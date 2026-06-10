@@ -444,6 +444,7 @@ _DECODER_EVIDENCE_OUTPUT_KEYS: tuple[tuple[str, str], ...] = (
     ("attention_kv_memory_out", "attention_kv_memory_report"),
     ("attention_local_sram_capacity_out", "attention_local_sram_capacity_report"),
     ("attention_kv_measured_sram_rebalance_out", "attention_kv_measured_sram_rebalance_report"),
+    ("attention_kv_measured_hbm_service_out", "attention_kv_measured_hbm_service_report"),
 )
 
 
@@ -531,6 +532,28 @@ def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, 
             "local_capacity_bytes_per_cluster",
             "abstract_local_capacity_bytes_per_cluster_replaced",
             "dominant_tile_resource",
+        ):
+            if key in best_dict:
+                parts.append(f"{key}={best_dict.get(key)}")
+        summary = "; ".join(parts)
+        return outcome, summary if summary.endswith(".") else summary + "."
+
+    if model == "llm_decoder_attention_kv_measured_hbm_service_llama7b_v1":
+        best = evidence_payload.get("best")
+        best_dict = dict(best) if isinstance(best, dict) else {}
+        outcome = "measured_hbm_service_recorded"
+        parts = [
+            f"Decoder measured-HBM service evidence recorded from {evidence_ref}: decision={outcome}",
+        ]
+        for key in (
+            "latency_us",
+            "dominant_tile_resource",
+            "effective_hbm_bytes_per_cycle",
+            "source_effective_hbm_bytes_per_cycle",
+            "derived_hbm_efficiency_vs_source",
+            "controller_service_cycles",
+            "tile_attention_cycles",
+            "hbm_byte_share",
         ):
             if key in best_dict:
                 parts.append(f"{key}={best_dict.get(key)}")

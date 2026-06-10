@@ -5068,6 +5068,49 @@ def _decoder_attention_kv_measured_sram_rebalance_evidence(*, item_id: str) -> d
     }
 
 
+def _decoder_attention_kv_measured_hbm_service_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_attention_kv_measured_hbm_service__{item_id}.json"
+    report = f"{base}/decoder_attention_kv_measured_hbm_service__{item_id}.md"
+    measured_sram = (
+        f"{base}/decoder_attention_kv_measured_sram_rebalance__"
+        "l2_decoder_attention_kv_measured_sram_rebalance_llama7b_v1.json"
+    )
+    return {
+        "inputs": {
+            "attention_kv_measured_sram_rebalance": measured_sram,
+            "attention_kv_measured_hbm_service_out": out,
+            "attention_kv_measured_hbm_service_report": report,
+            "attention_kv_measured_hbm_service_scope": (
+                "Refine the measured-SRAM Llama7B endpoint frontier with an explicit HBM "
+                "channel/burst/row-hit/outstanding-request service model. Compute, SRAM, "
+                "endpoint, and NoC fields are inherited from the measured-SRAM rebalance item."
+            ),
+        },
+        "commands": [
+            {
+                "name": "estimate_decoder_attention_kv_measured_hbm_service",
+                "run": (
+                    "python3 npu/eval/estimate_llm_decoder_attention_kv_measured_hbm_service.py "
+                    f"--measured-sram-rebalance-json {measured_sram} "
+                    "--frontier-row-limit 16 "
+                    "--channel-count 4,8,16 "
+                    "--channel-bandwidth-bytes-per-cycle 256,512,1024 "
+                    "--burst-bytes 256,512,1024 "
+                    "--hbm-outstanding 4,8,16,32 "
+                    "--request-overhead-cycles 2,4,8 "
+                    "--row-hit-rate 0.5,0.75,0.9 "
+                    "--row-miss-penalty-cycles 8,16,32 "
+                    "--scheduler-efficiency 0.6,0.75,0.9 "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+    }
+
+
 def _decoder_attention_noc_profile_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_noc_profile__{item_id}.json"
@@ -6628,6 +6671,7 @@ def _build_payload(
         "decoder_attention_sram_profile",
         "decoder_attention_local_sram_capacity",
         "decoder_attention_kv_measured_sram_rebalance",
+        "decoder_attention_kv_measured_hbm_service",
         "decoder_attention_noc_profile",
         "decoder_attention_kv_quality_gate",
         "decoder_attention_kv_quality_proxy",
@@ -6764,6 +6808,8 @@ def _build_payload(
             decoder_evidence = _decoder_attention_local_sram_capacity_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_measured_sram_rebalance":
             decoder_evidence = _decoder_attention_kv_measured_sram_rebalance_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_attention_kv_measured_hbm_service":
+            decoder_evidence = _decoder_attention_kv_measured_hbm_service_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_noc_profile":
             decoder_evidence = _decoder_attention_noc_profile_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_quality_gate":

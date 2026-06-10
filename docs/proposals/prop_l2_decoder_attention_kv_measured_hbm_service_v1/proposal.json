@@ -1,0 +1,65 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_measured_hbm_service_v1",
+  "created_utc": "2026-06-10T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Measured HBM service closure for Llama7B attention frontier",
+  "hypothesis": "The measured-SRAM Llama7B endpoint frontier remains valid, or its bottleneck shifts, when the inherited scalar HBM bandwidth is replaced by an explicit channel, burst, row-hit, and outstanding-request service model.",
+  "direct_comparison": {
+    "primary_question": "Does explicit HBM controller service change the measured-SRAM Llama7B attention frontier latency or dominant resource?",
+    "include": [
+      "Use l2_decoder_attention_kv_measured_sram_rebalance_llama7b_v1 as the source frontier.",
+      "Sweep channel count, per-channel payload bandwidth, burst size, outstanding request window, request overhead, row-hit rate, row-miss penalty, and scheduler efficiency.",
+      "Recompute endpoint service timing while inheriting compute, SRAM, endpoint, and NoC parameters from the measured-SRAM frontier.",
+      "Report effective HBM bytes/cycle versus the source scalar HBM assumption."
+    ],
+    "exclude": [
+      "Do not model full DRAM timing, refresh, bank groups, address mapping, or turnarounds.",
+      "Do not change SRAM packing or compute PPA in this item.",
+      "Do not resolve model-quality risk for KV sharing.",
+      "Do not replace the pending wide router/FIFO PPA closure item."
+    ],
+    "follow_on_broad_sweep": [
+      "If HBM becomes dominant, explore HBM stack/channel scaling and KV compression/quality-backed variants.",
+      "If tile compute remains dominant, return to compute density and tile scheduling under the measured memory assumptions.",
+      "Use this result as the next practical-memory baseline for Llama7B attention exploration."
+    ]
+  },
+  "expected_benefit": [
+    "Reduces the largest remaining memory-service abstraction after measured SRAM rebalance.",
+    "Checks whether the previous inherited HBM bandwidth was overly optimistic.",
+    "Separates HBM-controller service pressure from NoC/SRAM and compute pressure."
+  ],
+  "risks": [
+    "This is still an analytic HBM service bound, not a full DRAM timing simulator.",
+    "HBM channel bandwidth is expressed in core cycles and needs later calibration to a concrete interface clocking plan.",
+    "Controller area and power are not measured in this item."
+  ],
+  "needs_mapper_change": true,
+  "required_evaluations": [
+    {
+      "task_type": "l2_campaign",
+      "evaluation_mode": "frontier_detail",
+      "objective": "measured_hbm_service_frontier",
+      "cost_class": "small",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_kv_measured_sram_rebalance_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "record_measured_hbm_service_frontier",
+        "reason": "The result should report best latency, effective HBM bytes/cycle, source-vs-derived HBM efficiency, controller service cycles, and dominant resource."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_measured_sram_rebalance__l2_decoder_attention_kv_measured_sram_rebalance_llama7b_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/estimate_llm_decoder_attention_kv_measured_hbm_service.py",
+    "npu/eval/estimate_llm_decoder_attention_kv_measured_sram_rebalance.py",
+    "npu/eval/estimate_llm_decoder_attention_kv_onchip_service_schedule.py"
+  ]
+}
