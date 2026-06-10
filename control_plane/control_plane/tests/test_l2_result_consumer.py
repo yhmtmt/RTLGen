@@ -1222,6 +1222,113 @@ def test_consume_l2_result_frontier_attention_measured_sram_rebalance_uses_decod
             )
 
 
+def test_consume_l2_result_frontier_attention_measured_hbm_service_uses_decoder_evidence() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            proposal_dir = repo_root / "docs" / "proposals" / "prop_l2_attention_measured_hbm_service_v1"
+            _write(
+                proposal_dir / "proposal.json",
+                json.dumps(
+                    {
+                        "proposal_id": "prop_l2_attention_measured_hbm_service_v1",
+                        "kind": "architecture",
+                        "title": "Attention measured HBM service",
+                        "direct_comparison": {
+                            "primary_question": "Does explicit HBM controller service change the frontier?"
+                        },
+                    },
+                    indent=2,
+                )
+                + "\n",
+            )
+            evidence_rel = (
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_kv_measured_hbm_service__l2_attention_measured_hbm_service_v1.json"
+            )
+            report_rel = (
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_kv_measured_hbm_service__l2_attention_measured_hbm_service_v1.md"
+            )
+            _write(
+                repo_root / evidence_rel,
+                json.dumps(
+                    {
+                        "version": 1,
+                        "model": "llm_decoder_attention_kv_measured_hbm_service_llama7b_v1",
+                        "sweep_summary": {
+                            "generated_row_count": 64,
+                            "best_latency_us": 2138.84136,
+                            "best_derived_hbm_efficiency_vs_source": 0.019172,
+                        },
+                        "best": {
+                            "latency_us": 2138.84136,
+                            "dominant_tile_resource": "tile_attention",
+                            "effective_hbm_bytes_per_cycle": 792.596465,
+                            "source_effective_hbm_bytes_per_cycle": 41341.3632,
+                            "derived_hbm_efficiency_vs_source": 0.019172,
+                            "controller_service_cycles": 1301,
+                            "tile_attention_cycles": 1354,
+                            "hbm_byte_share": 0.983398438,
+                        },
+                    },
+                    indent=2,
+                )
+                + "\n",
+            )
+            _write(repo_root / report_rel, "# measured hbm service\n")
+            item_id = _seed_campaign_work_item(
+                session,
+                repo_root,
+                item_id="l2_attention_measured_hbm_service",
+                campaign_dir_rel="runs/campaigns/npu/attention_measured_hbm_service_campaign",
+                summary_rows=(
+                    "scope,arch_id,macro_mode,objective_rank,latency_ms_mean,energy_mj_mean,critical_path_ns_mean,total_power_mw_mean,flow_elapsed_s_mean,throughput_infer_per_s_mean\n"
+                    "aggregate,fp16_nm1_demo,flat_nomacro,1,0.4,0.15,5.5,0.18,1000,1.0\n"
+                ),
+                proposal_path="docs/proposals/prop_l2_attention_measured_hbm_service_v1",
+                comparison={"role": "frontier_closure"},
+            )
+            work_item = session.query(WorkItem).filter_by(item_id=item_id).one()
+            payload = copy.deepcopy(work_item.task_request.request_payload or {})
+            payload["developer_loop"]["evaluation"] = {
+                "mode": "frontier_detail",
+                "expected_direction": "iterate",
+                "expected_reason": "Use measured HBM service pressure to choose the next frontier.",
+            }
+            payload["developer_loop"]["abstraction"] = {
+                "layer": "decoder_attention_kv_measured_hbm_service",
+            }
+            work_item.task_request.request_payload = payload
+            work_item.input_manifest = {
+                "decoder_contract": {
+                    "attention_kv_measured_hbm_service_out": evidence_rel,
+                    "attention_kv_measured_hbm_service_report": report_rel,
+                }
+            }
+            work_item.expected_outputs = [*(work_item.expected_outputs or []), evidence_rel, report_rel]
+            session.commit()
+
+            consume_l2_result(session, Layer2ConsumeRequest(repo_root=str(repo_root), item_id=item_id))
+
+            decision_payload = json.loads(
+                (repo_root / "control_plane" / "shadow_exports" / "l2_decisions" / f"{item_id}.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            assessment = decision_payload["proposal_assessment"]
+            assert assessment["outcome"] == "measured_hbm_service_recorded"
+            assert assessment["decoder_evidence_ref"] == evidence_rel
+            assert assessment["decoder_quality"]["best"]["derived_hbm_efficiency_vs_source"] == 0.019172
+            assert decision_payload["evaluation_record"]["abstraction_layer"] == "decoder_attention_kv_measured_hbm_service"
+            assert decision_payload["source_refs"]["decoder_attention_kv_measured_hbm_service_out"] == evidence_rel
+            assert decision_payload["source_refs"]["decoder_attention_kv_measured_hbm_service_report"] == report_rel
+
+
 def test_consume_l2_result_frontier_synthesis_prefers_synthesis_evidence() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"

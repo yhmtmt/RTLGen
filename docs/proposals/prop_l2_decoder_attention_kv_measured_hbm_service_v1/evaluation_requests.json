@@ -1,0 +1,26 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_measured_hbm_service_v1",
+  "source_commit": "TBD_AFTER_MERGE",
+  "source_commit_note": "Dispatch should use the merge commit containing the measured HBM service estimator and generator hook.",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_kv_measured_hbm_service_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Recompute the measured-SRAM Llama7B attention frontier with explicit HBM controller service parameters.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_kv_measured_hbm_service",
+      "comparison_role": "frontier_closure",
+      "paired_baseline_item_id": "l2_decoder_attention_kv_measured_sram_rebalance_llama7b_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_kv_measured_sram_rebalance_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "record_measured_hbm_service_frontier",
+        "reason": "The result should report best latency, effective HBM bytes/cycle, source-vs-derived HBM efficiency, controller service cycles, and dominant resource."
+      },
+      "status": "proposed"
+    }
+  ]
+}
