@@ -5111,6 +5111,49 @@ def _decoder_attention_kv_measured_hbm_service_evidence(*, item_id: str) -> dict
     }
 
 
+def _decoder_attention_kv_hbm_closed_onchip_schedule_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_attention_kv_hbm_closed_onchip_schedule__{item_id}.json"
+    report = f"{base}/decoder_attention_kv_hbm_closed_onchip_schedule__{item_id}.md"
+    measured_hbm = (
+        f"{base}/decoder_attention_kv_measured_hbm_service__"
+        "l2_decoder_attention_kv_measured_hbm_service_llama7b_v1.json"
+    )
+    return {
+        "inputs": {
+            "attention_kv_measured_hbm_service": measured_hbm,
+            "attention_kv_hbm_closed_onchip_schedule_out": out,
+            "attention_kv_hbm_closed_onchip_schedule_report": report,
+            "attention_kv_hbm_closed_onchip_schedule_scope": (
+                "Re-sweep explicit on-chip SRAM/NoC service knobs on top of the measured-HBM "
+                "Llama7B frontier: schedule policy, bank arbitration, endpoint queue depth, "
+                "bank queue depth, router hop latency, packet payload, and prefetch overlap. "
+                "HBM controller service cycles, compute PPA, and measured SRAM quantities are inherited."
+            ),
+        },
+        "commands": [
+            {
+                "name": "estimate_decoder_attention_kv_hbm_closed_onchip_schedule",
+                "run": (
+                    "python3 npu/eval/estimate_llm_decoder_attention_kv_hbm_closed_onchip_schedule.py "
+                    f"--measured-hbm-service-json {measured_hbm} "
+                    "--frontier-row-limit 64 "
+                    "--schedule-policy static_wave,staggered_wave,prefetch_overlap "
+                    "--bank-arbiter-policy round_robin,locality_first,age_based "
+                    "--endpoint-queue-depth-bytes 1024,2048,8192,32768 "
+                    "--bank-queue-depth-bytes 1024,2048,8192,32768 "
+                    "--router-latency-cycles-per-hop 1,2,4 "
+                    "--packet-payload-bytes 64,128,256 "
+                    "--prefetch-overlap-fraction 0,0.25,0.5,0.75 "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+    }
+
+
 def _decoder_attention_noc_profile_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_noc_profile__{item_id}.json"
@@ -6672,6 +6715,7 @@ def _build_payload(
         "decoder_attention_local_sram_capacity",
         "decoder_attention_kv_measured_sram_rebalance",
         "decoder_attention_kv_measured_hbm_service",
+        "decoder_attention_kv_hbm_closed_onchip_schedule",
         "decoder_attention_noc_profile",
         "decoder_attention_kv_quality_gate",
         "decoder_attention_kv_quality_proxy",
@@ -6810,6 +6854,8 @@ def _build_payload(
             decoder_evidence = _decoder_attention_kv_measured_sram_rebalance_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_measured_hbm_service":
             decoder_evidence = _decoder_attention_kv_measured_hbm_service_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_attention_kv_hbm_closed_onchip_schedule":
+            decoder_evidence = _decoder_attention_kv_hbm_closed_onchip_schedule_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_noc_profile":
             decoder_evidence = _decoder_attention_noc_profile_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_quality_gate":

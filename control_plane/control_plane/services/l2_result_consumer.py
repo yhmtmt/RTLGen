@@ -445,6 +445,7 @@ _DECODER_EVIDENCE_OUTPUT_KEYS: tuple[tuple[str, str], ...] = (
     ("attention_local_sram_capacity_out", "attention_local_sram_capacity_report"),
     ("attention_kv_measured_sram_rebalance_out", "attention_kv_measured_sram_rebalance_report"),
     ("attention_kv_measured_hbm_service_out", "attention_kv_measured_hbm_service_report"),
+    ("attention_kv_hbm_closed_onchip_schedule_out", "attention_kv_hbm_closed_onchip_schedule_report"),
 )
 
 
@@ -554,6 +555,32 @@ def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, 
             "controller_service_cycles",
             "tile_attention_cycles",
             "hbm_byte_share",
+        ):
+            if key in best_dict:
+                parts.append(f"{key}={best_dict.get(key)}")
+        summary = "; ".join(parts)
+        return outcome, summary if summary.endswith(".") else summary + "."
+
+    if model == "llm_decoder_attention_kv_hbm_closed_onchip_schedule_llama7b_v1":
+        best = evidence_payload.get("best")
+        best_dict = dict(best) if isinstance(best, dict) else {}
+        outcome = "hbm_closed_onchip_schedule_recorded"
+        parts = [
+            f"Decoder HBM-closed on-chip schedule evidence recorded from {evidence_ref}: decision={outcome}",
+        ]
+        for key in (
+            "latency_us",
+            "latency_slowdown_vs_hbm_closed_source",
+            "dominant_tile_resource",
+            "schedule_policy",
+            "bank_arbiter_policy",
+            "endpoint_queue_depth_bytes",
+            "bank_queue_depth_bytes",
+            "router_latency_cycles_per_hop",
+            "packet_payload_bytes",
+            "tile_hbm_cycles",
+            "tile_attention_cycles",
+            "onchip_shared_service_cycles",
         ):
             if key in best_dict:
                 parts.append(f"{key}={best_dict.get(key)}")
