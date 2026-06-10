@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_hbm_closed_onchip_schedule_v1",
+  "decision": "iterate",
+  "pr_number": 826,
+  "merge_commit": "d0336a11d0ac568b8708079bd300b66d2f7a0399",
+  "merged_utc": "2026-06-10T02:16:13.042459Z"
+}
