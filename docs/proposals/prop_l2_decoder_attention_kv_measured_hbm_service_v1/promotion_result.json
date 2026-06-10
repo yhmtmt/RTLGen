@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_measured_hbm_service_v1",
+  "decision": "iterate",
+  "pr_number": 824,
+  "merge_commit": "67f2929efb275a20046903b87a36e3ebf6b90c0a",
+  "merged_utc": "2026-06-10T01:21:56.838839Z"
+}

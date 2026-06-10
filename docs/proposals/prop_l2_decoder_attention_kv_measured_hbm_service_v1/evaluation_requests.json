@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_decoder_attention_kv_measured_hbm_service_v1",
-  "source_commit": "TBD_AFTER_MERGE",
+  "source_commit": "5a426fc6db310aea694834210d26be2d4109d584",
   "source_commit_note": "Dispatch should use the merge commit containing the measured HBM service estimator and generator hook.",
   "requested_items": [
     {
@@ -20,7 +20,11 @@
         "direction": "record_measured_hbm_service_frontier",
         "reason": "The result should report best latency, effective HBM bytes/cycle, source-vs-derived HBM efficiency, controller service cycles, and dominant resource."
       },
-      "status": "proposed"
+      "status": "merged",
+      "merged_pr_number": 824,
+      "merge_commit": "67f2929efb275a20046903b87a36e3ebf6b90c0a",
+      "merged_utc": "2026-06-10T01:21:56.838839Z",
+      "notes": "Merged via PR #824 and merge 67f2929efb275a20046903b87a36e3ebf6b90c0a at 2026-06-10T01:21:56.838839Z."
     }
   ]
 }
