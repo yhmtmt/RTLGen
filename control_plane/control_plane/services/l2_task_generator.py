@@ -5197,6 +5197,55 @@ def _decoder_attention_kv_subtile_pipeline_schedule_evidence(*, item_id: str) ->
     }
 
 
+def _decoder_attention_kv_dual_stream_physical_feasibility_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_attention_kv_dual_stream_physical_feasibility__{item_id}.json"
+    report = f"{base}/decoder_attention_kv_dual_stream_physical_feasibility__{item_id}.md"
+    subtile_pipeline = (
+        f"{base}/decoder_attention_kv_subtile_pipeline_schedule__"
+        "l2_decoder_attention_kv_subtile_pipeline_schedule_llama7b_v1.json"
+    )
+    full_value_tile_metrics = (
+        "runs/designs/activations/"
+        "attention_kv_full_value_hd64_kv8_tl16_b128_p8_ppc2_w24_a40_wrapper/metrics.csv"
+    )
+    softmax_weight_metrics = (
+        "runs/designs/activations/"
+        "attention_softmax_weight_int8_r8_acc24_recip_q10_wrapper/metrics.csv"
+    )
+    return {
+        "inputs": {
+            "attention_kv_subtile_pipeline_schedule": subtile_pipeline,
+            "attention_kv_full_value_tile_metrics": full_value_tile_metrics,
+            "attention_kv_softmax_weight_metrics": softmax_weight_metrics,
+            "attention_kv_dual_stream_physical_feasibility_out": out,
+            "attention_kv_dual_stream_physical_feasibility_report": report,
+            "attention_kv_dual_stream_physical_feasibility_scope": (
+                "Apply measured full-value attention tile and softmax-weight-generator PPA to the "
+                "sub-tile pipeline schedule. Report whether the optimistic dual_mac schedule fits "
+                "the existing Llama7B logic budget, how much compute density/area is missing, and "
+                "which area-neutral fallback remains legal."
+            ),
+        },
+        "commands": [
+            {
+                "name": "estimate_decoder_attention_kv_dual_stream_physical_feasibility",
+                "run": (
+                    "python3 npu/eval/estimate_llm_decoder_attention_kv_dual_stream_physical_feasibility.py "
+                    f"--subtile-pipeline-json {subtile_pipeline} "
+                    f"--full-value-tile-metrics {full_value_tile_metrics} "
+                    f"--softmax-weight-metrics {softmax_weight_metrics} "
+                    "--frontier-row-limit 8 "
+                    "--buffer-area-um2-per-byte 0.0 "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+    }
+
+
 def _decoder_attention_noc_profile_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_noc_profile__{item_id}.json"
@@ -6760,6 +6809,7 @@ def _build_payload(
         "decoder_attention_kv_measured_hbm_service",
         "decoder_attention_kv_hbm_closed_onchip_schedule",
         "decoder_attention_kv_subtile_pipeline_schedule",
+        "decoder_attention_kv_dual_stream_physical_feasibility",
         "decoder_attention_noc_profile",
         "decoder_attention_kv_quality_gate",
         "decoder_attention_kv_quality_proxy",
@@ -6902,6 +6952,8 @@ def _build_payload(
             decoder_evidence = _decoder_attention_kv_hbm_closed_onchip_schedule_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_subtile_pipeline_schedule":
             decoder_evidence = _decoder_attention_kv_subtile_pipeline_schedule_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_attention_kv_dual_stream_physical_feasibility":
+            decoder_evidence = _decoder_attention_kv_dual_stream_physical_feasibility_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_noc_profile":
             decoder_evidence = _decoder_attention_noc_profile_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_quality_gate":

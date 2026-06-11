@@ -447,6 +447,7 @@ _DECODER_EVIDENCE_OUTPUT_KEYS: tuple[tuple[str, str], ...] = (
     ("attention_kv_measured_hbm_service_out", "attention_kv_measured_hbm_service_report"),
     ("attention_kv_hbm_closed_onchip_schedule_out", "attention_kv_hbm_closed_onchip_schedule_report"),
     ("attention_kv_subtile_pipeline_schedule_out", "attention_kv_subtile_pipeline_schedule_report"),
+    ("attention_kv_dual_stream_physical_feasibility_out", "attention_kv_dual_stream_physical_feasibility_report"),
 )
 
 
@@ -614,6 +615,29 @@ def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, 
         ):
             if key in best_dict:
                 parts.append(f"{key}={best_dict.get(key)}")
+        summary = "; ".join(parts)
+        return outcome, summary if summary.endswith(".") else summary + "."
+
+    if model == "llm_decoder_attention_kv_dual_stream_physical_feasibility_llama7b_v1":
+        diagnosis = evidence_payload.get("diagnosis")
+        diagnosis_dict = dict(diagnosis) if isinstance(diagnosis, dict) else {}
+        outcome = str(diagnosis_dict.get("decision") or "dual_stream_physical_feasibility_recorded")
+        parts = [
+            f"Decoder dual-stream physical feasibility evidence recorded from {evidence_ref}: decision={outcome}",
+        ]
+        for key in (
+            "best_requested_mode",
+            "best_requested_latency_us",
+            "best_requested_area_fit",
+            "best_requested_logic_slack_um2",
+            "best_requested_compute_area_over_budget_um2",
+            "best_requested_required_compute_density_gain",
+            "best_feasible_mode",
+            "best_feasible_latency_us",
+            "recommended_next_step",
+        ):
+            if key in diagnosis_dict:
+                parts.append(f"{key}={diagnosis_dict.get(key)}")
         summary = "; ".join(parts)
         return outcome, summary if summary.endswith(".") else summary + "."
 
