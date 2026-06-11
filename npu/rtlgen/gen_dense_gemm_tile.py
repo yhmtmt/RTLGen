@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Generate a dense FP16 GEMM-tile PPA harness.
+"""Generate a dense GEMM-tile PPA harness.
 
 The generated top is intentionally narrow at the boundary. It self-stimulates a
-regular array of exact RTLGen FP16 MAC primitives from a small seed register and
-folds all MAC outputs into a visible result register. This measures the dense
-compute tile without replicating the current NPU dynamic dispatcher or vector
-tail, while keeping every MAC output connected to the datapath.
+regular array of MAC primitives from a small seed register and folds all MAC
+outputs into a visible result register. This measures the dense compute tile
+without replicating the current NPU dynamic dispatcher or vector tail, while
+keeping every MAC output connected to the datapath.
 """
 
 from __future__ import annotations
@@ -44,22 +44,54 @@ def _validate_tile(tile: dict[str, Any]) -> None:
         raise SystemExit("dense_gemm_tile.k_unroll must be in [1, 4]")
     if pipeline_stages < 0 or pipeline_stages > 2:
         raise SystemExit("dense_gemm_tile.pipeline_stages must be in [0, 2]")
-    if str(tile.get("precision", "fp16")).lower() != "fp16":
-        raise SystemExit("dense_gemm_tile.precision currently supports only fp16")
+    precision = str(tile.get("precision", "fp16")).lower()
+    if precision not in {"fp16", "int8"}:
+        raise SystemExit("dense_gemm_tile.precision currently supports fp16 or int8")
 
 
 def _signal_name(prefix: str, index: int) -> str:
     return f"{prefix}_{index:04d}"
 
 
+def _generate_int8_mac_module(module_name: str = "int8_mac_s8s8_acc24") -> tuple[str, str]:
+    return (
+        module_name,
+        f"""module {module_name} (
+    input  wire signed [7:0]  A,
+    input  wire signed [7:0]  B,
+    input  wire signed [23:0] C,
+    output wire signed [23:0] R
+);
+  wire signed [15:0] product = A * B;
+  assign R = {{{{8{{product[15]}}}}, product}} + C;
+endmodule
+""",
+    )
+
+
 def _write_top(*, cfg: dict[str, Any], out_path: Path, mac_module_name: str, mac_module_text: str) -> None:
     tile = cfg["dense_gemm_tile"]
     top_name = str(cfg.get("top_name", tile.get("module_name", "dense_gemm_tile_top"))).strip()
+    precision = str(tile.get("precision", "fp16")).lower()
     array_m = _as_int(tile, "array_m", 4)
     array_n = _as_int(tile, "array_n", 4)
     k_unroll = _as_int(tile, "k_unroll", 1)
     pipeline_stages = _as_int(tile, "pipeline_stages", 1)
     mac_count = array_m * array_n * k_unroll
+    if precision == "fp16":
+        a_width = b_width = c_width = r_width = 16
+        signed_decl = ""
+        accum_bits = 16
+    else:
+        a_width = b_width = 8
+        c_width = r_width = 24
+        signed_decl = " signed"
+        accum_bits = 24
+
+    def _fold_term(signal: str) -> str:
+        if r_width >= 32:
+            return signal
+        return f"{{{32 - r_width}'h0, {signal}}}"
 
     wire_lines: list[str] = []
     input_reg_lines: list[str] = []
@@ -76,12 +108,20 @@ def _write_top(*, cfg: dict[str, Any], out_path: Path, mac_module_name: str, mac
         row = idx // (array_n * k_unroll)
         col = (idx // k_unroll) % array_n
         ku = idx % k_unroll
-        const_a = (0x3C00 ^ ((row + 1) * 0x0131) ^ ((col + 1) * 0x0027) ^ (ku * 0x0041)) & 0xFFFF
-        const_b = (0x4000 ^ ((row + 1) * 0x001D) ^ ((col + 1) * 0x00A3) ^ (ku * 0x0055)) & 0xFFFF
-        const_c = (0x0000 ^ ((row + 1) * 0x0007) ^ ((col + 1) * 0x000B) ^ (ku * 0x0013)) & 0xFFFF
-        a_src = f"(seed_state[15:0] ^ 16'h{const_a:04x} ^ cycle_ctr[15:0])"
-        b_src = f"(seed_state[31:16] ^ 16'h{const_b:04x} ^ {{cycle_ctr[7:0], cycle_ctr[15:8]}})"
-        c_src = f"(result_hash[15:0] ^ 16'h{const_c:04x})"
+        if precision == "fp16":
+            const_a = (0x3C00 ^ ((row + 1) * 0x0131) ^ ((col + 1) * 0x0027) ^ (ku * 0x0041)) & 0xFFFF
+            const_b = (0x4000 ^ ((row + 1) * 0x001D) ^ ((col + 1) * 0x00A3) ^ (ku * 0x0055)) & 0xFFFF
+            const_c = (0x0000 ^ ((row + 1) * 0x0007) ^ ((col + 1) * 0x000B) ^ (ku * 0x0013)) & 0xFFFF
+            a_src = f"(seed_state[15:0] ^ 16'h{const_a:04x} ^ cycle_ctr[15:0])"
+            b_src = f"(seed_state[31:16] ^ 16'h{const_b:04x} ^ {{cycle_ctr[7:0], cycle_ctr[15:8]}})"
+            c_src = f"(result_hash[15:0] ^ 16'h{const_c:04x})"
+        else:
+            const_a = (0x3D ^ ((row + 1) * 0x13) ^ ((col + 1) * 0x27) ^ (ku * 0x41)) & 0xFF
+            const_b = (0x21 ^ ((row + 1) * 0x1D) ^ ((col + 1) * 0xA3) ^ (ku * 0x55)) & 0xFF
+            const_c = (0x000011 ^ ((row + 1) * 0x0007) ^ ((col + 1) * 0x000B) ^ (ku * 0x0013)) & 0xFFFFFF
+            a_src = f"(seed_state[7:0] ^ 8'h{const_a:02x} ^ cycle_ctr[7:0])"
+            b_src = f"(seed_state[15:8] ^ 8'h{const_b:02x} ^ cycle_ctr[15:8])"
+            c_src = f"({{8'h00, result_hash[15:0]}} ^ 24'h{const_c:06x})"
         a_name = _signal_name("mac_a", idx)
         b_name = _signal_name("mac_b", idx)
         c_name = _signal_name("mac_c", idx)
@@ -89,16 +129,16 @@ def _write_top(*, cfg: dict[str, Any], out_path: Path, mac_module_name: str, mac
         if pipeline_stages >= 1:
             input_reg_lines.extend(
                 [
-                    f"  reg [15:0] {a_name}_q;",
-                    f"  reg [15:0] {b_name}_q;",
-                    f"  reg [15:0] {c_name}_q;",
+                    f"  reg{signed_decl} [{a_width - 1}:0] {a_name}_q;",
+                    f"  reg{signed_decl} [{b_width - 1}:0] {b_name}_q;",
+                    f"  reg{signed_decl} [{c_width - 1}:0] {c_name}_q;",
                 ]
             )
             input_reset_lines.extend(
                 [
-                    f"      {a_name}_q <= 16'h0000;",
-                    f"      {b_name}_q <= 16'h0000;",
-                    f"      {c_name}_q <= 16'h0000;",
+                    f"      {a_name}_q <= {a_width}'h0;",
+                    f"      {b_name}_q <= {b_width}'h0;",
+                    f"      {c_name}_q <= {c_width}'h0;",
                 ]
             )
             input_update_lines.extend(
@@ -114,18 +154,19 @@ def _write_top(*, cfg: dict[str, Any], out_path: Path, mac_module_name: str, mac
         else:
             wire_lines.extend(
                 [
-                    f"  wire [15:0] {a_name} = {a_src};",
-                    f"  wire [15:0] {b_name} = {b_src};",
-                    f"  wire [15:0] {c_name} = {c_src};",
+                    f"  wire{signed_decl} [{a_width - 1}:0] {a_name} = {a_src};",
+                    f"  wire{signed_decl} [{b_width - 1}:0] {b_name} = {b_src};",
+                    f"  wire{signed_decl} [{c_width - 1}:0] {c_name} = {c_src};",
                 ]
             )
             a_expr = a_name
             b_expr = b_name
             c_expr = c_name
 
-        wire_lines.append(f"  wire [15:0] {r_name};")
-        inst_lines.append(
-            f"""  {mac_module_name} u_mac_{idx:04d} (
+        wire_lines.append(f"  wire{signed_decl} [{r_width - 1}:0] {r_name};")
+        if precision == "fp16":
+            inst_lines.append(
+                f"""  {mac_module_name} u_mac_{idx:04d} (
     .A({a_expr}),
     .B({b_expr}),
     .C({c_expr}),
@@ -134,15 +175,24 @@ def _write_top(*, cfg: dict[str, Any], out_path: Path, mac_module_name: str, mac
     .RndMode(2'b00),
     .R({r_name})
   );"""
-        )
+            )
+        else:
+            inst_lines.append(
+                f"""  {mac_module_name} u_mac_{idx:04d} (
+    .A({a_expr}),
+    .B({b_expr}),
+    .C({c_expr}),
+    .R({r_name})
+  );"""
+            )
         if pipeline_stages >= 2:
             rq_name = f"{r_name}_q"
-            output_reg_lines.append(f"  reg [15:0] {rq_name};")
-            output_reset_lines.append(f"      {rq_name} <= 16'h0000;")
+            output_reg_lines.append(f"  reg{signed_decl} [{r_width - 1}:0] {rq_name};")
+            output_reset_lines.append(f"      {rq_name} <= {r_width}'h0;")
             output_update_lines.append(f"      {rq_name} <= {r_name};")
-            output_terms.append(f"{{16'h0000, {rq_name}}}")
+            output_terms.append(_fold_term(rq_name))
         else:
-            result_terms.append(f"{{16'h0000, {r_name}}}")
+            result_terms.append(_fold_term(r_name))
 
     if pipeline_stages >= 2:
         folded_expr = "\n      ^ ".join(output_terms)
@@ -206,7 +256,9 @@ endmodule
         "version": 0.1,
         "generator": "npu/rtlgen/gen_dense_gemm_tile.py",
         "top_name": top_name,
-        "precision": "fp16",
+        "precision": precision,
+        "operand_bits": a_width,
+        "accum_bits": accum_bits,
         "array_m": array_m,
         "array_n": array_n,
         "k_unroll": k_unroll,
@@ -233,18 +285,24 @@ def main() -> int:
     _validate_tile(tile)
 
     out_path = Path(args.out)
-    gemm_cfg = {
-        "rtlgen_cpp": tile.get(
-            "rtlgen_cpp",
-            {
-                "binary_path": "build/rtlgen",
-                "module_name": "gemm_mac_fp16_ieee",
-                "total_width": 16,
-                "mantissa_width": 10,
-            },
+    precision = str(tile.get("precision", "fp16")).lower()
+    if precision == "fp16":
+        gemm_cfg = {
+            "rtlgen_cpp": tile.get(
+                "rtlgen_cpp",
+                {
+                    "binary_path": "build/rtlgen",
+                    "module_name": "gemm_mac_fp16_ieee",
+                    "total_width": 16,
+                    "mantissa_width": 10,
+                },
+            )
+        }
+        mac_module_name, mac_module_text = generate_cpp_fp16_mac_module(gemm_cfg, out_path)
+    else:
+        mac_module_name, mac_module_text = _generate_int8_mac_module(
+            str(tile.get("mac_module_name", "int8_mac_s8s8_acc24")).strip() or "int8_mac_s8s8_acc24"
         )
-    }
-    mac_module_name, mac_module_text = generate_cpp_fp16_mac_module(gemm_cfg, out_path)
     _write_top(cfg=cfg, out_path=out_path, mac_module_name=mac_module_name, mac_module_text=mac_module_text)
     print(f"dense-gemm-tile: wrote RTL to {out_path}")
     return 0
