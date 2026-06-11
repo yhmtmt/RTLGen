@@ -5154,6 +5154,49 @@ def _decoder_attention_kv_hbm_closed_onchip_schedule_evidence(*, item_id: str) -
     }
 
 
+def _decoder_attention_kv_subtile_pipeline_schedule_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_attention_kv_subtile_pipeline_schedule__{item_id}.json"
+    report = f"{base}/decoder_attention_kv_subtile_pipeline_schedule__{item_id}.md"
+    hbm_closed_onchip = (
+        f"{base}/decoder_attention_kv_hbm_closed_onchip_schedule__"
+        "l2_decoder_attention_kv_hbm_closed_onchip_schedule_llama7b_v1.json"
+    )
+    return {
+        "inputs": {
+            "attention_kv_hbm_closed_onchip_schedule": hbm_closed_onchip,
+            "attention_kv_subtile_pipeline_schedule_out": out,
+            "attention_kv_subtile_pipeline_schedule_report": report,
+            "attention_kv_subtile_pipeline_schedule_scope": (
+                "Estimate sub-tile QK/softmax/V pipeline schedules on top of the measured-SRAM, "
+                "measured-HBM, HBM-closed on-chip Llama7B attention frontier. Sweep subtile count, "
+                "buffer count, prefetch distance, normalization strategy, and QK/V compute sharing "
+                "mode to separate schedule-only room from circuit-assisted pipeline room."
+            ),
+        },
+        "commands": [
+            {
+                "name": "estimate_decoder_attention_kv_subtile_pipeline_schedule",
+                "run": (
+                    "python3 npu/eval/estimate_llm_decoder_attention_kv_subtile_pipeline_schedule.py "
+                    f"--hbm-closed-onchip-schedule-json {hbm_closed_onchip} "
+                    "--frontier-row-limit 48 "
+                    "--subtile-count 1,2,4,8,16,32 "
+                    "--subtile-buffer-count 1,2,3,4 "
+                    "--prefetch-distance 0,1,2,3 "
+                    "--normalize-strategy full_tile_normalize,online_correction "
+                    "--compute-mode shared_mac,split_mac,dual_mac "
+                    "--softmax-latency-per-subtile 0,1,2,4 "
+                    "--online-rescale-penalty-cycles 0,1,2,4 "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+    }
+
+
 def _decoder_attention_noc_profile_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_noc_profile__{item_id}.json"
@@ -6716,6 +6759,7 @@ def _build_payload(
         "decoder_attention_kv_measured_sram_rebalance",
         "decoder_attention_kv_measured_hbm_service",
         "decoder_attention_kv_hbm_closed_onchip_schedule",
+        "decoder_attention_kv_subtile_pipeline_schedule",
         "decoder_attention_noc_profile",
         "decoder_attention_kv_quality_gate",
         "decoder_attention_kv_quality_proxy",
@@ -6856,6 +6900,8 @@ def _build_payload(
             decoder_evidence = _decoder_attention_kv_measured_hbm_service_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_hbm_closed_onchip_schedule":
             decoder_evidence = _decoder_attention_kv_hbm_closed_onchip_schedule_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_attention_kv_subtile_pipeline_schedule":
+            decoder_evidence = _decoder_attention_kv_subtile_pipeline_schedule_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_noc_profile":
             decoder_evidence = _decoder_attention_noc_profile_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_quality_gate":
