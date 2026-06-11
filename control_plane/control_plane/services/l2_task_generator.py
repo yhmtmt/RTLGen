@@ -5287,6 +5287,63 @@ def _decoder_attention_mixed_precision_quality_evidence(*, item_id: str) -> dict
     }
 
 
+def _decoder_attention_mixed_precision_physical_feasibility_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_attention_mixed_precision_physical_feasibility__{item_id}.json"
+    report = f"{base}/decoder_attention_mixed_precision_physical_feasibility__{item_id}.md"
+    subtile_pipeline = (
+        f"{base}/decoder_attention_kv_subtile_pipeline_schedule__"
+        "l2_decoder_attention_kv_subtile_pipeline_schedule_llama7b_v1.json"
+    )
+    quality_gate = (
+        f"{base}/decoder_attention_mixed_precision_quality__"
+        "l2_decoder_attention_mixed_precision_quality_llama7b_v1.json"
+    )
+    mixed_full_value_tile_metrics = (
+        "runs/designs/activations/"
+        "attention_kv_full_value_hd64_kv8_v6_tl16_b128_p8_ppc2_w22_a40_wrapper/metrics.csv"
+    )
+    softmax_weight_metrics = (
+        "runs/designs/activations/"
+        "attention_softmax_weight_int8_r8_acc24_recip_q10_wrapper/metrics.csv"
+    )
+    return {
+        "inputs": {
+            "attention_kv_subtile_pipeline_schedule": subtile_pipeline,
+            "attention_mixed_precision_quality": quality_gate,
+            "attention_kv_mixed_precision_full_value_tile_metrics": mixed_full_value_tile_metrics,
+            "attention_kv_softmax_weight_metrics": softmax_weight_metrics,
+            "attention_mixed_precision_physical_feasibility_out": out,
+            "attention_mixed_precision_physical_feasibility_report": report,
+            "attention_mixed_precision_physical_feasibility_scope": (
+                "Apply measured Q8/K8/V6 full-value attention tile PPA, gated by the "
+                "Llama7B-shape mixed-precision quality proxy, to the dual-stream physical "
+                "feasibility model. Report whether local datapath area savings change the "
+                "dual_mac fit or the remaining compute-density gap."
+            ),
+        },
+        "commands": [
+            {
+                "name": "estimate_decoder_attention_mixed_precision_physical_feasibility",
+                "run": (
+                    "python3 npu/eval/estimate_llm_decoder_attention_kv_dual_stream_physical_feasibility.py "
+                    f"--subtile-pipeline-json {subtile_pipeline} "
+                    f"--full-value-tile-metrics {mixed_full_value_tile_metrics} "
+                    f"--softmax-weight-metrics {softmax_weight_metrics} "
+                    f"--quality-gate-json {quality_gate} "
+                    "--precision-profile q8_k8_v6_a24_s24_w16 "
+                    "--model-name llm_decoder_attention_mixed_precision_physical_feasibility_llama7b_v1 "
+                    "--frontier-row-limit 8 "
+                    "--buffer-area-um2-per-byte 0.0 "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+    }
+
+
 def _decoder_attention_noc_profile_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_noc_profile__{item_id}.json"
@@ -6852,6 +6909,7 @@ def _build_payload(
         "decoder_attention_kv_subtile_pipeline_schedule",
         "decoder_attention_kv_dual_stream_physical_feasibility",
         "decoder_attention_mixed_precision_quality",
+        "decoder_attention_mixed_precision_physical_feasibility",
         "decoder_attention_noc_profile",
         "decoder_attention_kv_quality_gate",
         "decoder_attention_kv_quality_proxy",
@@ -6998,6 +7056,8 @@ def _build_payload(
             decoder_evidence = _decoder_attention_kv_dual_stream_physical_feasibility_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_mixed_precision_quality":
             decoder_evidence = _decoder_attention_mixed_precision_quality_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_attention_mixed_precision_physical_feasibility":
+            decoder_evidence = _decoder_attention_mixed_precision_physical_feasibility_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_noc_profile":
             decoder_evidence = _decoder_attention_noc_profile_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_quality_gate":

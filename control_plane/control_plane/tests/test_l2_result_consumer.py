@@ -1782,6 +1782,120 @@ def test_consume_l2_result_frontier_attention_mixed_precision_quality_uses_decod
             assert decision_payload["source_refs"]["decoder_attention_mixed_precision_quality_report"] == report_rel
 
 
+def test_consume_l2_result_frontier_attention_mixed_precision_physical_feasibility_uses_decoder_evidence() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            proposal_dir = repo_root / "docs" / "proposals" / "prop_l2_attention_mixed_precision_physical_v1"
+            _write(
+                proposal_dir / "proposal.json",
+                json.dumps(
+                    {
+                        "proposal_id": "prop_l2_attention_mixed_precision_physical_v1",
+                        "kind": "architecture",
+                        "title": "Attention mixed precision physical feasibility",
+                        "direct_comparison": {
+                            "primary_question": "Does the measured mixed-precision datapath change feasibility?"
+                        },
+                    },
+                    indent=2,
+                )
+                + "\n",
+            )
+            evidence_rel = (
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_mixed_precision_physical_feasibility__l2_attention_mixed_precision_physical_v1.json"
+            )
+            report_rel = (
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_mixed_precision_physical_feasibility__l2_attention_mixed_precision_physical_v1.md"
+            )
+            _write(
+                repo_root / evidence_rel,
+                json.dumps(
+                    {
+                        "version": 1,
+                        "model": "llm_decoder_attention_mixed_precision_physical_feasibility_llama7b_v1",
+                        "diagnosis": {
+                            "decision": "dual_stream_area_blocked",
+                            "precision_profile": "q8_k8_v6_a24_s24_w16",
+                            "best_requested_mode": "dual_mac",
+                            "best_requested_latency_us": 1575.37,
+                            "best_requested_area_fit": False,
+                            "best_requested_logic_slack_um2": -398800000.0,
+                            "best_requested_compute_area_over_budget_um2": 398800000.0,
+                            "best_requested_required_compute_density_gain": 2.01,
+                            "best_feasible_mode": "split_mac",
+                            "best_feasible_latency_us": 2042.38,
+                            "recommended_next_step": "target compute array density",
+                        },
+                    },
+                    indent=2,
+                )
+                + "\n",
+            )
+            _write(repo_root / report_rel, "# mixed precision physical feasibility\n")
+            item_id = _seed_campaign_work_item(
+                session,
+                repo_root,
+                item_id="l2_attention_mixed_precision_physical",
+                campaign_dir_rel="runs/campaigns/npu/attention_mixed_precision_physical_campaign",
+                summary_rows=(
+                    "scope,arch_id,macro_mode,objective_rank,latency_ms_mean,energy_mj_mean,critical_path_ns_mean,total_power_mw_mean,flow_elapsed_s_mean,throughput_infer_per_s_mean\n"
+                    "aggregate,fp16_nm1_demo,flat_nomacro,1,0.4,0.15,5.5,0.18,1000,1.0\n"
+                ),
+                proposal_path="docs/proposals/prop_l2_attention_mixed_precision_physical_v1",
+                comparison={"role": "frontier_closure"},
+            )
+            work_item = session.query(WorkItem).filter_by(item_id=item_id).one()
+            payload = copy.deepcopy(work_item.task_request.request_payload or {})
+            payload["developer_loop"]["evaluation"] = {
+                "mode": "frontier_detail",
+                "expected_direction": "iterate",
+                "expected_reason": "Use mixed-precision physical feasibility to choose the next PPA target.",
+            }
+            payload["developer_loop"]["abstraction"] = {
+                "layer": "decoder_attention_mixed_precision_physical_feasibility",
+            }
+            work_item.task_request.request_payload = payload
+            work_item.input_manifest = {
+                "decoder_contract": {
+                    "attention_mixed_precision_physical_feasibility_out": evidence_rel,
+                    "attention_mixed_precision_physical_feasibility_report": report_rel,
+                }
+            }
+            work_item.expected_outputs = [*(work_item.expected_outputs or []), evidence_rel, report_rel]
+            session.commit()
+
+            consume_l2_result(session, Layer2ConsumeRequest(repo_root=str(repo_root), item_id=item_id))
+
+            decision_payload = json.loads(
+                (repo_root / "control_plane" / "shadow_exports" / "l2_decisions" / f"{item_id}.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            assessment = decision_payload["proposal_assessment"]
+            assert assessment["outcome"] == "dual_stream_area_blocked"
+            assert assessment["decoder_evidence_ref"] == evidence_rel
+            assert "precision_profile=q8_k8_v6_a24_s24_w16" in assessment["summary"]
+            assert (
+                decision_payload["evaluation_record"]["abstraction_layer"]
+                == "decoder_attention_mixed_precision_physical_feasibility"
+            )
+            assert (
+                decision_payload["source_refs"]["decoder_attention_mixed_precision_physical_feasibility_out"]
+                == evidence_rel
+            )
+            assert (
+                decision_payload["source_refs"]["decoder_attention_mixed_precision_physical_feasibility_report"]
+                == report_rel
+            )
+
+
 def test_consume_l2_result_frontier_synthesis_prefers_synthesis_evidence() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"

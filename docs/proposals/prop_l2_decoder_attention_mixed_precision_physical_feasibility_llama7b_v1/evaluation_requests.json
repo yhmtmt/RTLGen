@@ -1,0 +1,25 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_mixed_precision_physical_feasibility_llama7b_v1",
+  "source_commit": "TBD_AFTER_MERGE",
+  "source_commit_note": "Dispatch should use the merge commit containing the new mixed-precision physical feasibility abstraction.",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_mixed_precision_physical_feasibility_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Recompute Llama7B dual-stream physical feasibility using the measured q8/k8/v6 full-value attention tile PPA and the mixed-precision quality gate.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_mixed_precision_physical_feasibility",
+      "comparison_role": "frontier_closure",
+      "paired_baseline_item_id": "l2_decoder_attention_kv_dual_stream_physical_feasibility_llama7b_v1",
+      "depends_on": [
+        "l2_decoder_attention_kv_subtile_pipeline_schedule_llama7b_v1",
+        "l2_decoder_attention_mixed_precision_quality_llama7b_v1",
+        "l1_decoder_attention_mixed_precision_full_value_tile_v1"
+      ],
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "Use measured mixed-precision physical feasibility to decide whether the remaining frontier work is local datapath precision or compute-array density/fusion."
+      }
+    }
+  ]
+}

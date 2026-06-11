@@ -449,6 +449,7 @@ _DECODER_EVIDENCE_OUTPUT_KEYS: tuple[tuple[str, str], ...] = (
     ("attention_kv_subtile_pipeline_schedule_out", "attention_kv_subtile_pipeline_schedule_report"),
     ("attention_kv_dual_stream_physical_feasibility_out", "attention_kv_dual_stream_physical_feasibility_report"),
     ("attention_mixed_precision_quality_out", "attention_mixed_precision_quality_report"),
+    ("attention_mixed_precision_physical_feasibility_out", "attention_mixed_precision_physical_feasibility_report"),
 )
 
 
@@ -619,14 +620,23 @@ def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, 
         summary = "; ".join(parts)
         return outcome, summary if summary.endswith(".") else summary + "."
 
-    if model == "llm_decoder_attention_kv_dual_stream_physical_feasibility_llama7b_v1":
+    if model in {
+        "llm_decoder_attention_kv_dual_stream_physical_feasibility_llama7b_v1",
+        "llm_decoder_attention_mixed_precision_physical_feasibility_llama7b_v1",
+    }:
         diagnosis = evidence_payload.get("diagnosis")
         diagnosis_dict = dict(diagnosis) if isinstance(diagnosis, dict) else {}
         outcome = str(diagnosis_dict.get("decision") or "dual_stream_physical_feasibility_recorded")
+        prefix = (
+            "Decoder mixed-precision physical feasibility evidence"
+            if model == "llm_decoder_attention_mixed_precision_physical_feasibility_llama7b_v1"
+            else "Decoder dual-stream physical feasibility evidence"
+        )
         parts = [
-            f"Decoder dual-stream physical feasibility evidence recorded from {evidence_ref}: decision={outcome}",
+            f"{prefix} recorded from {evidence_ref}: decision={outcome}",
         ]
         for key in (
+            "precision_profile",
             "best_requested_mode",
             "best_requested_latency_us",
             "best_requested_area_fit",
