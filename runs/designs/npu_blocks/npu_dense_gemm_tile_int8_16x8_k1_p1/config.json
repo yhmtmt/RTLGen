@@ -1,0 +1,13 @@
+{
+  "version": "0.1",
+  "top_name": "dense_gemm_tile_int8_16x8_k1_p1",
+  "dense_gemm_tile": {
+    "module_name": "dense_gemm_tile_int8_16x8_k1_p1",
+    "precision": "int8",
+    "mac_module_name": "int8_mac_s8s8_acc24",
+    "array_m": 16,
+    "array_n": 8,
+    "k_unroll": 1,
+    "pipeline_stages": 1
+  }
+}

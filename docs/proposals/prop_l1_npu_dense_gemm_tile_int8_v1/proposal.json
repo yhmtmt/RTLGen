@@ -1,0 +1,69 @@
+{
+  "proposal_id": "prop_l1_npu_dense_gemm_tile_int8_v1",
+  "created_utc": "2026-06-11T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit_block",
+  "title": "Dense int8 GEMM tile PPA",
+  "abstraction_layer": "architecture_block",
+  "hypothesis": "A dense signed-int8 GEMM tile can provide materially higher MAC/cycle/mm2 than the exact-FP16 dense tile, which may close the Llama7B mixed-precision dual-stream compute-area gap when Q8/K8/V6 quality gates are used.",
+  "direct_comparison": {
+    "primary_question": "What area, power, and delay do 64-MAC and 128-MAC signed-int8 dense GEMM tiles achieve on Nangate45, and how does their density compare to the FP16 dense GEMM tile anchor?",
+    "include": [
+      "8x8 k1 p1 signed-int8 dense tile",
+      "16x8 k1 p1 signed-int8 dense tile",
+      "same macro-style narrow self-stimulating hash harness as the FP16 dense tile",
+      "hierarchy-preserving Nangate45 PPA sweep",
+      "structural guard that all MAC outputs fold into the visible result hash"
+    ],
+    "exclude": [
+      "do not claim model quality from this PPA item",
+      "do not include softmax, normalization, reducer, SRAM, NoC, or producer integration",
+      "do not replace the FP16 compute model until a follow-up L2 substitution consumes the measured int8 rows"
+    ]
+  },
+  "expected_benefit": [
+    "turns the quality-backed Q8/K8 attention compute precision into measured dense-array PPA",
+    "tests whether the mixed-precision area gap is mostly due to using FP16 dense compute metrics",
+    "provides explicit source-identified int8 compute candidates for follow-up L2 schedule substitution"
+  ],
+  "risks": [
+    "int8 accumulator width and reduction strategy are still local tile choices, not a complete attention datapath",
+    "the wrapper measures dense compute only and omits surrounding SRAM/NoC integration",
+    "area savings may be reduced by routing, accumulator width, or hierarchy overhead"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l1_npu_dense_gemm_tile_int8_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure Nangate45 PPA for 8x8 and 16x8 signed-int8 dense GEMM tiles with hierarchy preserved.",
+      "evaluation_mode": "measurement_only",
+      "abstraction_layer": "architecture_block",
+      "cost_class": "medium",
+      "comparison_role": "frontier_synthesis",
+      "paired_baseline_item_id": "l1_npu_dense_gemm_tile_scaling_v2",
+      "depends_on_item_ids": [
+        "l1_npu_dense_gemm_tile_scaling_v2",
+        "l2_decoder_attention_mixed_precision_quality_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "Use measured int8 dense compute PPA to decide whether mixed-precision dual-stream Llama7B attention becomes physically feasible."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/designs/npu_blocks/npu_dense_gemm_tile_fp16_8x8_k1_p1/metrics.csv",
+    "runs/designs/npu_blocks/npu_dense_gemm_tile_fp16_16x8_k1_p1/metrics.csv",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_precision_quality__l2_decoder_attention_mixed_precision_quality_llama7b_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/rtlgen/gen_dense_gemm_tile.py",
+    "npu/eval/check_dense_gemm_tile_guard.py",
+    "runs/campaigns/npu/dense_gemm_tile_int8_v1/sweeps/nangate45_dense_tile_int8_hier.json",
+    "claim:mixed_precision_dual_stream_area_gap_v1"
+  ]
+}

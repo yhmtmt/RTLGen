@@ -95,10 +95,11 @@ def _load_legacy_npu_compute_candidates(*, repo_root: Path, tag_substring: str) 
     return candidates
 
 
-def _load_dense_tile_shape(config_path: Path) -> tuple[int, int, int, int]:
+def _load_dense_tile_shape(config_path: Path) -> tuple[str, int, int, int, int]:
     payload = json.loads(config_path.read_text(encoding="utf-8"))
     tile = payload.get("dense_gemm_tile") or {}
     return (
+        str(tile.get("precision", "fp16")).lower(),
         int(tile.get("array_m", 1)),
         int(tile.get("array_n", 1)),
         int(tile.get("k_unroll", 1)),
@@ -108,12 +109,16 @@ def _load_dense_tile_shape(config_path: Path) -> tuple[int, int, int, int]:
 
 def _load_dense_gemm_tile_candidates(*, repo_root: Path, tag_substring: str) -> list[JsonDict]:
     candidates: list[JsonDict] = []
-    for metrics_path in sorted((repo_root / "runs/designs/npu_blocks").glob("npu_dense_gemm_tile_fp16_*/metrics.csv")):
+    for metrics_path in sorted((repo_root / "runs/designs/npu_blocks").glob("npu_dense_gemm_tile_*/metrics.csv")):
         config_path = metrics_path.parent / "config.json"
         if not config_path.exists():
             continue
-        array_m, array_n, k_unroll, pipeline_stages = _load_dense_tile_shape(config_path)
+        precision, array_m, array_n, k_unroll, pipeline_stages = _load_dense_tile_shape(config_path)
         block_macs_per_cycle = array_m * array_n * k_unroll
+        if precision == "fp16":
+            compute_arch = f"dense_gemm_{array_m}x{array_n}_k{k_unroll}_p{pipeline_stages}"
+        else:
+            compute_arch = f"dense_gemm_{precision}_{array_m}x{array_n}_k{k_unroll}_p{pipeline_stages}"
         with metrics_path.open(newline="", encoding="utf-8") as f:
             for row in csv.DictReader(f):
                 tag = str(row.get("tag", ""))
@@ -126,9 +131,8 @@ def _load_dense_gemm_tile_candidates(*, repo_root: Path, tag_substring: str) -> 
                 total_power_mw = float(row["total_power_mw"])
                 candidates.append(
                     {
-                        "compute_arch": (
-                            f"dense_gemm_{array_m}x{array_n}_k{k_unroll}_p{pipeline_stages}"
-                        ),
+                        "compute_arch": compute_arch,
+                        "compute_precision": precision,
                         "num_modules": 1,
                         "lanes_per_module": block_macs_per_cycle,
                         "block_macs_per_cycle": block_macs_per_cycle,
