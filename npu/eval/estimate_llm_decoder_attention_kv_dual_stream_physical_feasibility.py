@@ -79,6 +79,7 @@ def _row_with_budget(
     full_value_tile: JsonDict,
     softmax_weight: JsonDict,
     buffer_area_um2_per_byte: float,
+    precision_profile: str,
 ) -> JsonDict:
     clusters = int(source_row["cluster_count"])
     compute_multiplier = float(source_row.get("compute_area_multiplier", 1.0))
@@ -136,6 +137,7 @@ def _row_with_budget(
     out.update(
         {
             "dual_stream_physical_model": "measured_full_value_tile_budget_v1",
+            "precision_profile": precision_profile,
             "measured_full_value_tile_metrics_csv": full_value_tile["metrics_csv"],
             "measured_full_value_tile_area_um2": measured_stream_area,
             "measured_full_value_tile_clock_ns": full_value_tile["critical_path_ns"],
@@ -175,12 +177,14 @@ def build_report(args: argparse.Namespace) -> JsonDict:
     source_rows = _source_rows(source, limit=args.frontier_row_limit)
     full_value_tile = _best_ok_metrics(args.full_value_tile_metrics)
     softmax_weight = _best_ok_metrics(args.softmax_weight_metrics)
+    quality_gate = _load_json(args.quality_gate_json) if args.quality_gate_json else None
     rows = [
         _row_with_budget(
             row,
             full_value_tile=full_value_tile,
             softmax_weight=softmax_weight,
             buffer_area_um2_per_byte=args.buffer_area_um2_per_byte,
+            precision_profile=args.precision_profile,
         )
         for row in source_rows
     ]
@@ -195,17 +199,29 @@ def build_report(args: argparse.Namespace) -> JsonDict:
     decision = "dual_stream_feasible" if best_feasible and best_feasible.get("compute_mode") == "dual_mac" else "dual_stream_area_blocked"
     return {
         "version": 1,
-        "model": "llm_decoder_attention_kv_dual_stream_physical_feasibility_llama7b_v1",
+        "model": args.model_name,
         "subtile_pipeline_json": str(args.subtile_pipeline_json),
         "source_model": source.get("model"),
         "inputs": {
             "frontier_row_limit": args.frontier_row_limit,
             "full_value_tile_metrics": str(args.full_value_tile_metrics),
             "softmax_weight_metrics": str(args.softmax_weight_metrics),
+            "quality_gate_json": str(args.quality_gate_json) if args.quality_gate_json else None,
+            "precision_profile": args.precision_profile,
             "buffer_area_um2_per_byte": args.buffer_area_um2_per_byte,
         },
+        "quality_gate": {
+            "decision": (quality_gate or {}).get("diagnosis", {}).get("decision"),
+            "best_low_cost_candidate": (quality_gate or {}).get("diagnosis", {}).get("best_low_cost_candidate"),
+            "best_low_cost_decision": (quality_gate or {}).get("diagnosis", {}).get("best_low_cost_decision"),
+            "best_quality_candidate": (quality_gate or {}).get("diagnosis", {}).get("best_quality_candidate"),
+            "best_quality_decision": (quality_gate or {}).get("diagnosis", {}).get("best_quality_decision"),
+        }
+        if quality_gate
+        else None,
         "diagnosis": {
             "decision": decision,
+            "precision_profile": args.precision_profile,
             "source_rows_used": len(source_rows),
             "physical_feasible_rows": len(feasible_rows),
             "best_requested_mode": best_requested.get("compute_mode"),
@@ -244,6 +260,7 @@ def write_markdown(path: Path, payload: JsonDict) -> None:
         "# Llama7B Dual-Stream Physical Feasibility",
         "",
         f"- decision: `{diag['decision']}`",
+        f"- precision profile: `{diag['precision_profile']}`",
         f"- source rows used: `{diag['source_rows_used']}`",
         f"- physical feasible rows: `{diag['physical_feasible_rows']}`",
         f"- best requested mode: `{diag['best_requested_mode']}`",
@@ -284,6 +301,12 @@ def main() -> int:
     parser.add_argument("--subtile-pipeline-json", type=Path, required=True)
     parser.add_argument("--full-value-tile-metrics", type=Path, required=True)
     parser.add_argument("--softmax-weight-metrics", type=Path, required=True)
+    parser.add_argument("--quality-gate-json", type=Path)
+    parser.add_argument("--precision-profile", default="exact_q8_kv8_v16_s24_w16")
+    parser.add_argument(
+        "--model-name",
+        default="llm_decoder_attention_kv_dual_stream_physical_feasibility_llama7b_v1",
+    )
     parser.add_argument("--frontier-row-limit", type=int, default=8)
     parser.add_argument("--buffer-area-um2-per-byte", type=float, default=0.0)
     parser.add_argument("--out", type=Path, required=True)
