@@ -1,0 +1,162 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "sweeps": [
+        "runs/campaigns/npu/dense_gemm_tile_int8_v1/sweeps/nangate45_dense_tile_int8_hier.json"
+      ],
+      "configs": [
+        "runs/designs/npu_blocks/npu_dense_gemm_tile_int8_8x8_k1_p1/config.json",
+        "runs/designs/npu_blocks/npu_dense_gemm_tile_int8_16x8_k1_p1/config.json"
+      ],
+      "out_root": "runs/designs/npu_blocks",
+      "design_dirs": [],
+      "macro_manifests": [],
+      "candidate_manifests": [],
+      "required_submodules": []
+    },
+    "commands": [
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && cmake -S . -B build && cmake --build build --target rtlgen",
+        "name": "build_generator"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/rtlgen/gen_dense_gemm_tile.py --config runs/designs/npu_blocks/npu_dense_gemm_tile_int8_8x8_k1_p1/config.json --out runs/designs/npu_blocks/npu_dense_gemm_tile_int8_8x8_k1_p1/verilog",
+        "name": "generate_dense_gemm_tile_rtl_npu_dense_gemm_tile_int8_8x8_k1_p1"
+      },
+      {
+        "run": "python3 npu/eval/check_dense_gemm_tile_guard.py --design-dir runs/designs/npu_blocks/npu_dense_gemm_tile_int8_8x8_k1_p1",
+        "name": "check_dense_gemm_tile_guard_npu_dense_gemm_tile_int8_8x8_k1_p1"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/synth/run_block_sweep.py --design_dir runs/designs/npu_blocks/npu_dense_gemm_tile_int8_8x8_k1_p1 --platform nangate45 --top dense_gemm_tile_int8_8x8_k1_p1 --sweep runs/campaigns/npu/dense_gemm_tile_int8_v1/sweeps/nangate45_dense_tile_int8_hier.json --out_root runs/designs/npu_blocks --skip_existing",
+        "name": "run_block_sweep_npu_dense_gemm_tile_int8_8x8_k1_p1"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/rtlgen/gen_dense_gemm_tile.py --config runs/designs/npu_blocks/npu_dense_gemm_tile_int8_16x8_k1_p1/config.json --out runs/designs/npu_blocks/npu_dense_gemm_tile_int8_16x8_k1_p1/verilog",
+        "name": "generate_dense_gemm_tile_rtl_npu_dense_gemm_tile_int8_16x8_k1_p1"
+      },
+      {
+        "run": "python3 npu/eval/check_dense_gemm_tile_guard.py --design-dir runs/designs/npu_blocks/npu_dense_gemm_tile_int8_16x8_k1_p1",
+        "name": "check_dense_gemm_tile_guard_npu_dense_gemm_tile_int8_16x8_k1_p1"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/synth/run_block_sweep.py --design_dir runs/designs/npu_blocks/npu_dense_gemm_tile_int8_16x8_k1_p1 --platform nangate45 --top dense_gemm_tile_int8_16x8_k1_p1 --sweep runs/campaigns/npu/dense_gemm_tile_int8_v1/sweeps/nangate45_dense_tile_int8_hier.json --out_root runs/designs/npu_blocks --skip_existing",
+        "name": "run_block_sweep_npu_dense_gemm_tile_int8_16x8_k1_p1"
+      },
+      {
+        "run": "python3 scripts/build_runs_index.py",
+        "name": "build_runs_index"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate"
+      }
+    ],
+    "objective": "Measure Nangate45 PPA for 8x8 and 16x8 signed-int8 dense GEMM tiles with hierarchy preserved.",
+    "acceptance": [
+      "Each generated wrapper metrics.csv contains at least one status=ok row for the queued sweep",
+      "Committed outputs stay lightweight (metrics.csv only; runs/index.csv is exported centrally after merge)",
+      "python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue pass"
+    ],
+    "source_mode": "config",
+    "expected_outputs": [
+      "runs/designs/npu_blocks/npu_dense_gemm_tile_int8_8x8_k1_p1/metrics.csv",
+      "runs/designs/npu_blocks/npu_dense_gemm_tile_int8_16x8_k1_p1/metrics.csv"
+    ]
+  },
+  "layer": "layer1",
+  "state": "evaluated",
+  "title": "Dense int8 GEMM tile PPA",
+  "result": {
+    "branch": "eval/l1_npu_dense_gemm_tile_int8_v1/s20260611t073448z",
+    "completed_utc": "2026-06-11T07:34:46.418057Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "b7c2d9c80c1c",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260611t073448z][host:b7c2d9c80c1c][item:l1_npu_dense_gemm_tile_int8_v1]",
+    "metrics_rows": [
+      {
+        "tag": "npu_dense_gemm_tile_int8_v1_hier",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "45bbfba9",
+        "metrics_csv": "runs/designs/npu_blocks/npu_dense_gemm_tile_int8_8x8_k1_p1/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/npu_dense_gemm_tile_int8_8x8_k1_p1/work/45bbfba9/result.json"
+      },
+      {
+        "tag": "npu_dense_gemm_tile_int8_v1_hier",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "f2207b88",
+        "metrics_csv": "runs/designs/npu_blocks/npu_dense_gemm_tile_int8_8x8_k1_p1/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/npu_dense_gemm_tile_int8_8x8_k1_p1/work/f2207b88/result.json"
+      },
+      {
+        "tag": "npu_dense_gemm_tile_int8_v1_hier",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "45bbfba9",
+        "metrics_csv": "runs/designs/npu_blocks/npu_dense_gemm_tile_int8_16x8_k1_p1/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/npu_dense_gemm_tile_int8_16x8_k1_p1/work/45bbfba9/result.json"
+      },
+      {
+        "tag": "npu_dense_gemm_tile_int8_v1_hier",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "f2207b88",
+        "metrics_csv": "runs/designs/npu_blocks/npu_dense_gemm_tile_int8_16x8_k1_p1/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/npu_dense_gemm_tile_int8_16x8_k1_p1/work/f2207b88/result.json"
+      }
+    ],
+    "queue_item_id": "l1_npu_dense_gemm_tile_int8_v1",
+    "session_id": "s20260611t073448z",
+    "status": "ok",
+    "summary": "9/9 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l1_npu_dense_gemm_tile_int8_v1/s20260611t073448z",
+    "pr_title": "eval: run dense int8 gemm tile ppa",
+    "checklist": [
+      "Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge",
+      "Include metrics row references for each completed design",
+      "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260611t073448z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l1_npu_dense_gemm_tile_int8_v1"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l1_npu_dense_gemm_tile_int8_v1",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 1,
+  "created_utc": "2026-06-11T07:09:39.302792Z",
+  "requested_by": "developer_agent",
+  "developer_loop": {
+    "evaluation": {
+      "mode": "measurement_only",
+      "trial_policy": {
+        "seed_start": 0,
+        "trial_count": 1,
+        "stop_after_failures": 1
+      }
+    },
+    "abstraction": {
+      "layer": "architecture_block"
+    },
+    "proposal_id": "prop_l1_npu_dense_gemm_tile_int8_v1",
+    "proposal_path": "docs/proposals/prop_l1_npu_dense_gemm_tile_int8_v1/proposal.json"
+  },
+  "source_requirement": {
+    "repo": "",
+    "reason": "evaluator runtime must contain the queued job source commit",
+    "version": 1,
+    "required_ref": "origin/master",
+    "required_sha": "4213a74e3f39dd6e9e718401dd7d72525e32d262",
+    "requires_daemon_restart": true
+  }
+}
