@@ -1,0 +1,31 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_mixed_precision_full_value_tile_v1",
+  "source_commit": "TBD_AFTER_MERGE",
+  "source_commit_note": "Dispatch should use the merge commit containing the mixed-precision full-value attention tile configs.",
+  "requested_items": [
+    {
+      "item_id": "l1_decoder_attention_mixed_precision_full_value_tile_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure Nangate45 PPA for Q8/K8/V6 and Q8/K8/V8 mixed-precision full-value attention tiles selected by the Llama7B proxy quality gate.",
+      "evaluation_mode": "ppa",
+      "abstraction_layer": "attention_kv_full_value_tile",
+      "comparison_role": "frontier_synthesis",
+      "paired_baseline_item_id": "l1_decoder_attention_full_value_tile_v1",
+      "depends_on_item_ids": [
+        "l1_decoder_attention_full_value_tile_v1",
+        "l2_decoder_attention_mixed_precision_quality_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "config_paths": [
+        "runs/designs/activations/attention_kv_full_value_hd64_kv8_v6_tl16_b128_p8_ppc2_w22_a40_wrapper/config_attention_kv_full_value_hd64_kv8_v6_tl16_b128_p8_ppc2_w22_a40.json",
+        "runs/designs/activations/attention_kv_full_value_hd64_kv8_v8_tl16_b128_p8_ppc2_w24_a40_wrapper/config_attention_kv_full_value_hd64_kv8_v8_tl16_b128_p8_ppc2_w24_a40.json"
+      ],
+      "sweep_path": "runs/campaigns/activations/attention_kv_full_value_tile/sweeps/nangate45_macro_frontier.json",
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "Use measured mixed-precision local tile PPA to decide whether to update the dual-stream feasibility model or pursue compute-array density instead."
+      }
+    }
+  ]
+}
