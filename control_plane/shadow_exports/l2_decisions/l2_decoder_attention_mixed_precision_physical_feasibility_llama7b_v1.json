@@ -1,0 +1,144 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-06-11T06:00:19.283826Z",
+  "item_id": "l2_decoder_attention_mixed_precision_physical_feasibility_llama7b_v1",
+  "run_key": "l2_decoder_attention_mixed_precision_physical_feasibility_llama7b_v1_run_95ef73a3ce675708",
+  "layer": "layer2",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l2_campaign",
+  "source_commit": "df7db11ce15eabd09ff96192c58f49592473a8a3",
+  "review_metadata_source_commit": "df7db11ce15eabd09ff96192c58f49592473a8a3",
+  "objective": "Recompute Llama7B dual-stream physical feasibility using measured q8/k8/v6 attention tile PPA and the mixed-precision quality gate.",
+  "input_manifest": {
+    "sweeps": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/sweep_compare_33.json",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/sweep_compare_33.json"
+    ],
+    "configs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/config_nm1.json",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/config_nm2.json"
+    ],
+    "design_dirs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp"
+    ],
+    "macro_manifests": [
+      "runs/designs/npu_macros/gemm_compute_array_fp16_nm1_c250/macro_manifest.json",
+      "runs/designs/npu_macros/gemm_compute_array_fp16_2slot_c300/macro_manifest.json"
+    ],
+    "decoder_contract": {
+      "attention_mixed_precision_quality": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_precision_quality__l2_decoder_attention_mixed_precision_quality_llama7b_v1.json",
+      "attention_kv_softmax_weight_metrics": "runs/designs/activations/attention_softmax_weight_int8_r8_acc24_recip_q10_wrapper/metrics.csv",
+      "attention_kv_subtile_pipeline_schedule": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_subtile_pipeline_schedule__l2_decoder_attention_kv_subtile_pipeline_schedule_llama7b_v1.json",
+      "attention_mixed_precision_physical_feasibility_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_precision_physical_feasibility__l2_decoder_attention_mixed_precision_physical_feasibility_llama7b_v1.json",
+      "attention_kv_mixed_precision_full_value_tile_metrics": "runs/designs/activations/attention_kv_full_value_hd64_kv8_v6_tl16_b128_p8_ppc2_w22_a40_wrapper/metrics.csv",
+      "attention_mixed_precision_physical_feasibility_scope": "Apply measured Q8/K8/V6 full-value attention tile PPA, gated by the Llama7B-shape mixed-precision quality proxy, to the dual-stream physical feasibility model. Report whether local datapath area savings change the dual_mac fit or the remaining compute-density gap.",
+      "attention_mixed_precision_physical_feasibility_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_precision_physical_feasibility__l2_decoder_attention_mixed_precision_physical_feasibility_llama7b_v1.md"
+    },
+    "generated_campaign": {
+      "path": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign__l2_decoder_attention_mixed_precision_physical_feasibility_llama7b_v1.json",
+      "outputs": {
+        "report_md": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_mixed_precision_physical_feasibility_llama7b_v1/report.md",
+        "results_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_mixed_precision_physical_feasibility_llama7b_v1/results.csv",
+        "campaign_dir": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_mixed_precision_physical_feasibility_llama7b_v1"
+      },
+      "clean_outputs": true,
+      "base_campaign_path": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign.json"
+    },
+    "candidate_manifests": [
+      "runs/candidates/nangate45/module_candidates.json"
+    ]
+  },
+  "recommendation": {
+    "arch_id": "fp16_nm1",
+    "macro_mode": "flat_nomacro",
+    "objective_rank": 1,
+    "objective_score": "0.0",
+    "latency_ms_mean": 0.028907999999999996,
+    "energy_mj_mean": 5.582770776e-06,
+    "critical_path_ns_mean": 5.557037432204143,
+    "die_area_um2_mean": 2250000.0,
+    "total_power_mw_mean": 0.193122,
+    "flow_elapsed_s_mean": 848.418
+  },
+  "objective_profiles": [],
+  "evaluation_record": {
+    "proposal_id": "prop_l2_decoder_attention_mixed_precision_physical_feasibility_llama7b_v1",
+    "title": "Mixed-precision attention physical feasibility",
+    "primary_question": "Does quality-approved q8/k8/v6 local datapath PPA make the dual_mac Llama7B schedule physically feasible?",
+    "evaluation_mode": "frontier_detail",
+    "comparison_role": "frontier_closure",
+    "abstraction_layer": "decoder_attention_mixed_precision_physical_feasibility",
+    "expected_direction": "iterate",
+    "expected_reason": "Use measured mixed-precision physical feasibility to decide whether the remaining frontier work is local datapath precision or compute-array density/fusion.",
+    "summary": "Decoder mixed-precision physical feasibility evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_precision_physical_feasibility__l2_decoder_attention_mixed_precision_physical_feasibility_llama7b_v1.json: decision=dual_stream_area_blocked; precision_profile=q8_k8_v6_a24_s24_w16; best_requested_mode=dual_mac; best_requested_latency_us=1575.373891; best_requested_area_fit=False; best_requested_logic_slack_um2=-397395735.8284; best_requested_compute_area_over_budget_um2=397395735.8284; best_requested_required_compute_density_gain=2.003777; best_feasible_mode=split_mac; best_feasible_latency_us=2042.378179; recommended_next_step=measure a denser dual-stream fused attention datapath or reduce compute replicas before promoting dual_mac.",
+    "outcome": "dual_stream_area_blocked",
+    "expectation_status": "unspecified"
+  },
+  "proposal_assessment": {
+    "proposal_id": "prop_l2_decoder_attention_mixed_precision_physical_feasibility_llama7b_v1",
+    "title": "Mixed-precision attention physical feasibility",
+    "kind": "architecture",
+    "primary_question": "Does quality-approved q8/k8/v6 local datapath PPA make the dual_mac Llama7B schedule physically feasible?",
+    "evaluation_mode": "frontier_detail",
+    "comparison_role": "frontier_closure",
+    "outcome": "dual_stream_area_blocked",
+    "summary": "Decoder mixed-precision physical feasibility evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_precision_physical_feasibility__l2_decoder_attention_mixed_precision_physical_feasibility_llama7b_v1.json: decision=dual_stream_area_blocked; precision_profile=q8_k8_v6_a24_s24_w16; best_requested_mode=dual_mac; best_requested_latency_us=1575.373891; best_requested_area_fit=False; best_requested_logic_slack_um2=-397395735.8284; best_requested_compute_area_over_budget_um2=397395735.8284; best_requested_required_compute_density_gain=2.003777; best_feasible_mode=split_mac; best_feasible_latency_us=2042.378179; recommended_next_step=measure a denser dual-stream fused attention datapath or reduce compute replicas before promoting dual_mac.",
+    "baseline_ref": null,
+    "baseline_item_id": null,
+    "matched_row_count": 0,
+    "matched_rows": [],
+    "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_precision_physical_feasibility__l2_decoder_attention_mixed_precision_physical_feasibility_llama7b_v1.json",
+    "decoder_quality": {
+      "diagnosis": {
+        "best_area_fit_latency_us": 2042.378179,
+        "best_area_fit_mode": "split_mac",
+        "best_feasible_latency_us": 2042.378179,
+        "best_feasible_mode": "split_mac",
+        "best_requested_area_fit": false,
+        "best_requested_compute_area_over_budget_um2": 397395735.8284,
+        "best_requested_latency_us": 1575.373891,
+        "best_requested_logic_slack_um2": -397395735.8284,
+        "best_requested_mode": "dual_mac",
+        "best_requested_required_compute_density_gain": 2.003777,
+        "decision": "dual_stream_area_blocked",
+        "physical_feasible_rows": 2,
+        "precision_profile": "q8_k8_v6_a24_s24_w16",
+        "recommended_next_step": "measure a denser dual-stream fused attention datapath or reduce compute replicas before promoting dual_mac",
+        "source_rows_used": 3
+      },
+      "assumptions": [
+        "The dual_mac schedule requires an explicit compute_area_multiplier from the sub-tile scheduler.",
+        "Measured full-value tile and softmax-weight generator PPA are used for local datapath overhead only.",
+        "The dense GEMM compute array is treated as already packed into the current logic budget; extra dual-stream compute must fit that same budget to be feasible.",
+        "Buffer capacity is checked against measured local SRAM bytes; an optional buffer-area proxy can be added for sensitivity but defaults to zero to avoid double-counting measured local SRAM."
+      ]
+    }
+  },
+  "source_refs": {
+    "best_point_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_mixed_precision_physical_feasibility_llama7b_v1/best_point.json",
+    "summary_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_mixed_precision_physical_feasibility_llama7b_v1/summary.csv",
+    "results_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_mixed_precision_physical_feasibility_llama7b_v1/results.csv",
+    "report_md": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_mixed_precision_physical_feasibility_llama7b_v1/report.md",
+    "focused_candidate_schedule_yml": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_mixed_precision_physical_feasibility_llama7b_v1/artifacts/mapper/fp16_nm1/mlp1/schedule.yml",
+    "focused_candidate_descriptors_bin": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_mixed_precision_physical_feasibility_llama7b_v1/artifacts/mapper/fp16_nm1/mlp1/descriptors.bin",
+    "focused_candidate_perf_trace_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_mixed_precision_physical_feasibility_llama7b_v1/artifacts/perf/fp16_nm1/mlp1/trace.json",
+    "focused_model_artifacts": [
+      {
+        "model_id": "mlp1",
+        "schedule_yml": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_mixed_precision_physical_feasibility_llama7b_v1/artifacts/mapper/fp16_nm1/mlp1/schedule.yml",
+        "descriptors_bin": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_mixed_precision_physical_feasibility_llama7b_v1/artifacts/mapper/fp16_nm1/mlp1/descriptors.bin",
+        "perf_trace_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_mixed_precision_physical_feasibility_llama7b_v1/artifacts/perf/fp16_nm1/mlp1/trace.json"
+      },
+      {
+        "model_id": "mlp2",
+        "schedule_yml": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_mixed_precision_physical_feasibility_llama7b_v1/artifacts/mapper/fp16_nm1/mlp2/schedule.yml",
+        "descriptors_bin": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_mixed_precision_physical_feasibility_llama7b_v1/artifacts/mapper/fp16_nm1/mlp2/descriptors.bin",
+        "perf_trace_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_mixed_precision_physical_feasibility_llama7b_v1/artifacts/perf/fp16_nm1/mlp2/trace.json"
+      }
+    ],
+    "decoder_attention_mixed_precision_physical_feasibility_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_precision_physical_feasibility__l2_decoder_attention_mixed_precision_physical_feasibility_llama7b_v1.json",
+    "decoder_attention_mixed_precision_physical_feasibility_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_precision_physical_feasibility__l2_decoder_attention_mixed_precision_physical_feasibility_llama7b_v1.md"
+  }
+}
