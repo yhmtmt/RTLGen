@@ -448,6 +448,7 @@ _DECODER_EVIDENCE_OUTPUT_KEYS: tuple[tuple[str, str], ...] = (
     ("attention_kv_hbm_closed_onchip_schedule_out", "attention_kv_hbm_closed_onchip_schedule_report"),
     ("attention_kv_subtile_pipeline_schedule_out", "attention_kv_subtile_pipeline_schedule_report"),
     ("attention_kv_dual_stream_physical_feasibility_out", "attention_kv_dual_stream_physical_feasibility_report"),
+    ("attention_mixed_precision_quality_out", "attention_mixed_precision_quality_report"),
 )
 
 
@@ -634,6 +635,28 @@ def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, 
             "best_requested_required_compute_density_gain",
             "best_feasible_mode",
             "best_feasible_latency_us",
+            "recommended_next_step",
+        ):
+            if key in diagnosis_dict:
+                parts.append(f"{key}={diagnosis_dict.get(key)}")
+        summary = "; ".join(parts)
+        return outcome, summary if summary.endswith(".") else summary + "."
+
+    if model == "llm_decoder_attention_mixed_precision_quality_llama7b_v1":
+        diagnosis = evidence_payload.get("diagnosis")
+        diagnosis_dict = dict(diagnosis) if isinstance(diagnosis, dict) else {}
+        outcome = str(diagnosis_dict.get("decision") or "mixed_precision_quality_recorded")
+        parts = [
+            f"Decoder attention mixed-precision quality evidence recorded from {evidence_ref}: decision={outcome}",
+        ]
+        for key in (
+            "best_quality_candidate",
+            "best_quality_decision",
+            "best_low_cost_candidate",
+            "best_low_cost_decision",
+            "passing_candidate_count",
+            "borderline_candidate_count",
+            "dual_stream_required_compute_density_gain",
             "recommended_next_step",
         ):
             if key in diagnosis_dict:

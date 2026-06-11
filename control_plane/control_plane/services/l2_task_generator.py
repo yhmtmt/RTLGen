@@ -5246,6 +5246,47 @@ def _decoder_attention_kv_dual_stream_physical_feasibility_evidence(*, item_id: 
     }
 
 
+def _decoder_attention_mixed_precision_quality_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_attention_mixed_precision_quality__{item_id}.json"
+    report = f"{base}/decoder_attention_mixed_precision_quality__{item_id}.md"
+    dual_stream_feasibility = (
+        f"{base}/decoder_attention_kv_dual_stream_physical_feasibility__"
+        "l2_decoder_attention_kv_dual_stream_physical_feasibility_llama7b_v1.json"
+    )
+    return {
+        "inputs": {
+            "attention_kv_dual_stream_physical_feasibility": dual_stream_feasibility,
+            "attention_mixed_precision_quality_out": out,
+            "attention_mixed_precision_quality_report": report,
+            "attention_mixed_precision_quality_scope": (
+                "Evaluate Llama7B-shape native-GQA attention sensitivity to mixed-precision Q/K/V, "
+                "dot-accumulator, score, and softmax-weight formats before promoting lower-area "
+                "attention compute primitives. This is a proxy quality gate, not final Llama7B perplexity."
+            ),
+        },
+        "commands": [
+            {
+                "name": "estimate_decoder_attention_mixed_precision_quality",
+                "run": (
+                    "python3 npu/eval/estimate_llm_decoder_attention_mixed_precision_quality.py "
+                    f"--dual-stream-feasibility {dual_stream_feasibility} "
+                    "--attention-heads 32 "
+                    "--kv-heads 4 "
+                    "--head-dim 128 "
+                    "--sequence-length-list 64,128 "
+                    "--regime-list native_correlated_queries,native_retrieval,native_low_margin,native_random "
+                    "--seed-count 1 "
+                    "--candidate-spec-list q8:k8:v8:a24:s24:w16,q8:k8:v8:a20:s24:w16,q8:k8:v8:a24:s16:w12,q6:k8:v8:a24:s24:w16,q8:k8:v6:a24:s24:w16 "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+    }
+
+
 def _decoder_attention_noc_profile_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_noc_profile__{item_id}.json"
@@ -6810,6 +6851,7 @@ def _build_payload(
         "decoder_attention_kv_hbm_closed_onchip_schedule",
         "decoder_attention_kv_subtile_pipeline_schedule",
         "decoder_attention_kv_dual_stream_physical_feasibility",
+        "decoder_attention_mixed_precision_quality",
         "decoder_attention_noc_profile",
         "decoder_attention_kv_quality_gate",
         "decoder_attention_kv_quality_proxy",
@@ -6954,6 +6996,8 @@ def _build_payload(
             decoder_evidence = _decoder_attention_kv_subtile_pipeline_schedule_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_dual_stream_physical_feasibility":
             decoder_evidence = _decoder_attention_kv_dual_stream_physical_feasibility_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_attention_mixed_precision_quality":
+            decoder_evidence = _decoder_attention_mixed_precision_quality_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_noc_profile":
             decoder_evidence = _decoder_attention_noc_profile_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_quality_gate":

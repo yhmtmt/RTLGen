@@ -1,0 +1,72 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_mixed_precision_quality_llama7b_v1",
+  "created_utc": "2026-06-11T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_attention_mixed_precision_quality",
+  "title": "Llama7B attention mixed-precision quality gate",
+  "hypothesis": "The dual-stream attention schedule is area-blocked under the current FP16 dense compute budget, so a lower-area mixed-precision compute primitive is only worth measuring if Llama7B-shape attention quality remains stable for the candidate Q/K/V, accumulator, score, and softmax-weight precisions.",
+  "direct_comparison": {
+    "primary_question": "Which mixed-precision attention arithmetic candidates are safe enough to become the next RTL/PPA target for the Llama7B frontier?",
+    "include": [
+      "Use the merged dual-stream physical-feasibility result as the hardware pressure input.",
+      "Use Llama7B-shape native-GQA dimensions: 32 attention heads, 4 KV heads, GQA8, and head_dim 128.",
+      "Sweep Q/K/V operand bits, fixed-width dot accumulator bits, score/logit precision, and softmax-weight precision.",
+      "Evaluate native correlated-query, retrieval, low-margin, and random regimes.",
+      "Report top-1 match, retrieval hit on retrieval-like regimes, KL divergence, output cosine, and RMSE.",
+      "Select the lowest-cost proxy-passing candidate and keep lower-bit controls as negative evidence."
+    ],
+    "exclude": [
+      "Do not claim final Llama7B perplexity or task accuracy.",
+      "Do not run Hugging Face 7B inference in this item.",
+      "Do not promote a mixed-precision circuit without a later RTL/PPA measurement and model-native quality gate.",
+      "Do not change GQA/KV-sharing quality assumptions."
+    ],
+    "follow_on_broad_sweep": [
+      "If Q8/K8/V6 or Q8/K8/V8 passes, request an L1/L2 PPA target for an attention-specific mixed-precision compute primitive.",
+      "If only borderline candidates pass, run a larger quality proxy or model-native checkpoint validation before PPA.",
+      "If all low-precision candidates fail, retreat to split_mac or pursue compute-density improvements that preserve FP16/BF16 semantics."
+    ]
+  },
+  "expected_benefit": [
+    "Links the mixed-precision density idea to an explicit Llama7B-shape quality gate.",
+    "Prevents lower-area compute from being promoted solely on PPA.",
+    "Identifies whether V precision, accumulator width, or score/weight precision is the first quality-sensitive point."
+  ],
+  "risks": [
+    "Synthetic Llama7B-shape attention proxy may not capture full model perplexity or long-context retrieval behavior.",
+    "The selected lowest-cost candidate still needs a real circuit and model-native validation.",
+    "One-seed, short-sequence defaults are intended for fast screening, not final acceptance."
+  ],
+  "needs_mapper_change": true,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_mixed_precision_quality_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Screen mixed-precision attention arithmetic candidates against a Llama7B-shape quality proxy before PPA.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_mixed_precision_quality",
+      "cost_class": "low",
+      "comparison_role": "frontier_closure",
+      "paired_baseline_item_id": "l2_decoder_attention_kv_dual_stream_physical_feasibility_llama7b_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_kv_dual_stream_physical_feasibility_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "Use the proxy-passing mixed-precision candidates to decide the next attention compute PPA target and the required follow-up model-quality gate."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_dual_stream_physical_feasibility__l2_decoder_attention_kv_dual_stream_physical_feasibility_llama7b_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/estimate_llm_decoder_attention_mixed_precision_quality.py",
+    "npu/eval/estimate_llm_decoder_attention_kv_dual_stream_physical_feasibility.py",
+    "npu/eval/estimate_llm_decoder_attention_kv_native_gqa_proxy.py"
+  ]
+}
