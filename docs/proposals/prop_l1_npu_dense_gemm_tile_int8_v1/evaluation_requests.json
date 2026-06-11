@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l1_npu_dense_gemm_tile_int8_v1",
-  "source_commit": "TBD_AFTER_MERGE",
+  "source_commit": "4213a74e3f39dd6e9e718401dd7d72525e32d262",
   "source_commit_note": "Dispatch should use the merge commit containing the int8 dense GEMM tile generator/config changes.",
   "requested_items": [
     {
@@ -25,7 +25,12 @@
       "expected_result": {
         "direction": "iterate",
         "reason": "Use measured int8 dense compute PPA to decide whether mixed-precision dual-stream Llama7B attention becomes physically feasible."
-      }
+      },
+      "status": "merged",
+      "merged_pr_number": 838,
+      "merge_commit": "8718078242e72f2e39b0c653ea3e5cb3302c439d",
+      "merged_utc": "2026-06-11T07:45:12.535706Z",
+      "notes": "Merged via PR #838 and merge 8718078242e72f2e39b0c653ea3e5cb3302c439d at 2026-06-11T07:45:12.535706Z."
     }
   ]
 }

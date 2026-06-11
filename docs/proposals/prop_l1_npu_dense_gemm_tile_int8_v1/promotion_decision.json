@@ -1,0 +1,15 @@
+{
+  "proposal_id": "prop_l1_npu_dense_gemm_tile_int8_v1",
+  "candidate_id": "l1_npu_dense_gemm_tile_int8_v1",
+  "decision": "promote",
+  "reason": "Accepted Layer 1 physical metrics were merged in PR #838 for the current candidate.",
+  "evidence_refs": [
+    "item:l1_npu_dense_gemm_tile_int8_v1",
+    "run:l1_npu_dense_gemm_tile_int8_v1_run_09cbc5ae383038df",
+    "artifact:control_plane/shadow_exports/l1_promotions/l1_npu_dense_gemm_tile_int8_v1.json",
+    "pr:#838",
+    "https://github.com/yhmtmt/RTLGen/pull/838"
+  ],
+  "next_action": "inspect the next dependent item",
+  "requires_human_approval": false
+}
