@@ -1,0 +1,141 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-06-11T05:08:31.136744Z",
+  "item_id": "l2_decoder_attention_mixed_precision_quality_llama7b_v1",
+  "run_key": "l2_decoder_attention_mixed_precision_quality_llama7b_v1_run_b48421fdaf63879b",
+  "layer": "layer2",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l2_campaign",
+  "source_commit": "6f0e2290ce508c9a8a90fdbb188ca3843dce173d",
+  "review_metadata_source_commit": "6f0e2290ce508c9a8a90fdbb188ca3843dce173d",
+  "objective": "Screen mixed-precision attention arithmetic candidates against a Llama7B-shape quality proxy before PPA.",
+  "input_manifest": {
+    "sweeps": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/sweep_compare_33.json",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/sweep_compare_33.json"
+    ],
+    "configs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/config_nm1.json",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/config_nm2.json"
+    ],
+    "design_dirs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp"
+    ],
+    "macro_manifests": [
+      "runs/designs/npu_macros/gemm_compute_array_fp16_nm1_c250/macro_manifest.json",
+      "runs/designs/npu_macros/gemm_compute_array_fp16_2slot_c300/macro_manifest.json"
+    ],
+    "decoder_contract": {
+      "attention_mixed_precision_quality_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_precision_quality__l2_decoder_attention_mixed_precision_quality_llama7b_v1.json",
+      "attention_mixed_precision_quality_scope": "Evaluate Llama7B-shape native-GQA attention sensitivity to mixed-precision Q/K/V, dot-accumulator, score, and softmax-weight formats before promoting lower-area attention compute primitives. This is a proxy quality gate, not final Llama7B perplexity.",
+      "attention_mixed_precision_quality_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_precision_quality__l2_decoder_attention_mixed_precision_quality_llama7b_v1.md",
+      "attention_kv_dual_stream_physical_feasibility": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_dual_stream_physical_feasibility__l2_decoder_attention_kv_dual_stream_physical_feasibility_llama7b_v1.json"
+    },
+    "generated_campaign": {
+      "path": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign__l2_decoder_attention_mixed_precision_quality_llama7b_v1.json",
+      "outputs": {
+        "report_md": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_mixed_precision_quality_llama7b_v1/report.md",
+        "results_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_mixed_precision_quality_llama7b_v1/results.csv",
+        "campaign_dir": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_mixed_precision_quality_llama7b_v1"
+      },
+      "clean_outputs": true,
+      "base_campaign_path": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign.json"
+    },
+    "candidate_manifests": [
+      "runs/candidates/nangate45/module_candidates.json"
+    ]
+  },
+  "recommendation": {
+    "arch_id": "fp16_nm1",
+    "macro_mode": "flat_nomacro",
+    "objective_rank": 1,
+    "objective_score": "0.0",
+    "latency_ms_mean": 0.028907999999999996,
+    "energy_mj_mean": 5.582770776e-06,
+    "critical_path_ns_mean": 5.557037432204143,
+    "die_area_um2_mean": 2250000.0,
+    "total_power_mw_mean": 0.193122,
+    "flow_elapsed_s_mean": 848.418
+  },
+  "objective_profiles": [],
+  "evaluation_record": {
+    "proposal_id": "prop_l2_decoder_attention_mixed_precision_quality_llama7b_v1",
+    "title": "Llama7B attention mixed-precision quality gate",
+    "primary_question": "Which mixed-precision attention arithmetic candidates are safe enough to become the next RTL/PPA target for the Llama7B frontier?",
+    "evaluation_mode": "frontier_detail",
+    "comparison_role": "frontier_closure",
+    "abstraction_layer": "decoder_attention_mixed_precision_quality",
+    "expected_direction": "iterate",
+    "expected_reason": "Use the proxy-passing mixed-precision candidates to decide the next attention compute PPA target and the required follow-up model-quality gate.",
+    "summary": "Decoder attention mixed-precision quality evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_precision_quality__l2_decoder_attention_mixed_precision_quality_llama7b_v1.json: decision=mixed_precision_quality_candidate_found; best_quality_candidate=q8_k8_v8_a24_s24_w16; best_quality_decision=mixed_precision_proxy_pass; best_low_cost_candidate=q8_k8_v6_a24_s24_w16; best_low_cost_decision=mixed_precision_proxy_pass; passing_candidate_count=3; borderline_candidate_count=1; dual_stream_required_compute_density_gain=2.011289; recommended_next_step=run PPA for the lowest-cost passing mixed-precision attention compute primitive and keep a real-checkpoint Llama-class quality gate before promotion.",
+    "outcome": "mixed_precision_quality_candidate_found",
+    "expectation_status": "unspecified"
+  },
+  "proposal_assessment": {
+    "proposal_id": "prop_l2_decoder_attention_mixed_precision_quality_llama7b_v1",
+    "title": "Llama7B attention mixed-precision quality gate",
+    "kind": "architecture",
+    "primary_question": "Which mixed-precision attention arithmetic candidates are safe enough to become the next RTL/PPA target for the Llama7B frontier?",
+    "evaluation_mode": "frontier_detail",
+    "comparison_role": "frontier_closure",
+    "outcome": "mixed_precision_quality_candidate_found",
+    "summary": "Decoder attention mixed-precision quality evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_precision_quality__l2_decoder_attention_mixed_precision_quality_llama7b_v1.json: decision=mixed_precision_quality_candidate_found; best_quality_candidate=q8_k8_v8_a24_s24_w16; best_quality_decision=mixed_precision_proxy_pass; best_low_cost_candidate=q8_k8_v6_a24_s24_w16; best_low_cost_decision=mixed_precision_proxy_pass; passing_candidate_count=3; borderline_candidate_count=1; dual_stream_required_compute_density_gain=2.011289; recommended_next_step=run PPA for the lowest-cost passing mixed-precision attention compute primitive and keep a real-checkpoint Llama-class quality gate before promotion.",
+    "baseline_ref": null,
+    "baseline_item_id": null,
+    "matched_row_count": 0,
+    "matched_rows": [],
+    "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_precision_quality__l2_decoder_attention_mixed_precision_quality_llama7b_v1.json",
+    "decoder_quality": {
+      "diagnosis": {
+        "best_low_cost_candidate": "q8_k8_v6_a24_s24_w16",
+        "best_low_cost_decision": "mixed_precision_proxy_pass",
+        "best_quality_candidate": "q8_k8_v8_a24_s24_w16",
+        "best_quality_decision": "mixed_precision_proxy_pass",
+        "borderline_candidate_count": 1,
+        "decision": "mixed_precision_quality_candidate_found",
+        "dual_stream_required_compute_density_gain": 2.011289,
+        "passing_candidate_count": 3,
+        "recommended_next_step": "run PPA for the lowest-cost passing mixed-precision attention compute primitive and keep a real-checkpoint Llama-class quality gate before promotion"
+      },
+      "sweep_summary": {
+        "borderline_candidate_count": 1,
+        "candidate_count": 5,
+        "metric_row_count": 1280,
+        "passing_candidate_count": 3
+      },
+      "assumptions": [
+        "This is a Llama7B-shape synthetic native-GQA attention proxy, not measured Llama7B perplexity or task accuracy.",
+        "The proxy uses 32 attention heads, 4 KV heads, and head_dim 128 by default to match the current GQA8 Llama7B frontier assumption.",
+        "Q/K/V use per-vector symmetric quantization; accumulator saturation models fixed-width integer dot products.",
+        "Passing this proxy is only a gate for mixed-precision RTL/PPA and later real-checkpoint validation."
+      ]
+    }
+  },
+  "source_refs": {
+    "best_point_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_mixed_precision_quality_llama7b_v1/best_point.json",
+    "summary_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_mixed_precision_quality_llama7b_v1/summary.csv",
+    "results_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_mixed_precision_quality_llama7b_v1/results.csv",
+    "report_md": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_mixed_precision_quality_llama7b_v1/report.md",
+    "focused_candidate_schedule_yml": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_mixed_precision_quality_llama7b_v1/artifacts/mapper/fp16_nm1/mlp1/schedule.yml",
+    "focused_candidate_descriptors_bin": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_mixed_precision_quality_llama7b_v1/artifacts/mapper/fp16_nm1/mlp1/descriptors.bin",
+    "focused_candidate_perf_trace_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_mixed_precision_quality_llama7b_v1/artifacts/perf/fp16_nm1/mlp1/trace.json",
+    "focused_model_artifacts": [
+      {
+        "model_id": "mlp1",
+        "schedule_yml": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_mixed_precision_quality_llama7b_v1/artifacts/mapper/fp16_nm1/mlp1/schedule.yml",
+        "descriptors_bin": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_mixed_precision_quality_llama7b_v1/artifacts/mapper/fp16_nm1/mlp1/descriptors.bin",
+        "perf_trace_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_mixed_precision_quality_llama7b_v1/artifacts/perf/fp16_nm1/mlp1/trace.json"
+      },
+      {
+        "model_id": "mlp2",
+        "schedule_yml": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_mixed_precision_quality_llama7b_v1/artifacts/mapper/fp16_nm1/mlp2/schedule.yml",
+        "descriptors_bin": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_mixed_precision_quality_llama7b_v1/artifacts/mapper/fp16_nm1/mlp2/descriptors.bin",
+        "perf_trace_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_mixed_precision_quality_llama7b_v1/artifacts/perf/fp16_nm1/mlp2/trace.json"
+      }
+    ],
+    "decoder_attention_mixed_precision_quality_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_precision_quality__l2_decoder_attention_mixed_precision_quality_llama7b_v1.json",
+    "decoder_attention_mixed_precision_quality_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_precision_quality__l2_decoder_attention_mixed_precision_quality_llama7b_v1.md"
+  }
+}
