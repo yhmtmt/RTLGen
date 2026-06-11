@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_decoder_attention_mixed_precision_quality_llama7b_v1",
-  "source_commit": "TBD_AFTER_MERGE",
+  "source_commit": "6f0e2290ce508c9a8a90fdbb188ca3843dce173d",
   "source_commit_note": "Dispatch should use the merge commit containing the mixed-precision attention quality estimator and control-plane hook.",
   "requested_items": [
     {
@@ -19,7 +19,12 @@
       "expected_result": {
         "direction": "iterate",
         "reason": "Use the proxy-passing mixed-precision candidates to decide the next attention compute PPA target and the required follow-up model-quality gate."
-      }
+      },
+      "status": "merged",
+      "merged_pr_number": 832,
+      "merge_commit": "a212f835e11c5ad41ca21a8089af4cab9577fc69",
+      "merged_utc": "2026-06-11T05:10:04.406040Z",
+      "notes": "Merged via PR #832 and merge a212f835e11c5ad41ca21a8089af4cab9577fc69 at 2026-06-11T05:10:04.406040Z."
     }
   ]
 }

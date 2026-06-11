@@ -1,0 +1,15 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_mixed_precision_quality_llama7b_v1",
+  "candidate_id": "l2_decoder_attention_mixed_precision_quality_llama7b_v1",
+  "decision": "iterate",
+  "reason": "Decoder attention mixed-precision quality evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_precision_quality__l2_decoder_attention_mixed_precision_quality_llama7b_v1.json: decision=mixed_precision_quality_candidate_found; best_quality_candidate=q8_k8_v8_a24_s24_w16; best_quality_decision=mixed_precision_proxy_pass; best_low_cost_candidate=q8_k8_v6_a24_s24_w16; best_low_cost_decision=mixed_precision_proxy_pass; passing_candidate_count=3; borderline_candidate_count=1; dual_stream_required_compute_density_gain=2.011289; recommended_next_step=run PPA for the lowest-cost passing mixed-precision attention compute primitive and keep a real-checkpoint Llama-class quality gate before promotion.",
+  "evidence_refs": [
+    "item:l2_decoder_attention_mixed_precision_quality_llama7b_v1",
+    "run:l2_decoder_attention_mixed_precision_quality_llama7b_v1_run_b48421fdaf63879b",
+    "artifact:control_plane/shadow_exports/l2_decisions/l2_decoder_attention_mixed_precision_quality_llama7b_v1.json",
+    "pr:#832",
+    "https://github.com/yhmtmt/RTLGen/pull/832"
+  ],
+  "next_action": "inspect follow-on work after l2_decoder_attention_mixed_precision_quality_llama7b_v1",
+  "requires_human_approval": false
+}
