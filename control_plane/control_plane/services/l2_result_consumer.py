@@ -450,6 +450,10 @@ _DECODER_EVIDENCE_OUTPUT_KEYS: tuple[tuple[str, str], ...] = (
     ("attention_kv_dual_stream_physical_feasibility_out", "attention_kv_dual_stream_physical_feasibility_report"),
     ("attention_mixed_precision_quality_out", "attention_mixed_precision_quality_report"),
     ("attention_mixed_precision_physical_feasibility_out", "attention_mixed_precision_physical_feasibility_report"),
+    (
+        "attention_mixed_precision_int8_compute_physical_feasibility_out",
+        "attention_mixed_precision_int8_compute_physical_feasibility_report",
+    ),
 )
 
 
