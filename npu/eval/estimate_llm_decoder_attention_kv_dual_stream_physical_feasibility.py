@@ -1,0 +1,302 @@
+#!/usr/bin/env python3
+"""Check physical feasibility of the dual-stream sub-tile attention schedule."""
+
+from __future__ import annotations
+
+import argparse
+import csv
+import json
+import sys
+from pathlib import Path
+from typing import Any
+
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+
+JsonDict = dict[str, Any]
+
+
+def _load_json(path: Path) -> JsonDict:
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _best_ok_metrics(path: Path) -> JsonDict:
+    with path.open(newline="", encoding="utf-8") as handle:
+        rows = [row for row in csv.DictReader(handle) if row.get("status") == "ok"]
+    if not rows:
+        raise RuntimeError(f"no status=ok metrics rows in {path}")
+    best = min(
+        rows,
+        key=lambda row: (
+            float(row.get("critical_path_ns") or "inf"),
+            float(row.get("die_area") or "inf"),
+            float(row.get("total_power_mw") or "inf"),
+        ),
+    )
+    return {
+        "metrics_csv": str(path),
+        "critical_path_ns": float(best["critical_path_ns"]),
+        "die_area_um2": float(best["die_area"]),
+        "total_power_mw": float(best["total_power_mw"]),
+        "param_hash": best.get("param_hash", ""),
+        "tag": best.get("tag", ""),
+        "result_path": best.get("result_path", ""),
+    }
+
+
+def _source_rows(payload: JsonDict, *, limit: int) -> list[JsonDict]:
+    rows = list(payload.get("best_by_compute_mode") or [])
+    if isinstance(payload.get("best"), dict):
+        rows.insert(0, payload["best"])
+    deduped: list[JsonDict] = []
+    seen: set[str] = set()
+    for row in rows:
+        key = json.dumps(
+            {
+                "compute_mode": row.get("compute_mode"),
+                "latency_us": row.get("latency_us"),
+                "tile_service_cycles": row.get("tile_service_cycles"),
+                "subtile_count": row.get("subtile_count"),
+                "subtile_buffer_count": row.get("subtile_buffer_count"),
+                "prefetch_distance": row.get("prefetch_distance"),
+                "normalize_strategy": row.get("normalize_strategy"),
+            },
+            sort_keys=True,
+        )
+        if key in seen:
+            continue
+        seen.add(key)
+        deduped.append(row)
+        if len(deduped) >= limit:
+            break
+    return deduped
+
+
+def _row_with_budget(
+    source_row: JsonDict,
+    *,
+    full_value_tile: JsonDict,
+    softmax_weight: JsonDict,
+    buffer_area_um2_per_byte: float,
+) -> JsonDict:
+    clusters = int(source_row["cluster_count"])
+    compute_multiplier = float(source_row.get("compute_area_multiplier", 1.0))
+    current_compute_area = float(source_row["compute_area_um2"])
+    compute_budget = float(source_row["compute_budget_um2"])
+    current_l1_overhead = float(source_row["measured_l1_overhead_area_um2"])
+    current_local_datapath_area = float(source_row["local_datapath_area_um2"])
+    current_softmax_area = float(source_row["softmax_weight_generator_area_um2"])
+    current_logic_used = float(source_row["logic_area_used_um2"])
+    required_buffer_bytes = int(source_row.get("required_stream_buffer_bytes", source_row.get("tile_local_buffer_bytes", 0)))
+    available_local_capacity = int(source_row.get("available_local_capacity_bytes", source_row.get("local_capacity_bytes_per_cluster", 0)))
+
+    measured_stream_area = float(full_value_tile["die_area_um2"])
+    measured_softmax_area = float(softmax_weight["die_area_um2"])
+    stream_buffer_area = required_buffer_bytes * buffer_area_um2_per_byte
+    selected_local_datapath_area = compute_multiplier * measured_stream_area
+    selected_softmax_area = measured_softmax_area
+    selected_l1_overhead = current_l1_overhead + clusters * (
+        selected_local_datapath_area
+        + selected_softmax_area
+        + stream_buffer_area
+        - current_local_datapath_area
+        - current_softmax_area
+    )
+
+    compute_area_required = current_compute_area * compute_multiplier
+    logic_used_required = current_logic_used + (compute_area_required - current_compute_area) + (
+        selected_l1_overhead - current_l1_overhead
+    )
+    logic_slack_required = compute_budget - logic_used_required
+    compute_area_over_budget = max(0.0, logic_used_required - compute_budget)
+    required_compute_density_gain = (
+        compute_area_required / max(1.0, compute_budget - selected_l1_overhead)
+    )
+    replica_count_budgeted = int(current_compute_area // max(1.0, float(source_row["measured_block_area_um2"])))
+    replica_count_required = int(source_row["compute_replica_count"] * compute_multiplier)
+    replica_shortfall = max(0, replica_count_required - replica_count_budgeted)
+    area_fit = logic_slack_required >= 0.0
+    buffer_fit = required_buffer_bytes <= available_local_capacity
+    feasible = area_fit and buffer_fit
+
+    if feasible:
+        adjusted_latency_us = float(source_row["latency_us"])
+        adjusted_tile_service_cycles = int(source_row["tile_service_cycles"])
+        adjusted_speedup = float(source_row["latency_speedup_vs_hbm_closed_source"])
+    else:
+        adjusted_latency_us = None
+        adjusted_tile_service_cycles = None
+        adjusted_speedup = None
+        if compute_multiplier > 1.0:
+            # If the doubled stream cannot fit, the nearest already-measured same-area schedule is split_mac.
+            adjusted_latency_us = None
+
+    out = dict(source_row)
+    out.update(
+        {
+            "dual_stream_physical_model": "measured_full_value_tile_budget_v1",
+            "measured_full_value_tile_metrics_csv": full_value_tile["metrics_csv"],
+            "measured_full_value_tile_area_um2": measured_stream_area,
+            "measured_full_value_tile_clock_ns": full_value_tile["critical_path_ns"],
+            "measured_full_value_tile_power_mw": full_value_tile["total_power_mw"],
+            "measured_softmax_weight_metrics_csv": softmax_weight["metrics_csv"],
+            "measured_softmax_weight_area_um2": measured_softmax_area,
+            "measured_softmax_weight_clock_ns": softmax_weight["critical_path_ns"],
+            "measured_softmax_weight_power_mw": softmax_weight["total_power_mw"],
+            "stream_buffer_area_um2_per_byte": buffer_area_um2_per_byte,
+            "stream_buffer_area_um2_per_cluster": round(stream_buffer_area, 6),
+            "selected_local_datapath_area_um2_per_cluster": round(selected_local_datapath_area, 6),
+            "selected_l1_overhead_area_um2": round(selected_l1_overhead, 6),
+            "compute_area_required_um2": round(compute_area_required, 6),
+            "compute_area_multiplier_required": compute_multiplier,
+            "logic_area_used_required_um2": round(logic_used_required, 6),
+            "logic_area_slack_required_um2": round(logic_slack_required, 6),
+            "compute_area_over_budget_um2": round(compute_area_over_budget, 6),
+            "required_compute_density_gain": round(required_compute_density_gain, 6),
+            "replica_count_required": replica_count_required,
+            "replica_count_budgeted_at_current_compute_area": replica_count_budgeted,
+            "replica_count_shortfall": replica_shortfall,
+            "local_datapath_clock_ok": float(full_value_tile["critical_path_ns"]) <= float(source_row["clock_ns"]),
+            "softmax_weight_clock_ok": float(softmax_weight["critical_path_ns"]) <= float(source_row["clock_ns"]),
+            "area_fit": area_fit,
+            "buffer_fit": buffer_fit,
+            "physical_feasible": feasible,
+            "adjusted_latency_us_if_feasible": adjusted_latency_us,
+            "adjusted_tile_service_cycles_if_feasible": adjusted_tile_service_cycles,
+            "adjusted_speedup_if_feasible": adjusted_speedup,
+        }
+    )
+    return out
+
+
+def build_report(args: argparse.Namespace) -> JsonDict:
+    source = _load_json(args.subtile_pipeline_json)
+    source_rows = _source_rows(source, limit=args.frontier_row_limit)
+    full_value_tile = _best_ok_metrics(args.full_value_tile_metrics)
+    softmax_weight = _best_ok_metrics(args.softmax_weight_metrics)
+    rows = [
+        _row_with_budget(
+            row,
+            full_value_tile=full_value_tile,
+            softmax_weight=softmax_weight,
+            buffer_area_um2_per_byte=args.buffer_area_um2_per_byte,
+        )
+        for row in source_rows
+    ]
+    feasible_rows = [row for row in rows if row["physical_feasible"]]
+    best_feasible = min(feasible_rows, key=lambda row: float(row["latency_us"])) if feasible_rows else None
+    best_requested = min(rows, key=lambda row: float(row["latency_us"]))
+    best_area_fit = min(
+        (row for row in rows if row["area_fit"]),
+        key=lambda row: float(row["latency_us"]),
+        default=None,
+    )
+    decision = "dual_stream_feasible" if best_feasible and best_feasible.get("compute_mode") == "dual_mac" else "dual_stream_area_blocked"
+    return {
+        "version": 1,
+        "model": "llm_decoder_attention_kv_dual_stream_physical_feasibility_llama7b_v1",
+        "subtile_pipeline_json": str(args.subtile_pipeline_json),
+        "source_model": source.get("model"),
+        "inputs": {
+            "frontier_row_limit": args.frontier_row_limit,
+            "full_value_tile_metrics": str(args.full_value_tile_metrics),
+            "softmax_weight_metrics": str(args.softmax_weight_metrics),
+            "buffer_area_um2_per_byte": args.buffer_area_um2_per_byte,
+        },
+        "diagnosis": {
+            "decision": decision,
+            "source_rows_used": len(source_rows),
+            "physical_feasible_rows": len(feasible_rows),
+            "best_requested_mode": best_requested.get("compute_mode"),
+            "best_requested_latency_us": best_requested.get("latency_us"),
+            "best_requested_area_fit": best_requested.get("area_fit"),
+            "best_requested_logic_slack_um2": best_requested.get("logic_area_slack_required_um2"),
+            "best_requested_compute_area_over_budget_um2": best_requested.get("compute_area_over_budget_um2"),
+            "best_requested_required_compute_density_gain": best_requested.get("required_compute_density_gain"),
+            "best_feasible_mode": best_feasible.get("compute_mode") if best_feasible else None,
+            "best_feasible_latency_us": best_feasible.get("latency_us") if best_feasible else None,
+            "best_area_fit_mode": best_area_fit.get("compute_mode") if best_area_fit else None,
+            "best_area_fit_latency_us": best_area_fit.get("latency_us") if best_area_fit else None,
+            "recommended_next_step": (
+                "measure a denser dual-stream fused attention datapath or reduce compute replicas before promoting dual_mac"
+                if decision == "dual_stream_area_blocked"
+                else "promote dual-stream schedule into a measured RTL/PPA wrapper"
+            ),
+        },
+        "best_requested": best_requested,
+        "best_feasible": best_feasible,
+        "best_area_fit": best_area_fit,
+        "rows": rows,
+        "assumptions": [
+            "The dual_mac schedule requires an explicit compute_area_multiplier from the sub-tile scheduler.",
+            "Measured full-value tile and softmax-weight generator PPA are used for local datapath overhead only.",
+            "The dense GEMM compute array is treated as already packed into the current logic budget; extra dual-stream compute must fit that same budget to be feasible.",
+            "Buffer capacity is checked against measured local SRAM bytes; an optional buffer-area proxy can be added for sensitivity but defaults to zero to avoid double-counting measured local SRAM.",
+        ],
+    }
+
+
+def write_markdown(path: Path, payload: JsonDict) -> None:
+    diag = payload["diagnosis"]
+    best = payload["best_requested"]
+    lines = [
+        "# Llama7B Dual-Stream Physical Feasibility",
+        "",
+        f"- decision: `{diag['decision']}`",
+        f"- source rows used: `{diag['source_rows_used']}`",
+        f"- physical feasible rows: `{diag['physical_feasible_rows']}`",
+        f"- best requested mode: `{diag['best_requested_mode']}`",
+        f"- best requested latency us: `{diag['best_requested_latency_us']}`",
+        f"- best requested logic slack um2: `{diag['best_requested_logic_slack_um2']}`",
+        f"- best requested compute area over budget um2: `{diag['best_requested_compute_area_over_budget_um2']}`",
+        f"- best requested required compute density gain: `{diag['best_requested_required_compute_density_gain']}`",
+        f"- recommended next step: `{diag['recommended_next_step']}`",
+        "",
+        "## Best Requested",
+        "",
+        "| mode | latency us | speedup | area fit | buffer fit | logic slack um2 | area over budget | density gain | required replicas | budget replicas | req buffer bytes |",
+        "|---|---:|---:|---|---|---:|---:|---:|---:|---:|---:|",
+        "| {compute_mode} | {latency_us} | {latency_speedup_vs_hbm_closed_source} | {area_fit} | "
+        "{buffer_fit} | {logic_area_slack_required_um2} | {compute_area_over_budget_um2} | "
+        "{required_compute_density_gain} | {replica_count_required} | "
+        "{replica_count_budgeted_at_current_compute_area} | {required_stream_buffer_bytes} |".format(**best),
+        "",
+        "## Rows",
+        "",
+        "| mode | latency us | area fit | feasible | logic slack um2 | local datapath/cluster | compute area required |",
+        "|---|---:|---|---|---:|---:|---:|",
+    ]
+    for row in payload["rows"]:
+        lines.append(
+            "| {compute_mode} | {latency_us} | {area_fit} | {physical_feasible} | "
+            "{logic_area_slack_required_um2} | {selected_local_datapath_area_um2_per_cluster} | "
+            "{compute_area_required_um2} |".format(**row)
+        )
+    lines.extend(["", "## Assumptions", ""])
+    lines.extend(f"- {item}" for item in payload["assumptions"])
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--subtile-pipeline-json", type=Path, required=True)
+    parser.add_argument("--full-value-tile-metrics", type=Path, required=True)
+    parser.add_argument("--softmax-weight-metrics", type=Path, required=True)
+    parser.add_argument("--frontier-row-limit", type=int, default=8)
+    parser.add_argument("--buffer-area-um2-per-byte", type=float, default=0.0)
+    parser.add_argument("--out", type=Path, required=True)
+    parser.add_argument("--out-md", type=Path, required=True)
+    args = parser.parse_args()
+
+    payload = build_report(args)
+    args.out.parent.mkdir(parents=True, exist_ok=True)
+    args.out.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    write_markdown(args.out_md, payload)
+    print(json.dumps({"ok": True, "out": str(args.out), "out_md": str(args.out_md)}, indent=2))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
