@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_decoder_attention_mixed_precision_physical_feasibility_llama7b_v1",
-  "source_commit": "TBD_AFTER_MERGE",
+  "source_commit": "df7db11ce15eabd09ff96192c58f49592473a8a3",
   "source_commit_note": "Dispatch should use the merge commit containing the new mixed-precision physical feasibility abstraction.",
   "requested_items": [
     {
@@ -19,7 +19,12 @@
       "expected_result": {
         "direction": "iterate",
         "reason": "Use measured mixed-precision physical feasibility to decide whether the remaining frontier work is local datapath precision or compute-array density/fusion."
-      }
+      },
+      "status": "merged",
+      "merged_pr_number": 836,
+      "merge_commit": "f134a54343d831df63ebd5a2ce0bea1e69cdc1f0",
+      "merged_utc": "2026-06-11T06:02:44.013156Z",
+      "notes": "Merged via PR #836 and merge f134a54343d831df63ebd5a2ce0bea1e69cdc1f0 at 2026-06-11T06:02:44.013156Z."
     }
   ]
 }
