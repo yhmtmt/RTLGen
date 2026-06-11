@@ -17,12 +17,34 @@ from control_plane.models.enums import ExecutorType, FlowName, LayerName, RunSta
 from control_plane.models.runs import Run
 from control_plane.models.task_requests import TaskRequest
 from control_plane.models.work_items import WorkItem
-from control_plane.services.l2_result_consumer import Layer2ConsumeRequest, consume_l2_result
+from control_plane.services.l2_result_consumer import Layer2ConsumeRequest, _decoder_evidence_summary, consume_l2_result
 
 
 def _write(path: Path, text: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text, encoding="utf-8")
+
+
+def test_decoder_evidence_summary_recognizes_mixed_precision_int8_compute_physical_feasibility() -> None:
+    outcome, summary = _decoder_evidence_summary(
+        evidence_ref="runs/datasets/demo/int8_compute.json",
+        evidence_payload={
+            "model": "llm_decoder_attention_mixed_precision_int8_compute_physical_feasibility_llama7b_v1",
+            "diagnosis": {
+                "decision": "dual_stream_feasible",
+                "precision_profile": "q8_k8_v6_a24_s24_w16_int8_compute",
+                "best_requested_mode": "dual_mac",
+                "best_requested_compute_substitution_enabled": True,
+                "best_requested_substituted_compute_arch": "dense_gemm_int8_16x8_k1_p1",
+                "best_requested_substituted_compute_area_um2": 89654016.0,
+                "best_requested_compute_clock_ok": True,
+            },
+        },
+    )
+
+    assert outcome == "dual_stream_feasible"
+    assert "int8-compute physical feasibility" in summary
+    assert "best_requested_substituted_compute_arch=dense_gemm_int8_16x8_k1_p1" in summary
 
 
 def _seed_succeeded_l2_campaign(session: Session, repo_root: Path) -> tuple[str, str]:

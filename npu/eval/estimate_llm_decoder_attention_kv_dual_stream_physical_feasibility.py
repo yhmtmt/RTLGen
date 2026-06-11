@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import math
 import sys
 from pathlib import Path
 from typing import Any
@@ -37,6 +38,32 @@ def _best_ok_metrics(path: Path) -> JsonDict:
     return {
         "metrics_csv": str(path),
         "critical_path_ns": float(best["critical_path_ns"]),
+        "die_area_um2": float(best["die_area"]),
+        "total_power_mw": float(best["total_power_mw"]),
+        "param_hash": best.get("param_hash", ""),
+        "tag": best.get("tag", ""),
+        "result_path": best.get("result_path", ""),
+    }
+
+
+def _best_ok_compute_metrics(path: Path) -> JsonDict:
+    with path.open(newline="", encoding="utf-8") as handle:
+        rows = [row for row in csv.DictReader(handle) if row.get("status") == "ok"]
+    if not rows:
+        raise RuntimeError(f"no status=ok compute metrics rows in {path}")
+    best = min(
+        rows,
+        key=lambda row: (
+            float(row.get("critical_path_ns") or "inf"),
+            float(row.get("instance_area_um2") or row.get("die_area") or "inf"),
+            float(row.get("total_power_mw") or "inf"),
+        ),
+    )
+    block_area = float(best.get("instance_area_um2") or best["die_area"])
+    return {
+        "metrics_csv": str(path),
+        "critical_path_ns": float(best["critical_path_ns"]),
+        "block_area_um2": block_area,
         "die_area_um2": float(best["die_area"]),
         "total_power_mw": float(best["total_power_mw"]),
         "param_hash": best.get("param_hash", ""),
@@ -78,6 +105,9 @@ def _row_with_budget(
     *,
     full_value_tile: JsonDict,
     softmax_weight: JsonDict,
+    compute_block: JsonDict | None,
+    compute_block_macs_per_cycle: int | None,
+    compute_arch_name: str | None,
     buffer_area_um2_per_byte: float,
     precision_profile: str,
 ) -> JsonDict:
@@ -105,7 +135,27 @@ def _row_with_budget(
         - current_softmax_area
     )
 
-    compute_area_required = current_compute_area * compute_multiplier
+    compute_substitution_enabled = compute_block is not None
+    if compute_block is None:
+        base_compute_area = current_compute_area
+        base_compute_power = float(source_row.get("compute_power_mw", source_row.get("measured_block_power_mw", 0.0)))
+        target_replica_count = int(source_row["compute_replica_count"])
+        target_block_area = float(source_row["measured_block_area_um2"])
+        target_block_macs = int(source_row["measured_block_macs_per_cycle"])
+        target_block_clock = float(source_row["measured_block_clock_ns"])
+        target_block_power = float(source_row.get("measured_block_power_mw", 0.0))
+        target_arch = str(source_row.get("compute_arch", ""))
+    else:
+        target_block_area = float(compute_block["block_area_um2"])
+        target_block_macs = int(compute_block_macs_per_cycle or source_row["measured_block_macs_per_cycle"])
+        target_replica_count = int(math.ceil(float(source_row["macs_per_cycle"]) / max(1, target_block_macs)))
+        base_compute_area = target_replica_count * target_block_area
+        target_block_clock = float(compute_block["critical_path_ns"])
+        target_block_power = float(compute_block["total_power_mw"])
+        base_compute_power = target_replica_count * target_block_power
+        target_arch = str(compute_arch_name or source_row.get("compute_arch", ""))
+
+    compute_area_required = base_compute_area * compute_multiplier
     logic_used_required = current_logic_used + (compute_area_required - current_compute_area) + (
         selected_l1_overhead - current_l1_overhead
     )
@@ -114,8 +164,11 @@ def _row_with_budget(
     required_compute_density_gain = (
         compute_area_required / max(1.0, compute_budget - selected_l1_overhead)
     )
-    replica_count_budgeted = int(current_compute_area // max(1.0, float(source_row["measured_block_area_um2"])))
-    replica_count_required = int(source_row["compute_replica_count"] * compute_multiplier)
+    if compute_block is None:
+        replica_count_budgeted = int(current_compute_area // max(1.0, target_block_area))
+    else:
+        replica_count_budgeted = int(max(0.0, compute_budget - selected_l1_overhead) // max(1.0, target_block_area))
+    replica_count_required = int(math.ceil(target_replica_count * compute_multiplier))
     replica_shortfall = max(0, replica_count_required - replica_count_budgeted)
     area_fit = logic_slack_required >= 0.0
     buffer_fit = required_buffer_bytes <= available_local_capacity
@@ -152,6 +205,17 @@ def _row_with_budget(
             "selected_l1_overhead_area_um2": round(selected_l1_overhead, 6),
             "compute_area_required_um2": round(compute_area_required, 6),
             "compute_area_multiplier_required": compute_multiplier,
+            "compute_substitution_enabled": compute_substitution_enabled,
+            "source_compute_arch": source_row.get("compute_arch"),
+            "substituted_compute_arch": target_arch if compute_substitution_enabled else None,
+            "substituted_compute_metrics_csv": compute_block["metrics_csv"] if compute_block else None,
+            "substituted_block_area_um2": round(target_block_area, 6) if compute_substitution_enabled else None,
+            "substituted_block_clock_ns": round(target_block_clock, 6) if compute_substitution_enabled else None,
+            "substituted_block_power_mw": round(target_block_power, 6) if compute_substitution_enabled else None,
+            "substituted_block_macs_per_cycle": target_block_macs if compute_substitution_enabled else None,
+            "substituted_compute_replica_count": target_replica_count if compute_substitution_enabled else None,
+            "substituted_compute_area_um2": round(base_compute_area, 6) if compute_substitution_enabled else None,
+            "substituted_compute_power_mw": round(base_compute_power, 6) if compute_substitution_enabled else None,
             "logic_area_used_required_um2": round(logic_used_required, 6),
             "logic_area_slack_required_um2": round(logic_slack_required, 6),
             "compute_area_over_budget_um2": round(compute_area_over_budget, 6),
@@ -161,6 +225,7 @@ def _row_with_budget(
             "replica_count_shortfall": replica_shortfall,
             "local_datapath_clock_ok": float(full_value_tile["critical_path_ns"]) <= float(source_row["clock_ns"]),
             "softmax_weight_clock_ok": float(softmax_weight["critical_path_ns"]) <= float(source_row["clock_ns"]),
+            "compute_clock_ok": target_block_clock <= float(source_row["clock_ns"]),
             "area_fit": area_fit,
             "buffer_fit": buffer_fit,
             "physical_feasible": feasible,
@@ -177,12 +242,16 @@ def build_report(args: argparse.Namespace) -> JsonDict:
     source_rows = _source_rows(source, limit=args.frontier_row_limit)
     full_value_tile = _best_ok_metrics(args.full_value_tile_metrics)
     softmax_weight = _best_ok_metrics(args.softmax_weight_metrics)
+    compute_block = _best_ok_compute_metrics(args.compute_block_metrics) if args.compute_block_metrics else None
     quality_gate = _load_json(args.quality_gate_json) if args.quality_gate_json else None
     rows = [
         _row_with_budget(
             row,
             full_value_tile=full_value_tile,
             softmax_weight=softmax_weight,
+            compute_block=compute_block,
+            compute_block_macs_per_cycle=args.compute_block_macs_per_cycle,
+            compute_arch_name=args.compute_arch_name,
             buffer_area_um2_per_byte=args.buffer_area_um2_per_byte,
             precision_profile=args.precision_profile,
         )
@@ -206,6 +275,9 @@ def build_report(args: argparse.Namespace) -> JsonDict:
             "frontier_row_limit": args.frontier_row_limit,
             "full_value_tile_metrics": str(args.full_value_tile_metrics),
             "softmax_weight_metrics": str(args.softmax_weight_metrics),
+            "compute_block_metrics": str(args.compute_block_metrics) if args.compute_block_metrics else None,
+            "compute_block_macs_per_cycle": args.compute_block_macs_per_cycle,
+            "compute_arch_name": args.compute_arch_name,
             "quality_gate_json": str(args.quality_gate_json) if args.quality_gate_json else None,
             "precision_profile": args.precision_profile,
             "buffer_area_um2_per_byte": args.buffer_area_um2_per_byte,
@@ -230,6 +302,10 @@ def build_report(args: argparse.Namespace) -> JsonDict:
             "best_requested_logic_slack_um2": best_requested.get("logic_area_slack_required_um2"),
             "best_requested_compute_area_over_budget_um2": best_requested.get("compute_area_over_budget_um2"),
             "best_requested_required_compute_density_gain": best_requested.get("required_compute_density_gain"),
+            "best_requested_compute_substitution_enabled": best_requested.get("compute_substitution_enabled"),
+            "best_requested_substituted_compute_arch": best_requested.get("substituted_compute_arch"),
+            "best_requested_substituted_compute_area_um2": best_requested.get("substituted_compute_area_um2"),
+            "best_requested_compute_clock_ok": best_requested.get("compute_clock_ok"),
             "best_feasible_mode": best_feasible.get("compute_mode") if best_feasible else None,
             "best_feasible_latency_us": best_feasible.get("latency_us") if best_feasible else None,
             "best_area_fit_mode": best_area_fit.get("compute_mode") if best_area_fit else None,
@@ -249,6 +325,12 @@ def build_report(args: argparse.Namespace) -> JsonDict:
             "Measured full-value tile and softmax-weight generator PPA are used for local datapath overhead only.",
             "The dense GEMM compute array is treated as already packed into the current logic budget; extra dual-stream compute must fit that same budget to be feasible.",
             "Buffer capacity is checked against measured local SRAM bytes; an optional buffer-area proxy can be added for sensitivity but defaults to zero to avoid double-counting measured local SRAM.",
+            (
+                "When compute-block substitution is enabled, measured block area/power/clock replace the source dense compute block, "
+                "but the upstream schedule latency is not recomputed; this is an area-feasibility substitution and a conservative latency view when the substituted block clock is no slower than the source clock."
+            )
+            if compute_block
+            else "No compute-block substitution was requested; dense compute area comes from the source schedule.",
         ],
     }
 
@@ -268,6 +350,9 @@ def write_markdown(path: Path, payload: JsonDict) -> None:
         f"- best requested logic slack um2: `{diag['best_requested_logic_slack_um2']}`",
         f"- best requested compute area over budget um2: `{diag['best_requested_compute_area_over_budget_um2']}`",
         f"- best requested required compute density gain: `{diag['best_requested_required_compute_density_gain']}`",
+        f"- best requested compute substitution: `{diag['best_requested_compute_substitution_enabled']}`",
+        f"- best requested substituted compute arch: `{diag['best_requested_substituted_compute_arch']}`",
+        f"- best requested substituted compute area um2: `{diag['best_requested_substituted_compute_area_um2']}`",
         f"- recommended next step: `{diag['recommended_next_step']}`",
         "",
         "## Best Requested",
@@ -301,6 +386,9 @@ def main() -> int:
     parser.add_argument("--subtile-pipeline-json", type=Path, required=True)
     parser.add_argument("--full-value-tile-metrics", type=Path, required=True)
     parser.add_argument("--softmax-weight-metrics", type=Path, required=True)
+    parser.add_argument("--compute-block-metrics", type=Path)
+    parser.add_argument("--compute-block-macs-per-cycle", type=int)
+    parser.add_argument("--compute-arch-name")
     parser.add_argument("--quality-gate-json", type=Path)
     parser.add_argument("--precision-profile", default="exact_q8_kv8_v16_s24_w16")
     parser.add_argument(
