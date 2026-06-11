@@ -1,0 +1,15 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_dual_stream_physical_feasibility_v1",
+  "candidate_id": "l2_decoder_attention_kv_dual_stream_physical_feasibility_llama7b_v1",
+  "decision": "iterate",
+  "reason": "Decoder dual-stream physical feasibility evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_dual_stream_physical_feasibility__l2_decoder_attention_kv_dual_stream_physical_feasibility_llama7b_v1.json: decision=dual_stream_area_blocked; best_requested_mode=dual_mac; best_requested_latency_us=1575.373891; best_requested_area_fit=False; best_requested_logic_slack_um2=-398874400.4116; best_requested_compute_area_over_budget_um2=398874400.4116; best_requested_required_compute_density_gain=2.011289; best_feasible_mode=split_mac; best_feasible_latency_us=2042.378179; recommended_next_step=measure a denser dual-stream fused attention datapath or reduce compute replicas before promoting dual_mac.",
+  "evidence_refs": [
+    "item:l2_decoder_attention_kv_dual_stream_physical_feasibility_llama7b_v1",
+    "run:l2_decoder_attention_kv_dual_stream_physical_feasibility_llama7b_v1_run_682cb12ad6eee971",
+    "artifact:control_plane/shadow_exports/l2_decisions/l2_decoder_attention_kv_dual_stream_physical_feasibility_llama7b_v1.json",
+    "pr:#830",
+    "https://github.com/yhmtmt/RTLGen/pull/830"
+  ],
+  "next_action": "inspect follow-on work after l2_decoder_attention_kv_dual_stream_physical_feasibility_llama7b_v1",
+  "requires_human_approval": false
+}

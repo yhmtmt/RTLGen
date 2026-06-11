@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_dual_stream_physical_feasibility_v1",
+  "decision": "iterate",
+  "pr_number": 830,
+  "merge_commit": "5a01e5685aba682185213da59d41cd132a234159",
+  "merged_utc": "2026-06-11T02:06:41.239626Z"
+}

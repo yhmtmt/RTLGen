@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_decoder_attention_kv_dual_stream_physical_feasibility_v1",
-  "source_commit": "TBD_AFTER_MERGE",
+  "source_commit": "efe7890b509de3642e1e3e364251d17f23f21056",
   "source_commit_note": "Dispatch should use the merge commit containing the dual-stream physical feasibility estimator and control-plane hook.",
   "requested_items": [
     {
@@ -19,7 +19,12 @@
       "expected_result": {
         "direction": "record_dual_stream_physical_feasibility",
         "reason": "The result should decide whether dual_mac is physically feasible under the current measured logic budget and quantify the density/area gap if it is not."
-      }
+      },
+      "status": "merged",
+      "merged_pr_number": 830,
+      "merge_commit": "5a01e5685aba682185213da59d41cd132a234159",
+      "merged_utc": "2026-06-11T02:06:41.239626Z",
+      "notes": "Merged via PR #830 and merge 5a01e5685aba682185213da59d41cd132a234159 at 2026-06-11T02:06:41.239626Z."
     }
   ]
 }
