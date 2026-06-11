@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_decoder_attention_kv_subtile_pipeline_schedule_v1",
-  "source_commit": null,
+  "source_commit": "82da1c2f8d9c30ce99f12382363bd86aa1d54989",
   "source_commit_note": "Dispatch should use the merge commit containing the sub-tile pipeline scheduler and control-plane hook.",
   "requested_items": [
     {
@@ -19,7 +19,12 @@
       "expected_result": {
         "direction": "record_subtile_pipeline_schedule_frontier",
         "reason": "The result should report schedule-only versus circuit-assisted speedup, legal buffer requirements, tile service cycles, HBM floor gap, and the selected follow-on RTL/PPA target."
-      }
+      },
+      "status": "merged",
+      "merged_pr_number": 828,
+      "merge_commit": "804834a0d3a43cbdfb8088c4888db4f7d7c97c2b",
+      "merged_utc": "2026-06-11T00:54:10.859381Z",
+      "notes": "Merged via PR #828 and merge 804834a0d3a43cbdfb8088c4888db4f7d7c97c2b at 2026-06-11T00:54:10.859381Z."
     }
   ]
 }

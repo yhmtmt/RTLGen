@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_subtile_pipeline_schedule_v1",
+  "decision": "iterate",
+  "pr_number": 828,
+  "merge_commit": "804834a0d3a43cbdfb8088c4888db4f7d7c97c2b",
+  "merged_utc": "2026-06-11T00:54:10.859381Z"
+}
