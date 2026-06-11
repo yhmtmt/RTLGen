@@ -1,0 +1,58 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_mixed_precision_int8_compute_physical_feasibility_llama7b_v1",
+  "kind": "architecture",
+  "title": "Mixed-precision attention with int8 dense compute physical feasibility",
+  "layer": "layer2",
+  "abstraction_layer": "decoder_attention_mixed_precision_int8_compute_physical_feasibility",
+  "status": "proposed",
+  "motivation": [
+    "The Q8/K8/V6 mixed-precision local datapath was quality-approved but still left dual_mac blocked when dense compute used the measured FP16 tile area.",
+    "Layer 1 has now measured signed-int8 dense GEMM tile PPA at the same 16x8, k1 throughput shape.",
+    "We need to determine whether substituting measured int8 dense compute closes the dual_mac physical area gap under the current Llama7B sub-tile schedule before launching another full PPA iteration."
+  ],
+  "direct_comparison": {
+    "primary_question": "Does measured int8 dense compute make the Q8/K8/V6 dual_mac Llama7B schedule physically feasible under the same schedule?",
+    "baseline": "l2_decoder_attention_mixed_precision_physical_feasibility_llama7b_v1",
+    "candidate": "l2_decoder_attention_mixed_precision_int8_compute_physical_feasibility_llama7b_v1",
+    "metrics": [
+      "decision",
+      "best_requested_area_fit",
+      "best_requested_compute_area_over_budget_um2",
+      "best_requested_required_compute_density_gain",
+      "best_requested_substituted_compute_area_um2",
+      "best_feasible_mode",
+      "best_feasible_latency_us"
+    ]
+  },
+  "expected_result": {
+    "direction": "close_dual_stream_area_gap_with_int8_compute",
+    "reason": "The measured int8 16x8 dense GEMM tile is substantially smaller than the FP16 dense tile, so dual_mac should move from area-blocked to feasible if the remaining abstractions are not dominant."
+  },
+  "required_inputs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_subtile_pipeline_schedule__l2_decoder_attention_kv_subtile_pipeline_schedule_llama7b_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_precision_quality__l2_decoder_attention_mixed_precision_quality_llama7b_v1.json",
+    "runs/designs/activations/attention_kv_full_value_hd64_kv8_v6_tl16_b128_p8_ppc2_w22_a40_wrapper/metrics.csv",
+    "runs/designs/activations/attention_softmax_weight_int8_r8_acc24_recip_q10_wrapper/metrics.csv",
+    "runs/designs/npu_blocks/npu_dense_gemm_tile_int8_16x8_k1_p1/metrics.csv"
+  ],
+  "evaluation_requests": [
+    {
+      "item_id": "l2_decoder_attention_mixed_precision_int8_compute_physical_feasibility_llama7b_v1",
+      "task_type": "l2_campaign",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_mixed_precision_int8_compute_physical_feasibility",
+      "comparison_role": "frontier_closure",
+      "paired_baseline_item_id": "l2_decoder_attention_mixed_precision_physical_feasibility_llama7b_v1",
+      "depends_on": [
+        "l1_npu_dense_gemm_tile_int8_v1",
+        "l2_decoder_attention_mixed_precision_physical_feasibility_llama7b_v1",
+        "l2_decoder_attention_mixed_precision_quality_llama7b_v1"
+      ]
+    }
+  ],
+  "source_files": [
+    "npu/eval/estimate_llm_decoder_attention_kv_dual_stream_physical_feasibility.py",
+    "control_plane/control_plane/services/l2_task_generator.py",
+    "control_plane/control_plane/services/l2_result_consumer.py"
+  ]
+}

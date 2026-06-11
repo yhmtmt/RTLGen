@@ -5494,6 +5494,61 @@ def test_generate_l2_campaign_task_adds_attention_mixed_precision_physical_feasi
             )
 
 
+def test_generate_l2_campaign_task_adds_attention_mixed_precision_int8_compute_physical_feasibility_evidence() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id="l2_decoder_attention_mixed_precision_int8_compute_physical_feasibility_llama7b_v1",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    abstraction_layer="decoder_attention_mixed_precision_int8_compute_physical_feasibility",
+                    evaluation_mode="frontier_detail",
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            commands = work_item.task_request.request_payload["task"]["commands"]
+            command_names = [command["name"] for command in commands]
+            decoder_inputs = work_item.input_manifest["decoder_contract"]
+            expected_outputs = work_item.task_request.request_payload["task"]["expected_outputs"]
+            run = commands[0]["run"]
+
+            assert "estimate_decoder_attention_mixed_precision_int8_compute_physical_feasibility" in command_names
+            assert "attention_kv_subtile_pipeline_schedule" in decoder_inputs
+            assert "attention_mixed_precision_quality" in decoder_inputs
+            assert "attention_kv_mixed_precision_full_value_tile_metrics" in decoder_inputs
+            assert "attention_int8_dense_compute_metrics" in decoder_inputs
+            assert "attention_mixed_precision_int8_compute_physical_feasibility_out" in decoder_inputs
+            assert "estimate_llm_decoder_attention_kv_dual_stream_physical_feasibility.py" in run
+            assert "npu_dense_gemm_tile_int8_16x8_k1_p1/metrics.csv" in run
+            assert "--compute-block-macs-per-cycle 128" in run
+            assert "--compute-arch-name dense_gemm_int8_16x8_k1_p1" in run
+            assert "--precision-profile q8_k8_v6_a24_s24_w16_int8_compute" in run
+            assert (
+                "--model-name llm_decoder_attention_mixed_precision_int8_compute_physical_feasibility_llama7b_v1"
+                in run
+            )
+            assert work_item.task_request.request_payload["task"]["inputs"]["decoder_contract"] == decoder_inputs
+            assert any(
+                output.endswith(
+                    "decoder_attention_mixed_precision_int8_compute_physical_feasibility__"
+                    "l2_decoder_attention_mixed_precision_int8_compute_physical_feasibility_llama7b_v1.json"
+                )
+                for output in expected_outputs
+            )
+
+
 def test_generate_l2_campaign_task_adds_attention_noc_profile_evidence() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"

@@ -623,11 +623,15 @@ def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, 
     if model in {
         "llm_decoder_attention_kv_dual_stream_physical_feasibility_llama7b_v1",
         "llm_decoder_attention_mixed_precision_physical_feasibility_llama7b_v1",
+        "llm_decoder_attention_mixed_precision_int8_compute_physical_feasibility_llama7b_v1",
     }:
         diagnosis = evidence_payload.get("diagnosis")
         diagnosis_dict = dict(diagnosis) if isinstance(diagnosis, dict) else {}
         outcome = str(diagnosis_dict.get("decision") or "dual_stream_physical_feasibility_recorded")
         prefix = (
+            "Decoder mixed-precision int8-compute physical feasibility evidence"
+            if model == "llm_decoder_attention_mixed_precision_int8_compute_physical_feasibility_llama7b_v1"
+            else
             "Decoder mixed-precision physical feasibility evidence"
             if model == "llm_decoder_attention_mixed_precision_physical_feasibility_llama7b_v1"
             else "Decoder dual-stream physical feasibility evidence"
@@ -643,6 +647,10 @@ def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, 
             "best_requested_logic_slack_um2",
             "best_requested_compute_area_over_budget_um2",
             "best_requested_required_compute_density_gain",
+            "best_requested_compute_substitution_enabled",
+            "best_requested_substituted_compute_arch",
+            "best_requested_substituted_compute_area_um2",
+            "best_requested_compute_clock_ok",
             "best_feasible_mode",
             "best_feasible_latency_us",
             "recommended_next_step",
