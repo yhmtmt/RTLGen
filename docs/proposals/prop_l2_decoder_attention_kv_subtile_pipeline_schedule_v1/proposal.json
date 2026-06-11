@@ -1,0 +1,66 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_subtile_pipeline_schedule_v1",
+  "created_utc": "2026-06-11T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Sub-tile pipelined attention schedule for Llama7B frontier",
+  "hypothesis": "The current Llama7B attention frontier is tile-attention limited, but the latency can be reduced if QK, softmax/statistics, V accumulation, and HBM prefetch are scheduled as a legal sub-tile pipeline. The sweep should separate schedule-only room from circuit-assisted room that requires independent QK/V compute streams.",
+  "direct_comparison": {
+    "primary_question": "How much of the current tile-attention bottleneck can be removed by legal sub-tile pipelining before RTL/PPA work?",
+    "include": [
+      "Use l2_decoder_attention_kv_hbm_closed_onchip_schedule_llama7b_v1 as the source frontier.",
+      "Sweep subtile count, subtile buffer count, prefetch distance, full-tile versus online normalization, QK/V compute sharing mode, softmax subtile latency, and online rescale penalty.",
+      "Treat shared_mac as schedule-only, split_mac as area-neutral compute partitioning, and dual_mac as an area-increasing circuit-assisted candidate.",
+      "Reject rows whose required stream buffer exceeds the selected local capacity or whose prefetch distance exceeds available buffers.",
+      "Report best latency, speedup versus the HBM-closed source, tile service cycles, HBM floor gap, compute mode, normalization strategy, buffer requirement, and dominant resource."
+    ],
+    "exclude": [
+      "Do not claim RTL equivalence or PPA for the pipelined datapath in this item.",
+      "Do not change HBM controller service, measured SRAM capacity, endpoint/router/FIFO primitive PPA, or KV sharing quality assumptions.",
+      "Do not model a full online softmax numerical error bound; use the online correction mode only as a scheduling feasibility marker.",
+      "Do not promote dual_mac without a follow-on physical area/power measurement."
+    ],
+    "follow_on_broad_sweep": [
+      "If shared_mac gives little improvement, move to circuit-level QK/V pipeline or compute-density exploration.",
+      "If dual_mac gives large improvement, define a minimal RTL/PPA target for a pipelined QK-softmax-V tile datapath.",
+      "If all legal rows hit the HBM floor, return to HBM/NoC overlap and prefetch-buffer planning."
+    ]
+  },
+  "expected_benefit": [
+    "Quantifies whether scheduling alone can improve the frontier.",
+    "Identifies the smallest circuit assumption that would justify a pipelined attention RTL/PPA job.",
+    "Avoids spending evaluator time on broad physical sweeps before the schedule has enough analytic headroom."
+  ],
+  "risks": [
+    "The model is analytic and does not yet validate ready/valid behavior or numeric equivalence.",
+    "dual_mac carries an explicit area multiplier but not measured PPA.",
+    "The buffer model is conservative but still simplified relative to a placed SRAM/register-file design."
+  ],
+  "needs_mapper_change": true,
+  "required_evaluations": [
+    {
+      "task_type": "l2_campaign",
+      "evaluation_mode": "frontier_detail",
+      "objective": "subtile_pipeline_schedule_frontier",
+      "cost_class": "small",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_kv_hbm_closed_onchip_schedule_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "record_subtile_pipeline_schedule_frontier",
+        "reason": "The result should report schedule-only versus circuit-assisted speedup, legal buffer requirements, tile service cycles, HBM floor gap, and the selected follow-on RTL/PPA target."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_hbm_closed_onchip_schedule__l2_decoder_attention_kv_hbm_closed_onchip_schedule_llama7b_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/estimate_llm_decoder_attention_kv_subtile_pipeline_schedule.py",
+    "npu/eval/estimate_llm_decoder_attention_kv_hbm_closed_onchip_schedule.py",
+    "npu/eval/estimate_llm_decoder_attention_kv_clustered_schedule.py"
+  ]
+}

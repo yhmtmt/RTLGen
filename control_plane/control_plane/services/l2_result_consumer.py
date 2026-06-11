@@ -446,6 +446,7 @@ _DECODER_EVIDENCE_OUTPUT_KEYS: tuple[tuple[str, str], ...] = (
     ("attention_kv_measured_sram_rebalance_out", "attention_kv_measured_sram_rebalance_report"),
     ("attention_kv_measured_hbm_service_out", "attention_kv_measured_hbm_service_report"),
     ("attention_kv_hbm_closed_onchip_schedule_out", "attention_kv_hbm_closed_onchip_schedule_report"),
+    ("attention_kv_subtile_pipeline_schedule_out", "attention_kv_subtile_pipeline_schedule_report"),
 )
 
 
@@ -581,6 +582,35 @@ def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, 
             "tile_hbm_cycles",
             "tile_attention_cycles",
             "onchip_shared_service_cycles",
+        ):
+            if key in best_dict:
+                parts.append(f"{key}={best_dict.get(key)}")
+        summary = "; ".join(parts)
+        return outcome, summary if summary.endswith(".") else summary + "."
+
+    if model == "llm_decoder_attention_kv_subtile_pipeline_schedule_llama7b_v1":
+        best = evidence_payload.get("best")
+        best_dict = dict(best) if isinstance(best, dict) else {}
+        outcome = "subtile_pipeline_schedule_recorded"
+        parts = [
+            f"Decoder sub-tile pipeline schedule evidence recorded from {evidence_ref}: decision={outcome}",
+        ]
+        for key in (
+            "latency_us",
+            "latency_speedup_vs_hbm_closed_source",
+            "tile_service_cycles",
+            "pipeline_attention_cycles",
+            "dominant_tile_resource",
+            "compute_mode",
+            "compute_area_multiplier",
+            "normalize_strategy",
+            "subtile_count",
+            "subtile_buffer_count",
+            "prefetch_distance",
+            "required_stream_buffer_bytes",
+            "available_local_capacity_bytes",
+            "hbm_exposed_cycles",
+            "hbm_floor_gap_cycles",
         ):
             if key in best_dict:
                 parts.append(f"{key}={best_dict.get(key)}")
