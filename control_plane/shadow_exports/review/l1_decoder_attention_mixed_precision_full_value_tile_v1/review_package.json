@@ -1,0 +1,208 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-06-11T05:47:49.278660Z",
+  "control_plane_source_commit": "1864fcf787a3ef4b833eaf4fdc5a3379679f6c88",
+  "review_metadata_source_commit": "1864fcf787a3ef4b833eaf4fdc5a3379679f6c88",
+  "item_id": "l1_decoder_attention_mixed_precision_full_value_tile_v1",
+  "run_key": "l1_decoder_attention_mixed_precision_full_value_tile_v1_run_78394da0c197180d",
+  "layer": "layer1",
+  "flow": "openroad",
+  "task_type": "l1_sweep",
+  "source_commit": "1864fcf787a3ef4b833eaf4fdc5a3379679f6c88",
+  "queue_snapshot": {
+    "path": "control_plane/shadow_exports/review/l1_decoder_attention_mixed_precision_full_value_tile_v1/evaluated.json",
+    "result": {
+      "branch": "eval/l1_decoder_attention_mixed_precision_full_value_tile_v1/s20260611t054747z",
+      "completed_utc": "2026-06-11T05:47:45.326302Z",
+      "evaluator_id": "control_plane",
+      "executor": "@control_plane",
+      "host": "b7c2d9c80c1c",
+      "identity_block": "[role:evaluator][account:control_plane][session:s20260611t054747z][host:b7c2d9c80c1c][item:l1_decoder_attention_mixed_precision_full_value_tile_v1]",
+      "metrics_rows": [
+        {
+          "tag": "attention_kv_full_value_tile_nangate45_macro_frontier_d64a96fd",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "07beada1",
+          "metrics_csv": "runs/designs/activations/attention_kv_full_value_hd64_kv8_v6_tl16_b128_p8_ppc2_w22_a40_wrapper/metrics.csv"
+        },
+        {
+          "tag": "attention_kv_full_value_tile_nangate45_macro_frontier_5137e93f",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "014c101f",
+          "metrics_csv": "runs/designs/activations/attention_kv_full_value_hd64_kv8_v6_tl16_b128_p8_ppc2_w22_a40_wrapper/metrics.csv"
+        },
+        {
+          "tag": "attention_kv_full_value_tile_nangate45_macro_frontier_d64a96fd",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "07beada1",
+          "metrics_csv": "runs/designs/activations/attention_kv_full_value_hd64_kv8_v8_tl16_b128_p8_ppc2_w24_a40_wrapper/metrics.csv"
+        },
+        {
+          "tag": "attention_kv_full_value_tile_nangate45_macro_frontier_5137e93f",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "014c101f",
+          "metrics_csv": "runs/designs/activations/attention_kv_full_value_hd64_kv8_v8_tl16_b128_p8_ppc2_w24_a40_wrapper/metrics.csv"
+        }
+      ],
+      "queue_item_id": "l1_decoder_attention_mixed_precision_full_value_tile_v1",
+      "session_id": "s20260611t054747z",
+      "status": "ok",
+      "summary": "4/4 commands succeeded"
+    }
+  },
+  "review_artifact": {
+    "kind": "promotion_proposal",
+    "path": "control_plane/shadow_exports/l1_promotions/l1_decoder_attention_mixed_precision_full_value_tile_v1.json",
+    "storage_mode": "repo",
+    "sha256": "a9cfce004862c0882f91cf24ec1270bab33718e88184235a775d5a7096c4c153",
+    "payload": {
+      "version": 0.1,
+      "generated_utc": "2026-06-11T05:47:46.426958Z",
+      "item_id": "l1_decoder_attention_mixed_precision_full_value_tile_v1",
+      "run_key": "l1_decoder_attention_mixed_precision_full_value_tile_v1_run_78394da0c197180d",
+      "layer": "layer1",
+      "flow": "openroad",
+      "platform": "nangate45",
+      "task_type": "l1_sweep",
+      "source_commit": "1864fcf787a3ef4b833eaf4fdc5a3379679f6c88",
+      "objective": "Measure Q8/K8/V6 and Q8/K8/V8 full-value attention tile PPA for quality-approved mixed precision.",
+      "input_manifest": {
+        "sweeps": [
+          "runs/campaigns/activations/attention_kv_full_value_tile/sweeps/nangate45_macro_frontier.json"
+        ],
+        "configs": [
+          "runs/designs/activations/attention_kv_full_value_hd64_kv8_v6_tl16_b128_p8_ppc2_w22_a40_wrapper/config_attention_kv_full_value_hd64_kv8_v6_tl16_b128_p8_ppc2_w22_a40.json",
+          "runs/designs/activations/attention_kv_full_value_hd64_kv8_v8_tl16_b128_p8_ppc2_w24_a40_wrapper/config_attention_kv_full_value_hd64_kv8_v8_tl16_b128_p8_ppc2_w24_a40.json"
+        ],
+        "out_root": "runs/designs/activations",
+        "design_dirs": [],
+        "macro_manifests": [],
+        "candidate_manifests": [],
+        "required_submodules": []
+      },
+      "proposal_count": 2,
+      "evaluation_record": {
+        "evaluation_mode": "ppa_sweep",
+        "abstraction_layer": "attention_kv_full_value_tile",
+        "result_kind": "physical_metrics",
+        "physical_metrics_present": true,
+        "summary": "Physical metrics recorded from an accepted status=ok Layer 1 row."
+      },
+      "proposal_assessment": null,
+      "proposals": [
+        {
+          "metrics_ref": {
+            "metrics_csv": "runs/designs/activations/attention_kv_full_value_hd64_kv8_v6_tl16_b128_p8_ppc2_w22_a40_wrapper/metrics.csv",
+            "platform": "nangate45",
+            "status": "ok",
+            "result_kind": "physical_metrics",
+            "param_hash": "014c101f",
+            "tag": "attention_kv_full_value_tile_nangate45_macro_frontier_5137e93f",
+            "result_path": "runs/designs/activations/attention_kv_full_value_hd64_kv8_v6_tl16_b128_p8_ppc2_w22_a40_wrapper/work/014c101f/result.json"
+          },
+          "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+          "metric_summary": {
+            "critical_path_ns": 0.7961,
+            "die_area": 93208.09,
+            "total_power_mw": 0.0325
+          }
+        },
+        {
+          "metrics_ref": {
+            "metrics_csv": "runs/designs/activations/attention_kv_full_value_hd64_kv8_v8_tl16_b128_p8_ppc2_w24_a40_wrapper/metrics.csv",
+            "platform": "nangate45",
+            "status": "ok",
+            "result_kind": "physical_metrics",
+            "param_hash": "07beada1",
+            "tag": "attention_kv_full_value_tile_nangate45_macro_frontier_d64a96fd",
+            "result_path": "runs/designs/activations/attention_kv_full_value_hd64_kv8_v8_tl16_b128_p8_ppc2_w24_a40_wrapper/work/07beada1/result.json"
+          },
+          "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+          "metric_summary": {
+            "critical_path_ns": 0.8825,
+            "die_area": 130100.883025,
+            "total_power_mw": 0.0339
+          }
+        }
+      ],
+      "trial_summary": {
+        "item_id": "l1_decoder_attention_mixed_precision_full_value_tile_v1",
+        "completed_trials": 1,
+        "success_count": 1,
+        "failure_count": 0,
+        "success_rate": 1.0,
+        "metrics": {
+          "critical_path_ns": {
+            "best": 0.7961,
+            "mean": 0.7961,
+            "median": 0.7961,
+            "max": 0.7961,
+            "range": 0.0,
+            "stddev": 0.0
+          },
+          "die_area": {
+            "best": 93208.09,
+            "mean": 93208.09,
+            "median": 93208.09,
+            "max": 93208.09,
+            "range": 0.0,
+            "stddev": 0.0
+          },
+          "total_power_mw": {
+            "best": 0.0325,
+            "mean": 0.0325,
+            "median": 0.0325,
+            "max": 0.0325,
+            "range": 0.0,
+            "stddev": 0.0
+          }
+        }
+      },
+      "source_refs": {
+        "trial_metrics_csvs": [
+          "runs/designs/activations/attention_kv_full_value_hd64_kv8_v6_tl16_b128_p8_ppc2_w22_a40_wrapper/metrics.csv",
+          "runs/designs/activations/attention_kv_full_value_hd64_kv8_v8_tl16_b128_p8_ppc2_w24_a40_wrapper/metrics.csv"
+        ],
+        "summary_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_mixed_precision_full_value_tile_v1/summary_stats.json",
+        "failure_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_mixed_precision_full_value_tile_v1/failure_stats.json",
+        "trial_table_csv": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_mixed_precision_full_value_tile_v1/trial_table.csv"
+      }
+    }
+  },
+  "developer_loop": {
+    "evaluation": {
+      "mode": "ppa_sweep",
+      "trial_policy": {
+        "seed_start": 0,
+        "trial_count": 1,
+        "stop_after_failures": 1
+      }
+    },
+    "abstraction": {
+      "layer": "attention_kv_full_value_tile"
+    },
+    "proposal_id": "prop_l1_decoder_attention_mixed_precision_full_value_tile_v1",
+    "proposal_path": "docs/proposals/prop_l1_decoder_attention_mixed_precision_full_value_tile_v1/proposal.json"
+  },
+  "submission_history": null,
+  "pr_payload": {
+    "branch": "eval/l1_decoder_attention_mixed_precision_full_value_tile_v1/s20260611t054747z",
+    "title": "eval: run mixed-precision full-value attention tile ppa",
+    "body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260611t054747z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l1_decoder_attention_mixed_precision_full_value_tile_v1"
+    },
+    "body_md": "## Summary\n- item_id: `l1_decoder_attention_mixed_precision_full_value_tile_v1`\n- run_key: `l1_decoder_attention_mixed_precision_full_value_tile_v1_run_78394da0c197180d`\n- layer: `layer1`\n- task_type: `l1_sweep`\n- status: `ok`\n- summary: `4/4 commands succeeded`\n- queue_snapshot: `control_plane/shadow_exports/review/l1_decoder_attention_mixed_precision_full_value_tile_v1/evaluated.json`\n- metrics_rows_count: `4`\n- review_artifact: `promotion_proposal` at `control_plane/shadow_exports/l1_promotions/l1_decoder_attention_mixed_precision_full_value_tile_v1.json`\n\n## Developer Context\n- proposal_id: `prop_l1_decoder_attention_mixed_precision_full_value_tile_v1`\n- proposal_path: `docs/proposals/prop_l1_decoder_attention_mixed_precision_full_value_tile_v1/proposal.json`\n- reviewer_first_read: `docs/proposals/prop_l1_decoder_attention_mixed_precision_full_value_tile_v1/proposal.json` plus `docs/developer_agent_review.md`\n- execution_source_commit: `1864fcf787a3ef4b833eaf4fdc5a3379679f6c88`\n- review_metadata_source_commit: `1864fcf787a3ef4b833eaf4fdc5a3379679f6c88`\n\n## Evaluation Mode\n- evaluation_mode: `ppa_sweep`\n- abstraction_layer: `attention_kv_full_value_tile`\n- evaluation_summary: `Physical metrics recorded from an accepted status=ok Layer 1 row.`\n\n## Checklist\n- [ ] Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge\n- [ ] Include metrics row references for each completed design\n- [ ] Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing\n",
+    "checklist": [
+      "Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge",
+      "Include metrics row references for each completed design",
+      "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ]
+  }
+}
