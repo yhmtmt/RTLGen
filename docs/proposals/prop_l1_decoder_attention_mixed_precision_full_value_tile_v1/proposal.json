@@ -1,0 +1,69 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_mixed_precision_full_value_tile_v1",
+  "created_utc": "2026-06-11T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "ppa",
+  "abstraction_layer": "attention_kv_full_value_tile",
+  "title": "Mixed-precision full-value attention tile PPA",
+  "hypothesis": "The Llama7B-shape mixed-precision quality proxy found Q8/K8/V6 with 24-bit score and 16-bit softmax weights as the lowest-cost proxy-passing candidate. Measuring this local full-value attention tile against a Q8/K8/V8 comparator will show whether the quality-approved mixed-precision path provides enough local PPA density improvement to revisit the area-blocked dual_mac schedule.",
+  "direct_comparison": {
+    "primary_question": "How much PPA improvement does the proxy-passing Q8/K8/V6 full-value attention tile provide versus the safer Q8/K8/V8 comparator and the existing Q8/V16 full-value anchor?",
+    "include": [
+      "Q8/K8/V6, score24, softmax-weight16, weighted-value22, hd64 tl16 p8 ppc2",
+      "Q8/K8/V8, score24, softmax-weight16, weighted-value24, hd64 tl16 p8 ppc2",
+      "same macro-style Nangate45 sweep as the existing full-value attention tile",
+      "core utilization 50 and 60",
+      "reference to l2_decoder_attention_mixed_precision_quality_llama7b_v1 as the quality gate"
+    ],
+    "exclude": [
+      "do not claim final Llama7B quality from this PPA item",
+      "do not change Q/K precision below 8 bits because q6 was risky in the proxy",
+      "do not re-run the full L2 scheduler in this item",
+      "do not measure a complete SRAM/NoC/producer-integrated attention subsystem"
+    ]
+  },
+  "expected_benefit": [
+    "turns the mixed-precision quality candidate into measured local datapath PPA",
+    "separates V6 density benefit from the safer V8 mixed-precision comparator",
+    "provides the missing measured input for a follow-up L2 feasibility update"
+  ],
+  "risks": [
+    "the wrapper uses deterministic internal stimulus and remains a local datapath macro proxy",
+    "score24/weight16 proxy passing is not final model-native Llama7B validation",
+    "the local tile area may be too small relative to the dense compute array area gap to change the top-level conclusion alone"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l1_decoder_attention_mixed_precision_full_value_tile_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure Nangate45 PPA for Q8/K8/V6 and Q8/K8/V8 mixed-precision full-value attention tiles selected by the Llama7B proxy quality gate.",
+      "evaluation_mode": "ppa",
+      "abstraction_layer": "attention_kv_full_value_tile",
+      "cost_class": "medium",
+      "comparison_role": "frontier_synthesis",
+      "paired_baseline_item_id": "l1_decoder_attention_full_value_tile_v1",
+      "depends_on_item_ids": [
+        "l1_decoder_attention_full_value_tile_v1",
+        "l2_decoder_attention_mixed_precision_quality_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "Use measured mixed-precision local tile PPA to decide whether to update the dual-stream feasibility model or pursue compute-array density instead."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/designs/activations/attention_kv_full_value_hd64_kv8_tl16_b128_p8_ppc2_w24_a40_wrapper/metrics.csv",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_precision_quality__l2_decoder_attention_mixed_precision_quality_llama7b_v1.json"
+  ],
+  "knowledge_refs": [
+    "scripts/generate_design.py",
+    "runs/campaigns/activations/attention_kv_full_value_tile/sweeps/nangate45_macro_frontier.json",
+    "runs/designs/activations/attention_kv_full_value_hd64_kv8_v6_tl16_b128_p8_ppc2_w22_a40_wrapper/config_attention_kv_full_value_hd64_kv8_v6_tl16_b128_p8_ppc2_w22_a40.json",
+    "runs/designs/activations/attention_kv_full_value_hd64_kv8_v8_tl16_b128_p8_ppc2_w24_a40_wrapper/config_attention_kv_full_value_hd64_kv8_v8_tl16_b128_p8_ppc2_w24_a40.json"
+  ]
+}
