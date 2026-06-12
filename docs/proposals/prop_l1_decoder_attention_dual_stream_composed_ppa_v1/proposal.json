@@ -1,0 +1,59 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_dual_stream_composed_ppa_v1",
+  "kind": "architecture",
+  "title": "Composed dual-stream attention datapath PPA",
+  "layer": "layer1",
+  "abstraction_layer": "decoder_attention_dual_stream_composed_datapath",
+  "status": "proposed",
+  "motivation": [
+    "The L2 int8-compute substitution result made the Q8/K8/V6 dual_mac schedule physically feasible, but it still substituted independently measured blocks into an analytic schedule model.",
+    "The next abstraction to remove is the local composed datapath/control cost of two int8 compute streams feeding shared softmax weights and two full-value streams.",
+    "A bounded Layer 1 PPA wrapper can measure the composed block before building a larger scheduler/SRAM/NoC wrapper."
+  ],
+  "direct_comparison": {
+    "primary_question": "How much PPA overhead appears when the int8 dense compute, softmax-weight, full-value streams, buffers, and local control are synthesized as one dual-stream block?",
+    "baseline": "l2_decoder_attention_mixed_precision_int8_compute_physical_feasibility_llama7b_v1",
+    "candidate": "l1_decoder_attention_dual_stream_composed_ppa_v1",
+    "metrics": [
+      "critical_path_ns",
+      "instance_area_um2",
+      "die_area",
+      "total_power_mw",
+      "stdcell_count"
+    ]
+  },
+  "expected_result": {
+    "direction": "measure_composition_overhead",
+    "reason": "Use measured composed datapath PPA to replace the current sum-of-parts area and clock assumptions in the Llama7B attention frontier."
+  },
+  "required_inputs": [
+    "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2/config.json",
+    "runs/campaigns/npu/attention_dual_stream_composed_v1/sweeps/nangate45_dual_stream_composed_hier.json",
+    "l1_npu_dense_gemm_tile_int8_v1",
+    "l2_decoder_attention_mixed_precision_int8_compute_physical_feasibility_llama7b_v1"
+  ],
+  "evaluation_requests": [
+    {
+      "item_id": "l1_decoder_attention_dual_stream_composed_ppa_v1",
+      "task_type": "l1_sweep",
+      "evaluation_mode": "frontier_closure",
+      "abstraction_layer": "decoder_attention_dual_stream_composed_datapath",
+      "comparison_role": "composition_overhead_anchor",
+      "paired_baseline_item_id": "l2_decoder_attention_mixed_precision_int8_compute_physical_feasibility_llama7b_v1",
+      "configs": [
+        "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/attention_dual_stream_composed_v1/sweeps/nangate45_dual_stream_composed_hier.json",
+      "out_root": "runs/designs/npu_blocks",
+      "depends_on": [
+        "l1_npu_dense_gemm_tile_int8_v1",
+        "l2_decoder_attention_mixed_precision_int8_compute_physical_feasibility_llama7b_v1"
+      ]
+    }
+  ],
+  "source_files": [
+    "npu/rtlgen/gen_attention_dual_stream_composed.py",
+    "npu/eval/check_attention_dual_stream_composed_guard.py",
+    "control_plane/control_plane/services/l1_task_generator.py"
+  ]
+}
