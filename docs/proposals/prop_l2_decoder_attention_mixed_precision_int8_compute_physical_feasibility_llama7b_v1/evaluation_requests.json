@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_decoder_attention_mixed_precision_int8_compute_physical_feasibility_llama7b_v1",
-  "source_commit": null,
+  "source_commit": "bc25e1758ad1d3fa1c436584db498c5d9fc653d4",
   "source_commit_note": "Dispatch should use the merge commit containing the int8 dense compute substitution abstraction.",
   "requested_items": [
     {
@@ -19,7 +19,12 @@
       "expected_result": {
         "direction": "close_dual_stream_area_gap_with_int8_compute",
         "reason": "The job should report whether measured int8 dense compute removes the dual_mac compute-area deficit under the same quality-gated mixed-precision schedule."
-      }
+      },
+      "status": "merged",
+      "merged_pr_number": 841,
+      "merge_commit": "bf3d3ff0d0912ed9411d35a416f19c0707120771",
+      "merged_utc": "2026-06-12T12:18:36.696542Z",
+      "notes": "Merged via PR #841 and merge bf3d3ff0d0912ed9411d35a416f19c0707120771 at 2026-06-12T12:18:36.696542Z."
     }
   ]
 }

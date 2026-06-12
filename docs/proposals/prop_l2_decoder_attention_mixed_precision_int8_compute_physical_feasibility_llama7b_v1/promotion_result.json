@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_mixed_precision_int8_compute_physical_feasibility_llama7b_v1",
+  "decision": "iterate",
+  "pr_number": 841,
+  "merge_commit": "bf3d3ff0d0912ed9411d35a416f19c0707120771",
+  "merged_utc": "2026-06-12T12:18:36.696542Z"
+}

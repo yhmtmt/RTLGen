@@ -1,0 +1,32 @@
+# Analysis Report
+
+## Candidate
+- `proposal_id`: `prop_l2_decoder_attention_mixed_precision_int8_compute_physical_feasibility_llama7b_v1`
+- `candidate_id`: `l2_decoder_attention_mixed_precision_int8_compute_physical_feasibility_llama7b_v1`
+
+## Evaluations Consumed
+- `l2_decoder_attention_mixed_precision_int8_compute_physical_feasibility_llama7b_v1`
+- `l2_decoder_attention_mixed_precision_int8_compute_physical_feasibility_llama7b_v1_run_7c3cfc94b24af65b`
+- source commit: `bc25e1758ad1d3fa1c436584db498c5d9fc653d4`
+- review: PR #841
+
+## Baseline Comparison
+- baseline_ref: `None`
+- baseline_item_id: `None`
+- outcome: `dual_stream_feasible`
+- summary: Decoder mixed-precision int8-compute physical feasibility evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_precision_int8_compute_physical_feasibility__l2_decoder_attention_mixed_precision_int8_compute_physical_feasibility_llama7b_v1.json: decision=dual_stream_feasible; precision_profile=q8_k8_v6_a24_s24_w16_int8_compute; best_requested_mode=dual_mac; best_requested_latency_us=1575.373891; best_requested_area_fit=True; best_requested_logic_slack_um2=216592520.1716; best_requested_compute_area_over_budget_um2=0.0; best_requested_required_compute_density_gain=0.452912; best_requested_compute_substitution_enabled=True; best_requested_substituted_compute_arch=dense_gemm_int8_16x8_k1_p1; best_requested_substituted_compute_area_um2=89654016.0; best_requested_compute_clock_ok=True; best_feasible_mode=dual_mac; best_feasible_latency_us=1575.373891; recommended_next_step=promote dual-stream schedule into a measured RTL/PPA wrapper.
+
+## Result
+- result: `iterate`
+- confidence level: merged accepted evidence
+- estimated optimization room: pending follow-on comparison
+- architecture conclusion robustness: staged evidence
+- summary: Decoder mixed-precision int8-compute physical feasibility evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_precision_int8_compute_physical_feasibility__l2_decoder_attention_mixed_precision_int8_compute_physical_feasibility_llama7b_v1.json: decision=dual_stream_feasible; precision_profile=q8_k8_v6_a24_s24_w16_int8_compute; best_requested_mode=dual_mac; best_requested_latency_us=1575.373891; best_requested_area_fit=True; best_requested_logic_slack_um2=216592520.1716; best_requested_compute_area_over_budget_um2=0.0; best_requested_required_compute_density_gain=0.452912; best_requested_compute_substitution_enabled=True; best_requested_substituted_compute_arch=dense_gemm_int8_16x8_k1_p1; best_requested_substituted_compute_area_um2=89654016.0; best_requested_compute_clock_ok=True; best_feasible_mode=dual_mac; best_feasible_latency_us=1575.373891; recommended_next_step=promote dual-stream schedule into a measured RTL/PPA wrapper.
+
+## Failures and Caveats
+- no additional caveats recorded during automatic finalization
+
+## Recommendation
+- `iterate`
+- reason: Decoder mixed-precision int8-compute physical feasibility evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_precision_int8_compute_physical_feasibility__l2_decoder_attention_mixed_precision_int8_compute_physical_feasibility_llama7b_v1.json: decision=dual_stream_feasible; precision_profile=q8_k8_v6_a24_s24_w16_int8_compute; best_requested_mode=dual_mac; best_requested_latency_us=1575.373891; best_requested_area_fit=True; best_requested_logic_slack_um2=216592520.1716; best_requested_compute_area_over_budget_um2=0.0; best_requested_required_compute_density_gain=0.452912; best_requested_compute_substitution_enabled=True; best_requested_substituted_compute_arch=dense_gemm_int8_16x8_k1_p1; best_requested_substituted_compute_area_um2=89654016.0; best_requested_compute_clock_ok=True; best_feasible_mode=dual_mac; best_feasible_latency_us=1575.373891; recommended_next_step=promote dual-stream schedule into a measured RTL/PPA wrapper.
+- next_action: inspect follow-on work after l2_decoder_attention_mixed_precision_int8_compute_physical_feasibility_llama7b_v1
