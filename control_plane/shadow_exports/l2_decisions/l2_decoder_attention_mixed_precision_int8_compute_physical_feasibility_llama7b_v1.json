@@ -1,6 +1,6 @@
 {
   "version": 0.1,
-  "generated_utc": "2026-06-11T13:33:52.538490Z",
+  "generated_utc": "2026-06-12T12:16:47.720653Z",
   "item_id": "l2_decoder_attention_mixed_precision_int8_compute_physical_feasibility_llama7b_v1",
   "run_key": "l2_decoder_attention_mixed_precision_int8_compute_physical_feasibility_llama7b_v1_run_7c3cfc94b24af65b",
   "layer": "layer2",
@@ -8,7 +8,7 @@
   "platform": "nangate45",
   "task_type": "l2_campaign",
   "source_commit": "bc25e1758ad1d3fa1c436584db498c5d9fc653d4",
-  "review_metadata_source_commit": "bc25e1758ad1d3fa1c436584db498c5d9fc653d4",
+  "review_metadata_source_commit": "20d0a9a6029f74d801b6263ac83aeac5b12d4788",
   "objective": "Substitute measured int8 dense GEMM compute into the Q8/K8/V6 dual-stream physical feasibility model.",
   "input_manifest": {
     "sweeps": [
@@ -73,8 +73,8 @@
     "abstraction_layer": "decoder_attention_mixed_precision_int8_compute_physical_feasibility",
     "expected_direction": "close_dual_stream_area_gap_with_int8_compute",
     "expected_reason": "The job should report whether measured signed-int8 dense compute removes the dual_mac compute-area deficit under the same quality-gated mixed-precision schedule.",
-    "summary": "Ranking/frontier evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.",
-    "outcome": "ranking_recorded",
+    "summary": "Decoder mixed-precision int8-compute physical feasibility evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_precision_int8_compute_physical_feasibility__l2_decoder_attention_mixed_precision_int8_compute_physical_feasibility_llama7b_v1.json: decision=dual_stream_feasible; precision_profile=q8_k8_v6_a24_s24_w16_int8_compute; best_requested_mode=dual_mac; best_requested_latency_us=1575.373891; best_requested_area_fit=True; best_requested_logic_slack_um2=216592520.1716; best_requested_compute_area_over_budget_um2=0.0; best_requested_required_compute_density_gain=0.452912; best_requested_compute_substitution_enabled=True; best_requested_substituted_compute_arch=dense_gemm_int8_16x8_k1_p1; best_requested_substituted_compute_area_um2=89654016.0; best_requested_compute_clock_ok=True; best_feasible_mode=dual_mac; best_feasible_latency_us=1575.373891; recommended_next_step=promote dual-stream schedule into a measured RTL/PPA wrapper.",
+    "outcome": "dual_stream_feasible",
     "expectation_status": "unspecified"
   },
   "proposal_assessment": {
@@ -84,12 +84,43 @@
     "primary_question": "Does measured int8 dense compute make the Q8/K8/V6 dual_mac Llama7B schedule physically feasible under the same schedule?",
     "evaluation_mode": "frontier_detail",
     "comparison_role": "frontier_closure",
-    "outcome": "ranking_recorded",
-    "summary": "Ranking/frontier evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.",
+    "outcome": "dual_stream_feasible",
+    "summary": "Decoder mixed-precision int8-compute physical feasibility evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_precision_int8_compute_physical_feasibility__l2_decoder_attention_mixed_precision_int8_compute_physical_feasibility_llama7b_v1.json: decision=dual_stream_feasible; precision_profile=q8_k8_v6_a24_s24_w16_int8_compute; best_requested_mode=dual_mac; best_requested_latency_us=1575.373891; best_requested_area_fit=True; best_requested_logic_slack_um2=216592520.1716; best_requested_compute_area_over_budget_um2=0.0; best_requested_required_compute_density_gain=0.452912; best_requested_compute_substitution_enabled=True; best_requested_substituted_compute_arch=dense_gemm_int8_16x8_k1_p1; best_requested_substituted_compute_area_um2=89654016.0; best_requested_compute_clock_ok=True; best_feasible_mode=dual_mac; best_feasible_latency_us=1575.373891; recommended_next_step=promote dual-stream schedule into a measured RTL/PPA wrapper.",
     "baseline_ref": null,
     "baseline_item_id": null,
     "matched_row_count": 0,
-    "matched_rows": []
+    "matched_rows": [],
+    "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_precision_int8_compute_physical_feasibility__l2_decoder_attention_mixed_precision_int8_compute_physical_feasibility_llama7b_v1.json",
+    "decoder_quality": {
+      "diagnosis": {
+        "best_area_fit_latency_us": 1575.373891,
+        "best_area_fit_mode": "dual_mac",
+        "best_feasible_latency_us": 1575.373891,
+        "best_feasible_mode": "dual_mac",
+        "best_requested_area_fit": true,
+        "best_requested_compute_area_over_budget_um2": 0.0,
+        "best_requested_compute_clock_ok": true,
+        "best_requested_compute_substitution_enabled": true,
+        "best_requested_latency_us": 1575.373891,
+        "best_requested_logic_slack_um2": 216592520.1716,
+        "best_requested_mode": "dual_mac",
+        "best_requested_required_compute_density_gain": 0.452912,
+        "best_requested_substituted_compute_arch": "dense_gemm_int8_16x8_k1_p1",
+        "best_requested_substituted_compute_area_um2": 89654016.0,
+        "decision": "dual_stream_feasible",
+        "physical_feasible_rows": 3,
+        "precision_profile": "q8_k8_v6_a24_s24_w16_int8_compute",
+        "recommended_next_step": "promote dual-stream schedule into a measured RTL/PPA wrapper",
+        "source_rows_used": 3
+      },
+      "assumptions": [
+        "The dual_mac schedule requires an explicit compute_area_multiplier from the sub-tile scheduler.",
+        "Measured full-value tile and softmax-weight generator PPA are used for local datapath overhead only.",
+        "The dense GEMM compute array is treated as already packed into the current logic budget; extra dual-stream compute must fit that same budget to be feasible.",
+        "Buffer capacity is checked against measured local SRAM bytes; an optional buffer-area proxy can be added for sensitivity but defaults to zero to avoid double-counting measured local SRAM.",
+        "When compute-block substitution is enabled, measured block area/power/clock replace the source dense compute block, but the upstream schedule latency is not recomputed; this is an area-feasibility substitution and a conservative latency view when the substituted block clock is no slower than the source clock."
+      ]
+    }
   },
   "source_refs": {
     "best_point_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_mixed_precision_physical_feasibility_llama7b_v1__l2_decoder_attention_mixed_precision_int8_compute_physical_feasibility_llama7b_v1/best_point.json",
@@ -112,6 +143,8 @@
         "descriptors_bin": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_mixed_precision_physical_feasibility_llama7b_v1__l2_decoder_attention_mixed_precision_int8_compute_physical_feasibility_llama7b_v1/artifacts/mapper/fp16_nm1/mlp2/descriptors.bin",
         "perf_trace_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_mixed_precision_physical_feasibility_llama7b_v1__l2_decoder_attention_mixed_precision_int8_compute_physical_feasibility_llama7b_v1/artifacts/perf/fp16_nm1/mlp2/trace.json"
       }
-    ]
+    ],
+    "decoder_attention_mixed_precision_int8_compute_physical_feasibility_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_precision_int8_compute_physical_feasibility__l2_decoder_attention_mixed_precision_int8_compute_physical_feasibility_llama7b_v1.json",
+    "decoder_attention_mixed_precision_int8_compute_physical_feasibility_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_precision_int8_compute_physical_feasibility__l2_decoder_attention_mixed_precision_int8_compute_physical_feasibility_llama7b_v1.md"
   }
 }
