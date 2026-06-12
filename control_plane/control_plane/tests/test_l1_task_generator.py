@@ -411,6 +411,69 @@ def _write_example_dense_gemm_tile_repo(repo_root: Path) -> tuple[str, str]:
     )
 
 
+def _write_example_dual_stream_composed_repo(repo_root: Path) -> tuple[str, str]:
+    design_dir = repo_root / "runs" / "designs" / "npu_blocks" / "attention_dual_stream_composed_smoke"
+    design_dir.mkdir(parents=True, exist_ok=True)
+    config_path = design_dir / "config.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "top_name": "attention_dual_stream_composed_smoke",
+                "attention_dual_stream_composed": {
+                    "streams": 2,
+                    "array_m": 2,
+                    "array_n": 2,
+                    "k_unroll": 1,
+                    "softmax_row_elems": 4,
+                    "softmax_accum_bits": 16,
+                    "reciprocal_bits": 10,
+                    "value_bits": 6,
+                    "value_lanes": 4,
+                    "partials": 4,
+                    "partials_per_cycle": 2,
+                    "stream_buffer_bits": 128,
+                },
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    sweep_path = (
+        repo_root
+        / "runs"
+        / "campaigns"
+        / "npu"
+        / "attention_dual_stream_composed_v1"
+        / "sweeps"
+        / "nangate45_dual_stream_composed_hier.json"
+    )
+    sweep_path.parent.mkdir(parents=True, exist_ok=True)
+    sweep_path.write_text(
+        json.dumps(
+            {
+                "flow_params": {
+                    "CLOCK_PERIOD": [10.0],
+                    "DIE_AREA": ["0 0 1200 1200"],
+                    "CORE_AREA": ["50 50 1150 1150"],
+                    "SYNTH_HIERARCHICAL": [1],
+                    "SYNTH_KEEP_MODULES": [
+                        "int8_mac_s8s8_acc24 attention_softmax_weight_int8_r8_acc24_recip_q10_like"
+                    ],
+                },
+                "tag_prefix": "attention_dual_stream_composed_v1",
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    return (
+        str(config_path.relative_to(repo_root)),
+        str(sweep_path.relative_to(repo_root)),
+    )
+
+
 
 def test_generate_l1_sweep_task_creates_ready_work_item() -> None:
     with tempfile.TemporaryDirectory() as td:
@@ -1081,6 +1144,59 @@ def test_generate_l1_sweep_task_supports_dense_gemm_tile_configs() -> None:
             ]
             assert work_item.task_request.request_payload["developer_loop"]["abstraction"] == {
                 "layer": "architecture_block"
+            }
+
+
+def test_generate_l1_sweep_task_supports_attention_dual_stream_composed_configs() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        config_path, sweep_path = _write_example_dual_stream_composed_repo(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l1_sweep_task(
+                session,
+                Layer1SweepGenerateRequest(
+                    repo_root=str(repo_root),
+                    sweep_path=sweep_path,
+                    config_paths=[config_path],
+                    platform="nangate45",
+                    out_root="runs/designs/npu_blocks",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    abstraction_layer="decoder_attention_dual_stream_composed_datapath",
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            assert result.status == "applied"
+            assert [command["name"] for command in work_item.command_manifest] == [
+                "build_generator",
+                "generate_attention_dual_stream_composed_rtl",
+                "check_attention_dual_stream_composed_guard",
+                "run_block_sweep",
+                "build_runs_index",
+                "validate",
+            ]
+            assert work_item.command_manifest[1]["run"] == (
+                "export PATH=/oss-cad-suite/bin:$PATH && "
+                "python3 npu/rtlgen/gen_attention_dual_stream_composed.py "
+                "--config runs/designs/npu_blocks/attention_dual_stream_composed_smoke/config.json "
+                "--out runs/designs/npu_blocks/attention_dual_stream_composed_smoke/verilog"
+            )
+            assert work_item.command_manifest[2]["run"] == (
+                "python3 npu/eval/check_attention_dual_stream_composed_guard.py "
+                "--design-dir runs/designs/npu_blocks/attention_dual_stream_composed_smoke"
+            )
+            assert "--top attention_dual_stream_composed_smoke" in work_item.command_manifest[3]["run"]
+            assert work_item.expected_outputs == [
+                "runs/designs/npu_blocks/attention_dual_stream_composed_smoke/metrics.csv"
+            ]
+            assert work_item.task_request.request_payload["developer_loop"]["abstraction"] == {
+                "layer": "decoder_attention_dual_stream_composed_datapath"
             }
 
 

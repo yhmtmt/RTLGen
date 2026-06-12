@@ -1,0 +1,30 @@
+{
+  "flow_params": {
+    "TAG": [
+      "attention_dual_stream_composed_v1_hier"
+    ],
+    "FLOW_VARIANT": [
+      "attention_dual_stream_composed_v1_hier"
+    ],
+    "CLOCK_PERIOD": [
+      10.0
+    ],
+    "DIE_AREA": [
+      "0 0 2500 2500"
+    ],
+    "CORE_AREA": [
+      "50 50 2450 2450"
+    ],
+    "PLACE_DENSITY": [
+      0.30,
+      0.40
+    ],
+    "SYNTH_HIERARCHICAL": [
+      1
+    ],
+    "SYNTH_KEEP_MODULES": [
+      "int8_mac_s8s8_acc24 attention_softmax_weight_int8_r8_acc24_recip_q10_like attention_full_value_stream_q8v6_p8_ppc2"
+    ]
+  },
+  "tag_prefix": "attention_dual_stream_composed_v1"
+}
