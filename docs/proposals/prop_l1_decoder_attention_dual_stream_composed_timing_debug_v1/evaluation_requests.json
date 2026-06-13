@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l1_decoder_attention_dual_stream_composed_timing_debug_v1",
-  "source_commit": null,
+  "source_commit": "75b6a87cbd4fd380f501ebcfcac0c024f04650e4",
   "source_commit_note": "Dispatch should use the merge commit containing extract_openroad_timing_summary.py and the composed dual-stream timing_debug_report.md task hook.",
   "requested_items": [
     {
@@ -26,7 +26,12 @@
       "expected_result": {
         "direction": "diagnose_timing_bottleneck",
         "reason": "The output should distinguish whether the long path is MAC-to-softmax composition, high-fan-in result folding, or value accumulation/control fan-in."
-      }
+      },
+      "status": "merged",
+      "merged_pr_number": 847,
+      "merge_commit": "931d9763ac673f27b573a5e9c86c1a0b3f8f7753",
+      "merged_utc": "2026-06-13T12:11:53.933057Z",
+      "notes": "Merged via PR #847 and merge 931d9763ac673f27b573a5e9c86c1a0b3f8f7753 at 2026-06-13T12:11:53.933057Z."
     }
   ]
 }
