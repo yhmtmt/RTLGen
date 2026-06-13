@@ -1178,6 +1178,7 @@ def test_generate_l1_sweep_task_supports_attention_dual_stream_composed_configs(
                 "generate_attention_dual_stream_composed_rtl",
                 "check_attention_dual_stream_composed_guard",
                 "run_block_sweep",
+                "extract_attention_dual_stream_timing_paths",
                 "build_runs_index",
                 "validate",
             ]
@@ -1192,8 +1193,15 @@ def test_generate_l1_sweep_task_supports_attention_dual_stream_composed_configs(
                 "--design-dir runs/designs/npu_blocks/attention_dual_stream_composed_smoke"
             )
             assert "--top attention_dual_stream_composed_smoke" in work_item.command_manifest[3]["run"]
+            assert work_item.command_manifest[4]["run"] == (
+                "python3 npu/eval/extract_openroad_timing_summary.py "
+                "--design-dir runs/designs/npu_blocks/attention_dual_stream_composed_smoke "
+                "--out runs/designs/npu_blocks/attention_dual_stream_composed_smoke/timing_debug_report.md "
+                "--max-paths 8"
+            )
             assert work_item.expected_outputs == [
-                "runs/designs/npu_blocks/attention_dual_stream_composed_smoke/metrics.csv"
+                "runs/designs/npu_blocks/attention_dual_stream_composed_smoke/metrics.csv",
+                "runs/designs/npu_blocks/attention_dual_stream_composed_smoke/timing_debug_report.md",
             ]
             assert work_item.task_request.request_payload["developer_loop"]["abstraction"] == {
                 "layer": "decoder_attention_dual_stream_composed_datapath"
