@@ -21,6 +21,24 @@ Path Type: max
   data arrival time              23.8349
   data required time             20.0000
   slack (VIOLATED)               -3.8349
+
+==========================================================================
+route report_power
+--------------------------------------------------------------------------
+This section must not be included in the path excerpt.
+""",
+        encoding="utf-8",
+    )
+    floorplan_report = report_dir / "2_floorplan_final.rpt"
+    floorplan_report.write_text(
+        """Startpoint: seed_state[0] (rising edge-triggered flip-flop clocked by clk)
+Endpoint: softmax_unit/weight_hash[8] (rising edge-triggered flip-flop clocked by clk)
+Path Group: clk
+Path Type: max
+
+  data arrival time              29.0000
+  data required time             10.0000
+  slack (VIOLATED)               -19.0000
 """,
         encoding="utf-8",
     )
@@ -68,7 +86,12 @@ Path Type: max
     )
 
     report = out_path.read_text(encoding="utf-8")
-    assert "path_block_count: 1" in report
+    assert "raw_path_block_count: 2" in report
+    assert "unique_path_block_count: 2" in report
+    assert "preferred_stage: `route`" in report
     assert "stream_buf_reg[0]" in report
     assert "softmax_unit/sum_reg[7]" in report
     assert "-3.8349" in report
+    assert "Worst Timing Paths Across All Stages" in report
+    assert report.index("stream_buf_reg[0]") < report.index("seed_state[0]")
+    assert "This section must not be included" not in report

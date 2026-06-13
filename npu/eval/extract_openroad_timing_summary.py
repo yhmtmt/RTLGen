@@ -24,6 +24,8 @@ SUMMARY_TOKENS = (
 @dataclass(frozen=True)
 class TimingPath:
     source: Path
+    stage: str
+    stage_rank: int
     startpoint: str
     endpoint: str
     path_group: str
@@ -32,6 +34,19 @@ class TimingPath:
     arrival: float | None
     required: float | None
     excerpt: list[str]
+
+
+STAGE_PATTERNS: tuple[tuple[str, str, int], ...] = (
+    ("6_finish", "finish", 0),
+    ("5_route", "route", 1),
+    ("route", "route", 1),
+    ("4_cts", "cts", 2),
+    ("cts", "cts", 2),
+    ("3_resizer", "resizer", 3),
+    ("3_detailed_place", "detailed_place", 4),
+    ("3_global_place", "global_place", 5),
+    ("2_floorplan", "floorplan", 6),
+)
 
 
 def _float_or_none(value: str | None) -> float | None:
@@ -66,6 +81,28 @@ def _read_limited(path: Path, *, max_bytes: int) -> str | None:
         return None
 
 
+def report_stage(path: Path) -> tuple[str, int]:
+    name = path.name.lower()
+    for pattern, stage, rank in STAGE_PATTERNS:
+        if pattern in name:
+            return stage, rank
+    return "other", 99
+
+
+def _trim_timing_block(lines: list[str]) -> list[str]:
+    slack_index = None
+    for index, line in enumerate(lines):
+        if "slack" in line.lower():
+            slack_index = index
+            break
+    if slack_index is None:
+        return lines
+    for index in range(slack_index + 1, len(lines)):
+        if lines[index].startswith("==="):
+            return lines[:index]
+    return lines
+
+
 def extract_timing_paths(path: Path, *, max_bytes: int) -> list[TimingPath]:
     text = _read_limited(path, max_bytes=max_bytes)
     if text is None or "Startpoint:" not in text:
@@ -75,7 +112,7 @@ def extract_timing_paths(path: Path, *, max_bytes: int) -> list[TimingPath]:
     for raw_block in re.split(r"(?=^Startpoint:)", text, flags=re.MULTILINE):
         if not raw_block.startswith("Startpoint:"):
             continue
-        lines = raw_block.strip().splitlines()
+        lines = _trim_timing_block(raw_block.strip().splitlines())
         block = "\n".join(lines)
         slack = None
         arrival = None
@@ -88,9 +125,12 @@ def extract_timing_paths(path: Path, *, max_bytes: int) -> list[TimingPath]:
                 arrival = _last_number(line)
             elif required is None and "data required time" in lower:
                 required = _last_number(line)
+        stage, stage_rank = report_stage(path)
         paths.append(
             TimingPath(
                 source=path,
+                stage=stage,
+                stage_rank=stage_rank,
                 startpoint=_field(r"^Startpoint:\s*(.+)$", block),
                 endpoint=_field(r"^Endpoint:\s*(.+)$", block),
                 path_group=_field(r"^Path Group:\s*(.+)$", block),
@@ -102,6 +142,26 @@ def extract_timing_paths(path: Path, *, max_bytes: int) -> list[TimingPath]:
             )
         )
     return paths
+
+
+def _dedupe_timing_paths(paths: Iterable[TimingPath]) -> list[TimingPath]:
+    seen: set[tuple[Path, str, str, str, float | None, float | None, float | None]] = set()
+    result: list[TimingPath] = []
+    for path in paths:
+        key = (
+            path.source,
+            path.startpoint,
+            path.endpoint,
+            path.path_group,
+            path.slack,
+            path.arrival,
+            path.required,
+        )
+        if key in seen:
+            continue
+        seen.add(key)
+        result.append(path)
+    return result
 
 
 def _condense_excerpt(lines: list[str]) -> list[str]:
@@ -193,6 +253,11 @@ def candidate_report_paths(row: dict[str, str]) -> list[Path]:
     return _dedupe(candidates)
 
 
+def _report_path_sort_key(path: Path) -> tuple[int, str]:
+    _, rank = report_stage(path)
+    return rank, str(path)
+
+
 def _summary_lines(path: Path, *, max_bytes: int) -> list[str]:
     text = _read_limited(path, max_bytes=max_bytes)
     if text is None:
@@ -225,6 +290,43 @@ def _sorted_metric_rows(rows: list[dict[str, str]]) -> list[dict[str, str]]:
             str(row.get("param_hash", "")),
         ),
     )
+
+
+def _timing_path_sort_key(path: TimingPath) -> tuple[bool, float, str, str]:
+    return path.slack is None, path.slack or 0.0, str(path.source), path.endpoint
+
+
+def _preferred_stage_paths(paths: list[TimingPath]) -> tuple[str | None, list[TimingPath]]:
+    if not paths:
+        return None, []
+    best_rank = min(path.stage_rank for path in paths)
+    selected = [path for path in paths if path.stage_rank == best_rank]
+    stage = selected[0].stage if selected else None
+    return stage, sorted(selected, key=_timing_path_sort_key)
+
+
+def _append_timing_path_section(lines: list[str], paths: list[TimingPath], *, max_paths: int) -> None:
+    for index, path in enumerate(paths[:max_paths], start=1):
+        lines.extend(
+            [
+                f"### Path {index}",
+                "",
+                f"- source: `{path.source}`",
+                f"- stage: `{path.stage}`",
+                f"- startpoint: `{path.startpoint}`",
+                f"- endpoint: `{path.endpoint}`",
+                f"- path_group: `{path.path_group}`",
+                f"- path_type: `{path.path_type}`",
+                f"- slack: `{_format_number(path.slack)}`",
+                f"- data_arrival_time: `{_format_number(path.arrival)}`",
+                f"- data_required_time: `{_format_number(path.required)}`",
+                "",
+                "```text",
+                *path.excerpt,
+                "```",
+                "",
+            ]
+        )
 
 
 def build_report(
@@ -276,7 +378,7 @@ def build_report(
         )
         candidates = candidate_report_paths(row)
         inspected.extend(candidates)
-        for candidate in candidates:
+        for candidate in sorted(candidates, key=_report_path_sort_key):
             paths = extract_timing_paths(candidate, max_bytes=max_bytes)
             all_paths.extend(paths)
             if not paths:
@@ -284,7 +386,9 @@ def build_report(
                 if summary:
                     summary_by_file[str(candidate)] = summary
 
-    sorted_paths = sorted(all_paths, key=lambda path: (path.slack is None, path.slack or 0.0))[:max_paths]
+    unique_paths = _dedupe_timing_paths(all_paths)
+    preferred_stage, preferred_paths = _preferred_stage_paths(unique_paths)
+    all_stage_paths = sorted(unique_paths, key=_timing_path_sort_key)
     lines.extend(
         [
             "",
@@ -293,7 +397,7 @@ def build_report(
         ]
     )
     if inspected:
-        for path in _dedupe(inspected):
+        for path in sorted(_dedupe(inspected), key=_report_path_sort_key):
             lines.append(f"- `{path}`")
     else:
         lines.append("- none")
@@ -301,33 +405,16 @@ def build_report(
     lines.extend(
         [
             "",
-            "## Extracted Timing Paths",
+            "## Preferred Final-Stage Timing Paths",
             "",
-            f"- path_block_count: {len(all_paths)}",
+            f"- raw_path_block_count: {len(all_paths)}",
+            f"- unique_path_block_count: {len(unique_paths)}",
+            f"- preferred_stage: `{preferred_stage or ''}`",
             "",
         ]
     )
-    if sorted_paths:
-        for index, path in enumerate(sorted_paths, start=1):
-            lines.extend(
-                [
-                    f"### Path {index}",
-                    "",
-                    f"- source: `{path.source}`",
-                    f"- startpoint: `{path.startpoint}`",
-                    f"- endpoint: `{path.endpoint}`",
-                    f"- path_group: `{path.path_group}`",
-                    f"- path_type: `{path.path_type}`",
-                    f"- slack: `{_format_number(path.slack)}`",
-                    f"- data_arrival_time: `{_format_number(path.arrival)}`",
-                    f"- data_required_time: `{_format_number(path.required)}`",
-                    "",
-                    "```text",
-                    *path.excerpt,
-                    "```",
-                    "",
-                ]
-            )
+    if preferred_paths:
+        _append_timing_path_section(lines, preferred_paths, max_paths=max_paths)
     else:
         lines.append("No report_checks-style Startpoint/Endpoint path blocks were found.")
         if summary_by_file:
@@ -337,6 +424,15 @@ def build_report(
                 lines.append("")
                 lines.extend(f"- {line}" for line in summary)
                 lines.append("")
+    if all_stage_paths and all_stage_paths != preferred_paths:
+        lines.extend(
+            [
+                "",
+                "## Worst Timing Paths Across All Stages",
+                "",
+            ]
+        )
+        _append_timing_path_section(lines, all_stage_paths, max_paths=max_paths)
 
     return "\n".join(lines).rstrip() + "\n"
 
