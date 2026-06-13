@@ -51,6 +51,26 @@
       "depends_on": [
         "l1_decoder_attention_dual_stream_composed_ppa_v1"
       ]
+    },
+    {
+      "item_id": "l1_decoder_attention_dual_stream_composed_timing_debug_final_stage_v1",
+      "task_type": "l1_sweep",
+      "evaluation_mode": "frontier_diagnosis",
+      "abstraction_layer": "decoder_attention_dual_stream_composed_datapath",
+      "comparison_role": "final_stage_critical_path_diagnosis",
+      "paired_baseline_item_id": "l1_decoder_attention_dual_stream_composed_timing_debug_v1",
+      "configs": [
+        "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/attention_dual_stream_composed_v1/sweeps/nangate45_dual_stream_composed_hier.json",
+      "out_root": "runs/designs/npu_blocks",
+      "expected_outputs": [
+        "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2/metrics.csv",
+        "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2/timing_debug_report.md"
+      ],
+      "depends_on": [
+        "l1_decoder_attention_dual_stream_composed_timing_debug_v1"
+      ]
     }
   ],
   "source_files": [

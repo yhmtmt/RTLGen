@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l1_decoder_attention_dual_stream_composed_timing_debug_v1",
-  "source_commit": "75b6a87cbd4fd380f501ebcfcac0c024f04650e4",
-  "source_commit_note": "Dispatch should use the merge commit containing extract_openroad_timing_summary.py and the composed dual-stream timing_debug_report.md task hook.",
+  "source_commit": "46a57a07cc68dff27c8e8ea7b4a18f82ce3f581b",
+  "source_commit_note": "Dispatch the final-stage diagnostic rerun using the merge commit containing final-stage timing report preference in extract_openroad_timing_summary.py.",
   "requested_items": [
     {
       "item_id": "l1_decoder_attention_dual_stream_composed_timing_debug_v1",
@@ -32,6 +32,32 @@
       "merge_commit": "931d9763ac673f27b573a5e9c86c1a0b3f8f7753",
       "merged_utc": "2026-06-13T12:11:53.933057Z",
       "notes": "Merged via PR #847 and merge 931d9763ac673f27b573a5e9c86c1a0b3f8f7753 at 2026-06-13T12:11:53.933057Z."
+    },
+    {
+      "item_id": "l1_decoder_attention_dual_stream_composed_timing_debug_final_stage_v1",
+      "task_type": "l1_sweep",
+      "objective": "Rerun the composed Q8/K8/V6 dual-stream attention datapath PPA and publish timing_debug_report.md with final-stage timing paths prioritized over earlier floorplan/global-place paths.",
+      "evaluation_mode": "frontier_diagnosis",
+      "abstraction_layer": "decoder_attention_dual_stream_composed_datapath",
+      "comparison_role": "final_stage_critical_path_diagnosis",
+      "paired_baseline_item_id": "l1_decoder_attention_dual_stream_composed_timing_debug_v1",
+      "configs": [
+        "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/attention_dual_stream_composed_v1/sweeps/nangate45_dual_stream_composed_hier.json",
+      "out_root": "runs/designs/npu_blocks",
+      "expected_outputs": [
+        "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2/metrics.csv",
+        "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2/timing_debug_report.md"
+      ],
+      "depends_on": [
+        "l1_decoder_attention_dual_stream_composed_timing_debug_v1"
+      ],
+      "expected_result": {
+        "direction": "diagnose_final_stage_timing_bottleneck",
+        "reason": "The preferred timing section should identify the latest available final route or finish report paths, while preserving earlier-stage worst paths only as context."
+      },
+      "status": "pending"
     }
   ]
 }
