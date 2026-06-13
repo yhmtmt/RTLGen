@@ -1,0 +1,62 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_dual_stream_composed_timing_debug_v1",
+  "kind": "diagnostic",
+  "title": "Composed dual-stream attention timing path diagnosis",
+  "layer": "layer1",
+  "abstraction_layer": "decoder_attention_dual_stream_composed_datapath",
+  "status": "proposed",
+  "motivation": [
+    "The composed dual-stream attention PPA result measured a critical path near 24 ns, roughly four times slower than the prior local softmax and schedule-clock assumptions.",
+    "The committed PPA artifact contained summary metrics but did not include OpenROAD report_checks-style path evidence, so the dominant register-to-register path could only be inferred from the RTL structure.",
+    "A targeted rerun should publish a lightweight timing_debug_report.md artifact that names the actual startpoint, endpoint, slack, and timing report source for the slowest path blocks."
+  ],
+  "direct_comparison": {
+    "primary_question": "Which concrete OpenROAD timing paths dominate the composed dual-stream attention datapath critical path?",
+    "baseline": "l1_decoder_attention_dual_stream_composed_ppa_v1",
+    "candidate": "l1_decoder_attention_dual_stream_composed_timing_debug_v1",
+    "metrics": [
+      "critical_path_ns",
+      "timing_path_startpoint",
+      "timing_path_endpoint",
+      "timing_path_slack",
+      "timing_debug_report"
+    ]
+  },
+  "expected_result": {
+    "direction": "diagnose_timing_bottleneck",
+    "reason": "Use concrete timing paths to decide whether the next fix should pipeline MAC-to-softmax composition, reduce hash/fold fan-in, or split local value accumulation."
+  },
+  "required_inputs": [
+    "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2/config.json",
+    "runs/campaigns/npu/attention_dual_stream_composed_v1/sweeps/nangate45_dual_stream_composed_hier.json",
+    "l1_decoder_attention_dual_stream_composed_ppa_v1"
+  ],
+  "evaluation_requests": [
+    {
+      "item_id": "l1_decoder_attention_dual_stream_composed_timing_debug_v1",
+      "task_type": "l1_sweep",
+      "evaluation_mode": "frontier_diagnosis",
+      "abstraction_layer": "decoder_attention_dual_stream_composed_datapath",
+      "comparison_role": "critical_path_diagnosis",
+      "paired_baseline_item_id": "l1_decoder_attention_dual_stream_composed_ppa_v1",
+      "configs": [
+        "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/attention_dual_stream_composed_v1/sweeps/nangate45_dual_stream_composed_hier.json",
+      "out_root": "runs/designs/npu_blocks",
+      "expected_outputs": [
+        "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2/metrics.csv",
+        "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2/timing_debug_report.md"
+      ],
+      "depends_on": [
+        "l1_decoder_attention_dual_stream_composed_ppa_v1"
+      ]
+    }
+  ],
+  "source_files": [
+    "npu/rtlgen/gen_attention_dual_stream_composed.py",
+    "npu/eval/check_attention_dual_stream_composed_guard.py",
+    "npu/eval/extract_openroad_timing_summary.py",
+    "control_plane/control_plane/services/l1_task_generator.py"
+  ]
+}
