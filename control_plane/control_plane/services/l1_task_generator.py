@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import timezone
 from hashlib import sha256
 import json
@@ -65,6 +65,7 @@ class Layer1ConfigTarget:
     design_name: str
     expected_metrics_path: str
     commands: list[dict[str, str]]
+    expected_report_paths: list[str] = field(default_factory=list)
 
 
 def _with_oss_cad_path(command: str) -> str:
@@ -521,6 +522,7 @@ def _read_config_target(
             design_kind="block",
             design_name=design_name,
             expected_metrics_path=f"{design_dir}/metrics.csv",
+            expected_report_paths=[f"{design_dir}/timing_debug_report.md"],
             commands=[
                 {
                     "name": "build_generator",
@@ -556,6 +558,15 @@ def _read_config_target(
                         + (f"--make_target {make_target} " if make_target else "")
                         + "--skip_existing"
                         )
+                    ),
+                },
+                {
+                    "name": "extract_attention_dual_stream_timing_paths",
+                    "run": (
+                        "python3 npu/eval/extract_openroad_timing_summary.py "
+                        f"--design-dir {design_dir} "
+                        f"--out {design_dir}/timing_debug_report.md "
+                        "--max-paths 8"
                     ),
                 },
             ],
@@ -834,7 +845,10 @@ def generate_l1_sweep_task(session: Session, request: Layer1SweepGenerateRequest
             sweep_path=sweep_path,
             config_paths=config_args,
         )
-    expected_outputs = [target.expected_metrics_path for target in targets]
+    expected_outputs = []
+    for target in targets:
+        expected_outputs.append(target.expected_metrics_path)
+        expected_outputs.extend(target.expected_report_paths)
 
     item_id = request.item_id or _default_item_id(
         sweep_path=sweep_path,
