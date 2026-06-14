@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Generate a composed dual-stream attention datapath PPA harness.
+"""Generate a composed dual-stream attention datapath harness.
 
 The generated top keeps the external boundary narrow while composing the local
 datapath pieces used by the Llama7B mixed-precision dual-stream feasibility
 model: two int8 dense compute streams, a shared int8 softmax-weight generator,
 two q8/v6 full-value streams, stream buffers, and simple start/done control.
-Every internal result is folded into a visible hash to prevent dead-code
-elimination during synthesis.
+By default the PPA harness exposes datapath outputs directly. Equivalence-only
+hash folding can be enabled with attention_dual_stream_composed.equivalence_hash.
 """
 
 from __future__ import annotations
@@ -23,6 +23,19 @@ def _load_json(path: Path) -> dict[str, Any]:
 
 def _as_int(config: dict[str, Any], key: str, default: int) -> int:
     return int(config.get(key, default))
+
+
+def _as_bool(config: dict[str, Any], key: str, default: bool) -> bool:
+    value = config.get(key, default)
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        text = value.strip().lower()
+        if text in {"1", "true", "yes", "on"}:
+            return True
+        if text in {"0", "false", "no", "off"}:
+            return False
+    return bool(value)
 
 
 def _validate(cfg: dict[str, Any]) -> dict[str, Any]:
@@ -72,15 +85,26 @@ endmodule
 """
 
 
-def _softmax_module(*, module_name: str, row_elems: int, accum_bits: int, reciprocal_bits: int) -> str:
+def _softmax_module(
+    *,
+    module_name: str,
+    row_elems: int,
+    accum_bits: int,
+    reciprocal_bits: int,
+    equivalence_hash: bool,
+) -> str:
     data_width = row_elems * 8
     product_bits = accum_bits + 8
+    hash_port = ",\n    output reg  [31:0]          weight_hash" if equivalence_hash else ""
+    hash_reg = "  reg [31:0] next_hash;\n" if equivalence_hash else ""
+    hash_init = f"    next_hash = 32'h5a5a_0101 ^ 32'h{reciprocal_bits & 0xFFFF:04x};\n" if equivalence_hash else ""
+    hash_update = "      next_hash = {next_hash[23:0], next_hash[31:24]} ^ {24'h0, lane_out};\n" if equivalence_hash else ""
+    hash_seq = "    weight_hash <= next_hash;\n" if equivalence_hash else ""
     return f"""(* keep_hierarchy = 1 *)
 module {module_name} (
     input  wire                  clk,
     input  wire [{data_width - 1}:0] scores,
-    output reg  [{data_width - 1}:0] weights,
-    output reg  [31:0]          weight_hash
+    output reg  [{data_width - 1}:0] weights{hash_port}
 );
   localparam integer ROW_ELEMS = {row_elems};
   localparam integer ACCUM_BITS = {accum_bits};
@@ -98,7 +122,7 @@ module {module_name} (
   reg [PRODUCT_BITS-1:0] numer;
   reg [7:0] lane_out;
   reg [{data_width - 1}:0] next_weights;
-  reg [31:0] next_hash;
+{hash_reg.rstrip()}
 
   always @(*) begin
     row_max = -(1 << 7);
@@ -121,7 +145,7 @@ module {module_name} (
     end
 
     next_weights = {{{data_width}{{1'b0}}}};
-      next_hash = 32'h5a5a_0101 ^ 32'h{reciprocal_bits & 0xFFFF:04x};
+{hash_init.rstrip()}
     for (i = 0; i < ROW_ELEMS; i = i + 1) begin
       numer = (exp_weight[i] * OUTPUT_SCALE) + (sum_weight >> 1);
       if (sum_weight != 0)
@@ -131,19 +155,26 @@ module {module_name} (
       if (lane_out > 8'd127)
         lane_out = 8'd127;
       next_weights[(i*8) +: 8] = lane_out;
-      next_hash = {{next_hash[23:0], next_hash[31:24]}} ^ {{24'h0, lane_out}};
+{hash_update.rstrip()}
     end
   end
 
   always @(posedge clk) begin
     weights <= next_weights;
-    weight_hash <= next_hash;
+{hash_seq.rstrip()}
   end
 endmodule
 """
 
 
-def _value_stream_module(*, module_name: str, row_elems: int, value_lanes: int, stream_buffer_bits: int) -> str:
+def _value_stream_module(
+    *,
+    module_name: str,
+    row_elems: int,
+    value_lanes: int,
+    stream_buffer_bits: int,
+    equivalence_hash: bool,
+) -> str:
     acc_bits = 40
     product_bits = 16
     fold_terms = ["32'h0000_0000"]
@@ -164,24 +195,27 @@ def _value_stream_module(*, module_name: str, row_elems: int, value_lanes: int, 
     sum_expr = " +\n      ".join(sum_terms)
     fold_expr = " ^\n      ".join(fold_terms)
     score_ext = f"{{{{{acc_bits - 24}{{score_mix[23]}}}}, score_mix}}"
+    hash_port = ",\n    output reg  [31:0]           value_hash" if equivalence_hash else ""
+    fold_wire = f"""  wire [31:0] product_fold =
+      {fold_expr};
+""" if equivalence_hash else ""
+    hash_seq = "    value_hash <= product_fold ^ value_accum[31:0] ^ {8'h0, score_mix};\n" if equivalence_hash else ""
     return f"""(* keep_hierarchy = 1 *)
 module {module_name} (
     input  wire                  clk,
     input  wire [{stream_buffer_bits - 1}:0] stream_data,
     input  wire [{row_elems * 8 - 1}:0] weights,
     input  wire [23:0]           score_mix,
-    output reg  [{acc_bits - 1}:0] value_accum,
-    output reg  [31:0]           value_hash
+    output reg  [{acc_bits - 1}:0] value_accum{hash_port}
 );
 {chr(10).join(product_lines)}
   wire signed [{acc_bits - 1}:0] product_sum =
       {sum_expr};
-  wire [31:0] product_fold =
-      {fold_expr};
+{fold_wire.rstrip()}
 
   always @(posedge clk) begin
     value_accum <= product_sum + {score_ext};
-    value_hash <= product_fold ^ value_accum[31:0] ^ {{8'h0, score_mix}};
+{hash_seq.rstrip()}
   end
 endmodule
 """
@@ -199,6 +233,7 @@ def _write_top(*, cfg: dict[str, Any], comp: dict[str, Any], out_path: Path) -> 
     reciprocal_bits = _as_int(comp, "reciprocal_bits", 10)
     accum_bits = _as_int(comp, "softmax_accum_bits", 24)
     stream_buffer_bits = _as_int(comp, "stream_buffer_bits", 1024)
+    equivalence_hash = _as_bool(comp, "equivalence_hash", False)
     macs_per_stream = array_m * array_n * k_unroll
     streams = 2
     total_macs = streams * macs_per_stream
@@ -210,7 +245,7 @@ def _write_top(*, cfg: dict[str, Any], comp: dict[str, Any], out_path: Path) -> 
     stream_update = [
         (
             f"      stream_buf_{stream} <= {{stream_buf_{stream}[{stream_buffer_bits - 33}:0], "
-            f"seed_state ^ result_hash ^ 32'h{0x13572468 ^ stream:08x}}};"
+            f"seed_state ^ {{16'h0, cycle_ctr}} ^ 32'h{0x13572468 ^ stream:08x}}};"
         )
         for stream in range(streams)
     ]
@@ -233,7 +268,7 @@ def _write_top(*, cfg: dict[str, Any], comp: dict[str, Any], out_path: Path) -> 
                 [
                     f"  wire signed [7:0] mac_a_{flat:04d} = seed_state[7:0] ^ stream_buf_{stream}[{(idx * 7) % (stream_buffer_bits - 7)} +: 8] ^ 8'h{const_a:02x} ^ cycle_ctr[7:0];",
                     f"  wire signed [7:0] mac_b_{flat:04d} = seed_state[15:8] ^ stream_buf_{stream}[{(idx * 11) % (stream_buffer_bits - 7)} +: 8] ^ 8'h{const_b:02x} ^ cycle_ctr[15:8];",
-                    f"  wire signed [23:0] mac_c_{flat:04d} = {{8'h00, result_hash[15:0]}} ^ stream_buf_{stream}[{(idx * 13) % (stream_buffer_bits - 23)} +: 24] ^ 24'h{const_c:06x};",
+                    f"  wire signed [23:0] mac_c_{flat:04d} = {{8'h00, cycle_ctr}} ^ stream_buf_{stream}[{(idx * 13) % (stream_buffer_bits - 23)} +: 24] ^ 24'h{const_c:06x};",
                     f"  wire signed [23:0] mac_r_{flat:04d};",
                 ]
             )
@@ -256,16 +291,58 @@ def _write_top(*, cfg: dict[str, Any], comp: dict[str, Any], out_path: Path) -> 
     score_row_concat = ", ".join(f"score_lane_{lane:02d}" for lane in reversed(range(row_elems)))
     compute_fold_expr = " ^\n      ".join(compute_fold_terms)
     score_mix_exprs = [" ^\n      ".join(terms) for terms in score_mix_terms]
+    top_ports = [
+        "    input  wire        clk",
+        "    input  wire        rst_n",
+        "    input  wire        start",
+        "    input  wire [31:0] seed",
+        "    output reg         done",
+    ]
+    if equivalence_hash:
+        top_ports.append("    output reg  [31:0] result_hash")
+    else:
+        top_ports.extend(
+            [
+                f"    output reg  [{row_elems * 8 - 1}:0] softmax_weights_out",
+                "    output reg  [39:0] value_accum_0_out",
+                "    output reg  [39:0] value_accum_1_out",
+                "    output reg  [23:0] score_mix_0_out",
+                "    output reg  [23:0] score_mix_1_out",
+            ]
+        )
+    softmax_hash_wire = "  wire [31:0] softmax_weight_hash;\n" if equivalence_hash else ""
+    value_hash_wires = "  wire [31:0] value_hash_0;\n  wire [31:0] value_hash_1;\n" if equivalence_hash else ""
+    compute_fold_wire = f"""  wire [31:0] compute_fold =
+      {compute_fold_expr};
+""" if equivalence_hash else ""
+    softmax_hash_conn = ",\n    .weight_hash(softmax_weight_hash)" if equivalence_hash else ""
+    value_hash_conn_0 = ",\n    .value_hash(value_hash_0)" if equivalence_hash else ""
+    value_hash_conn_1 = ",\n    .value_hash(value_hash_1)" if equivalence_hash else ""
+    reset_hash = "      result_hash <= 32'h0;\n" if equivalence_hash else ""
+    reset_ppa_outputs = "" if equivalence_hash else f"""      softmax_weights_out <= {{{row_elems * 8}{{1'b0}}}};
+      value_accum_0_out <= 40'h0;
+      value_accum_1_out <= 40'h0;
+      score_mix_0_out <= 24'h0;
+      score_mix_1_out <= 24'h0;
+"""
+    update_outputs = (
+        """        result_hash <= result_hash ^ compute_fold ^ softmax_weight_hash ^ value_hash_0 ^ value_hash_1 ^
+                       value_accum_0[31:0] ^ value_accum_1[31:0] ^ {16'h0, cycle_ctr};
+"""
+        if equivalence_hash
+        else """        softmax_weights_out <= softmax_weights;
+        value_accum_0_out <= value_accum_0;
+        value_accum_1_out <= value_accum_1;
+        score_mix_0_out <= score_mix_0;
+        score_mix_1_out <= score_mix_1;
+"""
+    )
+    top_port_text = ",\n".join(top_ports)
 
     top_text = f"""// Auto-generated by npu/rtlgen/gen_attention_dual_stream_composed.py
 (* keep_hierarchy = 1 *)
 module {top_name} (
-    input  wire        clk,
-    input  wire        rst_n,
-    input  wire        start,
-    input  wire [31:0] seed,
-    output reg         done,
-    output reg  [31:0] result_hash
+{top_port_text}
 );
   localparam integer STREAMS = {streams};
   localparam integer ARRAY_M = {array_m};
@@ -290,23 +367,20 @@ module {top_name} (
 {chr(10).join(score_assigns)}
   wire [{row_elems * 8 - 1}:0] softmax_scores = {{{score_row_concat}}};
   wire [{row_elems * 8 - 1}:0] softmax_weights;
-  wire [31:0] softmax_weight_hash;
-  wire [31:0] compute_fold =
-      {compute_fold_expr};
+{softmax_hash_wire.rstrip()}
+{compute_fold_wire.rstrip()}
   wire [23:0] score_mix_0 =
       {score_mix_exprs[0]};
   wire [23:0] score_mix_1 =
       {score_mix_exprs[1]};
   wire [39:0] value_accum_0;
   wire [39:0] value_accum_1;
-  wire [31:0] value_hash_0;
-  wire [31:0] value_hash_1;
+{value_hash_wires.rstrip()}
 
   {softmax_name} u_softmax (
     .clk(clk),
     .scores(softmax_scores),
-    .weights(softmax_weights),
-    .weight_hash(softmax_weight_hash)
+    .weights(softmax_weights){softmax_hash_conn}
   );
 
   {value_name} u_value_stream_0 (
@@ -314,8 +388,7 @@ module {top_name} (
     .stream_data(stream_buf_0),
     .weights(softmax_weights),
     .score_mix(score_mix_0),
-    .value_accum(value_accum_0),
-    .value_hash(value_hash_0)
+    .value_accum(value_accum_0){value_hash_conn_0}
   );
 
   {value_name} u_value_stream_1 (
@@ -323,16 +396,16 @@ module {top_name} (
     .stream_data(stream_buf_1),
     .weights(softmax_weights),
     .score_mix(score_mix_1),
-    .value_accum(value_accum_1),
-    .value_hash(value_hash_1)
+    .value_accum(value_accum_1){value_hash_conn_1}
   );
 
   always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
       seed_state <= 32'h0000_0001;
       cycle_ctr <= 16'h0;
-      result_hash <= 32'h0;
+{reset_hash.rstrip()}
       done <= 1'b0;
+{reset_ppa_outputs.rstrip()}
 {chr(10).join(stream_reset)}
     end else begin
       seed_state <= {{seed_state[30:0], seed_state[31] ^ seed_state[21] ^ seed_state[1] ^ seed_state[0]}} ^ seed;
@@ -340,8 +413,7 @@ module {top_name} (
       done <= start;
 {chr(10).join(stream_update)}
       if (start) begin
-        result_hash <= result_hash ^ compute_fold ^ softmax_weight_hash ^ value_hash_0 ^ value_hash_1 ^
-                       value_accum_0[31:0] ^ value_accum_1[31:0] ^ {{16'h0, cycle_ctr}};
+{update_outputs.rstrip()}
       end
     end
   end
@@ -352,8 +424,20 @@ endmodule
     rtl = "\n\n".join(
         [
             _int8_mac_module(),
-            _softmax_module(module_name=softmax_name, row_elems=row_elems, accum_bits=accum_bits, reciprocal_bits=reciprocal_bits),
-            _value_stream_module(module_name=value_name, row_elems=row_elems, value_lanes=value_lanes, stream_buffer_bits=stream_buffer_bits),
+            _softmax_module(
+                module_name=softmax_name,
+                row_elems=row_elems,
+                accum_bits=accum_bits,
+                reciprocal_bits=reciprocal_bits,
+                equivalence_hash=equivalence_hash,
+            ),
+            _value_stream_module(
+                module_name=value_name,
+                row_elems=row_elems,
+                value_lanes=value_lanes,
+                stream_buffer_bits=stream_buffer_bits,
+                equivalence_hash=equivalence_hash,
+            ),
             top_text,
         ]
     )
@@ -376,13 +460,18 @@ endmodule
         "partials": partials,
         "partials_per_cycle": partials_per_cycle,
         "stream_buffer_bits_per_stream": stream_buffer_bits,
+        "equivalence_hash": equivalence_hash,
         "components": {
             "compute": "two signed-int8 dense GEMM streams",
             "softmax_weight": "one shared rowwise int8 shift-exp reciprocal-normalized generator",
             "full_value": "two q8/v6 weighted-value streams",
-            "control": "start/done, seed LFSR, per-stream buffer registers, result hash",
+            "control": "start/done, seed LFSR, per-stream buffer registers",
         },
-        "datapath_guard": "all MAC, softmax, and value stream outputs fold into result_hash",
+        "datapath_guard": (
+            "all MAC, softmax, and value stream outputs fold into result_hash"
+            if equivalence_hash
+            else "PPA mode exposes softmax weights, value accumulators, and score mixes directly; equivalence hash disabled"
+        ),
     }
     (out_path / "attention_dual_stream_composed_manifest.json").write_text(
         json.dumps(manifest, indent=2, sort_keys=True) + "\n",
