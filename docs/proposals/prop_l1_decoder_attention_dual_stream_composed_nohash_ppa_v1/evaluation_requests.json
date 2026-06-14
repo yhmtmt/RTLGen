@@ -1,0 +1,33 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_dual_stream_composed_nohash_ppa_v1",
+  "source_commit": "f5941407d6ab613b390653bdd49708cf34c6c903",
+  "source_commit_note": "Dispatch should use the merge commit that makes equivalence_hash opt-in and adds the no-hash PPA design config.",
+  "requested_items": [
+    {
+      "item_id": "l1_decoder_attention_dual_stream_composed_nohash_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure Nangate45 PPA for the composed Q8/K8/V6 dual-stream attention datapath with equivalence-only hash folding disabled and real datapath outputs exposed directly.",
+      "evaluation_mode": "frontier_correction",
+      "abstraction_layer": "decoder_attention_dual_stream_composed_datapath",
+      "comparison_role": "production_like_ppa_without_equivalence_hash",
+      "paired_baseline_item_id": "l1_decoder_attention_dual_stream_composed_timing_debug_final_stage_v1",
+      "configs": [
+        "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/attention_dual_stream_composed_v1/sweeps/nangate45_dual_stream_composed_hier.json",
+      "out_root": "runs/designs/npu_blocks",
+      "expected_outputs": [
+        "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash/metrics.csv",
+        "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash/timing_debug_report.md"
+      ],
+      "depends_on": [
+        "l1_decoder_attention_dual_stream_composed_timing_debug_final_stage_v1"
+      ],
+      "expected_result": {
+        "direction": "remove_equivalence_instrumentation_from_ppa",
+        "reason": "The result should replace the hash-instrumented composed datapath timing when estimating production-like Llama7B attention performance."
+      },
+      "status": "pending"
+    }
+  ]
+}
