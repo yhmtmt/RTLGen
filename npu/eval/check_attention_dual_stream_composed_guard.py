@@ -27,6 +27,7 @@ def main() -> int:
     top_name = str(manifest["top_name"])
     total_macs = int(manifest["total_macs"])
     streams = int(manifest["streams"])
+    equivalence_hash = bool(manifest.get("equivalence_hash", False))
     if streams != 2:
         raise SystemExit(f"expected 2 streams, found {streams}")
     if f"module {top_name} " not in top_text:
@@ -42,19 +43,30 @@ def main() -> int:
         raise SystemExit("expected exactly one shared softmax instance")
     if "stream_buf_0" not in top_text or "stream_buf_1" not in top_text:
         raise SystemExit("missing dual stream buffer registers")
-    if "result_hash <=" not in top_text:
-        raise SystemExit("result_hash is not updated")
-
-    fold_match = re.search(r"\bwire\s+\[31:0\]\s+compute_fold\s*=\s*(.*?);", top_text, flags=re.DOTALL)
-    if fold_match is None:
-        raise SystemExit("missing compute_fold assignment")
-    fold_expr = fold_match.group(1)
-    missing_macs = [f"mac_r_{idx:04d}" for idx in range(total_macs) if f"mac_r_{idx:04d}" not in fold_expr]
-    if missing_macs:
-        raise SystemExit(f"MAC outputs are not visible in compute fold: {missing_macs[:8]}")
-    for token in ("softmax_weight_hash", "value_hash_0", "value_hash_1", "value_accum_0", "value_accum_1"):
-        if token not in top_text:
-            raise SystemExit(f"missing result visibility token: {token}")
+    if equivalence_hash:
+        if "result_hash <=" not in top_text:
+            raise SystemExit("result_hash is not updated")
+        fold_match = re.search(r"\bwire\s+\[31:0\]\s+compute_fold\s*=\s*(.*?);", top_text, flags=re.DOTALL)
+        if fold_match is None:
+            raise SystemExit("missing compute_fold assignment")
+        fold_expr = fold_match.group(1)
+        missing_macs = [f"mac_r_{idx:04d}" for idx in range(total_macs) if f"mac_r_{idx:04d}" not in fold_expr]
+        if missing_macs:
+            raise SystemExit(f"MAC outputs are not visible in compute fold: {missing_macs[:8]}")
+        for token in ("softmax_weight_hash", "value_hash_0", "value_hash_1", "value_accum_0", "value_accum_1"):
+            if token not in top_text:
+                raise SystemExit(f"missing result visibility token: {token}")
+    else:
+        forbidden_tokens = ("result_hash", "softmax_weight_hash", "value_hash_0", "value_hash_1", "compute_fold")
+        for token in forbidden_tokens:
+            if token in top_text:
+                raise SystemExit(f"equivalence-only hash token present in PPA mode: {token}")
+        for token in ("softmax_weights_out", "value_accum_0_out", "value_accum_1_out", "score_mix_0_out", "score_mix_1_out"):
+            if token not in top_text:
+                raise SystemExit(f"missing PPA datapath output token: {token}")
+        missing_macs = [f"mac_r_{idx:04d}" for idx in range(total_macs) if f"mac_r_{idx:04d}" not in top_text]
+        if missing_macs:
+            raise SystemExit(f"MAC outputs are not visible in PPA datapath: {missing_macs[:8]}")
 
     print(
         json.dumps(
@@ -65,6 +77,7 @@ def main() -> int:
                 "streams": streams,
                 "total_macs": total_macs,
                 "value_streams": value_instances,
+                "equivalence_hash": equivalence_hash,
             },
             indent=2,
             sort_keys=True,
