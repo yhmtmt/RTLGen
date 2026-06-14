@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l1_decoder_attention_dual_stream_composed_timing_debug_v1",
   "decision": "promote",
-  "pr_number": 847,
-  "merge_commit": "931d9763ac673f27b573a5e9c86c1a0b3f8f7753",
-  "merged_utc": "2026-06-13T12:11:53.933057Z"
+  "pr_number": 851,
+  "merge_commit": "bcab6bbbc8930ff49037b574a487225a92d42758",
+  "merged_utc": "2026-06-14T08:20:33.339403Z"
 }

@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l1_decoder_attention_dual_stream_composed_timing_debug_v1",
-  "source_commit": "46a57a07cc68dff27c8e8ea7b4a18f82ce3f581b",
+  "source_commit": "f7ee6a684f3dc7a5cc9e0491de022e0654cfdbf7",
   "source_commit_note": "Dispatch the final-stage diagnostic rerun using the merge commit containing final-stage timing report preference in extract_openroad_timing_summary.py.",
   "requested_items": [
     {
@@ -57,7 +57,11 @@
         "direction": "diagnose_final_stage_timing_bottleneck",
         "reason": "The preferred timing section should identify the latest available final route or finish report paths, while preserving earlier-stage worst paths only as context."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 851,
+      "merge_commit": "bcab6bbbc8930ff49037b574a487225a92d42758",
+      "merged_utc": "2026-06-14T08:20:33.339403Z",
+      "notes": "Merged via PR #851 and merge bcab6bbbc8930ff49037b574a487225a92d42758 at 2026-06-14T08:20:33.339403Z."
     }
   ]
 }
