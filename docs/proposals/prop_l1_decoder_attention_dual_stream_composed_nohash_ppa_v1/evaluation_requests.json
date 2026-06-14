@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l1_decoder_attention_dual_stream_composed_nohash_ppa_v1",
-  "source_commit": "f5941407d6ab613b390653bdd49708cf34c6c903",
+  "source_commit": "782da65c9109420e6338527eb94e89f42b0e972f",
   "source_commit_note": "Dispatch should use the merge commit that makes equivalence_hash opt-in and adds the no-hash PPA design config.",
   "requested_items": [
     {
@@ -27,7 +27,11 @@
         "direction": "remove_equivalence_instrumentation_from_ppa",
         "reason": "The result should replace the hash-instrumented composed datapath timing when estimating production-like Llama7B attention performance."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 854,
+      "merge_commit": "7de27938c33244b0d1da787e792f16cb6077c018",
+      "merged_utc": "2026-06-14T11:27:23.651658Z",
+      "notes": "Merged via PR #854 and merge 7de27938c33244b0d1da787e792f16cb6077c018 at 2026-06-14T11:27:23.651658Z."
     }
   ]
 }

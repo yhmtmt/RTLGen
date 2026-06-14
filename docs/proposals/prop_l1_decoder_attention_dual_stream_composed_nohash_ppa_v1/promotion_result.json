@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_dual_stream_composed_nohash_ppa_v1",
+  "decision": "promote",
+  "pr_number": 854,
+  "merge_commit": "7de27938c33244b0d1da787e792f16cb6077c018",
+  "merged_utc": "2026-06-14T11:27:23.651658Z"
+}
