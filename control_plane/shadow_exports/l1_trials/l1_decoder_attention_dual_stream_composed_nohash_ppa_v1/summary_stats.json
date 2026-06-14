@@ -1,0 +1,33 @@
+{
+  "item_id": "l1_decoder_attention_dual_stream_composed_nohash_ppa_v1",
+  "completed_trials": 1,
+  "success_count": 1,
+  "failure_count": 0,
+  "success_rate": 1.0,
+  "metrics": {
+    "critical_path_ns": {
+      "best": 23.1995,
+      "mean": 23.1995,
+      "median": 23.1995,
+      "max": 23.1995,
+      "range": 0.0,
+      "stddev": 0.0
+    },
+    "die_area": {
+      "best": 6250000.0,
+      "mean": 6250000.0,
+      "median": 6250000.0,
+      "max": 6250000.0,
+      "range": 0.0,
+      "stddev": 0.0
+    },
+    "total_power_mw": {
+      "best": 12.1,
+      "mean": 12.1,
+      "median": 12.1,
+      "max": 12.1,
+      "range": 0.0,
+      "stddev": 0.0
+    }
+  }
+}
