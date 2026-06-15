@@ -4,7 +4,12 @@ import sys
 from pathlib import Path
 
 
-def _write_config(config_path: Path, *, equivalence_hash: bool | None = None) -> None:
+def _write_config(
+    config_path: Path,
+    *,
+    equivalence_hash: bool | None = None,
+    softmax_pipeline_stages: int | None = None,
+) -> None:
     comp = {
         "streams": 2,
         "array_m": 2,
@@ -21,6 +26,8 @@ def _write_config(config_path: Path, *, equivalence_hash: bool | None = None) ->
     }
     if equivalence_hash is not None:
         comp["equivalence_hash"] = equivalence_hash
+    if softmax_pipeline_stages is not None:
+        comp["softmax_pipeline_stages"] = softmax_pipeline_stages
     config_path.parent.mkdir(parents=True)
     config_path.write_text(
         json.dumps(
@@ -81,6 +88,8 @@ def test_attention_dual_stream_composed_generator_ppa_guard_and_syntax(tmp_path:
     assert manifest["softmax_row_elems"] == 4
     assert manifest["value_lanes_per_stream"] == 4
     assert manifest["equivalence_hash"] is False
+    assert manifest["softmax_pipeline_stages"] == 0
+    assert manifest["value_alignment_delay_stages"] == 0
     assert "u_softmax" in top_text
     assert "u_value_stream_0" in top_text
     assert "u_value_stream_1" in top_text
@@ -89,6 +98,7 @@ def test_attention_dual_stream_composed_generator_ppa_guard_and_syntax(tmp_path:
     assert "score_mix_0_out" in top_text
     assert "result_hash" not in top_text
     assert "softmax_weight_hash" not in top_text
+    assert "softmax_scores_pipe_0" not in top_text
 
 
 def test_attention_dual_stream_composed_generator_equivalence_hash_mode(tmp_path: Path) -> None:
@@ -104,3 +114,21 @@ def test_attention_dual_stream_composed_generator_equivalence_hash_mode(tmp_path
     assert "value_hash_0" in top_text
     assert "compute_fold" in top_text
     assert "softmax_weights_out" not in top_text
+
+
+def test_attention_dual_stream_composed_generator_softmax_pipeline(tmp_path: Path) -> None:
+    design_dir = tmp_path / "attention_dual_stream_composed_pipeline"
+    config_path = design_dir / "config.json"
+    _write_config(config_path, softmax_pipeline_stages=1)
+    top_text = _generate_and_check(design_dir, config_path)
+
+    manifest = json.loads((design_dir / "verilog" / "attention_dual_stream_composed_manifest.json").read_text())
+    assert manifest["equivalence_hash"] is False
+    assert manifest["softmax_pipeline_stages"] == 1
+    assert manifest["value_alignment_delay_stages"] == 2
+    assert "reg [31:0] softmax_scores_pipe_0" in top_text
+    assert ".scores(softmax_scores_pipe_0)" in top_text
+    assert "stream_buf_0_pipe_1" in top_text
+    assert "score_mix_1_pipe_1" in top_text
+    assert ".stream_data(stream_buf_0_pipe_1)" in top_text
+    assert ".score_mix(score_mix_1_pipe_1)" in top_text

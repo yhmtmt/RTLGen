@@ -28,6 +28,8 @@ def main() -> int:
     total_macs = int(manifest["total_macs"])
     streams = int(manifest["streams"])
     equivalence_hash = bool(manifest.get("equivalence_hash", False))
+    softmax_pipeline_stages = int(manifest.get("softmax_pipeline_stages", 0))
+    value_alignment_delay_stages = int(manifest.get("value_alignment_delay_stages", 0))
     if streams != 2:
         raise SystemExit(f"expected 2 streams, found {streams}")
     if f"module {top_name} " not in top_text:
@@ -43,6 +45,30 @@ def main() -> int:
         raise SystemExit("expected exactly one shared softmax instance")
     if "stream_buf_0" not in top_text or "stream_buf_1" not in top_text:
         raise SystemExit("missing dual stream buffer registers")
+    if softmax_pipeline_stages:
+        if softmax_pipeline_stages != 1:
+            raise SystemExit(f"unsupported softmax_pipeline_stages={softmax_pipeline_stages}")
+        if value_alignment_delay_stages != softmax_pipeline_stages + 1:
+            raise SystemExit(
+                "value alignment delay must match the softmax input stage plus the registered softmax output latency"
+            )
+        for token in (
+            "softmax_scores_pipe_0",
+            ".scores(softmax_scores_pipe_0)",
+            "stream_buf_0_pipe_1",
+            "stream_buf_1_pipe_1",
+            ".stream_data(stream_buf_0_pipe_1)",
+            ".stream_data(stream_buf_1_pipe_1)",
+            ".score_mix(score_mix_0_pipe_1)",
+            ".score_mix(score_mix_1_pipe_1)",
+        ):
+            if token not in top_text:
+                raise SystemExit(f"missing softmax pipeline alignment token: {token}")
+    else:
+        if value_alignment_delay_stages != 0:
+            raise SystemExit("value alignment delay must be 0 when softmax pipeline is disabled")
+        if "softmax_scores_pipe_0" in top_text:
+            raise SystemExit("softmax pipeline register present when disabled")
     if equivalence_hash:
         if "result_hash <=" not in top_text:
             raise SystemExit("result_hash is not updated")
@@ -78,6 +104,8 @@ def main() -> int:
                 "total_macs": total_macs,
                 "value_streams": value_instances,
                 "equivalence_hash": equivalence_hash,
+                "softmax_pipeline_stages": softmax_pipeline_stages,
+                "value_alignment_delay_stages": value_alignment_delay_stages,
             },
             indent=2,
             sort_keys=True,
