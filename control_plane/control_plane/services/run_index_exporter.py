@@ -61,27 +61,6 @@ def _load_rows(index_path: Path) -> list[dict[str, str]]:
         return rows
 
 
-def _write_rows(index_path: Path, rows: list[dict[str, str]]) -> None:
-    index_path.parent.mkdir(parents=True, exist_ok=True)
-    with index_path.open("w", newline="", encoding="utf-8") as handle:
-        writer = csv.DictWriter(handle, fieldnames=RUNS_INDEX_FIELDNAMES)
-        writer.writeheader()
-        for row in rows:
-            writer.writerow({field: row.get(field, "") for field in RUNS_INDEX_FIELDNAMES})
-
-
-def _rows_from_db(session: Session) -> list[dict[str, str]]:
-    rows = (
-        session.query(RunIndexRow)
-        .order_by(RunIndexRow.index_order.asc(), RunIndexRow.created_at.asc())
-        .all()
-    )
-    return [
-        {field: str(getattr(row, field) or "") for field in RUNS_INDEX_FIELDNAMES}
-        for row in rows
-    ]
-
-
 def refresh_run_index(session: Session, *, repo_root: str) -> RunIndexRefreshResult:
     repo_path = Path(repo_root).resolve()
     script_path = repo_path / "scripts" / "build_runs_index.py"
@@ -108,12 +87,14 @@ def refresh_run_index(session: Session, *, repo_root: str) -> RunIndexRefreshRes
         detail = stderr or stdout or f"exit status {exc.returncode}"
         raise RunIndexExportError(f"failed to rebuild runs/index.csv: {detail}") from exc
 
+    # Keep the repository-generated CSV as the file of record. The running
+    # control-plane daemon can lag the target repo schema, so rewriting this
+    # file through RUNS_INDEX_FIELDNAMES would silently strip newer columns.
     rows = _load_rows(index_path)
     session.query(RunIndexRow).delete()
     for index_order, row in enumerate(rows):
         session.add(RunIndexRow(index_order=index_order, **row))
     session.flush()
-    _write_rows(index_path, _rows_from_db(session))
     return RunIndexRefreshResult(
         row_count=len(rows),
         index_path=str(index_path),

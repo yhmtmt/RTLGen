@@ -237,7 +237,8 @@ def test_finalize_after_merge_refreshes_central_runs_index() -> None:
                 "        'circuit_type','design','platform','status','critical_path_ns','die_area','total_power_mw',\n"
                 "        'instance_area_um2','stdcell_area_um2','stdcell_count','core_area_um2','utilization_pct',\n"
                 "        'config_hash','param_hash','tag','result_path','params_json','metrics_path','design_path',\n"
-                "        'sram_area_um2','sram_read_energy_pj','sram_write_energy_pj','sram_max_access_time_ns'])\n"
+                "        'sram_area_um2','sram_read_energy_pj','sram_write_energy_pj','sram_max_access_time_ns',\n"
+                "        'future_schema_column'])\n"
                 "    writer.writeheader()\n"
                 "    writer.writerow({\n"
                 "        'circuit_type': 'demo',\n"
@@ -263,6 +264,7 @@ def test_finalize_after_merge_refreshes_central_runs_index() -> None:
                 "        'sram_read_energy_pj': '',\n"
                 "        'sram_write_energy_pj': '',\n"
                 "        'sram_max_access_time_ns': '',\n"
+                "        'future_schema_column': 'preserved',\n"
                 "    })\n"
             ),
         )
@@ -390,6 +392,8 @@ def test_finalize_after_merge_refreshes_central_runs_index() -> None:
             assert "demo_wrapper" in exported
             assert "instance_area_um2,stdcell_area_um2,stdcell_count,core_area_um2,utilization_pct" in exported
             assert "4.0,5.0,6,7.0,8.0" in exported
+            assert "future_schema_column" in exported
+            assert "preserved" in exported
 
 
 
