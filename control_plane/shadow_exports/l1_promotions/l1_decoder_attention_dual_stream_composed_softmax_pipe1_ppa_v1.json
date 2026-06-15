@@ -1,0 +1,95 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-06-15T16:01:30.587246Z",
+  "item_id": "l1_decoder_attention_dual_stream_composed_softmax_pipe1_ppa_v1",
+  "run_key": "l1_decoder_attention_dual_stream_composed_softmax_pipe1_ppa_v1_run_19bf12b5503be18e",
+  "layer": "layer1",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l1_sweep",
+  "source_commit": "41d5caa6e7b9ad22470b270029a31bea95f6047e",
+  "objective": "Measure Nangate45 PPA for the composed Q8/K8/V6 dual-stream attention datapath with equivalence hash disabled and one softmax input pipeline stage.",
+  "input_manifest": {
+    "sweeps": [
+      "runs/campaigns/npu/attention_dual_stream_composed_v1/sweeps/nangate45_dual_stream_composed_hier.json"
+    ],
+    "configs": [
+      "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_pipe1/config.json"
+    ],
+    "out_root": "runs/designs/npu_blocks",
+    "design_dirs": [],
+    "macro_manifests": [],
+    "candidate_manifests": [],
+    "required_submodules": []
+  },
+  "proposal_count": 1,
+  "evaluation_record": {
+    "evaluation_mode": "frontier_correction",
+    "abstraction_layer": "decoder_attention_dual_stream_composed_datapath",
+    "result_kind": "physical_metrics",
+    "physical_metrics_present": true,
+    "summary": "Physical metrics recorded from an accepted status=ok Layer 1 row."
+  },
+  "proposal_assessment": null,
+  "proposals": [
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_pipe1/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "40317f7f",
+        "tag": "attention_dual_stream_composed_v1_hier",
+        "result_path": "/orfs/flow/reports/nangate45/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_pipe1/attention_dual_stream_composed_v1_hier/6_finish.rpt",
+        "work_result_json": "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_pipe1/work/40317f7f/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 22.7935,
+        "die_area": 6250000.0,
+        "total_power_mw": 8.97
+      }
+    }
+  ],
+  "trial_summary": {
+    "item_id": "l1_decoder_attention_dual_stream_composed_softmax_pipe1_ppa_v1",
+    "completed_trials": 1,
+    "success_count": 1,
+    "failure_count": 0,
+    "success_rate": 1.0,
+    "metrics": {
+      "critical_path_ns": {
+        "best": 22.7935,
+        "mean": 22.7935,
+        "median": 22.7935,
+        "max": 22.7935,
+        "range": 0.0,
+        "stddev": 0.0
+      },
+      "die_area": {
+        "best": 6250000.0,
+        "mean": 6250000.0,
+        "median": 6250000.0,
+        "max": 6250000.0,
+        "range": 0.0,
+        "stddev": 0.0
+      },
+      "total_power_mw": {
+        "best": 8.97,
+        "mean": 8.97,
+        "median": 8.97,
+        "max": 8.97,
+        "range": 0.0,
+        "stddev": 0.0
+      }
+    }
+  },
+  "source_refs": {
+    "trial_metrics_csvs": [
+      "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_pipe1/metrics.csv"
+    ],
+    "summary_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_dual_stream_composed_softmax_pipe1_ppa_v1/summary_stats.json",
+    "failure_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_dual_stream_composed_softmax_pipe1_ppa_v1/failure_stats.json",
+    "trial_table_csv": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_dual_stream_composed_softmax_pipe1_ppa_v1/trial_table.csv"
+  }
+}
