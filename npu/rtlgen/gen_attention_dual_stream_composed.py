@@ -51,6 +51,7 @@ def _validate(cfg: dict[str, Any]) -> dict[str, Any]:
     partials = _as_int(comp, "partials", 8)
     partials_per_cycle = _as_int(comp, "partials_per_cycle", 2)
     stream_buffer_bits = _as_int(comp, "stream_buffer_bits", 1024)
+    softmax_pipeline_stages = _as_int(comp, "softmax_pipeline_stages", 0)
     if streams != 2:
         raise SystemExit("attention_dual_stream_composed.streams must be 2 for the current dual-stream harness")
     if array_m < 1 or array_m > 16:
@@ -69,6 +70,8 @@ def _validate(cfg: dict[str, Any]) -> dict[str, Any]:
         raise SystemExit("attention_dual_stream_composed.partials_per_cycle must be in [1, partials]")
     if stream_buffer_bits < 128 or stream_buffer_bits > 4096:
         raise SystemExit("attention_dual_stream_composed.stream_buffer_bits must be in [128, 4096]")
+    if softmax_pipeline_stages < 0 or softmax_pipeline_stages > 1:
+        raise SystemExit("attention_dual_stream_composed.softmax_pipeline_stages must be in [0, 1]")
     return comp
 
 
@@ -234,6 +237,8 @@ def _write_top(*, cfg: dict[str, Any], comp: dict[str, Any], out_path: Path) -> 
     accum_bits = _as_int(comp, "softmax_accum_bits", 24)
     stream_buffer_bits = _as_int(comp, "stream_buffer_bits", 1024)
     equivalence_hash = _as_bool(comp, "equivalence_hash", False)
+    softmax_pipeline_stages = _as_int(comp, "softmax_pipeline_stages", 0)
+    value_delay_stages = softmax_pipeline_stages + 1 if softmax_pipeline_stages else 0
     macs_per_stream = array_m * array_n * k_unroll
     streams = 2
     total_macs = streams * macs_per_stream
@@ -249,6 +254,34 @@ def _write_top(*, cfg: dict[str, Any], comp: dict[str, Any], out_path: Path) -> 
         )
         for stream in range(streams)
     ]
+    softmax_pipe_regs = ""
+    softmax_pipe_reset = ""
+    softmax_pipe_update = ""
+    softmax_scores_for_softmax = "softmax_scores"
+    if softmax_pipeline_stages:
+        softmax_pipe_regs = f"  reg [{row_elems * 8 - 1}:0] softmax_scores_pipe_0;\n"
+        softmax_pipe_reset = f"      softmax_scores_pipe_0 <= {{{row_elems * 8}{{1'b0}}}};\n"
+        softmax_pipe_update = "      softmax_scores_pipe_0 <= softmax_scores;\n"
+        softmax_scores_for_softmax = "softmax_scores_pipe_0"
+
+    value_pipe_regs: list[str] = []
+    value_pipe_reset: list[str] = []
+    value_pipe_update: list[str] = []
+    value_stream_data_for_value = [f"stream_buf_{stream}" for stream in range(streams)]
+    score_mix_for_value = [f"score_mix_{stream}" for stream in range(streams)]
+    if value_delay_stages:
+        for stream in range(streams):
+            for stage in range(value_delay_stages):
+                value_pipe_regs.append(f"  reg [{stream_buffer_bits - 1}:0] stream_buf_{stream}_pipe_{stage};")
+                value_pipe_regs.append(f"  reg [23:0] score_mix_{stream}_pipe_{stage};")
+                value_pipe_reset.append(f"      stream_buf_{stream}_pipe_{stage} <= {{{stream_buffer_bits}{{1'b0}}}};")
+                value_pipe_reset.append(f"      score_mix_{stream}_pipe_{stage} <= 24'h0;")
+                source_stream = f"stream_buf_{stream}" if stage == 0 else f"stream_buf_{stream}_pipe_{stage - 1}"
+                source_score = f"score_mix_{stream}" if stage == 0 else f"score_mix_{stream}_pipe_{stage - 1}"
+                value_pipe_update.append(f"      stream_buf_{stream}_pipe_{stage} <= {source_stream};")
+                value_pipe_update.append(f"      score_mix_{stream}_pipe_{stage} <= {source_score};")
+            value_stream_data_for_value[stream] = f"stream_buf_{stream}_pipe_{value_delay_stages - 1}"
+            score_mix_for_value[stream] = f"score_mix_{stream}_pipe_{value_delay_stages - 1}"
 
     mac_wires: list[str] = []
     mac_insts: list[str] = []
@@ -359,6 +392,8 @@ module {top_name} (
   reg [31:0] seed_state;
   reg [15:0] cycle_ctr;
 {chr(10).join(stream_regs)}
+{softmax_pipe_regs.rstrip()}
+{chr(10).join(value_pipe_regs)}
 
 {chr(10).join(mac_wires)}
 
@@ -379,23 +414,23 @@ module {top_name} (
 
   {softmax_name} u_softmax (
     .clk(clk),
-    .scores(softmax_scores),
+    .scores({softmax_scores_for_softmax}),
     .weights(softmax_weights){softmax_hash_conn}
   );
 
   {value_name} u_value_stream_0 (
     .clk(clk),
-    .stream_data(stream_buf_0),
+    .stream_data({value_stream_data_for_value[0]}),
     .weights(softmax_weights),
-    .score_mix(score_mix_0),
+    .score_mix({score_mix_for_value[0]}),
     .value_accum(value_accum_0){value_hash_conn_0}
   );
 
   {value_name} u_value_stream_1 (
     .clk(clk),
-    .stream_data(stream_buf_1),
+    .stream_data({value_stream_data_for_value[1]}),
     .weights(softmax_weights),
-    .score_mix(score_mix_1),
+    .score_mix({score_mix_for_value[1]}),
     .value_accum(value_accum_1){value_hash_conn_1}
   );
 
@@ -407,11 +442,15 @@ module {top_name} (
       done <= 1'b0;
 {reset_ppa_outputs.rstrip()}
 {chr(10).join(stream_reset)}
+{softmax_pipe_reset.rstrip()}
+{chr(10).join(value_pipe_reset)}
     end else begin
       seed_state <= {{seed_state[30:0], seed_state[31] ^ seed_state[21] ^ seed_state[1] ^ seed_state[0]}} ^ seed;
       cycle_ctr <= cycle_ctr + 16'h1;
       done <= start;
 {chr(10).join(stream_update)}
+{softmax_pipe_update.rstrip()}
+{chr(10).join(value_pipe_update)}
       if (start) begin
 {update_outputs.rstrip()}
       end
@@ -461,6 +500,8 @@ endmodule
         "partials_per_cycle": partials_per_cycle,
         "stream_buffer_bits_per_stream": stream_buffer_bits,
         "equivalence_hash": equivalence_hash,
+        "softmax_pipeline_stages": softmax_pipeline_stages,
+        "value_alignment_delay_stages": value_delay_stages,
         "components": {
             "compute": "two signed-int8 dense GEMM streams",
             "softmax_weight": "one shared rowwise int8 shift-exp reciprocal-normalized generator",

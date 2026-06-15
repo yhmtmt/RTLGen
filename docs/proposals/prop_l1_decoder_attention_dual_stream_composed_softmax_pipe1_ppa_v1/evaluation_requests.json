@@ -1,0 +1,32 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_dual_stream_composed_softmax_pipe1_ppa_v1",
+  "source_commit_note": "Dispatch should use the merge commit that adds softmax_pipeline_stages and the no-hash softmax_pipe1 design config.",
+  "requested_items": [
+    {
+      "item_id": "l1_decoder_attention_dual_stream_composed_softmax_pipe1_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure Nangate45 PPA for the composed Q8/K8/V6 dual-stream attention datapath with equivalence-only hash folding disabled, one registered softmax input stage, and aligned value-stream payload delay.",
+      "evaluation_mode": "frontier_correction",
+      "abstraction_layer": "decoder_attention_dual_stream_composed_datapath",
+      "comparison_role": "softmax_input_pipeline_stage",
+      "paired_baseline_item_id": "l1_decoder_attention_dual_stream_composed_nohash_ppa_v1",
+      "configs": [
+        "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_pipe1/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/attention_dual_stream_composed_v1/sweeps/nangate45_dual_stream_composed_hier.json",
+      "out_root": "runs/designs/npu_blocks",
+      "expected_outputs": [
+        "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_pipe1/metrics.csv",
+        "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_pipe1/timing_debug_report.md"
+      ],
+      "depends_on": [
+        "l1_decoder_attention_dual_stream_composed_nohash_ppa_v1"
+      ],
+      "expected_result": {
+        "direction": "pipeline_softmax_weight_path",
+        "reason": "The result should show whether the no-hash composed datapath critical path is removed by a normal score/softmax pipeline boundary."
+      },
+      "status": "pending"
+    }
+  ]
+}

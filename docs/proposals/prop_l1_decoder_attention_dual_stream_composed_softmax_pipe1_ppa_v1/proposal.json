@@ -1,0 +1,62 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_dual_stream_composed_softmax_pipe1_ppa_v1",
+  "kind": "diagnostic",
+  "title": "Composed dual-stream attention softmax pipe1 PPA",
+  "layer": "layer1",
+  "abstraction_layer": "decoder_attention_dual_stream_composed_datapath",
+  "status": "proposed",
+  "motivation": [
+    "The no-hash composed dual-stream PPA run moved the final-stage critical path into the real softmax weight storage path.",
+    "The reported path starts at seed_state and ends at u_softmax/weights, indicating the MAC/score generation and softmax weight calculation are currently in one timing span.",
+    "A one-stage softmax input pipeline, with aligned value-stream payload delay, tests whether ordinary staging removes this datapath timing bottleneck."
+  ],
+  "direct_comparison": {
+    "primary_question": "How much PPA improvement comes from inserting one softmax input pipeline stage in the no-hash composed dual-stream attention datapath?",
+    "baseline": "l1_decoder_attention_dual_stream_composed_nohash_ppa_v1",
+    "candidate": "l1_decoder_attention_dual_stream_composed_softmax_pipe1_ppa_v1",
+    "metrics": [
+      "critical_path_ns",
+      "die_area",
+      "total_power_mw",
+      "stdcell_count",
+      "timing_debug_report"
+    ]
+  },
+  "expected_result": {
+    "direction": "pipeline_softmax_weight_path",
+    "reason": "Use the result to decide whether the current ~23 ns no-hash path is primarily missing staging or requires a deeper softmax algorithm/circuit change."
+  },
+  "required_inputs": [
+    "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_pipe1/config.json",
+    "runs/campaigns/npu/attention_dual_stream_composed_v1/sweeps/nangate45_dual_stream_composed_hier.json",
+    "l1_decoder_attention_dual_stream_composed_nohash_ppa_v1"
+  ],
+  "evaluation_requests": [
+    {
+      "item_id": "l1_decoder_attention_dual_stream_composed_softmax_pipe1_ppa_v1",
+      "task_type": "l1_sweep",
+      "evaluation_mode": "frontier_correction",
+      "abstraction_layer": "decoder_attention_dual_stream_composed_datapath",
+      "comparison_role": "softmax_input_pipeline_stage",
+      "paired_baseline_item_id": "l1_decoder_attention_dual_stream_composed_nohash_ppa_v1",
+      "configs": [
+        "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_pipe1/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/attention_dual_stream_composed_v1/sweeps/nangate45_dual_stream_composed_hier.json",
+      "out_root": "runs/designs/npu_blocks",
+      "expected_outputs": [
+        "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_pipe1/metrics.csv",
+        "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_pipe1/timing_debug_report.md"
+      ],
+      "depends_on": [
+        "l1_decoder_attention_dual_stream_composed_nohash_ppa_v1"
+      ]
+    }
+  ],
+  "source_files": [
+    "npu/rtlgen/gen_attention_dual_stream_composed.py",
+    "npu/eval/check_attention_dual_stream_composed_guard.py",
+    "npu/eval/extract_openroad_timing_summary.py",
+    "control_plane/control_plane/services/l1_task_generator.py"
+  ]
+}
