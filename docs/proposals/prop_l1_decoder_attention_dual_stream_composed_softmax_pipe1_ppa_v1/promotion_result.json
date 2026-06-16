@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_dual_stream_composed_softmax_pipe1_ppa_v1",
+  "decision": "promote",
+  "pr_number": 857,
+  "merge_commit": "bef1bf3afb837c682ec421de863bc93753e1a3c8",
+  "merged_utc": "2026-06-16T00:36:55.273714Z"
+}

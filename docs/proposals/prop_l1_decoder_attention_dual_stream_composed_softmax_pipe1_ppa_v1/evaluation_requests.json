@@ -26,7 +26,12 @@
         "direction": "pipeline_softmax_weight_path",
         "reason": "The result should show whether the no-hash composed datapath critical path is removed by a normal score/softmax pipeline boundary."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 857,
+      "merge_commit": "bef1bf3afb837c682ec421de863bc93753e1a3c8",
+      "merged_utc": "2026-06-16T00:36:55.273714Z",
+      "notes": "Merged via PR #857 and merge bef1bf3afb837c682ec421de863bc93753e1a3c8 at 2026-06-16T00:36:55.273714Z."
     }
-  ]
+  ],
+  "source_commit": "41d5caa6e7b9ad22470b270029a31bea95f6047e"
 }
