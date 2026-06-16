@@ -5491,6 +5491,53 @@ def test_generate_l2_campaign_task_adds_attention_softmax_pow2sum_quality_eviden
             )
 
 
+def test_generate_l2_campaign_task_adds_attention_softmax_recip_lut_quality_evidence() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id="l2_decoder_attention_softmax_recip_lut_quality_llama7b_v1",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    abstraction_layer="decoder_attention_softmax_recip_lut_quality",
+                    evaluation_mode="quality_equivalence_gate",
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            commands = work_item.task_request.request_payload["task"]["commands"]
+            command_names = [command["name"] for command in commands]
+            decoder_inputs = work_item.input_manifest["decoder_contract"]
+            expected_outputs = work_item.task_request.request_payload["task"]["expected_outputs"]
+            run = commands[0]["run"]
+
+            assert "estimate_decoder_attention_softmax_recip_lut_quality" in command_names
+            assert "attention_kv_dual_stream_physical_feasibility" in decoder_inputs
+            assert "attention_mixed_precision_quality_out" in decoder_inputs
+            assert "estimate_llm_decoder_attention_mixed_precision_quality.py" in run
+            assert "--candidate-spec-list q8:k8:v6:a24:s8:w8" in run
+            assert "--softmax-mode-list rtl_exact,rtl_pow2sum,rtl_recip_lut_q8,rtl_recip_lut_q10,rtl_recip_lut_q12" in run
+            assert "--seed-count 2" in run
+            assert work_item.task_request.request_payload["task"]["inputs"]["decoder_contract"] == decoder_inputs
+            assert any(
+                output.endswith(
+                    "decoder_attention_mixed_precision_quality__"
+                    "l2_decoder_attention_softmax_recip_lut_quality_llama7b_v1.json"
+                )
+                for output in expected_outputs
+            )
+
+
 def test_generate_l2_campaign_task_adds_attention_mixed_precision_physical_feasibility_evidence() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"

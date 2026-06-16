@@ -80,8 +80,8 @@ def _validate(cfg: dict[str, Any]) -> dict[str, Any]:
         raise SystemExit("attention_dual_stream_composed.softmax_pipeline_stages must be in [0, 1]")
     if softmax_internal_pipeline_stages < 0 or softmax_internal_pipeline_stages > 1:
         raise SystemExit("attention_dual_stream_composed.softmax_internal_pipeline_stages must be in [0, 1]")
-    if softmax_impl not in {"exact_div", "pow2sum"}:
-        raise SystemExit("attention_dual_stream_composed.softmax_impl must be exact_div or pow2sum")
+    if softmax_impl not in {"exact_div", "pow2sum", "recip_lut"}:
+        raise SystemExit("attention_dual_stream_composed.softmax_impl must be exact_div, pow2sum, or recip_lut")
     if softmax_internal_pipeline_stages and softmax_impl != "exact_div":
         raise SystemExit("attention_dual_stream_composed.softmax_internal_pipeline_stages requires exact_div")
     return comp
@@ -117,6 +117,11 @@ def _softmax_module(
     hash_init = f"    next_hash = 32'h5a5a_0101 ^ 32'h{reciprocal_bits & 0xFFFF:04x};\n" if equivalence_hash else ""
     hash_update = "      next_hash = {next_hash[23:0], next_hash[31:24]} ^ {24'h0, lane_out};\n" if equivalence_hash else ""
     hash_seq = "    weight_hash <= next_hash;\n" if equivalence_hash else ""
+    max_sum_weight = row_elems * 128
+    recip_lut_cases = "\n".join(
+        f"      {accum_bits}'d{denom}: reciprocal_lut = {reciprocal_bits + 8}'d{((127 << reciprocal_bits) + (denom >> 1)) // denom};"
+        for denom in range(1, max_sum_weight + 1)
+    )
     if internal_pipeline_stages:
         return f"""(* keep_hierarchy = 1 *)
 module {module_name} (
@@ -247,6 +252,84 @@ module {module_name} (
 {hash_init.rstrip()}
     for (i = 0; i < ROW_ELEMS; i = i + 1) begin
       lane_scaled = (exp_weight[i] * OUTPUT_SCALE) >> denom_shift;
+      if (lane_scaled > 8'd127)
+        lane_out = 8'd127;
+      else
+        lane_out = lane_scaled[7:0];
+      next_weights[(i*8) +: 8] = lane_out;
+{hash_update.rstrip()}
+    end
+  end
+
+  always @(posedge clk) begin
+    weights <= next_weights;
+{hash_seq.rstrip()}
+  end
+endmodule
+"""
+    if implementation == "recip_lut":
+        return f"""(* keep_hierarchy = 1 *)
+module {module_name} (
+    input  wire                  clk,
+    input  wire [{data_width - 1}:0] scores,
+    output reg  [{data_width - 1}:0] weights{hash_port}
+);
+  localparam integer ROW_ELEMS = {row_elems};
+  localparam integer ACCUM_BITS = {accum_bits};
+  localparam integer PRODUCT_BITS = {product_bits};
+  localparam integer MAX_SHIFT = 7;
+  localparam integer OUTPUT_SCALE = 127;
+  localparam integer RECIPROCAL_BITS = {reciprocal_bits};
+  localparam integer RECIPROCAL_WIDTH = {reciprocal_bits + 8};
+
+  integer i;
+  integer signed lane_val;
+  integer signed row_max;
+  integer delta;
+  reg [ACCUM_BITS-1:0] exp_weight [0:ROW_ELEMS-1];
+  reg [ACCUM_BITS-1:0] sum_weight;
+  reg [RECIPROCAL_WIDTH-1:0] reciprocal_q;
+  reg [PRODUCT_BITS+RECIPROCAL_WIDTH-1:0] lane_scaled;
+  reg [7:0] lane_out;
+  reg [{data_width - 1}:0] next_weights;
+{hash_reg.rstrip()}
+
+  function [RECIPROCAL_WIDTH-1:0] reciprocal_lut;
+    input [ACCUM_BITS-1:0] denom;
+    begin
+      case (denom)
+{recip_lut_cases}
+      default: reciprocal_lut = {{RECIPROCAL_WIDTH{{1'b0}}}};
+      endcase
+    end
+  endfunction
+
+  always @(*) begin
+    row_max = -(1 << 7);
+    for (i = 0; i < ROW_ELEMS; i = i + 1) begin
+      lane_val = $signed(scores[(i*8) +: 8]);
+      if (lane_val > row_max)
+        row_max = lane_val;
+    end
+
+    sum_weight = {{ACCUM_BITS{{1'b0}}}};
+    for (i = 0; i < ROW_ELEMS; i = i + 1) begin
+      lane_val = $signed(scores[(i*8) +: 8]);
+      delta = row_max - lane_val;
+      if (delta < 0)
+        delta = 0;
+      if (delta > MAX_SHIFT)
+        delta = MAX_SHIFT;
+      exp_weight[i] = ({{{{(ACCUM_BITS-1){{1'b0}}}}, 1'b1}} << (MAX_SHIFT - delta));
+      sum_weight = sum_weight + exp_weight[i];
+    end
+
+    reciprocal_q = reciprocal_lut(sum_weight);
+    next_weights = {{{data_width}{{1'b0}}}};
+{hash_init.rstrip()}
+    for (i = 0; i < ROW_ELEMS; i = i + 1) begin
+      lane_scaled = (exp_weight[i] * reciprocal_q) + ({{{{(PRODUCT_BITS+RECIPROCAL_WIDTH-1){{1'b0}}}}, 1'b1}} << (RECIPROCAL_BITS - 1));
+      lane_scaled = lane_scaled >> RECIPROCAL_BITS;
       if (lane_scaled > 8'd127)
         lane_out = 8'd127;
       else
