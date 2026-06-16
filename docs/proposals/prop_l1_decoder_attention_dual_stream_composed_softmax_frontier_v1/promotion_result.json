@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l1_decoder_attention_dual_stream_composed_softmax_frontier_v1",
-  "decision": "promote",
-  "pr_number": 859,
-  "merge_commit": "fa262f5a152222600c8f25c965768bbbafb14159",
-  "merged_utc": "2026-06-16T02:24:02.035565Z"
+  "decision": "iterate",
+  "pr_number": 862,
+  "merge_commit": "f43f96ba87eb6e0b61ff328d08c5f1ae3acc8faf",
+  "merged_utc": "2026-06-16T03:18:39.208317Z"
 }

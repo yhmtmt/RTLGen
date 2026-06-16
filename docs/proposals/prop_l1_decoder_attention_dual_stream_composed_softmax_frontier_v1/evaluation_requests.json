@@ -76,8 +76,12 @@
         "direction": "quality_gate_pow2sum",
         "reason": "A 6.4411 ns pow2sum PPA result is only useful if the replacement does not materially damage Llama7B-shape attention top-1/retrieval/output quality versus RTL-style exact int8 softmax."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 862,
+      "merge_commit": "f43f96ba87eb6e0b61ff328d08c5f1ae3acc8faf",
+      "merged_utc": "2026-06-16T03:18:39.208317Z",
+      "notes": "Merged via PR #862 and merge f43f96ba87eb6e0b61ff328d08c5f1ae3acc8faf at 2026-06-16T03:18:39.208317Z."
     }
   ],
-  "source_commit": "eec17a523f8dd0e2419ab9afd77fe639f79a0daa"
+  "source_commit": "2634eede3c91b2c85d339784ed630f7fecdfc514"
 }
