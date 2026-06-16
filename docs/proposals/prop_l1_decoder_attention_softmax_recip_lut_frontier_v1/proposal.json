@@ -36,7 +36,7 @@
   "candidate_plans": {
     "recip_lut": {
       "item_id": "l1_decoder_attention_dual_stream_composed_softmax_recip_lut_ppa_v1",
-      "description": "Replace exact sum division by a generated fixed-point reciprocal table for sum_weight, then multiply-shift each exp lane. Sweep q8/q10/q12 reciprocal widths under the same composed dual-stream harness using a reciprocal-specific flow sweep that raises SYNTH_MEMORY_MAX_BITS for the intended table ROM.",
+      "description": "Replace exact sum division by a generated fixed-point reciprocal table for sum_weight, then multiply-shift each exp lane. Sweep q8/q10/q12 reciprocal widths under the same composed dual-stream harness using a reciprocal-specific flow sweep that raises SYNTH_MEMORY_MAX_BITS for the intended q12-sized table ROM.",
       "quality_risk": "low softmax-specific risk relative to pow2sum because local proxy q12 matches exact RTL-mode quality; still blocked by the broader Q8/K8/V6 mixed-precision quality gate until model-native or QAT recovery is shown."
     },
     "recip_lut_quality": {
