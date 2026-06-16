@@ -52,7 +52,12 @@
         "direction": "replace_exact_divider",
         "reason": "This measures the PPA upside of removing sum division before spending quality-evaluation effort on the approximation."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 859,
+      "merge_commit": "fa262f5a152222600c8f25c965768bbbafb14159",
+      "merged_utc": "2026-06-16T02:24:02.035565Z",
+      "notes": "Merged via PR #859 and merge fa262f5a152222600c8f25c965768bbbafb14159 at 2026-06-16T02:24:02.035565Z."
     }
-  ]
+  ],
+  "source_commit": "eec17a523f8dd0e2419ab9afd77fe639f79a0daa"
 }
