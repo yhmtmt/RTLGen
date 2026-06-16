@@ -1,0 +1,56 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_softmax_recip_lut_frontier_v1",
+  "source_commit_note": "Dispatch should use the merge commit that adds reciprocal-LUT softmax generation, quality proxy support, and q8/q10/q12 design configs.",
+  "requested_items": [
+    {
+      "item_id": "l1_decoder_attention_dual_stream_composed_softmax_recip_lut_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure Nangate45 PPA for composed Q8/K8/V6 dual-stream attention datapaths using fixed-point reciprocal-LUT softmax normalization at q8/q10/q12 reciprocal widths.",
+      "evaluation_mode": "frontier_followup",
+      "abstraction_layer": "decoder_attention_dual_stream_composed_datapath",
+      "comparison_role": "softmax_reciprocal_lut_replacement",
+      "paired_baseline_item_id": "l1_decoder_attention_dual_stream_composed_softmax_pow2sum_ppa_v1",
+      "configs": [
+        "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_recip_lut_q8/config.json",
+        "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_recip_lut_q10/config.json",
+        "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_recip_lut_q12/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/attention_dual_stream_composed_v1/sweeps/nangate45_dual_stream_composed_hier.json",
+      "out_root": "runs/designs/npu_blocks",
+      "expected_outputs": [
+        "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_recip_lut_q8/metrics.csv",
+        "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_recip_lut_q10/metrics.csv",
+        "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_recip_lut_q12/metrics.csv"
+      ],
+      "depends_on": [
+        "l1_decoder_attention_dual_stream_composed_softmax_pow2sum_ppa_v1",
+        "l1_decoder_attention_dual_stream_composed_softmax_split1_ppa_v1"
+      ],
+      "expected_result": {
+        "direction": "reciprocal_lut_middle_ground",
+        "reason": "This tests whether a concrete divider-free reciprocal table sits between pow2sum and exact division in PPA while preserving exact-like normalization."
+      },
+      "status": "pending"
+    },
+    {
+      "item_id": "l2_decoder_attention_softmax_recip_lut_quality_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Run the Llama7B-shape quality/equivalence gate comparing exact, pow2sum, and q8/q10/q12 reciprocal-LUT softmax normalization for Q8/K8/V6/S8/W8 attention.",
+      "evaluation_mode": "quality_equivalence_gate",
+      "abstraction_layer": "decoder_attention_softmax_recip_lut_quality",
+      "comparison_role": "softmax_reciprocal_lut_quality_gate",
+      "paired_baseline_item_id": "l2_decoder_attention_softmax_pow2sum_quality_llama7b_v1",
+      "depends_on_item_ids": [
+        "l1_decoder_attention_dual_stream_composed_softmax_recip_lut_ppa_v1",
+        "l2_decoder_attention_softmax_pow2sum_quality_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "quality_gate_recip_lut",
+        "reason": "The reciprocal-LUT result should distinguish softmax-normalization error from the already known mixed-precision quantization error."
+      },
+      "status": "pending"
+    }
+  ]
+}

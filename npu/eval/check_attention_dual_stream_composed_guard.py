@@ -48,7 +48,7 @@ def main() -> int:
         raise SystemExit("expected exactly one shared softmax instance")
     if "stream_buf_0" not in top_text or "stream_buf_1" not in top_text:
         raise SystemExit("missing dual stream buffer registers")
-    if softmax_impl not in {"exact_div", "pow2sum"}:
+    if softmax_impl not in {"exact_div", "pow2sum", "recip_lut"}:
         raise SystemExit(f"unsupported softmax_impl={softmax_impl}")
     if softmax_latency_stages != 1 + softmax_internal_pipeline_stages:
         raise SystemExit("softmax latency must equal output register latency plus internal pipeline stages")
@@ -92,6 +92,14 @@ def main() -> int:
                 raise SystemExit(f"missing replacement softmax token: {token}")
         if "/ sum_weight" in top_text or "/ sum_weight_q" in top_text:
             raise SystemExit("pow2sum replacement must not contain a sum_weight divider")
+    if softmax_impl == "recip_lut":
+        for token in ("function [RECIPROCAL_WIDTH-1:0] reciprocal_lut", "reciprocal_q", "lane_scaled"):
+            if token not in top_text:
+                raise SystemExit(f"missing reciprocal-LUT softmax token: {token}")
+        if "denom_shift" in top_text:
+            raise SystemExit("reciprocal-LUT replacement must not contain pow2 denominator shift logic")
+        if "/ sum_weight" in top_text or "/ sum_weight_q" in top_text:
+            raise SystemExit("reciprocal-LUT replacement must not contain a sum_weight divider")
     if equivalence_hash:
         if "result_hash <=" not in top_text:
             raise SystemExit("result_hash is not updated")

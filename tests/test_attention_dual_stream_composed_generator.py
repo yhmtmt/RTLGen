@@ -180,3 +180,23 @@ def test_attention_dual_stream_composed_generator_softmax_pow2sum_replacement(tm
     assert "lane_scaled" in top_text
     assert "/ sum_weight" not in top_text
     assert ".stream_data(stream_buf_0_pipe_1)" in top_text
+
+
+def test_attention_dual_stream_composed_generator_softmax_recip_lut_replacement(tmp_path: Path) -> None:
+    design_dir = tmp_path / "attention_dual_stream_composed_recip_lut"
+    config_path = design_dir / "config.json"
+    _write_config(config_path, softmax_pipeline_stages=1, softmax_impl="recip_lut")
+    top_text = _generate_and_check(design_dir, config_path)
+
+    manifest = json.loads((design_dir / "verilog" / "attention_dual_stream_composed_manifest.json").read_text())
+    assert manifest["softmax_impl"] == "recip_lut"
+    assert manifest["softmax_pipeline_stages"] == 1
+    assert manifest["softmax_internal_pipeline_stages"] == 0
+    assert manifest["softmax_latency_stages"] == 1
+    assert manifest["value_alignment_delay_stages"] == 2
+    assert "function [RECIPROCAL_WIDTH-1:0] reciprocal_lut" in top_text
+    assert "reciprocal_q = reciprocal_lut(sum_weight)" in top_text
+    assert "/ sum_weight" not in top_text
+    assert "/ sum_weight_q" not in top_text
+    assert "denom_shift" not in top_text
+    assert ".stream_data(stream_buf_0_pipe_1)" in top_text

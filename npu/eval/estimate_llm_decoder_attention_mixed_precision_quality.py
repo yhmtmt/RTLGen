@@ -120,8 +120,19 @@ def _quantize_logits(logits: Vector, bits: int) -> Vector:
     return _dequantize(qvector, scale)
 
 
+def _rtl_reciprocal_bits(mode: str) -> int | None:
+    prefix = "rtl_recip_lut_q"
+    if not mode.startswith(prefix):
+        return None
+    bits = int(mode[len(prefix) :])
+    if bits <= 0 or bits > 24:
+        raise ValueError(f"unsupported reciprocal LUT bit width in softmax mode: {mode}")
+    return bits
+
+
 def _rtl_quantized_softmax(logits: Vector, *, score_bits: int, weight_bits: int, mode: str) -> Vector:
-    if mode not in {"rtl_exact", "rtl_pow2sum"}:
+    reciprocal_bits = _rtl_reciprocal_bits(mode)
+    if mode not in {"rtl_exact", "rtl_pow2sum"} and reciprocal_bits is None:
         raise ValueError(f"unsupported RTL softmax mode: {mode}")
     if weight_bits > 8:
         raise ValueError("RTL softmax modes model the int8 softmax weight block; weight_bits must be <= 8")
@@ -144,12 +155,19 @@ def _rtl_quantized_softmax(logits: Vector, *, score_bits: int, weight_bits: int,
         return _softmax(logits)
     if mode == "rtl_exact":
         lanes = [min(output_scale, ((weight * output_scale) + (sum_weight >> 1)) // sum_weight) for weight in exp_weights]
-    else:
+    elif mode == "rtl_pow2sum":
         denom_shift = 0
         for index in range(32):
             if sum_weight > (1 << index):
                 denom_shift = index + 1
         lanes = [min(output_scale, (weight * output_scale) >> denom_shift) for weight in exp_weights]
+    else:
+        assert reciprocal_bits is not None
+        reciprocal_q = ((output_scale << reciprocal_bits) + (sum_weight >> 1)) // sum_weight
+        lanes = [
+            min(output_scale, ((weight * reciprocal_q) + (1 << (reciprocal_bits - 1))) >> reciprocal_bits)
+            for weight in exp_weights
+        ]
     return [lane / float(output_scale) for lane in lanes]
 
 
@@ -341,7 +359,11 @@ def build_report(
     candidate_specs: list[str],
     softmax_mode_list: list[str],
 ) -> JsonDict:
-    unsupported_modes = sorted(set(softmax_mode_list) - {"float_quantized", "rtl_exact", "rtl_pow2sum"})
+    unsupported_modes = sorted(
+        mode
+        for mode in set(softmax_mode_list)
+        if mode not in {"float_quantized", "rtl_exact", "rtl_pow2sum"} and _rtl_reciprocal_bits(mode) is None
+    )
     if unsupported_modes:
         raise ValueError(f"unsupported softmax modes: {unsupported_modes}")
     candidates = [
@@ -516,7 +538,7 @@ def build_report(
             "This is a Llama7B-shape synthetic native-GQA attention proxy, not measured Llama7B perplexity or task accuracy.",
             "The proxy uses 32 attention heads, 4 KV heads, and head_dim 128 by default to match the current GQA8 Llama7B frontier assumption.",
             "Q/K/V use per-vector symmetric quantization; accumulator saturation models fixed-width integer dot products.",
-            "The rtl_exact and rtl_pow2sum modes model the int8 row-softmax RTL: score quantization, clipped exp powers, 127-scale output weights, and either exact or power-of-two sum normalization.",
+            "The rtl_exact, rtl_pow2sum, and rtl_recip_lut_qN modes model the int8 row-softmax RTL: score quantization, clipped exp powers, 127-scale output weights, and exact, power-of-two, or fixed-point reciprocal-LUT normalization.",
             "Passing this proxy is only a gate for mixed-precision RTL/PPA and later real-checkpoint validation.",
         ],
     }
