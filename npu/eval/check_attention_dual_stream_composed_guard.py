@@ -28,7 +28,10 @@ def main() -> int:
     total_macs = int(manifest["total_macs"])
     streams = int(manifest["streams"])
     equivalence_hash = bool(manifest.get("equivalence_hash", False))
+    softmax_impl = str(manifest.get("softmax_impl", "exact_div"))
     softmax_pipeline_stages = int(manifest.get("softmax_pipeline_stages", 0))
+    softmax_internal_pipeline_stages = int(manifest.get("softmax_internal_pipeline_stages", 0))
+    softmax_latency_stages = int(manifest.get("softmax_latency_stages", 1))
     value_alignment_delay_stages = int(manifest.get("value_alignment_delay_stages", 0))
     if streams != 2:
         raise SystemExit(f"expected 2 streams, found {streams}")
@@ -45,23 +48,33 @@ def main() -> int:
         raise SystemExit("expected exactly one shared softmax instance")
     if "stream_buf_0" not in top_text or "stream_buf_1" not in top_text:
         raise SystemExit("missing dual stream buffer registers")
+    if softmax_impl not in {"exact_div", "pow2sum"}:
+        raise SystemExit(f"unsupported softmax_impl={softmax_impl}")
+    if softmax_latency_stages != 1 + softmax_internal_pipeline_stages:
+        raise SystemExit("softmax latency must equal output register latency plus internal pipeline stages")
     if softmax_pipeline_stages:
         if softmax_pipeline_stages != 1:
             raise SystemExit(f"unsupported softmax_pipeline_stages={softmax_pipeline_stages}")
-        if value_alignment_delay_stages != softmax_pipeline_stages + 1:
+        if value_alignment_delay_stages != softmax_pipeline_stages + softmax_latency_stages:
             raise SystemExit(
-                "value alignment delay must match the softmax input stage plus the registered softmax output latency"
+                "value alignment delay must match the softmax input stage plus softmax module latency"
             )
-        for token in (
+        required_tokens = [
             "softmax_scores_pipe_0",
             ".scores(softmax_scores_pipe_0)",
-            "stream_buf_0_pipe_1",
-            "stream_buf_1_pipe_1",
-            ".stream_data(stream_buf_0_pipe_1)",
-            ".stream_data(stream_buf_1_pipe_1)",
-            ".score_mix(score_mix_0_pipe_1)",
-            ".score_mix(score_mix_1_pipe_1)",
-        ):
+        ]
+        last_stage = value_alignment_delay_stages - 1
+        required_tokens.extend(
+            [
+                f"stream_buf_0_pipe_{last_stage}",
+                f"stream_buf_1_pipe_{last_stage}",
+                f".stream_data(stream_buf_0_pipe_{last_stage})",
+                f".stream_data(stream_buf_1_pipe_{last_stage})",
+                f".score_mix(score_mix_0_pipe_{last_stage})",
+                f".score_mix(score_mix_1_pipe_{last_stage})",
+            ]
+        )
+        for token in required_tokens:
             if token not in top_text:
                 raise SystemExit(f"missing softmax pipeline alignment token: {token}")
     else:
@@ -69,6 +82,16 @@ def main() -> int:
             raise SystemExit("value alignment delay must be 0 when softmax pipeline is disabled")
         if "softmax_scores_pipe_0" in top_text:
             raise SystemExit("softmax pipeline register present when disabled")
+    if softmax_internal_pipeline_stages:
+        for token in ("exp_weight_q", "sum_weight_q"):
+            if token not in top_text:
+                raise SystemExit(f"missing split softmax pipeline token: {token}")
+    if softmax_impl == "pow2sum":
+        for token in ("denom_shift", "lane_scaled"):
+            if token not in top_text:
+                raise SystemExit(f"missing replacement softmax token: {token}")
+        if "/ sum_weight" in top_text or "/ sum_weight_q" in top_text:
+            raise SystemExit("pow2sum replacement must not contain a sum_weight divider")
     if equivalence_hash:
         if "result_hash <=" not in top_text:
             raise SystemExit("result_hash is not updated")
@@ -104,7 +127,10 @@ def main() -> int:
                 "total_macs": total_macs,
                 "value_streams": value_instances,
                 "equivalence_hash": equivalence_hash,
+                "softmax_impl": softmax_impl,
                 "softmax_pipeline_stages": softmax_pipeline_stages,
+                "softmax_internal_pipeline_stages": softmax_internal_pipeline_stages,
+                "softmax_latency_stages": softmax_latency_stages,
                 "value_alignment_delay_stages": value_alignment_delay_stages,
             },
             indent=2,

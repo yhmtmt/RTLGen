@@ -1,0 +1,20 @@
+{
+  "top_name": "attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_pow2sum",
+  "attention_dual_stream_composed": {
+    "streams": 2,
+    "array_m": 16,
+    "array_n": 8,
+    "k_unroll": 1,
+    "softmax_row_elems": 8,
+    "softmax_accum_bits": 24,
+    "reciprocal_bits": 10,
+    "value_bits": 6,
+    "value_lanes": 16,
+    "partials": 8,
+    "partials_per_cycle": 2,
+    "stream_buffer_bits": 1024,
+    "equivalence_hash": false,
+    "softmax_pipeline_stages": 1,
+    "softmax_impl": "pow2sum"
+  }
+}
