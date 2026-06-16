@@ -1,0 +1,58 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_dual_stream_composed_softmax_frontier_v1",
+  "source_commit_note": "Dispatch should use the merge commit that adds softmax split1 and pow2sum implementations and design configs.",
+  "requested_items": [
+    {
+      "item_id": "l1_decoder_attention_dual_stream_composed_softmax_split1_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure Nangate45 PPA for the composed Q8/K8/V6 dual-stream attention datapath with exact divider-based softmax split by one internal exp/sum pipeline stage.",
+      "evaluation_mode": "frontier_correction",
+      "abstraction_layer": "decoder_attention_dual_stream_composed_datapath",
+      "comparison_role": "exact_softmax_split_pipeline",
+      "paired_baseline_item_id": "l1_decoder_attention_dual_stream_composed_softmax_pipe1_ppa_v1",
+      "configs": [
+        "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_split1/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/attention_dual_stream_composed_v1/sweeps/nangate45_dual_stream_composed_hier.json",
+      "out_root": "runs/designs/npu_blocks",
+      "expected_outputs": [
+        "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_split1/metrics.csv",
+        "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_split1/timing_debug_report.md"
+      ],
+      "depends_on": [
+        "l1_decoder_attention_dual_stream_composed_softmax_pipe1_ppa_v1"
+      ],
+      "expected_result": {
+        "direction": "split_exact_softmax",
+        "reason": "This isolates whether the exact softmax bottleneck is the pre-divider max/sum logic or the divider/output half."
+      },
+      "status": "pending"
+    },
+    {
+      "item_id": "l1_decoder_attention_dual_stream_composed_softmax_pow2sum_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure Nangate45 PPA for the composed Q8/K8/V6 dual-stream attention datapath with divider-free power-of-two softmax sum normalization.",
+      "evaluation_mode": "frontier_correction",
+      "abstraction_layer": "decoder_attention_dual_stream_composed_datapath",
+      "comparison_role": "softmax_divider_replacement",
+      "paired_baseline_item_id": "l1_decoder_attention_dual_stream_composed_softmax_pipe1_ppa_v1",
+      "configs": [
+        "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_pow2sum/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/attention_dual_stream_composed_v1/sweeps/nangate45_dual_stream_composed_hier.json",
+      "out_root": "runs/designs/npu_blocks",
+      "expected_outputs": [
+        "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_pow2sum/metrics.csv",
+        "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_pow2sum/timing_debug_report.md"
+      ],
+      "depends_on": [
+        "l1_decoder_attention_dual_stream_composed_softmax_pipe1_ppa_v1"
+      ],
+      "expected_result": {
+        "direction": "replace_exact_divider",
+        "reason": "This measures the PPA upside of removing sum division before spending quality-evaluation effort on the approximation."
+      },
+      "status": "pending"
+    }
+  ]
+}

@@ -38,6 +38,10 @@ def _as_bool(config: dict[str, Any], key: str, default: bool) -> bool:
     return bool(value)
 
 
+def _as_str(config: dict[str, Any], key: str, default: str) -> str:
+    return str(config.get(key, default)).strip()
+
+
 def _validate(cfg: dict[str, Any]) -> dict[str, Any]:
     comp = cfg.get("attention_dual_stream_composed")
     if not isinstance(comp, dict):
@@ -52,6 +56,8 @@ def _validate(cfg: dict[str, Any]) -> dict[str, Any]:
     partials_per_cycle = _as_int(comp, "partials_per_cycle", 2)
     stream_buffer_bits = _as_int(comp, "stream_buffer_bits", 1024)
     softmax_pipeline_stages = _as_int(comp, "softmax_pipeline_stages", 0)
+    softmax_internal_pipeline_stages = _as_int(comp, "softmax_internal_pipeline_stages", 0)
+    softmax_impl = _as_str(comp, "softmax_impl", "exact_div")
     if streams != 2:
         raise SystemExit("attention_dual_stream_composed.streams must be 2 for the current dual-stream harness")
     if array_m < 1 or array_m > 16:
@@ -72,6 +78,12 @@ def _validate(cfg: dict[str, Any]) -> dict[str, Any]:
         raise SystemExit("attention_dual_stream_composed.stream_buffer_bits must be in [128, 4096]")
     if softmax_pipeline_stages < 0 or softmax_pipeline_stages > 1:
         raise SystemExit("attention_dual_stream_composed.softmax_pipeline_stages must be in [0, 1]")
+    if softmax_internal_pipeline_stages < 0 or softmax_internal_pipeline_stages > 1:
+        raise SystemExit("attention_dual_stream_composed.softmax_internal_pipeline_stages must be in [0, 1]")
+    if softmax_impl not in {"exact_div", "pow2sum"}:
+        raise SystemExit("attention_dual_stream_composed.softmax_impl must be exact_div or pow2sum")
+    if softmax_internal_pipeline_stages and softmax_impl != "exact_div":
+        raise SystemExit("attention_dual_stream_composed.softmax_internal_pipeline_stages requires exact_div")
     return comp
 
 
@@ -95,6 +107,8 @@ def _softmax_module(
     accum_bits: int,
     reciprocal_bits: int,
     equivalence_hash: bool,
+    implementation: str,
+    internal_pipeline_stages: int,
 ) -> str:
     data_width = row_elems * 8
     product_bits = accum_bits + 8
@@ -103,6 +117,151 @@ def _softmax_module(
     hash_init = f"    next_hash = 32'h5a5a_0101 ^ 32'h{reciprocal_bits & 0xFFFF:04x};\n" if equivalence_hash else ""
     hash_update = "      next_hash = {next_hash[23:0], next_hash[31:24]} ^ {24'h0, lane_out};\n" if equivalence_hash else ""
     hash_seq = "    weight_hash <= next_hash;\n" if equivalence_hash else ""
+    if internal_pipeline_stages:
+        return f"""(* keep_hierarchy = 1 *)
+module {module_name} (
+    input  wire                  clk,
+    input  wire [{data_width - 1}:0] scores,
+    output reg  [{data_width - 1}:0] weights{hash_port}
+);
+  localparam integer ROW_ELEMS = {row_elems};
+  localparam integer ACCUM_BITS = {accum_bits};
+  localparam integer PRODUCT_BITS = {product_bits};
+  localparam integer MAX_SHIFT = 7;
+  localparam integer OUTPUT_SCALE = 127;
+  localparam integer RECIPROCAL_BITS = {reciprocal_bits};
+
+  integer i;
+  integer signed lane_val;
+  integer signed row_max;
+  integer delta;
+  reg [ACCUM_BITS-1:0] exp_weight [0:ROW_ELEMS-1];
+  reg [ACCUM_BITS-1:0] sum_weight;
+  reg [ACCUM_BITS-1:0] exp_weight_q [0:ROW_ELEMS-1];
+  reg [ACCUM_BITS-1:0] sum_weight_q;
+  reg [PRODUCT_BITS-1:0] numer;
+  reg [7:0] lane_out;
+  reg [{data_width - 1}:0] next_weights;
+{hash_reg.rstrip()}
+
+  always @(*) begin
+    row_max = -(1 << 7);
+    for (i = 0; i < ROW_ELEMS; i = i + 1) begin
+      lane_val = $signed(scores[(i*8) +: 8]);
+      if (lane_val > row_max)
+        row_max = lane_val;
+    end
+
+    sum_weight = {{ACCUM_BITS{{1'b0}}}};
+    for (i = 0; i < ROW_ELEMS; i = i + 1) begin
+      lane_val = $signed(scores[(i*8) +: 8]);
+      delta = row_max - lane_val;
+      if (delta < 0)
+        delta = 0;
+      if (delta > MAX_SHIFT)
+        delta = MAX_SHIFT;
+      exp_weight[i] = ({{{{(ACCUM_BITS-1){{1'b0}}}}, 1'b1}} << (MAX_SHIFT - delta));
+      sum_weight = sum_weight + exp_weight[i];
+    end
+  end
+
+  always @(*) begin
+    next_weights = {{{data_width}{{1'b0}}}};
+{hash_init.rstrip()}
+    for (i = 0; i < ROW_ELEMS; i = i + 1) begin
+      numer = (exp_weight_q[i] * OUTPUT_SCALE) + (sum_weight_q >> 1);
+      if (sum_weight_q != 0)
+        lane_out = numer / sum_weight_q;
+      else
+        lane_out = 8'h00;
+      if (lane_out > 8'd127)
+        lane_out = 8'd127;
+      next_weights[(i*8) +: 8] = lane_out;
+{hash_update.rstrip()}
+    end
+  end
+
+  always @(posedge clk) begin
+    for (i = 0; i < ROW_ELEMS; i = i + 1) begin
+      exp_weight_q[i] <= exp_weight[i];
+    end
+    sum_weight_q <= sum_weight;
+    weights <= next_weights;
+{hash_seq.rstrip()}
+  end
+endmodule
+"""
+    if implementation == "pow2sum":
+        return f"""(* keep_hierarchy = 1 *)
+module {module_name} (
+    input  wire                  clk,
+    input  wire [{data_width - 1}:0] scores,
+    output reg  [{data_width - 1}:0] weights{hash_port}
+);
+  localparam integer ROW_ELEMS = {row_elems};
+  localparam integer ACCUM_BITS = {accum_bits};
+  localparam integer PRODUCT_BITS = {product_bits};
+  localparam integer MAX_SHIFT = 7;
+  localparam integer OUTPUT_SCALE = 127;
+  localparam integer RECIPROCAL_BITS = {reciprocal_bits};
+
+  integer i;
+  integer signed lane_val;
+  integer signed row_max;
+  integer delta;
+  integer denom_shift;
+  reg [ACCUM_BITS-1:0] exp_weight [0:ROW_ELEMS-1];
+  reg [ACCUM_BITS-1:0] sum_weight;
+  reg [PRODUCT_BITS-1:0] lane_scaled;
+  reg [7:0] lane_out;
+  reg [{data_width - 1}:0] next_weights;
+{hash_reg.rstrip()}
+
+  always @(*) begin
+    row_max = -(1 << 7);
+    for (i = 0; i < ROW_ELEMS; i = i + 1) begin
+      lane_val = $signed(scores[(i*8) +: 8]);
+      if (lane_val > row_max)
+        row_max = lane_val;
+    end
+
+    sum_weight = {{ACCUM_BITS{{1'b0}}}};
+    for (i = 0; i < ROW_ELEMS; i = i + 1) begin
+      lane_val = $signed(scores[(i*8) +: 8]);
+      delta = row_max - lane_val;
+      if (delta < 0)
+        delta = 0;
+      if (delta > MAX_SHIFT)
+        delta = MAX_SHIFT;
+      exp_weight[i] = ({{{{(ACCUM_BITS-1){{1'b0}}}}, 1'b1}} << (MAX_SHIFT - delta));
+      sum_weight = sum_weight + exp_weight[i];
+    end
+
+    denom_shift = 0;
+    for (i = 0; i < ACCUM_BITS; i = i + 1) begin
+      if (sum_weight > ({{{{(ACCUM_BITS-1){{1'b0}}}}, 1'b1}} << i))
+        denom_shift = i + 1;
+    end
+
+    next_weights = {{{data_width}{{1'b0}}}};
+{hash_init.rstrip()}
+    for (i = 0; i < ROW_ELEMS; i = i + 1) begin
+      lane_scaled = (exp_weight[i] * OUTPUT_SCALE) >> denom_shift;
+      if (lane_scaled > 8'd127)
+        lane_out = 8'd127;
+      else
+        lane_out = lane_scaled[7:0];
+      next_weights[(i*8) +: 8] = lane_out;
+{hash_update.rstrip()}
+    end
+  end
+
+  always @(posedge clk) begin
+    weights <= next_weights;
+{hash_seq.rstrip()}
+  end
+endmodule
+"""
     return f"""(* keep_hierarchy = 1 *)
 module {module_name} (
     input  wire                  clk,
@@ -238,7 +397,10 @@ def _write_top(*, cfg: dict[str, Any], comp: dict[str, Any], out_path: Path) -> 
     stream_buffer_bits = _as_int(comp, "stream_buffer_bits", 1024)
     equivalence_hash = _as_bool(comp, "equivalence_hash", False)
     softmax_pipeline_stages = _as_int(comp, "softmax_pipeline_stages", 0)
-    value_delay_stages = softmax_pipeline_stages + 1 if softmax_pipeline_stages else 0
+    softmax_internal_pipeline_stages = _as_int(comp, "softmax_internal_pipeline_stages", 0)
+    softmax_impl = _as_str(comp, "softmax_impl", "exact_div")
+    softmax_latency_stages = 1 + softmax_internal_pipeline_stages
+    value_delay_stages = softmax_pipeline_stages + softmax_latency_stages if softmax_pipeline_stages else 0
     macs_per_stream = array_m * array_n * k_unroll
     streams = 2
     total_macs = streams * macs_per_stream
@@ -469,6 +631,8 @@ endmodule
                 accum_bits=accum_bits,
                 reciprocal_bits=reciprocal_bits,
                 equivalence_hash=equivalence_hash,
+                implementation=softmax_impl,
+                internal_pipeline_stages=softmax_internal_pipeline_stages,
             ),
             _value_stream_module(
                 module_name=value_name,
@@ -500,7 +664,10 @@ endmodule
         "partials_per_cycle": partials_per_cycle,
         "stream_buffer_bits_per_stream": stream_buffer_bits,
         "equivalence_hash": equivalence_hash,
+        "softmax_impl": softmax_impl,
         "softmax_pipeline_stages": softmax_pipeline_stages,
+        "softmax_internal_pipeline_stages": softmax_internal_pipeline_stages,
+        "softmax_latency_stages": softmax_latency_stages,
         "value_alignment_delay_stages": value_delay_stages,
         "components": {
             "compute": "two signed-int8 dense GEMM streams",

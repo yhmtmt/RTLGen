@@ -9,6 +9,8 @@ def _write_config(
     *,
     equivalence_hash: bool | None = None,
     softmax_pipeline_stages: int | None = None,
+    softmax_internal_pipeline_stages: int | None = None,
+    softmax_impl: str | None = None,
 ) -> None:
     comp = {
         "streams": 2,
@@ -28,6 +30,10 @@ def _write_config(
         comp["equivalence_hash"] = equivalence_hash
     if softmax_pipeline_stages is not None:
         comp["softmax_pipeline_stages"] = softmax_pipeline_stages
+    if softmax_internal_pipeline_stages is not None:
+        comp["softmax_internal_pipeline_stages"] = softmax_internal_pipeline_stages
+    if softmax_impl is not None:
+        comp["softmax_impl"] = softmax_impl
     config_path.parent.mkdir(parents=True)
     config_path.write_text(
         json.dumps(
@@ -88,7 +94,10 @@ def test_attention_dual_stream_composed_generator_ppa_guard_and_syntax(tmp_path:
     assert manifest["softmax_row_elems"] == 4
     assert manifest["value_lanes_per_stream"] == 4
     assert manifest["equivalence_hash"] is False
+    assert manifest["softmax_impl"] == "exact_div"
     assert manifest["softmax_pipeline_stages"] == 0
+    assert manifest["softmax_internal_pipeline_stages"] == 0
+    assert manifest["softmax_latency_stages"] == 1
     assert manifest["value_alignment_delay_stages"] == 0
     assert "u_softmax" in top_text
     assert "u_value_stream_0" in top_text
@@ -125,6 +134,8 @@ def test_attention_dual_stream_composed_generator_softmax_pipeline(tmp_path: Pat
     manifest = json.loads((design_dir / "verilog" / "attention_dual_stream_composed_manifest.json").read_text())
     assert manifest["equivalence_hash"] is False
     assert manifest["softmax_pipeline_stages"] == 1
+    assert manifest["softmax_internal_pipeline_stages"] == 0
+    assert manifest["softmax_latency_stages"] == 1
     assert manifest["value_alignment_delay_stages"] == 2
     assert "reg [31:0] softmax_scores_pipe_0" in top_text
     assert ".scores(softmax_scores_pipe_0)" in top_text
@@ -132,3 +143,40 @@ def test_attention_dual_stream_composed_generator_softmax_pipeline(tmp_path: Pat
     assert "score_mix_1_pipe_1" in top_text
     assert ".stream_data(stream_buf_0_pipe_1)" in top_text
     assert ".score_mix(score_mix_1_pipe_1)" in top_text
+
+
+def test_attention_dual_stream_composed_generator_softmax_split_pipeline(tmp_path: Path) -> None:
+    design_dir = tmp_path / "attention_dual_stream_composed_split"
+    config_path = design_dir / "config.json"
+    _write_config(config_path, softmax_pipeline_stages=1, softmax_internal_pipeline_stages=1)
+    top_text = _generate_and_check(design_dir, config_path)
+
+    manifest = json.loads((design_dir / "verilog" / "attention_dual_stream_composed_manifest.json").read_text())
+    assert manifest["softmax_impl"] == "exact_div"
+    assert manifest["softmax_pipeline_stages"] == 1
+    assert manifest["softmax_internal_pipeline_stages"] == 1
+    assert manifest["softmax_latency_stages"] == 2
+    assert manifest["value_alignment_delay_stages"] == 3
+    assert "exp_weight_q" in top_text
+    assert "sum_weight_q" in top_text
+    assert ".stream_data(stream_buf_0_pipe_2)" in top_text
+    assert ".score_mix(score_mix_1_pipe_2)" in top_text
+    assert "lane_out = numer / sum_weight_q" in top_text
+
+
+def test_attention_dual_stream_composed_generator_softmax_pow2sum_replacement(tmp_path: Path) -> None:
+    design_dir = tmp_path / "attention_dual_stream_composed_pow2sum"
+    config_path = design_dir / "config.json"
+    _write_config(config_path, softmax_pipeline_stages=1, softmax_impl="pow2sum")
+    top_text = _generate_and_check(design_dir, config_path)
+
+    manifest = json.loads((design_dir / "verilog" / "attention_dual_stream_composed_manifest.json").read_text())
+    assert manifest["softmax_impl"] == "pow2sum"
+    assert manifest["softmax_pipeline_stages"] == 1
+    assert manifest["softmax_internal_pipeline_stages"] == 0
+    assert manifest["softmax_latency_stages"] == 1
+    assert manifest["value_alignment_delay_stages"] == 2
+    assert "denom_shift" in top_text
+    assert "lane_scaled" in top_text
+    assert "/ sum_weight" not in top_text
+    assert ".stream_data(stream_buf_0_pipe_1)" in top_text
