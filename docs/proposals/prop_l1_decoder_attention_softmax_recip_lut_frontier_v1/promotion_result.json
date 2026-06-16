@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l1_decoder_attention_softmax_recip_lut_frontier_v1",
-  "decision": "promote",
-  "pr_number": 870,
-  "merge_commit": "236c8acb945a0ef5eb1e988423737d532ab50939",
-  "merged_utc": "2026-06-16T13:53:29.231283Z"
+  "decision": "iterate",
+  "pr_number": 871,
+  "merge_commit": "7a152efb8ab3c8939eeb6c590a465ca4c0be46cb",
+  "merged_utc": "2026-06-16T14:05:12.619902Z"
 }

@@ -40,7 +40,7 @@
       "notes": "Merged via PR #870 and merge 236c8acb945a0ef5eb1e988423737d532ab50939 at 2026-06-16T13:53:29.231283Z."
     },
     {
-      "item_id": "l2_decoder_attention_softmax_recip_lut_quality_llama7b_v1",
+      "item_id": "l2_decoder_attention_softmax_recip_lut_quality_llama7b_v1_r3",
       "task_type": "l2_campaign",
       "objective": "Run the Llama7B-shape quality/equivalence gate comparing exact, pow2sum, and q8/q10/q12 reciprocal-LUT softmax normalization for Q8/K8/V6/S8/W8 attention.",
       "evaluation_mode": "quality_equivalence_gate",
@@ -57,7 +57,14 @@
         "direction": "quality_gate_recip_lut",
         "reason": "The reciprocal-LUT result should distinguish softmax-normalization error from the already known mixed-precision quantization error."
       },
-      "status": "pending"
+      "status": "merged",
+      "prior_item_ids": [
+        "l2_decoder_attention_softmax_recip_lut_quality_llama7b_v1"
+      ],
+      "merged_pr_number": 871,
+      "merge_commit": "7a152efb8ab3c8939eeb6c590a465ca4c0be46cb",
+      "merged_utc": "2026-06-16T14:05:12.619902Z",
+      "notes": "Merged via PR #871 and merge 7a152efb8ab3c8939eeb6c590a465ca4c0be46cb at 2026-06-16T14:05:12.619902Z."
     }
   ],
   "source_commit": "a91a3faacea5146ec5b677118537848618f03edd"
