@@ -57,6 +57,26 @@
       "merge_commit": "fa262f5a152222600c8f25c965768bbbafb14159",
       "merged_utc": "2026-06-16T02:24:02.035565Z",
       "notes": "Merged via PR #859 and merge fa262f5a152222600c8f25c965768bbbafb14159 at 2026-06-16T02:24:02.035565Z."
+    },
+    {
+      "item_id": "l2_decoder_attention_softmax_pow2sum_quality_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Run the Llama7B-shape quality/equivalence gate for the divider-free pow2sum softmax replacement against the same Q8/K8/V6/S8/W8 RTL-style exact softmax baseline.",
+      "evaluation_mode": "quality_equivalence_gate",
+      "abstraction_layer": "decoder_attention_softmax_pow2sum_quality",
+      "comparison_role": "softmax_replacement_quality_gate",
+      "paired_baseline_item_id": "l2_decoder_attention_mixed_precision_quality_llama7b_v1",
+      "depends_on_item_ids": [
+        "l1_decoder_attention_dual_stream_composed_softmax_pow2sum_ppa_v1",
+        "l2_decoder_attention_mixed_precision_quality_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "quality_gate_pow2sum",
+        "reason": "A 6.4411 ns pow2sum PPA result is only useful if the replacement does not materially damage Llama7B-shape attention top-1/retrieval/output quality versus RTL-style exact int8 softmax."
+      },
+      "status": "pending"
     }
   ],
   "source_commit": "eec17a523f8dd0e2419ab9afd77fe639f79a0daa"

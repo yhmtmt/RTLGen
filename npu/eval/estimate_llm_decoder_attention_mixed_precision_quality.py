@@ -25,6 +25,7 @@ class Candidate:
     acc_bits: int
     score_bits: int
     weight_bits: int
+    softmax_mode: str = "float_quantized"
 
 
 def _int_list(value: str) -> list[int]:
@@ -119,6 +120,39 @@ def _quantize_logits(logits: Vector, bits: int) -> Vector:
     return _dequantize(qvector, scale)
 
 
+def _rtl_quantized_softmax(logits: Vector, *, score_bits: int, weight_bits: int, mode: str) -> Vector:
+    if mode not in {"rtl_exact", "rtl_pow2sum"}:
+        raise ValueError(f"unsupported RTL softmax mode: {mode}")
+    if weight_bits > 8:
+        raise ValueError("RTL softmax modes model the int8 softmax weight block; weight_bits must be <= 8")
+    qlogits, _scale = _quantize_symmetric(logits, score_bits)
+    if not qlogits:
+        return []
+    max_shift = 7
+    output_scale = (1 << weight_bits) - 1
+    row_max = max(qlogits)
+    exp_weights: list[int] = []
+    for value in qlogits:
+        delta = row_max - value
+        if delta < 0:
+            delta = 0
+        if delta > max_shift:
+            delta = max_shift
+        exp_weights.append(1 << (max_shift - delta))
+    sum_weight = sum(exp_weights)
+    if sum_weight <= 0:
+        return _softmax(logits)
+    if mode == "rtl_exact":
+        lanes = [min(output_scale, ((weight * output_scale) + (sum_weight >> 1)) // sum_weight) for weight in exp_weights]
+    else:
+        denom_shift = 0
+        for index in range(32):
+            if sum_weight > (1 << index):
+                denom_shift = index + 1
+        lanes = [min(output_scale, (weight * output_scale) >> denom_shift) for weight in exp_weights]
+    return [lane / float(output_scale) for lane in lanes]
+
+
 def _candidate_dot_from_quantized_query(q_int: list[int], q_scale: float, key: Vector, candidate: Candidate) -> float:
     k_int, k_scale = _quantize_symmetric(key, candidate.k_bits)
     acc = sum(q * k for q, k in zip(q_int, k_int))
@@ -204,9 +238,17 @@ def _candidate_attention(
     scale = 1.0 / math.sqrt(len(query))
     q_int, q_scale = _quantize_symmetric(query, candidate.q_bits)
     logits = [_candidate_dot_from_quantized_query(q_int, q_scale, key, candidate) * scale for key in keys]
-    logits = _quantize_logits(logits, candidate.score_bits)
-    weights = _softmax(logits)
-    weights = _quantize_unsigned_probability(weights, candidate.weight_bits)
+    if candidate.softmax_mode == "float_quantized":
+        logits = _quantize_logits(logits, candidate.score_bits)
+        weights = _softmax(logits)
+        weights = _quantize_unsigned_probability(weights, candidate.weight_bits)
+    else:
+        weights = _rtl_quantized_softmax(
+            logits,
+            score_bits=candidate.score_bits,
+            weight_bits=candidate.weight_bits,
+            mode=candidate.softmax_mode,
+        )
     return {
         "top1": max(range(len(weights)), key=lambda index: weights[index]),
         "target": target,
@@ -215,7 +257,7 @@ def _candidate_attention(
     }
 
 
-def _parse_candidate_spec(spec: str) -> Candidate:
+def _parse_candidate_spec(spec: str, *, softmax_mode: str = "float_quantized") -> Candidate:
     values: dict[str, int] = {}
     for part in spec.split(":"):
         if len(part) < 2:
@@ -228,13 +270,18 @@ def _parse_candidate_spec(spec: str) -> Candidate:
     if missing:
         raise ValueError(f"candidate spec {spec!r} missing {sorted(missing)}")
     return Candidate(
-        candidate_id=spec.replace(":", "_"),
+        candidate_id=(
+            spec.replace(":", "_")
+            if softmax_mode == "float_quantized"
+            else f"{spec.replace(':', '_')}_softmax_{softmax_mode}"
+        ),
         q_bits=values["q"],
         k_bits=values["k"],
         v_bits=values["v"],
         acc_bits=values["a"],
         score_bits=values["s"],
         weight_bits=values["w"],
+        softmax_mode=softmax_mode,
     )
 
 
@@ -292,8 +339,16 @@ def build_report(
     regime_list: list[str],
     seed_count: int,
     candidate_specs: list[str],
+    softmax_mode_list: list[str],
 ) -> JsonDict:
-    candidates = [_parse_candidate_spec(spec) for spec in candidate_specs]
+    unsupported_modes = sorted(set(softmax_mode_list) - {"float_quantized", "rtl_exact", "rtl_pow2sum"})
+    if unsupported_modes:
+        raise ValueError(f"unsupported softmax modes: {unsupported_modes}")
+    candidates = [
+        _parse_candidate_spec(spec, softmax_mode=softmax_mode)
+        for spec in candidate_specs
+        for softmax_mode in softmax_mode_list
+    ]
     metric_rows: list[JsonDict] = []
     for sequence_length in sequence_length_list:
         for regime in regime_list:
@@ -342,6 +397,7 @@ def build_report(
                                 "acc_bits": candidate.acc_bits,
                                 "score_bits": candidate.score_bits,
                                 "weight_bits": candidate.weight_bits,
+                                "softmax_mode": candidate.softmax_mode,
                                 "sequence_length": sequence_length,
                                 "regime": regime,
                                 "seed": seed,
@@ -367,6 +423,7 @@ def build_report(
                 "acc_bits": candidate.acc_bits,
                 "score_bits": candidate.score_bits,
                 "weight_bits": candidate.weight_bits,
+                "softmax_mode": candidate.softmax_mode,
                 "decision": _decision(summary),
             }
         )
@@ -381,7 +438,14 @@ def build_report(
                 if row["candidate_id"] == candidate.candidate_id and row["regime"] == regime
             ]
             summary = _summarize(rows)
-            summary.update({"candidate_id": candidate.candidate_id, "regime": regime, "decision": _decision(summary)})
+            summary.update(
+                {
+                    "candidate_id": candidate.candidate_id,
+                    "softmax_mode": candidate.softmax_mode,
+                    "regime": regime,
+                    "decision": _decision(summary),
+                }
+            )
             regime_summary.append(summary)
 
     passing = [row for row in candidate_summary if row["decision"] == "mixed_precision_proxy_pass"]
@@ -434,6 +498,7 @@ def build_report(
             "regime_list": regime_list,
             "seed_count": seed_count,
             "candidate_specs": candidate_specs,
+            "softmax_mode_list": softmax_mode_list,
         },
         "sweep_summary": {
             "metric_row_count": len(metric_rows),
@@ -451,6 +516,7 @@ def build_report(
             "This is a Llama7B-shape synthetic native-GQA attention proxy, not measured Llama7B perplexity or task accuracy.",
             "The proxy uses 32 attention heads, 4 KV heads, and head_dim 128 by default to match the current GQA8 Llama7B frontier assumption.",
             "Q/K/V use per-vector symmetric quantization; accumulator saturation models fixed-width integer dot products.",
+            "The rtl_exact and rtl_pow2sum modes model the int8 row-softmax RTL: score quantization, clipped exp powers, 127-scale output weights, and either exact or power-of-two sum normalization.",
             "Passing this proxy is only a gate for mixed-precision RTL/PPA and later real-checkpoint validation.",
         ],
     }
@@ -471,12 +537,12 @@ def write_markdown(path: Path, payload: JsonDict) -> None:
         "",
         "## Candidate Summary",
         "",
-        "| candidate | q | k | v | acc | score | weight | top1 | retrieval | cosine | kl | decision |",
-        "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|",
+        "| candidate | softmax | q | k | v | acc | score | weight | top1 | retrieval | cosine | kl | decision |",
+        "|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|",
     ]
     for row in payload["candidate_summary"]:
         lines.append(
-            "| {candidate_id} | {q_bits} | {k_bits} | {v_bits} | {acc_bits} | {score_bits} | {weight_bits} | "
+            "| {candidate_id} | {softmax_mode} | {q_bits} | {k_bits} | {v_bits} | {acc_bits} | {score_bits} | {weight_bits} | "
             "{mean_top1_match} | {mean_retrieval_hit} | {mean_output_cosine} | {mean_kl_divergence} | {decision} |".format(
                 **row
             )
@@ -486,13 +552,13 @@ def write_markdown(path: Path, payload: JsonDict) -> None:
             "",
             "## Regime Summary",
             "",
-            "| candidate | regime | top1 | retrieval | cosine | kl | decision |",
-            "|---|---|---:|---:|---:|---:|---|",
+            "| candidate | softmax | regime | top1 | retrieval | cosine | kl | decision |",
+            "|---|---|---|---:|---:|---:|---:|---|",
         ]
     )
     for row in payload["regime_summary"]:
         lines.append(
-            "| {candidate_id} | {regime} | {mean_top1_match} | {mean_retrieval_hit} | "
+            "| {candidate_id} | {softmax_mode} | {regime} | {mean_top1_match} | {mean_retrieval_hit} | "
             "{mean_output_cosine} | {mean_kl_divergence} | {decision} |".format(**row)
         )
     lines.extend(["", "## Assumptions", ""])
@@ -525,6 +591,7 @@ def main() -> int:
             "q8:k8:v6:a24:s24:w16",
         ],
     )
+    ap.add_argument("--softmax-mode-list", type=_str_list, default=["float_quantized"])
     ap.add_argument("--out", required=True)
     ap.add_argument("--out-md", required=True)
     args = ap.parse_args()
@@ -543,6 +610,7 @@ def main() -> int:
         regime_list=args.regime_list,
         seed_count=args.seed_count,
         candidate_specs=args.candidate_spec_list,
+        softmax_mode_list=args.softmax_mode_list,
     )
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
