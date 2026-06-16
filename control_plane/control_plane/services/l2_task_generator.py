@@ -5287,6 +5287,48 @@ def _decoder_attention_mixed_precision_quality_evidence(*, item_id: str) -> dict
     }
 
 
+def _decoder_attention_softmax_pow2sum_quality_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_attention_mixed_precision_quality__{item_id}.json"
+    report = f"{base}/decoder_attention_mixed_precision_quality__{item_id}.md"
+    dual_stream_feasibility = (
+        f"{base}/decoder_attention_kv_dual_stream_physical_feasibility__"
+        "l2_decoder_attention_kv_dual_stream_physical_feasibility_llama7b_v1.json"
+    )
+    return {
+        "inputs": {
+            "attention_kv_dual_stream_physical_feasibility": dual_stream_feasibility,
+            "attention_mixed_precision_quality_out": out,
+            "attention_mixed_precision_quality_report": report,
+            "attention_mixed_precision_quality_scope": (
+                "Compare the Q8/K8/V6/S8/W8 RTL-style exact int8 softmax path against the "
+                "divider-free pow2sum replacement on the Llama7B-shape native-GQA attention proxy. "
+                "This is a quality/equivalence gate for the pow2sum PPA result, not final Llama7B perplexity."
+            ),
+        },
+        "commands": [
+            {
+                "name": "estimate_decoder_attention_softmax_pow2sum_quality",
+                "run": (
+                    "python3 npu/eval/estimate_llm_decoder_attention_mixed_precision_quality.py "
+                    f"--dual-stream-feasibility {dual_stream_feasibility} "
+                    "--attention-heads 32 "
+                    "--kv-heads 4 "
+                    "--head-dim 128 "
+                    "--sequence-length-list 64,128 "
+                    "--regime-list native_correlated_queries,native_retrieval,native_low_margin,native_random "
+                    "--seed-count 2 "
+                    "--candidate-spec-list q8:k8:v6:a24:s8:w8 "
+                    "--softmax-mode-list rtl_exact,rtl_pow2sum "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+    }
+
+
 def _decoder_attention_mixed_precision_physical_feasibility_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_mixed_precision_physical_feasibility__{item_id}.json"
@@ -6971,6 +7013,7 @@ def _build_payload(
         "decoder_attention_kv_subtile_pipeline_schedule",
         "decoder_attention_kv_dual_stream_physical_feasibility",
         "decoder_attention_mixed_precision_quality",
+        "decoder_attention_softmax_pow2sum_quality",
         "decoder_attention_mixed_precision_physical_feasibility",
         "decoder_attention_mixed_precision_int8_compute_physical_feasibility",
         "decoder_attention_noc_profile",
@@ -7119,6 +7162,8 @@ def _build_payload(
             decoder_evidence = _decoder_attention_kv_dual_stream_physical_feasibility_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_mixed_precision_quality":
             decoder_evidence = _decoder_attention_mixed_precision_quality_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_attention_softmax_pow2sum_quality":
+            decoder_evidence = _decoder_attention_softmax_pow2sum_quality_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_mixed_precision_physical_feasibility":
             decoder_evidence = _decoder_attention_mixed_precision_physical_feasibility_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_mixed_precision_int8_compute_physical_feasibility":

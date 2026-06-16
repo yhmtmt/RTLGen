@@ -15,7 +15,8 @@
     "baseline": "l1_decoder_attention_dual_stream_composed_softmax_pipe1_ppa_v1",
     "candidates": [
       "l1_decoder_attention_dual_stream_composed_softmax_split1_ppa_v1",
-      "l1_decoder_attention_dual_stream_composed_softmax_pow2sum_ppa_v1"
+      "l1_decoder_attention_dual_stream_composed_softmax_pow2sum_ppa_v1",
+      "l2_decoder_attention_softmax_pow2sum_quality_llama7b_v1"
     ],
     "metrics": [
       "critical_path_ns",
@@ -83,12 +84,26 @@
       "depends_on": [
         "l1_decoder_attention_dual_stream_composed_softmax_pipe1_ppa_v1"
       ]
+    },
+    {
+      "item_id": "l2_decoder_attention_softmax_pow2sum_quality_llama7b_v1",
+      "task_type": "l2_campaign",
+      "evaluation_mode": "quality_equivalence_gate",
+      "abstraction_layer": "decoder_attention_softmax_pow2sum_quality",
+      "comparison_role": "softmax_replacement_quality_gate",
+      "paired_baseline_item_id": "l2_decoder_attention_mixed_precision_quality_llama7b_v1",
+      "depends_on": [
+        "l1_decoder_attention_dual_stream_composed_softmax_pow2sum_ppa_v1",
+        "l2_decoder_attention_mixed_precision_quality_llama7b_v1"
+      ]
     }
   ],
   "source_files": [
     "npu/rtlgen/gen_attention_dual_stream_composed.py",
     "npu/eval/check_attention_dual_stream_composed_guard.py",
+    "npu/eval/estimate_llm_decoder_attention_mixed_precision_quality.py",
     "npu/eval/extract_openroad_timing_summary.py",
-    "control_plane/control_plane/services/l1_task_generator.py"
+    "control_plane/control_plane/services/l1_task_generator.py",
+    "control_plane/control_plane/services/l2_task_generator.py"
   ]
 }
