@@ -1,0 +1,2 @@
+run_key,attempt,trial_index,seed,status,metrics_csv,critical_path_ns,die_area,total_power_mw,failure_category,failure_stage,failure_signature
+l1_decoder_attention_dual_stream_composed_softmax_pow2sum_ppa_v1_run_2156504f729327f2,1,1,0,succeeded,runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_pow2sum/metrics.csv,6.4411,6250000.0,5.49,none,,
