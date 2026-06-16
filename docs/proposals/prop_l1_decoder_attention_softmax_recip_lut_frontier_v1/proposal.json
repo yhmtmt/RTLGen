@@ -36,7 +36,7 @@
   "candidate_plans": {
     "recip_lut": {
       "item_id": "l1_decoder_attention_dual_stream_composed_softmax_recip_lut_ppa_v1",
-      "description": "Replace exact sum division by a generated fixed-point reciprocal table for sum_weight, then multiply-shift each exp lane. Sweep q8/q10/q12 reciprocal widths under the same composed dual-stream harness.",
+      "description": "Replace exact sum division by a generated fixed-point reciprocal table for sum_weight, then multiply-shift each exp lane. Sweep q8/q10/q12 reciprocal widths under the same composed dual-stream harness using a reciprocal-specific flow sweep that raises SYNTH_MEMORY_MAX_BITS for the intended table ROM.",
       "quality_risk": "low softmax-specific risk relative to pow2sum because local proxy q12 matches exact RTL-mode quality; still blocked by the broader Q8/K8/V6 mixed-precision quality gate until model-native or QAT recovery is shown."
     },
     "recip_lut_quality": {
@@ -49,7 +49,7 @@
     "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_recip_lut_q8/config.json",
     "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_recip_lut_q10/config.json",
     "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_recip_lut_q12/config.json",
-    "runs/campaigns/npu/attention_dual_stream_composed_v1/sweeps/nangate45_dual_stream_composed_hier.json",
+    "runs/campaigns/npu/attention_dual_stream_composed_v1/sweeps/nangate45_dual_stream_composed_hier_recip_lut.json",
     "l1_decoder_attention_dual_stream_composed_softmax_split1_ppa_v1",
     "l1_decoder_attention_dual_stream_composed_softmax_pow2sum_ppa_v1"
   ],
@@ -66,7 +66,7 @@
         "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_recip_lut_q10/config.json",
         "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_recip_lut_q12/config.json"
       ],
-      "sweep_path": "runs/campaigns/npu/attention_dual_stream_composed_v1/sweeps/nangate45_dual_stream_composed_hier.json",
+      "sweep_path": "runs/campaigns/npu/attention_dual_stream_composed_v1/sweeps/nangate45_dual_stream_composed_hier_recip_lut.json",
       "out_root": "runs/designs/npu_blocks",
       "expected_outputs": [
         "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_recip_lut_q8/metrics.csv",
@@ -95,6 +95,7 @@
     "npu/rtlgen/gen_attention_dual_stream_composed.py",
     "npu/eval/check_attention_dual_stream_composed_guard.py",
     "npu/eval/estimate_llm_decoder_attention_mixed_precision_quality.py",
-    "control_plane/control_plane/services/l2_task_generator.py"
+    "control_plane/control_plane/services/l2_task_generator.py",
+    "runs/campaigns/npu/attention_dual_stream_composed_v1/sweeps/nangate45_dual_stream_composed_hier_recip_lut.json"
   ]
 }
