@@ -5167,10 +5167,11 @@ def _decoder_attention_kv_measured_hbm_service_evidence(*, item_id: str) -> dict
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_kv_measured_hbm_service__{item_id}.json"
     report = f"{base}/decoder_attention_kv_measured_hbm_service__{item_id}.md"
-    measured_sram = (
-        f"{base}/decoder_attention_kv_measured_sram_rebalance__"
-        "l2_decoder_attention_kv_measured_sram_rebalance_llama7b_v1.json"
-    )
+    if "softmax_recip_lut" in item_id:
+        source_item = "l2_decoder_attention_kv_measured_sram_rebalance_softmax_recip_lut_llama7b_v1"
+    else:
+        source_item = "l2_decoder_attention_kv_measured_sram_rebalance_llama7b_v1"
+    measured_sram = f"{base}/decoder_attention_kv_measured_sram_rebalance__{source_item}.json"
     return {
         "inputs": {
             "attention_kv_measured_sram_rebalance": measured_sram,
