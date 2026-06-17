@@ -1,0 +1,63 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_composed_datapath_recip_lut_variant_frontier_v1",
+  "created_utc": "2026-06-17T21:45:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Composed reciprocal-LUT softmax variant frontier for Llama7B attention",
+  "hypothesis": "The current composed q10 reciprocal-LUT frontier may not be the best measured datapath point because q8 and q12 wrapper PPA are already available and have different clock, area, power, and precision-risk tradeoffs.",
+  "direct_comparison": {
+    "primary_question": "Among measured q8/q10/q12 reciprocal-LUT composed dual-stream wrappers, which gives the best effective Llama7B attention latency under the same subtile schedule and quality evidence?",
+    "include": [
+      "Use l2_decoder_attention_kv_subtile_pipeline_schedule_softmax_recip_lut_llama7b_v1 as the source schedule.",
+      "Use measured q8, q10, and q12 composed dual-stream reciprocal-LUT wrapper metrics.",
+      "Scale each source schedule row by each wrapper clock and select by effective feasible latency, area, and power.",
+      "Report the selected reciprocal-LUT variant label and preserve source schedule latency."
+    ],
+    "exclude": [
+      "Do not run new OpenROAD PPA; this consumes already-measured wrapper metrics.",
+      "Do not change HBM, SRAM, NoC, KV sharing, or Llama7B workload assumptions.",
+      "Do not treat the proxy precision gate as final real-checkpoint Llama7B quality."
+    ]
+  },
+  "expected_benefit": [
+    "Avoids locking the composed frontier to q10 when q8 may have better measured clock, area, and power.",
+    "Makes precision-risk provenance explicit in the frontier ranking.",
+    "Improves the current least-abstract attention datapath latency estimate if a faster measured variant is acceptable."
+  ],
+  "risks": [
+    "The quality evidence is still proxy/equivalence evidence, not final Llama7B checkpoint perplexity.",
+    "The job remains an L2 composition of measured wrappers and schedule rows rather than full whole-attention RTL integration.",
+    "Selecting q8 should remain provisional until real-model precision validation confirms no quality regression."
+  ],
+  "needs_mapper_change": true,
+  "required_evaluations": [
+    {
+      "task_type": "l2_campaign",
+      "evaluation_mode": "frontier_detail",
+      "objective": "composed_recip_lut_variant_frontier",
+      "cost_class": "small",
+      "depends_on_item_ids": [
+        "l1_decoder_attention_dual_stream_composed_softmax_recip_lut_ppa_v1_r3",
+        "l2_decoder_attention_composed_datapath_physical_feasibility_softmax_recip_lut_llama7b_v1",
+        "l2_decoder_attention_softmax_recip_lut_quality_llama7b_v1_r3",
+        "l2_decoder_attention_kv_subtile_pipeline_schedule_softmax_recip_lut_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "record_composed_recip_lut_variant_frontier",
+        "reason": "The result should identify the best measured q8/q10/q12 reciprocal-LUT composed wrapper variant and update the least-abstract Llama7B attention frontier."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_physical_feasibility_softmax_recip_lut_llama7b_v1.json"
+  ],
+  "knowledge_refs": [
+    "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_recip_lut_q8/metrics.csv",
+    "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_recip_lut_q10/metrics.csv",
+    "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_recip_lut_q12/metrics.csv",
+    "control_plane/shadow_exports/l2_decisions/l2_decoder_attention_softmax_recip_lut_quality_llama7b_v1_r3.json"
+  ]
+}

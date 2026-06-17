@@ -90,6 +90,27 @@ def test_decoder_evidence_summary_recognizes_composed_datapath_physical_feasibil
     assert "best_requested_adjusted_latency_us_if_feasible=1637.2" in summary
 
 
+def test_decoder_evidence_summary_recognizes_composed_datapath_recip_lut_variant_frontier_model() -> None:
+    outcome, summary = _decoder_evidence_summary(
+        evidence_ref="runs/datasets/demo/composed_datapath_frontier.json",
+        evidence_payload={
+            "model": "llm_decoder_attention_composed_datapath_recip_lut_variant_frontier_llama7b_v1",
+            "diagnosis": {
+                "decision": "dual_stream_feasible",
+                "precision_profile": "q8_k8_v6_a24_s8_w8_recip_lut_q10_int8_compute",
+                "best_requested_mode": "dual_mac",
+                "best_requested_adjusted_latency_us_if_feasible": 1200.0,
+                "best_requested_substituted_compute_variant_label": "q12",
+                "best_requested_substituted_compute_arch": "attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_recip_lut_q12",
+            },
+        },
+    )
+
+    assert outcome == "dual_stream_feasible"
+    assert "composed dual-stream physical feasibility evidence (softmax-recip LUT variant frontier)" in summary
+    assert "best_requested_substituted_compute_variant_label=q12" in summary
+
+
 def _seed_succeeded_l2_campaign(session: Session, repo_root: Path) -> tuple[str, str]:
     campaign_dir = repo_root / "runs" / "campaigns" / "npu" / "demo_campaign"
     schedule_rel = "runs/campaigns/npu/demo_campaign/artifacts/mapper/fp16_nm1_demo/demo_model/schedule.yml"

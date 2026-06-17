@@ -953,6 +953,7 @@ def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, 
         "llm_decoder_attention_mixed_precision_int8_compute_physical_feasibility_llama7b_v1",
         "llm_decoder_attention_mixed_precision_int8_compute_physical_feasibility_softmax_recip_lut_llama7b_v1",
         "llm_decoder_attention_composed_datapath_physical_feasibility_softmax_recip_lut_llama7b_v1",
+        "llm_decoder_attention_composed_datapath_recip_lut_variant_frontier_llama7b_v1",
     }:
         diagnosis = evidence_payload.get("diagnosis")
         diagnosis_dict = dict(diagnosis) if isinstance(diagnosis, dict) else {}
@@ -965,6 +966,8 @@ def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, 
             else
             "Decoder mixed-precision physical feasibility evidence"
             if model == "llm_decoder_attention_mixed_precision_physical_feasibility_llama7b_v1"
+            else "Decoder composed dual-stream physical feasibility evidence (softmax-recip LUT variant frontier)"
+            if model == "llm_decoder_attention_composed_datapath_recip_lut_variant_frontier_llama7b_v1"
             else "Decoder dual-stream physical feasibility evidence"
         )
         parts = [
@@ -983,6 +986,7 @@ def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, 
             "best_requested_compute_substitution_enabled",
             "best_requested_substituted_compute_arch",
             "best_requested_substituted_compute_area_um2",
+            "best_requested_substituted_compute_variant_label",
             "best_requested_compute_clock_ok",
             "best_feasible_mode",
             "best_feasible_latency_us",
