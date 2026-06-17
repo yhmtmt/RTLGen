@@ -448,6 +448,10 @@ _DECODER_EVIDENCE_OUTPUT_KEYS: tuple[tuple[str, str], ...] = (
     ("attention_kv_hbm_closed_onchip_schedule_out", "attention_kv_hbm_closed_onchip_schedule_report"),
     ("attention_kv_subtile_pipeline_schedule_out", "attention_kv_subtile_pipeline_schedule_report"),
     ("attention_kv_dual_stream_physical_feasibility_out", "attention_kv_dual_stream_physical_feasibility_report"),
+    (
+        "attention_kv_endpoint_sram_noc_full_search_schedule_out",
+        "attention_kv_endpoint_sram_noc_full_search_schedule_report",
+    ),
     ("attention_mixed_precision_quality_out", "attention_mixed_precision_quality_report"),
     ("attention_mixed_precision_physical_feasibility_out", "attention_mixed_precision_physical_feasibility_report"),
     (
@@ -523,6 +527,151 @@ def _decoder_quality_brief(evidence_payload: dict[str, Any]) -> dict[str, Any]:
         if key in evidence_payload:
             brief[key] = evidence_payload[key]
     return brief
+
+
+def _decoder_frontier_arch_id(best: dict[str, Any]) -> str:
+    arch_id = str(best.get("arch_id", "")).strip()
+    if arch_id:
+        return arch_id
+    parts = [
+        str(best.get("topology", "")).strip(),
+        str(best.get("scheduler_policy", "")).strip(),
+        str(best.get("reduction_strategy", "")).strip(),
+    ]
+    cluster_count = best.get("cluster_count")
+    bank_count = best.get("bank_count")
+    if cluster_count is not None:
+        parts.append(f"c{cluster_count}")
+    if bank_count is not None:
+        parts.append(f"b{bank_count}")
+    compute_arch = str(best.get("compute_arch", "")).strip()
+    if compute_arch:
+        parts.append(compute_arch)
+    return "_".join(part for part in parts if part) or str(best.get("measured_l1_profile", "")).strip()
+
+
+def _decoder_frontier_recommendation(
+    *,
+    evidence_ref: str,
+    evidence_payload: dict[str, Any],
+) -> dict[str, Any] | None:
+    best = evidence_payload.get("best")
+    if not isinstance(best, dict) or not best:
+        return None
+    model = str(evidence_payload.get("model", "")).strip()
+    if not model.startswith("llm_decoder_"):
+        return None
+    arch_id = _decoder_frontier_arch_id(best)
+    macro_mode = (
+        str(best.get("macro_mode", "")).strip()
+        or str(best.get("compute_source", "")).strip()
+        or "decoder_frontier"
+    )
+    if not arch_id or not macro_mode:
+        return None
+    recommendation: dict[str, Any] = {
+        "source": "decoder_evidence",
+        "decoder_model": model,
+        "decoder_evidence_ref": evidence_ref,
+        "arch_id": arch_id,
+        "macro_mode": macro_mode,
+    }
+    for key in (
+        "measured_l1_profile",
+        "topology",
+        "scheduler_policy",
+        "reduction_strategy",
+        "cluster_count",
+        "bank_count",
+        "active_clusters",
+        "active_banks",
+        "die_area_mm2",
+        "compute_arch",
+        "compute_replica_count",
+        "macs_per_cycle",
+        "latency_us",
+        "total_cycles",
+        "layer_cycles",
+        "clock_ns",
+        "logic_area_used_um2",
+        "logic_power_mw",
+        "sram_area_fraction",
+        "compute_logic_area_fraction",
+        "total_sram_mib",
+        "dominant_tile_resource",
+        "practical_noc_cap_source",
+        "practical_per_cluster_noc_effective_bytes_per_cycle",
+        "endpoint_bytes_per_cycle_per_cluster",
+        "tile_tokens",
+        "tile_waves",
+    ):
+        if key in best:
+            recommendation[key] = best[key]
+    return recommendation
+
+
+def _decoder_frontier_profile_recommendations(evidence_payload: dict[str, Any]) -> list[dict[str, Any]]:
+    rows = evidence_payload.get("top_rows")
+    if not isinstance(rows, list):
+        return []
+    result: list[dict[str, Any]] = []
+    seen_profiles: set[str] = set()
+    for index, row in enumerate(rows, start=1):
+        if not isinstance(row, dict):
+            continue
+        profile = str(row.get("measured_l1_profile", "")).strip()
+        if not profile or profile in seen_profiles:
+            continue
+        seen_profiles.add(profile)
+        entry: dict[str, Any] = {
+            "profile": profile,
+            "rank_in_decoder_frontier": index,
+            "best_arch_id": _decoder_frontier_arch_id(row),
+            "best_macro_mode": str(row.get("compute_source", "")).strip() or "decoder_frontier",
+        }
+        for key in (
+            "latency_us",
+            "total_cycles",
+            "layer_cycles",
+            "clock_ns",
+            "logic_area_used_um2",
+            "logic_power_mw",
+            "measured_l1_overhead_area_um2",
+            "measured_l1_overhead_power_mw",
+            "softmax_weight_generator_area_um2",
+            "softmax_weight_generator_power_mw",
+            "softmax_weight_generator_clock_ns",
+            "topology",
+            "scheduler_policy",
+            "reduction_strategy",
+            "cluster_count",
+            "bank_count",
+            "die_area_mm2",
+            "dominant_tile_resource",
+        ):
+            if key in row:
+                entry[key] = row[key]
+        result.append(entry)
+    return result
+
+
+def _decoder_recommendation_override(
+    *,
+    repo_root: Path,
+    work_item: WorkItem,
+) -> tuple[dict[str, Any] | None, list[dict[str, Any]]]:
+    evidence_ref, _source_refs = _decoder_evidence_paths(repo_root=repo_root, work_item=work_item)
+    if not evidence_ref:
+        return None, []
+    evidence_path = _resolve_path(repo_root=repo_root, path_text=evidence_ref)
+    try:
+        evidence_payload = _load_json(evidence_path)
+    except Exception:
+        return None, []
+    return (
+        _decoder_frontier_recommendation(evidence_ref=evidence_ref, evidence_payload=evidence_payload),
+        _decoder_frontier_profile_recommendations(evidence_payload),
+    )
 
 
 def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, Any]) -> tuple[str, str]:
@@ -618,6 +767,32 @@ def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, 
             "available_local_capacity_bytes",
             "hbm_exposed_cycles",
             "hbm_floor_gap_cycles",
+        ):
+            if key in best_dict:
+                parts.append(f"{key}={best_dict.get(key)}")
+        summary = "; ".join(parts)
+        return outcome, summary if summary.endswith(".") else summary + "."
+
+    if model == "llm_decoder_attention_kv_sram_noc_constrained_schedule_llama7b_v1":
+        best = evidence_payload.get("best")
+        best_dict = dict(best) if isinstance(best, dict) else {}
+        outcome = "endpoint_sram_noc_frontier_recorded"
+        parts = [
+            f"Decoder endpoint SRAM/NoC frontier evidence recorded from {evidence_ref}: decision={outcome}",
+        ]
+        for key in (
+            "measured_l1_profile",
+            "latency_us",
+            "total_cycles",
+            "topology",
+            "scheduler_policy",
+            "reduction_strategy",
+            "cluster_count",
+            "bank_count",
+            "compute_replica_count",
+            "macs_per_cycle",
+            "dominant_tile_resource",
+            "practical_noc_cap_source",
         ):
             if key in best_dict:
                 parts.append(f"{key}={best_dict.get(key)}")
@@ -1266,8 +1441,29 @@ def _build_payload(
     source_refs: dict[str, str],
     evaluation_record: dict[str, Any] | None,
     proposal_assessment: dict[str, Any] | None,
+    recommendation_override: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     best = best_point.get("best") or {}
+    campaign_recommendation = {
+        "arch_id": best.get("arch_id") or summary_best.get("arch_id"),
+        "macro_mode": best.get("macro_mode") or summary_best.get("macro_mode"),
+        "objective_rank": best.get("objective_rank") or summary_best.get("objective_rank"),
+        "objective_score": best.get("objective_score") or summary_best.get("objective_score"),
+        "latency_ms_mean": best.get("latency_ms_mean") or summary_best.get("latency_ms_mean"),
+        "energy_mj_mean": best.get("energy_mj_mean") or summary_best.get("energy_mj_mean"),
+        "critical_path_ns_mean": best.get("critical_path_ns_mean") or summary_best.get("critical_path_ns_mean"),
+        "die_area_um2_mean": best.get("die_area_um2_mean") or summary_best.get("die_area_um2_mean"),
+        "total_power_mw_mean": best.get("total_power_mw_mean") or summary_best.get("total_power_mw_mean"),
+        "flow_elapsed_s_mean": best.get("flow_elapsed_s_mean") or summary_best.get("flow_elapsed_s_mean"),
+    }
+    if recommendation_override:
+        recommendation = {
+            **campaign_recommendation,
+            **recommendation_override,
+            "legacy_campaign_recommendation": campaign_recommendation,
+        }
+    else:
+        recommendation = campaign_recommendation
     return {
         "version": 0.1,
         "generated_utc": utcnow().astimezone(timezone.utc).isoformat().replace("+00:00", "Z"),
@@ -1281,18 +1477,7 @@ def _build_payload(
         "review_metadata_source_commit": _repo_head(repo_root) or run.checkout_commit or work_item.source_commit,
         "objective": work_item.task_request.description,
         "input_manifest": work_item.input_manifest,
-        "recommendation": {
-            "arch_id": best.get("arch_id") or summary_best.get("arch_id"),
-            "macro_mode": best.get("macro_mode") or summary_best.get("macro_mode"),
-            "objective_rank": best.get("objective_rank") or summary_best.get("objective_rank"),
-            "objective_score": best.get("objective_score") or summary_best.get("objective_score"),
-            "latency_ms_mean": best.get("latency_ms_mean") or summary_best.get("latency_ms_mean"),
-            "energy_mj_mean": best.get("energy_mj_mean") or summary_best.get("energy_mj_mean"),
-            "critical_path_ns_mean": best.get("critical_path_ns_mean") or summary_best.get("critical_path_ns_mean"),
-            "die_area_um2_mean": best.get("die_area_um2_mean") or summary_best.get("die_area_um2_mean"),
-            "total_power_mw_mean": best.get("total_power_mw_mean") or summary_best.get("total_power_mw_mean"),
-            "flow_elapsed_s_mean": best.get("flow_elapsed_s_mean") or summary_best.get("flow_elapsed_s_mean"),
-        },
+        "recommendation": recommendation,
         "objective_profiles": objective_profiles,
         "evaluation_record": evaluation_record,
         "proposal_assessment": proposal_assessment,
@@ -1386,6 +1571,12 @@ def consume_l2_result(session: Session, request: Layer2ConsumeRequest) -> Layer2
         if objective_sweep_path.exists():
             objective_sweep_exists = True
             objective_profiles = _profile_recommendations(_load_csv(objective_sweep_path))
+    recommendation_override, decoder_objective_profiles = _decoder_recommendation_override(
+        repo_root=repo_root,
+        work_item=work_item,
+    )
+    if decoder_objective_profiles and not objective_profiles:
+        objective_profiles = decoder_objective_profiles
 
     payload = _build_payload(
         repo_root=repo_root,
@@ -1396,6 +1587,7 @@ def consume_l2_result(session: Session, request: Layer2ConsumeRequest) -> Layer2
         objective_profiles=objective_profiles,
         evaluation_record=evaluation_record,
         proposal_assessment=proposal_assessment,
+        recommendation_override=recommendation_override,
         source_refs={
             "best_point_json": best_point_rel,
             "summary_csv": summary_rel,
