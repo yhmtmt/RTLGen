@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l2_decoder_attention_kv_subtile_pipeline_schedule_softmax_recip_lut_v1",
-  "decision": "pending",
-  "pr_number": null,
-  "merge_commit": "",
-  "merged_utc": ""
+  "decision": "iterate",
+  "pr_number": 909,
+  "merge_commit": "22660ffb76c95cba29e6a55e0b3bf56957d90b54",
+  "merged_utc": "2026-06-17T12:00:23Z"
 }

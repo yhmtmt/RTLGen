@@ -19,7 +19,11 @@
         "direction": "record_softmax_recip_subtile_pipeline_schedule_frontier",
         "reason": "Evaluate whether sub-tile QK/softmax/V pipelining reduces the tile_attention bottleneck after softmax-recip measured-HBM and HBM-closed on-chip service closure."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 909,
+      "merge_commit": "22660ffb76c95cba29e6a55e0b3bf56957d90b54",
+      "merged_utc": "2026-06-17T12:00:23Z",
+      "notes": "Merged via PR #909 and merge 22660ffb76c95cba29e6a55e0b3bf56957d90b54 at 2026-06-17T12:00:23Z."
     }
   ]
 }

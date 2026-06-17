@@ -2,12 +2,14 @@
   "proposal_id": "prop_l2_decoder_attention_kv_subtile_pipeline_schedule_softmax_recip_lut_v1",
   "candidate_id": "l2_decoder_attention_kv_subtile_pipeline_schedule_softmax_recip_lut_llama7b_v1",
   "decision": "iterate",
-  "reason": "The softmax-recip subtile pipeline schedule improves latency from 2138.84136 us to 1575.373891 us, a 1.357672x speedup, with a legal 532608 B stream buffer inside 614656 B local capacity. The selected dual_mac mode and online_correction strategy need explicit area and numerical validation before promotion.",
+  "reason": "Decoder sub-tile pipeline schedule evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_subtile_pipeline_schedule__l2_decoder_attention_kv_subtile_pipeline_schedule_softmax_recip_lut_llama7b_v1.json: decision=subtile_pipeline_schedule_recorded; latency_us=1575.373891; latency_speedup_vs_hbm_closed_source=1.357672; tile_service_cycles=986; pipeline_attention_cycles=986; dominant_tile_resource=pipeline_attention; compute_mode=dual_mac; compute_area_multiplier=2.0; normalize_strategy=online_correction; subtile_count=8; subtile_buffer_count=4; prefetch_distance=3; required_stream_buffer_bytes=532608; available_local_capacity_bytes=614656; hbm_exposed_cycles=815; hbm_floor_gap_cycles=-315.",
   "evidence_refs": [
     "item:l2_decoder_attention_kv_subtile_pipeline_schedule_softmax_recip_lut_llama7b_v1",
     "run:l2_decoder_attention_kv_subtile_pipeline_schedule_softmax_recip_lut_llama7b_v1_run_6364ceb1a3b8a12f",
-    "artifact:runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_subtile_pipeline_schedule__l2_decoder_attention_kv_subtile_pipeline_schedule_softmax_recip_lut_llama7b_v1.json"
+    "artifact:control_plane/shadow_exports/l2_decisions/l2_decoder_attention_kv_subtile_pipeline_schedule_softmax_recip_lut_llama7b_v1.json",
+    "pr:#909",
+    "https://github.com/yhmtmt/RTLGen/pull/909"
   ],
-  "next_action": "measure or constrain dual_mac subtile pipeline cost and validate online_correction precision",
+  "next_action": "inspect follow-on work after l2_decoder_attention_kv_subtile_pipeline_schedule_softmax_recip_lut_llama7b_v1",
   "requires_human_approval": false
 }
