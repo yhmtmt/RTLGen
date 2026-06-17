@@ -5199,12 +5199,82 @@ def test_generate_l2_campaign_task_adds_attention_measured_sram_rebalance_eviden
             assert "attention_local_sram_capacity" in decoder_inputs
             assert "attention_kv_measured_sram_rebalance_out" in decoder_inputs
             assert "estimate_llm_decoder_attention_kv_measured_sram_rebalance.py" in run
+            assert (
+                "l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_llama7b_v1.json"
+                in run
+            )
+            assert (
+                "l2_decoder_attention_kv_endpoint_router_sram_composition_llama7b_v1.json"
+                in run
+            )
+            assert (
+                "l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_softmax_recip_lut_llama7b_v1_r2.json"
+                not in run
+            )
+            assert (
+                "l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_llama7b_v1_r4.json"
+                not in run
+            )
             assert "l2_decoder_attention_local_sram_capacity_llama7b_v1.json" in run
             assert work_item.task_request.request_payload["task"]["inputs"]["decoder_contract"] == decoder_inputs
             assert any(
                 output.endswith(
                     "decoder_attention_kv_measured_sram_rebalance__"
                     "l2_decoder_attention_kv_measured_sram_rebalance_llama7b_v1.json"
+                )
+                for output in expected_outputs
+            )
+
+
+def test_generate_l2_campaign_task_adds_softmax_recip_lut_measured_sram_rebalance_evidence() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id="l2_decoder_attention_kv_measured_sram_rebalance_softmax_recip_lut_llama7b_v1",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    abstraction_layer="decoder_attention_kv_measured_sram_rebalance",
+                    evaluation_mode="frontier_detail",
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            commands = work_item.task_request.request_payload["task"]["commands"]
+            expected_outputs = work_item.task_request.request_payload["task"]["expected_outputs"]
+            run = commands[0]["run"]
+
+            assert (
+                "l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_softmax_recip_lut_llama7b_v1_r2.json"
+                in run
+            )
+            assert (
+                "l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_llama7b_v1_r4.json"
+                in run
+            )
+            assert "l2_decoder_attention_local_sram_capacity_llama7b_v1.json" in run
+            assert (
+                "l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_llama7b_v1.json"
+                not in run
+            )
+            assert (
+                "l2_decoder_attention_kv_endpoint_router_sram_composition_llama7b_v1.json"
+                not in run
+            )
+            assert any(
+                output.endswith(
+                    "decoder_attention_kv_measured_sram_rebalance__"
+                    "l2_decoder_attention_kv_measured_sram_rebalance_softmax_recip_lut_llama7b_v1.json"
                 )
                 for output in expected_outputs
             )
