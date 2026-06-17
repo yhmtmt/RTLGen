@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_decoder_attention_kv_measured_hbm_service_softmax_recip_lut_v1",
-  "source_commit": "303319a1cc3d665bb4c924fa1335e956da506d05",
+  "source_commit": "1c97907302c22c3f19f9913370da6fb0c791c73d",
   "source_commit_note": "Dispatch should use the merge commit containing the softmax-recip measured-SRAM result plus the measured-HBM generator hook.",
   "requested_items": [
     {
@@ -20,8 +20,11 @@
         "direction": "record_measured_hbm_service_frontier",
         "reason": "The result should report best latency, effective HBM bytes/cycle, source-vs-derived HBM efficiency, controller service cycles, and dominant resource."
       },
-      "status": "planned",
-      "notes": "Use the softmax-recip measured-SRAM frontier from PR #903 so the HBM service audit follows the current Llama7B frontier."
+      "status": "merged",
+      "notes": "Use the softmax-recip measured-SRAM frontier from PR #903 so the HBM service audit follows the current Llama7B frontier. Merged via PR #905 and merge da54e92b01b4d5badf5097c957aab922a436a785 at 2026-06-17T11:39:44.114009Z.",
+      "merged_pr_number": 905,
+      "merge_commit": "da54e92b01b4d5badf5097c957aab922a436a785",
+      "merged_utc": "2026-06-17T11:39:44.114009Z"
     }
   ]
 }

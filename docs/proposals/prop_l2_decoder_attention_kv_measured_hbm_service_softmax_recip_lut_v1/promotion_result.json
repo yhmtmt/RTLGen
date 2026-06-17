@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_measured_hbm_service_softmax_recip_lut_v1",
+  "decision": "iterate",
+  "pr_number": 905,
+  "merge_commit": "da54e92b01b4d5badf5097c957aab922a436a785",
+  "merged_utc": "2026-06-17T11:39:44.114009Z"
+}
