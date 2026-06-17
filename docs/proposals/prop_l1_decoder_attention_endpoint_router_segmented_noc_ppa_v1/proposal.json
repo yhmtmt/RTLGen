@@ -1,0 +1,35 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_endpoint_router_segmented_noc_ppa_v1",
+  "title": "Measure segmented/narrower NoC router/FIFO alternatives for Llama7B endpoint composition",
+  "status": "proposed",
+  "layer": "layer1",
+  "kind": "circuit_block",
+  "abstraction_layer": "architecture_block",
+  "motivation": "The latest Llama7B endpoint/router/SRAM composition audit closed endpoint PPA at 1024 bits but showed flat 2048-bit router and FIFO points failed boundary runs at core utilization 40/50/60. The remaining NoC closure path is therefore segmented lane composition or narrower scheduled links, not another flat 2048-bit retry.",
+  "hypothesis": "Fresh proposal-linked 128-bit and 256-bit router/FIFO PPA points will provide concrete lane costs for the next composition model, allowing the architecture search to compare 16x128, 8x256, and narrower scheduled-link interpretations without assuming a physically feasible flat 2048-bit primitive.",
+  "expected_behavior": {
+    "functional": "Existing deterministic L1 NoC primitive generation paths are used with narrower link widths to preserve behavioral comparability.",
+    "timing_model": "Measured routed router and FIFO wrappers at 128/256-bit widths expose lane-level costs, arbitration pressure, and datapath timing for composition scaling.",
+    "physical_model": "Layer-1 macro-style OpenROAD runs stay macro-preserving with the same Nangate45 density/period policy as the existing NoC primitive baseline."
+  },
+  "comparison_points": [
+    "l1_noc_router_p4_w128_wrapper",
+    "l1_noc_router_p4_w256_wrapper",
+    "l1_noc_fifo_w128_d16_wrapper",
+    "l1_noc_fifo_w256_d16_wrapper"
+  ],
+  "upstream_evidence": [
+    "l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_llama7b_v1_r3"
+  ],
+  "expected_benefit": [
+    "Provide current, proposal-linked lane-width alternatives after flat 2048-bit router/FIFO boundary failures.",
+    "Quantify whether segmented/narrow alternatives are enough to close required follow-on composition gaps before introducing a placed aggregate NoC wrapper.",
+    "Create a bounded next step that reuses known OpenROAD infrastructure and the already validated 40/50/60 utilization envelope."
+  ],
+  "risks": [
+    "This measures lane primitives, not a placed aggregate 2048-bit network wrapper.",
+    "Scheduler/pipeline effects are not represented here; this is primitive-level PPA evidence for the next composition model.",
+    "Full local SRAM capacity accounting remains a separate closure item."
+  ],
+  "created_utc": "2026-06-17T08:34:31.120746Z"
+}

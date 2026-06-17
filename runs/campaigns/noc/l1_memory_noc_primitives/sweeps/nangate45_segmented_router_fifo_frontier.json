@@ -1,0 +1,8 @@
+{
+  "tag_prefix": "l1_memory_noc_primitives_nangate45_segmented_router_fifo_frontier",
+  "flow_params": {
+    "CLOCK_PERIOD": [1.0],
+    "CORE_UTILIZATION": [40, 50, 60],
+    "PLACE_DENSITY": [0.52]
+  }
+}
