@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_decoder_attention_composed_datapath_physical_feasibility_softmax_recip_lut_v1",
-  "source_commit": "pending",
+  "source_commit": "0284e5722a44b45e8b91120fa7e9d2abacde97e5",
   "requested_items": [
     {
       "item_id": "l2_decoder_attention_composed_datapath_physical_feasibility_softmax_recip_lut_llama7b_v1",
@@ -23,7 +23,11 @@
         "direction": "record_softmax_recip_composed_datapath_physical_feasibility",
         "reason": "Quantify whether measured composed wrapper area and clock keep the softmax-recip int8 dual-MAC point ahead of the split/shared-MAC fallback."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 915,
+      "merge_commit": "1e63617106b34fa84363a9e56d30d7251dec1fe3",
+      "merged_utc": "2026-06-17T21:36:06.908352Z",
+      "notes": "Merged via PR #915 and merge 1e63617106b34fa84363a9e56d30d7251dec1fe3 at 2026-06-17T21:36:06.908352Z."
     }
   ]
 }
