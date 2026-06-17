@@ -4923,6 +4923,13 @@ def _decoder_attention_kv_endpoint_full_onchip_service_source(*, item_id: str) -
     return f"{base}/decoder_attention_kv_endpoint_full_onchip_service_schedule__{source_item}.json"
 
 
+def _decoder_attention_local_sram_capacity_source(*, item_id: str) -> str:
+    _ = item_id
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    source_item = "l2_decoder_attention_local_sram_capacity_llama7b_v1"
+    return f"{base}/decoder_attention_local_sram_capacity__{source_item}.json"
+
+
 def _decoder_attention_kv_endpoint_ready_valid_source(*, item_id: str) -> str:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     if "softmax_recip_lut" in item_id:
@@ -4977,6 +4984,7 @@ def _decoder_attention_kv_endpoint_router_sram_composition_evidence(
     report = f"{base}/decoder_attention_kv_endpoint_router_sram_composition__{item_id}.md"
     endpoint_ready_valid = _decoder_attention_kv_endpoint_ready_valid_source(item_id=item_id)
     endpoint_onchip = _decoder_attention_kv_endpoint_full_onchip_service_source(item_id=item_id)
+    local_sram_capacity = _decoder_attention_local_sram_capacity_source(item_id=item_id)
     sram_summary = "runs/designs/sram/llama7b_attention_tile_buffers_v1/sram_metrics_summary.json"
     sram_metrics = "runs/designs/sram/llama7b_attention_tile_buffers_v1/sram_metrics.json"
     wide_l1_promotion = "control_plane/shadow_exports/l1_promotions/l1_decoder_attention_endpoint_router_wide_ppa_v1.json"
@@ -4984,6 +4992,7 @@ def _decoder_attention_kv_endpoint_router_sram_composition_evidence(
         "inputs": {
             "attention_kv_endpoint_ready_valid_service": endpoint_ready_valid,
             "attention_kv_endpoint_full_onchip_service_schedule": endpoint_onchip,
+            "attention_kv_local_sram_capacity": local_sram_capacity,
             "attention_kv_tile_sram_metrics_summary": sram_summary,
             "attention_kv_tile_sram_metrics": sram_metrics,
             "attention_kv_endpoint_router_wide_l1_promotion": wide_l1_promotion,
@@ -5004,6 +5013,7 @@ def _decoder_attention_kv_endpoint_router_sram_composition_evidence(
                     "--repo-root . "
                     f"--endpoint-ready-valid-json {endpoint_ready_valid} "
                     f"--endpoint-onchip-json {endpoint_onchip} "
+                    f"--local-sram-capacity-json {local_sram_capacity} "
                     f"--sram-summary-json {sram_summary} "
                     f"--sram-metrics-json {sram_metrics} "
                     f"--wide-l1-promotion-json {wide_l1_promotion} "

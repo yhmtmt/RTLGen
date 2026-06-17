@@ -141,6 +141,29 @@ def _sram_capacity_bytes(sram_metrics: JsonDict) -> int:
     return total
 
 
+def _local_sram_capacity_evidence_summary(
+    local_sram_capacity: JsonDict | None,
+) -> tuple[JsonDict | None, JsonDict | None]:
+    if not isinstance(local_sram_capacity, dict):
+        return None, None
+    budget_check = local_sram_capacity.get("budget_check")
+    chunking = local_sram_capacity.get("chunking")
+    if not isinstance(budget_check, dict):
+        budget_check = None
+    if not isinstance(chunking, dict):
+        chunking = None
+    return budget_check, chunking
+
+
+def _local_sram_capacity_diagnosis(local_sram_budget: JsonDict | None) -> str:
+    if local_sram_budget is None:
+        return "full_local_capacity_sram_macro_profile_missing"
+    fits_budget = local_sram_budget.get("fits_sram_budget")
+    if isinstance(fits_budget, bool):
+        return "local_capacity_budget_passed" if fits_budget else "local_capacity_budget_failed"
+    return "local_capacity_budget_check_missing"
+
+
 def _build_payload(
     *,
     repo_root: Path,
@@ -149,6 +172,7 @@ def _build_payload(
     sram_summary: JsonDict,
     sram_metrics: JsonDict,
     wide_l1_promotion: JsonDict | None = None,
+    local_sram_capacity: JsonDict | None = None,
 ) -> JsonDict:
     best = endpoint_onchip["best"]
     ready_params = endpoint_ready_valid["derived_rtl_parameters"]
@@ -201,6 +225,12 @@ def _build_payload(
         for value in [scaled_router_area_per_cluster, scaled_fifo_area_per_cluster, scaled_endpoint_area_per_cluster]
         if value is not None
     )
+    local_sram_budget, local_sram_chunking = _local_sram_capacity_evidence_summary(local_sram_capacity)
+    local_sram_capacity_present = isinstance(local_sram_capacity, dict)
+    local_capacity_diagnosis = _local_sram_capacity_diagnosis(local_sram_budget)
+    local_capacity_fits_budget = (
+        local_sram_budget.get("fits_sram_budget") if isinstance(local_sram_budget, dict) else None
+    )
 
     closure_flags = {
         "ready_valid_endpoint_passed": endpoint_ready_valid["decision"] == "ready_valid_endpoint_policy_passed",
@@ -214,7 +244,11 @@ def _build_payload(
         name for name, closed in closure_flags.items() if not closed and name != "tile_sram_capacity_covers_selected_local_capacity"
     ]
     if not closure_flags["tile_sram_capacity_covers_selected_local_capacity"]:
-        requires_follow_on.append("full_local_capacity_sram_macro_profile_missing")
+        requires_follow_on.append(
+            "capacity_rebalance_or_smaller_local_sram_required"
+            if local_sram_capacity_present
+            else "full_local_capacity_sram_macro_profile_missing"
+        )
     if router_boundary and not closure_flags["router_ppa_width_matches_link_width"]:
         requires_follow_on = [
             "segmented_or_narrower_router_ppa_required" if item == "router_ppa_width_matches_link_width" else item
@@ -253,7 +287,7 @@ def _build_payload(
         "local_sram_capacity": (
             "covered_by_measured_tile_profile"
             if closure_flags["tile_sram_capacity_covers_selected_local_capacity"]
-            else "full_local_capacity_sram_macro_profile_missing"
+            else local_capacity_diagnosis
         ),
     }
 
@@ -298,10 +332,24 @@ def _build_payload(
             }
         )
     if not closure_flags["tile_sram_capacity_covers_selected_local_capacity"]:
+        if local_sram_capacity_present:
+            local_capacity_reason = (
+                "tile-local SRAM buffers are measured, and local-capacity CACTI evidence is available; "
+                "re-balance or reduce the selected local-capacity pool to resolve a local SRAM budget failure."
+                if local_capacity_fits_budget is False
+                else (
+                    "tile-local SRAM buffers are measured, and local-capacity CACTI evidence is available; "
+                    "consume measured local-capacity profiles in the next rebalance step."
+                )
+            )
+        else:
+            local_capacity_reason = (
+                "tile-local SRAM buffers are measured, but the selected local-capacity pool is still capacity-estimated"
+            )
         recommended_next_l1_points.append(
             {
                 "primitive": "local_sram_capacity",
-                "reason": "tile-local SRAM buffers are measured, but the selected local-capacity pool is still capacity-estimated",
+                "reason": local_capacity_reason,
                 "parameters": {
                     "local_capacity_bytes_per_cluster": local_capacity_bytes_per_cluster,
                     "active_clusters": active_clusters,
@@ -323,9 +371,20 @@ def _build_payload(
                 "Router/FIFO PPA is lane-scaled from narrower measured primitives until matching link-width or segmented L1 points are measured."
             )
     if not closure_flags["tile_sram_capacity_covers_selected_local_capacity"]:
-        remaining_abstractions.append(
-            "Tile-local SRAM buffers have CACTI metrics, but the selected per-cluster local capacity pool is not yet a concrete SRAM macro set."
-        )
+        if local_sram_capacity_present:
+            if local_capacity_fits_budget is False:
+                remaining_abstractions.append(
+                    "Tile-local SRAM buffers are measured, but measured local-capacity evidence already shows the selected per-cluster "
+                    "local SRAM pool exceeds the available shared SRAM budget."
+                )
+            else:
+                remaining_abstractions.append(
+                    "Tile-local SRAM buffers are measured, and concrete local-capacity evidence is available for the selected pool."
+                )
+        else:
+            remaining_abstractions.append(
+                "Tile-local SRAM buffers have CACTI metrics, but the selected per-cluster local capacity pool is not yet a concrete SRAM macro set."
+            )
     remaining_abstractions.append("HBM/DRAM service remains inherited and intentionally outside this audit.")
 
     return {
@@ -336,6 +395,7 @@ def _build_payload(
             "endpoint_ready_valid": "l2_decoder_attention_kv_endpoint_ready_valid_service_llama7b_v1",
             "sram_profile": "llama7b_attention_tile_buffers_v1",
             "wide_l1_promotion": wide_l1_promotion.get("item_id") if wide_l1_promotion else None,
+            "local_sram_capacity": local_sram_capacity.get("source_item") if isinstance(local_sram_capacity, dict) else None,
         },
         "selected_frontier": {
             "latency_us": best["latency_us"],
@@ -365,6 +425,10 @@ def _build_payload(
                 "total_write_energy_pj": sram_summary.get("total_write_energy_pj"),
                 "allocated_bytes": sram_allocated_bytes,
             },
+            "local_sram_capacity": {
+                "budget_check": local_sram_budget,
+                "chunking": local_sram_chunking,
+            } if local_sram_capacity_present else None,
         },
         "boundary_evidence": {
             "router": router_boundary,
@@ -439,6 +503,19 @@ def _write_report(payload: JsonDict, report: Path) -> None:
     lines.extend(["", "## Closure Diagnosis"])
     for name, value in diagnosis.items():
         lines.append(f"- {name}: `{value}`")
+    local_sram_evidence = payload.get("measured_primitives", {}).get("local_sram_capacity", {})
+    local_sram_budget = local_sram_evidence.get("budget_check") if isinstance(local_sram_evidence, dict) else None
+    if isinstance(local_sram_budget, dict):
+        lines.extend(
+            [
+                "",
+                "## Local SRAM Capacity Budget",
+                f"- fits_sram_budget: `{local_sram_budget.get('fits_sram_budget')}`",
+                f"- total_area_um2: `{local_sram_budget.get('total_area_um2')}`",
+                f"- sram_budget_area_um2: `{local_sram_budget.get('sram_budget_area_um2')}`",
+                f"- area_fraction_of_sram_budget: `{local_sram_budget.get('area_fraction_of_sram_budget')}`",
+            ]
+        )
     lines.extend(
         [
             "",
@@ -466,6 +543,7 @@ def main() -> int:
     parser.add_argument("--sram-summary-json", type=Path, required=True)
     parser.add_argument("--sram-metrics-json", type=Path, required=True)
     parser.add_argument("--wide-l1-promotion-json", type=Path)
+    parser.add_argument("--local-sram-capacity-json", type=Path)
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--out-md", type=Path, required=True)
     args = parser.parse_args()
@@ -482,6 +560,7 @@ def main() -> int:
         sram_summary=_load_json(rooted(args.sram_summary_json)),
         sram_metrics=_load_json(rooted(args.sram_metrics_json)),
         wide_l1_promotion=_load_json(rooted(args.wide_l1_promotion_json)) if args.wide_l1_promotion_json else None,
+        local_sram_capacity=_load_json(rooted(args.local_sram_capacity_json)) if args.local_sram_capacity_json else None,
     )
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
