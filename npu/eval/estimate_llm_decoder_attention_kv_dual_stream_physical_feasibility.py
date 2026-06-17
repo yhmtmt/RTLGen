@@ -7,6 +7,7 @@ import argparse
 import csv
 import json
 import math
+import re
 import sys
 from pathlib import Path
 from typing import Any
@@ -77,6 +78,55 @@ def _best_ok_compute_metrics(path: Path) -> JsonDict:
         "tag": best.get("tag", ""),
         "result_path": best.get("result_path", ""),
     }
+
+
+def _infer_composed_precision_profile(path: Path) -> str:
+    path_text = str(path)
+    match = re.search(r"softmax_recip_lut_(q\d+)", path_text)
+    if match:
+        return match.group(1)
+    if path.stem and path.stem != "metrics":
+        return path.stem
+    return path.parent.name or path.stem
+
+
+def _compose_variant_name(path: Path) -> str:
+    return path.parent.name
+
+
+def _parse_composed_metric_inputs(values: Any) -> list[Path]:
+    if not values:
+        return []
+    raw_values = values
+    if isinstance(raw_values, (str, Path)):
+        raw_values = [raw_values]
+    elif not isinstance(raw_values, (list, tuple)):
+        raise TypeError(f"invalid composed metric input: {type(raw_values)!r}")
+    paths: list[Path] = []
+    for value in raw_values:
+        value_text = str(value)
+        for piece in value_text.split(","):
+            piece = piece.strip()
+            if not piece:
+                continue
+            paths.append(Path(piece))
+    if not paths:
+        return []
+    return paths
+
+
+def _load_composed_variants(paths: list[Path]) -> list[JsonDict]:
+    variants: list[JsonDict] = []
+    for path in paths:
+        metrics = _best_ok_compute_metrics(path)
+        metrics.update(
+            {
+                "composed_variant_label": _infer_composed_precision_profile(path),
+                "composed_variant_name": _compose_variant_name(path),
+            }
+        )
+        variants.append(metrics)
+    return variants
 
 
 def _source_rows(payload: JsonDict, *, limit: int) -> list[JsonDict]:
@@ -177,7 +227,10 @@ def _row_with_budget(
         base_compute_power = target_replica_count * composed_power
         target_block_clock = composed_clock_ns
         target_block_power = composed_power
-        target_arch = "attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_recip_lut_q10"
+        target_arch = str(
+            composed_dual_stream.get("composed_variant_name")
+            or "attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_recip_lut_q10"
+        )
         compute_area_required = base_compute_area
     elif compute_block is None:
         base_compute_area = current_compute_area
@@ -259,6 +312,9 @@ def _row_with_budget(
                     "measured_dual_stream_composed_clock_ns": composed_clock_ns,
                     "measured_dual_stream_composed_power_mw": composed_power,
                     "measured_dual_stream_composed_required_replicas": composed_replica_count,
+                    "measured_dual_stream_composed_precision_profile": composed_dual_stream[
+                        "composed_variant_label"
+                    ],
                 }
                 if use_composed_dual_stream
                 else {}
@@ -284,6 +340,9 @@ def _row_with_budget(
             "substituted_compute_replica_count": target_replica_count if compute_substitution_enabled else None,
             "substituted_compute_area_um2": round(base_compute_area, 6) if compute_substitution_enabled else None,
             "substituted_compute_power_mw": round(base_compute_power, 6) if compute_substitution_enabled else None,
+            "substituted_compute_variant_label": (
+                composed_dual_stream["composed_variant_label"] if use_composed_dual_stream else None
+            ),
             "logic_area_used_required_um2": round(logic_used_required, 6),
             "logic_area_slack_required_um2": round(logic_slack_required, 6),
             "compute_area_over_budget_um2": round(compute_area_over_budget, 6),
@@ -305,38 +364,69 @@ def _row_with_budget(
     return out
 
 
+def _effective_selection_key(row: JsonDict) -> tuple[float, float, float, str]:
+    substituted_area = row.get("substituted_compute_area_um2")
+    substituted_power = row.get("substituted_compute_power_mw")
+    if substituted_area is None:
+        substituted_area = row.get("compute_area_required_um2")
+    if substituted_area is None:
+        substituted_area = float("inf")
+    if substituted_power is None:
+        substituted_power = float("inf")
+    return (
+        _effective_latency_us(row),
+        float(substituted_area),
+        float(substituted_power),
+        str(row.get("compute_mode", "")),
+    )
+
+
 def build_report(args: argparse.Namespace) -> JsonDict:
     source = _load_json(args.subtile_pipeline_json)
     source_rows = _source_rows(source, limit=args.frontier_row_limit)
     full_value_tile = _best_ok_metrics(args.full_value_tile_metrics)
     softmax_weight = _best_ok_metrics(args.softmax_weight_metrics)
-    composed_dual_stream = (
-        _best_ok_compute_metrics(args.composed_dual_stream_metrics)
-        if getattr(args, "composed_dual_stream_metrics", None)
-        else None
-    )
+    composed_dual_stream_metrics = _parse_composed_metric_inputs(getattr(args, "composed_dual_stream_metrics", None))
+    composed_variants = _load_composed_variants(composed_dual_stream_metrics) if composed_dual_stream_metrics else []
     compute_block = _best_ok_compute_metrics(args.compute_block_metrics) if args.compute_block_metrics else None
     quality_gate = _load_json(args.quality_gate_json) if args.quality_gate_json else None
-    rows = [
-        _row_with_budget(
-            row,
-            full_value_tile=full_value_tile,
-            softmax_weight=softmax_weight,
-            composed_dual_stream=composed_dual_stream,
-            compute_block=compute_block,
-            compute_block_macs_per_cycle=args.compute_block_macs_per_cycle,
-            compute_arch_name=args.compute_arch_name,
-            buffer_area_um2_per_byte=args.buffer_area_um2_per_byte,
-            precision_profile=args.precision_profile,
-        )
-        for row in source_rows
-    ]
+    rows: list[JsonDict] = []
+    for row in source_rows:
+        if composed_variants:
+            for composed_dual_stream in composed_variants:
+                rows.append(
+                    _row_with_budget(
+                        row,
+                        full_value_tile=full_value_tile,
+                        softmax_weight=softmax_weight,
+                        composed_dual_stream=composed_dual_stream,
+                        compute_block=compute_block,
+                        compute_block_macs_per_cycle=args.compute_block_macs_per_cycle,
+                        compute_arch_name=args.compute_arch_name,
+                        buffer_area_um2_per_byte=args.buffer_area_um2_per_byte,
+                        precision_profile=args.precision_profile,
+                    )
+                )
+        else:
+            rows.append(
+                _row_with_budget(
+                    row,
+                    full_value_tile=full_value_tile,
+                    softmax_weight=softmax_weight,
+                    composed_dual_stream=None,
+                    compute_block=compute_block,
+                    compute_block_macs_per_cycle=args.compute_block_macs_per_cycle,
+                    compute_arch_name=args.compute_arch_name,
+                    buffer_area_um2_per_byte=args.buffer_area_um2_per_byte,
+                    precision_profile=args.precision_profile,
+                )
+            )
     feasible_rows = [row for row in rows if row["physical_feasible"]]
-    best_feasible = min(feasible_rows, key=_effective_latency_us) if feasible_rows else None
-    best_requested = min(rows, key=lambda row: float(row["latency_us"]))
+    best_requested = min(rows, key=_effective_selection_key) if rows else None
+    best_feasible = min(feasible_rows, key=_effective_selection_key) if feasible_rows else None
     best_area_fit = min(
         (row for row in rows if row["area_fit"]),
-        key=_effective_latency_us,
+        key=_effective_selection_key,
         default=None,
     )
     decision = "dual_stream_feasible" if best_feasible and best_feasible.get("compute_mode") == "dual_mac" else "dual_stream_area_blocked"
@@ -346,7 +436,7 @@ def build_report(args: argparse.Namespace) -> JsonDict:
         "The dense GEMM compute array is treated as already packed into the current logic budget; extra dual-stream compute must fit that same budget to be feasible.",
         "Buffer capacity is checked against measured local SRAM bytes; an optional buffer-area proxy can be added for sensitivity but defaults to zero to avoid double-counting measured local SRAM.",
     ]
-    if composed_dual_stream:
+    if composed_variants:
         assumptions.append(
             "When composed dual-stream wrapper substitution is enabled, full-value and softmax measurements are treated as folded into the measured dual-stream RTL wrapper, and wrapper clock is used to scale feasible latency if it differs from source schedule clock."
         )
@@ -366,7 +456,7 @@ def build_report(args: argparse.Namespace) -> JsonDict:
             "full_value_tile_metrics": str(args.full_value_tile_metrics),
             "softmax_weight_metrics": str(args.softmax_weight_metrics),
             "composed_dual_stream_metrics": (
-                str(args.composed_dual_stream_metrics) if args.composed_dual_stream_metrics else None
+                [str(path) for path in composed_dual_stream_metrics] if composed_dual_stream_metrics else None
             ),
             "compute_block_metrics": str(args.compute_block_metrics) if args.compute_block_metrics else None,
             "compute_block_macs_per_cycle": args.compute_block_macs_per_cycle,
@@ -401,6 +491,7 @@ def build_report(args: argparse.Namespace) -> JsonDict:
             "best_requested_required_compute_density_gain": best_requested.get("required_compute_density_gain"),
             "best_requested_compute_substitution_enabled": best_requested.get("compute_substitution_enabled"),
             "best_requested_substituted_compute_arch": best_requested.get("substituted_compute_arch"),
+            "best_requested_substituted_compute_variant_label": best_requested.get("substituted_compute_variant_label"),
             "best_requested_substituted_compute_area_um2": best_requested.get("substituted_compute_area_um2"),
             "best_requested_compute_clock_ok": best_requested.get("compute_clock_ok"),
             "best_feasible_mode": best_feasible.get("compute_mode") if best_feasible else None,
@@ -440,26 +531,30 @@ def write_markdown(path: Path, payload: JsonDict) -> None:
         f"- best requested required compute density gain: `{diag['best_requested_required_compute_density_gain']}`",
         f"- best requested compute substitution: `{diag['best_requested_compute_substitution_enabled']}`",
         f"- best requested substituted compute arch: `{diag['best_requested_substituted_compute_arch']}`",
+        f"- best requested substituted compute variant: `{diag['best_requested_substituted_compute_variant_label']}`",
         f"- best requested substituted compute area um2: `{diag['best_requested_substituted_compute_area_um2']}`",
         f"- recommended next step: `{diag['recommended_next_step']}`",
         "",
         "## Best Requested",
         "",
-        "| mode | latency us | speedup | area fit | buffer fit | logic slack um2 | area over budget | density gain | required replicas | budget replicas | req buffer bytes |",
-        "|---|---:|---:|---|---|---:|---:|---:|---:|---:|---:|",
-        "| {compute_mode} | {latency_us} | {latency_speedup_vs_hbm_closed_source} | {area_fit} | "
-        "{buffer_fit} | {logic_area_slack_required_um2} | {compute_area_over_budget_um2} | "
+        "| mode | latency us | speedup | area fit | buffer fit | substituted variant | logic slack um2 | area over budget | "
+        "density gain | required replicas | budget replicas | req buffer bytes |",
+        "|---|---:|---:|---|---|---|---:|---:|---:|---:|---:|---:|",
+        "| {compute_mode} | {latency_us} | {latency_speedup_vs_hbm_closed_source} | {area_fit} | {buffer_fit} | "
+        "{substituted_compute_variant_label} | "
+        "{logic_area_slack_required_um2} | {compute_area_over_budget_um2} | "
         "{required_compute_density_gain} | {replica_count_required} | "
         "{replica_count_budgeted_at_current_compute_area} | {required_stream_buffer_bytes} |".format(**best),
         "",
         "## Rows",
         "",
-        "| mode | latency us | area fit | feasible | logic slack um2 | local datapath/cluster | compute area required |",
-        "|---|---:|---|---|---:|---:|---:|",
+        "| mode | latency us | area fit | feasible | substituted variant | logic slack um2 | local datapath/cluster | compute area required |",
+        "|---|---:|---|---|---|---:|---:|---:|",
     ]
     for row in payload["rows"]:
         lines.append(
             "| {compute_mode} | {latency_us} | {area_fit} | {physical_feasible} | "
+            "{substituted_compute_variant_label} | "
             "{logic_area_slack_required_um2} | {selected_local_datapath_area_um2_per_cluster} | "
             "{compute_area_required_um2} |".format(**row)
         )
@@ -474,7 +569,7 @@ def main() -> int:
     parser.add_argument("--subtile-pipeline-json", type=Path, required=True)
     parser.add_argument("--full-value-tile-metrics", type=Path, required=True)
     parser.add_argument("--softmax-weight-metrics", type=Path, required=True)
-    parser.add_argument("--composed-dual-stream-metrics", type=Path)
+    parser.add_argument("--composed-dual-stream-metrics", type=Path, action="append")
     parser.add_argument("--compute-block-metrics", type=Path)
     parser.add_argument("--compute-block-macs-per-cycle", type=int)
     parser.add_argument("--compute-arch-name")

@@ -5368,6 +5368,30 @@ def _decoder_attention_composed_datapath_physical_feasibility_evidence(*, item_i
         "runs/designs/npu_blocks/"
         "attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_recip_lut_q10/metrics.csv"
     )
+    variant_frontier = "variant_frontier" in item_id
+    if variant_frontier:
+        composed_dual_stream_metrics = (
+            "runs/designs/npu_blocks/"
+            "attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_recip_lut_q8/metrics.csv,"
+            "runs/designs/npu_blocks/"
+            "attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_recip_lut_q10/metrics.csv,"
+            "runs/designs/npu_blocks/"
+            "attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_recip_lut_q12/metrics.csv"
+        )
+    composed_dual_stream_metrics_flags = " ".join(
+        f"--composed-dual-stream-metrics {path}"
+        for path in composed_dual_stream_metrics.split(",")
+    )
+    model_name = (
+        "llm_decoder_attention_composed_datapath_recip_lut_variant_frontier_llama7b_v1"
+        if variant_frontier
+        else "llm_decoder_attention_composed_datapath_physical_feasibility_softmax_recip_lut_llama7b_v1"
+    )
+    precision_profile = (
+        "q8_k8_v6_a24_s8_w8_recip_lut_variant_int8_compute"
+        if variant_frontier
+        else "q8_k8_v6_a24_s8_w8_recip_lut_q10_int8_compute"
+    )
     return {
         "inputs": {
             "attention_kv_subtile_pipeline_schedule": subtile_pipeline,
@@ -5391,10 +5415,10 @@ def _decoder_attention_composed_datapath_physical_feasibility_evidence(*, item_i
                     f"--subtile-pipeline-json {subtile_pipeline} "
                     f"--full-value-tile-metrics {full_value_tile_metrics} "
                     f"--softmax-weight-metrics {softmax_weight_metrics} "
-                    f"--composed-dual-stream-metrics {composed_dual_stream_metrics} "
+                    f"{composed_dual_stream_metrics_flags} "
                     f"--quality-gate-json {quality_gate} "
-                    "--precision-profile q8_k8_v6_a24_s8_w8_recip_lut_q10_int8_compute "
-                    "--model-name llm_decoder_attention_composed_datapath_physical_feasibility_softmax_recip_lut_llama7b_v1 "
+                    f"--precision-profile {precision_profile} "
+                    f"--model-name {model_name} "
                     "--frontier-row-limit 8 "
                     "--buffer-area-um2-per-byte 0.0 "
                     f"--out {out} "
