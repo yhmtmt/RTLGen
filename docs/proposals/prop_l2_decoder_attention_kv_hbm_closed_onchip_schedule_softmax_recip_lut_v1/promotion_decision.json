@@ -1,0 +1,13 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_hbm_closed_onchip_schedule_softmax_recip_lut_v1",
+  "candidate_id": "l2_decoder_attention_kv_hbm_closed_onchip_schedule_softmax_recip_lut_llama7b_v1",
+  "decision": "iterate",
+  "reason": "The softmax-recip HBM-closed on-chip schedule result records latency_us=2138.84136 with tile_attention still dominant; re-sweeping on-chip SRAM/NoC service does not change the frontier, so the next step is softmax-recip subtile pipeline scheduling.",
+  "evidence_refs": [
+    "item:l2_decoder_attention_kv_hbm_closed_onchip_schedule_softmax_recip_lut_llama7b_v1",
+    "run:l2_decoder_attention_kv_hbm_closed_onchip_schedule_softmax_recip_lut_llama7b_v1_run_23c73d0286366557",
+    "artifact:runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_hbm_closed_onchip_schedule__l2_decoder_attention_kv_hbm_closed_onchip_schedule_softmax_recip_lut_llama7b_v1.json"
+  ],
+  "next_action": "run l2_decoder_attention_kv_subtile_pipeline_schedule_softmax_recip_lut_llama7b_v1",
+  "requires_human_approval": false
+}

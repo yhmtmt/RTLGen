@@ -1,0 +1,66 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_hbm_closed_onchip_schedule_softmax_recip_lut_v1",
+  "created_utc": "2026-06-17T11:47:54.863352Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Softmax-recip HBM-closed on-chip schedule closure for Llama7B attention",
+  "hypothesis": "After replacing the inherited scalar HBM assumption with the measured softmax-recip HBM service model, re-sweeping explicit SRAM and NoC service knobs should show whether the current frontier is still tile-attention limited before scheduling subtile QK/softmax/V pipelining.",
+  "direct_comparison": {
+    "primary_question": "Does re-optimizing on-chip SRAM and NoC service knobs on top of the softmax-recip measured-HBM Llama7B frontier change latency or the dominant resource?",
+    "include": [
+      "Use l2_decoder_attention_kv_measured_hbm_service_softmax_recip_lut_llama7b_v1 as the source frontier.",
+      "Sweep schedule policy, bank arbitration, endpoint queue depth, bank queue depth, router hop latency, packet payload, and prefetch overlap.",
+      "Keep measured softmax reciprocal LUT costs, measured SRAM rebalance quantities, measured HBM controller service cycles, compute PPA, and KV sharing assumptions inherited from the source frontier.",
+      "Report best latency, slowdown versus the measured-HBM source, dominant resource, queue/router settings, HBM cycles, attention cycles, and shared-service cycles."
+    ],
+    "exclude": [
+      "Do not introduce a new full NoC RTL implementation in this item.",
+      "Do not change HBM channel, burst, row-hit, or outstanding-request parameters.",
+      "Do not change SRAM macro packing, compute replica count, precision, or KV sharing quality assumptions.",
+      "Do not evaluate subtile QK/softmax/V pipelining until this HBM-closed on-chip source artifact is materialized."
+    ],
+    "follow_on_broad_sweep": [
+      "If tile attention remains dominant, run the softmax-recip subtile pipeline schedule item using this artifact as its source.",
+      "If NoC or SRAM service becomes dominant, split out concrete endpoint/router/topology RTL and scheduler variants before further compute-path tuning.",
+      "If HBM service becomes dominant, move to a fuller DRAM timing and controller area/power model."
+    ]
+  },
+  "expected_benefit": [
+    "Removes inherited on-chip schedule bias from the current softmax-recip measured-HBM frontier.",
+    "Confirms whether the measured-HBM closure still leaves room in the tile-attention path.",
+    "Creates the required materialized source artifact for the dependent subtile pipeline schedule exploration."
+  ],
+  "risks": [
+    "The on-chip service model is still analytic rather than a fully routed NoC implementation.",
+    "Queue and prefetch combinations may be optimistic until translated into ready/valid RTL.",
+    "HBM controller area and power remain modeled analytically rather than measured as placed logic."
+  ],
+  "needs_mapper_change": true,
+  "required_evaluations": [
+    {
+      "task_type": "l2_campaign",
+      "evaluation_mode": "frontier_detail",
+      "objective": "softmax_recip_hbm_closed_onchip_schedule_frontier",
+      "cost_class": "small",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_kv_measured_hbm_service_softmax_recip_lut_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "record_softmax_recip_hbm_closed_onchip_schedule_frontier",
+        "reason": "The result should record whether re-sweeping on-chip SRAM/NoC service knobs changes the current softmax-recip measured-HBM Llama7B attention frontier before subtile pipelining."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_measured_hbm_service__l2_decoder_attention_kv_measured_hbm_service_softmax_recip_lut_llama7b_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/estimate_llm_decoder_attention_kv_hbm_closed_onchip_schedule.py",
+    "npu/eval/estimate_llm_decoder_attention_kv_measured_hbm_service.py",
+    "npu/eval/estimate_llm_decoder_attention_kv_onchip_service_schedule.py",
+    "control_plane/control_plane/services/l2_task_generator.py"
+  ]
+}
