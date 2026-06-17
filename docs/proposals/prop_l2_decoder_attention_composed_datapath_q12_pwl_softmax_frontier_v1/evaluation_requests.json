@@ -1,0 +1,27 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_composed_datapath_q12_pwl_softmax_frontier_v1",
+  "source_commit": "8056be02f4213315da61f6d34586e8cd42ea5baa",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_composed_datapath_q12_pwl_softmax_frontier_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Substitute the measured q12/PWL composed dual-stream attention wrapper into the Llama7B subtile schedule and rank latency, area, energy, and precision-risk against the current composed frontier.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_composed_datapath_physical_feasibility",
+      "comparison_role": "frontier_closure",
+      "paired_baseline_item_id": "l2_decoder_attention_composed_datapath_recip_lut_variant_frontier_llama7b_v1",
+      "depends_on_item_ids": [
+        "l1_decoder_attention_dual_stream_composed_q12_pwl_softmax_ppa_v1",
+        "l2_decoder_attention_composed_datapath_recip_lut_variant_frontier_llama7b_v1",
+        "l2_decoder_attention_kv_subtile_pipeline_schedule_softmax_recip_lut_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "record_q12_pwl_composed_softmax_frontier",
+        "reason": "Identify whether the q12/PWL composed softmax wrapper improves precision-risk posture enough to justify its measured PPA cost in the Llama7B attention frontier."
+      },
+      "status": "pending"
+    }
+  ]
+}

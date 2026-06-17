@@ -1,0 +1,61 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_composed_datapath_q12_pwl_softmax_frontier_v1",
+  "created_utc": "2026-06-17T22:35:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Q12/PWL composed softmax frontier substitution for Llama7B attention",
+  "hypothesis": "The composed q12/PWL reciprocal softmax wrapper can reduce the precision risk of the current q8/q10/q12 reciprocal-LUT composed frontier, but it must be ranked with its measured clock, area, and power before it can replace the current Llama7B attention datapath point.",
+  "direct_comparison": {
+    "primary_question": "After the q12/PWL composed dual-stream wrapper PPA is measured, what Llama7B attention latency, area, energy, and precision-risk point does it produce under the same subtile schedule?",
+    "include": [
+      "Use l2_decoder_attention_kv_subtile_pipeline_schedule_softmax_recip_lut_llama7b_v1 as the source schedule.",
+      "Use the measured q12/PWL composed dual-stream wrapper metrics from l1_decoder_attention_dual_stream_composed_q12_pwl_softmax_ppa_v1.",
+      "Scale source schedule rows by the measured q12/PWL wrapper clock and area.",
+      "Report the substituted wrapper label, adjusted feasible latency, area fit, power, and remaining precision-risk provenance."
+    ],
+    "exclude": [
+      "Do not run new OpenROAD PPA in this L2 job.",
+      "Do not change HBM, SRAM, NoC, KV sharing, or Llama7B workload assumptions.",
+      "Do not treat proxy quality as final real-checkpoint Llama7B quality."
+    ]
+  },
+  "expected_benefit": [
+    "Makes the q12/PWL precision-risk mitigation comparable to the current measured composed reciprocal-LUT frontier.",
+    "Allows the Llama7B frontier to move away from the risky s8/w8 softmax format if the measured PPA tradeoff is acceptable.",
+    "Keeps the dependency on a concrete RTL/PPA artifact explicit."
+  ],
+  "risks": [
+    "The prerequisite q12/PWL L1 PPA job is still waiting on the remote evaluator.",
+    "The result remains an L2 substitution of a measured wrapper into a schedule rather than full whole-attention RTL integration.",
+    "Real Llama7B checkpoint quality remains future work."
+  ],
+  "needs_mapper_change": true,
+  "required_evaluations": [
+    {
+      "task_type": "l2_campaign",
+      "evaluation_mode": "frontier_detail",
+      "objective": "q12_pwl_composed_softmax_frontier",
+      "cost_class": "small_after_l1_metrics",
+      "depends_on_item_ids": [
+        "l1_decoder_attention_dual_stream_composed_q12_pwl_softmax_ppa_v1",
+        "l2_decoder_attention_composed_datapath_recip_lut_variant_frontier_llama7b_v1",
+        "l2_decoder_attention_kv_subtile_pipeline_schedule_softmax_recip_lut_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "record_q12_pwl_composed_softmax_frontier",
+        "reason": "The result should quantify whether the q12/PWL composed wrapper can become the least-abstract Llama7B attention datapath point once its measured PPA is available."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_recip_lut_variant_frontier_llama7b_v1.json"
+  ],
+  "knowledge_refs": [
+    "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_q12_pwl_recip_q12/metrics.csv",
+    "docs/proposals/prop_l1_decoder_attention_dual_stream_composed_q12_pwl_softmax_v1/proposal.json",
+    "npu/eval/estimate_llm_decoder_attention_kv_dual_stream_physical_feasibility.py"
+  ]
+}
