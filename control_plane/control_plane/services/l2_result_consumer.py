@@ -451,6 +451,10 @@ _DECODER_EVIDENCE_OUTPUT_KEYS: tuple[tuple[str, str], ...] = (
         "attention_kv_endpoint_full_onchip_service_schedule_report",
     ),
     ("attention_kv_endpoint_ready_valid_service_out", "attention_kv_endpoint_ready_valid_service_report"),
+    (
+        "attention_kv_endpoint_router_sram_composition_out",
+        "attention_kv_endpoint_router_sram_composition_report",
+    ),
     ("attention_kv_hbm_closed_onchip_schedule_out", "attention_kv_hbm_closed_onchip_schedule_report"),
     ("attention_kv_subtile_pipeline_schedule_out", "attention_kv_subtile_pipeline_schedule_report"),
     ("attention_kv_dual_stream_physical_feasibility_out", "attention_kv_dual_stream_physical_feasibility_report"),
@@ -526,6 +530,11 @@ def _decoder_quality_brief(evidence_payload: dict[str, Any]) -> dict[str, Any]:
         "per_cluster_sram_metrics_summary",
         "all_cluster_sram_metrics_summary",
         "remaining_abstractions",
+        "closure_flags",
+        "composition_quantities",
+        "measured_primitives",
+        "recommended_next_l1_points",
+        "required_follow_on_ppa",
         "best",
         "sweep_summary",
         "assumptions",
@@ -564,6 +573,8 @@ def _decoder_frontier_recommendation(
     best = evidence_payload.get("best")
     if not isinstance(best, dict) or not best:
         best = evidence_payload.get("source_best")
+    if not isinstance(best, dict) or not best:
+        best = evidence_payload.get("selected_frontier")
     if not isinstance(best, dict) or not best:
         return None
     model = str(evidence_payload.get("model", "")).strip()
@@ -620,6 +631,7 @@ def _decoder_frontier_recommendation(
         "onchip_shared_service_cycles",
         "tile_tokens",
         "tile_waves",
+        "link_width_bits",
     ):
         if key in best:
             recommendation[key] = best[key]
@@ -816,6 +828,56 @@ def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, 
         ):
             if key in source_best_dict:
                 parts.append(f"{key}={source_best_dict.get(key)}")
+        summary = "; ".join(parts)
+        return outcome, summary if summary.endswith(".") else summary + "."
+
+    if model == "llm_decoder_attention_endpoint_router_sram_composition_audit_v1":
+        decision = str(evidence_payload.get("decision", "")).strip()
+        outcome = decision or "endpoint_router_sram_composition_recorded"
+        selected_frontier = evidence_payload.get("selected_frontier")
+        selected = dict(selected_frontier) if isinstance(selected_frontier, dict) else {}
+        quantities = evidence_payload.get("composition_quantities")
+        quantity_dict = dict(quantities) if isinstance(quantities, dict) else {}
+        flags = evidence_payload.get("closure_flags")
+        flag_dict = dict(flags) if isinstance(flags, dict) else {}
+        follow_on = evidence_payload.get("required_follow_on_ppa")
+        required_follow_on = [str(item) for item in follow_on] if isinstance(follow_on, list) else []
+        parts = [
+            f"Decoder endpoint/router/SRAM composition evidence recorded from {evidence_ref}: decision={outcome}",
+        ]
+        for key in (
+            "latency_us",
+            "topology",
+            "scheduler_policy",
+            "reduction_strategy",
+            "cluster_count",
+            "bank_count",
+            "link_width_bits",
+            "packet_payload_bytes",
+            "dominant_tile_resource",
+        ):
+            if key in selected:
+                parts.append(f"{key}={selected.get(key)}")
+        for key in (
+            "endpoint_width_ratio_vs_measured_ppa",
+            "router_lanes_for_link",
+            "fifo_lanes_for_link",
+            "tile_sram_capacity_fraction_of_selected_local_capacity",
+            "tile_sram_budget_area_fraction",
+        ):
+            if key in quantity_dict:
+                parts.append(f"{key}={quantity_dict.get(key)}")
+        for key in (
+            "ready_valid_endpoint_passed",
+            "endpoint_ppa_width_matches_ready_valid_width",
+            "router_ppa_width_matches_link_width",
+            "fifo_ppa_width_matches_link_width",
+            "tile_sram_capacity_covers_selected_local_capacity",
+        ):
+            if key in flag_dict:
+                parts.append(f"{key}={flag_dict.get(key)}")
+        if required_follow_on:
+            parts.append(f"required_follow_on_ppa={','.join(required_follow_on)}")
         summary = "; ".join(parts)
         return outcome, summary if summary.endswith(".") else summary + "."
 
