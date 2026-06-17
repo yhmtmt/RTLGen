@@ -1244,6 +1244,40 @@ def test_consume_l2_result_frontier_onchip_service_overrides_generic_recommendat
                                 "dominant_tile_resource": "shared_path",
                             }
                         ],
+                        "best_by_profile": [
+                            {
+                                "measured_l1_profile": "hd64_kv8_full_value_p8_ppc2_noc128_softmax_int8_q8",
+                                "rank_in_decoder_frontier": 1,
+                                "topology": "mesh2d",
+                                "scheduler_policy": "locality_aware",
+                                "schedule_policy": "prefetch_overlap",
+                                "reduction_strategy": "cluster_tree",
+                                "bank_arbiter_policy": "locality_first",
+                                "cluster_count": 16,
+                                "bank_count": 64,
+                                "compute_source": "dense_gemm_tile",
+                                "compute_arch": "dense_gemm_16x8_k1_p1",
+                                "latency_us": 3222.903773,
+                                "total_cycles": 538848,
+                                "dominant_tile_resource": "shared_path",
+                            },
+                            {
+                                "measured_l1_profile": "hd64_kv8_full_value_p8_ppc2_noc128_softmax_int8_q10",
+                                "rank_in_decoder_frontier": 2,
+                                "topology": "mesh2d",
+                                "scheduler_policy": "locality_aware",
+                                "schedule_policy": "prefetch_overlap",
+                                "reduction_strategy": "cluster_tree",
+                                "bank_arbiter_policy": "locality_first",
+                                "cluster_count": 16,
+                                "bank_count": 64,
+                                "compute_source": "dense_gemm_tile",
+                                "compute_arch": "dense_gemm_16x8_k1_p1",
+                                "latency_us": 3222.903773,
+                                "total_cycles": 538848,
+                                "dominant_tile_resource": "shared_path",
+                            },
+                        ],
                     },
                     indent=2,
                 )
@@ -1299,6 +1333,11 @@ def test_consume_l2_result_frontier_onchip_service_overrides_generic_recommendat
             assert recommendation["bank_arbiter_policy"] == "locality_first"
             assert recommendation["latency_us"] == 3222.903773
             assert recommendation["legacy_campaign_recommendation"]["arch_id"] == "fp16_nm1_demo"
+            assert result.profile_count == 2
+            assert [row["profile"] for row in decision_payload["objective_profiles"]] == [
+                "hd64_kv8_full_value_p8_ppc2_noc128_softmax_int8_q8",
+                "hd64_kv8_full_value_p8_ppc2_noc128_softmax_int8_q10",
+            ]
             assert decision_payload["proposal_assessment"]["outcome"] == "onchip_service_schedule_recorded"
             assert decision_payload["source_refs"][
                 "decoder_attention_kv_endpoint_full_onchip_service_schedule_out"
