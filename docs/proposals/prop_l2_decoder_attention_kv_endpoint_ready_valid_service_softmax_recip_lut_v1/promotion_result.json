@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l2_decoder_attention_kv_endpoint_ready_valid_service_softmax_recip_lut_v1",
-  "decision": "pending",
-  "pr_number": null,
-  "merge_commit": "",
-  "merged_utc": ""
+  "decision": "iterate",
+  "pr_number": 886,
+  "merge_commit": "5dc2e285c0f0362453773f464359a35ffc0a8cb2",
+  "merged_utc": "2026-06-17T05:17:29.803901Z"
 }

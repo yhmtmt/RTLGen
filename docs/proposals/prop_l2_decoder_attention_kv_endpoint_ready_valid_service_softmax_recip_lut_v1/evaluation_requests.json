@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_decoder_attention_kv_endpoint_ready_valid_service_softmax_recip_lut_v1",
-  "source_commit": "20959c07c8223d68dd3c957661b356b9003d8482",
+  "source_commit": "bcc381dd2e2251fccf74a2095c59caf9c38821c6",
   "requested_items": [
     {
       "item_id": "l2_decoder_attention_kv_endpoint_ready_valid_service_softmax_recip_lut_llama7b_v1",
@@ -19,7 +19,11 @@
         "direction": "close_recip_lut_endpoint_ready_valid_service_for_selected_frontier",
         "reason": "Use the corrected profile-complete q12 reciprocal-LUT endpoint on-chip frontier as the source for concrete ready/valid endpoint queue probing."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 886,
+      "merge_commit": "5dc2e285c0f0362453773f464359a35ffc0a8cb2",
+      "merged_utc": "2026-06-17T05:17:29.803901Z",
+      "notes": "Merged via PR #886 and merge 5dc2e285c0f0362453773f464359a35ffc0a8cb2 at 2026-06-17T05:17:29.803901Z."
     }
   ]
 }

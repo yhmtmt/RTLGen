@@ -1,11 +1,15 @@
 {
   "proposal_id": "prop_l2_decoder_attention_kv_endpoint_ready_valid_service_softmax_recip_lut_v1",
-  "candidate_id": "",
+  "candidate_id": "l2_decoder_attention_kv_endpoint_ready_valid_service_softmax_recip_lut_llama7b_v1",
   "decision": "iterate",
-  "reason": "Awaiting ready/valid endpoint service result.",
+  "reason": "Decoder endpoint ready/valid service evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_endpoint_ready_valid_service__l2_decoder_attention_kv_endpoint_ready_valid_service_softmax_recip_lut_llama7b_v1.json: decision=ready_valid_endpoint_policy_passed; rtl_passed=True; latency_us=3222.903773; schedule_policy=prefetch_overlap; bank_arbiter_policy=locality_first; endpoint_queue_depth_bytes=2048; bank_queue_depth_bytes=2048; packet_payload_bytes=128.",
   "evidence_refs": [
-    "item:l2_decoder_attention_kv_endpoint_ready_valid_service_softmax_recip_lut_llama7b_v1"
+    "item:l2_decoder_attention_kv_endpoint_ready_valid_service_softmax_recip_lut_llama7b_v1",
+    "run:l2_decoder_attention_kv_endpoint_ready_valid_service_softmax_recip_lut_llama7b_v1_run_5ce04d3cc6df47c4",
+    "artifact:control_plane/shadow_exports/l2_decisions/l2_decoder_attention_kv_endpoint_ready_valid_service_softmax_recip_lut_llama7b_v1.json",
+    "pr:#886",
+    "https://github.com/yhmtmt/RTLGen/pull/886"
   ],
-  "next_action": "If the ready/valid probe succeeds, dispatch endpoint/router/SRAM composition for the same reciprocal-LUT frontier.",
-  "requires_human_approval": true
+  "next_action": "inspect follow-on work after l2_decoder_attention_kv_endpoint_ready_valid_service_softmax_recip_lut_llama7b_v1",
+  "requires_human_approval": false
 }
