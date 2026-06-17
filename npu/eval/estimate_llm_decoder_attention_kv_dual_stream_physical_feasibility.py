@@ -18,6 +18,13 @@ if str(_REPO_ROOT) not in sys.path:
 JsonDict = dict[str, Any]
 
 
+def _effective_latency_us(row: JsonDict) -> float:
+    value = row.get("adjusted_latency_us_if_feasible")
+    if value is None:
+        value = row.get("latency_us")
+    return float(value)
+
+
 def _load_json(path: Path) -> JsonDict:
     return json.loads(path.read_text(encoding="utf-8"))
 
@@ -105,6 +112,7 @@ def _row_with_budget(
     *,
     full_value_tile: JsonDict,
     softmax_weight: JsonDict,
+    composed_dual_stream: JsonDict | None,
     compute_block: JsonDict | None,
     compute_block_macs_per_cycle: int | None,
     compute_arch_name: str | None,
@@ -124,19 +132,54 @@ def _row_with_budget(
 
     measured_stream_area = float(full_value_tile["die_area_um2"])
     measured_softmax_area = float(softmax_weight["die_area_um2"])
+    source_clock_ns = float(source_row["clock_ns"])
+    use_composed_dual_stream = composed_dual_stream is not None
+    if use_composed_dual_stream:
+        composed_area = float(composed_dual_stream.get("block_area_um2") or composed_dual_stream["die_area_um2"])
+        composed_clock_ns = float(composed_dual_stream["critical_path_ns"])
+        composed_power = float(composed_dual_stream["total_power_mw"])
+        source_block_macs_per_cycle = int(source_row["measured_block_macs_per_cycle"])
+        composed_replica_count = int(
+            math.ceil(float(source_row["macs_per_cycle"]) / max(1, source_block_macs_per_cycle))
+        )
+    else:
+        composed_area = 0.0
+        composed_clock_ns = 0.0
+        composed_power = 0.0
+        composed_replica_count = 0
     stream_buffer_area = required_buffer_bytes * buffer_area_um2_per_byte
-    selected_local_datapath_area = compute_multiplier * measured_stream_area
-    selected_softmax_area = measured_softmax_area
-    selected_l1_overhead = current_l1_overhead + clusters * (
-        selected_local_datapath_area
-        + selected_softmax_area
-        + stream_buffer_area
-        - current_local_datapath_area
-        - current_softmax_area
-    )
 
-    compute_substitution_enabled = compute_block is not None
-    if compute_block is None:
+    if use_composed_dual_stream:
+        # The composed wrapper contains both int8 streams, reciprocal-LUT softmax, and stream-buffer/control.
+        # Replace local+softmax+compute through a single measured area term.
+        selected_local_datapath_area = 0.0
+        selected_softmax_area = 0.0
+        selected_l1_overhead = current_l1_overhead + clusters * (
+            stream_buffer_area - current_local_datapath_area - current_softmax_area
+        )
+    else:
+        selected_local_datapath_area = compute_multiplier * measured_stream_area
+        selected_softmax_area = measured_softmax_area
+        selected_l1_overhead = current_l1_overhead + clusters * (
+            selected_local_datapath_area
+            + selected_softmax_area
+            + stream_buffer_area
+            - current_local_datapath_area
+            - current_softmax_area
+        )
+
+    compute_substitution_enabled = use_composed_dual_stream or (compute_block is not None)
+    if use_composed_dual_stream:
+        target_block_area = composed_area
+        target_block_macs = int(source_row["macs_per_cycle"])
+        target_replica_count = composed_replica_count
+        base_compute_area = target_replica_count * target_block_area
+        base_compute_power = target_replica_count * composed_power
+        target_block_clock = composed_clock_ns
+        target_block_power = composed_power
+        target_arch = "attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_recip_lut_q10"
+        compute_area_required = base_compute_area
+    elif compute_block is None:
         base_compute_area = current_compute_area
         base_compute_power = float(source_row.get("compute_power_mw", source_row.get("measured_block_power_mw", 0.0)))
         target_replica_count = int(source_row["compute_replica_count"])
@@ -145,6 +188,7 @@ def _row_with_budget(
         target_block_clock = float(source_row["measured_block_clock_ns"])
         target_block_power = float(source_row.get("measured_block_power_mw", 0.0))
         target_arch = str(source_row.get("compute_arch", ""))
+        compute_area_required = base_compute_area * compute_multiplier
     else:
         target_block_area = float(compute_block["block_area_um2"])
         target_block_macs = int(compute_block_macs_per_cycle or source_row["measured_block_macs_per_cycle"])
@@ -154,8 +198,7 @@ def _row_with_budget(
         target_block_power = float(compute_block["total_power_mw"])
         base_compute_power = target_replica_count * target_block_power
         target_arch = str(compute_arch_name or source_row.get("compute_arch", ""))
-
-    compute_area_required = base_compute_area * compute_multiplier
+        compute_area_required = base_compute_area * compute_multiplier
     logic_used_required = current_logic_used + (compute_area_required - current_compute_area) + (
         selected_l1_overhead - current_l1_overhead
     )
@@ -164,20 +207,26 @@ def _row_with_budget(
     required_compute_density_gain = (
         compute_area_required / max(1.0, compute_budget - selected_l1_overhead)
     )
-    if compute_block is None:
+    if compute_block is None and not use_composed_dual_stream:
         replica_count_budgeted = int(current_compute_area // max(1.0, target_block_area))
     else:
         replica_count_budgeted = int(max(0.0, compute_budget - selected_l1_overhead) // max(1.0, target_block_area))
-    replica_count_required = int(math.ceil(target_replica_count * compute_multiplier))
+    replica_count_required = int(
+        math.ceil(target_replica_count * (compute_multiplier if not use_composed_dual_stream else 1.0))
+    )
     replica_shortfall = max(0, replica_count_required - replica_count_budgeted)
     area_fit = logic_slack_required >= 0.0
     buffer_fit = required_buffer_bytes <= available_local_capacity
     feasible = area_fit and buffer_fit
 
     if feasible:
-        adjusted_latency_us = float(source_row["latency_us"])
+        if use_composed_dual_stream and composed_clock_ns > 0.0 and source_clock_ns > 0.0:
+            adjusted_latency_us = float(source_row["latency_us"]) * composed_clock_ns / source_clock_ns
+            adjusted_speedup = float(source_row["latency_speedup_vs_hbm_closed_source"]) * source_clock_ns / composed_clock_ns
+        else:
+            adjusted_latency_us = float(source_row["latency_us"])
+            adjusted_speedup = float(source_row["latency_speedup_vs_hbm_closed_source"])
         adjusted_tile_service_cycles = int(source_row["tile_service_cycles"])
-        adjusted_speedup = float(source_row["latency_speedup_vs_hbm_closed_source"])
     else:
         adjusted_latency_us = None
         adjusted_tile_service_cycles = None
@@ -189,7 +238,11 @@ def _row_with_budget(
     out = dict(source_row)
     out.update(
         {
-            "dual_stream_physical_model": "measured_full_value_tile_budget_v1",
+            "dual_stream_physical_model": (
+                "measured_dual_stream_composed_budget_v1"
+                if use_composed_dual_stream
+                else "measured_full_value_tile_budget_v1"
+            ),
             "precision_profile": precision_profile,
             "measured_full_value_tile_metrics_csv": full_value_tile["metrics_csv"],
             "measured_full_value_tile_area_um2": measured_stream_area,
@@ -199,6 +252,17 @@ def _row_with_budget(
             "measured_softmax_weight_area_um2": measured_softmax_area,
             "measured_softmax_weight_clock_ns": softmax_weight["critical_path_ns"],
             "measured_softmax_weight_power_mw": softmax_weight["total_power_mw"],
+            **(
+                {
+                    "measured_dual_stream_composed_metrics_csv": composed_dual_stream["metrics_csv"],
+                    "measured_dual_stream_composed_area_um2": composed_area,
+                    "measured_dual_stream_composed_clock_ns": composed_clock_ns,
+                    "measured_dual_stream_composed_power_mw": composed_power,
+                    "measured_dual_stream_composed_required_replicas": composed_replica_count,
+                }
+                if use_composed_dual_stream
+                else {}
+            ),
             "stream_buffer_area_um2_per_byte": buffer_area_um2_per_byte,
             "stream_buffer_area_um2_per_cluster": round(stream_buffer_area, 6),
             "selected_local_datapath_area_um2_per_cluster": round(selected_local_datapath_area, 6),
@@ -208,7 +272,11 @@ def _row_with_budget(
             "compute_substitution_enabled": compute_substitution_enabled,
             "source_compute_arch": source_row.get("compute_arch"),
             "substituted_compute_arch": target_arch if compute_substitution_enabled else None,
-            "substituted_compute_metrics_csv": compute_block["metrics_csv"] if compute_block else None,
+            "substituted_compute_metrics_csv": (
+                composed_dual_stream["metrics_csv"]
+                if use_composed_dual_stream
+                else compute_block["metrics_csv"] if compute_block else None
+            ),
             "substituted_block_area_um2": round(target_block_area, 6) if compute_substitution_enabled else None,
             "substituted_block_clock_ns": round(target_block_clock, 6) if compute_substitution_enabled else None,
             "substituted_block_power_mw": round(target_block_power, 6) if compute_substitution_enabled else None,
@@ -242,6 +310,11 @@ def build_report(args: argparse.Namespace) -> JsonDict:
     source_rows = _source_rows(source, limit=args.frontier_row_limit)
     full_value_tile = _best_ok_metrics(args.full_value_tile_metrics)
     softmax_weight = _best_ok_metrics(args.softmax_weight_metrics)
+    composed_dual_stream = (
+        _best_ok_compute_metrics(args.composed_dual_stream_metrics)
+        if getattr(args, "composed_dual_stream_metrics", None)
+        else None
+    )
     compute_block = _best_ok_compute_metrics(args.compute_block_metrics) if args.compute_block_metrics else None
     quality_gate = _load_json(args.quality_gate_json) if args.quality_gate_json else None
     rows = [
@@ -249,6 +322,7 @@ def build_report(args: argparse.Namespace) -> JsonDict:
             row,
             full_value_tile=full_value_tile,
             softmax_weight=softmax_weight,
+            composed_dual_stream=composed_dual_stream,
             compute_block=compute_block,
             compute_block_macs_per_cycle=args.compute_block_macs_per_cycle,
             compute_arch_name=args.compute_arch_name,
@@ -258,14 +332,30 @@ def build_report(args: argparse.Namespace) -> JsonDict:
         for row in source_rows
     ]
     feasible_rows = [row for row in rows if row["physical_feasible"]]
-    best_feasible = min(feasible_rows, key=lambda row: float(row["latency_us"])) if feasible_rows else None
+    best_feasible = min(feasible_rows, key=_effective_latency_us) if feasible_rows else None
     best_requested = min(rows, key=lambda row: float(row["latency_us"]))
     best_area_fit = min(
         (row for row in rows if row["area_fit"]),
-        key=lambda row: float(row["latency_us"]),
+        key=_effective_latency_us,
         default=None,
     )
     decision = "dual_stream_feasible" if best_feasible and best_feasible.get("compute_mode") == "dual_mac" else "dual_stream_area_blocked"
+    assumptions = [
+        "The dual_mac schedule requires an explicit compute_area_multiplier from the sub-tile scheduler.",
+        "Measured full-value tile and softmax-weight generator PPA are used for local datapath overhead only.",
+        "The dense GEMM compute array is treated as already packed into the current logic budget; extra dual-stream compute must fit that same budget to be feasible.",
+        "Buffer capacity is checked against measured local SRAM bytes; an optional buffer-area proxy can be added for sensitivity but defaults to zero to avoid double-counting measured local SRAM.",
+    ]
+    if composed_dual_stream:
+        assumptions.append(
+            "When composed dual-stream wrapper substitution is enabled, full-value and softmax measurements are treated as folded into the measured dual-stream RTL wrapper, and wrapper clock is used to scale feasible latency if it differs from source schedule clock."
+        )
+    elif compute_block:
+        assumptions.append(
+            "When compute-block substitution is enabled, measured block area/power/clock replace the source dense compute block, but the upstream schedule latency is not recomputed; this is an area-feasibility substitution and a conservative latency view when the substituted block clock is no slower than the source clock."
+        )
+    else:
+        assumptions.append("No compute-block substitution was requested; dense compute area comes from the source schedule.")
     return {
         "version": 1,
         "model": args.model_name,
@@ -275,6 +365,9 @@ def build_report(args: argparse.Namespace) -> JsonDict:
             "frontier_row_limit": args.frontier_row_limit,
             "full_value_tile_metrics": str(args.full_value_tile_metrics),
             "softmax_weight_metrics": str(args.softmax_weight_metrics),
+            "composed_dual_stream_metrics": (
+                str(args.composed_dual_stream_metrics) if args.composed_dual_stream_metrics else None
+            ),
             "compute_block_metrics": str(args.compute_block_metrics) if args.compute_block_metrics else None,
             "compute_block_macs_per_cycle": args.compute_block_macs_per_cycle,
             "compute_arch_name": args.compute_arch_name,
@@ -298,6 +391,10 @@ def build_report(args: argparse.Namespace) -> JsonDict:
             "physical_feasible_rows": len(feasible_rows),
             "best_requested_mode": best_requested.get("compute_mode"),
             "best_requested_latency_us": best_requested.get("latency_us"),
+            "best_requested_adjusted_latency_us_if_feasible": best_requested.get("adjusted_latency_us_if_feasible"),
+            "best_requested_speedup_vs_hbm_closed_source": best_requested.get("latency_speedup_vs_hbm_closed_source"),
+            "best_requested_adjusted_speedup_vs_hbm_closed_source": best_requested.get("adjusted_speedup_if_feasible"),
+            "best_requested_adjusted_tile_service_cycles": best_requested.get("adjusted_tile_service_cycles_if_feasible"),
             "best_requested_area_fit": best_requested.get("area_fit"),
             "best_requested_logic_slack_um2": best_requested.get("logic_area_slack_required_um2"),
             "best_requested_compute_area_over_budget_um2": best_requested.get("compute_area_over_budget_um2"),
@@ -307,9 +404,11 @@ def build_report(args: argparse.Namespace) -> JsonDict:
             "best_requested_substituted_compute_area_um2": best_requested.get("substituted_compute_area_um2"),
             "best_requested_compute_clock_ok": best_requested.get("compute_clock_ok"),
             "best_feasible_mode": best_feasible.get("compute_mode") if best_feasible else None,
-            "best_feasible_latency_us": best_feasible.get("latency_us") if best_feasible else None,
+            "best_feasible_latency_us": _effective_latency_us(best_feasible) if best_feasible else None,
+            "best_feasible_source_latency_us": best_feasible.get("latency_us") if best_feasible else None,
             "best_area_fit_mode": best_area_fit.get("compute_mode") if best_area_fit else None,
-            "best_area_fit_latency_us": best_area_fit.get("latency_us") if best_area_fit else None,
+            "best_area_fit_latency_us": _effective_latency_us(best_area_fit) if best_area_fit else None,
+            "best_area_fit_source_latency_us": best_area_fit.get("latency_us") if best_area_fit else None,
             "recommended_next_step": (
                 "measure a denser dual-stream fused attention datapath or reduce compute replicas before promoting dual_mac"
                 if decision == "dual_stream_area_blocked"
@@ -320,18 +419,7 @@ def build_report(args: argparse.Namespace) -> JsonDict:
         "best_feasible": best_feasible,
         "best_area_fit": best_area_fit,
         "rows": rows,
-        "assumptions": [
-            "The dual_mac schedule requires an explicit compute_area_multiplier from the sub-tile scheduler.",
-            "Measured full-value tile and softmax-weight generator PPA are used for local datapath overhead only.",
-            "The dense GEMM compute array is treated as already packed into the current logic budget; extra dual-stream compute must fit that same budget to be feasible.",
-            "Buffer capacity is checked against measured local SRAM bytes; an optional buffer-area proxy can be added for sensitivity but defaults to zero to avoid double-counting measured local SRAM.",
-            (
-                "When compute-block substitution is enabled, measured block area/power/clock replace the source dense compute block, "
-                "but the upstream schedule latency is not recomputed; this is an area-feasibility substitution and a conservative latency view when the substituted block clock is no slower than the source clock."
-            )
-            if compute_block
-            else "No compute-block substitution was requested; dense compute area comes from the source schedule.",
-        ],
+        "assumptions": assumptions,
     }
 
 
@@ -386,6 +474,7 @@ def main() -> int:
     parser.add_argument("--subtile-pipeline-json", type=Path, required=True)
     parser.add_argument("--full-value-tile-metrics", type=Path, required=True)
     parser.add_argument("--softmax-weight-metrics", type=Path, required=True)
+    parser.add_argument("--composed-dual-stream-metrics", type=Path)
     parser.add_argument("--compute-block-metrics", type=Path)
     parser.add_argument("--compute-block-macs-per-cycle", type=int)
     parser.add_argument("--compute-arch-name")

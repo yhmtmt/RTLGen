@@ -1,0 +1,71 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_composed_datapath_physical_feasibility_softmax_recip_lut_v1",
+  "created_utc": "2026-06-17T21:30:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Softmax-recip composed dual-stream datapath feasibility for Llama7B attention",
+  "hypothesis": "The abstract int8-compute dual-MAC feasibility point should only remain the frontier if the measured composed dual-stream wrapper clock and area still beat the split/shared-MAC fallback under the same Llama7B attention schedule assumptions.",
+  "direct_comparison": {
+    "primary_question": "After substituting the measured q10 composed dual-stream softmax-recip wrapper, what is the physically effective dual-MAC latency and does it remain the best least-abstract frontier?",
+    "include": [
+      "Use l2_decoder_attention_kv_subtile_pipeline_schedule_softmax_recip_lut_llama7b_v1 as the source schedule.",
+      "Use the measured q10 composed dual-stream softmax-recip wrapper metrics as a combined local datapath, softmax, stream-buffer, and int8 compute wrapper.",
+      "Scale feasible source latency by measured wrapper clock divided by source schedule clock.",
+      "Report effective latency separately from the source schedule latency.",
+      "Compare against the abstract int8-compute dual-MAC result and the prior split/shared-MAC fallback."
+    ],
+    "exclude": [
+      "Do not change the HBM, SRAM, NoC, KV sharing, or Llama7B workload assumptions.",
+      "Do not treat the source schedule latency as final if measured wrapper clock is slower.",
+      "Do not claim full Llama7B quality closure; this consumes the existing mixed-precision quality gate and reciprocal-LUT decision references."
+    ],
+    "follow_on_broad_sweep": [
+      "If composed-clock dual-MAC is slower than split/shared MAC, measure a split/shared composed wrapper or optimize composed pipeline timing.",
+      "If composed-clock dual-MAC remains best, promote it as the current least-abstract attention frontier before expanding memory/NoC detail.",
+      "Run real checkpoint quality or perplexity once the architecture point is stable enough for precision validation."
+    ]
+  },
+  "expected_benefit": [
+    "Prevents the 1575 us abstract int8-compute point from being ranked without measured composed wrapper timing.",
+    "Quantifies the penalty from composed RTL clock integration.",
+    "Clarifies whether the current best least-abstract point is composed dual-MAC or the split/shared-MAC fallback."
+  ],
+  "risks": [
+    "The result is still an L2 composition of measured wrapper metrics and schedule rows, not a full whole-attention RTL PPA integration.",
+    "The quality gate uses the current small-benchmark mixed-precision evidence, not real Llama7B checkpoint perplexity.",
+    "The composed wrapper count assumes regular replication and may still need layout-level hierarchy validation."
+  ],
+  "needs_mapper_change": true,
+  "required_evaluations": [
+    {
+      "task_type": "l2_campaign",
+      "evaluation_mode": "frontier_detail",
+      "objective": "softmax_recip_composed_datapath_physical_feasibility",
+      "cost_class": "small",
+      "depends_on_item_ids": [
+        "l1_decoder_attention_dual_stream_composed_softmax_recip_lut_ppa_v1_r3",
+        "l2_decoder_attention_mixed_precision_int8_compute_physical_feasibility_softmax_recip_lut_llama7b_v1",
+        "l2_decoder_attention_kv_subtile_pipeline_schedule_softmax_recip_lut_llama7b_v1",
+        "l2_decoder_attention_mixed_precision_quality_llama7b_v1",
+        "l2_decoder_attention_softmax_recip_lut_quality_llama7b_v1_r3"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "record_softmax_recip_composed_datapath_physical_feasibility",
+        "reason": "The result should decide whether the measured composed dual-stream softmax-recip wrapper preserves the abstract dual-MAC advantage after clock scaling."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_precision_int8_compute_physical_feasibility__l2_decoder_attention_mixed_precision_int8_compute_physical_feasibility_softmax_recip_lut_llama7b_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_dual_stream_physical_feasibility__l2_decoder_attention_kv_dual_stream_physical_feasibility_softmax_recip_lut_llama7b_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/estimate_llm_decoder_attention_kv_dual_stream_physical_feasibility.py",
+    "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_recip_lut_q10/metrics.csv",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_subtile_pipeline_schedule__l2_decoder_attention_kv_subtile_pipeline_schedule_softmax_recip_lut_llama7b_v1.json",
+    "control_plane/shadow_exports/l2_decisions/l2_decoder_attention_softmax_recip_lut_quality_llama7b_v1_r3.json"
+  ]
+}

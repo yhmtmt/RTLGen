@@ -468,6 +468,10 @@ _DECODER_EVIDENCE_OUTPUT_KEYS: tuple[tuple[str, str], ...] = (
         "attention_mixed_precision_int8_compute_physical_feasibility_out",
         "attention_mixed_precision_int8_compute_physical_feasibility_report",
     ),
+    (
+        "attention_composed_datapath_physical_feasibility_out",
+        "attention_composed_datapath_physical_feasibility_report",
+    ),
 )
 
 
@@ -948,12 +952,15 @@ def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, 
         "llm_decoder_attention_mixed_precision_physical_feasibility_llama7b_v1",
         "llm_decoder_attention_mixed_precision_int8_compute_physical_feasibility_llama7b_v1",
         "llm_decoder_attention_mixed_precision_int8_compute_physical_feasibility_softmax_recip_lut_llama7b_v1",
+        "llm_decoder_attention_composed_datapath_physical_feasibility_softmax_recip_lut_llama7b_v1",
     }:
         diagnosis = evidence_payload.get("diagnosis")
         diagnosis_dict = dict(diagnosis) if isinstance(diagnosis, dict) else {}
         outcome = str(diagnosis_dict.get("decision") or "dual_stream_physical_feasibility_recorded")
         prefix = (
-            "Decoder mixed-precision int8-compute physical feasibility evidence"
+            "Decoder composed dual-stream physical feasibility evidence"
+            if model == "llm_decoder_attention_composed_datapath_physical_feasibility_softmax_recip_lut_llama7b_v1"
+            else "Decoder mixed-precision int8-compute physical feasibility evidence"
             if "llm_decoder_attention_mixed_precision_int8_compute_physical_feasibility" in model
             else
             "Decoder mixed-precision physical feasibility evidence"
@@ -967,6 +974,8 @@ def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, 
             "precision_profile",
             "best_requested_mode",
             "best_requested_latency_us",
+            "best_requested_adjusted_latency_us_if_feasible",
+            "best_requested_adjusted_speedup_vs_hbm_closed_source",
             "best_requested_area_fit",
             "best_requested_logic_slack_um2",
             "best_requested_compute_area_over_budget_um2",
