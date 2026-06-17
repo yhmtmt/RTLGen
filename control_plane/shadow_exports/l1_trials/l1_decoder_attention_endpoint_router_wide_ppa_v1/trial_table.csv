@@ -1,0 +1,2 @@
+run_key,attempt,trial_index,seed,status,metrics_csv,critical_path_ns,die_area,total_power_mw,failure_category,failure_stage,failure_signature
+l1_decoder_attention_endpoint_router_wide_ppa_v1_run_f5a3ff633170b880,1,1,0,failed,runs/designs/noc/l1_onchip_endpoint_w1024_b4_eq16_bq16_wrapper/metrics.csv,0.8012,35492.676025,0.0279,validation_error,acceptance,runs/designs/noc/l1_noc_router_p4_w2048_wrapper/metrics.csv: no status=ok rows (statuses=failed); runs/designs/noc/l1_noc_fifo_w2048_d16_wrapper/metrics.csv: no status=ok rows (statuses=failed)

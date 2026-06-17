@@ -81,6 +81,24 @@ def _resolve_run(session: Session, request: Layer1ConsumeRequest) -> tuple[WorkI
     return work_item, run
 
 
+def _failed_acceptance_run_has_metrics(run: Run) -> bool:
+    if run.status != RunStatus.FAILED:
+        return False
+    payload = dict(run.result_payload or {}) if isinstance(run.result_payload, dict) else {}
+    classification = dict(payload.get("failure_classification") or {})
+    if str(classification.get("category", "")).strip() != "validation_error":
+        return False
+    if str(classification.get("failed_command_name", "")).strip() != "acceptance":
+        return False
+    queue_result = dict(payload.get("queue_result") or {})
+    metrics_rows = queue_result.get("metrics_rows")
+    return isinstance(metrics_rows, list) and bool(metrics_rows)
+
+
+def _run_can_contribute_l1_metrics(run: Run) -> bool:
+    return run.status == RunStatus.SUCCEEDED or _failed_acceptance_run_has_metrics(run)
+
+
 def _safe_float(value: str | None) -> float | None:
     if value in ("", None):
         return None
@@ -696,14 +714,15 @@ def _trial_aggregate_payloads(repo_root: Path, work_item: WorkItem) -> tuple[lis
         payload = dict(run.result_payload or {}) if isinstance(run.result_payload, dict) else {}
         trial = dict(payload.get("trial") or {})
         failure = dict(payload.get("failure_classification") or {})
-        run_metrics_csvs = _metrics_csvs_from_run(run, work_item=work_item) if run.status == RunStatus.SUCCEEDED else []
+        contributes_metrics = _run_can_contribute_l1_metrics(run)
+        run_metrics_csvs = _metrics_csvs_from_run(run, work_item=work_item) if contributes_metrics else []
         for metrics_csv in run_metrics_csvs:
             if metrics_csv not in metrics_csvs:
                 metrics_csvs.append(metrics_csv)
-        if run.status == RunStatus.SUCCEEDED and seed_variance_selected_rows:
+        if contributes_metrics and run.status == RunStatus.SUCCEEDED and seed_variance_selected_rows:
             best = seed_variance_selected_rows.get(run.run_key)
         else:
-            best = _best_trial_row(repo_root, run) if run.status == RunStatus.SUCCEEDED else None
+            best = _best_trial_row(repo_root, run) if contributes_metrics else None
         metrics_csv = ""
         best_row = None
         if best is not None:
@@ -811,7 +830,7 @@ def consume_l1_result(session: Session, request: Layer1ConsumeRequest) -> Layer1
     work_item, run = _resolve_run(session, request)
     if work_item.task_type != "l1_sweep":
         raise Layer1ResultConsumerError(f"work item is not l1_sweep: {work_item.item_id}")
-    if run.status != RunStatus.SUCCEEDED:
+    if run.status != RunStatus.SUCCEEDED and not _failed_acceptance_run_has_metrics(run):
         raise Layer1ResultConsumerError(f"run is not succeeded: {run.run_key} status={run.status.value}")
 
     metrics_csvs, summary_stats, failure_stats, trial_rows, selected_group_metadata = _trial_aggregate_payloads(repo_root, work_item)

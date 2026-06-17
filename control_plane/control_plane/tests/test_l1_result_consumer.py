@@ -311,6 +311,131 @@ def test_consume_l1_result_records_failure_only_boundary_evidence() -> None:
             assert artifact.metadata_["proposal_count"] == 0
 
 
+def test_consume_l1_result_accepts_failed_acceptance_run_with_mixed_metrics() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        metrics_ok = "runs/designs/noc/l1_endpoint_w1024_wrapper/metrics.csv"
+        metrics_failed = "runs/designs/noc/l1_router_w2048_wrapper/metrics.csv"
+        _write_metrics(
+            repo_root / metrics_ok,
+            [
+                {
+                    "platform": "nangate45",
+                    "status": "ok",
+                    "param_hash": "ok0001",
+                    "tag": "wide_noc_frontier_a",
+                    "critical_path_ns": "0.8028",
+                    "die_area": "53031.18",
+                    "total_power_mw": "0.0282",
+                    "result_path": "runs/designs/noc/l1_endpoint_w1024_wrapper/work/ok0001/result.json",
+                }
+            ],
+        )
+        _write_metrics(
+            repo_root / metrics_failed,
+            [
+                {
+                    "platform": "nangate45",
+                    "status": "failed",
+                    "param_hash": "fail0001",
+                    "tag": "wide_noc_frontier_a",
+                    "result_path": "runs/designs/noc/l1_router_w2048_wrapper/work/fail0001/result.json",
+                }
+            ],
+        )
+
+        with Session(engine) as session:
+            task_request = TaskRequest(
+                request_key="l1_sweep:test_mixed_acceptance_failed",
+                source="test",
+                requested_by="@tester",
+                title="Layer1 mixed acceptance failed test",
+                description="test failed acceptance run consumption",
+                layer=LayerName.LAYER1,
+                flow=FlowName.OPENROAD,
+                priority=1,
+                request_payload={
+                    "item_id": "l1_test_mixed_acceptance_failed",
+                    "layer": "layer1",
+                    "flow": "openroad",
+                },
+                source_commit="deadbeef",
+            )
+            session.add(task_request)
+            session.flush()
+
+            work_item = WorkItem(
+                work_item_key="l1_sweep:l1_test_mixed_acceptance_failed",
+                task_request_id=task_request.id,
+                item_id="l1_test_mixed_acceptance_failed",
+                layer=LayerName.LAYER1,
+                flow=FlowName.OPENROAD,
+                platform="nangate45",
+                task_type="l1_sweep",
+                state=WorkItemState.FAILED,
+                priority=1,
+                source_mode="config",
+                input_manifest={"configs": [], "sweeps": []},
+                command_manifest=[],
+                expected_outputs=[metrics_ok, metrics_failed],
+                acceptance_rules=[
+                    "Each generated wrapper metrics.csv contains at least one status=ok row for the queued sweep",
+                ],
+                source_commit="deadbeef",
+            )
+            session.add(work_item)
+            session.flush()
+
+            run = Run(
+                run_key="l1_test_mixed_acceptance_failed_run_1",
+                work_item_id=work_item.id,
+                attempt=1,
+                executor_type=ExecutorType.INTERNAL_WORKER,
+                status=RunStatus.FAILED,
+                started_at=utcnow(),
+                completed_at=utcnow(),
+                checkout_commit="deadbeef",
+                result_summary="4/4 commands succeeded",
+                result_payload={
+                    "queue_result": {
+                        "status": "fail",
+                        "metrics_rows": [metrics_ok, metrics_failed],
+                    },
+                    "failure_classification": {
+                        "category": "validation_error",
+                        "failed_command_name": "acceptance",
+                    },
+                },
+            )
+            session.add(run)
+            session.commit()
+
+            result = consume_l1_result(
+                session,
+                Layer1ConsumeRequest(repo_root=str(repo_root), run_key=run.run_key),
+            )
+
+            assert result.proposal_count == 1
+            proposal_path = (
+                repo_root
+                / "control_plane"
+                / "shadow_exports"
+                / "l1_promotions"
+                / f"{work_item.item_id}.json"
+            )
+            payload = json.loads(proposal_path.read_text(encoding="utf-8"))
+            assert payload["proposal_count"] == 1
+            assert payload["proposals"][0]["metrics_ref"]["metrics_csv"] == metrics_ok
+            assert payload["boundary_evidence"]["row_count"] == 1
+            assert payload["boundary_evidence"]["rows"][0]["metrics_csv"] == metrics_failed
+            assert payload["boundary_evidence"]["rows"][0]["status"] == "failed"
+            assert session.query(Artifact).filter_by(kind="promotion_proposal").one().metadata_["proposal_count"] == 1
+
+
 def test_consume_l1_result_keeps_single_trial_metrics_without_trials_subdir() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
