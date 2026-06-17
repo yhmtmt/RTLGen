@@ -947,13 +947,14 @@ def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, 
         "llm_decoder_attention_kv_dual_stream_physical_feasibility_llama7b_v1",
         "llm_decoder_attention_mixed_precision_physical_feasibility_llama7b_v1",
         "llm_decoder_attention_mixed_precision_int8_compute_physical_feasibility_llama7b_v1",
+        "llm_decoder_attention_mixed_precision_int8_compute_physical_feasibility_softmax_recip_lut_llama7b_v1",
     }:
         diagnosis = evidence_payload.get("diagnosis")
         diagnosis_dict = dict(diagnosis) if isinstance(diagnosis, dict) else {}
         outcome = str(diagnosis_dict.get("decision") or "dual_stream_physical_feasibility_recorded")
         prefix = (
             "Decoder mixed-precision int8-compute physical feasibility evidence"
-            if model == "llm_decoder_attention_mixed_precision_int8_compute_physical_feasibility_llama7b_v1"
+            if "llm_decoder_attention_mixed_precision_int8_compute_physical_feasibility" in model
             else
             "Decoder mixed-precision physical feasibility evidence"
             if model == "llm_decoder_attention_mixed_precision_physical_feasibility_llama7b_v1"

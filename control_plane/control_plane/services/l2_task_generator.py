@@ -5537,14 +5537,25 @@ def _decoder_attention_mixed_precision_int8_compute_physical_feasibility_evidenc
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_mixed_precision_int8_compute_physical_feasibility__{item_id}.json"
     report = f"{base}/decoder_attention_mixed_precision_int8_compute_physical_feasibility__{item_id}.md"
-    subtile_pipeline = (
-        f"{base}/decoder_attention_kv_subtile_pipeline_schedule__"
-        "l2_decoder_attention_kv_subtile_pipeline_schedule_llama7b_v1.json"
-    )
-    quality_gate = (
-        f"{base}/decoder_attention_mixed_precision_quality__"
-        "l2_decoder_attention_mixed_precision_quality_llama7b_v1.json"
-    )
+    if "softmax_recip_lut" in item_id:
+        subtile_pipeline_source = "l2_decoder_attention_kv_subtile_pipeline_schedule_softmax_recip_lut_llama7b_v1"
+        quality_gate_source = "l2_decoder_attention_mixed_precision_quality_llama7b_v1"
+        softmax_recip_quality_decision = (
+            "control_plane/shadow_exports/l2_decisions/"
+            "l2_decoder_attention_softmax_recip_lut_quality_llama7b_v1_r3.json"
+        )
+        model_name = (
+            "llm_decoder_attention_mixed_precision_int8_compute_physical_feasibility_softmax_recip_lut_llama7b_v1"
+        )
+        precision_profile = "q8_k8_v6_a24_s8_w8_recip_lut_q10_int8_compute"
+    else:
+        subtile_pipeline_source = "l2_decoder_attention_kv_subtile_pipeline_schedule_llama7b_v1"
+        quality_gate_source = "l2_decoder_attention_mixed_precision_quality_llama7b_v1"
+        softmax_recip_quality_decision = None
+        model_name = "llm_decoder_attention_mixed_precision_int8_compute_physical_feasibility_llama7b_v1"
+        precision_profile = "q8_k8_v6_a24_s24_w16_int8_compute"
+    subtile_pipeline = f"{base}/decoder_attention_kv_subtile_pipeline_schedule__{subtile_pipeline_source}.json"
+    quality_gate = f"{base}/decoder_attention_mixed_precision_quality__{quality_gate_source}.json"
     mixed_full_value_tile_metrics = (
         "runs/designs/activations/"
         "attention_kv_full_value_hd64_kv8_v6_tl16_b128_p8_ppc2_w22_a40_wrapper/metrics.csv"
@@ -5558,6 +5569,11 @@ def _decoder_attention_mixed_precision_int8_compute_physical_feasibility_evidenc
         "inputs": {
             "attention_kv_subtile_pipeline_schedule": subtile_pipeline,
             "attention_mixed_precision_quality": quality_gate,
+            **(
+                {"attention_softmax_recip_lut_quality_decision": softmax_recip_quality_decision}
+                if softmax_recip_quality_decision is not None
+                else {}
+            ),
             "attention_kv_mixed_precision_full_value_tile_metrics": mixed_full_value_tile_metrics,
             "attention_kv_softmax_weight_metrics": softmax_weight_metrics,
             "attention_int8_dense_compute_metrics": int8_dense_compute_metrics,
@@ -5579,8 +5595,8 @@ def _decoder_attention_mixed_precision_int8_compute_physical_feasibility_evidenc
                     f"--full-value-tile-metrics {mixed_full_value_tile_metrics} "
                     f"--softmax-weight-metrics {softmax_weight_metrics} "
                     f"--quality-gate-json {quality_gate} "
-                    "--precision-profile q8_k8_v6_a24_s24_w16_int8_compute "
-                    "--model-name llm_decoder_attention_mixed_precision_int8_compute_physical_feasibility_llama7b_v1 "
+                    f"--precision-profile {precision_profile} "
+                    f"--model-name {model_name} "
                     "--frontier-row-limit 8 "
                     "--buffer-area-um2-per-byte 0.0 "
                     f"--compute-block-metrics {int8_dense_compute_metrics} "
