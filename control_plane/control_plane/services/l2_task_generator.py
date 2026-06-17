@@ -4988,6 +4988,9 @@ def _decoder_attention_kv_endpoint_router_sram_composition_evidence(
     sram_summary = "runs/designs/sram/llama7b_attention_tile_buffers_v1/sram_metrics_summary.json"
     sram_metrics = "runs/designs/sram/llama7b_attention_tile_buffers_v1/sram_metrics.json"
     wide_l1_promotion = "control_plane/shadow_exports/l1_promotions/l1_decoder_attention_endpoint_router_wide_ppa_v1.json"
+    segmented_l1_promotion = (
+        "control_plane/shadow_exports/l1_promotions/l1_decoder_attention_endpoint_router_segmented_noc_ppa_v1.json"
+    )
     return {
         "inputs": {
             "attention_kv_endpoint_ready_valid_service": endpoint_ready_valid,
@@ -4996,6 +4999,7 @@ def _decoder_attention_kv_endpoint_router_sram_composition_evidence(
             "attention_kv_tile_sram_metrics_summary": sram_summary,
             "attention_kv_tile_sram_metrics": sram_metrics,
             "attention_kv_endpoint_router_wide_l1_promotion": wide_l1_promotion,
+            "attention_kv_endpoint_router_segmented_noc_l1_promotion": segmented_l1_promotion,
             "attention_kv_endpoint_router_sram_composition_out": out,
             "attention_kv_endpoint_router_sram_composition_report": report,
             "attention_kv_endpoint_router_sram_composition_scope": (
@@ -5017,6 +5021,7 @@ def _decoder_attention_kv_endpoint_router_sram_composition_evidence(
                     f"--sram-summary-json {sram_summary} "
                     f"--sram-metrics-json {sram_metrics} "
                     f"--wide-l1-promotion-json {wide_l1_promotion} "
+                    f"--segmented-l1-promotion-json {segmented_l1_promotion} "
                     f"--out {out} "
                     f"--out-md {report}"
                 ),

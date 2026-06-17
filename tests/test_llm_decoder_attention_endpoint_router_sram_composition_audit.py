@@ -21,6 +21,13 @@ def _build_payload(
     *,
     repo_root: Path,
     local_sram_capacity: dict | None,
+    wide_l1_promotion: dict | None = None,
+    segmented_l1_promotion: dict | None = None,
+    router_metrics_design: str = "noc_router_w2048",
+    fifo_metrics_design: str = "noc_fifo_w2048",
+    endpoint_metrics_design: str = "onchip_endpoint_w512",
+    link_width_bits: int = 2048,
+    local_capacity_bytes_per_cluster: int = 1024,
 ) -> audit.JsonDict:
     endpoint_ready_valid = {
         "decision": "ready_valid_endpoint_policy_passed",
@@ -43,7 +50,7 @@ def _build_payload(
             "bank_arbiter_policy": "locality_first",
             "cluster_count": 16,
             "bank_count": 64,
-            "link_width_bits": 2048,
+            "link_width_bits": link_width_bits,
             "packet_payload_bytes": 64,
             "local_sram_fraction": 0.25,
             "sram_area_fraction": 0.35,
@@ -52,7 +59,7 @@ def _build_payload(
             "noc_router_metrics_csv": "runs/designs/test/router_metrics.csv",
             "noc_fifo_metrics_csv": "runs/designs/test/fifo_metrics.csv",
             "onchip_endpoint_metrics_csv": "runs/designs/test/onchip_endpoint_metrics.csv",
-            "local_capacity_bytes_per_cluster": 1024,
+            "local_capacity_bytes_per_cluster": local_capacity_bytes_per_cluster,
             "die_area_mm2": 0.8,
         }
     }
@@ -70,21 +77,21 @@ def _build_payload(
 
     _write_metrics_csv(
         repo_root / "runs/designs/test/router_metrics.csv",
-        design="noc_router_w2048",
+        design=router_metrics_design,
         critical_path_ns=4.1,
         die_area=120.0,
         power_mw=0.12,
     )
     _write_metrics_csv(
         repo_root / "runs/designs/test/fifo_metrics.csv",
-        design="noc_fifo_w2048",
+        design=fifo_metrics_design,
         critical_path_ns=4.2,
         die_area=110.0,
         power_mw=0.11,
     )
     _write_metrics_csv(
         repo_root / "runs/designs/test/onchip_endpoint_metrics.csv",
-        design="onchip_endpoint_w512",
+        design=endpoint_metrics_design,
         critical_path_ns=3.5,
         die_area=90.0,
         power_mw=0.09,
@@ -96,7 +103,8 @@ def _build_payload(
         endpoint_onchip=endpoint_onchip,
         sram_summary=sram_summary,
         sram_metrics=sram_metrics,
-        wide_l1_promotion=None,
+        wide_l1_promotion=wide_l1_promotion,
+        segmented_l1_promotion=segmented_l1_promotion,
         local_sram_capacity=local_sram_capacity,
     )
 
@@ -132,3 +140,103 @@ def test_endpoint_router_sram_composition_audit_without_local_sram_capacity_fall
     assert payload["required_follow_on_ppa"] == ["full_local_capacity_sram_macro_profile_missing"]
     assert payload["measured_primitives"]["local_sram_capacity"] is None
     assert payload["source_items"]["local_sram_capacity"] is None
+
+
+def test_endpoint_router_sram_composition_audit_uses_segmented_noc_promotion_for_router_fifo_width_fallback(
+    tmp_path: Path,
+) -> None:
+    wide_l1_promotion = {
+        "item_id": "l1_decoder_attention_endpoint_router_wide_ppa_v1",
+        "boundary_evidence": {
+            "rows": [
+                {"design": "l1_noc_router_p4_w2048_wrapper", "status": "failed"},
+                {"design": "l1_noc_fifo_w2048_d16_wrapper", "status": "failed"},
+            ]
+        },
+    }
+    segmented_l1_promotion = {
+        "item_id": "l1_decoder_attention_endpoint_router_segmented_noc_ppa_v1",
+        "proposals": [
+            {
+                "metrics_ref": {
+                    "metrics_csv": "runs/designs/noc/l1_noc_router_p4_w128_wrapper/metrics.csv",
+                },
+                "metric_summary": {
+                    "critical_path_ns": 1.0,
+                    "die_area": 100.0,
+                    "total_power_mw": 1.0,
+                },
+            },
+            {
+                "metrics_ref": {
+                    "metrics_csv": "runs/designs/noc/l1_noc_router_p4_w256_wrapper/metrics.csv",
+                },
+                "metric_summary": {
+                    "critical_path_ns": 0.5,
+                    "die_area": 80.0,
+                    "total_power_mw": 1.0,
+                },
+            },
+            {
+                "metrics_ref": {
+                    "metrics_csv": "runs/designs/noc/l1_noc_fifo_w128_d16_wrapper/metrics.csv",
+                },
+                "metric_summary": {
+                    "critical_path_ns": 1.4,
+                    "die_area": 200.0,
+                    "total_power_mw": 2.0,
+                },
+            },
+            {
+                "metrics_ref": {
+                    "metrics_csv": "runs/designs/noc/l1_noc_fifo_w256_d16_wrapper/metrics.csv",
+                },
+                "metric_summary": {
+                    "critical_path_ns": 1.5,
+                    "die_area": 180.0,
+                    "total_power_mw": 2.0,
+                },
+            },
+        ],
+    }
+    local_sram_capacity = {
+        "source_item": "l2_decoder_attention_local_sram_capacity_llama7b_v1",
+        "budget_check": {
+            "fits_sram_budget": True,
+            "total_area_um2": 10.0,
+            "sram_budget_area_um2": 20.0,
+            "area_fraction_of_sram_budget": 0.5,
+        },
+        "chunking": {
+            "allocated_bytes_per_cluster": 1024,
+        },
+    }
+    payload = _build_payload(
+        repo_root=tmp_path,
+        local_sram_capacity=local_sram_capacity,
+        wide_l1_promotion=wide_l1_promotion,
+        segmented_l1_promotion=segmented_l1_promotion,
+        router_metrics_design="noc_router_w1024",
+        fifo_metrics_design="noc_fifo_w1024",
+        local_capacity_bytes_per_cluster=256,
+    )
+
+    assert payload["measured_primitives"]["router"]["source"] == "segmented_l1_promotion"
+    assert payload["measured_primitives"]["fifo"]["source"] == "segmented_l1_promotion"
+    assert payload["measured_primitives"]["router"]["width_bits"] == 256
+    assert payload["measured_primitives"]["fifo"]["width_bits"] == 256
+    assert payload["composition_quantities"]["router_lanes_for_link"] == 8
+    assert payload["composition_quantities"]["fifo_lanes_for_link"] == 8
+    assert payload["source_items"]["segmented_l1_promotion"] == "l1_decoder_attention_endpoint_router_segmented_noc_ppa_v1"
+    assert payload["closure_diagnosis"]["router"] == (
+        "lane_composed_segmented_evidence_available_while_flat_2048_failed"
+    )
+    assert payload["closure_diagnosis"]["fifo"] == (
+        "lane_composed_segmented_evidence_available_while_flat_2048_failed"
+    )
+    assert payload["required_follow_on_ppa"] == []
+    assert payload["decision"] == "endpoint_router_sram_composition_closed_for_selected_policy"
+    assert not any(item["primitive"] == "segmented_noc_router" for item in payload["recommended_next_l1_points"])
+    assert not any(item["primitive"] == "segmented_noc_fifo" for item in payload["recommended_next_l1_points"])
+    assert any("Lane-composed/segmented NoC PPA metrics are available" in item for item in payload["remaining_abstractions"])
+    assert "lane-composed or narrower-link NoC PPA remains open" not in str(payload["remaining_abstractions"])
