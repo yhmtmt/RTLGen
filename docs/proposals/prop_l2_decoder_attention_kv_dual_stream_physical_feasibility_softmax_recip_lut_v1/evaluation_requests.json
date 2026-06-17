@@ -19,7 +19,11 @@
         "direction": "record_softmax_recip_dual_stream_physical_feasibility",
         "reason": "Quantify whether the softmax-recip subtile pipeline selected dual_mac schedule fits the measured logic budget, or whether the current physically valid frontier must use split/shared MAC."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 911,
+      "merge_commit": "2a34a846451d0c56dd3d55427723ae0a29524278",
+      "merged_utc": "2026-06-17T12:10:00.358658Z",
+      "notes": "Merged via PR #911 and merge 2a34a846451d0c56dd3d55427723ae0a29524278 at 2026-06-17T12:10:00.358658Z."
     }
   ]
 }
