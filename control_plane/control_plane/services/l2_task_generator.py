@@ -4923,6 +4923,15 @@ def _decoder_attention_kv_endpoint_full_onchip_service_source(*, item_id: str) -
     return f"{base}/decoder_attention_kv_endpoint_full_onchip_service_schedule__{source_item}.json"
 
 
+def _decoder_attention_kv_endpoint_router_sram_composition_source(*, item_id: str) -> str:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    if "softmax_recip_lut" in item_id:
+        source_item = "l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_llama7b_v1_r4"
+    else:
+        source_item = "l2_decoder_attention_kv_endpoint_router_sram_composition_llama7b_v1"
+    return f"{base}/decoder_attention_kv_endpoint_router_sram_composition__{source_item}.json"
+
+
 def _decoder_attention_local_sram_capacity_source(*, item_id: str) -> str:
     _ = item_id
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
@@ -5118,18 +5127,9 @@ def _decoder_attention_kv_measured_sram_rebalance_evidence(*, item_id: str) -> d
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_kv_measured_sram_rebalance__{item_id}.json"
     report = f"{base}/decoder_attention_kv_measured_sram_rebalance__{item_id}.md"
-    endpoint_schedule = (
-        f"{base}/decoder_attention_kv_endpoint_full_onchip_service_schedule__"
-        "l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_llama7b_v1.json"
-    )
-    composition = (
-        f"{base}/decoder_attention_kv_endpoint_router_sram_composition__"
-        "l2_decoder_attention_kv_endpoint_router_sram_composition_llama7b_v1.json"
-    )
-    local_capacity = (
-        f"{base}/decoder_attention_local_sram_capacity__"
-        "l2_decoder_attention_local_sram_capacity_llama7b_v1.json"
-    )
+    endpoint_schedule = _decoder_attention_kv_endpoint_full_onchip_service_source(item_id=item_id)
+    composition = _decoder_attention_kv_endpoint_router_sram_composition_source(item_id=item_id)
+    local_capacity = _decoder_attention_local_sram_capacity_source(item_id=item_id)
     return {
         "inputs": {
             "attention_kv_endpoint_full_onchip_service_schedule": endpoint_schedule,
