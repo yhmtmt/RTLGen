@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l1_decoder_attention_endpoint_router_segmented_noc_ppa_v1",
-  "source_commit": "c68dce07a65dc284ac5ee3051beedd2e06b5c109",
+  "source_commit": "276f12403c2e08e8cd9b5e891a8b1fb151b33de7",
   "source_commit_note": "Dispatch should use the merge commit containing PR #896 or newer; the follow-on reuses the existing NoC primitive generator stack.",
   "requested_items": [
     {
@@ -9,7 +9,7 @@
       "objective": "Measure proposal-linked 128/256-bit NoC router and FIFO lane primitives for the Llama7B endpoint path after flat 2048-bit router/FIFO boundary failures.",
       "evaluation_mode": "frontier_closure",
       "abstraction_layer": "architecture_block",
-      "status": "pending",
+      "status": "merged",
       "depends_on_item_ids": [
         "l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_llama7b_v1_r3"
       ],
@@ -24,7 +24,10 @@
       "sweep_path": "runs/campaigns/noc/l1_memory_noc_primitives/sweeps/nangate45_segmented_router_fifo_frontier.json",
       "platform": "nangate45",
       "out_root": "runs/designs/noc",
-      "notes": "This is the segmented_or_narrower_router_ppa_required and segmented_or_narrower_fifo_ppa_required follow-on from the latest endpoint/router/SRAM composition result."
+      "notes": "This is the segmented_or_narrower_router_ppa_required and segmented_or_narrower_fifo_ppa_required follow-on from the latest endpoint/router/SRAM composition result. Merged via PR #899 and merge 8074249a95092c10fc83920d43299ee9f48b8a01 at 2026-06-17T10:57:12.304716Z.",
+      "merged_pr_number": 899,
+      "merge_commit": "8074249a95092c10fc83920d43299ee9f48b8a01",
+      "merged_utc": "2026-06-17T10:57:12.304716Z"
     }
   ]
 }

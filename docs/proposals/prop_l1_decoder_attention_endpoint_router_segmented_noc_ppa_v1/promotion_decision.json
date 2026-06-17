@@ -1,11 +1,15 @@
 {
   "proposal_id": "prop_l1_decoder_attention_endpoint_router_segmented_noc_ppa_v1",
-  "candidate_id": "",
-  "decision": "pending",
-  "reason": "Awaiting L1 segmented/narrower NoC lane primitive sweep.",
+  "candidate_id": "l1_decoder_attention_endpoint_router_segmented_noc_ppa_v1",
+  "decision": "promote",
+  "reason": "Accepted Layer 1 physical metrics were merged in PR #899 for the current candidate.",
   "evidence_refs": [
-    "item:l1_decoder_attention_endpoint_router_segmented_noc_ppa_v1"
+    "item:l1_decoder_attention_endpoint_router_segmented_noc_ppa_v1",
+    "run:l1_decoder_attention_endpoint_router_segmented_noc_ppa_v1_run_10530f798d2176cb",
+    "artifact:control_plane/shadow_exports/l1_promotions/l1_decoder_attention_endpoint_router_segmented_noc_ppa_v1.json",
+    "pr:#899",
+    "https://github.com/yhmtmt/RTLGen/pull/899"
   ],
-  "next_action": "Dispatch l1_decoder_attention_endpoint_router_segmented_noc_ppa_v1 after this proposal merges.",
-  "requires_human_approval": true
+  "next_action": "inspect the next dependent item",
+  "requires_human_approval": false
 }
