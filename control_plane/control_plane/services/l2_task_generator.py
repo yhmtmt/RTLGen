@@ -4636,6 +4636,47 @@ def _decoder_attention_kv_endpoint_sram_noc_full_search_schedule_evidence(
     *,
     item_id: str,
 ) -> dict[str, Any]:
+    return _decoder_attention_kv_endpoint_sram_noc_full_search_schedule_evidence_with_profiles(
+        item_id=item_id,
+        profile_list="hd64_kv8_full_value_p8_ppc2_noc128_softmax_int8_q10",
+        scope=(
+            "Regenerate the endpoint-measured Llama7B dense-tile topology-derived schedule "
+            "from the full topology/scheduler pair matrix, then apply practical SRAM-bank, "
+            "local-buffer, and endpoint injection/ejection caps before ranking. This checks "
+            "whether practical on-chip service caps change the best topology/scheduler point."
+        ),
+    )
+
+
+def _decoder_attention_kv_endpoint_sram_noc_full_search_softmax_recip_lut_schedule_evidence(
+    *,
+    item_id: str,
+) -> dict[str, Any]:
+    return _decoder_attention_kv_endpoint_sram_noc_full_search_schedule_evidence_with_profiles(
+        item_id=item_id,
+        profile_list=(
+            "hd64_kv8_full_value_p8_ppc2_noc128_softmax_int8_q8,"
+            "hd64_kv8_full_value_p8_ppc2_noc128_softmax_int8_q10,"
+            "hd64_kv8_full_value_p8_ppc2_noc128_softmax_int8_q12"
+        ),
+        build_recip_lut_costs=True,
+        scope=(
+            "Regenerate the endpoint-measured Llama7B dense-tile topology-derived schedule "
+            "from the full topology/scheduler pair matrix, then apply practical SRAM-bank, "
+            "local-buffer, and endpoint injection/ejection caps while ranking q8/q10/q12 "
+            "reciprocal-LUT softmax local-cost profiles. This folds the merged reciprocal-LUT "
+            "precision frontier into the SRAM/NoC constrained architecture search."
+        ),
+    )
+
+
+def _decoder_attention_kv_endpoint_sram_noc_full_search_schedule_evidence_with_profiles(
+    *,
+    item_id: str,
+    profile_list: str,
+    scope: str,
+    build_recip_lut_costs: bool = False,
+) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_kv_endpoint_sram_noc_full_search_schedule__{item_id}.json"
     report = f"{base}/decoder_attention_kv_endpoint_sram_noc_full_search_schedule__{item_id}.md"
@@ -4646,62 +4687,83 @@ def _decoder_attention_kv_endpoint_sram_noc_full_search_schedule_evidence(
     endpoint_measured_costs = (
         "runs/campaigns/npu/l1_measured_costs/llama7b_attention_local_costs_all_measured_endpoint_v1.json"
     )
+    measured_costs = endpoint_measured_costs
+    generated_costs = (
+        f"runs/campaigns/npu/l1_measured_costs/"
+        f"llama7b_attention_local_costs_endpoint_recip_lut_q8_q10_q12__{item_id}.json"
+    )
+    if build_recip_lut_costs:
+        measured_costs = generated_costs
     sram_profile = f"{base}/decoder_attention_sram_profile__l2_decoder_attention_sram_profile_v1.json"
+    commands: list[dict[str, str]] = []
+    expected_outputs = [out, report]
+    if build_recip_lut_costs:
+        expected_outputs.insert(0, generated_costs)
+        commands.append(
+            {
+                "name": "build_decoder_attention_recip_lut_local_costs",
+                "run": (
+                    "python3 npu/eval/build_llama7b_attention_recip_lut_local_costs.py "
+                    "--repo-root . "
+                    f"--base-costs {endpoint_measured_costs} "
+                    "--template-profile hd64_kv8_full_value_p8_ppc2_noc128_softmax_int8_q10 "
+                    "--bits-list 8,10,12 "
+                    f"--out {generated_costs}"
+                ),
+            }
+        )
+    commands.append(
+        {
+            "name": "estimate_decoder_attention_kv_endpoint_sram_noc_full_search_schedule",
+            "run": (
+                "python3 npu/eval/estimate_llm_decoder_attention_kv_sram_noc_constrained_schedule.py "
+                "--repo-root . "
+                f"--topology-pairs-json {endpoint_topology_pairs} "
+                f"--sram-profile-json {sram_profile} "
+                "--compute-source dense_gemm_tile "
+                "--compute-arch-list dense_gemm_16x8_k1_p1 "
+                "--tag-substring npu_dense_gemm_tile_v2_scale_hier "
+                "--sequence-length-list 131072 "
+                "--die-area-mm2-list 800,1200 "
+                "--sram-area-fraction 0.35,0.4,0.5,0.6 "
+                "--logic-area-fraction 0.3,0.4,0.5 "
+                "--reserved-area-fraction 0.1 "
+                "--usable-sram-fraction 0.7 "
+                "--tile-tokens-list 512,1024 "
+                "--topology-row-limit 128 "
+                "--vector-ops-per-mac 0.125 "
+                "--reduction-scalar-bytes 2 "
+                "--command-cycles-per-tile 0,4,16 "
+                "--command-cycles-per-wave 0,16,64 "
+                "--reducer-setup-cycles 0,64,256 "
+                "--reduction-cycle-multiplier 1,2,4 "
+                f"--measured-l1-costs {measured_costs} "
+                f"--measured-l1-profile {profile_list} "
+                "--sram-bank-port-bytes-per-cycle 32 "
+                "--sram-read-ports-per-bank 1 "
+                "--sram-bank-efficiency 0.70,0.85 "
+                "--endpoint-port-bytes-per-cycle 32,64,128 "
+                "--endpoint-ports-per-cluster 1,2 "
+                "--endpoint-efficiency 0.70,0.85 "
+                "--local-buffer-multiplier 1,2 "
+                "--top-k 100 "
+                f"--out {out} "
+                f"--out-md {report}"
+            ),
+        }
+    )
     return {
         "inputs": {
             "attention_kv_dense_tile_endpoint_topology_scheduler_pairs": endpoint_topology_pairs,
-            "attention_kv_endpoint_measured_l1_costs": endpoint_measured_costs,
+            "attention_kv_endpoint_measured_l1_costs": measured_costs,
+            "attention_kv_endpoint_base_measured_l1_costs": endpoint_measured_costs,
             "attention_sram_profile": sram_profile,
             "attention_kv_endpoint_sram_noc_full_search_schedule_out": out,
             "attention_kv_endpoint_sram_noc_full_search_schedule_report": report,
-            "attention_kv_endpoint_sram_noc_full_search_schedule_scope": (
-                "Regenerate the endpoint-measured Llama7B dense-tile topology-derived schedule "
-                "from the full topology/scheduler pair matrix, then apply practical SRAM-bank, "
-                "local-buffer, and endpoint injection/ejection caps before ranking. This checks "
-                "whether practical on-chip service caps change the best topology/scheduler point."
-            ),
+            "attention_kv_endpoint_sram_noc_full_search_schedule_scope": scope,
         },
-        "commands": [
-            {
-                "name": "estimate_decoder_attention_kv_endpoint_sram_noc_full_search_schedule",
-                "run": (
-                    "python3 npu/eval/estimate_llm_decoder_attention_kv_sram_noc_constrained_schedule.py "
-                    "--repo-root . "
-                    f"--topology-pairs-json {endpoint_topology_pairs} "
-                    f"--sram-profile-json {sram_profile} "
-                    "--compute-source dense_gemm_tile "
-                    "--compute-arch-list dense_gemm_16x8_k1_p1 "
-                    "--tag-substring npu_dense_gemm_tile_v2_scale_hier "
-                    "--sequence-length-list 131072 "
-                    "--die-area-mm2-list 800,1200 "
-                    "--sram-area-fraction 0.35,0.4,0.5,0.6 "
-                    "--logic-area-fraction 0.3,0.4,0.5 "
-                    "--reserved-area-fraction 0.1 "
-                    "--usable-sram-fraction 0.7 "
-                    "--tile-tokens-list 512,1024 "
-                    "--topology-row-limit 128 "
-                    "--vector-ops-per-mac 0.125 "
-                    "--reduction-scalar-bytes 2 "
-                    "--command-cycles-per-tile 0,4,16 "
-                    "--command-cycles-per-wave 0,16,64 "
-                    "--reducer-setup-cycles 0,64,256 "
-                    "--reduction-cycle-multiplier 1,2,4 "
-                    f"--measured-l1-costs {endpoint_measured_costs} "
-                    "--measured-l1-profile hd64_kv8_full_value_p8_ppc2_noc128_softmax_int8_q10 "
-                    "--sram-bank-port-bytes-per-cycle 32 "
-                    "--sram-read-ports-per-bank 1 "
-                    "--sram-bank-efficiency 0.70,0.85 "
-                    "--endpoint-port-bytes-per-cycle 32,64,128 "
-                    "--endpoint-ports-per-cluster 1,2 "
-                    "--endpoint-efficiency 0.70,0.85 "
-                    "--local-buffer-multiplier 1,2 "
-                    "--top-k 100 "
-                    f"--out {out} "
-                    f"--out-md {report}"
-                ),
-            },
-        ],
-        "expected_outputs": [out, report],
+        "commands": commands,
+        "expected_outputs": expected_outputs,
     }
 
 
@@ -7044,6 +7106,7 @@ def _build_payload(
         "decoder_attention_kv_sram_noc_constrained_schedule",
         "decoder_attention_kv_endpoint_sram_noc_constrained_schedule",
         "decoder_attention_kv_endpoint_sram_noc_full_search_schedule",
+        "decoder_attention_kv_endpoint_sram_noc_full_search_softmax_recip_lut_schedule",
         "decoder_attention_kv_onchip_service_schedule",
         "decoder_attention_kv_endpoint_full_onchip_service_schedule",
         "decoder_attention_kv_endpoint_ready_valid_service",
@@ -7175,6 +7238,12 @@ def _build_payload(
         elif abstraction_layer_name == "decoder_attention_kv_endpoint_sram_noc_full_search_schedule":
             decoder_evidence = _decoder_attention_kv_endpoint_sram_noc_full_search_schedule_evidence(
                 item_id=item_id,
+            )
+        elif abstraction_layer_name == "decoder_attention_kv_endpoint_sram_noc_full_search_softmax_recip_lut_schedule":
+            decoder_evidence = (
+                _decoder_attention_kv_endpoint_sram_noc_full_search_softmax_recip_lut_schedule_evidence(
+                    item_id=item_id,
+                )
             )
         elif abstraction_layer_name == "decoder_attention_kv_onchip_service_schedule":
             decoder_evidence = _decoder_attention_kv_onchip_service_schedule_evidence(item_id=item_id)
