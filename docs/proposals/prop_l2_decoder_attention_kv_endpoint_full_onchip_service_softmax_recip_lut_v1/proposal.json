@@ -1,0 +1,67 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_endpoint_full_onchip_service_softmax_recip_lut_v1",
+  "created_utc": "2026-06-17T04:20:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Endpoint full on-chip service for reciprocal-LUT softmax Llama7B frontier",
+  "hypothesis": "Applying explicit endpoint queue, bank queue, packet payload, router hop latency, SRAM bank arbitration, wave staggering, and prefetch-overlap policies to the corrected q8/q10/q12 reciprocal-LUT endpoint full-search frontier will reduce the on-chip service abstraction and show whether the selected precision/topology point remains stable.",
+  "direct_comparison": {
+    "primary_question": "Does the corrected q8/q10/q12 endpoint full-search frontier remain best under explicit on-chip SRAM/NoC service scheduling?",
+    "include": [
+      "Use l2_decoder_attention_kv_endpoint_sram_noc_full_search_softmax_recip_lut_llama7b_v1_r2 as the source frontier.",
+      "Sweep static_wave, staggered_wave, and prefetch_overlap scheduling.",
+      "Sweep round_robin, locality_first, and age_based SRAM bank arbitration.",
+      "Sweep endpoint queue depth, bank queue depth, packet payload, router hop latency, and prefetch overlap.",
+      "Report latency movement and selected q8/q10/q12 profile under explicit on-chip service."
+    ],
+    "exclude": [
+      "Do not change HBM/DRAM bandwidth, frequency, or service policy.",
+      "Do not introduce new precision quality assumptions.",
+      "Do not run new physical closure in this L2 scheduler item.",
+      "Do not use the older endpoint full-search source without reciprocal-LUT softmax."
+    ],
+    "follow_on_broad_sweep": [
+      "If the selected profile or topology moves, use this result as the next Llama7B frontier baseline.",
+      "If the same family remains best, run endpoint/router/SRAM ready-valid service against this revised on-chip frontier.",
+      "Treat HBM/DRAM as a separate later item."
+    ]
+  },
+  "expected_benefit": [
+    "Keeps the on-chip service model aligned with the latest reciprocal-LUT softmax frontier.",
+    "Identifies whether explicit endpoint queues and bank arbitration change the best Llama7B point.",
+    "Provides the next least-abstract on-chip-service baseline before RTL endpoint/router/SRAM composition."
+  ],
+  "risks": [
+    "This remains an analytic service simulator, not router/SRAM RTL.",
+    "Queue and arbitration policies are parameterized approximations.",
+    "HBM/DRAM service remains inherited and abstract by design."
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "task_type": "l2_campaign",
+      "evaluation_mode": "frontier_detail",
+      "objective": "endpoint_full_onchip_service_schedule_softmax_recip_lut",
+      "cost_class": "small",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_kv_endpoint_sram_noc_full_search_softmax_recip_lut_llama7b_v1_r2"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "refine_recip_lut_endpoint_frontier_with_explicit_onchip_service_policies",
+        "reason": "The result should report explicit on-chip service policy movement relative to the corrected q8/q10/q12 endpoint full-search frontier."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_endpoint_sram_noc_full_search_schedule__l2_decoder_attention_kv_endpoint_sram_noc_full_search_softmax_recip_lut_llama7b_v1_r2.json"
+  ],
+  "knowledge_refs": [
+    "docs/proposals/prop_l2_decoder_attention_kv_endpoint_sram_noc_softmax_recip_lut_frontier_v1/analysis_report.md",
+    "docs/proposals/prop_l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_v1/analysis_report.md",
+    "npu/eval/estimate_llm_decoder_attention_kv_onchip_service_schedule.py"
+  ]
+}
+
