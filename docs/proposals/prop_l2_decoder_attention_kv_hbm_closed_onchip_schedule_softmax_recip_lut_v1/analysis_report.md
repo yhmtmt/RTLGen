@@ -5,39 +5,28 @@
 - `candidate_id`: `l2_decoder_attention_kv_hbm_closed_onchip_schedule_softmax_recip_lut_llama7b_v1`
 
 ## Evaluations Consumed
-- item: `l2_decoder_attention_kv_hbm_closed_onchip_schedule_softmax_recip_lut_llama7b_v1`
-- run: `l2_decoder_attention_kv_hbm_closed_onchip_schedule_softmax_recip_lut_llama7b_v1_run_23c73d0286366557`
+- `l2_decoder_attention_kv_hbm_closed_onchip_schedule_softmax_recip_lut_llama7b_v1`
+- `l2_decoder_attention_kv_hbm_closed_onchip_schedule_softmax_recip_lut_llama7b_v1_run_23c73d0286366557`
 - source commit: `7540125e5410eadb3b3ac1327aa0859e59087cd8`
+- review: PR #908
 
 ## Baseline Comparison
-- baseline item: `l2_decoder_attention_kv_measured_hbm_service_softmax_recip_lut_llama7b_v1`
-- result artifact:
-  `runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_hbm_closed_onchip_schedule__l2_decoder_attention_kv_hbm_closed_onchip_schedule_softmax_recip_lut_llama7b_v1.json`
+- baseline_ref: `None`
+- baseline_item_id: `None`
+- outcome: `hbm_closed_onchip_schedule_recorded`
+- summary: Decoder HBM-closed on-chip schedule evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_hbm_closed_onchip_schedule__l2_decoder_attention_kv_hbm_closed_onchip_schedule_softmax_recip_lut_llama7b_v1.json: decision=hbm_closed_onchip_schedule_recorded; latency_us=2138.84136; latency_slowdown_vs_hbm_closed_source=1.0; dominant_tile_resource=tile_attention; schedule_policy=static_wave; bank_arbiter_policy=locality_first; endpoint_queue_depth_bytes=1024; bank_queue_depth_bytes=1024; router_latency_cycles_per_hop=1; packet_payload_bytes=64; tile_hbm_cycles=1301; tile_attention_cycles=1354; onchip_shared_service_cycles=225.
 
 ## Result
-- latency: `2138.84136 us`
-- dominant resource: `tile_attention`
-- tile HBM cycles: `1301`
-- tile attention cycles: `1354`
-- tile service cycles: `1354`
-- on-chip shared service cycles: `225`
-- schedule policy: `static_wave`
-- bank arbiter: `locality_first`
-- endpoint queue depth: `1024 B`
-- bank queue depth: `1024 B`
-- router latency: `1 cycle/hop`
-- packet payload: `64 B`
-- logic area: `399591889.5248 um2`
-- logic power: `8123.59136 mW`
-- MACs/cycle: `109440`
+- result: `iterate`
+- confidence level: merged accepted evidence
+- estimated optimization room: pending follow-on comparison
+- architecture conclusion robustness: staged evidence
+- summary: Decoder HBM-closed on-chip schedule evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_hbm_closed_onchip_schedule__l2_decoder_attention_kv_hbm_closed_onchip_schedule_softmax_recip_lut_llama7b_v1.json: decision=hbm_closed_onchip_schedule_recorded; latency_us=2138.84136; latency_slowdown_vs_hbm_closed_source=1.0; dominant_tile_resource=tile_attention; schedule_policy=static_wave; bank_arbiter_policy=locality_first; endpoint_queue_depth_bytes=1024; bank_queue_depth_bytes=1024; router_latency_cycles_per_hop=1; packet_payload_bytes=64; tile_hbm_cycles=1301; tile_attention_cycles=1354; onchip_shared_service_cycles=225.
 
 ## Failures and Caveats
-- The remote assigned evaluator did not lease the ready item, so this small
-  analytic L2 run was rescued locally under
-  `eval-daemon-local-hbm-closed-softmax-rescue`.
-- The result still uses analytic HBM controller and NoC/SRAM service models.
+- no additional caveats recorded during automatic finalization
 
 ## Recommendation
 - `iterate`
-- reason: Re-sweeping on-chip service did not move the softmax-recip measured-HBM frontier; tile attention remains the next bottleneck.
-- next_action: Run `l2_decoder_attention_kv_subtile_pipeline_schedule_softmax_recip_lut_llama7b_v1`.
+- reason: Decoder HBM-closed on-chip schedule evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_hbm_closed_onchip_schedule__l2_decoder_attention_kv_hbm_closed_onchip_schedule_softmax_recip_lut_llama7b_v1.json: decision=hbm_closed_onchip_schedule_recorded; latency_us=2138.84136; latency_slowdown_vs_hbm_closed_source=1.0; dominant_tile_resource=tile_attention; schedule_policy=static_wave; bank_arbiter_policy=locality_first; endpoint_queue_depth_bytes=1024; bank_queue_depth_bytes=1024; router_latency_cycles_per_hop=1; packet_payload_bytes=64; tile_hbm_cycles=1301; tile_attention_cycles=1354; onchip_shared_service_cycles=225.
+- next_action: inspect follow-on work after l2_decoder_attention_kv_hbm_closed_onchip_schedule_softmax_recip_lut_llama7b_v1

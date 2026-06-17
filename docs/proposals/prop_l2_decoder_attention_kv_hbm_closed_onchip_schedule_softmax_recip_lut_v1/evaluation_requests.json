@@ -19,7 +19,11 @@
         "direction": "record_softmax_recip_hbm_closed_onchip_schedule_frontier",
         "reason": "Record whether re-sweeping on-chip SRAM/NoC service knobs changes the current softmax-recip measured-HBM Llama7B attention frontier before subtile pipelining."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 908,
+      "merge_commit": "9ec5c14bbc7a1d6bfaa3302f57dc839a0b88654a",
+      "merged_utc": "2026-06-17T11:56:00.273723Z",
+      "notes": "Merged via PR #908 and merge 9ec5c14bbc7a1d6bfaa3302f57dc839a0b88654a at 2026-06-17T11:56:00.273723Z."
     }
   ]
 }
