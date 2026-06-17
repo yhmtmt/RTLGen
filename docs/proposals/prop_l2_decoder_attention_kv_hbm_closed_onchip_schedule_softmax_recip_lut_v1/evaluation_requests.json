@@ -1,0 +1,25 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_hbm_closed_onchip_schedule_softmax_recip_lut_v1",
+  "source_commit": "7540125e5410eadb3b3ac1327aa0859e59087cd8",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_kv_hbm_closed_onchip_schedule_softmax_recip_lut_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "LLM-oriented attention-tail stress campaign for larger sequence lengths and more repeated non-terminal Softmax paths.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_kv_hbm_closed_onchip_schedule",
+      "comparison_role": "frontier_closure",
+      "paired_baseline_item_id": "l2_decoder_attention_kv_measured_hbm_service_softmax_recip_lut_llama7b_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_kv_measured_hbm_service_softmax_recip_lut_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "record_softmax_recip_hbm_closed_onchip_schedule_frontier",
+        "reason": "Record whether re-sweeping on-chip SRAM/NoC service knobs changes the current softmax-recip measured-HBM Llama7B attention frontier before subtile pipelining."
+      },
+      "status": "pending"
+    }
+  ]
+}
