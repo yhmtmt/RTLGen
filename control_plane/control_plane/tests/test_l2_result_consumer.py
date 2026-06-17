@@ -1347,6 +1347,145 @@ def test_consume_l2_result_frontier_onchip_service_overrides_generic_recommendat
             ] == report_rel
 
 
+def test_consume_l2_result_frontier_endpoint_router_sram_composition_uses_decoder_evidence() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            proposal_dir = repo_root / "docs" / "proposals" / "prop_l2_endpoint_router_sram_composition_v1"
+            _write(
+                proposal_dir / "proposal.json",
+                json.dumps(
+                    {
+                        "proposal_id": "prop_l2_endpoint_router_sram_composition_v1",
+                        "kind": "architecture",
+                        "title": "Endpoint/router/SRAM composition",
+                        "direct_comparison": {
+                            "primary_question": "Does concrete composition close the endpoint/router/SRAM abstraction?"
+                        },
+                    },
+                    indent=2,
+                )
+                + "\n",
+            )
+            evidence_rel = (
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_kv_endpoint_router_sram_composition__l2_endpoint_composition.json"
+            )
+            report_rel = (
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_kv_endpoint_router_sram_composition__l2_endpoint_composition.md"
+            )
+            _write(
+                repo_root / evidence_rel,
+                json.dumps(
+                    {
+                        "model": "llm_decoder_attention_endpoint_router_sram_composition_audit_v1",
+                        "decision": "composition_requires_follow_on_ppa",
+                        "selected_frontier": {
+                            "topology": "mesh2d",
+                            "scheduler_policy": "locality_aware",
+                            "reduction_strategy": "cluster_tree",
+                            "cluster_count": 16,
+                            "bank_count": 64,
+                            "latency_us": 3222.903773,
+                            "link_width_bits": 2048,
+                            "packet_payload_bytes": 128,
+                            "dominant_tile_resource": "shared_path",
+                        },
+                        "composition_quantities": {
+                            "endpoint_width_ratio_vs_measured_ppa": 8,
+                            "router_lanes_for_link": 16,
+                            "fifo_lanes_for_link": 16,
+                            "tile_sram_capacity_fraction_of_selected_local_capacity": 0.032113,
+                            "tile_sram_budget_area_fraction": 0.142156,
+                        },
+                        "closure_flags": {
+                            "ready_valid_endpoint_passed": True,
+                            "endpoint_ppa_width_matches_ready_valid_width": False,
+                            "router_ppa_width_matches_link_width": False,
+                            "fifo_ppa_width_matches_link_width": False,
+                            "tile_sram_capacity_covers_selected_local_capacity": False,
+                        },
+                        "required_follow_on_ppa": [
+                            "endpoint_ppa_width_matches_ready_valid_width",
+                            "router_ppa_width_matches_link_width",
+                            "fifo_ppa_width_matches_link_width",
+                            "full_local_capacity_sram_macro_profile_missing",
+                        ],
+                        "remaining_abstractions": [
+                            "Router/FIFO PPA is lane-scaled from narrower measured primitives.",
+                        ],
+                    },
+                    indent=2,
+                )
+                + "\n",
+            )
+            _write(repo_root / report_rel, "# composition\n")
+            item_id = _seed_campaign_work_item(
+                session,
+                repo_root,
+                item_id="l2_endpoint_composition",
+                campaign_dir_rel="runs/campaigns/npu/endpoint_composition_campaign",
+                summary_rows=(
+                    "scope,arch_id,macro_mode,objective_rank,latency_ms_mean,energy_mj_mean,critical_path_ns_mean,total_power_mw_mean,flow_elapsed_s_mean,throughput_infer_per_s_mean\n"
+                    "aggregate,fp16_nm1_demo,flat_nomacro,1,0.4,0.15,5.5,0.18,1000,1.0\n"
+                ),
+                proposal_path="docs/proposals/prop_l2_endpoint_router_sram_composition_v1",
+                comparison={"role": "frontier_closure"},
+            )
+            work_item = session.query(WorkItem).filter_by(item_id=item_id).one()
+            payload = copy.deepcopy(work_item.task_request.request_payload or {})
+            payload["developer_loop"]["evaluation"] = {
+                "mode": "frontier_detail",
+                "expected_direction": "close_endpoint_router_sram_composition",
+                "expected_reason": "Use composition audit evidence for next L1 closure points.",
+            }
+            payload["developer_loop"]["abstraction"] = {
+                "layer": "decoder_attention_kv_endpoint_router_sram_composition",
+            }
+            work_item.task_request.request_payload = payload
+            work_item.input_manifest = {
+                "decoder_contract": {
+                    "attention_kv_endpoint_router_sram_composition_out": evidence_rel,
+                    "attention_kv_endpoint_router_sram_composition_report": report_rel,
+                }
+            }
+            work_item.expected_outputs = [*(work_item.expected_outputs or []), evidence_rel, report_rel]
+            session.commit()
+
+            result = consume_l2_result(session, Layer2ConsumeRequest(repo_root=str(repo_root), item_id=item_id))
+
+            decision_payload = json.loads(
+                (repo_root / "control_plane" / "shadow_exports" / "l2_decisions" / f"{item_id}.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            recommendation = decision_payload["recommendation"]
+            assessment = decision_payload["proposal_assessment"]
+            assert result.recommended_arch_id == "mesh2d_locality_aware_cluster_tree_c16_b64"
+            assert recommendation["source"] == "decoder_evidence"
+            assert recommendation["latency_us"] == 3222.903773
+            assert recommendation["link_width_bits"] == 2048
+            assert recommendation["legacy_campaign_recommendation"]["arch_id"] == "fp16_nm1_demo"
+            assert assessment["outcome"] == "composition_requires_follow_on_ppa"
+            assert assessment["decoder_evidence_ref"] == evidence_rel
+            assert "router_lanes_for_link=16" in assessment["summary"]
+            assert "required_follow_on_ppa=endpoint_ppa_width_matches_ready_valid_width" in assessment["summary"]
+            assert assessment["decoder_quality"]["closure_flags"]["ready_valid_endpoint_passed"] is True
+            assert "required_follow_on_ppa" in assessment["decoder_quality"]
+            assert decision_payload["evaluation_record"]["outcome"] == "composition_requires_follow_on_ppa"
+            assert decision_payload["source_refs"][
+                "decoder_attention_kv_endpoint_router_sram_composition_out"
+            ] == evidence_rel
+            assert decision_payload["source_refs"][
+                "decoder_attention_kv_endpoint_router_sram_composition_report"
+            ] == report_rel
+
+
 def test_consume_l2_result_frontier_attention_local_sram_capacity_uses_decoder_evidence() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
