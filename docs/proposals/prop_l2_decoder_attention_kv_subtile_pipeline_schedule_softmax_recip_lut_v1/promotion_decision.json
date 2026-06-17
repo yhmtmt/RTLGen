@@ -1,0 +1,13 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_subtile_pipeline_schedule_softmax_recip_lut_v1",
+  "candidate_id": "l2_decoder_attention_kv_subtile_pipeline_schedule_softmax_recip_lut_llama7b_v1",
+  "decision": "iterate",
+  "reason": "The softmax-recip subtile pipeline schedule improves latency from 2138.84136 us to 1575.373891 us, a 1.357672x speedup, with a legal 532608 B stream buffer inside 614656 B local capacity. The selected dual_mac mode and online_correction strategy need explicit area and numerical validation before promotion.",
+  "evidence_refs": [
+    "item:l2_decoder_attention_kv_subtile_pipeline_schedule_softmax_recip_lut_llama7b_v1",
+    "run:l2_decoder_attention_kv_subtile_pipeline_schedule_softmax_recip_lut_llama7b_v1_run_6364ceb1a3b8a12f",
+    "artifact:runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_subtile_pipeline_schedule__l2_decoder_attention_kv_subtile_pipeline_schedule_softmax_recip_lut_llama7b_v1.json"
+  ],
+  "next_action": "measure or constrain dual_mac subtile pipeline cost and validate online_correction precision",
+  "requires_human_approval": false
+}
