@@ -1,0 +1,33 @@
+{
+  "item_id": "l1_decoder_attention_softmax_weight_generator_q8_v1",
+  "completed_trials": 1,
+  "success_count": 1,
+  "failure_count": 0,
+  "success_rate": 1.0,
+  "metrics": {
+    "critical_path_ns": {
+      "best": 5.5809,
+      "mean": 5.5809,
+      "median": 5.5809,
+      "max": 5.5809,
+      "range": 0.0,
+      "stddev": 0.0
+    },
+    "die_area": {
+      "best": 38032.8004,
+      "mean": 38032.8004,
+      "median": 38032.8004,
+      "max": 38032.8004,
+      "range": 0.0,
+      "stddev": 0.0
+    },
+    "total_power_mw": {
+      "best": 0.00667,
+      "mean": 0.00667,
+      "median": 0.00667,
+      "max": 0.00667,
+      "range": 0.0,
+      "stddev": 0.0
+    }
+  }
+}

@@ -1,0 +1,2 @@
+run_key,attempt,trial_index,seed,status,metrics_csv,critical_path_ns,die_area,total_power_mw,failure_category,failure_stage,failure_signature
+l1_decoder_attention_softmax_weight_generator_q8_v1_run_256374d1e044dbde,1,1,0,succeeded,runs/designs/activations/attention_softmax_weight_int8_r8_acc24_recip_q8_wrapper/metrics.csv,5.5809,38032.8004,0.00667,none,,
