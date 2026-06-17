@@ -1,9 +1,9 @@
 {
   "proposal_id": "prop_l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_v1",
-  "source_commit": "20959c07c8223d68dd3c957661b356b9003d8482",
+  "source_commit": "9ca357bf7a6b593e4b0e7b6fe25ac10ee3e7f01a",
   "requested_items": [
     {
-      "item_id": "l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_llama7b_v1",
+      "item_id": "l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_llama7b_v1_r2",
       "task_type": "l2_campaign",
       "objective": "Audit endpoint/router/SRAM composition for the corrected q12 reciprocal-LUT Llama7B endpoint frontier.",
       "evaluation_mode": "frontier_detail",
@@ -19,7 +19,14 @@
         "direction": "close_recip_lut_endpoint_router_sram_composition_for_selected_frontier",
         "reason": "Use reciprocal-LUT ready/valid output and q12 endpoint service frontier to audit concrete endpoint/router/SRAM composition."
       },
-      "status": "pending"
+      "status": "merged",
+      "prior_item_ids": [
+        "l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_llama7b_v1"
+      ],
+      "merged_pr_number": 889,
+      "merge_commit": "fa27073076cf54fd6e7422034aa0013bc26d276d",
+      "merged_utc": "2026-06-17T05:33:21.467668Z",
+      "notes": "Merged via PR #889 and merge fa27073076cf54fd6e7422034aa0013bc26d276d at 2026-06-17T05:33:21.467668Z."
     }
   ]
 }

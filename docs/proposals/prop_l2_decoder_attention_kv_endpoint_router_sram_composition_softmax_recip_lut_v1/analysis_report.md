@@ -2,20 +2,31 @@
 
 ## Candidate
 - `proposal_id`: `prop_l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_v1`
-- `candidate_id`: `l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_llama7b_v1`
+- `candidate_id`: `l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_llama7b_v1_r2`
 
 ## Evaluations Consumed
-- pending ready/valid endpoint result
+- `l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_llama7b_v1_r2`
+- `l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_llama7b_v1_r2_run_5810710abb241836`
+- source commit: `9ca357bf7a6b593e4b0e7b6fe25ac10ee3e7f01a`
+- review: PR #889
 
 ## Baseline Comparison
-- baseline/source: `l2_decoder_attention_kv_endpoint_ready_valid_service_softmax_recip_lut_llama7b_v1`
-- key deltas: composition gaps, replicated endpoint/router/FIFO/SRAM area/power, and remaining abstraction flags
+- baseline_ref: `None`
+- baseline_item_id: `None`
+- outcome: `composition_requires_follow_on_ppa`
+- summary: Decoder endpoint/router/SRAM composition evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_endpoint_router_sram_composition__l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_llama7b_v1_r2.json: decision=composition_requires_follow_on_ppa; latency_us=3222.903773; topology=mesh2d; scheduler_policy=locality_aware; reduction_strategy=cluster_tree; cluster_count=16; bank_count=64; link_width_bits=2048; packet_payload_bytes=128; dominant_tile_resource=shared_path; endpoint_width_ratio_vs_measured_ppa=8; router_lanes_for_link=16; fifo_lanes_for_link=16; tile_sram_capacity_fraction_of_selected_local_capacity=0.032113; tile_sram_budget_area_fraction=0.142156; ready_valid_endpoint_passed=True; endpoint_ppa_width_matches_ready_valid_width=False; router_ppa_width_matches_link_width=False; fifo_ppa_width_matches_link_width=False; tile_sram_capacity_covers_selected_local_capacity=False; required_follow_on_ppa=endpoint_ppa_width_matches_ready_valid_width,router_ppa_width_matches_link_width,fifo_ppa_width_matches_link_width,full_local_capacity_sram_macro_profile_missing.
 
 ## Result
-- pending
+- result: `iterate`
+- confidence level: merged accepted evidence
+- estimated optimization room: pending follow-on comparison
+- architecture conclusion robustness: staged evidence
+- summary: Decoder endpoint/router/SRAM composition evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_endpoint_router_sram_composition__l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_llama7b_v1_r2.json: decision=composition_requires_follow_on_ppa; latency_us=3222.903773; topology=mesh2d; scheduler_policy=locality_aware; reduction_strategy=cluster_tree; cluster_count=16; bank_count=64; link_width_bits=2048; packet_payload_bytes=128; dominant_tile_resource=shared_path; endpoint_width_ratio_vs_measured_ppa=8; router_lanes_for_link=16; fifo_lanes_for_link=16; tile_sram_capacity_fraction_of_selected_local_capacity=0.032113; tile_sram_budget_area_fraction=0.142156; ready_valid_endpoint_passed=True; endpoint_ppa_width_matches_ready_valid_width=False; router_ppa_width_matches_link_width=False; fifo_ppa_width_matches_link_width=False; tile_sram_capacity_covers_selected_local_capacity=False; required_follow_on_ppa=endpoint_ppa_width_matches_ready_valid_width,router_ppa_width_matches_link_width,fifo_ppa_width_matches_link_width,full_local_capacity_sram_macro_profile_missing.
 
 ## Failures and Caveats
-- HBM/DRAM service remains inherited.
+- no additional caveats recorded during automatic finalization
 
 ## Recommendation
-- pending evaluator result
+- `iterate`
+- reason: Decoder endpoint/router/SRAM composition evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_endpoint_router_sram_composition__l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_llama7b_v1_r2.json: decision=composition_requires_follow_on_ppa; latency_us=3222.903773; topology=mesh2d; scheduler_policy=locality_aware; reduction_strategy=cluster_tree; cluster_count=16; bank_count=64; link_width_bits=2048; packet_payload_bytes=128; dominant_tile_resource=shared_path; endpoint_width_ratio_vs_measured_ppa=8; router_lanes_for_link=16; fifo_lanes_for_link=16; tile_sram_capacity_fraction_of_selected_local_capacity=0.032113; tile_sram_budget_area_fraction=0.142156; ready_valid_endpoint_passed=True; endpoint_ppa_width_matches_ready_valid_width=False; router_ppa_width_matches_link_width=False; fifo_ppa_width_matches_link_width=False; tile_sram_capacity_covers_selected_local_capacity=False; required_follow_on_ppa=endpoint_ppa_width_matches_ready_valid_width,router_ppa_width_matches_link_width,fifo_ppa_width_matches_link_width,full_local_capacity_sram_macro_profile_missing.
+- next_action: inspect follow-on work after l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_llama7b_v1_r2

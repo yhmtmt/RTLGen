@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_v1",
-  "decision": "pending",
-  "pr_number": null,
-  "merge_commit": "",
-  "merged_utc": ""
+  "decision": "iterate",
+  "pr_number": 889,
+  "merge_commit": "fa27073076cf54fd6e7422034aa0013bc26d276d",
+  "merged_utc": "2026-06-17T05:33:21.467668Z"
 }

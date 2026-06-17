@@ -1,11 +1,15 @@
 {
   "proposal_id": "prop_l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_v1",
-  "candidate_id": "",
+  "candidate_id": "l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_llama7b_v1_r2",
   "decision": "iterate",
-  "reason": "Awaiting endpoint/router/SRAM composition audit.",
+  "reason": "Decoder endpoint/router/SRAM composition evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_endpoint_router_sram_composition__l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_llama7b_v1_r2.json: decision=composition_requires_follow_on_ppa; latency_us=3222.903773; topology=mesh2d; scheduler_policy=locality_aware; reduction_strategy=cluster_tree; cluster_count=16; bank_count=64; link_width_bits=2048; packet_payload_bytes=128; dominant_tile_resource=shared_path; endpoint_width_ratio_vs_measured_ppa=8; router_lanes_for_link=16; fifo_lanes_for_link=16; tile_sram_capacity_fraction_of_selected_local_capacity=0.032113; tile_sram_budget_area_fraction=0.142156; ready_valid_endpoint_passed=True; endpoint_ppa_width_matches_ready_valid_width=False; router_ppa_width_matches_link_width=False; fifo_ppa_width_matches_link_width=False; tile_sram_capacity_covers_selected_local_capacity=False; required_follow_on_ppa=endpoint_ppa_width_matches_ready_valid_width,router_ppa_width_matches_link_width,fifo_ppa_width_matches_link_width,full_local_capacity_sram_macro_profile_missing.",
   "evidence_refs": [
-    "item:l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_llama7b_v1"
+    "item:l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_llama7b_v1_r2",
+    "run:l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_llama7b_v1_r2_run_5810710abb241836",
+    "artifact:control_plane/shadow_exports/l2_decisions/l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_llama7b_v1_r2.json",
+    "pr:#889",
+    "https://github.com/yhmtmt/RTLGen/pull/889"
   ],
-  "next_action": "If composition succeeds, continue to SRAM rebalance or HBM/DRAM service closure.",
-  "requires_human_approval": true
+  "next_action": "inspect follow-on work after l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_llama7b_v1_r2",
+  "requires_human_approval": false
 }
