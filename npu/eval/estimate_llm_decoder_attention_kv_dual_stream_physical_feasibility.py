@@ -82,6 +82,8 @@ def _best_ok_compute_metrics(path: Path) -> JsonDict:
 
 def _infer_composed_precision_profile(path: Path) -> str:
     path_text = str(path)
+    if "softmax_q12_pwl_recip_q12" in path_text:
+        return "q12_pwl"
     match = re.search(r"softmax_recip_lut_(q\d+)", path_text)
     if match:
         return match.group(1)

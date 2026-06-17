@@ -202,3 +202,51 @@ def test_multi_composed_wrapper_variants_use_effective_variant_clock(tmp_path: P
     # source schedule latency is 100 us, so the q12 clock is 2/4 => 50 us
     assert result["diagnosis"]["best_requested_adjusted_latency_us_if_feasible"] == 50.0
     assert result["diagnosis"]["best_feasible_latency_us"] == 50.0
+
+
+def test_composed_q12_pwl_wrapper_variant_label_is_concise(tmp_path: Path) -> None:
+    source = tmp_path / "source.json"
+    _write_json(
+        source,
+        {
+            "model": "unit_source",
+            "best_by_compute_mode": [
+                {
+                    "compute_mode": "dual_mac",
+                    "latency_us": 100.0,
+                    "latency_speedup_vs_hbm_closed_source": 4.0,
+                    "tile_service_cycles": 12,
+                    "cluster_count": 1,
+                    "compute_area_multiplier": 1.0,
+                    "compute_area_um2": 120.0,
+                    "compute_budget_um2": 1000.0,
+                    "measured_l1_overhead_area_um2": 20.0,
+                    "local_datapath_area_um2": 10.0,
+                    "softmax_weight_generator_area_um2": 5.0,
+                    "logic_area_used_um2": 150.0,
+                    "required_stream_buffer_bytes": 16,
+                    "available_local_capacity_bytes": 32,
+                    "measured_block_area_um2": 120.0,
+                    "measured_block_clock_ns": 4.0,
+                    "measured_block_macs_per_cycle": 128,
+                    "measured_block_power_mw": 4.0,
+                    "compute_replica_count": 1,
+                    "compute_arch": "dense_gemm_16x8_k1_p1",
+                    "macs_per_cycle": 128,
+                    "clock_ns": 4.0,
+                }
+            ],
+        },
+    )
+    metrics = (
+        tmp_path
+        / "runs/designs/npu_blocks"
+        / "attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_q12_pwl_recip_q12"
+        / "metrics.csv"
+    )
+    _write_metrics(metrics, die_area=30.0, power_mw=0.7, instance_area=28.0)
+
+    result = build_report(_args(tmp_path, source=source, composed_metrics=[str(metrics)]))
+
+    assert result["diagnosis"]["best_requested_substituted_compute_variant_label"] == "q12_pwl"
+    assert result["best_requested"]["substituted_compute_variant_label"] == "q12_pwl"

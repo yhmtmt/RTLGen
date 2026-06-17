@@ -5813,6 +5813,59 @@ def test_generate_l2_campaign_task_adds_attention_composed_datapath_variant_fron
             )
 
 
+def test_generate_l2_campaign_task_adds_attention_composed_datapath_q12_pwl_frontier_evidence() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id="l2_decoder_attention_composed_datapath_q12_pwl_softmax_frontier_llama7b_v1",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    abstraction_layer="decoder_attention_composed_datapath_physical_feasibility",
+                    evaluation_mode="frontier_detail",
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            commands = work_item.task_request.request_payload["task"]["commands"]
+            run = commands[0]["run"]
+            decoder_inputs = work_item.input_manifest["decoder_contract"]
+
+            assert "estimate_decoder_attention_composed_datapath_physical_feasibility" in [c["name"] for c in commands]
+            assert (
+                "--model-name llm_decoder_attention_composed_datapath_q12_pwl_softmax_frontier_llama7b_v1"
+                in run
+            )
+            assert "--precision-profile q8_k8_v6_a24_s12_w12_pwl_recip_q12_int8_compute" in run
+            composed_dual_stream_metrics = decoder_inputs["attention_kv_composed_dual_stream_metrics"]
+            assert composed_dual_stream_metrics == (
+                "runs/designs/npu_blocks/"
+                "attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_q12_pwl_recip_q12/metrics.csv"
+            )
+            assert (
+                "--composed-dual-stream-metrics runs/designs/npu_blocks/"
+                "attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_q12_pwl_recip_q12/metrics.csv "
+                in run
+            )
+            assert any(
+                output.endswith(
+                    "decoder_attention_composed_datapath_physical_feasibility__"
+                    "l2_decoder_attention_composed_datapath_q12_pwl_softmax_frontier_llama7b_v1.json"
+                )
+                for output in work_item.task_request.request_payload["task"]["expected_outputs"]
+            )
+
+
 def test_generate_l2_campaign_task_adds_attention_mixed_precision_quality_evidence() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"

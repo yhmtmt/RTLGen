@@ -5364,12 +5364,18 @@ def _decoder_attention_composed_datapath_physical_feasibility_evidence(*, item_i
         "runs/designs/activations/"
         "attention_softmax_weight_int8_r8_acc24_recip_q10_wrapper/metrics.csv"
     )
+    q12_pwl_frontier = "q12_pwl_softmax_frontier" in item_id
+    variant_frontier = "variant_frontier" in item_id
     composed_dual_stream_metrics = (
         "runs/designs/npu_blocks/"
         "attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_recip_lut_q10/metrics.csv"
     )
-    variant_frontier = "variant_frontier" in item_id
-    if variant_frontier:
+    if q12_pwl_frontier:
+        composed_dual_stream_metrics = (
+            "runs/designs/npu_blocks/"
+            "attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_q12_pwl_recip_q12/metrics.csv"
+        )
+    elif variant_frontier:
         composed_dual_stream_metrics = (
             "runs/designs/npu_blocks/"
             "attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_recip_lut_q8/metrics.csv,"
@@ -5383,14 +5389,22 @@ def _decoder_attention_composed_datapath_physical_feasibility_evidence(*, item_i
         for path in composed_dual_stream_metrics.split(",")
     )
     model_name = (
-        "llm_decoder_attention_composed_datapath_recip_lut_variant_frontier_llama7b_v1"
-        if variant_frontier
-        else "llm_decoder_attention_composed_datapath_physical_feasibility_softmax_recip_lut_llama7b_v1"
+        "llm_decoder_attention_composed_datapath_q12_pwl_softmax_frontier_llama7b_v1"
+        if q12_pwl_frontier
+        else (
+            "llm_decoder_attention_composed_datapath_recip_lut_variant_frontier_llama7b_v1"
+            if variant_frontier
+            else "llm_decoder_attention_composed_datapath_physical_feasibility_softmax_recip_lut_llama7b_v1"
+        )
     )
     precision_profile = (
-        "q8_k8_v6_a24_s8_w8_recip_lut_variant_int8_compute"
-        if variant_frontier
-        else "q8_k8_v6_a24_s8_w8_recip_lut_q10_int8_compute"
+        "q8_k8_v6_a24_s12_w12_pwl_recip_q12_int8_compute"
+        if q12_pwl_frontier
+        else (
+            "q8_k8_v6_a24_s8_w8_recip_lut_variant_int8_compute"
+            if variant_frontier
+            else "q8_k8_v6_a24_s8_w8_recip_lut_q10_int8_compute"
+        )
     )
     return {
         "inputs": {
@@ -5402,7 +5416,7 @@ def _decoder_attention_composed_datapath_physical_feasibility_evidence(*, item_i
             "attention_composed_datapath_physical_feasibility_out": out,
             "attention_composed_datapath_physical_feasibility_report": report,
             "attention_composed_datapath_physical_feasibility_scope": (
-                "Use the composed dual-stream RTL wrapper PPA (q8/k8/v6 softmax-recip-q10 with two int8 streams) "
+                "Use the composed dual-stream RTL wrapper PPA "
                 "as a bounded next-step feasibility model, replacing separate full-value/softmax substitutions "
                 "while keeping the upstream source schedule."
             ),
