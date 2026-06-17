@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_decoder_attention_kv_measured_sram_rebalance_softmax_recip_lut_v1",
-  "source_commit": "89ce5a16643cea7a100bbc51ca84096933eae601",
+  "source_commit": "c569ea33f5194a80660fe36e50cdac8878a3da59",
   "source_commit_note": "Dispatch should use the merge commit containing the softmax-recip measured-SRAM rebalance generator hook.",
   "requested_items": [
     {
@@ -22,8 +22,11 @@
         "direction": "record_measured_sram_rebalanced_frontier",
         "reason": "The result should report best latency, HBM byte share, packed shared-SRAM capacity, and the replaced abstract local capacity."
       },
-      "status": "planned",
-      "notes": "Use the current softmax-recip endpoint schedule plus r4 endpoint/router/SRAM composition evidence so the rebalance closes only the remaining local SRAM capacity abstraction."
+      "status": "merged",
+      "notes": "Use the current softmax-recip endpoint schedule plus r4 endpoint/router/SRAM composition evidence so the rebalance closes only the remaining local SRAM capacity abstraction. Merged via PR #903 and merge 24814a267632cb12d380c83350d141f94c2dc16a at 2026-06-17T11:30:31.611323Z.",
+      "merged_pr_number": 903,
+      "merge_commit": "24814a267632cb12d380c83350d141f94c2dc16a",
+      "merged_utc": "2026-06-17T11:30:31.611323Z"
     }
   ]
 }
