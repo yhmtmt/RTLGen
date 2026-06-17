@@ -84,6 +84,7 @@ def _dedupe_rows(payload: JsonDict, *, limit: int) -> list[JsonDict]:
         ),
     ):
         key = (
+            str(row.get("measured_l1_profile")),
             str(row.get("topology")),
             str(row.get("scheduler_policy")),
             str(row.get("reduction_strategy")),

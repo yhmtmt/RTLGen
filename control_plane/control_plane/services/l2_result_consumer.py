@@ -627,7 +627,9 @@ def _decoder_frontier_recommendation(
 
 
 def _decoder_frontier_profile_recommendations(evidence_payload: dict[str, Any]) -> list[dict[str, Any]]:
-    rows = evidence_payload.get("top_rows")
+    rows = evidence_payload.get("best_by_profile")
+    if not isinstance(rows, list) or not rows:
+        rows = evidence_payload.get("top_rows")
     if not isinstance(rows, list):
         return []
     result: list[dict[str, Any]] = []
@@ -641,7 +643,7 @@ def _decoder_frontier_profile_recommendations(evidence_payload: dict[str, Any]) 
         seen_profiles.add(profile)
         entry: dict[str, Any] = {
             "profile": profile,
-            "rank_in_decoder_frontier": index,
+            "rank_in_decoder_frontier": row.get("rank_in_decoder_frontier", index),
             "best_arch_id": _decoder_frontier_arch_id(row),
             "best_macro_mode": str(row.get("compute_source", "")).strip() or "decoder_frontier",
         }

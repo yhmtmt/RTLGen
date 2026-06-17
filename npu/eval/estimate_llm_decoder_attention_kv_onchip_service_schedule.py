@@ -4,9 +4,9 @@
 from __future__ import annotations
 
 import argparse
-import heapq
 import json
 import math
+import re
 import sys
 from collections import Counter
 from pathlib import Path
@@ -21,6 +21,9 @@ from npu.eval import estimate_llm_decoder_attention_kv_sram_noc_constrained_sche
 
 
 JsonDict = dict[str, Any]
+
+
+_PROFILE_PRECISION_RE = re.compile(r"_q(\d+)(?:\D|$)")
 
 
 def _float_list(value: str) -> list[float]:
@@ -275,10 +278,33 @@ def _annotate_service(
     return out
 
 
+def _float_key(row: JsonDict, field: str) -> float:
+    try:
+        return float(row.get(field, math.inf))
+    except Exception:
+        return math.inf
+
+
+def _profile_precision_bits(row: JsonDict) -> int:
+    match = _PROFILE_PRECISION_RE.search(str(row.get("measured_l1_profile", "")))
+    return int(match.group(1)) if match else 0
+
+
+def _objective_key(row: JsonDict) -> tuple[float, float, float, float, int, str]:
+    return (
+        _float_key(row, "latency_us"),
+        _float_key(row, "total_cycles"),
+        _float_key(row, "logic_power_mw"),
+        _float_key(row, "logic_area_used_um2"),
+        -_profile_precision_bits(row),
+        str(row.get("measured_l1_profile", "")),
+    )
+
+
 def _update_best(target: dict[tuple[Any, ...], JsonDict], keys: tuple[str, ...], row: JsonDict) -> None:
     key = tuple(row.get(item) for item in keys)
     current = target.get(key)
-    if current is None or float(row["latency_us"]) < float(current["latency_us"]):
+    if current is None or _objective_key(row) < _objective_key(current):
         target[key] = row
 
 
@@ -291,11 +317,12 @@ def build_report(args: argparse.Namespace) -> JsonDict:
     generated = 0
     dominance = Counter()
     schedule_counts = Counter()
-    top_heap: list[tuple[float, int, JsonDict]] = []
-    heap_counter = 0
+    generated_rows: list[JsonDict] = []
     best_by_policy: dict[tuple[Any, ...], JsonDict] = {}
     best_by_topology: dict[tuple[Any, ...], JsonDict] = {}
     best_by_queue: dict[tuple[Any, ...], JsonDict] = {}
+    best_by_profile: dict[tuple[Any, ...], JsonDict] = {}
+    generated_latencies: list[float] = []
 
     for row in source_rows:
         for schedule_policy in args.schedule_policy:
@@ -322,16 +349,14 @@ def build_report(args: argparse.Namespace) -> JsonDict:
                                     generated += 1
                                     dominance[str(out["dominant_tile_resource"])] += 1
                                     schedule_counts[str(out["schedule_policy"])] += 1
-                                    if best is None or float(out["latency_us"]) < float(best["latency_us"]):
+                                    latency_us = float(out["latency_us"])
+                                    generated_latencies.append(latency_us)
+                                    generated_rows.append(out)
+                                    if best is None or _objective_key(out) < _objective_key(best):
                                         best = out
-                                    entry = (-float(out["latency_us"]), heap_counter, out)
-                                    heap_counter += 1
-                                    if len(top_heap) < args.top_k:
-                                        heapq.heappush(top_heap, entry)
-                                    elif entry[0] > top_heap[0][0]:
-                                        heapq.heapreplace(top_heap, entry)
                                     _update_best(best_by_policy, ("schedule_policy", "bank_arbiter_policy"), out)
                                     _update_best(best_by_topology, ("topology", "scheduler_policy", "reduction_strategy"), out)
+                                    _update_best(best_by_profile, ("measured_l1_profile",), out)
                                     _update_best(
                                         best_by_queue,
                                         ("endpoint_queue_depth_bytes", "bank_queue_depth_bytes", "router_latency_cycles_per_hop"),
@@ -339,7 +364,15 @@ def build_report(args: argparse.Namespace) -> JsonDict:
                                     )
     if best is None:
         raise RuntimeError("no on-chip service rows generated")
-    top_rows = [entry[2] for entry in sorted(top_heap, key=lambda entry: (entry[2]["latency_us"], entry[1]))]
+    top_rows = sorted(generated_rows, key=_objective_key)[: args.top_k]
+    sorted_latencies = sorted(generated_latencies)
+    profile_rows: list[JsonDict] = []
+    for row in sorted(best_by_profile.values(), key=_objective_key):
+        profile_row = dict(row)
+        latency = float(profile_row["latency_us"])
+        profile_row["rank_in_decoder_frontier"] = 1 + sum(1 for item in sorted_latencies if item < latency)
+        profile_row["same_latency_row_count"] = sum(1 for item in sorted_latencies if item == latency)
+        profile_rows.append(profile_row)
     return {
         "version": 1,
         "model": "llm_decoder_attention_kv_onchip_service_schedule_llama7b_v1",
@@ -363,9 +396,10 @@ def build_report(args: argparse.Namespace) -> JsonDict:
         },
         "best": best,
         "top_rows": top_rows,
-        "best_by_policy": sorted(best_by_policy.values(), key=lambda row: row["latency_us"])[:100],
-        "best_by_topology": sorted(best_by_topology.values(), key=lambda row: row["latency_us"])[:100],
-        "best_by_queue": sorted(best_by_queue.values(), key=lambda row: row["latency_us"])[:100],
+        "best_by_profile": profile_rows,
+        "best_by_policy": sorted(best_by_policy.values(), key=_objective_key)[:100],
+        "best_by_topology": sorted(best_by_topology.values(), key=_objective_key)[:100],
+        "best_by_queue": sorted(best_by_queue.values(), key=_objective_key)[:100],
         "assumptions": [
             "This pass refines on-chip SRAM/NoC service only; HBM/DRAM cycles and bandwidth fields are inherited from the input row.",
             "SRAM bank arbitration is modeled as per-cycle service under a named policy, not as placed SRAM macro RTL.",
@@ -393,11 +427,25 @@ def write_markdown(path: Path, payload: JsonDict) -> None:
         "{packet_payload_bytes} | {latency_us} | {latency_slowdown_vs_sram_noc_cap} | "
         "{latency_slowdown_vs_topology_derived} | {dominant_tile_resource} |".format(**best),
         "",
+        "## Best By Precision Profile",
+        "",
+        "| profile | frontier rank | latency us | area um2 | power mW | schedule | bank policy | resource |",
+        "|---|---:|---:|---:|---:|---|---|---|",
+    ]
+    for row in payload.get("best_by_profile", []):
+        lines.append(
+            "| {measured_l1_profile} | {rank_in_decoder_frontier} | {latency_us} | {logic_area_used_um2} | "
+            "{logic_power_mw} | {schedule_policy} | {bank_arbiter_policy} | {dominant_tile_resource} |".format(**row)
+        )
+    lines.extend(
+        [
+            "",
         "## Best By Policy",
         "",
         "| schedule | bank policy | latency us | vs cap | shared service cycles | exposed shared | resource |",
         "|---|---|---:|---:|---:|---:|---|",
-    ]
+        ]
+    )
     for row in payload["best_by_policy"][:30]:
         lines.append(
             "| {schedule_policy} | {bank_arbiter_policy} | {latency_us} | {latency_slowdown_vs_sram_noc_cap} | "
