@@ -5295,14 +5295,20 @@ def _decoder_attention_kv_subtile_pipeline_schedule_evidence(*, item_id: str) ->
     }
 
 
+def _decoder_attention_kv_dual_stream_physical_feasibility_source(*, item_id: str) -> str:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    if "softmax_recip_lut" in item_id:
+        source_item = "l2_decoder_attention_kv_subtile_pipeline_schedule_softmax_recip_lut_llama7b_v1"
+    else:
+        source_item = "l2_decoder_attention_kv_subtile_pipeline_schedule_llama7b_v1"
+    return f"{base}/decoder_attention_kv_subtile_pipeline_schedule__{source_item}.json"
+
+
 def _decoder_attention_kv_dual_stream_physical_feasibility_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_kv_dual_stream_physical_feasibility__{item_id}.json"
     report = f"{base}/decoder_attention_kv_dual_stream_physical_feasibility__{item_id}.md"
-    subtile_pipeline = (
-        f"{base}/decoder_attention_kv_subtile_pipeline_schedule__"
-        "l2_decoder_attention_kv_subtile_pipeline_schedule_llama7b_v1.json"
-    )
+    subtile_pipeline = _decoder_attention_kv_dual_stream_physical_feasibility_source(item_id=item_id)
     full_value_tile_metrics = (
         "runs/designs/activations/"
         "attention_kv_full_value_hd64_kv8_tl16_b128_p8_ppc2_w24_a40_wrapper/metrics.csv"
