@@ -578,6 +578,55 @@ def test_generate_l1_sweep_task_uses_boundary_metrics_acceptance() -> None:
             assert work_item.task_request.request_payload["task"]["acceptance"] == work_item.acceptance_rules
 
 
+def test_generate_l1_sweep_task_requeues_failed_item_on_upsert() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        config_path, sweep_path = _write_example_repo(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l1_sweep_task(
+                session,
+                Layer1SweepGenerateRequest(
+                    repo_root=str(repo_root),
+                    sweep_path=sweep_path,
+                    config_paths=[config_path],
+                    platform="nangate45",
+                    out_root="runs/designs/activations",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    abstraction_layer="circuit_block",
+                ),
+            )
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            work_item.state = WorkItemState.FAILED
+            work_item.assigned_machine_key = "eval-daemon-old"
+            work_item.queue_snapshot_path = "runs/eval_queue/openroad/failed/l1_demo.json"
+            session.commit()
+
+            generate_l1_sweep_task(
+                session,
+                Layer1SweepGenerateRequest(
+                    repo_root=str(repo_root),
+                    sweep_path=sweep_path,
+                    config_paths=[config_path],
+                    platform="nangate45",
+                    out_root="runs/designs/activations",
+                    requested_by="@tester2",
+                    source_commit=source_commit,
+                    abstraction_layer="circuit_block",
+                ),
+            )
+
+            session.refresh(work_item)
+            assert work_item.state == WorkItemState.DISPATCH_PENDING
+            assert work_item.assigned_machine_key is None
+            assert work_item.queue_snapshot_path is None
+
+
 def test_generate_l1_sweep_task_expands_expected_outputs_for_multi_trial_items() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
