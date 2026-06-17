@@ -1,0 +1,29 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_composed_datapath_physical_feasibility_softmax_recip_lut_v1",
+  "source_commit": "pending",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_composed_datapath_physical_feasibility_softmax_recip_lut_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "LLM-oriented attention-tail stress campaign with measured composed dual-stream softmax-recip datapath clock substitution.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_composed_datapath_physical_feasibility",
+      "comparison_role": "frontier_closure",
+      "paired_baseline_item_id": "l2_decoder_attention_mixed_precision_int8_compute_physical_feasibility_softmax_recip_lut_llama7b_v1",
+      "depends_on_item_ids": [
+        "l1_decoder_attention_dual_stream_composed_softmax_recip_lut_ppa_v1_r3",
+        "l2_decoder_attention_mixed_precision_int8_compute_physical_feasibility_softmax_recip_lut_llama7b_v1",
+        "l2_decoder_attention_kv_subtile_pipeline_schedule_softmax_recip_lut_llama7b_v1",
+        "l2_decoder_attention_mixed_precision_quality_llama7b_v1",
+        "l2_decoder_attention_softmax_recip_lut_quality_llama7b_v1_r3"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "record_softmax_recip_composed_datapath_physical_feasibility",
+        "reason": "Quantify whether measured composed wrapper area and clock keep the softmax-recip int8 dual-MAC point ahead of the split/shared-MAC fallback."
+      },
+      "status": "pending"
+    }
+  ]
+}

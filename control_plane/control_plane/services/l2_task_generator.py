@@ -5350,6 +5350,62 @@ def _decoder_attention_kv_dual_stream_physical_feasibility_evidence(*, item_id: 
     }
 
 
+def _decoder_attention_composed_datapath_physical_feasibility_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_attention_composed_datapath_physical_feasibility__{item_id}.json"
+    report = f"{base}/decoder_attention_composed_datapath_physical_feasibility__{item_id}.md"
+    subtile_pipeline = _decoder_attention_kv_dual_stream_physical_feasibility_source(item_id=item_id)
+    quality_gate = f"{base}/decoder_attention_mixed_precision_quality__l2_decoder_attention_mixed_precision_quality_llama7b_v1.json"
+    full_value_tile_metrics = (
+        "runs/designs/activations/"
+        "attention_kv_full_value_hd64_kv8_v6_tl16_b128_p8_ppc2_w22_a40_wrapper/metrics.csv"
+    )
+    softmax_weight_metrics = (
+        "runs/designs/activations/"
+        "attention_softmax_weight_int8_r8_acc24_recip_q10_wrapper/metrics.csv"
+    )
+    composed_dual_stream_metrics = (
+        "runs/designs/npu_blocks/"
+        "attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_recip_lut_q10/metrics.csv"
+    )
+    return {
+        "inputs": {
+            "attention_kv_subtile_pipeline_schedule": subtile_pipeline,
+            "attention_mixed_precision_quality": quality_gate,
+            "attention_kv_full_value_tile_metrics": full_value_tile_metrics,
+            "attention_kv_softmax_weight_metrics": softmax_weight_metrics,
+            "attention_kv_composed_dual_stream_metrics": composed_dual_stream_metrics,
+            "attention_composed_datapath_physical_feasibility_out": out,
+            "attention_composed_datapath_physical_feasibility_report": report,
+            "attention_composed_datapath_physical_feasibility_scope": (
+                "Use the composed dual-stream RTL wrapper PPA (q8/k8/v6 softmax-recip-q10 with two int8 streams) "
+                "as a bounded next-step feasibility model, replacing separate full-value/softmax substitutions "
+                "while keeping the upstream source schedule."
+            ),
+        },
+        "commands": [
+            {
+                "name": "estimate_decoder_attention_composed_datapath_physical_feasibility",
+                "run": (
+                    "python3 npu/eval/estimate_llm_decoder_attention_kv_dual_stream_physical_feasibility.py "
+                    f"--subtile-pipeline-json {subtile_pipeline} "
+                    f"--full-value-tile-metrics {full_value_tile_metrics} "
+                    f"--softmax-weight-metrics {softmax_weight_metrics} "
+                    f"--composed-dual-stream-metrics {composed_dual_stream_metrics} "
+                    f"--quality-gate-json {quality_gate} "
+                    "--precision-profile q8_k8_v6_a24_s8_w8_recip_lut_q10_int8_compute "
+                    "--model-name llm_decoder_attention_composed_datapath_physical_feasibility_softmax_recip_lut_llama7b_v1 "
+                    "--frontier-row-limit 8 "
+                    "--buffer-area-um2-per-byte 0.0 "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+    }
+
+
 def _decoder_attention_mixed_precision_quality_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_mixed_precision_quality__{item_id}.json"
@@ -7175,6 +7231,7 @@ def _build_payload(
         "decoder_attention_kv_measured_hbm_service",
         "decoder_attention_kv_hbm_closed_onchip_schedule",
         "decoder_attention_kv_subtile_pipeline_schedule",
+        "decoder_attention_composed_datapath_physical_feasibility",
         "decoder_attention_kv_dual_stream_physical_feasibility",
         "decoder_attention_mixed_precision_quality",
         "decoder_attention_softmax_pow2sum_quality",
@@ -7329,6 +7386,8 @@ def _build_payload(
             decoder_evidence = _decoder_attention_kv_hbm_closed_onchip_schedule_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_subtile_pipeline_schedule":
             decoder_evidence = _decoder_attention_kv_subtile_pipeline_schedule_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_attention_composed_datapath_physical_feasibility":
+            decoder_evidence = _decoder_attention_composed_datapath_physical_feasibility_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_dual_stream_physical_feasibility":
             decoder_evidence = _decoder_attention_kv_dual_stream_physical_feasibility_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_mixed_precision_quality":
