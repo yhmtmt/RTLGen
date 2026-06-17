@@ -1,8 +1,8 @@
 {
   "version": 0.1,
-  "generated_utc": "2026-06-17T04:40:09.355222Z",
-  "control_plane_source_commit": "7db3cc348ff59e57f12c2e2b7cf380a5302f734a",
-  "review_metadata_source_commit": "7db3cc348ff59e57f12c2e2b7cf380a5302f734a",
+  "generated_utc": "2026-06-17T04:46:53.727691Z",
+  "control_plane_source_commit": "058201be3bafbd0e8b6aaaed9e42b1f10a016b2c",
+  "review_metadata_source_commit": "058201be3bafbd0e8b6aaaed9e42b1f10a016b2c",
   "item_id": "l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_softmax_recip_lut_llama7b_v1_r2",
   "run_key": "l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_softmax_recip_lut_llama7b_v1_r2_run_40c7c348c504d184",
   "layer": "layer2",
@@ -222,10 +222,10 @@
     "kind": "decision_proposal",
     "path": "control_plane/shadow_exports/l2_decisions/l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_softmax_recip_lut_llama7b_v1_r2.json",
     "storage_mode": "repo",
-    "sha256": "a9a53a40836ab579a250c035ab9557c057ea479bacf8a95ec6e24e2fbc2c7d60",
+    "sha256": "7db595d57feec2b557a3691eaabed059075e8d6690ae46fb1b58e3163d72358c",
     "payload": {
       "version": 0.1,
-      "generated_utc": "2026-06-17T04:40:05.738706Z",
+      "generated_utc": "2026-06-17T04:46:53.266870Z",
       "item_id": "l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_softmax_recip_lut_llama7b_v1_r2",
       "run_key": "l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_softmax_recip_lut_llama7b_v1_r2_run_40c7c348c504d184",
       "layer": "layer2",
@@ -233,7 +233,7 @@
       "platform": "nangate45",
       "task_type": "l2_campaign",
       "source_commit": "7db3cc348ff59e57f12c2e2b7cf380a5302f734a",
-      "review_metadata_source_commit": "7db3cc348ff59e57f12c2e2b7cf380a5302f734a",
+      "review_metadata_source_commit": "058201be3bafbd0e8b6aaaed9e42b1f10a016b2c",
       "objective": "Refresh the reciprocal-LUT Llama7B endpoint full on-chip service frontier after preserving q8/q10/q12 profile rows and deterministic tied-latency PPA/precision ranking.",
       "input_manifest": {
         "sweeps": [
@@ -351,6 +351,54 @@
           "softmax_weight_generator_area_um2": 43505.6164,
           "softmax_weight_generator_power_mw": 0.0139,
           "softmax_weight_generator_clock_ns": 5.746,
+          "topology": "mesh2d",
+          "scheduler_policy": "locality_aware",
+          "reduction_strategy": "cluster_tree",
+          "cluster_count": 16,
+          "bank_count": 64,
+          "die_area_mm2": 800.0,
+          "dominant_tile_resource": "shared_path"
+        },
+        {
+          "profile": "hd64_kv8_full_value_p8_ppc2_noc128_softmax_int8_q10",
+          "rank_in_decoder_frontier": 1,
+          "best_arch_id": "mesh2d_locality_aware_cluster_tree_c16_b64_dense_gemm_16x8_k1_p1",
+          "best_macro_mode": "dense_gemm_tile",
+          "latency_us": 3222.903773,
+          "total_cycles": 538848,
+          "layer_cycles": 16839,
+          "clock_ns": 5.9811,
+          "logic_area_used_um2": 399995594.68,
+          "logic_power_mw": 8132.9456,
+          "measured_l1_overhead_area_um2": 3347450.68,
+          "measured_l1_overhead_power_mw": 0.9456,
+          "softmax_weight_generator_area_um2": 39776.3136,
+          "softmax_weight_generator_power_mw": 0.00479,
+          "softmax_weight_generator_clock_ns": 5.5948,
+          "topology": "mesh2d",
+          "scheduler_policy": "locality_aware",
+          "reduction_strategy": "cluster_tree",
+          "cluster_count": 16,
+          "bank_count": 64,
+          "die_area_mm2": 800.0,
+          "dominant_tile_resource": "shared_path"
+        },
+        {
+          "profile": "hd64_kv8_full_value_p8_ppc2_noc128_softmax_int8_q8",
+          "rank_in_decoder_frontier": 1,
+          "best_arch_id": "mesh2d_locality_aware_cluster_tree_c16_b64_dense_gemm_16x8_k1_p1",
+          "best_macro_mode": "dense_gemm_tile",
+          "latency_us": 3222.903773,
+          "total_cycles": 538848,
+          "layer_cycles": 16839,
+          "clock_ns": 5.9811,
+          "logic_area_used_um2": 399967698.4688,
+          "logic_power_mw": 8132.97568,
+          "measured_l1_overhead_area_um2": 3319554.4688,
+          "measured_l1_overhead_power_mw": 0.97568,
+          "softmax_weight_generator_area_um2": 38032.8004,
+          "softmax_weight_generator_power_mw": 0.00667,
+          "softmax_weight_generator_clock_ns": 5.5809,
           "topology": "mesh2d",
           "scheduler_policy": "locality_aware",
           "reduction_strategy": "cluster_tree",
@@ -663,7 +711,26 @@
     },
     "proposal_path": "docs/proposals/prop_l2_decoder_attention_kv_endpoint_full_onchip_service_softmax_recip_lut_v1"
   },
-  "submission_history": null,
+  "submission_history": {
+    "event_count": 1,
+    "failure_count": 0,
+    "retry_request_count": 0,
+    "retry_processed_count": 0,
+    "retry_failed_count": 0,
+    "had_retry": false,
+    "events": [
+      {
+        "event_time": "2026-06-17T04:40:16.723753Z",
+        "event_type": "submission_executed",
+        "pr_url": "https://github.com/yhmtmt/RTLGen/pull/882"
+      }
+    ],
+    "final_submission": {
+      "event_time": "2026-06-17T04:40:16.723753Z",
+      "event_type": "submission_executed",
+      "pr_url": "https://github.com/yhmtmt/RTLGen/pull/882"
+    }
+  },
   "pr_payload": {
     "branch": "eval/l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_softmax_recip_lut_llama7b_v1_r2/s20260617t044006z",
     "title": "eval: run rerun endpoint full on-chip service schedule with precision-profile coverage",
@@ -673,7 +740,7 @@
       "evaluator_id": "control_plane",
       "queue_item_id": "l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_softmax_recip_lut_llama7b_v1_r2"
     },
-    "body_md": "## Summary\n- item_id: `l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_softmax_recip_lut_llama7b_v1_r2`\n- run_key: `l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_softmax_recip_lut_llama7b_v1_r2_run_40c7c348c504d184`\n- layer: `layer2`\n- task_type: `l2_campaign`\n- status: `ok`\n- summary: `6/6 commands succeeded`\n- queue_snapshot: `control_plane/shadow_exports/review/l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_softmax_recip_lut_llama7b_v1_r2/evaluated.json`\n- metrics_rows_count: `24`\n- review_artifact: `decision_proposal` at `control_plane/shadow_exports/l2_decisions/l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_softmax_recip_lut_llama7b_v1_r2.json`\n\n## Developer Context\n- proposal_id: `prop_l2_decoder_attention_kv_endpoint_full_onchip_service_softmax_recip_lut_v1`\n- proposal_path: `docs/proposals/prop_l2_decoder_attention_kv_endpoint_full_onchip_service_softmax_recip_lut_v1`\n- reviewer_first_read: `docs/proposals/prop_l2_decoder_attention_kv_endpoint_full_onchip_service_softmax_recip_lut_v1` plus `docs/developer_agent_review.md`\n- execution_source_commit: `7db3cc348ff59e57f12c2e2b7cf380a5302f734a`\n- review_metadata_source_commit: `7db3cc348ff59e57f12c2e2b7cf380a5302f734a`\n\n## Evaluation Mode\n- evaluation_mode: `frontier_detail`\n- abstraction_layer: `decoder_attention_kv_endpoint_full_onchip_service_schedule`\n- comparison_role: `frontier_revision`\n- expected_direction: `refine_recip_lut_endpoint_frontier_with_profile_complete_onchip_service_policies`\n- expected_reason: `Rerun after precision-profile dedupe and tied-latency PPA/precision ranking fixes so q8/q10/q12 all appear in the decision.`\n- expectation_status: `unspecified`\n- evaluation_summary: `Decoder on-chip SRAM/NoC service evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_endpoint_full_onchip_service_schedule__l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_softmax_recip_lut_llama7b_v1_r2.json: decision=onchip_service_schedule_recorded; measured_l1_profile=hd64_kv8_full_value_p8_ppc2_noc128_softmax_int8_q12; latency_us=3222.903773; latency_slowdown_vs_sram_noc_cap=0.993451; total_cycles=538848; topology=mesh2d; scheduler_policy=locality_aware; schedule_policy=prefetch_overlap; bank_arbiter_policy=locality_first; cluster_count=16; bank_count=64; endpoint_queue_depth_bytes=2048; bank_queue_depth_bytes=2048; router_latency_cycles_per_hop=1; packet_payload_bytes=128; onchip_shared_service_cycles=2503; dominant_tile_resource=shared_path.`\n\n## Focused Comparison\n- primary_question: `Does the corrected q8/q10/q12 endpoint full-search frontier remain best under explicit on-chip SRAM/NoC service scheduling?`\n- comparison_role: `frontier_revision`\n- proposal_outcome: `onchip_service_schedule_recorded`\n- comparison_summary: `Decoder on-chip SRAM/NoC service evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_endpoint_full_onchip_service_schedule__l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_softmax_recip_lut_llama7b_v1_r2.json: decision=onchip_service_schedule_recorded; measured_l1_profile=hd64_kv8_full_value_p8_ppc2_noc128_softmax_int8_q12; latency_us=3222.903773; latency_slowdown_vs_sram_noc_cap=0.993451; total_cycles=538848; topology=mesh2d; scheduler_policy=locality_aware; schedule_policy=prefetch_overlap; bank_arbiter_policy=locality_first; cluster_count=16; bank_count=64; endpoint_queue_depth_bytes=2048; bank_queue_depth_bytes=2048; router_latency_cycles_per_hop=1; packet_payload_bytes=128; onchip_shared_service_cycles=2503; dominant_tile_resource=shared_path.`\n- baseline_ref: `None`\n- baseline_item_id: `None`\n\n## Checklist\n- [ ] Commit lightweight campaign artifacts only\n- [ ] Include metrics row references in result.metrics_rows\n- [ ] Keep committed result_path fields repo-portable\n- [ ] Run python3 scripts/validate_runs.py --skip_eval_queue before pushing\n",
+    "body_md": "## Summary\n- item_id: `l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_softmax_recip_lut_llama7b_v1_r2`\n- run_key: `l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_softmax_recip_lut_llama7b_v1_r2_run_40c7c348c504d184`\n- layer: `layer2`\n- task_type: `l2_campaign`\n- status: `ok`\n- summary: `6/6 commands succeeded`\n- queue_snapshot: `control_plane/shadow_exports/review/l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_softmax_recip_lut_llama7b_v1_r2/evaluated.json`\n- metrics_rows_count: `24`\n- review_artifact: `decision_proposal` at `control_plane/shadow_exports/l2_decisions/l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_softmax_recip_lut_llama7b_v1_r2.json`\n\n## Developer Context\n- proposal_id: `prop_l2_decoder_attention_kv_endpoint_full_onchip_service_softmax_recip_lut_v1`\n- proposal_path: `docs/proposals/prop_l2_decoder_attention_kv_endpoint_full_onchip_service_softmax_recip_lut_v1`\n- reviewer_first_read: `docs/proposals/prop_l2_decoder_attention_kv_endpoint_full_onchip_service_softmax_recip_lut_v1` plus `docs/developer_agent_review.md`\n- execution_source_commit: `7db3cc348ff59e57f12c2e2b7cf380a5302f734a`\n- review_metadata_source_commit: `058201be3bafbd0e8b6aaaed9e42b1f10a016b2c`\n\n## Evaluation Mode\n- evaluation_mode: `frontier_detail`\n- abstraction_layer: `decoder_attention_kv_endpoint_full_onchip_service_schedule`\n- comparison_role: `frontier_revision`\n- expected_direction: `refine_recip_lut_endpoint_frontier_with_profile_complete_onchip_service_policies`\n- expected_reason: `Rerun after precision-profile dedupe and tied-latency PPA/precision ranking fixes so q8/q10/q12 all appear in the decision.`\n- expectation_status: `unspecified`\n- evaluation_summary: `Decoder on-chip SRAM/NoC service evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_endpoint_full_onchip_service_schedule__l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_softmax_recip_lut_llama7b_v1_r2.json: decision=onchip_service_schedule_recorded; measured_l1_profile=hd64_kv8_full_value_p8_ppc2_noc128_softmax_int8_q12; latency_us=3222.903773; latency_slowdown_vs_sram_noc_cap=0.993451; total_cycles=538848; topology=mesh2d; scheduler_policy=locality_aware; schedule_policy=prefetch_overlap; bank_arbiter_policy=locality_first; cluster_count=16; bank_count=64; endpoint_queue_depth_bytes=2048; bank_queue_depth_bytes=2048; router_latency_cycles_per_hop=1; packet_payload_bytes=128; onchip_shared_service_cycles=2503; dominant_tile_resource=shared_path.`\n\n## Focused Comparison\n- primary_question: `Does the corrected q8/q10/q12 endpoint full-search frontier remain best under explicit on-chip SRAM/NoC service scheduling?`\n- comparison_role: `frontier_revision`\n- proposal_outcome: `onchip_service_schedule_recorded`\n- comparison_summary: `Decoder on-chip SRAM/NoC service evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_endpoint_full_onchip_service_schedule__l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_softmax_recip_lut_llama7b_v1_r2.json: decision=onchip_service_schedule_recorded; measured_l1_profile=hd64_kv8_full_value_p8_ppc2_noc128_softmax_int8_q12; latency_us=3222.903773; latency_slowdown_vs_sram_noc_cap=0.993451; total_cycles=538848; topology=mesh2d; scheduler_policy=locality_aware; schedule_policy=prefetch_overlap; bank_arbiter_policy=locality_first; cluster_count=16; bank_count=64; endpoint_queue_depth_bytes=2048; bank_queue_depth_bytes=2048; router_latency_cycles_per_hop=1; packet_payload_bytes=128; onchip_shared_service_cycles=2503; dominant_tile_resource=shared_path.`\n- baseline_ref: `None`\n- baseline_item_id: `None`\n\n## Submission Recovery\n- submission_failure_count: `0`\n- retry_request_count: `0`\n- final_submission_pr: `https://github.com/yhmtmt/RTLGen/pull/882`\n\n## Checklist\n- [ ] Commit lightweight campaign artifacts only\n- [ ] Include metrics row references in result.metrics_rows\n- [ ] Keep committed result_path fields repo-portable\n- [ ] Run python3 scripts/validate_runs.py --skip_eval_queue before pushing\n",
     "checklist": [
       "Commit lightweight campaign artifacts only",
       "Include metrics row references in result.metrics_rows",
