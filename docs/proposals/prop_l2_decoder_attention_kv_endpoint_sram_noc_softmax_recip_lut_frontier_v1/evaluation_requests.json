@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_decoder_attention_kv_endpoint_sram_noc_softmax_recip_lut_frontier_v1",
-  "source_commit": "cdea382d8909d81a29785d26f2699968e5ac425a",
+  "source_commit": "24e04c7e691f2f6ad5b44d2db02568474fb550a5",
   "source_commit_note": "Dispatch the L1 q8 item after this proposal/config PR is merged. Dispatch the L2 item only after q8 metrics are merged, because the L2 builder consumes the q8 metrics.csv artifact.",
   "requested_items": [
     {
@@ -29,9 +29,9 @@
       "notes": "Merged via PR #873 and merge ff31b883a47208aa5728f75b2c8df62908b471d9 at 2026-06-17T03:34:14.833284Z."
     },
     {
-      "item_id": "l2_decoder_attention_kv_endpoint_sram_noc_full_search_softmax_recip_lut_llama7b_v1",
+      "item_id": "l2_decoder_attention_kv_endpoint_sram_noc_full_search_softmax_recip_lut_llama7b_v1_r2",
       "task_type": "l2_campaign",
-      "objective": "Regenerate the endpoint SRAM/NoC full-search Llama7B frontier while ranking q8/q10/q12 reciprocal-LUT softmax local-cost profiles.",
+      "objective": "Regenerate endpoint SRAM/NoC full-search Llama7B frontier while ranking q8/q10/q12 reciprocal-LUT softmax local-cost profiles; r2 supersedes the generic-campaign #874 run generated from stale control-plane code.",
       "evaluation_mode": "frontier_detail",
       "abstraction_layer": "decoder_attention_kv_endpoint_sram_noc_full_search_softmax_recip_lut_schedule",
       "comparison_role": "frontier_revision",
@@ -45,8 +45,12 @@
       "requires_materialized_refs": true,
       "expected_result": {
         "direction": "rank_q8_q10_q12_softmax_profiles_in_endpoint_sram_noc_frontier",
-        "reason": "The result should show the best practical endpoint SRAM/NoC topology/scheduler point and the selected reciprocal-LUT softmax precision profile."
-      }
+        "reason": "Rank q8/q10/q12 reciprocal-LUT softmax local-cost profiles under practical endpoint SRAM/NoC caps."
+      },
+      "prior_item_ids": [
+        "l2_decoder_attention_kv_endpoint_sram_noc_full_search_softmax_recip_lut_llama7b_v1"
+      ],
+      "status": "pending"
     }
   ]
 }
