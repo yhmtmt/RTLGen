@@ -6576,11 +6576,14 @@ def test_generate_l2_campaign_task_adds_endpoint_router_sram_composition_evidenc
             assert "attention_kv_endpoint_ready_valid_service" in decoder_inputs
             assert "attention_kv_endpoint_full_onchip_service_schedule" in decoder_inputs
             assert "attention_kv_tile_sram_metrics_summary" in decoder_inputs
+            assert "attention_kv_endpoint_router_wide_l1_promotion" in decoder_inputs
             assert "attention_kv_endpoint_router_sram_composition_out" in decoder_inputs
             assert "audit_llm_decoder_attention_endpoint_router_sram_composition.py" in run
             assert "l2_decoder_attention_kv_endpoint_ready_valid_service_llama7b_v1.json" in run
             assert "l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_llama7b_v1.json" in run
             assert "llama7b_attention_tile_buffers_v1/sram_metrics_summary.json" in run
+            assert "--wide-l1-promotion-json" in run
+            assert "l1_decoder_attention_endpoint_router_wide_ppa_v1.json" in run
             assert "--noc-bandwidth-bytes-per-cycle" not in run
             assert "--data-rate-mtps" not in run
             assert work_item.task_request.request_payload["task"]["inputs"]["decoder_contract"] == decoder_inputs
@@ -6634,6 +6637,8 @@ def test_generate_l2_campaign_task_adds_softmax_recip_lut_endpoint_router_sram_s
                 "l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_softmax_recip_lut_llama7b_v1_r2.json"
                 in run
             )
+            assert "attention_kv_endpoint_router_wide_l1_promotion" in decoder_inputs
+            assert "l1_decoder_attention_endpoint_router_wide_ppa_v1.json" in run
             assert "l2_decoder_attention_kv_endpoint_ready_valid_service_llama7b_v1.json" not in run
             assert "l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_llama7b_v1.json" not in run
             assert work_item.expected_outputs == expected_outputs
