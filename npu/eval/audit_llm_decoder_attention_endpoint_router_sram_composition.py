@@ -88,6 +88,51 @@ def _best_promotion_metric(promotion: JsonDict | None, *, design_contains: str) 
     return min(matches, key=lambda item: (float(item["critical_path_ns"]), float(item["area_um2"])))
 
 
+def _best_segmented_router_fifo_metric(
+    promotion: JsonDict | None,
+    *,
+    design_contains: str,
+    target_width_bits: int,
+    allowed_lane_width_bits: tuple[int, ...] = (128, 256),
+) -> JsonDict | None:
+    if not promotion:
+        return None
+    proposals = promotion.get("proposals")
+    if not isinstance(proposals, list):
+        return None
+    candidates: list[JsonDict] = []
+    for proposal in proposals:
+        if not isinstance(proposal, dict):
+            continue
+        metric = _metrics_from_promotion_proposal(proposal)
+        if not metric:
+            continue
+        width_bits = metric.get("width_bits")
+        if not isinstance(width_bits, int) or width_bits <= 0:
+            continue
+        if width_bits not in allowed_lane_width_bits:
+            continue
+        if target_width_bits % width_bits != 0:
+            continue
+        if design_contains not in str(metric.get("design", "")):
+            continue
+        lane_count = target_width_bits // width_bits
+        metric["lane_count_for_link"] = lane_count
+        metric["aggregate_area_um2"] = float(metric["area_um2"]) * lane_count
+        metric["aggregate_power_mw"] = float(metric["power_mw"]) * lane_count
+        candidates.append(metric)
+    if not candidates:
+        return None
+    return min(
+        candidates,
+        key=lambda item: (
+            float(item["aggregate_area_um2"]),
+            float(item["aggregate_power_mw"]),
+            float(item["critical_path_ns"]),
+        ),
+    )
+
+
 def _promotion_boundary_rows(promotion: JsonDict | None, *, design_contains: str) -> list[JsonDict]:
     if not promotion:
         return []
@@ -172,6 +217,7 @@ def _build_payload(
     sram_summary: JsonDict,
     sram_metrics: JsonDict,
     wide_l1_promotion: JsonDict | None = None,
+    segmented_l1_promotion: JsonDict | None = None,
     local_sram_capacity: JsonDict | None = None,
 ) -> JsonDict:
     best = endpoint_onchip["best"]
@@ -181,6 +227,30 @@ def _build_payload(
     link_width_bits = int(best["link_width_bits"])
     router_metrics = _best_metrics(repo_root / best["noc_router_metrics_csv"])
     fifo_metrics = _best_metrics(repo_root / best["noc_fifo_metrics_csv"])
+    router_segmented_metrics = _best_segmented_router_fifo_metric(
+        segmented_l1_promotion,
+        design_contains="noc_router",
+        target_width_bits=link_width_bits,
+    )
+    fifo_segmented_metrics = _best_segmented_router_fifo_metric(
+        segmented_l1_promotion,
+        design_contains="noc_fifo",
+        target_width_bits=link_width_bits,
+    )
+    if router_segmented_metrics and (
+        not router_metrics
+        or not router_metrics.get("width_bits")
+        or int(router_metrics["width_bits"]) != link_width_bits
+    ):
+        router_segmented_metrics["source"] = "segmented_l1_promotion"
+        router_metrics = router_segmented_metrics
+    if fifo_segmented_metrics and (
+        not fifo_metrics
+        or not fifo_metrics.get("width_bits")
+        or int(fifo_metrics["width_bits"]) != link_width_bits
+    ):
+        fifo_segmented_metrics["source"] = "segmented_l1_promotion"
+        fifo_metrics = fifo_segmented_metrics
     endpoint_metrics = (
         _best_promotion_metric(wide_l1_promotion, design_contains="onchip_endpoint")
         or _best_metrics(repo_root / best["onchip_endpoint_metrics_csv"])
@@ -232,6 +302,8 @@ def _build_payload(
         local_sram_budget.get("fits_sram_budget") if isinstance(local_sram_budget, dict) else None
     )
 
+    router_uses_segmented = router_metrics.get("source") == "segmented_l1_promotion" if router_metrics else False
+    fifo_uses_segmented = fifo_metrics.get("source") == "segmented_l1_promotion" if fifo_metrics else False
     closure_flags = {
         "ready_valid_endpoint_passed": endpoint_ready_valid["decision"] == "ready_valid_endpoint_policy_passed",
         "endpoint_ppa_width_matches_ready_valid_width": endpoint_ppa_width == packet_bits,
@@ -249,16 +321,29 @@ def _build_payload(
             if local_sram_capacity_present
             else "full_local_capacity_sram_macro_profile_missing"
         )
-    if router_boundary and not closure_flags["router_ppa_width_matches_link_width"]:
-        requires_follow_on = [
-            "segmented_or_narrower_router_ppa_required" if item == "router_ppa_width_matches_link_width" else item
-            for item in requires_follow_on
-        ]
-    if fifo_boundary and not closure_flags["fifo_ppa_width_matches_link_width"]:
-        requires_follow_on = [
-            "segmented_or_narrower_fifo_ppa_required" if item == "fifo_ppa_width_matches_link_width" else item
-            for item in requires_follow_on
-        ]
+    if (
+        "router_ppa_width_matches_link_width" in requires_follow_on
+        and not closure_flags["router_ppa_width_matches_link_width"]
+    ):
+        requires_follow_on.remove("router_ppa_width_matches_link_width")
+        if not router_uses_segmented:
+            if router_boundary:
+                requires_follow_on.append("segmented_or_narrower_router_ppa_required")
+            else:
+                requires_follow_on.append("router_ppa_width_matches_link_width")
+    if (
+        "fifo_ppa_width_matches_link_width" in requires_follow_on
+        and not closure_flags["fifo_ppa_width_matches_link_width"]
+    ):
+        requires_follow_on.remove("fifo_ppa_width_matches_link_width")
+        if not fifo_uses_segmented:
+            if fifo_boundary:
+                requires_follow_on.append("segmented_or_narrower_fifo_ppa_required")
+            else:
+                requires_follow_on.append("fifo_ppa_width_matches_link_width")
+
+    router_measured_at_link_width = closure_flags["router_ppa_width_matches_link_width"] and link_width_bits == 2048
+    fifo_measured_at_link_width = closure_flags["fifo_ppa_width_matches_link_width"] and link_width_bits == 2048
 
     closure_diagnosis = {
         "endpoint": (
@@ -268,20 +353,36 @@ def _build_payload(
         ),
         "router": (
             "measured_at_link_width"
-            if closure_flags["router_ppa_width_matches_link_width"]
+            if router_measured_at_link_width
             else (
-                "flat_link_width_boundary_failed"
-                if router_boundary and router_boundary.get("status") == "failed"
-                else "ppa_width_mismatch_or_missing"
+                "lane_composed_segmented_evidence_available_while_flat_2048_failed"
+                if router_boundary and router_uses_segmented
+                else (
+                    "ppa_width_matches_non_2048_link_width"
+                    if closure_flags["router_ppa_width_matches_link_width"]
+                    else (
+                        "flat_link_width_boundary_failed"
+                        if router_boundary and router_boundary.get("status") == "failed"
+                        else "ppa_width_mismatch_or_missing"
+                    )
+                )
             )
         ),
         "fifo": (
             "measured_at_link_width"
-            if closure_flags["fifo_ppa_width_matches_link_width"]
+            if fifo_measured_at_link_width
             else (
-                "flat_link_width_boundary_failed"
-                if fifo_boundary and fifo_boundary.get("status") == "failed"
-                else "ppa_width_mismatch_or_missing"
+                "lane_composed_segmented_evidence_available_while_flat_2048_failed"
+                if fifo_boundary and fifo_uses_segmented
+                else (
+                    "ppa_width_matches_non_2048_link_width"
+                    if closure_flags["fifo_ppa_width_matches_link_width"]
+                    else (
+                        "flat_link_width_boundary_failed"
+                        if fifo_boundary and fifo_boundary.get("status") == "failed"
+                        else "ppa_width_mismatch_or_missing"
+                    )
+                )
             )
         ),
         "local_sram_capacity": (
@@ -306,31 +407,41 @@ def _build_payload(
             }
         )
     if not closure_flags["router_ppa_width_matches_link_width"]:
-        recommended_next_l1_points.append(
-            {
-                "primitive": "segmented_noc_router",
-                "reason": (
-                    "flat 2048-bit router failed physical boundary runs; measure lane-composed or narrower-link "
-                    "router/scheduler pairs instead of retrying the same flat primitive"
-                )
-                if router_boundary
-                else "selected link width lacks matching router PPA",
-                "parameters": {"ports": 4, "aggregate_flit_bits": link_width_bits, "candidate_lane_bits": [128, 256]},
-            }
-        )
+        if not router_uses_segmented:
+            recommended_next_l1_points.append(
+                {
+                    "primitive": "segmented_noc_router",
+                    "reason": (
+                        "flat 2048-bit router failed physical boundary runs; measure lane-composed or narrower-link "
+                        "router/scheduler pairs instead of retrying the same flat primitive"
+                    )
+                    if router_boundary
+                    else "selected link width lacks matching router PPA",
+                    "parameters": {
+                        "ports": 4,
+                        "aggregate_flit_bits": link_width_bits,
+                        "candidate_lane_bits": [128, 256],
+                    },
+                }
+            )
     if not closure_flags["fifo_ppa_width_matches_link_width"]:
-        recommended_next_l1_points.append(
-            {
-                "primitive": "segmented_noc_fifo",
-                "reason": (
-                    "flat 2048-bit FIFO failed physical boundary runs; measure lane-composed or narrower-link "
-                    "FIFO/scheduler pairs instead of retrying the same flat primitive"
-                )
-                if fifo_boundary
-                else "selected link width lacks matching FIFO PPA",
-                "parameters": {"depth": 16, "aggregate_flit_bits": link_width_bits, "candidate_lane_bits": [128, 256]},
-            }
-        )
+        if not fifo_uses_segmented:
+            recommended_next_l1_points.append(
+                {
+                    "primitive": "segmented_noc_fifo",
+                    "reason": (
+                        "flat 2048-bit FIFO failed physical boundary runs; measure lane-composed or narrower-link "
+                        "FIFO/scheduler pairs instead of retrying the same flat primitive"
+                    )
+                    if fifo_boundary
+                    else "selected link width lacks matching FIFO PPA",
+                    "parameters": {
+                        "depth": 16,
+                        "aggregate_flit_bits": link_width_bits,
+                        "candidate_lane_bits": [128, 256],
+                    },
+                }
+            )
     if not closure_flags["tile_sram_capacity_covers_selected_local_capacity"]:
         if local_sram_capacity_present:
             local_capacity_reason = (
@@ -362,7 +473,17 @@ def _build_payload(
             "Endpoint ready/valid behavior is verified at the selected width, but matching endpoint PPA is not yet available."
         )
     if not closure_flags["router_ppa_width_matches_link_width"] or not closure_flags["fifo_ppa_width_matches_link_width"]:
-        if router_boundary or fifo_boundary:
+        router_or_fifo_segmented = router_uses_segmented or fifo_uses_segmented
+        if router_or_fifo_segmented:
+            if router_boundary or fifo_boundary:
+                remaining_abstractions.append(
+                    "Lane-composed/segmented NoC PPA metrics are available for router/FIFO while flat 2048-bit boundary evidence failed."
+                )
+            else:
+                remaining_abstractions.append(
+                    "Lane-composed/segmented NoC PPA metrics are available for router/FIFO."
+                )
+        elif router_boundary or fifo_boundary:
             remaining_abstractions.append(
                 "Router/FIFO PPA cannot use the failed flat 2048-bit primitive; lane-composed or narrower-link NoC PPA remains open."
             )
@@ -395,6 +516,7 @@ def _build_payload(
             "endpoint_ready_valid": "l2_decoder_attention_kv_endpoint_ready_valid_service_llama7b_v1",
             "sram_profile": "llama7b_attention_tile_buffers_v1",
             "wide_l1_promotion": wide_l1_promotion.get("item_id") if wide_l1_promotion else None,
+            "segmented_l1_promotion": segmented_l1_promotion.get("item_id") if segmented_l1_promotion else None,
             "local_sram_capacity": local_sram_capacity.get("source_item") if isinstance(local_sram_capacity, dict) else None,
         },
         "selected_frontier": {
@@ -543,6 +665,7 @@ def main() -> int:
     parser.add_argument("--sram-summary-json", type=Path, required=True)
     parser.add_argument("--sram-metrics-json", type=Path, required=True)
     parser.add_argument("--wide-l1-promotion-json", type=Path)
+    parser.add_argument("--segmented-l1-promotion-json", type=Path)
     parser.add_argument("--local-sram-capacity-json", type=Path)
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--out-md", type=Path, required=True)
@@ -560,6 +683,9 @@ def main() -> int:
         sram_summary=_load_json(rooted(args.sram_summary_json)),
         sram_metrics=_load_json(rooted(args.sram_metrics_json)),
         wide_l1_promotion=_load_json(rooted(args.wide_l1_promotion_json)) if args.wide_l1_promotion_json else None,
+        segmented_l1_promotion=_load_json(rooted(args.segmented_l1_promotion_json))
+        if args.segmented_l1_promotion_json
+        else None,
         local_sram_capacity=_load_json(rooted(args.local_sram_capacity_json)) if args.local_sram_capacity_json else None,
     )
     args.out.parent.mkdir(parents=True, exist_ok=True)
