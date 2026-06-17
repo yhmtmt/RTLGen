@@ -1,0 +1,289 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-06-17T05:31:57.408756Z",
+  "item_id": "l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_llama7b_v1_r2",
+  "run_key": "l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_llama7b_v1_r2_run_5810710abb241836",
+  "layer": "layer2",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l2_campaign",
+  "source_commit": "9ca357bf7a6b593e4b0e7b6fe25ac10ee3e7f01a",
+  "review_metadata_source_commit": "9ca357bf7a6b593e4b0e7b6fe25ac10ee3e7f01a",
+  "objective": "Audit endpoint/router/SRAM composition for the corrected q12 reciprocal-LUT Llama7B endpoint frontier with explicit composition evidence promotion.",
+  "input_manifest": {
+    "sweeps": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/sweep_compare_33.json",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/sweep_compare_33.json"
+    ],
+    "configs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/config_nm1.json",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/config_nm2.json"
+    ],
+    "design_dirs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp"
+    ],
+    "macro_manifests": [
+      "runs/designs/npu_macros/gemm_compute_array_fp16_nm1_c250/macro_manifest.json",
+      "runs/designs/npu_macros/gemm_compute_array_fp16_2slot_c300/macro_manifest.json"
+    ],
+    "decoder_contract": {
+      "attention_kv_tile_sram_metrics": "runs/designs/sram/llama7b_attention_tile_buffers_v1/sram_metrics.json",
+      "attention_kv_tile_sram_metrics_summary": "runs/designs/sram/llama7b_attention_tile_buffers_v1/sram_metrics_summary.json",
+      "attention_kv_endpoint_ready_valid_service": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_endpoint_ready_valid_service__l2_decoder_attention_kv_endpoint_ready_valid_service_softmax_recip_lut_llama7b_v1.json",
+      "attention_kv_endpoint_router_sram_composition_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_endpoint_router_sram_composition__l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_llama7b_v1_r2.json",
+      "attention_kv_endpoint_full_onchip_service_schedule": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_endpoint_full_onchip_service_schedule__l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_softmax_recip_lut_llama7b_v1_r2.json",
+      "attention_kv_endpoint_router_sram_composition_scope": "Audit the selected endpoint service frontier against concrete endpoint, router, FIFO, and SRAM evidence. Quantify width/lane replication gaps and identify the exact L1 PPA points needed before treating the on-chip endpoint/router/SRAM composition as closed. HBM/DRAM service remains inherited unchanged.",
+      "attention_kv_endpoint_router_sram_composition_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_endpoint_router_sram_composition__l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_llama7b_v1_r2.md"
+    },
+    "generated_campaign": {
+      "path": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1/campaign__l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_llama7b_v1_r2.json",
+      "outputs": {
+        "report_md": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_llama7b_v1_r2/report.md",
+        "results_csv": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_llama7b_v1_r2/results.csv",
+        "campaign_dir": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_llama7b_v1_r2"
+      },
+      "clean_outputs": true,
+      "base_campaign_path": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1/campaign.json"
+    },
+    "candidate_manifests": [
+      "runs/candidates/nangate45/module_candidates.json"
+    ]
+  },
+  "recommendation": {
+    "arch_id": "mesh2d_locality_aware_cluster_tree_c16_b64",
+    "macro_mode": "decoder_frontier",
+    "objective_rank": 1,
+    "objective_score": "0.0",
+    "latency_ms_mean": 0.144262,
+    "energy_mj_mean": 2.7860165964e-05,
+    "critical_path_ns_mean": 5.557037432204143,
+    "die_area_um2_mean": 2250000.0,
+    "total_power_mw_mean": 0.193122,
+    "flow_elapsed_s_mean": 844.5733333333334,
+    "source": "decoder_evidence",
+    "decoder_model": "llm_decoder_attention_endpoint_router_sram_composition_audit_v1",
+    "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_endpoint_router_sram_composition__l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_llama7b_v1_r2.json",
+    "topology": "mesh2d",
+    "scheduler_policy": "locality_aware",
+    "schedule_policy": "prefetch_overlap",
+    "reduction_strategy": "cluster_tree",
+    "bank_arbiter_policy": "locality_first",
+    "cluster_count": 16,
+    "bank_count": 64,
+    "active_clusters": 16,
+    "latency_us": 3222.903773,
+    "sram_area_fraction": 0.35,
+    "compute_logic_area_fraction": 0.5,
+    "dominant_tile_resource": "shared_path",
+    "packet_payload_bytes": 128,
+    "link_width_bits": 2048,
+    "legacy_campaign_recommendation": {
+      "arch_id": "fp16_nm1",
+      "macro_mode": "flat_nomacro",
+      "objective_rank": 1,
+      "objective_score": "0.0",
+      "latency_ms_mean": 0.144262,
+      "energy_mj_mean": 2.7860165964e-05,
+      "critical_path_ns_mean": 5.557037432204143,
+      "die_area_um2_mean": 2250000.0,
+      "total_power_mw_mean": 0.193122,
+      "flow_elapsed_s_mean": 844.5733333333334
+    }
+  },
+  "objective_profiles": [],
+  "evaluation_record": {
+    "proposal_id": "prop_l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_v1",
+    "title": "Endpoint/router/SRAM composition for reciprocal-LUT Llama7B frontier",
+    "primary_question": "Does concrete endpoint/router/SRAM composition expose a width, replication, queue, or SRAM area gap that changes the selected Llama7B reciprocal-LUT frontier?",
+    "evaluation_mode": "frontier_detail",
+    "comparison_role": "frontier_closure",
+    "abstraction_layer": "decoder_attention_kv_endpoint_router_sram_composition",
+    "expected_direction": "close_recip_lut_endpoint_router_sram_composition_for_selected_frontier",
+    "expected_reason": "Use reciprocal-LUT ready/valid output and q12 endpoint service frontier to audit concrete endpoint/router/SRAM composition, with the composition audit promoted into the decision record.",
+    "summary": "Decoder endpoint/router/SRAM composition evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_endpoint_router_sram_composition__l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_llama7b_v1_r2.json: decision=composition_requires_follow_on_ppa; latency_us=3222.903773; topology=mesh2d; scheduler_policy=locality_aware; reduction_strategy=cluster_tree; cluster_count=16; bank_count=64; link_width_bits=2048; packet_payload_bytes=128; dominant_tile_resource=shared_path; endpoint_width_ratio_vs_measured_ppa=8; router_lanes_for_link=16; fifo_lanes_for_link=16; tile_sram_capacity_fraction_of_selected_local_capacity=0.032113; tile_sram_budget_area_fraction=0.142156; ready_valid_endpoint_passed=True; endpoint_ppa_width_matches_ready_valid_width=False; router_ppa_width_matches_link_width=False; fifo_ppa_width_matches_link_width=False; tile_sram_capacity_covers_selected_local_capacity=False; required_follow_on_ppa=endpoint_ppa_width_matches_ready_valid_width,router_ppa_width_matches_link_width,fifo_ppa_width_matches_link_width,full_local_capacity_sram_macro_profile_missing.",
+    "outcome": "composition_requires_follow_on_ppa",
+    "expectation_status": "unspecified"
+  },
+  "proposal_assessment": {
+    "proposal_id": "prop_l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_v1",
+    "title": "Endpoint/router/SRAM composition for reciprocal-LUT Llama7B frontier",
+    "kind": "architecture",
+    "primary_question": "Does concrete endpoint/router/SRAM composition expose a width, replication, queue, or SRAM area gap that changes the selected Llama7B reciprocal-LUT frontier?",
+    "evaluation_mode": "frontier_detail",
+    "comparison_role": "frontier_closure",
+    "outcome": "composition_requires_follow_on_ppa",
+    "summary": "Decoder endpoint/router/SRAM composition evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_endpoint_router_sram_composition__l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_llama7b_v1_r2.json: decision=composition_requires_follow_on_ppa; latency_us=3222.903773; topology=mesh2d; scheduler_policy=locality_aware; reduction_strategy=cluster_tree; cluster_count=16; bank_count=64; link_width_bits=2048; packet_payload_bytes=128; dominant_tile_resource=shared_path; endpoint_width_ratio_vs_measured_ppa=8; router_lanes_for_link=16; fifo_lanes_for_link=16; tile_sram_capacity_fraction_of_selected_local_capacity=0.032113; tile_sram_budget_area_fraction=0.142156; ready_valid_endpoint_passed=True; endpoint_ppa_width_matches_ready_valid_width=False; router_ppa_width_matches_link_width=False; fifo_ppa_width_matches_link_width=False; tile_sram_capacity_covers_selected_local_capacity=False; required_follow_on_ppa=endpoint_ppa_width_matches_ready_valid_width,router_ppa_width_matches_link_width,fifo_ppa_width_matches_link_width,full_local_capacity_sram_macro_profile_missing.",
+    "baseline_ref": null,
+    "baseline_item_id": null,
+    "matched_row_count": 0,
+    "matched_rows": [],
+    "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_endpoint_router_sram_composition__l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_llama7b_v1_r2.json",
+    "decoder_quality": {
+      "diagnosis": {},
+      "selected_frontier": {
+        "active_clusters": 16,
+        "bank_arbiter_policy": "locality_first",
+        "bank_count": 64,
+        "cluster_count": 16,
+        "compute_logic_area_fraction": 0.5,
+        "dominant_tile_resource": "shared_path",
+        "latency_us": 3222.903773,
+        "link_width_bits": 2048,
+        "local_sram_fraction": 0.25,
+        "packet_payload_bytes": 128,
+        "reduction_strategy": "cluster_tree",
+        "schedule_policy": "prefetch_overlap",
+        "scheduler_policy": "locality_aware",
+        "sram_area_fraction": 0.35,
+        "topology": "mesh2d"
+      },
+      "remaining_abstractions": [
+        "Router/FIFO PPA is lane-scaled from narrower measured primitives until wide-link L1 points are measured.",
+        "Endpoint ready/valid behavior is verified at 1024 bits, but endpoint PPA is still from the existing w128 wrapper.",
+        "Tile-local SRAM buffers have CACTI metrics, but the selected per-cluster local capacity pool is not yet a concrete SRAM macro set.",
+        "HBM/DRAM service remains inherited and intentionally outside this audit."
+      ],
+      "closure_flags": {
+        "endpoint_ppa_width_matches_ready_valid_width": false,
+        "fifo_ppa_width_matches_link_width": false,
+        "ready_valid_endpoint_passed": true,
+        "router_ppa_width_matches_link_width": false,
+        "tile_sram_capacity_covers_selected_local_capacity": false,
+        "tile_sram_profile_fits_sram_area_budget": true
+      },
+      "composition_quantities": {
+        "endpoint_width_ratio_vs_measured_ppa": 8,
+        "fifo_lanes_for_link": 16,
+        "link_width_bits": 2048,
+        "local_capacity_bytes_per_cluster": 19140624,
+        "packet_bits": 1024,
+        "packet_payload_bytes": 128,
+        "router_lanes_for_link": 16,
+        "router_lanes_for_packet": 8,
+        "scaled_endpoint_area_per_cluster_um2": 122344.2578,
+        "scaled_fifo_area_per_cluster_um2": 222123.69,
+        "scaled_local_service_area_all_clusters_um2": 6464844.1248,
+        "scaled_local_service_area_per_cluster_um2": 404052.7578,
+        "scaled_router_area_per_cluster_um2": 59584.81,
+        "sram_budget_area_um2": 280000000.0,
+        "tile_sram_allocated_bytes_per_cluster": 614656,
+        "tile_sram_budget_area_fraction": 0.142156,
+        "tile_sram_capacity_fraction_of_selected_local_capacity": 0.032113,
+        "tile_sram_total_area_um2_for_active_clusters": 39803772.916944005
+      },
+      "measured_primitives": {
+        "endpoint": {
+          "area_um2": 15293.032225,
+          "critical_path_ns": 0.7162,
+          "design": "l1_onchip_endpoint_w128_b4_eq8_bq4_wrapper",
+          "metrics_csv": "/tmp/rtlcp-worktree-o3b8kqqp/repo/runs/designs/noc/l1_onchip_endpoint_w128_b4_eq8_bq4_wrapper/metrics.csv",
+          "param_hash": "444485a4",
+          "power_mw": 0.00983,
+          "tag": "l1_memory_noc_primitives_nangate45_macro_frontier_d64a96fd",
+          "width_bits": 128
+        },
+        "fifo": {
+          "area_um2": 13882.730625,
+          "critical_path_ns": 0.2898,
+          "design": "l1_noc_fifo_w128_d16_wrapper",
+          "metrics_csv": "/tmp/rtlcp-worktree-o3b8kqqp/repo/runs/designs/noc/l1_noc_fifo_w128_d16_wrapper/metrics.csv",
+          "param_hash": "444485a4",
+          "power_mw": 0.00863,
+          "tag": "l1_memory_noc_primitives_nangate45_macro_frontier_d64a96fd",
+          "width_bits": 128
+        },
+        "router": {
+          "area_um2": 3724.050625,
+          "critical_path_ns": 0.2411,
+          "design": "l1_noc_router_p4_w128_wrapper",
+          "metrics_csv": "/tmp/rtlcp-worktree-o3b8kqqp/repo/runs/designs/noc/l1_noc_router_p4_w128_wrapper/metrics.csv",
+          "param_hash": "444485a4",
+          "power_mw": 0.00171,
+          "tag": "l1_memory_noc_primitives_nangate45_macro_frontier_d64a96fd",
+          "width_bits": 128
+        },
+        "sram_summary": {
+          "allocated_bytes": 614656,
+          "max_access_time_ns": 1.4124,
+          "total_area_um2": 2487735.8073090003,
+          "total_read_energy_pj": 374.6457,
+          "total_write_energy_pj": 572.2861999999999
+        }
+      },
+      "recommended_next_l1_points": [
+        {
+          "parameters": {
+            "bank_queue_depth": 16,
+            "banks": 4,
+            "endpoint_depth": 16,
+            "flit_bits": 1024
+          },
+          "primitive": "onchip_service_endpoint",
+          "reason": "ready/valid probe used DATA_W=1024 but selected PPA currently references w128 endpoint metrics"
+        },
+        {
+          "parameters": {
+            "flit_bits": 2048,
+            "ports": 4
+          },
+          "primitive": "noc_router",
+          "reason": "selected link is 2048 bits but current PPA references w128 router metrics"
+        },
+        {
+          "parameters": {
+            "depth": 16,
+            "flit_bits": 2048
+          },
+          "primitive": "noc_fifo",
+          "reason": "selected link is 2048 bits but current PPA references w128 FIFO metrics"
+        },
+        {
+          "parameters": {
+            "active_clusters": 16,
+            "local_capacity_bytes_per_cluster": 19140624
+          },
+          "primitive": "local_sram_capacity",
+          "reason": "tile-local SRAM buffers are measured, but the selected local-capacity pool is still capacity-estimated"
+        }
+      ],
+      "required_follow_on_ppa": [
+        "endpoint_ppa_width_matches_ready_valid_width",
+        "router_ppa_width_matches_link_width",
+        "fifo_ppa_width_matches_link_width",
+        "full_local_capacity_sram_macro_profile_missing"
+      ]
+    }
+  },
+  "source_refs": {
+    "best_point_json": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_llama7b_v1_r2/best_point.json",
+    "summary_csv": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_llama7b_v1_r2/summary.csv",
+    "results_csv": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_llama7b_v1_r2/results.csv",
+    "report_md": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_llama7b_v1_r2/report.md",
+    "focused_candidate_schedule_yml": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_llama7b_v1_r2/artifacts/mapper/fp16_nm1/tail_attn4_s256_h64/schedule.yml",
+    "focused_candidate_descriptors_bin": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_llama7b_v1_r2/artifacts/mapper/fp16_nm1/tail_attn4_s256_h64/descriptors.bin",
+    "focused_candidate_perf_trace_json": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_llama7b_v1_r2/artifacts/perf/fp16_nm1/tail_attn4_s256_h64/trace.json",
+    "focused_model_artifacts": [
+      {
+        "model_id": "tail_attn4_s256_h64",
+        "schedule_yml": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_llama7b_v1_r2/artifacts/mapper/fp16_nm1/tail_attn4_s256_h64/schedule.yml",
+        "descriptors_bin": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_llama7b_v1_r2/artifacts/mapper/fp16_nm1/tail_attn4_s256_h64/descriptors.bin",
+        "perf_trace_json": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_llama7b_v1_r2/artifacts/perf/fp16_nm1/tail_attn4_s256_h64/trace.json"
+      },
+      {
+        "model_id": "tail_attn6_s128_h64",
+        "schedule_yml": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_llama7b_v1_r2/artifacts/mapper/fp16_nm1/tail_attn6_s128_h64/schedule.yml",
+        "descriptors_bin": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_llama7b_v1_r2/artifacts/mapper/fp16_nm1/tail_attn6_s128_h64/descriptors.bin",
+        "perf_trace_json": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_llama7b_v1_r2/artifacts/perf/fp16_nm1/tail_attn6_s128_h64/trace.json"
+      },
+      {
+        "model_id": "tail_attn6_s256_h64",
+        "schedule_yml": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_llama7b_v1_r2/artifacts/mapper/fp16_nm1/tail_attn6_s256_h64/schedule.yml",
+        "descriptors_bin": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_llama7b_v1_r2/artifacts/mapper/fp16_nm1/tail_attn6_s256_h64/descriptors.bin",
+        "perf_trace_json": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_llama7b_v1_r2/artifacts/perf/fp16_nm1/tail_attn6_s256_h64/trace.json"
+      }
+    ],
+    "decoder_attention_kv_endpoint_router_sram_composition_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_endpoint_router_sram_composition__l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_llama7b_v1_r2.json",
+    "decoder_attention_kv_endpoint_router_sram_composition_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_endpoint_router_sram_composition__l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_llama7b_v1_r2.md"
+  }
+}

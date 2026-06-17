@@ -1,0 +1,142 @@
+{
+  "closure_flags": {
+    "endpoint_ppa_width_matches_ready_valid_width": false,
+    "fifo_ppa_width_matches_link_width": false,
+    "ready_valid_endpoint_passed": true,
+    "router_ppa_width_matches_link_width": false,
+    "tile_sram_capacity_covers_selected_local_capacity": false,
+    "tile_sram_profile_fits_sram_area_budget": true
+  },
+  "composition_quantities": {
+    "endpoint_width_ratio_vs_measured_ppa": 8,
+    "fifo_lanes_for_link": 16,
+    "link_width_bits": 2048,
+    "local_capacity_bytes_per_cluster": 19140624,
+    "packet_bits": 1024,
+    "packet_payload_bytes": 128,
+    "router_lanes_for_link": 16,
+    "router_lanes_for_packet": 8,
+    "scaled_endpoint_area_per_cluster_um2": 122344.2578,
+    "scaled_fifo_area_per_cluster_um2": 222123.69,
+    "scaled_local_service_area_all_clusters_um2": 6464844.1248,
+    "scaled_local_service_area_per_cluster_um2": 404052.7578,
+    "scaled_router_area_per_cluster_um2": 59584.81,
+    "sram_budget_area_um2": 280000000.0,
+    "tile_sram_allocated_bytes_per_cluster": 614656,
+    "tile_sram_budget_area_fraction": 0.142156,
+    "tile_sram_capacity_fraction_of_selected_local_capacity": 0.032113,
+    "tile_sram_total_area_um2_for_active_clusters": 39803772.916944005
+  },
+  "decision": "composition_requires_follow_on_ppa",
+  "measured_primitives": {
+    "endpoint": {
+      "area_um2": 15293.032225,
+      "critical_path_ns": 0.7162,
+      "design": "l1_onchip_endpoint_w128_b4_eq8_bq4_wrapper",
+      "metrics_csv": "/tmp/rtlcp-worktree-o3b8kqqp/repo/runs/designs/noc/l1_onchip_endpoint_w128_b4_eq8_bq4_wrapper/metrics.csv",
+      "param_hash": "444485a4",
+      "power_mw": 0.00983,
+      "tag": "l1_memory_noc_primitives_nangate45_macro_frontier_d64a96fd",
+      "width_bits": 128
+    },
+    "fifo": {
+      "area_um2": 13882.730625,
+      "critical_path_ns": 0.2898,
+      "design": "l1_noc_fifo_w128_d16_wrapper",
+      "metrics_csv": "/tmp/rtlcp-worktree-o3b8kqqp/repo/runs/designs/noc/l1_noc_fifo_w128_d16_wrapper/metrics.csv",
+      "param_hash": "444485a4",
+      "power_mw": 0.00863,
+      "tag": "l1_memory_noc_primitives_nangate45_macro_frontier_d64a96fd",
+      "width_bits": 128
+    },
+    "router": {
+      "area_um2": 3724.050625,
+      "critical_path_ns": 0.2411,
+      "design": "l1_noc_router_p4_w128_wrapper",
+      "metrics_csv": "/tmp/rtlcp-worktree-o3b8kqqp/repo/runs/designs/noc/l1_noc_router_p4_w128_wrapper/metrics.csv",
+      "param_hash": "444485a4",
+      "power_mw": 0.00171,
+      "tag": "l1_memory_noc_primitives_nangate45_macro_frontier_d64a96fd",
+      "width_bits": 128
+    },
+    "sram_summary": {
+      "allocated_bytes": 614656,
+      "max_access_time_ns": 1.4124,
+      "total_area_um2": 2487735.8073090003,
+      "total_read_energy_pj": 374.6457,
+      "total_write_energy_pj": 572.2861999999999
+    }
+  },
+  "model": "llm_decoder_attention_endpoint_router_sram_composition_audit_v1",
+  "recommended_next_l1_points": [
+    {
+      "parameters": {
+        "bank_queue_depth": 16,
+        "banks": 4,
+        "endpoint_depth": 16,
+        "flit_bits": 1024
+      },
+      "primitive": "onchip_service_endpoint",
+      "reason": "ready/valid probe used DATA_W=1024 but selected PPA currently references w128 endpoint metrics"
+    },
+    {
+      "parameters": {
+        "flit_bits": 2048,
+        "ports": 4
+      },
+      "primitive": "noc_router",
+      "reason": "selected link is 2048 bits but current PPA references w128 router metrics"
+    },
+    {
+      "parameters": {
+        "depth": 16,
+        "flit_bits": 2048
+      },
+      "primitive": "noc_fifo",
+      "reason": "selected link is 2048 bits but current PPA references w128 FIFO metrics"
+    },
+    {
+      "parameters": {
+        "active_clusters": 16,
+        "local_capacity_bytes_per_cluster": 19140624
+      },
+      "primitive": "local_sram_capacity",
+      "reason": "tile-local SRAM buffers are measured, but the selected local-capacity pool is still capacity-estimated"
+    }
+  ],
+  "remaining_abstractions": [
+    "Router/FIFO PPA is lane-scaled from narrower measured primitives until wide-link L1 points are measured.",
+    "Endpoint ready/valid behavior is verified at 1024 bits, but endpoint PPA is still from the existing w128 wrapper.",
+    "Tile-local SRAM buffers have CACTI metrics, but the selected per-cluster local capacity pool is not yet a concrete SRAM macro set.",
+    "HBM/DRAM service remains inherited and intentionally outside this audit."
+  ],
+  "required_follow_on_ppa": [
+    "endpoint_ppa_width_matches_ready_valid_width",
+    "router_ppa_width_matches_link_width",
+    "fifo_ppa_width_matches_link_width",
+    "full_local_capacity_sram_macro_profile_missing"
+  ],
+  "selected_frontier": {
+    "active_clusters": 16,
+    "bank_arbiter_policy": "locality_first",
+    "bank_count": 64,
+    "cluster_count": 16,
+    "compute_logic_area_fraction": 0.5,
+    "dominant_tile_resource": "shared_path",
+    "latency_us": 3222.903773,
+    "link_width_bits": 2048,
+    "local_sram_fraction": 0.25,
+    "packet_payload_bytes": 128,
+    "reduction_strategy": "cluster_tree",
+    "schedule_policy": "prefetch_overlap",
+    "scheduler_policy": "locality_aware",
+    "sram_area_fraction": 0.35,
+    "topology": "mesh2d"
+  },
+  "source_items": {
+    "endpoint_onchip": "l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_llama7b_v1",
+    "endpoint_ready_valid": "l2_decoder_attention_kv_endpoint_ready_valid_service_llama7b_v1",
+    "sram_profile": "llama7b_attention_tile_buffers_v1"
+  },
+  "version": 1
+}
