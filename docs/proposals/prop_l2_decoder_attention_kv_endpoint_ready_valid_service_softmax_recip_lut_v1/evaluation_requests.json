@@ -1,0 +1,25 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_endpoint_ready_valid_service_softmax_recip_lut_v1",
+  "source_commit": "20959c07c8223d68dd3c957661b356b9003d8482",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_kv_endpoint_ready_valid_service_softmax_recip_lut_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Derive and probe concrete ready/valid endpoint queue behavior for the corrected q12 reciprocal-LUT Llama7B endpoint full on-chip service frontier.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_kv_endpoint_ready_valid_service",
+      "comparison_role": "frontier_closure",
+      "paired_baseline_item_id": "l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_softmax_recip_lut_llama7b_v1_r2",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_softmax_recip_lut_llama7b_v1_r2"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "close_recip_lut_endpoint_ready_valid_service_for_selected_frontier",
+        "reason": "Use the corrected profile-complete q12 reciprocal-LUT endpoint on-chip frontier as the source for concrete ready/valid endpoint queue probing."
+      },
+      "status": "pending"
+    }
+  ]
+}

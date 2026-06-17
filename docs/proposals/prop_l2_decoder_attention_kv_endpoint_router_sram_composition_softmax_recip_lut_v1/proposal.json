@@ -1,0 +1,58 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_v1",
+  "created_utc": "2026-06-17T05:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Endpoint/router/SRAM composition for reciprocal-LUT Llama7B frontier",
+  "hypothesis": "The q12 reciprocal-LUT endpoint frontier remains selected when endpoint ready/valid service is composed with measured endpoint/router/FIFO/SRAM evidence.",
+  "direct_comparison": {
+    "primary_question": "Does concrete endpoint/router/SRAM composition expose a width, replication, queue, or SRAM area gap that changes the selected Llama7B reciprocal-LUT frontier?",
+    "include": [
+      "ready/valid endpoint service result for reciprocal-LUT q12 frontier",
+      "endpoint full on-chip service r2 result",
+      "router, FIFO, endpoint, and SRAM evidence paths"
+    ],
+    "exclude": [
+      "HBM/DRAM service replacement"
+    ],
+    "follow_on_broad_sweep": [
+      "measured SRAM rebalance or HBM/DRAM service closure if composition succeeds"
+    ]
+  },
+  "expected_benefit": [
+    "reduce the remaining on-chip endpoint/router/SRAM abstraction for the selected Llama7B frontier",
+    "identify exact L1 PPA gaps before treating the on-chip path as closed"
+  ],
+  "risks": [
+    "composition may reveal that additional L1 router/SRAM/endpoint PPA points are needed",
+    "HBM/DRAM service remains inherited after this step"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "task_type": "l2_campaign",
+      "item_id": "l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_llama7b_v1",
+      "evaluation_mode": "frontier_detail",
+      "objective": "endpoint_router_sram_composition_closure",
+      "cost_class": "low",
+      "abstraction_layer": "decoder_attention_kv_endpoint_router_sram_composition",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_kv_endpoint_ready_valid_service_softmax_recip_lut_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "close_recip_lut_endpoint_router_sram_composition_for_selected_frontier",
+        "reason": "Use the reciprocal-LUT ready/valid result and corrected q12 on-chip frontier to audit endpoint/router/SRAM composition."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_endpoint_full_onchip_service_schedule__l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_softmax_recip_lut_llama7b_v1_r2.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/audit_llm_decoder_attention_endpoint_router_sram_composition.py",
+    "runs/designs/sram/llama7b_attention_tile_buffers_v1/sram_metrics_summary.json"
+  ]
+}

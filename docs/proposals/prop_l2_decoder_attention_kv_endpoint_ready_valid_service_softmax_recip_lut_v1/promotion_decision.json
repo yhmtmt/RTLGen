@@ -1,0 +1,11 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_endpoint_ready_valid_service_softmax_recip_lut_v1",
+  "candidate_id": "",
+  "decision": "iterate",
+  "reason": "Awaiting ready/valid endpoint service result.",
+  "evidence_refs": [
+    "item:l2_decoder_attention_kv_endpoint_ready_valid_service_softmax_recip_lut_llama7b_v1"
+  ],
+  "next_action": "If the ready/valid probe succeeds, dispatch endpoint/router/SRAM composition for the same reciprocal-LUT frontier.",
+  "requires_human_approval": true
+}
