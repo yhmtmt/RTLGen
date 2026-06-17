@@ -1,0 +1,11 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_v1",
+  "candidate_id": "",
+  "decision": "iterate",
+  "reason": "Awaiting endpoint/router/SRAM composition audit.",
+  "evidence_refs": [
+    "item:l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_llama7b_v1"
+  ],
+  "next_action": "If composition succeeds, continue to SRAM rebalance or HBM/DRAM service closure.",
+  "requires_human_approval": true
+}
