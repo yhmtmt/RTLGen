@@ -33,6 +33,8 @@ def main() -> int:
     softmax_internal_pipeline_stages = int(manifest.get("softmax_internal_pipeline_stages", 0))
     softmax_latency_stages = int(manifest.get("softmax_latency_stages", 1))
     value_alignment_delay_stages = int(manifest.get("value_alignment_delay_stages", 0))
+    softmax_score_bits = int(manifest.get("softmax_score_bits", 8))
+    softmax_weight_bits = int(manifest.get("softmax_weight_bits", 8))
     if streams != 2:
         raise SystemExit(f"expected 2 streams, found {streams}")
     if f"module {top_name} " not in top_text:
@@ -48,8 +50,12 @@ def main() -> int:
         raise SystemExit("expected exactly one shared softmax instance")
     if "stream_buf_0" not in top_text or "stream_buf_1" not in top_text:
         raise SystemExit("missing dual stream buffer registers")
-    if softmax_impl not in {"exact_div", "pow2sum", "recip_lut"}:
+    if softmax_impl not in {"exact_div", "pow2sum", "recip_lut", "pwl_recip_lut"}:
         raise SystemExit(f"unsupported softmax_impl={softmax_impl}")
+    if not 2 <= softmax_score_bits <= 24:
+        raise SystemExit(f"unsupported softmax_score_bits={softmax_score_bits}")
+    if not 2 <= softmax_weight_bits <= 24:
+        raise SystemExit(f"unsupported softmax_weight_bits={softmax_weight_bits}")
     if softmax_latency_stages != 1 + softmax_internal_pipeline_stages:
         raise SystemExit("softmax latency must equal output register latency plus internal pipeline stages")
     if softmax_pipeline_stages:
@@ -100,6 +106,21 @@ def main() -> int:
             raise SystemExit("reciprocal-LUT replacement must not contain pow2 denominator shift logic")
         if "/ sum_weight" in top_text or "/ sum_weight_q" in top_text:
             raise SystemExit("reciprocal-LUT replacement must not contain a sum_weight divider")
+    if softmax_impl == "pwl_recip_lut":
+        if softmax_score_bits < 12 or softmax_weight_bits < 12:
+            raise SystemExit("PWL reciprocal softmax should keep at least 12-bit scores and weights")
+        for token in (
+            "function [ACCUM_BITS-1:0] pwl_weight",
+            "function [RECIPROCAL_WIDTH-1:0] reciprocal_lut",
+            "reciprocal_bucket",
+            "lane_scaled",
+        ):
+            if token not in top_text:
+                raise SystemExit(f"missing PWL reciprocal softmax token: {token}")
+        if "denom_shift" in top_text:
+            raise SystemExit("PWL reciprocal softmax must not contain pow2 denominator shift logic")
+        if "/ sum_weight" in top_text or "/ sum_weight_q" in top_text:
+            raise SystemExit("PWL reciprocal softmax must not contain a sum_weight divider")
     if equivalence_hash:
         if "result_hash <=" not in top_text:
             raise SystemExit("result_hash is not updated")
@@ -136,6 +157,8 @@ def main() -> int:
                 "value_streams": value_instances,
                 "equivalence_hash": equivalence_hash,
                 "softmax_impl": softmax_impl,
+                "softmax_score_bits": softmax_score_bits,
+                "softmax_weight_bits": softmax_weight_bits,
                 "softmax_pipeline_stages": softmax_pipeline_stages,
                 "softmax_internal_pipeline_stages": softmax_internal_pipeline_stages,
                 "softmax_latency_stages": softmax_latency_stages,
