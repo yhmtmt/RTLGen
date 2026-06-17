@@ -1168,6 +1168,146 @@ def test_consume_l2_result_frontier_endpoint_sram_noc_overrides_generic_recommen
             ] == report_rel
 
 
+def test_consume_l2_result_frontier_onchip_service_overrides_generic_recommendation() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            proposal_dir = repo_root / "docs" / "proposals" / "prop_l2_endpoint_onchip_service_v1"
+            _write(
+                proposal_dir / "proposal.json",
+                json.dumps(
+                    {
+                        "proposal_id": "prop_l2_endpoint_onchip_service_v1",
+                        "kind": "architecture",
+                        "title": "Endpoint on-chip service",
+                        "direct_comparison": {
+                            "primary_question": "Which explicit on-chip service policy is selected?"
+                        },
+                    },
+                    indent=2,
+                )
+                + "\n",
+            )
+            evidence_rel = (
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_kv_endpoint_full_onchip_service_schedule__l2_endpoint_onchip.json"
+            )
+            report_rel = (
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_kv_endpoint_full_onchip_service_schedule__l2_endpoint_onchip.md"
+            )
+            _write(
+                repo_root / evidence_rel,
+                json.dumps(
+                    {
+                        "version": 1,
+                        "model": "llm_decoder_attention_kv_onchip_service_schedule_llama7b_v1",
+                        "best": {
+                            "measured_l1_profile": "hd64_kv8_full_value_p8_ppc2_noc128_softmax_int8_q10",
+                            "topology": "mesh2d",
+                            "scheduler_policy": "locality_aware",
+                            "schedule_policy": "prefetch_overlap",
+                            "reduction_strategy": "cluster_tree",
+                            "bank_arbiter_policy": "locality_first",
+                            "cluster_count": 16,
+                            "bank_count": 64,
+                            "compute_source": "dense_gemm_tile",
+                            "compute_arch": "dense_gemm_16x8_k1_p1",
+                            "latency_us": 3222.903773,
+                            "total_cycles": 538848,
+                            "latency_slowdown_vs_sram_noc_cap": 0.993155,
+                            "endpoint_queue_depth_bytes": 32768,
+                            "bank_queue_depth_bytes": 32768,
+                            "router_latency_cycles_per_hop": 1,
+                            "packet_payload_bytes": 128,
+                            "onchip_shared_service_cycles": 1987,
+                            "dominant_tile_resource": "shared_path",
+                        },
+                        "top_rows": [
+                            {
+                                "measured_l1_profile": "hd64_kv8_full_value_p8_ppc2_noc128_softmax_int8_q10",
+                                "topology": "mesh2d",
+                                "scheduler_policy": "locality_aware",
+                                "schedule_policy": "prefetch_overlap",
+                                "reduction_strategy": "cluster_tree",
+                                "bank_arbiter_policy": "locality_first",
+                                "cluster_count": 16,
+                                "bank_count": 64,
+                                "compute_source": "dense_gemm_tile",
+                                "compute_arch": "dense_gemm_16x8_k1_p1",
+                                "latency_us": 3222.903773,
+                                "total_cycles": 538848,
+                                "dominant_tile_resource": "shared_path",
+                            }
+                        ],
+                    },
+                    indent=2,
+                )
+                + "\n",
+            )
+            _write(repo_root / report_rel, "# endpoint onchip\n")
+            item_id = _seed_campaign_work_item(
+                session,
+                repo_root,
+                item_id="l2_endpoint_onchip",
+                campaign_dir_rel="runs/campaigns/npu/endpoint_onchip_campaign",
+                summary_rows=(
+                    "scope,arch_id,macro_mode,objective_rank,latency_ms_mean,energy_mj_mean,critical_path_ns_mean,total_power_mw_mean,flow_elapsed_s_mean,throughput_infer_per_s_mean\n"
+                    "aggregate,fp16_nm1_demo,flat_nomacro,1,0.4,0.15,5.5,0.18,1000,1.0\n"
+                ),
+                proposal_path="docs/proposals/prop_l2_endpoint_onchip_service_v1",
+                comparison={"role": "frontier_revision"},
+            )
+            work_item = session.query(WorkItem).filter_by(item_id=item_id).one()
+            payload = copy.deepcopy(work_item.task_request.request_payload or {})
+            payload["developer_loop"]["evaluation"] = {
+                "mode": "frontier_detail",
+                "expected_direction": "iterate",
+                "expected_reason": "Use explicit on-chip service evidence for next architecture selection.",
+            }
+            payload["developer_loop"]["abstraction"] = {
+                "layer": "decoder_attention_kv_endpoint_full_onchip_service_schedule",
+            }
+            work_item.task_request.request_payload = payload
+            work_item.input_manifest = {
+                "decoder_contract": {
+                    "attention_kv_endpoint_full_onchip_service_schedule_out": evidence_rel,
+                    "attention_kv_endpoint_full_onchip_service_schedule_report": report_rel,
+                }
+            }
+            work_item.expected_outputs = [*(work_item.expected_outputs or []), evidence_rel, report_rel]
+            session.commit()
+
+            result = consume_l2_result(session, Layer2ConsumeRequest(repo_root=str(repo_root), item_id=item_id))
+
+            decision_payload = json.loads(
+                (repo_root / "control_plane" / "shadow_exports" / "l2_decisions" / f"{item_id}.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            recommendation = decision_payload["recommendation"]
+            assert result.recommended_arch_id == (
+                "mesh2d_locality_aware_cluster_tree_c16_b64_dense_gemm_16x8_k1_p1"
+            )
+            assert recommendation["source"] == "decoder_evidence"
+            assert recommendation["macro_mode"] == "dense_gemm_tile"
+            assert recommendation["schedule_policy"] == "prefetch_overlap"
+            assert recommendation["bank_arbiter_policy"] == "locality_first"
+            assert recommendation["latency_us"] == 3222.903773
+            assert recommendation["legacy_campaign_recommendation"]["arch_id"] == "fp16_nm1_demo"
+            assert decision_payload["proposal_assessment"]["outcome"] == "onchip_service_schedule_recorded"
+            assert decision_payload["source_refs"][
+                "decoder_attention_kv_endpoint_full_onchip_service_schedule_out"
+            ] == evidence_rel
+            assert decision_payload["source_refs"][
+                "decoder_attention_kv_endpoint_full_onchip_service_schedule_report"
+            ] == report_rel
+
+
 def test_consume_l2_result_frontier_attention_local_sram_capacity_uses_decoder_evidence() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"

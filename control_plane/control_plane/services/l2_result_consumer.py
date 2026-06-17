@@ -445,6 +445,12 @@ _DECODER_EVIDENCE_OUTPUT_KEYS: tuple[tuple[str, str], ...] = (
     ("attention_local_sram_capacity_out", "attention_local_sram_capacity_report"),
     ("attention_kv_measured_sram_rebalance_out", "attention_kv_measured_sram_rebalance_report"),
     ("attention_kv_measured_hbm_service_out", "attention_kv_measured_hbm_service_report"),
+    ("attention_kv_onchip_service_schedule_out", "attention_kv_onchip_service_schedule_report"),
+    (
+        "attention_kv_endpoint_full_onchip_service_schedule_out",
+        "attention_kv_endpoint_full_onchip_service_schedule_report",
+    ),
+    ("attention_kv_endpoint_ready_valid_service_out", "attention_kv_endpoint_ready_valid_service_report"),
     ("attention_kv_hbm_closed_onchip_schedule_out", "attention_kv_hbm_closed_onchip_schedule_report"),
     ("attention_kv_subtile_pipeline_schedule_out", "attention_kv_subtile_pipeline_schedule_report"),
     ("attention_kv_dual_stream_physical_feasibility_out", "attention_kv_dual_stream_physical_feasibility_report"),
@@ -557,6 +563,8 @@ def _decoder_frontier_recommendation(
 ) -> dict[str, Any] | None:
     best = evidence_payload.get("best")
     if not isinstance(best, dict) or not best:
+        best = evidence_payload.get("source_best")
+    if not isinstance(best, dict) or not best:
         return None
     model = str(evidence_payload.get("model", "")).strip()
     if not model.startswith("llm_decoder_"):
@@ -580,7 +588,9 @@ def _decoder_frontier_recommendation(
         "measured_l1_profile",
         "topology",
         "scheduler_policy",
+        "schedule_policy",
         "reduction_strategy",
+        "bank_arbiter_policy",
         "cluster_count",
         "bank_count",
         "active_clusters",
@@ -602,6 +612,12 @@ def _decoder_frontier_recommendation(
         "practical_noc_cap_source",
         "practical_per_cluster_noc_effective_bytes_per_cycle",
         "endpoint_bytes_per_cycle_per_cluster",
+        "latency_slowdown_vs_sram_noc_cap",
+        "endpoint_queue_depth_bytes",
+        "bank_queue_depth_bytes",
+        "router_latency_cycles_per_hop",
+        "packet_payload_bytes",
+        "onchip_shared_service_cycles",
         "tile_tokens",
         "tile_waves",
     ):
@@ -741,6 +757,63 @@ def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, 
         ):
             if key in best_dict:
                 parts.append(f"{key}={best_dict.get(key)}")
+        summary = "; ".join(parts)
+        return outcome, summary if summary.endswith(".") else summary + "."
+
+    if model == "llm_decoder_attention_kv_onchip_service_schedule_llama7b_v1":
+        best = evidence_payload.get("best")
+        best_dict = dict(best) if isinstance(best, dict) else {}
+        outcome = "onchip_service_schedule_recorded"
+        parts = [
+            f"Decoder on-chip SRAM/NoC service evidence recorded from {evidence_ref}: decision={outcome}",
+        ]
+        for key in (
+            "measured_l1_profile",
+            "latency_us",
+            "latency_slowdown_vs_sram_noc_cap",
+            "total_cycles",
+            "topology",
+            "scheduler_policy",
+            "schedule_policy",
+            "bank_arbiter_policy",
+            "cluster_count",
+            "bank_count",
+            "endpoint_queue_depth_bytes",
+            "bank_queue_depth_bytes",
+            "router_latency_cycles_per_hop",
+            "packet_payload_bytes",
+            "onchip_shared_service_cycles",
+            "dominant_tile_resource",
+        ):
+            if key in best_dict:
+                parts.append(f"{key}={best_dict.get(key)}")
+        summary = "; ".join(parts)
+        return outcome, summary if summary.endswith(".") else summary + "."
+
+    if model == "llm_decoder_attention_endpoint_ready_valid_service_probe_v1":
+        source_best = evidence_payload.get("source_best")
+        source_best_dict = dict(source_best) if isinstance(source_best, dict) else {}
+        decision = str(evidence_payload.get("decision", "")).strip()
+        outcome = decision or "endpoint_ready_valid_service_recorded"
+        parts = [
+            f"Decoder endpoint ready/valid service evidence recorded from {evidence_ref}: decision={outcome}",
+        ]
+        rtl_probe = evidence_payload.get("rtl_probe")
+        if isinstance(rtl_probe, dict):
+            for key in ("passed", "cycles", "max_endpoint_occupancy", "max_bank_occupancy", "stall_cycles"):
+                if key in rtl_probe:
+                    parts.append(f"rtl_{key}={rtl_probe.get(key)}")
+        for key in (
+            "latency_us",
+            "schedule_policy",
+            "bank_arbiter_policy",
+            "endpoint_queue_depth_bytes",
+            "bank_queue_depth_bytes",
+            "router_latency_cycles_per_hop",
+            "packet_payload_bytes",
+        ):
+            if key in source_best_dict:
+                parts.append(f"{key}={source_best_dict.get(key)}")
         summary = "; ".join(parts)
         return outcome, summary if summary.endswith(".") else summary + "."
 

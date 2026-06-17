@@ -4868,10 +4868,16 @@ def _decoder_attention_kv_endpoint_full_onchip_service_schedule_evidence(
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_kv_endpoint_full_onchip_service_schedule__{item_id}.json"
     report = f"{base}/decoder_attention_kv_endpoint_full_onchip_service_schedule__{item_id}.md"
-    endpoint_full_search = (
-        f"{base}/decoder_attention_kv_endpoint_sram_noc_full_search_schedule__"
-        "l2_decoder_attention_kv_endpoint_sram_noc_full_search_schedule_llama7b_v1.json"
-    )
+    if "softmax_recip_lut" in item_id:
+        endpoint_full_search = (
+            f"{base}/decoder_attention_kv_endpoint_sram_noc_full_search_schedule__"
+            "l2_decoder_attention_kv_endpoint_sram_noc_full_search_softmax_recip_lut_llama7b_v1_r2.json"
+        )
+    else:
+        endpoint_full_search = (
+            f"{base}/decoder_attention_kv_endpoint_sram_noc_full_search_schedule__"
+            "l2_decoder_attention_kv_endpoint_sram_noc_full_search_schedule_llama7b_v1.json"
+        )
     return {
         "inputs": {
             "attention_kv_endpoint_sram_noc_full_search_schedule": endpoint_full_search,
