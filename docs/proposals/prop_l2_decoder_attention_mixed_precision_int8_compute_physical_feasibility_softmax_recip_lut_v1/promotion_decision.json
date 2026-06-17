@@ -1,0 +1,15 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_mixed_precision_int8_compute_physical_feasibility_softmax_recip_lut_v1",
+  "candidate_id": "l2_decoder_attention_mixed_precision_int8_compute_physical_feasibility_softmax_recip_lut_llama7b_v1",
+  "decision": "iterate",
+  "reason": "Decoder mixed-precision int8-compute physical feasibility evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_precision_int8_compute_physical_feasibility__l2_decoder_attention_mixed_precision_int8_compute_physical_feasibility_softmax_recip_lut_llama7b_v1.json: decision=dual_stream_feasible; precision_profile=q8_k8_v6_a24_s8_w8_recip_lut_q10_int8_compute; best_requested_mode=dual_mac; best_requested_latency_us=1575.373891; best_requested_area_fit=True; best_requested_logic_slack_um2=216801992.1716; best_requested_compute_area_over_budget_um2=0.0; best_requested_required_compute_density_gain=0.452383; best_requested_compute_substitution_enabled=True; best_requested_substituted_compute_arch=dense_gemm_int8_16x8_k1_p1; best_requested_substituted_compute_area_um2=89549280.0; best_requested_compute_clock_ok=True; best_feasible_mode=dual_mac; best_feasible_latency_us=1575.373891; recommended_next_step=promote dual-stream schedule into a measured RTL/PPA wrapper.",
+  "evidence_refs": [
+    "item:l2_decoder_attention_mixed_precision_int8_compute_physical_feasibility_softmax_recip_lut_llama7b_v1",
+    "run:l2_decoder_attention_mixed_precision_int8_compute_physical_feasibility_softmax_recip_lut_llama7b_v1_run_796905f7e2a4d756",
+    "artifact:control_plane/shadow_exports/l2_decisions/l2_decoder_attention_mixed_precision_int8_compute_physical_feasibility_softmax_recip_lut_llama7b_v1.json",
+    "pr:#913",
+    "https://github.com/yhmtmt/RTLGen/pull/913"
+  ],
+  "next_action": "inspect follow-on work after l2_decoder_attention_mixed_precision_int8_compute_physical_feasibility_softmax_recip_lut_llama7b_v1",
+  "requires_human_approval": false
+}

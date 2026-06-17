@@ -20,7 +20,13 @@
       "expected_result": {
         "direction": "recover_dual_mac_with_int8_compute",
         "reason": "The job should record whether the current softmax-recip 1575.373891 us dual_mac schedule becomes physically feasible with measured int8 dense compute."
-      }
+      },
+      "status": "merged",
+      "merged_pr_number": 913,
+      "merge_commit": "43ffe90d218d19eaa30683f0aa423634600a8265",
+      "merged_utc": "2026-06-17T21:11:48.766301Z",
+      "notes": "Merged via PR #913 and merge 43ffe90d218d19eaa30683f0aa423634600a8265 at 2026-06-17T21:11:48.766301Z."
     }
-  ]
+  ],
+  "source_commit": "1f7289b71ec4d64e0c8b84651091fb6e29f48b8d"
 }

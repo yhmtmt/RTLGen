@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_mixed_precision_int8_compute_physical_feasibility_softmax_recip_lut_v1",
+  "decision": "iterate",
+  "pr_number": 913,
+  "merge_commit": "43ffe90d218d19eaa30683f0aa423634600a8265",
+  "merged_utc": "2026-06-17T21:11:48.766301Z"
+}
