@@ -21,8 +21,11 @@ than free or heuristic assumptions.
    - Scope: score max, exponent approximation, sum accumulation, reciprocal
      normalization, and normalized weight output.
    - First measurement: `l1_decoder_attention_softmax_weight_generator_v1`.
-   - First L2 consumer: add the selected measured softmax profile as per-cluster
-     local overhead and rerun the clustered schedule.
+   - Current follow-up: `prop_l2_decoder_attention_kv_endpoint_sram_noc_softmax_recip_lut_frontier_v1`
+     measures the missing standalone q8 reciprocal-LUT softmax-weight profile
+     and reruns the endpoint SRAM/NoC full search across q8/q10/q12 local-cost
+     profiles. This keeps the standalone softmax-weight accounting boundary
+     separate from the wider composed dual-stream datapath evidence.
 
 2. SRAM timing and energy
    - Scope: tile-local score/value buffering, KV tile reads, partial-value

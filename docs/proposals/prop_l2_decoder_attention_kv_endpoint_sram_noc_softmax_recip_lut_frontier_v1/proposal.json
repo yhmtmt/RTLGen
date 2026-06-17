@@ -1,0 +1,80 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_endpoint_sram_noc_softmax_recip_lut_frontier_v1",
+  "created_utc": "2026-06-17T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Llama7B endpoint SRAM/NoC frontier with reciprocal-LUT softmax profiles",
+  "hypothesis": "The current endpoint SRAM/NoC full-search frontier is still fixed to the q10 standalone softmax-weight profile. Measuring q8 under the same standalone softmax-weight boundary and rerunning the endpoint full search across q8/q10/q12 will expose whether the lower-cost q8 reciprocal-LUT point changes the best Llama7B token-throughput, energy, area, and precision tradeoff.",
+  "direct_comparison": {
+    "primary_question": "After q8 standalone reciprocal-LUT softmax PPA is available, does the practical endpoint SRAM/NoC full search select q8, q10, or q12 as the best measured softmax precision point?",
+    "include": [
+      "new q8 standalone attention softmax-weight generator PPA under the existing q10/q12/q16 flow",
+      "generated q8/q10/q12 endpoint local-cost profile file using the same local datapath, FIFO, router, and endpoint boundary",
+      "endpoint SRAM/NoC full-search regeneration over the existing topology/scheduler pair matrix",
+      "practical SRAM bank service, endpoint port, local-buffer, command, and reducer sensitivity",
+      "precision profile selected in the best and top-ranked rows"
+    ],
+    "exclude": [
+      "do not use composed dual-stream metrics as a drop-in replacement for standalone softmax-weight cost",
+      "do not change HBM/DRAM bandwidth or service policy",
+      "do not introduce KV sharing or other precision changes beyond softmax reciprocal width",
+      "do not run new dense GEMM tile PPA"
+    ],
+    "follow_on_broad_sweep": [
+      "if q8 is selected, promote it as the current softmax cost profile only after quality gates remain acceptable",
+      "if q10 or q12 is selected, retain q8 as PPA-only evidence and keep the selected profile in the Llama7B frontier",
+      "after precision selection, proceed to the detailed on-chip SRAM/endpoint arbitration model for the selected topology"
+    ]
+  },
+  "expected_benefit": [
+    "remove the q10-only softmax precision assumption from the endpoint SRAM/NoC frontier",
+    "keep the local-cost accounting boundary consistent with previous Llama7B schedule models",
+    "turn the merged reciprocal-LUT quality/PPA result into a directly ranked Llama7B architecture choice"
+  ],
+  "risks": [
+    "q8 standalone softmax-weight PPA must be measured before the L2 rerun can execute",
+    "the L2 search remains a service-envelope model, not cycle-accurate SRAM/NoC RTL",
+    "quality evidence is still proxy-level and must not be interpreted as final Llama7B perplexity"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "task_type": "l1_sweep",
+      "evaluation_mode": "frontier_detail",
+      "objective": "softmax_recip_lut_q8_standalone_weight_generator_ppa",
+      "cost_class": "small",
+      "expected_result": {
+        "direction": "measure_q8_softmax_weight_profile",
+        "reason": "The result should provide q8 standalone reciprocal-LUT softmax-weight PPA under the same boundary as the existing q10/q12/q16 profiles."
+      }
+    },
+    {
+      "task_type": "l2_campaign",
+      "evaluation_mode": "frontier_detail",
+      "objective": "endpoint_sram_noc_full_search_softmax_recip_lut_precision_frontier",
+      "cost_class": "medium",
+      "depends_on_item_ids": [
+        "l1_decoder_attention_softmax_weight_generator_q8_v1",
+        "l2_decoder_attention_kv_endpoint_sram_noc_full_search_schedule_llama7b_v1",
+        "l2_decoder_attention_softmax_recip_lut_quality_llama7b_v1_r3"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "rank_q8_q10_q12_softmax_profiles_in_endpoint_sram_noc_frontier",
+        "reason": "The result should report which reciprocal-LUT softmax precision profile is selected when practical endpoint SRAM/NoC caps are applied."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_endpoint_sram_noc_full_search_schedule__l2_decoder_attention_kv_endpoint_sram_noc_full_search_schedule_llama7b_v1.json",
+    "runs/campaigns/npu/l1_measured_costs/llama7b_attention_local_costs_all_measured_endpoint_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_precision_quality__l2_decoder_attention_softmax_recip_lut_quality_llama7b_v1_r3.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/build_llama7b_attention_recip_lut_local_costs.py",
+    "npu/eval/estimate_llm_decoder_attention_kv_sram_noc_constrained_schedule.py",
+    "docs/proposals/prop_l1_decoder_attention_softmax_recip_lut_frontier_v1/analysis_report.md"
+  ]
+}
