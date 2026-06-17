@@ -973,6 +973,10 @@ def generate_l1_sweep_task(session: Session, request: Layer1SweepGenerateRequest
     existing.acceptance_rules = payload["task"]["acceptance"]
     existing.source_commit = source_commit
     existing.trial_policy_json = ((payload.get("developer_loop") or {}).get("evaluation") or {}).get("trial_policy") or {}
+    if existing.state == WorkItemState.FAILED:
+        existing.state = WorkItemState.DISPATCH_PENDING
+        existing.assigned_machine_key = None
+        existing.queue_snapshot_path = None
     session.commit()
     return Layer1TaskGenerateResult(
         item_id=item_id,
