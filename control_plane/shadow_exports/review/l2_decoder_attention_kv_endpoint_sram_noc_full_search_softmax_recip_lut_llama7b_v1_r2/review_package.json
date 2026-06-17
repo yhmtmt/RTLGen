@@ -1,8 +1,8 @@
 {
   "version": 0.1,
-  "generated_utc": "2026-06-17T03:55:22.457438Z",
-  "control_plane_source_commit": "24e04c7e691f2f6ad5b44d2db02568474fb550a5",
-  "review_metadata_source_commit": "24e04c7e691f2f6ad5b44d2db02568474fb550a5",
+  "generated_utc": "2026-06-17T04:07:52.418445Z",
+  "control_plane_source_commit": "adb7d0b74bb2132be56604cca83fa20fd774fbd1",
+  "review_metadata_source_commit": "adb7d0b74bb2132be56604cca83fa20fd774fbd1",
   "item_id": "l2_decoder_attention_kv_endpoint_sram_noc_full_search_softmax_recip_lut_llama7b_v1_r2",
   "run_key": "l2_decoder_attention_kv_endpoint_sram_noc_full_search_softmax_recip_lut_llama7b_v1_r2_run_e7cb079384f2ed64",
   "layer": "layer2",
@@ -222,10 +222,10 @@
     "kind": "decision_proposal",
     "path": "control_plane/shadow_exports/l2_decisions/l2_decoder_attention_kv_endpoint_sram_noc_full_search_softmax_recip_lut_llama7b_v1_r2.json",
     "storage_mode": "repo",
-    "sha256": "71655fa1434fba1c41a259531064721c8bba154d61536d6b14ca724168d5bff5",
+    "sha256": "5ac0f18ba4826072e3e57ff5b17a9895534c3732c6627bb6a5b45f6bff637e98",
     "payload": {
       "version": 0.1,
-      "generated_utc": "2026-06-17T03:55:22.316307Z",
+      "generated_utc": "2026-06-17T04:07:06.011468Z",
       "item_id": "l2_decoder_attention_kv_endpoint_sram_noc_full_search_softmax_recip_lut_llama7b_v1_r2",
       "run_key": "l2_decoder_attention_kv_endpoint_sram_noc_full_search_softmax_recip_lut_llama7b_v1_r2_run_e7cb079384f2ed64",
       "layer": "layer2",
@@ -233,7 +233,7 @@
       "platform": "nangate45",
       "task_type": "l2_campaign",
       "source_commit": "24e04c7e691f2f6ad5b44d2db02568474fb550a5",
-      "review_metadata_source_commit": "24e04c7e691f2f6ad5b44d2db02568474fb550a5",
+      "review_metadata_source_commit": "adb7d0b74bb2132be56604cca83fa20fd774fbd1",
       "objective": "Regenerate endpoint SRAM/NoC full-search Llama7B frontier while ranking q8/q10/q12 reciprocal-LUT softmax local-cost profiles; r2 supersedes the generic-campaign #874 run generated from stale control-plane code.",
       "input_manifest": {
         "sweeps": [
@@ -276,8 +276,8 @@
         ]
       },
       "recommendation": {
-        "arch_id": "fp16_nm1",
-        "macro_mode": "flat_nomacro",
+        "arch_id": "mesh2d_locality_aware_cluster_tree_c16_b64_dense_gemm_16x8_k1_p1",
+        "macro_mode": "dense_gemm_tile",
         "objective_rank": 1,
         "objective_score": "0.0",
         "latency_ms_mean": 0.028907999999999996,
@@ -285,9 +285,124 @@
         "critical_path_ns_mean": 5.557037432204143,
         "die_area_um2_mean": 2250000.0,
         "total_power_mw_mean": 0.193122,
-        "flow_elapsed_s_mean": 848.418
+        "flow_elapsed_s_mean": 848.418,
+        "source": "decoder_evidence",
+        "decoder_model": "llm_decoder_attention_kv_sram_noc_constrained_schedule_llama7b_v1",
+        "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_endpoint_sram_noc_full_search_schedule__l2_decoder_attention_kv_endpoint_sram_noc_full_search_softmax_recip_lut_llama7b_v1_r2.json",
+        "measured_l1_profile": "hd64_kv8_full_value_p8_ppc2_noc128_softmax_int8_q8",
+        "topology": "mesh2d",
+        "scheduler_policy": "locality_aware",
+        "reduction_strategy": "cluster_tree",
+        "cluster_count": 16,
+        "bank_count": 64,
+        "active_clusters": 16,
+        "active_banks": 64,
+        "die_area_mm2": 800.0,
+        "compute_arch": "dense_gemm_16x8_k1_p1",
+        "compute_replica_count": 856,
+        "macs_per_cycle": 109568,
+        "latency_us": 3244.14864,
+        "total_cycles": 542400,
+        "layer_cycles": 16950,
+        "clock_ns": 5.9811,
+        "logic_area_used_um2": 399967698.4688,
+        "logic_power_mw": 8132.97568,
+        "sram_area_fraction": 0.35,
+        "compute_logic_area_fraction": 0.5,
+        "total_sram_mib": 1168.251038,
+        "dominant_tile_resource": "shared_path",
+        "practical_noc_cap_source": "endpoint",
+        "practical_per_cluster_noc_effective_bytes_per_cycle": 108.8,
+        "endpoint_bytes_per_cycle_per_cluster": 108.8,
+        "tile_tokens": 1024,
+        "tile_waves": 8,
+        "legacy_campaign_recommendation": {
+          "arch_id": "fp16_nm1",
+          "macro_mode": "flat_nomacro",
+          "objective_rank": 1,
+          "objective_score": "0.0",
+          "latency_ms_mean": 0.028907999999999996,
+          "energy_mj_mean": 5.582770776e-06,
+          "critical_path_ns_mean": 5.557037432204143,
+          "die_area_um2_mean": 2250000.0,
+          "total_power_mw_mean": 0.193122,
+          "flow_elapsed_s_mean": 848.418
+        }
       },
-      "objective_profiles": [],
+      "objective_profiles": [
+        {
+          "profile": "hd64_kv8_full_value_p8_ppc2_noc128_softmax_int8_q8",
+          "rank_in_decoder_frontier": 1,
+          "best_arch_id": "mesh2d_locality_aware_cluster_tree_c16_b64_dense_gemm_16x8_k1_p1",
+          "best_macro_mode": "dense_gemm_tile",
+          "latency_us": 3244.14864,
+          "total_cycles": 542400,
+          "layer_cycles": 16950,
+          "clock_ns": 5.9811,
+          "logic_area_used_um2": 399967698.4688,
+          "logic_power_mw": 8132.97568,
+          "measured_l1_overhead_area_um2": 3319554.4688,
+          "measured_l1_overhead_power_mw": 0.97568,
+          "softmax_weight_generator_area_um2": 38032.8004,
+          "softmax_weight_generator_power_mw": 0.00667,
+          "softmax_weight_generator_clock_ns": 5.5809,
+          "topology": "mesh2d",
+          "scheduler_policy": "locality_aware",
+          "reduction_strategy": "cluster_tree",
+          "cluster_count": 16,
+          "bank_count": 64,
+          "die_area_mm2": 800.0,
+          "dominant_tile_resource": "shared_path"
+        },
+        {
+          "profile": "hd64_kv8_full_value_p8_ppc2_noc128_softmax_int8_q10",
+          "rank_in_decoder_frontier": 9,
+          "best_arch_id": "mesh2d_locality_aware_cluster_tree_c16_b64_dense_gemm_16x8_k1_p1",
+          "best_macro_mode": "dense_gemm_tile",
+          "latency_us": 3244.14864,
+          "total_cycles": 542400,
+          "layer_cycles": 16950,
+          "clock_ns": 5.9811,
+          "logic_area_used_um2": 399995594.68,
+          "logic_power_mw": 8132.9456,
+          "measured_l1_overhead_area_um2": 3347450.68,
+          "measured_l1_overhead_power_mw": 0.9456,
+          "softmax_weight_generator_area_um2": 39776.3136,
+          "softmax_weight_generator_power_mw": 0.00479,
+          "softmax_weight_generator_clock_ns": 5.5948,
+          "topology": "mesh2d",
+          "scheduler_policy": "locality_aware",
+          "reduction_strategy": "cluster_tree",
+          "cluster_count": 16,
+          "bank_count": 64,
+          "die_area_mm2": 800.0,
+          "dominant_tile_resource": "shared_path"
+        },
+        {
+          "profile": "hd64_kv8_full_value_p8_ppc2_noc128_softmax_int8_q12",
+          "rank_in_decoder_frontier": 17,
+          "best_arch_id": "mesh2d_locality_aware_cluster_tree_c16_b64_dense_gemm_16x8_k1_p1",
+          "best_macro_mode": "dense_gemm_tile",
+          "latency_us": 3244.14864,
+          "total_cycles": 542400,
+          "layer_cycles": 16950,
+          "clock_ns": 5.9811,
+          "logic_area_used_um2": 399591889.5248,
+          "logic_power_mw": 8123.59136,
+          "measured_l1_overhead_area_um2": 3407119.5248,
+          "measured_l1_overhead_power_mw": 1.09136,
+          "softmax_weight_generator_area_um2": 43505.6164,
+          "softmax_weight_generator_power_mw": 0.0139,
+          "softmax_weight_generator_clock_ns": 5.746,
+          "topology": "mesh2d",
+          "scheduler_policy": "locality_aware",
+          "reduction_strategy": "cluster_tree",
+          "cluster_count": 16,
+          "bank_count": 64,
+          "die_area_mm2": 800.0,
+          "dominant_tile_resource": "shared_path"
+        }
+      ],
       "evaluation_record": {
         "proposal_id": "prop_l2_decoder_attention_kv_endpoint_sram_noc_softmax_recip_lut_frontier_v1",
         "title": "Llama7B endpoint SRAM/NoC frontier with reciprocal-LUT softmax profiles",
@@ -297,8 +412,8 @@
         "abstraction_layer": "decoder_attention_kv_endpoint_sram_noc_full_search_softmax_recip_lut_schedule",
         "expected_direction": "rank_q8_q10_q12_softmax_profiles_in_endpoint_sram_noc_frontier",
         "expected_reason": "Rank q8/q10/q12 reciprocal-LUT softmax local-cost profiles under practical endpoint SRAM/NoC caps.",
-        "summary": "Ranking/frontier evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.",
-        "outcome": "ranking_recorded",
+        "summary": "Decoder endpoint SRAM/NoC frontier evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_endpoint_sram_noc_full_search_schedule__l2_decoder_attention_kv_endpoint_sram_noc_full_search_softmax_recip_lut_llama7b_v1_r2.json: decision=endpoint_sram_noc_frontier_recorded; measured_l1_profile=hd64_kv8_full_value_p8_ppc2_noc128_softmax_int8_q8; latency_us=3244.14864; total_cycles=542400; topology=mesh2d; scheduler_policy=locality_aware; reduction_strategy=cluster_tree; cluster_count=16; bank_count=64; compute_replica_count=856; macs_per_cycle=109568; dominant_tile_resource=shared_path; practical_noc_cap_source=endpoint.",
+        "outcome": "endpoint_sram_noc_frontier_recorded",
         "expectation_status": "unspecified"
       },
       "proposal_assessment": {
@@ -308,12 +423,372 @@
         "primary_question": "After q8 standalone reciprocal-LUT softmax PPA is available, does the practical endpoint SRAM/NoC full search select q8, q10, or q12 as the best measured softmax precision point?",
         "evaluation_mode": "frontier_detail",
         "comparison_role": "frontier_revision",
-        "outcome": "ranking_recorded",
-        "summary": "Ranking/frontier evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.",
+        "outcome": "endpoint_sram_noc_frontier_recorded",
+        "summary": "Decoder endpoint SRAM/NoC frontier evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_endpoint_sram_noc_full_search_schedule__l2_decoder_attention_kv_endpoint_sram_noc_full_search_softmax_recip_lut_llama7b_v1_r2.json: decision=endpoint_sram_noc_frontier_recorded; measured_l1_profile=hd64_kv8_full_value_p8_ppc2_noc128_softmax_int8_q8; latency_us=3244.14864; total_cycles=542400; topology=mesh2d; scheduler_policy=locality_aware; reduction_strategy=cluster_tree; cluster_count=16; bank_count=64; compute_replica_count=856; macs_per_cycle=109568; dominant_tile_resource=shared_path; practical_noc_cap_source=endpoint.",
         "baseline_ref": null,
         "baseline_item_id": null,
         "matched_row_count": 0,
-        "matched_rows": []
+        "matched_rows": [],
+        "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_endpoint_sram_noc_full_search_schedule__l2_decoder_attention_kv_endpoint_sram_noc_full_search_softmax_recip_lut_llama7b_v1_r2.json",
+        "decoder_quality": {
+          "diagnosis": {},
+          "best": {
+            "active_banks": 64,
+            "active_clusters": 16,
+            "aggregate_noc_effective_bytes_per_cycle": 3853.5168,
+            "attention_heads": 32,
+            "bank_count": 64,
+            "bank_placement": "per_cluster_local",
+            "base_cross_tile_reduction_cycles": 165,
+            "clock_ns": 5.9811,
+            "cluster_count": 16,
+            "command_cycles_per_tile": 0,
+            "command_cycles_per_wave": 0,
+            "command_dispatch_cycles": 0,
+            "compute_arch": "dense_gemm_16x8_k1_p1",
+            "compute_area_um2": 396648144.0,
+            "compute_array_budget_after_measured_l1_um2": 396680445.5312,
+            "compute_budget_um2": 400000000.0,
+            "compute_logic_area_fraction": 0.5,
+            "compute_power_mw": 8132.0,
+            "compute_replica_count": 856,
+            "compute_source": "dense_gemm_tile",
+            "cross_tile_reduction_cycles": 165,
+            "cross_tile_reduction_noc_cycles": 125,
+            "cross_tile_reduction_payload_bytes": 133120,
+            "cross_tile_reduction_vector_cycles": 5,
+            "dense_array_m": 16,
+            "dense_array_n": 8,
+            "dense_k_unroll": 1,
+            "dense_pipeline_stages": 1,
+            "die_area_mm2": 800.0,
+            "dominant_tile_resource": "shared_path",
+            "effective_hbm_bytes_per_cycle": 41341.3632,
+            "endpoint_aggregate_bytes_per_cycle": 1740.8,
+            "endpoint_bytes_per_cycle_per_cluster": 108.8,
+            "endpoint_efficiency": 0.85,
+            "endpoint_port_bytes_per_cycle": 64.0,
+            "endpoint_ports_per_cluster": 2,
+            "hbm_byte_share": 0.714782,
+            "hidden_size": 4096,
+            "kv_bits": 8,
+            "kv_cache_mib": 4096.0,
+            "kv_heads": 4,
+            "kv_sharing": "gqa8",
+            "kv_write_cycles": 1,
+            "label": "llama7b_proxy",
+            "latency_slowdown_vs_topology_derived": 1.520452,
+            "latency_us": 3244.14864,
+            "layer_cycles": 16950,
+            "layers": 32,
+            "link_width_bits": 2048,
+            "local_buffer_multiplier": 1.0,
+            "local_byte_share": 0.071304,
+            "local_capacity_bytes_per_cluster": 19140624,
+            "local_capacity_mib": 292.062759,
+            "local_datapath_area_um2": 139416.358225,
+            "local_datapath_clock_ns": 0.8235,
+            "local_datapath_metrics_csv": "runs/designs/activations/attention_kv_full_value_hd64_kv8_tl16_b128_p8_ppc2_w24_a40_wrapper/metrics.csv",
+            "local_datapath_power_mw": 0.0341,
+            "local_reduction_cycles": 40,
+            "local_sram_fraction": 0.25,
+            "logic_area_slack_um2": 32301.5312,
+            "logic_area_used_um2": 399967698.4688,
+            "logic_power_mw": 8132.97568,
+            "macs_per_cycle": 109568,
+            "measured_block_area_um2": 463374.0,
+            "measured_block_clock_ns": 5.9811,
+            "measured_block_macs_per_cycle": 128,
+            "measured_block_power_mw": 9.5,
+            "measured_l1_overhead_area_um2": 3319554.4688,
+            "measured_l1_overhead_clock_ns": 5.5809,
+            "measured_l1_overhead_power_mw": 0.97568,
+            "measured_l1_profile": "hd64_kv8_full_value_p8_ppc2_noc128_softmax_int8_q8",
+            "metrics_csv": "runs/designs/npu_blocks/npu_dense_gemm_tile_fp16_16x8_k1_p1/metrics.csv",
+            "metrics_param_hash": "aed31ef8",
+            "metrics_tag": "npu_dense_gemm_tile_v2_scale_hier",
+            "noc_bandwidth_bytes_per_cycle": 27201.29505882353,
+            "noc_fifo_area_um2": 11606.830225,
+            "noc_fifo_clock_ns": 0.2965,
+            "noc_fifo_metrics_csv": "runs/designs/noc/l1_noc_fifo_w128_d16_wrapper/metrics.csv",
+            "noc_fifo_per_cluster": 1,
+            "noc_fifo_power_mw": 0.00862,
+            "noc_hops": 6,
+            "noc_router_area_um2": 3123.133225,
+            "noc_router_clock_ns": 0.2424,
+            "noc_router_metrics_csv": "runs/designs/noc/l1_noc_router_p4_w128_wrapper/metrics.csv",
+            "noc_router_per_cluster": 1,
+            "noc_router_power_mw": 0.00176,
+            "onchip_endpoint_area_um2": 15293.032225,
+            "onchip_endpoint_clock_ns": 0.7162,
+            "onchip_endpoint_metrics_csv": "runs/designs/noc/l1_onchip_endpoint_w128_b4_eq8_bq4_wrapper/metrics.csv",
+            "onchip_endpoint_per_cluster": 1,
+            "onchip_endpoint_power_mw": 0.00983,
+            "partial_reduction_payload_bytes": 8320,
+            "per_cluster_hbm_bytes_per_cycle": 2583.8352,
+            "per_cluster_macs_per_cycle": 6784,
+            "per_cluster_noc_effective_bytes_per_cycle": 240.8448,
+            "per_cluster_vector_ops_per_cycle": 848,
+            "practical_active_banks": 64,
+            "practical_aggregate_bank_bytes_per_cycle": 1740.8,
+            "practical_aggregate_noc_effective_bytes_per_cycle": 1740.8,
+            "practical_local_bank_bytes_per_cycle_per_cluster": 108.8,
+            "practical_local_banks_per_cluster": 4.0,
+            "practical_noc_cap_source": "endpoint",
+            "practical_per_cluster_noc_effective_bytes_per_cycle": 108.8,
+            "practical_shared_bank_bytes_per_cycle_per_cluster": 108.8,
+            "qkv_cycles": 192,
+            "raw_hbm_bytes_per_cycle": 55121.8176,
+            "reducer_setup_cycles": 0,
+            "reduction_cycle_multiplier": 1.0,
+            "reduction_scalar_bytes": 2,
+            "reduction_strategy": "cluster_tree",
+            "replicas_per_cluster_ceil": 54,
+            "replicas_per_cluster_floor": 53,
+            "required_local_buffer_bytes_per_cluster": 614656,
+            "reserved_area_fraction": 0.1,
+            "scheduler_policy": "locality_aware",
+            "sequence_length": 131072,
+            "shared_byte_share": 0.213913,
+            "shared_capacity_mib": 876.188278,
+            "softmax_weight_generator_area_um2": 38032.8004,
+            "softmax_weight_generator_clock_ns": 5.5809,
+            "softmax_weight_generator_metrics_csv": "runs/designs/activations/attention_softmax_weight_int8_r8_acc24_recip_q8_wrapper/metrics.csv",
+            "softmax_weight_generator_per_cluster": 1,
+            "softmax_weight_generator_power_mw": 0.00667,
+            "sram_area_fraction": 0.35,
+            "sram_bank_efficiency": 0.85,
+            "sram_bank_port_bytes_per_cycle": 32.0,
+            "sram_metrics_json": "runs/designs/sram/llama7b_attention_tile_buffers_v1/sram_metrics.json",
+            "sram_profile_source": "decoder_attention_sram_profile",
+            "sram_read_ports_per_bank": 1,
+            "tile_attention_cycles": 1354,
+            "tile_count": 128,
+            "tile_hbm_cycles": 291,
+            "tile_local_buffer_bytes": 614656,
+            "tile_local_sram_cycles": 688,
+            "tile_memory_cycles": 2074,
+            "tile_noc_cycles": 2074,
+            "tile_qk_cycles": 619,
+            "tile_service_cycles": 2074,
+            "tile_shared_bank_cycles": 2062,
+            "tile_shared_path_cycles": 2074,
+            "tile_stats_cycles": 116,
+            "tile_tokens": 1024,
+            "tile_value_cycles": 619,
+            "tile_waves": 8,
+            "tiles_per_cluster_ceil": 8,
+            "tiles_per_cluster_floor": 8,
+            "topology": "mesh2d",
+            "topology_active_links": 24,
+            "topology_aggregate_payload_bytes_per_cycle": 3853.5168,
+            "topology_area_proxy": 59.2,
+            "topology_average_hops": 2.666667,
+            "topology_cross_tile_reduction_noc_cycles": 35,
+            "topology_per_cluster_payload_bytes_per_cycle": 240.8448,
+            "topology_previous_bandwidth_gap": 8.503401,
+            "topology_proxy_score": 973.46,
+            "topology_proxy_service_cycles": 970,
+            "topology_router_radix": 4,
+            "topology_service_source": "decoder_attention_kv_dense_tile_topology_scheduler_pairs",
+            "topology_shared_tile_noc_cycles": 958,
+            "topology_worst_hops": 6,
+            "total_cycles": 542400,
+            "total_sram_mib": 1168.251038,
+            "unconstrained_aggregate_noc_effective_bytes_per_cycle": 3853.5168,
+            "unconstrained_latency_us": 2133.67369,
+            "unconstrained_tile_local_sram_cycles": 49,
+            "unconstrained_tile_shared_path_cycles": 944,
+            "usable_sram_fraction": 0.7,
+            "vector_ops_per_cycle": 13696,
+            "vector_ops_per_mac_assumption": 0.125,
+            "virtual_channels": 4
+          },
+          "sweep_summary": {
+            "dominant_tile_resource_counts": {
+              "command_dispatch": 6691140,
+              "cross_tile_reduction": 6912,
+              "local_sram": 4199040,
+              "shared_path": 96570684,
+              "tile_attention": 27648
+            },
+            "generated_row_count": 107495424,
+            "infeasible_counts": {},
+            "practical_noc_cap_source_counts": {
+              "endpoint": 45769536,
+              "sram_bank": 61725888
+            },
+            "source_mode": "full_topology_regeneration",
+            "source_model": "llm_decoder_attention_kv_topology_derived_schedule_llama7b_v1",
+            "source_rows_used": 2239488,
+            "topology_generated_row_count": 2239488,
+            "topology_pairs_summary": {
+              "invalid_pair_count": 94068,
+              "top_invalid_reasons": [
+                [
+                  "local_only topology cannot serve shared-KV traffic",
+                  24300
+                ],
+                [
+                  "cluster_tree reduction requires cluster_tree topology or a mesh spanning tree",
+                  24300
+                ],
+                [
+                  "local_only topology cannot route between multiple clusters",
+                  19440
+                ],
+                [
+                  "local_only topology requires owner_cluster reduction",
+                  16200
+                ],
+                [
+                  "local_only topology requires per_cluster_local banks",
+                  16200
+                ],
+                [
+                  "grouped_shared placement is not meaningful below 4 clusters",
+                  16200
+                ],
+                [
+                  "tree_reduction_aware scheduler requires cluster_tree reduction",
+                  16200
+                ],
+                [
+                  "centralized_tile reduction is rejected above 4 clusters",
+                  16200
+                ],
+                [
+                  "tree_reduction_aware scheduler requires cluster_tree topology or mesh2d",
+                  14580
+                ],
+                [
+                  "mesh2d topology requires at least 4 clusters",
+                  9720
+                ],
+                [
+                  "bank_aware_prefetch requires shared or distributed banks",
+                  8100
+                ],
+                [
+                  "bank_aware_prefetch requires at least 2 virtual channels",
+                  8100
+                ]
+              ],
+              "valid_pair_count": 27432,
+              "validity_matrix": {
+                "cluster_tree:bank_aware_prefetch": {
+                  "invalid": 3636,
+                  "valid": 1224
+                },
+                "cluster_tree:double_buffered_overlap": {
+                  "invalid": 2916,
+                  "valid": 1944
+                },
+                "cluster_tree:locality_aware": {
+                  "invalid": 2304,
+                  "valid": 2556
+                },
+                "cluster_tree:static_wave": {
+                  "invalid": 1944,
+                  "valid": 2916
+                },
+                "cluster_tree:tree_reduction_aware": {
+                  "invalid": 3672,
+                  "valid": 1188
+                },
+                "crossbar:bank_aware_prefetch": {
+                  "invalid": 4140,
+                  "valid": 720
+                },
+                "crossbar:double_buffered_overlap": {
+                  "invalid": 3636,
+                  "valid": 1224
+                },
+                "crossbar:locality_aware": {
+                  "invalid": 3276,
+                  "valid": 1584
+                },
+                "crossbar:static_wave": {
+                  "invalid": 3024,
+                  "valid": 1836
+                },
+                "crossbar:tree_reduction_aware": {
+                  "invalid": 4860,
+                  "valid": 0
+                },
+                "local_only:bank_aware_prefetch": {
+                  "invalid": 4860,
+                  "valid": 0
+                },
+                "local_only:double_buffered_overlap": {
+                  "invalid": 4860,
+                  "valid": 0
+                },
+                "local_only:locality_aware": {
+                  "invalid": 4860,
+                  "valid": 0
+                },
+                "local_only:static_wave": {
+                  "invalid": 4860,
+                  "valid": 0
+                },
+                "local_only:tree_reduction_aware": {
+                  "invalid": 4860,
+                  "valid": 0
+                },
+                "mesh2d:bank_aware_prefetch": {
+                  "invalid": 3852,
+                  "valid": 1008
+                },
+                "mesh2d:double_buffered_overlap": {
+                  "invalid": 3348,
+                  "valid": 1512
+                },
+                "mesh2d:locality_aware": {
+                  "invalid": 2844,
+                  "valid": 2016
+                },
+                "mesh2d:static_wave": {
+                  "invalid": 3240,
+                  "valid": 1620
+                },
+                "mesh2d:tree_reduction_aware": {
+                  "invalid": 3888,
+                  "valid": 972
+                },
+                "ring:bank_aware_prefetch": {
+                  "invalid": 4140,
+                  "valid": 720
+                },
+                "ring:double_buffered_overlap": {
+                  "invalid": 3708,
+                  "valid": 1152
+                },
+                "ring:locality_aware": {
+                  "invalid": 3348,
+                  "valid": 1512
+                },
+                "ring:static_wave": {
+                  "invalid": 3132,
+                  "valid": 1728
+                },
+                "ring:tree_reduction_aware": {
+                  "invalid": 4860,
+                  "valid": 0
+                }
+              }
+            },
+            "topology_service_rows_used": 128,
+            "topology_skipped_area_budget_count": 746496
+          },
+          "assumptions": [
+            "Input rows are regenerated from the topology/scheduler pair matrix before practical SRAM/NoC caps are applied.",
+            "SRAM bank service is capped by measured 256-bit tile-buffer bank width unless overridden by the CLI.",
+            "NoC service is capped by the minimum of topology aggregate payload service, endpoint injection/ejection service, and practical SRAM bank read service.",
+            "Local tile-buffer capacity is required per cluster; full KV-cache residency remains the higher-level HBM/SRAM capacity model from the source schedule.",
+            "This is still analytic scheduling evidence, not cycle-accurate SRAM arbitration or routed NoC RTL."
+          ]
+        }
       },
       "source_refs": {
         "best_point_json": "runs/campaigns/npu/e2e_eval_v0__l2_decoder_attention_kv_endpoint_sram_noc_full_search_softmax_recip_lut_llama7b_v1_r2/best_point.json",
@@ -336,7 +811,9 @@
             "descriptors_bin": "runs/campaigns/npu/e2e_eval_v0__l2_decoder_attention_kv_endpoint_sram_noc_full_search_softmax_recip_lut_llama7b_v1_r2/artifacts/mapper/fp16_nm1/mlp2/descriptors.bin",
             "perf_trace_json": "runs/campaigns/npu/e2e_eval_v0__l2_decoder_attention_kv_endpoint_sram_noc_full_search_softmax_recip_lut_llama7b_v1_r2/artifacts/perf/fp16_nm1/mlp2/trace.json"
           }
-        ]
+        ],
+        "decoder_attention_kv_endpoint_sram_noc_full_search_schedule_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_endpoint_sram_noc_full_search_schedule__l2_decoder_attention_kv_endpoint_sram_noc_full_search_softmax_recip_lut_llama7b_v1_r2.json",
+        "decoder_attention_kv_endpoint_sram_noc_full_search_schedule_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_endpoint_sram_noc_full_search_schedule__l2_decoder_attention_kv_endpoint_sram_noc_full_search_softmax_recip_lut_llama7b_v1_r2.md"
       }
     }
   },
@@ -366,7 +843,7 @@
     "proposal_path": "docs/proposals/prop_l2_decoder_attention_kv_endpoint_sram_noc_softmax_recip_lut_frontier_v1/proposal.json"
   },
   "submission_history": {
-    "event_count": 1,
+    "event_count": 2,
     "failure_count": 1,
     "retry_request_count": 0,
     "retry_processed_count": 0,
@@ -377,12 +854,22 @@
         "event_time": "2026-06-17T03:53:40.468577Z",
         "event_type": "submission_failed",
         "error": "work item l2_decoder_attention_kv_endpoint_sram_noc_full_search_softmax_recip_lut_llama7b_v1_r2 is not eligible for submission: proposal already finalized with decision=promote"
+      },
+      {
+        "event_time": "2026-06-17T03:55:32.306324Z",
+        "event_type": "submission_executed",
+        "pr_url": "https://github.com/yhmtmt/RTLGen/pull/875"
       }
     ],
     "last_failure": {
       "event_time": "2026-06-17T03:53:40.468577Z",
       "event_type": "submission_failed",
       "error": "work item l2_decoder_attention_kv_endpoint_sram_noc_full_search_softmax_recip_lut_llama7b_v1_r2 is not eligible for submission: proposal already finalized with decision=promote"
+    },
+    "final_submission": {
+      "event_time": "2026-06-17T03:55:32.306324Z",
+      "event_type": "submission_executed",
+      "pr_url": "https://github.com/yhmtmt/RTLGen/pull/875"
     }
   },
   "pr_payload": {
@@ -394,7 +881,7 @@
       "evaluator_id": "control_plane",
       "queue_item_id": "l2_decoder_attention_kv_endpoint_sram_noc_full_search_softmax_recip_lut_llama7b_v1_r2"
     },
-    "body_md": "## Summary\n- item_id: `l2_decoder_attention_kv_endpoint_sram_noc_full_search_softmax_recip_lut_llama7b_v1_r2`\n- run_key: `l2_decoder_attention_kv_endpoint_sram_noc_full_search_softmax_recip_lut_llama7b_v1_r2_run_e7cb079384f2ed64`\n- layer: `layer2`\n- task_type: `l2_campaign`\n- status: `ok`\n- summary: `7/7 commands succeeded`\n- queue_snapshot: `control_plane/shadow_exports/review/l2_decoder_attention_kv_endpoint_sram_noc_full_search_softmax_recip_lut_llama7b_v1_r2/evaluated.json`\n- metrics_rows_count: `24`\n- review_artifact: `decision_proposal` at `control_plane/shadow_exports/l2_decisions/l2_decoder_attention_kv_endpoint_sram_noc_full_search_softmax_recip_lut_llama7b_v1_r2.json`\n\n## Developer Context\n- proposal_id: `prop_l2_decoder_attention_kv_endpoint_sram_noc_softmax_recip_lut_frontier_v1`\n- proposal_path: `docs/proposals/prop_l2_decoder_attention_kv_endpoint_sram_noc_softmax_recip_lut_frontier_v1/proposal.json`\n- reviewer_first_read: `docs/proposals/prop_l2_decoder_attention_kv_endpoint_sram_noc_softmax_recip_lut_frontier_v1/proposal.json` plus `docs/developer_agent_review.md`\n- execution_source_commit: `24e04c7e691f2f6ad5b44d2db02568474fb550a5`\n- review_metadata_source_commit: `24e04c7e691f2f6ad5b44d2db02568474fb550a5`\n\n## Evaluation Mode\n- evaluation_mode: `frontier_detail`\n- abstraction_layer: `decoder_attention_kv_endpoint_sram_noc_full_search_softmax_recip_lut_schedule`\n- comparison_role: `frontier_revision`\n- expected_direction: `rank_q8_q10_q12_softmax_profiles_in_endpoint_sram_noc_frontier`\n- expected_reason: `Rank q8/q10/q12 reciprocal-LUT softmax local-cost profiles under practical endpoint SRAM/NoC caps.`\n- expectation_status: `unspecified`\n- evaluation_summary: `Ranking/frontier evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.`\n\n## Focused Comparison\n- primary_question: `After q8 standalone reciprocal-LUT softmax PPA is available, does the practical endpoint SRAM/NoC full search select q8, q10, or q12 as the best measured softmax precision point?`\n- comparison_role: `frontier_revision`\n- proposal_outcome: `ranking_recorded`\n- comparison_summary: `Ranking/frontier evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.`\n- baseline_ref: `None`\n- baseline_item_id: `None`\n\n## Submission Recovery\n- submission_failure_count: `1`\n- retry_request_count: `0`\n- last_submission_failure: `work item l2_decoder_attention_kv_endpoint_sram_noc_full_search_softmax_recip_lut_llama7b_v1_r2 is not eligible for submission: proposal already finalized with decision=promote`\n\n## Checklist\n- [ ] Commit lightweight campaign artifacts only\n- [ ] Include metrics row references in result.metrics_rows\n- [ ] Keep committed result_path fields repo-portable\n- [ ] Run python3 scripts/validate_runs.py --skip_eval_queue before pushing\n",
+    "body_md": "## Summary\n- item_id: `l2_decoder_attention_kv_endpoint_sram_noc_full_search_softmax_recip_lut_llama7b_v1_r2`\n- run_key: `l2_decoder_attention_kv_endpoint_sram_noc_full_search_softmax_recip_lut_llama7b_v1_r2_run_e7cb079384f2ed64`\n- layer: `layer2`\n- task_type: `l2_campaign`\n- status: `ok`\n- summary: `7/7 commands succeeded`\n- queue_snapshot: `control_plane/shadow_exports/review/l2_decoder_attention_kv_endpoint_sram_noc_full_search_softmax_recip_lut_llama7b_v1_r2/evaluated.json`\n- metrics_rows_count: `24`\n- review_artifact: `decision_proposal` at `control_plane/shadow_exports/l2_decisions/l2_decoder_attention_kv_endpoint_sram_noc_full_search_softmax_recip_lut_llama7b_v1_r2.json`\n\n## Developer Context\n- proposal_id: `prop_l2_decoder_attention_kv_endpoint_sram_noc_softmax_recip_lut_frontier_v1`\n- proposal_path: `docs/proposals/prop_l2_decoder_attention_kv_endpoint_sram_noc_softmax_recip_lut_frontier_v1/proposal.json`\n- reviewer_first_read: `docs/proposals/prop_l2_decoder_attention_kv_endpoint_sram_noc_softmax_recip_lut_frontier_v1/proposal.json` plus `docs/developer_agent_review.md`\n- execution_source_commit: `24e04c7e691f2f6ad5b44d2db02568474fb550a5`\n- review_metadata_source_commit: `adb7d0b74bb2132be56604cca83fa20fd774fbd1`\n\n## Evaluation Mode\n- evaluation_mode: `frontier_detail`\n- abstraction_layer: `decoder_attention_kv_endpoint_sram_noc_full_search_softmax_recip_lut_schedule`\n- comparison_role: `frontier_revision`\n- expected_direction: `rank_q8_q10_q12_softmax_profiles_in_endpoint_sram_noc_frontier`\n- expected_reason: `Rank q8/q10/q12 reciprocal-LUT softmax local-cost profiles under practical endpoint SRAM/NoC caps.`\n- expectation_status: `unspecified`\n- evaluation_summary: `Decoder endpoint SRAM/NoC frontier evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_endpoint_sram_noc_full_search_schedule__l2_decoder_attention_kv_endpoint_sram_noc_full_search_softmax_recip_lut_llama7b_v1_r2.json: decision=endpoint_sram_noc_frontier_recorded; measured_l1_profile=hd64_kv8_full_value_p8_ppc2_noc128_softmax_int8_q8; latency_us=3244.14864; total_cycles=542400; topology=mesh2d; scheduler_policy=locality_aware; reduction_strategy=cluster_tree; cluster_count=16; bank_count=64; compute_replica_count=856; macs_per_cycle=109568; dominant_tile_resource=shared_path; practical_noc_cap_source=endpoint.`\n\n## Focused Comparison\n- primary_question: `After q8 standalone reciprocal-LUT softmax PPA is available, does the practical endpoint SRAM/NoC full search select q8, q10, or q12 as the best measured softmax precision point?`\n- comparison_role: `frontier_revision`\n- proposal_outcome: `endpoint_sram_noc_frontier_recorded`\n- comparison_summary: `Decoder endpoint SRAM/NoC frontier evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_endpoint_sram_noc_full_search_schedule__l2_decoder_attention_kv_endpoint_sram_noc_full_search_softmax_recip_lut_llama7b_v1_r2.json: decision=endpoint_sram_noc_frontier_recorded; measured_l1_profile=hd64_kv8_full_value_p8_ppc2_noc128_softmax_int8_q8; latency_us=3244.14864; total_cycles=542400; topology=mesh2d; scheduler_policy=locality_aware; reduction_strategy=cluster_tree; cluster_count=16; bank_count=64; compute_replica_count=856; macs_per_cycle=109568; dominant_tile_resource=shared_path; practical_noc_cap_source=endpoint.`\n- baseline_ref: `None`\n- baseline_item_id: `None`\n\n## Submission Recovery\n- submission_failure_count: `1`\n- retry_request_count: `0`\n- last_submission_failure: `work item l2_decoder_attention_kv_endpoint_sram_noc_full_search_softmax_recip_lut_llama7b_v1_r2 is not eligible for submission: proposal already finalized with decision=promote`\n- final_submission_pr: `https://github.com/yhmtmt/RTLGen/pull/875`\n\n## Checklist\n- [ ] Commit lightweight campaign artifacts only\n- [ ] Include metrics row references in result.metrics_rows\n- [ ] Keep committed result_path fields repo-portable\n- [ ] Run python3 scripts/validate_runs.py --skip_eval_queue before pushing\n",
     "checklist": [
       "Commit lightweight campaign artifacts only",
       "Include metrics row references in result.metrics_rows",

@@ -1013,6 +1013,161 @@ def test_consume_l2_result_frontier_attention_kv_uses_decoder_evidence() -> None
             assert decision_payload["source_refs"]["decoder_attention_kv_memory_report"] == report_rel
 
 
+def test_consume_l2_result_frontier_endpoint_sram_noc_overrides_generic_recommendation() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            proposal_dir = repo_root / "docs" / "proposals" / "prop_l2_endpoint_sram_noc_frontier_v1"
+            _write(
+                proposal_dir / "proposal.json",
+                json.dumps(
+                    {
+                        "proposal_id": "prop_l2_endpoint_sram_noc_frontier_v1",
+                        "kind": "architecture",
+                        "title": "Endpoint SRAM/NoC frontier",
+                        "direct_comparison": {
+                            "primary_question": "Which endpoint SRAM/NoC point is selected?"
+                        },
+                    },
+                    indent=2,
+                )
+                + "\n",
+            )
+            evidence_rel = (
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_kv_endpoint_sram_noc_full_search_schedule__l2_endpoint_frontier.json"
+            )
+            report_rel = (
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_kv_endpoint_sram_noc_full_search_schedule__l2_endpoint_frontier.md"
+            )
+            _write(
+                repo_root / evidence_rel,
+                json.dumps(
+                    {
+                        "version": 1,
+                        "model": "llm_decoder_attention_kv_sram_noc_constrained_schedule_llama7b_v1",
+                        "best": {
+                            "measured_l1_profile": "hd64_kv8_full_value_p8_ppc2_noc128_softmax_int8_q8",
+                            "topology": "mesh2d",
+                            "scheduler_policy": "locality_aware",
+                            "reduction_strategy": "cluster_tree",
+                            "cluster_count": 16,
+                            "bank_count": 64,
+                            "compute_source": "dense_gemm_tile",
+                            "compute_arch": "dense_gemm_16x8_k1_p1",
+                            "compute_replica_count": 856,
+                            "macs_per_cycle": 109568,
+                            "latency_us": 3244.14864,
+                            "total_cycles": 542400,
+                            "clock_ns": 5.9811,
+                            "logic_area_used_um2": 399967698.4688,
+                            "logic_power_mw": 8132.97568,
+                            "dominant_tile_resource": "shared_path",
+                            "practical_noc_cap_source": "endpoint",
+                        },
+                        "top_rows": [
+                            {
+                                "measured_l1_profile": "hd64_kv8_full_value_p8_ppc2_noc128_softmax_int8_q8",
+                                "latency_us": 3244.14864,
+                                "total_cycles": 542400,
+                                "logic_area_used_um2": 399967698.4688,
+                                "logic_power_mw": 8132.97568,
+                                "softmax_weight_generator_clock_ns": 5.5809,
+                                "topology": "mesh2d",
+                                "scheduler_policy": "locality_aware",
+                                "reduction_strategy": "cluster_tree",
+                                "cluster_count": 16,
+                                "bank_count": 64,
+                                "compute_source": "dense_gemm_tile",
+                            },
+                            {
+                                "measured_l1_profile": "hd64_kv8_full_value_p8_ppc2_noc128_softmax_int8_q10",
+                                "latency_us": 3244.14864,
+                                "total_cycles": 542400,
+                                "logic_area_used_um2": 399995594.68,
+                                "logic_power_mw": 8132.9456,
+                                "softmax_weight_generator_clock_ns": 5.5948,
+                                "topology": "mesh2d",
+                                "scheduler_policy": "locality_aware",
+                                "reduction_strategy": "cluster_tree",
+                                "cluster_count": 16,
+                                "bank_count": 64,
+                                "compute_source": "dense_gemm_tile",
+                            },
+                        ],
+                    },
+                    indent=2,
+                )
+                + "\n",
+            )
+            _write(repo_root / report_rel, "# endpoint sram noc frontier\n")
+            item_id = _seed_campaign_work_item(
+                session,
+                repo_root,
+                item_id="l2_endpoint_frontier",
+                campaign_dir_rel="runs/campaigns/npu/endpoint_frontier_campaign",
+                summary_rows=(
+                    "scope,arch_id,macro_mode,objective_rank,latency_ms_mean,energy_mj_mean,critical_path_ns_mean,total_power_mw_mean,flow_elapsed_s_mean,throughput_infer_per_s_mean\n"
+                    "aggregate,fp16_nm1_demo,flat_nomacro,1,0.4,0.15,5.5,0.18,1000,1.0\n"
+                ),
+                proposal_path="docs/proposals/prop_l2_endpoint_sram_noc_frontier_v1",
+                comparison={"role": "frontier_revision"},
+            )
+            work_item = session.query(WorkItem).filter_by(item_id=item_id).one()
+            payload = copy.deepcopy(work_item.task_request.request_payload or {})
+            payload["developer_loop"]["evaluation"] = {
+                "mode": "frontier_detail",
+                "expected_direction": "iterate",
+                "expected_reason": "Use endpoint SRAM/NoC frontier evidence for next architecture selection.",
+            }
+            payload["developer_loop"]["abstraction"] = {
+                "layer": "decoder_attention_kv_endpoint_sram_noc_full_search_schedule",
+            }
+            work_item.task_request.request_payload = payload
+            work_item.input_manifest = {
+                "decoder_contract": {
+                    "attention_kv_endpoint_sram_noc_full_search_schedule_out": evidence_rel,
+                    "attention_kv_endpoint_sram_noc_full_search_schedule_report": report_rel,
+                }
+            }
+            work_item.expected_outputs = [*(work_item.expected_outputs or []), evidence_rel, report_rel]
+            session.commit()
+
+            result = consume_l2_result(session, Layer2ConsumeRequest(repo_root=str(repo_root), item_id=item_id))
+
+            decision_payload = json.loads(
+                (repo_root / "control_plane" / "shadow_exports" / "l2_decisions" / f"{item_id}.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            recommendation = decision_payload["recommendation"]
+            assert result.recommended_arch_id == (
+                "mesh2d_locality_aware_cluster_tree_c16_b64_dense_gemm_16x8_k1_p1"
+            )
+            assert result.profile_count == 2
+            assert recommendation["source"] == "decoder_evidence"
+            assert recommendation["arch_id"] == result.recommended_arch_id
+            assert recommendation["macro_mode"] == "dense_gemm_tile"
+            assert recommendation["measured_l1_profile"] == "hd64_kv8_full_value_p8_ppc2_noc128_softmax_int8_q8"
+            assert recommendation["latency_us"] == 3244.14864
+            assert recommendation["legacy_campaign_recommendation"]["arch_id"] == "fp16_nm1_demo"
+            assert decision_payload["objective_profiles"][1]["profile"].endswith("_q10")
+            assessment = decision_payload["proposal_assessment"]
+            assert assessment["outcome"] == "endpoint_sram_noc_frontier_recorded"
+            assert assessment["decoder_evidence_ref"] == evidence_rel
+            assert decision_payload["source_refs"][
+                "decoder_attention_kv_endpoint_sram_noc_full_search_schedule_out"
+            ] == evidence_rel
+            assert decision_payload["source_refs"][
+                "decoder_attention_kv_endpoint_sram_noc_full_search_schedule_report"
+            ] == report_rel
+
+
 def test_consume_l2_result_frontier_attention_local_sram_capacity_uses_decoder_evidence() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
