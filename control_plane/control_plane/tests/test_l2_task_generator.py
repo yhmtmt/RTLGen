@@ -5425,6 +5425,64 @@ def test_generate_l2_campaign_task_adds_attention_hbm_closed_onchip_schedule_evi
             )
 
 
+def test_generate_l2_campaign_task_adds_softmax_recip_lut_hbm_closed_onchip_schedule_evidence() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id="l2_decoder_attention_kv_hbm_closed_onchip_schedule_softmax_recip_lut_llama7b_v1",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    abstraction_layer="decoder_attention_kv_hbm_closed_onchip_schedule",
+                    evaluation_mode="frontier_detail",
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            commands = work_item.task_request.request_payload["task"]["commands"]
+            command_names = [command["name"] for command in commands]
+            decoder_inputs = work_item.input_manifest["decoder_contract"]
+            expected_outputs = work_item.task_request.request_payload["task"]["expected_outputs"]
+            run = commands[0]["run"]
+
+            assert "estimate_decoder_attention_kv_hbm_closed_onchip_schedule" in command_names
+            assert "attention_kv_measured_hbm_service" in decoder_inputs
+            assert "attention_kv_hbm_closed_onchip_schedule_out" in decoder_inputs
+            assert "estimate_llm_decoder_attention_kv_hbm_closed_onchip_schedule.py" in run
+            assert (
+                "l2_decoder_attention_kv_measured_hbm_service_softmax_recip_lut_llama7b_v1.json"
+                in run
+            )
+            assert (
+                "l2_decoder_attention_kv_measured_hbm_service_llama7b_v1.json"
+                not in run
+            )
+            assert "--router-latency-cycles-per-hop 1,2,4" in run
+            assert (
+                decoder_inputs["attention_kv_measured_hbm_service"]
+                == "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_measured_hbm_service__"
+                "l2_decoder_attention_kv_measured_hbm_service_softmax_recip_lut_llama7b_v1.json"
+            )
+            assert work_item.task_request.request_payload["task"]["inputs"]["decoder_contract"] == decoder_inputs
+            assert any(
+                output.endswith(
+                    "decoder_attention_kv_hbm_closed_onchip_schedule__"
+                    "l2_decoder_attention_kv_hbm_closed_onchip_schedule_softmax_recip_lut_llama7b_v1.json"
+                )
+                for output in expected_outputs
+            )
+
+
 def test_generate_l2_campaign_task_adds_attention_subtile_pipeline_schedule_evidence() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
@@ -5466,6 +5524,64 @@ def test_generate_l2_campaign_task_adds_attention_subtile_pipeline_schedule_evid
                 output.endswith(
                     "decoder_attention_kv_subtile_pipeline_schedule__"
                     "l2_decoder_attention_kv_subtile_pipeline_schedule_llama7b_v1.json"
+                )
+                for output in expected_outputs
+            )
+
+
+def test_generate_l2_campaign_task_adds_softmax_recip_lut_subtile_pipeline_schedule_evidence() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id="l2_decoder_attention_kv_subtile_pipeline_schedule_softmax_recip_lut_llama7b_v1",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    abstraction_layer="decoder_attention_kv_subtile_pipeline_schedule",
+                    evaluation_mode="frontier_detail",
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            commands = work_item.task_request.request_payload["task"]["commands"]
+            command_names = [command["name"] for command in commands]
+            decoder_inputs = work_item.input_manifest["decoder_contract"]
+            expected_outputs = work_item.task_request.request_payload["task"]["expected_outputs"]
+            run = commands[0]["run"]
+
+            assert "estimate_decoder_attention_kv_subtile_pipeline_schedule" in command_names
+            assert "attention_kv_hbm_closed_onchip_schedule" in decoder_inputs
+            assert "attention_kv_subtile_pipeline_schedule_out" in decoder_inputs
+            assert "estimate_llm_decoder_attention_kv_subtile_pipeline_schedule.py" in run
+            assert (
+                "l2_decoder_attention_kv_hbm_closed_onchip_schedule_softmax_recip_lut_llama7b_v1.json"
+                in run
+            )
+            assert (
+                "l2_decoder_attention_kv_hbm_closed_onchip_schedule_llama7b_v1.json"
+                not in run
+            )
+            assert (
+                decoder_inputs["attention_kv_hbm_closed_onchip_schedule"]
+                == "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_hbm_closed_onchip_schedule__"
+                "l2_decoder_attention_kv_hbm_closed_onchip_schedule_softmax_recip_lut_llama7b_v1.json"
+            )
+            assert "--compute-mode shared_mac,split_mac,dual_mac" in run
+            assert work_item.task_request.request_payload["task"]["inputs"]["decoder_contract"] == decoder_inputs
+            assert any(
+                output.endswith(
+                    "decoder_attention_kv_subtile_pipeline_schedule__"
+                    "l2_decoder_attention_kv_subtile_pipeline_schedule_softmax_recip_lut_llama7b_v1.json"
                 )
                 for output in expected_outputs
             )
