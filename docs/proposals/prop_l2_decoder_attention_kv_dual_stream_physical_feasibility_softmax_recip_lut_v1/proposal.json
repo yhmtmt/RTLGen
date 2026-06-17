@@ -1,0 +1,64 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_dual_stream_physical_feasibility_softmax_recip_lut_v1",
+  "created_utc": "2026-06-17T12:05:52.095529Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Softmax-recip dual-stream physical feasibility for Llama7B attention",
+  "hypothesis": "The softmax-recip subtile pipeline schedule selects dual_mac for latency, but the architecture frontier should only use that point if duplicated QK/V compute fits the measured 45nm logic budget; otherwise the physically valid frontier is the best area-fitting split/shared-MAC schedule.",
+  "direct_comparison": {
+    "primary_question": "Does the softmax-recip dual_mac subtile pipeline fit the measured logic budget, or must the current frontier fall back to split/shared MAC?",
+    "include": [
+      "Use l2_decoder_attention_kv_subtile_pipeline_schedule_softmax_recip_lut_llama7b_v1 as the source schedule.",
+      "Apply measured full-value attention tile and softmax reciprocal LUT generator PPA to the schedule rows.",
+      "Treat compute_area_multiplier=2.0 for dual_mac as requiring duplicated compute resources.",
+      "Report best requested mode, best area-fitting mode, logic slack, compute area over budget, required density gain, and recommended next action."
+    ],
+    "exclude": [
+      "Do not substitute a denser int8 compute block in this exact-q8/kv8/v16 feasibility check.",
+      "Do not change HBM, SRAM, NoC, precision, or KV sharing assumptions.",
+      "Do not promote dual_mac unless its required compute area fits the measured logic budget."
+    ],
+    "follow_on_broad_sweep": [
+      "If dual_mac is area-blocked, evaluate denser fused/partitioned attention compute or measured int8 compute substitution before promoting the 1575 us point.",
+      "If split_mac is the best feasible point, use it as the current physically valid frontier for whole-model ranking.",
+      "Validate online correction precision before promoting any subtile schedule as final."
+    ]
+  },
+  "expected_benefit": [
+    "Prevents the schedule-only dual_mac latency from being treated as physically free.",
+    "Identifies the current physically valid latency under measured 45nm compute area.",
+    "Quantifies the compute density gap needed to recover the optimistic dual_mac point."
+  ],
+  "risks": [
+    "The feasibility model still uses measured block substitution rather than a full composed dual-stream RTL PPA run.",
+    "The result does not resolve online-correction numerical quality.",
+    "A denser compute datapath may change timing, power, and routing in ways not captured by this analytic feasibility check."
+  ],
+  "needs_mapper_change": true,
+  "required_evaluations": [
+    {
+      "task_type": "l2_campaign",
+      "evaluation_mode": "frontier_detail",
+      "objective": "softmax_recip_dual_stream_physical_feasibility",
+      "cost_class": "small",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_kv_subtile_pipeline_schedule_softmax_recip_lut_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "record_softmax_recip_dual_stream_physical_feasibility",
+        "reason": "The result should decide whether the softmax-recip dual_mac subtile pipeline fits the measured logic budget and identify the current best physically feasible schedule."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_subtile_pipeline_schedule__l2_decoder_attention_kv_subtile_pipeline_schedule_softmax_recip_lut_llama7b_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/estimate_llm_decoder_attention_kv_dual_stream_physical_feasibility.py",
+    "runs/designs/activations/attention_kv_full_value_hd64_kv8_tl16_b128_p8_ppc2_w24_a40_wrapper/metrics.csv",
+    "runs/designs/activations/attention_softmax_weight_int8_r8_acc24_recip_q10_wrapper/metrics.csv"
+  ]
+}

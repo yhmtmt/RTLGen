@@ -1,0 +1,25 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_dual_stream_physical_feasibility_softmax_recip_lut_v1",
+  "source_commit": "a4846f80f6d8eeb052c209d3de8ea3ae0d78ef97",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_kv_dual_stream_physical_feasibility_softmax_recip_lut_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "LLM-oriented attention-tail stress campaign for larger sequence lengths and more repeated non-terminal Softmax paths.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_kv_dual_stream_physical_feasibility",
+      "comparison_role": "frontier_closure",
+      "paired_baseline_item_id": "l2_decoder_attention_kv_subtile_pipeline_schedule_softmax_recip_lut_llama7b_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_kv_subtile_pipeline_schedule_softmax_recip_lut_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "record_softmax_recip_dual_stream_physical_feasibility",
+        "reason": "Quantify whether the softmax-recip subtile pipeline selected dual_mac schedule fits the measured logic budget, or whether the current physically valid frontier must use split/shared MAC."
+      },
+      "status": "pending"
+    }
+  ]
+}
