@@ -50,7 +50,11 @@
       "prior_item_ids": [
         "l2_decoder_attention_kv_endpoint_sram_noc_full_search_softmax_recip_lut_llama7b_v1"
       ],
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 875,
+      "merge_commit": "0042cd240d720de852fde364da2c97b0fa717cf5",
+      "merged_utc": "2026-06-17T04:01:39.094506Z",
+      "notes": "Merged via PR #875 and merge 0042cd240d720de852fde364da2c97b0fa717cf5 at 2026-06-17T04:01:39.094506Z."
     }
   ]
 }
