@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l1_decoder_attention_endpoint_router_wide_ppa_v1",
-  "source_commit": null,
+  "source_commit": "5c1bdf575a5eca18c4fa00d5f48c695c6c3c724a",
   "source_commit_note": "Dispatch should use the merge commit containing the wide endpoint/router/FIFO config files.",
   "requested_items": [
     {
@@ -9,7 +9,11 @@
       "objective": "Measure Nangate45 PPA for 1024-bit endpoint and 2048-bit router/FIFO primitive anchors required by the Llama7B endpoint/router/SRAM composition audit.",
       "evaluation_mode": "frontier_closure",
       "abstraction_layer": "architecture_block",
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 894,
+      "merge_commit": "244908eb919a241e498bc70d8f7c47f098928be3",
+      "merged_utc": "2026-06-17T06:08:07.365689Z",
+      "notes": "Merged via PR #894 and merge 244908eb919a241e498bc70d8f7c47f098928be3 at 2026-06-17T06:08:07.365689Z."
     }
   ]
 }

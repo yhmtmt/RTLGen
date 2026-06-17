@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_endpoint_router_wide_ppa_v1",
+  "decision": "promote",
+  "pr_number": 894,
+  "merge_commit": "244908eb919a241e498bc70d8f7c47f098928be3",
+  "merged_utc": "2026-06-17T06:08:07.365689Z"
+}

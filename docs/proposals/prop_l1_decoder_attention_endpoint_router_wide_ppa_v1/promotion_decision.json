@@ -1,0 +1,15 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_endpoint_router_wide_ppa_v1",
+  "candidate_id": "l1_decoder_attention_endpoint_router_wide_ppa_v1",
+  "decision": "promote",
+  "reason": "Accepted Layer 1 physical metrics were merged in PR #894 for the current candidate.",
+  "evidence_refs": [
+    "item:l1_decoder_attention_endpoint_router_wide_ppa_v1",
+    "run:l1_decoder_attention_endpoint_router_wide_ppa_v1_run_f5a3ff633170b880",
+    "artifact:control_plane/shadow_exports/l1_promotions/l1_decoder_attention_endpoint_router_wide_ppa_v1.json",
+    "pr:#894",
+    "https://github.com/yhmtmt/RTLGen/pull/894"
+  ],
+  "next_action": "inspect the next dependent item",
+  "requires_human_approval": false
+}
