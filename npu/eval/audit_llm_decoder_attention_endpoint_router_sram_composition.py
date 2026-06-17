@@ -50,6 +50,89 @@ def _best_metrics(metrics_csv: Path) -> JsonDict | None:
     }
 
 
+def _metrics_from_promotion_proposal(proposal: JsonDict) -> JsonDict | None:
+    metrics_ref = proposal.get("metrics_ref")
+    metric_summary = proposal.get("metric_summary")
+    if not isinstance(metrics_ref, dict) or not isinstance(metric_summary, dict):
+        return None
+    metrics_csv = str(metrics_ref.get("metrics_csv", ""))
+    design = str(metrics_ref.get("design") or Path(metrics_csv).parent.name or "")
+    return {
+        "metrics_csv": metrics_csv,
+        "design": design,
+        "critical_path_ns": float(metric_summary["critical_path_ns"]),
+        "area_um2": float(metric_summary["die_area"]),
+        "power_mw": float(metric_summary["total_power_mw"]),
+        "param_hash": metrics_ref.get("param_hash", ""),
+        "tag": metrics_ref.get("tag", ""),
+        "width_bits": _parse_width_bits(design or metrics_csv),
+        "source": "l1_promotion",
+    }
+
+
+def _best_promotion_metric(promotion: JsonDict | None, *, design_contains: str) -> JsonDict | None:
+    if not promotion:
+        return None
+    proposals = promotion.get("proposals")
+    if not isinstance(proposals, list):
+        return None
+    matches: list[JsonDict] = []
+    for proposal in proposals:
+        if not isinstance(proposal, dict):
+            continue
+        metric = _metrics_from_promotion_proposal(proposal)
+        if metric and design_contains in str(metric.get("design", "")):
+            matches.append(metric)
+    if not matches:
+        return None
+    return min(matches, key=lambda item: (float(item["critical_path_ns"]), float(item["area_um2"])))
+
+
+def _promotion_boundary_rows(promotion: JsonDict | None, *, design_contains: str) -> list[JsonDict]:
+    if not promotion:
+        return []
+    boundary = promotion.get("boundary_evidence")
+    if not isinstance(boundary, dict):
+        return []
+    rows = boundary.get("rows")
+    if not isinstance(rows, list):
+        return []
+    return [
+        row
+        for row in rows
+        if isinstance(row, dict) and design_contains in str(row.get("design") or row.get("metrics_csv") or "")
+    ]
+
+
+def _boundary_summary(rows: list[JsonDict], *, target_width_bits: int) -> JsonDict | None:
+    if not rows:
+        return None
+    statuses = sorted({str(row.get("status", "")) for row in rows if row.get("status")})
+    param_hashes = [str(row.get("param_hash", "")) for row in rows if row.get("param_hash")]
+    metrics_csvs = sorted({str(row.get("metrics_csv", "")) for row in rows if row.get("metrics_csv")})
+    core_utilizations: list[int] = []
+    for row in rows:
+        params_json = row.get("params_json")
+        if not isinstance(params_json, str) or not params_json:
+            continue
+        try:
+            params = json.loads(params_json)
+        except json.JSONDecodeError:
+            continue
+        if "CORE_UTILIZATION" in params:
+            core_utilizations.append(int(params["CORE_UTILIZATION"]))
+    return {
+        "status": "failed" if statuses == ["failed"] else "mixed",
+        "row_count": len(rows),
+        "target_width_bits": target_width_bits,
+        "observed_width_bits": _parse_width_bits(str(rows[0].get("design") or rows[0].get("metrics_csv") or "")),
+        "statuses": statuses,
+        "core_utilizations": sorted(set(core_utilizations)),
+        "param_hashes": param_hashes,
+        "metrics_csvs": metrics_csvs,
+    }
+
+
 def _sram_capacity_bytes(sram_metrics: JsonDict) -> int:
     total = 0
     for instance in sram_metrics.get("instances", []):
@@ -65,6 +148,7 @@ def _build_payload(
     endpoint_onchip: JsonDict,
     sram_summary: JsonDict,
     sram_metrics: JsonDict,
+    wide_l1_promotion: JsonDict | None = None,
 ) -> JsonDict:
     best = endpoint_onchip["best"]
     ready_params = endpoint_ready_valid["derived_rtl_parameters"]
@@ -73,7 +157,18 @@ def _build_payload(
     link_width_bits = int(best["link_width_bits"])
     router_metrics = _best_metrics(repo_root / best["noc_router_metrics_csv"])
     fifo_metrics = _best_metrics(repo_root / best["noc_fifo_metrics_csv"])
-    endpoint_metrics = _best_metrics(repo_root / best["onchip_endpoint_metrics_csv"])
+    endpoint_metrics = (
+        _best_promotion_metric(wide_l1_promotion, design_contains="onchip_endpoint")
+        or _best_metrics(repo_root / best["onchip_endpoint_metrics_csv"])
+    )
+    router_boundary = _boundary_summary(
+        _promotion_boundary_rows(wide_l1_promotion, design_contains="noc_router"),
+        target_width_bits=link_width_bits,
+    )
+    fifo_boundary = _boundary_summary(
+        _promotion_boundary_rows(wide_l1_promotion, design_contains="noc_fifo"),
+        target_width_bits=link_width_bits,
+    )
 
     router_width = int(router_metrics["width_bits"]) if router_metrics and router_metrics.get("width_bits") else 0
     fifo_width = int(fifo_metrics["width_bits"]) if fifo_metrics and fifo_metrics.get("width_bits") else 0
@@ -120,6 +215,118 @@ def _build_payload(
     ]
     if not closure_flags["tile_sram_capacity_covers_selected_local_capacity"]:
         requires_follow_on.append("full_local_capacity_sram_macro_profile_missing")
+    if router_boundary and not closure_flags["router_ppa_width_matches_link_width"]:
+        requires_follow_on = [
+            "segmented_or_narrower_router_ppa_required" if item == "router_ppa_width_matches_link_width" else item
+            for item in requires_follow_on
+        ]
+    if fifo_boundary and not closure_flags["fifo_ppa_width_matches_link_width"]:
+        requires_follow_on = [
+            "segmented_or_narrower_fifo_ppa_required" if item == "fifo_ppa_width_matches_link_width" else item
+            for item in requires_follow_on
+        ]
+
+    closure_diagnosis = {
+        "endpoint": (
+            "measured_at_ready_valid_width"
+            if closure_flags["endpoint_ppa_width_matches_ready_valid_width"]
+            else "ppa_width_mismatch_or_missing"
+        ),
+        "router": (
+            "measured_at_link_width"
+            if closure_flags["router_ppa_width_matches_link_width"]
+            else (
+                "flat_link_width_boundary_failed"
+                if router_boundary and router_boundary.get("status") == "failed"
+                else "ppa_width_mismatch_or_missing"
+            )
+        ),
+        "fifo": (
+            "measured_at_link_width"
+            if closure_flags["fifo_ppa_width_matches_link_width"]
+            else (
+                "flat_link_width_boundary_failed"
+                if fifo_boundary and fifo_boundary.get("status") == "failed"
+                else "ppa_width_mismatch_or_missing"
+            )
+        ),
+        "local_sram_capacity": (
+            "covered_by_measured_tile_profile"
+            if closure_flags["tile_sram_capacity_covers_selected_local_capacity"]
+            else "full_local_capacity_sram_macro_profile_missing"
+        ),
+    }
+
+    recommended_next_l1_points = []
+    if not closure_flags["endpoint_ppa_width_matches_ready_valid_width"]:
+        recommended_next_l1_points.append(
+            {
+                "primitive": "onchip_service_endpoint",
+                "reason": "ready/valid probe width still lacks matching endpoint PPA",
+                "parameters": {
+                    "flit_bits": packet_bits,
+                    "banks": int(ready_params["banks"]),
+                    "endpoint_depth": int(ready_params["endpoint_queue_depth"]),
+                    "bank_queue_depth": int(ready_params["bank_queue_depth"]),
+                },
+            }
+        )
+    if not closure_flags["router_ppa_width_matches_link_width"]:
+        recommended_next_l1_points.append(
+            {
+                "primitive": "segmented_noc_router",
+                "reason": (
+                    "flat 2048-bit router failed physical boundary runs; measure lane-composed or narrower-link "
+                    "router/scheduler pairs instead of retrying the same flat primitive"
+                )
+                if router_boundary
+                else "selected link width lacks matching router PPA",
+                "parameters": {"ports": 4, "aggregate_flit_bits": link_width_bits, "candidate_lane_bits": [128, 256]},
+            }
+        )
+    if not closure_flags["fifo_ppa_width_matches_link_width"]:
+        recommended_next_l1_points.append(
+            {
+                "primitive": "segmented_noc_fifo",
+                "reason": (
+                    "flat 2048-bit FIFO failed physical boundary runs; measure lane-composed or narrower-link "
+                    "FIFO/scheduler pairs instead of retrying the same flat primitive"
+                )
+                if fifo_boundary
+                else "selected link width lacks matching FIFO PPA",
+                "parameters": {"depth": 16, "aggregate_flit_bits": link_width_bits, "candidate_lane_bits": [128, 256]},
+            }
+        )
+    if not closure_flags["tile_sram_capacity_covers_selected_local_capacity"]:
+        recommended_next_l1_points.append(
+            {
+                "primitive": "local_sram_capacity",
+                "reason": "tile-local SRAM buffers are measured, but the selected local-capacity pool is still capacity-estimated",
+                "parameters": {
+                    "local_capacity_bytes_per_cluster": local_capacity_bytes_per_cluster,
+                    "active_clusters": active_clusters,
+                },
+            }
+        )
+    remaining_abstractions = []
+    if not closure_flags["endpoint_ppa_width_matches_ready_valid_width"]:
+        remaining_abstractions.append(
+            "Endpoint ready/valid behavior is verified at the selected width, but matching endpoint PPA is not yet available."
+        )
+    if not closure_flags["router_ppa_width_matches_link_width"] or not closure_flags["fifo_ppa_width_matches_link_width"]:
+        if router_boundary or fifo_boundary:
+            remaining_abstractions.append(
+                "Router/FIFO PPA cannot use the failed flat 2048-bit primitive; lane-composed or narrower-link NoC PPA remains open."
+            )
+        else:
+            remaining_abstractions.append(
+                "Router/FIFO PPA is lane-scaled from narrower measured primitives until matching link-width or segmented L1 points are measured."
+            )
+    if not closure_flags["tile_sram_capacity_covers_selected_local_capacity"]:
+        remaining_abstractions.append(
+            "Tile-local SRAM buffers have CACTI metrics, but the selected per-cluster local capacity pool is not yet a concrete SRAM macro set."
+        )
+    remaining_abstractions.append("HBM/DRAM service remains inherited and intentionally outside this audit.")
 
     return {
         "model": "llm_decoder_attention_endpoint_router_sram_composition_audit_v1",
@@ -128,6 +335,7 @@ def _build_payload(
             "endpoint_onchip": "l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_llama7b_v1",
             "endpoint_ready_valid": "l2_decoder_attention_kv_endpoint_ready_valid_service_llama7b_v1",
             "sram_profile": "llama7b_attention_tile_buffers_v1",
+            "wide_l1_promotion": wide_l1_promotion.get("item_id") if wide_l1_promotion else None,
         },
         "selected_frontier": {
             "latency_us": best["latency_us"],
@@ -158,6 +366,10 @@ def _build_payload(
                 "allocated_bytes": sram_allocated_bytes,
             },
         },
+        "boundary_evidence": {
+            "router": router_boundary,
+            "fifo": fifo_boundary,
+        },
         "composition_quantities": {
             "packet_bits": packet_bits,
             "packet_payload_bytes": packet_payload_bytes,
@@ -182,48 +394,15 @@ def _build_payload(
             "scaled_local_service_area_all_clusters_um2": scaled_local_service_area_per_cluster * active_clusters,
         },
         "closure_flags": closure_flags,
+        "closure_diagnosis": closure_diagnosis,
         "decision": (
             "composition_requires_follow_on_ppa"
             if requires_follow_on
             else "endpoint_router_sram_composition_closed_for_selected_policy"
         ),
         "required_follow_on_ppa": requires_follow_on,
-        "recommended_next_l1_points": [
-            {
-                "primitive": "onchip_service_endpoint",
-                "reason": "ready/valid probe used DATA_W=1024 but selected PPA currently references w128 endpoint metrics",
-                "parameters": {
-                    "flit_bits": packet_bits,
-                    "banks": int(ready_params["banks"]),
-                    "endpoint_depth": int(ready_params["endpoint_queue_depth"]),
-                    "bank_queue_depth": int(ready_params["bank_queue_depth"]),
-                },
-            },
-            {
-                "primitive": "noc_router",
-                "reason": "selected link is 2048 bits but current PPA references w128 router metrics",
-                "parameters": {"ports": 4, "flit_bits": link_width_bits},
-            },
-            {
-                "primitive": "noc_fifo",
-                "reason": "selected link is 2048 bits but current PPA references w128 FIFO metrics",
-                "parameters": {"depth": 16, "flit_bits": link_width_bits},
-            },
-            {
-                "primitive": "local_sram_capacity",
-                "reason": "tile-local SRAM buffers are measured, but the selected local-capacity pool is still capacity-estimated",
-                "parameters": {
-                    "local_capacity_bytes_per_cluster": local_capacity_bytes_per_cluster,
-                    "active_clusters": active_clusters,
-                },
-            },
-        ],
-        "remaining_abstractions": [
-            "Router/FIFO PPA is lane-scaled from narrower measured primitives until wide-link L1 points are measured.",
-            "Endpoint ready/valid behavior is verified at 1024 bits, but endpoint PPA is still from the existing w128 wrapper.",
-            "Tile-local SRAM buffers have CACTI metrics, but the selected per-cluster local capacity pool is not yet a concrete SRAM macro set.",
-            "HBM/DRAM service remains inherited and intentionally outside this audit.",
-        ],
+        "recommended_next_l1_points": recommended_next_l1_points,
+        "remaining_abstractions": remaining_abstractions,
     }
 
 
@@ -231,6 +410,7 @@ def _write_report(payload: JsonDict, report: Path) -> None:
     selected = payload["selected_frontier"]
     quantities = payload["composition_quantities"]
     flags = payload["closure_flags"]
+    diagnosis = payload["closure_diagnosis"]
     lines = [
         "# Endpoint Router/SRAM Composition Audit",
         "",
@@ -255,6 +435,9 @@ def _write_report(payload: JsonDict, report: Path) -> None:
         "## Closure Flags",
     ]
     for name, value in flags.items():
+        lines.append(f"- {name}: `{value}`")
+    lines.extend(["", "## Closure Diagnosis"])
+    for name, value in diagnosis.items():
         lines.append(f"- {name}: `{value}`")
     lines.extend(
         [
@@ -282,6 +465,7 @@ def main() -> int:
     parser.add_argument("--endpoint-onchip-json", type=Path, required=True)
     parser.add_argument("--sram-summary-json", type=Path, required=True)
     parser.add_argument("--sram-metrics-json", type=Path, required=True)
+    parser.add_argument("--wide-l1-promotion-json", type=Path)
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--out-md", type=Path, required=True)
     args = parser.parse_args()
@@ -297,6 +481,7 @@ def main() -> int:
         endpoint_onchip=_load_json(rooted(args.endpoint_onchip_json)),
         sram_summary=_load_json(rooted(args.sram_summary_json)),
         sram_metrics=_load_json(rooted(args.sram_metrics_json)),
+        wide_l1_promotion=_load_json(rooted(args.wide_l1_promotion_json)) if args.wide_l1_promotion_json else None,
     )
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")

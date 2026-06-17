@@ -531,6 +531,8 @@ def _decoder_quality_brief(evidence_payload: dict[str, Any]) -> dict[str, Any]:
         "all_cluster_sram_metrics_summary",
         "remaining_abstractions",
         "closure_flags",
+        "closure_diagnosis",
+        "boundary_evidence",
         "composition_quantities",
         "measured_primitives",
         "recommended_next_l1_points",
@@ -840,6 +842,8 @@ def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, 
         quantity_dict = dict(quantities) if isinstance(quantities, dict) else {}
         flags = evidence_payload.get("closure_flags")
         flag_dict = dict(flags) if isinstance(flags, dict) else {}
+        diagnosis = evidence_payload.get("closure_diagnosis")
+        diagnosis_dict = dict(diagnosis) if isinstance(diagnosis, dict) else {}
         follow_on = evidence_payload.get("required_follow_on_ppa")
         required_follow_on = [str(item) for item in follow_on] if isinstance(follow_on, list) else []
         parts = [
@@ -876,6 +880,9 @@ def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, 
         ):
             if key in flag_dict:
                 parts.append(f"{key}={flag_dict.get(key)}")
+        for key in ("endpoint", "router", "fifo", "local_sram_capacity"):
+            if key in diagnosis_dict:
+                parts.append(f"{key}_diagnosis={diagnosis_dict.get(key)}")
         if required_follow_on:
             parts.append(f"required_follow_on_ppa={','.join(required_follow_on)}")
         summary = "; ".join(parts)

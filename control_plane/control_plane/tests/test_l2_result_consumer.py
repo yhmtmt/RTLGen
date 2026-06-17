@@ -1405,15 +1405,24 @@ def test_consume_l2_result_frontier_endpoint_router_sram_composition_uses_decode
                         },
                         "closure_flags": {
                             "ready_valid_endpoint_passed": True,
-                            "endpoint_ppa_width_matches_ready_valid_width": False,
+                            "endpoint_ppa_width_matches_ready_valid_width": True,
                             "router_ppa_width_matches_link_width": False,
                             "fifo_ppa_width_matches_link_width": False,
                             "tile_sram_capacity_covers_selected_local_capacity": False,
                         },
+                        "closure_diagnosis": {
+                            "endpoint": "measured_at_ready_valid_width",
+                            "router": "flat_link_width_boundary_failed",
+                            "fifo": "flat_link_width_boundary_failed",
+                            "local_sram_capacity": "full_local_capacity_sram_macro_profile_missing",
+                        },
+                        "boundary_evidence": {
+                            "router": {"status": "failed", "target_width_bits": 2048, "core_utilizations": [40, 50, 60]},
+                            "fifo": {"status": "failed", "target_width_bits": 2048, "core_utilizations": [40, 50, 60]},
+                        },
                         "required_follow_on_ppa": [
-                            "endpoint_ppa_width_matches_ready_valid_width",
-                            "router_ppa_width_matches_link_width",
-                            "fifo_ppa_width_matches_link_width",
+                            "segmented_or_narrower_router_ppa_required",
+                            "segmented_or_narrower_fifo_ppa_required",
                             "full_local_capacity_sram_macro_profile_missing",
                         ],
                         "remaining_abstractions": [
@@ -1474,8 +1483,11 @@ def test_consume_l2_result_frontier_endpoint_router_sram_composition_uses_decode
             assert assessment["outcome"] == "composition_requires_follow_on_ppa"
             assert assessment["decoder_evidence_ref"] == evidence_rel
             assert "router_lanes_for_link=16" in assessment["summary"]
-            assert "required_follow_on_ppa=endpoint_ppa_width_matches_ready_valid_width" in assessment["summary"]
+            assert "router_diagnosis=flat_link_width_boundary_failed" in assessment["summary"]
+            assert "required_follow_on_ppa=segmented_or_narrower_router_ppa_required" in assessment["summary"]
             assert assessment["decoder_quality"]["closure_flags"]["ready_valid_endpoint_passed"] is True
+            assert assessment["decoder_quality"]["closure_diagnosis"]["endpoint"] == "measured_at_ready_valid_width"
+            assert assessment["decoder_quality"]["boundary_evidence"]["router"]["status"] == "failed"
             assert "required_follow_on_ppa" in assessment["decoder_quality"]
             assert decision_payload["evaluation_record"]["outcome"] == "composition_requires_follow_on_ppa"
             assert decision_payload["source_refs"][
