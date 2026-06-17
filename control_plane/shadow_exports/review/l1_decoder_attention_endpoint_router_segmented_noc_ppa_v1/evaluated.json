@@ -1,0 +1,198 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "sweeps": [
+        "runs/campaigns/noc/l1_memory_noc_primitives/sweeps/nangate45_segmented_router_fifo_frontier.json"
+      ],
+      "configs": [
+        "runs/designs/noc/l1_noc_router_p4_w128_wrapper/config_l1_noc_router_p4_w128.json",
+        "runs/designs/noc/l1_noc_router_p4_w256_wrapper/config_l1_noc_router_p4_w256.json",
+        "runs/designs/noc/l1_noc_fifo_w128_d16_wrapper/config_l1_noc_fifo_w128_d16.json",
+        "runs/designs/noc/l1_noc_fifo_w256_d16_wrapper/config_l1_noc_fifo_w256_d16.json"
+      ],
+      "out_root": "runs/designs/noc",
+      "design_dirs": [],
+      "macro_manifests": [],
+      "candidate_manifests": [],
+      "required_submodules": []
+    },
+    "commands": [
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && cmake -S . -B build && cmake --build build --target rtlgen",
+        "name": "build_generator"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 scripts/run_sweep.py --configs runs/designs/noc/l1_noc_router_p4_w128_wrapper/config_l1_noc_router_p4_w128.json runs/designs/noc/l1_noc_router_p4_w256_wrapper/config_l1_noc_router_p4_w256.json runs/designs/noc/l1_noc_fifo_w128_d16_wrapper/config_l1_noc_fifo_w128_d16.json runs/designs/noc/l1_noc_fifo_w256_d16_wrapper/config_l1_noc_fifo_w256_d16.json --platform nangate45 --sweep runs/campaigns/noc/l1_memory_noc_primitives/sweeps/nangate45_segmented_router_fifo_frontier.json --out_root runs/designs/noc --force_gen --skip_existing",
+        "name": "run_sweep"
+      },
+      {
+        "run": "python3 scripts/build_runs_index.py",
+        "name": "build_runs_index"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate"
+      }
+    ],
+    "objective": "Measure proposal-linked 128/256-bit NoC router and FIFO lane primitives for the Llama7B endpoint path after flat 2048-bit router/FIFO boundary failures.",
+    "acceptance": [
+      "Each generated wrapper metrics.csv contains recorded rows with a status column; allow non-ok metrics such as flow_failed when the row is boundary evidence",
+      "Committed outputs stay lightweight (metrics.csv only; runs/index.csv is exported centrally after merge)",
+      "python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue pass"
+    ],
+    "source_mode": "config",
+    "expected_outputs": [
+      "runs/designs/noc/l1_noc_router_p4_w128_wrapper/metrics.csv",
+      "runs/designs/noc/l1_noc_router_p4_w256_wrapper/metrics.csv",
+      "runs/designs/noc/l1_noc_fifo_w128_d16_wrapper/metrics.csv",
+      "runs/designs/noc/l1_noc_fifo_w256_d16_wrapper/metrics.csv"
+    ]
+  },
+  "layer": "layer1",
+  "state": "evaluated",
+  "title": "Segmented/narrower NoC router/FIFO lane PPA",
+  "result": {
+    "branch": "eval/l1_decoder_attention_endpoint_router_segmented_noc_ppa_v1/s20260617t090552z",
+    "completed_utc": "2026-06-17T09:05:50.298733Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "b7c2d9c80c1c",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260617t090552z][host:b7c2d9c80c1c][item:l1_decoder_attention_endpoint_router_segmented_noc_ppa_v1]",
+    "metrics_rows": [
+      {
+        "tag": "l1_memory_noc_primitives_nangate45_segmented_router_fifo_frontier_9b900945",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "63bb253e",
+        "metrics_csv": "runs/designs/noc/l1_noc_router_p4_w128_wrapper/metrics.csv"
+      },
+      {
+        "tag": "l1_memory_noc_primitives_nangate45_segmented_router_fifo_frontier_d64a96fd",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "518b1498",
+        "metrics_csv": "runs/designs/noc/l1_noc_router_p4_w128_wrapper/metrics.csv"
+      },
+      {
+        "tag": "l1_memory_noc_primitives_nangate45_segmented_router_fifo_frontier_5137e93f",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "f72667d8",
+        "metrics_csv": "runs/designs/noc/l1_noc_router_p4_w128_wrapper/metrics.csv"
+      },
+      {
+        "tag": "l1_memory_noc_primitives_nangate45_segmented_router_fifo_frontier_9b900945",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "63bb253e",
+        "metrics_csv": "runs/designs/noc/l1_noc_router_p4_w256_wrapper/metrics.csv"
+      },
+      {
+        "tag": "l1_memory_noc_primitives_nangate45_segmented_router_fifo_frontier_d64a96fd",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "518b1498",
+        "metrics_csv": "runs/designs/noc/l1_noc_router_p4_w256_wrapper/metrics.csv"
+      },
+      {
+        "tag": "l1_memory_noc_primitives_nangate45_segmented_router_fifo_frontier_5137e93f",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "f72667d8",
+        "metrics_csv": "runs/designs/noc/l1_noc_router_p4_w256_wrapper/metrics.csv"
+      },
+      {
+        "tag": "l1_memory_noc_primitives_nangate45_segmented_router_fifo_frontier_9b900945",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "63bb253e",
+        "metrics_csv": "runs/designs/noc/l1_noc_fifo_w128_d16_wrapper/metrics.csv"
+      },
+      {
+        "tag": "l1_memory_noc_primitives_nangate45_segmented_router_fifo_frontier_d64a96fd",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "518b1498",
+        "metrics_csv": "runs/designs/noc/l1_noc_fifo_w128_d16_wrapper/metrics.csv"
+      },
+      {
+        "tag": "l1_memory_noc_primitives_nangate45_segmented_router_fifo_frontier_5137e93f",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "f72667d8",
+        "metrics_csv": "runs/designs/noc/l1_noc_fifo_w128_d16_wrapper/metrics.csv"
+      },
+      {
+        "tag": "l1_memory_noc_primitives_nangate45_segmented_router_fifo_frontier_9b900945",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "63bb253e",
+        "metrics_csv": "runs/designs/noc/l1_noc_fifo_w256_d16_wrapper/metrics.csv"
+      },
+      {
+        "tag": "l1_memory_noc_primitives_nangate45_segmented_router_fifo_frontier_d64a96fd",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "518b1498",
+        "metrics_csv": "runs/designs/noc/l1_noc_fifo_w256_d16_wrapper/metrics.csv"
+      },
+      {
+        "tag": "l1_memory_noc_primitives_nangate45_segmented_router_fifo_frontier_5137e93f",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "f72667d8",
+        "metrics_csv": "runs/designs/noc/l1_noc_fifo_w256_d16_wrapper/metrics.csv"
+      }
+    ],
+    "queue_item_id": "l1_decoder_attention_endpoint_router_segmented_noc_ppa_v1",
+    "session_id": "s20260617t090552z",
+    "status": "ok",
+    "summary": "4/4 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l1_decoder_attention_endpoint_router_segmented_noc_ppa_v1/s20260617t090552z",
+    "pr_title": "eval: run segmented/narrower noc router/fifo lane ppa",
+    "checklist": [
+      "Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge",
+      "Include metrics row references for each completed design",
+      "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260617t090552z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l1_decoder_attention_endpoint_router_segmented_noc_ppa_v1"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l1_decoder_attention_endpoint_router_segmented_noc_ppa_v1",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 1,
+  "created_utc": "2026-06-17T08:41:26.242366Z",
+  "requested_by": "control_plane",
+  "developer_loop": {
+    "evaluation": {
+      "mode": "frontier_closure",
+      "trial_policy": {
+        "seed_start": 0,
+        "trial_count": 1,
+        "stop_after_failures": 1
+      }
+    },
+    "abstraction": {
+      "layer": "architecture_block"
+    },
+    "proposal_id": "prop_l1_decoder_attention_endpoint_router_segmented_noc_ppa_v1",
+    "proposal_path": "docs/proposals/prop_l1_decoder_attention_endpoint_router_segmented_noc_ppa_v1"
+  },
+  "source_requirement": {
+    "repo": "",
+    "reason": "evaluator runtime must contain the queued job source commit",
+    "version": 1,
+    "required_ref": "origin/master",
+    "required_sha": "276f12403c2e08e8cd9b5e891a8b1fb151b33de7",
+    "requires_daemon_restart": true
+  }
+}

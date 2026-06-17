@@ -1,0 +1,33 @@
+{
+  "item_id": "l1_decoder_attention_endpoint_router_segmented_noc_ppa_v1",
+  "completed_trials": 1,
+  "success_count": 1,
+  "failure_count": 0,
+  "success_rate": 1.0,
+  "metrics": {
+    "critical_path_ns": {
+      "best": 0.2401,
+      "mean": 0.2401,
+      "median": 0.2401,
+      "max": 0.2401,
+      "range": 0.0,
+      "stddev": 0.0
+    },
+    "die_area": {
+      "best": 3299.3536,
+      "mean": 3299.3536,
+      "median": 3299.3536,
+      "max": 3299.3536,
+      "range": 0.0,
+      "stddev": 0.0
+    },
+    "total_power_mw": {
+      "best": 0.00171,
+      "mean": 0.00171,
+      "median": 0.00171,
+      "max": 0.00171,
+      "range": 0.0,
+      "stddev": 0.0
+    }
+  }
+}
