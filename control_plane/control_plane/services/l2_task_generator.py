@@ -5211,10 +5211,11 @@ def _decoder_attention_kv_hbm_closed_onchip_schedule_evidence(*, item_id: str) -
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_kv_hbm_closed_onchip_schedule__{item_id}.json"
     report = f"{base}/decoder_attention_kv_hbm_closed_onchip_schedule__{item_id}.md"
-    measured_hbm = (
-        f"{base}/decoder_attention_kv_measured_hbm_service__"
-        "l2_decoder_attention_kv_measured_hbm_service_llama7b_v1.json"
-    )
+    if "softmax_recip_lut" in item_id:
+        source_item = "l2_decoder_attention_kv_measured_hbm_service_softmax_recip_lut_llama7b_v1"
+    else:
+        source_item = "l2_decoder_attention_kv_measured_hbm_service_llama7b_v1"
+    measured_hbm = f"{base}/decoder_attention_kv_measured_hbm_service__{source_item}.json"
     return {
         "inputs": {
             "attention_kv_measured_hbm_service": measured_hbm,
@@ -5254,10 +5255,11 @@ def _decoder_attention_kv_subtile_pipeline_schedule_evidence(*, item_id: str) ->
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_kv_subtile_pipeline_schedule__{item_id}.json"
     report = f"{base}/decoder_attention_kv_subtile_pipeline_schedule__{item_id}.md"
-    hbm_closed_onchip = (
-        f"{base}/decoder_attention_kv_hbm_closed_onchip_schedule__"
-        "l2_decoder_attention_kv_hbm_closed_onchip_schedule_llama7b_v1.json"
-    )
+    if "softmax_recip_lut" in item_id:
+        source_item = "l2_decoder_attention_kv_hbm_closed_onchip_schedule_softmax_recip_lut_llama7b_v1"
+    else:
+        source_item = "l2_decoder_attention_kv_hbm_closed_onchip_schedule_llama7b_v1"
+    hbm_closed_onchip = f"{base}/decoder_attention_kv_hbm_closed_onchip_schedule__{source_item}.json"
     return {
         "inputs": {
             "attention_kv_hbm_closed_onchip_schedule": hbm_closed_onchip,
