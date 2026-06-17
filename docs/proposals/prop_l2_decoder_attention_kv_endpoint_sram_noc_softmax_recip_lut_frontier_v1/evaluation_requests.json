@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_decoder_attention_kv_endpoint_sram_noc_softmax_recip_lut_frontier_v1",
-  "source_commit": "TBD_AFTER_MERGE",
+  "source_commit": "cdea382d8909d81a29785d26f2699968e5ac425a",
   "source_commit_note": "Dispatch the L1 q8 item after this proposal/config PR is merged. Dispatch the L2 item only after q8 metrics are merged, because the L2 builder consumes the q8 metrics.csv artifact.",
   "requested_items": [
     {
@@ -21,7 +21,12 @@
       "expected_result": {
         "direction": "measure_q8_softmax_weight_profile",
         "reason": "The result should provide q8 standalone reciprocal-LUT softmax-weight PPA for the same local-cost boundary used by the current Llama7B endpoint scheduler."
-      }
+      },
+      "status": "merged",
+      "merged_pr_number": 873,
+      "merge_commit": "ff31b883a47208aa5728f75b2c8df62908b471d9",
+      "merged_utc": "2026-06-17T03:34:14.833284Z",
+      "notes": "Merged via PR #873 and merge ff31b883a47208aa5728f75b2c8df62908b471d9 at 2026-06-17T03:34:14.833284Z."
     },
     {
       "item_id": "l2_decoder_attention_kv_endpoint_sram_noc_full_search_softmax_recip_lut_llama7b_v1",
