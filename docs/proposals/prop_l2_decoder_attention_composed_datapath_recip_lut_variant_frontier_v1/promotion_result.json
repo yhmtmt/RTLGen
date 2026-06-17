@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_composed_datapath_recip_lut_variant_frontier_v1",
+  "decision": "iterate",
+  "pr_number": 917,
+  "merge_commit": "25cb3978b96e59ca5bc74712bf8ed9f6626ea73d",
+  "merged_utc": "2026-06-17T21:52:18.598651Z"
+}

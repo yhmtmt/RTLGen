@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_decoder_attention_composed_datapath_recip_lut_variant_frontier_v1",
-  "source_commit": "pending",
+  "source_commit": "45392fae420e5fe965c0841a44bfbe3eb134082c",
   "requested_items": [
     {
       "item_id": "l2_decoder_attention_composed_datapath_recip_lut_variant_frontier_llama7b_v1",
@@ -22,7 +22,11 @@
         "direction": "record_composed_recip_lut_variant_frontier",
         "reason": "Identify whether q8, q10, or q12 reciprocal-LUT composed wrapper is the best measured datapath point."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 917,
+      "merge_commit": "25cb3978b96e59ca5bc74712bf8ed9f6626ea73d",
+      "merged_utc": "2026-06-17T21:52:18.598651Z",
+      "notes": "Merged via PR #917 and merge 25cb3978b96e59ca5bc74712bf8ed9f6626ea73d at 2026-06-17T21:52:18.598651Z."
     }
   ]
 }
