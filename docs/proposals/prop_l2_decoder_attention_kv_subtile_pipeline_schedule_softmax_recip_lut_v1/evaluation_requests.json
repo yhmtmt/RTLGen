@@ -1,0 +1,25 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_subtile_pipeline_schedule_softmax_recip_lut_v1",
+  "source_commit": "f81774cba0b9e26dd9a6d15e8959ea6854bd0fa2",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_kv_subtile_pipeline_schedule_softmax_recip_lut_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "LLM-oriented attention-tail stress campaign for larger sequence lengths and more repeated non-terminal Softmax paths.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_kv_subtile_pipeline_schedule",
+      "comparison_role": "frontier_closure",
+      "paired_baseline_item_id": "l2_decoder_attention_kv_hbm_closed_onchip_schedule_softmax_recip_lut_llama7b_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_kv_hbm_closed_onchip_schedule_softmax_recip_lut_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "record_softmax_recip_subtile_pipeline_schedule_frontier",
+        "reason": "Evaluate whether sub-tile QK/softmax/V pipelining reduces the tile_attention bottleneck after softmax-recip measured-HBM and HBM-closed on-chip service closure."
+      },
+      "status": "pending"
+    }
+  ]
+}

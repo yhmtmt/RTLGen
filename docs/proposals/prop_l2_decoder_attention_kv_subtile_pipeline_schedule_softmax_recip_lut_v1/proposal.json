@@ -1,0 +1,65 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_subtile_pipeline_schedule_softmax_recip_lut_v1",
+  "created_utc": "2026-06-17T11:56:58.260271Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Softmax-recip subtile pipeline schedule for Llama7B attention",
+  "hypothesis": "After measured SRAM rebalance, measured HBM service, and HBM-closed on-chip schedule closure, the remaining tile-attention bottleneck can be reduced by streaming QK, softmax, and value work across legal subtiles within the measured local SRAM capacity.",
+  "direct_comparison": {
+    "primary_question": "Does sub-tile QK/softmax/V pipelining improve the softmax-recip HBM-closed Llama7B attention frontier without exceeding measured local SRAM capacity?",
+    "include": [
+      "Use l2_decoder_attention_kv_hbm_closed_onchip_schedule_softmax_recip_lut_llama7b_v1 as the source frontier.",
+      "Sweep subtile count, subtile buffer count, prefetch distance, normalization strategy, compute sharing mode, softmax latency per subtile, and online rescale penalty.",
+      "Require the stream buffer footprint to fit within the measured local capacity per cluster.",
+      "Report latency, speedup versus the HBM-closed source, dominant resource, selected subtile schedule, residual HBM exposure, and local capacity margin."
+    ],
+    "exclude": [
+      "Do not change HBM controller parameters or SRAM macro packing in this item.",
+      "Do not change precision, KV sharing, or numerical quality assumptions.",
+      "Do not add new full NoC RTL or a new compute primitive in this schedule-only item.",
+      "Do not treat the dual-MAC schedule as free of area impact until the compute partition model is revisited."
+    ],
+    "follow_on_broad_sweep": [
+      "If the schedule improves latency, revisit compute-area accounting for dual-MAC and split-MAC modes.",
+      "If the pipeline remains dominant, explore physical compute-path pipelining and additional attention datapath partitioning.",
+      "If HBM exposure or local SRAM becomes dominant, move to a more detailed memory-controller and local-buffer schedule model."
+    ]
+  },
+  "expected_benefit": [
+    "Reduces the tile-attention critical path after memory-service closure.",
+    "Tests whether the measured local SRAM capacity can support streaming subtile buffers.",
+    "Identifies whether the next bottleneck is pipeline compute, residual memory service, or HBM exposure."
+  ],
+  "risks": [
+    "Dual-MAC mode currently inherits the source compute area and should be revisited for physical area consistency.",
+    "Online correction and softmax rescale behavior are schedule-mode assumptions rather than full numerical validation.",
+    "The model remains analytic and does not yet instantiate a full pipelined RTL datapath."
+  ],
+  "needs_mapper_change": true,
+  "required_evaluations": [
+    {
+      "task_type": "l2_campaign",
+      "evaluation_mode": "frontier_detail",
+      "objective": "softmax_recip_subtile_pipeline_schedule_frontier",
+      "cost_class": "small",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_kv_hbm_closed_onchip_schedule_softmax_recip_lut_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "record_softmax_recip_subtile_pipeline_schedule_frontier",
+        "reason": "Evaluate whether sub-tile QK/softmax/V pipelining reduces the tile_attention bottleneck after softmax-recip measured-HBM and HBM-closed on-chip service closure."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_hbm_closed_onchip_schedule__l2_decoder_attention_kv_hbm_closed_onchip_schedule_softmax_recip_lut_llama7b_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/estimate_llm_decoder_attention_kv_subtile_pipeline_schedule.py",
+    "npu/eval/estimate_llm_decoder_attention_kv_hbm_closed_onchip_schedule.py",
+    "control_plane/control_plane/services/l2_task_generator.py"
+  ]
+}
