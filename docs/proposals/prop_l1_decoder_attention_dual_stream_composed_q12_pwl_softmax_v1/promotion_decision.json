@@ -1,0 +1,9 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_dual_stream_composed_q12_pwl_softmax_v1",
+  "candidate_id": "l1_decoder_attention_dual_stream_composed_q12_pwl_softmax_ppa_v1",
+  "decision": "iterate",
+  "reason": "PPA evidence is pending. Dispatch the q12/PWL composed softmax measurement after this proposal is merged.",
+  "evidence_refs": [],
+  "next_action": "dispatch l1_decoder_attention_dual_stream_composed_q12_pwl_softmax_ppa_v1",
+  "requires_human_approval": false
+}

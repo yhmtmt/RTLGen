@@ -11,6 +11,10 @@ def _write_config(
     softmax_pipeline_stages: int | None = None,
     softmax_internal_pipeline_stages: int | None = None,
     softmax_impl: str | None = None,
+    softmax_score_bits: int | None = None,
+    softmax_weight_bits: int | None = None,
+    softmax_input_frac_bits: int | None = None,
+    softmax_reciprocal_lut_bucket_shift: int | None = None,
 ) -> None:
     comp = {
         "streams": 2,
@@ -34,6 +38,14 @@ def _write_config(
         comp["softmax_internal_pipeline_stages"] = softmax_internal_pipeline_stages
     if softmax_impl is not None:
         comp["softmax_impl"] = softmax_impl
+    if softmax_score_bits is not None:
+        comp["softmax_score_bits"] = softmax_score_bits
+    if softmax_weight_bits is not None:
+        comp["softmax_weight_bits"] = softmax_weight_bits
+    if softmax_input_frac_bits is not None:
+        comp["softmax_input_frac_bits"] = softmax_input_frac_bits
+    if softmax_reciprocal_lut_bucket_shift is not None:
+        comp["softmax_reciprocal_lut_bucket_shift"] = softmax_reciprocal_lut_bucket_shift
     config_path.parent.mkdir(parents=True)
     config_path.write_text(
         json.dumps(
@@ -200,3 +212,31 @@ def test_attention_dual_stream_composed_generator_softmax_recip_lut_replacement(
     assert "/ sum_weight_q" not in top_text
     assert "denom_shift" not in top_text
     assert ".stream_data(stream_buf_0_pipe_1)" in top_text
+
+
+def test_attention_dual_stream_composed_generator_q12_pwl_softmax(tmp_path: Path) -> None:
+    design_dir = tmp_path / "attention_dual_stream_composed_q12_pwl"
+    config_path = design_dir / "config.json"
+    _write_config(
+        config_path,
+        softmax_pipeline_stages=1,
+        softmax_impl="pwl_recip_lut",
+        softmax_score_bits=12,
+        softmax_weight_bits=12,
+        softmax_input_frac_bits=8,
+        softmax_reciprocal_lut_bucket_shift=8,
+    )
+    top_text = _generate_and_check(design_dir, config_path)
+
+    manifest = json.loads((design_dir / "verilog" / "attention_dual_stream_composed_manifest.json").read_text())
+    assert manifest["softmax_impl"] == "pwl_recip_lut"
+    assert manifest["softmax_score_bits"] == 12
+    assert manifest["softmax_weight_bits"] == 12
+    assert manifest["softmax_input_frac_bits"] == 8
+    assert manifest["softmax_reciprocal_lut_bucket_shift"] == 8
+    assert "attention_softmax_weight_q12_pwl_recip_like" in top_text
+    assert "function [ACCUM_BITS-1:0] pwl_weight" in top_text
+    assert "function [RECIPROCAL_WIDTH-1:0] reciprocal_lut" in top_text
+    assert "wire [47:0] softmax_weights" in top_text
+    assert "wire [11:0] score_lane_00" in top_text
+    assert "wire [11:0] weight_00" in top_text
