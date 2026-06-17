@@ -4914,6 +4914,24 @@ def _decoder_attention_kv_endpoint_full_onchip_service_schedule_evidence(
     }
 
 
+def _decoder_attention_kv_endpoint_full_onchip_service_source(*, item_id: str) -> str:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    if "softmax_recip_lut" in item_id:
+        source_item = "l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_softmax_recip_lut_llama7b_v1_r2"
+    else:
+        source_item = "l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_llama7b_v1"
+    return f"{base}/decoder_attention_kv_endpoint_full_onchip_service_schedule__{source_item}.json"
+
+
+def _decoder_attention_kv_endpoint_ready_valid_source(*, item_id: str) -> str:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    if "softmax_recip_lut" in item_id:
+        source_item = "l2_decoder_attention_kv_endpoint_ready_valid_service_softmax_recip_lut_llama7b_v1"
+    else:
+        source_item = "l2_decoder_attention_kv_endpoint_ready_valid_service_llama7b_v1"
+    return f"{base}/decoder_attention_kv_endpoint_ready_valid_service__{source_item}.json"
+
+
 def _decoder_attention_kv_endpoint_ready_valid_service_evidence(
     *,
     item_id: str,
@@ -4921,10 +4939,7 @@ def _decoder_attention_kv_endpoint_ready_valid_service_evidence(
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_kv_endpoint_ready_valid_service__{item_id}.json"
     report = f"{base}/decoder_attention_kv_endpoint_ready_valid_service__{item_id}.md"
-    endpoint_onchip = (
-        f"{base}/decoder_attention_kv_endpoint_full_onchip_service_schedule__"
-        "l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_llama7b_v1.json"
-    )
+    endpoint_onchip = _decoder_attention_kv_endpoint_full_onchip_service_source(item_id=item_id)
     return {
         "inputs": {
             "attention_kv_endpoint_full_onchip_service_schedule": endpoint_onchip,
@@ -4960,14 +4975,8 @@ def _decoder_attention_kv_endpoint_router_sram_composition_evidence(
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_kv_endpoint_router_sram_composition__{item_id}.json"
     report = f"{base}/decoder_attention_kv_endpoint_router_sram_composition__{item_id}.md"
-    endpoint_ready_valid = (
-        f"{base}/decoder_attention_kv_endpoint_ready_valid_service__"
-        "l2_decoder_attention_kv_endpoint_ready_valid_service_llama7b_v1.json"
-    )
-    endpoint_onchip = (
-        f"{base}/decoder_attention_kv_endpoint_full_onchip_service_schedule__"
-        "l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_llama7b_v1.json"
-    )
+    endpoint_ready_valid = _decoder_attention_kv_endpoint_ready_valid_source(item_id=item_id)
+    endpoint_onchip = _decoder_attention_kv_endpoint_full_onchip_service_source(item_id=item_id)
     sram_summary = "runs/designs/sram/llama7b_attention_tile_buffers_v1/sram_metrics_summary.json"
     sram_metrics = "runs/designs/sram/llama7b_attention_tile_buffers_v1/sram_metrics.json"
     return {
