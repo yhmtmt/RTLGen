@@ -1,0 +1,200 @@
+{
+  "boundary_evidence": {
+    "fifo": {
+      "core_utilizations": [
+        40,
+        50,
+        60
+      ],
+      "metrics_csvs": [
+        "runs/designs/noc/l1_noc_fifo_w2048_d16_wrapper/metrics.csv"
+      ],
+      "observed_width_bits": 2048,
+      "param_hashes": [
+        "9455a154",
+        "444485a4",
+        "e6eb27a9"
+      ],
+      "row_count": 3,
+      "status": "failed",
+      "statuses": [
+        "failed"
+      ],
+      "target_width_bits": 2048
+    },
+    "router": {
+      "core_utilizations": [
+        40,
+        50,
+        60
+      ],
+      "metrics_csvs": [
+        "runs/designs/noc/l1_noc_router_p4_w2048_wrapper/metrics.csv"
+      ],
+      "observed_width_bits": 2048,
+      "param_hashes": [
+        "9455a154",
+        "444485a4",
+        "e6eb27a9"
+      ],
+      "row_count": 3,
+      "status": "failed",
+      "statuses": [
+        "failed"
+      ],
+      "target_width_bits": 2048
+    }
+  },
+  "closure_diagnosis": {
+    "endpoint": "measured_at_ready_valid_width",
+    "fifo": "lane_composed_segmented_evidence_available_while_flat_2048_failed",
+    "local_sram_capacity": "local_capacity_budget_failed",
+    "router": "lane_composed_segmented_evidence_available_while_flat_2048_failed"
+  },
+  "closure_flags": {
+    "endpoint_ppa_width_matches_ready_valid_width": true,
+    "fifo_ppa_width_matches_link_width": false,
+    "ready_valid_endpoint_passed": true,
+    "router_ppa_width_matches_link_width": false,
+    "tile_sram_capacity_covers_selected_local_capacity": false,
+    "tile_sram_profile_fits_sram_area_budget": true
+  },
+  "composition_quantities": {
+    "endpoint_width_ratio_vs_measured_ppa": 1,
+    "fifo_lanes_for_link": 8,
+    "link_width_bits": 2048,
+    "local_capacity_bytes_per_cluster": 19140624,
+    "packet_bits": 1024,
+    "packet_payload_bytes": 128,
+    "router_lanes_for_link": 8,
+    "router_lanes_for_packet": 4,
+    "scaled_endpoint_area_per_cluster_um2": 35492.676025,
+    "scaled_fifo_area_per_cluster_um2": 94238.7698,
+    "scaled_local_service_area_all_clusters_um2": 2498020.394,
+    "scaled_local_service_area_per_cluster_um2": 156126.274625,
+    "scaled_router_area_per_cluster_um2": 26394.8288,
+    "sram_budget_area_um2": 280000000.0,
+    "tile_sram_allocated_bytes_per_cluster": 614656,
+    "tile_sram_budget_area_fraction": 0.142156,
+    "tile_sram_capacity_fraction_of_selected_local_capacity": 0.032113,
+    "tile_sram_total_area_um2_for_active_clusters": 39803772.916944005
+  },
+  "decision": "composition_requires_follow_on_ppa",
+  "measured_primitives": {
+    "endpoint": {
+      "area_um2": 35492.676025,
+      "critical_path_ns": 0.8012,
+      "design": "l1_onchip_endpoint_w1024_b4_eq16_bq16_wrapper",
+      "metrics_csv": "runs/designs/noc/l1_onchip_endpoint_w1024_b4_eq16_bq16_wrapper/metrics.csv",
+      "param_hash": "e6eb27a9",
+      "power_mw": 0.0279,
+      "source": "l1_promotion",
+      "tag": "l1_memory_noc_primitives_nangate45_macro_frontier_5137e93f",
+      "width_bits": 1024
+    },
+    "fifo": {
+      "aggregate_area_um2": 94238.7698,
+      "aggregate_power_mw": 0.06952,
+      "area_um2": 11779.846225,
+      "critical_path_ns": 0.29,
+      "design": "l1_noc_fifo_w256_d16_wrapper",
+      "lane_count_for_link": 8,
+      "metrics_csv": "runs/designs/noc/l1_noc_fifo_w256_d16_wrapper/metrics.csv",
+      "param_hash": "f72667d8",
+      "power_mw": 0.00869,
+      "source": "segmented_l1_promotion",
+      "tag": "l1_memory_noc_primitives_nangate45_segmented_router_fifo_frontier_5137e93f",
+      "width_bits": 256
+    },
+    "local_sram_capacity": {
+      "budget_check": {
+        "area_fraction_of_sram_budget": 4.667229,
+        "fits_sram_budget": false,
+        "sram_budget_area_um2": 280000000.0,
+        "total_area_um2": 1306824061.5888963
+      },
+      "chunking": {
+        "allocated_bytes_all_clusters": 306446336,
+        "allocated_bytes_per_cluster": 19152896,
+        "capacity_overhead": 1.000641,
+        "chunk_count_per_cluster": 4,
+        "chunks_bytes": [
+          16777216,
+          2097152,
+          262144,
+          16384
+        ],
+        "max_chunk_bytes": 16777216,
+        "min_chunk_bytes": 16384,
+        "width_bits": 1024,
+        "word_bytes": 128
+      }
+    },
+    "router": {
+      "aggregate_area_um2": 26394.8288,
+      "aggregate_power_mw": 0.01368,
+      "area_um2": 3299.3536,
+      "critical_path_ns": 0.2401,
+      "design": "l1_noc_router_p4_w256_wrapper",
+      "lane_count_for_link": 8,
+      "metrics_csv": "runs/designs/noc/l1_noc_router_p4_w256_wrapper/metrics.csv",
+      "param_hash": "f72667d8",
+      "power_mw": 0.00171,
+      "source": "segmented_l1_promotion",
+      "tag": "l1_memory_noc_primitives_nangate45_segmented_router_fifo_frontier_5137e93f",
+      "width_bits": 256
+    },
+    "sram_summary": {
+      "allocated_bytes": 614656,
+      "max_access_time_ns": 1.4124,
+      "total_area_um2": 2487735.8073090003,
+      "total_read_energy_pj": 374.6457,
+      "total_write_energy_pj": 572.2861999999999
+    }
+  },
+  "model": "llm_decoder_attention_endpoint_router_sram_composition_audit_v1",
+  "recommended_next_l1_points": [
+    {
+      "parameters": {
+        "active_clusters": 16,
+        "local_capacity_bytes_per_cluster": 19140624
+      },
+      "primitive": "local_sram_capacity",
+      "reason": "tile-local SRAM buffers are measured, and local-capacity CACTI evidence is available; re-balance or reduce the selected local-capacity pool to resolve a local SRAM budget failure."
+    }
+  ],
+  "remaining_abstractions": [
+    "Lane-composed/segmented NoC PPA metrics are available for router/FIFO while flat 2048-bit boundary evidence failed.",
+    "Tile-local SRAM buffers are measured, but measured local-capacity evidence already shows the selected per-cluster local SRAM pool exceeds the available shared SRAM budget.",
+    "HBM/DRAM service remains inherited and intentionally outside this audit."
+  ],
+  "required_follow_on_ppa": [
+    "capacity_rebalance_or_smaller_local_sram_required"
+  ],
+  "selected_frontier": {
+    "active_clusters": 16,
+    "bank_arbiter_policy": "locality_first",
+    "bank_count": 64,
+    "cluster_count": 16,
+    "compute_logic_area_fraction": 0.5,
+    "dominant_tile_resource": "shared_path",
+    "latency_us": 3222.903773,
+    "link_width_bits": 2048,
+    "local_sram_fraction": 0.25,
+    "packet_payload_bytes": 128,
+    "reduction_strategy": "cluster_tree",
+    "schedule_policy": "prefetch_overlap",
+    "scheduler_policy": "locality_aware",
+    "sram_area_fraction": 0.35,
+    "topology": "mesh2d"
+  },
+  "source_items": {
+    "endpoint_onchip": "l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_llama7b_v1",
+    "endpoint_ready_valid": "l2_decoder_attention_kv_endpoint_ready_valid_service_llama7b_v1",
+    "local_sram_capacity": "l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_llama7b_v1",
+    "segmented_l1_promotion": "l1_decoder_attention_endpoint_router_segmented_noc_ppa_v1",
+    "sram_profile": "llama7b_attention_tile_buffers_v1",
+    "wide_l1_promotion": "l1_decoder_attention_endpoint_router_wide_ppa_v1"
+  },
+  "version": 1
+}
