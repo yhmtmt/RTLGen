@@ -155,6 +155,14 @@ def test_expire_stale_leases_requeues_assigned_nonterminal_work_as_ready() -> No
             started_at=utcnow(),
         )
         session.add(run)
+        lease.machine.capabilities = {
+            **(lease.machine.capabilities or {}),
+            "last_progress": {
+                "phase": "command_running",
+                "item_id": item_b.item_id,
+                "command_name": "run_sweep",
+            },
+        }
         lease.expires_at = utcnow().replace(year=2020)
         item_b.state = WorkItemState.RUNNING
         session.commit()
@@ -168,6 +176,7 @@ def test_expire_stale_leases_requeues_assigned_nonterminal_work_as_ready() -> No
         assert lease.status == LeaseStatus.EXPIRED
         assert item_b.state == WorkItemState.READY
         assert run.status == RunStatus.CANCELED
+        assert "last_progress" not in lease.machine.capabilities
         assert run.completed_at is not None
         assert run.failure_category == "lease_expired"
 

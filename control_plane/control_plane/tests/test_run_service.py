@@ -113,6 +113,15 @@ def test_start_append_complete_run_lifecycle() -> None:
             event_payload={"command": "validate", "exit_code": 0},
         )
         assert event.event_type == "command_finished"
+        lease.machine.capabilities = {
+            **(lease.machine.capabilities or {}),
+            "last_progress": {
+                "phase": "command_running",
+                "item_id": work_item.item_id,
+                "command_name": "validate",
+            },
+        }
+        session.commit()
 
         completed = complete_run(
             session,
@@ -135,6 +144,7 @@ def test_start_append_complete_run_lifecycle() -> None:
         lease = session.query(WorkerLease).filter_by(lease_token=lease.lease_token).one()
         assert run.status.value == "succeeded"
         assert lease.status == LeaseStatus.RELEASED
+        assert "last_progress" not in lease.machine.capabilities
         assert work_item.state == WorkItemState.ARTIFACT_SYNC
         assert session.query(RunEvent).filter_by(run_id=run.id).count() == 3
 
