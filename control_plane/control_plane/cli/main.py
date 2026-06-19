@@ -88,6 +88,7 @@ def main(argv: list[str] | None = None) -> int:
     generate_l1_parser.add_argument("--no-auto-dispatch", action="store_true")
     generate_l1_parser.add_argument("--dispatch-machine-key")
     generate_l1_parser.add_argument("--dispatch-freshness-seconds", type=int, default=120)
+    generate_l1_parser.add_argument("--no-update-proposal-files", action="store_true")
 
     consume_l1_parser = subparsers.add_parser(
         "consume-l1-result",
@@ -149,6 +150,7 @@ def main(argv: list[str] | None = None) -> int:
     generate_l2_parser.add_argument("--no-auto-dispatch", action="store_true")
     generate_l2_parser.add_argument("--dispatch-machine-key")
     generate_l2_parser.add_argument("--dispatch-freshness-seconds", type=int, default=120)
+    generate_l2_parser.add_argument("--no-update-proposal-files", action="store_true")
 
     github_poll_parser = subparsers.add_parser("poll-github", help="Poll GitHub review PR state and reconcile merged PRs")
     github_poll_parser.add_argument("--database-url", required=True)
@@ -540,6 +542,8 @@ def main(argv: list[str] | None = None) -> int:
                 argv2.extend([key, str(value)])
         if args.no_auto_dispatch:
             argv2.append("--no-auto-dispatch")
+        if args.no_update_proposal_files:
+            argv2.append("--no-update-proposal-files")
         if args.dispatch_freshness_seconds is not None:
             argv2.extend(["--dispatch-freshness-seconds", str(args.dispatch_freshness_seconds)])
         return generate_l1_sweep_main(argv2)
@@ -624,6 +628,8 @@ def main(argv: list[str] | None = None) -> int:
             argv2.append("--no-run-physical")
         if args.no_auto_dispatch:
             argv2.append("--no-auto-dispatch")
+        if args.no_update_proposal_files:
+            argv2.append("--no-update-proposal-files")
         for item_id in args.depends_on_item_id or []:
             argv2.extend(["--depends-on-item-id", str(item_id)])
         if args.requires_merged_inputs:

@@ -37,6 +37,7 @@ def test_top_level_generate_l1_forwards_extended_generation_flags() -> None:
                 "100",
                 "--stop-after-failures",
                 "2",
+                "--no-update-proposal-files",
             ]
         )
 
@@ -50,6 +51,35 @@ def test_top_level_generate_l1_forwards_extended_generation_flags() -> None:
     assert forwarded[forwarded.index("--trial-count") + 1] == "3"
     assert forwarded[forwarded.index("--seed-start") + 1] == "100"
     assert forwarded[forwarded.index("--stop-after-failures") + 1] == "2"
+    assert "--no-update-proposal-files" in forwarded
+
+
+def test_top_level_generate_l2_forwards_no_update_proposal_files() -> None:
+    with patch("control_plane.cli.main.generate_l2_campaign_main", return_value=0) as generate:
+        result = main(
+            [
+                "generate-l2-campaign",
+                "--database-url",
+                "sqlite+pysqlite:///:memory:",
+                "--repo-root",
+                "/repo",
+                "--campaign-path",
+                "campaign.json",
+                "--item-id",
+                "l2_item",
+                "--no-run-physical",
+                "--requires-materialized-refs",
+                "--no-update-proposal-files",
+            ]
+        )
+
+    assert result == 0
+    forwarded = generate.call_args.args[0]
+    assert forwarded[forwarded.index("--campaign-path") + 1] == "campaign.json"
+    assert forwarded[forwarded.index("--item-id") + 1] == "l2_item"
+    assert "--no-run-physical" in forwarded
+    assert "--requires-materialized-refs" in forwarded
+    assert "--no-update-proposal-files" in forwarded
 
 
 def test_top_level_run_worker_forwards_only_worker_flags() -> None:
