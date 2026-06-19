@@ -3687,8 +3687,9 @@ def test_generate_l2_campaign_task_adds_decoder_attention_kv_model_native_qualit
 
             work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
             decoder_inputs = work_item.input_manifest["decoder_contract"]
-            assert [command["name"] for command in work_item.command_manifest[:1]] == [
+            assert [command["name"] for command in work_item.command_manifest] == [
                 "evaluate_decoder_attention_kv_model_native_quality_7b",
+                "validate_runs",
             ]
             run = work_item.command_manifest[0]["run"]
             assert "RTLGEN_MODEL_NATIVE_7B_MODEL_ID" in run
@@ -3706,12 +3707,24 @@ def test_generate_l2_campaign_task_adds_decoder_attention_kv_model_native_qualit
                 "decoder_attention_kv_model_native_quality_7b__"
                 "l2_decoder_attention_kv_model_native_quality_7b_v1.json"
             )
+            assert "generated_campaign" not in work_item.input_manifest
             assert decoder_inputs["attention_kv_trace_calibration"].endswith(
                 "decoder_attention_kv_trace_calibration__l2_decoder_attention_kv_trace_calibration_v1.json"
             )
             assert "7B-class trained checkpoint" in decoder_inputs["attention_kv_model_native_quality_7b_scope"]
             assert "RTLGEN_MODEL_NATIVE_7B_MODEL_ID" in decoder_inputs["attention_kv_model_native_quality_7b_scope"]
-            assert decoder_inputs["attention_kv_memory_out"] in work_item.expected_outputs
+            assert work_item.expected_outputs == [
+                (
+                    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                    "decoder_attention_kv_model_native_quality_7b__"
+                    "l2_decoder_attention_kv_model_native_quality_7b_v1.json"
+                ),
+                (
+                    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                    "decoder_attention_kv_model_native_quality_7b__"
+                    "l2_decoder_attention_kv_model_native_quality_7b_v1.md"
+                ),
+            ]
             assert work_item.task_request.request_payload["developer_loop"]["abstraction"] == {
                 "layer": "decoder_attention_kv_model_native_quality_7b",
             }
