@@ -5964,6 +5964,7 @@ def _decoder_attention_kv_model_native_quality_7b_evidence(*, item_id: str) -> d
             },
         ],
         "expected_outputs": [out, report],
+        "evidence_only": True,
     }
 
 
@@ -7226,6 +7227,7 @@ def _build_payload(
         },
     }
     abstraction_layer_name = str(abstraction_layer or "").strip()
+    evidence_only = False
     if abstraction_layer_name in {
         "decoder_probability_path",
         "decoder_probability_sweep",
@@ -7606,9 +7608,34 @@ def _build_payload(
             decoder_evidence = _decoder_probability_sweep_evidence(item_id=item_id)
         else:
             decoder_evidence = _decoder_probability_path_evidence(item_id=item_id)
-        commands = [*decoder_evidence["commands"], *commands]
-        expected_outputs = _uniq([*expected_outputs, *decoder_evidence["expected_outputs"]])
-        task_inputs["decoder_contract"] = decoder_evidence["inputs"]
+        evidence_only = bool(decoder_evidence.get("evidence_only"))
+        if evidence_only:
+            commands = [
+                *decoder_evidence["commands"],
+                {
+                    "name": "validate_runs",
+                    "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+                },
+            ]
+            expected_outputs = _uniq(list(decoder_evidence["expected_outputs"]))
+            task_inputs = {"decoder_contract": decoder_evidence["inputs"]}
+        else:
+            commands = [*decoder_evidence["commands"], *commands]
+            expected_outputs = _uniq([*expected_outputs, *decoder_evidence["expected_outputs"]])
+            task_inputs["decoder_contract"] = decoder_evidence["inputs"]
+
+    acceptance = [
+        "Populate metrics.csv for all referenced design dirs",
+        "Write campaign summary outputs under the campaign output directory",
+        "Keep result_path/work_result_json fields repo-portable",
+        "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing",
+    ]
+    if evidence_only:
+        acceptance = [
+            "Write all declared decoder evidence artifacts",
+            "Keep evidence artifact paths repo-portable",
+            "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing",
+        ]
 
     payload = {
         "version": 0.1,
@@ -7627,12 +7654,7 @@ def _build_payload(
             "inputs": task_inputs,
             "commands": commands,
             "expected_outputs": expected_outputs,
-            "acceptance": [
-                "Populate metrics.csv for all referenced design dirs",
-                "Write campaign summary outputs under the campaign output directory",
-                "Keep result_path/work_result_json fields repo-portable",
-                "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing",
-            ],
+            "acceptance": acceptance,
         },
         "handoff": {
             "branch": f"eval/{item_id}/<session_id>",
