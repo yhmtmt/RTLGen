@@ -58,6 +58,7 @@ class Layer2CampaignGenerateRequest:
     depends_on_item_ids: list[str] | None = None
     requires_merged_inputs: bool = False
     requires_materialized_refs: bool = False
+    update_proposal_files: bool = True
 
 
 @dataclass(frozen=True)
@@ -7766,24 +7767,25 @@ def generate_l2_campaign_task(session: Session, request: Layer2CampaignGenerateR
         explicit=request.requires_materialized_refs,
     )
     source_commit = _resolve_source_commit(repo_root, request.source_commit)
-    _upsert_requested_item_entry(
-        repo_root=repo_root,
-        proposal_id=request.proposal_id,
-        proposal_path=proposal_path,
-        item_id=item_id,
-        task_type='l2_campaign',
-        objective=objective,
-        evaluation_mode=effective_evaluation_mode,
-        abstraction_layer=effective_abstraction_layer,
-        comparison_role=effective_comparison_role,
-        paired_baseline_item_id=effective_paired_baseline_item_id,
-        depends_on_item_ids=effective_depends_on_item_ids,
-        requires_merged_inputs=effective_requires_merged_inputs,
-        requires_materialized_refs=effective_requires_materialized_refs,
-        expected_direction=request.expected_direction,
-        expected_reason=request.expected_reason,
-        source_commit=source_commit,
-    )
+    if request.update_proposal_files:
+        _upsert_requested_item_entry(
+            repo_root=repo_root,
+            proposal_id=request.proposal_id,
+            proposal_path=proposal_path,
+            item_id=item_id,
+            task_type='l2_campaign',
+            objective=objective,
+            evaluation_mode=effective_evaluation_mode,
+            abstraction_layer=effective_abstraction_layer,
+            comparison_role=effective_comparison_role,
+            paired_baseline_item_id=effective_paired_baseline_item_id,
+            depends_on_item_ids=effective_depends_on_item_ids,
+            requires_merged_inputs=effective_requires_merged_inputs,
+            requires_materialized_refs=effective_requires_materialized_refs,
+            expected_direction=request.expected_direction,
+            expected_reason=request.expected_reason,
+            source_commit=source_commit,
+        )
     expected_outputs = _build_expected_outputs(
         campaign=campaign,
         generated_campaign_path=generated_campaign_path,

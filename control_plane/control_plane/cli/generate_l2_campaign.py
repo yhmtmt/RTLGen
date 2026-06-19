@@ -41,6 +41,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--no-auto-dispatch", action="store_true")
     parser.add_argument("--dispatch-machine-key")
     parser.add_argument("--dispatch-freshness-seconds", type=int, default=120)
+    parser.add_argument("--no-update-proposal-files", action="store_true")
     args = parser.parse_args(argv)
 
     engine = build_engine(args.database_url)
@@ -75,6 +76,7 @@ def main(argv: list[str] | None = None) -> int:
                 depends_on_item_ids=args.depends_on_item_id,
                 requires_merged_inputs=args.requires_merged_inputs,
                 requires_materialized_refs=args.requires_materialized_refs,
+                update_proposal_files=not args.no_update_proposal_files,
             ),
         )
         payload = dict(result.__dict__)
