@@ -5924,6 +5924,49 @@ def _decoder_attention_kv_model_native_quality_evidence(*, item_id: str) -> dict
     }
 
 
+def _decoder_attention_kv_model_native_quality_7b_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_attention_kv_model_native_quality_7b__{item_id}.json"
+    report = f"{base}/decoder_attention_kv_model_native_quality_7b__{item_id}.md"
+    trace_calibration = f"{base}/decoder_attention_kv_trace_calibration__l2_decoder_attention_kv_trace_calibration_v1.json"
+    return {
+        "inputs": {
+            "attention_kv_memory_out": out,
+            "attention_kv_memory_report": report,
+            "attention_kv_trace_calibration": trace_calibration,
+            "attention_kv_model_native_quality_7b_scope": (
+                "Run a 7B-class trained checkpoint through teacher-forced decode while feeding back "
+                "KV8/KV4-quantized past_key_values. The default checkpoint is a public native-GQA "
+                "7B-class model, but the evaluator may set RTLGEN_MODEL_NATIVE_7B_MODEL_ID and "
+                "RTLGEN_MODEL_NATIVE_7B_EXPECTED_GQA_GROUP_SIZE to test an exact LLaMA-family or "
+                "access-controlled checkpoint. This is a real-checkpoint precision gate, not PPA."
+            ),
+        },
+        "commands": [
+            {
+                "name": "evaluate_decoder_attention_kv_model_native_quality_7b",
+                "run": (
+                    "bash -lc '"
+                    "MODEL_ID=${RTLGEN_MODEL_NATIVE_7B_MODEL_ID:-mistralai/Mistral-7B-v0.1}; "
+                    "EXPECTED_GQA=${RTLGEN_MODEL_NATIVE_7B_EXPECTED_GQA_GROUP_SIZE:-4}; "
+                    "bash npu/eval/run_hf_eval_python.sh "
+                    "npu/eval/evaluate_llm_decoder_model_native_kv_quant.py "
+                    "--model-id \"$MODEL_ID\" "
+                    "--expected-gqa-group-size \"$EXPECTED_GQA\" "
+                    "--kv-bits-list 8,4 "
+                    "--kv-granularity-list tensor "
+                    "--max-prompts 8 "
+                    "--generation-steps 8 "
+                    "--topk 5 "
+                    f"--out {out} "
+                    f"--out-md {report}'"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+    }
+
+
 def _decoder_attention_kv_model_native_recovery_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_kv_model_native_recovery__{item_id}.json"
@@ -7282,6 +7325,7 @@ def _build_payload(
         "decoder_attention_kv_native_gqa_proxy",
         "decoder_attention_kv_trace_calibration",
         "decoder_attention_kv_model_native_quality",
+        "decoder_attention_kv_model_native_quality_7b",
         "decoder_attention_kv_model_native_recovery",
         "decoder_output_projection_producer_memory_hierarchy",
         "decoder_output_projection_weight_store_feasibility",
@@ -7452,6 +7496,8 @@ def _build_payload(
             decoder_evidence = _decoder_attention_kv_trace_calibration_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_model_native_quality":
             decoder_evidence = _decoder_attention_kv_model_native_quality_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_attention_kv_model_native_quality_7b":
+            decoder_evidence = _decoder_attention_kv_model_native_quality_7b_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_model_native_recovery":
             decoder_evidence = _decoder_attention_kv_model_native_recovery_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_output_projection_producer_memory_hierarchy":

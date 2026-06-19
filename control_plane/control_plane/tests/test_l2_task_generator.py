@@ -3654,6 +3654,69 @@ def test_generate_l2_campaign_task_adds_decoder_attention_kv_model_native_qualit
             }
 
 
+def test_generate_l2_campaign_task_adds_decoder_attention_kv_model_native_quality_7b() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    item_id="l2_decoder_attention_kv_model_native_quality_7b_v1",
+                    proposal_id="prop_l2_decoder_attention_kv_model_native_quality_7b_v1",
+                    proposal_path=(
+                        "docs/proposals/"
+                        "prop_l2_decoder_attention_kv_model_native_quality_7b_v1/proposal.json"
+                    ),
+                    evaluation_mode="frontier_detail",
+                    abstraction_layer="decoder_attention_kv_model_native_quality_7b",
+                    expected_direction="iterate",
+                    comparison_role="frontier_synthesis",
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            decoder_inputs = work_item.input_manifest["decoder_contract"]
+            assert [command["name"] for command in work_item.command_manifest[:1]] == [
+                "evaluate_decoder_attention_kv_model_native_quality_7b",
+            ]
+            run = work_item.command_manifest[0]["run"]
+            assert "RTLGEN_MODEL_NATIVE_7B_MODEL_ID" in run
+            assert "mistralai/Mistral-7B-v0.1" in run
+            assert "RTLGEN_MODEL_NATIVE_7B_EXPECTED_GQA_GROUP_SIZE" in run
+            assert run.startswith("bash -lc '")
+            assert "run_hf_eval_python.sh" in run
+            assert "evaluate_llm_decoder_model_native_kv_quant.py" in run
+            assert "--model-id \"$MODEL_ID\"" in run
+            assert "--expected-gqa-group-size \"$EXPECTED_GQA\"" in run
+            assert "--kv-bits-list 8,4" in run
+            assert "--kv-granularity-list tensor" in run
+            assert decoder_inputs["attention_kv_memory_out"] == (
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_kv_model_native_quality_7b__"
+                "l2_decoder_attention_kv_model_native_quality_7b_v1.json"
+            )
+            assert decoder_inputs["attention_kv_trace_calibration"].endswith(
+                "decoder_attention_kv_trace_calibration__l2_decoder_attention_kv_trace_calibration_v1.json"
+            )
+            assert "7B-class trained checkpoint" in decoder_inputs["attention_kv_model_native_quality_7b_scope"]
+            assert "RTLGEN_MODEL_NATIVE_7B_MODEL_ID" in decoder_inputs["attention_kv_model_native_quality_7b_scope"]
+            assert decoder_inputs["attention_kv_memory_out"] in work_item.expected_outputs
+            assert work_item.task_request.request_payload["developer_loop"]["abstraction"] == {
+                "layer": "decoder_attention_kv_model_native_quality_7b",
+            }
+
+
 def test_generate_l2_campaign_task_adds_decoder_attention_kv_model_native_recovery() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
