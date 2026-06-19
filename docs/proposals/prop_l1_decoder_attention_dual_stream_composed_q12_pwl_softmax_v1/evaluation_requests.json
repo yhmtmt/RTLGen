@@ -5,7 +5,7 @@
     {
       "item_id": "l1_decoder_attention_dual_stream_composed_q12_pwl_softmax_ppa_v1",
       "task_type": "l1_sweep",
-      "objective": "Run a Layer1 nangate45 OpenROAD sweep for 1 configs using nangate45_dual_stream_composed_hier_q12_pwl.json and record lightweight design metrics for comparison.",
+      "objective": "Measure Nangate45 PPA for the composed Q8/K8/V6 dual-stream attention datapath using a concrete q12/PWL reciprocal softmax block.",
       "evaluation_mode": "frontier_followup",
       "abstraction_layer": "decoder_attention_dual_stream_composed_datapath",
       "comparison_role": "q12_pwl_softmax_quality_risk_reduction",
@@ -26,5 +26,5 @@
       "status": "pending"
     }
   ],
-  "source_commit": "7b7eba905ab87b1e8489baf66aaafc22a22b35f3"
+  "source_commit": "55a0f1af9e15c5707266edeb953abb1a53c437f5"
 }
