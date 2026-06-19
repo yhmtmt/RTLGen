@@ -213,6 +213,18 @@ def heartbeat_lease(
     )
 
 
+def clear_worker_progress_for_item(machine, *, item_id: str) -> bool:
+    """Clear stale machine progress when it still points at a completed item."""
+
+    capabilities = dict(machine.capabilities or {})
+    progress = capabilities.get("last_progress")
+    if not isinstance(progress, dict) or progress.get("item_id") != item_id:
+        return False
+    capabilities.pop("last_progress", None)
+    machine.capabilities = capabilities
+    return True
+
+
 def _mark_run_abandoned(session: Session, *, run, now) -> None:
     if run.status in {RunStatus.SUCCEEDED, RunStatus.FAILED, RunStatus.CANCELED, RunStatus.TIMED_OUT}:
         return
@@ -256,6 +268,7 @@ def expire_stale_leases(session: Session) -> LeaseExpiryResult:
     requeued_count = 0
     for lease in leases:
         lease.status = LeaseStatus.EXPIRED
+        clear_worker_progress_for_item(lease.machine, item_id=lease.work_item.item_id)
         expired_count += 1
         work_item = lease.work_item
         latest_run = None

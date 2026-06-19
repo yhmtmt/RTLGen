@@ -16,6 +16,7 @@ from control_plane.models.enums import ArtifactStorageMode, ExecutorType, LeaseS
 from control_plane.models.run_events import RunEvent
 from control_plane.models.runs import Run
 from control_plane.models.worker_leases import WorkerLease
+from control_plane.services.lease_service import clear_worker_progress_for_item
 
 _TERMINAL_RUN_STATUSES = {
     RunStatus.SUCCEEDED,
@@ -317,6 +318,7 @@ def complete_run(
     if run.lease is not None and run.lease.status == LeaseStatus.ACTIVE:
         run.lease.status = LeaseStatus.RELEASED
         run.lease.last_heartbeat_at = utcnow()
+        clear_worker_progress_for_item(run.lease.machine, item_id=work_item.item_id)
 
     created_artifacts: list[Artifact] = []
     for item in artifacts or []:
