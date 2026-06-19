@@ -423,6 +423,65 @@ def test_operator_status_does_not_flag_assigned_ready_worker_with_progress() -> 
         assert "stalled_workers=" not in status.health_summary["message"]
 
 
+def test_operator_status_reports_blocked_dependency_reason() -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    create_all(engine)
+    with Session(engine) as session:
+        dependency = _seed_item(session, item_id="quality_gate", state=WorkItemState.READY)
+        blocked_task = TaskRequest(
+            request_key="queue:blocked_followup",
+            source="test",
+            requested_by="tester",
+            title="blocked followup",
+            description="blocked followup",
+            layer=LayerName.LAYER2,
+            flow=FlowName.OPENROAD,
+            priority=1,
+            request_payload={
+                "item_id": "blocked_followup",
+                "developer_loop": {
+                    "dependencies": {
+                        "item_ids": [dependency.item_id],
+                        "requires_merged_inputs": True,
+                        "requires_materialized_refs": True,
+                    }
+                },
+            },
+        )
+        session.add(blocked_task)
+        session.flush()
+        session.add(
+            WorkItem(
+                work_item_key="queue:blocked_followup",
+                task_request_id=blocked_task.id,
+                item_id="blocked_followup",
+                layer=LayerName.LAYER2,
+                flow=FlowName.OPENROAD,
+                platform="nangate45",
+                task_type="l2_campaign",
+                state=WorkItemState.BLOCKED,
+                priority=1,
+                input_manifest={},
+                command_manifest=[],
+                expected_outputs=[],
+                acceptance_rules=[],
+            )
+        )
+        session.commit()
+
+        status = load_operator_status(session, OperatorStatusRequest(recent_limit=5))
+
+    assert len(status.blocked_items) == 1
+    row = status.blocked_items[0]
+    assert row["item_id"] == "blocked_followup"
+    assert row["dependency_item_ids"] == ["quality_gate"]
+    assert row["requires_merged_inputs"] is True
+    assert row["requires_materialized_refs"] is True
+    assert row["dependency_satisfied"] is False
+    assert row["dependency_reason"] == "dependency quality_gate is not merged"
+    assert "blocked=1" in status.health_summary["message"]
+
+
 def test_operator_status_marks_resumable_pending_submission(monkeypatch) -> None:
     engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
     create_all(engine)

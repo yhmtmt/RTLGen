@@ -272,6 +272,10 @@ _DASHBOARD_HTML = """<!DOCTYPE html>
           <div class="table-wrap"><table id="dispatch-pending-table"></table></div>
         </div>
         <div class="panel">
+          <h2>Blocked Items</h2>
+          <div class="table-wrap"><table id="blocked-items-table"></table></div>
+        </div>
+        <div class="panel">
           <h2>Resolver Cases</h2>
           <div class="table-wrap"><table id="resolver-cases-table"></table></div>
         </div>
@@ -370,6 +374,7 @@ _DASHBOARD_HTML = """<!DOCTYPE html>
       machines: document.getElementById("machines-table"),
       pendingSubmissions: document.getElementById("pending-submissions-table"),
       dispatchPending: document.getElementById("dispatch-pending-table"),
+      blockedItems: document.getElementById("blocked-items-table"),
       resolverCases: document.getElementById("resolver-cases-table"),
       states: document.getElementById("states-table"),
       runIndexSummary: document.getElementById("run-index-summary-table"),
@@ -705,6 +710,13 @@ _DASHBOARD_HTML = """<!DOCTYPE html>
             <button data-action="supersede" data-item-id="${escapeHtml(row.item_id)}">Supersede</button>
           ` },
       ], payload.dispatch_pending_items || []);
+      renderTable(tables.blockedItems, [
+        { key: "item_id", label: "Item", render: (value) => `<span class='mono'>${escapeHtml(value)}</span>` },
+        { key: "task_type", label: "Task" },
+        { key: "dependency_reason", label: "Blocker", render: (value) => escapeHtml(value || "dependencies pending") },
+        { key: "dependency_item_ids", label: "Dependencies", render: (value) => `<span class='mono'>${escapeHtml((value || []).join(", "))}</span>` },
+        { key: "updated_at", label: "Updated", render: (value) => escapeHtml(formatTime(value)) },
+      ], payload.blocked_items || []);
       renderTable(tables.resolverCases, [
         { key: "item_id", label: "Item", render: (value) => `<span class='mono'>${escapeHtml(value || "")}</span>` },
         { key: "failure_class", label: "Class" },
@@ -901,6 +913,7 @@ def _status_payload(database_url: str, recent_limit: int) -> dict[str, object]:
         "evaluator_machines": status.evaluator_machines,
         "pending_submission_items": status.pending_submission_items,
         "dispatch_pending_items": status.dispatch_pending_items,
+        "blocked_items": status.blocked_items,
         "recent_failures": status.recent_failures,
         "recent_submissions": status.recent_submissions,
         "recent_resolver_cases": status.recent_resolver_cases,

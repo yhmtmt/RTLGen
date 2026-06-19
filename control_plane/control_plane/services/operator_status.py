@@ -20,6 +20,7 @@ from control_plane.models.worker_leases import WorkerLease
 from control_plane.models.worker_machines import WorkerMachine
 from control_plane.models.work_items import WorkItem
 from control_plane.services.completion_retry_service import submission_retry_status
+from control_plane.services.dependency_gate import dependency_gate_config_from_payload, evaluate_work_item_dependencies
 from control_plane.services.operator_submission import assess_submission_eligibility
 from control_plane.services.run_index_query import comparative_run_index
 from control_plane.services.trial_variance import load_seed_trial_variance
@@ -77,6 +78,7 @@ class OperatorStatusResult:
     stale_leases: list[dict[str, object]]
     pending_submission_items: list[dict[str, object]]
     dispatch_pending_items: list[dict[str, object]]
+    blocked_items: list[dict[str, object]]
     recent_failures: list[dict[str, object]]
     recent_submissions: list[dict[str, object]]
     recent_resolver_cases: list[dict[str, object]]
@@ -266,6 +268,42 @@ def load_operator_status(session: Session, request: OperatorStatusRequest) -> Op
             }
         )
 
+    blocked_items = []
+    for work_item in (
+        session.query(WorkItem)
+        .filter(WorkItem.state == WorkItemState.BLOCKED)
+        .order_by(WorkItem.updated_at.desc(), WorkItem.created_at.desc())
+        .limit(request.recent_limit)
+        .all()
+    ):
+        latest_run = None
+        if work_item.runs:
+            latest_run = sorted(work_item.runs, key=lambda row: (row.attempt, row.created_at or utcnow()))[-1]
+        gate = evaluate_work_item_dependencies(
+            session,
+            repo_root=Path(request.repo_root).resolve(),
+            work_item=work_item,
+        )
+        dependency_config = dependency_gate_config_from_payload(work_item.task_request.request_payload or {})
+        blocked_items.append(
+            {
+                "item_id": work_item.item_id,
+                "task_type": work_item.task_type,
+                "platform": work_item.platform,
+                "assigned_machine_key": work_item.assigned_machine_key,
+                "source_commit": work_item.source_commit,
+                "dependency_item_ids": list(dependency_config.item_ids),
+                "requires_merged_inputs": dependency_config.requires_merged_inputs,
+                "requires_materialized_refs": dependency_config.requires_materialized_refs,
+                "dependency_satisfied": gate.satisfied,
+                "dependency_reason": gate.reason,
+                "created_at": work_item.created_at.isoformat() if work_item.created_at else None,
+                "updated_at": work_item.updated_at.isoformat() if work_item.updated_at else None,
+                "run_key": latest_run.run_key if latest_run is not None else None,
+                "run_status": latest_run.status.value if latest_run is not None else None,
+            }
+        )
+
     recent_failures = []
     for run in (
         session.query(Run)
@@ -367,6 +405,9 @@ def load_operator_status(session: Session, request: OperatorStatusRequest) -> Op
     dispatch_pending_count = state_counts.get(WorkItemState.DISPATCH_PENDING.value, 0)
     if dispatch_pending_count:
         attention_flags.append(f"dispatch_pending={dispatch_pending_count}")
+    blocked_count = state_counts.get(WorkItemState.BLOCKED.value, 0)
+    if blocked_count:
+        attention_flags.append(f"blocked={blocked_count}")
     ready_items = state_counts.get(WorkItemState.READY.value, 0)
     if ready_items:
         attention_flags.append(f"ready={ready_items}")
@@ -397,6 +438,7 @@ def load_operator_status(session: Session, request: OperatorStatusRequest) -> Op
         stale_leases=stale_leases,
         pending_submission_items=pending_submission_items,
         dispatch_pending_items=dispatch_pending_items,
+        blocked_items=blocked_items,
         recent_failures=recent_failures,
         recent_submissions=recent_submissions,
         recent_resolver_cases=recent_resolver_cases,
