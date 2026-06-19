@@ -1,0 +1,60 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_model_native_quality_7b_v1",
+  "created_utc": "2026-06-19T13:54:18.996791Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Evaluate 7B-class native KV quantization quality",
+  "hypothesis": "The current Llama7B proxy frontier treats GQA8/KV8 as the conservative precision point and KV4 as a hardware-benefit experiment. A larger trained checkpoint should be evaluated directly before any KV4 or low-precision cache point is promoted.",
+  "direct_comparison": {
+    "primary_question": "Does teacher-forced decode on a real 7B-class checkpoint preserve next-token rankings when past_key_values are quantized to KV8 or KV4?",
+    "include": [
+      "KV8 and KV4 tensor-scale cache feedback on a 7B-class checkpoint",
+      "top-1 match, top-k contains, logit cosine, probability KL, and margin-sensitive deltas"
+    ],
+    "exclude": [
+      "PPA or OpenROAD synthesis",
+      "QAT or fine-tuning recovery",
+      "promotion of structural GQA/MQA changes without matching trained-checkpoint evidence"
+    ],
+    "follow_on_broad_sweep": [
+      "If KV4 fails, keep the deployable frontier at KV8 and schedule QAT or safer scale-granularity recovery.",
+      "If KV4 passes, price the scale metadata and rerun the Llama7B frontier ranking with the measured precision point."
+    ]
+  },
+  "expected_benefit": [
+    "Reduce precision abstraction by replacing synthetic proxy-only evidence with a real larger-checkpoint quality gate.",
+    "Prevent hardware-only KV4 speedups from entering the main frontier without model evidence."
+  ],
+  "risks": [
+    "The default public 7B-class checkpoint is Mistral-7B with GQA group size 4, not the exact GQA8 proxy shape.",
+    "Exact LLaMA-family checkpoints may require evaluator-local Hugging Face credentials and a different expected GQA group size.",
+    "The prompt set is still small and teacher-forced; it is a gate, not full perplexity or task accuracy."
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "task_type": "l2_campaign",
+      "evaluation_mode": "frontier_detail",
+      "objective": "Run a real 7B-class checkpoint through teacher-forced KV8/KV4 cache quantization to check whether the Llama7B proxy precision frontier holds on a larger native checkpoint.",
+      "cost_class": "medium",
+      "depends_on_item_ids": [],
+      "requires_merged_inputs": false,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "The output is a precision gate used to decide whether KV8 remains the conservative frontier or KV4 deserves follow-up recovery."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_model_native_quality__l2_decoder_attention_kv_model_native_quality_tinyllama_v1_r2.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_model_native_recovery__l2_decoder_attention_kv_model_native_recovery_tinyllama_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_quality_gate__l2_decoder_attention_kv_quality_gate_llama7b_v1.json"
+  ],
+  "knowledge_refs": [
+    "script:npu/eval/evaluate_llm_decoder_model_native_kv_quant.py",
+    "source:transformers Mistral docs - Mistral 7B uses GQA",
+    "source:transformers Llama config docs - num_key_value_heads controls MHA/GQA/MQA"
+  ]
+}

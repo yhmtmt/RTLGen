@@ -1,0 +1,23 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_model_native_quality_7b_v1",
+  "source_commit": "78bf63f25a05b7798ee98e4607d4882f7a2ce468",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_kv_model_native_quality_7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Run a real 7B-class checkpoint through teacher-forced KV8/KV4 cache quantization to check whether the Llama7B proxy precision frontier holds on a larger native checkpoint.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_kv_model_native_quality_7b",
+      "comparison_role": "precision_gate",
+      "paired_baseline_item_id": "",
+      "depends_on_item_ids": [],
+      "requires_merged_inputs": false,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": ""
+      },
+      "status": "pending"
+    }
+  ]
+}
