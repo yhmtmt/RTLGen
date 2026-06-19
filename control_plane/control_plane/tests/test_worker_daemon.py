@@ -327,6 +327,39 @@ def test_worker_daemon_emits_positive_poll_logs() -> None:
             assert progress["poll"] == 2
 
 
+def test_worker_daemon_persists_capability_filter_with_poll_progress() -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    create_all(engine)
+    session_factory = build_session_factory(engine)
+
+    with patch(
+        "control_plane.services.worker_daemon._run_parallel_batch",
+        return_value=[WorkerLoopResult(status="no_work", summary="no work available")],
+    ), patch("control_plane.services.worker_daemon.time.sleep"):
+        run_worker_daemon(
+            session_factory,
+            config=WorkerDaemonConfig(
+                worker=WorkerConfig(
+                    repo_root="/tmp/repo",
+                    machine_key="daemon-worker-filter-progress",
+                    hostname="daemon-host",
+                    capability_filter={"platform": "nangate45", "flow": "openroad"},
+                ),
+                poll_seconds=0,
+                max_polls=1,
+                stop_on_no_work=True,
+                run_scheduler_maintenance=False,
+            ),
+        )
+
+    with Session(engine) as session:
+        machine = session.query(WorkerMachine).filter_by(machine_key="daemon-worker-filter-progress").one()
+        assert machine.capabilities["platform"] == "nangate45"
+        assert machine.capabilities["flow"] == "openroad"
+        assert machine.capabilities["last_progress"]["phase"] == "worker_poll"
+        assert machine.capabilities["last_progress"]["status"] == "no_work"
+
+
 def _init_git_repo(repo_root: Path) -> None:
     subprocess.run(["git", "init", str(repo_root)], check=True, capture_output=True, text=True)
     subprocess.run(["git", "-C", str(repo_root), "config", "user.email", "tester@example.com"], check=True)

@@ -82,6 +82,7 @@ def _record_daemon_progress(
             capabilities = dict(machine.capabilities or {}) if machine is not None else {}
             if not capabilities:
                 capabilities.update(config.worker.capabilities or {})
+            capabilities.update(config.worker.capability_filter or {})
             capabilities["last_progress"] = progress
             upsert_worker_machine(
                 session,
