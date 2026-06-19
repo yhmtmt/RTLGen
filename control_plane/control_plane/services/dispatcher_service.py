@@ -105,6 +105,14 @@ def auto_dispatch_item(
     if work_item.state in {WorkItemState.MERGED, WorkItemState.SUPERSEDED}:
         return AutoDispatchItemResult(item_id=item_id, status="skipped", reason=f"terminal_state:{work_item.state.value}")
     if work_item.assigned_machine_key:
+        if work_item.state in {WorkItemState.DRAFT, WorkItemState.DISPATCH_PENDING}:
+            assigned = assign_work_item(session, item_id=item_id, machine_key=work_item.assigned_machine_key)
+            return AutoDispatchItemResult(
+                item_id=item_id,
+                status="assigned",
+                machine_key=assigned.assigned_machine_key,
+                reason=assigned.state,
+            )
         return AutoDispatchItemResult(
             item_id=item_id,
             status="skipped",
