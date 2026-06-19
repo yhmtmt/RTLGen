@@ -19,9 +19,11 @@ from control_plane.models.run_events import RunEvent
 from control_plane.models.runs import Run
 from control_plane.models.task_requests import TaskRequest
 from control_plane.models.work_items import WorkItem
+from control_plane.models.worker_machines import WorkerMachine
 from control_plane.services.completion_service import CompletionProcessResult, CompletionProcessingError
 from control_plane.services.lease_service import upsert_worker_machine
 from control_plane.services.scheduler import assign_work_item
+from control_plane.services.source_reconciler import SourceReconciliationError, SourceReconciliationResult
 from control_plane.services.worker_daemon import WorkerDaemonConfig, run_worker_daemon
 from control_plane.workers.checkout import CheckoutInfo
 from control_plane.workers.executor import (
@@ -391,6 +393,113 @@ def test_worker_daemon_updates_service_repo_before_leasing_required_source() -> 
         with Session(engine) as session:
             item = session.query(WorkItem).filter_by(item_id="daemon_item_source_update").one()
             assert item.state == WorkItemState.READY
+
+
+def test_worker_daemon_records_blocked_source_reconcile_progress() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        _init_git_repo(repo_root)
+        db_path = Path(td) / "cp.db"
+        engine = create_engine(f"sqlite+pysqlite:///{db_path}", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            _seed_ready_work_item(
+                session,
+                item_id="daemon_item_source_blocked",
+                repo_root=repo_root,
+                assigned_machine_key="daemon-worker-source-blocked",
+                source_commit="deadbeef",
+            )
+
+        session_factory = build_session_factory(engine)
+        with patch(
+            "control_plane.services.worker_daemon.reconcile_service_repo_source",
+            return_value=SourceReconciliationResult(
+                status="blocked",
+                required_sha="deadbeef",
+                current_sha="cafebabe",
+                source_commit_relation="missing",
+                message="required source commit is not reachable",
+            ),
+        ):
+            result = run_worker_daemon(
+                session_factory,
+                config=WorkerDaemonConfig(
+                    worker=WorkerConfig(
+                        repo_root=str(repo_root),
+                        machine_key="daemon-worker-source-blocked",
+                        capabilities={"platform": "nangate45", "flow": "openroad"},
+                        capability_filter={"platform": "nangate45", "flow": "openroad"},
+                        heartbeat_seconds=1,
+                    ),
+                    poll_seconds=0,
+                    max_polls=1,
+                    auto_update_source=True,
+                    restart_on_source_update=False,
+                ),
+            )
+
+        assert [row.status for row in result.results] == ["source_blocked"]
+        with Session(engine) as session:
+            machine = session.query(WorkerMachine).filter_by(machine_key="daemon-worker-source-blocked").one()
+            progress = machine.capabilities["last_progress"]
+            assert progress["phase"] == "source_reconcile"
+            assert progress["status"] == "blocked"
+            assert progress["item_id"] == "daemon_item_source_blocked"
+            assert progress["required_sha"] == "deadbeef"
+            assert progress["current_sha"] == "cafebabe"
+            assert progress["relation"] == "missing"
+
+
+def test_worker_daemon_records_source_reconcile_error_progress() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        _init_git_repo(repo_root)
+        db_path = Path(td) / "cp.db"
+        engine = create_engine(f"sqlite+pysqlite:///{db_path}", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            _seed_ready_work_item(
+                session,
+                item_id="daemon_item_source_error",
+                repo_root=repo_root,
+                assigned_machine_key="daemon-worker-source-error",
+                source_commit="deadbeef",
+            )
+
+        session_factory = build_session_factory(engine)
+        with patch(
+            "control_plane.services.worker_daemon.reconcile_service_repo_source",
+            side_effect=SourceReconciliationError("fetch failed"),
+        ):
+            result = run_worker_daemon(
+                session_factory,
+                config=WorkerDaemonConfig(
+                    worker=WorkerConfig(
+                        repo_root=str(repo_root),
+                        machine_key="daemon-worker-source-error",
+                        capabilities={"platform": "nangate45", "flow": "openroad"},
+                        capability_filter={"platform": "nangate45", "flow": "openroad"},
+                        heartbeat_seconds=1,
+                    ),
+                    poll_seconds=0,
+                    max_polls=1,
+                    auto_update_source=True,
+                    restart_on_source_update=False,
+                ),
+            )
+
+        assert [row.status for row in result.results] == ["source_reconcile_error"]
+        with Session(engine) as session:
+            machine = session.query(WorkerMachine).filter_by(machine_key="daemon-worker-source-error").one()
+            progress = machine.capabilities["last_progress"]
+            assert progress["phase"] == "source_reconcile_error"
+            assert progress["status"] == "error"
+            assert progress["item_id"] == "daemon_item_source_error"
+            assert progress["required_sha"] == "deadbeef"
+            assert progress["error"] == "fetch failed"
 
 
 def test_worker_daemon_executes_two_items_with_concurrency() -> None:

@@ -17,7 +17,8 @@ from control_plane.services.source_reconciler import (
     reconcile_service_repo_source,
     reexec_current_process,
 )
-from control_plane.services.lease_service import expire_stale_leases
+from control_plane.models.worker_machines import WorkerMachine
+from control_plane.services.lease_service import expire_stale_leases, upsert_worker_machine
 from control_plane.services.worker_service import run_worker
 from control_plane.workers.executor import WorkerConfig, WorkerLoopResult
 
@@ -60,6 +61,40 @@ def _dispose_session_engine(session_factory: sessionmaker, logger: Callable[[str
 
 def _is_retryable_db_error(exc: Exception) -> bool:
     return isinstance(exc, (OperationalError, DBAPIError))
+
+
+def _record_daemon_progress(
+    session_factory: sessionmaker,
+    *,
+    config: WorkerDaemonConfig,
+    progress: dict[str, object],
+    logger: Callable[[str], None],
+) -> None:
+    """Persist daemon-level progress for work that happens before a lease exists."""
+
+    try:
+        with session_factory() as session:
+            machine = (
+                session.query(WorkerMachine)
+                .filter(WorkerMachine.machine_key == config.worker.machine_key)
+                .one_or_none()
+            )
+            capabilities = dict(machine.capabilities or {}) if machine is not None else {}
+            if not capabilities:
+                capabilities.update(config.worker.capabilities or {})
+            capabilities["last_progress"] = progress
+            upsert_worker_machine(
+                session,
+                machine_key=config.worker.machine_key,
+                hostname=config.worker.hostname,
+                executor_kind=config.worker.executor_kind,
+                capabilities=capabilities,
+                role=config.worker.machine_role,
+                slot_capacity=config.worker.slot_capacity,
+            )
+            session.commit()
+    except Exception as exc:  # pragma: no cover - progress reporting must not stop work
+        logger(f"worker-daemon progress_update_error phase={progress.get('phase')} error={exc}")
 
 
 def _run_parallel_batch(
@@ -114,6 +149,18 @@ def _reconcile_next_item_source(
         return None
 
     required_sha = str(item.source_commit or "").strip()
+    _record_daemon_progress(
+        session_factory,
+        config=config,
+        logger=logger,
+        progress={
+            "phase": "source_reconcile",
+            "status": "checking",
+            "item_id": item.item_id,
+            "required_sha": required_sha,
+            "update_ref": config.source_update_ref,
+        },
+    )
     try:
         result = reconcile_service_repo_source(
             repo_root=config.worker.repo_root,
@@ -125,6 +172,18 @@ def _reconcile_next_item_source(
         logger(
             "worker-daemon source_reconcile_error "
             f"item_id={item.item_id} required_sha={required_sha} error={exc}"
+        )
+        _record_daemon_progress(
+            session_factory,
+            config=config,
+            logger=logger,
+            progress={
+                "phase": "source_reconcile_error",
+                "status": "error",
+                "item_id": item.item_id,
+                "required_sha": required_sha,
+                "error": str(exc),
+            },
         )
         return WorkerLoopResult(
             status="source_reconcile_error",
@@ -140,6 +199,21 @@ def _reconcile_next_item_source(
         f"item_id={item.item_id} status={result.status} "
         f"required_sha={result.required_sha} current_sha={result.current_sha} "
         f"relation={result.source_commit_relation} message={result.message or ''}"
+    )
+    _record_daemon_progress(
+        session_factory,
+        config=config,
+        logger=logger,
+        progress={
+            "phase": "source_reconcile",
+            "status": result.status,
+            "item_id": item.item_id,
+            "required_sha": result.required_sha,
+            "current_sha": result.current_sha,
+            "relation": result.source_commit_relation,
+            "message": result.message,
+            "restart_required": result.restart_required,
+        },
     )
     if result.status == "updated" and result.restart_required and config.restart_on_source_update:
         logger("worker-daemon source_reconcile reexec reason=service_repo_updated")
