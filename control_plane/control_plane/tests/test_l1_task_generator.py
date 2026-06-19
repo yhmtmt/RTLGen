@@ -927,6 +927,63 @@ def test_generate_l1_sweep_task_records_requested_item_in_proposal_evaluation_re
             assert (proposal_dir / name).exists()
 
 
+def test_generate_l1_sweep_task_can_refresh_db_without_updating_proposal_files() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        config_path, sweep_path = _write_example_repo(repo_root)
+        proposal_dir = repo_root / "docs" / "proposals" / "prop_l1_demo_v1"
+        proposal_dir.mkdir(parents=True, exist_ok=True)
+        (proposal_dir / "proposal.json").write_text(
+            json.dumps({"proposal_id": "prop_l1_demo_v1", "abstraction_layer": "circuit_block"}, indent=2) + "\n",
+            encoding="utf-8",
+        )
+        evaluation_requests_path = proposal_dir / "evaluation_requests.json"
+        evaluation_requests_path.write_text(
+            json.dumps(
+                {
+                    "proposal_id": "prop_l1_demo_v1",
+                    "source_commit": "previous",
+                    "requested_items": [],
+                },
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        before = evaluation_requests_path.read_text(encoding="utf-8")
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l1_sweep_task(
+                session,
+                Layer1SweepGenerateRequest(
+                    repo_root=str(repo_root),
+                    sweep_path=sweep_path,
+                    config_paths=[config_path],
+                    platform="nangate45",
+                    out_root="runs/designs/activations",
+                    item_id="l1_demo_softmax_proposal_r1",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    proposal_id="prop_l1_demo_v1",
+                    proposal_path="docs/proposals/prop_l1_demo_v1",
+                    abstraction_layer="circuit_block",
+                    update_proposal_files=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            assert result.status == "applied"
+            assert work_item.source_commit == source_commit
+            assert work_item.task_request.source_commit == source_commit
+            assert work_item.task_request.request_payload["developer_loop"]["proposal_id"] == "prop_l1_demo_v1"
+
+        assert evaluation_requests_path.read_text(encoding="utf-8") == before
+
+
 def test_generate_l1_sweep_task_strips_placeholder_requested_items_from_template() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"

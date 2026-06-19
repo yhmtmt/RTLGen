@@ -49,6 +49,7 @@ class Layer1SweepGenerateRequest:
     trial_count: int = 1
     seed_start: int = 0
     stop_after_failures: int | None = None
+    update_proposal_files: bool = True
 
 
 @dataclass(frozen=True)
@@ -895,17 +896,18 @@ def generate_l1_sweep_task(session: Session, request: Layer1SweepGenerateRequest
         repo_root=repo_root,
         required_sha=source_commit,
     )
-    _upsert_evaluation_request_entry(
-        repo_root=repo_root,
-        proposal_id=request.proposal_id,
-        proposal_path=proposal_path,
-        item_id=item_id,
-        task_type="l1_sweep",
-        objective=objective,
-        evaluation_mode=((payload.get("developer_loop") or {}).get("evaluation") or {}).get("mode") or "",
-        abstraction_layer=effective_abstraction_layer,
-        source_commit=source_commit,
-    )
+    if request.update_proposal_files:
+        _upsert_evaluation_request_entry(
+            repo_root=repo_root,
+            proposal_id=request.proposal_id,
+            proposal_path=proposal_path,
+            item_id=item_id,
+            task_type="l1_sweep",
+            objective=objective,
+            evaluation_mode=((payload.get("developer_loop") or {}).get("evaluation") or {}).get("mode") or "",
+            abstraction_layer=effective_abstraction_layer,
+            source_commit=source_commit,
+        )
 
     existing = session.query(WorkItem).filter(WorkItem.item_id == item_id).one_or_none()
     if existing is None:
