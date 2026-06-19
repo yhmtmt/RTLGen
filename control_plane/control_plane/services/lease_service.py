@@ -96,7 +96,14 @@ def upsert_worker_machine(
     machine.executor_kind = executor_kind or machine.executor_kind
     machine.role = role or machine.role
     machine.slot_capacity = max(1, int(slot_capacity))
-    machine.capabilities = capabilities if capabilities is not None else machine.capabilities
+    if capabilities is not None:
+        current_capabilities = dict(machine.capabilities or {})
+        next_capabilities = dict(capabilities)
+        if not next_capabilities:
+            next_capabilities = current_capabilities
+        elif isinstance(current_capabilities.get("last_progress"), dict) and "last_progress" not in next_capabilities:
+            next_capabilities["last_progress"] = current_capabilities["last_progress"]
+        machine.capabilities = next_capabilities
     machine.active = True
     machine.last_seen_at = now
     session.flush()

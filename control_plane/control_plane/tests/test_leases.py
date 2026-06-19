@@ -132,6 +132,30 @@ def test_heartbeat_updates_expiry_and_machine_progress() -> None:
         assert lease.machine.capabilities["last_progress"]["phase"] == "run_campaign"
 
 
+def test_upsert_worker_machine_does_not_clear_progress_with_empty_capabilities() -> None:
+    with make_session() as session:
+        from control_plane.services.lease_service import upsert_worker_machine
+
+        machine = upsert_worker_machine(
+            session,
+            machine_key="machine-1",
+            capabilities={
+                "platform": "nangate45",
+                "flow": "openroad",
+                "last_progress": {"phase": "worker_poll", "status": "no_work"},
+            },
+        )
+        session.commit()
+
+        upsert_worker_machine(session, machine_key=machine.machine_key, capabilities={})
+        session.commit()
+        session.refresh(machine)
+
+        assert machine.capabilities["platform"] == "nangate45"
+        assert machine.capabilities["flow"] == "openroad"
+        assert machine.capabilities["last_progress"] == {"phase": "worker_poll", "status": "no_work"}
+
+
 def test_expire_stale_leases_requeues_assigned_nonterminal_work_as_ready() -> None:
     with make_session() as session:
         _, item_b = seed_ready_items(session)
