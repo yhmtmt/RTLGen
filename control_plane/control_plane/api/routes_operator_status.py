@@ -669,6 +669,11 @@ _DASHBOARD_HTML = """<!DOCTYPE html>
         { key: "slot_capacity", label: "Slots" },
         { key: "active_slots", label: "Active" },
         { key: "assigned_ready", label: "Assigned Ready" },
+        { key: "worker_attention", label: "Worker Status", render: (value, row) => {
+          if (value) return `<span title='${escapeHtml(value)}'>attention</span>`;
+          const progress = row.last_progress || {};
+          return escapeHtml(progress.phase || progress.status || "");
+        } },
         { key: "last_seen_at", label: "Last Seen", render: (value) => escapeHtml(formatTime(value)) },
       ], payload.evaluator_machines || []);
       renderTable(tables.pendingSubmissions, [

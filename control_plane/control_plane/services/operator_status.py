@@ -116,6 +116,7 @@ def load_operator_status(session: Session, request: OperatorStatusRequest) -> Op
 
     evaluator_machines = []
     stale_machine_cutoff = now - timedelta(hours=24)
+    fresh_machine_cutoff = now - timedelta(minutes=5)
     for machine in session.query(WorkerMachine).order_by(WorkerMachine.machine_key.asc()).all():
         active_slots = (
             session.query(WorkerLease)
@@ -130,6 +131,17 @@ def load_operator_status(session: Session, request: OperatorStatusRequest) -> Op
         last_seen_at = _as_comparable_utc(machine.last_seen_at)
         if active_slots == 0 and assigned_ready == 0 and last_seen_at is not None and last_seen_at < stale_machine_cutoff:
             continue
+        capabilities = dict(machine.capabilities or {})
+        last_progress = capabilities.get("last_progress")
+        if not isinstance(last_progress, dict):
+            last_progress = None
+        worker_attention = None
+        if active_slots == 0 and assigned_ready > 0 and last_seen_at is not None and last_seen_at >= fresh_machine_cutoff:
+            if last_progress is None:
+                worker_attention = "fresh_heartbeat_assigned_ready_without_progress"
+        heartbeat_age_seconds = None
+        if last_seen_at is not None:
+            heartbeat_age_seconds = max(0.0, (now - last_seen_at).total_seconds())
         evaluator_machines.append(
             {
                 "machine_key": machine.machine_key,
@@ -140,6 +152,10 @@ def load_operator_status(session: Session, request: OperatorStatusRequest) -> Op
                 "assigned_ready": assigned_ready,
                 "active": machine.active,
                 "last_seen_at": machine.last_seen_at.isoformat() if machine.last_seen_at else None,
+                "heartbeat_age_seconds": heartbeat_age_seconds,
+                "capabilities": capabilities,
+                "last_progress": last_progress,
+                "worker_attention": worker_attention,
             }
         )
 
@@ -354,6 +370,9 @@ def load_operator_status(session: Session, request: OperatorStatusRequest) -> Op
     ready_items = state_counts.get(WorkItemState.READY.value, 0)
     if ready_items:
         attention_flags.append(f"ready={ready_items}")
+    stalled_workers = sum(1 for row in evaluator_machines if row.get("worker_attention"))
+    if stalled_workers:
+        attention_flags.append(f"stalled_workers={stalled_workers}")
     if recent_resolver_cases:
         attention_flags.append(f"resolver_cases={len(recent_resolver_cases)}")
 
