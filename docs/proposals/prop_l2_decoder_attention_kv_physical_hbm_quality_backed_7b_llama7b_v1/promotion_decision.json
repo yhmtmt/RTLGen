@@ -1,0 +1,9 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_physical_hbm_quality_backed_7b_llama7b_v1",
+  "candidate_id": "l2_decoder_attention_kv_physical_hbm_quality_backed_7b_llama7b_v1",
+  "decision": "pending",
+  "reason": "Waiting for the 7B-native quality gate and the dependent HBM rerank.",
+  "evidence_refs": [],
+  "next_action": "Dispatch after l2_decoder_attention_kv_model_native_quality_7b_v1 materializes.",
+  "requires_human_approval": true
+}

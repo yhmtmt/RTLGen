@@ -45,6 +45,10 @@ than free or heuristic assumptions.
    - Scope: teacher-forced decode on a real 7B-class checkpoint with KV8/KV4
      cache quantization feedback.
    - Active gate: `l2_decoder_attention_kv_model_native_quality_7b_v1`.
+   - Prepared consumer:
+     `l2_decoder_attention_kv_physical_hbm_quality_backed_7b_llama7b_v1`
+     reranks the conservative native-GQA KV16/KV8 physical-HBM frontier using
+     the 7B quality artifact instead of the older TinyLlama precision proxy.
    - Result use: keep KV8 as the conservative frontier unless KV4 survives
      top-1/top-k/logit-cosine/KL/margin-sensitive checks, or schedule a
      QAT/scale-granularity recovery job if KV4 fails but still looks valuable.

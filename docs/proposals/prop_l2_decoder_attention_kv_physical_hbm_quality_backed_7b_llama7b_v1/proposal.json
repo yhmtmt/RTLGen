@@ -1,0 +1,68 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_physical_hbm_quality_backed_7b_llama7b_v1",
+  "created_utc": "2026-06-19T14:42:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_attention_kv_physical_hbm_quality_backed_7b",
+  "title": "7B-native quality-backed Llama7B physical HBM frontier",
+  "hypothesis": "Once the 7B-class native KV quality gate has run, the physical HBM frontier should be reranked using that larger-checkpoint precision evidence instead of the older TinyLlama proxy gate.",
+  "direct_comparison": {
+    "primary_question": "Under the physical HBM model, does the conservative native-GQA KV16/KV8 frontier remain the deployable Llama7B point when the quality evidence is taken from a 7B-class checkpoint?",
+    "include": [
+      "llama7b_proxy at 32k, 64k, and 131k tokens",
+      "die areas 100, 200, and 400 mm2",
+      "native-GQA group-8 KV sharing only",
+      "packed KV16 and KV8 storage only",
+      "7B-class teacher-forced KV8/KV4 quality artifact as the precision gate"
+    ],
+    "exclude": [
+      "KV4 promotion before the 7B quality artifact is reviewed",
+      "MQA or other structural KV sharing without matching trained-checkpoint evidence",
+      "OpenROAD/PPA execution",
+      "cycle-accurate HBM or NoC simulation"
+    ]
+  },
+  "expected_benefit": [
+    "Replaces TinyLlama-only precision provenance in the quality-backed HBM frontier with a 7B-class checkpoint gate.",
+    "Keeps the deployable frontier conservative while preserving a clear follow-up path if KV4 survives the 7B gate.",
+    "Makes the later integrated Llama7B closure less abstract in the precision dimension."
+  ],
+  "risks": [
+    "The queued 7B quality gate may require evaluator-local model credentials or substantial memory.",
+    "The first rerank intentionally excludes KV4 even if the quality artifact is borderline; a KV4-inclusive rerank should be a separate reviewed job.",
+    "The HBM model remains a service/bandwidth model rather than detailed DRAM timing."
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_kv_physical_hbm_quality_backed_7b_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Rerank the conservative native-GQA KV16/KV8 physical-HBM frontier using 7B-class native KV quality evidence.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_kv_physical_hbm_quality_backed_7b",
+      "cost_class": "low_after_quality_gate",
+      "comparison_role": "frontier_synthesis",
+      "paired_baseline_item_id": "l2_decoder_attention_kv_physical_hbm_quality_backed_llama7b_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_kv_model_native_quality_7b_v1",
+        "l2_decoder_attention_kv_physical_hbm_quality_backed_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "Use the 7B-native quality gate to decide whether KV8 remains the conservative deployable frontier or whether a KV4 recovery/rerank track should be opened."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_physical_hbm_quality_backed__l2_decoder_attention_kv_physical_hbm_quality_backed_llama7b_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_model_native_quality_7b__l2_decoder_attention_kv_model_native_quality_7b_v1.json"
+  ],
+  "knowledge_refs": [
+    "docs/architecture/llama7b_attention_abstraction_closure_plan.md",
+    "npu/eval/estimate_llm_decoder_attention_kv_physical_hbm_frontier.py",
+    "npu/eval/evaluate_llm_decoder_model_native_kv_quant.py"
+  ]
+}
