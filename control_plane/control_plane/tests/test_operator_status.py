@@ -375,6 +375,52 @@ def test_operator_status_reports_evaluator_machine_capacity() -> None:
         assert row["slot_capacity"] == 4
         assert row["assigned_ready"] == 1
         assert row["active_slots"] == 0
+        assert row["heartbeat_age_seconds"] is not None
+        assert row["capabilities"] == {"platform": "nangate45", "flow": "openroad"}
+        assert row["last_progress"] is None
+        assert row["worker_attention"] == "fresh_heartbeat_assigned_ready_without_progress"
+        assert "stalled_workers=1" in status.health_summary["message"]
+
+
+def test_operator_status_does_not_flag_assigned_ready_worker_with_progress() -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    create_all(engine)
+    now = utcnow()
+    with Session(engine) as session:
+        machine = WorkerMachine(
+            machine_key="worker-progress",
+            hostname="eval-host",
+            executor_kind="local_process",
+            capabilities={
+                "flow": "openroad",
+                "platform": "nangate45",
+                "last_progress": {
+                    "phase": "source_reconcile",
+                    "status": "checking",
+                    "item_id": "assigned_ready",
+                },
+            },
+            role="evaluator",
+            slot_capacity=4,
+            last_seen_at=now,
+        )
+        session.add(machine)
+        session.flush()
+        ready_item = _seed_item(session, item_id="assigned_ready", state=WorkItemState.READY)
+        ready_item.assigned_machine_key = machine.machine_key
+        session.commit()
+
+        status = load_operator_status(session, OperatorStatusRequest(recent_limit=5))
+        row = next(r for r in status.evaluator_machines if r["machine_key"] == "worker-progress")
+        assert row["assigned_ready"] == 1
+        assert row["active_slots"] == 0
+        assert row["last_progress"] == {
+            "phase": "source_reconcile",
+            "status": "checking",
+            "item_id": "assigned_ready",
+        }
+        assert row["worker_attention"] is None
+        assert "stalled_workers=" not in status.health_summary["message"]
 
 
 def test_operator_status_marks_resumable_pending_submission(monkeypatch) -> None:
