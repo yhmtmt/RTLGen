@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from dataclasses import field
 import json
 import re
 import subprocess
@@ -20,6 +21,7 @@ class EvaluatorRefreshRequest:
     reason: str = "control-plane source changed"
     evaluator: str = "remote evaluator"
     dry_run: bool = False
+    details: tuple[str, ...] = field(default_factory=tuple)
 
 
 @dataclass(frozen=True)
@@ -106,6 +108,15 @@ def build_refresh_body(request: EvaluatorRefreshRequest) -> str:
             f"- evaluator: `{request.evaluator}`",
             f"- reason: {request.reason}",
             "",
+            *(
+                [
+                    "Current control-plane evidence:",
+                    *[f"- {detail}" for detail in request.details],
+                    "",
+                ]
+                if request.details
+                else []
+            ),
             "Expected evaluator procedure:",
             "1. Fetch `origin/master` and update the evaluator worktree to the target commit.",
             "2. Refresh Python dependencies if repository dependency files changed.",

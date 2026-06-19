@@ -174,6 +174,10 @@ def main(argv: list[str] | None = None) -> int:
     evaluator_refresh_parser.add_argument("--target-commit")
     evaluator_refresh_parser.add_argument("--reason", default="control-plane source changed")
     evaluator_refresh_parser.add_argument("--evaluator", default="remote evaluator")
+    evaluator_refresh_parser.add_argument("--database-url")
+    evaluator_refresh_parser.add_argument("--include-operator-status", action="store_true")
+    evaluator_refresh_parser.add_argument("--machine-key")
+    evaluator_refresh_parser.add_argument("--recent-limit", type=int, default=10)
     evaluator_refresh_parser.add_argument("--dry-run", action="store_true")
 
     resolver_parser = subparsers.add_parser(
@@ -1074,6 +1078,14 @@ def main(argv: list[str] | None = None) -> int:
         ]
         if args.target_commit is not None:
             argv2.extend(["--target-commit", str(args.target_commit)])
+        if args.database_url is not None:
+            argv2.extend(["--database-url", str(args.database_url)])
+        if args.machine_key is not None:
+            argv2.extend(["--machine-key", str(args.machine_key)])
+        if args.recent_limit is not None:
+            argv2.extend(["--recent-limit", str(args.recent_limit)])
+        if args.include_operator_status:
+            argv2.append("--include-operator-status")
         if args.dry_run:
             argv2.append("--dry-run")
         return request_evaluator_refresh_main(argv2)

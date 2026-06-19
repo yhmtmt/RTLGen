@@ -29,6 +29,23 @@ def test_build_refresh_body_includes_ack_block() -> None:
     assert "Restart evaluator-side daemons" in body
 
 
+def test_build_refresh_body_includes_operator_status_details() -> None:
+    body = build_refresh_body(
+        EvaluatorRefreshRequest(
+            repo="yhmtmt/RTLGen",
+            target_commit="abcdef1234567890",
+            details=(
+                "operator health: attention: ready=2, stalled_workers=1",
+                "machine eval-daemon: assigned_ready=2, active_slots=0",
+            ),
+        )
+    )
+
+    assert "Current control-plane evidence:" in body
+    assert "- operator health: attention: ready=2, stalled_workers=1" in body
+    assert "- machine eval-daemon: assigned_ready=2, active_slots=0" in body
+
+
 def test_request_evaluator_refresh_creates_issue_when_none_open() -> None:
     calls = []
 
