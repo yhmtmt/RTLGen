@@ -319,6 +319,12 @@ def test_worker_daemon_emits_positive_poll_logs() -> None:
         assert any("poll=1" in entry and "succeeded" in entry for entry in messages)
         assert any("poll=2" in entry and "no_work" in entry for entry in messages)
         assert any("worker-daemon exit" in entry for entry in messages)
+        with Session(engine) as session:
+            machine = session.query(WorkerMachine).filter_by(machine_key="daemon-worker-log").one()
+            progress = machine.capabilities["last_progress"]
+            assert progress["phase"] == "worker_poll"
+            assert progress["status"] == "no_work"
+            assert progress["poll"] == 2
 
 
 def _init_git_repo(repo_root: Path) -> None:

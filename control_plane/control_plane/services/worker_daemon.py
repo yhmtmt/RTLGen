@@ -126,6 +126,45 @@ def _run_parallel_batch(
     return results
 
 
+def _record_poll_result_progress(
+    session_factory: sessionmaker,
+    *,
+    config: WorkerDaemonConfig,
+    logger: Callable[[str], None],
+    poll_count: int,
+    batch: list[WorkerLoopResult],
+) -> None:
+    statuses = [row.status for row in batch]
+    if statuses and all(status == "no_work" for status in statuses):
+        _record_daemon_progress(
+            session_factory,
+            config=config,
+            logger=logger,
+            progress={
+                "phase": "worker_poll",
+                "status": "no_work",
+                "poll": poll_count,
+                "summary": batch[-1].summary if batch else "",
+            },
+        )
+        return
+    if any(status == "worker_error" for status in statuses):
+        _record_daemon_progress(
+            session_factory,
+            config=config,
+            logger=logger,
+            progress={
+                "phase": "worker_poll",
+                "status": "worker_error",
+                "poll": poll_count,
+                "results": [
+                    {"item_id": row.item_id, "status": row.status, "summary": row.summary}
+                    for row in batch
+                ],
+            },
+        )
+
+
 def _reconcile_next_item_source(
     session_factory: sessionmaker,
     *,
@@ -299,6 +338,13 @@ def run_worker_daemon(
             f"results={[{'item_id': row.item_id, 'status': row.status} for row in batch]}"
         )
         batch_no_work = all(result.status == "no_work" for result in batch)
+        _record_poll_result_progress(
+            session_factory,
+            config=config,
+            logger=logger,
+            poll_count=poll_count,
+            batch=batch,
+        )
         if batch_no_work:
             no_work_polls += 1
             if config.stop_on_no_work:
