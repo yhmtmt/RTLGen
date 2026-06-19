@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import argparse
 import json
+from pathlib import Path
 import socket
+import subprocess
 
 from control_plane.db import build_engine, build_session_factory, create_all
 from control_plane.services.worker_daemon import WorkerDaemonConfig, run_worker_daemon
@@ -15,6 +17,36 @@ def _parse_json_flag(raw: str | None):
     if raw is None:
         return None
     return json.loads(raw)
+
+
+def _service_repo_head(repo_root: str) -> str | None:
+    repo = Path(repo_root).resolve()
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(repo), "rev-parse", "HEAD"],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            text=True,
+        )
+    except (OSError, subprocess.CalledProcessError):
+        return None
+    head = result.stdout.strip()
+    return head or None
+
+
+def _worker_capabilities(*, repo_root: str, capabilities_json: str | None, capability_filter_json: str | None) -> dict:
+    capabilities = dict(_parse_json_flag(capabilities_json) or {})
+    capability_filter = dict(_parse_json_flag(capability_filter_json) or {})
+    for key, value in capability_filter.items():
+        capabilities.setdefault(key, value)
+    worker_source = dict(capabilities.get("worker_source") or {})
+    worker_source.setdefault("repo_root", str(Path(repo_root).resolve()))
+    head = _service_repo_head(repo_root)
+    if head:
+        worker_source["head"] = head
+    capabilities["worker_source"] = worker_source
+    return capabilities
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -60,6 +92,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--source-update-ref", default="origin/master")
     parser.add_argument("--no-restart-on-source-update", action="store_true")
     args = parser.parse_args(argv)
+    capability_filter = _parse_json_flag(args.capability_filter_json)
+    capabilities = _worker_capabilities(
+        repo_root=args.repo_root,
+        capabilities_json=args.capabilities_json,
+        capability_filter_json=args.capability_filter_json,
+    )
 
     engine = build_engine(args.database_url)
     create_all(engine)
@@ -74,8 +112,8 @@ def main(argv: list[str] | None = None) -> int:
                 executor_kind=args.executor_kind,
                 machine_role=args.machine_role,
                 slot_capacity=args.slot_capacity if args.slot_capacity is not None else max(1, args.concurrency),
-                capabilities=_parse_json_flag(args.capabilities_json),
-                capability_filter=_parse_json_flag(args.capability_filter_json),
+                capabilities=capabilities,
+                capability_filter=capability_filter,
                 lease_seconds=args.lease_seconds,
                 heartbeat_seconds=args.heartbeat_seconds,
                 command_timeout_seconds=args.command_timeout_seconds,
