@@ -382,6 +382,62 @@ def test_operator_status_reports_evaluator_machine_capacity() -> None:
         assert "stalled_workers=1" in status.health_summary["message"]
 
 
+def test_operator_status_reports_empty_capability_stalled_worker() -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    create_all(engine)
+    with Session(engine) as session:
+        from control_plane.services.lease_service import upsert_worker_machine
+        machine = upsert_worker_machine(
+            session,
+            machine_key="worker-empty-caps",
+            hostname="worker-empty-caps",
+            role="evaluator",
+            slot_capacity=4,
+            capabilities={},
+        )
+        task = TaskRequest(
+            request_key="queue:empty_caps_ready",
+            source="test",
+            requested_by="tester",
+            title="empty caps ready",
+            description="empty caps ready",
+            layer="layer2",
+            flow="openroad",
+            priority=1,
+            request_payload={"item_id": "empty_caps_ready"},
+        )
+        session.add(task)
+        session.flush()
+        session.add(
+            WorkItem(
+                work_item_key="queue:empty_caps_ready",
+                task_request_id=task.id,
+                item_id="empty_caps_ready",
+                layer="layer2",
+                flow="openroad",
+                platform="nangate45",
+                task_type="l2_campaign",
+                state=WorkItemState.READY,
+                priority=1,
+                input_manifest={},
+                command_manifest=[],
+                expected_outputs=[],
+                acceptance_rules=[],
+                assigned_machine_key=machine.machine_key,
+            )
+        )
+        session.commit()
+
+        status = load_operator_status(session, OperatorStatusRequest(recent_limit=5))
+        row = next(r for r in status.evaluator_machines if r["machine_key"] == "worker-empty-caps")
+        assert row["assigned_ready"] == 1
+        assert row["active_slots"] == 0
+        assert row["capabilities"] == {}
+        assert row["last_progress"] is None
+        assert row["worker_attention"] == "fresh_heartbeat_assigned_ready_empty_capabilities"
+        assert "stalled_workers=1" in status.health_summary["message"]
+
+
 def test_operator_status_does_not_flag_assigned_ready_worker_with_progress() -> None:
     engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
     create_all(engine)

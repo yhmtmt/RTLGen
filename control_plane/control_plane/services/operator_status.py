@@ -140,7 +140,10 @@ def load_operator_status(session: Session, request: OperatorStatusRequest) -> Op
         worker_attention = None
         if active_slots == 0 and assigned_ready > 0 and last_seen_at is not None and last_seen_at >= fresh_machine_cutoff:
             if last_progress is None:
-                worker_attention = "fresh_heartbeat_assigned_ready_without_progress"
+                if capabilities:
+                    worker_attention = "fresh_heartbeat_assigned_ready_without_progress"
+                else:
+                    worker_attention = "fresh_heartbeat_assigned_ready_empty_capabilities"
         heartbeat_age_seconds = None
         if last_seen_at is not None:
             heartbeat_age_seconds = max(0.0, (now - last_seen_at).total_seconds())
