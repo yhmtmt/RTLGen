@@ -167,6 +167,77 @@ Healthy busy state:
 - `ARTIFACT_SYNC` items drain to `AWAITING_REVIEW`
 - eligible items open draft PRs automatically when submit is enabled
 
+## Stalled Evaluator Heartbeat
+
+`operator_status` reports a stalled evaluator when a machine has fresh
+heartbeats, assigned `READY` work, no active lease, and no worker progress.
+
+Important `worker_attention` values:
+- `fresh_heartbeat_assigned_ready_without_progress`: the worker has persisted
+  capabilities, but has not reported source reconciliation, no-work, worker
+  error, or command progress for its assigned work.
+- `fresh_heartbeat_assigned_ready_empty_capabilities`: the worker heartbeat is
+  fresh but `worker_machines.capabilities` is `{}`. A current worker launched
+  through `run_worker_daemon_service.sh` should persist `platform`, `flow`, and
+  `worker_source.head` before leasing. This usually means an old process is
+  still writing the heartbeat, the evaluator was not restarted onto current
+  `origin/master`, or a non-worker/duplicate process is using the same
+  `RTLCP_MACHINE_KEY`.
+
+First confirm the item is actually eligible before changing assignments:
+```sh
+source /workspaces/RTLGen/control_plane/.venv/bin/activate
+PYTHONPATH=/workspaces/RTLGen/control_plane \
+python3 - <<'PY'
+import os
+
+from control_plane.db import build_engine, build_session_factory
+from control_plane.services.scheduler import select_next_work_item
+
+db = os.environ["RTLCP_DATABASE_URL"]
+machine_key = "<machine_key>"
+engine = build_engine(db)
+Session = build_session_factory(engine)
+with Session() as session:
+    item = select_next_work_item(
+        session,
+        machine_key=machine_key,
+        machine_capabilities={},
+        capability_filter={"platform": "nangate45", "flow": "openroad"},
+    )
+    print(item.item_id, item.state.value, item.source_commit)
+    session.rollback()
+PY
+```
+
+If the selector finds the assigned item, do not move the work to another
+machine just to clear the dashboard. Fix the evaluator process:
+```sh
+sudo systemctl stop rtlgen-evaluator-worker.service || true
+pkill -f 'run-worker-daemon.*<machine_key>' || true
+
+cd /workspaces/rtlgen-eval-clean
+git fetch origin
+git reset --hard origin/master
+
+export RTLCP_MACHINE_KEY='<machine_key>'
+export RTLCP_CAPABILITY_FILTER_JSON='{"platform":"nangate45","flow":"openroad"}'
+export RTLCP_AUTO_UPDATE_SOURCE=1
+sudo systemctl start rtlgen-evaluator-worker.service
+```
+
+Then verify the machine row changes:
+```sh
+/workspaces/RTLGen/control_plane/scripts/operator_status.sh --format table
+```
+
+A corrected worker should show non-empty capabilities, including
+`worker_source.head`, and then transition to `source_reconcile`,
+`worker_poll/no_work`, or an active lease/run. If PostgreSQL shows lingering
+connections from the evaluator host, check for duplicate worker processes before
+terminating database backends; idle DB sessions are a symptom, not proof of the
+root cause.
+
 ## Recovery
 
 Restart evaluator worker after pulling latest `master`:
