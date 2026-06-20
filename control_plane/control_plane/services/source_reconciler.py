@@ -19,7 +19,7 @@ from sqlalchemy.orm import Session
 from control_plane.models.enums import FlowName, LeaseStatus, WorkItemState
 from control_plane.models.worker_leases import WorkerLease
 from control_plane.models.work_items import WorkItem
-from control_plane.services.lease_service import upsert_worker_machine
+from control_plane.services.lease_service import upsert_worker_machine, worker_capabilities_for_filter
 
 
 class SourceReconciliationError(RuntimeError):
@@ -372,7 +372,7 @@ def next_source_required_item(
         machine_key=machine_key,
         hostname=hostname,
         executor_kind=executor_kind,
-        capabilities=capabilities,
+        capabilities=worker_capabilities_for_filter(capabilities, capability_filter),
         role=machine_role,
         slot_capacity=slot_capacity,
     )
