@@ -18,6 +18,7 @@ from control_plane.models.runs import Run
 from control_plane.models.task_requests import TaskRequest
 from control_plane.models.work_items import WorkItem
 from control_plane.models.worker_leases import WorkerLease
+from control_plane.models.worker_machines import WorkerMachine
 from control_plane.services.lease_service import acquire_next_lease, expire_stale_leases, heartbeat_lease
 from control_plane.services.scheduler import assign_work_item
 
@@ -105,6 +106,27 @@ def test_acquire_next_lease_selects_matching_highest_priority_item() -> None:
         assert item_b.state == WorkItemState.LEASED
         lease = session.query(WorkerLease).filter_by(lease_token=result.lease_token).one()
         assert lease.status == LeaseStatus.ACTIVE
+
+
+def test_acquire_next_lease_persists_capability_filter() -> None:
+    with make_session() as session:
+        _, item_b = seed_ready_items(session)
+        from control_plane.services.lease_service import upsert_worker_machine
+
+        upsert_worker_machine(session, machine_key="machine-1")
+        assign_work_item(session, item_id=item_b.item_id, machine_key="machine-1")
+
+        result = acquire_next_lease(
+            session,
+            machine_key="machine-1",
+            capability_filter={"platform": "nangate45", "flow": "openroad"},
+            lease_seconds=900,
+        )
+
+        machine = session.query(WorkerMachine).filter_by(machine_key="machine-1").one()
+        assert result.item_id == item_b.item_id
+        assert machine.capabilities["platform"] == "nangate45"
+        assert machine.capabilities["flow"] == "openroad"
 
 
 def test_heartbeat_updates_expiry_and_machine_progress() -> None:

@@ -65,6 +65,17 @@ def _as_iso(dt) -> str:
     return dt.isoformat()
 
 
+def worker_capabilities_for_filter(
+    capabilities: dict[str, Any] | None,
+    capability_filter: dict[str, Any] | None,
+) -> dict[str, Any] | None:
+    if capabilities is None and capability_filter is None:
+        return None
+    merged = dict(capabilities or {})
+    merged.update(capability_filter or {})
+    return merged
+
+
 def upsert_worker_machine(
     session: Session,
     *,
@@ -129,7 +140,7 @@ def acquire_next_lease(
             machine_key=machine_key,
             hostname=hostname,
             executor_kind=executor_kind,
-            capabilities=capabilities,
+            capabilities=worker_capabilities_for_filter(capabilities, capability_filter),
             role=machine_role,
             slot_capacity=slot_capacity,
         )

@@ -6,10 +6,18 @@ from pathlib import Path
 import subprocess
 
 import pytest
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session
 
+from control_plane.db import create_all
+from control_plane.models.enums import WorkItemState
+from control_plane.models.task_requests import TaskRequest
+from control_plane.models.work_items import WorkItem
+from control_plane.models.worker_machines import WorkerMachine
 from control_plane.services import source_reconciler
 from control_plane.services.source_reconciler import (
     SourceReconciliationError,
+    next_source_required_item,
     reconcile_service_repo_source,
 )
 
@@ -38,6 +46,61 @@ def _init_repo_with_stale_head(repo_root: Path) -> tuple[str, str]:
     second = _run("git", "-C", str(repo_root), "rev-parse", "HEAD")
     _run("git", "-C", str(repo_root), "checkout", "--detach", first)
     return first, second
+
+
+def test_next_source_required_item_persists_capability_filter() -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    create_all(engine)
+    with Session(engine) as session:
+        task = TaskRequest(
+            request_key="queue:source_item",
+            source="test",
+            requested_by="tester",
+            title="source item",
+            description="requires source",
+            layer="layer2",
+            flow="openroad",
+            priority=1,
+            request_payload={"item_id": "source_item"},
+        )
+        session.add(task)
+        session.flush()
+        item = WorkItem(
+            work_item_key="queue:source_item",
+            task_request_id=task.id,
+            item_id="source_item",
+            layer="layer2",
+            flow="openroad",
+            platform="nangate45",
+            task_type="l2_campaign",
+            state=WorkItemState.READY,
+            priority=1,
+            source_commit="0" * 40,
+            assigned_machine_key="machine-1",
+            input_manifest={},
+            command_manifest=[],
+            expected_outputs=[],
+            acceptance_rules=[],
+        )
+        session.add(item)
+        session.commit()
+
+        selected = next_source_required_item(
+            session,
+            machine_key="machine-1",
+            hostname=None,
+            executor_kind="docker",
+            machine_role="evaluator",
+            slot_capacity=1,
+            capabilities=None,
+            capability_filter={"platform": "nangate45", "flow": "openroad"},
+        )
+
+        machine = session.query(WorkerMachine).filter_by(machine_key="machine-1").one()
+        assert selected is not None
+        assert selected.item_id == "source_item"
+        assert machine.capabilities["platform"] == "nangate45"
+        assert machine.capabilities["flow"] == "openroad"
 
 
 def test_reconcile_service_repo_recovers_stale_git_index_lock(tmp_path: Path) -> None:
