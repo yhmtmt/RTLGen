@@ -1,0 +1,78 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-06-21T10:28:05.839691Z",
+  "item_id": "l2_decoder_attention_kv_model_native_quality_7b_v1_r2",
+  "run_key": "l2_decoder_attention_kv_model_native_quality_7b_v1_r2_run_115d2c5cc7ceec50",
+  "layer": "layer2",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l2_campaign",
+  "source_commit": "25029453e1bd386b4a8f2fc17bde6bd01d727149",
+  "review_metadata_source_commit": "62dce9666f6d0120264e3bfbd2d76a72cb7b6743",
+  "objective": "Retry the 7B-class native checkpoint KV8/KV4 quality gate with memory-reduced dtype and bounded prompt/step defaults after v1 was killed with exit_code=-9.",
+  "input_manifest": {
+    "decoder_contract": {
+      "attention_kv_memory_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_model_native_quality_7b__l2_decoder_attention_kv_model_native_quality_7b_v1_r2.json",
+      "attention_kv_memory_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_model_native_quality_7b__l2_decoder_attention_kv_model_native_quality_7b_v1_r2.md",
+      "attention_kv_trace_calibration": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_trace_calibration__l2_decoder_attention_kv_trace_calibration_v1.json",
+      "attention_kv_model_native_quality_7b_scope": "Run a 7B-class trained checkpoint through teacher-forced decode while feeding back KV8/KV4-quantized past_key_values. The default checkpoint is a public native-GQA 7B-class model, but the evaluator may set RTLGEN_MODEL_NATIVE_7B_MODEL_ID and RTLGEN_MODEL_NATIVE_7B_EXPECTED_GQA_GROUP_SIZE to test an exact LLaMA-family or access-controlled checkpoint. This is a real-checkpoint precision gate, not PPA."
+    }
+  },
+  "recommendation": {
+    "source": "decoder_evidence",
+    "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_model_native_quality_7b__l2_decoder_attention_kv_model_native_quality_7b_v1_r2.json",
+    "arch_id": "decoder_attention_kv_model_native_quality_7b",
+    "macro_mode": "evidence_only",
+    "outcome": "native_checkpoint_kv4_promising"
+  },
+  "objective_profiles": [],
+  "evaluation_record": {
+    "proposal_id": "prop_l2_decoder_attention_kv_model_native_quality_7b_v1",
+    "title": "Evaluate 7B-class native KV quantization quality",
+    "primary_question": "Does teacher-forced decode on a real 7B-class checkpoint preserve next-token rankings when past_key_values are quantized to KV8 or KV4?",
+    "evaluation_mode": "frontier_detail",
+    "comparison_role": "precision_gate",
+    "abstraction_layer": "decoder_attention_kv_model_native_quality_7b",
+    "expected_direction": "iterate",
+    "expected_reason": "v1 was killed with exit_code=-9; r2 uses bfloat16 and smaller prompt/step defaults to produce a bounded 7B native precision signal.",
+    "summary": "Decoder native-checkpoint KV quality evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_model_native_quality_7b__l2_decoder_attention_kv_model_native_quality_7b_v1_r2.json: decision=native_checkpoint_kv4_promising; model_id=mistralai/Mistral-7B-v0.1; attention_heads=32; kv_heads=8; gqa_group_size=4.0; dtype=bfloat16; kv4_kv_bits=4; kv4_kv_granularity=tensor; kv4_top1_match_rate=1.0; kv4_topk_contains_rate=1.0; kv4_mean_logit_cosine=0.9978199414249704; kv4_mean_probability_kl=0.01678496644161117; kv4_max_abs_logit_delta_max=2.3125; next_step=Use this checkpoint evidence with the PPA model, then schedule a larger 7B-class or QAT confirmation.",
+    "outcome": "native_checkpoint_kv4_promising",
+    "expectation_status": "unspecified"
+  },
+  "proposal_assessment": {
+    "proposal_id": "prop_l2_decoder_attention_kv_model_native_quality_7b_v1",
+    "title": "Evaluate 7B-class native KV quantization quality",
+    "kind": "architecture",
+    "primary_question": "Does teacher-forced decode on a real 7B-class checkpoint preserve next-token rankings when past_key_values are quantized to KV8 or KV4?",
+    "evaluation_mode": "frontier_detail",
+    "comparison_role": "precision_gate",
+    "outcome": "native_checkpoint_kv4_promising",
+    "summary": "Decoder native-checkpoint KV quality evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_model_native_quality_7b__l2_decoder_attention_kv_model_native_quality_7b_v1_r2.json: decision=native_checkpoint_kv4_promising; model_id=mistralai/Mistral-7B-v0.1; attention_heads=32; kv_heads=8; gqa_group_size=4.0; dtype=bfloat16; kv4_kv_bits=4; kv4_kv_granularity=tensor; kv4_top1_match_rate=1.0; kv4_topk_contains_rate=1.0; kv4_mean_logit_cosine=0.9978199414249704; kv4_mean_probability_kl=0.01678496644161117; kv4_max_abs_logit_delta_max=2.3125; next_step=Use this checkpoint evidence with the PPA model, then schedule a larger 7B-class or QAT confirmation.",
+    "baseline_ref": null,
+    "baseline_item_id": null,
+    "matched_row_count": 0,
+    "matched_rows": [],
+    "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_model_native_quality_7b__l2_decoder_attention_kv_model_native_quality_7b_v1_r2.json",
+    "decoder_quality": {
+      "diagnosis": {},
+      "assumptions": [
+        "This is post-training native-checkpoint KV cache quantization, not QAT.",
+        "Teacher-forced reference tokens isolate KV-cache perturbation from divergent generated text.",
+        "The evaluator must have Hugging Face model access; generated model weights are not committed."
+      ]
+    }
+  },
+  "source_refs": {
+    "decoder_evidence_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_model_native_quality_7b__l2_decoder_attention_kv_model_native_quality_7b_v1_r2.json",
+    "decoder_attention_kv_memory_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_model_native_quality_7b__l2_decoder_attention_kv_model_native_quality_7b_v1_r2.json",
+    "decoder_attention_kv_memory_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_model_native_quality_7b__l2_decoder_attention_kv_model_native_quality_7b_v1_r2.md"
+  },
+  "decoder_quality": {
+    "diagnosis": {},
+    "assumptions": [
+      "This is post-training native-checkpoint KV cache quantization, not QAT.",
+      "Teacher-forced reference tokens isolate KV-cache perturbation from divergent generated text.",
+      "The evaluator must have Hugging Face model access; generated model weights are not committed."
+    ]
+  }
+}
