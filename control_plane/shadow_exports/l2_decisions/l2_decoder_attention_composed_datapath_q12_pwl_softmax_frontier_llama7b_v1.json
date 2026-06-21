@@ -1,0 +1,123 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-06-21T10:40:43.515447Z",
+  "item_id": "l2_decoder_attention_composed_datapath_q12_pwl_softmax_frontier_llama7b_v1",
+  "run_key": "l2_decoder_attention_composed_datapath_q12_pwl_softmax_frontier_llama7b_v1_run_4bbe2652b40b0ff5",
+  "layer": "layer2",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l2_campaign",
+  "source_commit": "0bf76729d525e08aab8b8428ba2c4bb272c48aa5",
+  "review_metadata_source_commit": "0bf76729d525e08aab8b8428ba2c4bb272c48aa5",
+  "objective": "Substitute the measured q12/PWL composed dual-stream attention wrapper into the Llama7B subtile schedule and rank latency, area, energy, and precision-risk against the current composed frontier.",
+  "input_manifest": {
+    "sweeps": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/sweep_compare_33.json",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/sweep_compare_33.json"
+    ],
+    "configs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/config_nm1.json",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/config_nm2.json"
+    ],
+    "design_dirs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp"
+    ],
+    "macro_manifests": [
+      "runs/designs/npu_macros/gemm_compute_array_fp16_nm1_c250/macro_manifest.json",
+      "runs/designs/npu_macros/gemm_compute_array_fp16_2slot_c300/macro_manifest.json"
+    ],
+    "decoder_contract": {
+      "attention_mixed_precision_quality": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_precision_quality__l2_decoder_attention_mixed_precision_quality_llama7b_v1.json",
+      "attention_kv_softmax_weight_metrics": "runs/designs/activations/attention_softmax_weight_int8_r8_acc24_recip_q10_wrapper/metrics.csv",
+      "attention_kv_full_value_tile_metrics": "runs/designs/activations/attention_kv_full_value_hd64_kv8_v6_tl16_b128_p8_ppc2_w22_a40_wrapper/metrics.csv",
+      "attention_kv_subtile_pipeline_schedule": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_subtile_pipeline_schedule__l2_decoder_attention_kv_subtile_pipeline_schedule_llama7b_v1.json",
+      "attention_kv_composed_dual_stream_metrics": "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_q12_pwl_recip_q12/metrics.csv",
+      "attention_composed_datapath_physical_feasibility_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_q12_pwl_softmax_frontier_llama7b_v1.json",
+      "attention_composed_datapath_physical_feasibility_scope": "Use the composed dual-stream RTL wrapper PPA as a bounded next-step feasibility model, replacing separate full-value/softmax substitutions while keeping the upstream source schedule.",
+      "attention_composed_datapath_physical_feasibility_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_q12_pwl_softmax_frontier_llama7b_v1.md"
+    },
+    "generated_campaign": {
+      "path": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1/campaign__l2_decoder_attention_composed_datapath_q12_pwl_softmax_frontier_llama7b_v1.json",
+      "outputs": {
+        "report_md": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_composed_datapath_q12_pwl_softmax_frontier_llama7b_v1/report.md",
+        "results_csv": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_composed_datapath_q12_pwl_softmax_frontier_llama7b_v1/results.csv",
+        "campaign_dir": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_composed_datapath_q12_pwl_softmax_frontier_llama7b_v1"
+      },
+      "clean_outputs": true,
+      "base_campaign_path": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1/campaign.json"
+    },
+    "candidate_manifests": [
+      "runs/candidates/nangate45/module_candidates.json"
+    ]
+  },
+  "recommendation": {
+    "arch_id": "fp16_nm1",
+    "macro_mode": "flat_nomacro",
+    "objective_rank": 1,
+    "objective_score": "0.0",
+    "latency_ms_mean": 0.144262,
+    "energy_mj_mean": 2.7860165964e-05,
+    "critical_path_ns_mean": 5.557037432204143,
+    "die_area_um2_mean": 2250000.0,
+    "total_power_mw_mean": 0.193122,
+    "flow_elapsed_s_mean": 844.5733333333334
+  },
+  "objective_profiles": [],
+  "evaluation_record": {
+    "proposal_id": "prop_l2_decoder_attention_composed_datapath_q12_pwl_softmax_frontier_v1",
+    "title": "Q12/PWL composed softmax frontier substitution for Llama7B attention",
+    "primary_question": "After the q12/PWL composed dual-stream wrapper PPA is measured, what Llama7B attention latency, area, energy, and precision-risk point does it produce under the same subtile schedule?",
+    "evaluation_mode": "frontier_detail",
+    "comparison_role": "frontier_closure",
+    "abstraction_layer": "decoder_attention_composed_datapath_physical_feasibility",
+    "expected_direction": "unknown",
+    "expected_reason": "",
+    "summary": "Ranking/frontier evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.",
+    "outcome": "ranking_recorded",
+    "expectation_status": "unspecified"
+  },
+  "proposal_assessment": {
+    "proposal_id": "prop_l2_decoder_attention_composed_datapath_q12_pwl_softmax_frontier_v1",
+    "title": "Q12/PWL composed softmax frontier substitution for Llama7B attention",
+    "kind": "architecture",
+    "primary_question": "After the q12/PWL composed dual-stream wrapper PPA is measured, what Llama7B attention latency, area, energy, and precision-risk point does it produce under the same subtile schedule?",
+    "evaluation_mode": "frontier_detail",
+    "comparison_role": "frontier_closure",
+    "outcome": "ranking_recorded",
+    "summary": "Ranking/frontier evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.",
+    "baseline_ref": null,
+    "baseline_item_id": null,
+    "matched_row_count": 0,
+    "matched_rows": []
+  },
+  "source_refs": {
+    "best_point_json": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_composed_datapath_q12_pwl_softmax_frontier_llama7b_v1/best_point.json",
+    "summary_csv": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_composed_datapath_q12_pwl_softmax_frontier_llama7b_v1/summary.csv",
+    "results_csv": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_composed_datapath_q12_pwl_softmax_frontier_llama7b_v1/results.csv",
+    "report_md": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_composed_datapath_q12_pwl_softmax_frontier_llama7b_v1/report.md",
+    "focused_candidate_schedule_yml": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_composed_datapath_q12_pwl_softmax_frontier_llama7b_v1/artifacts/mapper/fp16_nm1/tail_attn4_s256_h64/schedule.yml",
+    "focused_candidate_descriptors_bin": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_composed_datapath_q12_pwl_softmax_frontier_llama7b_v1/artifacts/mapper/fp16_nm1/tail_attn4_s256_h64/descriptors.bin",
+    "focused_candidate_perf_trace_json": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_composed_datapath_q12_pwl_softmax_frontier_llama7b_v1/artifacts/perf/fp16_nm1/tail_attn4_s256_h64/trace.json",
+    "focused_model_artifacts": [
+      {
+        "model_id": "tail_attn4_s256_h64",
+        "schedule_yml": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_composed_datapath_q12_pwl_softmax_frontier_llama7b_v1/artifacts/mapper/fp16_nm1/tail_attn4_s256_h64/schedule.yml",
+        "descriptors_bin": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_composed_datapath_q12_pwl_softmax_frontier_llama7b_v1/artifacts/mapper/fp16_nm1/tail_attn4_s256_h64/descriptors.bin",
+        "perf_trace_json": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_composed_datapath_q12_pwl_softmax_frontier_llama7b_v1/artifacts/perf/fp16_nm1/tail_attn4_s256_h64/trace.json"
+      },
+      {
+        "model_id": "tail_attn6_s128_h64",
+        "schedule_yml": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_composed_datapath_q12_pwl_softmax_frontier_llama7b_v1/artifacts/mapper/fp16_nm1/tail_attn6_s128_h64/schedule.yml",
+        "descriptors_bin": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_composed_datapath_q12_pwl_softmax_frontier_llama7b_v1/artifacts/mapper/fp16_nm1/tail_attn6_s128_h64/descriptors.bin",
+        "perf_trace_json": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_composed_datapath_q12_pwl_softmax_frontier_llama7b_v1/artifacts/perf/fp16_nm1/tail_attn6_s128_h64/trace.json"
+      },
+      {
+        "model_id": "tail_attn6_s256_h64",
+        "schedule_yml": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_composed_datapath_q12_pwl_softmax_frontier_llama7b_v1/artifacts/mapper/fp16_nm1/tail_attn6_s256_h64/schedule.yml",
+        "descriptors_bin": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_composed_datapath_q12_pwl_softmax_frontier_llama7b_v1/artifacts/mapper/fp16_nm1/tail_attn6_s256_h64/descriptors.bin",
+        "perf_trace_json": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_composed_datapath_q12_pwl_softmax_frontier_llama7b_v1/artifacts/perf/fp16_nm1/tail_attn6_s256_h64/trace.json"
+      }
+    ]
+  }
+}
