@@ -29,5 +29,5 @@
       65536
     ]
   },
-  "tag_prefix": "attention_dual_stream_composed_v1_q12_pwl"
+  "tag_prefix": "attention_dual_stream_composed_v1_hier_q12_pwl"
 }
