@@ -5981,8 +5981,8 @@ def _decoder_attention_kv_model_native_quality_evidence(*, item_id: str) -> dict
     trace_calibration = f"{base}/decoder_attention_kv_trace_calibration__l2_decoder_attention_kv_trace_calibration_v1.json"
     return {
         "inputs": {
-            "attention_kv_memory_out": out,
-            "attention_kv_memory_report": report,
+            "attention_kv_model_native_quality_out": out,
+            "attention_kv_model_native_quality_report": report,
             "attention_kv_trace_calibration": trace_calibration,
             "attention_kv_model_native_quality_scope": (
                 "Run a trained native-GQA checkpoint through teacher-forced decode while feeding back "
@@ -6017,8 +6017,8 @@ def _decoder_attention_kv_model_native_quality_7b_evidence(*, item_id: str) -> d
     trace_calibration = f"{base}/decoder_attention_kv_trace_calibration__l2_decoder_attention_kv_trace_calibration_v1.json"
     return {
         "inputs": {
-            "attention_kv_memory_out": out,
-            "attention_kv_memory_report": report,
+            "attention_kv_model_native_quality_7b_out": out,
+            "attention_kv_model_native_quality_7b_report": report,
             "attention_kv_trace_calibration": trace_calibration,
             "attention_kv_model_native_quality_7b_scope": (
                 "Run a 7B-class trained checkpoint through teacher-forced decode while feeding back "

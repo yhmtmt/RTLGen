@@ -588,6 +588,132 @@ def test_consume_l2_result_writes_decision_proposal() -> None:
             assert artifact.path == f"control_plane/shadow_exports/l2_decisions/{item_id}.json"
 
 
+def test_consume_l2_result_writes_evidence_only_decision_without_campaign_outputs() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        item_id = "l2_decoder_attention_kv_model_native_quality_7b_v1_r2"
+        evidence_rel = (
+            "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+            f"decoder_attention_kv_model_native_quality_7b__{item_id}.json"
+        )
+        report_rel = (
+            "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+            f"decoder_attention_kv_model_native_quality_7b__{item_id}.md"
+        )
+        _write(
+            repo_root / evidence_rel,
+            json.dumps(
+                {
+                    "model": {
+                        "model_id": "mistralai/Mistral-7B-v0.1",
+                        "attention_heads": 32,
+                        "kv_heads": 8,
+                        "gqa_group_size": 4.0,
+                        "dtype": "bfloat16",
+                    },
+                    "decision": {
+                        "status": "native_checkpoint_kv4_promising",
+                        "next_step": "Use this checkpoint evidence with the PPA model.",
+                    },
+                    "best_kv4_candidate": {
+                        "kv_bits": 4,
+                        "kv_granularity": "tensor",
+                        "top1_match_rate": 1.0,
+                        "topk_contains_rate": 1.0,
+                        "mean_logit_cosine": 0.9978,
+                        "mean_probability_kl": 0.0168,
+                    },
+                },
+                indent=2,
+            )
+            + "\n",
+        )
+        _write(repo_root / report_rel, "# quality report\n")
+
+        with Session(engine) as session:
+            task_request = TaskRequest(
+                request_key=f"l2_campaign:{item_id}",
+                source="test",
+                requested_by="@tester",
+                title="Layer2 native quality",
+                description="native checkpoint quality gate",
+                layer=LayerName.LAYER2,
+                flow=FlowName.OPENROAD,
+                priority=1,
+                request_payload={
+                    "item_id": item_id,
+                    "layer": "layer2",
+                    "flow": "openroad",
+                    "developer_loop": {
+                        "proposal_id": "prop_l2_decoder_attention_kv_model_native_quality_7b_v1",
+                        "evaluation": {
+                            "mode": "frontier_detail",
+                            "expected_direction": "iterate",
+                        },
+                        "comparison": {"role": "precision_gate"},
+                        "abstraction": {"layer": "decoder_attention_kv_model_native_quality_7b"},
+                    },
+                },
+                source_commit="deadbeef",
+            )
+            session.add(task_request)
+            session.flush()
+            work_item = WorkItem(
+                work_item_key=f"l2_campaign:{item_id}",
+                task_request_id=task_request.id,
+                item_id=item_id,
+                layer=LayerName.LAYER2,
+                flow=FlowName.OPENROAD,
+                platform="nangate45",
+                task_type="l2_campaign",
+                state=WorkItemState.ARTIFACT_SYNC,
+                priority=1,
+                source_mode="src_verilog",
+                input_manifest={
+                    "decoder_contract": {
+                        "attention_kv_memory_out": evidence_rel,
+                        "attention_kv_memory_report": report_rel,
+                    }
+                },
+                command_manifest=[],
+                expected_outputs=[evidence_rel, report_rel],
+                acceptance_rules=[],
+                source_commit="deadbeef",
+            )
+            session.add(work_item)
+            session.flush()
+            run = Run(
+                run_key=f"{item_id}_run_1",
+                work_item_id=work_item.id,
+                attempt=1,
+                executor_type=ExecutorType.INTERNAL_WORKER,
+                status=RunStatus.SUCCEEDED,
+                started_at=utcnow(),
+                completed_at=utcnow(),
+                checkout_commit="deadbeef",
+                result_summary="2/2 commands succeeded",
+                result_payload={"queue_result": {"status": "ok"}},
+            )
+            session.add(run)
+            session.commit()
+
+            result = consume_l2_result(session, Layer2ConsumeRequest(repo_root=str(repo_root), item_id=item_id))
+            assert result.recommended_arch_id == "decoder_attention_kv_model_native_quality_7b"
+            assert result.recommended_macro_mode == "evidence_only"
+            assert result.profile_count == 0
+
+            proposal_path = repo_root / "control_plane" / "shadow_exports" / "l2_decisions" / f"{item_id}.json"
+            payload = json.loads(proposal_path.read_text(encoding="utf-8"))
+            assert payload["recommendation"]["source"] == "decoder_evidence"
+            assert payload["proposal_assessment"]["outcome"] == "native_checkpoint_kv4_promising"
+            assert payload["source_refs"]["decoder_evidence_json"] == evidence_rel
+            assert payload["source_refs"]["decoder_attention_kv_memory_report"] == report_rel
+
+
 def test_consume_l2_result_allows_explicit_target_path() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
