@@ -1,0 +1,15 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_composed_datapath_q12_pwl_softmax_frontier_v1",
+  "candidate_id": "l2_decoder_attention_composed_datapath_q12_pwl_softmax_frontier_llama7b_v1",
+  "decision": "iterate",
+  "reason": "Decoder evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_q12_pwl_softmax_frontier_llama7b_v1.json: decision=dual_stream_area_blocked; recommended_next_step=measure a denser dual-stream fused attention datapath or reduce compute replicas before promoting dual_mac.",
+  "evidence_refs": [
+    "item:l2_decoder_attention_composed_datapath_q12_pwl_softmax_frontier_llama7b_v1",
+    "run:l2_decoder_attention_composed_datapath_q12_pwl_softmax_frontier_llama7b_v1_run_4bbe2652b40b0ff5",
+    "artifact:control_plane/shadow_exports/l2_decisions/l2_decoder_attention_composed_datapath_q12_pwl_softmax_frontier_llama7b_v1.json",
+    "pr:#959",
+    "https://github.com/yhmtmt/RTLGen/pull/959"
+  ],
+  "next_action": "inspect follow-on work after l2_decoder_attention_composed_datapath_q12_pwl_softmax_frontier_llama7b_v1",
+  "requires_human_approval": false
+}

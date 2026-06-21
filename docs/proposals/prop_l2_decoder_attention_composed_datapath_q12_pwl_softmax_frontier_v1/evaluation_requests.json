@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_decoder_attention_composed_datapath_q12_pwl_softmax_frontier_v1",
-  "source_commit": "c9d02d1ab29bd85ec6f316ebb8116a04480545c8",
+  "source_commit": "0bf76729d525e08aab8b8428ba2c4bb272c48aa5",
   "requested_items": [
     {
       "item_id": "l2_decoder_attention_composed_datapath_q12_pwl_softmax_frontier_llama7b_v1",
@@ -21,7 +21,11 @@
         "direction": "record_q12_pwl_composed_softmax_frontier",
         "reason": "Identify whether the q12/PWL composed softmax wrapper improves precision-risk posture enough to justify its measured PPA cost in the Llama7B attention frontier."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 959,
+      "merge_commit": "254b99bf2b26cb22b7b3df96fa9368113ce6ec3c",
+      "merged_utc": "2026-06-21T10:46:53.728096Z",
+      "notes": "Merged via PR #959 and merge 254b99bf2b26cb22b7b3df96fa9368113ce6ec3c at 2026-06-21T10:46:53.728096Z."
     }
   ]
 }

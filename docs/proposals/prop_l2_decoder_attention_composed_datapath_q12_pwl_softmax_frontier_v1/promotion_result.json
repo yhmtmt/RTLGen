@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_composed_datapath_q12_pwl_softmax_frontier_v1",
+  "decision": "iterate",
+  "pr_number": 959,
+  "merge_commit": "254b99bf2b26cb22b7b3df96fa9368113ce6ec3c",
+  "merged_utc": "2026-06-21T10:46:53.728096Z"
+}
