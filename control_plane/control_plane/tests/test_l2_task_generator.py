@@ -3134,6 +3134,12 @@ def test_generate_l2_campaign_task_adds_decoder_attention_kv_physical_hbm_qualit
             assert "--kv-sharing-list gqa8" in run
             assert "--kv-bits-list 16,8" in run
             assert "--kv-bits-list 16,8,4" not in run
+            assert (
+                "--quality-gate-json "
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_kv_model_native_quality_7b__"
+                "l2_decoder_attention_kv_model_native_quality_7b_v1.json"
+            ) in run
             assert decoder_inputs["attention_kv_memory_out"] == (
                 "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
                 "decoder_attention_kv_physical_hbm_quality_backed_7b__"
@@ -3192,6 +3198,14 @@ def test_generate_l2_campaign_task_adds_decoder_attention_kv_physical_hbm_qualit
 
             work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
             decoder_inputs = work_item.input_manifest["decoder_contract"]
+            run = work_item.command_manifest[0]["run"]
+            assert "estimate_llm_decoder_attention_kv_physical_hbm_frontier.py" in run
+            assert (
+                "--quality-gate-json "
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_kv_model_native_quality_7b__"
+                "l2_decoder_attention_kv_model_native_quality_7b_v1_r2.json"
+            ) in run
             assert decoder_inputs["attention_kv_model_native_quality_7b"].endswith(
                 "decoder_attention_kv_model_native_quality_7b__"
                 "l2_decoder_attention_kv_model_native_quality_7b_v1_r2.json"

@@ -3528,6 +3528,7 @@ def _decoder_attention_kv_physical_hbm_quality_backed_7b_evidence(
                     "--macs-per-cycle 524288 "
                     "--vector-ops-per-cycle 65536 "
                     "--clock-ns 1.0 "
+                    f"--quality-gate-json {native_quality_7b} "
                     f"--out {out} "
                     f"--out-md {report}"
                 ),
