@@ -5,18 +5,25 @@
 - `candidate_id`: `l1_decoder_attention_dual_stream_composed_q12_pwl_softmax_ppa_v1`
 
 ## Evaluations Consumed
-- Pending: this proposal creates the PPA item.
+- `l1_decoder_attention_dual_stream_composed_q12_pwl_softmax_ppa_v1`
+- `l1_decoder_attention_dual_stream_composed_q12_pwl_softmax_ppa_v1_run_85a4972365c1a8c3`
+- source commit: `e029513e37c8db2ef74418ff96eb1ce805461d3c`
+- review: PR #950
 
 ## Baseline Comparison
-- Baseline PPA: `l1_decoder_attention_dual_stream_composed_softmax_recip_lut_ppa_v1_r3`
-- Baseline L2 schedule substitution: `l2_decoder_attention_composed_datapath_recip_lut_variant_frontier_llama7b_v1`
+- not applicable
 
 ## Result
-- Pending evaluation.
+- result: `promote`
+- confidence level: merged accepted evidence
+- estimated optimization room: accepted at current stage
+- architecture conclusion robustness: accepted for the current proposal scope
+- summary: Physical metrics recorded from an accepted status=ok Layer 1 row.
 
 ## Failures and Caveats
-- The q8 S8/W8 reciprocal-LUT composed point remains PPA-best but quality-risky under the current proxy.
-- This q12/PWL point is intended to measure the concrete physical cost of reducing that softmax precision risk.
+- no additional caveats recorded during automatic finalization
 
 ## Recommendation
-- Dispatch the L1 PPA item after merge.
+- `promote`
+- reason: Accepted Layer 1 physical metrics were merged in PR #950 for the current candidate.
+- next_action: inspect the next dependent item

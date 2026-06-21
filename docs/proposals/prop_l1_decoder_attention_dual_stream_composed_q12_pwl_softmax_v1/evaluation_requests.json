@@ -23,8 +23,12 @@
         "direction": "measure_quality_safer_composed_softmax_cost",
         "reason": "The current q8 reciprocal-LUT composed point is PPA-best but quality-risky; this job measures the actual composed cost of the safer q12/PWL softmax alternative."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 950,
+      "merge_commit": "f5135af51a9afbbe2cf366389158b685a01d258c",
+      "merged_utc": "2026-06-21T10:14:11.729387Z",
+      "notes": "Merged via PR #950 and merge f5135af51a9afbbe2cf366389158b685a01d258c at 2026-06-21T10:14:11.729387Z."
     }
   ],
-  "source_commit": "042bd911f964e44c0fed924ea2b579a487dfc21c"
+  "source_commit": "e029513e37c8db2ef74418ff96eb1ce805461d3c"
 }

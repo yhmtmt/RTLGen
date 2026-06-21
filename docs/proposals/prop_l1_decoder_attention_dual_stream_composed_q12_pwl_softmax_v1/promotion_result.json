@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l1_decoder_attention_dual_stream_composed_q12_pwl_softmax_v1",
-  "decision": "pending",
-  "pr_number": null,
-  "merge_commit": "",
-  "merged_utc": ""
+  "decision": "promote",
+  "pr_number": 950,
+  "merge_commit": "f5135af51a9afbbe2cf366389158b685a01d258c",
+  "merged_utc": "2026-06-21T10:14:11.729387Z"
 }

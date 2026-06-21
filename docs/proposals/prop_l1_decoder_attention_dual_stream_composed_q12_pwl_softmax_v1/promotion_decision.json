@@ -1,9 +1,15 @@
 {
   "proposal_id": "prop_l1_decoder_attention_dual_stream_composed_q12_pwl_softmax_v1",
   "candidate_id": "l1_decoder_attention_dual_stream_composed_q12_pwl_softmax_ppa_v1",
-  "decision": "iterate",
-  "reason": "PPA evidence is pending. Dispatch the q12/PWL composed softmax measurement after this proposal is merged.",
-  "evidence_refs": [],
-  "next_action": "dispatch l1_decoder_attention_dual_stream_composed_q12_pwl_softmax_ppa_v1",
+  "decision": "promote",
+  "reason": "Accepted Layer 1 physical metrics were merged in PR #950 for the current candidate.",
+  "evidence_refs": [
+    "item:l1_decoder_attention_dual_stream_composed_q12_pwl_softmax_ppa_v1",
+    "run:l1_decoder_attention_dual_stream_composed_q12_pwl_softmax_ppa_v1_run_85a4972365c1a8c3",
+    "artifact:control_plane/shadow_exports/l1_promotions/l1_decoder_attention_dual_stream_composed_q12_pwl_softmax_ppa_v1.json",
+    "pr:#950",
+    "https://github.com/yhmtmt/RTLGen/pull/950"
+  ],
+  "next_action": "inspect the next dependent item",
   "requires_human_approval": false
 }
