@@ -3762,6 +3762,9 @@ def test_generate_l2_campaign_task_adds_decoder_attention_kv_model_native_qualit
             assert "RTLGEN_MODEL_NATIVE_7B_MODEL_ID" in run
             assert "mistralai/Mistral-7B-v0.1" in run
             assert "RTLGEN_MODEL_NATIVE_7B_EXPECTED_GQA_GROUP_SIZE" in run
+            assert "RTLGEN_MODEL_NATIVE_7B_MAX_PROMPTS" in run
+            assert "RTLGEN_MODEL_NATIVE_7B_GENERATION_STEPS" in run
+            assert "RTLGEN_MODEL_NATIVE_7B_DTYPE" in run
             assert run.startswith("bash -lc '")
             assert "run_hf_eval_python.sh" in run
             assert "evaluate_llm_decoder_model_native_kv_quant.py" in run
@@ -3769,6 +3772,9 @@ def test_generate_l2_campaign_task_adds_decoder_attention_kv_model_native_qualit
             assert "--expected-gqa-group-size \"$EXPECTED_GQA\"" in run
             assert "--kv-bits-list 8,4" in run
             assert "--kv-granularity-list tensor" in run
+            assert "--max-prompts \"$MAX_PROMPTS\"" in run
+            assert "--generation-steps \"$GENERATION_STEPS\"" in run
+            assert "--dtype \"$DTYPE\"" in run
             assert decoder_inputs["attention_kv_memory_out"] == (
                 "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
                 "decoder_attention_kv_model_native_quality_7b__"
