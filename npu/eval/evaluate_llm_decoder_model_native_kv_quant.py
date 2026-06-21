@@ -178,6 +178,23 @@ def _candidate_rank_key(row: JsonDict) -> tuple[float, float, float, float]:
     )
 
 
+def _resolve_torch_dtype(torch_module: Any, *, device: str, dtype_name: str) -> Any:
+    if dtype_name == "auto":
+        return torch_module.float16 if device.startswith("cuda") else torch_module.float32
+    if dtype_name == "float32":
+        return torch_module.float32
+    if dtype_name == "float16":
+        return torch_module.float16
+    if dtype_name == "bfloat16":
+        return torch_module.bfloat16
+    raise SystemExit(f"unsupported dtype: {dtype_name}")
+
+
+def _dtype_label(dtype: Any) -> str:
+    text = str(dtype)
+    return text.split(".", 1)[-1] if "." in text else text
+
+
 def _write_report_md(payload: JsonDict) -> str:
     lines = [
         "# Native GQA KV Quantization Quality",
@@ -235,7 +252,7 @@ def _run_model_eval(args: argparse.Namespace) -> JsonDict:
     device = args.device
     if device == "auto":
         device = "cuda" if torch.cuda.is_available() else "cpu"
-    dtype = torch.float16 if device.startswith("cuda") else torch.float32
+    dtype = _resolve_torch_dtype(torch, device=device, dtype_name=args.dtype)
     tokenizer = AutoTokenizer.from_pretrained(model_id)
     model = AutoModelForCausalLM.from_pretrained(model_id, torch_dtype=dtype)
     model.to(device)
@@ -372,7 +389,8 @@ def _run_model_eval(args: argparse.Namespace) -> JsonDict:
             "kv_heads": kv_heads,
             "gqa_group_size": gqa_group_size,
             "device": device,
-            "dtype": str(dtype),
+            "dtype": _dtype_label(dtype),
+            "requested_dtype": args.dtype,
         },
         "prompt_count": len(prompts),
         "generation_steps": args.generation_steps,
@@ -405,6 +423,7 @@ def main() -> int:
     parser.add_argument("--kv-granularity-list", type=_parse_granularities, default=["tensor"])
     parser.add_argument("--expected-gqa-group-size", type=int, default=8)
     parser.add_argument("--device", default="auto", choices=["auto", "cpu", "cuda"])
+    parser.add_argument("--dtype", default="auto", choices=["auto", "float32", "float16", "bfloat16"])
     parser.add_argument("--out", required=True)
     parser.add_argument("--out-md", required=True)
     args = parser.parse_args()

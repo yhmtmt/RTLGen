@@ -1,4 +1,17 @@
-from npu.eval.evaluate_llm_decoder_model_native_kv_quant import _decision, _summarize_rows
+from npu.eval.evaluate_llm_decoder_model_native_kv_quant import _decision, _dtype_label, _resolve_torch_dtype, _summarize_rows
+
+
+class _TorchDtypeStub:
+    float16 = "torch.float16"
+    float32 = "torch.float32"
+    bfloat16 = "torch.bfloat16"
+
+
+def test_resolve_torch_dtype_supports_memory_reduced_cpu_eval() -> None:
+    assert _resolve_torch_dtype(_TorchDtypeStub, device="cpu", dtype_name="auto") == "torch.float32"
+    assert _resolve_torch_dtype(_TorchDtypeStub, device="cuda", dtype_name="auto") == "torch.float16"
+    assert _resolve_torch_dtype(_TorchDtypeStub, device="cpu", dtype_name="bfloat16") == "torch.bfloat16"
+    assert _dtype_label("torch.bfloat16") == "bfloat16"
 
 
 def test_summarize_rows_records_rank_and_logit_metrics() -> None:
