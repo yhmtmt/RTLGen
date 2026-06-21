@@ -113,7 +113,11 @@ def _merge_result(run: Run, work_item: WorkItem) -> dict[str, Any]:
 
     if queue_result["status"] == "ok":
         metrics_rows = queue_result.get("metrics_rows")
-        if not isinstance(metrics_rows, list) or not metrics_rows:
+        metrics_exempt_reason = str(queue_result.get("metrics_exempt_reason", "")).strip()
+        if (
+            (not isinstance(metrics_rows, list) or not metrics_rows)
+            and metrics_exempt_reason != "evidence_only_decoder_evidence"
+        ):
             raise QueueExportError(
                 f"evaluated export for {work_item.item_id} requires non-empty queue_result.metrics_rows when status=ok"
             )
@@ -126,6 +130,7 @@ def _merge_result(run: Run, work_item: WorkItem) -> dict[str, Any]:
         "host",
         "identity_block",
         "metrics_rows",
+        "metrics_exempt_reason",
         "queue_item_id",
         "session_id",
         "status",
