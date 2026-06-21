@@ -121,26 +121,27 @@ def _repo_materialized_dependency_exists(*, repo_root: Path, item_id: str, requi
         if not path.exists():
             return DependencyGateResult(False, f"dependency {item_id} missing materialized artifact: {path}")
     try:
-        decision_payload = json.loads(decision_path.read_text(encoding="utf-8"))
+        json.loads(decision_path.read_text(encoding="utf-8"))
     except Exception:
         return DependencyGateResult(False, f"dependency {item_id} decision artifact is unreadable")
-    source_refs = decision_payload.get("source_refs")
-    if isinstance(source_refs, dict):
-        for rel_path in source_refs.values():
-            if isinstance(rel_path, list):
-                continue
-            if not isinstance(rel_path, str) or not rel_path.strip():
-                continue
-            path = Path(rel_path)
-            if path.is_absolute():
-                candidate = path
-            else:
-                candidate = repo_root / path
-            if not candidate.exists():
-                return DependencyGateResult(
-                    False,
-                    f"dependency {item_id} missing materialized artifact: {rel_path}",
-                )
+    try:
+        queue_payload = json.loads(queue_snapshot.read_text(encoding="utf-8"))
+    except Exception:
+        return DependencyGateResult(False, f"dependency {item_id} queue snapshot is unreadable")
+    task_payload = queue_payload.get("task")
+    expected_outputs = []
+    if isinstance(task_payload, dict) and isinstance(task_payload.get("expected_outputs"), list):
+        expected_outputs = task_payload["expected_outputs"]
+    for rel_path in expected_outputs:
+        if not isinstance(rel_path, str) or not rel_path.strip():
+            continue
+        path = Path(rel_path)
+        candidate = path if path.is_absolute() else repo_root / path
+        if not candidate.exists():
+            return DependencyGateResult(
+                False,
+                f"dependency {item_id} missing materialized artifact: {rel_path}",
+            )
     return DependencyGateResult(True)
 
 
