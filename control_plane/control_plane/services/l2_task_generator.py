@@ -3453,13 +3453,25 @@ def _decoder_attention_kv_physical_hbm_quality_backed_evidence(*, item_id: str) 
     }
 
 
-def _decoder_attention_kv_physical_hbm_quality_backed_7b_evidence(*, item_id: str) -> dict[str, Any]:
+def _decoder_attention_kv_physical_hbm_quality_backed_7b_evidence(
+    *,
+    item_id: str,
+    depends_on_item_ids: list[str] | None = None,
+) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_kv_physical_hbm_quality_backed_7b__{item_id}.json"
     report = f"{base}/decoder_attention_kv_physical_hbm_quality_backed_7b__{item_id}.md"
+    native_quality_7b_item_id = next(
+        (
+            dep
+            for dep in (depends_on_item_ids or [])
+            if dep.startswith("l2_decoder_attention_kv_model_native_quality_7b_")
+        ),
+        "l2_decoder_attention_kv_model_native_quality_7b_v1",
+    )
     native_quality_7b = (
         f"{base}/decoder_attention_kv_model_native_quality_7b__"
-        "l2_decoder_attention_kv_model_native_quality_7b_v1.json"
+        f"{native_quality_7b_item_id}.json"
     )
     physical_frontier = (
         f"{base}/decoder_attention_kv_physical_hbm_frontier__"
@@ -7461,7 +7473,10 @@ def _build_payload(
         elif abstraction_layer_name == "decoder_attention_kv_physical_hbm_quality_backed":
             decoder_evidence = _decoder_attention_kv_physical_hbm_quality_backed_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_physical_hbm_quality_backed_7b":
-            decoder_evidence = _decoder_attention_kv_physical_hbm_quality_backed_7b_evidence(item_id=item_id)
+            decoder_evidence = _decoder_attention_kv_physical_hbm_quality_backed_7b_evidence(
+                item_id=item_id,
+                depends_on_item_ids=depends_on_item_ids,
+            )
         elif abstraction_layer_name == "decoder_attention_kv_physical_hbm_memory_noc":
             decoder_evidence = _decoder_attention_kv_physical_hbm_memory_noc_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_physical_hbm_compute_sensitivity":
