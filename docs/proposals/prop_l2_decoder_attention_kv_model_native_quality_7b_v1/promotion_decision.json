@@ -1,14 +1,15 @@
 {
   "proposal_id": "prop_l2_decoder_attention_kv_model_native_quality_7b_v1",
-  "candidate_id": "l2_decoder_attention_kv_model_native_quality_7b_v1",
-  "decision": "pending_remote_result",
-  "reason": "The work item has been staged to collect 7B-class native checkpoint KV8/KV4 quality evidence before promoting or rejecting low-bit KV cache points in the Llama7B frontier.",
+  "candidate_id": "l2_decoder_attention_kv_model_native_quality_7b_v1_r2",
+  "decision": "iterate",
+  "reason": "Decoder native-checkpoint KV quality evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_model_native_quality_7b__l2_decoder_attention_kv_model_native_quality_7b_v1_r2.json: decision=native_checkpoint_kv4_promising; model_id=mistralai/Mistral-7B-v0.1; attention_heads=32; kv_heads=8; gqa_group_size=4.0; dtype=bfloat16; kv4_kv_bits=4; kv4_kv_granularity=tensor; kv4_top1_match_rate=1.0; kv4_topk_contains_rate=1.0; kv4_mean_logit_cosine=0.9978199414249704; kv4_mean_probability_kl=0.01678496644161117; kv4_max_abs_logit_delta_max=2.3125; next_step=Use this checkpoint evidence with the PPA model, then schedule a larger 7B-class or QAT confirmation.",
   "evidence_refs": [
-    "item:l2_decoder_attention_kv_model_native_quality_7b_v1",
-    "pr:927",
-    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_model_native_quality__l2_decoder_attention_kv_model_native_quality_tinyllama_v1_r2.json",
-    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_model_native_recovery__l2_decoder_attention_kv_model_native_recovery_tinyllama_v1.json"
+    "item:l2_decoder_attention_kv_model_native_quality_7b_v1_r2",
+    "run:l2_decoder_attention_kv_model_native_quality_7b_v1_r2_run_115d2c5cc7ceec50",
+    "artifact:control_plane/shadow_exports/l2_decisions/l2_decoder_attention_kv_model_native_quality_7b_v1_r2.json",
+    "pr:#954",
+    "https://github.com/yhmtmt/RTLGen/pull/954"
   ],
-  "next_action": "Wait for the remote evaluator result, then update the precision frontier interpretation: keep KV8 conservative if KV4 fails, or schedule KV4 metadata/QAT follow-up if it passes.",
+  "next_action": "inspect follow-on work after l2_decoder_attention_kv_model_native_quality_7b_v1_r2",
   "requires_human_approval": false
 }

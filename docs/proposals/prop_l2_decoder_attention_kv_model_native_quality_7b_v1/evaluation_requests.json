@@ -1,9 +1,9 @@
 {
   "proposal_id": "prop_l2_decoder_attention_kv_model_native_quality_7b_v1",
-  "source_commit": "78bf63f25a05b7798ee98e4607d4882f7a2ce468",
+  "source_commit": "25029453e1bd386b4a8f2fc17bde6bd01d727149",
   "requested_items": [
     {
-      "item_id": "l2_decoder_attention_kv_model_native_quality_7b_v1",
+      "item_id": "l2_decoder_attention_kv_model_native_quality_7b_v1_r2",
       "task_type": "l2_campaign",
       "objective": "Run a real 7B-class checkpoint through teacher-forced KV8/KV4 cache quantization to check whether the Llama7B proxy precision frontier holds on a larger native checkpoint.",
       "evaluation_mode": "frontier_detail",
@@ -17,7 +17,14 @@
         "direction": "iterate",
         "reason": ""
       },
-      "status": "pending"
+      "status": "merged",
+      "prior_item_ids": [
+        "l2_decoder_attention_kv_model_native_quality_7b_v1"
+      ],
+      "merged_pr_number": 954,
+      "merge_commit": "b7169043d940410fa8b4794b9281724f2fac6593",
+      "merged_utc": "2026-06-21T10:29:48.382186Z",
+      "notes": "Merged via PR #954 and merge b7169043d940410fa8b4794b9281724f2fac6593 at 2026-06-21T10:29:48.382186Z."
     }
   ]
 }

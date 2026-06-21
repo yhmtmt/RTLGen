@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l2_decoder_attention_kv_model_native_quality_7b_v1",
-  "decision": "pending",
-  "pr_number": null,
-  "merge_commit": "",
-  "merged_utc": ""
+  "decision": "iterate",
+  "pr_number": 954,
+  "merge_commit": "b7169043d940410fa8b4794b9281724f2fac6593",
+  "merged_utc": "2026-06-21T10:29:48.382186Z"
 }
