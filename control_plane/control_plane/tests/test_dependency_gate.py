@@ -170,7 +170,7 @@ def test_refresh_all_blocked_items_releases_repo_materialized_missing_dependency
                 + "\n",
             ),
             (review_rel, "{}\n"),
-            (queue_rel, "{}\n"),
+            (queue_rel, json.dumps({"task": {"expected_outputs": [evidence_rel]}}, indent=2) + "\n"),
             (evidence_rel, "{}\n"),
         ):
             path = repo_root / rel
