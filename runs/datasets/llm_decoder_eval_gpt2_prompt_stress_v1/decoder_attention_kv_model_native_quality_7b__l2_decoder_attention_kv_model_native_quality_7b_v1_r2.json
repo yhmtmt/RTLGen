@@ -1,0 +1,93 @@
+{
+  "assumptions": [
+    "This is post-training native-checkpoint KV cache quantization, not QAT.",
+    "Teacher-forced reference tokens isolate KV-cache perturbation from divergent generated text.",
+    "The evaluator must have Hugging Face model access; generated model weights are not committed."
+  ],
+  "best_kv4_candidate": {
+    "comparison_count": 8,
+    "kv_bits": 4,
+    "kv_granularity": "tensor",
+    "max_abs_logit_delta_max": 2.3125,
+    "max_abs_logit_delta_mean": 1.419189453125,
+    "mean_logit_cosine": 0.9978199414249704,
+    "mean_probability_kl": 0.01678496644161117,
+    "mean_reference_margin": 1.3046875,
+    "min_reference_margin": 0.0,
+    "top1_match_rate": 1.0,
+    "topk_contains_rate": 1.0
+  },
+  "candidate_summary": [
+    {
+      "comparison_count": 8,
+      "kv_bits": 8,
+      "kv_granularity": "tensor",
+      "max_abs_logit_delta_max": 0.4375,
+      "max_abs_logit_delta_mean": 0.1875,
+      "mean_logit_cosine": 0.9999542478621327,
+      "mean_probability_kl": 0.0004798215588894854,
+      "mean_reference_margin": 1.3046875,
+      "min_reference_margin": 0.0,
+      "top1_match_rate": 1.0,
+      "topk_contains_rate": 1.0
+    },
+    {
+      "comparison_count": 8,
+      "kv_bits": 4,
+      "kv_granularity": "tensor",
+      "max_abs_logit_delta_max": 2.3125,
+      "max_abs_logit_delta_mean": 1.419189453125,
+      "mean_logit_cosine": 0.9978199414249704,
+      "mean_probability_kl": 0.01678496644161117,
+      "mean_reference_margin": 1.3046875,
+      "min_reference_margin": 0.0,
+      "top1_match_rate": 1.0,
+      "topk_contains_rate": 1.0
+    }
+  ],
+  "decision": {
+    "blockers": [],
+    "cautions": [
+      "Best KV4 ranking mostly holds, but logit cosine is below the promotion caution line"
+    ],
+    "next_step": "Use this checkpoint evidence with the PPA model, then schedule a larger 7B-class or QAT confirmation.",
+    "selected_kv4_granularity": "tensor",
+    "status": "native_checkpoint_kv4_promising",
+    "thresholds": {
+      "kv4_mean_logit_cosine_caution_below": 0.999,
+      "kv4_top1_match_min": 0.98,
+      "kv4_topk_contains_min": 0.995,
+      "kv8_top1_match_caution_below": 0.995
+    }
+  },
+  "generation_steps": 4,
+  "kv_granularity_list": [
+    "tensor"
+  ],
+  "model": {
+    "attention_heads": 32,
+    "device": "cpu",
+    "dtype": "bfloat16",
+    "gqa_group_size": 4.0,
+    "kv_heads": 8,
+    "model_id": "mistralai/Mistral-7B-v0.1",
+    "requested_dtype": "bfloat16"
+  },
+  "prompt_count": 2,
+  "prompt_records": [
+    {
+      "prefill_reference_margin": 0.1875,
+      "prefill_reference_top1": 264,
+      "prompt": "The capital of France is",
+      "prompt_index": 0
+    },
+    {
+      "prefill_reference_margin": 2.3125,
+      "prefill_reference_top1": 2308,
+      "prompt": "Two plus two equals",
+      "prompt_index": 1
+    }
+  ],
+  "topk": 5,
+  "version": 0.2
+}
