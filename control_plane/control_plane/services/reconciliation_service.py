@@ -404,6 +404,34 @@ def _ensure_queue_snapshot_artifact(
         artifact.sha256 = queue_sha256
 
 
+def _is_evidence_only_decision_run(*, session: Session, repo_root: Path, work_item: WorkItem, run: Run) -> bool:
+    if work_item.task_type != "l2_campaign":
+        return False
+    artifact = (
+        session.query(Artifact)
+        .filter(Artifact.run_id == run.id, Artifact.kind == "decision_proposal")
+        .one_or_none()
+    )
+    if artifact is None:
+        return False
+    path = repo_root / str(artifact.path)
+    if not path.exists():
+        return False
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return False
+    if not isinstance(payload, dict):
+        return False
+    recommendation = payload.get("recommendation")
+    if not isinstance(recommendation, dict):
+        return False
+    return (
+        str(recommendation.get("source", "")).strip() == "decoder_evidence"
+        and str(recommendation.get("macro_mode", "")).strip() == "evidence_only"
+    )
+
+
 def sync_run_artifacts(session: Session, request: ArtifactSyncRequest) -> ArtifactSyncResult:
     repo_root = Path(request.repo_root).resolve()
     work_item, run = _resolve_run(session, request)
@@ -444,8 +472,17 @@ def sync_run_artifacts(session: Session, request: ArtifactSyncRequest) -> Artifa
             "summary": queue_result.get("summary") or run.result_summary,
         }
     )
+    evidence_only_decision = _is_evidence_only_decision_run(
+        session=session,
+        repo_root=repo_root,
+        work_item=work_item,
+        run=run,
+    )
     if queue_result["status"] == "ok" and not queue_result["metrics_rows"]:
-        raise ArtifactSyncError(f"run {run.run_key} has no validator-compatible metrics rows to export")
+        if evidence_only_decision:
+            queue_result["metrics_exempt_reason"] = "evidence_only_decoder_evidence"
+        else:
+            raise ArtifactSyncError(f"run {run.run_key} has no validator-compatible metrics rows to export")
 
     payload = dict(run.result_payload or {})
     payload["queue_result"] = queue_result

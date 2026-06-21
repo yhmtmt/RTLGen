@@ -10,6 +10,7 @@ import tempfile
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
+from control_plane.clock import utcnow
 from control_plane.db import build_session_factory, create_all
 from control_plane.models.artifacts import Artifact
 from control_plane.models.enums import ArtifactStorageMode, ExecutorType, RunStatus, WorkItemState
@@ -181,6 +182,135 @@ def test_sync_run_artifacts_roundtrips_internal_worker_run() -> None:
             assert work_item.state == WorkItemState.ARTIFACT_SYNC
             assert run.status == RunStatus.SUCCEEDED
             assert queue_snapshot.path == "runs/eval_queue/openroad/evaluated/cp009_item.json"
+
+
+def test_sync_run_artifacts_allows_evidence_only_decision_without_metrics_rows() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        item_id = "l2_evidence_only_quality"
+        queue_path = repo_root / "runs" / "eval_queue" / "openroad" / "queued" / f"{item_id}.json"
+        queue_path.parent.mkdir(parents=True, exist_ok=True)
+        queue_path.write_text(
+            json.dumps(
+                {
+                    "version": 0.1,
+                    "item_id": item_id,
+                    "title": "evidence only quality",
+                    "layer": "layer2",
+                    "flow": "openroad",
+                    "state": "queued",
+                    "priority": 1,
+                    "requested_by": "@tester",
+                    "platform": "nangate45",
+                    "task": {
+                        "objective": "record decoder quality evidence",
+                        "source_mode": "src_verilog",
+                        "inputs": {"decoder_contract": {}},
+                        "commands": [],
+                        "expected_outputs": [
+                            "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_demo.json"
+                        ],
+                        "acceptance": [],
+                    },
+                    "handoff": {
+                        "branch": f"eval/{item_id}/<session_id>",
+                        "pr_title": "eval: evidence only quality",
+                        "identity_block_format": (
+                            "[role:evaluator][account:<evaluator_id>]"
+                            "[session:<session_id>][host:<host>][item:<queue_item_id>]"
+                        ),
+                    },
+                },
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        decision_rel = f"control_plane/shadow_exports/l2_decisions/{item_id}.json"
+        decision_path = repo_root / decision_rel
+        decision_path.parent.mkdir(parents=True, exist_ok=True)
+        decision_path.write_text(
+            json.dumps(
+                {
+                    "item_id": item_id,
+                    "recommendation": {
+                        "source": "decoder_evidence",
+                        "arch_id": "decoder_attention_kv_model_native_quality_7b",
+                        "macro_mode": "evidence_only",
+                    },
+                    "evaluation_record": {
+                        "evaluation_mode": "frontier_detail",
+                        "comparison_role": "precision_gate",
+                    },
+                    "proposal_assessment": {"outcome": "native_checkpoint_kv4_promising"},
+                },
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            import_queue_item(
+                session,
+                QueueImportRequest(
+                    repo_root=str(repo_root),
+                    queue_path=str(queue_path.relative_to(repo_root)),
+                ),
+            )
+            work_item = session.query(WorkItem).filter_by(item_id=item_id).one()
+            work_item.state = WorkItemState.ARTIFACT_SYNC
+            work_item.task_type = "l2_campaign"
+            run = Run(
+                run_key=f"{item_id}_run_1",
+                work_item_id=work_item.id,
+                attempt=1,
+                executor_type=ExecutorType.INTERNAL_WORKER,
+                status=RunStatus.SUCCEEDED,
+                started_at=utcnow(),
+                completed_at=utcnow(),
+                result_summary="2/2 commands succeeded",
+                result_payload={"queue_result": {"status": "ok"}},
+            )
+            session.add(run)
+            session.flush()
+            session.add(
+                Artifact(
+                    run_id=run.id,
+                    kind="decision_proposal",
+                    storage_mode=ArtifactStorageMode.REPO,
+                    path=decision_rel,
+                    sha256="abc123",
+                    metadata_={"profile_count": 0},
+                )
+            )
+            session.commit()
+
+            result = sync_run_artifacts(
+                session,
+                ArtifactSyncRequest(
+                    repo_root=str(repo_root),
+                    item_id=item_id,
+                    evaluator_id="cpbot",
+                    session_id="s20260308t120000z",
+                    host="cp-host",
+                    executor="@control_plane",
+                    target_path=f"runs/eval_queue/openroad/evaluated/{item_id}.json",
+                ),
+            )
+            assert result.metrics_row_count == 0
+
+        evaluated = json.loads(
+            (repo_root / "runs" / "eval_queue" / "openroad" / "evaluated" / f"{item_id}.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        assert evaluated["state"] == "evaluated"
+        assert evaluated["result"]["status"] == "ok"
+        assert evaluated["result"]["metrics_rows"] == []
+        assert evaluated["result"]["metrics_exempt_reason"] == "evidence_only_decoder_evidence"
 
 
 def test_sync_run_artifacts_deduplicates_queue_snapshot_artifacts() -> None:
