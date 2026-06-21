@@ -1,0 +1,137 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "sweeps": [
+        "runs/campaigns/npu/attention_dual_stream_composed_v1/sweeps/nangate45_dual_stream_composed_hier_q12_pwl.json"
+      ],
+      "configs": [
+        "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_q12_pwl_recip_q12/config.json"
+      ],
+      "out_root": "runs/designs/npu_blocks",
+      "design_dirs": [],
+      "macro_manifests": [],
+      "candidate_manifests": [],
+      "required_submodules": []
+    },
+    "commands": [
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && cmake -S . -B build && cmake --build build --target rtlgen",
+        "name": "build_generator"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/rtlgen/gen_attention_dual_stream_composed.py --config runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_q12_pwl_recip_q12/config.json --out runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_q12_pwl_recip_q12/verilog",
+        "name": "generate_attention_dual_stream_composed_rtl"
+      },
+      {
+        "run": "python3 npu/eval/check_attention_dual_stream_composed_guard.py --design-dir runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_q12_pwl_recip_q12",
+        "name": "check_attention_dual_stream_composed_guard"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/synth/run_block_sweep.py --design_dir runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_q12_pwl_recip_q12 --platform nangate45 --top attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_q12_pwl_recip_q12 --sweep runs/campaigns/npu/attention_dual_stream_composed_v1/sweeps/nangate45_dual_stream_composed_hier_q12_pwl.json --out_root runs/designs/npu_blocks --skip_existing",
+        "name": "run_block_sweep"
+      },
+      {
+        "run": "python3 npu/eval/extract_openroad_timing_summary.py --design-dir runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_q12_pwl_recip_q12 --out runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_q12_pwl_recip_q12/timing_debug_report.md --max-paths 8",
+        "name": "extract_attention_dual_stream_timing_paths"
+      },
+      {
+        "run": "python3 scripts/build_runs_index.py",
+        "name": "build_runs_index"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate"
+      }
+    ],
+    "objective": "Measure Nangate45 PPA for the composed Q8/K8/V6 dual-stream attention datapath using a concrete q12/PWL reciprocal softmax block.",
+    "acceptance": [
+      "Each generated wrapper metrics.csv contains at least one status=ok row for the queued sweep",
+      "Committed outputs stay lightweight (metrics.csv only; runs/index.csv is exported centrally after merge)",
+      "python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue pass"
+    ],
+    "source_mode": "config",
+    "expected_outputs": [
+      "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_q12_pwl_recip_q12/metrics.csv",
+      "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_q12_pwl_recip_q12/timing_debug_report.md"
+    ]
+  },
+  "layer": "layer1",
+  "state": "evaluated",
+  "title": "Measure q12 PWL composed attention softmax PPA",
+  "result": {
+    "branch": "eval/l1_decoder_attention_dual_stream_composed_q12_pwl_softmax_ppa_v1/s20260621t1008z",
+    "completed_utc": "2026-06-21T10:03:29.361793Z",
+    "evaluator_id": "codex",
+    "executor": "@codex",
+    "host": "devcontainer",
+    "identity_block": "[role:evaluator][account:codex][session:20260621-local-fix][host:devcontainer][item:l1_decoder_attention_dual_stream_composed_q12_pwl_softmax_ppa_v1]",
+    "metrics_rows": [
+      {
+        "tag": "attention_dual_stream_composed_v1_hier_q12_pwl",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "ff5fc604",
+        "metrics_csv": "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_q12_pwl_recip_q12/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_q12_pwl_recip_q12/work/ff5fc604/result.json"
+      },
+      {
+        "tag": "attention_dual_stream_composed_v1_hier_q12_pwl",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "c5c2bdc3",
+        "metrics_csv": "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_q12_pwl_recip_q12/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_q12_pwl_recip_q12/work/c5c2bdc3/result.json"
+      }
+    ],
+    "queue_item_id": "l1_decoder_attention_dual_stream_composed_q12_pwl_softmax_ppa_v1",
+    "session_id": "20260621-local-fix",
+    "status": "ok",
+    "summary": "7/7 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l1_decoder_attention_dual_stream_composed_q12_pwl_softmax_ppa_v1/20260621-local-fix",
+    "pr_title": "eval: run measure q12 pwl composed attention softmax ppa",
+    "checklist": [
+      "Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge",
+      "Include metrics row references for each completed design",
+      "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "devcontainer",
+      "session_id": "20260621-local-fix",
+      "evaluator_id": "codex",
+      "queue_item_id": "l1_decoder_attention_dual_stream_composed_q12_pwl_softmax_ppa_v1"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l1_decoder_attention_dual_stream_composed_q12_pwl_softmax_ppa_v1",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 1,
+  "created_utc": "2026-06-20T20:48:53.706988Z",
+  "requested_by": "@control_plane",
+  "developer_loop": {
+    "evaluation": {
+      "mode": "frontier_followup",
+      "trial_policy": {
+        "seed_start": 0,
+        "trial_count": 1,
+        "stop_after_failures": 1
+      }
+    },
+    "abstraction": {
+      "layer": "decoder_attention_dual_stream_composed_datapath"
+    },
+    "proposal_id": "prop_l1_decoder_attention_dual_stream_composed_q12_pwl_softmax_v1",
+    "proposal_path": "docs/proposals/prop_l1_decoder_attention_dual_stream_composed_q12_pwl_softmax_v1/proposal.json"
+  },
+  "source_requirement": {
+    "repo": "",
+    "reason": "evaluator runtime must contain the queued job source commit",
+    "version": 1,
+    "required_ref": "origin/master",
+    "required_sha": "e029513e37c8db2ef74418ff96eb1ce805461d3c",
+    "requires_daemon_restart": true
+  }
+}
