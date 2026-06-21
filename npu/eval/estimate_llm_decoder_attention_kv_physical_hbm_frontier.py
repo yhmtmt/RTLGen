@@ -35,6 +35,109 @@ def _str_list(value: str) -> list[str]:
     return items
 
 
+def _as_str(value: Any) -> str:
+    if value is None:
+        return ""
+    return str(value).strip()
+
+
+def _as_int(value: Any, *, default: int = 0) -> int:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def _as_float(value: Any, *, default: float = 0.0) -> float:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def _normalize_text_list(values: Any) -> list[str]:
+    if not isinstance(values, list):
+        return []
+    items: list[str] = []
+    for value in values:
+        text = _as_str(value)
+        if text:
+            items.append(text)
+    return items
+
+
+def _compact_quality_candidate(row: Any) -> JsonDict | None:
+    if not isinstance(row, dict):
+        return None
+    kv_bits = _as_int(row.get("kv_bits"), default=-1)
+    if kv_bits < 0:
+        return None
+    return {
+        "kv_bits": kv_bits,
+        "kv_granularity": _as_str(row.get("kv_granularity")),
+        "comparison_count": _as_int(row.get("comparison_count")),
+        "top1_match_rate": _as_float(row.get("top1_match_rate")),
+        "topk_contains_rate": _as_float(row.get("topk_contains_rate")),
+        "mean_logit_cosine": _as_float(row.get("mean_logit_cosine")),
+        "mean_probability_kl": _as_float(row.get("mean_probability_kl")),
+        "min_reference_margin": _as_float(row.get("min_reference_margin")),
+        "max_abs_logit_delta_max": _as_float(row.get("max_abs_logit_delta_max")),
+    }
+
+
+def _load_quality_gate_json(path_text: str) -> JsonDict:
+    path = Path(path_text)
+    if not path.exists():
+        raise SystemExit(f"quality-gate-json does not exist: {path}")
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise SystemExit(f"invalid quality-gate-json {path}: {exc}") from exc
+    except OSError as exc:
+        raise SystemExit(f"failed to read quality-gate-json {path}: {exc}") from exc
+    if not isinstance(payload, dict):
+        payload = {}
+
+    model_payload = payload.get("model", {})
+    if not isinstance(model_payload, dict):
+        model_payload = {}
+    decision_payload = payload.get("decision", {})
+    if not isinstance(decision_payload, dict):
+        decision_payload = {}
+    candidate_summary = payload.get("candidate_summary", [])
+    if not isinstance(candidate_summary, list):
+        candidate_summary = []
+    best_kv4_candidate = payload.get("best_kv4_candidate")
+    compact_candidates = [
+        candidate
+        for candidate in (_compact_quality_candidate(row) for row in candidate_summary)
+        if candidate is not None
+    ]
+    return {
+        "quality_gate_json": str(path),
+        "model": {
+            "model_id": _as_str(model_payload.get("model_id")),
+            "attention_heads": _as_int(model_payload.get("attention_heads")),
+            "kv_heads": _as_int(model_payload.get("kv_heads")),
+            "gqa_group_size": _as_float(model_payload.get("gqa_group_size")),
+            "device": _as_str(model_payload.get("device")),
+            "dtype": _as_str(model_payload.get("dtype")),
+            "requested_dtype": _as_str(model_payload.get("requested_dtype")),
+        },
+        "decision": {
+            "status": _as_str(decision_payload.get("status")),
+            "blockers": _normalize_text_list(decision_payload.get("blockers")),
+            "cautions": _normalize_text_list(decision_payload.get("cautions")),
+            "next_step": _as_str(decision_payload.get("next_step")),
+        },
+        "candidate_summary": {
+            "kv4": [row for row in compact_candidates if row["kv_bits"] == 4],
+            "kv8": [row for row in compact_candidates if row["kv_bits"] == 8],
+        },
+        "best_kv4_candidate": _compact_quality_candidate(best_kv4_candidate),
+    }
+
+
 def _ceil_div(a: int | float, b: int | float) -> int:
     return int(math.ceil(a / b)) if a else 0
 
@@ -370,6 +473,7 @@ def build_report(
     macs_per_cycle_list: list[int],
     vector_ops_per_cycle_list: list[int],
     clock_ns: float,
+    quality_gate: JsonDict | None = None,
 ) -> JsonDict:
     shapes = {
         "llama7b_proxy": {"layers": 32, "hidden_size": 4096, "attention_heads": 32},
@@ -560,6 +664,7 @@ def build_report(
         ),
         "best_by_memory_noc": retained_memory_noc,
         "best_by_compute": best_by_compute,
+        "quality_gate": quality_gate,
         "assumptions": [
             "This is a planning model for single-token decode attention/KV, not a JEDEC HBM timing model.",
             "HBM bandwidth is derived from stack count, pseudo-channel count, interface width, MT/s, and the core clock period.",
@@ -658,6 +763,69 @@ def _write_markdown(path: Path, payload: JsonDict) -> None:
         )
     lines.extend(["", "## Assumptions", ""])
     lines.extend(f"- {item}" for item in payload["assumptions"])
+    quality_gate = payload.get("quality_gate")
+    if isinstance(quality_gate, dict):
+        model = quality_gate.get("model", {})
+        decision = quality_gate.get("decision", {})
+        candidates = quality_gate.get("candidate_summary", {})
+        lines.extend(
+            [
+                "",
+                "## Native KV Quality Gate Summary",
+                "",
+                f"- status: `{_as_str(decision.get('status'))}`",
+                f"- model: `{_as_str(model.get('model_id'))}`",
+                f"- gqa_group_size: `{_as_float(model.get('gqa_group_size'))}`",
+                "",
+            ]
+        )
+        if isinstance(decision.get("blockers"), list) and decision["blockers"]:
+            lines.extend(["## Blockers", ""])
+            lines.extend(f"- {item}" for item in decision["blockers"])
+            lines.append("")
+        if isinstance(decision.get("cautions"), list) and decision["cautions"]:
+            lines.extend(["## Cautions", ""])
+            lines.extend(f"- {item}" for item in decision["cautions"])
+            lines.append("")
+        for tag in ("kv8", "kv4"):
+            rows = candidates.get(tag)
+            if not isinstance(rows, list) or not rows:
+                continue
+            lines.extend(
+                [
+                    f"### {tag.upper()} summary",
+                    "",
+                    "| bits | granularity | top1 | top-k | cosine | kl | comparisons | margin | delta |",
+                    "|---:|---|---:|---:|---:|---:|---:|---:|---:|",
+                ]
+            )
+            for row in rows:
+                lines.append(
+                    "| {bits} | {gran} | {top1} | {topk} | {cos} | {kl} | {count} | {margin} | {delta} |".format(
+                        bits=row["kv_bits"],
+                        gran=row.get("kv_granularity") or "tensor",
+                        top1=row.get("top1_match_rate"),
+                        topk=row.get("topk_contains_rate"),
+                        cos=row.get("mean_logit_cosine"),
+                        kl=row.get("mean_probability_kl"),
+                        count=row.get("comparison_count"),
+                        margin=row.get("min_reference_margin"),
+                        delta=row.get("max_abs_logit_delta_max"),
+                    )
+                )
+            lines.append("")
+        best_kv4 = quality_gate.get("best_kv4_candidate")
+        if isinstance(best_kv4, dict):
+            lines.extend(
+                [
+                    "### best KV4 candidate",
+                    "",
+                    f"- granularity: `{_as_str(best_kv4.get('kv_granularity'))}`",
+                    f"- top1_match_rate: `{_as_float(best_kv4.get('top1_match_rate'))}`",
+                    f"- topk_contains_rate: `{_as_float(best_kv4.get('topk_contains_rate'))}`",
+                    f"- mean_logit_cosine: `{_as_float(best_kv4.get('mean_logit_cosine'))}`",
+                ]
+            )
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
@@ -694,10 +862,14 @@ def main() -> int:
     ap.add_argument("--macs-per-cycle", type=_int_list, default=[524288])
     ap.add_argument("--vector-ops-per-cycle", type=_int_list, default=[65536])
     ap.add_argument("--clock-ns", type=float, default=1.0)
+    ap.add_argument("--quality-gate-json")
     ap.add_argument("--out", required=True)
     ap.add_argument("--out-md", required=True)
     args = ap.parse_args()
 
+    quality_gate = None
+    if args.quality_gate_json:
+        quality_gate = _load_quality_gate_json(args.quality_gate_json)
     payload = build_report(
         label=args.label,
         sequence_length_list=args.sequence_length_list,
@@ -729,6 +901,7 @@ def main() -> int:
         macs_per_cycle_list=args.macs_per_cycle,
         vector_ops_per_cycle_list=args.vector_ops_per_cycle,
         clock_ns=args.clock_ns,
+        quality_gate=quality_gate,
     )
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
