@@ -445,6 +445,8 @@ _DECODER_EVIDENCE_OUTPUT_KEYS: tuple[tuple[str, str], ...] = (
     ("attention_local_sram_capacity_out", "attention_local_sram_capacity_report"),
     ("attention_kv_measured_sram_rebalance_out", "attention_kv_measured_sram_rebalance_report"),
     ("attention_kv_measured_hbm_service_out", "attention_kv_measured_hbm_service_report"),
+    ("attention_kv_model_native_quality_out", "attention_kv_model_native_quality_report"),
+    ("attention_kv_model_native_quality_7b_out", "attention_kv_model_native_quality_7b_report"),
     ("attention_kv_onchip_service_schedule_out", "attention_kv_onchip_service_schedule_report"),
     (
         "attention_kv_endpoint_full_onchip_service_schedule_out",
@@ -712,6 +714,35 @@ def _decoder_recommendation_override(
 
 def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, Any]) -> tuple[str, str]:
     model = str(evidence_payload.get("model", "")).strip()
+    if isinstance(evidence_payload.get("model"), dict) and isinstance(evidence_payload.get("decision"), dict):
+        decision = dict(evidence_payload["decision"])
+        outcome = str(decision.get("status") or "native_checkpoint_quality_recorded")
+        model_info = dict(evidence_payload["model"])
+        parts = [
+            f"Decoder native-checkpoint KV quality evidence recorded from {evidence_ref}: decision={outcome}",
+        ]
+        for key in ("model_id", "attention_heads", "kv_heads", "gqa_group_size", "dtype"):
+            if key in model_info:
+                parts.append(f"{key}={model_info.get(key)}")
+        best_kv4 = evidence_payload.get("best_kv4_candidate")
+        if isinstance(best_kv4, dict):
+            for key in (
+                "kv_bits",
+                "kv_granularity",
+                "top1_match_rate",
+                "topk_contains_rate",
+                "mean_logit_cosine",
+                "mean_probability_kl",
+                "max_abs_logit_delta_max",
+            ):
+                if key in best_kv4:
+                    parts.append(f"kv4_{key}={best_kv4.get(key)}")
+        next_step = str(decision.get("next_step", "")).strip()
+        if next_step:
+            parts.append(f"next_step={next_step}")
+        summary = "; ".join(parts)
+        return outcome, summary if summary.endswith(".") else summary + "."
+
     if model == "llm_decoder_attention_kv_measured_sram_rebalance_llama7b_v1":
         best = evidence_payload.get("best")
         best_dict = dict(best) if isinstance(best, dict) else {}
@@ -1643,6 +1674,62 @@ def _build_payload(
     }
 
 
+def _decoder_evidence_recommendation(
+    *,
+    repo_root: Path,
+    work_item: WorkItem,
+    evidence_ref: str,
+    outcome: str,
+) -> dict[str, Any]:
+    abstraction_layer = _developer_loop_abstraction_layer(repo_root, work_item)
+    return {
+        "source": "decoder_evidence",
+        "decoder_evidence_ref": evidence_ref,
+        "arch_id": abstraction_layer or work_item.item_id,
+        "macro_mode": "evidence_only",
+        "outcome": outcome,
+    }
+
+
+def _build_decoder_evidence_payload(
+    *,
+    repo_root: Path,
+    work_item: WorkItem,
+    run: Run,
+    evidence_ref: str,
+    evidence_payload: dict[str, Any],
+    source_refs: dict[str, str],
+    evaluation_record: dict[str, Any] | None,
+    proposal_assessment: dict[str, Any] | None,
+) -> dict[str, Any]:
+    outcome = str((proposal_assessment or {}).get("outcome") or "decoder_evidence_recorded")
+    return {
+        "version": 0.1,
+        "generated_utc": utcnow().astimezone(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "item_id": work_item.item_id,
+        "run_key": run.run_key,
+        "layer": work_item.layer.value,
+        "flow": work_item.flow.value,
+        "platform": work_item.platform,
+        "task_type": work_item.task_type,
+        "source_commit": run.checkout_commit or work_item.source_commit,
+        "review_metadata_source_commit": _repo_head(repo_root) or run.checkout_commit or work_item.source_commit,
+        "objective": work_item.task_request.description,
+        "input_manifest": work_item.input_manifest,
+        "recommendation": _decoder_evidence_recommendation(
+            repo_root=repo_root,
+            work_item=work_item,
+            evidence_ref=evidence_ref,
+            outcome=outcome,
+        ),
+        "objective_profiles": [],
+        "evaluation_record": evaluation_record,
+        "proposal_assessment": proposal_assessment,
+        "source_refs": source_refs,
+        "decoder_quality": _decoder_quality_brief(evidence_payload),
+    }
+
+
 def _upsert_artifact(session: Session, *, run: Run, target_path: str, payload: dict[str, Any]) -> None:
     artifact = (
         session.query(Artifact)
@@ -1675,6 +1762,69 @@ def consume_l2_result(session: Session, request: Layer2ConsumeRequest) -> Layer2
     if run.status != RunStatus.SUCCEEDED:
         raise Layer2ResultConsumerError(f"run is not succeeded: {run.run_key} status={run.status.value}")
 
+    proposal = _load_proposal(repo_root, work_item)
+    evidence_ref, evidence_source_refs = _decoder_evidence_paths(repo_root=repo_root, work_item=work_item)
+    if evidence_ref and _find_output_path_optional(work_item, "/best_point.json") is None:
+        evidence_path = _resolve_path(repo_root=repo_root, path_text=evidence_ref)
+        evidence_payload = _load_json(evidence_path)
+        evaluation_mode = _effective_evaluation_mode(repo_root, work_item)
+        comparison_role = _effective_comparison_role(repo_root, work_item)
+        proposal_assessment, evaluation_record, proposal_source_refs = _build_decoder_evidence_assessment(
+            work_item=work_item,
+            proposal=proposal,
+            repo_root=repo_root,
+            evaluation_mode=evaluation_mode,
+            comparison_role=comparison_role,
+        )
+        payload = _build_decoder_evidence_payload(
+            repo_root=repo_root,
+            work_item=work_item,
+            run=run,
+            evidence_ref=evidence_ref,
+            evidence_payload=evidence_payload,
+            evaluation_record=evaluation_record,
+            proposal_assessment=proposal_assessment,
+            source_refs={
+                "decoder_evidence_json": evidence_ref,
+                **evidence_source_refs,
+                **proposal_source_refs,
+            },
+        )
+        recommended_arch_id = str(payload["recommendation"].get("arch_id", "")).strip()
+        recommended_macro_mode = str(payload["recommendation"].get("macro_mode", "")).strip()
+        if not recommended_arch_id or not recommended_macro_mode:
+            raise Layer2ResultConsumerError(f"could not derive recommended point for work item: {work_item.item_id}")
+        target_rel = request.target_path or _default_target_path(item_id=work_item.item_id)
+        target_path = _resolve_path(repo_root=repo_root, path_text=target_rel)
+        target_path.parent.mkdir(parents=True, exist_ok=True)
+        target_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+
+        _upsert_artifact(session, run=run, target_path=str(target_path.relative_to(repo_root)), payload=payload)
+        work_item.state = WorkItemState.ARTIFACT_SYNC
+        session.add(
+            RunEvent(
+                run_id=run.id,
+                event_time=utcnow(),
+                event_type="l2_decision_proposed",
+                event_payload={
+                    "target_path": str(target_path.relative_to(repo_root)),
+                    "recommended_arch_id": recommended_arch_id,
+                    "recommended_macro_mode": recommended_macro_mode,
+                    "profile_count": 0,
+                },
+            )
+        )
+        session.commit()
+        return Layer2ConsumeResult(
+            item_id=work_item.item_id,
+            run_key=run.run_key,
+            target_path=str(target_path),
+            recommended_arch_id=recommended_arch_id,
+            recommended_macro_mode=recommended_macro_mode,
+            profile_count=0,
+            work_item_state=work_item.state.value,
+        )
+
     best_point_rel = _find_output_path(work_item, "/best_point.json")
     summary_rel = _find_output_path(work_item, "/summary.csv")
     results_rel = _find_output_path(work_item, "/results.csv")
@@ -1685,7 +1835,6 @@ def consume_l2_result(session: Session, request: Layer2ConsumeRequest) -> Layer2
     summary_rows = _load_csv(_resolve_path(repo_root=repo_root, path_text=summary_rel))
     results_rows = _load_csv(_resolve_path(repo_root=repo_root, path_text=results_rel))
     summary_best = _summary_best_row(summary_rows)
-    proposal = _load_proposal(repo_root, work_item)
     evaluation_mode = _effective_evaluation_mode(repo_root, work_item)
     comparison_role = _effective_comparison_role(repo_root, work_item)
     explicit_comparison_role = _explicit_comparison_role(repo_root, work_item)

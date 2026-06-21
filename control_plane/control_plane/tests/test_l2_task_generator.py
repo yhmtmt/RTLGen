@@ -3765,7 +3765,7 @@ def test_generate_l2_campaign_task_adds_decoder_attention_kv_model_native_qualit
             assert "run_hf_eval_python.sh" in run
             assert "evaluate_llm_decoder_model_native_kv_quant.py" in run
             assert "--kv-bits-list 8,4" in run
-            assert decoder_inputs["attention_kv_memory_out"] == (
+            assert decoder_inputs["attention_kv_model_native_quality_out"] == (
                 "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
                 "decoder_attention_kv_model_native_quality__"
                 "l2_decoder_attention_kv_model_native_quality_tinyllama_v1.json"
@@ -3774,7 +3774,7 @@ def test_generate_l2_campaign_task_adds_decoder_attention_kv_model_native_qualit
                 "decoder_attention_kv_trace_calibration__l2_decoder_attention_kv_trace_calibration_v1.json"
             )
             assert "teacher-forced decode" in decoder_inputs["attention_kv_model_native_quality_scope"]
-            assert decoder_inputs["attention_kv_memory_out"] in work_item.expected_outputs
+            assert decoder_inputs["attention_kv_model_native_quality_out"] in work_item.expected_outputs
             assert work_item.task_request.request_payload["developer_loop"]["abstraction"] == {
                 "layer": "decoder_attention_kv_model_native_quality",
             }
@@ -3834,7 +3834,7 @@ def test_generate_l2_campaign_task_adds_decoder_attention_kv_model_native_qualit
             assert "--max-prompts \"$MAX_PROMPTS\"" in run
             assert "--generation-steps \"$GENERATION_STEPS\"" in run
             assert "--dtype \"$DTYPE\"" in run
-            assert decoder_inputs["attention_kv_memory_out"] == (
+            assert decoder_inputs["attention_kv_model_native_quality_7b_out"] == (
                 "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
                 "decoder_attention_kv_model_native_quality_7b__"
                 "l2_decoder_attention_kv_model_native_quality_7b_v1.json"
