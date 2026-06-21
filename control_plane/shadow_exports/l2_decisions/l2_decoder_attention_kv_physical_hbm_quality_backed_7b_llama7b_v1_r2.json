@@ -1,0 +1,227 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-06-21T10:46:00.866901Z",
+  "item_id": "l2_decoder_attention_kv_physical_hbm_quality_backed_7b_llama7b_v1_r2",
+  "run_key": "l2_decoder_attention_kv_physical_hbm_quality_backed_7b_llama7b_v1_r2_run_819568598c09ad78",
+  "layer": "layer2",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l2_campaign",
+  "source_commit": "0bf76729d525e08aab8b8428ba2c4bb272c48aa5",
+  "review_metadata_source_commit": "0bf76729d525e08aab8b8428ba2c4bb272c48aa5",
+  "objective": "Rerank the conservative native-GQA KV16/KV8 physical-HBM frontier using bounded 7B-class native KV quality evidence from the r2 retry artifact.",
+  "input_manifest": {
+    "sweeps": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/sweep_compare_33.json",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/sweep_compare_33.json"
+    ],
+    "configs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/config_nm1.json",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/config_nm2.json"
+    ],
+    "design_dirs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp"
+    ],
+    "macro_manifests": [
+      "runs/designs/npu_macros/gemm_compute_array_fp16_nm1_c250/macro_manifest.json",
+      "runs/designs/npu_macros/gemm_compute_array_fp16_2slot_c300/macro_manifest.json"
+    ],
+    "decoder_contract": {
+      "attention_kv_memory_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_physical_hbm_quality_backed_7b__l2_decoder_attention_kv_physical_hbm_quality_backed_7b_llama7b_v1_r2.json",
+      "attention_kv_memory_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_physical_hbm_quality_backed_7b__l2_decoder_attention_kv_physical_hbm_quality_backed_7b_llama7b_v1_r2.md",
+      "attention_kv_physical_hbm_frontier": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_physical_hbm_frontier__l2_decoder_attention_kv_physical_hbm_frontier_llama7b_v1.json",
+      "attention_kv_model_native_quality_7b": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_model_native_quality_7b__l2_decoder_attention_kv_model_native_quality_7b_v1_r2.json",
+      "attention_kv_physical_hbm_quality_backed_7b_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_physical_hbm_quality_backed_7b__l2_decoder_attention_kv_physical_hbm_quality_backed_7b_llama7b_v1_r2.json",
+      "attention_kv_physical_hbm_quality_backed_7b_scope": "7B-native-quality-backed physical-HBM frontier for llama7b_proxy decode. Constrain the first rerank to native-GQA KV16 and KV8 until the 7B teacher-forced quality gate proves whether KV4 survives top-1/top-k, logit-cosine, KL, and margin-sensitive checks. MQA and other structural KV sharing remain excluded without matching trained-checkpoint evidence.",
+      "attention_kv_physical_hbm_quality_backed_7b_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_physical_hbm_quality_backed_7b__l2_decoder_attention_kv_physical_hbm_quality_backed_7b_llama7b_v1_r2.md"
+    },
+    "generated_campaign": {
+      "path": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign__l2_decoder_attention_kv_physical_hbm_quality_backed_7b_llama7b_v1_r2.json",
+      "outputs": {
+        "report_md": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_physical_hbm_quality_backed_7b_llama7b_v1_r2/report.md",
+        "results_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_physical_hbm_quality_backed_7b_llama7b_v1_r2/results.csv",
+        "campaign_dir": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_physical_hbm_quality_backed_7b_llama7b_v1_r2"
+      },
+      "clean_outputs": true,
+      "base_campaign_path": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign.json"
+    },
+    "candidate_manifests": [
+      "runs/candidates/nangate45/module_candidates.json"
+    ]
+  },
+  "recommendation": {
+    "arch_id": "b16",
+    "macro_mode": "decoder_frontier",
+    "objective_rank": 1,
+    "objective_score": "0.0",
+    "latency_ms_mean": 0.028907999999999996,
+    "energy_mj_mean": 5.582770776e-06,
+    "critical_path_ns_mean": 5.557037432204143,
+    "die_area_um2_mean": 2250000.0,
+    "total_power_mw_mean": 0.193122,
+    "flow_elapsed_s_mean": 848.418,
+    "source": "decoder_evidence",
+    "decoder_model": "llm_decoder_attention_kv_physical_hbm_frontier_llama7b_v1",
+    "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_physical_hbm_quality_backed_7b__l2_decoder_attention_kv_physical_hbm_quality_backed_7b_llama7b_v1_r2.json",
+    "bank_count": 16,
+    "active_banks": 16,
+    "die_area_mm2": 100.0,
+    "macs_per_cycle": 524288,
+    "latency_us": 30.944,
+    "total_cycles": 30944,
+    "layer_cycles": 967,
+    "clock_ns": 1.0,
+    "sram_area_fraction": 0.6,
+    "total_sram_mib": 250.339508,
+    "dominant_tile_resource": "hbm",
+    "router_latency_cycles_per_hop": 2,
+    "tile_tokens": 512,
+    "legacy_campaign_recommendation": {
+      "arch_id": "fp16_nm1",
+      "macro_mode": "flat_nomacro",
+      "objective_rank": 1,
+      "objective_score": "0.0",
+      "latency_ms_mean": 0.028907999999999996,
+      "energy_mj_mean": 5.582770776e-06,
+      "critical_path_ns_mean": 5.557037432204143,
+      "die_area_um2_mean": 2250000.0,
+      "total_power_mw_mean": 0.193122,
+      "flow_elapsed_s_mean": 848.418
+    }
+  },
+  "objective_profiles": [],
+  "evaluation_record": {
+    "proposal_id": "prop_l2_decoder_attention_kv_physical_hbm_quality_backed_7b_llama7b_v1",
+    "title": "7B-native quality-backed Llama7B physical HBM frontier",
+    "primary_question": "Under the physical HBM model, does the conservative native-GQA KV16/KV8 frontier remain the deployable Llama7B point when the quality evidence is taken from a 7B-class checkpoint?",
+    "evaluation_mode": "frontier_detail",
+    "comparison_role": "frontier_synthesis",
+    "abstraction_layer": "decoder_attention_kv_physical_hbm_quality_backed_7b",
+    "expected_direction": "iterate",
+    "expected_reason": "Consumes the r2 bounded 7B native quality gate so physical HBM reranking does not depend on the failed v1 artifact.",
+    "summary": "Decoder evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_physical_hbm_quality_backed_7b__l2_decoder_attention_kv_physical_hbm_quality_backed_7b_llama7b_v1_r2.json: decision=decoder_evidence_recorded.",
+    "outcome": "decoder_evidence_recorded",
+    "expectation_status": "unspecified"
+  },
+  "proposal_assessment": {
+    "proposal_id": "prop_l2_decoder_attention_kv_physical_hbm_quality_backed_7b_llama7b_v1",
+    "title": "7B-native quality-backed Llama7B physical HBM frontier",
+    "kind": "architecture",
+    "primary_question": "Under the physical HBM model, does the conservative native-GQA KV16/KV8 frontier remain the deployable Llama7B point when the quality evidence is taken from a 7B-class checkpoint?",
+    "evaluation_mode": "frontier_detail",
+    "comparison_role": "frontier_synthesis",
+    "outcome": "decoder_evidence_recorded",
+    "summary": "Decoder evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_physical_hbm_quality_backed_7b__l2_decoder_attention_kv_physical_hbm_quality_backed_7b_llama7b_v1_r2.json: decision=decoder_evidence_recorded.",
+    "baseline_ref": null,
+    "baseline_item_id": null,
+    "matched_row_count": 0,
+    "matched_rows": [],
+    "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_physical_hbm_quality_backed_7b__l2_decoder_attention_kv_physical_hbm_quality_backed_7b_llama7b_v1_r2.json",
+    "decoder_quality": {
+      "diagnosis": {},
+      "best": {
+        "active_banks": 16,
+        "arbitration_efficiency": 0.85,
+        "attention_heads": 32,
+        "bank_bandwidth_bytes_per_cycle": 1024.0,
+        "bank_conflict_efficiency": 0.75,
+        "bank_count": 16,
+        "bank_interleave_tokens": 16,
+        "bitcell_area_um2_per_bit": 0.02,
+        "clock_ns": 1.0,
+        "compute_wait_cycles": 286,
+        "data_rate_mtps": 9000,
+        "die_area_mm2": 100.0,
+        "dominant_tile_resource": "hbm",
+        "effective_hbm_bytes_per_cycle": 6912.0,
+        "hbm_byte_share": 0.816646,
+        "hbm_efficiency": 0.75,
+        "hbm_outstanding": 8,
+        "hbm_stall_cycles": 286,
+        "hidden_size": 4096,
+        "kv_bits": 8,
+        "kv_cache_mib": 1024.0,
+        "kv_heads": 4,
+        "kv_sharing": "gqa8",
+        "kv_write_shared_cycles": 1,
+        "label": "llama7b_proxy",
+        "latency_us": 30.944,
+        "layer_cycles": 967,
+        "layers": 32,
+        "local_sram_fraction": 0.25,
+        "macs_per_cycle": 524288,
+        "noc_bandwidth_bytes_per_cycle": 16384.0,
+        "noc_effective_bytes_per_cycle": 13926.4,
+        "noc_hops": 1,
+        "prefetch_distance_tiles": 4,
+        "prefetch_stall_cycles": 3312,
+        "prefetch_start": "during_qkv",
+        "pseudo_channel_width_bits": 64,
+        "pseudo_channels_per_stack": 16,
+        "qkv_cycles": 40,
+        "raw_hbm_bytes_per_cycle": 9216.0,
+        "router_latency_cycles_per_hop": 2,
+        "sequence_length": 32768,
+        "shared_capacity_mib": 187.754631,
+        "shared_stall_cycles": 9,
+        "sram_area_fraction": 0.6,
+        "stack_count": 8,
+        "tile_attention_cycles": 10,
+        "tile_count": 64,
+        "tile_hbm_cycles": 62,
+        "tile_shared_path_cycles": 9,
+        "tile_tokens": 512,
+        "total_cycles": 30944,
+        "total_sram_mib": 250.339508,
+        "usable_sram_fraction": 0.7,
+        "vector_ops_per_cycle": 65536,
+        "virtual_channels": 4
+      },
+      "sweep_summary": {
+        "best_by_memory_noc_row_count": 9,
+        "dominant_tile_resource_counts": {
+          "hbm": 5172,
+          "shared_path": 12
+        },
+        "generated_row_count": 5184,
+        "retained_best_by_memory_noc_row_count": 9,
+        "retained_top_row_count": 50
+      },
+      "assumptions": [
+        "This is a planning model for single-token decode attention/KV, not a JEDEC HBM timing model.",
+        "HBM bandwidth is derived from stack count, pseudo-channel count, interface width, MT/s, and the core clock period.",
+        "HBM efficiency represents controller scheduling, protocol overhead, row locality, and clock-crossing loss in aggregate.",
+        "KV bits are treated as packed storage bits, so kv4 has half the byte traffic of kv8.",
+        "Shared SRAM residency is capacity-based; the remaining KV-cache traffic spills to HBM.",
+        "MAC/cycle and vector-op/cycle values are throughput proxies for architecture sizing, not physical proofs of an implemented array.",
+        "The tile scheduler is a compact service model intended to rank architecture directions before RTL."
+      ]
+    }
+  },
+  "source_refs": {
+    "best_point_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_physical_hbm_quality_backed_7b_llama7b_v1_r2/best_point.json",
+    "summary_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_physical_hbm_quality_backed_7b_llama7b_v1_r2/summary.csv",
+    "results_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_physical_hbm_quality_backed_7b_llama7b_v1_r2/results.csv",
+    "report_md": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_physical_hbm_quality_backed_7b_llama7b_v1_r2/report.md",
+    "focused_candidate_schedule_yml": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_physical_hbm_quality_backed_7b_llama7b_v1_r2/artifacts/mapper/fp16_nm1/mlp1/schedule.yml",
+    "focused_candidate_descriptors_bin": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_physical_hbm_quality_backed_7b_llama7b_v1_r2/artifacts/mapper/fp16_nm1/mlp1/descriptors.bin",
+    "focused_candidate_perf_trace_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_physical_hbm_quality_backed_7b_llama7b_v1_r2/artifacts/perf/fp16_nm1/mlp1/trace.json",
+    "focused_model_artifacts": [
+      {
+        "model_id": "mlp1",
+        "schedule_yml": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_physical_hbm_quality_backed_7b_llama7b_v1_r2/artifacts/mapper/fp16_nm1/mlp1/schedule.yml",
+        "descriptors_bin": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_physical_hbm_quality_backed_7b_llama7b_v1_r2/artifacts/mapper/fp16_nm1/mlp1/descriptors.bin",
+        "perf_trace_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_physical_hbm_quality_backed_7b_llama7b_v1_r2/artifacts/perf/fp16_nm1/mlp1/trace.json"
+      },
+      {
+        "model_id": "mlp2",
+        "schedule_yml": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_physical_hbm_quality_backed_7b_llama7b_v1_r2/artifacts/mapper/fp16_nm1/mlp2/schedule.yml",
+        "descriptors_bin": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_physical_hbm_quality_backed_7b_llama7b_v1_r2/artifacts/mapper/fp16_nm1/mlp2/descriptors.bin",
+        "perf_trace_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_physical_hbm_quality_backed_7b_llama7b_v1_r2/artifacts/perf/fp16_nm1/mlp2/trace.json"
+      }
+    ],
+    "decoder_attention_kv_memory_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_physical_hbm_quality_backed_7b__l2_decoder_attention_kv_physical_hbm_quality_backed_7b_llama7b_v1_r2.json",
+    "decoder_attention_kv_memory_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_physical_hbm_quality_backed_7b__l2_decoder_attention_kv_physical_hbm_quality_backed_7b_llama7b_v1_r2.md"
+  }
+}
