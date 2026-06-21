@@ -1,0 +1,4 @@
+run_key,attempt,trial_index,seed,status,metrics_csv,critical_path_ns,die_area,total_power_mw,failure_category,failure_stage,failure_signature
+l1_decoder_attention_dual_stream_composed_q12_pwl_softmax_ppa_v1_run_1260a377ffa13694,1,1,0,canceled,,,,,command_canceled,run_block_sweep,exit_code=130
+l1_decoder_attention_dual_stream_composed_q12_pwl_softmax_ppa_v1_run_e5cd16b57ddec610,2,2,1,canceled,,,,,lease_expired,control_plane,lease expired before run completion
+l1_decoder_attention_dual_stream_composed_q12_pwl_softmax_ppa_v1_run_85a4972365c1a8c3,3,2,1,succeeded,runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_q12_pwl_recip_q12/metrics.csv,30.8676,6250000.0,23.7,none,,

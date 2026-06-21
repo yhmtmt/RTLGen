@@ -1,0 +1,33 @@
+{
+  "item_id": "l1_decoder_attention_dual_stream_composed_q12_pwl_softmax_ppa_v1",
+  "completed_trials": 3,
+  "success_count": 1,
+  "failure_count": 2,
+  "success_rate": 0.3333333333333333,
+  "metrics": {
+    "critical_path_ns": {
+      "best": 30.8676,
+      "mean": 30.8676,
+      "median": 30.8676,
+      "max": 30.8676,
+      "range": 0.0,
+      "stddev": 0.0
+    },
+    "die_area": {
+      "best": 6250000.0,
+      "mean": 6250000.0,
+      "median": 6250000.0,
+      "max": 6250000.0,
+      "range": 0.0,
+      "stddev": 0.0
+    },
+    "total_power_mw": {
+      "best": 23.7,
+      "mean": 23.7,
+      "median": 23.7,
+      "max": 23.7,
+      "range": 0.0,
+      "stddev": 0.0
+    }
+  }
+}
