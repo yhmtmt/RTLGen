@@ -1,5 +1,7 @@
 import tempfile
+import json
 from pathlib import Path
+import subprocess
 
 from control_plane.models.artifacts import Artifact
 from control_plane.models.enums import RunStatus, WorkItemState
@@ -125,4 +127,108 @@ def test_refresh_all_blocked_items_releases_satisfied_dependent() -> None:
             session.refresh(blocked)
 
         assert released == ["blocked_item"]
-        assert blocked.state == WorkItemState.READY
+        assert blocked.state == WorkItemState.DISPATCH_PENDING
+
+
+def test_refresh_all_blocked_items_releases_repo_materialized_missing_dependency() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        (repo_root / "README.md").write_text("demo\n", encoding="utf-8")
+        subprocess.run(["git", "init"], cwd=repo_root, check=True, capture_output=True)
+        subprocess.run(["git", "add", "README.md"], cwd=repo_root, check=True, capture_output=True)
+        subprocess.run(
+            ["git", "-c", "user.email=test@example.com", "-c", "user.name=Test", "commit", "-m", "init"],
+            cwd=repo_root,
+            check=True,
+            capture_output=True,
+        )
+        head = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=repo_root,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+        item_id = "missing_db_dependency"
+        decision_rel = f"control_plane/shadow_exports/l2_decisions/{item_id}.json"
+        review_rel = f"control_plane/shadow_exports/review/{item_id}/review_package.json"
+        queue_rel = f"control_plane/shadow_exports/review/{item_id}/evaluated.json"
+        evidence_rel = "runs/datasets/demo/evidence.json"
+        for rel, text in (
+            (
+                decision_rel,
+                json.dumps(
+                    {
+                        "item_id": item_id,
+                        "source_refs": {
+                            "decoder_evidence_json": evidence_rel,
+                        },
+                    },
+                    indent=2,
+                )
+                + "\n",
+            ),
+            (review_rel, "{}\n"),
+            (queue_rel, "{}\n"),
+            (evidence_rel, "{}\n"),
+        ):
+            path = repo_root / rel
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(text, encoding="utf-8")
+
+        with make_session() as session:
+            blocked_task = TaskRequest(
+                request_key="queue:blocked",
+                source="test",
+                requested_by="tester",
+                title="blocked",
+                description="blocked",
+                layer="layer2",
+                flow="openroad",
+                priority=1,
+                request_payload={
+                    "source_requirement": {
+                        "version": 1,
+                        "required_ref": "origin/master",
+                        "required_sha": "oldsha",
+                        "requires_daemon_restart": True,
+                    },
+                    "developer_loop": {
+                        "dependencies": {
+                            "item_ids": [item_id],
+                            "requires_merged_inputs": True,
+                            "requires_materialized_refs": True,
+                        }
+                    }
+                },
+            )
+            session.add(blocked_task)
+            session.flush()
+            blocked = WorkItem(
+                work_item_key="queue:blocked",
+                task_request_id=blocked_task.id,
+                item_id="blocked_item",
+                layer="layer2",
+                flow="openroad",
+                platform="nangate45",
+                task_type="l2_campaign",
+                state=WorkItemState.BLOCKED,
+                priority=1,
+                input_manifest={},
+                command_manifest=[],
+                expected_outputs=[],
+                acceptance_rules=[],
+            )
+            session.add(blocked)
+            session.commit()
+
+            released = refresh_all_blocked_items(session, repo_root=repo_root)
+            session.commit()
+            session.refresh(blocked)
+            refreshed_required_sha = blocked.task_request.request_payload["source_requirement"]["required_sha"]
+
+        assert released == ["blocked_item"]
+        assert blocked.state == WorkItemState.DISPATCH_PENDING
+        assert blocked.source_commit == head
+        assert refreshed_required_sha == head
