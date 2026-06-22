@@ -6494,6 +6494,79 @@ def test_generate_l2_campaign_task_adds_attention_hbm_energy_calibration_evidenc
             }
 
 
+def test_generate_l2_campaign_task_adds_attention_hbm_command_calibrated_service_evidence() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id="l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    proposal_id="prop_l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1",
+                    proposal_path=(
+                        "docs/proposals/"
+                        "prop_l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1/proposal.json"
+                    ),
+                    abstraction_layer="decoder_attention_hbm_command_calibrated_service",
+                    evaluation_mode="frontier_detail",
+                    comparison_role="frontier_closure",
+                    depends_on_item_ids=[
+                        "l2_decoder_attention_hbm_energy_calibration_llama7b_v1",
+                    ],
+                    requires_merged_inputs=True,
+                    requires_materialized_refs=True,
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            commands = work_item.task_request.request_payload["task"]["commands"]
+            run = commands[0]["run"]
+            decoder_inputs = work_item.input_manifest["decoder_contract"]
+
+            assert [command["name"] for command in commands[:1]] == [
+                "audit_decoder_attention_hbm_command_calibrated_service",
+            ]
+            assert "audit_llm_decoder_attention_hbm_command_calibrated_service.py" in run
+            assert (
+                "--hbm-dram-service-energy-json "
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_hbm_dram_service_energy__"
+                "l2_decoder_attention_hbm_dram_service_energy_llama7b_v1.json"
+            ) in run
+            assert (
+                "--hbm-energy-calibration-json "
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_hbm_energy_calibration__"
+                "l2_decoder_attention_hbm_energy_calibration_llama7b_v1.json"
+            ) in run
+            assert decoder_inputs["attention_hbm_command_calibrated_service_out"].endswith(
+                "decoder_attention_hbm_command_calibrated_service__"
+                "l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1.json"
+            )
+            assert decoder_inputs["attention_hbm_command_calibrated_service_out"] in work_item.expected_outputs
+            assert work_item.task_request.request_payload["developer_loop"]["abstraction"] == {
+                "layer": "decoder_attention_hbm_command_calibrated_service",
+            }
+            assert work_item.task_request.request_payload["developer_loop"]["dependencies"] == {
+                "item_ids": [
+                    "l2_decoder_attention_hbm_energy_calibration_llama7b_v1",
+                ],
+                "requires_merged_inputs": True,
+                "requires_materialized_refs": True,
+            }
+
+
 def test_generate_l2_campaign_task_adds_attention_mixed_precision_quality_evidence() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"

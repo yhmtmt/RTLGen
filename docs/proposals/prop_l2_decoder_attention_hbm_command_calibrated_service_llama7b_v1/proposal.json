@@ -1,0 +1,73 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1",
+  "created_utc": "2026-06-22T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_attention_hbm_command_calibrated_service",
+  "title": "Llama7B attention HBM command-calibrated service closure",
+  "hypothesis": "The source-backed HBM aggregate calibration preserved the selected Llama7B family but changed the dominant energy component to HBM. Scaling the existing command-class HBM/DRAM service model to that source-backed energy anchor and sweeping row-hit locality should show whether command-mix-aware service accounting preserves the frontier before investing in a full stack-current/controller model.",
+  "direct_comparison": {
+    "primary_question": "Does source-scaled command-class HBM service accounting preserve the Llama7B energy-best family under row-hit sensitivity?",
+    "include": [
+      "consume the merged HBM/DRAM service-energy result",
+      "consume the merged source-backed HBM energy calibration result",
+      "globally scale read-hit, read-miss, write, activate/precharge, and command pJ terms to the HBM2 aggregate pJ/bit anchor",
+      "sweep row-hit rates and recompute service latency and energy",
+      "report latency-best, energy-best, dominant energy component, and selected family"
+    ],
+    "exclude": [
+      "new OpenROAD/PPA runs",
+      "vendor HBM current-table signoff",
+      "cycle-accurate HBM controller RTL simulation",
+      "new model-quality or QAT jobs"
+    ],
+    "follow_on_broad_sweep": [
+      "If source-scaled command service moves the family under row-hit sensitivity, prioritize stack-current/controller modeling.",
+      "If the family remains stable, move to direct compute-energy measurement for the selected dense compute point."
+    ]
+  },
+  "expected_benefit": [
+    "Retains row-hit, row-miss, command, and activate/precharge sensitivity instead of collapsing HBM energy to a flat byte charge.",
+    "Connects the command-class HBM service model to source-backed aggregate HBM energy.",
+    "Clarifies whether HBM locality uncertainty can move the current energy frontier."
+  ],
+  "risks": [
+    "The command-class scale is derived from an aggregate HBM pJ/bit source, not vendor current tables.",
+    "The row-hit latency sensitivity reuses the analytic HBM controller service model.",
+    "Compute energy remains scaled from the nearest measured dense compute reference."
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Scale the HBM/DRAM command-service energy model to the source-backed HBM aggregate energy anchor and sweep row-hit sensitivity for retained Llama7B frontier rows.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_hbm_command_calibrated_service",
+      "comparison_role": "frontier_closure",
+      "cost_class": "low",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_hbm_energy_calibration_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "record_hbm_command_calibrated_service",
+        "reason": "Determine whether source-scaled command-class HBM service accounting preserves the selected Llama7B energy family under row-hit sensitivity."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_hbm_energy_calibration__l2_decoder_attention_hbm_energy_calibration_llama7b_v1.json"
+  ],
+  "source_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_hbm_dram_service_energy__l2_decoder_attention_hbm_dram_service_energy_llama7b_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_hbm_energy_calibration__l2_decoder_attention_hbm_energy_calibration_llama7b_v1.json"
+  ],
+  "knowledge_refs": [
+    "docs/architecture/llama7b_attention_abstraction_closure_plan.md",
+    "control_plane/control_plane/services/l2_task_generator.py",
+    "npu/eval/audit_llm_decoder_attention_hbm_command_calibrated_service.py"
+  ]
+}

@@ -64,6 +64,22 @@ than free or heuristic assumptions.
   - dominant energy component under those parameters: `compute`
   - next result: calibrate HBM energy against source-backed aggregate HBM
     pJ/bit references before accepting the compute-dominance conclusion
+- The source-backed HBM energy calibration result
+  `l2_decoder_attention_hbm_energy_calibration_llama7b_v1` is merged by
+  PR #977. It reports:
+  - selected energy family remains the `400.0 mm2` `gqa8/kv8`
+    `tile_tokens=1024` point
+  - latency: `105.37783453568113 us/token`
+  - token throughput: `9489.661695993555 token/s`
+  - total energy with the HBM2 `3.97 pJ/bit` anchor:
+    `11.522041553338012 mJ/token`
+  - HBM energy: `9.092064929036372 mJ/token`
+  - compute energy: `2.41357553664 mJ/token`
+  - dominant energy component changes from `compute` under unsourced
+    command-class pJ values to `hbm` under source-backed aggregate energy
+  - next result: scale the command-class HBM service model to the source-backed
+    HBM energy anchor and sweep row-hit sensitivity before claiming the final
+    HBM energy ranking
 - There is no active queue item for this closure stage. New evaluations should
   continue to dispatch only to the remote evaluator
   `eval-daemon-b7c2d9c80c1c`.
@@ -83,16 +99,16 @@ than free or heuristic assumptions.
 2. HBM/DRAM and on-chip service detail
    - Scope: replace aggregate HBM efficiency and compact NoC/SRAM service caps
      with a more explicit controller, arbitration, and contention model.
-   - Status: partially bounded by the HBM energy sensitivity result and the
-     merged HBM/DRAM command-service energy result, but not cycle-accurate.
-     The command-service result uses explicit read-hit, read-miss, write,
-     activate/precharge, and command pJ parameters, but those pJ values are not
-     source calibrated.
+   - Status: partially bounded by the HBM energy sensitivity result, the merged
+     HBM/DRAM command-service energy result, and the source-backed aggregate HBM
+     energy calibration result, but not cycle-accurate. The aggregate
+     source-backed calibration preserved the selected family but changed the
+     dominant component to HBM.
    - Next result: run
-     `l2_decoder_attention_hbm_energy_calibration_llama7b_v1`, consuming the
-     merged HBM/DRAM service-energy result and design-registry HBM energy
-     references, to determine whether source-backed aggregate HBM pJ/bit bounds
-     preserve the energy-best family and dominant energy component.
+     `l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1`,
+     consuming the merged HBM/DRAM service-energy result and source-backed HBM
+     energy calibration result, to retain command-mix and row-hit sensitivity
+     while calibrating to the HBM2 aggregate pJ/bit anchor.
 
 3. Composed q12/PWL softmax datapath density recovery
    - Scope: score max, exponent approximation, sum accumulation, reciprocal
@@ -138,11 +154,11 @@ than free or heuristic assumptions.
 
 ## Ordering
 
-The next evaluation should close the highest-impact remaining comparison term:
-source-backed HBM energy calibration. The merged HBM/DRAM service-energy result
-uses explicit command-class accounting, but the pJ values were model parameters.
-The next job should recompute the retained frontier against source-backed HBM
-pJ/bit anchors from the design registry. After that, directly measure or bound
-the selected compute service point if the source-backed HBM calibration preserves
-the selected family. All new evaluation jobs should run on the remote evaluator,
-not the devcontainer.
+The next evaluation should keep closing the dominant HBM term while preserving
+command-mix sensitivity. The merged source-backed HBM calibration shows the
+selected family is stable, but HBM dominates energy. The next job should scale
+the command-class HBM/DRAM service model to the HBM2 aggregate pJ/bit anchor and
+sweep row-hit sensitivity. After that, directly measure or bound the selected
+compute service point if the command-calibrated HBM result preserves the selected
+family. All new evaluation jobs should run on the remote evaluator, not the
+devcontainer.
