@@ -5699,6 +5699,76 @@ def _decoder_attention_hbm_energy_sensitivity_evidence(*, item_id: str) -> dict[
     }
 
 
+def _decoder_attention_hbm_dram_service_energy_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_attention_hbm_dram_service_energy__{item_id}.json"
+    report = f"{base}/decoder_attention_hbm_dram_service_energy__{item_id}.md"
+    integrated_energy = (
+        f"{base}/decoder_attention_integrated_energy_closure__"
+        "l2_decoder_attention_integrated_energy_closure_llama7b_v1_r2.json"
+    )
+    hbm_sensitivity = (
+        f"{base}/decoder_attention_hbm_energy_sensitivity__"
+        "l2_decoder_attention_hbm_energy_sensitivity_llama7b_v1.json"
+    )
+    hbm_quality_backed = (
+        f"{base}/decoder_attention_kv_physical_hbm_quality_backed_7b__"
+        "l2_decoder_attention_kv_physical_hbm_quality_backed_7b_llama7b_v1_r2.json"
+    )
+    hbm_controller = (
+        f"{base}/decoder_attention_kv_hbm_controller__"
+        "l2_decoder_attention_kv_hbm_controller_llama7b_v1_r3.json"
+    )
+    measured_compute = (
+        f"{base}/decoder_attention_kv_dense_tile_measured_compute__"
+        "l2_decoder_attention_kv_dense_tile_measured_compute_llama7b_v1.json"
+    )
+    sram_profile = f"{base}/decoder_attention_sram_profile__l2_decoder_attention_sram_profile_v1.json"
+    return {
+        "inputs": {
+            "attention_integrated_energy_closure": integrated_energy,
+            "attention_hbm_energy_sensitivity": hbm_sensitivity,
+            "attention_kv_physical_hbm_quality_backed_7b": hbm_quality_backed,
+            "attention_kv_hbm_controller": hbm_controller,
+            "attention_kv_dense_tile_measured_compute": measured_compute,
+            "attention_sram_profile": sram_profile,
+            "attention_hbm_dram_service_energy_out": out,
+            "attention_hbm_dram_service_energy_report": report,
+            "attention_hbm_dram_service_energy_scope": (
+                "Replace the HBM pJ/byte-only frontier comparison with an explicit "
+                "HBM/DRAM command-class service-energy model. Consume the merged HBM "
+                "sensitivity result, retained quality-backed frontier rows, and HBM "
+                "controller evidence; report whether latency-best, energy-best, and "
+                "balanced points move under row-hit, burst, outstanding-request, and "
+                "activate/precharge accounting."
+            ),
+        },
+        "commands": [
+            {
+                "name": "audit_decoder_attention_hbm_dram_service_energy",
+                "run": (
+                    "python3 npu/eval/audit_llm_decoder_attention_hbm_dram_service_energy.py "
+                    f"--integrated-energy-json {integrated_energy} "
+                    f"--hbm-energy-sensitivity-json {hbm_sensitivity} "
+                    f"--hbm-quality-backed-json {hbm_quality_backed} "
+                    f"--hbm-controller-json {hbm_controller} "
+                    f"--measured-compute-json {measured_compute} "
+                    f"--sram-profile-json {sram_profile} "
+                    "--read-hit-pj-per-byte 4.0 "
+                    "--read-miss-pj-per-byte 10.0 "
+                    "--write-pj-per-byte 6.0 "
+                    "--activate-precharge-pj-per-row 3000.0 "
+                    "--command-pj-per-burst 5.0 "
+                    "--noc-energy-pj-per-byte-hop 0.02 "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+    }
+
+
 def _decoder_attention_mixed_precision_quality_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_mixed_precision_quality__{item_id}.json"
@@ -7578,6 +7648,7 @@ def _build_payload(
         "decoder_attention_integrated_abstraction_closure",
         "decoder_attention_integrated_energy_closure",
         "decoder_attention_hbm_energy_sensitivity",
+        "decoder_attention_hbm_dram_service_energy",
         "decoder_attention_kv_dual_stream_physical_feasibility",
         "decoder_attention_mixed_precision_quality",
         "decoder_attention_softmax_pow2sum_quality",
@@ -7746,6 +7817,8 @@ def _build_payload(
             decoder_evidence = _decoder_attention_integrated_energy_closure_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_hbm_energy_sensitivity":
             decoder_evidence = _decoder_attention_hbm_energy_sensitivity_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_attention_hbm_dram_service_energy":
+            decoder_evidence = _decoder_attention_hbm_dram_service_energy_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_dual_stream_physical_feasibility":
             decoder_evidence = _decoder_attention_kv_dual_stream_physical_feasibility_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_mixed_precision_quality":

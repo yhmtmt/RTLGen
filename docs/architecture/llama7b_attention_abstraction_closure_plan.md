@@ -39,6 +39,17 @@ than free or heuristic assumptions.
   - NoC energy: `0.00427893972795392 mJ/token`, using byte-hop accounting
   - SRAM energy: `0.00012002985704362652 mJ/token`, scaled from CACTI macro
     profile evidence
+- The HBM energy sensitivity result
+  `l2_decoder_attention_hbm_energy_sensitivity_llama7b_v1` is merged by
+  PR #973. It reports:
+  - latency/throughput best remains the `100.0 mm2` `gqa8/kv8` point at
+    `30.944 us/token` and `32316.442606 token/s`
+  - at the nominal `8 pJ/byte` HBM setting, energy best moves to the
+    `400.0 mm2` `gqa8/kv8` point at `66.432 us/token`, `15052.986513 token/s`,
+    and `4.719907157640776 mJ/token`
+  - the frontier is therefore sensitive to the dominant HBM energy term and
+    still needs HBM/DRAM service-energy closure before claiming an
+    energy-optimal point
 - There is no active queue item for this closure stage. New evaluations should
   continue to dispatch only to the remote evaluator
   `eval-daemon-b7c2d9c80c1c`.
@@ -58,10 +69,15 @@ than free or heuristic assumptions.
 2. HBM/DRAM and on-chip service detail
    - Scope: replace aggregate HBM efficiency and compact NoC/SRAM service caps
      with a more explicit controller, arbitration, and contention model.
-   - Status: not cycle-accurate. The current selected frontier is HBM-dominant
-     and still uses an aggregate bandwidth/efficiency model.
-   - Next result: bound whether HBM service, NoC/SRAM contention, or compute
-     service changes the selected `gqa8/kv8` frontier.
+   - Status: partially bounded by the HBM energy sensitivity result, but not
+     cycle-accurate. The current selected frontier is HBM-sensitive and still
+     needs a controller-derived service and command-class energy model.
+   - Next result: run
+     `l2_decoder_attention_hbm_dram_service_energy_llama7b_v1`, consuming the
+     merged HBM sensitivity result and HBM controller artifact, to determine
+     whether row-hit, burst, outstanding-request, activate/precharge, and
+     command accounting changes the latency-best, energy-best, balanced, or
+     Pareto frontier.
 
 3. Composed q12/PWL softmax datapath density recovery
    - Scope: score max, exponent approximation, sum accumulation, reciprocal
@@ -108,10 +124,10 @@ than free or heuristic assumptions.
 ## Ordering
 
 The next evaluation should close the highest-impact remaining comparison term:
-HBM energy sensitivity. The merged integrated-energy result is HBM-energy
-dominated, so the next job should sweep HBM pJ/byte over the retained
-quality-backed HBM frontier rows and report whether the lowest-latency 100 mm2
-point remains energy-robust or whether a larger SRAM/die point becomes
-energy-optimal. After that, refine HBM/NoC/SRAM service detail and directly
+HBM/DRAM service-energy detail. The merged HBM energy sensitivity result shows
+that the energy optimum moves under the HBM pJ/byte assumption, so the next job
+should replace the scalar HBM energy term with explicit row-hit, burst,
+outstanding-request, activate/precharge, and command accounting. After that,
+calibrate the HBM pJ parameters from source-backed HBM stack data and directly
 measure or bound the selected compute service point. All new evaluation jobs
 should run on the remote evaluator, not the devcontainer.

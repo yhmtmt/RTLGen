@@ -2060,6 +2060,129 @@ def test_consume_l2_result_hbm_energy_sensitivity_uses_decoder_evidence() -> Non
             )
 
 
+def test_consume_l2_result_hbm_dram_service_energy_uses_decoder_evidence() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            proposal_dir = (
+                repo_root
+                / "docs"
+                / "proposals"
+                / "prop_l2_decoder_attention_hbm_dram_service_energy_llama7b_v1"
+            )
+            _write(
+                proposal_dir / "proposal.json",
+                json.dumps(
+                    {
+                        "proposal_id": "prop_l2_decoder_attention_hbm_dram_service_energy_llama7b_v1",
+                        "kind": "architecture",
+                        "title": "HBM DRAM service energy",
+                        "direct_comparison": {
+                            "primary_question": "Does DRAM command-service energy change the Llama7B frontier?"
+                        },
+                    },
+                    indent=2,
+                )
+                + "\n",
+            )
+            evidence_rel = (
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_hbm_dram_service_energy__"
+                "l2_decoder_attention_hbm_dram_service_energy_llama7b_v1.json"
+            )
+            report_rel = (
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_hbm_dram_service_energy__"
+                "l2_decoder_attention_hbm_dram_service_energy_llama7b_v1.md"
+            )
+            _write(
+                repo_root / evidence_rel,
+                json.dumps(
+                    {
+                        "model": "llm_decoder_attention_hbm_dram_service_energy_llama7b_v1",
+                        "decision": "hbm_dram_service_energy_preserves_energy_frontier",
+                        "diagnosis": {
+                            "decision": "hbm_dram_service_energy_preserves_energy_frontier",
+                            "recommended_next_step": "calibrate HBM stack currents",
+                        },
+                        "best": {
+                            "arch_id": "hbm_dram_service_energy_best",
+                            "latency_us": 70.0,
+                            "token_throughput_per_s": 14285.71,
+                            "die_area_mm2": 400.0,
+                            "energy_mj": 5.4,
+                            "energy_status": "hbm_dram_command_service_energy_model_not_signoff",
+                            "dominant_energy_component": "compute",
+                        },
+                        "remaining_abstractions": [
+                            "HBM/DRAM service is command-class and row-hit aware but not signoff.",
+                        ],
+                    },
+                    indent=2,
+                )
+                + "\n",
+            )
+            _write(repo_root / report_rel, "# hbm dram service energy\n")
+            item_id = _seed_campaign_work_item(
+                session,
+                repo_root,
+                item_id="l2_decoder_attention_hbm_dram_service_energy_llama7b_v1",
+                campaign_dir_rel="runs/campaigns/npu/hbm_dram_service_energy_campaign",
+                summary_rows=(
+                    "scope,arch_id,macro_mode,objective_rank,latency_ms_mean,energy_mj_mean,critical_path_ns_mean,total_power_mw_mean,flow_elapsed_s_mean,throughput_infer_per_s_mean\n"
+                    "aggregate,fp16_nm1_demo,flat_nomacro,1,0.4,0.15,5.5,0.18,1000,1.0\n"
+                ),
+                proposal_path=(
+                    "docs/proposals/"
+                    "prop_l2_decoder_attention_hbm_dram_service_energy_llama7b_v1"
+                ),
+                comparison={"role": "frontier_closure"},
+            )
+            work_item = session.query(WorkItem).filter_by(item_id=item_id).one()
+            payload = copy.deepcopy(work_item.task_request.request_payload or {})
+            payload["developer_loop"]["evaluation"] = {
+                "mode": "frontier_detail",
+                "expected_direction": "record_hbm_dram_service_energy_frontier",
+                "expected_reason": "Use DRAM service-energy evidence for the next closure job.",
+            }
+            payload["developer_loop"]["abstraction"] = {
+                "layer": "decoder_attention_hbm_dram_service_energy",
+            }
+            work_item.task_request.request_payload = payload
+            work_item.input_manifest = {
+                "decoder_contract": {
+                    "attention_hbm_dram_service_energy_out": evidence_rel,
+                    "attention_hbm_dram_service_energy_report": report_rel,
+                }
+            }
+            work_item.expected_outputs = [*(work_item.expected_outputs or []), evidence_rel, report_rel]
+            session.commit()
+
+            result = consume_l2_result(session, Layer2ConsumeRequest(repo_root=str(repo_root), item_id=item_id))
+
+            decision_payload = json.loads(
+                (repo_root / "control_plane" / "shadow_exports" / "l2_decisions" / f"{item_id}.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            assert result.recommended_arch_id == "hbm_dram_service_energy_best"
+            assert decision_payload["proposal_assessment"]["outcome"] == (
+                "hbm_dram_service_energy_preserves_energy_frontier"
+            )
+            assert decision_payload["recommendation"]["source"] == "decoder_evidence"
+            assert decision_payload["recommendation"]["energy_mj"] == 5.4
+            assert decision_payload["recommendation"]["token_throughput_per_s"] == 14285.71
+            assert decision_payload["source_refs"]["decoder_attention_hbm_dram_service_energy_out"] == evidence_rel
+            assert (
+                decision_payload["source_refs"]["decoder_attention_hbm_dram_service_energy_report"]
+                == report_rel
+            )
+
+
 def test_consume_l2_result_frontier_attention_local_sram_capacity_uses_decoder_evidence() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
