@@ -25,8 +25,12 @@
         "reason": "Determine whether the HBM-energy-sensitive frontier remains stable under explicit DRAM command/service accounting."
       },
       "cost_class": "low",
-      "notes": "This request must run on remote evaluator eval-daemon-b7c2d9c80c1c.",
-      "status": "pending"
+      "notes": "This request must run on remote evaluator eval-daemon-b7c2d9c80c1c. Merged via PR #975 and merge e518aa3703ec8039c36ffac75460062eef900f4b at 2026-06-22T08:52:16.422143Z.",
+      "status": "merged",
+      "merged_pr_number": 975,
+      "merge_commit": "e518aa3703ec8039c36ffac75460062eef900f4b",
+      "merged_utc": "2026-06-22T08:52:16.422143Z"
     }
-  ]
+  ],
+  "source_commit": "c9169759f666977ab33a5bd461efe947db3775d8"
 }

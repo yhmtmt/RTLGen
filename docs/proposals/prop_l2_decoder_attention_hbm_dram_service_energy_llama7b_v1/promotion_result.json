@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_hbm_dram_service_energy_llama7b_v1",
+  "decision": "iterate",
+  "pr_number": 975,
+  "merge_commit": "e518aa3703ec8039c36ffac75460062eef900f4b",
+  "merged_utc": "2026-06-22T08:52:16.422143Z"
+}
