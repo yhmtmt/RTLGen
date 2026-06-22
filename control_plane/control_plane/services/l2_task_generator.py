@@ -5811,6 +5811,49 @@ def _decoder_attention_hbm_energy_calibration_evidence(*, item_id: str) -> dict[
     }
 
 
+def _decoder_attention_hbm_command_calibrated_service_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_attention_hbm_command_calibrated_service__{item_id}.json"
+    report = f"{base}/decoder_attention_hbm_command_calibrated_service__{item_id}.md"
+    hbm_dram_service = (
+        f"{base}/decoder_attention_hbm_dram_service_energy__"
+        "l2_decoder_attention_hbm_dram_service_energy_llama7b_v1.json"
+    )
+    hbm_energy_calibration = (
+        f"{base}/decoder_attention_hbm_energy_calibration__"
+        "l2_decoder_attention_hbm_energy_calibration_llama7b_v1.json"
+    )
+    return {
+        "inputs": {
+            "attention_hbm_dram_service_energy": hbm_dram_service,
+            "attention_hbm_energy_calibration": hbm_energy_calibration,
+            "attention_hbm_command_calibrated_service_out": out,
+            "attention_hbm_command_calibrated_service_report": report,
+            "attention_hbm_command_calibrated_service_scope": (
+                "Scale the HBM/DRAM command-class service-energy model to the "
+                "source-backed HBM aggregate pJ/bit calibration and sweep row-hit "
+                "sensitivity. Report whether command-mix-aware service accounting "
+                "preserves the Llama7B energy-best family."
+            ),
+        },
+        "commands": [
+            {
+                "name": "audit_decoder_attention_hbm_command_calibrated_service",
+                "run": (
+                    "python3 npu/eval/audit_llm_decoder_attention_hbm_command_calibrated_service.py "
+                    f"--hbm-dram-service-energy-json {hbm_dram_service} "
+                    f"--hbm-energy-calibration-json {hbm_energy_calibration} "
+                    "--primary-measurement-id hbm2_fgdram_micro2017_access_energy "
+                    "--row-hit-rate-list 0.5,0.7,0.9,0.95 "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+    }
+
+
 def _decoder_attention_mixed_precision_quality_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_mixed_precision_quality__{item_id}.json"
@@ -7692,6 +7735,7 @@ def _build_payload(
         "decoder_attention_hbm_energy_sensitivity",
         "decoder_attention_hbm_dram_service_energy",
         "decoder_attention_hbm_energy_calibration",
+        "decoder_attention_hbm_command_calibrated_service",
         "decoder_attention_kv_dual_stream_physical_feasibility",
         "decoder_attention_mixed_precision_quality",
         "decoder_attention_softmax_pow2sum_quality",
@@ -7864,6 +7908,8 @@ def _build_payload(
             decoder_evidence = _decoder_attention_hbm_dram_service_energy_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_hbm_energy_calibration":
             decoder_evidence = _decoder_attention_hbm_energy_calibration_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_attention_hbm_command_calibrated_service":
+            decoder_evidence = _decoder_attention_hbm_command_calibrated_service_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_dual_stream_physical_feasibility":
             decoder_evidence = _decoder_attention_kv_dual_stream_physical_feasibility_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_mixed_precision_quality":
