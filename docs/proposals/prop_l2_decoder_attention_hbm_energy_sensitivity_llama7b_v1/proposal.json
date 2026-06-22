@@ -1,0 +1,71 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_hbm_energy_sensitivity_llama7b_v1",
+  "created_utc": "2026-06-22T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_attention_hbm_energy_sensitivity",
+  "title": "Llama7B attention HBM energy sensitivity over retained quality-backed frontier rows",
+  "hypothesis": "Because the merged integrated-energy closure is dominated by parameterized HBM pJ/byte, sweeping that parameter across retained quality-backed frontier rows should show whether the fastest 100 mm2 point is also energy-robust or whether larger SRAM/die points become energy-optimal.",
+  "direct_comparison": {
+    "primary_question": "Does the selected Llama7B 131k attention frontier remain best when HBM energy per byte is swept, or does the energy optimum move to a larger-memory point?",
+    "include": [
+      "consume the merged integrated energy closure result",
+      "consume the merged 7B quality-backed HBM frontier rows",
+      "sweep HBM pJ/byte over an explicit range",
+      "report latency-best, energy-best, balanced, and Pareto candidates for each HBM energy point"
+    ],
+    "exclude": [
+      "new OpenROAD/PPA runs",
+      "cycle-accurate DRAM command/current modeling",
+      "new model-quality or QAT jobs",
+      "new HBM controller RTL"
+    ],
+    "follow_on_broad_sweep": [
+      "If the energy optimum changes, close HBM/DRAM service and energy modeling before promoting an energy-optimal architecture point."
+    ]
+  },
+  "expected_benefit": [
+    "Turns the dominant energy parameter from a hidden constant into an explicit sensitivity table.",
+    "Shows whether throughput-best and energy-best are the same or different architecture points.",
+    "Preserves precision status by using the quality-backed HBM frontier rows."
+  ],
+  "risks": [
+    "The sweep bounds energy sensitivity but does not replace HBM with a physical DRAM power model.",
+    "Compute, NoC, and SRAM energy terms inherit the measured-plus-parameterized accounting from the prior integrated-energy closure.",
+    "A broader die/memory frontier may still be needed if the retained HBM rows are too narrow."
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_hbm_energy_sensitivity_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Sweep HBM pJ/byte over retained quality-backed Llama7B attention frontier rows and report throughput/energy/area/precision tradeoffs.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_hbm_energy_sensitivity",
+      "comparison_role": "frontier_closure",
+      "cost_class": "low",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_integrated_energy_closure_llama7b_v1_r2"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "record_hbm_energy_sensitivity_frontier",
+        "reason": "Determine whether the Llama7B selected frontier is stable when the dominant HBM energy parameter is swept."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_integrated_energy_closure__l2_decoder_attention_integrated_energy_closure_llama7b_v1_r2.json"
+  ],
+  "source_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_integrated_energy_closure__l2_decoder_attention_integrated_energy_closure_llama7b_v1_r2.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_physical_hbm_quality_backed_7b__l2_decoder_attention_kv_physical_hbm_quality_backed_7b_llama7b_v1_r2.json"
+  ],
+  "knowledge_refs": [
+    "docs/architecture/llama7b_attention_abstraction_closure_plan.md",
+    "docs/proposals/prop_l2_decoder_attention_integrated_energy_closure_llama7b_v1/proposal.json",
+    "control_plane/control_plane/services/l2_task_generator.py"
+  ]
+}
