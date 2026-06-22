@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_integrated_energy_closure_llama7b_v1",
+  "decision": "iterate",
+  "pr_number": 969,
+  "merge_commit": "8af1e694a102abd83ba4dbc17509eab0f2fd07da",
+  "merged_utc": "2026-06-22T08:17:57.633257Z"
+}

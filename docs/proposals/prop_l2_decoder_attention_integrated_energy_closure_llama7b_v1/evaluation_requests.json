@@ -6,7 +6,7 @@
   ],
   "requested_items": [
     {
-      "item_id": "l2_decoder_attention_integrated_energy_closure_llama7b_v1",
+      "item_id": "l2_decoder_attention_integrated_energy_closure_llama7b_v1_r2",
       "task_type": "l2_campaign",
       "objective": "Run one integrated Llama7B attention frontier rerank with explicit full-energy abstraction-closure accounting.",
       "evaluation_mode": "frontier_detail",
@@ -22,8 +22,15 @@
         "reason": "Emit the reranked 131k Llama7B attention frontier and residual energy abstractions from the full closure pass."
       },
       "cost_class": "low",
-      "notes": "This request must run on remote evaluator eval-daemon-b7c2d9c80c1c."
+      "notes": "This request must run on remote evaluator eval-daemon-b7c2d9c80c1c. Merged via PR #969 and merge 8af1e694a102abd83ba4dbc17509eab0f2fd07da at 2026-06-22T08:17:57.633257Z.",
+      "prior_item_ids": [
+        "l2_decoder_attention_integrated_energy_closure_llama7b_v1"
+      ],
+      "status": "merged",
+      "merged_pr_number": 969,
+      "merge_commit": "8af1e694a102abd83ba4dbc17509eab0f2fd07da",
+      "merged_utc": "2026-06-22T08:17:57.633257Z"
     }
   ],
-  "source_commit": "8675ee4792c77fe9839c2b18122e5291999f1e55"
+  "source_commit": "9c54c5e820e9df8071686c9a2ff74cbb394555b7"
 }
