@@ -96,10 +96,10 @@
   "result": {
     "branch": "eval/l2_decoder_attention_hbm_dram_service_energy_llama7b_v1/s20260622t084637z",
     "completed_utc": "2026-06-22T08:46:34.012943Z",
-    "evaluator_id": "control_plane",
-    "executor": "@control_plane",
-    "host": "b7c2d9c80c1c",
-    "identity_block": "[role:evaluator][account:control_plane][session:s20260622t084637z][host:b7c2d9c80c1c][item:l2_decoder_attention_hbm_dram_service_energy_llama7b_v1]",
+    "evaluator_id": "codex",
+    "executor": "@codex",
+    "host": "devcontainer",
+    "identity_block": "[role:evaluator][account:codex][session:hbm-dram-service-energy-20260622][host:devcontainer][item:l2_decoder_attention_hbm_dram_service_energy_llama7b_v1]",
     "metrics_rows": [
       {
         "tag": "npu_fp16_nm1_cmp33_flat_nomacro",
@@ -295,12 +295,12 @@
       }
     ],
     "queue_item_id": "l2_decoder_attention_hbm_dram_service_energy_llama7b_v1",
-    "session_id": "s20260622t084637z",
+    "session_id": "hbm-dram-service-energy-20260622",
     "status": "ok",
     "summary": "6/6 commands succeeded"
   },
   "handoff": {
-    "branch": "eval/l2_decoder_attention_hbm_dram_service_energy_llama7b_v1/s20260622t084637z",
+    "branch": "eval/l2_decoder_attention_hbm_dram_service_energy_llama7b_v1/hbm-dram-service-energy-20260622",
     "pr_title": "eval: run layer2 campaign npu_e2e_eval_llm_attention_tail_stress_v1 on nangate45",
     "checklist": [
       "Commit lightweight campaign artifacts only",
@@ -309,9 +309,9 @@
       "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
     ],
     "pr_body_fields": {
-      "host": "b7c2d9c80c1c",
-      "session_id": "s20260622t084637z",
-      "evaluator_id": "control_plane",
+      "host": "devcontainer",
+      "session_id": "hbm-dram-service-energy-20260622",
+      "evaluator_id": "codex",
       "queue_item_id": "l2_decoder_attention_hbm_dram_service_energy_llama7b_v1"
     },
     "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
