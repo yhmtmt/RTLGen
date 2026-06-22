@@ -8,7 +8,7 @@
     {
       "item_id": "l2_decoder_attention_integrated_energy_closure_llama7b_v1",
       "task_type": "l2_campaign",
-      "objective": "Run one integrated Llama7B attention frontier rerank with explicit full-energy abstraction-closure accounting.",
+      "objective": "LLM-oriented attention-tail stress campaign for larger sequence lengths and more repeated non-terminal Softmax paths.",
       "evaluation_mode": "frontier_detail",
       "abstraction_layer": "decoder_attention_integrated_energy_closure",
       "comparison_role": "frontier_closure",
@@ -19,11 +19,13 @@
       "requires_materialized_refs": true,
       "expected_result": {
         "direction": "record_integrated_energy_closure_frontier",
-        "reason": "Emit the reranked 131k Llama7B attention frontier and residual energy abstractions from the full closure pass."
+        "reason": "Record measured-plus-parameterized integrated energy for the selected Llama7B attention frontier and expose remaining energy abstractions."
       },
       "cost_class": "low",
-      "notes": "This request must run on remote evaluator eval-daemon-b7c2d9c80c1c."
+      "notes": "This request must run on remote evaluator eval-daemon-b7c2d9c80c1c.",
+      "paired_baseline_item_id": "",
+      "status": "pending"
     }
   ],
-  "source_commit": "8675ee4792c77fe9839c2b18122e5291999f1e55"
+  "source_commit": "874a6fc4692f0cf65916b7bf41c2270ddb8ac130"
 }
