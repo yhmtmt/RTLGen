@@ -1,0 +1,15 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_integrated_abstraction_closure_llama7b_v1",
+  "candidate_id": "l2_decoder_attention_integrated_abstraction_closure_llama7b_v1",
+  "decision": "iterate",
+  "reason": "Decoder evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_integrated_abstraction_closure__l2_decoder_attention_integrated_abstraction_closure_llama7b_v1.json: decision=integrated_closure_recorded_q12_blocked_hbm_service_frontier; recommended_next_step=close integrated energy and HBM/NoC/SRAM service details before promoting a final Llama7B point.",
+  "evidence_refs": [
+    "item:l2_decoder_attention_integrated_abstraction_closure_llama7b_v1",
+    "run:l2_decoder_attention_integrated_abstraction_closure_llama7b_v1_run_acb615aded687309",
+    "artifact:control_plane/shadow_exports/l2_decisions/l2_decoder_attention_integrated_abstraction_closure_llama7b_v1.json",
+    "pr:#963",
+    "https://github.com/yhmtmt/RTLGen/pull/963"
+  ],
+  "next_action": "inspect follow-on work after l2_decoder_attention_integrated_abstraction_closure_llama7b_v1",
+  "requires_human_approval": false
+}

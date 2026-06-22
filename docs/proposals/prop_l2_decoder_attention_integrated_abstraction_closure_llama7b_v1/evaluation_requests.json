@@ -23,7 +23,13 @@
         "direction": "record_integrated_abstraction_closure_frontier",
         "reason": "Report a reranked Llama7B 131k attention frontier with remaining abstraction sensitivities from both merged inputs."
       },
-      "cost_class": "low"
+      "cost_class": "low",
+      "status": "merged",
+      "merged_pr_number": 963,
+      "merge_commit": "a962046f0c7c9244502e0542ea3023a2a11ed6e1",
+      "merged_utc": "2026-06-22T07:46:33.289364Z",
+      "notes": "Merged via PR #963 and merge a962046f0c7c9244502e0542ea3023a2a11ed6e1 at 2026-06-22T07:46:33.289364Z."
     }
-  ]
+  ],
+  "source_commit": "827018fea8b8971c947ab7240300dbaeb73bbebe"
 }
