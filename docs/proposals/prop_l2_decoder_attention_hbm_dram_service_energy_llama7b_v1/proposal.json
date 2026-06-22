@@ -1,0 +1,76 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_hbm_dram_service_energy_llama7b_v1",
+  "created_utc": "2026-06-22T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_attention_hbm_dram_service_energy",
+  "title": "Llama7B attention HBM/DRAM service-energy closure",
+  "hypothesis": "The merged HBM energy sensitivity result shows the energy optimum depends on HBM energy. Replacing the scalar pJ/byte term with explicit row-hit, burst, outstanding-request, activate/precharge, and command energy accounting should give a tighter frontier decision before promoting an energy-optimal Llama7B point.",
+  "direct_comparison": {
+    "primary_question": "Does a lightweight HBM/DRAM command-service energy model preserve or move the Llama7B latency-best, energy-best, and balanced frontier points?",
+    "include": [
+      "consume the merged integrated energy closure",
+      "consume the merged HBM energy sensitivity result",
+      "consume retained quality-backed HBM frontier rows",
+      "consume the HBM controller service artifact",
+      "split HBM energy into row-hit reads, row-miss reads, writes, activate/precharge, and command overhead",
+      "report latency-best, energy-best, balanced, and Pareto candidates under the DRAM service-energy model"
+    ],
+    "exclude": [
+      "new OpenROAD/PPA runs",
+      "vendor HBM current-table signoff",
+      "cycle-accurate DRAM controller RTL",
+      "new model-quality or QAT jobs"
+    ],
+    "follow_on_broad_sweep": [
+      "If the selected point remains stable, calibrate the DRAM pJ parameters from source-backed HBM stack data and close the scaled compute-energy term.",
+      "If the selected point moves, rerun the Llama7B frontier ranking under the moved point and update the architecture recommendation."
+    ]
+  },
+  "expected_benefit": [
+    "Reduces the dominant HBM-energy abstraction from a single pJ/byte scalar to explicit command and service terms.",
+    "Exposes any throughput penalty from controller-derived service efficiency rather than only energy sensitivity.",
+    "Keeps precision status tied to the existing quality-backed gqa8/kv8 frontier rows."
+  ],
+  "risks": [
+    "The DRAM model is still parameterized; pJ values need calibration against source-backed HBM stack current data before final energy claims.",
+    "Compute energy remains scaled from the nearest measured dense compute reference.",
+    "NoC and SRAM energy inherit the profile-scaled accounting from the integrated energy closure."
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_hbm_dram_service_energy_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Apply a lightweight HBM/DRAM command-service energy model to retained quality-backed Llama7B attention frontier rows and report throughput/energy/area/precision tradeoffs.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_hbm_dram_service_energy",
+      "comparison_role": "frontier_closure",
+      "cost_class": "low",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_hbm_energy_sensitivity_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "record_hbm_dram_service_energy_frontier",
+        "reason": "Determine whether the HBM-energy-sensitive frontier remains stable under explicit DRAM command/service accounting."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_hbm_energy_sensitivity__l2_decoder_attention_hbm_energy_sensitivity_llama7b_v1.json"
+  ],
+  "source_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_integrated_energy_closure__l2_decoder_attention_integrated_energy_closure_llama7b_v1_r2.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_hbm_energy_sensitivity__l2_decoder_attention_hbm_energy_sensitivity_llama7b_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_physical_hbm_quality_backed_7b__l2_decoder_attention_kv_physical_hbm_quality_backed_7b_llama7b_v1_r2.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_hbm_controller__l2_decoder_attention_kv_hbm_controller_llama7b_v1_r3.json"
+  ],
+  "knowledge_refs": [
+    "docs/architecture/llama7b_attention_abstraction_closure_plan.md",
+    "docs/proposals/prop_l2_decoder_attention_hbm_energy_sensitivity_llama7b_v1/proposal.json",
+    "control_plane/control_plane/services/l2_task_generator.py"
+  ]
+}
