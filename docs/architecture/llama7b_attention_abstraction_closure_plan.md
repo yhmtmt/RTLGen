@@ -27,6 +27,18 @@ than free or heuristic assumptions.
   - die area point: `100.0 mm2`
   - precision: native-GQA `gqa8`, `kv8`
   - dominant resource: `hbm`
+- The integrated energy-accounting closure
+  `l2_decoder_attention_integrated_energy_closure_llama7b_v1_r2` is merged by
+  PR #969. It reports:
+  - total energy: `8.14357724928343 mJ/token`
+  - energy status: `parameterized_integrated_energy_not_full_measurement`
+  - dominant energy component: `hbm`
+  - compute energy: `1.12424255488 mJ/token`, scaled from the nearest measured
+    dense compute reference
+  - HBM energy: `7.014935724818432 mJ/token`, using `8 pJ/byte`
+  - NoC energy: `0.00427893972795392 mJ/token`, using byte-hop accounting
+  - SRAM energy: `0.00012002985704362652 mJ/token`, scaled from CACTI macro
+    profile evidence
 - There is no active queue item for this closure stage. New evaluations should
   continue to dispatch only to the remote evaluator
   `eval-daemon-b7c2d9c80c1c`.
@@ -36,10 +48,12 @@ than free or heuristic assumptions.
 1. Full integrated energy closure
    - Scope: compose measured compute, local SRAM, NoC/router/FIFO, HBM service,
      q12/PWL datapath, and precision choices into one Llama7B energy metric.
-   - Status: not closed. The integrated closure explicitly reports
-     `energy_status=full_integrated_energy_missing`.
-   - Next result: make token throughput, energy, area, and precision directly
-     comparable for the selected Llama7B frontier and plausible challengers.
+   - Status: partially closed by PR #969. Token throughput, area, precision, and
+     a measured-plus-parameterized energy account are now present, but the energy
+     account explicitly reports
+     `energy_status=parameterized_integrated_energy_not_full_measurement`.
+   - Next result: remove or bound the dominant HBM pJ/byte sensitivity and the
+     scaled compute-energy term before claiming an energy-optimal point.
 
 2. HBM/DRAM and on-chip service detail
    - Scope: replace aggregate HBM efficiency and compact NoC/SRAM service caps
@@ -93,8 +107,11 @@ than free or heuristic assumptions.
 
 ## Ordering
 
-The next evaluation should close the highest-impact missing comparison term:
-full integrated energy for the selected `physical_hbm_gqa8_kv8_service_frontier`
-and its plausible challengers. In parallel or immediately after, refine the
-HBM/NoC/SRAM service model because the selected point is HBM-dominant. All new
-evaluation jobs should run on the remote evaluator, not the devcontainer.
+The next evaluation should close the highest-impact remaining comparison term:
+HBM energy sensitivity. The merged integrated-energy result is HBM-energy
+dominated, so the next job should sweep HBM pJ/byte over the retained
+quality-backed HBM frontier rows and report whether the lowest-latency 100 mm2
+point remains energy-robust or whether a larger SRAM/die point becomes
+energy-optimal. After that, refine HBM/NoC/SRAM service detail and directly
+measure or bound the selected compute service point. All new evaluation jobs
+should run on the remote evaluator, not the devcontainer.
