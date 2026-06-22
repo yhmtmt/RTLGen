@@ -16,44 +16,59 @@ than free or heuristic assumptions.
 - NoC traffic profile evidence has been merged by
   `prop_l2_decoder_attention_noc_profile_v1` / PR #736, using the measured
   FIFO/router primitive anchors from `l1_decoder_memory_noc_primitives_v1`.
-- The latest L2 full-value rerun preserved the frontier at
-  `1200 mm2 / nm64_flat / 8 clusters / cluster_tree`, with latency
-  `15134.080960 us`.
-- Current active remote-only queue:
-  - `l1_decoder_attention_dual_stream_composed_q12_pwl_softmax_ppa_v1`,
-    assigned to `eval-daemon-b7c2d9c80c1c`, source `63df7c30`.
-  - `l2_decoder_attention_kv_model_native_quality_7b_v1`, assigned to the same
-    remote evaluator, source `63df7c30`.
-- `l2_decoder_attention_composed_datapath_q12_pwl_softmax_frontier_llama7b_v1`
-  is staged but blocked until the L1 q12/PWL PPA item is merged/materialized.
+- The integrated closure result
+  `l2_decoder_attention_integrated_abstraction_closure_llama7b_v1` is merged by
+  PR #963. It consumes the merged q12/PWL composed datapath feasibility result,
+  the merged 7B quality-backed HBM frontier, and the native 7B KV-quality gate.
+- The current selected Llama7B attention frontier is
+  `physical_hbm_gqa8_kv8_service_frontier`:
+  - latency: `30.944 us/token`
+  - token throughput: `32316.442606 token/s`
+  - die area point: `100.0 mm2`
+  - precision: native-GQA `gqa8`, `kv8`
+  - dominant resource: `hbm`
+- There is no active queue item for this closure stage. New evaluations should
+  continue to dispatch only to the remote evaluator
+  `eval-daemon-b7c2d9c80c1c`.
 
 ## Remaining Quantities
 
-1. Composed q12/PWL softmax datapath PPA
+1. Full integrated energy closure
+   - Scope: compose measured compute, local SRAM, NoC/router/FIFO, HBM service,
+     q12/PWL datapath, and precision choices into one Llama7B energy metric.
+   - Status: not closed. The integrated closure explicitly reports
+     `energy_status=full_integrated_energy_missing`.
+   - Next result: make token throughput, energy, area, and precision directly
+     comparable for the selected Llama7B frontier and plausible challengers.
+
+2. HBM/DRAM and on-chip service detail
+   - Scope: replace aggregate HBM efficiency and compact NoC/SRAM service caps
+     with a more explicit controller, arbitration, and contention model.
+   - Status: not cycle-accurate. The current selected frontier is HBM-dominant
+     and still uses an aggregate bandwidth/efficiency model.
+   - Next result: bound whether HBM service, NoC/SRAM contention, or compute
+     service changes the selected `gqa8/kv8` frontier.
+
+3. Composed q12/PWL softmax datapath density recovery
    - Scope: score max, exponent approximation, sum accumulation, reciprocal
      normalization, normalized weight output, and value mixing inside the
      composed dual-stream attention wrapper.
-   - Active measurement:
-     `l1_decoder_attention_dual_stream_composed_q12_pwl_softmax_ppa_v1`.
-   - First L2 consumer:
+   - Status: measured and consumed. The L2 consumer
      `l2_decoder_attention_composed_datapath_q12_pwl_softmax_frontier_llama7b_v1`
-     substitutes the measured q12/PWL wrapper into the current Llama7B subtile
-     schedule and compares latency, area, energy, and precision-risk posture
-     against the reciprocal-LUT composed frontier.
+     reports `dual_stream_area_blocked`; the measured q12/PWL wrapper is
+     available but the dual-stream frontier cannot be promoted on area/clock.
+   - Next result: measure a denser fused attention datapath or reduce compute
+     replicas before retrying dual-stream promotion.
 
-2. Native 7B precision quality
+4. Native 7B precision quality and KV4 recovery
    - Scope: teacher-forced decode on a real 7B-class checkpoint with KV8/KV4
      cache quantization feedback.
-   - Active gate: `l2_decoder_attention_kv_model_native_quality_7b_v1`.
-   - Prepared consumer:
-     `l2_decoder_attention_kv_physical_hbm_quality_backed_7b_llama7b_v1`
-     reranks the conservative native-GQA KV16/KV8 physical-HBM frontier using
-     the 7B quality artifact instead of the older TinyLlama precision proxy.
-   - Result use: keep KV8 as the conservative frontier unless KV4 survives
-     top-1/top-k/logit-cosine/KL/margin-sensitive checks, or schedule a
-     QAT/scale-granularity recovery job if KV4 fails but still looks valuable.
+   - Status: 7B native quality evidence is merged. KV8 is conservative; KV4 is
+     promising but below the cosine/KL caution line.
+   - Next result: schedule QAT, scale-granularity recovery, or a larger 7B-class
+     confirmation before treating KV4 as a precision-safe frontier point.
 
-3. SRAM timing and energy
+5. SRAM timing and energy
    - Scope: tile-local score/value buffering, KV tile reads, partial-value
      buffering, and result writeback.
    - Status: measured/merged by `l2_decoder_attention_sram_profile_v1`.
@@ -61,7 +76,7 @@ than free or heuristic assumptions.
      SRAM profile and reports any surviving SRAM abstraction as an explicit
      sensitivity term, not as an implicit ideal buffer.
 
-4. NoC arbitration and contention
+6. NoC arbitration and contention
    - Scope: per-cluster local router/fifo cost is already measured, but current
      schedule still uses bandwidth divided by hop count for contention.
    - Status: measured/merged by `l2_decoder_attention_noc_profile_v1`.
@@ -69,17 +84,17 @@ than free or heuristic assumptions.
      payload/cycle and arbitration-latency bounds under the selected
      producer/reducer traffic mix.
 
-5. Integrated schedule closure
+7. Integrated schedule closure audit
    - Scope: rerun the Llama7B attention schedule with measured compute,
-     full-value tile, softmax, SRAM, and NoC profiles.
-   - Result: publish a remaining-abstractions table. Any surviving abstraction
-     must be explicitly named with a bounded sensitivity parameter.
+     full-value tile, softmax, SRAM, NoC, HBM, and precision evidence.
+   - Status: merged by PR #963. The surviving abstractions are now explicit:
+     HBM/DRAM service, NoC/SRAM service contention, full integrated energy,
+     q12/PWL dual-stream area/clock promotion, and KV4 precision recovery.
 
 ## Ordering
 
-Keep the remote evaluator focused on the L1 q12/PWL composed softmax PPA first;
-it is the dependency that unblocks the staged q12/PWL Llama7B frontier
-substitution. Run the native 7B precision gate in parallel only when the remote
-evaluator has capacity, because it is evidence-only and has no OpenROAD/PPA
-step. After both results are merged, rerun the integrated closure and publish
-the remaining-abstractions table.
+The next evaluation should close the highest-impact missing comparison term:
+full integrated energy for the selected `physical_hbm_gqa8_kv8_service_frontier`
+and its plausible challengers. In parallel or immediately after, refine the
+HBM/NoC/SRAM service model because the selected point is HBM-dominant. All new
+evaluation jobs should run on the remote evaluator, not the devcontainer.
