@@ -1,0 +1,21 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_hbm_energy_calibration_llama7b_v1",
+  "requests": [
+    {
+      "item_id": "l2_decoder_attention_hbm_energy_calibration_llama7b_v1",
+      "task_type": "l2_campaign",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_hbm_energy_calibration",
+      "comparison_role": "frontier_closure",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_hbm_dram_service_energy_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "run_physical": false,
+      "expected_direction": "record_source_backed_hbm_energy_calibration",
+      "expected_reason": "Calibrate the HBM energy component with source-backed aggregate HBM pJ/bit references before claiming the Llama7B energy-optimal point.",
+      "dispatch_machine_key": "eval-daemon-b7c2d9c80c1c"
+    }
+  ]
+}

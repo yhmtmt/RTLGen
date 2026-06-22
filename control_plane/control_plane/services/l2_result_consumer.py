@@ -490,6 +490,10 @@ _DECODER_EVIDENCE_OUTPUT_KEYS: tuple[tuple[str, str], ...] = (
         "attention_hbm_dram_service_energy_out",
         "attention_hbm_dram_service_energy_report",
     ),
+    (
+        "attention_hbm_energy_calibration_out",
+        "attention_hbm_energy_calibration_report",
+    ),
 )
 
 
