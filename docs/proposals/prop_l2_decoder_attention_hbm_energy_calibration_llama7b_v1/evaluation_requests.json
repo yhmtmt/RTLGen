@@ -17,5 +17,20 @@
       "expected_reason": "Calibrate the HBM energy component with source-backed aggregate HBM pJ/bit references before claiming the Llama7B energy-optimal point.",
       "dispatch_machine_key": "eval-daemon-b7c2d9c80c1c"
     }
+  ],
+  "source_commit": "53584274bf7f29e3943ef9c0906a994694cb3908",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_hbm_energy_calibration_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "LLM-oriented attention-tail stress campaign for larger sequence lengths and more repeated non-terminal Softmax paths.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_hbm_energy_calibration",
+      "status": "merged",
+      "merged_pr_number": 977,
+      "merge_commit": "bdab7783b0922525ce1b8e199dd4434b15348937",
+      "merged_utc": "2026-06-22T09:09:54.942354Z",
+      "notes": "Merged via PR #977 and merge bdab7783b0922525ce1b8e199dd4434b15348937 at 2026-06-22T09:09:54.942354Z."
+    }
   ]
 }

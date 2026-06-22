@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_hbm_energy_calibration_llama7b_v1",
+  "decision": "iterate",
+  "pr_number": 977,
+  "merge_commit": "bdab7783b0922525ce1b8e199dd4434b15348937",
+  "merged_utc": "2026-06-22T09:09:54.942354Z"
+}
