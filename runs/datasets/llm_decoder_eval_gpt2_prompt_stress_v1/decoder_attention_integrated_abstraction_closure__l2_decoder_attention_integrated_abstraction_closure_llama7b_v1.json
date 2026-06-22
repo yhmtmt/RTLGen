@@ -1,0 +1,158 @@
+{
+  "best": {
+    "arch_id": "physical_hbm_gqa8_kv8_service_frontier",
+    "die_area_mm2": 100.0,
+    "dominant_resource": "hbm",
+    "energy_mj": null,
+    "energy_status": "full_integrated_energy_missing",
+    "kv_bits": 8,
+    "kv_sharing": "gqa8",
+    "latency_us": 30.944,
+    "macs_per_cycle": 524288,
+    "precision_status": "native_checkpoint_kv4_promising",
+    "token_throughput_per_s": 32316.442605997934,
+    "vector_ops_per_cycle": 65536
+  },
+  "closure_diagnosis": {
+    "precision_next_step": "Use this checkpoint evidence with the PPA model, then schedule a larger 7B-class or QAT confirmation.",
+    "q12_pwl_datapath": "dual_stream_area_blocked",
+    "q12_pwl_next_step": "measure a denser dual-stream fused attention datapath or reduce compute replicas before promoting dual_mac",
+    "selected_frontier": "Use conservative GQA8/KV8 physical-HBM service frontier until the remaining service and energy abstractions are closed."
+  },
+  "closure_flags": {
+    "conservative_kv8_quality_backed": true,
+    "hbm_model_cycle_accurate": false,
+    "integrated_energy_model_available": false,
+    "kv4_promotable_without_recovery": false,
+    "native_7b_quality_available": true,
+    "q12_pwl_composed_datapath_measured": true,
+    "q12_pwl_dual_stream_promotable": false
+  },
+  "decision": "integrated_closure_recorded_q12_blocked_hbm_service_frontier",
+  "diagnosis": {
+    "decision": "integrated_closure_recorded_q12_blocked_hbm_service_frontier",
+    "precision_status": "native_checkpoint_kv4_promising",
+    "q12_pwl_datapath": "dual_stream_area_blocked",
+    "recommended_next_step": "close integrated energy and HBM/NoC/SRAM service details before promoting a final Llama7B point",
+    "selected_frontier": "physical_hbm_gqa8_kv8_service_frontier"
+  },
+  "model": "llm_decoder_attention_integrated_abstraction_closure_llama7b_v1",
+  "precision": {
+    "kv4_candidate": {
+      "comparison_count": 8,
+      "kv_bits": 4,
+      "kv_granularity": "tensor",
+      "max_abs_logit_delta_max": 2.3125,
+      "max_abs_logit_delta_mean": 1.419189453125,
+      "mean_logit_cosine": 0.9978199414249704,
+      "mean_probability_kl": 0.01678496644161117,
+      "mean_reference_margin": 1.3046875,
+      "min_reference_margin": 0.0,
+      "top1_match_rate": 1.0,
+      "topk_contains_rate": 1.0
+    },
+    "kv4_promotable_without_recovery": false,
+    "kv8_candidate": {
+      "comparison_count": 8,
+      "kv_bits": 8,
+      "kv_granularity": "tensor",
+      "max_abs_logit_delta_max": 0.4375,
+      "max_abs_logit_delta_mean": 0.1875,
+      "mean_logit_cosine": 0.9999542478621327,
+      "mean_probability_kl": 0.0004798215588894854,
+      "mean_reference_margin": 1.3046875,
+      "min_reference_margin": 0.0,
+      "top1_match_rate": 1.0,
+      "topk_contains_rate": 1.0
+    },
+    "native_quality_cautions": [
+      "Best KV4 ranking mostly holds, but logit cosine is below the promotion caution line"
+    ],
+    "native_quality_status": "native_checkpoint_kv4_promising",
+    "selected_frontier_kv_bits": 8,
+    "selected_frontier_kv_sharing": "gqa8"
+  },
+  "ranked_candidates": [
+    {
+      "area_mm2": 100.0,
+      "dominant_resource": "hbm",
+      "energy_mj": null,
+      "latency_us": 30.944,
+      "name": "quality_backed_hbm_gqa8_kv8",
+      "precision": {
+        "kv_bits": 8,
+        "kv_sharing": "gqa8",
+        "status": "native_checkpoint_kv4_promising"
+      },
+      "status": "current_selected_service_frontier",
+      "token_throughput_per_s": 32316.442605997934
+    },
+    {
+      "area_fit": false,
+      "clock_ok": false,
+      "compute_mode": "dual_mac",
+      "latency_us_if_feasible": 1575.373891,
+      "logic_slack_um2": -16751455.9308,
+      "name": "q12_pwl_dual_stream_composed_datapath",
+      "required_compute_density_gain": 1.041929,
+      "status": "blocked_not_promotable"
+    }
+  ],
+  "recommended_next_l1_points": [
+    {
+      "primitive": "denser_or_lower_replica_q12_pwl_dual_stream_datapath",
+      "reason": "The measured q12/PWL wrapper blocks the dual-stream frontier on area/clock before it can improve throughput."
+    }
+  ],
+  "recommended_next_l2_jobs": [
+    {
+      "job": "integrated_energy_closure",
+      "reason": "Token throughput and area are bounded, but full Llama7B energy is still not comparable across candidates."
+    },
+    {
+      "job": "hbm_noc_sram_service_detail",
+      "reason": "The selected frontier is still HBM-service dominated and uses aggregate NoC/SRAM service assumptions."
+    },
+    {
+      "job": "kv4_recovery_or_larger_quality_confirmation",
+      "reason": "KV4 has top-k stability but misses the cosine/KL caution line."
+    }
+  ],
+  "remaining_abstractions": [
+    "HBM/DRAM service is still an aggregate bandwidth/efficiency model, not cycle-accurate DRAM timing.",
+    "NoC/SRAM contention in the selected HBM frontier is still a compact service model.",
+    "Full Llama7B integrated energy is not yet composed from measured compute, SRAM, NoC, and HBM energy.",
+    "Measured q12/PWL dual-stream composed datapath is available, but the current dual-stream frontier is blocked by area or clock and cannot be promoted.",
+    "KV4 remains precision-risky without QAT, scale-granularity recovery, or a larger 7B-class confirmation."
+  ],
+  "source_artifacts": {
+    "composed_datapath_model": "llm_decoder_attention_composed_datapath_q12_pwl_softmax_frontier_llama7b_v1",
+    "hbm_quality_backed_model": "llm_decoder_attention_kv_physical_hbm_frontier_llama7b_v1",
+    "native_quality_model": "mistralai/Mistral-7B-v0.1"
+  },
+  "subcampaign_energy_refs": {
+    "hbm_quality_backed_mlp_smoke": {
+      "arch_id": "fp16_nm1",
+      "critical_path_ns_mean": 5.557037432204143,
+      "die_area_um2_mean": 2250000.0,
+      "energy_mj_mean": 5.582770776e-06,
+      "latency_ms_mean": 0.028907999999999996,
+      "macro_mode": "flat_nomacro",
+      "scope": "subcampaign_not_full_llama7b_integrated_energy",
+      "throughput_infer_per_s_mean": 126107.72426475417,
+      "total_power_mw_mean": 0.193122
+    },
+    "q12_pwl_tail_stress": {
+      "arch_id": "fp16_nm1",
+      "critical_path_ns_mean": 5.557037432204143,
+      "die_area_um2_mean": 2250000.0,
+      "energy_mj_mean": 2.7860165964e-05,
+      "latency_ms_mean": 0.144262,
+      "macro_mode": "flat_nomacro",
+      "scope": "subcampaign_not_full_llama7b_integrated_energy",
+      "throughput_infer_per_s_mean": 8421.072384503364,
+      "total_power_mw_mean": 0.193122
+    }
+  },
+  "version": 1
+}

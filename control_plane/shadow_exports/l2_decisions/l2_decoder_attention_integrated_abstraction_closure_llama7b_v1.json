@@ -1,0 +1,195 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-06-22T07:44:08.767974Z",
+  "item_id": "l2_decoder_attention_integrated_abstraction_closure_llama7b_v1",
+  "run_key": "l2_decoder_attention_integrated_abstraction_closure_llama7b_v1_run_acb615aded687309",
+  "layer": "layer2",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l2_campaign",
+  "source_commit": "827018fea8b8971c947ab7240300dbaeb73bbebe",
+  "review_metadata_source_commit": "827018fea8b8971c947ab7240300dbaeb73bbebe",
+  "objective": "LLM-oriented attention-tail stress campaign for larger sequence lengths and more repeated non-terminal Softmax paths.",
+  "input_manifest": {
+    "sweeps": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/sweep_compare_33.json",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/sweep_compare_33.json"
+    ],
+    "configs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/config_nm1.json",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/config_nm2.json"
+    ],
+    "design_dirs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp"
+    ],
+    "macro_manifests": [
+      "runs/designs/npu_macros/gemm_compute_array_fp16_nm1_c250/macro_manifest.json",
+      "runs/designs/npu_macros/gemm_compute_array_fp16_2slot_c300/macro_manifest.json"
+    ],
+    "decoder_contract": {
+      "attention_kv_model_native_quality_7b": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_model_native_quality_7b__l2_decoder_attention_kv_model_native_quality_7b_v1_r2.json",
+      "attention_composed_datapath_q12_pwl_best": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_composed_datapath_q12_pwl_softmax_frontier_llama7b_v1/best_point.json",
+      "attention_kv_physical_hbm_quality_backed_7b": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_physical_hbm_quality_backed_7b__l2_decoder_attention_kv_physical_hbm_quality_backed_7b_llama7b_v1_r2.json",
+      "attention_integrated_abstraction_closure_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_integrated_abstraction_closure__l2_decoder_attention_integrated_abstraction_closure_llama7b_v1.json",
+      "attention_integrated_abstraction_closure_scope": "Integrate the merged q12/PWL composed datapath feasibility result, the merged 7B quality-backed HBM frontier, and native 7B KV quality evidence into one Llama7B frontier closure artifact. Report the selected token-throughput/area/precision point and name any remaining energy, HBM, SRAM, NoC, or datapath abstractions explicitly.",
+      "attention_integrated_abstraction_closure_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_integrated_abstraction_closure__l2_decoder_attention_integrated_abstraction_closure_llama7b_v1.md",
+      "attention_composed_datapath_physical_feasibility": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_q12_pwl_softmax_frontier_llama7b_v1.json",
+      "attention_kv_physical_hbm_quality_backed_7b_best": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_physical_hbm_quality_backed_7b_llama7b_v1_r2/best_point.json"
+    },
+    "generated_campaign": {
+      "path": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1/campaign__l2_decoder_attention_integrated_abstraction_closure_llama7b_v1.json",
+      "outputs": {
+        "report_md": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_integrated_abstraction_closure_llama7b_v1/report.md",
+        "results_csv": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_integrated_abstraction_closure_llama7b_v1/results.csv",
+        "campaign_dir": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_integrated_abstraction_closure_llama7b_v1"
+      },
+      "clean_outputs": true,
+      "base_campaign_path": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1/campaign.json"
+    },
+    "candidate_manifests": [
+      "runs/candidates/nangate45/module_candidates.json"
+    ]
+  },
+  "recommendation": {
+    "arch_id": "physical_hbm_gqa8_kv8_service_frontier",
+    "macro_mode": "decoder_frontier",
+    "objective_rank": 1,
+    "objective_score": "0.0",
+    "latency_ms_mean": 0.144262,
+    "energy_mj_mean": 2.7860165964e-05,
+    "critical_path_ns_mean": 5.557037432204143,
+    "die_area_um2_mean": 2250000.0,
+    "total_power_mw_mean": 0.193122,
+    "flow_elapsed_s_mean": 844.5733333333334,
+    "source": "decoder_evidence",
+    "decoder_model": "llm_decoder_attention_integrated_abstraction_closure_llama7b_v1",
+    "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_integrated_abstraction_closure__l2_decoder_attention_integrated_abstraction_closure_llama7b_v1.json",
+    "die_area_mm2": 100.0,
+    "macs_per_cycle": 524288,
+    "latency_us": 30.944,
+    "legacy_campaign_recommendation": {
+      "arch_id": "fp16_nm1",
+      "macro_mode": "flat_nomacro",
+      "objective_rank": 1,
+      "objective_score": "0.0",
+      "latency_ms_mean": 0.144262,
+      "energy_mj_mean": 2.7860165964e-05,
+      "critical_path_ns_mean": 5.557037432204143,
+      "die_area_um2_mean": 2250000.0,
+      "total_power_mw_mean": 0.193122,
+      "flow_elapsed_s_mean": 844.5733333333334
+    }
+  },
+  "objective_profiles": [],
+  "evaluation_record": {
+    "proposal_id": "prop_l2_decoder_attention_integrated_abstraction_closure_llama7b_v1",
+    "title": "Integrated Llama7B attention abstraction-closure rerank with merged q12/PWL and 7B quality-backed HBM inputs",
+    "primary_question": "After integrating both merged artifacts, which Llama7B attention frontier point remains dominant and what specific abstraction dimensions (e.g., SRAM timing, NoC arbitration, queueing policy, and cost model margins) remain explicit?",
+    "evaluation_mode": "frontier_detail",
+    "comparison_role": "frontier_closure",
+    "abstraction_layer": "decoder_attention_integrated_abstraction_closure",
+    "expected_direction": "record_integrated_abstraction_closure_frontier",
+    "expected_reason": "Report a reranked Llama7B attention frontier with explicit remaining abstractions after merged q12/PWL and 7B quality-backed HBM evidence.",
+    "summary": "Decoder evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_integrated_abstraction_closure__l2_decoder_attention_integrated_abstraction_closure_llama7b_v1.json: decision=integrated_closure_recorded_q12_blocked_hbm_service_frontier; recommended_next_step=close integrated energy and HBM/NoC/SRAM service details before promoting a final Llama7B point.",
+    "outcome": "integrated_closure_recorded_q12_blocked_hbm_service_frontier",
+    "expectation_status": "unspecified"
+  },
+  "proposal_assessment": {
+    "proposal_id": "prop_l2_decoder_attention_integrated_abstraction_closure_llama7b_v1",
+    "title": "Integrated Llama7B attention abstraction-closure rerank with merged q12/PWL and 7B quality-backed HBM inputs",
+    "kind": "architecture",
+    "primary_question": "After integrating both merged artifacts, which Llama7B attention frontier point remains dominant and what specific abstraction dimensions (e.g., SRAM timing, NoC arbitration, queueing policy, and cost model margins) remain explicit?",
+    "evaluation_mode": "frontier_detail",
+    "comparison_role": "frontier_closure",
+    "outcome": "integrated_closure_recorded_q12_blocked_hbm_service_frontier",
+    "summary": "Decoder evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_integrated_abstraction_closure__l2_decoder_attention_integrated_abstraction_closure_llama7b_v1.json: decision=integrated_closure_recorded_q12_blocked_hbm_service_frontier; recommended_next_step=close integrated energy and HBM/NoC/SRAM service details before promoting a final Llama7B point.",
+    "baseline_ref": null,
+    "baseline_item_id": null,
+    "matched_row_count": 0,
+    "matched_rows": [],
+    "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_integrated_abstraction_closure__l2_decoder_attention_integrated_abstraction_closure_llama7b_v1.json",
+    "decoder_quality": {
+      "diagnosis": {
+        "decision": "integrated_closure_recorded_q12_blocked_hbm_service_frontier",
+        "precision_status": "native_checkpoint_kv4_promising",
+        "q12_pwl_datapath": "dual_stream_area_blocked",
+        "recommended_next_step": "close integrated energy and HBM/NoC/SRAM service details before promoting a final Llama7B point",
+        "selected_frontier": "physical_hbm_gqa8_kv8_service_frontier"
+      },
+      "remaining_abstractions": [
+        "HBM/DRAM service is still an aggregate bandwidth/efficiency model, not cycle-accurate DRAM timing.",
+        "NoC/SRAM contention in the selected HBM frontier is still a compact service model.",
+        "Full Llama7B integrated energy is not yet composed from measured compute, SRAM, NoC, and HBM energy.",
+        "Measured q12/PWL dual-stream composed datapath is available, but the current dual-stream frontier is blocked by area or clock and cannot be promoted.",
+        "KV4 remains precision-risky without QAT, scale-granularity recovery, or a larger 7B-class confirmation."
+      ],
+      "closure_flags": {
+        "conservative_kv8_quality_backed": true,
+        "hbm_model_cycle_accurate": false,
+        "integrated_energy_model_available": false,
+        "kv4_promotable_without_recovery": false,
+        "native_7b_quality_available": true,
+        "q12_pwl_composed_datapath_measured": true,
+        "q12_pwl_dual_stream_promotable": false
+      },
+      "closure_diagnosis": {
+        "precision_next_step": "Use this checkpoint evidence with the PPA model, then schedule a larger 7B-class or QAT confirmation.",
+        "q12_pwl_datapath": "dual_stream_area_blocked",
+        "q12_pwl_next_step": "measure a denser dual-stream fused attention datapath or reduce compute replicas before promoting dual_mac",
+        "selected_frontier": "Use conservative GQA8/KV8 physical-HBM service frontier until the remaining service and energy abstractions are closed."
+      },
+      "recommended_next_l1_points": [
+        {
+          "primitive": "denser_or_lower_replica_q12_pwl_dual_stream_datapath",
+          "reason": "The measured q12/PWL wrapper blocks the dual-stream frontier on area/clock before it can improve throughput."
+        }
+      ],
+      "best": {
+        "arch_id": "physical_hbm_gqa8_kv8_service_frontier",
+        "die_area_mm2": 100.0,
+        "dominant_resource": "hbm",
+        "energy_mj": null,
+        "energy_status": "full_integrated_energy_missing",
+        "kv_bits": 8,
+        "kv_sharing": "gqa8",
+        "latency_us": 30.944,
+        "macs_per_cycle": 524288,
+        "precision_status": "native_checkpoint_kv4_promising",
+        "token_throughput_per_s": 32316.442605997934,
+        "vector_ops_per_cycle": 65536
+      }
+    }
+  },
+  "source_refs": {
+    "best_point_json": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_integrated_abstraction_closure_llama7b_v1/best_point.json",
+    "summary_csv": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_integrated_abstraction_closure_llama7b_v1/summary.csv",
+    "results_csv": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_integrated_abstraction_closure_llama7b_v1/results.csv",
+    "report_md": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_integrated_abstraction_closure_llama7b_v1/report.md",
+    "focused_candidate_schedule_yml": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_integrated_abstraction_closure_llama7b_v1/artifacts/mapper/fp16_nm1/tail_attn4_s256_h64/schedule.yml",
+    "focused_candidate_descriptors_bin": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_integrated_abstraction_closure_llama7b_v1/artifacts/mapper/fp16_nm1/tail_attn4_s256_h64/descriptors.bin",
+    "focused_candidate_perf_trace_json": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_integrated_abstraction_closure_llama7b_v1/artifacts/perf/fp16_nm1/tail_attn4_s256_h64/trace.json",
+    "focused_model_artifacts": [
+      {
+        "model_id": "tail_attn4_s256_h64",
+        "schedule_yml": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_integrated_abstraction_closure_llama7b_v1/artifacts/mapper/fp16_nm1/tail_attn4_s256_h64/schedule.yml",
+        "descriptors_bin": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_integrated_abstraction_closure_llama7b_v1/artifacts/mapper/fp16_nm1/tail_attn4_s256_h64/descriptors.bin",
+        "perf_trace_json": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_integrated_abstraction_closure_llama7b_v1/artifacts/perf/fp16_nm1/tail_attn4_s256_h64/trace.json"
+      },
+      {
+        "model_id": "tail_attn6_s128_h64",
+        "schedule_yml": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_integrated_abstraction_closure_llama7b_v1/artifacts/mapper/fp16_nm1/tail_attn6_s128_h64/schedule.yml",
+        "descriptors_bin": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_integrated_abstraction_closure_llama7b_v1/artifacts/mapper/fp16_nm1/tail_attn6_s128_h64/descriptors.bin",
+        "perf_trace_json": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_integrated_abstraction_closure_llama7b_v1/artifacts/perf/fp16_nm1/tail_attn6_s128_h64/trace.json"
+      },
+      {
+        "model_id": "tail_attn6_s256_h64",
+        "schedule_yml": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_integrated_abstraction_closure_llama7b_v1/artifacts/mapper/fp16_nm1/tail_attn6_s256_h64/schedule.yml",
+        "descriptors_bin": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_integrated_abstraction_closure_llama7b_v1/artifacts/mapper/fp16_nm1/tail_attn6_s256_h64/descriptors.bin",
+        "perf_trace_json": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_integrated_abstraction_closure_llama7b_v1/artifacts/perf/fp16_nm1/tail_attn6_s256_h64/trace.json"
+      }
+    ],
+    "decoder_attention_integrated_abstraction_closure_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_integrated_abstraction_closure__l2_decoder_attention_integrated_abstraction_closure_llama7b_v1.json",
+    "decoder_attention_integrated_abstraction_closure_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_integrated_abstraction_closure__l2_decoder_attention_integrated_abstraction_closure_llama7b_v1.md"
+  }
+}
