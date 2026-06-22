@@ -1,0 +1,75 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_measured_compute_energy_closure_llama7b_v1",
+  "created_utc": "2026-06-22T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_attention_measured_compute_energy_closure",
+  "title": "Llama7B attention measured compute energy closure",
+  "hypothesis": "The command-calibrated HBM frontier still assumes an abstract 524288 MAC/cycle compute point on a 400 mm2 die. Replacing that capacity with measured dense-tile replicated compute rows should expose whether the current best family remains physically plausible and should produce a corrected throughput/energy/area frontier.",
+  "direct_comparison": {
+    "primary_question": "Does measured dense-tile compute capacity preserve or replace the current HBM-calibrated Llama7B frontier?",
+    "include": [
+      "consume the merged HBM command-calibrated service result",
+      "consume the merged dense-tile measured compute substitution result",
+      "check whether the abstract selected MAC/cycle target fits the selected die using measured tile density",
+      "recompute latency, token throughput, compute energy, HBM energy, SRAM energy, and NoC energy for measured compute rows",
+      "report measured-compute-constrained latency-best, energy-best, Pareto rows, and remaining abstractions"
+    ],
+    "exclude": [
+      "new OpenROAD/PPA runs",
+      "new dense macro synthesis",
+      "new precision or QAT jobs",
+      "vendor HBM current-table signoff"
+    ],
+    "follow_on_broad_sweep": [
+      "If measured compute replaces the abstract frontier, use the corrected point for the next architecture decision and explore denser compute or lower precision.",
+      "If measured compute preserves the family, promote the current HBM-calibrated frontier and move to NoC/SRAM service closure."
+    ]
+  },
+  "expected_benefit": [
+    "Prevents a physically infeasible MAC/cycle assumption from driving the Llama7B frontier.",
+    "Makes compute power/energy use measured dense-tile PPA rather than nearest-reference scaling only.",
+    "Reports both measured compute capacity and source-backed HBM energy in one comparable frontier."
+  ],
+  "risks": [
+    "Compute power is still replicated from measured tiles, not measured as one full integrated macro.",
+    "Compute energy ranking assumes clock gating during added HBM command-service stalls; wall-time energy is reported as an upper bound.",
+    "HBM energy remains source-backed aggregate pJ/byte rather than vendor stack-current signoff.",
+    "NoC/SRAM energy remains profile-scaled."
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_measured_compute_energy_closure_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Re-rank the Llama7B HBM-calibrated frontier under measured dense-tile compute capacity and measured-tile compute power.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_measured_compute_energy_closure",
+      "comparison_role": "frontier_closure",
+      "cost_class": "low",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "record_measured_compute_energy_closure",
+        "reason": "Determine whether the abstract 524288 MAC/cycle selected point is physically plausible under measured dense-tile compute density and energy."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_hbm_command_calibrated_service__l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1.json"
+  ],
+  "source_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_hbm_command_calibrated_service__l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_dense_tile_measured_compute__l2_decoder_attention_kv_dense_tile_measured_compute_llama7b_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_sram_profile__l2_decoder_attention_sram_profile_v1.json"
+  ],
+  "knowledge_refs": [
+    "docs/architecture/llama7b_attention_abstraction_closure_plan.md",
+    "control_plane/control_plane/services/l2_task_generator.py",
+    "npu/eval/audit_llm_decoder_attention_measured_compute_energy_closure.py"
+  ]
+}
