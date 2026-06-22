@@ -1,0 +1,15 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1",
+  "candidate_id": "l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1",
+  "decision": "iterate",
+  "reason": "Decoder evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_hbm_command_calibrated_service__l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1.json: decision=hbm_command_calibrated_service_preserves_frontier; recommended_next_step=Use the command-calibrated HBM service result to decide whether to invest next in cycle-accurate HBM controller/current modeling or in direct compute-energy measurement.",
+  "evidence_refs": [
+    "item:l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1",
+    "run:l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1_run_9e58828040c0e65a",
+    "artifact:control_plane/shadow_exports/l2_decisions/l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1.json",
+    "pr:#979",
+    "https://github.com/yhmtmt/RTLGen/pull/979"
+  ],
+  "next_action": "inspect follow-on work after l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1",
+  "requires_human_approval": false
+}

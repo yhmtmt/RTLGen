@@ -17,5 +17,20 @@
       "expected_reason": "Scale the command-class HBM service model to source-backed aggregate HBM energy and test row-hit sensitivity before final Llama7B energy ranking.",
       "dispatch_machine_key": "eval-daemon-b7c2d9c80c1c"
     }
+  ],
+  "source_commit": "fe4ca975710eb00fcc06a99579ded3d59c58d58b",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "LLM-oriented attention-tail stress campaign for larger sequence lengths and more repeated non-terminal Softmax paths.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_hbm_command_calibrated_service",
+      "status": "merged",
+      "merged_pr_number": 979,
+      "merge_commit": "889cd98b1246b397b53895a39f45421c575b38f8",
+      "merged_utc": "2026-06-22T09:21:25.166459Z",
+      "notes": "Merged via PR #979 and merge 889cd98b1246b397b53895a39f45421c575b38f8 at 2026-06-22T09:21:25.166459Z."
+    }
   ]
 }

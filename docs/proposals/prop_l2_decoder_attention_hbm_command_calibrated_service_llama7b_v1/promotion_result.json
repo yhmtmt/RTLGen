@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1",
+  "decision": "iterate",
+  "pr_number": 979,
+  "merge_commit": "889cd98b1246b397b53895a39f45421c575b38f8",
+  "merged_utc": "2026-06-22T09:21:25.166459Z"
+}
