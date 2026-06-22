@@ -1,0 +1,583 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-06-22T09:33:29.505850Z",
+  "control_plane_source_commit": "8a1546101a72d36317320f41587d1d400369bc48",
+  "review_metadata_source_commit": "8a1546101a72d36317320f41587d1d400369bc48",
+  "item_id": "l2_decoder_attention_measured_compute_energy_closure_llama7b_v1",
+  "run_key": "l2_decoder_attention_measured_compute_energy_closure_llama7b_v1_run_14a2a7f71b70d0eb",
+  "layer": "layer2",
+  "flow": "openroad",
+  "task_type": "l2_campaign",
+  "source_commit": "8a1546101a72d36317320f41587d1d400369bc48",
+  "queue_snapshot": {
+    "path": "control_plane/shadow_exports/review/l2_decoder_attention_measured_compute_energy_closure_llama7b_v1/evaluated.json",
+    "result": {
+      "branch": "eval/l2_decoder_attention_measured_compute_energy_closure_llama7b_v1/s20260622t093327z",
+      "completed_utc": "2026-06-22T09:33:24.833459Z",
+      "evaluator_id": "control_plane",
+      "executor": "@control_plane",
+      "host": "b7c2d9c80c1c",
+      "identity_block": "[role:evaluator][account:control_plane][session:s20260622t093327z][host:b7c2d9c80c1c][item:l2_decoder_attention_measured_compute_energy_closure_llama7b_v1]",
+      "metrics_rows": [
+        {
+          "tag": "npu_fp16_nm1_cmp33_flat_nomacro",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "362e11ef",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/362e11ef/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_hier_macro",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "6f738885",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/6f738885/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r1",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "3e84d92b",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/3e84d92b/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r2",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "13a2c990",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/13a2c990/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r3",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "34eeb6e5",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/34eeb6e5/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r4",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "439adb1e",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/439adb1e/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r5",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "936b2a7b",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/936b2a7b/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_hier_macro_r1",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "54a235ae",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/54a235ae/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_hier_macro_r2",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "f190a078",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/f190a078/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_hier_macro_r3",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "b874bef7",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/b874bef7/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_hier_macro_r4",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "3a650f98",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/3a650f98/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_hier_macro_r5",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "3fa4f194",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/3fa4f194/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_flat_nomacro",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "033cdfdc",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/033cdfdc/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_hier_macro",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "c4548bca",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/c4548bca/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_flat_nomacro_r1",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "258015dc",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/258015dc/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_flat_nomacro_r2",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "95526f98",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/95526f98/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_flat_nomacro_r3",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "099823db",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/099823db/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_flat_nomacro_r4",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "b276f2e7",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/b276f2e7/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_flat_nomacro_r5",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "f0b4f9e6",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/f0b4f9e6/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_hier_macro_r1",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "5d0ac971",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/5d0ac971/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_hier_macro_r2",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "a9ae3c35",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/a9ae3c35/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_hier_macro_r3",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "c51fa4a2",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/c51fa4a2/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_hier_macro_r4",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "98a03366",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/98a03366/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_hier_macro_r5",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "41f8b4a8",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/41f8b4a8/result.json"
+        }
+      ],
+      "queue_item_id": "l2_decoder_attention_measured_compute_energy_closure_llama7b_v1",
+      "session_id": "s20260622t093327z",
+      "status": "ok",
+      "summary": "6/6 commands succeeded"
+    }
+  },
+  "review_artifact": {
+    "kind": "decision_proposal",
+    "path": "control_plane/shadow_exports/l2_decisions/l2_decoder_attention_measured_compute_energy_closure_llama7b_v1.json",
+    "storage_mode": "repo",
+    "sha256": "aa02967fd1bd4f00de7d6a29d54dce4d26027465d4972f9e1bc44052c36f157e",
+    "payload": {
+      "version": 0.1,
+      "generated_utc": "2026-06-22T09:33:26.175742Z",
+      "item_id": "l2_decoder_attention_measured_compute_energy_closure_llama7b_v1",
+      "run_key": "l2_decoder_attention_measured_compute_energy_closure_llama7b_v1_run_14a2a7f71b70d0eb",
+      "layer": "layer2",
+      "flow": "openroad",
+      "platform": "nangate45",
+      "task_type": "l2_campaign",
+      "source_commit": "8a1546101a72d36317320f41587d1d400369bc48",
+      "review_metadata_source_commit": "8a1546101a72d36317320f41587d1d400369bc48",
+      "objective": "LLM-oriented attention-tail stress campaign for larger sequence lengths and more repeated non-terminal Softmax paths.",
+      "input_manifest": {
+        "sweeps": [
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/sweep_compare_33.json",
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/sweep_compare_33.json"
+        ],
+        "configs": [
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/config_nm1.json",
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/config_nm2.json"
+        ],
+        "design_dirs": [
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp",
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp"
+        ],
+        "macro_manifests": [
+          "runs/designs/npu_macros/gemm_compute_array_fp16_nm1_c250/macro_manifest.json",
+          "runs/designs/npu_macros/gemm_compute_array_fp16_2slot_c300/macro_manifest.json"
+        ],
+        "decoder_contract": {
+          "attention_sram_profile": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_sram_profile__l2_decoder_attention_sram_profile_v1.json",
+          "attention_hbm_command_calibrated_service": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_hbm_command_calibrated_service__l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1.json",
+          "attention_kv_dense_tile_measured_compute": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_dense_tile_measured_compute__l2_decoder_attention_kv_dense_tile_measured_compute_llama7b_v1.json",
+          "attention_measured_compute_energy_closure_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_measured_compute_energy_closure__l2_decoder_attention_measured_compute_energy_closure_llama7b_v1.json",
+          "attention_measured_compute_energy_closure_scope": "Replace the abstract selected-point MAC/cycle assumption with the merged measured dense-tile compute-capacity rows, then recompute Llama7B throughput/energy/area under source-backed HBM energy.",
+          "attention_measured_compute_energy_closure_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_measured_compute_energy_closure__l2_decoder_attention_measured_compute_energy_closure_llama7b_v1.md"
+        },
+        "generated_campaign": {
+          "path": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1/campaign__l2_decoder_attention_measured_compute_energy_closure_llama7b_v1.json",
+          "outputs": {
+            "report_md": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_measured_compute_energy_closure_llama7b_v1/report.md",
+            "results_csv": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_measured_compute_energy_closure_llama7b_v1/results.csv",
+            "campaign_dir": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_measured_compute_energy_closure_llama7b_v1"
+          },
+          "clean_outputs": true,
+          "base_campaign_path": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1/campaign.json"
+        },
+        "candidate_manifests": [
+          "runs/candidates/nangate45/module_candidates.json"
+        ]
+      },
+      "recommendation": {
+        "arch_id": "measured_compute_energy_closure_best",
+        "macro_mode": "decoder_frontier",
+        "objective_rank": 1,
+        "objective_score": "0.0",
+        "latency_ms_mean": 0.144262,
+        "energy_mj_mean": 2.7860165964e-05,
+        "critical_path_ns_mean": 5.557037432204143,
+        "die_area_um2_mean": 2250000.0,
+        "total_power_mw_mean": 0.193122,
+        "flow_elapsed_s_mean": 844.5733333333334,
+        "source": "decoder_evidence",
+        "decoder_model": "llm_decoder_attention_measured_compute_energy_closure_llama7b_v1",
+        "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_measured_compute_energy_closure__l2_decoder_attention_measured_compute_energy_closure_llama7b_v1.json",
+        "bank_count": 16,
+        "active_banks": 16,
+        "die_area_mm2": 1200.0,
+        "compute_arch": "dense_gemm_16x8_k1_p1",
+        "compute_replica_count": 1037,
+        "macs_per_cycle": 132736,
+        "latency_us": 72544.06213406654,
+        "token_throughput_per_s": 13.784725731954872,
+        "energy_mj": 81.66413005453946,
+        "energy_status": "measured_dense_tile_compute_power_clock_gated_with_source_hbm_energy",
+        "dominant_energy_component": "hbm",
+        "total_cycles": 308608,
+        "layer_cycles": 9644,
+        "clock_ns": 6.0669,
+        "sram_area_fraction": 0.4,
+        "compute_logic_area_fraction": 0.4,
+        "total_sram_mib": 2431.869507,
+        "dominant_tile_resource": "tile_attention",
+        "router_latency_cycles_per_hop": 2,
+        "tile_tokens": 512,
+        "legacy_campaign_recommendation": {
+          "arch_id": "fp16_nm1",
+          "macro_mode": "flat_nomacro",
+          "objective_rank": 1,
+          "objective_score": "0.0",
+          "latency_ms_mean": 0.144262,
+          "energy_mj_mean": 2.7860165964e-05,
+          "critical_path_ns_mean": 5.557037432204143,
+          "die_area_um2_mean": 2250000.0,
+          "total_power_mw_mean": 0.193122,
+          "flow_elapsed_s_mean": 844.5733333333334
+        }
+      },
+      "objective_profiles": [],
+      "evaluation_record": {
+        "proposal_id": "prop_l2_decoder_attention_measured_compute_energy_closure_llama7b_v1",
+        "title": "Llama7B attention measured compute energy closure",
+        "primary_question": "Does measured dense-tile compute capacity preserve or replace the current HBM-calibrated Llama7B frontier?",
+        "evaluation_mode": "frontier_detail",
+        "comparison_role": "frontier_closure",
+        "abstraction_layer": "decoder_attention_measured_compute_energy_closure",
+        "expected_direction": "record_measured_compute_energy_closure",
+        "expected_reason": "Replace the abstract selected MAC/cycle point with measured dense-tile compute capacity before final Llama7B ranking.",
+        "summary": "Decoder evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_measured_compute_energy_closure__l2_decoder_attention_measured_compute_energy_closure_llama7b_v1.json: decision=measured_compute_constraints_replace_abstract_frontier; recommended_next_step=Use the measured-compute-constrained frontier for the next architecture decision; then either measure a larger integrated compute macro or explore denser/lower-precision compute.",
+        "outcome": "measured_compute_constraints_replace_abstract_frontier",
+        "expectation_status": "unspecified"
+      },
+      "proposal_assessment": {
+        "proposal_id": "prop_l2_decoder_attention_measured_compute_energy_closure_llama7b_v1",
+        "title": "Llama7B attention measured compute energy closure",
+        "kind": "architecture",
+        "primary_question": "Does measured dense-tile compute capacity preserve or replace the current HBM-calibrated Llama7B frontier?",
+        "evaluation_mode": "frontier_detail",
+        "comparison_role": "frontier_closure",
+        "outcome": "measured_compute_constraints_replace_abstract_frontier",
+        "summary": "Decoder evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_measured_compute_energy_closure__l2_decoder_attention_measured_compute_energy_closure_llama7b_v1.json: decision=measured_compute_constraints_replace_abstract_frontier; recommended_next_step=Use the measured-compute-constrained frontier for the next architecture decision; then either measure a larger integrated compute macro or explore denser/lower-precision compute.",
+        "baseline_ref": null,
+        "baseline_item_id": null,
+        "matched_row_count": 0,
+        "matched_rows": [],
+        "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_measured_compute_energy_closure__l2_decoder_attention_measured_compute_energy_closure_llama7b_v1.json",
+        "decoder_quality": {
+          "diagnosis": {
+            "abstract_compute_target_infeasible_at_measured_tile_density": true,
+            "decision": "measured_compute_constraints_replace_abstract_frontier",
+            "energy_family_changed_vs_hbm_command_calibrated": true,
+            "measured_compute_energy_best": "die1200_dense_gemm_16x8_k1_p1_mac132736_lat1872.29_hbm0.465654_tt512",
+            "measured_energy_family": "die1200:kv8:gqa8:tt512",
+            "previous_energy_family": "die400:kv8:gqa8:tt1024",
+            "previous_hbm_command_calibrated_best": "die400_kv8_gqa8_lat66.432_hbm0.266583_dt6400_eff0.35_tt1024",
+            "recommended_next_step": "Use the measured-compute-constrained frontier for the next architecture decision; then either measure a larger integrated compute macro or explore denser/lower-precision compute."
+          },
+          "remaining_abstractions": [
+            "Compute power is measured per dense tile and replicated to measured-compute capacity rows, not measured as one full integrated 400-1200 mm2 macro.",
+            "Compute energy ranking assumes compute lanes can be clock gated during added HBM command-service stalls; wall-time compute-power energy is reported as an upper bound.",
+            "HBM energy uses source-backed aggregate pJ/byte and the existing command-service latency model, not vendor stack-current signoff.",
+            "NoC/SRAM energy remains profile-scaled rather than routed switching or SRAM compiler signoff.",
+            "Quality remains native-GQA KV8 backed; KV4/MQA remain excluded until recovery evidence is sufficient."
+          ],
+          "best": {
+            "active_banks": 16,
+            "arbitration_efficiency": 0.85,
+            "arch_id": "measured_compute_energy_closure_best",
+            "attention_heads": 32,
+            "bank_bandwidth_bytes_per_cycle": 2048.0,
+            "bank_conflict_efficiency": 0.75,
+            "bank_count": 16,
+            "bank_interleave_tokens": 16,
+            "base_latency_us": 1872.293875,
+            "bitcell_area_um2_per_bit": 0.02,
+            "candidate_id": "die1200_dense_gemm_16x8_k1_p1_mac132736_lat1872.29_hbm0.465654_tt512",
+            "clock_ns": 6.0669,
+            "compute_arch": "dense_gemm_16x8_k1_p1",
+            "compute_area_um2": 479602130.0,
+            "compute_budget_um2": 480000000.0,
+            "compute_logic_area_fraction": 0.4,
+            "compute_power_mw": 9664.84,
+            "compute_replica_count": 1037,
+            "compute_wait_cycles": 13,
+            "data_rate_mtps": 9000,
+            "die_area_mm2": 1200.0,
+            "dominant_energy_component": "hbm",
+            "dominant_tile_resource": "tile_attention",
+            "effective_hbm_bytes_per_cycle": 41934.4128,
+            "energy_components": {
+              "compute_mj": 18.095420734855,
+              "hbm_mj": 63.520046663430314,
+              "noc_mj": 0.04726377605496832,
+              "sram_mj": 0.0013988801991727702
+            },
+            "energy_mj": 81.66413005453946,
+            "energy_status": "measured_dense_tile_compute_power_clock_gated_with_source_hbm_energy",
+            "hbm_byte_share": 0.465654,
+            "hbm_efficiency": 0.75,
+            "hbm_energy": {
+              "energy_mj": 63.520046663430314,
+              "energy_pj_per_byte": 31.76,
+              "read_bytes": 1999968701.251584,
+              "status": "source_backed_aggregate_hbm_energy",
+              "write_bytes": 32768.0
+            },
+            "hbm_outstanding": 16,
+            "hbm_service": {
+              "base_latency_us": 1872.293875,
+              "hbm_latency_weight": 0.465654,
+              "hidden_command_cycles_per_burst": 1.9798989873223327,
+              "latency_us": 72544.06213406654,
+              "modeled_effective_hbm_bytes_per_cycle": 511.0190307611322,
+              "original_effective_hbm_bytes_per_cycle": 41934.4128,
+              "payload_cycles_per_burst": 0.02394027963180281,
+              "service_latency_scale": 82.06037402861729
+            },
+            "hbm_stall_cycles": 0,
+            "hidden_size": 4096,
+            "kv_bits": 8,
+            "kv_cache_mib": 4096.0,
+            "kv_heads": 4,
+            "kv_sharing": "gqa8",
+            "kv_write_shared_cycles": 1,
+            "label": "llama7b_proxy",
+            "latency_us": 72544.06213406654,
+            "layer_cycles": 9644,
+            "layers": 32,
+            "local_sram_fraction": 0.1,
+            "macs_per_cycle": 132736,
+            "measured_block_area_um2": 462490.0,
+            "measured_block_clock_ns": 6.0669,
+            "measured_block_macs_per_cycle": 128,
+            "measured_block_power_mw": 9.32,
+            "measured_compute_energy": {
+              "compute_active_latency_us": 1872.293875,
+              "compute_arch": "dense_gemm_16x8_k1_p1",
+              "compute_area_um2": 479602130.0,
+              "compute_power_mw": 9664.84,
+              "compute_replica_count": 1037,
+              "energy_mj": 18.095420734855,
+              "macs_per_cycle": 132736,
+              "metrics_csv": "runs/designs/npu_blocks/npu_dense_gemm_tile_fp16_16x8_k1_p1/metrics.csv",
+              "metrics_param_hash": "498124b7",
+              "metrics_tag": "npu_dense_gemm_tile_v2_scale_hier",
+              "status": "measured_dense_tile_power_replicated_to_row_capacity",
+              "wall_latency_us": 72544.06213406654,
+              "wall_time_power_energy_upper_bound_mj": 701.1267534758116
+            },
+            "metrics_csv": "runs/designs/npu_blocks/npu_dense_gemm_tile_fp16_16x8_k1_p1/metrics.csv",
+            "metrics_param_hash": "498124b7",
+            "metrics_tag": "npu_dense_gemm_tile_v2_scale_hier",
+            "noc_bandwidth_bytes_per_cycle": 32768.0,
+            "noc_effective_bytes_per_cycle": 27852.8,
+            "noc_energy": {
+              "energy_mj": 0.04726377605496832,
+              "energy_pj_per_byte_hop": 0.02,
+              "hops": 1.0,
+              "payload_bytes": 2363188802.748416,
+              "status": "profile_payload_byte_hop"
+            },
+            "noc_hops": 1,
+            "prefetch_distance_tiles": 4,
+            "prefetch_stall_cycles": 145448,
+            "prefetch_start": "during_qkv",
+            "pseudo_channel_width_bits": 64,
+            "pseudo_channels_per_stack": 16,
+            "qkv_cycles": 158,
+            "raw_hbm_bytes_per_cycle": 55912.5504,
+            "reserved_area_fraction": 0.1,
+            "router_latency_cycles_per_hop": 2,
+            "sequence_length": 131072,
+            "shared_capacity_mib": 2188.682556,
+            "shared_stall_cycles": 13,
+            "sram_area_fraction": 0.4,
+            "sram_energy": {
+              "energy_mj": 0.0013988801991727702,
+              "energy_pj": 1398880.1991727701,
+              "missing_instances": [
+                "softmax_stats_buffer"
+              ],
+              "read_bytes": 2294998594.748416,
+              "read_pj_per_byte": 0.0006095209352873802,
+              "status": "profile_scaled_from_measured_cacti_sram_buffers",
+              "write_bytes": 32768.0,
+              "write_pj_per_byte": 0.0009310674588713034
+            },
+            "stack_count": 8,
+            "tile_attention_cycles": 37,
+            "tile_count": 256,
+            "tile_hbm_cycles": 6,
+            "tile_shared_path_cycles": 13,
+            "tile_tokens": 512,
+            "token_throughput_per_s": 13.784725731954872,
+            "total_cycles": 308608,
+            "total_sram_mib": 2431.869507,
+            "usable_sram_fraction": 0.85,
+            "vector_ops_per_cycle": 16592,
+            "vector_ops_per_mac_assumption": 0.125,
+            "virtual_channels": 4
+          }
+        }
+      },
+      "source_refs": {
+        "best_point_json": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_measured_compute_energy_closure_llama7b_v1/best_point.json",
+        "summary_csv": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_measured_compute_energy_closure_llama7b_v1/summary.csv",
+        "results_csv": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_measured_compute_energy_closure_llama7b_v1/results.csv",
+        "report_md": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_measured_compute_energy_closure_llama7b_v1/report.md",
+        "focused_candidate_schedule_yml": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_measured_compute_energy_closure_llama7b_v1/artifacts/mapper/fp16_nm1/tail_attn4_s256_h64/schedule.yml",
+        "focused_candidate_descriptors_bin": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_measured_compute_energy_closure_llama7b_v1/artifacts/mapper/fp16_nm1/tail_attn4_s256_h64/descriptors.bin",
+        "focused_candidate_perf_trace_json": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_measured_compute_energy_closure_llama7b_v1/artifacts/perf/fp16_nm1/tail_attn4_s256_h64/trace.json",
+        "focused_model_artifacts": [
+          {
+            "model_id": "tail_attn4_s256_h64",
+            "schedule_yml": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_measured_compute_energy_closure_llama7b_v1/artifacts/mapper/fp16_nm1/tail_attn4_s256_h64/schedule.yml",
+            "descriptors_bin": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_measured_compute_energy_closure_llama7b_v1/artifacts/mapper/fp16_nm1/tail_attn4_s256_h64/descriptors.bin",
+            "perf_trace_json": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_measured_compute_energy_closure_llama7b_v1/artifacts/perf/fp16_nm1/tail_attn4_s256_h64/trace.json"
+          },
+          {
+            "model_id": "tail_attn6_s128_h64",
+            "schedule_yml": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_measured_compute_energy_closure_llama7b_v1/artifacts/mapper/fp16_nm1/tail_attn6_s128_h64/schedule.yml",
+            "descriptors_bin": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_measured_compute_energy_closure_llama7b_v1/artifacts/mapper/fp16_nm1/tail_attn6_s128_h64/descriptors.bin",
+            "perf_trace_json": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_measured_compute_energy_closure_llama7b_v1/artifacts/perf/fp16_nm1/tail_attn6_s128_h64/trace.json"
+          },
+          {
+            "model_id": "tail_attn6_s256_h64",
+            "schedule_yml": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_measured_compute_energy_closure_llama7b_v1/artifacts/mapper/fp16_nm1/tail_attn6_s256_h64/schedule.yml",
+            "descriptors_bin": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_measured_compute_energy_closure_llama7b_v1/artifacts/mapper/fp16_nm1/tail_attn6_s256_h64/descriptors.bin",
+            "perf_trace_json": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_measured_compute_energy_closure_llama7b_v1/artifacts/perf/fp16_nm1/tail_attn6_s256_h64/trace.json"
+          }
+        ],
+        "decoder_attention_measured_compute_energy_closure_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_measured_compute_energy_closure__l2_decoder_attention_measured_compute_energy_closure_llama7b_v1.json",
+        "decoder_attention_measured_compute_energy_closure_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_measured_compute_energy_closure__l2_decoder_attention_measured_compute_energy_closure_llama7b_v1.md"
+      }
+    }
+  },
+  "developer_loop": {
+    "comparison": {
+      "role": "frontier_closure",
+      "paired_baseline_item_id": ""
+    },
+    "evaluation": {
+      "mode": "frontier_detail",
+      "expected_reason": "Replace the abstract selected MAC/cycle point with measured dense-tile compute capacity before final Llama7B ranking.",
+      "expected_direction": "record_measured_compute_energy_closure"
+    },
+    "abstraction": {
+      "layer": "decoder_attention_measured_compute_energy_closure"
+    },
+    "proposal_id": "prop_l2_decoder_attention_measured_compute_energy_closure_llama7b_v1",
+    "dependencies": {
+      "item_ids": [
+        "l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    },
+    "proposal_path": "docs/proposals/prop_l2_decoder_attention_measured_compute_energy_closure_llama7b_v1/proposal.json"
+  },
+  "submission_history": null,
+  "pr_payload": {
+    "branch": "eval/l2_decoder_attention_measured_compute_energy_closure_llama7b_v1/s20260622t093327z",
+    "title": "eval: run layer2 campaign npu_e2e_eval_llm_attention_tail_stress_v1 on nangate45",
+    "body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260622t093327z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l2_decoder_attention_measured_compute_energy_closure_llama7b_v1"
+    },
+    "body_md": "## Summary\n- item_id: `l2_decoder_attention_measured_compute_energy_closure_llama7b_v1`\n- run_key: `l2_decoder_attention_measured_compute_energy_closure_llama7b_v1_run_14a2a7f71b70d0eb`\n- layer: `layer2`\n- task_type: `l2_campaign`\n- status: `ok`\n- summary: `6/6 commands succeeded`\n- queue_snapshot: `control_plane/shadow_exports/review/l2_decoder_attention_measured_compute_energy_closure_llama7b_v1/evaluated.json`\n- metrics_rows_count: `24`\n- review_artifact: `decision_proposal` at `control_plane/shadow_exports/l2_decisions/l2_decoder_attention_measured_compute_energy_closure_llama7b_v1.json`\n\n## Developer Context\n- proposal_id: `prop_l2_decoder_attention_measured_compute_energy_closure_llama7b_v1`\n- proposal_path: `docs/proposals/prop_l2_decoder_attention_measured_compute_energy_closure_llama7b_v1/proposal.json`\n- reviewer_first_read: `docs/proposals/prop_l2_decoder_attention_measured_compute_energy_closure_llama7b_v1/proposal.json` plus `docs/developer_agent_review.md`\n- execution_source_commit: `8a1546101a72d36317320f41587d1d400369bc48`\n- review_metadata_source_commit: `8a1546101a72d36317320f41587d1d400369bc48`\n\n## Evaluation Mode\n- evaluation_mode: `frontier_detail`\n- abstraction_layer: `decoder_attention_measured_compute_energy_closure`\n- comparison_role: `frontier_closure`\n- expected_direction: `record_measured_compute_energy_closure`\n- expected_reason: `Replace the abstract selected MAC/cycle point with measured dense-tile compute capacity before final Llama7B ranking.`\n- expectation_status: `unspecified`\n- evaluation_summary: `Decoder evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_measured_compute_energy_closure__l2_decoder_attention_measured_compute_energy_closure_llama7b_v1.json: decision=measured_compute_constraints_replace_abstract_frontier; recommended_next_step=Use the measured-compute-constrained frontier for the next architecture decision; then either measure a larger integrated compute macro or explore denser/lower-precision compute.`\n\n## Focused Comparison\n- primary_question: `Does measured dense-tile compute capacity preserve or replace the current HBM-calibrated Llama7B frontier?`\n- comparison_role: `frontier_closure`\n- proposal_outcome: `measured_compute_constraints_replace_abstract_frontier`\n- comparison_summary: `Decoder evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_measured_compute_energy_closure__l2_decoder_attention_measured_compute_energy_closure_llama7b_v1.json: decision=measured_compute_constraints_replace_abstract_frontier; recommended_next_step=Use the measured-compute-constrained frontier for the next architecture decision; then either measure a larger integrated compute macro or explore denser/lower-precision compute.`\n- baseline_ref: `None`\n- baseline_item_id: `None`\n\n## Checklist\n- [ ] Commit lightweight campaign artifacts only\n- [ ] Include metrics row references in result.metrics_rows\n- [ ] Keep committed result_path fields repo-portable\n- [ ] Run python3 scripts/validate_runs.py --skip_eval_queue before pushing\n",
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Include metrics row references in result.metrics_rows",
+      "Keep committed result_path fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ]
+  }
+}
