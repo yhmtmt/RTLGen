@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_hbm_energy_sensitivity_llama7b_v1",
+  "decision": "iterate",
+  "pr_number": 973,
+  "merge_commit": "90c7946a1ffdcc9265bcb5ba794199372097b5ba",
+  "merged_utc": "2026-06-22T08:35:16.205792Z"
+}

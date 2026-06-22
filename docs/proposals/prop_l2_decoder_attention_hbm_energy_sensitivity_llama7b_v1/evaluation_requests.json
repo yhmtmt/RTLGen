@@ -23,8 +23,12 @@
         "reason": "Expose sensitivity to the dominant HBM pJ/byte energy term before claiming an energy-optimal Llama7B attention point."
       },
       "cost_class": "low",
-      "notes": "This request must run on remote evaluator eval-daemon-b7c2d9c80c1c."
+      "notes": "This request must run on remote evaluator eval-daemon-b7c2d9c80c1c. Merged via PR #973 and merge 90c7946a1ffdcc9265bcb5ba794199372097b5ba at 2026-06-22T08:35:16.205792Z.",
+      "status": "merged",
+      "merged_pr_number": 973,
+      "merge_commit": "90c7946a1ffdcc9265bcb5ba794199372097b5ba",
+      "merged_utc": "2026-06-22T08:35:16.205792Z"
     }
   ],
-  "source_commit": "d9f42e55"
+  "source_commit": "76e4dad9e738e331f924df8f2e45ffa2a6a01088"
 }
