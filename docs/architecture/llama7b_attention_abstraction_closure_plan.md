@@ -50,6 +50,20 @@ than free or heuristic assumptions.
   - the frontier is therefore sensitive to the dominant HBM energy term and
     still needs HBM/DRAM service-energy closure before claiming an
     energy-optimal point
+- The HBM/DRAM service-energy result
+  `l2_decoder_attention_hbm_dram_service_energy_llama7b_v1` is merged by
+  PR #975. It reports:
+  - selected energy/latency/balanced family remains the `400.0 mm2` `gqa8/kv8`
+    point with `tile_tokens=1024`
+  - latency: `105.37783453568113 us/token`
+  - token throughput: `9489.661695993555 token/s`
+  - total energy: `3.8321431139716426 mJ/token`
+  - compute energy: `2.41357553664 mJ/token`
+  - HBM energy: `1.4021664896700032 mJ/token`, using explicit but unsourced
+    command-class pJ parameters
+  - dominant energy component under those parameters: `compute`
+  - next result: calibrate HBM energy against source-backed aggregate HBM
+    pJ/bit references before accepting the compute-dominance conclusion
 - There is no active queue item for this closure stage. New evaluations should
   continue to dispatch only to the remote evaluator
   `eval-daemon-b7c2d9c80c1c`.
@@ -69,15 +83,16 @@ than free or heuristic assumptions.
 2. HBM/DRAM and on-chip service detail
    - Scope: replace aggregate HBM efficiency and compact NoC/SRAM service caps
      with a more explicit controller, arbitration, and contention model.
-   - Status: partially bounded by the HBM energy sensitivity result, but not
-     cycle-accurate. The current selected frontier is HBM-sensitive and still
-     needs a controller-derived service and command-class energy model.
+   - Status: partially bounded by the HBM energy sensitivity result and the
+     merged HBM/DRAM command-service energy result, but not cycle-accurate.
+     The command-service result uses explicit read-hit, read-miss, write,
+     activate/precharge, and command pJ parameters, but those pJ values are not
+     source calibrated.
    - Next result: run
-     `l2_decoder_attention_hbm_dram_service_energy_llama7b_v1`, consuming the
-     merged HBM sensitivity result and HBM controller artifact, to determine
-     whether row-hit, burst, outstanding-request, activate/precharge, and
-     command accounting changes the latency-best, energy-best, balanced, or
-     Pareto frontier.
+     `l2_decoder_attention_hbm_energy_calibration_llama7b_v1`, consuming the
+     merged HBM/DRAM service-energy result and design-registry HBM energy
+     references, to determine whether source-backed aggregate HBM pJ/bit bounds
+     preserve the energy-best family and dominant energy component.
 
 3. Composed q12/PWL softmax datapath density recovery
    - Scope: score max, exponent approximation, sum accumulation, reciprocal
@@ -124,10 +139,10 @@ than free or heuristic assumptions.
 ## Ordering
 
 The next evaluation should close the highest-impact remaining comparison term:
-HBM/DRAM service-energy detail. The merged HBM energy sensitivity result shows
-that the energy optimum moves under the HBM pJ/byte assumption, so the next job
-should replace the scalar HBM energy term with explicit row-hit, burst,
-outstanding-request, activate/precharge, and command accounting. After that,
-calibrate the HBM pJ parameters from source-backed HBM stack data and directly
-measure or bound the selected compute service point. All new evaluation jobs
-should run on the remote evaluator, not the devcontainer.
+source-backed HBM energy calibration. The merged HBM/DRAM service-energy result
+uses explicit command-class accounting, but the pJ values were model parameters.
+The next job should recompute the retained frontier against source-backed HBM
+pJ/bit anchors from the design registry. After that, directly measure or bound
+the selected compute service point if the source-backed HBM calibration preserves
+the selected family. All new evaluation jobs should run on the remote evaluator,
+not the devcontainer.

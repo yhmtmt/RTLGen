@@ -1,0 +1,73 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_hbm_energy_calibration_llama7b_v1",
+  "created_utc": "2026-06-22T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_attention_hbm_energy_calibration",
+  "title": "Llama7B attention source-backed HBM energy calibration",
+  "hypothesis": "The merged HBM/DRAM service-energy result uses explicit command-class pJ parameters, but those values are not source calibrated. Recomputing the selected Llama7B frontier against source-backed aggregate HBM pJ/bit references should expose whether the energy-best point and dominant energy component remain stable.",
+  "direct_comparison": {
+    "primary_question": "Does source-backed aggregate HBM pJ/bit calibration preserve or move the Llama7B HBM/DRAM service-energy frontier?",
+    "include": [
+      "consume the merged HBM/DRAM service-energy result",
+      "consume HBM2/HBM2E/HBM3 aggregate energy references from the design registry",
+      "recompute HBM energy for retained service-model frontier rows",
+      "report latency-best, energy-best, dominant energy component, and remaining abstractions under each source-backed HBM energy anchor"
+    ],
+    "exclude": [
+      "new OpenROAD/PPA runs",
+      "vendor stack-current-table signoff",
+      "cycle-accurate HBM controller simulation",
+      "new precision or QAT jobs"
+    ],
+    "follow_on_broad_sweep": [
+      "If calibrated HBM dominates or moves the point, replace aggregate pJ/bit bounds with a controller/current-calibrated HBM model.",
+      "If the point remains stable, measure or bound compute energy at the selected MAC/cycle target."
+    ]
+  },
+  "expected_benefit": [
+    "Replaces unsourced HBM pJ assumptions with explicit source-backed memory-energy anchors.",
+    "Prevents claiming compute or HBM dominance before the dominant memory term has a literature-backed range.",
+    "Keeps the result revisable by storing the external reference measurements in the design registry."
+  ],
+  "risks": [
+    "External HBM pJ/bit references are aggregate access-energy anchors, not command-class stack-current signoff.",
+    "The calibration preserves the existing HBM/DRAM service latency model and does not add cycle-accurate controller simulation.",
+    "Compute energy remains scaled from a nearest measured dense compute reference."
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_hbm_energy_calibration_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Calibrate retained Llama7B HBM/DRAM service-energy frontier rows against source-backed aggregate HBM pJ/bit references.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_hbm_energy_calibration",
+      "comparison_role": "frontier_closure",
+      "cost_class": "low",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_hbm_dram_service_energy_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "record_source_backed_hbm_energy_calibration",
+        "reason": "Determine whether source-backed aggregate HBM energy changes the current Llama7B service-energy frontier before final energy ranking."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_hbm_dram_service_energy__l2_decoder_attention_hbm_dram_service_energy_llama7b_v1.json"
+  ],
+  "source_refs": [
+    "runs/design_registry/external_measurements.jsonl",
+    "runs/design_registry/comparison_claims.jsonl",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_hbm_dram_service_energy__l2_decoder_attention_hbm_dram_service_energy_llama7b_v1.json"
+  ],
+  "knowledge_refs": [
+    "docs/architecture/llama7b_attention_abstraction_closure_plan.md",
+    "control_plane/control_plane/services/l2_task_generator.py",
+    "npu/eval/audit_llm_decoder_attention_hbm_energy_calibration.py"
+  ]
+}
