@@ -1,0 +1,544 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-06-22T09:19:41.316684Z",
+  "control_plane_source_commit": "fe4ca975710eb00fcc06a99579ded3d59c58d58b",
+  "review_metadata_source_commit": "fe4ca975710eb00fcc06a99579ded3d59c58d58b",
+  "item_id": "l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1",
+  "run_key": "l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1_run_9e58828040c0e65a",
+  "layer": "layer2",
+  "flow": "openroad",
+  "task_type": "l2_campaign",
+  "source_commit": "fe4ca975710eb00fcc06a99579ded3d59c58d58b",
+  "queue_snapshot": {
+    "path": "control_plane/shadow_exports/review/l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1/evaluated.json",
+    "result": {
+      "branch": "eval/l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1/s20260622t091938z",
+      "completed_utc": "2026-06-22T09:19:35.974385Z",
+      "evaluator_id": "control_plane",
+      "executor": "@control_plane",
+      "host": "b7c2d9c80c1c",
+      "identity_block": "[role:evaluator][account:control_plane][session:s20260622t091938z][host:b7c2d9c80c1c][item:l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1]",
+      "metrics_rows": [
+        {
+          "tag": "npu_fp16_nm1_cmp33_flat_nomacro",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "362e11ef",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/362e11ef/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_hier_macro",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "6f738885",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/6f738885/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r1",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "3e84d92b",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/3e84d92b/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r2",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "13a2c990",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/13a2c990/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r3",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "34eeb6e5",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/34eeb6e5/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r4",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "439adb1e",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/439adb1e/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r5",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "936b2a7b",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/936b2a7b/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_hier_macro_r1",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "54a235ae",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/54a235ae/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_hier_macro_r2",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "f190a078",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/f190a078/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_hier_macro_r3",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "b874bef7",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/b874bef7/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_hier_macro_r4",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "3a650f98",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/3a650f98/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_hier_macro_r5",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "3fa4f194",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/3fa4f194/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_flat_nomacro",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "033cdfdc",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/033cdfdc/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_hier_macro",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "c4548bca",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/c4548bca/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_flat_nomacro_r1",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "258015dc",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/258015dc/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_flat_nomacro_r2",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "95526f98",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/95526f98/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_flat_nomacro_r3",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "099823db",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/099823db/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_flat_nomacro_r4",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "b276f2e7",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/b276f2e7/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_flat_nomacro_r5",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "f0b4f9e6",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/f0b4f9e6/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_hier_macro_r1",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "5d0ac971",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/5d0ac971/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_hier_macro_r2",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "a9ae3c35",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/a9ae3c35/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_hier_macro_r3",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "c51fa4a2",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/c51fa4a2/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_hier_macro_r4",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "98a03366",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/98a03366/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_hier_macro_r5",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "41f8b4a8",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/41f8b4a8/result.json"
+        }
+      ],
+      "queue_item_id": "l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1",
+      "session_id": "s20260622t091938z",
+      "status": "ok",
+      "summary": "6/6 commands succeeded"
+    }
+  },
+  "review_artifact": {
+    "kind": "decision_proposal",
+    "path": "control_plane/shadow_exports/l2_decisions/l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1.json",
+    "storage_mode": "repo",
+    "sha256": "7db971ac809ff9196c15ed867b0cedacccc888d0954c24f052097f5764eb1dde",
+    "payload": {
+      "version": 0.1,
+      "generated_utc": "2026-06-22T09:19:37.378815Z",
+      "item_id": "l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1",
+      "run_key": "l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1_run_9e58828040c0e65a",
+      "layer": "layer2",
+      "flow": "openroad",
+      "platform": "nangate45",
+      "task_type": "l2_campaign",
+      "source_commit": "fe4ca975710eb00fcc06a99579ded3d59c58d58b",
+      "review_metadata_source_commit": "fe4ca975710eb00fcc06a99579ded3d59c58d58b",
+      "objective": "LLM-oriented attention-tail stress campaign for larger sequence lengths and more repeated non-terminal Softmax paths.",
+      "input_manifest": {
+        "sweeps": [
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/sweep_compare_33.json",
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/sweep_compare_33.json"
+        ],
+        "configs": [
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/config_nm1.json",
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/config_nm2.json"
+        ],
+        "design_dirs": [
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp",
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp"
+        ],
+        "macro_manifests": [
+          "runs/designs/npu_macros/gemm_compute_array_fp16_nm1_c250/macro_manifest.json",
+          "runs/designs/npu_macros/gemm_compute_array_fp16_2slot_c300/macro_manifest.json"
+        ],
+        "decoder_contract": {
+          "attention_hbm_energy_calibration": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_hbm_energy_calibration__l2_decoder_attention_hbm_energy_calibration_llama7b_v1.json",
+          "attention_hbm_dram_service_energy": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_hbm_dram_service_energy__l2_decoder_attention_hbm_dram_service_energy_llama7b_v1.json",
+          "attention_hbm_command_calibrated_service_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_hbm_command_calibrated_service__l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1.json",
+          "attention_hbm_command_calibrated_service_scope": "Scale the HBM/DRAM command-class service-energy model to the source-backed HBM aggregate pJ/bit calibration and sweep row-hit sensitivity. Report whether command-mix-aware service accounting preserves the Llama7B energy-best family.",
+          "attention_hbm_command_calibrated_service_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_hbm_command_calibrated_service__l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1.md"
+        },
+        "generated_campaign": {
+          "path": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1/campaign__l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1.json",
+          "outputs": {
+            "report_md": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1/report.md",
+            "results_csv": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1/results.csv",
+            "campaign_dir": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1"
+          },
+          "clean_outputs": true,
+          "base_campaign_path": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1/campaign.json"
+        },
+        "candidate_manifests": [
+          "runs/candidates/nangate45/module_candidates.json"
+        ]
+      },
+      "recommendation": {
+        "arch_id": "hbm_command_calibrated_service_best",
+        "macro_mode": "decoder_frontier",
+        "objective_rank": 1,
+        "objective_score": "0.0",
+        "latency_ms_mean": 0.144262,
+        "energy_mj_mean": 2.7860165964e-05,
+        "critical_path_ns_mean": 5.557037432204143,
+        "die_area_um2_mean": 2250000.0,
+        "total_power_mw_mean": 0.193122,
+        "flow_elapsed_s_mean": 844.5733333333334,
+        "source": "decoder_evidence",
+        "decoder_model": "llm_decoder_attention_hbm_command_calibrated_service_llama7b_v1",
+        "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_hbm_command_calibrated_service__l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1.json",
+        "die_area_mm2": 400.0,
+        "macs_per_cycle": 524288.0,
+        "latency_us": 105.37783453568113,
+        "token_throughput_per_s": 9489.661695993555,
+        "energy_mj": 11.522041553338012,
+        "energy_status": "hbm_command_class_scaled_to_source_aggregate_not_stack_current_signoff",
+        "dominant_energy_component": "hbm",
+        "total_sram_mib": 1001.358032,
+        "tile_tokens": 1024,
+        "legacy_campaign_recommendation": {
+          "arch_id": "fp16_nm1",
+          "macro_mode": "flat_nomacro",
+          "objective_rank": 1,
+          "objective_score": "0.0",
+          "latency_ms_mean": 0.144262,
+          "energy_mj_mean": 2.7860165964e-05,
+          "critical_path_ns_mean": 5.557037432204143,
+          "die_area_um2_mean": 2250000.0,
+          "total_power_mw_mean": 0.193122,
+          "flow_elapsed_s_mean": 844.5733333333334
+        }
+      },
+      "objective_profiles": [],
+      "evaluation_record": {
+        "proposal_id": "prop_l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1",
+        "title": "Llama7B attention HBM command-calibrated service closure",
+        "primary_question": "Does source-scaled command-class HBM service accounting preserve the Llama7B energy-best family under row-hit sensitivity?",
+        "evaluation_mode": "frontier_detail",
+        "comparison_role": "frontier_closure",
+        "abstraction_layer": "decoder_attention_hbm_command_calibrated_service",
+        "expected_direction": "record_hbm_command_calibrated_service",
+        "expected_reason": "Scale the command-class HBM service model to source-backed aggregate HBM energy and test row-hit sensitivity before final Llama7B energy ranking.",
+        "summary": "Decoder evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_hbm_command_calibrated_service__l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1.json: decision=hbm_command_calibrated_service_preserves_frontier; recommended_next_step=Use the command-calibrated HBM service result to decide whether to invest next in cycle-accurate HBM controller/current modeling or in direct compute-energy measurement.",
+        "outcome": "hbm_command_calibrated_service_preserves_frontier",
+        "expectation_status": "unspecified"
+      },
+      "proposal_assessment": {
+        "proposal_id": "prop_l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1",
+        "title": "Llama7B attention HBM command-calibrated service closure",
+        "kind": "architecture",
+        "primary_question": "Does source-scaled command-class HBM service accounting preserve the Llama7B energy-best family under row-hit sensitivity?",
+        "evaluation_mode": "frontier_detail",
+        "comparison_role": "frontier_closure",
+        "outcome": "hbm_command_calibrated_service_preserves_frontier",
+        "summary": "Decoder evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_hbm_command_calibrated_service__l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1.json: decision=hbm_command_calibrated_service_preserves_frontier; recommended_next_step=Use the command-calibrated HBM service result to decide whether to invest next in cycle-accurate HBM controller/current modeling or in direct compute-energy measurement.",
+        "baseline_ref": null,
+        "baseline_item_id": null,
+        "matched_row_count": 0,
+        "matched_rows": [],
+        "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_hbm_command_calibrated_service__l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1.json",
+        "decoder_quality": {
+          "diagnosis": {
+            "any_row_hit_scenario_changes_energy_family": false,
+            "command_calibrated_energy_best": "die400_kv8_gqa8_lat66.432_hbm0.266583_dt6400_eff0.35_tt1024",
+            "command_calibrated_energy_family": "die400:kv8:gqa8:tt1024",
+            "decision": "hbm_command_calibrated_service_preserves_frontier",
+            "energy_frontier_changed_vs_hbm_energy_calibration": false,
+            "previous_energy_family": "die400:kv8:gqa8:tt1024",
+            "previous_hbm_energy_calibration_best": "die400_kv8_gqa8_lat66.432_hbm0.266583_dt6400_eff0.35_tt1024",
+            "recommended_next_step": "Use the command-calibrated HBM service result to decide whether to invest next in cycle-accurate HBM controller/current modeling or in direct compute-energy measurement."
+          },
+          "remaining_abstractions": [
+            "HBM command-class terms are globally scaled to an aggregate source pJ/bit anchor; this is not vendor stack-current signoff.",
+            "Row-hit service sensitivity is analytic and reuses the existing HBM controller service model, not a cycle-accurate RTL controller.",
+            "Compute energy remains scaled from the nearest measured dense compute reference.",
+            "NoC/SRAM energy remains profile-scaled rather than routed switching or SRAM compiler signoff."
+          ],
+          "best": {
+            "arch_id": "hbm_command_calibrated_service_best",
+            "base_latency_us": 66.432,
+            "candidate_id": "die400_kv8_gqa8_lat66.432_hbm0.266583_dt6400_eff0.35_tt1024",
+            "data_rate_mtps": 6400,
+            "die_area_mm2": 400.0,
+            "dominant_energy_component": "hbm",
+            "energy_components": {
+              "compute_mj": 2.41357553664,
+              "hbm_mj": 9.092064929036372,
+              "noc_mj": 0.01592105910665216,
+              "sram_mj": 0.00048002855498715
+            },
+            "energy_mj": 11.522041553338012,
+            "energy_status": "hbm_command_class_scaled_to_source_aggregate_not_stack_current_signoff",
+            "hbm_byte_share": 0.266583,
+            "hbm_command_calibrated_energy": {
+              "activate_precharge_pj": 543786172.8233826,
+              "activate_precharge_pj_per_row": 19452.893068018268,
+              "burst_count": 279565,
+              "command_pj": 9063913.417600878,
+              "command_pj_per_burst": 32.42148844669711,
+              "energy_mj": 9.092064929036372,
+              "energy_pj": 9092064929.036371,
+              "miss_row_count": 27954,
+              "read_bytes": 286241316.667392,
+              "read_hit_pj": 6681866069.735438,
+              "read_hit_pj_per_byte": 25.93719075735769,
+              "read_miss_pj": 1856073908.2598436,
+              "read_miss_pj_per_byte": 64.84297689339422,
+              "row_hit_rate": 0.9,
+              "row_hit_read_bytes": 257617185.00065282,
+              "row_miss_read_bytes": 28624131.666739196,
+              "status": "hbm_command_class_energy_scaled_to_source_aggregate_not_stack_current_signoff",
+              "write_bytes": 32768.0,
+              "write_pj": 1274864.8001056453,
+              "write_pj_per_byte": 38.90578613603654
+            },
+            "hbm_command_calibrated_service": {
+              "base_latency_us": 66.432,
+              "hbm_latency_weight": 0.35,
+              "hidden_command_cycles_per_burst": 1.9798989873223327,
+              "latency_us": 105.37783453568113,
+              "modeled_effective_hbm_bytes_per_cycle": 428.73967312223033,
+              "payload_cycles_per_burst": 0.4084967320261437,
+              "row_hit_rate": 0.9,
+              "service_latency_scale": 2.675003205670294,
+              "token_throughput_per_s": 9489.661695993555
+            },
+            "hbm_dram_energy": {
+              "activate_precharge_pj": 83862000.0,
+              "activate_precharge_pj_per_row": 3000.0,
+              "burst_count": 279565,
+              "command_pj": 1397825.0,
+              "command_pj_per_burst": 5.0,
+              "energy_mj": 1.4021664896700032,
+              "energy_pj": 1402166489.6700032,
+              "miss_row_count": 27954,
+              "read_bytes": 286241316.667392,
+              "read_hit_pj": 1030468740.0026113,
+              "read_hit_pj_per_byte": 4.0,
+              "read_miss_pj": 286241316.66739196,
+              "read_miss_pj_per_byte": 10.0,
+              "row_hit_read_bytes": 257617185.00065282,
+              "row_miss_read_bytes": 28624131.666739196,
+              "status": "hbm_dram_command_class_energy_model_not_signoff",
+              "write_bytes": 32768.0,
+              "write_pj": 196608.0,
+              "write_pj_per_byte": 6.0
+            },
+            "hbm_dram_service": {
+              "arbitration_efficiency": 0.85,
+              "burst_bytes": 1024.0,
+              "hbm_outstanding": 8.0,
+              "hidden_command_cycles_per_burst": 1.9798989873223327,
+              "modeled_effective_hbm_bytes_per_cycle": 428.73967312223033,
+              "modeled_hbm_efficiency": 0.13084096469794626,
+              "original_effective_hbm_bytes_per_cycle": 1146.88,
+              "original_hbm_efficiency": 0.35,
+              "payload_cycles_per_burst": 0.4084967320261437,
+              "raw_hbm_bytes_per_cycle": 3276.8,
+              "request_overhead_cycles": 4.0,
+              "row_hit_rate": 0.9,
+              "row_miss_penalty_cycles": 16.0,
+              "scheduler_efficiency": 0.9,
+              "service_cycles_per_burst": 2.3883957193484764
+            },
+            "hbm_efficiency": 0.35,
+            "hbm_energy_pj_per_byte": 0.0,
+            "hbm_latency_weight": 0.35,
+            "hbm_read_bytes": 286241316.667392,
+            "kv_bits": 8,
+            "kv_sharing": "gqa8",
+            "latency_us": 105.37783453568113,
+            "macs_per_cycle": 524288.0,
+            "precision_status": "quality_backed_conservative",
+            "remaining_energy_abstractions": [
+              "HBM service uses burst/row-hit/outstanding-request accounting, not a cycle-accurate DRAM controller RTL simulation.",
+              "HBM energy is split by command class, but pJ values are explicit model parameters rather than vendor signoff currents.",
+              "Compute energy is still scaled from the nearest measured dense compute reference.",
+              "NoC/SRAM energy uses profile-scaled accounting from the integrated energy closure."
+            ],
+            "service_latency_scale": 2.675003205670294,
+            "source_candidate_id": "die400_kv8_gqa8_lat66.432_hbm0.266583_dt6400_eff0.35_tt1024",
+            "source_latency_resource": "hbm",
+            "tile_tokens": 1024,
+            "token_throughput_per_s": 9489.661695993555,
+            "total_sram_mib": 1001.358032,
+            "total_tile_kv_read_bytes": 1073741824.0,
+            "vector_ops_per_cycle": 65536
+          }
+        }
+      },
+      "source_refs": {
+        "best_point_json": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1/best_point.json",
+        "summary_csv": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1/summary.csv",
+        "results_csv": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1/results.csv",
+        "report_md": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1/report.md",
+        "focused_candidate_schedule_yml": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1/artifacts/mapper/fp16_nm1/tail_attn4_s256_h64/schedule.yml",
+        "focused_candidate_descriptors_bin": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1/artifacts/mapper/fp16_nm1/tail_attn4_s256_h64/descriptors.bin",
+        "focused_candidate_perf_trace_json": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1/artifacts/perf/fp16_nm1/tail_attn4_s256_h64/trace.json",
+        "focused_model_artifacts": [
+          {
+            "model_id": "tail_attn4_s256_h64",
+            "schedule_yml": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1/artifacts/mapper/fp16_nm1/tail_attn4_s256_h64/schedule.yml",
+            "descriptors_bin": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1/artifacts/mapper/fp16_nm1/tail_attn4_s256_h64/descriptors.bin",
+            "perf_trace_json": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1/artifacts/perf/fp16_nm1/tail_attn4_s256_h64/trace.json"
+          },
+          {
+            "model_id": "tail_attn6_s128_h64",
+            "schedule_yml": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1/artifacts/mapper/fp16_nm1/tail_attn6_s128_h64/schedule.yml",
+            "descriptors_bin": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1/artifacts/mapper/fp16_nm1/tail_attn6_s128_h64/descriptors.bin",
+            "perf_trace_json": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1/artifacts/perf/fp16_nm1/tail_attn6_s128_h64/trace.json"
+          },
+          {
+            "model_id": "tail_attn6_s256_h64",
+            "schedule_yml": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1/artifacts/mapper/fp16_nm1/tail_attn6_s256_h64/schedule.yml",
+            "descriptors_bin": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1/artifacts/mapper/fp16_nm1/tail_attn6_s256_h64/descriptors.bin",
+            "perf_trace_json": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1/artifacts/perf/fp16_nm1/tail_attn6_s256_h64/trace.json"
+          }
+        ],
+        "decoder_attention_hbm_command_calibrated_service_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_hbm_command_calibrated_service__l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1.json",
+        "decoder_attention_hbm_command_calibrated_service_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_hbm_command_calibrated_service__l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1.md"
+      }
+    }
+  },
+  "developer_loop": {
+    "comparison": {
+      "role": "frontier_closure",
+      "paired_baseline_item_id": ""
+    },
+    "evaluation": {
+      "mode": "frontier_detail",
+      "expected_reason": "Scale the command-class HBM service model to source-backed aggregate HBM energy and test row-hit sensitivity before final Llama7B energy ranking.",
+      "expected_direction": "record_hbm_command_calibrated_service"
+    },
+    "abstraction": {
+      "layer": "decoder_attention_hbm_command_calibrated_service"
+    },
+    "proposal_id": "prop_l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1",
+    "dependencies": {
+      "item_ids": [
+        "l2_decoder_attention_hbm_energy_calibration_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    },
+    "proposal_path": "docs/proposals/prop_l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1/proposal.json"
+  },
+  "submission_history": null,
+  "pr_payload": {
+    "branch": "eval/l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1/s20260622t091938z",
+    "title": "eval: run layer2 campaign npu_e2e_eval_llm_attention_tail_stress_v1 on nangate45",
+    "body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260622t091938z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1"
+    },
+    "body_md": "## Summary\n- item_id: `l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1`\n- run_key: `l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1_run_9e58828040c0e65a`\n- layer: `layer2`\n- task_type: `l2_campaign`\n- status: `ok`\n- summary: `6/6 commands succeeded`\n- queue_snapshot: `control_plane/shadow_exports/review/l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1/evaluated.json`\n- metrics_rows_count: `24`\n- review_artifact: `decision_proposal` at `control_plane/shadow_exports/l2_decisions/l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1.json`\n\n## Developer Context\n- proposal_id: `prop_l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1`\n- proposal_path: `docs/proposals/prop_l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1/proposal.json`\n- reviewer_first_read: `docs/proposals/prop_l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1/proposal.json` plus `docs/developer_agent_review.md`\n- execution_source_commit: `fe4ca975710eb00fcc06a99579ded3d59c58d58b`\n- review_metadata_source_commit: `fe4ca975710eb00fcc06a99579ded3d59c58d58b`\n\n## Evaluation Mode\n- evaluation_mode: `frontier_detail`\n- abstraction_layer: `decoder_attention_hbm_command_calibrated_service`\n- comparison_role: `frontier_closure`\n- expected_direction: `record_hbm_command_calibrated_service`\n- expected_reason: `Scale the command-class HBM service model to source-backed aggregate HBM energy and test row-hit sensitivity before final Llama7B energy ranking.`\n- expectation_status: `unspecified`\n- evaluation_summary: `Decoder evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_hbm_command_calibrated_service__l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1.json: decision=hbm_command_calibrated_service_preserves_frontier; recommended_next_step=Use the command-calibrated HBM service result to decide whether to invest next in cycle-accurate HBM controller/current modeling or in direct compute-energy measurement.`\n\n## Focused Comparison\n- primary_question: `Does source-scaled command-class HBM service accounting preserve the Llama7B energy-best family under row-hit sensitivity?`\n- comparison_role: `frontier_closure`\n- proposal_outcome: `hbm_command_calibrated_service_preserves_frontier`\n- comparison_summary: `Decoder evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_hbm_command_calibrated_service__l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1.json: decision=hbm_command_calibrated_service_preserves_frontier; recommended_next_step=Use the command-calibrated HBM service result to decide whether to invest next in cycle-accurate HBM controller/current modeling or in direct compute-energy measurement.`\n- baseline_ref: `None`\n- baseline_item_id: `None`\n\n## Checklist\n- [ ] Commit lightweight campaign artifacts only\n- [ ] Include metrics row references in result.metrics_rows\n- [ ] Keep committed result_path fields repo-portable\n- [ ] Run python3 scripts/validate_runs.py --skip_eval_queue before pushing\n",
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Include metrics row references in result.metrics_rows",
+      "Keep committed result_path fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ]
+  }
+}
