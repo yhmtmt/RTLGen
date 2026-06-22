@@ -1,0 +1,253 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-06-22T09:08:06.066572Z",
+  "item_id": "l2_decoder_attention_hbm_energy_calibration_llama7b_v1",
+  "run_key": "l2_decoder_attention_hbm_energy_calibration_llama7b_v1_run_75da55250a5254ab",
+  "layer": "layer2",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l2_campaign",
+  "source_commit": "53584274bf7f29e3943ef9c0906a994694cb3908",
+  "review_metadata_source_commit": "53584274bf7f29e3943ef9c0906a994694cb3908",
+  "objective": "LLM-oriented attention-tail stress campaign for larger sequence lengths and more repeated non-terminal Softmax paths.",
+  "input_manifest": {
+    "sweeps": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/sweep_compare_33.json",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/sweep_compare_33.json"
+    ],
+    "configs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/config_nm1.json",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/config_nm2.json"
+    ],
+    "design_dirs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp"
+    ],
+    "macro_manifests": [
+      "runs/designs/npu_macros/gemm_compute_array_fp16_nm1_c250/macro_manifest.json",
+      "runs/designs/npu_macros/gemm_compute_array_fp16_2slot_c300/macro_manifest.json"
+    ],
+    "decoder_contract": {
+      "attention_hbm_dram_service_energy": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_hbm_dram_service_energy__l2_decoder_attention_hbm_dram_service_energy_llama7b_v1.json",
+      "design_registry_comparison_claims": "runs/design_registry/comparison_claims.jsonl",
+      "attention_hbm_energy_calibration_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_hbm_energy_calibration__l2_decoder_attention_hbm_energy_calibration_llama7b_v1.json",
+      "design_registry_external_measurements": "runs/design_registry/external_measurements.jsonl",
+      "attention_hbm_energy_calibration_scope": "Calibrate the merged HBM/DRAM command-service energy result against source-backed aggregate HBM pJ/bit references from the design registry. Report whether the energy-best family and dominant energy component remain stable before promoting an energy-optimal Llama7B point.",
+      "attention_hbm_energy_calibration_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_hbm_energy_calibration__l2_decoder_attention_hbm_energy_calibration_llama7b_v1.md"
+    },
+    "generated_campaign": {
+      "path": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1/campaign__l2_decoder_attention_hbm_energy_calibration_llama7b_v1.json",
+      "outputs": {
+        "report_md": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_hbm_energy_calibration_llama7b_v1/report.md",
+        "results_csv": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_hbm_energy_calibration_llama7b_v1/results.csv",
+        "campaign_dir": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_hbm_energy_calibration_llama7b_v1"
+      },
+      "clean_outputs": true,
+      "base_campaign_path": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1/campaign.json"
+    },
+    "candidate_manifests": [
+      "runs/candidates/nangate45/module_candidates.json"
+    ]
+  },
+  "recommendation": {
+    "arch_id": "hbm_energy_calibrated_best",
+    "macro_mode": "decoder_frontier",
+    "objective_rank": 1,
+    "objective_score": "0.0",
+    "latency_ms_mean": 0.144262,
+    "energy_mj_mean": 2.7860165964e-05,
+    "critical_path_ns_mean": 5.557037432204143,
+    "die_area_um2_mean": 2250000.0,
+    "total_power_mw_mean": 0.193122,
+    "flow_elapsed_s_mean": 844.5733333333334,
+    "source": "decoder_evidence",
+    "decoder_model": "llm_decoder_attention_hbm_energy_calibration_llama7b_v1",
+    "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_hbm_energy_calibration__l2_decoder_attention_hbm_energy_calibration_llama7b_v1.json",
+    "die_area_mm2": 400.0,
+    "macs_per_cycle": 524288.0,
+    "latency_us": 105.37783453568113,
+    "token_throughput_per_s": 9489.661695993555,
+    "energy_mj": 11.522041553338012,
+    "energy_status": "source_backed_aggregate_hbm_energy_not_stack_current_signoff",
+    "dominant_energy_component": "hbm",
+    "total_sram_mib": 1001.358032,
+    "tile_tokens": 1024,
+    "legacy_campaign_recommendation": {
+      "arch_id": "fp16_nm1",
+      "macro_mode": "flat_nomacro",
+      "objective_rank": 1,
+      "objective_score": "0.0",
+      "latency_ms_mean": 0.144262,
+      "energy_mj_mean": 2.7860165964e-05,
+      "critical_path_ns_mean": 5.557037432204143,
+      "die_area_um2_mean": 2250000.0,
+      "total_power_mw_mean": 0.193122,
+      "flow_elapsed_s_mean": 844.5733333333334
+    }
+  },
+  "objective_profiles": [],
+  "evaluation_record": {
+    "proposal_id": "prop_l2_decoder_attention_hbm_energy_calibration_llama7b_v1",
+    "title": "Llama7B attention source-backed HBM energy calibration",
+    "primary_question": "Does source-backed aggregate HBM pJ/bit calibration preserve or move the Llama7B HBM/DRAM service-energy frontier?",
+    "evaluation_mode": "frontier_detail",
+    "comparison_role": "frontier_closure",
+    "abstraction_layer": "decoder_attention_hbm_energy_calibration",
+    "expected_direction": "record_source_backed_hbm_energy_calibration",
+    "expected_reason": "Calibrate the HBM energy component with source-backed HBM stack references before claiming an energy-optimal Llama7B point.",
+    "summary": "Decoder evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_hbm_energy_calibration__l2_decoder_attention_hbm_energy_calibration_llama7b_v1.json: decision=hbm_energy_calibration_preserves_energy_frontier; recommended_next_step=If HBM dominates under source-backed aggregate calibration, replace the aggregate pJ/bit bound with a stack-current/controller-calibrated HBM model before final energy ranking.",
+    "outcome": "hbm_energy_calibration_preserves_energy_frontier",
+    "expectation_status": "unspecified"
+  },
+  "proposal_assessment": {
+    "proposal_id": "prop_l2_decoder_attention_hbm_energy_calibration_llama7b_v1",
+    "title": "Llama7B attention source-backed HBM energy calibration",
+    "kind": "architecture",
+    "primary_question": "Does source-backed aggregate HBM pJ/bit calibration preserve or move the Llama7B HBM/DRAM service-energy frontier?",
+    "evaluation_mode": "frontier_detail",
+    "comparison_role": "frontier_closure",
+    "outcome": "hbm_energy_calibration_preserves_energy_frontier",
+    "summary": "Decoder evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_hbm_energy_calibration__l2_decoder_attention_hbm_energy_calibration_llama7b_v1.json: decision=hbm_energy_calibration_preserves_energy_frontier; recommended_next_step=If HBM dominates under source-backed aggregate calibration, replace the aggregate pJ/bit bound with a stack-current/controller-calibrated HBM model before final energy ranking.",
+    "baseline_ref": null,
+    "baseline_item_id": null,
+    "matched_row_count": 0,
+    "matched_rows": [],
+    "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_hbm_energy_calibration__l2_decoder_attention_hbm_energy_calibration_llama7b_v1.json",
+    "decoder_quality": {
+      "diagnosis": {
+        "calibrated_energy_best": "die400_kv8_gqa8_lat66.432_hbm0.266583_dt6400_eff0.35_tt1024",
+        "calibrated_energy_family": "die400:kv8:gqa8:tt1024",
+        "decision": "hbm_energy_calibration_preserves_energy_frontier",
+        "dominant_energy_component_changed": true,
+        "energy_frontier_changed_vs_hbm_dram_service": false,
+        "previous_energy_family": "die400:kv8:gqa8:tt1024",
+        "previous_hbm_dram_service_energy_best": "die400_kv8_gqa8_lat66.432_hbm0.266583_dt6400_eff0.35_tt1024",
+        "primary_measurement_id": "hbm2_fgdram_micro2017_access_energy",
+        "recommended_next_step": "If HBM dominates under source-backed aggregate calibration, replace the aggregate pJ/bit bound with a stack-current/controller-calibrated HBM model before final energy ranking."
+      },
+      "remaining_abstractions": [
+        "HBM energy is calibrated from aggregate source pJ/bit references, not matched stack-current tables.",
+        "The calibration preserves the HBM/DRAM service latency model but does not simulate a cycle-accurate controller.",
+        "Compute energy remains scaled from the nearest measured dense compute reference until the selected MAC/cycle point is measured.",
+        "NoC/SRAM energy remains profile-scaled rather than routed switching or SRAM compiler signoff."
+      ],
+      "best": {
+        "arch_id": "hbm_energy_calibrated_best",
+        "base_latency_us": 66.432,
+        "candidate_id": "die400_kv8_gqa8_lat66.432_hbm0.266583_dt6400_eff0.35_tt1024",
+        "data_rate_mtps": 6400,
+        "die_area_mm2": 400.0,
+        "dominant_energy_component": "hbm",
+        "energy_components": {
+          "compute_mj": 2.41357553664,
+          "hbm_mj": 9.092064929036372,
+          "noc_mj": 0.01592105910665216,
+          "sram_mj": 0.00048002855498715
+        },
+        "energy_mj": 11.522041553338012,
+        "energy_status": "source_backed_aggregate_hbm_energy_not_stack_current_signoff",
+        "hbm_byte_share": 0.266583,
+        "hbm_dram_energy": {
+          "activate_precharge_pj": 83862000.0,
+          "activate_precharge_pj_per_row": 3000.0,
+          "burst_count": 279565,
+          "command_pj": 1397825.0,
+          "command_pj_per_burst": 5.0,
+          "energy_mj": 1.4021664896700032,
+          "energy_pj": 1402166489.6700032,
+          "miss_row_count": 27954,
+          "read_bytes": 286241316.667392,
+          "read_hit_pj": 1030468740.0026113,
+          "read_hit_pj_per_byte": 4.0,
+          "read_miss_pj": 286241316.66739196,
+          "read_miss_pj_per_byte": 10.0,
+          "row_hit_read_bytes": 257617185.00065282,
+          "row_miss_read_bytes": 28624131.666739196,
+          "status": "hbm_dram_command_class_energy_model_not_signoff",
+          "write_bytes": 32768.0,
+          "write_pj": 196608.0,
+          "write_pj_per_byte": 6.0
+        },
+        "hbm_dram_service": {
+          "arbitration_efficiency": 0.85,
+          "burst_bytes": 1024.0,
+          "hbm_outstanding": 8.0,
+          "hidden_command_cycles_per_burst": 1.9798989873223327,
+          "modeled_effective_hbm_bytes_per_cycle": 428.73967312223033,
+          "modeled_hbm_efficiency": 0.13084096469794626,
+          "original_effective_hbm_bytes_per_cycle": 1146.88,
+          "original_hbm_efficiency": 0.35,
+          "payload_cycles_per_burst": 0.4084967320261437,
+          "raw_hbm_bytes_per_cycle": 3276.8,
+          "request_overhead_cycles": 4.0,
+          "row_hit_rate": 0.9,
+          "row_miss_penalty_cycles": 16.0,
+          "scheduler_efficiency": 0.9,
+          "service_cycles_per_burst": 2.3883957193484764
+        },
+        "hbm_efficiency": 0.35,
+        "hbm_energy_calibration": {
+          "external_design_id": "hbm2_fgdram_micro2017",
+          "hbm_bytes": 286274084.667392,
+          "hbm_energy_mj": 9.092064929036372,
+          "hbm_energy_pj_per_bit": 3.97,
+          "hbm_energy_pj_per_byte": 31.76,
+          "measurement_id": "hbm2_fgdram_micro2017_access_energy"
+        },
+        "hbm_energy_pj_per_byte": 0.0,
+        "hbm_latency_weight": 0.35,
+        "hbm_read_bytes": 286241316.667392,
+        "kv_bits": 8,
+        "kv_sharing": "gqa8",
+        "latency_us": 105.37783453568113,
+        "macs_per_cycle": 524288.0,
+        "precision_status": "quality_backed_conservative",
+        "remaining_energy_abstractions": [
+          "HBM service uses burst/row-hit/outstanding-request accounting, not a cycle-accurate DRAM controller RTL simulation.",
+          "HBM energy is split by command class, but pJ values are explicit model parameters rather than vendor signoff currents.",
+          "Compute energy is still scaled from the nearest measured dense compute reference.",
+          "NoC/SRAM energy uses profile-scaled accounting from the integrated energy closure."
+        ],
+        "service_latency_scale": 2.675003205670294,
+        "source_candidate_id": "die400_kv8_gqa8_lat66.432_hbm0.266583_dt6400_eff0.35_tt1024",
+        "source_latency_resource": "hbm",
+        "tile_tokens": 1024,
+        "token_throughput_per_s": 9489.661695993555,
+        "total_sram_mib": 1001.358032,
+        "total_tile_kv_read_bytes": 1073741824.0,
+        "vector_ops_per_cycle": 65536
+      }
+    }
+  },
+  "source_refs": {
+    "best_point_json": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_hbm_energy_calibration_llama7b_v1/best_point.json",
+    "summary_csv": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_hbm_energy_calibration_llama7b_v1/summary.csv",
+    "results_csv": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_hbm_energy_calibration_llama7b_v1/results.csv",
+    "report_md": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_hbm_energy_calibration_llama7b_v1/report.md",
+    "focused_candidate_schedule_yml": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_hbm_energy_calibration_llama7b_v1/artifacts/mapper/fp16_nm1/tail_attn4_s256_h64/schedule.yml",
+    "focused_candidate_descriptors_bin": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_hbm_energy_calibration_llama7b_v1/artifacts/mapper/fp16_nm1/tail_attn4_s256_h64/descriptors.bin",
+    "focused_candidate_perf_trace_json": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_hbm_energy_calibration_llama7b_v1/artifacts/perf/fp16_nm1/tail_attn4_s256_h64/trace.json",
+    "focused_model_artifacts": [
+      {
+        "model_id": "tail_attn4_s256_h64",
+        "schedule_yml": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_hbm_energy_calibration_llama7b_v1/artifacts/mapper/fp16_nm1/tail_attn4_s256_h64/schedule.yml",
+        "descriptors_bin": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_hbm_energy_calibration_llama7b_v1/artifacts/mapper/fp16_nm1/tail_attn4_s256_h64/descriptors.bin",
+        "perf_trace_json": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_hbm_energy_calibration_llama7b_v1/artifacts/perf/fp16_nm1/tail_attn4_s256_h64/trace.json"
+      },
+      {
+        "model_id": "tail_attn6_s128_h64",
+        "schedule_yml": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_hbm_energy_calibration_llama7b_v1/artifacts/mapper/fp16_nm1/tail_attn6_s128_h64/schedule.yml",
+        "descriptors_bin": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_hbm_energy_calibration_llama7b_v1/artifacts/mapper/fp16_nm1/tail_attn6_s128_h64/descriptors.bin",
+        "perf_trace_json": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_hbm_energy_calibration_llama7b_v1/artifacts/perf/fp16_nm1/tail_attn6_s128_h64/trace.json"
+      },
+      {
+        "model_id": "tail_attn6_s256_h64",
+        "schedule_yml": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_hbm_energy_calibration_llama7b_v1/artifacts/mapper/fp16_nm1/tail_attn6_s256_h64/schedule.yml",
+        "descriptors_bin": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_hbm_energy_calibration_llama7b_v1/artifacts/mapper/fp16_nm1/tail_attn6_s256_h64/descriptors.bin",
+        "perf_trace_json": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_hbm_energy_calibration_llama7b_v1/artifacts/perf/fp16_nm1/tail_attn6_s256_h64/trace.json"
+      }
+    ],
+    "decoder_attention_hbm_energy_calibration_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_hbm_energy_calibration__l2_decoder_attention_hbm_energy_calibration_llama7b_v1.json",
+    "decoder_attention_hbm_energy_calibration_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_hbm_energy_calibration__l2_decoder_attention_hbm_energy_calibration_llama7b_v1.md"
+  }
+}
