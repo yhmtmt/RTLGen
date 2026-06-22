@@ -5897,6 +5897,77 @@ def _decoder_attention_measured_compute_energy_closure_evidence(*, item_id: str)
     }
 
 
+def _decoder_attention_dense_gemm_v3_measured_compute_closure_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    measured_compute = f"{base}/decoder_attention_kv_dense_tile_v3_measured_compute__{item_id}.json"
+    measured_compute_report = f"{base}/decoder_attention_kv_dense_tile_v3_measured_compute__{item_id}.md"
+    out = f"{base}/decoder_attention_dense_gemm_v3_measured_compute_closure__{item_id}.json"
+    report = f"{base}/decoder_attention_dense_gemm_v3_measured_compute_closure__{item_id}.md"
+    hbm_command_calibrated = (
+        f"{base}/decoder_attention_hbm_command_calibrated_service__"
+        "l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1.json"
+    )
+    previous_closure = (
+        f"{base}/decoder_attention_measured_compute_energy_closure__"
+        "l2_decoder_attention_measured_compute_energy_closure_llama7b_v1.json"
+    )
+    sram_profile = f"{base}/decoder_attention_sram_profile__l2_decoder_attention_sram_profile_v1.json"
+    dense_v3_promotion = "docs/proposals/prop_l1_npu_dense_gemm_tile_scaling_v3/promotion_result.json"
+    return {
+        "inputs": {
+            "dense_gemm_tile_scaling_v3": dense_v3_promotion,
+            "attention_hbm_command_calibrated_service": hbm_command_calibrated,
+            "attention_measured_compute_energy_closure_previous": previous_closure,
+            "attention_sram_profile": sram_profile,
+            "attention_kv_dense_tile_v3_measured_compute_out": measured_compute,
+            "attention_kv_dense_tile_v3_measured_compute_report": measured_compute_report,
+            "attention_dense_gemm_v3_measured_compute_closure_out": out,
+            "attention_dense_gemm_v3_measured_compute_closure_report": report,
+            "attention_dense_gemm_v3_measured_compute_closure_scope": (
+                "Regenerate the Llama7B native-GQA KV8 measured-compute rows using the "
+                "Layer 1 dense GEMM tile V3 exact-FP16 depth-scaling metrics, then rerun "
+                "the source-backed HBM command-calibrated measured-compute energy closure "
+                "against that V3 compute set and compare with the PR #981 corrected frontier."
+            ),
+        },
+        "commands": [
+            {
+                "name": "estimate_decoder_attention_kv_dense_tile_v3_measured_compute",
+                "run": (
+                    "python3 npu/eval/estimate_llm_decoder_attention_kv_measured_compute.py "
+                    "--repo-root . "
+                    "--compute-source dense_gemm_tile "
+                    "--tag-substring npu_dense_gemm_tile_v3_depth_hier "
+                    "--sequence-length-list 131072 "
+                    "--die-area-mm2-list 100,200,400,800,1200 "
+                    "--sram-area-fraction 0.4,0.6,0.75 "
+                    "--logic-area-fraction 0.05,0.1,0.2,0.4,0.6 "
+                    "--reserved-area-fraction 0.1 "
+                    "--usable-sram-fraction 0.7,0.85 "
+                    "--local-sram-fraction 0.1,0.25,0.5 "
+                    "--tile-tokens-list 512,1024 "
+                    "--bank-count 16,64 "
+                    "--vector-ops-per-mac 0.125 "
+                    f"--out {measured_compute} "
+                    f"--out-md {measured_compute_report}"
+                ),
+            },
+            {
+                "name": "audit_decoder_attention_dense_gemm_v3_measured_compute_closure",
+                "run": (
+                    "python3 npu/eval/audit_llm_decoder_attention_measured_compute_energy_closure.py "
+                    f"--hbm-command-calibrated-service-json {hbm_command_calibrated} "
+                    f"--measured-compute-json {measured_compute} "
+                    f"--sram-profile-json {sram_profile} "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [measured_compute, measured_compute_report, out, report],
+    }
+
+
 def _decoder_attention_mixed_precision_quality_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_mixed_precision_quality__{item_id}.json"
@@ -7780,6 +7851,7 @@ def _build_payload(
         "decoder_attention_hbm_energy_calibration",
         "decoder_attention_hbm_command_calibrated_service",
         "decoder_attention_measured_compute_energy_closure",
+        "decoder_attention_dense_gemm_v3_measured_compute_closure",
         "decoder_attention_kv_dual_stream_physical_feasibility",
         "decoder_attention_mixed_precision_quality",
         "decoder_attention_softmax_pow2sum_quality",
@@ -7956,6 +8028,8 @@ def _build_payload(
             decoder_evidence = _decoder_attention_hbm_command_calibrated_service_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_measured_compute_energy_closure":
             decoder_evidence = _decoder_attention_measured_compute_energy_closure_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_attention_dense_gemm_v3_measured_compute_closure":
+            decoder_evidence = _decoder_attention_dense_gemm_v3_measured_compute_closure_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_dual_stream_physical_feasibility":
             decoder_evidence = _decoder_attention_kv_dual_stream_physical_feasibility_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_mixed_precision_quality":

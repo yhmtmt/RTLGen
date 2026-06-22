@@ -1,0 +1,76 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_dense_gemm_v3_measured_compute_closure_llama7b_v1",
+  "created_utc": "2026-06-22T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Llama7B measured compute closure with dense GEMM V3 metrics",
+  "abstraction_layer": "decoder_attention_dense_gemm_v3_measured_compute_closure",
+  "hypothesis": "The PR #981 measured-compute closure used the latest merged compute frontier available then, but PR #982 has now merged a deeper 16x16 exact-FP16 dense GEMM tile point under a larger floorplan. Substituting that merged V3 dense compute source and reranking Llama7B should yield a corrected measured-compute frontier and expose whether the abstract 524288 MAC/cycle point remains physically plausible.",
+  "direct_comparison": {
+    "primary_question": "Does the V3 dense GEMM tile compute source change the corrected PR #981 measured-compute frontier for Llama7B when compared against source-backed HBM command service and SRAM profile?",
+    "include": [
+      "consume merged l1 dense-GEMM V3 metrics from `l1_npu_dense_gemm_tile_scaling_v3`",
+      "consume merged source-backed HBM command-calibrated service results",
+      "consume merged SRAM profile",
+      "recompute PR #981 measured-compute frontier rows under the V3 dense tile source",
+      "compare measured frontiers, latency-best, energy-best, and Pareto points against the PR #981 corrected frontier"
+    ],
+    "exclude": [
+      "new RTL generation or OpenROAD/PPA sweeps",
+      "changes to HBM/DRAM command-model internals",
+      "new NoC or SRAM physical model jobs",
+      "quality/QAT architecture changes"
+    ],
+    "follow_on_broad_sweep": [
+      "If V3 dense compute shifts the family, keep this frontier as the next architecture baseline and add integrated compute verification.",
+      "If V3 dense compute does not shift the family, proceed to NoC/SRAM/command-service residual closure depth."
+    ]
+  },
+  "expected_benefit": [
+    "replace the PR #981 abstract compute anchor with merged V3 dense-GEMM measured compute density",
+    "rebuild Llama7B throughput/energy/area with source-backed HBM command service and SRAM profile",
+    "provide a single controlled rerank artifact that can be promoted without changing software quality assumptions"
+  ],
+  "risks": [
+    "V3 dense compute rows may still be replica-scaled and not full integrated compute macro measurements.",
+    "the rerank remains sensitive to SRAM and NoC profile scaling assumptions.",
+    "the new rerank is blocked from running until source-merged V3 compute artifacts are available."
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_dense_gemm_v3_measured_compute_closure_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "rerank PR #981 measured-compute Llama7B frontier against merged V3 dense-GEMM compute rows using source-backed HBM command-calibrated service and SRAM profile.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_dense_gemm_v3_measured_compute_closure",
+      "comparison_role": "frontier_closure",
+      "cost_class": "low",
+      "depends_on_item_ids": [
+        "l1_npu_dense_gemm_tile_scaling_v3",
+        "l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1",
+        "l2_decoder_attention_measured_compute_energy_closure_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "rerank_measured_compute_closure",
+        "reason": "Determine whether the PR #981 corrected frontier holds under merged V3 dense-GEMM measured compute density and select updated best rows if needed."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_measured_compute_energy_closure__l2_decoder_attention_measured_compute_energy_closure_llama7b_v1.json",
+    "item:l1_npu_dense_gemm_tile_scaling_v3"
+  ],
+  "source_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_hbm_command_calibrated_service__l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_sram_profile__l2_decoder_attention_sram_profile_v1.json"
+  ],
+  "knowledge_refs": [
+    "docs/architecture/llama7b_attention_abstraction_closure_plan.md",
+    "npu/eval/audit_llm_decoder_attention_measured_compute_energy_closure.py",
+    "control_plane/control_plane/services/l2_task_generator.py"
+  ]
+}

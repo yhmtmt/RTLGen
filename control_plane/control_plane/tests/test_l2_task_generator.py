@@ -6640,6 +6640,79 @@ def test_generate_l2_campaign_task_adds_attention_measured_compute_energy_closur
             }
 
 
+def test_generate_l2_campaign_task_adds_dense_gemm_v3_measured_compute_closure_evidence() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id="l2_decoder_attention_dense_gemm_v3_measured_compute_closure_llama7b_v1",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    proposal_id="prop_l2_decoder_attention_dense_gemm_v3_measured_compute_closure_llama7b_v1",
+                    proposal_path=(
+                        "docs/proposals/"
+                        "prop_l2_decoder_attention_dense_gemm_v3_measured_compute_closure_llama7b_v1/"
+                        "proposal.json"
+                    ),
+                    abstraction_layer="decoder_attention_dense_gemm_v3_measured_compute_closure",
+                    evaluation_mode="frontier_detail",
+                    comparison_role="frontier_closure",
+                    depends_on_item_ids=[
+                        "l1_npu_dense_gemm_tile_scaling_v3",
+                        "l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1",
+                        "l2_decoder_attention_measured_compute_energy_closure_llama7b_v1",
+                    ],
+                    requires_merged_inputs=True,
+                    requires_materialized_refs=True,
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            commands = work_item.task_request.request_payload["task"]["commands"]
+            decoder_inputs = work_item.input_manifest["decoder_contract"]
+
+            assert [command["name"] for command in commands[:2]] == [
+                "estimate_decoder_attention_kv_dense_tile_v3_measured_compute",
+                "audit_decoder_attention_dense_gemm_v3_measured_compute_closure",
+            ]
+            assert "--tag-substring npu_dense_gemm_tile_v3_depth_hier" in commands[0]["run"]
+            assert "audit_llm_decoder_attention_measured_compute_energy_closure.py" in commands[1]["run"]
+            assert (
+                "--measured-compute-json "
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_kv_dense_tile_v3_measured_compute__"
+                "l2_decoder_attention_dense_gemm_v3_measured_compute_closure_llama7b_v1.json"
+            ) in commands[1]["run"]
+            assert decoder_inputs["attention_kv_dense_tile_v3_measured_compute_out"] in work_item.expected_outputs
+            assert (
+                decoder_inputs["attention_dense_gemm_v3_measured_compute_closure_out"]
+                in work_item.expected_outputs
+            )
+            assert work_item.task_request.request_payload["developer_loop"]["abstraction"] == {
+                "layer": "decoder_attention_dense_gemm_v3_measured_compute_closure",
+            }
+            assert work_item.task_request.request_payload["developer_loop"]["dependencies"] == {
+                "item_ids": [
+                    "l1_npu_dense_gemm_tile_scaling_v3",
+                    "l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1",
+                    "l2_decoder_attention_measured_compute_energy_closure_llama7b_v1",
+                ],
+                "requires_merged_inputs": True,
+                "requires_materialized_refs": True,
+            }
+
+
 def test_generate_l2_campaign_task_adds_attention_mixed_precision_quality_evidence() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
