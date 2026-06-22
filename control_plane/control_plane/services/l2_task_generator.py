@@ -5854,6 +5854,49 @@ def _decoder_attention_hbm_command_calibrated_service_evidence(*, item_id: str) 
     }
 
 
+def _decoder_attention_measured_compute_energy_closure_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_attention_measured_compute_energy_closure__{item_id}.json"
+    report = f"{base}/decoder_attention_measured_compute_energy_closure__{item_id}.md"
+    hbm_command_calibrated = (
+        f"{base}/decoder_attention_hbm_command_calibrated_service__"
+        "l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1.json"
+    )
+    measured_compute = (
+        f"{base}/decoder_attention_kv_dense_tile_measured_compute__"
+        "l2_decoder_attention_kv_dense_tile_measured_compute_llama7b_v1.json"
+    )
+    sram_profile = f"{base}/decoder_attention_sram_profile__l2_decoder_attention_sram_profile_v1.json"
+    return {
+        "inputs": {
+            "attention_hbm_command_calibrated_service": hbm_command_calibrated,
+            "attention_kv_dense_tile_measured_compute": measured_compute,
+            "attention_sram_profile": sram_profile,
+            "attention_measured_compute_energy_closure_out": out,
+            "attention_measured_compute_energy_closure_report": report,
+            "attention_measured_compute_energy_closure_scope": (
+                "Replace the abstract selected-point MAC/cycle assumption with the "
+                "merged measured dense-tile compute-capacity rows, then recompute "
+                "Llama7B throughput/energy/area under source-backed HBM energy."
+            ),
+        },
+        "commands": [
+            {
+                "name": "audit_decoder_attention_measured_compute_energy_closure",
+                "run": (
+                    "python3 npu/eval/audit_llm_decoder_attention_measured_compute_energy_closure.py "
+                    f"--hbm-command-calibrated-service-json {hbm_command_calibrated} "
+                    f"--measured-compute-json {measured_compute} "
+                    f"--sram-profile-json {sram_profile} "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+    }
+
+
 def _decoder_attention_mixed_precision_quality_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_mixed_precision_quality__{item_id}.json"
@@ -7736,6 +7779,7 @@ def _build_payload(
         "decoder_attention_hbm_dram_service_energy",
         "decoder_attention_hbm_energy_calibration",
         "decoder_attention_hbm_command_calibrated_service",
+        "decoder_attention_measured_compute_energy_closure",
         "decoder_attention_kv_dual_stream_physical_feasibility",
         "decoder_attention_mixed_precision_quality",
         "decoder_attention_softmax_pow2sum_quality",
@@ -7910,6 +7954,8 @@ def _build_payload(
             decoder_evidence = _decoder_attention_hbm_energy_calibration_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_hbm_command_calibrated_service":
             decoder_evidence = _decoder_attention_hbm_command_calibrated_service_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_attention_measured_compute_energy_closure":
+            decoder_evidence = _decoder_attention_measured_compute_energy_closure_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_dual_stream_physical_feasibility":
             decoder_evidence = _decoder_attention_kv_dual_stream_physical_feasibility_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_mixed_precision_quality":

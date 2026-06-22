@@ -80,6 +80,19 @@ than free or heuristic assumptions.
   - next result: scale the command-class HBM service model to the source-backed
     HBM energy anchor and sweep row-hit sensitivity before claiming the final
     HBM energy ranking
+- The HBM command-calibrated service result
+  `l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1` is merged by
+  PR #979. It reports:
+  - selected energy family remains the `400.0 mm2` `gqa8/kv8`
+    `tile_tokens=1024` point when retaining the abstract `524288 MAC/cycle`
+    selected compute target
+  - command-class energy scale to the HBM2 source anchor: `6.484297689339423`
+  - row-hit sweep from `0.5` to `0.95` does not move the selected family
+  - nominal row-hit `0.9` latency: `105.37783453568113 us/token`
+  - nominal row-hit `0.9` energy: `11.522041553338012 mJ/token`
+  - dominant energy component: `hbm`
+  - next result: replace the abstract `524288 MAC/cycle` target with measured
+    dense-tile compute capacity and recompute throughput/energy/area
 - There is no active queue item for this closure stage. New evaluations should
   continue to dispatch only to the remote evaluator
   `eval-daemon-b7c2d9c80c1c`.
@@ -95,6 +108,18 @@ than free or heuristic assumptions.
      `energy_status=parameterized_integrated_energy_not_full_measurement`.
    - Next result: remove or bound the dominant HBM pJ/byte sensitivity and the
      scaled compute-energy term before claiming an energy-optimal point.
+
+1a. Measured compute capacity and energy closure
+   - Scope: replace abstract selected-point `macs_per_cycle` and nearest-row
+     compute-energy scaling with measured dense-tile replicated capacity rows.
+   - Status: the current HBM-calibrated best assumes `524288 MAC/cycle` on a
+     `400.0 mm2` die. The merged dense-tile measured-compute artifact reaches
+     about `132k MAC/cycle` only at the `1200.0 mm2` planning point, so the
+     abstract `400.0 mm2` frontier must be checked before reuse.
+   - Next result: run
+     `l2_decoder_attention_measured_compute_energy_closure_llama7b_v1` to
+     determine whether the current selected family survives measured compute
+     capacity/energy constraints.
 
 2. HBM/DRAM and on-chip service detail
    - Scope: replace aggregate HBM efficiency and compact NoC/SRAM service caps
@@ -154,11 +179,9 @@ than free or heuristic assumptions.
 
 ## Ordering
 
-The next evaluation should keep closing the dominant HBM term while preserving
-command-mix sensitivity. The merged source-backed HBM calibration shows the
-selected family is stable, but HBM dominates energy. The next job should scale
-the command-class HBM/DRAM service model to the HBM2 aggregate pJ/bit anchor and
-sweep row-hit sensitivity. After that, directly measure or bound the selected
-compute service point if the command-calibrated HBM result preserves the selected
-family. All new evaluation jobs should run on the remote evaluator, not the
-devcontainer.
+The next evaluation should close the selected compute target. HBM calibration is
+stable across source-backed pJ/bit and row-hit sensitivity, but the selected
+point still assumes an abstract `524288 MAC/cycle` compute service point on a
+`400.0 mm2` die. The next job should replace that assumption with measured
+dense-tile replicated capacity rows and recompute throughput/energy/area. All
+new evaluation jobs should run on the remote evaluator, not the devcontainer.

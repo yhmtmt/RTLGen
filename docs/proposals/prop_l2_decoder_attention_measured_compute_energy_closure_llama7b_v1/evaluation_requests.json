@@ -1,0 +1,21 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_measured_compute_energy_closure_llama7b_v1",
+  "requests": [
+    {
+      "item_id": "l2_decoder_attention_measured_compute_energy_closure_llama7b_v1",
+      "task_type": "l2_campaign",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_measured_compute_energy_closure",
+      "comparison_role": "frontier_closure",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "run_physical": false,
+      "expected_direction": "record_measured_compute_energy_closure",
+      "expected_reason": "Replace the abstract selected MAC/cycle point with measured dense-tile compute capacity before final Llama7B ranking.",
+      "dispatch_machine_key": "eval-daemon-b7c2d9c80c1c"
+    }
+  ]
+}
