@@ -1928,6 +1928,10 @@ def test_consume_l2_result_integrated_energy_closure_uses_decoder_evidence() -> 
                 "integrated_energy_closure_parameterized_frontier_recorded"
             )
             assert decision_payload["recommendation"]["source"] == "decoder_evidence"
+            assert decision_payload["recommendation"]["energy_mj"] == 0.42
+            assert decision_payload["recommendation"]["energy_status"] == (
+                "parameterized_integrated_energy_not_full_measurement"
+            )
             assert decision_payload["source_refs"]["decoder_attention_integrated_energy_closure_out"] == evidence_rel
             assert (
                 decision_payload["source_refs"]["decoder_attention_integrated_energy_closure_report"]
