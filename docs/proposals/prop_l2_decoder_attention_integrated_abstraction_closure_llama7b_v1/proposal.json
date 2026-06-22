@@ -1,0 +1,74 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_integrated_abstraction_closure_llama7b_v1",
+  "created_utc": "2026-06-22T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_attention_integrated_abstraction_closure",
+  "title": "Integrated Llama7B attention abstraction-closure rerank with merged q12/PWL and 7B quality-backed HBM inputs",
+  "hypothesis": "A single L2 rerun that consumes the merged q12/PWL composed datapath frontier and merged 7B quality-backed HBM frontier should produce the next best Llama7B attention candidate and expose the remaining abstractions that still need RTL-level closure.",
+  "direct_comparison": {
+    "primary_question": "After integrating both merged artifacts, which Llama7B attention frontier point remains dominant and what specific abstraction dimensions (e.g., SRAM timing, NoC arbitration, queueing policy, and cost model margins) remain explicit?",
+    "include": [
+      "Llama7B attention abstraction-closure rerank using 131k context.",
+      "substitute the merged L2 q12/PWL composed softmax frontier artifact.",
+      "substitute the merged L2 7B quality-backed physical HBM artifact for quality provenance.",
+      "report remaining abstractions as a named table with one-line sensitivity notes per term."
+    ],
+    "exclude": [
+      "new L1/RTL/PPA or quality-control-plane jobs",
+      "OpenROAD synthesis / PPA generation",
+      "new model-quality gate jobs beyond the already-merged 7B KV artifact",
+      "new memory-controller micro-architecture simulation"
+    ],
+    "follow_on_broad_sweep": [
+      "Target one remaining abstraction from the report with a dedicated follow-on RTL or service-accurate estimator job."
+    ]
+  },
+  "expected_benefit": [
+    "Produces a cleaner Llama7B frontier candidate by consuming both merged abstractions in one rerank.",
+    "Separates remaining uncertainty from already-validated datapath quality/compute assumptions.",
+    "Creates an explicit handoff artifact for the next targeted closure job instead of carrying two stacked abstractions implicitly."
+  ],
+  "risks": [
+    "The integrated rerank still uses non-routed global NoC/HBM contention assumptions outside the merged inputs.",
+    "The result can narrow, but not remove, SRAM queue-depth and locality abstractions without additional RTL or measured-service evidence.",
+    "If either merged baseline artifact is revoked or regenerated, the rerank must be repeated."
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_integrated_abstraction_closure_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Integrate merged q12/PWL composed datapath and merged 7B quality-backed HBM artifacts to rerank the Llama7B attention frontier and publish remaining abstractions.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_integrated_abstraction_closure",
+      "comparison_role": "frontier_closure",
+      "cost_class": "low",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_composed_datapath_q12_pwl_softmax_frontier_llama7b_v1",
+        "l2_decoder_attention_kv_physical_hbm_quality_backed_7b_llama7b_v1_r2"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "record_integrated_abstraction_closure_frontier",
+        "reason": "Identify the reranked 131k Llama7B attention frontier with a compact remaining-abstraction report."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_q12_pwl_softmax_frontier_llama7b_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_physical_hbm_quality_backed_7b__l2_decoder_attention_kv_physical_hbm_quality_backed_7b_llama7b_v1_r2.json"
+  ],
+  "source_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_q12_pwl_softmax_frontier_llama7b_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_physical_hbm_quality_backed_7b__l2_decoder_attention_kv_physical_hbm_quality_backed_7b_llama7b_v1_r2.json"
+  ],
+  "knowledge_refs": [
+    "docs/architecture/llama7b_attention_abstraction_closure_plan.md",
+    "docs/proposals/prop_l2_decoder_attention_composed_datapath_q12_pwl_softmax_frontier_v1/proposal.json",
+    "docs/proposals/prop_l2_decoder_attention_kv_physical_hbm_quality_backed_7b_llama7b_v1/proposal.json",
+    "control_plane/control_plane/services/l2_task_generator.py"
+  ]
+}

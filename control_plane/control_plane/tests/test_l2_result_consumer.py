@@ -1688,6 +1688,129 @@ def test_consume_l2_result_frontier_endpoint_router_sram_composition_uses_decode
             ] == report_rel
 
 
+def test_consume_l2_result_integrated_abstraction_closure_uses_decoder_evidence() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            proposal_dir = (
+                repo_root
+                / "docs"
+                / "proposals"
+                / "prop_l2_decoder_attention_integrated_abstraction_closure_llama7b_v1"
+            )
+            _write(
+                proposal_dir / "proposal.json",
+                json.dumps(
+                    {
+                        "proposal_id": "prop_l2_decoder_attention_integrated_abstraction_closure_llama7b_v1",
+                        "kind": "architecture",
+                        "title": "Integrated abstraction closure",
+                        "direct_comparison": {
+                            "primary_question": "Which Llama7B point remains after integrated closure?"
+                        },
+                    },
+                    indent=2,
+                )
+                + "\n",
+            )
+            evidence_rel = (
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_integrated_abstraction_closure__"
+                "l2_decoder_attention_integrated_abstraction_closure_llama7b_v1.json"
+            )
+            report_rel = (
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_integrated_abstraction_closure__"
+                "l2_decoder_attention_integrated_abstraction_closure_llama7b_v1.md"
+            )
+            _write(
+                repo_root / evidence_rel,
+                json.dumps(
+                    {
+                        "model": "llm_decoder_attention_integrated_abstraction_closure_llama7b_v1",
+                        "decision": "integrated_closure_recorded_q12_blocked_hbm_service_frontier",
+                        "diagnosis": {
+                            "decision": "integrated_closure_recorded_q12_blocked_hbm_service_frontier",
+                            "recommended_next_step": "close integrated energy and service details",
+                        },
+                        "best": {
+                            "arch_id": "physical_hbm_gqa8_kv8_service_frontier",
+                            "latency_us": 30.944,
+                            "token_throughput_per_s": 32316.443,
+                            "die_area_mm2": 100.0,
+                            "energy_status": "full_integrated_energy_missing",
+                        },
+                        "closure_flags": {
+                            "q12_pwl_composed_datapath_measured": True,
+                            "integrated_energy_model_available": False,
+                        },
+                        "remaining_abstractions": [
+                            "Full Llama7B integrated energy is not yet composed.",
+                        ],
+                    },
+                    indent=2,
+                )
+                + "\n",
+            )
+            _write(repo_root / report_rel, "# integrated closure\n")
+            item_id = _seed_campaign_work_item(
+                session,
+                repo_root,
+                item_id="l2_decoder_attention_integrated_abstraction_closure_llama7b_v1",
+                campaign_dir_rel="runs/campaigns/npu/integrated_closure_campaign",
+                summary_rows=(
+                    "scope,arch_id,macro_mode,objective_rank,latency_ms_mean,energy_mj_mean,critical_path_ns_mean,total_power_mw_mean,flow_elapsed_s_mean,throughput_infer_per_s_mean\n"
+                    "aggregate,fp16_nm1_demo,flat_nomacro,1,0.4,0.15,5.5,0.18,1000,1.0\n"
+                ),
+                proposal_path=(
+                    "docs/proposals/"
+                    "prop_l2_decoder_attention_integrated_abstraction_closure_llama7b_v1"
+                ),
+                comparison={"role": "frontier_closure"},
+            )
+            work_item = session.query(WorkItem).filter_by(item_id=item_id).one()
+            payload = copy.deepcopy(work_item.task_request.request_payload or {})
+            payload["developer_loop"]["evaluation"] = {
+                "mode": "frontier_detail",
+                "expected_direction": "record_integrated_abstraction_closure_frontier",
+                "expected_reason": "Use integrated closure evidence for the next targeted abstraction job.",
+            }
+            payload["developer_loop"]["abstraction"] = {
+                "layer": "decoder_attention_integrated_abstraction_closure",
+            }
+            work_item.task_request.request_payload = payload
+            work_item.input_manifest = {
+                "decoder_contract": {
+                    "attention_integrated_abstraction_closure_out": evidence_rel,
+                    "attention_integrated_abstraction_closure_report": report_rel,
+                }
+            }
+            work_item.expected_outputs = [*(work_item.expected_outputs or []), evidence_rel, report_rel]
+            session.commit()
+
+            result = consume_l2_result(session, Layer2ConsumeRequest(repo_root=str(repo_root), item_id=item_id))
+
+            decision_payload = json.loads(
+                (repo_root / "control_plane" / "shadow_exports" / "l2_decisions" / f"{item_id}.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            assert result.recommended_arch_id == "physical_hbm_gqa8_kv8_service_frontier"
+            assert decision_payload["proposal_assessment"]["outcome"] == (
+                "integrated_closure_recorded_q12_blocked_hbm_service_frontier"
+            )
+            assert decision_payload["recommendation"]["source"] == "decoder_evidence"
+            assert decision_payload["source_refs"]["decoder_attention_integrated_abstraction_closure_out"] == evidence_rel
+            assert (
+                decision_payload["source_refs"]["decoder_attention_integrated_abstraction_closure_report"]
+                == report_rel
+            )
+
+
 def test_consume_l2_result_frontier_attention_local_sram_capacity_uses_decoder_evidence() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
