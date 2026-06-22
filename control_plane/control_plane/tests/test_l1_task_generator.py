@@ -1217,7 +1217,7 @@ def test_generate_l1_sweep_task_supports_dense_gemm_tile_configs() -> None:
                     sweep_path=sweep_path,
                     config_paths=[config_path],
                     platform="nangate45",
-                    out_root="runs/designs/npu_blocks",
+                    out_root="runs/campaigns/npu/dense_gemm_tile_v1",
                     requested_by="@tester",
                     source_commit=source_commit,
                     abstraction_layer="architecture_block",
@@ -1245,8 +1245,9 @@ def test_generate_l1_sweep_task_supports_dense_gemm_tile_configs() -> None:
                 "--design-dir runs/designs/npu_blocks/npu_dense_gemm_tile_fp16_4x4_k1_p1"
             )
             assert "--top dense_gemm_tile_fp16_4x4_k1_p1" in work_item.command_manifest[3]["run"]
+            assert "--out_root runs/campaigns/npu/dense_gemm_tile_v1" in work_item.command_manifest[3]["run"]
             assert work_item.expected_outputs == [
-                "runs/designs/npu_blocks/npu_dense_gemm_tile_fp16_4x4_k1_p1/metrics.csv"
+                "runs/campaigns/npu/dense_gemm_tile_v1/npu_dense_gemm_tile_fp16_4x4_k1_p1/metrics.csv"
             ]
             assert work_item.task_request.request_payload["developer_loop"]["abstraction"] == {
                 "layer": "architecture_block"

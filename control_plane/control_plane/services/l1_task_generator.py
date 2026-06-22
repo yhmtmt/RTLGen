@@ -331,6 +331,9 @@ def _read_config_target(
     make_target: str | None,
 ) -> Layer1ConfigTarget:
     cfg = _load_json(config_path)
+    def block_metrics_path(design_name: str) -> str:
+        return f"{out_root}/{design_name}/metrics.csv"
+
     if "multiplier" in cfg:
         module_name = cfg["multiplier"]["module_name"]
         wrapper = f"{module_name}_wrapper"
@@ -471,7 +474,7 @@ def _read_config_target(
         return Layer1ConfigTarget(
             design_kind="block",
             design_name=design_name,
-            expected_metrics_path=f"{design_dir}/metrics.csv",
+            expected_metrics_path=block_metrics_path(design_name),
             commands=[
                 {
                     "name": "build_generator",
@@ -522,7 +525,7 @@ def _read_config_target(
         return Layer1ConfigTarget(
             design_kind="block",
             design_name=design_name,
-            expected_metrics_path=f"{design_dir}/metrics.csv",
+            expected_metrics_path=block_metrics_path(design_name),
             expected_report_paths=[f"{design_dir}/timing_debug_report.md"],
             commands=[
                 {
@@ -586,7 +589,7 @@ def _read_config_target(
         return Layer1ConfigTarget(
             design_kind="block",
             design_name=design_name,
-            expected_metrics_path=f"{design_dir}/metrics.csv",
+            expected_metrics_path=block_metrics_path(design_name),
             commands=[
                 {
                     "name": "build_generator",
