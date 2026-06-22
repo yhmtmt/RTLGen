@@ -1,0 +1,120 @@
+{
+  "best": {
+    "arch_id": "physical_hbm_gqa8_kv8_service_frontier",
+    "die_area_mm2": 100.0,
+    "dominant_energy_component": "hbm",
+    "dominant_resource": "hbm",
+    "energy_mj": 8.14357724928343,
+    "energy_status": "parameterized_integrated_energy_not_full_measurement",
+    "kv_bits": 8,
+    "kv_sharing": "gqa8",
+    "latency_us": 30.944,
+    "macs_per_cycle": 524288.0,
+    "token_throughput_per_s": 32316.442605997934,
+    "vector_ops_per_cycle": 65536
+  },
+  "closure_flags": {
+    "compute_energy_directly_measured_at_selected_point": false,
+    "full_measured_energy_available": false,
+    "hbm_energy_parameterized": true,
+    "integrated_energy_accounting_available": true,
+    "noc_energy_parameterized": true,
+    "sram_energy_profile_scaled": true
+  },
+  "decision": "integrated_energy_closure_parameterized_frontier_recorded",
+  "diagnosis": {
+    "decision": "integrated_energy_closure_parameterized_frontier_recorded",
+    "dominant_energy_component": "hbm",
+    "dominant_latency_resource": "hbm",
+    "recommended_next_step": "measure or bound the selected compute service point directly, then refine HBM/NoC/SRAM energy from parameterized service accounting toward physical models",
+    "selected_frontier": "physical_hbm_gqa8_kv8_service_frontier"
+  },
+  "energy_components": {
+    "compute": {
+      "energy_mj": 1.12424255488,
+      "note": "The selected service frontier does not have measured compute PPA at its target MAC/cycle; this term scales the nearest measured dense compute reference.",
+      "reference_compute_power_mw": 9233.67,
+      "reference_die_area_mm2": 1200.0,
+      "reference_latency_us": 1871.090496,
+      "reference_macs_per_cycle": 133248.0,
+      "scaled_power_mw": 36331.52,
+      "source_metrics_csv": "runs/designs/npu_blocks/npu_dense_gemm_tile_fp16_8x16_k1_p1/metrics.csv",
+      "status": "parameterized_from_nearest_measured_compute_density",
+      "target_macs_per_cycle": 524288.0
+    },
+    "hbm": {
+      "energy_mj": 7.014935724818432,
+      "energy_pj": 7014935724.818432,
+      "energy_pj_per_byte": 8.0,
+      "read_bytes": 876866965.602304,
+      "status": "parameterized_hbm_energy_per_byte"
+    },
+    "noc": {
+      "energy_mj": 0.00427893972795392,
+      "energy_pj": 4278939.72795392,
+      "energy_pj_per_byte_hop": 0.02,
+      "hops": 1.0,
+      "payload_bytes": 213946986.39769602,
+      "status": "parameterized_payload_byte_hop_energy"
+    },
+    "sram": {
+      "energy_mj": 0.00012002985704362652,
+      "energy_pj": 120029.85704362651,
+      "missing_instances": [
+        "softmax_stats_buffer"
+      ],
+      "read_bytes": 196874858.39769602,
+      "read_pj_per_byte": 0.0006095209352873802,
+      "status": "profile_scaled_from_measured_cacti_sram_buffers",
+      "write_bytes": 32768.0,
+      "write_pj_per_byte": 0.0009310674588713034
+    }
+  },
+  "energy_parameters": {
+    "hbm_energy_pj_per_byte": 8.0,
+    "noc_energy_pj_per_byte_hop": 0.02
+  },
+  "model": "llm_decoder_attention_integrated_energy_closure_llama7b_v1",
+  "ranked_candidates": [
+    {
+      "area_mm2": 100.0,
+      "dominant_energy_component": "hbm",
+      "energy_mj": 8.14357724928343,
+      "energy_status": "parameterized_integrated_energy_not_full_measurement",
+      "latency_us": 30.944,
+      "name": "quality_backed_hbm_gqa8_kv8",
+      "status": "current_selected_energy_accounted_frontier",
+      "token_throughput_per_s": 32316.442605997934
+    }
+  ],
+  "remaining_abstractions": [
+    "HBM energy uses an explicit pJ/byte sensitivity parameter, not a cycle-accurate DRAM timing/power model.",
+    "NoC energy uses payload byte-hop accounting, not routed wire/switching simulation.",
+    "SRAM energy scales CACTI macro access estimates by traffic bytes; it is not a placed SRAM compiler energy signoff.",
+    "Selected 524288 MAC/cycle compute energy is scaled from the nearest measured dense compute reference, not directly measured at that service point."
+  ],
+  "source_artifacts": {
+    "hbm_quality_backed_model": "llm_decoder_attention_kv_physical_hbm_frontier_llama7b_v1",
+    "integrated_closure_model": "llm_decoder_attention_integrated_abstraction_closure_llama7b_v1",
+    "measured_compute_model": "llm_decoder_attention_kv_measured_compute_llama7b_v1",
+    "noc_profile_model": "llama7b_proxy",
+    "sram_profile_model": "llama7b_proxy"
+  },
+  "traffic": {
+    "attention_heads": 32,
+    "cross_tile_reduction_bytes": 17039360.0,
+    "estimated_noc_payload_bytes": 213946986.39769602,
+    "full_tile_kv_bytes": 524288.0,
+    "hbm_read_bytes": 876866965.602304,
+    "hidden_size": 4096,
+    "kv_heads": 4,
+    "kv_write_bytes": 32768.0,
+    "layers": 32,
+    "sequence_length": 32768,
+    "shared_read_bytes": 196874858.39769602,
+    "tile_count": 64,
+    "tile_tokens": 512,
+    "total_tile_kv_read_bytes": 1073741824.0
+  },
+  "version": 1
+}

@@ -1,0 +1,449 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-06-22T08:09:42.254519Z",
+  "control_plane_source_commit": "9c54c5e820e9df8071686c9a2ff74cbb394555b7",
+  "review_metadata_source_commit": "9c54c5e820e9df8071686c9a2ff74cbb394555b7",
+  "item_id": "l2_decoder_attention_integrated_energy_closure_llama7b_v1_r2",
+  "run_key": "l2_decoder_attention_integrated_energy_closure_llama7b_v1_r2_run_b23581acb0e9c814",
+  "layer": "layer2",
+  "flow": "openroad",
+  "task_type": "l2_campaign",
+  "source_commit": "9c54c5e820e9df8071686c9a2ff74cbb394555b7",
+  "queue_snapshot": {
+    "path": "control_plane/shadow_exports/review/l2_decoder_attention_integrated_energy_closure_llama7b_v1_r2/evaluated.json",
+    "result": {
+      "branch": "eval/l2_decoder_attention_integrated_energy_closure_llama7b_v1_r2/s20260622t080939z",
+      "completed_utc": "2026-06-22T08:09:37.892167Z",
+      "evaluator_id": "control_plane",
+      "executor": "@control_plane",
+      "host": "b7c2d9c80c1c",
+      "identity_block": "[role:evaluator][account:control_plane][session:s20260622t080939z][host:b7c2d9c80c1c][item:l2_decoder_attention_integrated_energy_closure_llama7b_v1_r2]",
+      "metrics_rows": [
+        {
+          "tag": "npu_fp16_nm1_cmp33_flat_nomacro",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "362e11ef",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/362e11ef/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_hier_macro",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "6f738885",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/6f738885/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r1",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "3e84d92b",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/3e84d92b/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r2",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "13a2c990",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/13a2c990/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r3",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "34eeb6e5",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/34eeb6e5/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r4",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "439adb1e",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/439adb1e/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r5",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "936b2a7b",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/936b2a7b/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_hier_macro_r1",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "54a235ae",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/54a235ae/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_hier_macro_r2",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "f190a078",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/f190a078/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_hier_macro_r3",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "b874bef7",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/b874bef7/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_hier_macro_r4",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "3a650f98",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/3a650f98/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_hier_macro_r5",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "3fa4f194",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/3fa4f194/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_flat_nomacro",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "033cdfdc",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/033cdfdc/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_hier_macro",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "c4548bca",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/c4548bca/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_flat_nomacro_r1",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "258015dc",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/258015dc/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_flat_nomacro_r2",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "95526f98",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/95526f98/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_flat_nomacro_r3",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "099823db",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/099823db/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_flat_nomacro_r4",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "b276f2e7",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/b276f2e7/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_flat_nomacro_r5",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "f0b4f9e6",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/f0b4f9e6/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_hier_macro_r1",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "5d0ac971",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/5d0ac971/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_hier_macro_r2",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "a9ae3c35",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/a9ae3c35/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_hier_macro_r3",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "c51fa4a2",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/c51fa4a2/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_hier_macro_r4",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "98a03366",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/98a03366/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_hier_macro_r5",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "41f8b4a8",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/41f8b4a8/result.json"
+        }
+      ],
+      "queue_item_id": "l2_decoder_attention_integrated_energy_closure_llama7b_v1_r2",
+      "session_id": "s20260622t080939z",
+      "status": "ok",
+      "summary": "6/6 commands succeeded"
+    }
+  },
+  "review_artifact": {
+    "kind": "decision_proposal",
+    "path": "control_plane/shadow_exports/l2_decisions/l2_decoder_attention_integrated_energy_closure_llama7b_v1_r2.json",
+    "storage_mode": "repo",
+    "sha256": "f6bca2d5390c3f1e620414a79611e4b2fcb1070b54d76a1c887de96c01d77ba7",
+    "payload": {
+      "version": 0.1,
+      "generated_utc": "2026-06-22T08:09:39.143362Z",
+      "item_id": "l2_decoder_attention_integrated_energy_closure_llama7b_v1_r2",
+      "run_key": "l2_decoder_attention_integrated_energy_closure_llama7b_v1_r2_run_b23581acb0e9c814",
+      "layer": "layer2",
+      "flow": "openroad",
+      "platform": "nangate45",
+      "task_type": "l2_campaign",
+      "source_commit": "9c54c5e820e9df8071686c9a2ff74cbb394555b7",
+      "review_metadata_source_commit": "9c54c5e820e9df8071686c9a2ff74cbb394555b7",
+      "objective": "LLM-oriented attention-tail stress campaign for larger sequence lengths and more repeated non-terminal Softmax paths.",
+      "input_manifest": {
+        "sweeps": [
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/sweep_compare_33.json",
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/sweep_compare_33.json"
+        ],
+        "configs": [
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/config_nm1.json",
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/config_nm2.json"
+        ],
+        "design_dirs": [
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp",
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp"
+        ],
+        "macro_manifests": [
+          "runs/designs/npu_macros/gemm_compute_array_fp16_nm1_c250/macro_manifest.json",
+          "runs/designs/npu_macros/gemm_compute_array_fp16_2slot_c300/macro_manifest.json"
+        ],
+        "decoder_contract": {
+          "attention_noc_profile": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_noc_profile__l2_decoder_attention_noc_profile_v1.json",
+          "attention_sram_profile": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_sram_profile__l2_decoder_attention_sram_profile_v1.json",
+          "attention_integrated_energy_closure_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_integrated_energy_closure__l2_decoder_attention_integrated_energy_closure_llama7b_v1_r2.json",
+          "attention_integrated_abstraction_closure": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_integrated_abstraction_closure__l2_decoder_attention_integrated_abstraction_closure_llama7b_v1.json",
+          "attention_kv_dense_tile_measured_compute": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_dense_tile_measured_compute__l2_decoder_attention_kv_dense_tile_measured_compute_llama7b_v1.json",
+          "attention_integrated_energy_closure_scope": "Compose an explicit integrated-energy account for the selected Llama7B attention frontier. Keep measured compute, SRAM, NoC, and HBM terms separate from parameterized terms so the ranking exposes remaining energy abstractions instead of hiding them in a single heuristic score.",
+          "attention_integrated_energy_closure_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_integrated_energy_closure__l2_decoder_attention_integrated_energy_closure_llama7b_v1_r2.md",
+          "attention_kv_physical_hbm_quality_backed_7b": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_physical_hbm_quality_backed_7b__l2_decoder_attention_kv_physical_hbm_quality_backed_7b_llama7b_v1_r2.json"
+        },
+        "generated_campaign": {
+          "path": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1/campaign__l2_decoder_attention_integrated_energy_closure_llama7b_v1_r2.json",
+          "outputs": {
+            "report_md": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_integrated_energy_closure_llama7b_v1_r2/report.md",
+            "results_csv": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_integrated_energy_closure_llama7b_v1_r2/results.csv",
+            "campaign_dir": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_integrated_energy_closure_llama7b_v1_r2"
+          },
+          "clean_outputs": true,
+          "base_campaign_path": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1/campaign.json"
+        },
+        "candidate_manifests": [
+          "runs/candidates/nangate45/module_candidates.json"
+        ]
+      },
+      "recommendation": {
+        "arch_id": "physical_hbm_gqa8_kv8_service_frontier",
+        "macro_mode": "decoder_frontier",
+        "objective_rank": 1,
+        "objective_score": "0.0",
+        "latency_ms_mean": 0.144262,
+        "energy_mj_mean": 2.7860165964e-05,
+        "critical_path_ns_mean": 5.557037432204143,
+        "die_area_um2_mean": 2250000.0,
+        "total_power_mw_mean": 0.193122,
+        "flow_elapsed_s_mean": 844.5733333333334,
+        "source": "decoder_evidence",
+        "decoder_model": "llm_decoder_attention_integrated_energy_closure_llama7b_v1",
+        "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_integrated_energy_closure__l2_decoder_attention_integrated_energy_closure_llama7b_v1_r2.json",
+        "die_area_mm2": 100.0,
+        "macs_per_cycle": 524288.0,
+        "latency_us": 30.944,
+        "legacy_campaign_recommendation": {
+          "arch_id": "fp16_nm1",
+          "macro_mode": "flat_nomacro",
+          "objective_rank": 1,
+          "objective_score": "0.0",
+          "latency_ms_mean": 0.144262,
+          "energy_mj_mean": 2.7860165964e-05,
+          "critical_path_ns_mean": 5.557037432204143,
+          "die_area_um2_mean": 2250000.0,
+          "total_power_mw_mean": 0.193122,
+          "flow_elapsed_s_mean": 844.5733333333334
+        }
+      },
+      "objective_profiles": [],
+      "evaluation_record": {
+        "proposal_id": "prop_l2_decoder_attention_integrated_energy_closure_llama7b_v1",
+        "title": "Integrated Llama7B attention energy-accounting frontier rerank on merged abstraction inputs",
+        "primary_question": "After adding explicit integrated-energy accounting to the merged abstraction-closure baseline, which Llama7B 131k attention frontier point remains dominant and which measured or parameterized energy terms still need closure?",
+        "evaluation_mode": "frontier_detail",
+        "comparison_role": "frontier_closure",
+        "abstraction_layer": "decoder_attention_integrated_energy_closure",
+        "expected_direction": "record_integrated_energy_closure_frontier",
+        "expected_reason": "Record measured-plus-parameterized integrated energy for the selected Llama7B attention frontier and expose remaining energy abstractions.",
+        "summary": "Decoder evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_integrated_energy_closure__l2_decoder_attention_integrated_energy_closure_llama7b_v1_r2.json: decision=integrated_energy_closure_parameterized_frontier_recorded; recommended_next_step=measure or bound the selected compute service point directly, then refine HBM/NoC/SRAM energy from parameterized service accounting toward physical models.",
+        "outcome": "integrated_energy_closure_parameterized_frontier_recorded",
+        "expectation_status": "unspecified"
+      },
+      "proposal_assessment": {
+        "proposal_id": "prop_l2_decoder_attention_integrated_energy_closure_llama7b_v1",
+        "title": "Integrated Llama7B attention energy-accounting frontier rerank on merged abstraction inputs",
+        "kind": "architecture",
+        "primary_question": "After adding explicit integrated-energy accounting to the merged abstraction-closure baseline, which Llama7B 131k attention frontier point remains dominant and which measured or parameterized energy terms still need closure?",
+        "evaluation_mode": "frontier_detail",
+        "comparison_role": "frontier_closure",
+        "outcome": "integrated_energy_closure_parameterized_frontier_recorded",
+        "summary": "Decoder evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_integrated_energy_closure__l2_decoder_attention_integrated_energy_closure_llama7b_v1_r2.json: decision=integrated_energy_closure_parameterized_frontier_recorded; recommended_next_step=measure or bound the selected compute service point directly, then refine HBM/NoC/SRAM energy from parameterized service accounting toward physical models.",
+        "baseline_ref": null,
+        "baseline_item_id": null,
+        "matched_row_count": 0,
+        "matched_rows": [],
+        "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_integrated_energy_closure__l2_decoder_attention_integrated_energy_closure_llama7b_v1_r2.json",
+        "decoder_quality": {
+          "diagnosis": {
+            "decision": "integrated_energy_closure_parameterized_frontier_recorded",
+            "dominant_energy_component": "hbm",
+            "dominant_latency_resource": "hbm",
+            "recommended_next_step": "measure or bound the selected compute service point directly, then refine HBM/NoC/SRAM energy from parameterized service accounting toward physical models",
+            "selected_frontier": "physical_hbm_gqa8_kv8_service_frontier"
+          },
+          "remaining_abstractions": [
+            "HBM energy uses an explicit pJ/byte sensitivity parameter, not a cycle-accurate DRAM timing/power model.",
+            "NoC energy uses payload byte-hop accounting, not routed wire/switching simulation.",
+            "SRAM energy scales CACTI macro access estimates by traffic bytes; it is not a placed SRAM compiler energy signoff.",
+            "Selected 524288 MAC/cycle compute energy is scaled from the nearest measured dense compute reference, not directly measured at that service point."
+          ],
+          "closure_flags": {
+            "compute_energy_directly_measured_at_selected_point": false,
+            "full_measured_energy_available": false,
+            "hbm_energy_parameterized": true,
+            "integrated_energy_accounting_available": true,
+            "noc_energy_parameterized": true,
+            "sram_energy_profile_scaled": true
+          },
+          "best": {
+            "arch_id": "physical_hbm_gqa8_kv8_service_frontier",
+            "die_area_mm2": 100.0,
+            "dominant_energy_component": "hbm",
+            "dominant_resource": "hbm",
+            "energy_mj": 8.14357724928343,
+            "energy_status": "parameterized_integrated_energy_not_full_measurement",
+            "kv_bits": 8,
+            "kv_sharing": "gqa8",
+            "latency_us": 30.944,
+            "macs_per_cycle": 524288.0,
+            "token_throughput_per_s": 32316.442605997934,
+            "vector_ops_per_cycle": 65536
+          }
+        }
+      },
+      "source_refs": {
+        "best_point_json": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_integrated_energy_closure_llama7b_v1_r2/best_point.json",
+        "summary_csv": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_integrated_energy_closure_llama7b_v1_r2/summary.csv",
+        "results_csv": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_integrated_energy_closure_llama7b_v1_r2/results.csv",
+        "report_md": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_integrated_energy_closure_llama7b_v1_r2/report.md",
+        "focused_candidate_schedule_yml": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_integrated_energy_closure_llama7b_v1_r2/artifacts/mapper/fp16_nm1/tail_attn4_s256_h64/schedule.yml",
+        "focused_candidate_descriptors_bin": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_integrated_energy_closure_llama7b_v1_r2/artifacts/mapper/fp16_nm1/tail_attn4_s256_h64/descriptors.bin",
+        "focused_candidate_perf_trace_json": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_integrated_energy_closure_llama7b_v1_r2/artifacts/perf/fp16_nm1/tail_attn4_s256_h64/trace.json",
+        "focused_model_artifacts": [
+          {
+            "model_id": "tail_attn4_s256_h64",
+            "schedule_yml": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_integrated_energy_closure_llama7b_v1_r2/artifacts/mapper/fp16_nm1/tail_attn4_s256_h64/schedule.yml",
+            "descriptors_bin": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_integrated_energy_closure_llama7b_v1_r2/artifacts/mapper/fp16_nm1/tail_attn4_s256_h64/descriptors.bin",
+            "perf_trace_json": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_integrated_energy_closure_llama7b_v1_r2/artifacts/perf/fp16_nm1/tail_attn4_s256_h64/trace.json"
+          },
+          {
+            "model_id": "tail_attn6_s128_h64",
+            "schedule_yml": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_integrated_energy_closure_llama7b_v1_r2/artifacts/mapper/fp16_nm1/tail_attn6_s128_h64/schedule.yml",
+            "descriptors_bin": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_integrated_energy_closure_llama7b_v1_r2/artifacts/mapper/fp16_nm1/tail_attn6_s128_h64/descriptors.bin",
+            "perf_trace_json": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_integrated_energy_closure_llama7b_v1_r2/artifacts/perf/fp16_nm1/tail_attn6_s128_h64/trace.json"
+          },
+          {
+            "model_id": "tail_attn6_s256_h64",
+            "schedule_yml": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_integrated_energy_closure_llama7b_v1_r2/artifacts/mapper/fp16_nm1/tail_attn6_s256_h64/schedule.yml",
+            "descriptors_bin": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_integrated_energy_closure_llama7b_v1_r2/artifacts/mapper/fp16_nm1/tail_attn6_s256_h64/descriptors.bin",
+            "perf_trace_json": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_integrated_energy_closure_llama7b_v1_r2/artifacts/perf/fp16_nm1/tail_attn6_s256_h64/trace.json"
+          }
+        ],
+        "decoder_attention_integrated_energy_closure_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_integrated_energy_closure__l2_decoder_attention_integrated_energy_closure_llama7b_v1_r2.json",
+        "decoder_attention_integrated_energy_closure_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_integrated_energy_closure__l2_decoder_attention_integrated_energy_closure_llama7b_v1_r2.md"
+      }
+    }
+  },
+  "developer_loop": {
+    "comparison": {
+      "role": "frontier_closure",
+      "paired_baseline_item_id": ""
+    },
+    "evaluation": {
+      "mode": "frontier_detail",
+      "expected_reason": "Record measured-plus-parameterized integrated energy for the selected Llama7B attention frontier and expose remaining energy abstractions.",
+      "expected_direction": "record_integrated_energy_closure_frontier"
+    },
+    "abstraction": {
+      "layer": "decoder_attention_integrated_energy_closure"
+    },
+    "proposal_id": "prop_l2_decoder_attention_integrated_energy_closure_llama7b_v1",
+    "dependencies": {
+      "item_ids": [
+        "l2_decoder_attention_integrated_abstraction_closure_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    },
+    "proposal_path": "docs/proposals/prop_l2_decoder_attention_integrated_energy_closure_llama7b_v1/proposal.json"
+  },
+  "submission_history": null,
+  "pr_payload": {
+    "branch": "eval/l2_decoder_attention_integrated_energy_closure_llama7b_v1_r2/s20260622t080939z",
+    "title": "eval: run layer2 campaign npu_e2e_eval_llm_attention_tail_stress_v1 on nangate45",
+    "body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260622t080939z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l2_decoder_attention_integrated_energy_closure_llama7b_v1_r2"
+    },
+    "body_md": "## Summary\n- item_id: `l2_decoder_attention_integrated_energy_closure_llama7b_v1_r2`\n- run_key: `l2_decoder_attention_integrated_energy_closure_llama7b_v1_r2_run_b23581acb0e9c814`\n- layer: `layer2`\n- task_type: `l2_campaign`\n- status: `ok`\n- summary: `6/6 commands succeeded`\n- queue_snapshot: `control_plane/shadow_exports/review/l2_decoder_attention_integrated_energy_closure_llama7b_v1_r2/evaluated.json`\n- metrics_rows_count: `24`\n- review_artifact: `decision_proposal` at `control_plane/shadow_exports/l2_decisions/l2_decoder_attention_integrated_energy_closure_llama7b_v1_r2.json`\n\n## Developer Context\n- proposal_id: `prop_l2_decoder_attention_integrated_energy_closure_llama7b_v1`\n- proposal_path: `docs/proposals/prop_l2_decoder_attention_integrated_energy_closure_llama7b_v1/proposal.json`\n- reviewer_first_read: `docs/proposals/prop_l2_decoder_attention_integrated_energy_closure_llama7b_v1/proposal.json` plus `docs/developer_agent_review.md`\n- execution_source_commit: `9c54c5e820e9df8071686c9a2ff74cbb394555b7`\n- review_metadata_source_commit: `9c54c5e820e9df8071686c9a2ff74cbb394555b7`\n\n## Evaluation Mode\n- evaluation_mode: `frontier_detail`\n- abstraction_layer: `decoder_attention_integrated_energy_closure`\n- comparison_role: `frontier_closure`\n- expected_direction: `record_integrated_energy_closure_frontier`\n- expected_reason: `Record measured-plus-parameterized integrated energy for the selected Llama7B attention frontier and expose remaining energy abstractions.`\n- expectation_status: `unspecified`\n- evaluation_summary: `Decoder evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_integrated_energy_closure__l2_decoder_attention_integrated_energy_closure_llama7b_v1_r2.json: decision=integrated_energy_closure_parameterized_frontier_recorded; recommended_next_step=measure or bound the selected compute service point directly, then refine HBM/NoC/SRAM energy from parameterized service accounting toward physical models.`\n\n## Focused Comparison\n- primary_question: `After adding explicit integrated-energy accounting to the merged abstraction-closure baseline, which Llama7B 131k attention frontier point remains dominant and which measured or parameterized energy terms still need closure?`\n- comparison_role: `frontier_closure`\n- proposal_outcome: `integrated_energy_closure_parameterized_frontier_recorded`\n- comparison_summary: `Decoder evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_integrated_energy_closure__l2_decoder_attention_integrated_energy_closure_llama7b_v1_r2.json: decision=integrated_energy_closure_parameterized_frontier_recorded; recommended_next_step=measure or bound the selected compute service point directly, then refine HBM/NoC/SRAM energy from parameterized service accounting toward physical models.`\n- baseline_ref: `None`\n- baseline_item_id: `None`\n\n## Checklist\n- [ ] Commit lightweight campaign artifacts only\n- [ ] Include metrics row references in result.metrics_rows\n- [ ] Keep committed result_path fields repo-portable\n- [ ] Run python3 scripts/validate_runs.py --skip_eval_queue before pushing\n",
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Include metrics row references in result.metrics_rows",
+      "Keep committed result_path fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ]
+  }
+}
