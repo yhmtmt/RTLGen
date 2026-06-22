@@ -5530,6 +5530,68 @@ def _decoder_attention_composed_datapath_physical_feasibility_evidence(*, item_i
     }
 
 
+def _decoder_attention_integrated_abstraction_closure_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_attention_integrated_abstraction_closure__{item_id}.json"
+    report = f"{base}/decoder_attention_integrated_abstraction_closure__{item_id}.md"
+    composed_datapath = (
+        f"{base}/decoder_attention_composed_datapath_physical_feasibility__"
+        "l2_decoder_attention_composed_datapath_q12_pwl_softmax_frontier_llama7b_v1.json"
+    )
+    hbm_quality_backed = (
+        f"{base}/decoder_attention_kv_physical_hbm_quality_backed_7b__"
+        "l2_decoder_attention_kv_physical_hbm_quality_backed_7b_llama7b_v1_r2.json"
+    )
+    native_quality = (
+        f"{base}/decoder_attention_kv_model_native_quality_7b__"
+        "l2_decoder_attention_kv_model_native_quality_7b_v1_r2.json"
+    )
+    q12_frontier_best = (
+        "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__"
+        "l2_decoder_attention_composed_datapath_q12_pwl_softmax_frontier_llama7b_v1/"
+        "best_point.json"
+    )
+    hbm_campaign_best = (
+        "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__"
+        "l2_decoder_attention_kv_physical_hbm_quality_backed_7b_llama7b_v1_r2/"
+        "best_point.json"
+    )
+    return {
+        "inputs": {
+            "attention_composed_datapath_physical_feasibility": composed_datapath,
+            "attention_kv_physical_hbm_quality_backed_7b": hbm_quality_backed,
+            "attention_kv_model_native_quality_7b": native_quality,
+            "attention_composed_datapath_q12_pwl_best": q12_frontier_best,
+            "attention_kv_physical_hbm_quality_backed_7b_best": hbm_campaign_best,
+            "attention_integrated_abstraction_closure_out": out,
+            "attention_integrated_abstraction_closure_report": report,
+            "attention_integrated_abstraction_closure_scope": (
+                "Integrate the merged q12/PWL composed datapath feasibility result, "
+                "the merged 7B quality-backed HBM frontier, and native 7B KV quality "
+                "evidence into one Llama7B frontier closure artifact. Report the "
+                "selected token-throughput/area/precision point and name any remaining "
+                "energy, HBM, SRAM, NoC, or datapath abstractions explicitly."
+            ),
+        },
+        "commands": [
+            {
+                "name": "audit_decoder_attention_integrated_abstraction_closure",
+                "run": (
+                    "python3 npu/eval/audit_llm_decoder_attention_integrated_abstraction_closure.py "
+                    f"--composed-datapath-json {composed_datapath} "
+                    f"--hbm-quality-backed-json {hbm_quality_backed} "
+                    f"--native-quality-json {native_quality} "
+                    f"--q12-frontier-best-json {q12_frontier_best} "
+                    f"--hbm-campaign-best-json {hbm_campaign_best} "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+    }
+
+
 def _decoder_attention_mixed_precision_quality_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_mixed_precision_quality__{item_id}.json"
@@ -7406,6 +7468,7 @@ def _build_payload(
         "decoder_attention_kv_hbm_closed_onchip_schedule",
         "decoder_attention_kv_subtile_pipeline_schedule",
         "decoder_attention_composed_datapath_physical_feasibility",
+        "decoder_attention_integrated_abstraction_closure",
         "decoder_attention_kv_dual_stream_physical_feasibility",
         "decoder_attention_mixed_precision_quality",
         "decoder_attention_softmax_pow2sum_quality",
@@ -7568,6 +7631,8 @@ def _build_payload(
             decoder_evidence = _decoder_attention_kv_subtile_pipeline_schedule_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_composed_datapath_physical_feasibility":
             decoder_evidence = _decoder_attention_composed_datapath_physical_feasibility_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_attention_integrated_abstraction_closure":
+            decoder_evidence = _decoder_attention_integrated_abstraction_closure_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_dual_stream_physical_feasibility":
             decoder_evidence = _decoder_attention_kv_dual_stream_physical_feasibility_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_mixed_precision_quality":

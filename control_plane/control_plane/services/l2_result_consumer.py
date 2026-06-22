@@ -474,6 +474,10 @@ _DECODER_EVIDENCE_OUTPUT_KEYS: tuple[tuple[str, str], ...] = (
         "attention_composed_datapath_physical_feasibility_out",
         "attention_composed_datapath_physical_feasibility_report",
     ),
+    (
+        "attention_integrated_abstraction_closure_out",
+        "attention_integrated_abstraction_closure_report",
+    ),
 )
 
 
