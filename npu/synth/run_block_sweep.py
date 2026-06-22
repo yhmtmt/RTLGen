@@ -1581,8 +1581,25 @@ def run_single(design_dir: Path, design_name: str, platform: str, top: str, veri
     if skip_existing and result_path.exists():
         print(f"[INFO] Skipping existing run: {run_dir}")
         try:
-            return json.loads(result_path.read_text(encoding="utf-8"))
-        except json.JSONDecodeError:
+            cached_payload = json.loads(result_path.read_text(encoding="utf-8"))
+            if not isinstance(cached_payload, dict):
+                raise ValueError("result.json payload is not an object")
+            if not str(cached_payload.get("design", "")).strip():
+                cached_payload["design"] = design_name
+            if not str(cached_payload.get("platform", "")).strip():
+                cached_payload["platform"] = platform
+            if not str(cached_payload.get("config_hash", "")).strip():
+                cached_payload["config_hash"] = config_hash
+            if not str(cached_payload.get("param_hash", "")).strip():
+                cached_payload["param_hash"] = run_id
+            if not str(cached_payload.get("tag", "")).strip():
+                cached_payload["tag"] = tag
+            if not str(cached_payload.get("work_result_json", "")).strip():
+                cached_payload["work_result_json"] = str(result_path)
+
+            append_metrics(circuit_root / "metrics.csv", cached_payload)
+            return cached_payload
+        except (json.JSONDecodeError, ValueError):
             return {
                 "design": design_name,
                 "platform": platform,
