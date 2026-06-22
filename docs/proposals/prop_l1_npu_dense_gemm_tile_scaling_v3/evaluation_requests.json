@@ -1,0 +1,33 @@
+{
+  "proposal_id": "prop_l1_npu_dense_gemm_tile_scaling_v3",
+  "requests": [
+    {
+      "item_id": "l1_npu_dense_gemm_tile_scaling_v3",
+      "task_type": "l1_sweep",
+      "evaluation_mode": "measurement_only",
+      "abstraction_layer": "architecture_block",
+      "comparison_role": "measurement",
+      "expected_direction": "measure_dense_tile_depth_scaling",
+      "expected_reason": "Measure whether exact-FP16 16x16 k_unroll depth improves MAC density enough to revise the PR #981 measured-compute-constrained Llama7B frontier.",
+      "dispatch_machine_key": "eval-daemon-b7c2d9c80c1c",
+      "configs": [
+        "runs/designs/npu_blocks/npu_dense_gemm_tile_fp16_16x16_k1_p2/config.json",
+        "runs/designs/npu_blocks/npu_dense_gemm_tile_fp16_16x16_k1_p1/config.json",
+        "runs/designs/npu_blocks/npu_dense_gemm_tile_fp16_16x16_k2_p2/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/dense_gemm_tile_v3/sweeps/nangate45_dense_tile_depth_hier.json",
+      "out_root": "runs/campaigns/npu/dense_gemm_tile_v3"
+    }
+  ],
+  "requested_items": [
+    {
+      "item_id": "l1_npu_dense_gemm_tile_scaling_v3",
+      "task_type": "l1_sweep",
+      "objective": "Measure 16x16 exact-FP16 dense GEMM k1/k2 pipeline and depth scaling under one larger hierarchy-preserving Nangate45 floorplan.",
+      "evaluation_mode": "measurement_only",
+      "abstraction_layer": "architecture_block",
+      "status": "blocked_until_source_merged",
+      "notes": "Dispatch only after this proposal, the V3 sweep, and the new dense tile configs are merged to master; queue with source_requirement.required_sha set to that merge commit and dispatch_machine_key eval-daemon-b7c2d9c80c1c."
+    }
+  ]
+}

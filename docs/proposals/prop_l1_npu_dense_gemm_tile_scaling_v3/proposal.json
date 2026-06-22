@@ -1,0 +1,70 @@
+{
+  "proposal_id": "prop_l1_npu_dense_gemm_tile_scaling_v3",
+  "created_utc": "2026-06-22T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit_block",
+  "title": "Dense FP16 GEMM tile depth scaling V3",
+  "abstraction_layer": "architecture_block",
+  "hypothesis": "The measured-compute Llama7B frontier is limited by exact-FP16 dense tile MAC density. Increasing k_unroll within the existing 16x16 generator limit may improve MAC/cycle/mm2 or expose the next physical boundary without changing precision or generator semantics.",
+  "direct_comparison": {
+    "primary_question": "Does a 16x16 exact-FP16 dense GEMM tile with k_unroll=2 improve measured MAC density and energy per MAC versus the 16x16 k1 baseline under the same macro floorplan?",
+    "include": [
+      "16x16 k1 p2 exact-FP16 dense tile baseline remeasured in the V3 floorplan",
+      "16x16 k1 p1 exact-FP16 dense tile pipeline comparison",
+      "16x16 k2 p2 exact-FP16 dense tile depth scaling point",
+      "hierarchy-preserving Nangate45 PPA sweep",
+      "structural guard that all MAC outputs fold into the visible result hash",
+      "failure rows preserved as boundary evidence if timing, area, or flow fails"
+    ],
+    "exclude": [
+      "32-wide dense tiles, because the current generator validates array_m and array_n only up to 16",
+      "the prepared 16x16 k4 p2 boundary point in the first dispatch",
+      "softmax, normalization, reducer, CQ, DMA, SRAM, NoC, or producer integration",
+      "quality-changing precision approximation"
+    ],
+    "follow_on_broad_sweep": [
+      "If k2 improves density, run the prepared k4 boundary item or add a larger integrated macro measurement.",
+      "If k2 does not improve density, use the PR #981 measured-compute-constrained frontier and pivot to precision recovery or integrated compute hierarchy.",
+      "If the flow fails, record the failed point as the current exact-FP16 dense-tile scaling boundary before trying a different circuit algorithm."
+    ]
+  },
+  "expected_benefit": [
+    "Reduces the dominant measured-compute abstraction exposed by PR #981.",
+    "Tests exact-FP16 compute density before introducing lower precision.",
+    "Separates depth-scaling effects from unsupported wider-array generator changes.",
+    "Provides source-linked metrics for recomputing the Llama7B throughput, energy, and area frontier."
+  ],
+  "risks": [
+    "The k2 point may run longer or fail if area/timing pressure grows faster than MAC count.",
+    "The larger floorplan makes absolute delay less directly comparable to earlier V2 rows, so the V3 job remeasures the k1 baseline in the same floorplan.",
+    "The wrapper remains a macro-style PPA harness rather than a complete NPU block.",
+    "Pipeline stage 2 registers MAC outputs but does not retime inside the exact FP16 MAC primitive."
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l1_npu_dense_gemm_tile_scaling_v3",
+      "task_type": "l1_sweep",
+      "objective": "Measure 16x16 exact-FP16 dense GEMM k1/k2 pipeline and depth scaling under one larger hierarchy-preserving Nangate45 floorplan.",
+      "evaluation_mode": "measurement_only",
+      "abstraction_layer": "architecture_block",
+      "cost_class": "medium",
+      "expected_result": {
+        "direction": "measure_dense_tile_depth_scaling",
+        "reason": "Determine whether exact-FP16 k_unroll depth improves measured MAC density enough to change the PR #981 measured-compute-constrained Llama7B frontier."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/designs/npu_blocks/npu_dense_gemm_tile_fp16_16x16_k1_p2/metrics.csv",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_measured_compute_energy_closure__l2_decoder_attention_measured_compute_energy_closure_llama7b_v1.json"
+  ],
+  "knowledge_refs": [
+    "pr:981",
+    "docs/architecture/llama7b_attention_abstraction_closure_plan.md",
+    "npu/rtlgen/gen_dense_gemm_tile.py",
+    "npu/eval/check_dense_gemm_tile_guard.py",
+    "runs/campaigns/npu/dense_gemm_tile_v3/sweeps/nangate45_dense_tile_depth_hier.json"
+  ]
+}

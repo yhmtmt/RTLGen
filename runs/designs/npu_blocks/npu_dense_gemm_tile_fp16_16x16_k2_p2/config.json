@@ -1,0 +1,18 @@
+{
+  "version": "0.1",
+  "top_name": "dense_gemm_tile_fp16_16x16_k2_p2",
+  "dense_gemm_tile": {
+    "module_name": "dense_gemm_tile_fp16_16x16_k2_p2",
+    "precision": "fp16",
+    "array_m": 16,
+    "array_n": 16,
+    "k_unroll": 2,
+    "pipeline_stages": 2,
+    "rtlgen_cpp": {
+      "binary_path": "build/rtlgen",
+      "module_name": "gemm_mac_fp16_ieee",
+      "total_width": 16,
+      "mantissa_width": 10
+    }
+  }
+}

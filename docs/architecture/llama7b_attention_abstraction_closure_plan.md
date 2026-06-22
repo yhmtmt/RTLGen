@@ -93,6 +93,25 @@ than free or heuristic assumptions.
   - dominant energy component: `hbm`
   - next result: replace the abstract `524288 MAC/cycle` target with measured
     dense-tile compute capacity and recompute throughput/energy/area
+- The measured compute energy closure result
+  `l2_decoder_attention_measured_compute_energy_closure_llama7b_v1` is merged
+  by PR #981. It reports:
+  - the abstract `400.0 mm2` / `524288 MAC/cycle` frontier is not physically
+    plausible at measured exact-FP16 dense-tile density
+  - the abstract selected point would require `4096` copies of the best
+    measured 128-MAC/cycle dense tile, or `1888.64512 mm2` of compute area
+    before SRAM, HBM, NoC, and reserved area
+  - the corrected measured-compute-constrained energy best is
+    `die1200_dense_gemm_16x8_k1_p1_mac132736_lat1872.29_hbm0.465654_tt512`
+  - corrected latency: `72544.06213406654 us/token`
+  - corrected token throughput: `13.784725731954872 token/s`
+  - corrected energy: `81.66413005453946 mJ/token`
+  - compute energy: `18.095420734855 mJ/token`
+  - HBM energy: `63.520046663430314 mJ/token`
+  - dominant energy component remains `hbm`, but throughput and area are now
+    dominated by measured compute density
+  - next result: measure denser exact-FP16 dense GEMM tiles before accepting the
+    measured-compute frontier as the best possible exact-FP16 architecture
 - There is no active queue item for this closure stage. New evaluations should
   continue to dispatch only to the remote evaluator
   `eval-daemon-b7c2d9c80c1c`.
@@ -112,14 +131,13 @@ than free or heuristic assumptions.
 1a. Measured compute capacity and energy closure
    - Scope: replace abstract selected-point `macs_per_cycle` and nearest-row
      compute-energy scaling with measured dense-tile replicated capacity rows.
-   - Status: the current HBM-calibrated best assumes `524288 MAC/cycle` on a
-     `400.0 mm2` die. The merged dense-tile measured-compute artifact reaches
-     about `132k MAC/cycle` only at the `1200.0 mm2` planning point, so the
-     abstract `400.0 mm2` frontier must be checked before reuse.
-   - Next result: run
-     `l2_decoder_attention_measured_compute_energy_closure_llama7b_v1` to
-     determine whether the current selected family survives measured compute
-     capacity/energy constraints.
+   - Status: closed for the current measured dense-tile set by PR #981. The
+     current exact-FP16 measured-compute frontier reaches about `132k
+     MAC/cycle` only at the `1200.0 mm2` planning point, and the abstract
+     `524288 MAC/cycle` selected point is infeasible.
+   - Next result: run `l1_npu_dense_gemm_tile_scaling_v3` to measure whether
+     16x16 exact-FP16 `k_unroll` depth scaling improves MAC/cycle/mm2 enough to
+     rerank the Llama7B frontier.
 
 2. HBM/DRAM and on-chip service detail
    - Scope: replace aggregate HBM efficiency and compact NoC/SRAM service caps
@@ -179,9 +197,11 @@ than free or heuristic assumptions.
 
 ## Ordering
 
-The next evaluation should close the selected compute target. HBM calibration is
-stable across source-backed pJ/bit and row-hit sensitivity, but the selected
-point still assumes an abstract `524288 MAC/cycle` compute service point on a
-`400.0 mm2` die. The next job should replace that assumption with measured
-dense-tile replicated capacity rows and recompute throughput/energy/area. All
-new evaluation jobs should run on the remote evaluator, not the devcontainer.
+The next evaluation should test whether exact-FP16 dense compute can become
+denser before moving to lower precision or a wider generator. PR #981 already
+closed the abstract selected compute target and showed that the current
+measured dense-tile set makes the old `524288 MAC/cycle` point infeasible. The
+next job is `l1_npu_dense_gemm_tile_scaling_v3`: remeasure the 16x16 k1
+baseline and measure a 16x16 k2 depth point in the same larger macro floorplan.
+All new evaluation jobs should run on the remote evaluator, not the
+devcontainer.
