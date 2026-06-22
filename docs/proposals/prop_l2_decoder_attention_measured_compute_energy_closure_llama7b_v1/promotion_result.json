@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_measured_compute_energy_closure_llama7b_v1",
+  "decision": "iterate",
+  "pr_number": 981,
+  "merge_commit": "d1600148e8821b56e0f3599af204e0ac9c167c3b",
+  "merged_utc": "2026-06-22T09:37:01.270647Z"
+}

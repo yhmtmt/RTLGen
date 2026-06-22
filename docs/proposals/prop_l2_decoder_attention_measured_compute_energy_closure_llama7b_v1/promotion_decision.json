@@ -1,0 +1,15 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_measured_compute_energy_closure_llama7b_v1",
+  "candidate_id": "l2_decoder_attention_measured_compute_energy_closure_llama7b_v1",
+  "decision": "iterate",
+  "reason": "Decoder evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_measured_compute_energy_closure__l2_decoder_attention_measured_compute_energy_closure_llama7b_v1.json: decision=measured_compute_constraints_replace_abstract_frontier; recommended_next_step=Use the measured-compute-constrained frontier for the next architecture decision; then either measure a larger integrated compute macro or explore denser/lower-precision compute.",
+  "evidence_refs": [
+    "item:l2_decoder_attention_measured_compute_energy_closure_llama7b_v1",
+    "run:l2_decoder_attention_measured_compute_energy_closure_llama7b_v1_run_14a2a7f71b70d0eb",
+    "artifact:control_plane/shadow_exports/l2_decisions/l2_decoder_attention_measured_compute_energy_closure_llama7b_v1.json",
+    "pr:#981",
+    "https://github.com/yhmtmt/RTLGen/pull/981"
+  ],
+  "next_action": "inspect follow-on work after l2_decoder_attention_measured_compute_energy_closure_llama7b_v1",
+  "requires_human_approval": false
+}

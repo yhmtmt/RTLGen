@@ -17,5 +17,20 @@
       "expected_reason": "Replace the abstract selected MAC/cycle point with measured dense-tile compute capacity before final Llama7B ranking.",
       "dispatch_machine_key": "eval-daemon-b7c2d9c80c1c"
     }
+  ],
+  "source_commit": "8a1546101a72d36317320f41587d1d400369bc48",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_measured_compute_energy_closure_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "LLM-oriented attention-tail stress campaign for larger sequence lengths and more repeated non-terminal Softmax paths.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_measured_compute_energy_closure",
+      "status": "merged",
+      "merged_pr_number": 981,
+      "merge_commit": "d1600148e8821b56e0f3599af204e0ac9c167c3b",
+      "merged_utc": "2026-06-22T09:37:01.270647Z",
+      "notes": "Merged via PR #981 and merge d1600148e8821b56e0f3599af204e0ac9c167c3b at 2026-06-22T09:37:01.270647Z."
+    }
   ]
 }
