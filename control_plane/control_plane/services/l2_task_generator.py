@@ -5592,6 +5592,61 @@ def _decoder_attention_integrated_abstraction_closure_evidence(*, item_id: str) 
     }
 
 
+def _decoder_attention_integrated_energy_closure_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_attention_integrated_energy_closure__{item_id}.json"
+    report = f"{base}/decoder_attention_integrated_energy_closure__{item_id}.md"
+    integrated_closure = (
+        f"{base}/decoder_attention_integrated_abstraction_closure__"
+        "l2_decoder_attention_integrated_abstraction_closure_llama7b_v1.json"
+    )
+    hbm_quality_backed = (
+        f"{base}/decoder_attention_kv_physical_hbm_quality_backed_7b__"
+        "l2_decoder_attention_kv_physical_hbm_quality_backed_7b_llama7b_v1_r2.json"
+    )
+    measured_compute = (
+        f"{base}/decoder_attention_kv_dense_tile_measured_compute__"
+        "l2_decoder_attention_kv_dense_tile_measured_compute_llama7b_v1.json"
+    )
+    sram_profile = f"{base}/decoder_attention_sram_profile__l2_decoder_attention_sram_profile_v1.json"
+    noc_profile = f"{base}/decoder_attention_noc_profile__l2_decoder_attention_noc_profile_v1.json"
+    return {
+        "inputs": {
+            "attention_integrated_abstraction_closure": integrated_closure,
+            "attention_kv_physical_hbm_quality_backed_7b": hbm_quality_backed,
+            "attention_kv_dense_tile_measured_compute": measured_compute,
+            "attention_sram_profile": sram_profile,
+            "attention_noc_profile": noc_profile,
+            "attention_integrated_energy_closure_out": out,
+            "attention_integrated_energy_closure_report": report,
+            "attention_integrated_energy_closure_scope": (
+                "Compose an explicit integrated-energy account for the selected Llama7B "
+                "attention frontier. Keep measured compute, SRAM, NoC, and HBM terms "
+                "separate from parameterized terms so the ranking exposes remaining "
+                "energy abstractions instead of hiding them in a single heuristic score."
+            ),
+        },
+        "commands": [
+            {
+                "name": "audit_decoder_attention_integrated_energy_closure",
+                "run": (
+                    "python3 npu/eval/audit_llm_decoder_attention_integrated_energy_closure.py "
+                    f"--integrated-closure-json {integrated_closure} "
+                    f"--hbm-quality-backed-json {hbm_quality_backed} "
+                    f"--measured-compute-json {measured_compute} "
+                    f"--sram-profile-json {sram_profile} "
+                    f"--noc-profile-json {noc_profile} "
+                    "--hbm-energy-pj-per-byte 8.0 "
+                    "--noc-energy-pj-per-byte-hop 0.02 "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+    }
+
+
 def _decoder_attention_mixed_precision_quality_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_mixed_precision_quality__{item_id}.json"
@@ -7469,6 +7524,7 @@ def _build_payload(
         "decoder_attention_kv_subtile_pipeline_schedule",
         "decoder_attention_composed_datapath_physical_feasibility",
         "decoder_attention_integrated_abstraction_closure",
+        "decoder_attention_integrated_energy_closure",
         "decoder_attention_kv_dual_stream_physical_feasibility",
         "decoder_attention_mixed_precision_quality",
         "decoder_attention_softmax_pow2sum_quality",
@@ -7633,6 +7689,8 @@ def _build_payload(
             decoder_evidence = _decoder_attention_composed_datapath_physical_feasibility_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_integrated_abstraction_closure":
             decoder_evidence = _decoder_attention_integrated_abstraction_closure_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_attention_integrated_energy_closure":
+            decoder_evidence = _decoder_attention_integrated_energy_closure_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_dual_stream_physical_feasibility":
             decoder_evidence = _decoder_attention_kv_dual_stream_physical_feasibility_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_mixed_precision_quality":
