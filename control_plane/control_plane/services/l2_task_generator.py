@@ -6017,6 +6017,55 @@ def _decoder_attention_mixed_int8_energy_closure_evidence(*, item_id: str) -> di
     }
 
 
+def _decoder_attention_mixed_int8_native_quality_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_attention_mixed_int8_native_quality__{item_id}.json"
+    report = f"{base}/decoder_attention_mixed_int8_native_quality__{item_id}.md"
+    energy_closure = (
+        f"{base}/decoder_attention_mixed_int8_energy_closure__"
+        "l2_decoder_attention_mixed_int8_energy_closure_llama7b_v1_r2.json"
+    )
+    return {
+        "inputs": {
+            "attention_mixed_int8_energy_closure": energy_closure,
+            "attention_mixed_int8_native_quality_out": out,
+            "attention_mixed_int8_native_quality_report": report,
+            "attention_mixed_int8_native_quality_scope": (
+                "Run a 7B-class trained checkpoint with the attention modules shadowed by "
+                "q8/k8/v8 arithmetic and the RTL int8 reciprocal-softmax approximation used by "
+                "the current mixed/int8 latency frontier. This removes the synthetic-distribution "
+                "quality abstraction for the mixed/int8 point, but remains a prompt-level "
+                "attention-shadow gate rather than QAT or full perplexity."
+            ),
+        },
+        "commands": [
+            {
+                "name": "evaluate_decoder_attention_mixed_int8_native_quality",
+                "run": (
+                    "bash -lc '"
+                    "MODEL_ID=${RTLGEN_MODEL_NATIVE_7B_MODEL_ID:-mistralai/Mistral-7B-v0.1}; "
+                    "EXPECTED_GQA=${RTLGEN_MODEL_NATIVE_7B_EXPECTED_GQA_GROUP_SIZE:-4}; "
+                    "MAX_PROMPTS=${RTLGEN_MODEL_NATIVE_7B_MAX_PROMPTS:-2}; "
+                    "DTYPE=${RTLGEN_MODEL_NATIVE_7B_DTYPE:-bfloat16}; "
+                    "bash npu/eval/run_hf_eval_python.sh "
+                    "npu/eval/evaluate_llm_decoder_model_native_mixed_int8_attention.py "
+                    "--model-id \"$MODEL_ID\" "
+                    "--expected-gqa-group-size \"$EXPECTED_GQA\" "
+                    "--max-prompts \"$MAX_PROMPTS\" "
+                    "--dtype \"$DTYPE\" "
+                    "--topk 5 "
+                    "--q-bits 8 --k-bits 8 --v-bits 8 --score-bits 8 --weight-bits 8 "
+                    "--softmax-mode rtl_recip_lut_q8 "
+                    f"--out {out} "
+                    f"--out-md {report}'"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+        "evidence_only": True,
+    }
+
+
 def _decoder_attention_mixed_precision_quality_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_mixed_precision_quality__{item_id}.json"
@@ -7902,6 +7951,7 @@ def _build_payload(
         "decoder_attention_measured_compute_energy_closure",
         "decoder_attention_dense_gemm_v3_measured_compute_closure",
         "decoder_attention_mixed_int8_energy_closure",
+        "decoder_attention_mixed_int8_native_quality",
         "decoder_attention_kv_dual_stream_physical_feasibility",
         "decoder_attention_mixed_precision_quality",
         "decoder_attention_softmax_pow2sum_quality",
@@ -8082,6 +8132,8 @@ def _build_payload(
             decoder_evidence = _decoder_attention_dense_gemm_v3_measured_compute_closure_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_mixed_int8_energy_closure":
             decoder_evidence = _decoder_attention_mixed_int8_energy_closure_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_attention_mixed_int8_native_quality":
+            decoder_evidence = _decoder_attention_mixed_int8_native_quality_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_dual_stream_physical_feasibility":
             decoder_evidence = _decoder_attention_kv_dual_stream_physical_feasibility_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_mixed_precision_quality":

@@ -1,0 +1,83 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_mixed_int8_native_quality_llama7b_v1",
+  "created_utc": "2026-06-24T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Llama7B mixed/int8 native attention quality gate",
+  "abstraction_layer": "decoder_attention_mixed_int8_native_quality",
+  "hypothesis": "The mixed/int8 softmax-recip latency frontier is only promotable if the q8/k8/v8 attention-shadow path preserves next-token rankings on a real 7B-class checkpoint. A native checkpoint gate should replace the current synthetic-distribution quality proxy before mixed/int8 is treated as a precision-valid frontier.",
+  "direct_comparison": {
+    "primary_question": "Does the mixed/int8 softmax-recip attention path preserve 7B-class checkpoint final-logit rankings closely enough to keep the mixed/int8 point as a precision-valid latency frontier?",
+    "baseline": "native checkpoint attention in the evaluator runtime",
+    "candidate": "q8/k8/v8 attention shadow with rtl_recip_lut_q8 softmax weights",
+    "include": [
+      "real 7B-class checkpoint prompt-level final-logit comparison",
+      "q8/k8/v8 symmetric attention tensor quantization",
+      "int8 RTL reciprocal-softmax approximation",
+      "top-1 match, top-k contains, logit cosine, probability KL, and max logit delta"
+    ],
+    "exclude": [
+      "QAT or fine-tuning recovery",
+      "full perplexity or task accuracy",
+      "new OpenROAD/PPA runs",
+      "HBM/NoC/SRAM model changes"
+    ],
+    "metrics": [
+      "decision",
+      "top1_match_rate",
+      "topk_contains_rate",
+      "mean_logit_cosine",
+      "mean_probability_kl",
+      "max_abs_logit_delta_max",
+      "model_id",
+      "precision_profile",
+      "remaining_abstractions"
+    ]
+  },
+  "expected_benefit": [
+    "replace proxy-only mixed/int8 precision evidence with a real-checkpoint attention-shadow gate",
+    "decide whether the mixed/int8 energy-closure latency frontier can remain under consideration",
+    "separate precision risk from HBM-dominant energy risk in the current frontier"
+  ],
+  "risks": [
+    "the default public 7B-class checkpoint is Mistral-7B unless evaluator-local variables select a LLaMA-family checkpoint",
+    "the gate compares prompt-level final logits and does not model autoregressive error accumulation",
+    "attention shadowing is implemented through the Transformers module interface and may need adaptation for non-LLaMA-family modules"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_mixed_int8_native_quality_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Run a 7B-class native checkpoint quality gate for the q8/k8/v8 mixed/int8 softmax-recip attention path used by the current latency frontier.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_mixed_int8_native_quality",
+      "comparison_role": "precision_gate",
+      "cost_class": "medium",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_mixed_int8_energy_closure_llama7b_v1_r2"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "validate_or_reject_mixed_int8_latency_frontier_precision",
+        "reason": "The mixed/int8 point has much higher token throughput but higher energy and only proxy quality; native checkpoint evidence is required before it can remain a precision-valid latency frontier."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_model_native_quality_7b__l2_decoder_attention_kv_model_native_quality_7b_v1_r2.json"
+  ],
+  "source_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_energy_closure__l2_decoder_attention_mixed_int8_energy_closure_llama7b_v1_r2.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_precision_quality__l2_decoder_attention_mixed_precision_quality_llama7b_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/evaluate_llm_decoder_model_native_mixed_int8_attention.py",
+    "npu/eval/evaluate_llm_decoder_model_native_kv_quant.py",
+    "npu/eval/estimate_llm_decoder_attention_mixed_precision_quality.py",
+    "docs/architecture/llama7b_attention_abstraction_closure_plan.md"
+  ]
+}
+

@@ -475,6 +475,10 @@ _DECODER_EVIDENCE_OUTPUT_KEYS: tuple[tuple[str, str], ...] = (
         "attention_mixed_int8_energy_closure_report",
     ),
     (
+        "attention_mixed_int8_native_quality_out",
+        "attention_mixed_int8_native_quality_report",
+    ),
+    (
         "attention_composed_datapath_physical_feasibility_out",
         "attention_composed_datapath_physical_feasibility_report",
     ),
@@ -750,6 +754,40 @@ def _decoder_recommendation_override(
 
 def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, Any]) -> tuple[str, str]:
     model = str(evidence_payload.get("model", "")).strip()
+    if evidence_payload.get("quality_gate") == "mixed_int8_attention_shadow" and isinstance(
+        evidence_payload.get("decision"),
+        dict,
+    ):
+        decision = dict(evidence_payload["decision"])
+        outcome = str(decision.get("status") or "mixed_int8_native_quality_recorded")
+        model_info = dict(evidence_payload.get("model") or {})
+        precision = dict(evidence_payload.get("precision") or {})
+        summary_row = dict(evidence_payload.get("summary") or {})
+        parts = [
+            f"Decoder mixed/int8 native attention quality evidence recorded from {evidence_ref}: decision={outcome}",
+        ]
+        for key in ("model_id", "attention_heads", "kv_heads", "gqa_group_size", "dtype"):
+            if key in model_info:
+                parts.append(f"{key}={model_info.get(key)}")
+        for key in ("q_bits", "k_bits", "v_bits", "score_bits", "weight_bits", "softmax_mode"):
+            if key in precision:
+                parts.append(f"{key}={precision.get(key)}")
+        for key in (
+            "comparison_count",
+            "top1_match_rate",
+            "topk_contains_rate",
+            "mean_logit_cosine",
+            "mean_probability_kl",
+            "max_abs_logit_delta_max",
+        ):
+            if key in summary_row:
+                parts.append(f"{key}={summary_row.get(key)}")
+        next_step = str(decision.get("next_step", "")).strip()
+        if next_step:
+            parts.append(f"next_step={next_step}")
+        summary = "; ".join(parts)
+        return outcome, summary if summary.endswith(".") else summary + "."
+
     if isinstance(evidence_payload.get("model"), dict) and isinstance(evidence_payload.get("decision"), dict):
         decision = dict(evidence_payload["decision"])
         outcome = str(decision.get("status") or "native_checkpoint_quality_recorded")
