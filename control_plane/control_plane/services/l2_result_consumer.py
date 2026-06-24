@@ -479,6 +479,10 @@ _DECODER_EVIDENCE_OUTPUT_KEYS: tuple[tuple[str, str], ...] = (
         "attention_mixed_int8_native_quality_report",
     ),
     (
+        "attention_mixed_int8_native_quality_ablation_out",
+        "attention_mixed_int8_native_quality_ablation_report",
+    ),
+    (
         "attention_composed_datapath_physical_feasibility_out",
         "attention_composed_datapath_physical_feasibility_report",
     ),
@@ -785,6 +789,20 @@ def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, 
         next_step = str(decision.get("next_step", "")).strip()
         if next_step:
             parts.append(f"next_step={next_step}")
+        candidate_summaries = evidence_payload.get("candidate_summaries")
+        if isinstance(candidate_summaries, list) and candidate_summaries:
+            best_candidate = dict(evidence_payload.get("best_candidate") or {})
+            if best_candidate:
+                parts.append(f"best_candidate_id={best_candidate.get('candidate_id')}")
+                for key in (
+                    "top1_match_rate",
+                    "topk_contains_rate",
+                    "mean_logit_cosine",
+                    "mean_probability_kl",
+                ):
+                    if key in best_candidate:
+                        parts.append(f"best_{key}={best_candidate.get(key)}")
+            parts.append(f"candidate_count={len(candidate_summaries)}")
         summary = "; ".join(parts)
         return outcome, summary if summary.endswith(".") else summary + "."
 
