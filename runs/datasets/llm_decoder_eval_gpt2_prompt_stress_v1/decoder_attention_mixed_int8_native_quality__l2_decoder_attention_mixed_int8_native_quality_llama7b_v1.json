@@ -1,0 +1,292 @@
+{
+  "assumptions": [
+    "This is a native-checkpoint attention-shadow gate, not a full QAT or perplexity study.",
+    "Teacher-forced next-token inputs isolate attention-path ranking drift from decoding-policy variance.",
+    "Only Llama-style q/k/v projection + attention-softmax control is patched (QKV quantization + RTL-style int8 softmax).",
+    "Q/K/V quantization and RTL softmax are applied in an in-process attention shadow, not reflected in training-time weights."
+  ],
+  "candidate_rows": [
+    {
+      "candidate_top1": 264,
+      "logit_cosine": 0.9368807600567373,
+      "max_abs_logit_delta": 10.109375,
+      "probability_kl": 1.3036208100023086,
+      "prompt_index": 0,
+      "reference_margin": 0.1875,
+      "reference_top1": 264,
+      "step": 0,
+      "top1_match": 1.0,
+      "topk_contains": 1.0
+    },
+    {
+      "candidate_top1": 1215,
+      "logit_cosine": 0.9310458968802339,
+      "max_abs_logit_delta": 8.234375,
+      "probability_kl": 2.3111248218932308,
+      "prompt_index": 0,
+      "reference_margin": 1.5625,
+      "reference_top1": 2990,
+      "step": 1,
+      "top1_match": 0.0,
+      "topk_contains": 0.0
+    },
+    {
+      "candidate_top1": 302,
+      "logit_cosine": 0.9620098556399248,
+      "max_abs_logit_delta": 6.5390625,
+      "probability_kl": 0.40330222702425844,
+      "prompt_index": 0,
+      "reference_margin": 0.0,
+      "reference_top1": 302,
+      "step": 2,
+      "top1_match": 1.0,
+      "topk_contains": 1.0
+    },
+    {
+      "candidate_top1": 1287,
+      "logit_cosine": 0.9580956430850232,
+      "max_abs_logit_delta": 6.953125,
+      "probability_kl": 1.0670581250210616,
+      "prompt_index": 0,
+      "reference_margin": 0.3125,
+      "reference_top1": 1287,
+      "step": 3,
+      "top1_match": 1.0,
+      "topk_contains": 1.0
+    },
+    {
+      "candidate_top1": 1722,
+      "logit_cosine": 0.9698371684994849,
+      "max_abs_logit_delta": 5.609375,
+      "probability_kl": 1.1114497780128794,
+      "prompt_index": 0,
+      "reference_margin": 1.3125,
+      "reference_top1": 10190,
+      "step": 4,
+      "top1_match": 0.0,
+      "topk_contains": 0.0
+    },
+    {
+      "candidate_top1": 28725,
+      "logit_cosine": 0.9571838572886241,
+      "max_abs_logit_delta": 8.1484375,
+      "probability_kl": 0.31745164964137257,
+      "prompt_index": 0,
+      "reference_margin": 0.8125,
+      "reference_top1": 28723,
+      "step": 5,
+      "top1_match": 0.0,
+      "topk_contains": 1.0
+    },
+    {
+      "candidate_top1": 661,
+      "logit_cosine": 0.9398061115868541,
+      "max_abs_logit_delta": 6.78125,
+      "probability_kl": 0.8602958242046937,
+      "prompt_index": 0,
+      "reference_margin": 0.3125,
+      "reference_top1": 661,
+      "step": 6,
+      "top1_match": 1.0,
+      "topk_contains": 1.0
+    },
+    {
+      "candidate_top1": 349,
+      "logit_cosine": 0.9662315518703072,
+      "max_abs_logit_delta": 6.203125,
+      "probability_kl": 0.26632992631637575,
+      "prompt_index": 0,
+      "reference_margin": 0.9375,
+      "reference_top1": 349,
+      "step": 7,
+      "top1_match": 1.0,
+      "topk_contains": 1.0
+    },
+    {
+      "candidate_top1": 28725,
+      "logit_cosine": 0.8591517700467242,
+      "max_abs_logit_delta": 10.125,
+      "probability_kl": 4.983791250636879,
+      "prompt_index": 1,
+      "reference_margin": 2.3125,
+      "reference_top1": 2308,
+      "step": 0,
+      "top1_match": 0.0,
+      "topk_contains": 0.0
+    },
+    {
+      "candidate_top1": 28725,
+      "logit_cosine": 0.9489928823993324,
+      "max_abs_logit_delta": 8.57421875,
+      "probability_kl": 1.1048030638215895,
+      "prompt_index": 1,
+      "reference_margin": 0.5625,
+      "reference_top1": 28723,
+      "step": 1,
+      "top1_match": 0.0,
+      "topk_contains": 1.0
+    },
+    {
+      "candidate_top1": 13,
+      "logit_cosine": 0.8821441500781233,
+      "max_abs_logit_delta": 8.75,
+      "probability_kl": 0.639753275415653,
+      "prompt_index": 1,
+      "reference_margin": 1.125,
+      "reference_top1": 13,
+      "step": 2,
+      "top1_match": 1.0,
+      "topk_contains": 1.0
+    },
+    {
+      "candidate_top1": 13,
+      "logit_cosine": 0.9295401898900636,
+      "max_abs_logit_delta": 7.734375,
+      "probability_kl": 0.1813347203089894,
+      "prompt_index": 1,
+      "reference_margin": 5.25,
+      "reference_top1": 13,
+      "step": 3,
+      "top1_match": 1.0,
+      "topk_contains": 1.0
+    },
+    {
+      "candidate_top1": 1014,
+      "logit_cosine": 0.9595509703357409,
+      "max_abs_logit_delta": 6.53125,
+      "probability_kl": 0.6518261651699921,
+      "prompt_index": 1,
+      "reference_margin": 0.375,
+      "reference_top1": 3840,
+      "step": 4,
+      "top1_match": 0.0,
+      "topk_contains": 0.0
+    },
+    {
+      "candidate_top1": 28809,
+      "logit_cosine": 0.9553743898584086,
+      "max_abs_logit_delta": 7.296875,
+      "probability_kl": 0.47260495706409344,
+      "prompt_index": 1,
+      "reference_margin": 1.125,
+      "reference_top1": 28809,
+      "step": 5,
+      "top1_match": 1.0,
+      "topk_contains": 1.0
+    },
+    {
+      "candidate_top1": 28713,
+      "logit_cosine": 0.980056985719408,
+      "max_abs_logit_delta": 5.2421875,
+      "probability_kl": 0.0013761949282709981,
+      "prompt_index": 1,
+      "reference_margin": 7.5625,
+      "reference_top1": 28713,
+      "step": 6,
+      "top1_match": 1.0,
+      "topk_contains": 1.0
+    },
+    {
+      "candidate_top1": 272,
+      "logit_cosine": 0.9663689552499604,
+      "max_abs_logit_delta": 6.25,
+      "probability_kl": 0.5469475573405321,
+      "prompt_index": 1,
+      "reference_margin": 0.8125,
+      "reference_top1": 272,
+      "step": 7,
+      "top1_match": 1.0,
+      "topk_contains": 1.0
+    }
+  ],
+  "candidate_summary": {
+    "comparison_count": 16,
+    "k_bits": 8,
+    "max_abs_logit_delta_max": 10.125,
+    "max_abs_logit_delta_mean": 7.442626953125,
+    "max_reference_margin": 7.5625,
+    "mean_logit_cosine": 0.9438919461553094,
+    "mean_probability_kl": 1.0139418966751363,
+    "min_reference_margin": 0.0,
+    "q_bits": 8,
+    "score_bits": 8,
+    "softmax_mode": "rtl_recip_lut_q8",
+    "top1_match_rate": 0.625,
+    "topk_contains_rate": 0.75,
+    "v_bits": 8,
+    "weight_bits": 8
+  },
+  "decision": {
+    "blockers": [
+      "attention-shadow top-rank drift is too large for quality-gate promotion"
+    ],
+    "cautions": [
+      "probability KL is above the mixed/int8 attention shadow comfort band",
+      "average logit cosine dropped below the mixed/int8 attention shadow caution line"
+    ],
+    "next_step": "Hold this attention-shadow candidate until safer quantization is proven with a real checkpoint run or broader model sampling.",
+    "status": "mixed_int8_native_attention_shadow_hold",
+    "thresholds": {
+      "attention_shadow_only": true,
+      "mean_logit_cosine_caution_below": 0.998,
+      "mean_probability_kl_caution_above": 0.02,
+      "not_full_perplexity_gate": true,
+      "top1_match_min": 0.99,
+      "topk_contains_min": 0.995
+    }
+  },
+  "expected_gqa_group_size": 4,
+  "generation_steps": 8,
+  "model": {
+    "attention_heads": 32,
+    "device": "cpu",
+    "dtype": "bfloat16",
+    "gqa_group_size": 4.0,
+    "kv_heads": 8,
+    "model_id": "mistralai/Mistral-7B-v0.1",
+    "requested_dtype": "bfloat16"
+  },
+  "precision": {
+    "k_bits": 8,
+    "q_bits": 8,
+    "score_bits": 8,
+    "softmax_mode": "rtl_recip_lut_q8",
+    "v_bits": 8,
+    "weight_bits": 8
+  },
+  "prompt_count": 2,
+  "prompt_records": [
+    {
+      "prefill_reference_margin": 0.1875,
+      "prefill_reference_top1": 264,
+      "prompt": "The capital of France is",
+      "prompt_index": 0
+    },
+    {
+      "prefill_reference_margin": 2.3125,
+      "prefill_reference_top1": 2308,
+      "prompt": "Two plus two equals",
+      "prompt_index": 1
+    }
+  ],
+  "quality_gate": "mixed_int8_attention_shadow",
+  "summary": {
+    "comparison_count": 16,
+    "k_bits": 8,
+    "max_abs_logit_delta_max": 10.125,
+    "max_abs_logit_delta_mean": 7.442626953125,
+    "max_reference_margin": 7.5625,
+    "mean_logit_cosine": 0.9438919461553094,
+    "mean_probability_kl": 1.0139418966751363,
+    "min_reference_margin": 0.0,
+    "q_bits": 8,
+    "score_bits": 8,
+    "softmax_mode": "rtl_recip_lut_q8",
+    "top1_match_rate": 0.625,
+    "topk_contains_rate": 0.75,
+    "v_bits": 8,
+    "weight_bits": 8
+  },
+  "topk": 5,
+  "version": 0.1
+}
