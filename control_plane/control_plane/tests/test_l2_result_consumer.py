@@ -101,6 +101,47 @@ def test_decoder_evidence_summary_recognizes_mixed_precision_int8_compute_energy
     assert "best_dominant_energy_component=hbm" in summary
 
 
+def test_decoder_evidence_summary_recognizes_mixed_int8_native_quality() -> None:
+    outcome, summary = _decoder_evidence_summary(
+        evidence_ref="runs/datasets/demo/mixed_int8_native_quality.json",
+        evidence_payload={
+            "quality_gate": "mixed_int8_attention_shadow",
+            "model": {
+                "model_id": "mistralai/Mistral-7B-v0.1",
+                "attention_heads": 32,
+                "kv_heads": 8,
+                "gqa_group_size": 4.0,
+                "dtype": "bfloat16",
+            },
+            "precision": {
+                "q_bits": 8,
+                "k_bits": 8,
+                "v_bits": 8,
+                "score_bits": 8,
+                "weight_bits": 8,
+                "softmax_mode": "rtl_recip_lut_q8",
+            },
+            "summary": {
+                "comparison_count": 2,
+                "top1_match_rate": 1.0,
+                "topk_contains_rate": 1.0,
+                "mean_logit_cosine": 0.9999,
+                "mean_probability_kl": 0.0001,
+                "max_abs_logit_delta_max": 0.25,
+            },
+            "decision": {
+                "status": "mixed_int8_native_attention_shadow_pass",
+                "next_step": "use mixed/int8 as latency frontier and schedule autoregressive confirmation",
+            },
+        },
+    )
+
+    assert outcome == "mixed_int8_native_attention_shadow_pass"
+    assert "mixed/int8 native attention quality" in summary
+    assert "softmax_mode=rtl_recip_lut_q8" in summary
+    assert "top1_match_rate=1.0" in summary
+
+
 def test_decoder_evidence_summary_recognizes_composed_datapath_physical_feasibility() -> None:
     outcome, summary = _decoder_evidence_summary(
         evidence_ref="runs/datasets/demo/composed_datapath.json",
