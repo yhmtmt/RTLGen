@@ -1,0 +1,105 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "decoder_contract": {
+        "attention_mixed_int8_high_score_boundary": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_high_score_boundary__l2_decoder_attention_mixed_int8_high_score_boundary_llama7b_v1.json",
+        "attention_mixed_int8_broad_native_quality_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_broad_native_quality__l2_decoder_attention_mixed_int8_broad_native_quality_llama7b_v1_r2.json",
+        "attention_mixed_int8_broad_native_quality_scope": "Broaden the native 7B-class attention-shadow quality gate for the only passing mixed/int8 high-score point. Recheck score24 float-quantized softmax against a float-exact control and nearby failing controls before spending PPA on the mixed/int8 precision frontier.",
+        "attention_mixed_int8_broad_native_quality_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_broad_native_quality__l2_decoder_attention_mixed_int8_broad_native_quality_llama7b_v1_r2.md"
+      }
+    },
+    "commands": [
+      {
+        "run": "bash -lc 'MODEL_ID=${RTLGEN_MODEL_NATIVE_7B_MODEL_ID:-mistralai/Mistral-7B-v0.1}; EXPECTED_GQA=${RTLGEN_MODEL_NATIVE_7B_EXPECTED_GQA_GROUP_SIZE:-4}; MAX_PROMPTS=${RTLGEN_MODEL_NATIVE_7B_BROAD_MAX_PROMPTS:-8}; GEN_STEPS=${RTLGEN_MODEL_NATIVE_7B_BROAD_GENERATION_STEPS:-8}; DTYPE=${RTLGEN_MODEL_NATIVE_7B_DTYPE:-bfloat16}; bash npu/eval/run_hf_eval_python.sh npu/eval/evaluate_llm_decoder_model_native_mixed_int8_attention.py --model-id \"$MODEL_ID\" --expected-gqa-group-size \"$EXPECTED_GQA\" --max-prompts \"$MAX_PROMPTS\" --generation-steps \"$GEN_STEPS\" --dtype \"$DTYPE\" --topk 5 --candidate score22_float:q8,k8,v8,s22,w16,float_quantized --candidate score24_float:q8,k8,v8,s24,w16,float_quantized --candidate score24_rtl_exact:q8,k8,v8,s24,w8,rtl_exact --candidate qkv8_float_exact:q8,k8,v8,s24,w16,float_exact --primary-candidate-id score24_float --out runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_broad_native_quality__l2_decoder_attention_mixed_int8_broad_native_quality_llama7b_v1_r2.json --out-md runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_broad_native_quality__l2_decoder_attention_mixed_int8_broad_native_quality_llama7b_v1_r2.md'",
+        "name": "evaluate_decoder_attention_mixed_int8_broad_native_quality"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate_runs"
+      }
+    ],
+    "objective": "Rerun the broader 7B-class native checkpoint attention-shadow gate for the passing score24 QKV8 mixed/int8 point after fixing mixed/int8 evidence artifact transport.",
+    "acceptance": [
+      "Write all declared decoder evidence artifacts",
+      "Keep evidence artifact paths repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "source_mode": "src_verilog",
+    "expected_outputs": [
+      "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_broad_native_quality__l2_decoder_attention_mixed_int8_broad_native_quality_llama7b_v1_r2.json",
+      "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_broad_native_quality__l2_decoder_attention_mixed_int8_broad_native_quality_llama7b_v1_r2.md"
+    ]
+  },
+  "layer": "layer2",
+  "state": "evaluated",
+  "title": "Llama7B mixed/int8 broad native attention quality r2",
+  "result": {
+    "branch": "eval/l2_decoder_attention_mixed_int8_broad_native_quality_llama7b_v1_r2/s20260624t115330z",
+    "completed_utc": "2026-06-24T11:53:28.287945Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "b7c2d9c80c1c",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260624t115330z][host:b7c2d9c80c1c][item:l2_decoder_attention_mixed_int8_broad_native_quality_llama7b_v1_r2]",
+    "metrics_rows": [],
+    "metrics_exempt_reason": "evidence_only_decoder_evidence",
+    "queue_item_id": "l2_decoder_attention_mixed_int8_broad_native_quality_llama7b_v1_r2",
+    "session_id": "s20260624t115330z",
+    "status": "ok",
+    "summary": "2/2 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l2_decoder_attention_mixed_int8_broad_native_quality_llama7b_v1_r2/s20260624t115330z",
+    "pr_title": "eval: run llama7b mixed/int8 broad native attention quality r2",
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Include metrics row references in result.metrics_rows",
+      "Keep committed result_path fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260624t115330z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l2_decoder_attention_mixed_int8_broad_native_quality_llama7b_v1_r2"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l2_decoder_attention_mixed_int8_broad_native_quality_llama7b_v1_r2",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 1,
+  "created_utc": "2026-06-24T11:51:01.655563Z",
+  "requested_by": "developer_agent",
+  "developer_loop": {
+    "comparison": {
+      "role": "precision_validation",
+      "paired_baseline_item_id": ""
+    },
+    "evaluation": {
+      "mode": "quality_gate",
+      "expected_reason": "The first broad-native-quality run completed but mixed/int8 dataset outputs were not transported; after fixing artifact transport, rerun the same score24_float quality gate before PPA is spent on the score24 mixed/int8 point.",
+      "expected_direction": "validate_score24_float_before_ppa"
+    },
+    "abstraction": {
+      "layer": "decoder_attention_mixed_int8_broad_native_quality"
+    },
+    "proposal_id": "prop_l2_decoder_attention_mixed_int8_broad_native_quality_llama7b_v1",
+    "dependencies": {
+      "item_ids": [
+        "l2_decoder_attention_mixed_int8_high_score_boundary_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    },
+    "proposal_path": "docs/proposals/prop_l2_decoder_attention_mixed_int8_broad_native_quality_llama7b_v1/proposal.json"
+  },
+  "source_requirement": {
+    "repo": "",
+    "reason": "evaluator runtime must contain the queued job source commit",
+    "version": 1,
+    "required_ref": "origin/master",
+    "required_sha": "47e6974fc6ffae2e10e5b491bf968a2d5106bfa7",
+    "requires_daemon_restart": true
+  }
+}

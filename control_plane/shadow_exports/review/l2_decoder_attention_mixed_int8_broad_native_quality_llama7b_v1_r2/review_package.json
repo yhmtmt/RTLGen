@@ -1,0 +1,156 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-06-24T11:53:32.930700Z",
+  "control_plane_source_commit": "47e6974fc6ffae2e10e5b491bf968a2d5106bfa7",
+  "review_metadata_source_commit": "47e6974fc6ffae2e10e5b491bf968a2d5106bfa7",
+  "item_id": "l2_decoder_attention_mixed_int8_broad_native_quality_llama7b_v1_r2",
+  "run_key": "l2_decoder_attention_mixed_int8_broad_native_quality_llama7b_v1_r2_run_a756884b923d650b",
+  "layer": "layer2",
+  "flow": "openroad",
+  "task_type": "l2_campaign",
+  "source_commit": "47e6974fc6ffae2e10e5b491bf968a2d5106bfa7",
+  "queue_snapshot": {
+    "path": "control_plane/shadow_exports/review/l2_decoder_attention_mixed_int8_broad_native_quality_llama7b_v1_r2/evaluated.json",
+    "result": {
+      "branch": "eval/l2_decoder_attention_mixed_int8_broad_native_quality_llama7b_v1_r2/s20260624t115330z",
+      "completed_utc": "2026-06-24T11:53:28.287945Z",
+      "evaluator_id": "control_plane",
+      "executor": "@control_plane",
+      "host": "b7c2d9c80c1c",
+      "identity_block": "[role:evaluator][account:control_plane][session:s20260624t115330z][host:b7c2d9c80c1c][item:l2_decoder_attention_mixed_int8_broad_native_quality_llama7b_v1_r2]",
+      "metrics_rows": [],
+      "metrics_exempt_reason": "evidence_only_decoder_evidence",
+      "queue_item_id": "l2_decoder_attention_mixed_int8_broad_native_quality_llama7b_v1_r2",
+      "session_id": "s20260624t115330z",
+      "status": "ok",
+      "summary": "2/2 commands succeeded"
+    }
+  },
+  "review_artifact": {
+    "kind": "decision_proposal",
+    "path": "control_plane/shadow_exports/l2_decisions/l2_decoder_attention_mixed_int8_broad_native_quality_llama7b_v1_r2.json",
+    "storage_mode": "repo",
+    "sha256": "cfc774278dd350d42e451e257f6a97be0b992673e157640af0e33744dbd09473",
+    "payload": {
+      "version": 0.1,
+      "generated_utc": "2026-06-24T11:53:29.370329Z",
+      "item_id": "l2_decoder_attention_mixed_int8_broad_native_quality_llama7b_v1_r2",
+      "run_key": "l2_decoder_attention_mixed_int8_broad_native_quality_llama7b_v1_r2_run_a756884b923d650b",
+      "layer": "layer2",
+      "flow": "openroad",
+      "platform": "nangate45",
+      "task_type": "l2_campaign",
+      "source_commit": "47e6974fc6ffae2e10e5b491bf968a2d5106bfa7",
+      "review_metadata_source_commit": "47e6974fc6ffae2e10e5b491bf968a2d5106bfa7",
+      "objective": "Rerun the broader 7B-class native checkpoint attention-shadow gate for the passing score24 QKV8 mixed/int8 point after fixing mixed/int8 evidence artifact transport.",
+      "input_manifest": {
+        "decoder_contract": {
+          "attention_mixed_int8_high_score_boundary": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_high_score_boundary__l2_decoder_attention_mixed_int8_high_score_boundary_llama7b_v1.json",
+          "attention_mixed_int8_broad_native_quality_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_broad_native_quality__l2_decoder_attention_mixed_int8_broad_native_quality_llama7b_v1_r2.json",
+          "attention_mixed_int8_broad_native_quality_scope": "Broaden the native 7B-class attention-shadow quality gate for the only passing mixed/int8 high-score point. Recheck score24 float-quantized softmax against a float-exact control and nearby failing controls before spending PPA on the mixed/int8 precision frontier.",
+          "attention_mixed_int8_broad_native_quality_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_broad_native_quality__l2_decoder_attention_mixed_int8_broad_native_quality_llama7b_v1_r2.md"
+        }
+      },
+      "recommendation": {
+        "source": "decoder_evidence",
+        "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_broad_native_quality__l2_decoder_attention_mixed_int8_broad_native_quality_llama7b_v1_r2.json",
+        "arch_id": "decoder_attention_mixed_int8_broad_native_quality",
+        "macro_mode": "evidence_only",
+        "outcome": "mixed_int8_native_attention_shadow_hold"
+      },
+      "objective_profiles": [],
+      "evaluation_record": {
+        "proposal_id": "prop_l2_decoder_attention_mixed_int8_broad_native_quality_llama7b_v1",
+        "title": "Llama7B mixed/int8 broad native attention quality",
+        "primary_question": "Does the score24 QKV8 attention-shadow point still preserve native 7B-class checkpoint rankings on a broader prompt set?",
+        "evaluation_mode": "quality_gate",
+        "comparison_role": "precision_validation",
+        "abstraction_layer": "decoder_attention_mixed_int8_broad_native_quality",
+        "expected_direction": "validate_score24_float_before_ppa",
+        "expected_reason": "The first broad-native-quality run completed but mixed/int8 dataset outputs were not transported; after fixing artifact transport, rerun the same score24_float quality gate before PPA is spent on the score24 mixed/int8 point.",
+        "summary": "Decoder mixed/int8 native attention quality evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_broad_native_quality__l2_decoder_attention_mixed_int8_broad_native_quality_llama7b_v1_r2.json: decision=mixed_int8_native_attention_shadow_hold; model_id=mistralai/Mistral-7B-v0.1; attention_heads=32; kv_heads=8; gqa_group_size=4.0; dtype=bfloat16; q_bits=8; k_bits=8; v_bits=8; score_bits=24; weight_bits=16; softmax_mode=float_quantized; comparison_count=64; top1_match_rate=0.96875; topk_contains_rate=1.0; mean_logit_cosine=0.9999025562684435; mean_probability_kl=0.0014115558838723183; max_abs_logit_delta_max=0.53125; next_step=Hold this attention-shadow candidate until safer quantization is proven with a real checkpoint run or broader model sampling.; best_candidate_id=qkv8_float_exact; best_top1_match_rate=1.0; best_topk_contains_rate=1.0; best_mean_logit_cosine=0.9998988400355315; best_mean_probability_kl=0.0012425925766148221; candidate_count=4.",
+        "outcome": "mixed_int8_native_attention_shadow_hold",
+        "expectation_status": "unspecified"
+      },
+      "proposal_assessment": {
+        "proposal_id": "prop_l2_decoder_attention_mixed_int8_broad_native_quality_llama7b_v1",
+        "title": "Llama7B mixed/int8 broad native attention quality",
+        "kind": "architecture",
+        "primary_question": "Does the score24 QKV8 attention-shadow point still preserve native 7B-class checkpoint rankings on a broader prompt set?",
+        "evaluation_mode": "quality_gate",
+        "comparison_role": "precision_validation",
+        "outcome": "mixed_int8_native_attention_shadow_hold",
+        "summary": "Decoder mixed/int8 native attention quality evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_broad_native_quality__l2_decoder_attention_mixed_int8_broad_native_quality_llama7b_v1_r2.json: decision=mixed_int8_native_attention_shadow_hold; model_id=mistralai/Mistral-7B-v0.1; attention_heads=32; kv_heads=8; gqa_group_size=4.0; dtype=bfloat16; q_bits=8; k_bits=8; v_bits=8; score_bits=24; weight_bits=16; softmax_mode=float_quantized; comparison_count=64; top1_match_rate=0.96875; topk_contains_rate=1.0; mean_logit_cosine=0.9999025562684435; mean_probability_kl=0.0014115558838723183; max_abs_logit_delta_max=0.53125; next_step=Hold this attention-shadow candidate until safer quantization is proven with a real checkpoint run or broader model sampling.; best_candidate_id=qkv8_float_exact; best_top1_match_rate=1.0; best_topk_contains_rate=1.0; best_mean_logit_cosine=0.9998988400355315; best_mean_probability_kl=0.0012425925766148221; candidate_count=4.",
+        "baseline_ref": null,
+        "baseline_item_id": null,
+        "matched_row_count": 0,
+        "matched_rows": [],
+        "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_broad_native_quality__l2_decoder_attention_mixed_int8_broad_native_quality_llama7b_v1_r2.json",
+        "decoder_quality": {
+          "diagnosis": {},
+          "assumptions": [
+            "This is a native-checkpoint attention-shadow gate, not a full QAT or perplexity study.",
+            "Teacher-forced next-token inputs isolate attention-path ranking drift from decoding-policy variance.",
+            "Only Llama-style q/k/v projection + attention-softmax control is patched (QKV quantization + RTL-style int8 softmax).",
+            "Q/K/V quantization and RTL softmax are applied in an in-process attention shadow, not reflected in training-time weights."
+          ]
+        }
+      },
+      "source_refs": {
+        "decoder_evidence_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_broad_native_quality__l2_decoder_attention_mixed_int8_broad_native_quality_llama7b_v1_r2.json",
+        "decoder_attention_mixed_int8_broad_native_quality_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_broad_native_quality__l2_decoder_attention_mixed_int8_broad_native_quality_llama7b_v1_r2.json",
+        "decoder_attention_mixed_int8_broad_native_quality_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_broad_native_quality__l2_decoder_attention_mixed_int8_broad_native_quality_llama7b_v1_r2.md"
+      },
+      "decoder_quality": {
+        "diagnosis": {},
+        "assumptions": [
+          "This is a native-checkpoint attention-shadow gate, not a full QAT or perplexity study.",
+          "Teacher-forced next-token inputs isolate attention-path ranking drift from decoding-policy variance.",
+          "Only Llama-style q/k/v projection + attention-softmax control is patched (QKV quantization + RTL-style int8 softmax).",
+          "Q/K/V quantization and RTL softmax are applied in an in-process attention shadow, not reflected in training-time weights."
+        ]
+      }
+    }
+  },
+  "developer_loop": {
+    "comparison": {
+      "role": "precision_validation",
+      "paired_baseline_item_id": ""
+    },
+    "evaluation": {
+      "mode": "quality_gate",
+      "expected_reason": "The first broad-native-quality run completed but mixed/int8 dataset outputs were not transported; after fixing artifact transport, rerun the same score24_float quality gate before PPA is spent on the score24 mixed/int8 point.",
+      "expected_direction": "validate_score24_float_before_ppa"
+    },
+    "abstraction": {
+      "layer": "decoder_attention_mixed_int8_broad_native_quality"
+    },
+    "proposal_id": "prop_l2_decoder_attention_mixed_int8_broad_native_quality_llama7b_v1",
+    "dependencies": {
+      "item_ids": [
+        "l2_decoder_attention_mixed_int8_high_score_boundary_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    },
+    "proposal_path": "docs/proposals/prop_l2_decoder_attention_mixed_int8_broad_native_quality_llama7b_v1/proposal.json"
+  },
+  "submission_history": null,
+  "pr_payload": {
+    "branch": "eval/l2_decoder_attention_mixed_int8_broad_native_quality_llama7b_v1_r2/s20260624t115330z",
+    "title": "eval: run llama7b mixed/int8 broad native attention quality r2",
+    "body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260624t115330z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l2_decoder_attention_mixed_int8_broad_native_quality_llama7b_v1_r2"
+    },
+    "body_md": "## Summary\n- item_id: `l2_decoder_attention_mixed_int8_broad_native_quality_llama7b_v1_r2`\n- run_key: `l2_decoder_attention_mixed_int8_broad_native_quality_llama7b_v1_r2_run_a756884b923d650b`\n- layer: `layer2`\n- task_type: `l2_campaign`\n- status: `ok`\n- summary: `2/2 commands succeeded`\n- queue_snapshot: `control_plane/shadow_exports/review/l2_decoder_attention_mixed_int8_broad_native_quality_llama7b_v1_r2/evaluated.json`\n- metrics_rows_count: `0`\n- review_artifact: `decision_proposal` at `control_plane/shadow_exports/l2_decisions/l2_decoder_attention_mixed_int8_broad_native_quality_llama7b_v1_r2.json`\n\n## Developer Context\n- proposal_id: `prop_l2_decoder_attention_mixed_int8_broad_native_quality_llama7b_v1`\n- proposal_path: `docs/proposals/prop_l2_decoder_attention_mixed_int8_broad_native_quality_llama7b_v1/proposal.json`\n- reviewer_first_read: `docs/proposals/prop_l2_decoder_attention_mixed_int8_broad_native_quality_llama7b_v1/proposal.json` plus `docs/developer_agent_review.md`\n- execution_source_commit: `47e6974fc6ffae2e10e5b491bf968a2d5106bfa7`\n- review_metadata_source_commit: `47e6974fc6ffae2e10e5b491bf968a2d5106bfa7`\n\n## Evaluation Mode\n- evaluation_mode: `quality_gate`\n- abstraction_layer: `decoder_attention_mixed_int8_broad_native_quality`\n- comparison_role: `precision_validation`\n- expected_direction: `validate_score24_float_before_ppa`\n- expected_reason: `The first broad-native-quality run completed but mixed/int8 dataset outputs were not transported; after fixing artifact transport, rerun the same score24_float quality gate before PPA is spent on the score24 mixed/int8 point.`\n- expectation_status: `unspecified`\n- evaluation_summary: `Decoder mixed/int8 native attention quality evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_broad_native_quality__l2_decoder_attention_mixed_int8_broad_native_quality_llama7b_v1_r2.json: decision=mixed_int8_native_attention_shadow_hold; model_id=mistralai/Mistral-7B-v0.1; attention_heads=32; kv_heads=8; gqa_group_size=4.0; dtype=bfloat16; q_bits=8; k_bits=8; v_bits=8; score_bits=24; weight_bits=16; softmax_mode=float_quantized; comparison_count=64; top1_match_rate=0.96875; topk_contains_rate=1.0; mean_logit_cosine=0.9999025562684435; mean_probability_kl=0.0014115558838723183; max_abs_logit_delta_max=0.53125; next_step=Hold this attention-shadow candidate until safer quantization is proven with a real checkpoint run or broader model sampling.; best_candidate_id=qkv8_float_exact; best_top1_match_rate=1.0; best_topk_contains_rate=1.0; best_mean_logit_cosine=0.9998988400355315; best_mean_probability_kl=0.0012425925766148221; candidate_count=4.`\n\n## Focused Comparison\n- primary_question: `Does the score24 QKV8 attention-shadow point still preserve native 7B-class checkpoint rankings on a broader prompt set?`\n- comparison_role: `precision_validation`\n- proposal_outcome: `mixed_int8_native_attention_shadow_hold`\n- comparison_summary: `Decoder mixed/int8 native attention quality evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_broad_native_quality__l2_decoder_attention_mixed_int8_broad_native_quality_llama7b_v1_r2.json: decision=mixed_int8_native_attention_shadow_hold; model_id=mistralai/Mistral-7B-v0.1; attention_heads=32; kv_heads=8; gqa_group_size=4.0; dtype=bfloat16; q_bits=8; k_bits=8; v_bits=8; score_bits=24; weight_bits=16; softmax_mode=float_quantized; comparison_count=64; top1_match_rate=0.96875; topk_contains_rate=1.0; mean_logit_cosine=0.9999025562684435; mean_probability_kl=0.0014115558838723183; max_abs_logit_delta_max=0.53125; next_step=Hold this attention-shadow candidate until safer quantization is proven with a real checkpoint run or broader model sampling.; best_candidate_id=qkv8_float_exact; best_top1_match_rate=1.0; best_topk_contains_rate=1.0; best_mean_logit_cosine=0.9998988400355315; best_mean_probability_kl=0.0012425925766148221; candidate_count=4.`\n- baseline_ref: `None`\n- baseline_item_id: `None`\n\n## Checklist\n- [ ] Commit lightweight campaign artifacts only\n- [ ] Include metrics row references in result.metrics_rows\n- [ ] Keep committed result_path fields repo-portable\n- [ ] Run python3 scripts/validate_runs.py --skip_eval_queue before pushing\n",
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Include metrics row references in result.metrics_rows",
+      "Keep committed result_path fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ]
+  }
+}
