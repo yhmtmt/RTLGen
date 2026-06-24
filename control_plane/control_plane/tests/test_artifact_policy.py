@@ -94,6 +94,16 @@ def test_transportable_expected_output_allows_compact_attention_kv_dataset() -> 
     )
     assert is_transportable_expected_output(
         "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+        "decoder_attention_mixed_int8_broad_native_quality__"
+        "l2_decoder_attention_mixed_int8_broad_native_quality_llama7b_v1.json"
+    )
+    assert is_transportable_expected_output(
+        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+        "decoder_attention_mixed_int8_high_score_boundary__"
+        "l2_decoder_attention_mixed_int8_high_score_boundary_llama7b_v1.md"
+    )
+    assert is_transportable_expected_output(
+        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
         "decoder_attention_kv_dense_tile_endpoint_measured_l1_clustered_schedule__"
         "l2_decoder_attention_kv_dense_tile_endpoint_measured_l1_clustered_schedule_llama7b_v1.json"
     )
