@@ -1,0 +1,33 @@
+{
+  "item_id": "l1_npu_dense_gemm_tile_scaling_v3_r2",
+  "completed_trials": 3,
+  "success_count": 1,
+  "failure_count": 2,
+  "success_rate": 0.3333333333333333,
+  "metrics": {
+    "critical_path_ns": {
+      "best": 6.4969,
+      "mean": 6.4969,
+      "median": 6.4969,
+      "max": 6.4969,
+      "range": 0.0,
+      "stddev": 0.0
+    },
+    "die_area": {
+      "best": 6760000.0,
+      "mean": 6760000.0,
+      "median": 6760000.0,
+      "max": 6760000.0,
+      "range": 0.0,
+      "stddev": 0.0
+    },
+    "total_power_mw": {
+      "best": 21.3,
+      "mean": 21.3,
+      "median": 21.3,
+      "max": 21.3,
+      "range": 0.0,
+      "stddev": 0.0
+    }
+  }
+}

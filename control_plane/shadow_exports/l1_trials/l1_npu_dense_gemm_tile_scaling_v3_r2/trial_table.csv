@@ -1,0 +1,10 @@
+run_key,attempt,trial_index,seed,status,metrics_csv,critical_path_ns,die_area,total_power_mw,failure_category,failure_stage,failure_signature
+l1_npu_dense_gemm_tile_scaling_v3_r2_run_1188438249486ee5,1,1,0,failed,,,,,worker_error,worker,"(psycopg.OperationalError) consuming input failed: server closed the connection unexpectedly
+	This probably means the server terminated abnormally
+	before or while processing the request.
+server closed the connection unexpectedly
+	This probably means the server terminated abnormally
+	before or while processing the request.
+(Background on this error at: https://sqlalche.me/e/20/e3q8)"
+l1_npu_dense_gemm_tile_scaling_v3_r2_run_c42230f69ee7bdfc,2,1,,canceled,,,,,lease_expired,control_plane,lease expired before run completion
+l1_npu_dense_gemm_tile_scaling_v3_r2_run_de2e2cf26d937e01,3,1,0,succeeded,runs/campaigns/npu/dense_gemm_tile_v3/npu_dense_gemm_tile_fp16_16x16_k1_p1/metrics.csv,6.4969,6760000.0,21.3,none,,
