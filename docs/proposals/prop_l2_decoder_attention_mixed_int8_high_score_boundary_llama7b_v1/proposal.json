@@ -1,0 +1,79 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_mixed_int8_high_score_boundary_llama7b_v1",
+  "created_utc": "2026-06-24T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Llama7B mixed/int8 attention high-score precision boundary",
+  "abstraction_layer": "decoder_attention_mixed_int8_high_score_boundary",
+  "hypothesis": "QKV8 attention may remain viable if score precision is raised above the failing score16 boundary. A native 7B-class sweep over score18/20/22/24 should decide whether any practical score quantization remains, or whether the frontier must keep high-precision attention scores and softmax.",
+  "direct_comparison": {
+    "primary_question": "What is the lowest high-score precision that preserves native 7B-class checkpoint rankings for QKV8 attention?",
+    "baseline": "l2_decoder_attention_mixed_int8_score_boundary_llama7b_v1",
+    "candidate": "score18/20/22/24 QKV8 attention-shadow candidates",
+    "include": [
+      "score18, score20, score22, and score24 float-quantized softmax candidates",
+      "score18, score20, score22, and score24 RTL exact int8 softmax candidates",
+      "a qkv8_float_exact reference-style candidate",
+      "native 7B-class checkpoint prompt-level final-logit comparisons",
+      "top-1 match, top-k contains, logit cosine, probability KL, and max logit delta"
+    ],
+    "exclude": [
+      "new OpenROAD/PPA runs",
+      "QAT or fine-tuning recovery",
+      "full perplexity or task accuracy",
+      "reciprocal-LUT variants beyond the existing score8 failure"
+    ],
+    "metrics": [
+      "best_candidate_id",
+      "lowest_passing_score_bits",
+      "candidate_summaries",
+      "top1_match_rate",
+      "topk_contains_rate",
+      "mean_logit_cosine",
+      "mean_probability_kl"
+    ]
+  },
+  "expected_benefit": [
+    "narrow the precision boundary between failing score16 and the previously passing high-resolution QKV8 path",
+    "avoid PPA on score-quantized hardware points that fail native checkpoint evidence",
+    "decide whether the next practical hardware point should keep high-precision scores/softmax while preserving QKV8 projections"
+  ],
+  "risks": [
+    "the result is still a prompt-level attention-shadow gate rather than full perplexity",
+    "the boundary may move with a larger prompt set or a different LLaMA-family checkpoint",
+    "RTL exact softmax still abstracts reciprocal implementation cost"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_mixed_int8_high_score_boundary_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Run a 7B-class native checkpoint high-score boundary sweep for QKV8 attention after score16 failed.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_mixed_int8_high_score_boundary",
+      "comparison_role": "precision_boundary",
+      "cost_class": "medium",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_mixed_int8_score_boundary_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "find_high_score_precision_boundary",
+        "reason": "Score10-16 all failed while the earlier high-resolution QKV8 path passed; this job narrows whether score18/20/22 can preserve rankings or whether only near-full score precision is viable."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score_boundary__l2_decoder_attention_mixed_int8_score_boundary_llama7b_v1.json"
+  ],
+  "source_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_native_quality_ablation__l2_decoder_attention_mixed_int8_native_quality_ablation_llama7b_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_energy_closure__l2_decoder_attention_mixed_int8_energy_closure_llama7b_v1_r2.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/evaluate_llm_decoder_model_native_mixed_int8_attention.py",
+    "docs/proposals/prop_l2_decoder_attention_mixed_int8_score_boundary_llama7b_v1/proposal.json"
+  ]
+}
