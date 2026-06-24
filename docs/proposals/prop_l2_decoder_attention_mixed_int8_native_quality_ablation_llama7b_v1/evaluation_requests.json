@@ -17,8 +17,12 @@
         "direction": "identify_precision_blocker",
         "reason": "The prior native quality gate held the mixed/int8 latency frontier; this ablation determines which approximation should be redesigned or relaxed next."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 998,
+      "merge_commit": "e4de7ce1e1aa76df4725ccc227f9e84db7085ec7",
+      "merged_utc": "2026-06-24T11:16:28.465619Z",
+      "notes": "Merged via PR #998 and merge e4de7ce1e1aa76df4725ccc227f9e84db7085ec7 at 2026-06-24T11:16:28.465619Z."
     }
-  ]
+  ],
+  "source_commit": "a39040884231921cbe116d10a2b52d4bfcfcd8c5"
 }
-

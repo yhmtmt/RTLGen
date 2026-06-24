@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_mixed_int8_native_quality_ablation_llama7b_v1",
+  "decision": "iterate",
+  "pr_number": 998,
+  "merge_commit": "e4de7ce1e1aa76df4725ccc227f9e84db7085ec7",
+  "merged_utc": "2026-06-24T11:16:28.465619Z"
+}
