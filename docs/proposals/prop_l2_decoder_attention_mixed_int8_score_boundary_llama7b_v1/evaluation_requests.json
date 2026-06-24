@@ -17,8 +17,12 @@
         "direction": "find_lowest_passing_score_precision",
         "reason": "The previous ablation showed QKV8 itself passes but score8 fails; the next frontier needs the lowest score precision that still preserves rankings."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 1000,
+      "merge_commit": "d3e7678045190a9fa24a37f6c8ee8633e802b26e",
+      "merged_utc": "2026-06-24T11:25:25.711130Z",
+      "notes": "Merged via PR #1000 and merge d3e7678045190a9fa24a37f6c8ee8633e802b26e at 2026-06-24T11:25:25.711130Z."
     }
-  ]
+  ],
+  "source_commit": "48d3415f3b62bd1ffc58c7acc0b4f8c932b7e722"
 }
-
