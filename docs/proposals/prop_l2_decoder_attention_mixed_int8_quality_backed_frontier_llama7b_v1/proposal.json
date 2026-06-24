@@ -1,0 +1,83 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1",
+  "created_utc": "2026-06-24T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Llama7B mixed/int8 quality-backed frontier audit",
+  "abstraction_layer": "decoder_attention_mixed_int8_quality_backed_frontier",
+  "hypothesis": "The mixed/int8 energy frontier must be revised after broad native 7B attention-shadow quality rejected score/softmax quantization. Only the qkv8_float_exact direction should remain as a quality-backed candidate until it is recosted with matching high-precision score-softmax PPA.",
+  "direct_comparison": {
+    "primary_question": "Which mixed/int8 energy rows remain rankable after the broad native quality gate?",
+    "baseline": "l2_decoder_attention_mixed_int8_energy_closure_llama7b_v1_r2",
+    "candidate": "l2_decoder_attention_mixed_int8_broad_native_quality_llama7b_v1_r2",
+    "include": [
+      "consume merged mixed/int8 energy closure r2",
+      "consume merged broad native 7B attention-shadow quality r2",
+      "identify quality-passing candidate IDs and precision profile",
+      "invalidate score/softmax-quantized energy rows that do not match the passing precision point",
+      "record the recost requirement before throughput, energy, and area ranking"
+    ],
+    "exclude": [
+      "new OpenROAD/PPA runs",
+      "new native checkpoint inference",
+      "QAT or fine-tuning recovery",
+      "new HBM/SRAM/NoC modeling"
+    ],
+    "metrics": [
+      "decision",
+      "quality_passing_candidate_ids",
+      "quality_best_candidate_id",
+      "quality_best_top1_match_rate",
+      "quality_best_mean_probability_kl",
+      "invalidated_energy_candidate_count",
+      "old_energy_best_latency_us",
+      "old_energy_best_token_throughput_per_s",
+      "old_energy_best_energy_mj",
+      "remaining_abstractions"
+    ]
+  },
+  "expected_benefit": [
+    "prevent stale score/softmax-quantized PPA rows from being ranked as the mixed/int8 frontier",
+    "preserve the old energy row as an unranked latency/traffic floor while identifying the required recost",
+    "define the next PPA job around q8/k8/v8 projections with high-precision or exact score-softmax"
+  ],
+  "risks": [
+    "this audit does not produce the recosted PPA numbers",
+    "the quality gate remains attention-shadow evidence rather than full perplexity or task accuracy",
+    "the passing qkv8_float_exact direction may still need a hardware score-softmax embodiment before final comparison"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Reconcile mixed/int8 energy closure against broad native 7B quality evidence and mark non-matching energy rows unrankable.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_mixed_int8_quality_backed_frontier",
+      "comparison_role": "quality_backed_frontier",
+      "cost_class": "low",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_mixed_int8_energy_closure_llama7b_v1_r2",
+        "l2_decoder_attention_mixed_int8_broad_native_quality_llama7b_v1_r2"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "retract_invalid_mixed_int8_energy_ranking",
+        "reason": "The broad native quality result only passes qkv8_float_exact; the old energy-best row uses score/softmax quantization and must not remain a quality-backed frontier point."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_energy_closure__l2_decoder_attention_mixed_int8_energy_closure_llama7b_v1_r2.json"
+  ],
+  "source_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_broad_native_quality__l2_decoder_attention_mixed_int8_broad_native_quality_llama7b_v1_r2.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/audit_llm_decoder_attention_mixed_int8_quality_backed_frontier.py",
+    "docs/proposals/prop_l2_decoder_attention_mixed_int8_broad_native_quality_llama7b_v1/proposal.json",
+    "docs/proposals/prop_l2_decoder_attention_mixed_int8_energy_closure_llama7b_v1/proposal.json"
+  ]
+}

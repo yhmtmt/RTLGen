@@ -442,6 +442,25 @@ primitive envelope. Under that envelope, the physical primitive metrics do not
 make q10 cheaper than q12/q14/q16; q10 remains a quality/minimum-precision
 choice until an integrated datapath measurement says otherwise.
 
+## Mixed-Int8 Quality-Backed Frontier
+After running native 7B-class attention-shadow quality gates, do not rank a
+mixed/int8 energy row by PPA alone. Reconcile the latest energy closure with the
+latest broad native quality artifact first:
+```sh
+python3 npu/eval/audit_llm_decoder_attention_mixed_int8_quality_backed_frontier.py \
+  --mixed-int8-energy-closure-json runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_energy_closure__l2_decoder_attention_mixed_int8_energy_closure_llama7b_v1_r2.json \
+  --mixed-int8-broad-native-quality-json runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_broad_native_quality__l2_decoder_attention_mixed_int8_broad_native_quality_llama7b_v1_r2.json \
+  --out /tmp/decoder_attention_mixed_int8_quality_backed_frontier.json \
+  --out-md /tmp/decoder_attention_mixed_int8_quality_backed_frontier.md
+```
+
+If the broad quality gate only passes `qkv8_float_exact`, prior score/softmax
+quantized energy rows such as `s8/w8/recip_lut` are unranked latency/traffic
+floors, not quality-backed frontier points. The next PPA job must recost the
+q8/k8/v8 projection path with matching high-precision or exact score-softmax
+hardware before comparing token throughput, energy, and area against the FP16
+baseline.
+
 Optionally verify path-like fields exist:
 ```sh
 python3 npu/eval/validate.py --campaign <campaign.json> --check_paths

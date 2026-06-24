@@ -495,6 +495,14 @@ _DECODER_EVIDENCE_OUTPUT_KEYS: tuple[tuple[str, str], ...] = (
         "attention_mixed_int8_broad_native_quality_report",
     ),
     (
+        "attention_mixed_int8_quality_backed_frontier_out",
+        "attention_mixed_int8_quality_backed_frontier_report",
+    ),
+    (
+        "attention_mixed_int8_quality_energy_frontier_out",
+        "attention_mixed_int8_quality_energy_frontier_report",
+    ),
+    (
         "attention_composed_datapath_physical_feasibility_out",
         "attention_composed_datapath_physical_feasibility_report",
     ),
@@ -1165,6 +1173,36 @@ def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, 
         recommended_next = str(diagnosis_dict.get("recommended_next_step", "")).strip()
         if recommended_next:
             parts.append(f"recommended_next_step={recommended_next}")
+        summary = "; ".join(parts)
+        return outcome, summary if summary.endswith(".") else summary + "."
+
+    if model == "llm_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1":
+        diagnosis = evidence_payload.get("diagnosis")
+        diagnosis_dict = dict(diagnosis) if isinstance(diagnosis, dict) else {}
+        outcome = str(
+            diagnosis_dict.get("decision")
+            or evidence_payload.get("decision")
+            or "mixed_int8_quality_backed_frontier_recorded"
+        )
+        parts = [
+            f"Decoder mixed/int8 quality-backed frontier evidence recorded from {evidence_ref}: decision={outcome}",
+        ]
+        for key in (
+            "quality_passing_candidate_count",
+            "quality_passing_candidate_ids",
+            "quality_best_candidate_id",
+            "quality_best_top1_match_rate",
+            "quality_best_mean_probability_kl",
+            "invalidated_energy_candidate_count",
+            "old_energy_best_candidate_id",
+            "old_energy_best_latency_us",
+            "old_energy_best_token_throughput_per_s",
+            "old_energy_best_energy_mj",
+            "old_energy_best_precision_profile",
+            "recommended_next_step",
+        ):
+            if key in diagnosis_dict:
+                parts.append(f"{key}={diagnosis_dict.get(key)}")
         summary = "; ".join(parts)
         return outcome, summary if summary.endswith(".") else summary + "."
 

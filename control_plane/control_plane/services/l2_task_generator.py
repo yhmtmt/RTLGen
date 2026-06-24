@@ -6279,6 +6279,48 @@ def _decoder_attention_mixed_int8_broad_native_quality_evidence(*, item_id: str)
     }
 
 
+def _decoder_attention_mixed_int8_quality_backed_frontier_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    energy_closure = (
+        f"{base}/decoder_attention_mixed_int8_energy_closure__"
+        "l2_decoder_attention_mixed_int8_energy_closure_llama7b_v1_r2.json"
+    )
+    broad_native_quality = (
+        f"{base}/decoder_attention_mixed_int8_broad_native_quality__"
+        "l2_decoder_attention_mixed_int8_broad_native_quality_llama7b_v1_r2.json"
+    )
+    out = f"{base}/decoder_attention_mixed_int8_quality_backed_frontier__{item_id}.json"
+    report = f"{base}/decoder_attention_mixed_int8_quality_backed_frontier__{item_id}.md"
+    return {
+        "inputs": {
+            "attention_mixed_int8_energy_closure": energy_closure,
+            "attention_mixed_int8_broad_native_quality": broad_native_quality,
+            "attention_mixed_int8_quality_backed_frontier_out": out,
+            "attention_mixed_int8_quality_backed_frontier_report": report,
+            "attention_mixed_int8_quality_backed_frontier_scope": (
+                "Reconcile the mixed/int8 energy frontier with the broad native 7B attention-shadow "
+                "quality gate. Demote score/softmax-quantized energy rows that no longer match the "
+                "quality-passing qkv8_float_exact precision point, and identify the recosted PPA "
+                "work needed before ranking throughput, energy, area, and precision."
+            ),
+        },
+        "commands": [
+            {
+                "name": "audit_decoder_attention_mixed_int8_quality_backed_frontier",
+                "run": (
+                    "python3 npu/eval/audit_llm_decoder_attention_mixed_int8_quality_backed_frontier.py "
+                    f"--mixed-int8-energy-closure-json {energy_closure} "
+                    f"--mixed-int8-broad-native-quality-json {broad_native_quality} "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+        "evidence_only": True,
+    }
+
+
 def _decoder_attention_mixed_precision_quality_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_mixed_precision_quality__{item_id}.json"
@@ -8169,6 +8211,7 @@ def _build_payload(
         "decoder_attention_mixed_int8_score_boundary",
         "decoder_attention_mixed_int8_high_score_boundary",
         "decoder_attention_mixed_int8_broad_native_quality",
+        "decoder_attention_mixed_int8_quality_backed_frontier",
         "decoder_attention_kv_dual_stream_physical_feasibility",
         "decoder_attention_mixed_precision_quality",
         "decoder_attention_softmax_pow2sum_quality",
@@ -8359,6 +8402,8 @@ def _build_payload(
             decoder_evidence = _decoder_attention_mixed_int8_high_score_boundary_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_mixed_int8_broad_native_quality":
             decoder_evidence = _decoder_attention_mixed_int8_broad_native_quality_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_attention_mixed_int8_quality_backed_frontier":
+            decoder_evidence = _decoder_attention_mixed_int8_quality_backed_frontier_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_dual_stream_physical_feasibility":
             decoder_evidence = _decoder_attention_kv_dual_stream_physical_feasibility_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_mixed_precision_quality":
