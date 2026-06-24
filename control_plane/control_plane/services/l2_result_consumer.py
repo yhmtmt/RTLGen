@@ -487,6 +487,10 @@ _DECODER_EVIDENCE_OUTPUT_KEYS: tuple[tuple[str, str], ...] = (
         "attention_mixed_int8_score_boundary_report",
     ),
     (
+        "attention_mixed_int8_high_score_boundary_out",
+        "attention_mixed_int8_high_score_boundary_report",
+    ),
+    (
         "attention_composed_datapath_physical_feasibility_out",
         "attention_composed_datapath_physical_feasibility_report",
     ),

@@ -1,0 +1,23 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_mixed_int8_high_score_boundary_llama7b_v1",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_mixed_int8_high_score_boundary_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Run a 7B-class native checkpoint high-score boundary sweep for QKV8 attention after score16 failed.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_mixed_int8_high_score_boundary",
+      "comparison_role": "precision_boundary",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_mixed_int8_score_boundary_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "find_high_score_precision_boundary",
+        "reason": "Score10-16 all failed while the earlier high-resolution QKV8 path passed; this job narrows whether score18/20/22 can preserve rankings or whether only near-full score precision is viable."
+      },
+      "status": "pending"
+    }
+  ]
+}
