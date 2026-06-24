@@ -1,0 +1,80 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-06-24T11:23:32.662524Z",
+  "item_id": "l2_decoder_attention_mixed_int8_score_boundary_llama7b_v1",
+  "run_key": "l2_decoder_attention_mixed_int8_score_boundary_llama7b_v1_run_235802f7765ff1b0",
+  "layer": "layer2",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l2_campaign",
+  "source_commit": "48d3415f3b62bd1ffc58c7acc0b4f8c932b7e722",
+  "review_metadata_source_commit": "48d3415f3b62bd1ffc58c7acc0b4f8c932b7e722",
+  "objective": "Run a 7B-class native checkpoint score-bit boundary sweep for QKV8 attention after score8 failed.",
+  "input_manifest": {
+    "decoder_contract": {
+      "attention_mixed_int8_score_boundary_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score_boundary__l2_decoder_attention_mixed_int8_score_boundary_llama7b_v1.json",
+      "attention_mixed_int8_score_boundary_scope": "Run a 7B-class native checkpoint score-bit boundary sweep after the mixed/int8 ablation showed QKV8 is acceptable but score8 fails. This identifies the lowest score precision that preserves rankings before mapping the candidate back to PPA.",
+      "attention_mixed_int8_score_boundary_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score_boundary__l2_decoder_attention_mixed_int8_score_boundary_llama7b_v1.md",
+      "attention_mixed_int8_native_quality_ablation": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_native_quality_ablation__l2_decoder_attention_mixed_int8_native_quality_ablation_llama7b_v1.json"
+    }
+  },
+  "recommendation": {
+    "source": "decoder_evidence",
+    "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score_boundary__l2_decoder_attention_mixed_int8_score_boundary_llama7b_v1.json",
+    "arch_id": "decoder_attention_mixed_int8_score_boundary",
+    "macro_mode": "evidence_only",
+    "outcome": "mixed_int8_native_attention_shadow_hold"
+  },
+  "objective_profiles": [],
+  "evaluation_record": {
+    "proposal_id": "prop_l2_decoder_attention_mixed_int8_score_boundary_llama7b_v1",
+    "title": "Llama7B mixed/int8 attention score precision boundary",
+    "primary_question": "What is the lowest attention score precision that preserves native 7B-class checkpoint rankings for QKV8 attention?",
+    "evaluation_mode": "frontier_detail",
+    "comparison_role": "precision_boundary",
+    "abstraction_layer": "decoder_attention_mixed_int8_score_boundary",
+    "expected_direction": "find_lowest_passing_score_precision",
+    "expected_reason": "The previous ablation showed QKV8 itself passes but score8 fails; the next frontier needs the lowest score precision that still preserves rankings.",
+    "summary": "Decoder mixed/int8 native attention quality evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score_boundary__l2_decoder_attention_mixed_int8_score_boundary_llama7b_v1.json: decision=mixed_int8_native_attention_shadow_hold; model_id=mistralai/Mistral-7B-v0.1; attention_heads=32; kv_heads=8; gqa_group_size=4.0; dtype=bfloat16; q_bits=8; k_bits=8; v_bits=8; score_bits=12; weight_bits=8; softmax_mode=rtl_exact; comparison_count=16; top1_match_rate=0.5625; topk_contains_rate=0.75; mean_logit_cosine=0.9388521451215864; mean_probability_kl=0.988032547806978; max_abs_logit_delta_max=10.3984375; next_step=Hold this attention-shadow candidate until safer quantization is proven with a real checkpoint run or broader model sampling.; best_candidate_id=score10_float; best_top1_match_rate=0.6875; best_topk_contains_rate=1.0; best_mean_logit_cosine=0.9764499680089153; best_mean_probability_kl=0.4291034575331289; candidate_count=8.",
+    "outcome": "mixed_int8_native_attention_shadow_hold",
+    "expectation_status": "unspecified"
+  },
+  "proposal_assessment": {
+    "proposal_id": "prop_l2_decoder_attention_mixed_int8_score_boundary_llama7b_v1",
+    "title": "Llama7B mixed/int8 attention score precision boundary",
+    "kind": "architecture",
+    "primary_question": "What is the lowest attention score precision that preserves native 7B-class checkpoint rankings for QKV8 attention?",
+    "evaluation_mode": "frontier_detail",
+    "comparison_role": "precision_boundary",
+    "outcome": "mixed_int8_native_attention_shadow_hold",
+    "summary": "Decoder mixed/int8 native attention quality evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score_boundary__l2_decoder_attention_mixed_int8_score_boundary_llama7b_v1.json: decision=mixed_int8_native_attention_shadow_hold; model_id=mistralai/Mistral-7B-v0.1; attention_heads=32; kv_heads=8; gqa_group_size=4.0; dtype=bfloat16; q_bits=8; k_bits=8; v_bits=8; score_bits=12; weight_bits=8; softmax_mode=rtl_exact; comparison_count=16; top1_match_rate=0.5625; topk_contains_rate=0.75; mean_logit_cosine=0.9388521451215864; mean_probability_kl=0.988032547806978; max_abs_logit_delta_max=10.3984375; next_step=Hold this attention-shadow candidate until safer quantization is proven with a real checkpoint run or broader model sampling.; best_candidate_id=score10_float; best_top1_match_rate=0.6875; best_topk_contains_rate=1.0; best_mean_logit_cosine=0.9764499680089153; best_mean_probability_kl=0.4291034575331289; candidate_count=8.",
+    "baseline_ref": null,
+    "baseline_item_id": null,
+    "matched_row_count": 0,
+    "matched_rows": [],
+    "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score_boundary__l2_decoder_attention_mixed_int8_score_boundary_llama7b_v1.json",
+    "decoder_quality": {
+      "diagnosis": {},
+      "assumptions": [
+        "This is a native-checkpoint attention-shadow gate, not a full QAT or perplexity study.",
+        "Teacher-forced next-token inputs isolate attention-path ranking drift from decoding-policy variance.",
+        "Only Llama-style q/k/v projection + attention-softmax control is patched (QKV quantization + RTL-style int8 softmax).",
+        "Q/K/V quantization and RTL softmax are applied in an in-process attention shadow, not reflected in training-time weights."
+      ]
+    }
+  },
+  "source_refs": {
+    "decoder_evidence_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score_boundary__l2_decoder_attention_mixed_int8_score_boundary_llama7b_v1.json",
+    "decoder_attention_mixed_int8_score_boundary_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score_boundary__l2_decoder_attention_mixed_int8_score_boundary_llama7b_v1.json",
+    "decoder_attention_mixed_int8_score_boundary_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score_boundary__l2_decoder_attention_mixed_int8_score_boundary_llama7b_v1.md"
+  },
+  "decoder_quality": {
+    "diagnosis": {},
+    "assumptions": [
+      "This is a native-checkpoint attention-shadow gate, not a full QAT or perplexity study.",
+      "Teacher-forced next-token inputs isolate attention-path ranking drift from decoding-policy variance.",
+      "Only Llama-style q/k/v projection + attention-softmax control is patched (QKV quantization + RTL-style int8 softmax).",
+      "Q/K/V quantization and RTL softmax are applied in an in-process attention shadow, not reflected in training-time weights."
+    ]
+  }
+}
