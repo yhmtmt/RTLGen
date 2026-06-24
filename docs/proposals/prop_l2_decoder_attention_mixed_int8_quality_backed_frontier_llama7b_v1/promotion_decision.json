@@ -1,0 +1,15 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1",
+  "candidate_id": "l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1",
+  "decision": "iterate",
+  "reason": "Decoder mixed/int8 quality-backed frontier evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_quality_backed_frontier__l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1.json: decision=mixed_int8_quality_backed_frontier_recost_required; quality_passing_candidate_count=1; quality_passing_candidate_ids=['qkv8_float_exact']; quality_best_candidate_id=qkv8_float_exact; quality_best_top1_match_rate=1.0; quality_best_mean_probability_kl=0.0012425925766148221; invalidated_energy_candidate_count=1; old_energy_best_candidate_id=die800_dense_gemm_int8_16x8_k1_p1_rep855_lat1575.37_hbm0.983398_tt1024; old_energy_best_latency_us=1575.373891; old_energy_best_token_throughput_per_s=634.7699461778119; old_energy_best_energy_mj=135.75588466251537; old_energy_best_precision_profile=q8_k8_v6_a24_s8_w8_recip_lut_q10_int8_compute; recommended_next_step=Recompute the Llama7B energy frontier for q8/k8/v8 projection quantization with high-precision or exact score/softmax PPA; do not rank the old s8/w8 reciprocal-LUT energy row.",
+  "evidence_refs": [
+    "item:l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1",
+    "run:l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1_run_aa26060ae07e8159",
+    "artifact:control_plane/shadow_exports/l2_decisions/l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1.json",
+    "pr:#1009",
+    "https://github.com/yhmtmt/RTLGen/pull/1009"
+  ],
+  "next_action": "inspect follow-on work after l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1",
+  "requires_human_approval": false
+}
