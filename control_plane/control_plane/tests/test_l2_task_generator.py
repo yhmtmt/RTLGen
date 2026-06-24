@@ -6713,6 +6713,62 @@ def test_generate_l2_campaign_task_adds_dense_gemm_v3_measured_compute_closure_e
             }
 
 
+def test_generate_l2_campaign_task_adds_mixed_int8_energy_closure_evidence() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id="l2_decoder_attention_mixed_int8_energy_closure_llama7b_v1",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    proposal_id="prop_l2_decoder_attention_mixed_int8_energy_closure_llama7b_v1",
+                    proposal_path=(
+                        "docs/proposals/"
+                        "prop_l2_decoder_attention_mixed_int8_energy_closure_llama7b_v1/"
+                        "proposal.json"
+                    ),
+                    abstraction_layer="decoder_attention_mixed_int8_energy_closure",
+                    evaluation_mode="frontier_detail",
+                    comparison_role="frontier_closure",
+                    depends_on_item_ids=[
+                        "l2_decoder_attention_mixed_precision_int8_compute_physical_feasibility_softmax_recip_lut_llama7b_v1",
+                        "l2_decoder_attention_dense_gemm_v3_measured_compute_closure_llama7b_v1",
+                    ],
+                    requires_merged_inputs=True,
+                    requires_materialized_refs=True,
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            commands = work_item.task_request.request_payload["task"]["commands"]
+            decoder_inputs = work_item.input_manifest["decoder_contract"]
+
+            assert [command["name"] for command in commands[:1]] == [
+                "audit_decoder_attention_mixed_int8_energy_closure",
+            ]
+            run = commands[0]["run"]
+            assert "audit_llm_decoder_attention_mixed_precision_int8_compute_energy_closure.py" in run
+            assert "--mixed-precision-int8-compute-physical-feasibility-json" in run
+            assert "--baseline-closure-json" in run
+            assert "attention_mixed_precision_int8_compute_physical_feasibility" in decoder_inputs
+            assert "attention_mixed_int8_energy_closure_out" in decoder_inputs
+            assert decoder_inputs["attention_mixed_int8_energy_closure_out"] in work_item.expected_outputs
+            assert work_item.task_request.request_payload["developer_loop"]["abstraction"] == {
+                "layer": "decoder_attention_mixed_int8_energy_closure",
+            }
+
+
 def test_generate_l2_campaign_task_adds_attention_mixed_precision_quality_evidence() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"

@@ -471,6 +471,10 @@ _DECODER_EVIDENCE_OUTPUT_KEYS: tuple[tuple[str, str], ...] = (
         "attention_mixed_precision_int8_compute_physical_feasibility_report",
     ),
     (
+        "attention_mixed_int8_energy_closure_out",
+        "attention_mixed_int8_energy_closure_report",
+    ),
+    (
         "attention_composed_datapath_physical_feasibility_out",
         "attention_composed_datapath_physical_feasibility_report",
     ),
@@ -1057,6 +1061,42 @@ def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, 
         ):
             if key in diagnosis_dict:
                 parts.append(f"{key}={diagnosis_dict.get(key)}")
+        summary = "; ".join(parts)
+        return outcome, summary if summary.endswith(".") else summary + "."
+
+    if model == "llm_decoder_attention_mixed_precision_int8_compute_energy_closure_llama7b_v1":
+        diagnosis = evidence_payload.get("diagnosis")
+        diagnosis_dict = dict(diagnosis) if isinstance(diagnosis, dict) else {}
+        best = evidence_payload.get("best")
+        best_dict = dict(best) if isinstance(best, dict) else {}
+        outcome = str(diagnosis_dict.get("decision") or evidence_payload.get("decision") or "mixed_int8_energy_closure_recorded")
+        parts = [
+            f"Decoder mixed/int8 energy closure evidence recorded from {evidence_ref}: decision={outcome}",
+        ]
+        for key in (
+            "source_rows_used",
+            "physical_feasible_rows",
+            "best_requested_mode",
+            "best_requested_adjusted_latency_us_if_feasible",
+            "best_requested_substituted_compute_arch",
+            "best_requested_substituted_compute_area_um2",
+            "best_requested_substituted_compute_power_mw",
+        ):
+            if key in diagnosis_dict:
+                parts.append(f"{key}={diagnosis_dict.get(key)}")
+        for key in (
+            "candidate_id",
+            "latency_us",
+            "token_throughput_per_s",
+            "energy_mj",
+            "die_area_mm2",
+            "dominant_energy_component",
+        ):
+            if key in best_dict:
+                parts.append(f"best_{key}={best_dict.get(key)}")
+        recommended_next = str(diagnosis_dict.get("recommended_next_step", "")).strip()
+        if recommended_next:
+            parts.append(f"recommended_next_step={recommended_next}")
         summary = "; ".join(parts)
         return outcome, summary if summary.endswith(".") else summary + "."
 

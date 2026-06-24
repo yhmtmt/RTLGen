@@ -5968,6 +5968,55 @@ def _decoder_attention_dense_gemm_v3_measured_compute_closure_evidence(*, item_i
     }
 
 
+def _decoder_attention_mixed_int8_energy_closure_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    mixed_int8_physical = (
+        f"{base}/decoder_attention_mixed_precision_int8_compute_physical_feasibility__"
+        "l2_decoder_attention_mixed_precision_int8_compute_physical_feasibility_softmax_recip_lut_llama7b_v1.json"
+    )
+    hbm_command_calibrated = (
+        f"{base}/decoder_attention_hbm_command_calibrated_service__"
+        "l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1.json"
+    )
+    sram_profile = f"{base}/decoder_attention_sram_profile__l2_decoder_attention_sram_profile_v1.json"
+    baseline_closure = (
+        f"{base}/decoder_attention_dense_gemm_v3_measured_compute_closure__"
+        "l2_decoder_attention_dense_gemm_v3_measured_compute_closure_llama7b_v1.json"
+    )
+    out = f"{base}/decoder_attention_mixed_int8_energy_closure__{item_id}.json"
+    report = f"{base}/decoder_attention_mixed_int8_energy_closure__{item_id}.md"
+    return {
+        "inputs": {
+            "attention_mixed_precision_int8_compute_physical_feasibility": mixed_int8_physical,
+            "attention_hbm_command_calibrated_service": hbm_command_calibrated,
+            "attention_sram_profile": sram_profile,
+            "attention_dense_gemm_v3_measured_compute_closure": baseline_closure,
+            "attention_mixed_int8_energy_closure_out": out,
+            "attention_mixed_int8_energy_closure_report": report,
+            "attention_mixed_int8_energy_closure_scope": (
+                "Convert the quality-gated mixed/int8 softmax-recip physical-feasibility rows into "
+                "source-backed HBM/SRAM energy rows using substituted int8 compute PPA, then compare "
+                "throughput, energy, area, and precision against the exact-FP16 dense-GEMM V3 closure."
+            ),
+        },
+        "commands": [
+            {
+                "name": "audit_decoder_attention_mixed_int8_energy_closure",
+                "run": (
+                    "python3 npu/eval/audit_llm_decoder_attention_mixed_precision_int8_compute_energy_closure.py "
+                    f"--mixed-precision-int8-compute-physical-feasibility-json {mixed_int8_physical} "
+                    f"--hbm-command-calibrated-service-json {hbm_command_calibrated} "
+                    f"--sram-profile-json {sram_profile} "
+                    f"--baseline-closure-json {baseline_closure} "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+    }
+
+
 def _decoder_attention_mixed_precision_quality_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_mixed_precision_quality__{item_id}.json"
@@ -7852,6 +7901,7 @@ def _build_payload(
         "decoder_attention_hbm_command_calibrated_service",
         "decoder_attention_measured_compute_energy_closure",
         "decoder_attention_dense_gemm_v3_measured_compute_closure",
+        "decoder_attention_mixed_int8_energy_closure",
         "decoder_attention_kv_dual_stream_physical_feasibility",
         "decoder_attention_mixed_precision_quality",
         "decoder_attention_softmax_pow2sum_quality",
@@ -8030,6 +8080,8 @@ def _build_payload(
             decoder_evidence = _decoder_attention_measured_compute_energy_closure_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_dense_gemm_v3_measured_compute_closure":
             decoder_evidence = _decoder_attention_dense_gemm_v3_measured_compute_closure_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_attention_mixed_int8_energy_closure":
+            decoder_evidence = _decoder_attention_mixed_int8_energy_closure_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_dual_stream_physical_feasibility":
             decoder_evidence = _decoder_attention_kv_dual_stream_physical_feasibility_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_mixed_precision_quality":
