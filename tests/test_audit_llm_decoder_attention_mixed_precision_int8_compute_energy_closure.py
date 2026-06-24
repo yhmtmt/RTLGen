@@ -45,6 +45,7 @@ def _payload() -> dict:
             "adjusted_latency_us_if_feasible": 22.5,
             "substituted_compute_arch": "dense_gemm_int8_16x8_k1_p1",
             "substituted_compute_area_um2": 512_000.0,
+            "substituted_compute_metrics_csv": "runs/designs/npu_blocks/npu_dense_gemm_tile_int8_16x8_k1_p1/metrics.csv",
             "substituted_compute_power_mw": 2.0,
             "substituted_compute_replica_count": 128,
             "compute_area_required_um2": 1_024_000.0,
@@ -56,8 +57,12 @@ def _payload() -> dict:
                 "adjusted_latency_us_if_feasible": 22.5,
                 "substituted_compute_arch": "dense_gemm_int8_16x8_k1_p1",
                 "substituted_compute_area_um2": 512_000.0,
+                "substituted_compute_metrics_csv": "runs/designs/npu_blocks/npu_dense_gemm_tile_int8_16x8_k1_p1/metrics.csv",
                 "substituted_compute_power_mw": 2.0,
                 "substituted_compute_replica_count": 128,
+                "compute_arch": "dense_gemm_fp16_source",
+                "compute_power_mw": 1000.0,
+                "metrics_csv": "runs/designs/npu_blocks/npu_dense_gemm_tile_fp16_16x8_k1_p1/metrics.csv",
                 "die_area_mm2": 800.0,
             },
             {
@@ -94,6 +99,9 @@ def test_adjusted_latency_from_physical_feasibility_is_used(tmp_path: Path) -> N
     best = payload["best"]
     assert best["latency_us"] == 22.5
     assert best["substituted_compute_arch"] == "dense_gemm_int8_16x8_k1_p1"
+    assert best["compute_arch"] == "dense_gemm_int8_16x8_k1_p1"
+    assert best["compute_power_mw"] == 2.0
+    assert best["metrics_csv"].endswith("npu_dense_gemm_tile_int8_16x8_k1_p1/metrics.csv")
     assert payload["decision"].startswith("mixed_precision_int8_compute_energy_closure")
 
 
