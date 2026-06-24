@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_dense_gemm_v3_measured_compute_closure_llama7b_v1",
+  "decision": "iterate",
+  "pr_number": 989,
+  "merge_commit": "71bb1666bb9e3907686de8bf4967d3bb7c053e28",
+  "merged_utc": "2026-06-24T10:22:10.945398Z"
+}

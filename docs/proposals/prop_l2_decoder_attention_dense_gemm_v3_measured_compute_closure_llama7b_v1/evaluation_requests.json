@@ -38,8 +38,12 @@
         "direction": "rerank_measured_compute_closure",
         "reason": "Record whether V3 dense-GEMM rows preserve or replace the PR #981 corrected measured-compute frontier."
       },
-      "status": "blocked_until_l1_v3_merged",
-      "notes": "Hold dispatch until `l1_npu_dense_gemm_tile_scaling_v3` artifacts are merged into the campaign source set; run only on eval-daemon-b7c2d9c80c1c."
+      "status": "merged",
+      "notes": "Hold dispatch until `l1_npu_dense_gemm_tile_scaling_v3` artifacts are merged into the campaign source set; run only on eval-daemon-b7c2d9c80c1c. Merged via PR #989 and merge 71bb1666bb9e3907686de8bf4967d3bb7c053e28 at 2026-06-24T10:22:10.945398Z.",
+      "merged_pr_number": 989,
+      "merge_commit": "71bb1666bb9e3907686de8bf4967d3bb7c053e28",
+      "merged_utc": "2026-06-24T10:22:10.945398Z"
     }
-  ]
+  ],
+  "source_commit": "cce70ed1c53fbcf1ed0b94271b3edac447f1f904"
 }
