@@ -101,6 +101,37 @@ def test_decoder_evidence_summary_recognizes_mixed_precision_int8_compute_energy
     assert "best_dominant_energy_component=hbm" in summary
 
 
+def test_decoder_evidence_summary_recognizes_mixed_int8_quality_backed_frontier() -> None:
+    outcome, summary = _decoder_evidence_summary(
+        evidence_ref="runs/datasets/demo/mixed_int8_quality_backed_frontier.json",
+        evidence_payload={
+            "model": "llm_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1",
+            "decision": "mixed_int8_quality_backed_frontier_recost_required",
+            "diagnosis": {
+                "decision": "mixed_int8_quality_backed_frontier_recost_required",
+                "quality_passing_candidate_count": 1,
+                "quality_passing_candidate_ids": ["qkv8_float_exact"],
+                "quality_best_candidate_id": "qkv8_float_exact",
+                "quality_best_top1_match_rate": 1.0,
+                "quality_best_mean_probability_kl": 0.0012,
+                "invalidated_energy_candidate_count": 1,
+                "old_energy_best_candidate_id": "die800_dense_gemm_int8_16x8_k1_p1",
+                "old_energy_best_latency_us": 1575.37,
+                "old_energy_best_token_throughput_per_s": 634.77,
+                "old_energy_best_energy_mj": 135.75,
+                "old_energy_best_precision_profile": "q8_k8_v6_a24_s8_w8_recip_lut_q10_int8_compute",
+                "recommended_next_step": "recompute with high-precision score-softmax",
+            },
+        },
+    )
+
+    assert outcome == "mixed_int8_quality_backed_frontier_recost_required"
+    assert "quality-backed frontier" in summary
+    assert "quality_best_candidate_id=qkv8_float_exact" in summary
+    assert "invalidated_energy_candidate_count=1" in summary
+    assert "old_energy_best_token_throughput_per_s=634.77" in summary
+
+
 def test_decoder_evidence_summary_recognizes_mixed_int8_native_quality() -> None:
     outcome, summary = _decoder_evidence_summary(
         evidence_ref="runs/datasets/demo/mixed_int8_native_quality.json",
