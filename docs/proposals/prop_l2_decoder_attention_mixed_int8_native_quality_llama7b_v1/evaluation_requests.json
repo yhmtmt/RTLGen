@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_decoder_attention_mixed_int8_native_quality_llama7b_v1",
-  "source_commit": "b38572fa9f94a409fe3030aa39687c42c7018358",
+  "source_commit": "00337aa586851731ca563cb01ff22dd588f3de49",
   "requested_items": [
     {
       "item_id": "l2_decoder_attention_mixed_int8_native_quality_llama7b_v1",
@@ -18,8 +18,11 @@
         "direction": "validate_or_reject_mixed_int8_latency_frontier_precision",
         "reason": "The mixed/int8 point has much higher token throughput but higher energy and only proxy quality; native checkpoint evidence is required before it can remain a precision-valid latency frontier."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 996,
+      "merge_commit": "39e4702dc41db5fec520db01704e2573851e92e5",
+      "merged_utc": "2026-06-24T11:03:05.036957Z",
+      "notes": "Merged via PR #996 and merge 39e4702dc41db5fec520db01704e2573851e92e5 at 2026-06-24T11:03:05.036957Z."
     }
   ]
 }
-
