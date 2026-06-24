@@ -5,8 +5,10 @@ from __future__ import annotations
 
 import argparse
 import contextlib
+import importlib
 import json
 import math
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -22,6 +24,17 @@ DEFAULT_PROMPTS = [
     "The color of the clear daytime sky is",
     "When comparing approximate inference results, the safest metric is",
 ]
+
+
+@dataclass(frozen=True)
+class CandidateConfig:
+    candidate_id: str
+    q_bits: int
+    k_bits: int
+    v_bits: int
+    score_bits: int
+    weight_bits: int
+    softmax_mode: str
 
 
 def _float(value: Any, default: float = 0.0) -> float:
@@ -195,8 +208,127 @@ def _parse_positive_int(value: str) -> int:
     return value
 
 
+def _candidate_id_from_bits(*, q_bits: int, k_bits: int, v_bits: int, score_bits: int, weight_bits: int, softmax_mode: str) -> str:
+    return f"q{q_bits}_k{k_bits}_v{v_bits}_s{score_bits}_w{weight_bits}_{softmax_mode}"
+
+
+def _parse_candidate_token_pair(token: str) -> tuple[str, int]:
+    token = token.strip()
+    if len(token) < 2:
+        raise ValueError(f"invalid candidate token: {token!r}")
+    key = token[0].lower()
+    return key, int(token[1:])
+
+
+def _parse_candidate_spec(spec: Any) -> CandidateConfig:
+    if isinstance(spec, dict):
+        candidate_id = str(spec.get("candidate_id", "")).strip()
+        q_bits = int(spec["q_bits"])
+        k_bits = int(spec["k_bits"])
+        v_bits = int(spec["v_bits"])
+        score_bits = int(spec["score_bits"])
+        weight_bits = int(spec["weight_bits"])
+        softmax_mode = str(spec["softmax_mode"])
+    else:
+        spec = str(spec).strip()
+        if not spec:
+            raise ValueError("empty candidate spec")
+
+        candidate_id = ""
+        spec_body = spec
+        if "{" in spec_body and spec_body.rstrip().endswith("}"):
+            data = json.loads(spec_body)
+            if not isinstance(data, dict):
+                raise ValueError("candidate spec JSON object must be an object")
+            candidate_id = str(data.get("candidate_id", "")).strip()
+            q_bits = int(data["q_bits"])
+            k_bits = int(data["k_bits"])
+            v_bits = int(data["v_bits"])
+            score_bits = int(data["score_bits"])
+            weight_bits = int(data["weight_bits"])
+            softmax_mode = str(data["softmax_mode"])
+        else:
+            if ":" in spec_body:
+                candidate_id, spec_body = spec_body.split(":", 1)
+                candidate_id = candidate_id.strip()
+            parts = [item.strip() for item in spec_body.split(",") if item.strip()]
+            if len(parts) != 6:
+                raise ValueError(f"candidate spec {spec!r} must contain q,k,v,s,w and softmax mode")
+            values: dict[str, int] = {}
+            softmax_mode = ""
+            for part in parts:
+                if len(part) == 0:
+                    continue
+                if part in {"float_quantized", "float_exact", "rtl_exact", "rtl_pow2sum"} or part.startswith("rtl_recip_lut_q"):
+                    if softmax_mode:
+                        raise ValueError(f"candidate spec {spec!r} has duplicate softmax mode tokens")
+                    softmax_mode = part
+                    continue
+                key, value = _parse_candidate_token_pair(part)
+                if key in values:
+                    raise ValueError(f"duplicate candidate token key {key!r} in {spec!r}")
+                if key == "s":
+                    score_bits = value
+                    values[key] = value
+                elif key in {"q", "k", "v", "w"}:
+                    values[key] = value
+                else:
+                    if softmax_mode:
+                        raise ValueError(f"candidate spec {spec!r} has an unknown token {part!r}")
+                    softmax_mode = part
+            if "q" not in values or "k" not in values or "v" not in values or "s" not in values or "w" not in values:
+                raise ValueError(f"candidate spec {spec!r} must include q,k,v,s,w,mode")
+            q_bits = values["q"]
+            k_bits = values["k"]
+            v_bits = values["v"]
+            weight_bits = values["w"]
+            if not softmax_mode:
+                raise ValueError(f"candidate spec {spec!r} missing softmax mode token")
+
+    q_bits = _parse_positive_int(str(q_bits))
+    k_bits = _parse_positive_int(str(k_bits))
+    v_bits = _parse_positive_int(str(v_bits))
+    score_bits = _parse_positive_int(str(score_bits))
+    weight_bits = _parse_positive_int(str(weight_bits))
+    if not candidate_id:
+        candidate_id = _candidate_id_from_bits(
+            q_bits=q_bits,
+            k_bits=k_bits,
+            v_bits=v_bits,
+            score_bits=score_bits,
+            weight_bits=weight_bits,
+            softmax_mode=softmax_mode,
+        )
+
+    return CandidateConfig(
+        candidate_id=candidate_id,
+        q_bits=q_bits,
+        k_bits=k_bits,
+        v_bits=v_bits,
+        score_bits=score_bits,
+        weight_bits=weight_bits,
+        softmax_mode=_parse_softmax_mode(softmax_mode),
+    )
+
+
+def _parse_candidate_list(value: str) -> list[CandidateConfig]:
+    raw = value.strip()
+    if not raw:
+        return []
+    if raw.startswith("["):
+        payload = json.loads(raw)
+        if not isinstance(payload, list):
+            raise argparse.ArgumentTypeError("candidate-list expects a JSON array or semicolon-separated spec values")
+        return [_parse_candidate_spec(item) for item in payload]
+    # preserve support for old shell-style repeated lists that contain commas in each spec
+    items = [item.strip() for item in raw.replace("\n", ";").split(";") if item.strip()]
+    if len(items) == 1:
+        return [_parse_candidate_spec(items[0])]
+    return [_parse_candidate_spec(item) for item in items]
+
+
 def _parse_softmax_mode(value: str) -> str:
-    supported = {"float_quantized", "rtl_exact", "rtl_pow2sum", "rtl_recip_lut_q8"}
+    supported = {"float_quantized", "float_exact", "rtl_exact", "rtl_pow2sum", "rtl_recip_lut_q8"}
     if value.startswith("rtl_recip_lut_q"):
         bits = _rtl_reciprocal_bits(value)
         if bits <= 0:
@@ -222,6 +354,114 @@ def _resolve_torch_dtype(torch_module: Any, *, device: str, dtype_name: str) -> 
 def _dtype_label(dtype: Any) -> str:
     text = str(dtype)
     return text.split(".", 1)[-1] if "." in text else text
+
+
+def _load_runtime_modules() -> tuple[Any, Any, Any]:
+    try:
+        torch_module = importlib.import_module("torch")
+    except ModuleNotFoundError as exc:
+        raise SystemExit(
+            "missing runtime dependency for mixed/int8 attention quality: install torch and transformers"
+        ) from exc
+
+    try:
+        transformers = importlib.import_module("transformers")
+    except ModuleNotFoundError as exc:
+        raise SystemExit(
+            "missing runtime dependency for mixed/int8 attention quality: install torch and transformers"
+        ) from exc
+
+    auto_model_cls = getattr(transformers, "AutoModelForCausalLM", None)
+    auto_tokenizer_cls = getattr(transformers, "AutoTokenizer", None)
+    if auto_model_cls is None or auto_tokenizer_cls is None:
+        raise SystemExit(
+            "transformers package does not expose AutoModelForCausalLM/AutoTokenizer for mixed/int8 attention quality"
+        )
+
+    return torch_module, auto_model_cls, auto_tokenizer_cls
+
+
+def _candidate_precision(candidate: CandidateConfig) -> JsonDict:
+    return {
+        "candidate_id": candidate.candidate_id,
+        "q_bits": candidate.q_bits,
+        "k_bits": candidate.k_bits,
+        "v_bits": candidate.v_bits,
+        "score_bits": candidate.score_bits,
+        "weight_bits": candidate.weight_bits,
+        "softmax_mode": candidate.softmax_mode,
+    }
+
+
+def _resolve_candidates(args: argparse.Namespace) -> list[CandidateConfig]:
+    candidates: list[CandidateConfig] = []
+    if args.candidate:
+        candidates.extend(args.candidate)
+    for chunk in args.candidate_list:
+        if chunk:
+            candidates.extend(chunk)
+
+    if not candidates:
+        candidates.append(
+            CandidateConfig(
+                candidate_id=_candidate_id_from_bits(
+                    q_bits=args.q_bits,
+                    k_bits=args.k_bits,
+                    v_bits=args.v_bits,
+                    score_bits=args.score_bits,
+                    weight_bits=args.weight_bits,
+                    softmax_mode=args.softmax_mode,
+                ),
+                q_bits=args.q_bits,
+                k_bits=args.k_bits,
+                v_bits=args.v_bits,
+                score_bits=args.score_bits,
+                weight_bits=args.weight_bits,
+                softmax_mode=args.softmax_mode,
+            )
+        )
+    return candidates
+
+
+def _candidate_quality_rank(candidate_summary: JsonDict) -> tuple[int, float, float, float, float, float, float]:
+    status = str(candidate_summary.get("decision_status", ""))
+    if status == "mixed_int8_native_attention_shadow_pass":
+        status_score = 3
+    elif status == "mixed_int8_native_attention_shadow_caution":
+        status_score = 2
+    else:
+        status_score = 1
+    return (
+        status_score,
+        _float(candidate_summary.get("top1_match_rate"), 0.0),
+        _float(candidate_summary.get("topk_contains_rate"), 0.0),
+        _float(candidate_summary.get("mean_logit_cosine"), 0.0),
+        -_float(candidate_summary.get("mean_probability_kl"), 0.0),
+        -_float(candidate_summary.get("max_abs_logit_delta_mean"), 0.0),
+        -_float(candidate_summary.get("comparison_count"), 0.0),
+    )
+
+
+def _pick_primary_summary(candidate_summaries: list[JsonDict], *, primary_candidate_id: str) -> JsonDict:
+    if primary_candidate_id:
+        for summary in candidate_summaries:
+            if summary.get("candidate_id") == primary_candidate_id:
+                return summary
+        raise SystemExit(f"primary candidate id not found: {primary_candidate_id}")
+    return candidate_summaries[0]
+
+
+def _summarize_candidate_rows(*, candidate: CandidateConfig, rows: list[JsonDict], decision: JsonDict) -> JsonDict:
+    summary = _summarize_rows(rows)
+    summary.update(
+        {
+            "candidate_id": candidate.candidate_id,
+            **_candidate_precision(candidate),
+            "decision_status": decision["status"],
+            "decision": decision,
+        }
+    )
+    return summary
 
 
 def _decision(summary: JsonDict, *, expected_gqa_group_size: int, actual_gqa_group_size: float) -> JsonDict:
@@ -371,6 +611,9 @@ def _softmax_patch(score_bits: int, weight_bits: int, softmax_mode: str):
             out = [value * scale for value in q_values]
             out = _safe_exp_softmax(out)
             return torch.tensor(out, dtype=torch.float32, device=row.device).reshape(row.shape)
+        if softmax_mode == "float_exact":
+            out = _safe_exp_softmax(values)
+            return torch.tensor(out, dtype=torch.float32, device=row.device).reshape(row.shape)
         out = _rtl_quantized_softmax(values, score_bits=score_bits, weight_bits=weight_bits, softmax_mode=softmax_mode)
         return torch.tensor(out, dtype=row.dtype if row.dtype.is_floating_point else torch.float32, device=row.device).reshape(row.shape)
 
@@ -418,12 +661,151 @@ def _run_single_inference(
     return out.past_key_values, logits, probs, order
 
 
-def _run_model_eval(args: argparse.Namespace) -> JsonDict:
+def _collect_reference_rows(
+    reference_model: Any,
+    tokenizer: Any,
+    prompts: list[str],
+    *,
+    generation_steps: int,
+    topk: int,
+    device: str,
+    torch_module: Any,
+) -> tuple[list[JsonDict], list[JsonDict]]:
+    rows: list[JsonDict] = []
+    prompt_records: list[JsonDict] = []
+
+    for prompt_index, prompt in enumerate(prompts):
+        encoded = tokenizer(prompt, return_tensors="pt")
+        prompt_input_ids = encoded["input_ids"].to(device)
+
+        with torch_module.no_grad():
+            ref_past, ref_logits, ref_probs, _ = _run_single_inference(
+                reference_model,
+                input_ids=prompt_input_ids,
+                past_key_values=None,
+                topk=max(2, topk),
+            )
+
+        ref_order = _topk(ref_logits, max(2, topk))
+        ref_top1 = ref_order[0]
+        ref_margin = ref_logits[ref_order[0]] - ref_logits[ref_order[1]] if len(ref_order) > 1 else 0.0
+        prompt_records.append(
+            {
+                "prompt_index": prompt_index,
+                "prompt": prompt,
+                "prefill_reference_top1": ref_top1,
+                "prefill_reference_margin": ref_margin,
+            }
+        )
+        rows.append(
+            {
+                "prompt_index": prompt_index,
+                "step": 0,
+                "input_ids": prompt_input_ids[0].tolist(),
+                "reference_top1": ref_top1,
+                "reference_margin": ref_margin,
+                "reference_logits": ref_logits,
+                "reference_probs": ref_probs,
+            }
+        )
+
+        for step in range(1, generation_steps):
+            input_token = ref_top1
+            next_input = torch_module.tensor([[input_token]], dtype=torch_module.long, device=device)
+            with torch_module.no_grad():
+                ref_past, ref_logits, ref_probs, ref_order = _run_single_inference(
+                    reference_model,
+                    input_ids=next_input,
+                    past_key_values=ref_past,
+                    topk=max(2, topk),
+                )
+            ref_margin = ref_logits[ref_order[0]] - ref_logits[ref_order[1]] if len(ref_order) > 1 else 0.0
+            ref_top1 = ref_order[0]
+            rows.append(
+                {
+                    "prompt_index": prompt_index,
+                    "step": step,
+                    "input_ids": [input_token],
+                    "reference_top1": ref_top1,
+                    "reference_margin": ref_margin,
+                    "reference_logits": ref_logits,
+                    "reference_probs": ref_probs,
+                }
+            )
+
+    return rows, prompt_records
+
+
+def _evaluate_candidate_rows(
+    reference_rows: list[JsonDict],
+    candidate_model: Any,
+    candidate: CandidateConfig,
+    *,
+    tokenizer: Any,
+    device: str,
+    torch_module: Any,
+    topk: int,
+) -> list[JsonDict]:
+    del tokenizer
+    softmax_ctx = _softmax_patch(
+        score_bits=candidate.score_bits,
+        weight_bits=candidate.weight_bits,
+        softmax_mode=candidate.softmax_mode,
+    )
+    candidate_rows: list[JsonDict] = []
+    past_by_prompt: dict[int, Any] = {}
+    patches = _install_attention_wrappers(
+        candidate_model,
+        q_bits=candidate.q_bits,
+        k_bits=candidate.k_bits,
+        v_bits=candidate.v_bits,
+    )
+
     try:
-        import torch  # type: ignore
-        from transformers import AutoModelForCausalLM, AutoTokenizer  # type: ignore
-    except ModuleNotFoundError as exc:
-        raise SystemExit("missing runtime dependency for mixed/int8 attention quality: install torch and transformers") from exc
+        for row in reference_rows:
+            prompt_index = int(row["prompt_index"])
+            step = int(row["step"])
+            input_ids = row["input_ids"]
+            past = None if step == 0 else past_by_prompt[prompt_index]
+
+            with torch_module.no_grad():
+                with softmax_ctx():
+                    cand_past, cand_logits, cand_probs, cand_order = _run_single_inference(
+                        candidate_model,
+                        input_ids=torch_module.tensor([input_ids], dtype=torch_module.long, device=device),
+                        past_key_values=past,
+                        topk=topk,
+                    )
+
+            past_by_prompt[prompt_index] = cand_past
+            ref_top1 = int(row["reference_top1"])
+            cand_top1 = int(cand_order[0])
+            reference_logits = [float(value) for value in row["reference_logits"]]
+            reference_probs = [float(value) for value in row["reference_probs"]]
+            candidate_rows.append(
+                {
+                    "candidate_id": candidate.candidate_id,
+                    "prompt_index": prompt_index,
+                    "step": step,
+                    "reference_top1": ref_top1,
+                    "candidate_top1": cand_top1,
+                    "top1_match": 1.0 if cand_top1 == ref_top1 else 0.0,
+                    "topk_contains": 1.0 if ref_top1 in cand_order else 0.0,
+                    "reference_margin": float(row["reference_margin"]),
+                    "logit_cosine": _cosine(reference_logits, cand_logits),
+                    "probability_kl": _kl_divergence(reference_probs, cand_probs),
+                    "max_abs_logit_delta": max(abs(a - b) for a, b in zip(reference_logits, cand_logits)),
+                }
+            )
+
+    finally:
+        _restore_attention_wrappers(patches)
+
+    return candidate_rows
+
+
+def _run_model_eval(args: argparse.Namespace) -> JsonDict:
+    torch, AutoModelForCausalLM, AutoTokenizer = _load_runtime_modules()
 
     model_id = args.model_id or "TinyLlama/TinyLlama-1.1B-Chat-v1.0"
     device = args.device
@@ -463,127 +845,47 @@ def _run_model_eval(args: argparse.Namespace) -> JsonDict:
     if not prompts:
         raise SystemExit("no prompts to evaluate")
 
-    patches = _install_attention_wrappers(
-        candidate_model,
-        q_bits=args.q_bits,
-        k_bits=args.k_bits,
-        v_bits=args.v_bits,
+    candidates = _resolve_candidates(args)
+    candidate_ids = [candidate.candidate_id for candidate in candidates]
+    if len(set(candidate_ids)) != len(candidate_ids):
+        raise SystemExit(f"candidate ids must be unique: {candidate_ids}")
+
+    reference_rows, prompt_records = _collect_reference_rows(
+        reference_model,
+        tokenizer,
+        prompts,
+        generation_steps=args.generation_steps,
+        topk=args.topk,
+        device=device,
+        torch_module=torch,
     )
 
     candidate_rows: list[JsonDict] = []
-    prompt_records: list[JsonDict] = []
-    try:
-        softmax_ctx = _softmax_patch(
-            score_bits=args.score_bits,
-            weight_bits=args.weight_bits,
-            softmax_mode=args.softmax_mode,
+    candidate_summaries: list[JsonDict] = []
+    for candidate in candidates:
+        rows = _evaluate_candidate_rows(
+            reference_rows,
+            candidate_model,
+            candidate,
+            tokenizer=tokenizer,
+            device=device,
+            torch_module=torch,
+            topk=args.topk,
         )
+        decision = _decision(
+            _summarize_rows(rows),
+            expected_gqa_group_size=args.expected_gqa_group_size,
+            actual_gqa_group_size=gqa_group_size,
+        )
+        candidate_summary = _summarize_candidate_rows(candidate=candidate, rows=rows, decision=decision)
+        candidate_rows.extend(rows)
+        candidate_summaries.append(candidate_summary)
 
-        for prompt_index, prompt in enumerate(prompts):
-            encoded = tokenizer(prompt, return_tensors="pt")
-            input_ids = encoded["input_ids"].to(device)
+    if not candidate_summaries:
+        raise SystemExit("no candidates were configured")
 
-            with torch.no_grad():
-                ref_past, ref_logits, ref_probs, _ = _run_single_inference(
-                    reference_model,
-                    input_ids=input_ids,
-                    past_key_values=None,
-                    topk=max(2, args.topk),
-                )
-            ref_order = _topk(ref_logits, max(2, args.topk))
-            ref_top1 = ref_order[0]
-            ref_margin = ref_logits[ref_order[0]] - ref_logits[ref_order[1]] if len(ref_order) > 1 else 0.0
-            prompt_records.append(
-                {
-                    "prompt_index": prompt_index,
-                    "prompt": prompt,
-                    "prefill_reference_top1": ref_top1,
-                    "prefill_reference_margin": ref_margin,
-                }
-            )
-
-            with torch.no_grad():
-                with softmax_ctx():
-                    cand_past, cand_logits, cand_probs, cand_order = _run_single_inference(
-                        candidate_model,
-                        input_ids=input_ids,
-                        past_key_values=None,
-                        topk=args.topk,
-                    )
-                next_id = ref_order[0]
-                cand_top1 = cand_order[0]
-                candidate_rows.append(
-                    {
-                        "prompt_index": prompt_index,
-                        "step": 0,
-                        "reference_top1": ref_top1,
-                        "candidate_top1": cand_top1,
-                        "top1_match": 1.0 if cand_top1 == ref_top1 else 0.0,
-                        "topk_contains": 1.0 if ref_top1 in cand_order else 0.0,
-                        "reference_margin": ref_margin,
-                        "logit_cosine": _cosine(ref_logits, cand_logits),
-                        "probability_kl": _kl_divergence(ref_probs, cand_probs),
-                        "max_abs_logit_delta": max(abs(a - b) for a, b in zip(ref_logits, cand_logits)),
-                    }
-                )
-
-            for step in range(1, args.generation_steps):
-                next_input = torch.tensor([[next_id]], dtype=torch.long, device=device)
-                with torch.no_grad():
-                    ref_past, ref_logits, ref_probs, ref_order = _run_single_inference(
-                        reference_model,
-                        input_ids=next_input,
-                        past_key_values=ref_past,
-                        topk=max(2, args.topk),
-                    )
-                ref_margin = ref_logits[ref_order[0]] - ref_logits[ref_order[1]] if len(ref_order) > 1 else 0.0
-
-                with torch.no_grad():
-                    with softmax_ctx():
-                        cand_past, cand_logits, cand_probs, cand_order = _run_single_inference(
-                            candidate_model,
-                            input_ids=next_input,
-                            past_key_values=cand_past,
-                            topk=args.topk,
-                        )
-
-                next_id = ref_order[0]
-                candidate_rows.append(
-                    {
-                        "prompt_index": prompt_index,
-                        "step": step,
-                        "reference_top1": next_id,
-                        "candidate_top1": cand_order[0],
-                        "top1_match": 1.0 if cand_order[0] == next_id else 0.0,
-                        "topk_contains": 1.0 if next_id in cand_order else 0.0,
-                        "reference_margin": ref_margin,
-                        "logit_cosine": _cosine(ref_logits, cand_logits),
-                        "probability_kl": _kl_divergence(ref_probs, cand_probs),
-                        "max_abs_logit_delta": max(abs(a - b) for a, b in zip(ref_logits, cand_logits)),
-                    }
-                )
-
-    finally:
-        _restore_attention_wrappers(patches)
-
-    candidate_summary = _summarize_rows(candidate_rows)
-    candidate_summary.update(
-        {
-            "q_bits": args.q_bits,
-            "k_bits": args.k_bits,
-            "v_bits": args.v_bits,
-            "score_bits": args.score_bits,
-            "weight_bits": args.weight_bits,
-            "softmax_mode": args.softmax_mode,
-            "comparison_count": len(candidate_rows),
-        }
-    )
-
-    decision = _decision(
-        candidate_summary,
-        expected_gqa_group_size=args.expected_gqa_group_size,
-        actual_gqa_group_size=gqa_group_size,
-    )
+    best_candidate = max(candidate_summaries, key=_candidate_quality_rank)
+    primary_summary = _pick_primary_summary(candidate_summaries, primary_candidate_id=args.primary_candidate_id)
 
     return {
         "version": 0.1,
@@ -603,17 +905,19 @@ def _run_model_eval(args: argparse.Namespace) -> JsonDict:
         "expected_gqa_group_size": args.expected_gqa_group_size,
         "candidate_rows": candidate_rows,
         "prompt_records": prompt_records,
-        "candidate_summary": candidate_summary,
-        "summary": candidate_summary,
-        "precision": {
-            "q_bits": args.q_bits,
-            "k_bits": args.k_bits,
-            "v_bits": args.v_bits,
-            "score_bits": args.score_bits,
-            "weight_bits": args.weight_bits,
-            "softmax_mode": args.softmax_mode,
+        "candidate_summaries": candidate_summaries,
+        "candidate_summary": primary_summary,
+        "best_candidate": {
+            "candidate_id": best_candidate["candidate_id"],
+            "decision_status": best_candidate["decision_status"],
+            "top1_match_rate": best_candidate["top1_match_rate"],
+            "topk_contains_rate": best_candidate["topk_contains_rate"],
+            "mean_logit_cosine": best_candidate["mean_logit_cosine"],
+            "mean_probability_kl": best_candidate["mean_probability_kl"],
         },
-        "decision": decision,
+        "summary": primary_summary,
+        "precision": _candidate_precision(next(candidate for candidate in candidates if candidate.candidate_id == primary_summary["candidate_id"])),
+        "decision": primary_summary["decision"],
         "assumptions": [
             "This is a native-checkpoint attention-shadow gate, not a full QAT or perplexity study.",
             "Teacher-forced next-token inputs isolate attention-path ranking drift from decoding-policy variance.",
@@ -629,31 +933,39 @@ def _write_report_md(payload: JsonDict) -> str:
         "",
         f"- model_id: `{payload['model']['model_id']}`",
         f"- decision: `{payload['decision']['status']}`",
+        f"- best_candidate: `{payload['best_candidate']['candidate_id']}` ({payload['best_candidate']['decision_status']})",
         f"- attention_head_count: `{payload['model']['attention_heads']}`",
         f"- kv_head_count: `{payload['model']['kv_heads']}`",
         f"- gqa_group_size: `{payload['model']['gqa_group_size']}`",
         f"- expected_gqa_group_size: `{payload['expected_gqa_group_size']}`",
         "",
-        "## Candidate",
+        "## Candidates",
         "",
-        f"- q_bits: `{payload['candidate_summary']['q_bits']}`",
-        f"- k_bits: `{payload['candidate_summary']['k_bits']}`",
-        f"- v_bits: `{payload['candidate_summary']['v_bits']}`",
-        f"- score_bits: `{payload['candidate_summary']['score_bits']}`",
-        f"- weight_bits: `{payload['candidate_summary']['weight_bits']}`",
-        f"- softmax_mode: `{payload['candidate_summary']['softmax_mode']}`",
-        "",
-        "## Candidate Metrics",
-        "",
-        "| comparisons | top1_match | topk_contains | mean_cosine | mean_kl | min_margin | max_delta |",
-        "|---:|---:|---:|---:|---:|---:|---:|",
-        "| {comparison_count} | {top1_match_rate:.6f} | {topk_contains_rate:.6f} | {mean_logit_cosine:.6f} | {mean_probability_kl:.6f} | {min_reference_margin:.6f} | {max_abs_logit_delta_max:.6f} |".format(
-            **payload["candidate_summary"]
-        ),
-        "",
-        f"- decision: `{payload['decision']['status']}`",
-        f"- next_step: {payload['decision']['next_step']}",
+        "| candidate_id | q_bits | k_bits | v_bits | score_bits | weight_bits | softmax_mode | top1_match | topk_contains | mean_cosine | mean_kl | decision |",
+        "|---|---:|---:|---:|---:|---:|---|---:|---:|---:|---:|---|",
     ]
+    for row in payload['candidate_summaries']:
+        lines.append(
+            "| {candidate_id} | {q_bits} | {k_bits} | {v_bits} | {score_bits} | {weight_bits} | {softmax_mode} | "
+            "{top1_match_rate:.6f} | {topk_contains_rate:.6f} | {mean_logit_cosine:.6f} | {mean_probability_kl:.6f} | "
+            "{decision_status} |".format(**row)
+        )
+
+    lines.extend(
+        [
+            "",
+            "## Primary Candidate Metrics",
+            "",
+            "| comparisons | top1_match | topk_contains | mean_cosine | mean_kl | min_margin | max_delta |",
+            "|---:|---:|---:|---:|---:|---:|---:|",
+            "| {comparison_count} | {top1_match_rate:.6f} | {topk_contains_rate:.6f} | {mean_logit_cosine:.6f} | {mean_probability_kl:.6f} | {min_reference_margin:.6f} | {max_abs_logit_delta_max:.6f} |".format(
+                **payload["candidate_summary"]
+            ),
+            "",
+            f"- decision: `{payload['decision']['status']}`",
+            f"- next_step: {payload['decision']['next_step']}",
+        ]
+    )
 
     if payload["decision"].get("blockers"):
         lines.extend(["", "## Blockers", ""])
@@ -682,6 +994,9 @@ def main() -> int:
     parser.add_argument("--score-bits", type=_parse_positive_int, default=8)
     parser.add_argument("--weight-bits", type=_parse_positive_int, default=8)
     parser.add_argument("--softmax-mode", type=_parse_softmax_mode, default="rtl_recip_lut_q8")
+    parser.add_argument("--candidate", action="append", type=_parse_candidate_spec, default=[])
+    parser.add_argument("--candidate-list", action="append", type=_parse_candidate_list, default=[])
+    parser.add_argument("--primary-candidate-id", default="")
     parser.add_argument("--device", default="auto", choices=["auto", "cpu", "cuda"])
     parser.add_argument("--dtype", default="auto", choices=["auto", "float32", "float16", "bfloat16"])
     parser.add_argument("--out", required=True)

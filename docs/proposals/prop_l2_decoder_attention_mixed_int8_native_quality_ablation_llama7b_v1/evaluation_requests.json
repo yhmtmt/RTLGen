@@ -1,0 +1,24 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_mixed_int8_native_quality_ablation_llama7b_v1",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_mixed_int8_native_quality_ablation_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Run a 7B-class native checkpoint ablation ladder to isolate the precision loss source in the mixed/int8 softmax-recip attention path.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_mixed_int8_native_quality_ablation",
+      "comparison_role": "precision_failure_diagnosis",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_mixed_int8_native_quality_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "identify_precision_blocker",
+        "reason": "The prior native quality gate held the mixed/int8 latency frontier; this ablation determines which approximation should be redesigned or relaxed next."
+      },
+      "status": "pending"
+    }
+  ]
+}
+

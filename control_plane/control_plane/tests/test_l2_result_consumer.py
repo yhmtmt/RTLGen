@@ -142,6 +142,70 @@ def test_decoder_evidence_summary_recognizes_mixed_int8_native_quality() -> None
     assert "top1_match_rate=1.0" in summary
 
 
+def test_decoder_evidence_summary_recognizes_mixed_int8_native_quality_ablation() -> None:
+    outcome, summary = _decoder_evidence_summary(
+        evidence_ref="runs/datasets/demo/mixed_int8_native_quality_ablation.json",
+        evidence_payload={
+            "quality_gate": "mixed_int8_attention_shadow",
+            "model": {
+                "model_id": "mistralai/Mistral-7B-v0.1",
+                "attention_heads": 32,
+                "kv_heads": 8,
+                "gqa_group_size": 4.0,
+                "dtype": "bfloat16",
+            },
+            "precision": {
+                "q_bits": 8,
+                "k_bits": 8,
+                "v_bits": 8,
+                "score_bits": 8,
+                "weight_bits": 8,
+                "softmax_mode": "rtl_recip_lut_q8",
+            },
+            "summary": {
+                "comparison_count": 16,
+                "top1_match_rate": 0.625,
+                "topk_contains_rate": 0.75,
+                "mean_logit_cosine": 0.94,
+                "mean_probability_kl": 1.0,
+                "max_abs_logit_delta_max": 10.125,
+            },
+            "candidate_summaries": [
+                {
+                    "candidate_id": "qkv8_float_softmax",
+                    "top1_match_rate": 0.9,
+                    "topk_contains_rate": 1.0,
+                    "mean_logit_cosine": 0.99,
+                    "mean_probability_kl": 0.01,
+                },
+                {
+                    "candidate_id": "qkv8_score8_rtl_recip_q8",
+                    "top1_match_rate": 0.625,
+                    "topk_contains_rate": 0.75,
+                    "mean_logit_cosine": 0.94,
+                    "mean_probability_kl": 1.0,
+                },
+            ],
+            "best_candidate": {
+                "candidate_id": "qkv8_float_softmax",
+                "top1_match_rate": 0.9,
+                "topk_contains_rate": 1.0,
+                "mean_logit_cosine": 0.99,
+                "mean_probability_kl": 0.01,
+            },
+            "decision": {
+                "status": "mixed_int8_native_attention_shadow_hold",
+                "next_step": "Hold current hardware candidate; inspect ablation best.",
+            },
+        },
+    )
+
+    assert outcome == "mixed_int8_native_attention_shadow_hold"
+    assert "candidate_count=2" in summary
+    assert "best_candidate_id=qkv8_float_softmax" in summary
+    assert "best_top1_match_rate=0.9" in summary
+
+
 def test_decoder_evidence_summary_recognizes_composed_datapath_physical_feasibility() -> None:
     outcome, summary = _decoder_evidence_summary(
         evidence_ref="runs/datasets/demo/composed_datapath.json",
