@@ -1,0 +1,146 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-06-24T10:05:52.059670Z",
+  "item_id": "l1_npu_dense_gemm_tile_scaling_v3_r2",
+  "run_key": "l1_npu_dense_gemm_tile_scaling_v3_r2_run_de2e2cf26d937e01",
+  "layer": "layer1",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l1_sweep",
+  "source_commit": "b8acbccd885376fdf001329f83808e6283346b27",
+  "objective": "Re-run the V3 dense FP16 GEMM tile k1/k2 depth scaling measurement after fixing block sweep metrics artifact paths.",
+  "input_manifest": {
+    "sweeps": [
+      "runs/campaigns/npu/dense_gemm_tile_v3/sweeps/nangate45_dense_tile_depth_hier.json"
+    ],
+    "configs": [
+      "runs/designs/npu_blocks/npu_dense_gemm_tile_fp16_16x16_k1_p2/config.json",
+      "runs/designs/npu_blocks/npu_dense_gemm_tile_fp16_16x16_k1_p1/config.json",
+      "runs/designs/npu_blocks/npu_dense_gemm_tile_fp16_16x16_k2_p2/config.json"
+    ],
+    "out_root": "runs/campaigns/npu/dense_gemm_tile_v3",
+    "design_dirs": [],
+    "macro_manifests": [],
+    "candidate_manifests": [],
+    "required_submodules": []
+  },
+  "proposal_count": 2,
+  "evaluation_record": {
+    "evaluation_mode": "measurement_only",
+    "abstraction_layer": "architecture_block",
+    "result_kind": "physical_metrics",
+    "physical_metrics_present": true,
+    "summary": "Physical metrics recorded from an accepted status=ok Layer 1 row."
+  },
+  "proposal_assessment": null,
+  "proposals": [
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/campaigns/npu/dense_gemm_tile_v3/npu_dense_gemm_tile_fp16_16x16_k1_p2/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "b3c26f20",
+        "tag": "npu_dense_gemm_tile_v3_depth_hier",
+        "result_path": "/orfs/flow/reports/nangate45/npu_dense_gemm_tile_fp16_16x16_k1_p2/dense_gemm_tile_v3_depth_hier/6_finish.rpt",
+        "work_result_json": "runs/campaigns/npu/dense_gemm_tile_v3/npu_dense_gemm_tile_fp16_16x16_k1_p2/work/b3c26f20/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 6.6037,
+        "die_area": 6760000.0,
+        "total_power_mw": 18.3
+      }
+    },
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/campaigns/npu/dense_gemm_tile_v3/npu_dense_gemm_tile_fp16_16x16_k1_p1/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "b3c26f20",
+        "tag": "npu_dense_gemm_tile_v3_depth_hier",
+        "result_path": "/orfs/flow/reports/nangate45/npu_dense_gemm_tile_fp16_16x16_k1_p1/dense_gemm_tile_v3_depth_hier/6_finish.rpt",
+        "work_result_json": "runs/campaigns/npu/dense_gemm_tile_v3/npu_dense_gemm_tile_fp16_16x16_k1_p1/work/b3c26f20/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 6.4969,
+        "die_area": 6760000.0,
+        "total_power_mw": 21.3
+      }
+    }
+  ],
+  "trial_summary": {
+    "item_id": "l1_npu_dense_gemm_tile_scaling_v3_r2",
+    "completed_trials": 3,
+    "success_count": 1,
+    "failure_count": 2,
+    "success_rate": 0.3333333333333333,
+    "metrics": {
+      "critical_path_ns": {
+        "best": 6.4969,
+        "mean": 6.4969,
+        "median": 6.4969,
+        "max": 6.4969,
+        "range": 0.0,
+        "stddev": 0.0
+      },
+      "die_area": {
+        "best": 6760000.0,
+        "mean": 6760000.0,
+        "median": 6760000.0,
+        "max": 6760000.0,
+        "range": 0.0,
+        "stddev": 0.0
+      },
+      "total_power_mw": {
+        "best": 21.3,
+        "mean": 21.3,
+        "median": 21.3,
+        "max": 21.3,
+        "range": 0.0,
+        "stddev": 0.0
+      }
+    }
+  },
+  "source_refs": {
+    "trial_metrics_csvs": [
+      "runs/campaigns/npu/dense_gemm_tile_v3/npu_dense_gemm_tile_fp16_16x16_k1_p2/metrics.csv",
+      "runs/campaigns/npu/dense_gemm_tile_v3/npu_dense_gemm_tile_fp16_16x16_k1_p1/metrics.csv",
+      "runs/campaigns/npu/dense_gemm_tile_v3/npu_dense_gemm_tile_fp16_16x16_k2_p2/metrics.csv"
+    ],
+    "summary_stats_json": "control_plane/shadow_exports/l1_trials/l1_npu_dense_gemm_tile_scaling_v3_r2/summary_stats.json",
+    "failure_stats_json": "control_plane/shadow_exports/l1_trials/l1_npu_dense_gemm_tile_scaling_v3_r2/failure_stats.json",
+    "trial_table_csv": "control_plane/shadow_exports/l1_trials/l1_npu_dense_gemm_tile_scaling_v3_r2/trial_table.csv"
+  },
+  "boundary_evidence": {
+    "row_count": 2,
+    "rows": [
+      {
+        "metrics_csv": "runs/campaigns/npu/dense_gemm_tile_v3/npu_dense_gemm_tile_fp16_16x16_k2_p2/metrics.csv",
+        "status": "flow_failed",
+        "design": "npu_dense_gemm_tile_fp16_16x16_k2_p2",
+        "platform": "nangate45",
+        "config_hash": "fd4a37857fcb",
+        "param_hash": "3baee906",
+        "tag": "npu_dense_gemm_tile_v3_depth_hier",
+        "result_path": "/orfs/flow/logs/nangate45/npu_dense_gemm_tile_fp16_16x16_k2_p2/dense_gemm_tile_v3_depth_hier",
+        "work_result_json": "runs/campaigns/npu/dense_gemm_tile_v3/npu_dense_gemm_tile_fp16_16x16_k2_p2/work/3baee906/result.json",
+        "params_json": "{\"CLOCK_PERIOD\": 10.0, \"CORE_AREA\": \"50 50 2550 2550\", \"CORE_UTILIZATION\": \"\", \"DIE_AREA\": \"0 0 2600 2600\", \"FLOW_VARIANT\": \"dense_gemm_tile_v3_depth_hier\", \"PLACE_DENSITY\": 0.35, \"SYNTH_HIERARCHICAL\": 1, \"SYNTH_KEEP_MODULES\": \"gemm_mac_fp16_ieee\", \"TAG\": \"npu_dense_gemm_tile_v3_depth_hier\", \"tag_prefix\": \"npu_dense_gemm_tile_v3_depth\"}"
+      },
+      {
+        "metrics_csv": "runs/campaigns/npu/dense_gemm_tile_v3/npu_dense_gemm_tile_fp16_16x16_k2_p2/metrics.csv",
+        "status": "flow_failed",
+        "design": "npu_dense_gemm_tile_fp16_16x16_k2_p2",
+        "platform": "nangate45",
+        "config_hash": "fd4a37857fcb",
+        "param_hash": "b3c26f20",
+        "tag": "npu_dense_gemm_tile_v3_depth_hier",
+        "result_path": "/orfs/flow/logs/nangate45/npu_dense_gemm_tile_fp16_16x16_k2_p2/dense_gemm_tile_v3_depth_hier",
+        "work_result_json": "runs/campaigns/npu/dense_gemm_tile_v3/npu_dense_gemm_tile_fp16_16x16_k2_p2/work/b3c26f20/result.json",
+        "params_json": "{\"CLOCK_PERIOD\": 10.0, \"CORE_AREA\": \"50 50 2550 2550\", \"CORE_UTILIZATION\": \"\", \"DIE_AREA\": \"0 0 2600 2600\", \"FLOW_VARIANT\": \"dense_gemm_tile_v3_depth_hier\", \"PLACE_DENSITY\": 0.45, \"SYNTH_HIERARCHICAL\": 1, \"SYNTH_KEEP_MODULES\": \"gemm_mac_fp16_ieee\", \"TAG\": \"npu_dense_gemm_tile_v3_depth_hier\", \"tag_prefix\": \"npu_dense_gemm_tile_v3_depth\"}"
+      }
+    ]
+  }
+}
