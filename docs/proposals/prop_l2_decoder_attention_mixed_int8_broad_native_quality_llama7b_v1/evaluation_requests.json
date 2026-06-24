@@ -1,0 +1,23 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_mixed_int8_broad_native_quality_llama7b_v1",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_mixed_int8_broad_native_quality_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Run a broader 7B-class native checkpoint attention-shadow gate for the passing score24 QKV8 mixed/int8 point.",
+      "evaluation_mode": "quality_gate",
+      "abstraction_layer": "decoder_attention_mixed_int8_broad_native_quality",
+      "comparison_role": "precision_validation",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_mixed_int8_high_score_boundary_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "validate_score24_float_before_ppa",
+        "reason": "Score18/20/22 failed and score24_float passed on the small high-score boundary gate; the next decision needs broader native-checkpoint evidence before PPA is spent on the score24 mixed/int8 point."
+      },
+      "status": "pending"
+    }
+  ]
+}

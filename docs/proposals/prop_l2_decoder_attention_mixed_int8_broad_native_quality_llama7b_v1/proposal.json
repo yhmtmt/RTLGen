@@ -1,0 +1,81 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_mixed_int8_broad_native_quality_llama7b_v1",
+  "created_utc": "2026-06-24T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Llama7B mixed/int8 broad native attention quality",
+  "abstraction_layer": "decoder_attention_mixed_int8_broad_native_quality",
+  "hypothesis": "The only passing mixed/int8 high-score point, QKV8 with score24 and float-quantized softmax, remains stable when the native 7B-class checkpoint attention-shadow gate is broadened from the two-prompt boundary probe to the full default prompt set.",
+  "direct_comparison": {
+    "primary_question": "Does the score24 QKV8 attention-shadow point still preserve native 7B-class checkpoint rankings on a broader prompt set?",
+    "baseline": "l2_decoder_attention_mixed_int8_high_score_boundary_llama7b_v1",
+    "candidate": "score24_float QKV8 attention-shadow candidate",
+    "include": [
+      "score24 float-quantized softmax as the primary candidate",
+      "qkv8 float-exact as a high-precision control",
+      "score22 float-quantized and score24 RTL-exact controls near the failing boundary",
+      "native 7B-class checkpoint teacher-forced final-logit comparisons over the default prompt set",
+      "top-1 match, top-k contains, logit cosine, probability KL, and max logit delta"
+    ],
+    "exclude": [
+      "new OpenROAD/PPA runs",
+      "QAT or fine-tuning recovery",
+      "full perplexity or task accuracy",
+      "additional checkpoints beyond the configured 7B-class model"
+    ],
+    "metrics": [
+      "best_candidate_id",
+      "candidate_summaries",
+      "prompt_count",
+      "generation_steps",
+      "top1_match_rate",
+      "topk_contains_rate",
+      "mean_logit_cosine",
+      "mean_probability_kl",
+      "max_abs_logit_delta_max"
+    ]
+  },
+  "expected_benefit": [
+    "reduce the prompt-sampling abstraction in the current score24 pass",
+    "decide whether score24_float is ready for a measured hardware/PPA follow-up",
+    "keep the failing score22 and RTL-exact controls in the same run for regression context"
+  ],
+  "risks": [
+    "the result is still an attention-shadow gate rather than full perplexity",
+    "the boundary may move with a different LLaMA-family checkpoint or a larger benchmark set",
+    "the passing float-quantized softmax path still needs a hardware embodiment before final frontier comparison"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_mixed_int8_broad_native_quality_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Run a broader 7B-class native checkpoint attention-shadow gate for the passing score24 QKV8 mixed/int8 point.",
+      "evaluation_mode": "quality_gate",
+      "abstraction_layer": "decoder_attention_mixed_int8_broad_native_quality",
+      "comparison_role": "precision_validation",
+      "cost_class": "medium",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_mixed_int8_high_score_boundary_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "validate_score24_float_before_ppa",
+        "reason": "Score18/20/22 failed and score24_float passed on the small high-score boundary gate; the next decision needs broader native-checkpoint evidence before PPA is spent on the score24 mixed/int8 point."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_high_score_boundary__l2_decoder_attention_mixed_int8_high_score_boundary_llama7b_v1.json"
+  ],
+  "source_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score_boundary__l2_decoder_attention_mixed_int8_score_boundary_llama7b_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_native_quality_ablation__l2_decoder_attention_mixed_int8_native_quality_ablation_llama7b_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/evaluate_llm_decoder_model_native_mixed_int8_attention.py",
+    "docs/proposals/prop_l2_decoder_attention_mixed_int8_high_score_boundary_llama7b_v1/proposal.json"
+  ]
+}
