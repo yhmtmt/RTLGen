@@ -22,7 +22,7 @@
   ],
   "requested_items": [
     {
-      "item_id": "l2_decoder_attention_mixed_int8_energy_closure_llama7b_v1",
+      "item_id": "l2_decoder_attention_mixed_int8_energy_closure_llama7b_v1_r2",
       "task_type": "l2_campaign",
       "objective": "Convert mixed/int8 physical-feasibility rows into comparable source-backed energy rows and compare them against exact-FP16 dense-GEMM V3 Llama7B closure.",
       "evaluation_mode": "frontier_detail",
@@ -40,8 +40,15 @@
         "direction": "compare_mixed_int8_against_fp16_v3",
         "reason": "Record the mixed/int8 throughput-energy-area-precision tradeoff against the current exact-FP16 measured baseline."
       },
-      "status": "proposed",
-      "notes": "Run on the remote evaluator. This is a low-cost audit job; it should not launch OpenROAD."
+      "status": "merged",
+      "notes": "Run on the remote evaluator. This is a low-cost audit job; it should not launch OpenROAD. Merged via PR #993 and merge 5e7ccb96637dee79fda363ca4abf4d790f64fed1 at 2026-06-24T10:48:27.088799Z.",
+      "prior_item_ids": [
+        "l2_decoder_attention_mixed_int8_energy_closure_llama7b_v1"
+      ],
+      "merged_pr_number": 993,
+      "merge_commit": "5e7ccb96637dee79fda363ca4abf4d790f64fed1",
+      "merged_utc": "2026-06-24T10:48:27.088799Z"
     }
-  ]
+  ],
+  "source_commit": "44b3a813f2668c50708e2b8b873a6b0af4844802"
 }
