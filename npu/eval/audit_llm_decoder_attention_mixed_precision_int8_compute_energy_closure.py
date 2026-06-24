@@ -175,6 +175,10 @@ def _energy_row(row: JsonDict, command_calibrated: JsonDict, sram_profile: JsonD
         key=lambda item: item[1],
     )[0].replace("_", " ")
 
+    substituted_compute_arch = row.get("substituted_compute_arch")
+    substituted_compute_replica_count = int(_as_float(row.get("substituted_compute_replica_count"), 1))
+    substituted_compute_area_um2 = _as_float(row.get("substituted_compute_area_um2"))
+
     return {
         **row,
         "candidate_id": _candidate_id(row),
@@ -183,14 +187,18 @@ def _energy_row(row: JsonDict, command_calibrated: JsonDict, sram_profile: JsonD
         "base_latency_us": _as_float(row.get("latency_us")),
         "token_throughput_per_s": _tokens_per_s(latency_us),
         "die_area_mm2": _as_float(row.get("die_area_mm2")),
+        "compute_arch": substituted_compute_arch,
+        "compute_power_mw": compute_power_mw,
+        "compute_replica_count": substituted_compute_replica_count,
+        "metrics_csv": row.get("substituted_compute_metrics_csv") or row.get("metrics_csv"),
         "compute_area_um2": _compute_area_mm2(row) * 1_000_000.0,
         "compute_area_mm2": _compute_area_mm2(row),
-        "substituted_compute_arch": row.get("substituted_compute_arch"),
-        "substituted_compute_replica_count": int(_as_float(row.get("substituted_compute_replica_count"), 1)),
+        "substituted_compute_arch": substituted_compute_arch,
+        "substituted_compute_replica_count": substituted_compute_replica_count,
         "substituted_compute_power_mw": compute_power_mw,
         "substituted_compute_power_mw_only": substituted_compute_power_mw,
         "measured_l1_overhead_power_mw_included": measured_l1_overhead_power_mw,
-        "substituted_compute_area_um2": _as_float(row.get("substituted_compute_area_um2")),
+        "substituted_compute_area_um2": substituted_compute_area_um2,
         "compute_energy_mj": compute_energy_mj,
         "hbm_energy_mj": _energy_mj_from_pj(hbm_energy_pj),
         "sram_energy_mj": _as_float(sram.get("energy_mj")),
