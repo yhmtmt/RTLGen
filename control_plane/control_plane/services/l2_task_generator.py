@@ -6117,6 +6117,60 @@ def _decoder_attention_mixed_int8_native_quality_ablation_evidence(*, item_id: s
     }
 
 
+def _decoder_attention_mixed_int8_score_boundary_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_attention_mixed_int8_score_boundary__{item_id}.json"
+    report = f"{base}/decoder_attention_mixed_int8_score_boundary__{item_id}.md"
+    ablation = (
+        f"{base}/decoder_attention_mixed_int8_native_quality_ablation__"
+        "l2_decoder_attention_mixed_int8_native_quality_ablation_llama7b_v1.json"
+    )
+    return {
+        "inputs": {
+            "attention_mixed_int8_native_quality_ablation": ablation,
+            "attention_mixed_int8_score_boundary_out": out,
+            "attention_mixed_int8_score_boundary_report": report,
+            "attention_mixed_int8_score_boundary_scope": (
+                "Run a 7B-class native checkpoint score-bit boundary sweep after the mixed/int8 "
+                "ablation showed QKV8 is acceptable but score8 fails. This identifies the lowest "
+                "score precision that preserves rankings before mapping the candidate back to PPA."
+            ),
+        },
+        "commands": [
+            {
+                "name": "evaluate_decoder_attention_mixed_int8_score_boundary",
+                "run": (
+                    "bash -lc '"
+                    "MODEL_ID=${RTLGEN_MODEL_NATIVE_7B_MODEL_ID:-mistralai/Mistral-7B-v0.1}; "
+                    "EXPECTED_GQA=${RTLGEN_MODEL_NATIVE_7B_EXPECTED_GQA_GROUP_SIZE:-4}; "
+                    "MAX_PROMPTS=${RTLGEN_MODEL_NATIVE_7B_MAX_PROMPTS:-2}; "
+                    "DTYPE=${RTLGEN_MODEL_NATIVE_7B_DTYPE:-bfloat16}; "
+                    "bash npu/eval/run_hf_eval_python.sh "
+                    "npu/eval/evaluate_llm_decoder_model_native_mixed_int8_attention.py "
+                    "--model-id \"$MODEL_ID\" "
+                    "--expected-gqa-group-size \"$EXPECTED_GQA\" "
+                    "--max-prompts \"$MAX_PROMPTS\" "
+                    "--dtype \"$DTYPE\" "
+                    "--topk 5 "
+                    "--candidate score10_float:q8,k8,v8,s10,w16,float_quantized "
+                    "--candidate score12_float:q8,k8,v8,s12,w16,float_quantized "
+                    "--candidate score14_float:q8,k8,v8,s14,w16,float_quantized "
+                    "--candidate score16_float:q8,k8,v8,s16,w16,float_quantized "
+                    "--candidate score10_rtl_exact:q8,k8,v8,s10,w8,rtl_exact "
+                    "--candidate score12_rtl_exact:q8,k8,v8,s12,w8,rtl_exact "
+                    "--candidate score14_rtl_exact:q8,k8,v8,s14,w8,rtl_exact "
+                    "--candidate score16_rtl_exact:q8,k8,v8,s16,w8,rtl_exact "
+                    "--primary-candidate-id score12_rtl_exact "
+                    f"--out {out} "
+                    f"--out-md {report}'"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+        "evidence_only": True,
+    }
+
+
 def _decoder_attention_mixed_precision_quality_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_mixed_precision_quality__{item_id}.json"
@@ -8004,6 +8058,7 @@ def _build_payload(
         "decoder_attention_mixed_int8_energy_closure",
         "decoder_attention_mixed_int8_native_quality",
         "decoder_attention_mixed_int8_native_quality_ablation",
+        "decoder_attention_mixed_int8_score_boundary",
         "decoder_attention_kv_dual_stream_physical_feasibility",
         "decoder_attention_mixed_precision_quality",
         "decoder_attention_softmax_pow2sum_quality",
@@ -8188,6 +8243,8 @@ def _build_payload(
             decoder_evidence = _decoder_attention_mixed_int8_native_quality_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_mixed_int8_native_quality_ablation":
             decoder_evidence = _decoder_attention_mixed_int8_native_quality_ablation_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_attention_mixed_int8_score_boundary":
+            decoder_evidence = _decoder_attention_mixed_int8_score_boundary_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_dual_stream_physical_feasibility":
             decoder_evidence = _decoder_attention_kv_dual_stream_physical_feasibility_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_mixed_precision_quality":
