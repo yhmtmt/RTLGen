@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_mixed_int8_high_score_boundary_llama7b_v1",
+  "decision": "iterate",
+  "pr_number": 1002,
+  "merge_commit": "a07ea911a32d22c7783b0163bef9adce4214f3b2",
+  "merged_utc": "2026-06-24T11:36:23.208360Z"
+}
