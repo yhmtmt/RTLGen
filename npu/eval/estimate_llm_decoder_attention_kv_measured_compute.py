@@ -109,8 +109,11 @@ def _load_dense_tile_shape(config_path: Path) -> tuple[str, int, int, int, int]:
 
 def _load_dense_gemm_tile_candidates(*, repo_root: Path, tag_substring: str) -> list[JsonDict]:
     candidates: list[JsonDict] = []
-    for metrics_path in sorted((repo_root / "runs/designs/npu_blocks").glob("npu_dense_gemm_tile_*/metrics.csv")):
-        config_path = metrics_path.parent / "config.json"
+    design_metric_paths = sorted((repo_root / "runs/designs/npu_blocks").glob("npu_dense_gemm_tile_*/metrics.csv"))
+    campaign_metric_paths = sorted((repo_root / "runs/campaigns" / "npu").glob("dense_gemm_tile_*/*/metrics.csv"))
+    for metrics_path in design_metric_paths + campaign_metric_paths:
+        design_name = metrics_path.parent.name
+        config_path = repo_root / "runs" / "designs" / "npu_blocks" / design_name / "config.json"
         if not config_path.exists():
             continue
         precision, array_m, array_n, k_unroll, pipeline_stages = _load_dense_tile_shape(config_path)
