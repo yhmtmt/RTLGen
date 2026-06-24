@@ -1,0 +1,79 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_mixed_int8_score_boundary_llama7b_v1",
+  "created_utc": "2026-06-24T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Llama7B mixed/int8 attention score precision boundary",
+  "abstraction_layer": "decoder_attention_mixed_int8_score_boundary",
+  "hypothesis": "QKV8 can remain in the latency frontier if attention score precision is raised above the failing score8 point. A native 7B-class score-bit boundary sweep should identify the lowest passing score precision before PPA is spent on a new hardware candidate.",
+  "direct_comparison": {
+    "primary_question": "What is the lowest attention score precision that preserves native 7B-class checkpoint rankings for QKV8 attention?",
+    "baseline": "l2_decoder_attention_mixed_int8_native_quality_ablation_llama7b_v1",
+    "candidate": "score10/12/14/16 QKV8 attention-shadow candidates",
+    "include": [
+      "score10, score12, score14, and score16 float-quantized softmax candidates",
+      "score10, score12, score14, and score16 RTL exact int8 softmax candidates",
+      "native 7B-class checkpoint prompt-level final-logit comparisons",
+      "top-1 match, top-k contains, logit cosine, probability KL, and max logit delta"
+    ],
+    "exclude": [
+      "new OpenROAD/PPA runs",
+      "QAT or fine-tuning recovery",
+      "full perplexity or task accuracy",
+      "reciprocal-LUT variants beyond the current score8 failure"
+    ],
+    "metrics": [
+      "best_candidate_id",
+      "lowest_passing_score_bits",
+      "candidate_summaries",
+      "top1_match_rate",
+      "topk_contains_rate",
+      "mean_logit_cosine",
+      "mean_probability_kl"
+    ]
+  },
+  "expected_benefit": [
+    "replace the vague precision failure with a concrete score-bit boundary",
+    "identify whether the next hardware point should target score10, score12, score14, score16, or abandon score quantization",
+    "avoid PPA on precision points that fail native checkpoint evidence"
+  ],
+  "risks": [
+    "the result is still a prompt-level attention-shadow gate rather than full perplexity",
+    "the boundary may move with a larger prompt set or a different LLaMA-family checkpoint",
+    "RTL exact softmax still abstracts reciprocal implementation cost"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_mixed_int8_score_boundary_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Run a 7B-class native checkpoint score-bit boundary sweep for QKV8 attention after score8 failed.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_mixed_int8_score_boundary",
+      "comparison_role": "precision_boundary",
+      "cost_class": "medium",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_mixed_int8_native_quality_ablation_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "find_lowest_passing_score_precision",
+        "reason": "The previous ablation showed QKV8 itself passes but score8 fails; the next frontier needs the lowest score precision that still preserves rankings."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_native_quality_ablation__l2_decoder_attention_mixed_int8_native_quality_ablation_llama7b_v1.json"
+  ],
+  "source_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_native_quality__l2_decoder_attention_mixed_int8_native_quality_llama7b_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_energy_closure__l2_decoder_attention_mixed_int8_energy_closure_llama7b_v1_r2.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/evaluate_llm_decoder_model_native_mixed_int8_attention.py",
+    "docs/proposals/prop_l2_decoder_attention_mixed_int8_native_quality_ablation_llama7b_v1/proposal.json"
+  ]
+}
+

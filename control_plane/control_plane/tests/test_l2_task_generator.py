@@ -6897,6 +6897,69 @@ def test_generate_l2_campaign_task_adds_mixed_int8_native_quality_ablation_evide
             }
 
 
+def test_generate_l2_campaign_task_adds_mixed_int8_score_boundary_evidence() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id="l2_decoder_attention_mixed_int8_score_boundary_llama7b_v1",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    proposal_id="prop_l2_decoder_attention_mixed_int8_score_boundary_llama7b_v1",
+                    proposal_path=(
+                        "docs/proposals/"
+                        "prop_l2_decoder_attention_mixed_int8_score_boundary_llama7b_v1/"
+                        "proposal.json"
+                    ),
+                    abstraction_layer="decoder_attention_mixed_int8_score_boundary",
+                    evaluation_mode="frontier_detail",
+                    comparison_role="precision_boundary",
+                    depends_on_item_ids=[
+                        "l2_decoder_attention_mixed_int8_native_quality_ablation_llama7b_v1",
+                    ],
+                    requires_merged_inputs=True,
+                    requires_materialized_refs=True,
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            commands = work_item.task_request.request_payload["task"]["commands"]
+            decoder_inputs = work_item.input_manifest["decoder_contract"]
+
+            assert [command["name"] for command in commands[:1]] == [
+                "evaluate_decoder_attention_mixed_int8_score_boundary",
+            ]
+            run = commands[0]["run"]
+            assert "--candidate score10_float:q8,k8,v8,s10,w16,float_quantized" in run
+            assert "--candidate score16_rtl_exact:q8,k8,v8,s16,w8,rtl_exact" in run
+            assert "--primary-candidate-id score12_rtl_exact" in run
+            assert decoder_inputs["attention_mixed_int8_native_quality_ablation"].endswith(
+                "decoder_attention_mixed_int8_native_quality_ablation__"
+                "l2_decoder_attention_mixed_int8_native_quality_ablation_llama7b_v1.json"
+            )
+            assert "attention_mixed_int8_score_boundary_out" in decoder_inputs
+            assert decoder_inputs["attention_mixed_int8_score_boundary_out"] in work_item.expected_outputs
+            assert work_item.task_request.request_payload["developer_loop"]["abstraction"] == {
+                "layer": "decoder_attention_mixed_int8_score_boundary",
+            }
+            assert work_item.task_request.request_payload["developer_loop"]["dependencies"] == {
+                "item_ids": ["l2_decoder_attention_mixed_int8_native_quality_ablation_llama7b_v1"],
+                "requires_merged_inputs": True,
+                "requires_materialized_refs": True,
+            }
+
+
 def test_generate_l2_campaign_task_adds_attention_mixed_precision_quality_evidence() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
