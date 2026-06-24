@@ -21,13 +21,20 @@
   ],
   "requested_items": [
     {
-      "item_id": "l1_npu_dense_gemm_tile_scaling_v3",
+      "item_id": "l1_npu_dense_gemm_tile_scaling_v3_r2",
       "task_type": "l1_sweep",
       "objective": "Measure 16x16 exact-FP16 dense GEMM k1/k2 pipeline and depth scaling under one larger hierarchy-preserving Nangate45 floorplan.",
       "evaluation_mode": "measurement_only",
       "abstraction_layer": "architecture_block",
-      "status": "blocked_until_source_merged",
-      "notes": "Dispatch only after this proposal, the V3 sweep, and the new dense tile configs are merged to master; queue with source_requirement.required_sha set to that merge commit and dispatch_machine_key eval-daemon-b7c2d9c80c1c."
+      "status": "merged",
+      "notes": "Dispatch only after this proposal, the V3 sweep, and the new dense tile configs are merged to master; queue with source_requirement.required_sha set to that merge commit and dispatch_machine_key eval-daemon-b7c2d9c80c1c. Merged via PR #986 and merge 4ba137cbba49056a4b1e873f4356355eeda974b1 at 2026-06-24T10:08:55.471266Z.",
+      "prior_item_ids": [
+        "l1_npu_dense_gemm_tile_scaling_v3"
+      ],
+      "merged_pr_number": 986,
+      "merge_commit": "4ba137cbba49056a4b1e873f4356355eeda974b1",
+      "merged_utc": "2026-06-24T10:08:55.471266Z"
     }
-  ]
+  ],
+  "source_commit": "b8acbccd885376fdf001329f83808e6283346b27"
 }
