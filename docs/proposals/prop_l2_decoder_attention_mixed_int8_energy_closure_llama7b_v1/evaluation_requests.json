@@ -1,0 +1,47 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_mixed_int8_energy_closure_llama7b_v1",
+  "requests": [
+    {
+      "item_id": "l2_decoder_attention_mixed_int8_energy_closure_llama7b_v1",
+      "task_type": "l2_campaign",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_mixed_int8_energy_closure",
+      "comparison_role": "frontier_closure",
+      "expected_direction": "compare_mixed_int8_against_fp16_v3",
+      "expected_reason": "Record whether the mixed/int8 softmax-recip point is the energy, latency, or precision-risk frontier when compared against exact-FP16 dense-GEMM V3 closure.",
+      "dispatch_machine_key": "eval-daemon-b7c2d9c80c1c",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_mixed_precision_int8_compute_physical_feasibility_softmax_recip_lut_llama7b_v1",
+        "l2_decoder_attention_dense_gemm_v3_measured_compute_closure_llama7b_v1",
+        "l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1",
+        "l2_decoder_attention_sram_profile_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    }
+  ],
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_mixed_int8_energy_closure_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Convert mixed/int8 physical-feasibility rows into comparable source-backed energy rows and compare them against exact-FP16 dense-GEMM V3 Llama7B closure.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_mixed_int8_energy_closure",
+      "comparison_role": "frontier_closure",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_mixed_precision_int8_compute_physical_feasibility_softmax_recip_lut_llama7b_v1",
+        "l2_decoder_attention_dense_gemm_v3_measured_compute_closure_llama7b_v1",
+        "l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1",
+        "l2_decoder_attention_sram_profile_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "compare_mixed_int8_against_fp16_v3",
+        "reason": "Record the mixed/int8 throughput-energy-area-precision tradeoff against the current exact-FP16 measured baseline."
+      },
+      "status": "proposed",
+      "notes": "Run on the remote evaluator. This is a low-cost audit job; it should not launch OpenROAD."
+    }
+  ]
+}

@@ -69,6 +69,38 @@ def test_decoder_evidence_summary_recognizes_softmax_recip_lut_mixed_precision_i
     assert "best_requested_substituted_compute_arch=dense_gemm_int8_16x8_k1_p1" in summary
 
 
+def test_decoder_evidence_summary_recognizes_mixed_precision_int8_compute_energy_closure() -> None:
+    outcome, summary = _decoder_evidence_summary(
+        evidence_ref="runs/datasets/demo/int8_energy.json",
+        evidence_payload={
+            "model": "llm_decoder_attention_mixed_precision_int8_compute_energy_closure_llama7b_v1",
+            "diagnosis": {
+                "decision": "mixed_precision_int8_compute_improves_latency_not_energy",
+                "source_rows_used": 3,
+                "physical_feasible_rows": 3,
+                "best_requested_mode": "dual_mac",
+                "best_requested_adjusted_latency_us_if_feasible": 1575.373891,
+                "best_requested_substituted_compute_arch": "dense_gemm_int8_16x8_k1_p1",
+                "best_requested_substituted_compute_area_um2": 89549280.0,
+                "best_requested_substituted_compute_power_mw": 974.7,
+            },
+            "best": {
+                "candidate_id": "die800_dense_gemm_int8_16x8_k1_p1",
+                "latency_us": 1575.373891,
+                "token_throughput_per_s": 634.77,
+                "energy_mj": 135.75,
+                "die_area_mm2": 800.0,
+                "dominant_energy_component": "hbm",
+            },
+        },
+    )
+
+    assert outcome == "mixed_precision_int8_compute_improves_latency_not_energy"
+    assert "mixed/int8 energy closure" in summary
+    assert "best_token_throughput_per_s=634.77" in summary
+    assert "best_dominant_energy_component=hbm" in summary
+
+
 def test_decoder_evidence_summary_recognizes_composed_datapath_physical_feasibility() -> None:
     outcome, summary = _decoder_evidence_summary(
         evidence_ref="runs/datasets/demo/composed_datapath.json",

@@ -1,0 +1,84 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_mixed_int8_energy_closure_llama7b_v1",
+  "created_utc": "2026-06-24T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Llama7B mixed/int8 energy closure against exact-FP16 V3 baseline",
+  "abstraction_layer": "decoder_attention_mixed_int8_energy_closure",
+  "hypothesis": "The quality-gated mixed/int8 softmax-recip dual-stream point should be compared against the exact-FP16 dense-GEMM V3 closure with the same source-backed HBM/SRAM energy accounting. This determines whether the lower-precision point is an energy, latency, area, or precision frontier rather than only a physical-feasibility result.",
+  "direct_comparison": {
+    "primary_question": "Does the mixed/int8 softmax-recip point replace the exact-FP16 dense-GEMM V3 Llama7B frontier when token throughput, energy, area, and precision are considered together?",
+    "baseline": "l2_decoder_attention_dense_gemm_v3_measured_compute_closure_llama7b_v1",
+    "candidate": "l2_decoder_attention_mixed_int8_energy_closure_llama7b_v1",
+    "include": [
+      "consume merged mixed/int8 softmax-recip physical-feasibility artifact",
+      "use substituted int8 compute PPA fields instead of source FP16 row power",
+      "add measured local L1 overhead power carried by the physical-feasibility row",
+      "consume source-backed HBM command energy and merged SRAM profile",
+      "compare against exact-FP16 dense-GEMM V3 measured-compute closure"
+    ],
+    "exclude": [
+      "new OpenROAD/PPA runs",
+      "new Llama7B checkpoint perplexity measurement",
+      "new HBM vendor signoff model",
+      "new routed NoC or SRAM compiler signoff"
+    ],
+    "metrics": [
+      "decision",
+      "token_throughput_per_s",
+      "energy_mj",
+      "die_area_mm2",
+      "precision_profile",
+      "dominant_energy_component",
+      "remaining_abstractions"
+    ]
+  },
+  "expected_benefit": [
+    "turn the mixed/int8 physical-feasibility result into a directly comparable frontier record",
+    "separate the latency frontier from the energy frontier if HBM traffic dominates",
+    "record the remaining precision-quality gap before any lower-precision promotion"
+  ],
+  "risks": [
+    "mixed/int8 quality is still proxy-backed and may not survive real-checkpoint validation",
+    "energy uses replicated measured blocks rather than a full integrated macro",
+    "NoC/SRAM and HBM energy are still model/profile based"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_mixed_int8_energy_closure_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Convert the mixed/int8 softmax-recip physical-feasibility rows into source-backed energy rows and compare them against the exact-FP16 dense-GEMM V3 Llama7B closure.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_mixed_int8_energy_closure",
+      "comparison_role": "frontier_closure",
+      "cost_class": "low",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_mixed_precision_int8_compute_physical_feasibility_softmax_recip_lut_llama7b_v1",
+        "l2_decoder_attention_dense_gemm_v3_measured_compute_closure_llama7b_v1",
+        "l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1",
+        "l2_decoder_attention_sram_profile_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "compare_mixed_int8_against_fp16_v3",
+        "reason": "Record whether mixed/int8 is energy-best, latency-best, or only a precision-risk candidate under the current Llama7B energy model."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_dense_gemm_v3_measured_compute_closure__l2_decoder_attention_dense_gemm_v3_measured_compute_closure_llama7b_v1.json"
+  ],
+  "source_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_precision_int8_compute_physical_feasibility__l2_decoder_attention_mixed_precision_int8_compute_physical_feasibility_softmax_recip_lut_llama7b_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_hbm_command_calibrated_service__l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_sram_profile__l2_decoder_attention_sram_profile_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/audit_llm_decoder_attention_mixed_precision_int8_compute_energy_closure.py",
+    "control_plane/control_plane/services/l2_task_generator.py",
+    "docs/architecture/llama7b_attention_abstraction_closure_plan.md"
+  ]
+}
