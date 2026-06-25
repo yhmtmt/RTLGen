@@ -1,0 +1,107 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "decoder_contract": {
+        "attention_mixed_int8_q12_pwl_proxy_audit": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_q12_pwl_proxy_audit__l2_decoder_attention_mixed_int8_q12_pwl_proxy_audit_llama7b_v1.json",
+        "attention_mixed_int8_quality_backed_frontier": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_quality_backed_frontier__l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1.json",
+        "attention_mixed_int8_score_precision_recovery_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score_precision_recovery__l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1.json",
+        "attention_mixed_int8_score_precision_recovery_scope": "Run a broad 7B attention-shadow precision recovery sweep after q12/PWL and quality-backed frontier dependencies. This is an evidence-only job to decide whether higher score precision or higher PWL-reciprocal precision can recover mixed/int8 quality before recosting any new PPA.",
+        "attention_mixed_int8_score_precision_recovery_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score_precision_recovery__l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1.md"
+      }
+    },
+    "commands": [
+      {
+        "run": "bash -lc 'MODEL_ID=${RTLGEN_MODEL_NATIVE_7B_MODEL_ID:-mistralai/Mistral-7B-v0.1}; EXPECTED_GQA=${RTLGEN_MODEL_NATIVE_7B_EXPECTED_GQA_GROUP_SIZE:-4}; MAX_PROMPTS=${RTLGEN_MODEL_NATIVE_7B_BROAD_MAX_PROMPTS:-8}; GEN_STEPS=${RTLGEN_MODEL_NATIVE_7B_BROAD_GENERATION_STEPS:-8}; DTYPE=${RTLGEN_MODEL_NATIVE_7B_DTYPE:-bfloat16}; bash npu/eval/run_hf_eval_python.sh npu/eval/evaluate_llm_decoder_model_native_mixed_int8_attention.py --model-id \"$MODEL_ID\" --expected-gqa-group-size \"$EXPECTED_GQA\" --max-prompts \"$MAX_PROMPTS\" --generation-steps \"$GEN_STEPS\" --dtype \"$DTYPE\" --topk 5 --candidate qkv8_float_exact:q8,k8,v8,s24,w16,float_exact --candidate score24_float:q8,k8,v8,s24,w16,float_quantized --candidate score28_float:q8,k8,v8,s28,w16,float_quantized --candidate score32_float:q8,k8,v8,s32,w16,float_quantized --candidate qkv8_q16_pwl_recip_q16_bucket8:q8,k8,v8,s16,w16,pwl_recip_lut_q16_bucket8 --candidate qkv8_q20_pwl_recip_q20_bucket8:q8,k8,v8,s20,w20,pwl_recip_lut_q20_bucket8 --primary-candidate-id score32_float --out runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score_precision_recovery__l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1.json --out-md runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score_precision_recovery__l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1.md'",
+        "name": "evaluate_decoder_attention_mixed_int8_score_precision_recovery"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate_runs"
+      }
+    ],
+    "objective": "Run a broad precision-recovery mixed/int8 native attention-shadow sweep to test score/PWL-reciprocal precision upgrades before any final mixed-int8 ranking.",
+    "acceptance": [
+      "Write all declared decoder evidence artifacts",
+      "Keep evidence artifact paths repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "source_mode": "src_verilog",
+    "expected_outputs": [
+      "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score_precision_recovery__l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1.json",
+      "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score_precision_recovery__l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1.md"
+    ]
+  },
+  "layer": "layer2",
+  "state": "evaluated",
+  "title": "Llama7B mixed/int8 score precision recovery",
+  "result": {
+    "branch": "eval/l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1/s20260625t134303z",
+    "completed_utc": "2026-06-25T13:42:21.955359Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "b7c2d9c80c1c",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260625t134303z][host:b7c2d9c80c1c][item:l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1]",
+    "metrics_rows": [],
+    "metrics_exempt_reason": "evidence_only_decoder_evidence",
+    "queue_item_id": "l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1",
+    "session_id": "s20260625t134303z",
+    "status": "ok",
+    "summary": "2/2 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1/s20260625t134303z",
+    "pr_title": "eval: run llama7b mixed/int8 score precision recovery",
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Include metrics row references in result.metrics_rows",
+      "Keep committed result_path fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260625t134303z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 1,
+  "created_utc": "2026-06-25T13:39:19.567759Z",
+  "requested_by": "developer_agent",
+  "developer_loop": {
+    "comparison": {
+      "role": "precision_recovery",
+      "paired_baseline_item_id": ""
+    },
+    "evaluation": {
+      "mode": "quality_gate",
+      "expected_reason": "Identify whether score32 or high-precision PWL reciprocal variants recover attention-shadow quality before any PPA recosting.",
+      "expected_direction": "recover_quality_gate_or_hold_for_recost"
+    },
+    "abstraction": {
+      "layer": "decoder_attention_mixed_int8_score_precision_recovery"
+    },
+    "proposal_id": "prop_l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1",
+    "dependencies": {
+      "item_ids": [
+        "l2_decoder_attention_mixed_int8_q12_pwl_proxy_audit_llama7b_v1",
+        "l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    },
+    "proposal_path": "docs/proposals/prop_l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1/proposal.json"
+  },
+  "source_requirement": {
+    "repo": "",
+    "reason": "evaluator runtime must contain the queued job source commit",
+    "version": 1,
+    "required_ref": "origin/master",
+    "required_sha": "68d78c106c9d3b4891657cc2aa259171397aa4ab",
+    "requires_daemon_restart": true
+  }
+}
