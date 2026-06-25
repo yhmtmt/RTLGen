@@ -846,7 +846,11 @@ def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, 
         summary = "; ".join(parts)
         return outcome, summary if summary.endswith(".") else summary + "."
 
-    if isinstance(evidence_payload.get("model"), dict) and isinstance(evidence_payload.get("decision"), dict):
+    if (
+        isinstance(evidence_payload.get("model"), dict)
+        and isinstance(evidence_payload.get("decision"), dict)
+        and evidence_payload.get("quality_gate") != "mixed_int8_generation_quality"
+    ):
         decision = dict(evidence_payload["decision"])
         outcome = str(decision.get("status") or "native_checkpoint_quality_recorded")
         model_info = dict(evidence_payload["model"])
@@ -1264,7 +1268,10 @@ def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, 
         summary = "; ".join(parts)
         return outcome, summary if summary.endswith(".") else summary + "."
 
-    if model == "llm_decoder_attention_mixed_int8_generation_quality_llama7b_v1":
+    if (
+        model == "llm_decoder_attention_mixed_int8_generation_quality_llama7b_v1"
+        or evidence_payload.get("quality_gate") == "mixed_int8_generation_quality"
+    ):
         decision = evidence_payload.get("decision")
         decision_dict = dict(decision) if isinstance(decision, dict) else {}
         outcome = str(

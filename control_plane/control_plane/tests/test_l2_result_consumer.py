@@ -1129,7 +1129,12 @@ def test_consume_l2_result_frontier_attention_mixed_int8_generation_quality_uses
                 repo_root / evidence_rel,
                 json.dumps(
                     {
-                        "model": "llm_decoder_attention_mixed_int8_generation_quality_llama7b_v1",
+                        "quality_gate": "mixed_int8_generation_quality",
+                        "model": {
+                            "model_id": "mistralai/Mistral-7B-v0.1",
+                            "gqa_group_size": 4.0,
+                            "dtype": "bfloat16",
+                        },
                         "decision": {
                             "status": "mixed_int8_generation_quality_hold",
                             "recommended_next_step": "do not recost until generation drift is resolved",
@@ -1195,6 +1200,9 @@ def test_consume_l2_result_frontier_attention_mixed_int8_generation_quality_uses
             )
             assessment = decision_payload["proposal_assessment"]
             assert assessment["outcome"] == "mixed_int8_generation_quality_hold"
+            assert "Decoder mixed/int8 generation quality evidence" in assessment["summary"]
+            assert "KV quality evidence" not in assessment["summary"]
+            assert "free_run_exact_match_rate=0.75" in assessment["summary"]
             assert assessment["decoder_evidence_ref"] == evidence_rel
             assert (
                 decision_payload["evaluation_record"]["abstraction_layer"]

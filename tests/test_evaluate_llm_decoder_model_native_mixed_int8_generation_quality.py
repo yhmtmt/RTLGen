@@ -65,6 +65,7 @@ def test_generation_decision_pass_and_hold_thresholds() -> None:
     clean = {
         "teacher_forced_nll_delta_mean": 0.2,
         "candidate_probability_assigned_to_reference_token_mean": 0.35,
+        "candidate_probability_assigned_to_reference_token_min": 0.01,
         "free_running_match_rate": 0.9,
     }
     poor = {
@@ -73,7 +74,14 @@ def test_generation_decision_pass_and_hold_thresholds() -> None:
         "free_running_match_rate": 0.5,
     }
 
-    assert _decision(clean, expected_gqa_group_size=4, actual_gqa_group_size=4.0)["status"] == "mixed_int8_generation_quality_pass"
+    clean_decision = _decision(clean, expected_gqa_group_size=4, actual_gqa_group_size=4.0)
+    assert clean_decision["status"] == "mixed_int8_generation_quality_pass"
+    assert clean_decision["thresholds"] == {
+        "teacher_forced_mean_nll_delta_max": 0.4,
+        "teacher_forced_candidate_reference_token_prob_mean_min": 0.1,
+        "free_running_match_rate_min": 0.75,
+        "expected_gqa_group_size": 4,
+    }
     hold = _decision(poor, expected_gqa_group_size=4, actual_gqa_group_size=4.0)
     assert hold["status"] == "mixed_int8_generation_quality_hold"
     assert hold["blockers"]
