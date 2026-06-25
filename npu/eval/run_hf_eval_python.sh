@@ -76,4 +76,5 @@ printf 'rtlgen hf eval: using %s (Python %s)\n' "${selected_python}" "${version}
 script="$1"
 shift
 cd "${repo_root}"
+export PYTHONPATH="${repo_root}${PYTHONPATH:+:${PYTHONPATH}}"
 exec "${selected_python}" "${script}" "$@"
