@@ -21,5 +21,19 @@
       }
     }
   ],
-  "source_commit": "571ee45629c1d2bc62795c8b7a7aecdd812f49a7"
+  "source_commit": "e325e0b2ca3ab4c2da45d9e8a188638a9e7f8c33",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_mixed_int8_score_margin_audit_llama7b_v1_r2",
+      "task_type": "l2_campaign",
+      "objective": "LLM-oriented attention-tail stress campaign for larger sequence lengths and more repeated non-terminal Softmax paths.",
+      "evaluation_mode": "quality_gate",
+      "abstraction_layer": "decoder_attention_mixed_int8_score_margin_audit",
+      "status": "merged",
+      "merged_pr_number": 1025,
+      "merge_commit": "ea435ed9f2360409760cf222a1c4114b6d9d9c94",
+      "merged_utc": "2026-06-25T14:07:34.108032Z",
+      "notes": "Merged via PR #1025 and merge ea435ed9f2360409760cf222a1c4114b6d9d9c94 at 2026-06-25T14:07:34.108032Z."
+    }
+  ]
 }

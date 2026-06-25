@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_mixed_int8_score_margin_audit_llama7b_v1",
+  "decision": "iterate",
+  "pr_number": 1025,
+  "merge_commit": "ea435ed9f2360409760cf222a1c4114b6d9d9c94",
+  "merged_utc": "2026-06-25T14:07:34.108032Z"
+}
