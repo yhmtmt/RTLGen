@@ -21,5 +21,20 @@
         "reason": "Not a final ranking job: identify whether score32 or high-precision PWL-reciprocal variants recover attention-shadow quality before recosting."
       }
     }
+  ],
+  "source_commit": "68d78c106c9d3b4891657cc2aa259171397aa4ab",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Run a broad precision-recovery mixed/int8 native attention-shadow sweep to test score/PWL-reciprocal precision upgrades before any final mixed-int8 ranking.",
+      "evaluation_mode": "quality_gate",
+      "abstraction_layer": "decoder_attention_mixed_int8_score_precision_recovery",
+      "status": "merged",
+      "merged_pr_number": 1021,
+      "merge_commit": "b80ed72fe954873b1d24ac35d7ecd4b088ea4fa6",
+      "merged_utc": "2026-06-25T13:45:03.101234Z",
+      "notes": "Merged via PR #1021 and merge b80ed72fe954873b1d24ac35d7ecd4b088ea4fa6 at 2026-06-25T13:45:03.101234Z."
+    }
   ]
 }
