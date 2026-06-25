@@ -1,0 +1,144 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-06-25T14:01:17.168421Z",
+  "control_plane_source_commit": "b4399701829e9b5c251ddcabd36cbc26c193e74a",
+  "review_metadata_source_commit": "b4399701829e9b5c251ddcabd36cbc26c193e74a",
+  "item_id": "l2_decoder_attention_mixed_int8_score_margin_audit_llama7b_v1",
+  "run_key": "l2_decoder_attention_mixed_int8_score_margin_audit_llama7b_v1_run_fc4aaf9171ea2d3c",
+  "layer": "layer2",
+  "flow": "openroad",
+  "task_type": "l2_campaign",
+  "source_commit": "b4399701829e9b5c251ddcabd36cbc26c193e74a",
+  "queue_snapshot": {
+    "path": "control_plane/shadow_exports/review/l2_decoder_attention_mixed_int8_score_margin_audit_llama7b_v1/evaluated.json",
+    "result": {
+      "branch": "eval/l2_decoder_attention_mixed_int8_score_margin_audit_llama7b_v1/s20260625t140114z",
+      "completed_utc": "2026-06-25T14:01:12.315881Z",
+      "evaluator_id": "control_plane",
+      "executor": "@control_plane",
+      "host": "b7c2d9c80c1c",
+      "identity_block": "[role:evaluator][account:control_plane][session:s20260625t140114z][host:b7c2d9c80c1c][item:l2_decoder_attention_mixed_int8_score_margin_audit_llama7b_v1]",
+      "metrics_rows": [],
+      "metrics_exempt_reason": "evidence_only_decoder_evidence",
+      "queue_item_id": "l2_decoder_attention_mixed_int8_score_margin_audit_llama7b_v1",
+      "session_id": "s20260625t140114z",
+      "status": "ok",
+      "summary": "2/2 commands succeeded"
+    }
+  },
+  "review_artifact": {
+    "kind": "decision_proposal",
+    "path": "control_plane/shadow_exports/l2_decisions/l2_decoder_attention_mixed_int8_score_margin_audit_llama7b_v1.json",
+    "storage_mode": "repo",
+    "sha256": "29c9db822e202dbf201be629581d971b856c1a891eb7f1dda2214362c1feaa64",
+    "payload": {
+      "version": 0.1,
+      "generated_utc": "2026-06-25T14:01:14.047044Z",
+      "item_id": "l2_decoder_attention_mixed_int8_score_margin_audit_llama7b_v1",
+      "run_key": "l2_decoder_attention_mixed_int8_score_margin_audit_llama7b_v1_run_fc4aaf9171ea2d3c",
+      "layer": "layer2",
+      "flow": "openroad",
+      "platform": "nangate45",
+      "task_type": "l2_campaign",
+      "source_commit": "b4399701829e9b5c251ddcabd36cbc26c193e74a",
+      "review_metadata_source_commit": "b4399701829e9b5c251ddcabd36cbc26c193e74a",
+      "objective": "LLM-oriented attention-tail stress campaign for larger sequence lengths and more repeated non-terminal Softmax paths.",
+      "input_manifest": {
+        "decoder_contract": {
+          "attention_mixed_int8_score_margin_audit_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score_margin_audit__l2_decoder_attention_mixed_int8_score_margin_audit_llama7b_v1.json",
+          "attention_mixed_int8_score_margin_audit_scope": "Audit the score precision recovery candidate rows by reference-margin buckets and top-k containment. This is a cheap evidence-only job to separate narrow-margin top1 drift from systematic approximation error before any new PPA recost.",
+          "attention_mixed_int8_score_precision_recovery": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score_precision_recovery__l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1.json",
+          "attention_mixed_int8_score_margin_audit_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score_margin_audit__l2_decoder_attention_mixed_int8_score_margin_audit_llama7b_v1.md"
+        }
+      },
+      "recommendation": {
+        "source": "decoder_evidence",
+        "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score_margin_audit__l2_decoder_attention_mixed_int8_score_margin_audit_llama7b_v1.json",
+        "arch_id": "decoder_attention_mixed_int8_score_margin_audit",
+        "macro_mode": "evidence_only",
+        "outcome": "score_margin_audit_narrow_margin_hold"
+      },
+      "objective_profiles": [],
+      "evaluation_record": {
+        "proposal_id": "prop_l2_decoder_attention_mixed_int8_score_margin_audit_llama7b_v1",
+        "title": "Llama7B mixed/int8 score margin audit",
+        "primary_question": "Are the remaining mixed/int8 score precision top1 failures narrow-margin, top-k-stable drift or systematic quality failures?",
+        "evaluation_mode": "quality_gate",
+        "comparison_role": "score_margin_audit",
+        "abstraction_layer": "decoder_attention_mixed_int8_score_margin_audit",
+        "expected_direction": "unknown",
+        "expected_reason": "",
+        "summary": "Decoder mixed/int8 score-margin audit recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score_margin_audit__l2_decoder_attention_mixed_int8_score_margin_audit_llama7b_v1.json: decision=score_margin_audit_narrow_margin_hold; candidate_count=6; primary_candidate_id=qkv8_float_exact; primary_comparison_count=64; primary_top1_miss_count=0; primary_top1_match_rate=1.0; primary_topk_contains_rate=1.0; primary_miss_topk_contains_rate=0.0; primary_miss_mean_reference_margin=0.0; primary_miss_mean_probability_kl=0.0; primary_miss_mean_logit_cosine=0.0; primary_miss_max_abs_logit_delta=0.0; next_step=The misses are concentrated in narrow-margin regions; keep this recovery path blocked until bounded top-k and follow-up scoring checks show stable high-margin behavior.",
+        "outcome": "score_margin_audit_narrow_margin_hold",
+        "expectation_status": "unspecified"
+      },
+      "proposal_assessment": {
+        "proposal_id": "prop_l2_decoder_attention_mixed_int8_score_margin_audit_llama7b_v1",
+        "title": "Llama7B mixed/int8 score margin audit",
+        "kind": "architecture",
+        "primary_question": "Are the remaining mixed/int8 score precision top1 failures narrow-margin, top-k-stable drift or systematic quality failures?",
+        "evaluation_mode": "quality_gate",
+        "comparison_role": "score_margin_audit",
+        "outcome": "score_margin_audit_narrow_margin_hold",
+        "summary": "Decoder mixed/int8 score-margin audit recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score_margin_audit__l2_decoder_attention_mixed_int8_score_margin_audit_llama7b_v1.json: decision=score_margin_audit_narrow_margin_hold; candidate_count=6; primary_candidate_id=qkv8_float_exact; primary_comparison_count=64; primary_top1_miss_count=0; primary_top1_match_rate=1.0; primary_topk_contains_rate=1.0; primary_miss_topk_contains_rate=0.0; primary_miss_mean_reference_margin=0.0; primary_miss_mean_probability_kl=0.0; primary_miss_mean_logit_cosine=0.0; primary_miss_max_abs_logit_delta=0.0; next_step=The misses are concentrated in narrow-margin regions; keep this recovery path blocked until bounded top-k and follow-up scoring checks show stable high-margin behavior.",
+        "baseline_ref": null,
+        "baseline_item_id": null,
+        "matched_row_count": 0,
+        "matched_rows": [],
+        "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score_margin_audit__l2_decoder_attention_mixed_int8_score_margin_audit_llama7b_v1.json",
+        "decoder_quality": {
+          "diagnosis": {}
+        }
+      },
+      "source_refs": {
+        "decoder_evidence_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score_margin_audit__l2_decoder_attention_mixed_int8_score_margin_audit_llama7b_v1.json",
+        "decoder_attention_mixed_int8_score_margin_audit_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score_margin_audit__l2_decoder_attention_mixed_int8_score_margin_audit_llama7b_v1.json",
+        "decoder_attention_mixed_int8_score_margin_audit_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score_margin_audit__l2_decoder_attention_mixed_int8_score_margin_audit_llama7b_v1.md"
+      },
+      "decoder_quality": {
+        "diagnosis": {}
+      }
+    }
+  },
+  "developer_loop": {
+    "comparison": {
+      "role": "score_margin_audit",
+      "paired_baseline_item_id": ""
+    },
+    "evaluation": {
+      "mode": "quality_gate",
+      "expected_reason": "",
+      "expected_direction": ""
+    },
+    "abstraction": {
+      "layer": "decoder_attention_mixed_int8_score_margin_audit"
+    },
+    "proposal_id": "prop_l2_decoder_attention_mixed_int8_score_margin_audit_llama7b_v1",
+    "dependencies": {
+      "item_ids": [
+        "l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    },
+    "proposal_path": "docs/proposals/prop_l2_decoder_attention_mixed_int8_score_margin_audit_llama7b_v1/proposal.json"
+  },
+  "submission_history": null,
+  "pr_payload": {
+    "branch": "eval/l2_decoder_attention_mixed_int8_score_margin_audit_llama7b_v1/s20260625t140114z",
+    "title": "eval: run layer2 campaign npu_e2e_eval_llm_attention_tail_stress_v1 on nangate45",
+    "body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260625t140114z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l2_decoder_attention_mixed_int8_score_margin_audit_llama7b_v1"
+    },
+    "body_md": "## Summary\n- item_id: `l2_decoder_attention_mixed_int8_score_margin_audit_llama7b_v1`\n- run_key: `l2_decoder_attention_mixed_int8_score_margin_audit_llama7b_v1_run_fc4aaf9171ea2d3c`\n- layer: `layer2`\n- task_type: `l2_campaign`\n- status: `ok`\n- summary: `2/2 commands succeeded`\n- queue_snapshot: `control_plane/shadow_exports/review/l2_decoder_attention_mixed_int8_score_margin_audit_llama7b_v1/evaluated.json`\n- metrics_rows_count: `0`\n- review_artifact: `decision_proposal` at `control_plane/shadow_exports/l2_decisions/l2_decoder_attention_mixed_int8_score_margin_audit_llama7b_v1.json`\n\n## Developer Context\n- proposal_id: `prop_l2_decoder_attention_mixed_int8_score_margin_audit_llama7b_v1`\n- proposal_path: `docs/proposals/prop_l2_decoder_attention_mixed_int8_score_margin_audit_llama7b_v1/proposal.json`\n- reviewer_first_read: `docs/proposals/prop_l2_decoder_attention_mixed_int8_score_margin_audit_llama7b_v1/proposal.json` plus `docs/developer_agent_review.md`\n- execution_source_commit: `b4399701829e9b5c251ddcabd36cbc26c193e74a`\n- review_metadata_source_commit: `b4399701829e9b5c251ddcabd36cbc26c193e74a`\n\n## Evaluation Mode\n- evaluation_mode: `quality_gate`\n- abstraction_layer: `decoder_attention_mixed_int8_score_margin_audit`\n- comparison_role: `score_margin_audit`\n- expected_direction: `unknown`\n- expectation_status: `unspecified`\n- evaluation_summary: `Decoder mixed/int8 score-margin audit recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score_margin_audit__l2_decoder_attention_mixed_int8_score_margin_audit_llama7b_v1.json: decision=score_margin_audit_narrow_margin_hold; candidate_count=6; primary_candidate_id=qkv8_float_exact; primary_comparison_count=64; primary_top1_miss_count=0; primary_top1_match_rate=1.0; primary_topk_contains_rate=1.0; primary_miss_topk_contains_rate=0.0; primary_miss_mean_reference_margin=0.0; primary_miss_mean_probability_kl=0.0; primary_miss_mean_logit_cosine=0.0; primary_miss_max_abs_logit_delta=0.0; next_step=The misses are concentrated in narrow-margin regions; keep this recovery path blocked until bounded top-k and follow-up scoring checks show stable high-margin behavior.`\n\n## Focused Comparison\n- primary_question: `Are the remaining mixed/int8 score precision top1 failures narrow-margin, top-k-stable drift or systematic quality failures?`\n- comparison_role: `score_margin_audit`\n- proposal_outcome: `score_margin_audit_narrow_margin_hold`\n- comparison_summary: `Decoder mixed/int8 score-margin audit recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score_margin_audit__l2_decoder_attention_mixed_int8_score_margin_audit_llama7b_v1.json: decision=score_margin_audit_narrow_margin_hold; candidate_count=6; primary_candidate_id=qkv8_float_exact; primary_comparison_count=64; primary_top1_miss_count=0; primary_top1_match_rate=1.0; primary_topk_contains_rate=1.0; primary_miss_topk_contains_rate=0.0; primary_miss_mean_reference_margin=0.0; primary_miss_mean_probability_kl=0.0; primary_miss_mean_logit_cosine=0.0; primary_miss_max_abs_logit_delta=0.0; next_step=The misses are concentrated in narrow-margin regions; keep this recovery path blocked until bounded top-k and follow-up scoring checks show stable high-margin behavior.`\n- baseline_ref: `None`\n- baseline_item_id: `None`\n\n## Checklist\n- [ ] Commit lightweight campaign artifacts only\n- [ ] Include metrics row references in result.metrics_rows\n- [ ] Keep committed result_path fields repo-portable\n- [ ] Run python3 scripts/validate_runs.py --skip_eval_queue before pushing\n",
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Include metrics row references in result.metrics_rows",
+      "Keep committed result_path fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ]
+  }
+}
