@@ -7341,6 +7341,70 @@ def test_generate_l2_campaign_task_adds_mixed_int8_score_precision_recovery_evid
             }
 
 
+def test_generate_l2_campaign_task_adds_mixed_int8_score_margin_audit_evidence() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id="l2_decoder_attention_mixed_int8_score_margin_audit_llama7b_v1",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    proposal_id="prop_l2_decoder_attention_mixed_int8_score_margin_audit_llama7b_v1",
+                    proposal_path=(
+                        "docs/proposals/"
+                        "prop_l2_decoder_attention_mixed_int8_score_margin_audit_llama7b_v1/"
+                        "proposal.json"
+                    ),
+                    abstraction_layer="decoder_attention_mixed_int8_score_margin_audit",
+                    evaluation_mode="quality_gate",
+                    comparison_role="score_margin_audit",
+                    depends_on_item_ids=[
+                        "l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1",
+                    ],
+                    requires_merged_inputs=True,
+                    requires_materialized_refs=True,
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            commands = work_item.task_request.request_payload["task"]["commands"]
+            decoder_inputs = work_item.input_manifest["decoder_contract"]
+
+            assert [command["name"] for command in commands[:1]] == [
+                "audit_decoder_attention_mixed_int8_score_margin",
+            ]
+            run = commands[0]["run"]
+            assert "audit_llm_decoder_attention_mixed_int8_score_margin.py" in run
+            assert "--score-precision-recovery-json" in run
+            assert decoder_inputs["attention_mixed_int8_score_precision_recovery"].endswith(
+                "decoder_attention_mixed_int8_score_precision_recovery__"
+                "l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1.json"
+            )
+            assert "attention_mixed_int8_score_margin_audit_out" in decoder_inputs
+            assert decoder_inputs["attention_mixed_int8_score_margin_audit_out"] in work_item.expected_outputs
+            assert work_item.task_request.request_payload["developer_loop"]["abstraction"] == {
+                "layer": "decoder_attention_mixed_int8_score_margin_audit",
+            }
+            assert work_item.task_request.request_payload["developer_loop"]["dependencies"] == {
+                "item_ids": [
+                    "l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1",
+                ],
+                "requires_merged_inputs": True,
+                "requires_materialized_refs": True,
+            }
+
+
 def test_generate_l2_campaign_task_adds_mixed_int8_quality_backed_frontier_evidence() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
