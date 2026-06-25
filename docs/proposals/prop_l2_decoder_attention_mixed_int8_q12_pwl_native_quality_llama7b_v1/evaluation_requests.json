@@ -1,0 +1,24 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_mixed_int8_q12_pwl_native_quality_llama7b_v1",
+  "requests": [
+    {
+      "item_id": "l2_decoder_attention_mixed_int8_q12_pwl_native_quality_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Run the native 7B mixed/int8 attention-shadow quality gate for q8/k8/v8 with q12/PWL reciprocal-LUT softmax.",
+      "evaluation_mode": "quality_gate",
+      "abstraction_layer": "decoder_attention_mixed_int8_q12_pwl_native_quality",
+      "comparison_role": "precision_validation",
+      "cost_class": "medium",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "run_physical": false,
+      "expected_result": {
+        "direction": "validate_or_reject_q12_pwl_hardware_proxy",
+        "reason": "Measured q12/PWL PPA should only be used for the mixed/int8 frontier if its arithmetic passes the native quality gate."
+      }
+    }
+  ]
+}

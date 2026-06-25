@@ -1,0 +1,81 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_mixed_int8_q12_pwl_native_quality_llama7b_v1",
+  "created_utc": "2026-06-25T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Llama7B mixed/int8 q12-PWL native quality gate",
+  "abstraction_layer": "decoder_attention_mixed_int8_q12_pwl_native_quality",
+  "hypothesis": "The measured q12/PWL reciprocal-LUT softmax datapath may be a cheaper hardware proxy for the only broad-quality-passing q8/k8/v8 float-exact mixed/int8 attention direction, but it must pass the native 7B attention-shadow quality gate before it can be used for throughput, energy, and area ranking.",
+  "direct_comparison": {
+    "primary_question": "Does q8/k8/v8 with the measured q12/PWL reciprocal-LUT softmax arithmetic preserve the Llama7B native attention-shadow quality of the qkv8_float_exact control?",
+    "baseline": "l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1",
+    "candidate": "qkv8_q12_pwl_recip_q12_bucket8",
+    "include": [
+      "q8/k8/v8 projection quantization",
+      "q12 score quantization with fixed input_frac_bits=8",
+      "q12 PWL exp anchors at 0, 2, 4, and 8",
+      "q12 reciprocal normalization with reciprocal_lut_bucket_shift=8",
+      "float-exact, score24 float-quantized, and score24 RTL-exact controls"
+    ],
+    "exclude": [
+      "new OpenROAD/PPA runs",
+      "QAT or fine-tuning recovery",
+      "new HBM/SRAM/NoC modeling",
+      "using q12/PWL PPA as rankable unless this quality gate passes"
+    ],
+    "metrics": [
+      "decision",
+      "candidate_summaries",
+      "top1_match_rate",
+      "topk_contains_rate",
+      "mean_logit_cosine",
+      "mean_probability_kl",
+      "max_abs_logit_delta_max",
+      "best_candidate"
+    ]
+  },
+  "expected_benefit": [
+    "separate precision validity from PPA availability for the measured q12/PWL softmax block",
+    "decide whether existing q12/PWL dual-stream PPA can be used as a bounded hardware proxy",
+    "avoid recosting the mixed/int8 frontier with a softmax approximation that the native model rejects"
+  ],
+  "risks": [
+    "the quality gate is still attention-shadow evidence rather than full task accuracy",
+    "the existing measured composed q12/PWL datapath uses v6 values, so a passing result still requires a v8 PPA recost or explicit substitution caveat",
+    "PWL score scaling is fixed to the measured input_frac_bits=8 contract and may need later range adaptation"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_mixed_int8_q12_pwl_native_quality_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Run the native 7B mixed/int8 attention-shadow gate for q8/k8/v8 with q12/PWL reciprocal-LUT softmax and controls.",
+      "evaluation_mode": "quality_gate",
+      "abstraction_layer": "decoder_attention_mixed_int8_q12_pwl_native_quality",
+      "comparison_role": "precision_validation",
+      "cost_class": "medium",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "validate_or_reject_q12_pwl_hardware_proxy",
+        "reason": "The current mixed/int8 frontier only has qkv8_float_exact quality backing; measured q12/PWL PPA cannot be ranked unless its arithmetic passes the native quality gate."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_quality_backed_frontier__l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1.json"
+  ],
+  "source_refs": [
+    "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_q12_pwl_recip_q12/config.json",
+    "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_q12_pwl_recip_q12/metrics.csv"
+  ],
+  "knowledge_refs": [
+    "npu/eval/evaluate_llm_decoder_model_native_mixed_int8_attention.py",
+    "npu/rtlgen/gen_attention_dual_stream_composed.py",
+    "docs/proposals/prop_l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1/proposal.json"
+  ]
+}
