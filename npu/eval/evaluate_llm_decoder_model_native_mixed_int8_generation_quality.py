@@ -429,8 +429,8 @@ def _decision(summary: JsonDict, *, expected_gqa_group_size: int, actual_gqa_gro
         "blockers": blockers,
         "next_step": next_step,
         "thresholds": {
-            "teacher_forced_nll_delta_max": 0.4,
-            "candidate_probability_assigned_to_reference_token_min": 0.1,
+            "teacher_forced_mean_nll_delta_max": 0.4,
+            "teacher_forced_candidate_reference_token_prob_mean_min": 0.1,
             "free_running_match_rate_min": 0.75,
             "expected_gqa_group_size": expected_gqa_group_size,
         },
