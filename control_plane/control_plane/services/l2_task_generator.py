@@ -6447,6 +6447,41 @@ def _decoder_attention_mixed_int8_score_precision_recovery_evidence(*, item_id: 
     }
 
 
+def _decoder_attention_mixed_int8_score_margin_audit_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    score_precision_recovery = (
+        f"{base}/decoder_attention_mixed_int8_score_precision_recovery__"
+        "l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1.json"
+    )
+    out = f"{base}/decoder_attention_mixed_int8_score_margin_audit__{item_id}.json"
+    report = f"{base}/decoder_attention_mixed_int8_score_margin_audit__{item_id}.md"
+    return {
+        "inputs": {
+            "attention_mixed_int8_score_precision_recovery": score_precision_recovery,
+            "attention_mixed_int8_score_margin_audit_out": out,
+            "attention_mixed_int8_score_margin_audit_report": report,
+            "attention_mixed_int8_score_margin_audit_scope": (
+                "Audit the score precision recovery candidate rows by reference-margin buckets "
+                "and top-k containment. This is a cheap evidence-only job to separate narrow-margin "
+                "top1 drift from systematic approximation error before any new PPA recost."
+            ),
+        },
+        "commands": [
+            {
+                "name": "audit_decoder_attention_mixed_int8_score_margin",
+                "run": (
+                    "python3 npu/eval/audit_llm_decoder_attention_mixed_int8_score_margin.py "
+                    f"--score-precision-recovery-json {score_precision_recovery} "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+        "evidence_only": True,
+    }
+
+
 def _decoder_attention_mixed_int8_quality_backed_frontier_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     energy_closure = (
@@ -8382,6 +8417,7 @@ def _build_payload(
         "decoder_attention_mixed_int8_q12_pwl_native_quality",
         "decoder_attention_mixed_int8_q12_pwl_proxy_audit",
         "decoder_attention_mixed_int8_score_precision_recovery",
+        "decoder_attention_mixed_int8_score_margin_audit",
         "decoder_attention_mixed_int8_quality_backed_frontier",
         "decoder_attention_kv_dual_stream_physical_feasibility",
         "decoder_attention_mixed_precision_quality",
@@ -8579,6 +8615,8 @@ def _build_payload(
             decoder_evidence = _decoder_attention_mixed_int8_q12_pwl_proxy_audit_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_mixed_int8_score_precision_recovery":
             decoder_evidence = _decoder_attention_mixed_int8_score_precision_recovery_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_attention_mixed_int8_score_margin_audit":
+            decoder_evidence = _decoder_attention_mixed_int8_score_margin_audit_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_mixed_int8_quality_backed_frontier":
             decoder_evidence = _decoder_attention_mixed_int8_quality_backed_frontier_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_dual_stream_physical_feasibility":

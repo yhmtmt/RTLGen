@@ -971,6 +971,124 @@ def test_consume_l2_result_frontier_attention_mixed_int8_score_precision_recover
             )
 
 
+def test_consume_l2_result_frontier_attention_mixed_int8_score_margin_audit_uses_decoder_evidence() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            proposal_dir = repo_root / "docs" / "proposals" / "prop_l2_attention_mixed_int8_score_margin_audit_v1"
+            proposal_dir.mkdir(parents=True)
+            _write(
+                proposal_dir / "proposal.json",
+                json.dumps(
+                    {
+                        "proposal_id": "prop_l2_attention_mixed_int8_score_margin_audit_v1",
+                        "kind": "architecture",
+                        "title": "Attention mixed-int8 score margin audit",
+                        "direct_comparison": {
+                            "primary_question": (
+                                "Are score32/PWL top1 misses narrow-margin top-k-stable drift or systematic errors?"
+                            )
+                        },
+                    },
+                    indent=2,
+                )
+                + "\n",
+            )
+            evidence_rel = (
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_mixed_int8_score_margin_audit__"
+                "l2_attention_mixed_int8_score_margin_audit_v1.json"
+            )
+            report_rel = (
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_mixed_int8_score_margin_audit__"
+                "l2_attention_mixed_int8_score_margin_audit_v1.md"
+            )
+            _write(
+                repo_root / evidence_rel,
+                json.dumps(
+                    {
+                        "model": "llm_decoder_attention_mixed_int8_score_margin_audit_llama7b_v1",
+                        "decision": {
+                            "status": "score_margin_audit_narrow_margin_hold",
+                            "recommended_next_step": "run generation/perplexity quality before recosting score32",
+                        },
+                        "candidates": [
+                            {
+                                "candidate_id": "score32_float",
+                                "comparison_count": 64,
+                                "top1_match_rate": 0.96875,
+                                "topk_contains_rate": 1.0,
+                                "top1_miss_count": 2,
+                                "miss_topk_contains_rate": 1.0,
+                                "miss_mean_reference_margin": 0.125,
+                                "miss_mean_probability_kl": 0.0029,
+                                "miss_mean_logit_cosine": 0.9999,
+                                "miss_max_abs_logit_delta": 0.34375,
+                            }
+                        ],
+                    },
+                    indent=2,
+                )
+                + "\n",
+            )
+            _write(repo_root / report_rel, "# mixed-int8 score margin audit\n")
+            item_id = _seed_campaign_work_item(
+                session,
+                repo_root,
+                item_id="l2_attention_mixed_int8_score_margin_audit_v1",
+                campaign_dir_rel="runs/campaigns/npu/attention_mixed_int8_score_margin_audit_campaign",
+                summary_rows=(
+                    "scope,arch_id,macro_mode,objective_rank,latency_ms_mean,energy_mj_mean,critical_path_ns_mean,total_power_mw_mean,flow_elapsed_s_mean,throughput_infer_per_s_mean\n"
+                    "aggregate,fp16_nm1_demo,flat_nomacro,1,0.4,0.15,5.5,0.18,1000,1.0\n"
+                ),
+                proposal_path="docs/proposals/prop_l2_attention_mixed_int8_score_margin_audit_v1",
+                comparison={"role": "score_margin_audit"},
+            )
+            work_item = session.query(WorkItem).filter_by(item_id=item_id).one()
+            payload = copy.deepcopy(work_item.task_request.request_payload or {})
+            payload["developer_loop"]["evaluation"] = {
+                "mode": "quality_gate",
+                "expected_direction": "iterate",
+                "expected_reason": "Classify top1 misses before recosting.",
+            }
+            payload["developer_loop"]["abstraction"] = {
+                "layer": "decoder_attention_mixed_int8_score_margin_audit",
+            }
+            work_item.task_request.request_payload = payload
+            work_item.input_manifest = {
+                "decoder_contract": {
+                    "attention_mixed_int8_score_margin_audit_out": evidence_rel,
+                    "attention_mixed_int8_score_margin_audit_report": report_rel,
+                }
+            }
+            work_item.expected_outputs = [*(work_item.expected_outputs or []), evidence_rel, report_rel]
+            session.commit()
+
+            consume_l2_result(session, Layer2ConsumeRequest(repo_root=str(repo_root), item_id=item_id))
+
+            decision_payload = json.loads(
+                (repo_root / "control_plane" / "shadow_exports" / "l2_decisions" / f"{item_id}.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            assessment = decision_payload["proposal_assessment"]
+            assert assessment["outcome"] == "score_margin_audit_narrow_margin_hold"
+            assert assessment["decoder_evidence_ref"] == evidence_rel
+            assert (
+                decision_payload["evaluation_record"]["abstraction_layer"]
+                == "decoder_attention_mixed_int8_score_margin_audit"
+            )
+            assert decision_payload["source_refs"]["decoder_attention_mixed_int8_score_margin_audit_out"] == evidence_rel
+            assert (
+                decision_payload["source_refs"]["decoder_attention_mixed_int8_score_margin_audit_report"]
+                == report_rel
+            )
+
+
 def test_decoder_evidence_summary_recognizes_composed_datapath_physical_feasibility() -> None:
     outcome, summary = _decoder_evidence_summary(
         evidence_ref="runs/datasets/demo/composed_datapath.json",

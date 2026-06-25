@@ -1,0 +1,25 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_mixed_int8_score_margin_audit_llama7b_v1",
+  "requests": [
+    {
+      "item_id": "l2_decoder_attention_mixed_int8_score_margin_audit_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Audit score precision recovery rows by reference-margin bucket and classify the remaining top1 failures before recosting.",
+      "evaluation_mode": "quality_gate",
+      "abstraction_layer": "decoder_attention_mixed_int8_score_margin_audit",
+      "comparison_role": "score_margin_audit",
+      "cost_class": "low",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "run_physical": false,
+      "expected_result": {
+        "direction": "classify_precision_recovery_failure_mode",
+        "reason": "Not a final ranking job: determine whether the observed top1 drift is narrow-margin/top-k-stable or systematic before PPA recosting."
+      }
+    }
+  ],
+  "source_commit": "571ee45629c1d2bc62795c8b7a7aecdd812f49a7"
+}

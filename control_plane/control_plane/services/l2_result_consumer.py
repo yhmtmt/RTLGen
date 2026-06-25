@@ -507,6 +507,10 @@ _DECODER_EVIDENCE_OUTPUT_KEYS: tuple[tuple[str, str], ...] = (
         "attention_mixed_int8_score_precision_recovery_report",
     ),
     (
+        "attention_mixed_int8_score_margin_audit_out",
+        "attention_mixed_int8_score_margin_audit_report",
+    ),
+    (
         "attention_mixed_int8_quality_backed_frontier_out",
         "attention_mixed_int8_quality_backed_frontier_report",
     ),
@@ -1215,6 +1219,44 @@ def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, 
         ):
             if key in diagnosis_dict:
                 parts.append(f"{key}={diagnosis_dict.get(key)}")
+        summary = "; ".join(parts)
+        return outcome, summary if summary.endswith(".") else summary + "."
+
+    if model == "llm_decoder_attention_mixed_int8_score_margin_audit_llama7b_v1":
+        decision = evidence_payload.get("decision")
+        decision_dict = dict(decision) if isinstance(decision, dict) else {}
+        outcome = str(
+            decision_dict.get("status")
+            or evidence_payload.get("decision")
+            or "score_margin_audit_recorded"
+        )
+        parts = [
+            f"Decoder mixed/int8 score-margin audit recorded from {evidence_ref}: decision={outcome}",
+        ]
+        candidate_audits = evidence_payload.get("candidate_audits")
+        if not isinstance(candidate_audits, list):
+            candidate_audits = evidence_payload.get("candidates")
+        if isinstance(candidate_audits, list):
+            parts.append(f"candidate_count={len(candidate_audits)}")
+            if candidate_audits:
+                primary = dict(candidate_audits[0])
+                for key in (
+                    "candidate_id",
+                    "comparison_count",
+                    "top1_miss_count",
+                    "top1_match_rate",
+                    "topk_contains_rate",
+                    "miss_topk_contains_rate",
+                    "miss_mean_reference_margin",
+                    "miss_mean_probability_kl",
+                    "miss_mean_logit_cosine",
+                    "miss_max_abs_logit_delta",
+                ):
+                    if key in primary:
+                        parts.append(f"primary_{key}={primary.get(key)}")
+        next_step = str(decision_dict.get("next_step") or decision_dict.get("recommended_next_step") or "").strip()
+        if next_step:
+            parts.append(f"next_step={next_step}")
         summary = "; ".join(parts)
         return outcome, summary if summary.endswith(".") else summary + "."
 

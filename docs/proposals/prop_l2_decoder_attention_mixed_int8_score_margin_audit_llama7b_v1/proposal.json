@@ -1,0 +1,82 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_mixed_int8_score_margin_audit_llama7b_v1",
+  "created_utc": "2026-06-25T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Llama7B mixed/int8 score margin audit",
+  "abstraction_layer": "decoder_attention_mixed_int8_score_margin_audit",
+  "hypothesis": "The score32/PWL precision recovery failures are likely concentrated in narrow reference-margin rows with top-k containment preserved; confirming this separates recoverable decoding-policy sensitivity from systematic approximation error before any recosted PPA run.",
+  "direct_comparison": {
+    "primary_question": "Are the remaining mixed/int8 score precision top1 failures narrow-margin, top-k-stable drift or systematic quality failures?",
+    "baseline": "l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1",
+    "candidate": "score32_float and high-precision PWL reciprocal rows from the score recovery artifact",
+    "include": [
+      "consume the merged score precision recovery JSON artifact",
+      "bucket top1 misses by reference margin",
+      "report top-k containment, KL, cosine, and max logit delta for misses and all rows",
+      "classify whether failures are narrow-margin/top-k-stable or systematic",
+      "produce an evidence-only result for the next generation/perplexity or exact-softmax decision"
+    ],
+    "exclude": [
+      "new Hugging Face model inference",
+      "new OpenROAD/PPA runs",
+      "final throughput/energy/area ranking"
+    ],
+    "metrics": [
+      "decision",
+      "candidate_id",
+      "comparison_count",
+      "miss_count",
+      "miss_rate",
+      "miss_topk_contains_rate",
+      "miss_mean_reference_margin",
+      "miss_mean_probability_kl",
+      "miss_mean_logit_cosine",
+      "max_abs_logit_delta_max"
+    ]
+  },
+  "expected_benefit": [
+    "avoid recosting candidates whose quality failure is systematic",
+    "identify whether exact/high-precision softmax should be embodied next",
+    "provide concrete row-level evidence for a later model-level generation/perplexity audit"
+  ],
+  "risks": [
+    "this remains attention-shadow evidence and does not prove generated-text quality",
+    "margin buckets are only as broad as the current prompt/step corpus",
+    "top-k-stable drift can still affect sampling when temperature or decoding policy changes"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_mixed_int8_score_margin_audit_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Audit score precision recovery rows by reference-margin bucket and classify the remaining top1 failures before recosting.",
+      "evaluation_mode": "quality_gate",
+      "abstraction_layer": "decoder_attention_mixed_int8_score_margin_audit",
+      "comparison_role": "score_margin_audit",
+      "cost_class": "low",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "run_physical": false,
+      "expected_result": {
+        "direction": "classify_precision_recovery_failure_mode",
+        "reason": "This job should decide whether to pursue generation/perplexity quality validation for narrow-margin drift or switch to exact/high-precision softmax embodiment."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score_precision_recovery__l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1.json"
+  ],
+  "source_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score_precision_recovery__l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/evaluate_llm_decoder_model_native_mixed_int8_attention.py",
+    "npu/eval/audit_llm_decoder_attention_mixed_int8_score_margin.py",
+    "docs/proposals/prop_l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1/proposal.json"
+  ]
+}
