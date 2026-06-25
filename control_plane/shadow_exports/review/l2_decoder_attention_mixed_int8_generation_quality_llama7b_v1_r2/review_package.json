@@ -1,0 +1,144 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-06-25T14:25:02.347786Z",
+  "control_plane_source_commit": "6f833c9b1a2c90c53ea27009845086320ce28d25",
+  "review_metadata_source_commit": "6f833c9b1a2c90c53ea27009845086320ce28d25",
+  "item_id": "l2_decoder_attention_mixed_int8_generation_quality_llama7b_v1_r2",
+  "run_key": "l2_decoder_attention_mixed_int8_generation_quality_llama7b_v1_r2_run_c718c9bd312dd2ce",
+  "layer": "layer2",
+  "flow": "openroad",
+  "task_type": "l2_campaign",
+  "source_commit": "6f833c9b1a2c90c53ea27009845086320ce28d25",
+  "queue_snapshot": {
+    "path": "control_plane/shadow_exports/review/l2_decoder_attention_mixed_int8_generation_quality_llama7b_v1_r2/evaluated.json",
+    "result": {
+      "branch": "eval/l2_decoder_attention_mixed_int8_generation_quality_llama7b_v1_r2/s20260625t142459z",
+      "completed_utc": "2026-06-25T14:24:57.834615Z",
+      "evaluator_id": "control_plane",
+      "executor": "@control_plane",
+      "host": "b7c2d9c80c1c",
+      "identity_block": "[role:evaluator][account:control_plane][session:s20260625t142459z][host:b7c2d9c80c1c][item:l2_decoder_attention_mixed_int8_generation_quality_llama7b_v1_r2]",
+      "metrics_rows": [],
+      "metrics_exempt_reason": "evidence_only_decoder_evidence",
+      "queue_item_id": "l2_decoder_attention_mixed_int8_generation_quality_llama7b_v1_r2",
+      "session_id": "s20260625t142459z",
+      "status": "ok",
+      "summary": "2/2 commands succeeded"
+    }
+  },
+  "review_artifact": {
+    "kind": "decision_proposal",
+    "path": "control_plane/shadow_exports/l2_decisions/l2_decoder_attention_mixed_int8_generation_quality_llama7b_v1_r2.json",
+    "storage_mode": "repo",
+    "sha256": "f8444772522d9c90f341cbb3f11ee1aff75784a3e3334da8791d4d09d4ef877d",
+    "payload": {
+      "version": 0.1,
+      "generated_utc": "2026-06-25T14:24:59.095729Z",
+      "item_id": "l2_decoder_attention_mixed_int8_generation_quality_llama7b_v1_r2",
+      "run_key": "l2_decoder_attention_mixed_int8_generation_quality_llama7b_v1_r2_run_c718c9bd312dd2ce",
+      "layer": "layer2",
+      "flow": "openroad",
+      "platform": "nangate45",
+      "task_type": "l2_campaign",
+      "source_commit": "6f833c9b1a2c90c53ea27009845086320ce28d25",
+      "review_metadata_source_commit": "6f833c9b1a2c90c53ea27009845086320ce28d25",
+      "objective": "LLM-oriented attention-tail stress campaign for larger sequence lengths and more repeated non-terminal Softmax paths.",
+      "input_manifest": {
+        "decoder_contract": {
+          "attention_mixed_int8_score_margin_audit": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score_margin_audit__l2_decoder_attention_mixed_int8_score_margin_audit_llama7b_v1_r2.json",
+          "attention_mixed_int8_generation_quality_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_generation_quality__l2_decoder_attention_mixed_int8_generation_quality_llama7b_v1_r2.json",
+          "attention_mixed_int8_generation_quality_scope": "Run a bounded native-checkpoint generation/NLL check for the score32 mixed/int8 candidate after the score-margin audit showed narrow-margin top1 drift. This reduces quality abstraction before any exact-softmax or score32 PPA recost.",
+          "attention_mixed_int8_generation_quality_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_generation_quality__l2_decoder_attention_mixed_int8_generation_quality_llama7b_v1_r2.md"
+        }
+      },
+      "recommendation": {
+        "source": "decoder_evidence",
+        "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_generation_quality__l2_decoder_attention_mixed_int8_generation_quality_llama7b_v1_r2.json",
+        "arch_id": "decoder_attention_mixed_int8_generation_quality",
+        "macro_mode": "evidence_only",
+        "outcome": "mixed_int8_generation_quality_pass"
+      },
+      "objective_profiles": [],
+      "evaluation_record": {
+        "proposal_id": "prop_l2_decoder_attention_mixed_int8_generation_quality_llama7b_v1",
+        "title": "Llama7B mixed/int8 score32 generation quality",
+        "primary_question": "Does the score32 mixed/int8 attention path preserve bounded greedy generation and teacher-forced reference-token likelihood on a 7B checkpoint?",
+        "evaluation_mode": "quality_gate",
+        "comparison_role": "generation_quality",
+        "abstraction_layer": "decoder_attention_mixed_int8_generation_quality",
+        "expected_direction": "unknown",
+        "expected_reason": "",
+        "summary": "Decoder native-checkpoint KV quality evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_generation_quality__l2_decoder_attention_mixed_int8_generation_quality_llama7b_v1_r2.json: decision=mixed_int8_generation_quality_pass; model_id=mistralai/Mistral-7B-v0.1; gqa_group_size=4.0; dtype=bfloat16; next_step=Candidate passed the bounded generation-quality gate; route this score configuration into the native-checkpoint quality evidence stream.",
+        "outcome": "mixed_int8_generation_quality_pass",
+        "expectation_status": "unspecified"
+      },
+      "proposal_assessment": {
+        "proposal_id": "prop_l2_decoder_attention_mixed_int8_generation_quality_llama7b_v1",
+        "title": "Llama7B mixed/int8 score32 generation quality",
+        "kind": "architecture",
+        "primary_question": "Does the score32 mixed/int8 attention path preserve bounded greedy generation and teacher-forced reference-token likelihood on a 7B checkpoint?",
+        "evaluation_mode": "quality_gate",
+        "comparison_role": "generation_quality",
+        "outcome": "mixed_int8_generation_quality_pass",
+        "summary": "Decoder native-checkpoint KV quality evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_generation_quality__l2_decoder_attention_mixed_int8_generation_quality_llama7b_v1_r2.json: decision=mixed_int8_generation_quality_pass; model_id=mistralai/Mistral-7B-v0.1; gqa_group_size=4.0; dtype=bfloat16; next_step=Candidate passed the bounded generation-quality gate; route this score configuration into the native-checkpoint quality evidence stream.",
+        "baseline_ref": null,
+        "baseline_item_id": null,
+        "matched_row_count": 0,
+        "matched_rows": [],
+        "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_generation_quality__l2_decoder_attention_mixed_int8_generation_quality_llama7b_v1_r2.json",
+        "decoder_quality": {
+          "diagnosis": {}
+        }
+      },
+      "source_refs": {
+        "decoder_evidence_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_generation_quality__l2_decoder_attention_mixed_int8_generation_quality_llama7b_v1_r2.json",
+        "decoder_attention_mixed_int8_generation_quality_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_generation_quality__l2_decoder_attention_mixed_int8_generation_quality_llama7b_v1_r2.json",
+        "decoder_attention_mixed_int8_generation_quality_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_generation_quality__l2_decoder_attention_mixed_int8_generation_quality_llama7b_v1_r2.md"
+      },
+      "decoder_quality": {
+        "diagnosis": {}
+      }
+    }
+  },
+  "developer_loop": {
+    "comparison": {
+      "role": "generation_quality",
+      "paired_baseline_item_id": ""
+    },
+    "evaluation": {
+      "mode": "quality_gate",
+      "expected_reason": "",
+      "expected_direction": ""
+    },
+    "abstraction": {
+      "layer": "decoder_attention_mixed_int8_generation_quality"
+    },
+    "proposal_id": "prop_l2_decoder_attention_mixed_int8_generation_quality_llama7b_v1",
+    "dependencies": {
+      "item_ids": [
+        "l2_decoder_attention_mixed_int8_score_margin_audit_llama7b_v1_r2"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    },
+    "proposal_path": "docs/proposals/prop_l2_decoder_attention_mixed_int8_generation_quality_llama7b_v1/proposal.json"
+  },
+  "submission_history": null,
+  "pr_payload": {
+    "branch": "eval/l2_decoder_attention_mixed_int8_generation_quality_llama7b_v1_r2/s20260625t142459z",
+    "title": "eval: run layer2 campaign npu_e2e_eval_llm_attention_tail_stress_v1 on nangate45",
+    "body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260625t142459z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l2_decoder_attention_mixed_int8_generation_quality_llama7b_v1_r2"
+    },
+    "body_md": "## Summary\n- item_id: `l2_decoder_attention_mixed_int8_generation_quality_llama7b_v1_r2`\n- run_key: `l2_decoder_attention_mixed_int8_generation_quality_llama7b_v1_r2_run_c718c9bd312dd2ce`\n- layer: `layer2`\n- task_type: `l2_campaign`\n- status: `ok`\n- summary: `2/2 commands succeeded`\n- queue_snapshot: `control_plane/shadow_exports/review/l2_decoder_attention_mixed_int8_generation_quality_llama7b_v1_r2/evaluated.json`\n- metrics_rows_count: `0`\n- review_artifact: `decision_proposal` at `control_plane/shadow_exports/l2_decisions/l2_decoder_attention_mixed_int8_generation_quality_llama7b_v1_r2.json`\n\n## Developer Context\n- proposal_id: `prop_l2_decoder_attention_mixed_int8_generation_quality_llama7b_v1`\n- proposal_path: `docs/proposals/prop_l2_decoder_attention_mixed_int8_generation_quality_llama7b_v1/proposal.json`\n- reviewer_first_read: `docs/proposals/prop_l2_decoder_attention_mixed_int8_generation_quality_llama7b_v1/proposal.json` plus `docs/developer_agent_review.md`\n- execution_source_commit: `6f833c9b1a2c90c53ea27009845086320ce28d25`\n- review_metadata_source_commit: `6f833c9b1a2c90c53ea27009845086320ce28d25`\n\n## Evaluation Mode\n- evaluation_mode: `quality_gate`\n- abstraction_layer: `decoder_attention_mixed_int8_generation_quality`\n- comparison_role: `generation_quality`\n- expected_direction: `unknown`\n- expectation_status: `unspecified`\n- evaluation_summary: `Decoder native-checkpoint KV quality evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_generation_quality__l2_decoder_attention_mixed_int8_generation_quality_llama7b_v1_r2.json: decision=mixed_int8_generation_quality_pass; model_id=mistralai/Mistral-7B-v0.1; gqa_group_size=4.0; dtype=bfloat16; next_step=Candidate passed the bounded generation-quality gate; route this score configuration into the native-checkpoint quality evidence stream.`\n\n## Focused Comparison\n- primary_question: `Does the score32 mixed/int8 attention path preserve bounded greedy generation and teacher-forced reference-token likelihood on a 7B checkpoint?`\n- comparison_role: `generation_quality`\n- proposal_outcome: `mixed_int8_generation_quality_pass`\n- comparison_summary: `Decoder native-checkpoint KV quality evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_generation_quality__l2_decoder_attention_mixed_int8_generation_quality_llama7b_v1_r2.json: decision=mixed_int8_generation_quality_pass; model_id=mistralai/Mistral-7B-v0.1; gqa_group_size=4.0; dtype=bfloat16; next_step=Candidate passed the bounded generation-quality gate; route this score configuration into the native-checkpoint quality evidence stream.`\n- baseline_ref: `None`\n- baseline_item_id: `None`\n\n## Checklist\n- [ ] Commit lightweight campaign artifacts only\n- [ ] Include metrics row references in result.metrics_rows\n- [ ] Keep committed result_path fields repo-portable\n- [ ] Run python3 scripts/validate_runs.py --skip_eval_queue before pushing\n",
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Include metrics row references in result.metrics_rows",
+      "Keep committed result_path fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ]
+  }
+}
