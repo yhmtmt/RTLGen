@@ -170,6 +170,70 @@ def test_decoder_evidence_summary_recognizes_mixed_int8_q12_pwl_proxy_audit() ->
     assert "recommended_next_step=measure v8 composed q12/PWL datapath" in summary
 
 
+def test_decoder_evidence_summary_recognizes_mixed_int8_score_precision_recovery() -> None:
+    outcome, summary = _decoder_evidence_summary(
+        evidence_ref="runs/datasets/demo/mixed_int8_score_precision_recovery.json",
+        evidence_payload={
+            "quality_gate": "mixed_int8_attention_shadow",
+            "model": {
+                "model_id": "mistralai/Mistral-7B-v0.1",
+                "attention_heads": 32,
+                "kv_heads": 8,
+                "gqa_group_size": 4.0,
+                "dtype": "bfloat16",
+            },
+            "precision": {
+                "q_bits": 8,
+                "k_bits": 8,
+                "v_bits": 8,
+                "score_bits": 32,
+                "weight_bits": 16,
+                "softmax_mode": "float_quantized",
+            },
+            "summary": {
+                "comparison_count": 8,
+                "top1_match_rate": 0.95,
+                "topk_contains_rate": 0.98,
+                "mean_logit_cosine": 0.9951,
+                "mean_probability_kl": 0.02,
+                "max_abs_logit_delta_max": 0.31,
+            },
+            "candidate_summaries": [
+                {
+                    "candidate_id": "score32_float",
+                    "top1_match_rate": 0.95,
+                    "topk_contains_rate": 0.98,
+                    "mean_logit_cosine": 0.9951,
+                    "mean_probability_kl": 0.02,
+                },
+                {
+                    "candidate_id": "qkv8_q20_pwl_recip_q20_bucket8",
+                    "top1_match_rate": 0.93,
+                    "topk_contains_rate": 0.97,
+                    "mean_logit_cosine": 0.9920,
+                    "mean_probability_kl": 0.028,
+                },
+            ],
+            "best_candidate": {
+                "candidate_id": "score32_float",
+                "top1_match_rate": 0.95,
+                "topk_contains_rate": 0.98,
+                "mean_logit_cosine": 0.9951,
+                "mean_probability_kl": 0.02,
+            },
+            "decision": {
+                "status": "mixed_int8_native_attention_shadow_hold",
+                "next_step": "run v8 recost if score32 passes and keep mixed-int8 ranking blocked until PPA is available",
+            },
+        },
+    )
+
+    assert outcome == "mixed_int8_native_attention_shadow_hold"
+    assert "mixed/int8 native attention quality" in summary
+    assert "best_candidate_id=score32_float" in summary
+    assert "candidate_count=2" in summary
+
+
 def test_decoder_evidence_summary_recognizes_mixed_int8_native_quality() -> None:
     outcome, summary = _decoder_evidence_summary(
         evidence_ref="runs/datasets/demo/mixed_int8_native_quality.json",
@@ -742,6 +806,166 @@ def test_consume_l2_result_frontier_attention_mixed_int8_q12_pwl_proxy_audit_use
             assert (
                 decision_payload["source_refs"][
                     "decoder_attention_mixed_int8_q12_pwl_proxy_audit_report"
+                ]
+                == report_rel
+            )
+
+
+def test_consume_l2_result_frontier_attention_mixed_int8_score_precision_recovery_uses_decoder_evidence() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            proposal_dir = (
+                repo_root / "docs" / "proposals" / "prop_l2_attention_mixed_int8_score_precision_recovery_v1"
+            )
+            _write(
+                proposal_dir / "proposal.json",
+                json.dumps(
+                    {
+                        "proposal_id": "prop_l2_attention_mixed_int8_score_precision_recovery_v1",
+                        "kind": "architecture",
+                        "title": "Attention mixed-int8 score precision recovery",
+                        "direct_comparison": {
+                            "primary_question": (
+                                "Can score 28/32 or higher-precision PWL reciprocal recover native attention shadow quality "
+                                "before final ranking?"
+                            )
+                        },
+                    },
+                    indent=2,
+                )
+                + "\n",
+            )
+            evidence_rel = (
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_mixed_int8_score_precision_recovery__"
+                "l2_attention_mixed_int8_score_precision_recovery_v1.json"
+            )
+            report_rel = (
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_mixed_int8_score_precision_recovery__"
+                "l2_attention_mixed_int8_score_precision_recovery_v1.md"
+            )
+            _write(
+                repo_root / evidence_rel,
+                json.dumps(
+                    {
+                        "quality_gate": "mixed_int8_attention_shadow",
+                        "model": {
+                            "model_id": "mistralai/Mistral-7B-v0.1",
+                            "attention_heads": 32,
+                            "kv_heads": 8,
+                            "gqa_group_size": 4.0,
+                            "dtype": "bfloat16",
+                        },
+                        "precision": {
+                            "q_bits": 8,
+                            "k_bits": 8,
+                            "v_bits": 8,
+                            "score_bits": 32,
+                            "weight_bits": 16,
+                            "softmax_mode": "float_quantized",
+                        },
+                        "summary": {
+                            "comparison_count": 8,
+                            "top1_match_rate": 0.97,
+                            "topk_contains_rate": 0.99,
+                            "mean_logit_cosine": 0.997,
+                            "mean_probability_kl": 0.011,
+                            "max_abs_logit_delta_max": 0.29,
+                        },
+                        "candidate_summaries": [
+                            {
+                                "candidate_id": "score32_float:q8,k8,v8,s32,w16,float_quantized",
+                                "top1_match_rate": 0.97,
+                                "topk_contains_rate": 0.99,
+                                "mean_logit_cosine": 0.997,
+                                "mean_probability_kl": 0.011,
+                            },
+                            {
+                                "candidate_id": "qkv8_q20_pwl_recip_q20_bucket8:q8,k8,v8,s20,w20,pwl_recip_lut_q20_bucket8",
+                                "top1_match_rate": 0.96,
+                                "topk_contains_rate": 0.98,
+                                "mean_logit_cosine": 0.996,
+                                "mean_probability_kl": 0.014,
+                            },
+                        ],
+                        "best_candidate": {
+                            "candidate_id": "score32_float:q8,k8,v8,s32,w16,float_quantized",
+                            "top1_match_rate": 0.97,
+                            "topk_contains_rate": 0.99,
+                            "mean_logit_cosine": 0.997,
+                            "mean_probability_kl": 0.011,
+                        },
+                        "decision": {
+                            "status": "mixed_int8_native_attention_shadow_hold",
+                            "next_step": "collect v8 composed PPA and recost only if score32 holds",
+                        },
+                    },
+                    indent=2,
+                )
+                + "\n",
+            )
+            _write(repo_root / report_rel, "# mixed-int8 score precision recovery\n")
+            item_id = _seed_campaign_work_item(
+                session,
+                repo_root,
+                item_id="l2_attention_mixed_int8_score_precision_recovery_v1",
+                campaign_dir_rel="runs/campaigns/npu/attention_mixed_int8_score_precision_recovery_campaign",
+                summary_rows=(
+                    "scope,arch_id,macro_mode,objective_rank,latency_ms_mean,energy_mj_mean,critical_path_ns_mean,total_power_mw_mean,flow_elapsed_s_mean,throughput_infer_per_s_mean\n"
+                    "aggregate,fp16_nm1_demo,flat_nomacro,1,0.4,0.15,5.5,0.18,1000,1.0\n"
+                ),
+                proposal_path="docs/proposals/prop_l2_attention_mixed_int8_score_precision_recovery_v1",
+                comparison={"role": "precision_recovery"},
+            )
+            work_item = session.query(WorkItem).filter_by(item_id=item_id).one()
+            payload = copy.deepcopy(work_item.task_request.request_payload or {})
+            payload["developer_loop"]["evaluation"] = {
+                "mode": "quality_gate",
+                "expected_direction": "iterate",
+                "expected_reason": "Select final recovery recipe before any PPA recosting.",
+            }
+            payload["developer_loop"]["abstraction"] = {
+                "layer": "decoder_attention_mixed_int8_score_precision_recovery",
+            }
+            work_item.task_request.request_payload = payload
+            work_item.input_manifest = {
+                "decoder_contract": {
+                    "attention_mixed_int8_score_precision_recovery_out": evidence_rel,
+                    "attention_mixed_int8_score_precision_recovery_report": report_rel,
+                }
+            }
+            work_item.expected_outputs = [*(work_item.expected_outputs or []), evidence_rel, report_rel]
+            session.commit()
+
+            consume_l2_result(session, Layer2ConsumeRequest(repo_root=str(repo_root), item_id=item_id))
+
+            decision_payload = json.loads(
+                (repo_root / "control_plane" / "shadow_exports" / "l2_decisions" / f"{item_id}.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            assessment = decision_payload["proposal_assessment"]
+            assert assessment["outcome"] == "mixed_int8_native_attention_shadow_hold"
+            assert assessment["decoder_evidence_ref"] == evidence_rel
+            assert (
+                decision_payload["evaluation_record"]["abstraction_layer"]
+                == "decoder_attention_mixed_int8_score_precision_recovery"
+            )
+            assert (
+                decision_payload["source_refs"][
+                    "decoder_attention_mixed_int8_score_precision_recovery_out"
+                ]
+                == evidence_rel
+            )
+            assert (
+                decision_payload["source_refs"][
+                    "decoder_attention_mixed_int8_score_precision_recovery_report"
                 ]
                 == report_rel
             )

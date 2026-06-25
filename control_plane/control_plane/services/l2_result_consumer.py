@@ -503,6 +503,10 @@ _DECODER_EVIDENCE_OUTPUT_KEYS: tuple[tuple[str, str], ...] = (
         "attention_mixed_int8_q12_pwl_proxy_audit_report",
     ),
     (
+        "attention_mixed_int8_score_precision_recovery_out",
+        "attention_mixed_int8_score_precision_recovery_report",
+    ),
+    (
         "attention_mixed_int8_quality_backed_frontier_out",
         "attention_mixed_int8_quality_backed_frontier_report",
     ),
