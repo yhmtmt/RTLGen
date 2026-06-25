@@ -132,6 +132,44 @@ def test_decoder_evidence_summary_recognizes_mixed_int8_quality_backed_frontier(
     assert "old_energy_best_token_throughput_per_s=634.77" in summary
 
 
+def test_decoder_evidence_summary_recognizes_mixed_int8_q12_pwl_proxy_audit() -> None:
+    outcome, summary = _decoder_evidence_summary(
+        evidence_ref="runs/datasets/demo/mixed_int8_q12_pwl_proxy_audit.json",
+        evidence_payload={
+            "model": "llm_decoder_attention_mixed_int8_q12_pwl_proxy_audit_llama7b_v1",
+            "decision": {
+                "status": "q12_pwl_proxy_v8_recost_required",
+                "recommended_next_step": "measure v8 composed q12/PWL datapath",
+            },
+            "q12_pwl_quality": {
+                "candidate_id": "qkv8_q12_pwl_recip_q12_bucket8",
+                "decision_status": "mixed_int8_native_attention_shadow_pass",
+                "top1_match_rate": 1.0,
+                "topk_contains_rate": 1.0,
+                "mean_probability_kl": 0.001,
+                "quality_passed": True,
+            },
+            "ppa_proxy": {
+                "composed_metrics_path": "runs/designs/npu_blocks/q12/metrics.csv",
+                "composed_value_bits": 6,
+                "composed_best_critical_path_ns": 30.86,
+                "composed_best_total_power_mw": 23.7,
+                "composed_best_die_area_um2": 6250000.0,
+                "v8_full_value_metrics_path": "runs/designs/activations/v8/metrics.csv",
+                "v8_full_value_best_critical_path_ns": 0.89,
+                "v8_full_value_best_total_power_mw": 0.033,
+                "v8_full_value_best_die_area_um2": 108534.0,
+            },
+        },
+    )
+
+    assert outcome == "q12_pwl_proxy_v8_recost_required"
+    assert "q12_candidate_id=qkv8_q12_pwl_recip_q12_bucket8" in summary
+    assert "q12_quality_passed=True" in summary
+    assert "composed_value_bits=6" in summary
+    assert "recommended_next_step=measure v8 composed q12/PWL datapath" in summary
+
+
 def test_decoder_evidence_summary_recognizes_mixed_int8_native_quality() -> None:
     outcome, summary = _decoder_evidence_summary(
         evidence_ref="runs/datasets/demo/mixed_int8_native_quality.json",
@@ -579,6 +617,131 @@ def test_consume_l2_result_frontier_attention_mixed_int8_q12_pwl_native_quality_
             assert (
                 decision_payload["source_refs"][
                     "decoder_attention_mixed_int8_q12_pwl_native_quality_report"
+                ]
+                == report_rel
+            )
+
+
+def test_consume_l2_result_frontier_attention_mixed_int8_q12_pwl_proxy_audit_uses_decoder_evidence() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            proposal_dir = (
+                repo_root
+                / "docs"
+                / "proposals"
+                / "prop_l2_attention_mixed_int8_q12_pwl_proxy_audit_v1"
+            )
+            _write(
+                proposal_dir / "proposal.json",
+                json.dumps(
+                    {
+                        "proposal_id": "prop_l2_attention_mixed_int8_q12_pwl_proxy_audit_v1",
+                        "kind": "architecture",
+                        "title": "Attention mixed-int8 q12 PWL proxy audit",
+                        "direct_comparison": {
+                            "primary_question": "Can q12/PWL measured PPA proxy qkv8_float_exact?"
+                        },
+                    },
+                    indent=2,
+                )
+                + "\n",
+            )
+            evidence_rel = (
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_mixed_int8_q12_pwl_proxy_audit__"
+                "l2_attention_mixed_int8_q12_pwl_proxy_audit_v1.json"
+            )
+            report_rel = (
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_mixed_int8_q12_pwl_proxy_audit__"
+                "l2_attention_mixed_int8_q12_pwl_proxy_audit_v1.md"
+            )
+            _write(
+                repo_root / evidence_rel,
+                json.dumps(
+                    {
+                        "model": "llm_decoder_attention_mixed_int8_q12_pwl_proxy_audit_llama7b_v1",
+                        "decision": {
+                            "status": "q12_pwl_proxy_v8_recost_required",
+                            "recommended_next_step": "measure v8 composed q12/PWL datapath",
+                        },
+                        "q12_pwl_quality": {
+                            "candidate_id": "qkv8_q12_pwl_recip_q12_bucket8",
+                            "decision_status": "mixed_int8_native_attention_shadow_pass",
+                            "top1_match_rate": 1.0,
+                            "topk_contains_rate": 1.0,
+                            "quality_passed": True,
+                        },
+                        "ppa_proxy": {
+                            "composed_value_bits": 6,
+                            "composed_best_critical_path_ns": 30.86,
+                        },
+                    },
+                    indent=2,
+                )
+                + "\n",
+            )
+            _write(repo_root / report_rel, "# mixed-int8 q12 PWL proxy audit\n")
+            item_id = _seed_campaign_work_item(
+                session,
+                repo_root,
+                item_id="l2_attention_mixed_int8_q12_pwl_proxy_audit_v1",
+                campaign_dir_rel="runs/campaigns/npu/attention_mixed_int8_q12_pwl_proxy_audit_campaign",
+                summary_rows=(
+                    "scope,arch_id,macro_mode,objective_rank,latency_ms_mean,energy_mj_mean,critical_path_ns_mean,total_power_mw_mean,flow_elapsed_s_mean,throughput_infer_per_s_mean\n"
+                    "aggregate,fp16_nm1_demo,flat_nomacro,1,0.4,0.15,5.5,0.18,1000,1.0\n"
+                ),
+                proposal_path="docs/proposals/prop_l2_attention_mixed_int8_q12_pwl_proxy_audit_v1",
+                comparison={"role": "quality_backed_proxy"},
+            )
+            work_item = session.query(WorkItem).filter_by(item_id=item_id).one()
+            payload = copy.deepcopy(work_item.task_request.request_payload or {})
+            payload["developer_loop"]["evaluation"] = {
+                "mode": "frontier_detail",
+                "expected_direction": "validate_or_recost",
+                "expected_reason": "Decide whether q12/PWL PPA is quality-backed.",
+            }
+            payload["developer_loop"]["abstraction"] = {
+                "layer": "decoder_attention_mixed_int8_q12_pwl_proxy_audit",
+            }
+            work_item.task_request.request_payload = payload
+            work_item.input_manifest = {
+                "decoder_contract": {
+                    "attention_mixed_int8_q12_pwl_proxy_audit_out": evidence_rel,
+                    "attention_mixed_int8_q12_pwl_proxy_audit_report": report_rel,
+                }
+            }
+            work_item.expected_outputs = [*(work_item.expected_outputs or []), evidence_rel, report_rel]
+            session.commit()
+
+            consume_l2_result(session, Layer2ConsumeRequest(repo_root=str(repo_root), item_id=item_id))
+
+            decision_payload = json.loads(
+                (repo_root / "control_plane" / "shadow_exports" / "l2_decisions" / f"{item_id}.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            assessment = decision_payload["proposal_assessment"]
+            assert assessment["outcome"] == "q12_pwl_proxy_v8_recost_required"
+            assert assessment["decoder_evidence_ref"] == evidence_rel
+            assert (
+                decision_payload["evaluation_record"]["abstraction_layer"]
+                == "decoder_attention_mixed_int8_q12_pwl_proxy_audit"
+            )
+            assert (
+                decision_payload["source_refs"][
+                    "decoder_attention_mixed_int8_q12_pwl_proxy_audit_out"
+                ]
+                == evidence_rel
+            )
+            assert (
+                decision_payload["source_refs"][
+                    "decoder_attention_mixed_int8_q12_pwl_proxy_audit_report"
                 ]
                 == report_rel
             )
