@@ -1,0 +1,95 @@
+{
+  "decision": {
+    "quality_status": "caution",
+    "rationale": "Treat q12/PWL softmax as a provisional proxy only; resolve quality caution before closing as quality-backed.",
+    "recommended_next_step": "Treat q12/PWL softmax as a provisional proxy only; resolve quality caution before closing as quality-backed.",
+    "status": "q12_pwl_proxy_quality_caution"
+  },
+  "inputs": {
+    "composed_q12_pwl_metrics_csv": "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_q12_pwl_recip_q12/metrics.csv",
+    "full_value_v8_metrics_csv": "runs/designs/activations/attention_kv_full_value_hd64_kv8_v8_tl16_b128_p8_ppc2_w24_a40_wrapper/metrics.csv",
+    "q12_pwl_native_quality_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_q12_pwl_native_quality__l2_decoder_attention_mixed_int8_q12_pwl_native_quality_llama7b_v1.json",
+    "quality_backed_frontier_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_quality_backed_frontier__l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1.json"
+  },
+  "model": "llm_decoder_attention_mixed_int8_q12_pwl_proxy_audit_llama7b_v1",
+  "ppa_proxy": {
+    "composed_best_critical_path_ns": 30.8676,
+    "composed_best_die_area_um2": 6250000.0,
+    "composed_best_instance_area_um2": 486298.0,
+    "composed_best_total_power_mw": 23.7,
+    "composed_metrics_path": "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_q12_pwl_recip_q12/metrics.csv",
+    "composed_q12_pwl": {
+      "candidate_design": "attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_q12_pwl_recip_q12",
+      "critical_path_ns": 30.8676,
+      "die_area": 6250000.0,
+      "instance_area": 486298.0,
+      "metrics_csv": "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_q12_pwl_recip_q12/metrics.csv",
+      "ok_row_count": 2,
+      "tag": "attention_dual_stream_composed_v1_hier_q12_pwl",
+      "total_power_mw": 23.7
+    },
+    "composed_q12_pwl_is_v6_proxy": true,
+    "composed_q12_pwl_version_hint": "6",
+    "composed_value_bits": 6,
+    "full_value_v8": {
+      "candidate_design": "attention_kv_full_value_hd64_kv8_v8_tl16_b128_p8_ppc2_w24_a40_wrapper",
+      "critical_path_ns": 0.8825,
+      "die_area": 130100.883025,
+      "instance_area": 0.0,
+      "metrics_csv": "runs/designs/activations/attention_kv_full_value_hd64_kv8_v8_tl16_b128_p8_ppc2_w24_a40_wrapper/metrics.csv",
+      "ok_row_count": 2,
+      "tag": "attention_kv_full_value_tile_nangate45_macro_frontier_d64a96fd",
+      "total_power_mw": 0.0339
+    },
+    "full_value_v8_present": true,
+    "v8_full_value_best_critical_path_ns": 0.8825,
+    "v8_full_value_best_die_area_um2": 130100.883025,
+    "v8_full_value_best_instance_area_um2": 0.0,
+    "v8_full_value_best_total_power_mw": 0.0339,
+    "v8_full_value_metrics_path": "runs/designs/activations/attention_kv_full_value_hd64_kv8_v8_tl16_b128_p8_ppc2_w24_a40_wrapper/metrics.csv"
+  },
+  "q12_pwl_quality": {
+    "candidate_id": "qkv8_q12_pwl_recip_q12_bucket8",
+    "comparison_count": 64,
+    "decision_status": "mixed_int8_native_attention_shadow_hold",
+    "max_abs_logit_delta_max": 5.25,
+    "mean_logit_cosine": 0.9986065845280322,
+    "mean_probability_kl": 0.014237412876954065,
+    "precision": {
+      "candidate_id": "qkv8_q12_pwl_recip_q12_bucket8",
+      "k_bits": 8,
+      "q_bits": 8,
+      "score_bits": 12,
+      "softmax_mode": "pwl_recip_lut_q12_bucket8",
+      "v_bits": 8,
+      "weight_bits": 12
+    },
+    "proxy_pass": false,
+    "quality_passed": false,
+    "top1_match_rate": 0.96875,
+    "topk_contains_rate": 1.0
+  },
+  "qkv8_float_exact_source": {
+    "candidate_id": "qkv8_float_exact",
+    "comparison_count": 64,
+    "decision_status": "mixed_int8_native_attention_shadow_pass",
+    "is_quality_backed_direction": true,
+    "max_abs_logit_delta_max": 0.52734375,
+    "mean_logit_cosine": 0.9998988400355315,
+    "mean_probability_kl": 0.0012425925766148221,
+    "precision": {
+      "candidate_id": "qkv8_float_exact"
+    },
+    "source": "quality_backed_direction.candidate",
+    "top1_match_rate": 1.0,
+    "topk_contains_rate": 1.0
+  },
+  "recommended_next_step": "Treat q12/PWL softmax as a provisional proxy only; resolve quality caution before closing as quality-backed.",
+  "remaining_abstractions": [
+    "This audit is a measured datapath proxy check, not a full, fully recosted quality-backed frontier decision.",
+    "The composed q12/PWL path is treated as a proxy if not quality-backed by direct qkv8_float_exact service-space evidence.",
+    "Full Llama7B latency/energy/cost ranking remains unchanged until v8 full-value composed PPA replaces this proxy.",
+    "No additional model-level perplexity check is performed in this script."
+  ],
+  "version": 1
+}
