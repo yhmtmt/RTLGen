@@ -495,6 +495,10 @@ _DECODER_EVIDENCE_OUTPUT_KEYS: tuple[tuple[str, str], ...] = (
         "attention_mixed_int8_broad_native_quality_report",
     ),
     (
+        "attention_mixed_int8_q12_pwl_native_quality_out",
+        "attention_mixed_int8_q12_pwl_native_quality_report",
+    ),
+    (
         "attention_mixed_int8_quality_backed_frontier_out",
         "attention_mixed_int8_quality_backed_frontier_report",
     ),

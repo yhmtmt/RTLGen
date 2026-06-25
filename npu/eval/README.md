@@ -461,6 +461,15 @@ q8/k8/v8 projection path with matching high-precision or exact score-softmax
 hardware before comparing token throughput, energy, and area against the FP16
 baseline.
 
+The measured q12/PWL reciprocal-LUT softmax path is a candidate proxy for that
+recost, but only after a native quality gate validates the same arithmetic. In
+the mixed/int8 native evaluator, use softmax mode
+`pwl_recip_lut_q12_bucket8` for the measured contract:
+`score_bits=12`, `weight_bits=12`, fixed `input_frac_bits=8`, PWL exp anchors
+at 0/2/4/8, `reciprocal_bits=12`, and `reciprocal_lut_bucket_shift=8`.
+Do not substitute the q12/PWL PPA row for `qkv8_float_exact` unless this gate
+passes or the report explicitly marks the substitution as not quality-backed.
+
 Optionally verify path-like fields exist:
 ```sh
 python3 npu/eval/validate.py --campaign <campaign.json> --check_paths
