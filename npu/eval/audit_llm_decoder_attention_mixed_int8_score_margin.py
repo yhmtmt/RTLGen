@@ -349,6 +349,13 @@ def build_payload(args: argparse.Namespace) -> JsonDict:
     source = _load_json(args.score_precision_recovery_json)
     rows = _get_candidate_rows(source)
     summaries = _get_candidate_summaries(source)
+    primary_candidate_id = ""
+    primary_summary = source.get("candidate_summary")
+    if isinstance(primary_summary, dict):
+        primary_candidate_id = _as_str(primary_summary.get("candidate_id"))
+    if not primary_candidate_id:
+        primary = source.get("primary_candidate_id")
+        primary_candidate_id = _as_str(primary)
 
     rows_by_candidate: dict[str, list[JsonDict]] = {}
     for row in rows:
@@ -395,7 +402,15 @@ def build_payload(args: argparse.Namespace) -> JsonDict:
         )
         candidates.append(candidate)
 
-    candidates.sort(key=lambda item: (_status_rank(item.get("audit_status", "")), -_as_float(item.get("top1_match_rate")), -_as_int(item.get("comparison_count")), _as_str(item.get("candidate_id"))))
+    candidates.sort(
+        key=lambda item: (
+            0 if primary_candidate_id and _as_str(item.get("candidate_id")) == primary_candidate_id else 1,
+            _status_rank(item.get("audit_status", "")),
+            -_as_float(item.get("top1_match_rate")),
+            -_as_int(item.get("comparison_count")),
+            _as_str(item.get("candidate_id")),
+        )
+    )
 
     audit_status_counts = {
         DECISION_PASS: 0,
@@ -439,6 +454,7 @@ def build_payload(args: argparse.Namespace) -> JsonDict:
         "inputs": {
             "score_precision_recovery_json": str(args.score_precision_recovery_json),
         },
+        "primary_candidate_id": primary_candidate_id,
         "candidates": candidates,
         "candidate_count": len(candidates),
     }
@@ -450,6 +466,7 @@ def _write_markdown(payload: JsonDict, path: Path) -> None:
         "",
         f"- decision: `{payload['decision']['status']}`",
         f"- decision_counts: `{payload['decision']['audit_status_counts']}`",
+        f"- primary_candidate_id: `{payload.get('primary_candidate_id', '')}`",
         f"- candidate_count: `{payload['candidate_count']}`",
         f"- recommended_next_step: `{payload['decision']['recommended_next_step']}`",
         "",

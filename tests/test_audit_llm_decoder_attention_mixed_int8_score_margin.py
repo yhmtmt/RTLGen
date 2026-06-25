@@ -78,6 +78,9 @@ def test_audit_classifies_narrow_and_systematic_by_margin_bucket(tmp_path: Path)
                 "max_abs_logit_delta": 0.1,
             },
         ],
+        "candidate_summary": {
+            "candidate_id": "candidate_narrow",
+        },
         "candidate_rows": [
             {"candidate_id": "candidate_narrow", "top1_match": 1.0, "topk_contains": 1.0, "reference_margin": 0.2, "logit_cosine": 0.999, "probability_kl": 0.001, "max_abs_logit_delta": 0.2},
             {"candidate_id": "candidate_narrow", "top1_match": 0.0, "topk_contains": 1.0, "reference_margin": 0.2, "logit_cosine": 0.998, "probability_kl": 0.002, "max_abs_logit_delta": 0.3},
@@ -96,6 +99,8 @@ def test_audit_classifies_narrow_and_systematic_by_margin_bucket(tmp_path: Path)
     by_id = {row["candidate_id"]: row for row in output["candidates"]}
 
     assert output["decision"]["status"] == DECISION_SYSTEMATIC_HOLD
+    assert output["primary_candidate_id"] == "candidate_narrow"
+    assert output["candidates"][0]["candidate_id"] == "candidate_narrow"
     assert by_id["candidate_narrow"]["audit_status"] == DECISION_NARROW_HOLD
     assert by_id["candidate_narrow"]["top1_miss_by_reference_margin"]["0_0.5"] == 1
     assert by_id["candidate_narrow"]["top1_miss_by_reference_margin"]["0_5_1.0"] == 1
