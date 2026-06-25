@@ -511,6 +511,10 @@ _DECODER_EVIDENCE_OUTPUT_KEYS: tuple[tuple[str, str], ...] = (
         "attention_mixed_int8_score_margin_audit_report",
     ),
     (
+        "attention_mixed_int8_generation_quality_out",
+        "attention_mixed_int8_generation_quality_report",
+    ),
+    (
         "attention_mixed_int8_quality_backed_frontier_out",
         "attention_mixed_int8_quality_backed_frontier_report",
     ),
@@ -1254,6 +1258,41 @@ def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, 
                 ):
                     if key in primary:
                         parts.append(f"primary_{key}={primary.get(key)}")
+        next_step = str(decision_dict.get("next_step") or decision_dict.get("recommended_next_step") or "").strip()
+        if next_step:
+            parts.append(f"next_step={next_step}")
+        summary = "; ".join(parts)
+        return outcome, summary if summary.endswith(".") else summary + "."
+
+    if model == "llm_decoder_attention_mixed_int8_generation_quality_llama7b_v1":
+        decision = evidence_payload.get("decision")
+        decision_dict = dict(decision) if isinstance(decision, dict) else {}
+        outcome = str(
+            decision_dict.get("status")
+            or evidence_payload.get("decision")
+            or "mixed_int8_generation_quality_recorded"
+        )
+        parts = [
+            f"Decoder mixed/int8 generation quality evidence recorded from {evidence_ref}: decision={outcome}",
+        ]
+        summary_row = evidence_payload.get("summary")
+        summary_dict = dict(summary_row) if isinstance(summary_row, dict) else {}
+        for key in (
+            "candidate_id",
+            "prompt_count",
+            "generation_steps",
+            "free_run_exact_match_rate",
+            "free_run_token_match_rate",
+            "diverged_prompt_count",
+            "mean_first_divergence_step",
+            "teacher_forced_mean_reference_nll",
+            "teacher_forced_mean_candidate_nll",
+            "teacher_forced_mean_nll_delta",
+            "teacher_forced_reference_token_prob_mean",
+            "teacher_forced_candidate_reference_token_prob_mean",
+        ):
+            if key in summary_dict:
+                parts.append(f"{key}={summary_dict.get(key)}")
         next_step = str(decision_dict.get("next_step") or decision_dict.get("recommended_next_step") or "").strip()
         if next_step:
             parts.append(f"next_step={next_step}")
