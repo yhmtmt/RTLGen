@@ -412,11 +412,12 @@ def _build_payload(args: argparse.Namespace) -> JsonDict:
         }
 
     quality_status = _quality_status_category(q12_quality.get("decision_status", ""))
-    q12_quality["proxy_pass"] = (
+    quality_pass = (
         quality_status == "pass"
         and _is_one(q12_quality.get("top1_match_rate"))
         and _is_one(q12_quality.get("topk_contains_rate"))
     )
+    q12_quality["proxy_pass"] = quality_pass
     q12_quality["quality_passed"] = q12_quality["proxy_pass"]
 
     frontier_payload = _load_json(args.quality_backed_frontier_json)
@@ -436,27 +437,17 @@ def _build_payload(args: argparse.Namespace) -> JsonDict:
             "Align quality-backed frontier inputs to explicitly identify qkv8_float_exact as the active quality-backed direction "
             "before promoting this proxy check."
         )
-    elif not q12_quality["decision_status"] and not q12_quality["proxy_pass"]:
+    elif not q12_quality["decision_status"] and not quality_pass:
         decision_status = "q12_pwl_proxy_missing_evidence"
         next_step = (
             "Collect per-candidate quality evidence for qkv8_q12_pwl_recip_q12_bucket8 from the same mixed-int8 artifact generation "
             "that produced the frontier."
         )
-    elif q12_quality["decision_status"] and quality_status == "fail":
+    elif not quality_pass:
         decision_status = "q12_pwl_proxy_quality_rejected"
         next_step = (
-            "Do not use q12/PWL composed proxy evidence yet; improve the qkv8_q12_pwl_recip_q12_bucket8 quality gate "
-            "before re-running this audit."
-        )
-    elif q12_quality["decision_status"] and quality_status == "caution":
-        decision_status = "q12_pwl_proxy_quality_caution"
-        next_step = (
-            "Treat q12/PWL softmax as a provisional proxy only; resolve quality caution before closing as quality-backed."
-        )
-    elif not q12_quality["proxy_pass"]:
-        decision_status = "q12_pwl_proxy_quality_caution"
-        next_step = (
-            "The candidate is not a strict pass for top-1/top-k at 1.0, so keep this path as quality-risk only."
+            "Do not use q12/PWL composed proxy as quality-backed for frontier decisions; improve the qkv8_q12_pwl_recip_q12_bucket8 "
+            "quality gate and top-1/top-k equality before re-running this audit."
         )
     else:
         if not composed:
