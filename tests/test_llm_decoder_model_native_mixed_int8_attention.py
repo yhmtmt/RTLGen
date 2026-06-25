@@ -215,6 +215,14 @@ def test_parse_candidate_spec_and_list_compatibility() -> None:
     generated = _parse_candidate_spec("q8,k8,v8,s8,w8,rtl_recip_lut_q10")
     assert generated.candidate_id == "q8_k8_v8_s8_w8_rtl_recip_lut_q10"
 
+    q12_pwl = _parse_candidate_spec(
+        "qkv8_q12_pwl_recip_q12_bucket8:q8,k8,v8,s12,w12,pwl_recip_lut_q12_bucket8"
+    )
+    assert q12_pwl.candidate_id == "qkv8_q12_pwl_recip_q12_bucket8"
+    assert q12_pwl.score_bits == 12
+    assert q12_pwl.weight_bits == 12
+    assert q12_pwl.softmax_mode == "pwl_recip_lut_q12_bucket8"
+
     with pytest.raises(ValueError):
         _parse_candidate_spec("qkv8_score8:r8")
 

@@ -355,7 +355,11 @@ def _parse_candidate_spec(spec: Any) -> CandidateConfig:
             for part in parts:
                 if len(part) == 0:
                     continue
-                if part in {"float_quantized", "float_exact", "rtl_exact", "rtl_pow2sum"} or part.startswith("rtl_recip_lut_q"):
+                if (
+                    part in {"float_quantized", "float_exact", "rtl_exact", "rtl_pow2sum"}
+                    or part.startswith("rtl_recip_lut_q")
+                    or part.startswith("pwl_recip_lut_q")
+                ):
                     if softmax_mode:
                         raise ValueError(f"candidate spec {spec!r} has duplicate softmax mode tokens")
                     softmax_mode = part
