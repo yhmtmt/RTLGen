@@ -1,0 +1,80 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-06-25T13:11:12.127710Z",
+  "item_id": "l2_decoder_attention_mixed_int8_q12_pwl_native_quality_llama7b_v1",
+  "run_key": "l2_decoder_attention_mixed_int8_q12_pwl_native_quality_llama7b_v1_run_d345d45312d09497",
+  "layer": "layer2",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l2_campaign",
+  "source_commit": "e477f43a823762692ad4a905a8a6d1a1342211c7",
+  "review_metadata_source_commit": "e477f43a823762692ad4a905a8a6d1a1342211c7",
+  "objective": "Validate whether q8/k8/v8 with measured q12/PWL reciprocal-LUT softmax arithmetic preserves native 7B attention-shadow quality before using q12/PWL PPA as a frontier proxy.",
+  "input_manifest": {
+    "decoder_contract": {
+      "attention_mixed_int8_quality_backed_frontier": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_quality_backed_frontier__l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1.json",
+      "attention_mixed_int8_q12_pwl_native_quality_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_q12_pwl_native_quality__l2_decoder_attention_mixed_int8_q12_pwl_native_quality_llama7b_v1.json",
+      "attention_mixed_int8_q12_pwl_native_quality_scope": "Validate whether the measured q12/PWL reciprocal-LUT softmax datapath can serve as a quality-backed hardware proxy for the q8/k8/v8 float-exact mixed/int8 frontier. The PWL mode mirrors the measured block's score_bits=12, weight_bits=12, input_frac_bits=8, reciprocal_bits=12, and reciprocal_lut_bucket_shift=8 contract.",
+      "attention_mixed_int8_q12_pwl_native_quality_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_q12_pwl_native_quality__l2_decoder_attention_mixed_int8_q12_pwl_native_quality_llama7b_v1.md"
+    }
+  },
+  "recommendation": {
+    "source": "decoder_evidence",
+    "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_q12_pwl_native_quality__l2_decoder_attention_mixed_int8_q12_pwl_native_quality_llama7b_v1.json",
+    "arch_id": "decoder_attention_mixed_int8_q12_pwl_native_quality",
+    "macro_mode": "evidence_only",
+    "outcome": "mixed_int8_native_attention_shadow_hold"
+  },
+  "objective_profiles": [],
+  "evaluation_record": {
+    "proposal_id": "prop_l2_decoder_attention_mixed_int8_q12_pwl_native_quality_llama7b_v1",
+    "title": "Llama7B mixed/int8 q12-PWL native quality gate",
+    "primary_question": "Does q8/k8/v8 with the measured q12/PWL reciprocal-LUT softmax arithmetic preserve the Llama7B native attention-shadow quality of the qkv8_float_exact control?",
+    "evaluation_mode": "quality_gate",
+    "comparison_role": "quality_gate",
+    "abstraction_layer": "decoder_attention_mixed_int8_q12_pwl_native_quality",
+    "expected_direction": "validate_q12_pwl_native_quality",
+    "expected_reason": "Confirm native 7B attention-shadow quality for q12/PWL before using measured PPA as a mixed/int8 frontier proxy.",
+    "summary": "Decoder mixed/int8 native attention quality evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_q12_pwl_native_quality__l2_decoder_attention_mixed_int8_q12_pwl_native_quality_llama7b_v1.json: decision=mixed_int8_native_attention_shadow_hold; model_id=mistralai/Mistral-7B-v0.1; attention_heads=32; kv_heads=8; gqa_group_size=4.0; dtype=bfloat16; q_bits=8; k_bits=8; v_bits=8; score_bits=12; weight_bits=12; softmax_mode=pwl_recip_lut_q12_bucket8; comparison_count=64; top1_match_rate=0.96875; topk_contains_rate=1.0; mean_logit_cosine=0.9986065845280322; mean_probability_kl=0.014237412876954065; max_abs_logit_delta_max=5.25; next_step=Hold this attention-shadow candidate until safer quantization is proven with a real checkpoint run or broader model sampling.; best_candidate_id=qkv8_float_exact; best_top1_match_rate=1.0; best_topk_contains_rate=1.0; best_mean_logit_cosine=0.9998988400355315; best_mean_probability_kl=0.0012425925766148221; candidate_count=4.",
+    "outcome": "mixed_int8_native_attention_shadow_hold",
+    "expectation_status": "unspecified"
+  },
+  "proposal_assessment": {
+    "proposal_id": "prop_l2_decoder_attention_mixed_int8_q12_pwl_native_quality_llama7b_v1",
+    "title": "Llama7B mixed/int8 q12-PWL native quality gate",
+    "kind": "architecture",
+    "primary_question": "Does q8/k8/v8 with the measured q12/PWL reciprocal-LUT softmax arithmetic preserve the Llama7B native attention-shadow quality of the qkv8_float_exact control?",
+    "evaluation_mode": "quality_gate",
+    "comparison_role": "quality_gate",
+    "outcome": "mixed_int8_native_attention_shadow_hold",
+    "summary": "Decoder mixed/int8 native attention quality evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_q12_pwl_native_quality__l2_decoder_attention_mixed_int8_q12_pwl_native_quality_llama7b_v1.json: decision=mixed_int8_native_attention_shadow_hold; model_id=mistralai/Mistral-7B-v0.1; attention_heads=32; kv_heads=8; gqa_group_size=4.0; dtype=bfloat16; q_bits=8; k_bits=8; v_bits=8; score_bits=12; weight_bits=12; softmax_mode=pwl_recip_lut_q12_bucket8; comparison_count=64; top1_match_rate=0.96875; topk_contains_rate=1.0; mean_logit_cosine=0.9986065845280322; mean_probability_kl=0.014237412876954065; max_abs_logit_delta_max=5.25; next_step=Hold this attention-shadow candidate until safer quantization is proven with a real checkpoint run or broader model sampling.; best_candidate_id=qkv8_float_exact; best_top1_match_rate=1.0; best_topk_contains_rate=1.0; best_mean_logit_cosine=0.9998988400355315; best_mean_probability_kl=0.0012425925766148221; candidate_count=4.",
+    "baseline_ref": null,
+    "baseline_item_id": null,
+    "matched_row_count": 0,
+    "matched_rows": [],
+    "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_q12_pwl_native_quality__l2_decoder_attention_mixed_int8_q12_pwl_native_quality_llama7b_v1.json",
+    "decoder_quality": {
+      "diagnosis": {},
+      "assumptions": [
+        "This is a native-checkpoint attention-shadow gate, not a full QAT or perplexity study.",
+        "Teacher-forced next-token inputs isolate attention-path ranking drift from decoding-policy variance.",
+        "Only Llama-style q/k/v projection + attention-softmax control is patched (QKV quantization + RTL-style int8 softmax).",
+        "Q/K/V quantization and RTL softmax are applied in an in-process attention shadow, not reflected in training-time weights."
+      ]
+    }
+  },
+  "source_refs": {
+    "decoder_evidence_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_q12_pwl_native_quality__l2_decoder_attention_mixed_int8_q12_pwl_native_quality_llama7b_v1.json",
+    "decoder_attention_mixed_int8_q12_pwl_native_quality_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_q12_pwl_native_quality__l2_decoder_attention_mixed_int8_q12_pwl_native_quality_llama7b_v1.json",
+    "decoder_attention_mixed_int8_q12_pwl_native_quality_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_q12_pwl_native_quality__l2_decoder_attention_mixed_int8_q12_pwl_native_quality_llama7b_v1.md"
+  },
+  "decoder_quality": {
+    "diagnosis": {},
+    "assumptions": [
+      "This is a native-checkpoint attention-shadow gate, not a full QAT or perplexity study.",
+      "Teacher-forced next-token inputs isolate attention-path ranking drift from decoding-policy variance.",
+      "Only Llama-style q/k/v projection + attention-softmax control is patched (QKV quantization + RTL-style int8 softmax).",
+      "Q/K/V quantization and RTL softmax are applied in an in-process attention shadow, not reflected in training-time weights."
+    ]
+  }
+}

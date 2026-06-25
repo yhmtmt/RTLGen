@@ -1,0 +1,105 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "decoder_contract": {
+        "attention_mixed_int8_quality_backed_frontier": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_quality_backed_frontier__l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1.json",
+        "attention_mixed_int8_q12_pwl_native_quality_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_q12_pwl_native_quality__l2_decoder_attention_mixed_int8_q12_pwl_native_quality_llama7b_v1.json",
+        "attention_mixed_int8_q12_pwl_native_quality_scope": "Validate whether the measured q12/PWL reciprocal-LUT softmax datapath can serve as a quality-backed hardware proxy for the q8/k8/v8 float-exact mixed/int8 frontier. The PWL mode mirrors the measured block's score_bits=12, weight_bits=12, input_frac_bits=8, reciprocal_bits=12, and reciprocal_lut_bucket_shift=8 contract.",
+        "attention_mixed_int8_q12_pwl_native_quality_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_q12_pwl_native_quality__l2_decoder_attention_mixed_int8_q12_pwl_native_quality_llama7b_v1.md"
+      }
+    },
+    "commands": [
+      {
+        "run": "bash -lc 'MODEL_ID=${RTLGEN_MODEL_NATIVE_7B_MODEL_ID:-mistralai/Mistral-7B-v0.1}; EXPECTED_GQA=${RTLGEN_MODEL_NATIVE_7B_EXPECTED_GQA_GROUP_SIZE:-4}; MAX_PROMPTS=${RTLGEN_MODEL_NATIVE_7B_BROAD_MAX_PROMPTS:-8}; GEN_STEPS=${RTLGEN_MODEL_NATIVE_7B_BROAD_GENERATION_STEPS:-8}; DTYPE=${RTLGEN_MODEL_NATIVE_7B_DTYPE:-bfloat16}; bash npu/eval/run_hf_eval_python.sh npu/eval/evaluate_llm_decoder_model_native_mixed_int8_attention.py --model-id \"$MODEL_ID\" --expected-gqa-group-size \"$EXPECTED_GQA\" --max-prompts \"$MAX_PROMPTS\" --generation-steps \"$GEN_STEPS\" --dtype \"$DTYPE\" --topk 5 --candidate qkv8_float_exact:q8,k8,v8,s24,w16,float_exact --candidate qkv8_score24_float:q8,k8,v8,s24,w16,float_quantized --candidate qkv8_score24_rtl_exact:q8,k8,v8,s24,w8,rtl_exact --candidate qkv8_q12_pwl_recip_q12_bucket8:q8,k8,v8,s12,w12,pwl_recip_lut_q12_bucket8 --primary-candidate-id qkv8_q12_pwl_recip_q12_bucket8 --out runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_q12_pwl_native_quality__l2_decoder_attention_mixed_int8_q12_pwl_native_quality_llama7b_v1.json --out-md runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_q12_pwl_native_quality__l2_decoder_attention_mixed_int8_q12_pwl_native_quality_llama7b_v1.md'",
+        "name": "evaluate_decoder_attention_mixed_int8_q12_pwl_native_quality"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate_runs"
+      }
+    ],
+    "objective": "Validate whether q8/k8/v8 with measured q12/PWL reciprocal-LUT softmax arithmetic preserves native 7B attention-shadow quality before using q12/PWL PPA as a frontier proxy.",
+    "acceptance": [
+      "Write all declared decoder evidence artifacts",
+      "Keep evidence artifact paths repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "source_mode": "src_verilog",
+    "expected_outputs": [
+      "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_q12_pwl_native_quality__l2_decoder_attention_mixed_int8_q12_pwl_native_quality_llama7b_v1.json",
+      "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_q12_pwl_native_quality__l2_decoder_attention_mixed_int8_q12_pwl_native_quality_llama7b_v1.md"
+    ]
+  },
+  "layer": "layer2",
+  "state": "evaluated",
+  "title": "Llama7B mixed/int8 q12-PWL native quality gate",
+  "result": {
+    "branch": "eval/l2_decoder_attention_mixed_int8_q12_pwl_native_quality_llama7b_v1/s20260625t131112z",
+    "completed_utc": "2026-06-25T13:11:10.577351Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "b7c2d9c80c1c",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260625t131112z][host:b7c2d9c80c1c][item:l2_decoder_attention_mixed_int8_q12_pwl_native_quality_llama7b_v1]",
+    "metrics_rows": [],
+    "metrics_exempt_reason": "evidence_only_decoder_evidence",
+    "queue_item_id": "l2_decoder_attention_mixed_int8_q12_pwl_native_quality_llama7b_v1",
+    "session_id": "s20260625t131112z",
+    "status": "ok",
+    "summary": "2/2 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l2_decoder_attention_mixed_int8_q12_pwl_native_quality_llama7b_v1/s20260625t131112z",
+    "pr_title": "eval: run llama7b mixed/int8 q12-pwl native quality gate",
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Include metrics row references in result.metrics_rows",
+      "Keep committed result_path fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260625t131112z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l2_decoder_attention_mixed_int8_q12_pwl_native_quality_llama7b_v1"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l2_decoder_attention_mixed_int8_q12_pwl_native_quality_llama7b_v1",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 1,
+  "created_utc": "2026-06-25T13:08:49.983406Z",
+  "requested_by": "developer_agent",
+  "developer_loop": {
+    "comparison": {
+      "role": "quality_gate",
+      "paired_baseline_item_id": ""
+    },
+    "evaluation": {
+      "mode": "quality_gate",
+      "expected_reason": "Confirm native 7B attention-shadow quality for q12/PWL before using measured PPA as a mixed/int8 frontier proxy.",
+      "expected_direction": "validate_q12_pwl_native_quality"
+    },
+    "abstraction": {
+      "layer": "decoder_attention_mixed_int8_q12_pwl_native_quality"
+    },
+    "proposal_id": "prop_l2_decoder_attention_mixed_int8_q12_pwl_native_quality_llama7b_v1",
+    "dependencies": {
+      "item_ids": [
+        "l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    },
+    "proposal_path": "docs/proposals/prop_l2_decoder_attention_mixed_int8_q12_pwl_native_quality_llama7b_v1/proposal.json"
+  },
+  "source_requirement": {
+    "repo": "",
+    "reason": "evaluator runtime must contain the queued job source commit",
+    "version": 1,
+    "required_ref": "origin/master",
+    "required_sha": "e477f43a823762692ad4a905a8a6d1a1342211c7",
+    "requires_daemon_restart": true
+  }
+}
