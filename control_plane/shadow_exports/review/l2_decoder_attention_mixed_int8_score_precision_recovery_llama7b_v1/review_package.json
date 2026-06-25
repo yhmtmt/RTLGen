@@ -1,0 +1,158 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-06-25T13:42:26.588856Z",
+  "control_plane_source_commit": "68d78c106c9d3b4891657cc2aa259171397aa4ab",
+  "review_metadata_source_commit": "68d78c106c9d3b4891657cc2aa259171397aa4ab",
+  "item_id": "l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1",
+  "run_key": "l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1_run_c49ecf14ba9e7cb6",
+  "layer": "layer2",
+  "flow": "openroad",
+  "task_type": "l2_campaign",
+  "source_commit": "68d78c106c9d3b4891657cc2aa259171397aa4ab",
+  "queue_snapshot": {
+    "path": "control_plane/shadow_exports/review/l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1/evaluated.json",
+    "result": {
+      "branch": "eval/l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1/s20260625t134224z",
+      "completed_utc": "2026-06-25T13:42:21.955359Z",
+      "evaluator_id": "control_plane",
+      "executor": "@control_plane",
+      "host": "b7c2d9c80c1c",
+      "identity_block": "[role:evaluator][account:control_plane][session:s20260625t134224z][host:b7c2d9c80c1c][item:l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1]",
+      "metrics_rows": [],
+      "metrics_exempt_reason": "evidence_only_decoder_evidence",
+      "queue_item_id": "l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1",
+      "session_id": "s20260625t134224z",
+      "status": "ok",
+      "summary": "2/2 commands succeeded"
+    }
+  },
+  "review_artifact": {
+    "kind": "decision_proposal",
+    "path": "control_plane/shadow_exports/l2_decisions/l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1.json",
+    "storage_mode": "repo",
+    "sha256": "100238a2298f2ce565c02ea8f61e0819f90a6ad88fa5b07062c16ecf4eccf4db",
+    "payload": {
+      "version": 0.1,
+      "generated_utc": "2026-06-25T13:42:23.406933Z",
+      "item_id": "l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1",
+      "run_key": "l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1_run_c49ecf14ba9e7cb6",
+      "layer": "layer2",
+      "flow": "openroad",
+      "platform": "nangate45",
+      "task_type": "l2_campaign",
+      "source_commit": "68d78c106c9d3b4891657cc2aa259171397aa4ab",
+      "review_metadata_source_commit": "68d78c106c9d3b4891657cc2aa259171397aa4ab",
+      "objective": "Run a broad precision-recovery mixed/int8 native attention-shadow sweep to test score/PWL-reciprocal precision upgrades before any final mixed-int8 ranking.",
+      "input_manifest": {
+        "decoder_contract": {
+          "attention_mixed_int8_q12_pwl_proxy_audit": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_q12_pwl_proxy_audit__l2_decoder_attention_mixed_int8_q12_pwl_proxy_audit_llama7b_v1.json",
+          "attention_mixed_int8_quality_backed_frontier": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_quality_backed_frontier__l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1.json",
+          "attention_mixed_int8_score_precision_recovery_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score_precision_recovery__l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1.json",
+          "attention_mixed_int8_score_precision_recovery_scope": "Run a broad 7B attention-shadow precision recovery sweep after q12/PWL and quality-backed frontier dependencies. This is an evidence-only job to decide whether higher score precision or higher PWL-reciprocal precision can recover mixed/int8 quality before recosting any new PPA.",
+          "attention_mixed_int8_score_precision_recovery_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score_precision_recovery__l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1.md"
+        }
+      },
+      "recommendation": {
+        "source": "decoder_evidence",
+        "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score_precision_recovery__l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1.json",
+        "arch_id": "decoder_attention_mixed_int8_score_precision_recovery",
+        "macro_mode": "evidence_only",
+        "outcome": "mixed_int8_native_attention_shadow_hold"
+      },
+      "objective_profiles": [],
+      "evaluation_record": {
+        "proposal_id": "prop_l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1",
+        "title": "Llama7B mixed/int8 score precision recovery",
+        "primary_question": "Can score-precision recovery or higher-precision PWL-reciprocal settings recover quality while keeping the job as an evidence-only checkpoint for ranking preparation?",
+        "evaluation_mode": "quality_gate",
+        "comparison_role": "precision_recovery",
+        "abstraction_layer": "decoder_attention_mixed_int8_score_precision_recovery",
+        "expected_direction": "recover_quality_gate_or_hold_for_recost",
+        "expected_reason": "Identify whether score32 or high-precision PWL reciprocal variants recover attention-shadow quality before any PPA recosting.",
+        "summary": "Decoder mixed/int8 native attention quality evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score_precision_recovery__l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1.json: decision=mixed_int8_native_attention_shadow_hold; model_id=mistralai/Mistral-7B-v0.1; attention_heads=32; kv_heads=8; gqa_group_size=4.0; dtype=bfloat16; q_bits=8; k_bits=8; v_bits=8; score_bits=32; weight_bits=16; softmax_mode=float_quantized; comparison_count=64; top1_match_rate=0.96875; topk_contains_rate=1.0; mean_logit_cosine=0.9999025562684435; mean_probability_kl=0.0014115558838723183; max_abs_logit_delta_max=0.53125; next_step=Hold this attention-shadow candidate until safer quantization is proven with a real checkpoint run or broader model sampling.; best_candidate_id=qkv8_float_exact; best_top1_match_rate=1.0; best_topk_contains_rate=1.0; best_mean_logit_cosine=0.9998988400355315; best_mean_probability_kl=0.0012425925766148221; candidate_count=6.",
+        "outcome": "mixed_int8_native_attention_shadow_hold",
+        "expectation_status": "unspecified"
+      },
+      "proposal_assessment": {
+        "proposal_id": "prop_l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1",
+        "title": "Llama7B mixed/int8 score precision recovery",
+        "kind": "architecture",
+        "primary_question": "Can score-precision recovery or higher-precision PWL-reciprocal settings recover quality while keeping the job as an evidence-only checkpoint for ranking preparation?",
+        "evaluation_mode": "quality_gate",
+        "comparison_role": "precision_recovery",
+        "outcome": "mixed_int8_native_attention_shadow_hold",
+        "summary": "Decoder mixed/int8 native attention quality evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score_precision_recovery__l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1.json: decision=mixed_int8_native_attention_shadow_hold; model_id=mistralai/Mistral-7B-v0.1; attention_heads=32; kv_heads=8; gqa_group_size=4.0; dtype=bfloat16; q_bits=8; k_bits=8; v_bits=8; score_bits=32; weight_bits=16; softmax_mode=float_quantized; comparison_count=64; top1_match_rate=0.96875; topk_contains_rate=1.0; mean_logit_cosine=0.9999025562684435; mean_probability_kl=0.0014115558838723183; max_abs_logit_delta_max=0.53125; next_step=Hold this attention-shadow candidate until safer quantization is proven with a real checkpoint run or broader model sampling.; best_candidate_id=qkv8_float_exact; best_top1_match_rate=1.0; best_topk_contains_rate=1.0; best_mean_logit_cosine=0.9998988400355315; best_mean_probability_kl=0.0012425925766148221; candidate_count=6.",
+        "baseline_ref": null,
+        "baseline_item_id": null,
+        "matched_row_count": 0,
+        "matched_rows": [],
+        "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score_precision_recovery__l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1.json",
+        "decoder_quality": {
+          "diagnosis": {},
+          "assumptions": [
+            "This is a native-checkpoint attention-shadow gate, not a full QAT or perplexity study.",
+            "Teacher-forced next-token inputs isolate attention-path ranking drift from decoding-policy variance.",
+            "Only Llama-style q/k/v projection + attention-softmax control is patched (QKV quantization + RTL-style int8 softmax).",
+            "Q/K/V quantization and RTL softmax are applied in an in-process attention shadow, not reflected in training-time weights."
+          ]
+        }
+      },
+      "source_refs": {
+        "decoder_evidence_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score_precision_recovery__l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1.json",
+        "decoder_attention_mixed_int8_score_precision_recovery_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score_precision_recovery__l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1.json",
+        "decoder_attention_mixed_int8_score_precision_recovery_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score_precision_recovery__l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1.md"
+      },
+      "decoder_quality": {
+        "diagnosis": {},
+        "assumptions": [
+          "This is a native-checkpoint attention-shadow gate, not a full QAT or perplexity study.",
+          "Teacher-forced next-token inputs isolate attention-path ranking drift from decoding-policy variance.",
+          "Only Llama-style q/k/v projection + attention-softmax control is patched (QKV quantization + RTL-style int8 softmax).",
+          "Q/K/V quantization and RTL softmax are applied in an in-process attention shadow, not reflected in training-time weights."
+        ]
+      }
+    }
+  },
+  "developer_loop": {
+    "comparison": {
+      "role": "precision_recovery",
+      "paired_baseline_item_id": ""
+    },
+    "evaluation": {
+      "mode": "quality_gate",
+      "expected_reason": "Identify whether score32 or high-precision PWL reciprocal variants recover attention-shadow quality before any PPA recosting.",
+      "expected_direction": "recover_quality_gate_or_hold_for_recost"
+    },
+    "abstraction": {
+      "layer": "decoder_attention_mixed_int8_score_precision_recovery"
+    },
+    "proposal_id": "prop_l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1",
+    "dependencies": {
+      "item_ids": [
+        "l2_decoder_attention_mixed_int8_q12_pwl_proxy_audit_llama7b_v1",
+        "l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    },
+    "proposal_path": "docs/proposals/prop_l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1/proposal.json"
+  },
+  "submission_history": null,
+  "pr_payload": {
+    "branch": "eval/l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1/s20260625t134224z",
+    "title": "eval: run llama7b mixed/int8 score precision recovery",
+    "body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260625t134224z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1"
+    },
+    "body_md": "## Summary\n- item_id: `l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1`\n- run_key: `l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1_run_c49ecf14ba9e7cb6`\n- layer: `layer2`\n- task_type: `l2_campaign`\n- status: `ok`\n- summary: `2/2 commands succeeded`\n- queue_snapshot: `control_plane/shadow_exports/review/l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1/evaluated.json`\n- metrics_rows_count: `0`\n- review_artifact: `decision_proposal` at `control_plane/shadow_exports/l2_decisions/l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1.json`\n\n## Developer Context\n- proposal_id: `prop_l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1`\n- proposal_path: `docs/proposals/prop_l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1/proposal.json`\n- reviewer_first_read: `docs/proposals/prop_l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1/proposal.json` plus `docs/developer_agent_review.md`\n- execution_source_commit: `68d78c106c9d3b4891657cc2aa259171397aa4ab`\n- review_metadata_source_commit: `68d78c106c9d3b4891657cc2aa259171397aa4ab`\n\n## Evaluation Mode\n- evaluation_mode: `quality_gate`\n- abstraction_layer: `decoder_attention_mixed_int8_score_precision_recovery`\n- comparison_role: `precision_recovery`\n- expected_direction: `recover_quality_gate_or_hold_for_recost`\n- expected_reason: `Identify whether score32 or high-precision PWL reciprocal variants recover attention-shadow quality before any PPA recosting.`\n- expectation_status: `unspecified`\n- evaluation_summary: `Decoder mixed/int8 native attention quality evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score_precision_recovery__l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1.json: decision=mixed_int8_native_attention_shadow_hold; model_id=mistralai/Mistral-7B-v0.1; attention_heads=32; kv_heads=8; gqa_group_size=4.0; dtype=bfloat16; q_bits=8; k_bits=8; v_bits=8; score_bits=32; weight_bits=16; softmax_mode=float_quantized; comparison_count=64; top1_match_rate=0.96875; topk_contains_rate=1.0; mean_logit_cosine=0.9999025562684435; mean_probability_kl=0.0014115558838723183; max_abs_logit_delta_max=0.53125; next_step=Hold this attention-shadow candidate until safer quantization is proven with a real checkpoint run or broader model sampling.; best_candidate_id=qkv8_float_exact; best_top1_match_rate=1.0; best_topk_contains_rate=1.0; best_mean_logit_cosine=0.9998988400355315; best_mean_probability_kl=0.0012425925766148221; candidate_count=6.`\n\n## Focused Comparison\n- primary_question: `Can score-precision recovery or higher-precision PWL-reciprocal settings recover quality while keeping the job as an evidence-only checkpoint for ranking preparation?`\n- comparison_role: `precision_recovery`\n- proposal_outcome: `mixed_int8_native_attention_shadow_hold`\n- comparison_summary: `Decoder mixed/int8 native attention quality evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score_precision_recovery__l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1.json: decision=mixed_int8_native_attention_shadow_hold; model_id=mistralai/Mistral-7B-v0.1; attention_heads=32; kv_heads=8; gqa_group_size=4.0; dtype=bfloat16; q_bits=8; k_bits=8; v_bits=8; score_bits=32; weight_bits=16; softmax_mode=float_quantized; comparison_count=64; top1_match_rate=0.96875; topk_contains_rate=1.0; mean_logit_cosine=0.9999025562684435; mean_probability_kl=0.0014115558838723183; max_abs_logit_delta_max=0.53125; next_step=Hold this attention-shadow candidate until safer quantization is proven with a real checkpoint run or broader model sampling.; best_candidate_id=qkv8_float_exact; best_top1_match_rate=1.0; best_topk_contains_rate=1.0; best_mean_logit_cosine=0.9998988400355315; best_mean_probability_kl=0.0012425925766148221; candidate_count=6.`\n- baseline_ref: `None`\n- baseline_item_id: `None`\n\n## Checklist\n- [ ] Commit lightweight campaign artifacts only\n- [ ] Include metrics row references in result.metrics_rows\n- [ ] Keep committed result_path fields repo-portable\n- [ ] Run python3 scripts/validate_runs.py --skip_eval_queue before pushing\n",
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Include metrics row references in result.metrics_rows",
+      "Keep committed result_path fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ]
+  }
+}
