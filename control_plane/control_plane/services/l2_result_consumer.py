@@ -499,6 +499,10 @@ _DECODER_EVIDENCE_OUTPUT_KEYS: tuple[tuple[str, str], ...] = (
         "attention_mixed_int8_q12_pwl_native_quality_report",
     ),
     (
+        "attention_mixed_int8_q12_pwl_proxy_audit_out",
+        "attention_mixed_int8_q12_pwl_proxy_audit_report",
+    ),
+    (
         "attention_mixed_int8_quality_backed_frontier_out",
         "attention_mixed_int8_quality_backed_frontier_report",
     ),
@@ -1207,6 +1211,51 @@ def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, 
         ):
             if key in diagnosis_dict:
                 parts.append(f"{key}={diagnosis_dict.get(key)}")
+        summary = "; ".join(parts)
+        return outcome, summary if summary.endswith(".") else summary + "."
+
+    if model == "llm_decoder_attention_mixed_int8_q12_pwl_proxy_audit_llama7b_v1":
+        decision = evidence_payload.get("decision")
+        decision_dict = dict(decision) if isinstance(decision, dict) else {}
+        q12_quality = evidence_payload.get("q12_pwl_quality")
+        q12_quality_dict = dict(q12_quality) if isinstance(q12_quality, dict) else {}
+        ppa_proxy = evidence_payload.get("ppa_proxy")
+        ppa_proxy_dict = dict(ppa_proxy) if isinstance(ppa_proxy, dict) else {}
+        outcome = str(
+            decision_dict.get("status")
+            or evidence_payload.get("decision")
+            or "q12_pwl_proxy_audit_recorded"
+        )
+        parts = [
+            f"Decoder mixed/int8 q12/PWL proxy audit evidence recorded from {evidence_ref}: decision={outcome}",
+        ]
+        for key in (
+            "candidate_id",
+            "decision_status",
+            "top1_match_rate",
+            "topk_contains_rate",
+            "mean_probability_kl",
+            "quality_passed",
+            "proxy_pass",
+        ):
+            if key in q12_quality_dict:
+                parts.append(f"q12_{key}={q12_quality_dict.get(key)}")
+        for key in (
+            "composed_metrics_path",
+            "composed_value_bits",
+            "composed_best_critical_path_ns",
+            "composed_best_total_power_mw",
+            "composed_best_die_area_um2",
+            "v8_full_value_metrics_path",
+            "v8_full_value_best_critical_path_ns",
+            "v8_full_value_best_total_power_mw",
+            "v8_full_value_best_die_area_um2",
+        ):
+            if key in ppa_proxy_dict:
+                parts.append(f"{key}={ppa_proxy_dict.get(key)}")
+        next_step = str(decision_dict.get("recommended_next_step", "")).strip()
+        if next_step:
+            parts.append(f"recommended_next_step={next_step}")
         summary = "; ".join(parts)
         return outcome, summary if summary.endswith(".") else summary + "."
 

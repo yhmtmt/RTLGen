@@ -7173,6 +7173,86 @@ def test_generate_l2_campaign_task_adds_mixed_int8_q12_pwl_native_quality_eviden
             }
 
 
+def test_generate_l2_campaign_task_adds_mixed_int8_q12_pwl_proxy_audit_evidence() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id="l2_decoder_attention_mixed_int8_q12_pwl_proxy_audit_llama7b_v1",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    proposal_id="prop_l2_decoder_attention_mixed_int8_q12_pwl_proxy_audit_llama7b_v1",
+                    proposal_path=(
+                        "docs/proposals/"
+                        "prop_l2_decoder_attention_mixed_int8_q12_pwl_proxy_audit_llama7b_v1/"
+                        "proposal.json"
+                    ),
+                    abstraction_layer="decoder_attention_mixed_int8_q12_pwl_proxy_audit",
+                    evaluation_mode="frontier_detail",
+                    comparison_role="quality_backed_proxy",
+                    depends_on_item_ids=[
+                        "l2_decoder_attention_mixed_int8_q12_pwl_native_quality_llama7b_v1",
+                        "l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1",
+                    ],
+                    requires_merged_inputs=True,
+                    requires_materialized_refs=True,
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            commands = work_item.task_request.request_payload["task"]["commands"]
+            decoder_inputs = work_item.input_manifest["decoder_contract"]
+
+            assert [command["name"] for command in commands[:1]] == [
+                "audit_decoder_attention_mixed_int8_q12_pwl_proxy",
+            ]
+            run = commands[0]["run"]
+            assert "audit_llm_decoder_attention_mixed_int8_q12_pwl_proxy.py" in run
+            assert "--q12-pwl-native-quality-json" in run
+            assert "--quality-backed-frontier-json" in run
+            assert "--composed-q12-pwl-metrics" in run
+            assert "--full-value-v8-metrics" in run
+            assert decoder_inputs["attention_mixed_int8_q12_pwl_native_quality"].endswith(
+                "decoder_attention_mixed_int8_q12_pwl_native_quality__"
+                "l2_decoder_attention_mixed_int8_q12_pwl_native_quality_llama7b_v1.json"
+            )
+            assert decoder_inputs["attention_mixed_int8_quality_backed_frontier"].endswith(
+                "decoder_attention_mixed_int8_quality_backed_frontier__"
+                "l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1.json"
+            )
+            assert decoder_inputs["attention_mixed_int8_q12_pwl_composed_metrics"].endswith(
+                "attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_q12_pwl_recip_q12/"
+                "metrics.csv"
+            )
+            assert "attention_mixed_int8_q12_pwl_proxy_audit_out" in decoder_inputs
+            assert (
+                decoder_inputs["attention_mixed_int8_q12_pwl_proxy_audit_out"]
+                in work_item.expected_outputs
+            )
+            assert work_item.task_request.request_payload["developer_loop"]["abstraction"] == {
+                "layer": "decoder_attention_mixed_int8_q12_pwl_proxy_audit",
+            }
+            assert work_item.task_request.request_payload["developer_loop"]["dependencies"] == {
+                "item_ids": [
+                    "l2_decoder_attention_mixed_int8_q12_pwl_native_quality_llama7b_v1",
+                    "l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1",
+                ],
+                "requires_merged_inputs": True,
+                "requires_materialized_refs": True,
+            }
+
+
 def test_generate_l2_campaign_task_adds_mixed_int8_quality_backed_frontier_evidence() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
