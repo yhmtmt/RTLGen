@@ -7253,6 +7253,94 @@ def test_generate_l2_campaign_task_adds_mixed_int8_q12_pwl_proxy_audit_evidence(
             }
 
 
+def test_generate_l2_campaign_task_adds_mixed_int8_score_precision_recovery_evidence() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id="l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    proposal_id="prop_l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1",
+                    proposal_path=(
+                        "docs/proposals/"
+                        "prop_l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1/"
+                        "proposal.json"
+                    ),
+                    abstraction_layer="decoder_attention_mixed_int8_score_precision_recovery",
+                    evaluation_mode="quality_gate",
+                    comparison_role="precision_recovery",
+                    depends_on_item_ids=[
+                        "l2_decoder_attention_mixed_int8_q12_pwl_proxy_audit_llama7b_v1",
+                        "l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1",
+                    ],
+                    requires_merged_inputs=True,
+                    requires_materialized_refs=True,
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            commands = work_item.task_request.request_payload["task"]["commands"]
+            decoder_inputs = work_item.input_manifest["decoder_contract"]
+
+            assert [command["name"] for command in commands[:1]] == [
+                "evaluate_decoder_attention_mixed_int8_score_precision_recovery",
+            ]
+            run = commands[0]["run"]
+            assert "evaluate_llm_decoder_model_native_mixed_int8_attention.py" in run
+            assert "RTLGEN_MODEL_NATIVE_7B_BROAD_MAX_PROMPTS" in run
+            assert "RTLGEN_MODEL_NATIVE_7B_BROAD_GENERATION_STEPS" in run
+            assert "--generation-steps \"$GEN_STEPS\"" in run
+            assert "--candidate qkv8_float_exact:q8,k8,v8,s24,w16,float_exact" in run
+            assert "--candidate score24_float:q8,k8,v8,s24,w16,float_quantized" in run
+            assert "--candidate score28_float:q8,k8,v8,s28,w16,float_quantized" in run
+            assert "--candidate score32_float:q8,k8,v8,s32,w16,float_quantized" in run
+            assert (
+                "--candidate qkv8_q16_pwl_recip_q16_bucket8:q8,k8,v8,s16,w16,pwl_recip_lut_q16_bucket8"
+                in run
+            )
+            assert (
+                "--candidate qkv8_q20_pwl_recip_q20_bucket8:q8,k8,v8,s20,w20,pwl_recip_lut_q20_bucket8"
+                in run
+            )
+            assert "--primary-candidate-id score32_float" in run
+            assert decoder_inputs["attention_mixed_int8_q12_pwl_proxy_audit"].endswith(
+                "decoder_attention_mixed_int8_q12_pwl_proxy_audit__"
+                "l2_decoder_attention_mixed_int8_q12_pwl_proxy_audit_llama7b_v1.json"
+            )
+            assert decoder_inputs["attention_mixed_int8_quality_backed_frontier"].endswith(
+                "decoder_attention_mixed_int8_quality_backed_frontier__"
+                "l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1.json"
+            )
+            assert "attention_mixed_int8_score_precision_recovery_out" in decoder_inputs
+            assert (
+                decoder_inputs["attention_mixed_int8_score_precision_recovery_out"]
+                in work_item.expected_outputs
+            )
+            assert work_item.task_request.request_payload["developer_loop"]["abstraction"] == {
+                "layer": "decoder_attention_mixed_int8_score_precision_recovery",
+            }
+            assert work_item.task_request.request_payload["developer_loop"]["dependencies"] == {
+                "item_ids": [
+                    "l2_decoder_attention_mixed_int8_q12_pwl_proxy_audit_llama7b_v1",
+                    "l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1",
+                ],
+                "requires_merged_inputs": True,
+                "requires_materialized_refs": True,
+            }
+
+
 def test_generate_l2_campaign_task_adds_mixed_int8_quality_backed_frontier_evidence() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
