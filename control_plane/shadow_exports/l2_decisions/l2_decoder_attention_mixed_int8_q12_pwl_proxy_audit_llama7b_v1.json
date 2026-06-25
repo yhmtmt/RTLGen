@@ -1,0 +1,83 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-06-25T13:22:45.355913Z",
+  "item_id": "l2_decoder_attention_mixed_int8_q12_pwl_proxy_audit_llama7b_v1",
+  "run_key": "l2_decoder_attention_mixed_int8_q12_pwl_proxy_audit_llama7b_v1_run_6d8b014f4068f1d0",
+  "layer": "layer2",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l2_campaign",
+  "source_commit": "fc78bdce1b0901c66e6be30c9e142402fe57f6b1",
+  "review_metadata_source_commit": "5f7bf627854bd3a983a1346d0e66e78bb86b4b3e",
+  "objective": "Audit q12/PWL quality and measured PPA evidence to decide whether the measured q12/PWL softmax datapath can proxy the qkv8_float_exact mixed/int8 frontier or requires v8 composed recost.",
+  "input_manifest": {
+    "decoder_contract": {
+      "attention_mixed_int8_q12_pwl_native_quality": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_q12_pwl_native_quality__l2_decoder_attention_mixed_int8_q12_pwl_native_quality_llama7b_v1.json",
+      "attention_mixed_int8_q12_pwl_proxy_audit_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_q12_pwl_proxy_audit__l2_decoder_attention_mixed_int8_q12_pwl_proxy_audit_llama7b_v1.json",
+      "attention_mixed_int8_quality_backed_frontier": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_quality_backed_frontier__l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1.json",
+      "attention_mixed_int8_q12_pwl_composed_metrics": "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_q12_pwl_recip_q12/metrics.csv",
+      "attention_mixed_int8_q12_pwl_proxy_audit_scope": "Consume the q12/PWL native quality gate and measured q12/PWL composed PPA to decide whether the q12/PWL softmax datapath can be used as a quality-backed proxy for qkv8_float_exact, or whether v8 composed PPA must be measured first.",
+      "attention_mixed_int8_q12_pwl_proxy_audit_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_q12_pwl_proxy_audit__l2_decoder_attention_mixed_int8_q12_pwl_proxy_audit_llama7b_v1.md",
+      "attention_mixed_int8_q12_pwl_v8_full_value_metrics": "runs/designs/activations/attention_kv_full_value_hd64_kv8_v8_tl16_b128_p8_ppc2_w24_a40_wrapper/metrics.csv"
+    }
+  },
+  "recommendation": {
+    "source": "decoder_evidence",
+    "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_q12_pwl_proxy_audit__l2_decoder_attention_mixed_int8_q12_pwl_proxy_audit_llama7b_v1.json",
+    "arch_id": "decoder_attention_mixed_int8_q12_pwl_proxy_audit",
+    "macro_mode": "evidence_only",
+    "outcome": "q12_pwl_proxy_quality_rejected"
+  },
+  "objective_profiles": [],
+  "evaluation_record": {
+    "proposal_id": "prop_l2_decoder_attention_mixed_int8_q12_pwl_proxy_audit_llama7b_v1",
+    "title": "Llama7B mixed/int8 q12-PWL proxy audit",
+    "primary_question": "Can the measured q12/PWL composed softmax datapath be used as a quality-backed proxy for the qkv8_float_exact frontier, or must the v8 composed datapath be measured first?",
+    "evaluation_mode": "frontier_detail",
+    "comparison_role": "quality_backed_proxy",
+    "abstraction_layer": "decoder_attention_mixed_int8_q12_pwl_proxy_audit",
+    "expected_direction": "validate_or_recost_q12_pwl_proxy",
+    "expected_reason": "Use measured q12/PWL PPA only if quality passes; otherwise require v8 composed recost or reject the proxy.",
+    "summary": "Decoder mixed/int8 q12/PWL proxy audit evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_q12_pwl_proxy_audit__l2_decoder_attention_mixed_int8_q12_pwl_proxy_audit_llama7b_v1.json: decision=q12_pwl_proxy_quality_rejected; q12_candidate_id=qkv8_q12_pwl_recip_q12_bucket8; q12_decision_status=mixed_int8_native_attention_shadow_hold; q12_top1_match_rate=0.96875; q12_topk_contains_rate=1.0; q12_mean_probability_kl=0.014237412876954065; q12_quality_passed=False; q12_proxy_pass=False; composed_metrics_path=runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_q12_pwl_recip_q12/metrics.csv; composed_value_bits=6; composed_best_critical_path_ns=30.8676; composed_best_total_power_mw=23.7; composed_best_die_area_um2=6250000.0; v8_full_value_metrics_path=runs/designs/activations/attention_kv_full_value_hd64_kv8_v8_tl16_b128_p8_ppc2_w24_a40_wrapper/metrics.csv; v8_full_value_best_critical_path_ns=0.8825; v8_full_value_best_total_power_mw=0.0339; v8_full_value_best_die_area_um2=130100.883025; recommended_next_step=Do not use q12/PWL composed proxy as quality-backed for frontier decisions; improve the qkv8_q12_pwl_recip_q12_bucket8 quality gate and top-1/top-k equality before re-running this audit.",
+    "outcome": "q12_pwl_proxy_quality_rejected",
+    "expectation_status": "unspecified"
+  },
+  "proposal_assessment": {
+    "proposal_id": "prop_l2_decoder_attention_mixed_int8_q12_pwl_proxy_audit_llama7b_v1",
+    "title": "Llama7B mixed/int8 q12-PWL proxy audit",
+    "kind": "architecture",
+    "primary_question": "Can the measured q12/PWL composed softmax datapath be used as a quality-backed proxy for the qkv8_float_exact frontier, or must the v8 composed datapath be measured first?",
+    "evaluation_mode": "frontier_detail",
+    "comparison_role": "quality_backed_proxy",
+    "outcome": "q12_pwl_proxy_quality_rejected",
+    "summary": "Decoder mixed/int8 q12/PWL proxy audit evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_q12_pwl_proxy_audit__l2_decoder_attention_mixed_int8_q12_pwl_proxy_audit_llama7b_v1.json: decision=q12_pwl_proxy_quality_rejected; q12_candidate_id=qkv8_q12_pwl_recip_q12_bucket8; q12_decision_status=mixed_int8_native_attention_shadow_hold; q12_top1_match_rate=0.96875; q12_topk_contains_rate=1.0; q12_mean_probability_kl=0.014237412876954065; q12_quality_passed=False; q12_proxy_pass=False; composed_metrics_path=runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_q12_pwl_recip_q12/metrics.csv; composed_value_bits=6; composed_best_critical_path_ns=30.8676; composed_best_total_power_mw=23.7; composed_best_die_area_um2=6250000.0; v8_full_value_metrics_path=runs/designs/activations/attention_kv_full_value_hd64_kv8_v8_tl16_b128_p8_ppc2_w24_a40_wrapper/metrics.csv; v8_full_value_best_critical_path_ns=0.8825; v8_full_value_best_total_power_mw=0.0339; v8_full_value_best_die_area_um2=130100.883025; recommended_next_step=Do not use q12/PWL composed proxy as quality-backed for frontier decisions; improve the qkv8_q12_pwl_recip_q12_bucket8 quality gate and top-1/top-k equality before re-running this audit.",
+    "baseline_ref": null,
+    "baseline_item_id": null,
+    "matched_row_count": 0,
+    "matched_rows": [],
+    "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_q12_pwl_proxy_audit__l2_decoder_attention_mixed_int8_q12_pwl_proxy_audit_llama7b_v1.json",
+    "decoder_quality": {
+      "diagnosis": {},
+      "remaining_abstractions": [
+        "This audit is a measured datapath proxy check, not a full, fully recosted quality-backed frontier decision.",
+        "The composed q12/PWL path is treated as a proxy if not quality-backed by direct qkv8_float_exact service-space evidence.",
+        "Full Llama7B latency/energy/cost ranking remains unchanged until v8 full-value composed PPA replaces this proxy.",
+        "No additional model-level perplexity check is performed in this script."
+      ]
+    }
+  },
+  "source_refs": {
+    "decoder_evidence_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_q12_pwl_proxy_audit__l2_decoder_attention_mixed_int8_q12_pwl_proxy_audit_llama7b_v1.json",
+    "decoder_attention_mixed_int8_q12_pwl_proxy_audit_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_q12_pwl_proxy_audit__l2_decoder_attention_mixed_int8_q12_pwl_proxy_audit_llama7b_v1.json",
+    "decoder_attention_mixed_int8_q12_pwl_proxy_audit_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_q12_pwl_proxy_audit__l2_decoder_attention_mixed_int8_q12_pwl_proxy_audit_llama7b_v1.md"
+  },
+  "decoder_quality": {
+    "diagnosis": {},
+    "remaining_abstractions": [
+      "This audit is a measured datapath proxy check, not a full, fully recosted quality-backed frontier decision.",
+      "The composed q12/PWL path is treated as a proxy if not quality-backed by direct qkv8_float_exact service-space evidence.",
+      "Full Llama7B latency/energy/cost ranking remains unchanged until v8 full-value composed PPA replaces this proxy.",
+      "No additional model-level perplexity check is performed in this script."
+    ]
+  }
+}
