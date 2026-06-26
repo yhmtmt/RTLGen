@@ -25,7 +25,13 @@
       "expected_result": {
         "direction": "reduce_exact_softmax_timing_path",
         "reason": "This keeps exact integer softmax arithmetic while testing whether one extra divider operand register recovers score32/w16 clock rate enough to improve Llama7B frontier recost."
-      }
+      },
+      "status": "merged",
+      "merged_pr_number": 1044,
+      "merge_commit": "f6abad688464cb52a1e9891ec63504ce112a0c0f",
+      "merged_utc": "2026-06-26T22:28:42.647692Z",
+      "notes": "Merged via PR #1044 and merge f6abad688464cb52a1e9891ec63504ce112a0c0f at 2026-06-26T22:28:42.647692Z."
     }
-  ]
+  ],
+  "source_commit": "3e7382bfac7db68632d6f7bd20627b2d7d4aa806"
 }

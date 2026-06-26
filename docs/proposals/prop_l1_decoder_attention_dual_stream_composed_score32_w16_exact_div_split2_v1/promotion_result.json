@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_dual_stream_composed_score32_w16_exact_div_split2_v1",
+  "decision": "promote",
+  "pr_number": 1044,
+  "merge_commit": "f6abad688464cb52a1e9891ec63504ce112a0c0f",
+  "merged_utc": "2026-06-26T22:28:42.647692Z"
+}
