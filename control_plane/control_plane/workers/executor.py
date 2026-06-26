@@ -7,8 +7,10 @@ from dataclasses import dataclass
 import json
 from pathlib import Path
 import shutil
+import time
 from typing import Any
 
+from sqlalchemy.exc import DBAPIError, OperationalError
 from sqlalchemy.orm import Session, sessionmaker
 
 from control_plane.ids import make_id
@@ -81,6 +83,46 @@ class WorkerLoopResult:
     run_key: str | None = None
     command_count: int = 0
     summary: str | None = None
+
+
+_RUN_EVENT_RETRY_ATTEMPTS = 3
+_RUN_EVENT_RETRY_DELAY_SECONDS = 0.25
+
+
+def _is_retryable_db_error(exc: Exception) -> bool:
+    return isinstance(exc, (OperationalError, DBAPIError))
+
+
+def _dispose_session_engine(session_factory: sessionmaker) -> None:
+    engine = getattr(session_factory, "kw", {}).get("bind")
+    if engine is None:
+        return
+    try:
+        engine.dispose()
+    except Exception:
+        return
+
+
+def _with_db_retry(
+    session_factory: sessionmaker,
+    op,
+    *,
+    swallow: bool,
+):
+    for attempt in range(1, _RUN_EVENT_RETRY_ATTEMPTS + 1):
+        try:
+            with session_factory() as session:
+                return op(session)
+        except Exception as exc:  # pragma: no cover - defensive retry path
+            if not _is_retryable_db_error(exc):
+                raise
+            if attempt >= _RUN_EVENT_RETRY_ATTEMPTS:
+                if swallow:
+                    return None
+                raise
+            _dispose_session_engine(session_factory)
+            if attempt < _RUN_EVENT_RETRY_ATTEMPTS:
+                time.sleep(_RUN_EVENT_RETRY_DELAY_SECONDS)
 
 
 def _classify_failure(
@@ -380,6 +422,54 @@ def _active_command_manifest(work_item: WorkItem, trial_index: int) -> list[dict
     return commands
 
 
+def _safe_append_run_event(
+    session_factory: sessionmaker,
+    *,
+    run_key: str,
+    event_type: str,
+    event_payload: dict[str, Any] | None = None,
+) -> None:
+    def _op(session: Session) -> None:
+        append_run_event(session, run_key=run_key, event_type=event_type, event_payload=event_payload)
+
+    _with_db_retry(session_factory, _op, swallow=True)
+
+
+def _complete_run_with_retry(
+    session_factory: sessionmaker,
+    *,
+    run_key: str,
+    status: str,
+    result_summary: str,
+    result_payload: dict[str, Any] | None,
+    artifacts: list[dict[str, Any]] | None,
+    failure_requeue: bool,
+    failure_classification: dict[str, Any] | None,
+) -> Any:
+    def _op(session: Session):
+        if failure_requeue:
+            _safe_append_run_event(
+                session_factory=session_factory,
+                run_key=run_key,
+                event_type="run_requeued",
+                event_payload={"failure_classification": failure_classification},
+            )
+        return complete_run(
+            session,
+            run_key=run_key,
+            status=status,
+            result_summary=result_summary,
+            result_payload=result_payload,
+            artifacts=artifacts,
+        )
+
+    return _with_db_retry(
+        session_factory,
+        _op,
+        swallow=False,
+    )
+
+
 def _should_continue_trials(session: Session, work_item: WorkItem) -> bool:
     policy = _trial_policy(work_item)
     completed = _completed_trial_runs(session, work_item.id)
@@ -404,8 +494,8 @@ def _promote_post_run_state(*, session_factory: sessionmaker, work_item_id: str,
             next_trial_index = len(completed) + 1
             next_seed = _trial_policy(work_item)["seed_start"] + next_trial_index - 1
             session.commit()
-            append_run_event(
-                session,
+            _safe_append_run_event(
+                session_factory,
                 run_key=run_key,
                 event_type="trial_scheduled",
                 event_payload={"next_trial_index": next_trial_index, "next_seed": next_seed},
@@ -415,8 +505,8 @@ def _promote_post_run_state(*, session_factory: sessionmaker, work_item_id: str,
             if work_item.state != WorkItemState.ARTIFACT_SYNC:
                 work_item.state = WorkItemState.ARTIFACT_SYNC
                 session.commit()
-            append_run_event(
-                session,
+            _safe_append_run_event(
+                session_factory,
                 run_key=run_key,
                 event_type="trial_set_completed",
                 event_payload={"success_count": success_count, "completed_trials": len(completed)},
@@ -545,13 +635,12 @@ def _record_completion_result(
     event_type: str,
     payload: dict[str, Any],
 ) -> None:
-    with session_factory() as session:
-        append_run_event(
-            session,
-            run_key=run_key,
-            event_type=event_type,
-            event_payload=payload,
-        )
+    _safe_append_run_event(
+        session_factory,
+        run_key=run_key,
+        event_type=event_type,
+        event_payload=payload,
+    )
 
 
 def _process_requested_submission_retry(
@@ -791,36 +880,37 @@ def execute_one_work_item(session_factory: sessionmaker, *, config: WorkerConfig
             attempt=attempt,
             max_retry_attempts=config.max_retry_attempts,
         )
-        with session_factory() as session:
-            append_run_event(
-                session,
+        _safe_append_run_event(
+            session_factory,
+            run_key=run_key,
+            event_type="checkout_failed",
+            event_payload={"error": checkout_error},
+        )
+        if failure["requeue"]:
+            _safe_append_run_event(
+                session_factory,
                 run_key=run_key,
-                event_type="checkout_failed",
-                event_payload={"error": checkout_error},
+                event_type="run_requeued",
+                event_payload={"failure_classification": failure},
             )
-            if failure["requeue"]:
-                append_run_event(
-                    session,
-                    run_key=run_key,
-                    event_type="run_requeued",
-                    event_payload={"failure_classification": failure},
-                )
-            complete_run(
-                session,
-                run_key=run_key,
-                status="failed",
-                result_summary=f"checkout failed: {checkout_error}",
-                result_payload={
-                    "checkout_error": checkout_error,
-                    "failure_classification": failure,
-                    "retry_decision": {
-                        "requeue": failure["requeue"],
-                        "attempt": failure["attempt"],
-                        "max_retry_attempts": failure["max_retry_attempts"],
-                    },
+        _complete_run_with_retry(
+            session_factory,
+            run_key=run_key,
+            status="failed",
+            result_summary=f"checkout failed: {checkout_error}",
+            result_payload={
+                "checkout_error": checkout_error,
+                "failure_classification": failure,
+                "retry_decision": {
+                    "requeue": failure["requeue"],
+                    "attempt": failure["attempt"],
+                    "max_retry_attempts": failure["max_retry_attempts"],
                 },
-                artifacts=[],
-            )
+            },
+            artifacts=[],
+            failure_requeue=failure["requeue"],
+            failure_classification=failure,
+        )
         return WorkerLoopResult(
             status="failed",
             item_id=work_item.item_id,
@@ -828,21 +918,20 @@ def execute_one_work_item(session_factory: sessionmaker, *, config: WorkerConfig
             summary=f"checkout failed: {checkout_error}",
         )
 
-    with session_factory() as session:
-        append_run_event(
-            session,
-            run_key=run_key,
-            event_type="checkout_prepared",
-            event_payload={
-                "repo_root": checkout_info.repo_root,
-                "head_sha": checkout_info.head_sha,
-                "git_dirty": checkout_info.git_dirty,
-                "source_commit": checkout_info.source_commit,
-                "source_commit_matches": checkout_info.source_commit_matches,
-                "source_commit_relation": checkout_info.source_commit_relation,
-                "materialized_submodules": list(checkout_info.materialized_submodules),
-            },
-        )
+    _safe_append_run_event(
+        session_factory,
+        run_key=run_key,
+        event_type="checkout_prepared",
+        event_payload={
+            "repo_root": checkout_info.repo_root,
+            "head_sha": checkout_info.head_sha,
+            "git_dirty": checkout_info.git_dirty,
+            "source_commit": checkout_info.source_commit,
+            "source_commit_matches": checkout_info.source_commit_matches,
+            "source_commit_relation": checkout_info.source_commit_relation,
+            "materialized_submodules": list(checkout_info.materialized_submodules),
+        },
+    )
 
     _materialize_generated_inputs(
         checkout_root=checkout_info.work_dir,
@@ -918,25 +1007,23 @@ def execute_one_work_item(session_factory: sessionmaker, *, config: WorkerConfig
         acceptance_warnings = acceptance.warnings
         if acceptance_errors:
             success = False
-            with session_factory() as session:
-                append_run_event(
-                    session,
-                    run_key=run_key,
-                    event_type="acceptance_failed",
-                    event_payload={"errors": acceptance_errors},
-                )
+            _safe_append_run_event(
+                session_factory,
+                run_key=run_key,
+                event_type="acceptance_failed",
+                event_payload={"errors": acceptance_errors},
+            )
         elif acceptance_warnings:
-            with session_factory() as session:
-                append_run_event(
-                    session,
-                    run_key=run_key,
-                    event_type="acceptance_warnings",
-                    event_payload={
-                        "warnings": acceptance_warnings,
-                        "ok_file_count": acceptance.ok_file_count,
-                        "non_ok_file_count": acceptance.non_ok_file_count,
-                    },
-                )
+            _safe_append_run_event(
+                session_factory,
+                run_key=run_key,
+                event_type="acceptance_warnings",
+                event_payload={
+                    "warnings": acceptance_warnings,
+                    "ok_file_count": acceptance.ok_file_count,
+                    "non_ok_file_count": acceptance.non_ok_file_count,
+                },
+            )
 
     artifacts = collect_expected_output_artifacts(
         repo_root=checkout_info.work_dir,
@@ -1042,31 +1129,25 @@ def execute_one_work_item(session_factory: sessionmaker, *, config: WorkerConfig
             *acceptance_warnings,
         ]
 
-    with session_factory() as session:
-        if failure["requeue"]:
-            append_run_event(
-                session,
-                run_key=run_key,
-                event_type="run_requeued",
-                event_payload={"failure_classification": failure},
-            )
-        completed = complete_run(
-            session,
-            run_key=run_key,
-            status=_terminal_run_status(success=success, failure_category=failure["category"]),
-            result_summary=worker_error or summarize_command_results(command_results),
-            result_payload=result_payload,
-            artifacts=[
-                {
-                    "kind": artifact.kind,
-                    "storage_mode": artifact.storage_mode,
-                    "path": artifact.path,
-                    "sha256": artifact.sha256,
-                    "metadata": artifact.metadata,
-                }
-                for artifact in artifacts
-            ],
-        )
+    completed = _complete_run_with_retry(
+        session_factory,
+        run_key=run_key,
+        status=_terminal_run_status(success=success, failure_category=failure["category"]),
+        result_summary=worker_error or summarize_command_results(command_results),
+        result_payload=result_payload,
+        artifacts=[
+            {
+                "kind": artifact.kind,
+                "storage_mode": artifact.storage_mode,
+                "path": artifact.path,
+                "sha256": artifact.sha256,
+                "metadata": artifact.metadata,
+            }
+            for artifact in artifacts
+        ],
+        failure_requeue=failure["requeue"],
+        failure_classification=failure,
+    )
 
     if completed.status == "succeeded":
         _sync_expected_outputs_to_repo(
@@ -1122,23 +1203,22 @@ def _record_command_result(
             "returncode": result.returncode,
         }
     )
-    with session_factory() as session:
-        append_run_event(
-            session,
-            run_key=run_key,
-            event_type="command_finished",
-            event_payload={
-                "command_name": result.name,
-                "command": result.command,
-                "returncode": result.returncode,
-                "duration_seconds": result.duration_seconds,
-                "stdout_log": result.stdout_log,
-                "stderr_log": result.stderr_log,
-                "timed_out": result.timed_out,
-                "stalled": result.stalled,
-                "canceled": result.canceled,
-            },
-        )
+    _safe_append_run_event(
+        session_factory=session_factory,
+        run_key=run_key,
+        event_type="command_finished",
+        event_payload={
+            "command_name": result.name,
+            "command": result.command,
+            "returncode": result.returncode,
+            "duration_seconds": result.duration_seconds,
+            "stdout_log": result.stdout_log,
+            "stderr_log": result.stderr_log,
+            "timed_out": result.timed_out,
+            "stalled": result.stalled,
+            "canceled": result.canceled,
+        },
+    )
 
 
 def _record_command_started(
@@ -1157,13 +1237,12 @@ def _record_command_started(
         "stderr_log": payload["stderr_log"],
     }
     heartbeat.update_progress(progress)
-    with session_factory() as session:
-        append_run_event(
-            session,
-            run_key=run_key,
-            event_type="command_started",
-            event_payload=payload,
-        )
+    _safe_append_run_event(
+        session_factory=session_factory,
+        run_key=run_key,
+        event_type="command_started",
+        event_payload=payload,
+    )
 
 
 def _record_command_progress(
@@ -1180,18 +1259,20 @@ def _record_command_progress(
         **payload,
     }
     heartbeat.update_progress(progress)
-    with session_factory() as session:
-        append_run_event(
-            session,
-            run_key=run_key,
-            event_type="command_progress",
-            event_payload=progress,
-        )
+    _safe_append_run_event(
+        session_factory=session_factory,
+        run_key=run_key,
+        event_type="command_progress",
+        event_payload=progress,
+    )
 
 
 def _is_cancel_requested(*, session_factory: sessionmaker, run_key: str) -> bool:
-    with session_factory() as session:
+    def _op(session: Session) -> bool:
         return is_run_cancel_requested(session, run_key=run_key)
+
+    result = _with_db_retry(session_factory, _op, swallow=True)
+    return bool(result)
 
 
 def _terminal_run_status(*, success: bool, failure_category: str) -> str:

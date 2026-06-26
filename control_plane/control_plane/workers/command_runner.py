@@ -187,14 +187,19 @@ def _monitor_command(
         if returncode is not None:
             return returncode
 
-        if cancel_requested is not None and cancel_requested():
-            _terminate_process_group(process)
+        if cancel_requested is not None:
             try:
-                process.wait(timeout=10)
-            except subprocess.TimeoutExpired:
-                _terminate_process_group(process, force=True)
-                process.wait(timeout=5)
-            return 130
+                canceled = cancel_requested()
+            except Exception:
+                canceled = False
+            if canceled:
+                _terminate_process_group(process)
+                try:
+                    process.wait(timeout=10)
+                except subprocess.TimeoutExpired:
+                    _terminate_process_group(process, force=True)
+                    process.wait(timeout=5)
+                return 130
 
         if timeout_seconds is not None and now - started >= timeout_seconds:
             _terminate_process_group(process)
@@ -216,17 +221,20 @@ def _monitor_command(
             return 125
 
         if on_command_progress is not None and now >= next_progress:
-            on_command_progress(
-                {
-                    "command_name": command_name,
-                    "elapsed_seconds": now - started,
-                    "stdout_log": str(stdout_path),
-                    "stderr_log": str(stderr_path),
-                    "stdout_bytes": stdout_path.stat().st_size if stdout_path.exists() else 0,
-                    "stderr_bytes": stderr_path.stat().st_size if stderr_path.exists() else 0,
-                    "last_output_age_seconds": last_output_age,
-                }
-            )
+            try:
+                on_command_progress(
+                    {
+                        "command_name": command_name,
+                        "elapsed_seconds": now - started,
+                        "stdout_log": str(stdout_path),
+                        "stderr_log": str(stderr_path),
+                        "stdout_bytes": stdout_path.stat().st_size if stdout_path.exists() else 0,
+                        "stderr_bytes": stderr_path.stat().st_size if stderr_path.exists() else 0,
+                        "last_output_age_seconds": last_output_age,
+                    }
+                )
+            except Exception:
+                pass
             next_progress = now + max(1, progress_interval_seconds)
 
         time.sleep(1)
