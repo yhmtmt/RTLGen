@@ -10,6 +10,7 @@ import time
 from unittest import mock
 
 from sqlalchemy import create_engine
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 
 from control_plane.db import build_session_factory, create_all
@@ -887,6 +888,188 @@ def test_worker_honors_cancel_requested_during_command() -> None:
             assert work_item.state == WorkItemState.FAILED
             assert run.status == RunStatus.CANCELED
             assert run.result_payload["failure_classification"]["category"] == "command_canceled"
+
+
+def test_worker_continues_when_cancel_check_db_disconnect_occurs() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        init_git_repo(repo_root)
+        db_path = Path(td) / "cp.db"
+        engine = create_engine(f"sqlite+pysqlite:///{db_path}", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            seeded = seed_timeout_work_item(session, item_id="item_cancel_db_retry")
+            seeded.assigned_machine_key = "worker-1"
+            session.commit()
+
+        session_factory = build_session_factory(engine)
+        import control_plane.workers.executor as executor
+
+        original_is_run_cancel_requested = executor.is_run_cancel_requested
+        calls = {"count": 0}
+
+        def _flaky_cancel_requested(_session, *, run_key: str) -> bool:
+            calls["count"] += 1
+            if calls["count"] == 1:
+                raise OperationalError("select 1", {}, Exception("db connection lost"))
+            return original_is_run_cancel_requested(_session, run_key=run_key)
+
+        with mock.patch.object(executor, "is_run_cancel_requested", side_effect=_flaky_cancel_requested):
+            results = run_worker(
+                session_factory,
+                config=WorkerConfig(
+                    repo_root=str(repo_root),
+                    machine_key="worker-1",
+                    capabilities={"platform": "nangate45", "flow": "openroad"},
+                    capability_filter={"platform": "nangate45", "flow": "openroad"},
+                    lease_seconds=60,
+                    heartbeat_seconds=1,
+                    command_progress_seconds=1,
+                ),
+                max_items=1,
+            )
+
+        assert len(results) == 1
+        assert results[0].status == "succeeded"
+
+        with Session(engine) as session:
+            run = session.query(Run).filter_by(run_key=results[0].run_key).one()
+            assert run.status == RunStatus.SUCCEEDED
+            assert run.result_payload["failure_classification"]["category"] == "none"
+            assert run.result_payload["retry_decision"]["requeue"] is False
+            assert calls["count"] >= 1
+
+
+def test_worker_continues_when_command_progress_event_db_disconnect_is_retryable() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        init_git_repo(repo_root)
+        db_path = Path(td) / "cp.db"
+        engine = create_engine(f"sqlite+pysqlite:///{db_path}", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            seeded = seed_timeout_work_item(session, item_id="item_progress_db_retry")
+            seeded.assigned_machine_key = "worker-1"
+            session.commit()
+
+        session_factory = build_session_factory(engine)
+        import control_plane.workers.executor as executor
+
+        original_append_run_event = executor.append_run_event
+        calls = {"progress": 0, "failed_calls": 0}
+
+        def _flaky_append_run_event(
+            session,
+            *,
+            run_key: str,
+            event_type: str,
+            event_payload: dict | None = None,
+        ) -> None:
+            if event_type == "command_progress":
+                calls["progress"] += 1
+                if calls["failed_calls"] == 0:
+                    calls["failed_calls"] += 1
+                    raise OperationalError("insert into run_events", {}, Exception("db connection lost"))
+            return original_append_run_event(
+                session,
+                run_key=run_key,
+                event_type=event_type,
+                event_payload=event_payload,
+            )
+
+        with mock.patch.object(executor, "append_run_event", side_effect=_flaky_append_run_event):
+            results = run_worker(
+                session_factory,
+                config=WorkerConfig(
+                    repo_root=str(repo_root),
+                    machine_key="worker-1",
+                    capabilities={"platform": "nangate45", "flow": "openroad"},
+                    capability_filter={"platform": "nangate45", "flow": "openroad"},
+                    lease_seconds=60,
+                    heartbeat_seconds=1,
+                    command_progress_seconds=1,
+                    command_timeout_seconds=5,
+                ),
+                max_items=1,
+            )
+
+        assert len(results) == 1
+        assert results[0].status == "succeeded"
+
+        with Session(engine) as session:
+            run = session.query(Run).filter_by(run_key=results[0].run_key).one()
+            assert run.status == RunStatus.SUCCEEDED
+            assert run.result_payload["failure_classification"]["category"] == "none"
+            event_types = {row.event_type for row in session.query(RunEvent).filter_by(run_id=run.id).all()}
+            assert "command_progress" in event_types
+            assert "command_finished" in event_types
+            assert calls["failed_calls"] == 1
+            assert calls["progress"] >= 1
+
+
+def test_worker_completes_when_complete_run_db_disconnect_is_retryable() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        init_git_repo(repo_root)
+        db_path = Path(td) / "cp.db"
+        engine = create_engine(f"sqlite+pysqlite:///{db_path}", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            seeded = seed_ready_work_item(session, item_id="item_complete_db_retry", repo_root=repo_root, failing=False)
+            seeded.assigned_machine_key = "worker-1"
+            session.commit()
+
+        session_factory = build_session_factory(engine)
+        import control_plane.workers.executor as executor
+        original_complete_run = executor.complete_run
+        calls = {"count": 0}
+
+        def _flaky_complete_run(
+            session,
+            *,
+            run_key: str,
+            status: str,
+            result_summary: str,
+            result_payload: dict | None = None,
+            artifacts: list[dict] | None = None,
+        ):
+            calls["count"] += 1
+            if calls["count"] == 1:
+                raise OperationalError("update runs", {}, Exception("db connection lost"))
+            return original_complete_run(
+                session,
+                run_key=run_key,
+                status=status,
+                result_summary=result_summary,
+                result_payload=result_payload,
+                artifacts=artifacts,
+            )
+
+        with mock.patch.object(executor, "complete_run", side_effect=_flaky_complete_run):
+            results = run_worker(
+                session_factory,
+                config=WorkerConfig(
+                    repo_root=str(repo_root),
+                    machine_key="worker-1",
+                    capabilities={"platform": "nangate45", "flow": "openroad"},
+                    capability_filter={"platform": "nangate45", "flow": "openroad"},
+                    lease_seconds=60,
+                    heartbeat_seconds=1,
+                ),
+                max_items=1,
+            )
+
+        assert len(results) == 1
+        assert results[0].status == "succeeded"
+        assert calls["count"] == 2
+
+        with Session(engine) as session:
+            run = session.query(Run).filter_by(run_key=results[0].run_key).one()
+            assert run.status == RunStatus.SUCCEEDED
+            assert run.result_payload["retry_decision"]["requeue"] is False
 
 
 def test_worker_marks_stalled_command_as_timed_out() -> None:
