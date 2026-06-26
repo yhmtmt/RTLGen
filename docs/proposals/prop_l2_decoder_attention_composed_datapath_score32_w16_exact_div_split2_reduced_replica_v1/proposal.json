@@ -1,0 +1,68 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_composed_datapath_score32_w16_exact_div_split2_reduced_replica_v1",
+  "created_utc": "2026-06-26T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Llama7B score32/w16 exact-div split2 composed datapath reduced-replica recost",
+  "abstraction_layer": "decoder_attention_composed_datapath_physical_feasibility",
+  "hypothesis": "The score32/w16 exact-divider split2 wrapper may improve the quality-backed Llama7B area-fit point by trading one extra exact softmax pipeline cycle for a shorter measured wrapper clock. The system impact must be recosted from measured PPA rather than inferred from the RTL change.",
+  "direct_comparison": {
+    "primary_question": "Does the measured split2 exact-divider datapath improve the Llama7B reduced-replica latency/area/energy point relative to the prior score32/w16 exact-div wrapper?",
+    "baseline": "l2_decoder_attention_composed_datapath_score32_w16_exact_div_reduced_replica_llama7b_v1_r2",
+    "candidate": "l2_decoder_attention_composed_datapath_score32_w16_exact_div_split2_reduced_replica_llama7b_v1",
+    "include": [
+      "consume measured score32/w16 exact-div split2 composed datapath metrics",
+      "use the existing Llama7B sub-tile schedule structure",
+      "reduce compute replicas to the measured-area budgeted count",
+      "recompute QKV, QK, value, tile service, layer, and total latency at the measured split2 wrapper clock",
+      "compare against the prior score32/w16 exact-div reduced-replica recost"
+    ],
+    "exclude": [
+      "new native checkpoint quality run",
+      "new HBM/DRAM service model",
+      "new scheduler topology search"
+    ],
+    "metrics": [
+      "decision",
+      "precision_profile",
+      "best_requested_replica_recost_area_fit_replica_count",
+      "best_requested_replica_recost_macs_per_cycle",
+      "best_requested_replica_recost_latency_us",
+      "best_requested_adjusted_speedup_vs_hbm_closed_source",
+      "best_feasible_latency_us"
+    ]
+  },
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_composed_datapath_score32_w16_exact_div_split2_reduced_replica_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Recost the measured score32/v8/w16 exact-div split2 composed dual-stream attention wrapper at the area-fit replica count and measured wrapper clock.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_composed_datapath_physical_feasibility",
+      "comparison_role": "score32_quality_split2_reduced_replica_recost",
+      "paired_baseline_item_id": "l2_decoder_attention_composed_datapath_score32_w16_exact_div_reduced_replica_llama7b_v1_r2",
+      "depends_on_item_ids": [
+        "l1_decoder_attention_dual_stream_composed_score32_w16_exact_div_split2_ppa_v1",
+        "l2_decoder_attention_composed_datapath_score32_w16_exact_div_reduced_replica_llama7b_v1_r2",
+        "l2_decoder_attention_kv_subtile_pipeline_schedule_softmax_recip_lut_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "record_score32_split2_area_fit_recost",
+        "reason": "The prior exact-div score32/w16 area-fit point is feasible but slow; the split2 PPA run will show whether timing recovery offsets the extra pipeline stage."
+      }
+    }
+  ],
+  "source_refs": [
+    "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_score32_w16_exact_div_split2/metrics.csv",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_score32_w16_exact_div_reduced_replica_llama7b_v1_r2.json",
+    "npu/eval/estimate_llm_decoder_attention_kv_dual_stream_physical_feasibility.py"
+  ],
+  "remaining_abstractions": [
+    "This recosts the existing analytic schedule rather than running a new end-to-end simulator.",
+    "HBM/SRAM/NoC service models are inherited unchanged from the upstream sub-tile schedule.",
+    "The split2 wrapper preserves the current fixed-point exact-divider softmax profile; it does not introduce full floating exp hardware."
+  ]
+}
