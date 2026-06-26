@@ -1,0 +1,216 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-06-26T13:18:10.727901Z",
+  "control_plane_source_commit": "6fb163777d6bab1aba60e12381ea9315599fc794",
+  "review_metadata_source_commit": "6fb163777d6bab1aba60e12381ea9315599fc794",
+  "item_id": "l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1_r2",
+  "run_key": "l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1_r2_run_74c86725291693a3",
+  "layer": "layer2",
+  "flow": "openroad",
+  "task_type": "l2_campaign",
+  "source_commit": "6fb163777d6bab1aba60e12381ea9315599fc794",
+  "queue_snapshot": {
+    "path": "control_plane/shadow_exports/review/l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1_r2/evaluated.json",
+    "result": {
+      "branch": "eval/l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1_r2/s20260626t131808z",
+      "completed_utc": "2026-06-26T13:18:07.308094Z",
+      "evaluator_id": "control_plane",
+      "executor": "@control_plane",
+      "host": "b7c2d9c80c1c",
+      "identity_block": "[role:evaluator][account:control_plane][session:s20260626t131808z][host:b7c2d9c80c1c][item:l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1_r2]",
+      "metrics_rows": [],
+      "metrics_exempt_reason": "evidence_only_decoder_evidence",
+      "queue_item_id": "l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1_r2",
+      "session_id": "s20260626t131808z",
+      "status": "ok",
+      "summary": "2/2 commands succeeded"
+    }
+  },
+  "review_artifact": {
+    "kind": "decision_proposal",
+    "path": "control_plane/shadow_exports/l2_decisions/l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1_r2.json",
+    "storage_mode": "repo",
+    "sha256": "7bee65d79c4a123788e6e23b4f3763514df720230359606d12225e36fdc524bc",
+    "payload": {
+      "version": 0.1,
+      "generated_utc": "2026-06-26T13:18:08.318884Z",
+      "item_id": "l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1_r2",
+      "run_key": "l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1_r2_run_74c86725291693a3",
+      "layer": "layer2",
+      "flow": "openroad",
+      "platform": "nangate45",
+      "task_type": "l2_campaign",
+      "source_commit": "6fb163777d6bab1aba60e12381ea9315599fc794",
+      "review_metadata_source_commit": "6fb163777d6bab1aba60e12381ea9315599fc794",
+      "objective": "LLM-oriented attention-tail stress campaign for larger sequence lengths and more repeated non-terminal Softmax paths.",
+      "input_manifest": {
+        "decoder_contract": {
+          "attention_mixed_int8_energy_closure": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_energy_closure__l2_decoder_attention_mixed_int8_energy_closure_llama7b_v1_r2.json",
+          "attention_mixed_int8_generation_quality": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_generation_quality__l2_decoder_attention_mixed_int8_generation_quality_llama7b_v1_r3.json",
+          "attention_mixed_int8_broad_native_quality": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_broad_native_quality__l2_decoder_attention_mixed_int8_broad_native_quality_llama7b_v1_r2.json",
+          "attention_mixed_int8_quality_backed_frontier_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_quality_backed_frontier__l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1_r2.json",
+          "attention_mixed_int8_quality_backed_frontier_scope": "Reconcile the mixed/int8 energy frontier with the broad native 7B attention-shadow quality gate. Demote score/softmax-quantized energy rows that no longer match the quality-passing qkv8_float_exact precision point, and identify the recosted PPA work needed before ranking throughput, energy, area, and precision.",
+          "attention_mixed_int8_quality_backed_frontier_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_quality_backed_frontier__l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1_r2.md"
+        }
+      },
+      "recommendation": {
+        "source": "decoder_evidence",
+        "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_quality_backed_frontier__l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1_r2.json",
+        "arch_id": "decoder_attention_mixed_int8_quality_backed_frontier",
+        "macro_mode": "evidence_only",
+        "outcome": "mixed_int8_quality_backed_frontier_recost_required"
+      },
+      "objective_profiles": [],
+      "evaluation_record": {
+        "proposal_id": "prop_l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1",
+        "title": "Llama7B mixed/int8 quality-backed frontier audit",
+        "primary_question": "Which mixed/int8 energy rows remain rankable after the broad native and bounded generation/NLL quality gates?",
+        "evaluation_mode": "frontier_detail",
+        "comparison_role": "quality_backed_frontier",
+        "abstraction_layer": "decoder_attention_mixed_int8_quality_backed_frontier",
+        "expected_direction": "unknown",
+        "expected_reason": "",
+        "summary": "Decoder mixed/int8 quality-backed frontier evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_quality_backed_frontier__l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1_r2.json: decision=mixed_int8_quality_backed_frontier_recost_required; quality_passing_candidate_count=1; quality_passing_candidate_ids=['qkv8_float_exact']; quality_best_candidate_id=qkv8_float_exact; quality_best_top1_match_rate=1.0; quality_best_mean_probability_kl=0.0012425925766148221; score32_generation_quality_pass=True; score32_generation_quality_summary={'candidate_id': 'score32_float', 'decision_status': 'mixed_int8_generation_quality_pass', 'free_run_exact_match_rate': 0.75, 'free_run_token_match_rate': 0.84375, 'teacher_forced_candidate_reference_token_prob_mean': 0.44887183254036667, 'teacher_forced_mean_nll_delta': 0.0023279039990386913}; invalidated_energy_candidate_count=1; old_energy_best_candidate_id=die800_dense_gemm_int8_16x8_k1_p1_rep855_lat1575.37_hbm0.983398_tt1024; old_energy_best_latency_us=1575.373891; old_energy_best_token_throughput_per_s=634.7699461778119; old_energy_best_energy_mj=135.75588466251537; old_energy_best_precision_profile=q8_k8_v6_a24_s8_w8_recip_lut_q10_int8_compute; recommended_next_step=Score32 mixed-int8 generation/NLL evidence is passing for candidate score32_float; recost this score/softmax path with exact score/softmax PPA and update frontier ranking against energy/latency/area once rerun.",
+        "outcome": "mixed_int8_quality_backed_frontier_recost_required",
+        "expectation_status": "unspecified"
+      },
+      "proposal_assessment": {
+        "proposal_id": "prop_l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1",
+        "title": "Llama7B mixed/int8 quality-backed frontier audit",
+        "kind": "architecture",
+        "primary_question": "Which mixed/int8 energy rows remain rankable after the broad native and bounded generation/NLL quality gates?",
+        "evaluation_mode": "frontier_detail",
+        "comparison_role": "quality_backed_frontier",
+        "outcome": "mixed_int8_quality_backed_frontier_recost_required",
+        "summary": "Decoder mixed/int8 quality-backed frontier evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_quality_backed_frontier__l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1_r2.json: decision=mixed_int8_quality_backed_frontier_recost_required; quality_passing_candidate_count=1; quality_passing_candidate_ids=['qkv8_float_exact']; quality_best_candidate_id=qkv8_float_exact; quality_best_top1_match_rate=1.0; quality_best_mean_probability_kl=0.0012425925766148221; score32_generation_quality_pass=True; score32_generation_quality_summary={'candidate_id': 'score32_float', 'decision_status': 'mixed_int8_generation_quality_pass', 'free_run_exact_match_rate': 0.75, 'free_run_token_match_rate': 0.84375, 'teacher_forced_candidate_reference_token_prob_mean': 0.44887183254036667, 'teacher_forced_mean_nll_delta': 0.0023279039990386913}; invalidated_energy_candidate_count=1; old_energy_best_candidate_id=die800_dense_gemm_int8_16x8_k1_p1_rep855_lat1575.37_hbm0.983398_tt1024; old_energy_best_latency_us=1575.373891; old_energy_best_token_throughput_per_s=634.7699461778119; old_energy_best_energy_mj=135.75588466251537; old_energy_best_precision_profile=q8_k8_v6_a24_s8_w8_recip_lut_q10_int8_compute; recommended_next_step=Score32 mixed-int8 generation/NLL evidence is passing for candidate score32_float; recost this score/softmax path with exact score/softmax PPA and update frontier ranking against energy/latency/area once rerun.",
+        "baseline_ref": null,
+        "baseline_item_id": null,
+        "matched_row_count": 0,
+        "matched_rows": [],
+        "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_quality_backed_frontier__l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1_r2.json",
+        "decoder_quality": {
+          "diagnosis": {
+            "decision": "mixed_int8_quality_backed_frontier_recost_required",
+            "invalidated_energy_candidate_count": 1,
+            "old_energy_best_candidate_id": "die800_dense_gemm_int8_16x8_k1_p1_rep855_lat1575.37_hbm0.983398_tt1024",
+            "old_energy_best_energy_mj": 135.75588466251537,
+            "old_energy_best_latency_us": 1575.373891,
+            "old_energy_best_precision_profile": "q8_k8_v6_a24_s8_w8_recip_lut_q10_int8_compute",
+            "old_energy_best_token_throughput_per_s": 634.7699461778119,
+            "quality_backed_latency_floor_us_unranked": 1575.373891,
+            "quality_backed_throughput_floor_tok_s_unranked": 634.7699461778119,
+            "quality_best_candidate_id": "qkv8_float_exact",
+            "quality_best_mean_probability_kl": 0.0012425925766148221,
+            "quality_best_top1_match_rate": 1.0,
+            "quality_candidate_count": 4,
+            "quality_passing_candidate_count": 1,
+            "quality_passing_candidate_ids": [
+              "qkv8_float_exact"
+            ],
+            "recommended_next_step": "Score32 mixed-int8 generation/NLL evidence is passing for candidate score32_float; recost this score/softmax path with exact score/softmax PPA and update frontier ranking against energy/latency/area once rerun.",
+            "score32_generation_quality_pass": true,
+            "score32_generation_quality_summary": {
+              "candidate_id": "score32_float",
+              "decision_status": "mixed_int8_generation_quality_pass",
+              "free_run_exact_match_rate": 0.75,
+              "free_run_token_match_rate": 0.84375,
+              "teacher_forced_candidate_reference_token_prob_mean": 0.44887183254036667,
+              "teacher_forced_mean_nll_delta": 0.0023279039990386913
+            }
+          },
+          "remaining_abstractions": [
+            "The score32_float path has bounded generation/NLL evidence and should drive a score/softmax frontier rerun.",
+            "The previous mixed/int8 energy closure remains useful as a latency/traffic floor only; its s8/w8 reciprocal-LUT score-softmax precision is invalid for quality-backed ranking.",
+            "This audit is an evidence reconciliation step and does not rerun OpenROAD or the native model quality gate.",
+            "HBM/SRAM/NoC abstractions from the source energy closure remain unchanged until the recosted precision path is generated."
+          ]
+        }
+      },
+      "source_refs": {
+        "decoder_evidence_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_quality_backed_frontier__l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1_r2.json",
+        "decoder_attention_mixed_int8_quality_backed_frontier_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_quality_backed_frontier__l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1_r2.json",
+        "decoder_attention_mixed_int8_quality_backed_frontier_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_quality_backed_frontier__l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1_r2.md"
+      },
+      "decoder_quality": {
+        "diagnosis": {
+          "decision": "mixed_int8_quality_backed_frontier_recost_required",
+          "invalidated_energy_candidate_count": 1,
+          "old_energy_best_candidate_id": "die800_dense_gemm_int8_16x8_k1_p1_rep855_lat1575.37_hbm0.983398_tt1024",
+          "old_energy_best_energy_mj": 135.75588466251537,
+          "old_energy_best_latency_us": 1575.373891,
+          "old_energy_best_precision_profile": "q8_k8_v6_a24_s8_w8_recip_lut_q10_int8_compute",
+          "old_energy_best_token_throughput_per_s": 634.7699461778119,
+          "quality_backed_latency_floor_us_unranked": 1575.373891,
+          "quality_backed_throughput_floor_tok_s_unranked": 634.7699461778119,
+          "quality_best_candidate_id": "qkv8_float_exact",
+          "quality_best_mean_probability_kl": 0.0012425925766148221,
+          "quality_best_top1_match_rate": 1.0,
+          "quality_candidate_count": 4,
+          "quality_passing_candidate_count": 1,
+          "quality_passing_candidate_ids": [
+            "qkv8_float_exact"
+          ],
+          "recommended_next_step": "Score32 mixed-int8 generation/NLL evidence is passing for candidate score32_float; recost this score/softmax path with exact score/softmax PPA and update frontier ranking against energy/latency/area once rerun.",
+          "score32_generation_quality_pass": true,
+          "score32_generation_quality_summary": {
+            "candidate_id": "score32_float",
+            "decision_status": "mixed_int8_generation_quality_pass",
+            "free_run_exact_match_rate": 0.75,
+            "free_run_token_match_rate": 0.84375,
+            "teacher_forced_candidate_reference_token_prob_mean": 0.44887183254036667,
+            "teacher_forced_mean_nll_delta": 0.0023279039990386913
+          }
+        },
+        "remaining_abstractions": [
+          "The score32_float path has bounded generation/NLL evidence and should drive a score/softmax frontier rerun.",
+          "The previous mixed/int8 energy closure remains useful as a latency/traffic floor only; its s8/w8 reciprocal-LUT score-softmax precision is invalid for quality-backed ranking.",
+          "This audit is an evidence reconciliation step and does not rerun OpenROAD or the native model quality gate.",
+          "HBM/SRAM/NoC abstractions from the source energy closure remain unchanged until the recosted precision path is generated."
+        ]
+      }
+    }
+  },
+  "developer_loop": {
+    "comparison": {
+      "role": "quality_backed_frontier",
+      "paired_baseline_item_id": ""
+    },
+    "evaluation": {
+      "mode": "frontier_detail",
+      "expected_reason": "",
+      "expected_direction": ""
+    },
+    "abstraction": {
+      "layer": "decoder_attention_mixed_int8_quality_backed_frontier"
+    },
+    "proposal_id": "prop_l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1",
+    "dependencies": {
+      "item_ids": [
+        "l2_decoder_attention_mixed_int8_energy_closure_llama7b_v1_r2",
+        "l2_decoder_attention_mixed_int8_broad_native_quality_llama7b_v1_r2",
+        "l2_decoder_attention_mixed_int8_generation_quality_llama7b_v1_r3"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    },
+    "proposal_path": "docs/proposals/prop_l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1/proposal.json"
+  },
+  "submission_history": null,
+  "pr_payload": {
+    "branch": "eval/l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1_r2/s20260626t131808z",
+    "title": "eval: run layer2 campaign npu_e2e_eval_llm_attention_tail_stress_v1 on nangate45",
+    "body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260626t131808z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1_r2"
+    },
+    "body_md": "## Summary\n- item_id: `l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1_r2`\n- run_key: `l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1_r2_run_74c86725291693a3`\n- layer: `layer2`\n- task_type: `l2_campaign`\n- status: `ok`\n- summary: `2/2 commands succeeded`\n- queue_snapshot: `control_plane/shadow_exports/review/l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1_r2/evaluated.json`\n- metrics_rows_count: `0`\n- review_artifact: `decision_proposal` at `control_plane/shadow_exports/l2_decisions/l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1_r2.json`\n\n## Developer Context\n- proposal_id: `prop_l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1`\n- proposal_path: `docs/proposals/prop_l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1/proposal.json`\n- reviewer_first_read: `docs/proposals/prop_l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1/proposal.json` plus `docs/developer_agent_review.md`\n- execution_source_commit: `6fb163777d6bab1aba60e12381ea9315599fc794`\n- review_metadata_source_commit: `6fb163777d6bab1aba60e12381ea9315599fc794`\n\n## Evaluation Mode\n- evaluation_mode: `frontier_detail`\n- abstraction_layer: `decoder_attention_mixed_int8_quality_backed_frontier`\n- comparison_role: `quality_backed_frontier`\n- expected_direction: `unknown`\n- expectation_status: `unspecified`\n- evaluation_summary: `Decoder mixed/int8 quality-backed frontier evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_quality_backed_frontier__l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1_r2.json: decision=mixed_int8_quality_backed_frontier_recost_required; quality_passing_candidate_count=1; quality_passing_candidate_ids=['qkv8_float_exact']; quality_best_candidate_id=qkv8_float_exact; quality_best_top1_match_rate=1.0; quality_best_mean_probability_kl=0.0012425925766148221; score32_generation_quality_pass=True; score32_generation_quality_summary={'candidate_id': 'score32_float', 'decision_status': 'mixed_int8_generation_quality_pass', 'free_run_exact_match_rate': 0.75, 'free_run_token_match_rate': 0.84375, 'teacher_forced_candidate_reference_token_prob_mean': 0.44887183254036667, 'teacher_forced_mean_nll_delta': 0.0023279039990386913}; invalidated_energy_candidate_count=1; old_energy_best_candidate_id=die800_dense_gemm_int8_16x8_k1_p1_rep855_lat1575.37_hbm0.983398_tt1024; old_energy_best_latency_us=1575.373891; old_energy_best_token_throughput_per_s=634.7699461778119; old_energy_best_energy_mj=135.75588466251537; old_energy_best_precision_profile=q8_k8_v6_a24_s8_w8_recip_lut_q10_int8_compute; recommended_next_step=Score32 mixed-int8 generation/NLL evidence is passing for candidate score32_float; recost this score/softmax path with exact score/softmax PPA and update frontier ranking against energy/latency/area once rerun.`\n\n## Focused Comparison\n- primary_question: `Which mixed/int8 energy rows remain rankable after the broad native and bounded generation/NLL quality gates?`\n- comparison_role: `quality_backed_frontier`\n- proposal_outcome: `mixed_int8_quality_backed_frontier_recost_required`\n- comparison_summary: `Decoder mixed/int8 quality-backed frontier evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_quality_backed_frontier__l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1_r2.json: decision=mixed_int8_quality_backed_frontier_recost_required; quality_passing_candidate_count=1; quality_passing_candidate_ids=['qkv8_float_exact']; quality_best_candidate_id=qkv8_float_exact; quality_best_top1_match_rate=1.0; quality_best_mean_probability_kl=0.0012425925766148221; score32_generation_quality_pass=True; score32_generation_quality_summary={'candidate_id': 'score32_float', 'decision_status': 'mixed_int8_generation_quality_pass', 'free_run_exact_match_rate': 0.75, 'free_run_token_match_rate': 0.84375, 'teacher_forced_candidate_reference_token_prob_mean': 0.44887183254036667, 'teacher_forced_mean_nll_delta': 0.0023279039990386913}; invalidated_energy_candidate_count=1; old_energy_best_candidate_id=die800_dense_gemm_int8_16x8_k1_p1_rep855_lat1575.37_hbm0.983398_tt1024; old_energy_best_latency_us=1575.373891; old_energy_best_token_throughput_per_s=634.7699461778119; old_energy_best_energy_mj=135.75588466251537; old_energy_best_precision_profile=q8_k8_v6_a24_s8_w8_recip_lut_q10_int8_compute; recommended_next_step=Score32 mixed-int8 generation/NLL evidence is passing for candidate score32_float; recost this score/softmax path with exact score/softmax PPA and update frontier ranking against energy/latency/area once rerun.`\n- baseline_ref: `None`\n- baseline_item_id: `None`\n\n## Checklist\n- [ ] Commit lightweight campaign artifacts only\n- [ ] Include metrics row references in result.metrics_rows\n- [ ] Keep committed result_path fields repo-portable\n- [ ] Run python3 scripts/validate_runs.py --skip_eval_queue before pushing\n",
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Include metrics row references in result.metrics_rows",
+      "Keep committed result_path fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ]
+  }
+}
