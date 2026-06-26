@@ -1122,6 +1122,7 @@ def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, 
         "llm_decoder_attention_composed_datapath_physical_feasibility_softmax_recip_lut_llama7b_v1",
         "llm_decoder_attention_composed_datapath_recip_lut_variant_frontier_llama7b_v1",
         "llm_decoder_attention_composed_datapath_score32_w16_exact_div_frontier_llama7b_v1",
+        "llm_decoder_attention_composed_datapath_score32_w16_exact_div_reduced_replica_llama7b_v1",
     }:
         diagnosis = evidence_payload.get("diagnosis")
         diagnosis_dict = dict(diagnosis) if isinstance(diagnosis, dict) else {}
@@ -1138,6 +1139,8 @@ def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, 
             if model == "llm_decoder_attention_composed_datapath_recip_lut_variant_frontier_llama7b_v1"
             else "Decoder composed dual-stream physical feasibility evidence (score32/w16 exact-div frontier)"
             if model == "llm_decoder_attention_composed_datapath_score32_w16_exact_div_frontier_llama7b_v1"
+            else "Decoder composed dual-stream physical feasibility evidence (score32/w16 exact-div reduced-replica recost)"
+            if model == "llm_decoder_attention_composed_datapath_score32_w16_exact_div_reduced_replica_llama7b_v1"
             else "Decoder dual-stream physical feasibility evidence"
         )
         parts = [
@@ -1158,6 +1161,10 @@ def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, 
             "best_requested_substituted_compute_area_um2",
             "best_requested_substituted_compute_variant_label",
             "best_requested_compute_clock_ok",
+            "best_requested_replica_recost_enabled",
+            "best_requested_replica_recost_area_fit_replica_count",
+            "best_requested_replica_recost_macs_per_cycle",
+            "best_requested_replica_recost_latency_us",
             "best_feasible_mode",
             "best_feasible_latency_us",
             "recommended_next_step",
