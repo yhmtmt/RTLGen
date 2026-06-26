@@ -1,0 +1,66 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_composed_datapath_score32_w16_exact_div_reduced_replica_v1",
+  "created_utc": "2026-06-26T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Llama7B score32/w16 exact-div composed datapath reduced-replica recost",
+  "abstraction_layer": "decoder_attention_composed_datapath_physical_feasibility",
+  "hypothesis": "The measured score32/v8/w16 composed datapath may still define a useful quality-backed Llama7B point if the compute replica count is reduced to the area-fit bound and latency is recomputed at the measured wrapper clock.",
+  "direct_comparison": {
+    "primary_question": "What Llama7B latency/area/energy direction remains when the measured score32/w16 exact-div composed datapath is constrained to the area-fit replica count?",
+    "baseline": "l2_decoder_attention_composed_datapath_score32_w16_exact_div_frontier_llama7b_v1",
+    "candidate": "l2_decoder_attention_composed_datapath_score32_w16_exact_div_reduced_replica_llama7b_v1",
+    "include": [
+      "consume measured score32/w16 exact-div composed datapath metrics",
+      "use the existing Llama7B sub-tile schedule structure",
+      "reduce compute replicas to the measured-area budgeted count",
+      "recompute QKV, QK, value, tile service, layer, and total latency at the measured wrapper clock"
+    ],
+    "exclude": [
+      "new native checkpoint quality run",
+      "new HBM/DRAM service model",
+      "new L1 datapath synthesis"
+    ],
+    "metrics": [
+      "decision",
+      "precision_profile",
+      "best_requested_replica_recost_area_fit_replica_count",
+      "best_requested_replica_recost_macs_per_cycle",
+      "best_requested_replica_recost_latency_us",
+      "best_feasible_latency_us"
+    ]
+  },
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_composed_datapath_score32_w16_exact_div_reduced_replica_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Recost the measured score32/v8/w16 exact-div composed dual-stream attention wrapper at the area-fit replica count and measured wrapper clock.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_composed_datapath_physical_feasibility",
+      "comparison_role": "score32_quality_reduced_replica_recost",
+      "paired_baseline_item_id": "l2_decoder_attention_composed_datapath_score32_w16_exact_div_frontier_llama7b_v1",
+      "depends_on_item_ids": [
+        "l1_decoder_attention_dual_stream_composed_score32_w16_exact_div_ppa_v1",
+        "l2_decoder_attention_composed_datapath_score32_w16_exact_div_frontier_llama7b_v1",
+        "l2_decoder_attention_kv_subtile_pipeline_schedule_softmax_recip_lut_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "record_score32_quality_area_fit_recost",
+        "reason": "The prior score32/w16 frontier was dual_stream_area_blocked; this records the conservative area-fit latency point before spending another L1 PPA run."
+      }
+    }
+  ],
+  "source_refs": [
+    "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_score32_w16_exact_div/metrics.csv",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_score32_w16_exact_div_frontier_llama7b_v1.json",
+    "npu/eval/estimate_llm_decoder_attention_kv_dual_stream_physical_feasibility.py"
+  ],
+  "remaining_abstractions": [
+    "This recosts the existing analytic schedule rather than running a new end-to-end simulator.",
+    "HBM/SRAM/NoC service models are inherited unchanged from the upstream sub-tile schedule.",
+    "The measured exact-divider softmax structure is still a fixed-point approximation profile, not a full floating exp datapath."
+  ]
+}

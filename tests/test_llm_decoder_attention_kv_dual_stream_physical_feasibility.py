@@ -36,6 +36,7 @@ def _args(
     source: Path,
     compute_metrics: Path | None = None,
     composed_metrics: list[str] | None = None,
+    recompute_area_fit_replicas: bool = False,
 ) -> argparse.Namespace:
     full_value = tmp_path / "full_value.csv"
     softmax = tmp_path / "softmax.csv"
@@ -54,6 +55,7 @@ def _args(
         model_name="unit",
         frontier_row_limit=8,
         buffer_area_um2_per_byte=0.0,
+        recompute_area_fit_replicas=recompute_area_fit_replicas,
     )
 
 
@@ -250,3 +252,97 @@ def test_composed_q12_pwl_wrapper_variant_label_is_concise(tmp_path: Path) -> No
 
     assert result["diagnosis"]["best_requested_substituted_compute_variant_label"] == "q12_pwl"
     assert result["best_requested"]["substituted_compute_variant_label"] == "q12_pwl"
+
+
+def test_composed_wrapper_can_recost_area_fit_replica_count(tmp_path: Path) -> None:
+    source = tmp_path / "source.json"
+    _write_json(
+        source,
+        {
+            "model": "unit_source",
+            "best_by_compute_mode": [
+                {
+                    "compute_mode": "dual_mac",
+                    "latency_us": 1.6,
+                    "source_latency_us": 3.2,
+                    "latency_speedup_vs_hbm_closed_source": 2.0,
+                    "cluster_count": 1,
+                    "compute_area_multiplier": 1.0,
+                    "compute_area_um2": 90.0,
+                    "compute_budget_um2": 170.0,
+                    "measured_l1_overhead_area_um2": 10.0,
+                    "local_datapath_area_um2": 4.0,
+                    "softmax_weight_generator_area_um2": 2.0,
+                    "logic_area_used_um2": 160.0,
+                    "required_stream_buffer_bytes": 16,
+                    "available_local_capacity_bytes": 32,
+                    "measured_block_area_um2": 45.0,
+                    "measured_block_clock_ns": 1.0,
+                    "measured_block_macs_per_cycle": 128,
+                    "measured_block_power_mw": 1.0,
+                    "compute_replica_count": 2,
+                    "compute_arch": "dense_gemm_16x8_k1_p1",
+                    "macs_per_cycle": 256,
+                    "clock_ns": 1.0,
+                    "layers": 1,
+                    "qkv_cycles": 10,
+                    "tile_qk_cycles": 80,
+                    "tile_stats_cycles": 8,
+                    "tile_value_cycles": 80,
+                    "tile_hbm_cycles": 10,
+                    "tile_local_sram_cycles": 1,
+                    "tile_shared_path_cycles": 1,
+                    "tile_waves": 1,
+                    "command_dispatch_cycles": 0,
+                    "cross_tile_reduction_cycles": 0,
+                    "kv_write_cycles": 0,
+                    "subtile_count": 1,
+                    "subtile_buffer_count": 1,
+                    "prefetch_distance": 0,
+                    "normalize_strategy": "online_correction",
+                    "online_rescale_penalty_cycles": 0,
+                    "subtile_stats_cycles": 8,
+                    "subtile_hbm_cycles": 10,
+                    "subtile_aux_memory_cycles": 1,
+                    "tile_service_cycles": 88,
+                }
+            ],
+        },
+    )
+    metrics = tmp_path / "score32" / "metrics.csv"
+    metrics.parent.mkdir(parents=True, exist_ok=True)
+    metrics.write_text(
+        "\n".join(
+            [
+                "status,critical_path_ns,die_area,instance_area_um2,total_power_mw,param_hash,tag,result_path",
+                "ok,2.0,100.0,100.0,4.0,abc,score32,results/score32",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    blocked = build_report(_args(tmp_path, source=source, composed_metrics=[str(metrics)]))
+    recost = build_report(
+        _args(
+            tmp_path,
+            source=source,
+            composed_metrics=[str(metrics)],
+            recompute_area_fit_replicas=True,
+        )
+    )
+
+    assert blocked["diagnosis"]["decision"] == "dual_stream_area_blocked"
+    assert blocked["diagnosis"]["best_feasible_mode"] is None
+    assert blocked["best_requested"]["replica_recost_enabled"] is False
+
+    assert recost["diagnosis"]["decision"] == "dual_stream_feasible"
+    assert recost["best_requested"]["replica_recost_enabled"] is True
+    assert recost["best_requested"]["replica_recost_source_replica_count"] == 2
+    assert recost["best_requested"]["replica_recost_area_fit_replica_count"] == 1
+    assert recost["best_requested"]["replica_recost_macs_per_cycle"] == 128
+    assert recost["best_requested"]["replica_recost_latency_us"] == 716.0 / 1000.0
+    assert recost["best_requested"]["area_fit"] is True
+    assert recost["best_requested"]["physical_feasible"] is True
+    assert recost["best_requested"]["compute_clock_ok"] is True
+    assert recost["diagnosis"]["best_feasible_latency_us"] == 716.0 / 1000.0

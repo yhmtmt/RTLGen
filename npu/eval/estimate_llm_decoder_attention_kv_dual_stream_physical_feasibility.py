@@ -22,6 +22,8 @@ JsonDict = dict[str, Any]
 def _effective_latency_us(row: JsonDict) -> float:
     value = row.get("adjusted_latency_us_if_feasible")
     if value is None:
+        value = row.get("replica_recost_latency_us")
+    if value is None:
         value = row.get("latency_us")
     return float(value)
 
@@ -170,6 +172,7 @@ def _row_with_budget(
     compute_arch_name: str | None,
     buffer_area_um2_per_byte: float,
     precision_profile: str,
+    recompute_area_fit_replicas: bool,
 ) -> JsonDict:
     clusters = int(source_row["cluster_count"])
     compute_multiplier = float(source_row.get("compute_area_multiplier", 1.0))
@@ -223,8 +226,8 @@ def _row_with_budget(
     compute_substitution_enabled = use_composed_dual_stream or (compute_block is not None)
     if use_composed_dual_stream:
         target_block_area = composed_area
-        target_block_macs = int(source_row["macs_per_cycle"])
         target_replica_count = composed_replica_count
+        target_block_macs = source_block_macs_per_cycle
         base_compute_area = target_replica_count * target_block_area
         base_compute_power = target_replica_count * composed_power
         target_block_clock = composed_clock_ns
@@ -361,9 +364,217 @@ def _row_with_budget(
             "adjusted_latency_us_if_feasible": adjusted_latency_us,
             "adjusted_tile_service_cycles_if_feasible": adjusted_tile_service_cycles,
             "adjusted_speedup_if_feasible": adjusted_speedup,
+            "replica_recost_enabled": False,
+            "replica_recost_source_replica_count": None,
+            "replica_recost_area_fit_replica_count": None,
+            "replica_recost_macs_per_cycle": None,
+            "replica_recost_latency_us": None,
+            "replica_recost_tile_service_cycles": None,
+            "replica_recost_layer_cycles": None,
+            "replica_recost_total_cycles": None,
         }
     )
+    if recompute_area_fit_replicas and compute_substitution_enabled and replica_count_budgeted > 0:
+        recost = _area_fit_replica_recost(
+            source_row,
+            target_replica_count=target_replica_count,
+            area_fit_replica_count=min(target_replica_count, replica_count_budgeted),
+            block_macs_per_cycle=target_block_macs,
+            block_clock_ns=target_block_clock,
+            block_power_mw=target_block_power,
+            target_block_area_um2=target_block_area,
+            source_block_macs_per_cycle=int(source_row["measured_block_macs_per_cycle"]),
+            source_clock_ns=float(source_row["clock_ns"]),
+            current_compute_area_um2=current_compute_area,
+            compute_budget_um2=compute_budget,
+            logic_area_used_um2=current_logic_used,
+            selected_l1_overhead_area_um2=selected_l1_overhead,
+            current_l1_overhead_area_um2=current_l1_overhead,
+            buffer_fit=buffer_fit,
+        )
+        out.update(recost)
     return out
+
+
+def _ceil_scaled_cycles(value: Any, *, old_macs: int, new_macs: int) -> int:
+    return int(math.ceil(float(value) * max(1, old_macs) / max(1, new_macs)))
+
+
+def _area_fit_replica_recost(
+    source_row: JsonDict,
+    *,
+    target_replica_count: int,
+    area_fit_replica_count: int,
+    block_macs_per_cycle: int,
+    block_clock_ns: float,
+    block_power_mw: float,
+    target_block_area_um2: float,
+    source_block_macs_per_cycle: int,
+    source_clock_ns: float,
+    current_compute_area_um2: float,
+    compute_budget_um2: float,
+    logic_area_used_um2: float,
+    selected_l1_overhead_area_um2: float,
+    current_l1_overhead_area_um2: float,
+    buffer_fit: bool,
+) -> JsonDict:
+    new_macs = max(1, int(area_fit_replica_count) * max(1, int(block_macs_per_cycle)))
+    old_macs = max(1, int(source_row.get("macs_per_cycle", target_replica_count * source_block_macs_per_cycle)))
+    qkv_cycles = _ceil_scaled_cycles(source_row["qkv_cycles"], old_macs=old_macs, new_macs=new_macs)
+    tile_qk_cycles = _ceil_scaled_cycles(source_row["tile_qk_cycles"], old_macs=old_macs, new_macs=new_macs)
+    tile_value_cycles = _ceil_scaled_cycles(source_row["tile_value_cycles"], old_macs=old_macs, new_macs=new_macs)
+    source_scaled = dict(source_row)
+    source_scaled.update(
+        {
+            "qkv_cycles": qkv_cycles,
+            "tile_qk_cycles": tile_qk_cycles,
+            "tile_value_cycles": tile_value_cycles,
+            "clock_ns": block_clock_ns,
+        }
+    )
+    scheduled = _scheduled_subtile_pipeline(source_scaled)
+    compute_area = int(area_fit_replica_count) * target_block_area_um2
+    compute_power = int(area_fit_replica_count) * block_power_mw
+    logic_required = logic_area_used_um2 + (compute_area - current_compute_area_um2) + (
+        selected_l1_overhead_area_um2 - current_l1_overhead_area_um2
+    )
+    area_fit = logic_required <= compute_budget_um2
+    recost_feasible = area_fit and buffer_fit
+    source_latency_us = float(source_row["latency_us"])
+    latency_us = float(scheduled["latency_us"])
+    return {
+        "replica_recost_enabled": True,
+        "replica_recost_source_replica_count": target_replica_count,
+        "replica_recost_area_fit_replica_count": int(area_fit_replica_count),
+        "replica_recost_macs_per_cycle": new_macs,
+        "replica_recost_clock_ns": round(block_clock_ns, 6),
+        "replica_recost_qkv_cycles": qkv_cycles,
+        "replica_recost_tile_qk_cycles": tile_qk_cycles,
+        "replica_recost_tile_value_cycles": tile_value_cycles,
+        "replica_recost_tile_service_cycles": scheduled["tile_service_cycles"],
+        "replica_recost_layer_cycles": scheduled["layer_cycles"],
+        "replica_recost_total_cycles": scheduled["total_cycles"],
+        "replica_recost_latency_us": latency_us,
+        "replica_recost_latency_slowdown_vs_source": round(latency_us / max(1e-9, source_latency_us), 6),
+        "replica_recost_compute_area_um2": round(compute_area, 6),
+        "replica_recost_compute_power_mw": round(compute_power, 6),
+        "replica_recost_logic_area_required_um2": round(logic_required, 6),
+        "replica_recost_logic_area_slack_um2": round(compute_budget_um2 - logic_required, 6),
+        "replica_recost_area_fit": area_fit,
+        "replica_recost_buffer_fit": buffer_fit,
+        "replica_recost_physical_feasible": recost_feasible,
+        "replica_recost_compute_clock_ok": True,
+        "compute_clock_ok": True if recost_feasible else block_clock_ns <= source_clock_ns,
+        "area_fit": True if recost_feasible else area_fit,
+        "physical_feasible": recost_feasible,
+        "adjusted_latency_us_if_feasible": latency_us if recost_feasible else None,
+        "adjusted_tile_service_cycles_if_feasible": scheduled["tile_service_cycles"] if recost_feasible else None,
+        "adjusted_speedup_if_feasible": (
+            float(source_row["source_latency_us"]) / latency_us
+            if recost_feasible and source_row.get("source_latency_us") is not None
+            else None
+        ),
+    }
+
+
+def _scheduled_subtile_pipeline(row: JsonDict) -> JsonDict:
+    subtiles = int(row.get("subtile_count", 1))
+    prefetch_distance = int(row.get("prefetch_distance", 0))
+    normalize_strategy = str(row.get("normalize_strategy", "online_correction"))
+    compute_mode = str(row.get("compute_mode", "dual_mac"))
+    qk_sub, value_sub = _compute_stage_cycles(row, subtiles=subtiles, compute_mode=compute_mode)
+    stats_sub = int(row.get("subtile_stats_cycles", math.ceil(int(row["tile_stats_cycles"]) / subtiles)))
+    hbm_sub = int(row.get("subtile_hbm_cycles", math.ceil(int(row["tile_hbm_cycles"]) / subtiles)))
+    memory_aux_sub = int(
+        row.get(
+            "subtile_aux_memory_cycles",
+            max(
+                math.ceil(int(row.get("tile_local_sram_cycles", 0)) / subtiles),
+                math.ceil(int(row.get("tile_shared_path_cycles", 0)) / subtiles),
+            ),
+        )
+    )
+    hbm_end = [max(0, index + 1 - prefetch_distance) * hbm_sub for index in range(subtiles)]
+    stats_end: list[int] = []
+    value_end: list[int] = []
+    shared_gemm_free = 0
+    qk_free = 0
+    value_free = 0
+    stats_free = 0
+
+    for index in range(subtiles):
+        qk_start = max(qk_free, hbm_end[index], index * memory_aux_sub)
+        if compute_mode == "shared_mac":
+            qk_start = max(qk_start, shared_gemm_free)
+        qk_done = qk_start + qk_sub
+        qk_free = qk_done
+        if compute_mode == "shared_mac":
+            shared_gemm_free = qk_done
+
+        stats_start = max(stats_free, qk_done)
+        stats_done = stats_start + stats_sub
+        stats_end.append(stats_done)
+        stats_free = stats_done
+
+        if normalize_strategy == "full_tile_normalize":
+            continue
+        value_start = max(value_free, stats_done + int(row.get("online_rescale_penalty_cycles", 0)), hbm_end[index])
+        if compute_mode == "shared_mac":
+            value_start = max(value_start, shared_gemm_free)
+        value_done = value_start + value_sub
+        value_end.append(value_done)
+        value_free = value_done
+        if compute_mode == "shared_mac":
+            shared_gemm_free = value_done
+
+    if normalize_strategy == "full_tile_normalize":
+        all_stats_done = stats_end[-1]
+        for index in range(subtiles):
+            value_start = max(value_free, all_stats_done, hbm_end[index])
+            if compute_mode == "shared_mac":
+                value_start = max(value_start, shared_gemm_free)
+            value_done = value_start + value_sub
+            value_end.append(value_done)
+            value_free = value_done
+            if compute_mode == "shared_mac":
+                shared_gemm_free = value_done
+    elif normalize_strategy != "online_correction":
+        raise ValueError(f"unknown normalize strategy: {normalize_strategy}")
+
+    hbm_exposed_cycles = hbm_end[-1]
+    pipeline_cycles = max(value_end[-1], hbm_exposed_cycles, subtiles * memory_aux_sub)
+    residual_memory_cycles = max(int(row.get("tile_local_sram_cycles", 0)), int(row.get("tile_shared_path_cycles", 0)))
+    tile_service_cycles = max(pipeline_cycles, residual_memory_cycles)
+    layer_cycles = (
+        int(row["qkv_cycles"])
+        + int(row["tile_waves"]) * tile_service_cycles
+        + int(row.get("command_dispatch_cycles", 0))
+        + int(row["cross_tile_reduction_cycles"])
+        + int(row["kv_write_cycles"])
+    )
+    total_cycles = layer_cycles * int(row["layers"])
+    return {
+        "subtile_qk_cycles": qk_sub,
+        "subtile_value_cycles": value_sub,
+        "tile_service_cycles": tile_service_cycles,
+        "layer_cycles": layer_cycles,
+        "total_cycles": total_cycles,
+        "latency_us": round(total_cycles * float(row["clock_ns"]) / 1000.0, 6),
+    }
+
+
+def _compute_stage_cycles(row: JsonDict, *, subtiles: int, compute_mode: str) -> tuple[int, int]:
+    qk_base = int(row["tile_qk_cycles"])
+    value_base = int(row["tile_value_cycles"])
+    if compute_mode == "shared_mac":
+        scale = 1.0
+    elif compute_mode == "split_mac":
+        scale = 2.0
+    elif compute_mode == "dual_mac":
+        scale = 1.0
+    else:
+        raise ValueError(f"unknown compute mode: {compute_mode}")
+    return int(math.ceil(qk_base * scale / subtiles)), int(math.ceil(value_base * scale / subtiles))
 
 
 def _effective_selection_key(row: JsonDict) -> tuple[float, float, float, str]:
@@ -407,6 +618,7 @@ def build_report(args: argparse.Namespace) -> JsonDict:
                         compute_arch_name=args.compute_arch_name,
                         buffer_area_um2_per_byte=args.buffer_area_um2_per_byte,
                         precision_profile=args.precision_profile,
+                        recompute_area_fit_replicas=args.recompute_area_fit_replicas,
                     )
                 )
         else:
@@ -421,6 +633,7 @@ def build_report(args: argparse.Namespace) -> JsonDict:
                     compute_arch_name=args.compute_arch_name,
                     buffer_area_um2_per_byte=args.buffer_area_um2_per_byte,
                     precision_profile=args.precision_profile,
+                    recompute_area_fit_replicas=args.recompute_area_fit_replicas,
                 )
             )
     feasible_rows = [row for row in rows if row["physical_feasible"]]
@@ -466,6 +679,7 @@ def build_report(args: argparse.Namespace) -> JsonDict:
             "quality_gate_json": str(args.quality_gate_json) if args.quality_gate_json else None,
             "precision_profile": args.precision_profile,
             "buffer_area_um2_per_byte": args.buffer_area_um2_per_byte,
+            "recompute_area_fit_replicas": args.recompute_area_fit_replicas,
         },
         "quality_gate": {
             "decision": (quality_gate or {}).get("diagnosis", {}).get("decision"),
@@ -496,6 +710,12 @@ def build_report(args: argparse.Namespace) -> JsonDict:
             "best_requested_substituted_compute_variant_label": best_requested.get("substituted_compute_variant_label"),
             "best_requested_substituted_compute_area_um2": best_requested.get("substituted_compute_area_um2"),
             "best_requested_compute_clock_ok": best_requested.get("compute_clock_ok"),
+            "best_requested_replica_recost_enabled": best_requested.get("replica_recost_enabled"),
+            "best_requested_replica_recost_area_fit_replica_count": best_requested.get(
+                "replica_recost_area_fit_replica_count"
+            ),
+            "best_requested_replica_recost_macs_per_cycle": best_requested.get("replica_recost_macs_per_cycle"),
+            "best_requested_replica_recost_latency_us": best_requested.get("replica_recost_latency_us"),
             "best_feasible_mode": best_feasible.get("compute_mode") if best_feasible else None,
             "best_feasible_latency_us": _effective_latency_us(best_feasible) if best_feasible else None,
             "best_feasible_source_latency_us": best_feasible.get("latency_us") if best_feasible else None,
@@ -583,6 +803,14 @@ def main() -> int:
     )
     parser.add_argument("--frontier-row-limit", type=int, default=8)
     parser.add_argument("--buffer-area-um2-per-byte", type=float, default=0.0)
+    parser.add_argument(
+        "--recompute-area-fit-replicas",
+        action="store_true",
+        help=(
+            "When measured compute substitution exceeds area budget, recost a conservative point "
+            "using the budgeted replica count and measured substituted clock."
+        ),
+    )
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--out-md", type=Path, required=True)
     args = parser.parse_args()
