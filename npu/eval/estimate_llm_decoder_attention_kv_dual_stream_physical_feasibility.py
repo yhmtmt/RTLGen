@@ -438,6 +438,9 @@ def _area_fit_replica_recost(
     logic_required = logic_area_used_um2 + (compute_area - current_compute_area_um2) + (
         selected_l1_overhead_area_um2 - current_l1_overhead_area_um2
     )
+    logic_slack = compute_budget_um2 - logic_required
+    compute_over_budget = max(0.0, logic_required - compute_budget_um2)
+    density_gain = compute_area / max(1.0, compute_budget_um2 - selected_l1_overhead_area_um2)
     area_fit = logic_required <= compute_budget_um2
     recost_feasible = area_fit and buffer_fit
     source_latency_us = float(source_row["latency_us"])
@@ -459,11 +462,21 @@ def _area_fit_replica_recost(
         "replica_recost_compute_area_um2": round(compute_area, 6),
         "replica_recost_compute_power_mw": round(compute_power, 6),
         "replica_recost_logic_area_required_um2": round(logic_required, 6),
-        "replica_recost_logic_area_slack_um2": round(compute_budget_um2 - logic_required, 6),
+        "replica_recost_logic_area_slack_um2": round(logic_slack, 6),
         "replica_recost_area_fit": area_fit,
         "replica_recost_buffer_fit": buffer_fit,
         "replica_recost_physical_feasible": recost_feasible,
         "replica_recost_compute_clock_ok": True,
+        "substituted_compute_replica_count": int(area_fit_replica_count),
+        "substituted_compute_area_um2": round(compute_area, 6),
+        "substituted_compute_power_mw": round(compute_power, 6),
+        "compute_area_required_um2": round(compute_area, 6),
+        "logic_area_used_required_um2": round(logic_required, 6),
+        "logic_area_slack_required_um2": round(logic_slack, 6),
+        "compute_area_over_budget_um2": round(compute_over_budget, 6),
+        "required_compute_density_gain": round(density_gain, 6),
+        "replica_count_required": int(area_fit_replica_count),
+        "replica_count_shortfall": 0 if area_fit else max(0, target_replica_count - area_fit_replica_count),
         "compute_clock_ok": True if recost_feasible else block_clock_ns <= source_clock_ns,
         "area_fit": True if recost_feasible else area_fit,
         "physical_feasible": recost_feasible,
