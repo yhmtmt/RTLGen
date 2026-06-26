@@ -1,0 +1,13 @@
+run_key,attempt,trial_index,seed,status,metrics_csv,critical_path_ns,die_area,total_power_mw,failure_category,failure_stage,failure_signature
+l1_decoder_attention_dual_stream_composed_score32_w16_exact_div_ppa_v1_run_dac21d817f2b6229,1,1,0,failed,,,,,worker_error,worker,"(psycopg.OperationalError) consuming input failed: server closed the connection unexpectedly
+	This probably means the server terminated abnormally
+	before or while processing the request.
+server closed the connection unexpectedly
+	This probably means the server terminated abnormally
+	before or while processing the request.
+[SQL: SELECT runs.id AS runs_id, runs.run_key AS runs_run_key, runs.work_item_id AS runs_work_item_id, runs.lease_id AS runs_lease_id, runs.attempt AS runs_attempt, runs.executor_type AS runs_executor_type, runs.machine_id AS runs_machine_id, runs.container_image AS runs_container_image, runs.checkout_commit AS runs_checkout_commit, runs.branch_name AS runs_branch_name, runs.trial_index AS runs_trial_index, runs.seed AS runs_seed, runs.trial_group_key AS runs_trial_group_key, runs.flow_variant AS runs_flow_variant, runs.scheduler_variant AS runs_scheduler_variant, runs.failure_stage AS runs_failure_stage, runs.failure_category AS runs_failure_category, runs.failure_signature AS runs_failure_signature, runs.runtime_seconds AS runs_runtime_seconds, runs.status AS runs_status, runs.started_at AS runs_started_at, runs.completed_at AS runs_completed_at, runs.result_summary AS runs_result_summary, runs.result_payload AS runs_result_payload, runs.created_at AS runs_created_at 
+FROM runs 
+WHERE runs.run_key = %(run_key_1)s::VARCHAR]
+[parameters: {'run_key_1': 'l1_decoder_attention_dual_stream_composed_score32_w16_exact_div_ppa_v1_run_dac21d817f2b6229'}]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)"
+l1_decoder_attention_dual_stream_composed_score32_w16_exact_div_ppa_v1_run_8c1e4245ce89d702,2,1,0,succeeded,runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_score32_w16_exact_div/metrics.csv,36.174,6250000.0,11.3,none,,
