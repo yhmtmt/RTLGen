@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 JsonDict = dict[str, Any]
+SCORE32_FLOAT_CANDIDATE_ID = "score32_float"
 
 
 def _load_json(path: Path) -> JsonDict:
@@ -94,6 +95,17 @@ def _quality_summary(row: JsonDict) -> JsonDict:
     }
 
 
+def _generation_quality_summary(row: JsonDict) -> JsonDict:
+    return {
+        "candidate_id": row.get("candidate_id"),
+        "decision_status": row.get("decision_status") or (row.get("decision") or {}).get("status"),
+        "free_run_exact_match_rate": row.get("free_run_exact_match_rate"),
+        "free_run_token_match_rate": row.get("free_run_token_match_rate"),
+        "teacher_forced_mean_nll_delta": row.get("teacher_forced_mean_nll_delta"),
+        "teacher_forced_candidate_reference_token_prob_mean": row.get("teacher_forced_candidate_reference_token_prob_mean"),
+    }
+
+
 def _score_softmax_quantized(row: JsonDict) -> bool:
     precision = str(row.get("precision_profile") or "")
     softmax_paths = " ".join(
@@ -109,9 +121,39 @@ def _score_softmax_quantized(row: JsonDict) -> bool:
     )
 
 
+def _maybe_load_json(path: Path | None) -> JsonDict | None:
+    if path is None:
+        return None
+    if not path.exists():
+        raise FileNotFoundError(f"generation quality JSON not found: {path}")
+    payload = _load_json(path)
+    return payload if isinstance(payload, dict) else None
+
+
+def _generation_quality_score32_pass(generation_quality: JsonDict | None) -> tuple[JsonDict | None, bool]:
+    if not generation_quality:
+        return None, False
+
+    score32_rows = [
+        row
+        for row in _candidate_summaries(generation_quality)
+        if str(row.get("candidate_id")) == SCORE32_FLOAT_CANDIDATE_ID
+    ]
+    if not score32_rows:
+        return None, False
+    summary_row = score32_rows[0]
+    summary = _generation_quality_summary(summary_row)
+    return summary, _is_pass(summary_row)
+
+
 def build_payload(args: argparse.Namespace) -> JsonDict:
     energy = _load_json(args.mixed_int8_energy_closure_json)
     quality = _load_json(args.mixed_int8_broad_native_quality_json)
+    generation_quality = _maybe_load_json(args.mixed_int8_generation_quality_json)
+    score32_generation_quality_summary, score32_generation_quality_pass = _generation_quality_score32_pass(
+        generation_quality
+    )
+
     quality_rows = _candidate_summaries(quality)
     if not quality_rows:
         raise RuntimeError("broad native quality artifact contains no candidate_summaries")
@@ -147,16 +189,54 @@ def build_payload(args: argparse.Namespace) -> JsonDict:
             )
 
     decision = "mixed_int8_quality_backed_frontier_recost_required"
-    recommended_next_step = (
-        "Recompute the Llama7B energy frontier for q8/k8/v8 projection quantization with "
-        "high-precision or exact score/softmax PPA; do not rank the old s8/w8 reciprocal-LUT energy row."
+    recost_requirement = (
+        "Substitute or measure high-precision/exact score/softmax PPA for the passing qkv8_float_exact path "
+        "before comparing throughput, energy, or area against FP16/dense baselines."
     )
-    if not qkv8_pass:
+    quality_backed_status = "quality_pass_requires_energy_recost" if qkv8_pass else "no_quality_pass"
+    quality_passed = qkv8_pass or score32_generation_quality_pass
+    recost_required = bool(score32_generation_quality_pass or invalidated_rows)
+
+    if not quality_passed:
         decision = "mixed_int8_quality_backed_frontier_no_passing_candidate"
-        recommended_next_step = "No mixed-int8 attention candidate passed the broad native quality gate; return to precision search."
+        recommended_next_step = (
+            "No mixed-int8 attention candidate passed the broad native quality gate; return to precision search."
+        )
+        quality_backed_status = "no_quality_pass"
     elif not invalidated_rows:
         decision = "mixed_int8_quality_backed_frontier_recorded"
-        recommended_next_step = "Inspect whether the energy closure already matches the passing qkv8_float_exact precision path."
+        recommended_next_step = "Inspect whether the energy closure already matches the passing quality evidence path."
+        if score32_generation_quality_pass:
+            decision = "mixed_int8_quality_backed_frontier_recost_required"
+            recommended_next_step = (
+                "Score32 mixed-int8 generation/NLL evidence is passing for candidate score32_float; "
+                "re-cost this score/softmax path with exact score/softmax PPA and update frontier ranking "
+                "against energy/latency/area once rerun."
+            )
+            recost_requirement = (
+                "Substitute or measure high-precision/exact score/softmax PPA for the passing score32_float path "
+                "before comparing throughput, energy, or area against FP16/dense baselines."
+            )
+            recost_required = True
+            quality_backed_status = "quality_pass_requires_energy_recost"
+    elif score32_generation_quality_pass:
+        decision = "mixed_int8_quality_backed_frontier_recost_required"
+        recommended_next_step = (
+            "Score32 mixed-int8 generation/NLL evidence is passing for candidate score32_float;"
+            " recost this score/softmax path with exact score/softmax PPA and update frontier ranking"
+            " against energy/latency/area once rerun."
+        )
+        recost_requirement = (
+            "Substitute or measure high-precision/exact score/softmax PPA for the passing score32_float path "
+            "before comparing throughput, energy, or area against FP16/dense baselines."
+        )
+        quality_backed_status = "quality_pass_requires_energy_recost"
+        recost_required = True
+    else:
+        recommended_next_step = (
+            "Recompute the Llama7B energy frontier for q8/k8/v8 projection quantization with "
+            "high-precision or exact score/softmax PPA; do not rank the old s8/w8 reciprocal-LUT energy row."
+        )
 
     best_quality = _quality_summary(qkv8_float_exact) if isinstance(qkv8_float_exact, dict) else None
     old_best = _energy_summary(energy_best)
@@ -171,6 +251,13 @@ def build_payload(args: argparse.Namespace) -> JsonDict:
         "inputs": {
             "mixed_int8_energy_closure_json": str(args.mixed_int8_energy_closure_json),
             "mixed_int8_broad_native_quality_json": str(args.mixed_int8_broad_native_quality_json),
+            **(
+                {
+                    "mixed_int8_generation_quality_json": str(args.mixed_int8_generation_quality_json)
+                }
+                if args.mixed_int8_generation_quality_json
+                else {}
+            ),
         },
         "diagnosis": {
             "decision": decision,
@@ -180,6 +267,8 @@ def build_payload(args: argparse.Namespace) -> JsonDict:
             "quality_best_candidate_id": (best_quality or {}).get("candidate_id"),
             "quality_best_top1_match_rate": (best_quality or {}).get("top1_match_rate"),
             "quality_best_mean_probability_kl": (best_quality or {}).get("mean_probability_kl"),
+            "score32_generation_quality_summary": score32_generation_quality_summary,
+            "score32_generation_quality_pass": score32_generation_quality_pass,
             "invalidated_energy_candidate_count": len(invalidated_rows),
             "old_energy_best_candidate_id": (old_best or {}).get("candidate_id"),
             "old_energy_best_latency_us": (old_best or {}).get("latency_us"),
@@ -191,12 +280,11 @@ def build_payload(args: argparse.Namespace) -> JsonDict:
             "recommended_next_step": recommended_next_step,
         },
         "quality_backed_direction": {
-            "status": "quality_pass_requires_energy_recost" if qkv8_pass else "no_quality_pass",
+            "status": quality_backed_status,
             "candidate": best_quality,
-            "rankable_for_energy_frontier": False if invalidated_rows else qkv8_pass,
+            "rankable_for_energy_frontier": False if recost_required else quality_passed,
             "recost_requirement": (
-                "Substitute or measure high-precision/exact score-softmax PPA for the passing qkv8_float_exact path "
-                "before comparing throughput, energy, or area against FP16/dense baselines."
+                recost_requirement
             ),
         },
         "invalidated_energy_candidates": invalidated_rows,
@@ -207,7 +295,14 @@ def build_payload(args: argparse.Namespace) -> JsonDict:
         "old_energy_best": old_best,
         "old_latency_best": _energy_summary(latency_best),
         "remaining_abstractions": [
-            "The quality-passing qkv8_float_exact path has not yet been recosted with matching high-precision/exact score-softmax PPA.",
+            (
+                "The score32_float path has bounded generation/NLL evidence and should drive a score/softmax frontier rerun."
+                if score32_generation_quality_pass
+                else (
+                    "The quality-passing qkv8_float_exact path has not yet been recosted with matching "
+                    "high-precision/exact score-softmax PPA."
+                )
+            ),
             "The previous mixed/int8 energy closure remains useful as a latency/traffic floor only; its s8/w8 reciprocal-LUT score-softmax precision is invalid for quality-backed ranking.",
             "This audit is an evidence reconciliation step and does not rerun OpenROAD or the native model quality gate.",
             "HBM/SRAM/NoC abstractions from the source energy closure remain unchanged until the recosted precision path is generated.",
@@ -267,6 +362,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--mixed-int8-energy-closure-json", type=Path, required=True)
     parser.add_argument("--mixed-int8-broad-native-quality-json", type=Path, required=True)
+    parser.add_argument("--mixed-int8-generation-quality-json", type=Path)
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--out-md", type=Path, required=True)
     args = parser.parse_args()

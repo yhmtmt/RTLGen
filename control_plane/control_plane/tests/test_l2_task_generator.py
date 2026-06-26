@@ -7501,6 +7501,7 @@ def test_generate_l2_campaign_task_adds_mixed_int8_quality_backed_frontier_evide
                     depends_on_item_ids=[
                         "l2_decoder_attention_mixed_int8_energy_closure_llama7b_v1_r2",
                         "l2_decoder_attention_mixed_int8_broad_native_quality_llama7b_v1_r2",
+                        "l2_decoder_attention_mixed_int8_generation_quality_llama7b_v1_r3",
                     ],
                     requires_merged_inputs=True,
                     requires_materialized_refs=True,
@@ -7519,6 +7520,7 @@ def test_generate_l2_campaign_task_adds_mixed_int8_quality_backed_frontier_evide
             assert "audit_llm_decoder_attention_mixed_int8_quality_backed_frontier.py" in run
             assert "--mixed-int8-energy-closure-json" in run
             assert "--mixed-int8-broad-native-quality-json" in run
+            assert "--mixed-int8-generation-quality-json" in run
             assert decoder_inputs["attention_mixed_int8_energy_closure"].endswith(
                 "decoder_attention_mixed_int8_energy_closure__"
                 "l2_decoder_attention_mixed_int8_energy_closure_llama7b_v1_r2.json"
@@ -7526,6 +7528,10 @@ def test_generate_l2_campaign_task_adds_mixed_int8_quality_backed_frontier_evide
             assert decoder_inputs["attention_mixed_int8_broad_native_quality"].endswith(
                 "decoder_attention_mixed_int8_broad_native_quality__"
                 "l2_decoder_attention_mixed_int8_broad_native_quality_llama7b_v1_r2.json"
+            )
+            assert decoder_inputs["attention_mixed_int8_generation_quality"].endswith(
+                "decoder_attention_mixed_int8_generation_quality__"
+                "l2_decoder_attention_mixed_int8_generation_quality_llama7b_v1_r3.json"
             )
             assert "attention_mixed_int8_quality_backed_frontier_out" in decoder_inputs
             assert (
@@ -7539,6 +7545,7 @@ def test_generate_l2_campaign_task_adds_mixed_int8_quality_backed_frontier_evide
                 "item_ids": [
                     "l2_decoder_attention_mixed_int8_energy_closure_llama7b_v1_r2",
                     "l2_decoder_attention_mixed_int8_broad_native_quality_llama7b_v1_r2",
+                    "l2_decoder_attention_mixed_int8_generation_quality_llama7b_v1_r3",
                 ],
                 "requires_merged_inputs": True,
                 "requires_materialized_refs": True,
