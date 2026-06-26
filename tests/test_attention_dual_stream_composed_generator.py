@@ -15,6 +15,7 @@ def _write_config(
     softmax_accum_bits: int | None = None,
     softmax_score_bits: int | None = None,
     softmax_weight_bits: int | None = None,
+    reciprocal_bits: int | None = None,
     softmax_input_frac_bits: int | None = None,
     softmax_reciprocal_lut_bucket_shift: int | None = None,
 ) -> None:
@@ -48,6 +49,8 @@ def _write_config(
         comp["softmax_score_bits"] = softmax_score_bits
     if softmax_weight_bits is not None:
         comp["softmax_weight_bits"] = softmax_weight_bits
+    if reciprocal_bits is not None:
+        comp["reciprocal_bits"] = reciprocal_bits
     if softmax_input_frac_bits is not None:
         comp["softmax_input_frac_bits"] = softmax_input_frac_bits
     if softmax_reciprocal_lut_bucket_shift is not None:
@@ -381,6 +384,47 @@ def test_attention_dual_stream_composed_generator_score32_v8_exact_softmax(tmp_p
     assert manifest["value_bits"] == 8
     assert "module attention_full_value_stream_q8v8_p8_ppc2" in top_text
     assert "wire signed [7:0] value_00" in top_text
+
+
+def test_attention_dual_stream_composed_generator_score32_v8_recip_lut_q16_softmax(
+    tmp_path: Path,
+) -> None:
+    design_dir = tmp_path / "attention_dual_stream_composed_score32_v8_recip_lut_q16"
+    config_path = design_dir / "config.json"
+    _write_config(
+        config_path,
+        softmax_pipeline_stages=1,
+        softmax_impl="recip_lut",
+        mac_accum_bits=32,
+        softmax_accum_bits=40,
+        softmax_score_bits=32,
+        softmax_weight_bits=16,
+        reciprocal_bits=16,
+    )
+    cfg = json.loads(config_path.read_text(encoding="utf-8"))
+    cfg["attention_dual_stream_composed"]["value_bits"] = 8
+    config_path.write_text(json.dumps(cfg, indent=2) + "\n", encoding="utf-8")
+
+    top_text = _generate_and_check(design_dir, config_path)
+
+    manifest = json.loads((design_dir / "verilog" / "attention_dual_stream_composed_manifest.json").read_text())
+    assert manifest["mac_module"] == "int8_mac_s8s8_acc32"
+    assert manifest["softmax_impl"] == "recip_lut"
+    assert manifest["softmax_score_bits"] == 32
+    assert manifest["softmax_weight_bits"] == 16
+    assert manifest["reciprocal_bits"] == 16
+    assert manifest["value_bits"] == 8
+    assert manifest["softmax_latency_stages"] == 1
+    assert manifest["value_alignment_delay_stages"] == 2
+    assert "module attention_softmax_weight_score32_w16_recip_lut_q16_like" in top_text
+    assert "localparam integer RECIPROCAL_BITS = 16" in top_text
+    assert "localparam integer RECIPROCAL_WIDTH = 32" in top_text
+    assert "function [RECIPROCAL_WIDTH-1:0] reciprocal_lut" in top_text
+    assert "reciprocal_q = reciprocal_lut(sum_weight)" in top_text
+    assert "/ sum_weight" not in top_text
+    assert "/ sum_weight_q" not in top_text
+    assert "wire [63:0] softmax_weights" in top_text
+    assert "module attention_full_value_stream_q8v8_p8_ppc2" in top_text
 
 
 def test_attention_dual_stream_composed_generator_score32_v8_exact_softmax_divider_operand_pipeline(
