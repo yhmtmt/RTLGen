@@ -33,6 +33,7 @@ def main() -> int:
     softmax_internal_pipeline_stages = int(manifest.get("softmax_internal_pipeline_stages", 0))
     softmax_latency_stages = int(manifest.get("softmax_latency_stages", 1))
     value_alignment_delay_stages = int(manifest.get("value_alignment_delay_stages", 0))
+    mac_accum_bits = int(manifest.get("mac_accum_bits", 24))
     softmax_score_bits = int(manifest.get("softmax_score_bits", 8))
     softmax_weight_bits = int(manifest.get("softmax_weight_bits", 8))
     if streams != 2:
@@ -52,8 +53,14 @@ def main() -> int:
         raise SystemExit("missing dual stream buffer registers")
     if softmax_impl not in {"exact_div", "pow2sum", "recip_lut", "pwl_recip_lut"}:
         raise SystemExit(f"unsupported softmax_impl={softmax_impl}")
-    if not 2 <= softmax_score_bits <= 24:
+    if not 24 <= mac_accum_bits <= 32:
+        raise SystemExit(f"unsupported mac_accum_bits={mac_accum_bits}")
+    if not 2 <= softmax_score_bits <= 32:
         raise SystemExit(f"unsupported softmax_score_bits={softmax_score_bits}")
+    if softmax_score_bits > mac_accum_bits:
+        raise SystemExit(
+            f"softmax_score_bits={softmax_score_bits} exceeds mac_accum_bits={mac_accum_bits}"
+        )
     if not 2 <= softmax_weight_bits <= 24:
         raise SystemExit(f"unsupported softmax_weight_bits={softmax_weight_bits}")
     if softmax_latency_stages != 1 + softmax_internal_pipeline_stages:

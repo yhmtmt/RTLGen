@@ -1264,6 +1264,27 @@ def test_decoder_evidence_summary_recognizes_composed_datapath_recip_lut_variant
     assert "best_requested_substituted_compute_variant_label=q12" in summary
 
 
+def test_decoder_evidence_summary_recognizes_composed_datapath_score32_frontier_model() -> None:
+    outcome, summary = _decoder_evidence_summary(
+        evidence_ref="runs/datasets/demo/composed_datapath_score32.json",
+        evidence_payload={
+            "model": "llm_decoder_attention_composed_datapath_score32_w16_exact_div_frontier_llama7b_v1",
+            "diagnosis": {
+                "decision": "dual_stream_feasible",
+                "precision_profile": "q8_k8_v8_a32_s32_w16_exact_div_int8_compute",
+                "best_requested_mode": "dual_mac",
+                "best_requested_adjusted_latency_us_if_feasible": 1800.0,
+                "best_requested_substituted_compute_variant_label": "score32_w16_exact_div",
+                "best_requested_substituted_compute_arch": "attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_score32_w16_exact_div",
+            },
+        },
+    )
+
+    assert outcome == "dual_stream_feasible"
+    assert "composed dual-stream physical feasibility evidence (score32/w16 exact-div frontier)" in summary
+    assert "precision_profile=q8_k8_v8_a32_s32_w16_exact_div_int8_compute" in summary
+
+
 def _seed_succeeded_l2_campaign(session: Session, repo_root: Path) -> tuple[str, str]:
     campaign_dir = repo_root / "runs" / "campaigns" / "npu" / "demo_campaign"
     schedule_rel = "runs/campaigns/npu/demo_campaign/artifacts/mapper/fp16_nm1_demo/demo_model/schedule.yml"

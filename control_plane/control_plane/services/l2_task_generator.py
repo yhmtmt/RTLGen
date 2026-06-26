@@ -5451,12 +5451,18 @@ def _decoder_attention_composed_datapath_physical_feasibility_evidence(*, item_i
         "attention_softmax_weight_int8_r8_acc24_recip_q10_wrapper/metrics.csv"
     )
     q12_pwl_frontier = "q12_pwl_softmax_frontier" in item_id
+    score32_frontier = "score32_w16_exact_div_frontier" in item_id
     variant_frontier = "variant_frontier" in item_id
     composed_dual_stream_metrics = (
         "runs/designs/npu_blocks/"
         "attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_recip_lut_q10/metrics.csv"
     )
-    if q12_pwl_frontier:
+    if score32_frontier:
+        composed_dual_stream_metrics = (
+            "runs/designs/npu_blocks/"
+            "attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_score32_w16_exact_div/metrics.csv"
+        )
+    elif q12_pwl_frontier:
         composed_dual_stream_metrics = (
             "runs/designs/npu_blocks/"
             "attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_q12_pwl_recip_q12/metrics.csv"
@@ -5474,24 +5480,18 @@ def _decoder_attention_composed_datapath_physical_feasibility_evidence(*, item_i
         f"--composed-dual-stream-metrics {path}"
         for path in composed_dual_stream_metrics.split(",")
     )
-    model_name = (
-        "llm_decoder_attention_composed_datapath_q12_pwl_softmax_frontier_llama7b_v1"
-        if q12_pwl_frontier
-        else (
-            "llm_decoder_attention_composed_datapath_recip_lut_variant_frontier_llama7b_v1"
-            if variant_frontier
-            else "llm_decoder_attention_composed_datapath_physical_feasibility_softmax_recip_lut_llama7b_v1"
-        )
-    )
-    precision_profile = (
-        "q8_k8_v6_a24_s12_w12_pwl_recip_q12_int8_compute"
-        if q12_pwl_frontier
-        else (
-            "q8_k8_v6_a24_s8_w8_recip_lut_variant_int8_compute"
-            if variant_frontier
-            else "q8_k8_v6_a24_s8_w8_recip_lut_q10_int8_compute"
-        )
-    )
+    if score32_frontier:
+        model_name = "llm_decoder_attention_composed_datapath_score32_w16_exact_div_frontier_llama7b_v1"
+        precision_profile = "q8_k8_v8_a32_s32_w16_exact_div_int8_compute"
+    elif q12_pwl_frontier:
+        model_name = "llm_decoder_attention_composed_datapath_q12_pwl_softmax_frontier_llama7b_v1"
+        precision_profile = "q8_k8_v6_a24_s12_w12_pwl_recip_q12_int8_compute"
+    elif variant_frontier:
+        model_name = "llm_decoder_attention_composed_datapath_recip_lut_variant_frontier_llama7b_v1"
+        precision_profile = "q8_k8_v6_a24_s8_w8_recip_lut_variant_int8_compute"
+    else:
+        model_name = "llm_decoder_attention_composed_datapath_physical_feasibility_softmax_recip_lut_llama7b_v1"
+        precision_profile = "q8_k8_v6_a24_s8_w8_recip_lut_q10_int8_compute"
     return {
         "inputs": {
             "attention_kv_subtile_pipeline_schedule": subtile_pipeline,

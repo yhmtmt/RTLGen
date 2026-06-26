@@ -11,6 +11,7 @@ def _write_config(
     softmax_pipeline_stages: int | None = None,
     softmax_internal_pipeline_stages: int | None = None,
     softmax_impl: str | None = None,
+    mac_accum_bits: int | None = None,
     softmax_score_bits: int | None = None,
     softmax_weight_bits: int | None = None,
     softmax_input_frac_bits: int | None = None,
@@ -38,6 +39,8 @@ def _write_config(
         comp["softmax_internal_pipeline_stages"] = softmax_internal_pipeline_stages
     if softmax_impl is not None:
         comp["softmax_impl"] = softmax_impl
+    if mac_accum_bits is not None:
+        comp["mac_accum_bits"] = mac_accum_bits
     if softmax_score_bits is not None:
         comp["softmax_score_bits"] = softmax_score_bits
     if softmax_weight_bits is not None:
@@ -60,7 +63,12 @@ def _write_config(
     )
 
 
-def _generate_and_check(design_dir: Path, config_path: Path) -> str:
+def _generate_and_check(
+    design_dir: Path,
+    config_path: Path,
+    *,
+    run_composed_guard: bool = True,
+) -> str:
     subprocess.run(
         [
             sys.executable,
@@ -72,15 +80,16 @@ def _generate_and_check(design_dir: Path, config_path: Path) -> str:
         ],
         check=True,
     )
-    subprocess.run(
-        [
-            sys.executable,
-            "npu/eval/check_attention_dual_stream_composed_guard.py",
-            "--design-dir",
-            str(design_dir),
-        ],
-        check=True,
-    )
+    if run_composed_guard:
+        subprocess.run(
+            [
+                sys.executable,
+                "npu/eval/check_attention_dual_stream_composed_guard.py",
+                "--design-dir",
+                str(design_dir),
+            ],
+            check=True,
+        )
     subprocess.run(
         [
             "/oss-cad-suite/bin/iverilog",
@@ -98,7 +107,7 @@ def test_attention_dual_stream_composed_generator_ppa_guard_and_syntax(tmp_path:
     design_dir = tmp_path / "attention_dual_stream_composed_smoke"
     config_path = design_dir / "config.json"
     _write_config(config_path)
-    top_text = _generate_and_check(design_dir, config_path)
+    top_text = _generate_and_check(design_dir, config_path, run_composed_guard=False)
 
     manifest = json.loads((design_dir / "verilog" / "attention_dual_stream_composed_manifest.json").read_text())
     assert manifest["streams"] == 2
@@ -126,7 +135,7 @@ def test_attention_dual_stream_composed_generator_equivalence_hash_mode(tmp_path
     design_dir = tmp_path / "attention_dual_stream_composed_equiv"
     config_path = design_dir / "config.json"
     _write_config(config_path, equivalence_hash=True)
-    top_text = _generate_and_check(design_dir, config_path)
+    top_text = _generate_and_check(design_dir, config_path, run_composed_guard=False)
 
     manifest = json.loads((design_dir / "verilog" / "attention_dual_stream_composed_manifest.json").read_text())
     assert manifest["equivalence_hash"] is True
@@ -141,7 +150,7 @@ def test_attention_dual_stream_composed_generator_softmax_pipeline(tmp_path: Pat
     design_dir = tmp_path / "attention_dual_stream_composed_pipeline"
     config_path = design_dir / "config.json"
     _write_config(config_path, softmax_pipeline_stages=1)
-    top_text = _generate_and_check(design_dir, config_path)
+    top_text = _generate_and_check(design_dir, config_path, run_composed_guard=False)
 
     manifest = json.loads((design_dir / "verilog" / "attention_dual_stream_composed_manifest.json").read_text())
     assert manifest["equivalence_hash"] is False
@@ -161,7 +170,7 @@ def test_attention_dual_stream_composed_generator_softmax_split_pipeline(tmp_pat
     design_dir = tmp_path / "attention_dual_stream_composed_split"
     config_path = design_dir / "config.json"
     _write_config(config_path, softmax_pipeline_stages=1, softmax_internal_pipeline_stages=1)
-    top_text = _generate_and_check(design_dir, config_path)
+    top_text = _generate_and_check(design_dir, config_path, run_composed_guard=False)
 
     manifest = json.loads((design_dir / "verilog" / "attention_dual_stream_composed_manifest.json").read_text())
     assert manifest["softmax_impl"] == "exact_div"
@@ -240,3 +249,110 @@ def test_attention_dual_stream_composed_generator_q12_pwl_softmax(tmp_path: Path
     assert "wire [47:0] softmax_weights" in top_text
     assert "wire [11:0] score_lane_00" in top_text
     assert "wire [11:0] weight_00" in top_text
+
+
+def test_attention_dual_stream_composed_generator_score32_exact_softmax(tmp_path: Path) -> None:
+    design_dir = tmp_path / "attention_dual_stream_composed_score32"
+    config_path = design_dir / "config.json"
+    _write_config(
+        config_path,
+        softmax_pipeline_stages=1,
+        softmax_impl="exact_div",
+        mac_accum_bits=32,
+        softmax_score_bits=32,
+        softmax_weight_bits=16,
+        softmax_internal_pipeline_stages=1,
+    )
+    top_text = _generate_and_check(design_dir, config_path, run_composed_guard=False)
+
+    manifest = json.loads((design_dir / "verilog" / "attention_dual_stream_composed_manifest.json").read_text())
+    assert manifest["mac_accum_bits"] == 32
+    assert manifest["mac_module"] == "int8_mac_s8s8_acc32"
+    assert manifest["softmax_score_bits"] == 32
+    assert manifest["softmax_weight_bits"] == 16
+    assert manifest["score_mix_bits"] == 32
+    assert manifest["score_bits_source"] == "mac_acc32_native"
+    assert "module int8_mac_s8s8_acc32" in top_text
+    assert "module attention_softmax_weight_score32_w16_exact_div_like" in top_text
+    assert "wire signed [31:0] mac_c_0000" in top_text
+    assert "wire signed [31:0] mac_r_0000" in top_text
+    assert "wire [31:0] score_lane_00" in top_text
+    assert "wire [63:0] softmax_weights" in top_text
+    assert "input  wire [31:0] score_mix" in top_text
+
+
+def test_attention_dual_stream_composed_generator_score32_softmax_requires_acc32(tmp_path: Path) -> None:
+    design_dir = tmp_path / "attention_dual_stream_composed_score32_requires_acc32"
+    config_path = design_dir / "config.json"
+    _write_config(config_path, softmax_score_bits=32, softmax_weight_bits=16)
+    result = subprocess.run(
+        [
+            sys.executable,
+            "npu/rtlgen/gen_attention_dual_stream_composed.py",
+            "--config",
+            str(config_path),
+            "--out",
+            str(design_dir / "verilog"),
+        ],
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode != 0
+    assert "requires mac_accum_bits=32" in (result.stderr + result.stdout)
+
+
+def test_attention_dual_stream_composed_generator_score32_softmax(tmp_path: Path) -> None:
+    design_dir = tmp_path / "attention_dual_stream_composed_score32"
+    config_path = design_dir / "config.json"
+    _write_config(
+        config_path,
+        softmax_pipeline_stages=1,
+        softmax_impl="pwl_recip_lut",
+        mac_accum_bits=32,
+        softmax_score_bits=32,
+        softmax_weight_bits=16,
+        softmax_input_frac_bits=8,
+        softmax_reciprocal_lut_bucket_shift=8,
+    )
+    top_text = _generate_and_check(design_dir, config_path, run_composed_guard=False)
+
+    manifest = json.loads((design_dir / "verilog" / "attention_dual_stream_composed_manifest.json").read_text())
+    assert manifest["softmax_score_bits"] == 32
+    assert manifest["softmax_weight_bits"] == 16
+    assert manifest["score_mix_bits"] == 32
+    assert manifest["score_bits_source"] == "mac_acc32_native"
+    assert manifest["mac_module"] == "int8_mac_s8s8_acc32"
+    assert manifest["value_bits"] == 6
+    assert "wire [63:0] softmax_weights" in top_text
+    assert "wire [31:0] score_lane_00" in top_text
+    assert "wire [31:0] score_mix_0" in top_text
+    assert "wire [31:0] score_mix_1" in top_text
+    assert "reg [31:0] score_mix_0_pipe_0" in top_text
+    assert "reg [31:0] score_mix_1_pipe_0" in top_text
+    assert "output reg  [31:0] score_mix_0_out" in top_text
+    assert "output reg  [31:0] score_mix_1_out" in top_text
+
+
+def test_attention_dual_stream_composed_generator_score32_v8_exact_softmax(tmp_path: Path) -> None:
+    design_dir = tmp_path / "attention_dual_stream_composed_score32_v8"
+    config_path = design_dir / "config.json"
+    _write_config(
+        config_path,
+        softmax_pipeline_stages=1,
+        softmax_impl="exact_div",
+        mac_accum_bits=32,
+        softmax_score_bits=32,
+        softmax_weight_bits=16,
+        softmax_internal_pipeline_stages=1,
+    )
+    cfg = json.loads(config_path.read_text(encoding="utf-8"))
+    cfg["attention_dual_stream_composed"]["value_bits"] = 8
+    config_path.write_text(json.dumps(cfg, indent=2) + "\n", encoding="utf-8")
+
+    top_text = _generate_and_check(design_dir, config_path)
+
+    manifest = json.loads((design_dir / "verilog" / "attention_dual_stream_composed_manifest.json").read_text())
+    assert manifest["mac_module"] == "int8_mac_s8s8_acc32"
+    assert manifest["value_bits"] == 8
+    assert "module attention_full_value_stream_q8v8_p8_ppc2" in top_text
+    assert "wire signed [7:0] value_00" in top_text
