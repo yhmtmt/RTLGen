@@ -1,0 +1,39 @@
+## Summary
+- item_id: `l2_decoder_attention_composed_datapath_score32_w16_exact_div_reduced_replica_llama7b_v1_r2`
+- run_key: `l2_decoder_attention_composed_datapath_score32_w16_exact_div_reduced_replica_llama7b_v1_r2_run_e481e942ebdbf45b`
+- layer: `layer2`
+- task_type: `l2_campaign`
+- status: `ok`
+- summary: `6/6 commands succeeded`
+- queue_snapshot: `control_plane/shadow_exports/review/l2_decoder_attention_composed_datapath_score32_w16_exact_div_reduced_replica_llama7b_v1_r2/evaluated.json`
+- metrics_rows_count: `24`
+- review_artifact: `decision_proposal` at `control_plane/shadow_exports/l2_decisions/l2_decoder_attention_composed_datapath_score32_w16_exact_div_reduced_replica_llama7b_v1_r2.json`
+
+## Developer Context
+- proposal_id: `prop_l2_decoder_attention_composed_datapath_score32_w16_exact_div_reduced_replica_v1`
+- proposal_path: `docs/proposals/prop_l2_decoder_attention_composed_datapath_score32_w16_exact_div_reduced_replica_v1/proposal.json`
+- reviewer_first_read: `docs/proposals/prop_l2_decoder_attention_composed_datapath_score32_w16_exact_div_reduced_replica_v1/proposal.json` plus `docs/developer_agent_review.md`
+- execution_source_commit: `7f3c1441a97cc0c3d77481fd7fc5c5a6835e5f4e`
+- review_metadata_source_commit: `7f3c1441a97cc0c3d77481fd7fc5c5a6835e5f4e`
+
+## Evaluation Mode
+- evaluation_mode: `frontier_detail`
+- abstraction_layer: `decoder_attention_composed_datapath_physical_feasibility`
+- comparison_role: `score32_quality_reduced_replica_recost`
+- expected_direction: `unknown`
+- expectation_status: `unspecified`
+- evaluation_summary: `Decoder composed dual-stream physical feasibility evidence (score32/w16 exact-div reduced-replica recost) recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_score32_w16_exact_div_reduced_replica_llama7b_v1_r2.json: decision=dual_stream_feasible; precision_profile=q8_k8_v8_a32_s32_w16_exact_div_int8_compute; best_requested_mode=dual_mac; best_requested_latency_us=1575.373891; best_requested_adjusted_latency_us_if_feasible=9636.7536; best_requested_adjusted_speedup_vs_hbm_closed_source=0.2219462537674513; best_requested_area_fit=True; best_requested_logic_slack_um2=427790.0692; best_requested_compute_area_over_budget_um2=0.0; best_requested_required_compute_density_gain=0.998929; best_requested_compute_substitution_enabled=True; best_requested_substituted_compute_arch=attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_score32_w16_exact_div; best_requested_substituted_compute_area_um2=399091842.0; best_requested_substituted_compute_variant_label=attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_score32_w16_exact_div; best_requested_compute_clock_ok=True; best_requested_replica_recost_enabled=True; best_requested_replica_recost_area_fit_replica_count=801; best_requested_replica_recost_macs_per_cycle=102528; best_requested_replica_recost_latency_us=9636.7536; best_feasible_mode=dual_mac; best_feasible_latency_us=9636.7536; recommended_next_step=promote dual-stream schedule into a measured RTL/PPA wrapper.`
+
+## Focused Comparison
+- primary_question: `What Llama7B latency/area/energy direction remains when the measured score32/w16 exact-div composed datapath is constrained to the area-fit replica count?`
+- comparison_role: `score32_quality_reduced_replica_recost`
+- proposal_outcome: `dual_stream_feasible`
+- comparison_summary: `Decoder composed dual-stream physical feasibility evidence (score32/w16 exact-div reduced-replica recost) recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_score32_w16_exact_div_reduced_replica_llama7b_v1_r2.json: decision=dual_stream_feasible; precision_profile=q8_k8_v8_a32_s32_w16_exact_div_int8_compute; best_requested_mode=dual_mac; best_requested_latency_us=1575.373891; best_requested_adjusted_latency_us_if_feasible=9636.7536; best_requested_adjusted_speedup_vs_hbm_closed_source=0.2219462537674513; best_requested_area_fit=True; best_requested_logic_slack_um2=427790.0692; best_requested_compute_area_over_budget_um2=0.0; best_requested_required_compute_density_gain=0.998929; best_requested_compute_substitution_enabled=True; best_requested_substituted_compute_arch=attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_score32_w16_exact_div; best_requested_substituted_compute_area_um2=399091842.0; best_requested_substituted_compute_variant_label=attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_score32_w16_exact_div; best_requested_compute_clock_ok=True; best_requested_replica_recost_enabled=True; best_requested_replica_recost_area_fit_replica_count=801; best_requested_replica_recost_macs_per_cycle=102528; best_requested_replica_recost_latency_us=9636.7536; best_feasible_mode=dual_mac; best_feasible_latency_us=9636.7536; recommended_next_step=promote dual-stream schedule into a measured RTL/PPA wrapper.`
+- baseline_ref: `None`
+- baseline_item_id: `None`
+
+## Checklist
+- [ ] Commit lightweight campaign artifacts only
+- [ ] Include metrics row references in result.metrics_rows
+- [ ] Keep committed result_path fields repo-portable
+- [ ] Run python3 scripts/validate_runs.py --skip_eval_queue before pushing

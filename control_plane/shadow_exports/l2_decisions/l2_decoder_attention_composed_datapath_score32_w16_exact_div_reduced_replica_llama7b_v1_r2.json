@@ -1,0 +1,167 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-06-26T18:29:59.144787Z",
+  "item_id": "l2_decoder_attention_composed_datapath_score32_w16_exact_div_reduced_replica_llama7b_v1_r2",
+  "run_key": "l2_decoder_attention_composed_datapath_score32_w16_exact_div_reduced_replica_llama7b_v1_r2_run_e481e942ebdbf45b",
+  "layer": "layer2",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l2_campaign",
+  "source_commit": "7f3c1441a97cc0c3d77481fd7fc5c5a6835e5f4e",
+  "review_metadata_source_commit": "7f3c1441a97cc0c3d77481fd7fc5c5a6835e5f4e",
+  "objective": "LLM-oriented attention-tail stress campaign for larger sequence lengths and more repeated non-terminal Softmax paths.",
+  "input_manifest": {
+    "sweeps": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/sweep_compare_33.json",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/sweep_compare_33.json"
+    ],
+    "configs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/config_nm1.json",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/config_nm2.json"
+    ],
+    "design_dirs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp"
+    ],
+    "macro_manifests": [
+      "runs/designs/npu_macros/gemm_compute_array_fp16_nm1_c250/macro_manifest.json",
+      "runs/designs/npu_macros/gemm_compute_array_fp16_2slot_c300/macro_manifest.json"
+    ],
+    "decoder_contract": {
+      "attention_mixed_precision_quality": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_precision_quality__l2_decoder_attention_mixed_precision_quality_llama7b_v1.json",
+      "attention_kv_softmax_weight_metrics": "runs/designs/activations/attention_softmax_weight_int8_r8_acc24_recip_q10_wrapper/metrics.csv",
+      "attention_kv_full_value_tile_metrics": "runs/designs/activations/attention_kv_full_value_hd64_kv8_v6_tl16_b128_p8_ppc2_w22_a40_wrapper/metrics.csv",
+      "attention_kv_subtile_pipeline_schedule": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_subtile_pipeline_schedule__l2_decoder_attention_kv_subtile_pipeline_schedule_llama7b_v1.json",
+      "attention_kv_composed_dual_stream_metrics": "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_score32_w16_exact_div/metrics.csv",
+      "attention_composed_datapath_physical_feasibility_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_score32_w16_exact_div_reduced_replica_llama7b_v1_r2.json",
+      "attention_composed_datapath_physical_feasibility_scope": "Use the composed dual-stream RTL wrapper PPA as a bounded next-step feasibility model, replacing separate full-value/softmax substitutions while keeping the upstream source schedule.",
+      "attention_composed_datapath_physical_feasibility_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_score32_w16_exact_div_reduced_replica_llama7b_v1_r2.md"
+    },
+    "generated_campaign": {
+      "path": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1/campaign__l2_decoder_attention_composed_datapath_score32_w16_exact_div_reduced_replica_llama7b_v1_r2.json",
+      "outputs": {
+        "report_md": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_composed_datapath_score32_w16_exact_div_reduced_replica_llama7b_v1_r2/report.md",
+        "results_csv": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_composed_datapath_score32_w16_exact_div_reduced_replica_llama7b_v1_r2/results.csv",
+        "campaign_dir": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_composed_datapath_score32_w16_exact_div_reduced_replica_llama7b_v1_r2"
+      },
+      "clean_outputs": true,
+      "base_campaign_path": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1/campaign.json"
+    },
+    "candidate_manifests": [
+      "runs/candidates/nangate45/module_candidates.json"
+    ]
+  },
+  "recommendation": {
+    "arch_id": "fp16_nm1",
+    "macro_mode": "flat_nomacro",
+    "objective_rank": 1,
+    "objective_score": "0.0",
+    "latency_ms_mean": 0.144262,
+    "energy_mj_mean": 2.7860165964e-05,
+    "critical_path_ns_mean": 5.557037432204143,
+    "die_area_um2_mean": 2250000.0,
+    "total_power_mw_mean": 0.193122,
+    "flow_elapsed_s_mean": 844.5733333333334
+  },
+  "objective_profiles": [],
+  "evaluation_record": {
+    "proposal_id": "prop_l2_decoder_attention_composed_datapath_score32_w16_exact_div_reduced_replica_v1",
+    "title": "Llama7B score32/w16 exact-div composed datapath reduced-replica recost",
+    "primary_question": "What Llama7B latency/area/energy direction remains when the measured score32/w16 exact-div composed datapath is constrained to the area-fit replica count?",
+    "evaluation_mode": "frontier_detail",
+    "comparison_role": "score32_quality_reduced_replica_recost",
+    "abstraction_layer": "decoder_attention_composed_datapath_physical_feasibility",
+    "expected_direction": "unknown",
+    "expected_reason": "",
+    "summary": "Decoder composed dual-stream physical feasibility evidence (score32/w16 exact-div reduced-replica recost) recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_score32_w16_exact_div_reduced_replica_llama7b_v1_r2.json: decision=dual_stream_feasible; precision_profile=q8_k8_v8_a32_s32_w16_exact_div_int8_compute; best_requested_mode=dual_mac; best_requested_latency_us=1575.373891; best_requested_adjusted_latency_us_if_feasible=9636.7536; best_requested_adjusted_speedup_vs_hbm_closed_source=0.2219462537674513; best_requested_area_fit=True; best_requested_logic_slack_um2=427790.0692; best_requested_compute_area_over_budget_um2=0.0; best_requested_required_compute_density_gain=0.998929; best_requested_compute_substitution_enabled=True; best_requested_substituted_compute_arch=attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_score32_w16_exact_div; best_requested_substituted_compute_area_um2=399091842.0; best_requested_substituted_compute_variant_label=attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_score32_w16_exact_div; best_requested_compute_clock_ok=True; best_requested_replica_recost_enabled=True; best_requested_replica_recost_area_fit_replica_count=801; best_requested_replica_recost_macs_per_cycle=102528; best_requested_replica_recost_latency_us=9636.7536; best_feasible_mode=dual_mac; best_feasible_latency_us=9636.7536; recommended_next_step=promote dual-stream schedule into a measured RTL/PPA wrapper.",
+    "outcome": "dual_stream_feasible",
+    "expectation_status": "unspecified"
+  },
+  "proposal_assessment": {
+    "proposal_id": "prop_l2_decoder_attention_composed_datapath_score32_w16_exact_div_reduced_replica_v1",
+    "title": "Llama7B score32/w16 exact-div composed datapath reduced-replica recost",
+    "kind": "architecture",
+    "primary_question": "What Llama7B latency/area/energy direction remains when the measured score32/w16 exact-div composed datapath is constrained to the area-fit replica count?",
+    "evaluation_mode": "frontier_detail",
+    "comparison_role": "score32_quality_reduced_replica_recost",
+    "outcome": "dual_stream_feasible",
+    "summary": "Decoder composed dual-stream physical feasibility evidence (score32/w16 exact-div reduced-replica recost) recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_score32_w16_exact_div_reduced_replica_llama7b_v1_r2.json: decision=dual_stream_feasible; precision_profile=q8_k8_v8_a32_s32_w16_exact_div_int8_compute; best_requested_mode=dual_mac; best_requested_latency_us=1575.373891; best_requested_adjusted_latency_us_if_feasible=9636.7536; best_requested_adjusted_speedup_vs_hbm_closed_source=0.2219462537674513; best_requested_area_fit=True; best_requested_logic_slack_um2=427790.0692; best_requested_compute_area_over_budget_um2=0.0; best_requested_required_compute_density_gain=0.998929; best_requested_compute_substitution_enabled=True; best_requested_substituted_compute_arch=attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_score32_w16_exact_div; best_requested_substituted_compute_area_um2=399091842.0; best_requested_substituted_compute_variant_label=attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_score32_w16_exact_div; best_requested_compute_clock_ok=True; best_requested_replica_recost_enabled=True; best_requested_replica_recost_area_fit_replica_count=801; best_requested_replica_recost_macs_per_cycle=102528; best_requested_replica_recost_latency_us=9636.7536; best_feasible_mode=dual_mac; best_feasible_latency_us=9636.7536; recommended_next_step=promote dual-stream schedule into a measured RTL/PPA wrapper.",
+    "baseline_ref": null,
+    "baseline_item_id": null,
+    "matched_row_count": 0,
+    "matched_rows": [],
+    "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_score32_w16_exact_div_reduced_replica_llama7b_v1_r2.json",
+    "decoder_quality": {
+      "diagnosis": {
+        "best_area_fit_latency_us": 9636.7536,
+        "best_area_fit_mode": "dual_mac",
+        "best_area_fit_source_latency_us": 1575.373891,
+        "best_feasible_latency_us": 9636.7536,
+        "best_feasible_mode": "dual_mac",
+        "best_feasible_source_latency_us": 1575.373891,
+        "best_requested_adjusted_latency_us_if_feasible": 9636.7536,
+        "best_requested_adjusted_speedup_vs_hbm_closed_source": 0.2219462537674513,
+        "best_requested_adjusted_tile_service_cycles": 996,
+        "best_requested_area_fit": true,
+        "best_requested_compute_area_over_budget_um2": 0.0,
+        "best_requested_compute_clock_ok": true,
+        "best_requested_compute_substitution_enabled": true,
+        "best_requested_latency_us": 1575.373891,
+        "best_requested_logic_slack_um2": 427790.0692,
+        "best_requested_mode": "dual_mac",
+        "best_requested_replica_recost_area_fit_replica_count": 801,
+        "best_requested_replica_recost_enabled": true,
+        "best_requested_replica_recost_latency_us": 9636.7536,
+        "best_requested_replica_recost_macs_per_cycle": 102528,
+        "best_requested_required_compute_density_gain": 0.998929,
+        "best_requested_speedup_vs_hbm_closed_source": 1.357672,
+        "best_requested_substituted_compute_arch": "attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_score32_w16_exact_div",
+        "best_requested_substituted_compute_area_um2": 399091842.0,
+        "best_requested_substituted_compute_variant_label": "attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_score32_w16_exact_div",
+        "decision": "dual_stream_feasible",
+        "physical_feasible_rows": 3,
+        "precision_profile": "q8_k8_v8_a32_s32_w16_exact_div_int8_compute",
+        "recommended_next_step": "promote dual-stream schedule into a measured RTL/PPA wrapper",
+        "source_rows_used": 3
+      },
+      "assumptions": [
+        "The dual_mac schedule requires an explicit compute_area_multiplier from the sub-tile scheduler.",
+        "Measured full-value tile and softmax-weight generator PPA are used for local datapath overhead only.",
+        "The dense GEMM compute array is treated as already packed into the current logic budget; extra dual-stream compute must fit that same budget to be feasible.",
+        "Buffer capacity is checked against measured local SRAM bytes; an optional buffer-area proxy can be added for sensitivity but defaults to zero to avoid double-counting measured local SRAM.",
+        "When composed dual-stream wrapper substitution is enabled, full-value and softmax measurements are treated as folded into the measured dual-stream RTL wrapper, and wrapper clock is used to scale feasible latency if it differs from source schedule clock."
+      ]
+    }
+  },
+  "source_refs": {
+    "best_point_json": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_composed_datapath_score32_w16_exact_div_reduced_replica_llama7b_v1_r2/best_point.json",
+    "summary_csv": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_composed_datapath_score32_w16_exact_div_reduced_replica_llama7b_v1_r2/summary.csv",
+    "results_csv": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_composed_datapath_score32_w16_exact_div_reduced_replica_llama7b_v1_r2/results.csv",
+    "report_md": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_composed_datapath_score32_w16_exact_div_reduced_replica_llama7b_v1_r2/report.md",
+    "focused_candidate_schedule_yml": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_composed_datapath_score32_w16_exact_div_reduced_replica_llama7b_v1_r2/artifacts/mapper/fp16_nm1/tail_attn4_s256_h64/schedule.yml",
+    "focused_candidate_descriptors_bin": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_composed_datapath_score32_w16_exact_div_reduced_replica_llama7b_v1_r2/artifacts/mapper/fp16_nm1/tail_attn4_s256_h64/descriptors.bin",
+    "focused_candidate_perf_trace_json": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_composed_datapath_score32_w16_exact_div_reduced_replica_llama7b_v1_r2/artifacts/perf/fp16_nm1/tail_attn4_s256_h64/trace.json",
+    "focused_model_artifacts": [
+      {
+        "model_id": "tail_attn4_s256_h64",
+        "schedule_yml": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_composed_datapath_score32_w16_exact_div_reduced_replica_llama7b_v1_r2/artifacts/mapper/fp16_nm1/tail_attn4_s256_h64/schedule.yml",
+        "descriptors_bin": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_composed_datapath_score32_w16_exact_div_reduced_replica_llama7b_v1_r2/artifacts/mapper/fp16_nm1/tail_attn4_s256_h64/descriptors.bin",
+        "perf_trace_json": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_composed_datapath_score32_w16_exact_div_reduced_replica_llama7b_v1_r2/artifacts/perf/fp16_nm1/tail_attn4_s256_h64/trace.json"
+      },
+      {
+        "model_id": "tail_attn6_s128_h64",
+        "schedule_yml": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_composed_datapath_score32_w16_exact_div_reduced_replica_llama7b_v1_r2/artifacts/mapper/fp16_nm1/tail_attn6_s128_h64/schedule.yml",
+        "descriptors_bin": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_composed_datapath_score32_w16_exact_div_reduced_replica_llama7b_v1_r2/artifacts/mapper/fp16_nm1/tail_attn6_s128_h64/descriptors.bin",
+        "perf_trace_json": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_composed_datapath_score32_w16_exact_div_reduced_replica_llama7b_v1_r2/artifacts/perf/fp16_nm1/tail_attn6_s128_h64/trace.json"
+      },
+      {
+        "model_id": "tail_attn6_s256_h64",
+        "schedule_yml": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_composed_datapath_score32_w16_exact_div_reduced_replica_llama7b_v1_r2/artifacts/mapper/fp16_nm1/tail_attn6_s256_h64/schedule.yml",
+        "descriptors_bin": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_composed_datapath_score32_w16_exact_div_reduced_replica_llama7b_v1_r2/artifacts/mapper/fp16_nm1/tail_attn6_s256_h64/descriptors.bin",
+        "perf_trace_json": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_composed_datapath_score32_w16_exact_div_reduced_replica_llama7b_v1_r2/artifacts/perf/fp16_nm1/tail_attn6_s256_h64/trace.json"
+      }
+    ],
+    "decoder_attention_composed_datapath_physical_feasibility_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_score32_w16_exact_div_reduced_replica_llama7b_v1_r2.json",
+    "decoder_attention_composed_datapath_physical_feasibility_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_score32_w16_exact_div_reduced_replica_llama7b_v1_r2.md"
+  }
+}
