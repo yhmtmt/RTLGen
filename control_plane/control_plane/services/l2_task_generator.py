@@ -6541,12 +6541,17 @@ def _decoder_attention_mixed_int8_quality_backed_frontier_evidence(*, item_id: s
         f"{base}/decoder_attention_mixed_int8_broad_native_quality__"
         "l2_decoder_attention_mixed_int8_broad_native_quality_llama7b_v1_r2.json"
     )
+    generation_quality = (
+        f"{base}/decoder_attention_mixed_int8_generation_quality__"
+        "l2_decoder_attention_mixed_int8_generation_quality_llama7b_v1_r3.json"
+    )
     out = f"{base}/decoder_attention_mixed_int8_quality_backed_frontier__{item_id}.json"
     report = f"{base}/decoder_attention_mixed_int8_quality_backed_frontier__{item_id}.md"
     return {
         "inputs": {
             "attention_mixed_int8_energy_closure": energy_closure,
             "attention_mixed_int8_broad_native_quality": broad_native_quality,
+            "attention_mixed_int8_generation_quality": generation_quality,
             "attention_mixed_int8_quality_backed_frontier_out": out,
             "attention_mixed_int8_quality_backed_frontier_report": report,
             "attention_mixed_int8_quality_backed_frontier_scope": (
@@ -6563,6 +6568,7 @@ def _decoder_attention_mixed_int8_quality_backed_frontier_evidence(*, item_id: s
                     "python3 npu/eval/audit_llm_decoder_attention_mixed_int8_quality_backed_frontier.py "
                     f"--mixed-int8-energy-closure-json {energy_closure} "
                     f"--mixed-int8-broad-native-quality-json {broad_native_quality} "
+                    f"--mixed-int8-generation-quality-json {generation_quality} "
                     f"--out {out} "
                     f"--out-md {report}"
                 ),

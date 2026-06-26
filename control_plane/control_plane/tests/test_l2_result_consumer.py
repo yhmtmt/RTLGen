@@ -114,6 +114,11 @@ def test_decoder_evidence_summary_recognizes_mixed_int8_quality_backed_frontier(
                 "quality_best_candidate_id": "qkv8_float_exact",
                 "quality_best_top1_match_rate": 1.0,
                 "quality_best_mean_probability_kl": 0.0012,
+                "score32_generation_quality_pass": True,
+                "score32_generation_quality_summary": {
+                    "candidate_id": "score32_float",
+                    "free_run_token_match_rate": 0.84375,
+                },
                 "invalidated_energy_candidate_count": 1,
                 "old_energy_best_candidate_id": "die800_dense_gemm_int8_16x8_k1_p1",
                 "old_energy_best_latency_us": 1575.37,
@@ -128,6 +133,8 @@ def test_decoder_evidence_summary_recognizes_mixed_int8_quality_backed_frontier(
     assert outcome == "mixed_int8_quality_backed_frontier_recost_required"
     assert "quality-backed frontier" in summary
     assert "quality_best_candidate_id=qkv8_float_exact" in summary
+    assert "score32_generation_quality_pass=True" in summary
+    assert "score32_float" in summary
     assert "invalidated_energy_candidate_count=1" in summary
     assert "old_energy_best_token_throughput_per_s=634.77" in summary
 
