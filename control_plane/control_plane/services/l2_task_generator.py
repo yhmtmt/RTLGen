@@ -5453,6 +5453,7 @@ def _decoder_attention_composed_datapath_physical_feasibility_evidence(*, item_i
     q12_pwl_frontier = "q12_pwl_softmax_frontier" in item_id
     score32_split2_reduced_replica = "score32_w16_exact_div_split2_reduced_replica" in item_id
     score32_reduced_replica = "score32_w16_exact_div_reduced_replica" in item_id
+    score32_recip_lut_q16_reduced_replica = "score32_w16_recip_lut_q16_reduced_replica" in item_id
     score32_frontier = "score32_w16_exact_div_frontier" in item_id
     variant_frontier = "variant_frontier" in item_id
     composed_dual_stream_metrics = (
@@ -5463,6 +5464,11 @@ def _decoder_attention_composed_datapath_physical_feasibility_evidence(*, item_i
         composed_dual_stream_metrics = (
             "runs/designs/npu_blocks/"
             "attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_score32_w16_exact_div_split2/metrics.csv"
+        )
+    elif score32_recip_lut_q16_reduced_replica:
+        composed_dual_stream_metrics = (
+            "runs/designs/npu_blocks/"
+            "attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_score32_w16_recip_lut_q16/metrics.csv"
         )
     elif score32_frontier or score32_reduced_replica:
         composed_dual_stream_metrics = (
@@ -5490,6 +5496,9 @@ def _decoder_attention_composed_datapath_physical_feasibility_evidence(*, item_i
     if score32_split2_reduced_replica:
         model_name = "llm_decoder_attention_composed_datapath_score32_w16_exact_div_split2_reduced_replica_llama7b_v1"
         precision_profile = "q8_k8_v8_a32_s32_w16_exact_div_int8_compute"
+    elif score32_recip_lut_q16_reduced_replica:
+        model_name = "llm_decoder_attention_composed_datapath_score32_w16_recip_lut_q16_reduced_replica_llama7b_v1"
+        precision_profile = "q8_k8_v8_a32_s32_w16_recip_lut_q16_int8_compute"
     elif score32_reduced_replica:
         model_name = "llm_decoder_attention_composed_datapath_score32_w16_exact_div_reduced_replica_llama7b_v1"
         precision_profile = "q8_k8_v8_a32_s32_w16_exact_div_int8_compute"
@@ -5532,7 +5541,7 @@ def _decoder_attention_composed_datapath_physical_feasibility_evidence(*, item_i
                     f"--quality-gate-json {quality_gate} "
                     f"--precision-profile {precision_profile} "
                     f"--model-name {model_name} "
-                    f"{'--recompute-area-fit-replicas ' if score32_reduced_replica or score32_split2_reduced_replica else ''}"
+                    f"{'--recompute-area-fit-replicas ' if score32_reduced_replica or score32_split2_reduced_replica or score32_recip_lut_q16_reduced_replica else ''}"
                     "--frontier-row-limit 8 "
                     "--buffer-area-um2-per-byte 0.0 "
                     f"--out {out} "

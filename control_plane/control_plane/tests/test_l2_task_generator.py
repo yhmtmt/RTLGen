@@ -6242,6 +6242,61 @@ def test_generate_l2_campaign_task_adds_attention_composed_datapath_score32_redu
             )
 
 
+def test_generate_l2_campaign_task_adds_attention_composed_datapath_score32_recip_lut_q16_reduced_replica_evidence() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id="l2_decoder_attention_composed_datapath_score32_w16_recip_lut_q16_reduced_replica_llama7b_v1",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    abstraction_layer="decoder_attention_composed_datapath_physical_feasibility",
+                    evaluation_mode="frontier_detail",
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            commands = work_item.task_request.request_payload["task"]["commands"]
+            run = commands[0]["run"]
+            decoder_inputs = work_item.input_manifest["decoder_contract"]
+
+            assert "estimate_decoder_attention_composed_datapath_physical_feasibility" in [c["name"] for c in commands]
+            assert (
+                "--model-name llm_decoder_attention_composed_datapath_score32_w16_recip_lut_q16_reduced_replica_llama7b_v1"
+                in run
+            )
+            assert "--recompute-area-fit-replicas" in run
+            assert (
+                "--precision-profile q8_k8_v8_a32_s32_w16_recip_lut_q16_int8_compute" in run
+            )
+            assert decoder_inputs["attention_kv_composed_dual_stream_metrics"] == (
+                "runs/designs/npu_blocks/"
+                "attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_score32_w16_recip_lut_q16/metrics.csv"
+            )
+            assert (
+                "--composed-dual-stream-metrics runs/designs/npu_blocks/"
+                "attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_score32_w16_recip_lut_q16/metrics.csv "
+                in run
+            )
+            assert any(
+                output.endswith(
+                    "decoder_attention_composed_datapath_physical_feasibility__"
+                    "l2_decoder_attention_composed_datapath_score32_w16_recip_lut_q16_reduced_replica_llama7b_v1.json"
+                )
+                for output in work_item.task_request.request_payload["task"]["expected_outputs"]
+            )
+
+
 def test_generate_l2_campaign_task_adds_attention_composed_datapath_score32_split2_reduced_replica_evidence() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"

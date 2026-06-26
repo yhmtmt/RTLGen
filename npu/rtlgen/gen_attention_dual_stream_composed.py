@@ -806,9 +806,13 @@ def _write_top(*, cfg: dict[str, Any], comp: dict[str, Any], out_path: Path) -> 
         "attention_softmax_weight_q12_pwl_recip_like"
         if softmax_impl == "pwl_recip_lut"
         else (
+            f"attention_softmax_weight_score32_w16_recip_lut_q{reciprocal_bits}_like"
+            if softmax_score_bits == 32 and softmax_weight_bits == 16 and softmax_impl == "recip_lut"
+            else (
             "attention_softmax_weight_score32_w16_exact_div_like"
             if softmax_score_bits == 32 and softmax_weight_bits == 16 and softmax_impl == "exact_div"
             else "attention_softmax_weight_int8_r8_acc24_recip_q10_like"
+            )
         )
     )
     value_name = f"attention_full_value_stream_q8v{value_bits}_p8_ppc2"
@@ -1104,7 +1108,11 @@ endmodule
             "softmax_weight": (
                 "one shared q12 PWL reciprocal-normalized generator"
                 if softmax_impl == "pwl_recip_lut"
-                else "one shared rowwise int8 shift-exp reciprocal-normalized generator"
+                else (
+                    "one shared score32/w16 shift-exp reciprocal-LUT-normalized generator"
+                    if softmax_score_bits == 32 and softmax_weight_bits == 16 and softmax_impl == "recip_lut"
+                    else "one shared rowwise int8 shift-exp reciprocal-normalized generator"
+                )
             ),
             "full_value": "two q8/v6 weighted-value streams",
             "control": "start/done, seed LFSR, per-stream buffer registers",

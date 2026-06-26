@@ -1,0 +1,62 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_composed_datapath_score32_w16_recip_lut_q16_reduced_replica_v1",
+  "created_utc": "2026-06-26T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Llama7B score32/w16 recip-lut q16 composed datapath reduced-replica recost",
+  "hypothesis": "The existing exact-div reduced-replica Llama7B route is blocked by area; a score32/w16 recip-lut q16 composed datapath variant can produce a conservative area-fit point with updated measured wrapper characteristics and explicitly classified approximation.",
+  "direct_comparison": {
+    "primary_question": "What is the feasibility and latency after re-costing the score32/w16 recip-lut q16 composed datapath at the measured area-fit replica count?",
+    "baseline": "l2_decoder_attention_composed_datapath_score32_w16_exact_div_reduced_replica_llama7b_v1_r2",
+    "include": [
+      "Use the measured score32/w16 recip-lut q16 composed dual-stream wrapper metrics.",
+      "Scale the Llama7B subtile schedule by the measured wrapper and area-fit replicate geometry.",
+      "Recompute feasible and adjusted latency fields at the measured wrapper clock."
+    ],
+    "exclude": [
+      "new KV service model generation",
+      "new L1 datapath PPA generation",
+      "new quality proxy reruns"
+    ],
+    "metrics": [
+      "decision",
+      "precision_profile",
+      "best_requested_replica_recost_area_fit_replica_count",
+      "best_requested_replica_recost_macs_per_cycle",
+      "best_requested_replica_recost_latency_us",
+      "best_feasible_latency_us"
+    ]
+  },
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_composed_datapath_score32_w16_recip_lut_q16_reduced_replica_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Recost the measured score32/w16 recip-lut q16 composed dual-stream attention wrapper at the measured area-fit replica count.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_composed_datapath_physical_feasibility",
+      "comparison_role": "score32_recip_lut_q16_reduced_replica_recost",
+      "paired_baseline_item_id": "l2_decoder_attention_composed_datapath_score32_w16_exact_div_reduced_replica_llama7b_v1_r2",
+      "depends_on_item_ids": [
+        "l1_decoder_attention_dual_stream_composed_score32_w16_recip_lut_q16_ppa_v1",
+        "l2_decoder_attention_composed_datapath_score32_w16_exact_div_reduced_replica_llama7b_v1_r2",
+        "l2_decoder_attention_kv_subtile_pipeline_schedule_softmax_recip_lut_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "record_score32_recip_lut_q16_area_fit_recost",
+        "reason": "This records the conservative area-fit datapath point for the q16 recip-lut score32/w16 composed wrapper before any new end-to-end quality work."
+      }
+    }
+  ],
+  "source_refs": [
+    "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_score32_w16_recip_lut_q16/metrics.csv",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_score32_w16_exact_div_reduced_replica_llama7b_v1_r2.json",
+    "npu/eval/estimate_llm_decoder_attention_kv_dual_stream_physical_feasibility.py"
+  ],
+  "remaining_abstractions": [
+    "This is an L2-only scaled feasibility recost using pre-measured composed wrapper metrics.",
+    "Subtile schedule selection and HBM/NoC/SRAM assumptions stay inherited from upstream merged dependencies."
+  ]
+}
