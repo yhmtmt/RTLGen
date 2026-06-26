@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_composed_datapath_score32_w16_exact_div_frontier_v1",
+  "decision": "iterate",
+  "pr_number": 1037,
+  "merge_commit": "0d02e061c909ba89f147bb110bbb65d2195e6f78",
+  "merged_utc": "2026-06-26T18:13:38.033065Z"
+}

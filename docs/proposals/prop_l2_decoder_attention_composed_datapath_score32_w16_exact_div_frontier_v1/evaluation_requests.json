@@ -20,7 +20,13 @@
       "expected_result": {
         "direction": "record_score32_quality_recost_frontier",
         "reason": "This is the dependent Llama7B frontier substitution after score32/v8/w16 composed datapath PPA is available."
-      }
+      },
+      "status": "merged",
+      "merged_pr_number": 1037,
+      "merge_commit": "0d02e061c909ba89f147bb110bbb65d2195e6f78",
+      "merged_utc": "2026-06-26T18:13:38.033065Z",
+      "notes": "Merged via PR #1037 and merge 0d02e061c909ba89f147bb110bbb65d2195e6f78 at 2026-06-26T18:13:38.033065Z."
     }
-  ]
+  ],
+  "source_commit": "db2fd8747d03b95ec479c1ac0a489b03745818ab"
 }
