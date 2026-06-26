@@ -1,0 +1,64 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_composed_datapath_score32_w16_exact_div_frontier_v1",
+  "created_utc": "2026-06-26T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Llama7B composed datapath score32/w16 exact-div frontier",
+  "abstraction_layer": "decoder_attention_composed_datapath_physical_feasibility",
+  "hypothesis": "If the widened score32/v8/w16 composed datapath remains physically feasible, it should replace the invalidated s8/w8 reciprocal-LUT mixed-int8 energy row as the quality-backed precision candidate for the next Llama7B frontier ranking.",
+  "direct_comparison": {
+    "primary_question": "After measuring the score32/v8/w16 composed wrapper, what latency/area/precision point does it imply when substituted into the Llama7B dual-stream schedule?",
+    "baseline": "l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1_r2",
+    "candidate": "l2_decoder_attention_composed_datapath_score32_w16_exact_div_frontier_llama7b_v1",
+    "include": [
+      "consume measured score32/w16 exact-div composed datapath metrics",
+      "substitute the measured wrapper into the existing Llama7B sub-tile schedule",
+      "record feasibility, adjusted latency, required area, and precision profile"
+    ],
+    "exclude": [
+      "new native checkpoint quality run",
+      "new HBM/DRAM service model",
+      "full end-to-end energy reranking until this feasibility record exists"
+    ],
+    "metrics": [
+      "decision",
+      "precision_profile",
+      "best_requested_adjusted_latency_us_if_feasible",
+      "best_requested_logic_slack_um2",
+      "best_requested_substituted_compute_area_um2",
+      "best_requested_substituted_compute_variant_label"
+    ]
+  },
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_composed_datapath_score32_w16_exact_div_frontier_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Substitute the measured score32/v8/w16 exact-div composed dual-stream attention wrapper into the Llama7B schedule and record the quality-backed frontier cost direction.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_composed_datapath_physical_feasibility",
+      "comparison_role": "score32_quality_recost_frontier",
+      "paired_baseline_item_id": "l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1_r2",
+      "depends_on_item_ids": [
+        "l1_decoder_attention_dual_stream_composed_score32_w16_exact_div_ppa_v1",
+        "l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1_r2",
+        "l2_decoder_attention_kv_subtile_pipeline_schedule_softmax_recip_lut_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "record_score32_quality_recost_frontier",
+        "reason": "This is the first Llama7B schedule substitution using measured PPA for the quality-recovered score32/v8/w16 path."
+      }
+    }
+  ],
+  "source_refs": [
+    "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_score32_w16_exact_div/metrics.csv",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_quality_backed_frontier__l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1_r2.json",
+    "npu/eval/estimate_llm_decoder_attention_kv_dual_stream_physical_feasibility.py"
+  ],
+  "remaining_abstractions": [
+    "This substitutes measured local datapath PPA into an existing analytic schedule; HBM/SRAM/NoC service models remain unchanged.",
+    "The measured softmax structure is exact-divider based and not a full floating exp datapath."
+  ]
+}
