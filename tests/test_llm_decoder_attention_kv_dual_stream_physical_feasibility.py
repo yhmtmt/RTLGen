@@ -342,6 +342,11 @@ def test_composed_wrapper_can_recost_area_fit_replica_count(tmp_path: Path) -> N
     assert recost["best_requested"]["replica_recost_area_fit_replica_count"] == 1
     assert recost["best_requested"]["replica_recost_macs_per_cycle"] == 128
     assert recost["best_requested"]["replica_recost_latency_us"] == 716.0 / 1000.0
+    assert recost["best_requested"]["substituted_compute_replica_count"] == 1
+    assert recost["best_requested"]["substituted_compute_area_um2"] == 100.0
+    assert recost["best_requested"]["compute_area_required_um2"] == 100.0
+    assert recost["best_requested"]["logic_area_slack_required_um2"] == 6.0
+    assert recost["best_requested"]["compute_area_over_budget_um2"] == 0.0
     assert recost["best_requested"]["area_fit"] is True
     assert recost["best_requested"]["physical_feasible"] is True
     assert recost["best_requested"]["compute_clock_ok"] is True
