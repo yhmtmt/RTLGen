@@ -1,0 +1,31 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_dual_stream_composed_score32_w16_exact_div_split2_v1",
+  "source_commit_note": "Dispatch should use the merge commit that adds softmax_internal_pipeline_stages=2 support and the score32/w16 exact-div split2 design config.",
+  "requested_items": [
+    {
+      "item_id": "l1_decoder_attention_dual_stream_composed_score32_w16_exact_div_split2_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure Nangate45 PPA for the q8/k8/v8/a32/s32/w16 composed dual-stream attention datapath with exact softmax divider operands registered before the final divide.",
+      "evaluation_mode": "frontier_timing_closure",
+      "abstraction_layer": "decoder_attention_dual_stream_composed_datapath",
+      "comparison_role": "score32_exact_divider_operand_pipeline",
+      "paired_baseline_item_id": "l1_decoder_attention_dual_stream_composed_score32_w16_exact_div_ppa_v1",
+      "configs": [
+        "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_score32_w16_exact_div_split2/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/attention_dual_stream_composed_v1/sweeps/nangate45_dual_stream_composed_hier_score32_w16_exact_div_split2.json",
+      "out_root": "runs/designs/npu_blocks",
+      "expected_outputs": [
+        "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_score32_w16_exact_div_split2/metrics.csv",
+        "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_score32_w16_exact_div_split2/timing_debug_report.md"
+      ],
+      "depends_on": [
+        "l1_decoder_attention_dual_stream_composed_score32_w16_exact_div_ppa_v1"
+      ],
+      "expected_result": {
+        "direction": "reduce_exact_softmax_timing_path",
+        "reason": "This keeps exact integer softmax arithmetic while testing whether one extra divider operand register recovers score32/w16 clock rate enough to improve Llama7B frontier recost."
+      }
+    }
+  ]
+}

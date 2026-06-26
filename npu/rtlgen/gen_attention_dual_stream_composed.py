@@ -87,8 +87,8 @@ def _validate(cfg: dict[str, Any]) -> dict[str, Any]:
         raise SystemExit("attention_dual_stream_composed.stream_buffer_bits must be in [128, 4096]")
     if softmax_pipeline_stages < 0 or softmax_pipeline_stages > 1:
         raise SystemExit("attention_dual_stream_composed.softmax_pipeline_stages must be in [0, 1]")
-    if softmax_internal_pipeline_stages < 0 or softmax_internal_pipeline_stages > 1:
-        raise SystemExit("attention_dual_stream_composed.softmax_internal_pipeline_stages must be in [0, 1]")
+    if softmax_internal_pipeline_stages < 0 or softmax_internal_pipeline_stages > 2:
+        raise SystemExit("attention_dual_stream_composed.softmax_internal_pipeline_stages must be in [0, 2]")
     if mac_accum_bits < 24 or mac_accum_bits > 32:
         raise SystemExit("attention_dual_stream_composed.mac_accum_bits must be in [24, 32]")
     if softmax_score_bits < 2 or softmax_score_bits > 32:
@@ -327,7 +327,7 @@ module {module_name} (
   end
 endmodule
 """
-    if internal_pipeline_stages:
+    if internal_pipeline_stages == 1:
         return f"""(* keep_hierarchy = 1 *)
 module {module_name} (
     input  wire                  clk,
@@ -398,6 +398,91 @@ module {module_name} (
       exp_weight_q[i] <= exp_weight[i];
     end
     sum_weight_q <= sum_weight;
+    weights <= next_weights;
+{hash_seq.rstrip()}
+  end
+endmodule
+"""
+    if internal_pipeline_stages == 2:
+        return f"""(* keep_hierarchy = 1 *)
+module {module_name} (
+    input  wire                  clk,
+    input  wire [{score_row_width - 1}:0] scores,
+    output reg  [{weight_row_width - 1}:0] weights{hash_port}
+);
+  localparam integer ROW_ELEMS = {row_elems};
+  localparam integer SCORE_BITS = {score_bits};
+  localparam integer WEIGHT_BITS = {weight_bits};
+  localparam integer ACCUM_BITS = {accum_bits};
+  localparam integer PRODUCT_BITS = {product_bits};
+  localparam integer MAX_SHIFT = 7;
+  localparam integer OUTPUT_SCALE = {output_scale};
+  localparam integer RECIPROCAL_BITS = {reciprocal_bits};
+
+  integer i;
+  integer signed lane_val;
+  integer signed row_max;
+  integer delta;
+  reg [ACCUM_BITS-1:0] exp_weight [0:ROW_ELEMS-1];
+  reg [ACCUM_BITS-1:0] sum_weight;
+  reg [ACCUM_BITS-1:0] exp_weight_q [0:ROW_ELEMS-1];
+  reg [ACCUM_BITS-1:0] sum_weight_q;
+  reg [PRODUCT_BITS-1:0] numer [0:ROW_ELEMS-1];
+  reg [PRODUCT_BITS-1:0] numer_q [0:ROW_ELEMS-1];
+  reg [ACCUM_BITS-1:0] sum_weight_qq;
+  reg [WEIGHT_BITS-1:0] lane_out;
+  reg [{weight_row_width - 1}:0] next_weights;
+{hash_reg.rstrip()}
+
+  always @(*) begin
+    row_max = -(1 << (SCORE_BITS - 1));
+    for (i = 0; i < ROW_ELEMS; i = i + 1) begin
+      lane_val = $signed(scores[(i*SCORE_BITS) +: SCORE_BITS]);
+      if (lane_val > row_max)
+        row_max = lane_val;
+    end
+
+    sum_weight = {{ACCUM_BITS{{1'b0}}}};
+    for (i = 0; i < ROW_ELEMS; i = i + 1) begin
+      lane_val = $signed(scores[(i*SCORE_BITS) +: SCORE_BITS]);
+      delta = row_max - lane_val;
+      if (delta < 0)
+        delta = 0;
+      if (delta > MAX_SHIFT)
+        delta = MAX_SHIFT;
+      exp_weight[i] = ({{{{(ACCUM_BITS-1){{1'b0}}}}, 1'b1}} << (MAX_SHIFT - delta));
+      sum_weight = sum_weight + exp_weight[i];
+    end
+  end
+
+  always @(*) begin
+    for (i = 0; i < ROW_ELEMS; i = i + 1) begin
+      numer[i] = (exp_weight_q[i] * OUTPUT_SCALE) + (sum_weight_q >> 1);
+    end
+  end
+
+  always @(*) begin
+    next_weights = {{{weight_row_width}{{1'b0}}}};
+{hash_init.rstrip()}
+    for (i = 0; i < ROW_ELEMS; i = i + 1) begin
+      if (sum_weight_qq != 0)
+        lane_out = numer_q[i] / sum_weight_qq;
+      else
+        lane_out = {{WEIGHT_BITS{{1'b0}}}};
+      if (lane_out > OUTPUT_SCALE)
+        lane_out = OUTPUT_SCALE;
+      next_weights[(i*WEIGHT_BITS) +: WEIGHT_BITS] = lane_out;
+{hash_update.rstrip()}
+    end
+  end
+
+  always @(posedge clk) begin
+    for (i = 0; i < ROW_ELEMS; i = i + 1) begin
+      exp_weight_q[i] <= exp_weight[i];
+      numer_q[i] <= numer[i];
+    end
+    sum_weight_q <= sum_weight;
+    sum_weight_qq <= sum_weight_q;
     weights <= next_weights;
 {hash_seq.rstrip()}
   end

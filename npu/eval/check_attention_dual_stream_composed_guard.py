@@ -99,6 +99,10 @@ def main() -> int:
         for token in ("exp_weight_q", "sum_weight_q"):
             if token not in top_text:
                 raise SystemExit(f"missing split softmax pipeline token: {token}")
+    if softmax_internal_pipeline_stages >= 2:
+        for token in ("numer_q", "sum_weight_qq"):
+            if token not in top_text:
+                raise SystemExit(f"missing divider operand pipeline token: {token}")
     if softmax_impl == "pow2sum":
         for token in ("denom_shift", "lane_scaled"):
             if token not in top_text:
