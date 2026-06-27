@@ -168,6 +168,62 @@ def _seed_blocked_submission_item(engine, *, submission_failed_reason: str | Non
         session.commit()
 
 
+def _seed_assigned_ready_source_mismatch(engine) -> None:
+    now = utcnow()
+    with Session(engine) as session:
+        task = TaskRequest(
+            request_key="queue:needs-source",
+            source="test",
+            requested_by="tester",
+            title="needs source",
+            description="detect stale worker source",
+            layer=LayerName.LAYER2,
+            flow=FlowName.OPENROAD,
+            priority=1,
+            request_payload={"item_id": "needs-source"},
+        )
+        session.add(task)
+        session.flush()
+        session.add(
+            WorkItem(
+                work_item_key="queue:needs-source",
+                task_request_id=task.id,
+                item_id="needs-source",
+                layer=LayerName.LAYER2,
+                flow=FlowName.OPENROAD,
+                platform="nangate45",
+                task_type="l2_campaign",
+                state=WorkItemState.READY,
+                priority=1,
+                source_commit="b" * 40,
+                assigned_machine_key="eval-source",
+                input_manifest={},
+                command_manifest=[],
+                expected_outputs=[],
+                acceptance_rules=[],
+            )
+        )
+        session.add(
+            WorkerMachine(
+                machine_key="eval-source",
+                hostname="eval-source",
+                executor_kind="local_process",
+                role="evaluator",
+                slot_capacity=4,
+                capabilities={
+                    "flow": "openroad",
+                    "platform": "nangate45",
+                    "worker_source": {
+                        "head": "a" * 40,
+                        "repo_root": "/workspaces/rtlgen-eval-clean",
+                    },
+                },
+                last_seen_at=now - timedelta(minutes=30),
+            )
+        )
+        session.commit()
+
+
 def test_dev_resolver_opens_issue_once_for_same_evidence() -> None:
     engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
     create_all(engine)
@@ -351,6 +407,47 @@ def test_dev_resolver_opens_issue_for_blocked_submission() -> None:
     assert case.owner == "dev"
     assert case.fingerprint == "artifact_sync_blocked_submission:proposal_linkage_unresolved"
     assert case.issue_number == 176
+    assert case.status == "awaiting_remote"
+
+
+def test_dev_resolver_opens_issue_for_assigned_ready_source_mismatch() -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    create_all(engine)
+    _seed_assigned_ready_source_mismatch(engine)
+
+    session_factory = build_session_factory(engine)
+    with patch(
+        "control_plane.services.resolver_dev_daemon.open_issue_for_case",
+        return_value=ResolverIssueCreateResult(issue_number=177, issue_url="https://github.com/yhmtmt/RTLGen/issues/177"),
+    ) as open_issue_mock, patch(
+        "control_plane.services.resolver_dev_daemon.comment_issue_for_case"
+    ) as comment_mock, patch(
+        "control_plane.services.resolver_dev_daemon.time.sleep"
+    ):
+        result = run_dev_resolver(
+            session_factory,
+            ResolverDevDaemonConfig(
+                repo="yhmtmt/RTLGen",
+                repo_root="/repo",
+                poll_seconds=0,
+                max_polls=1,
+            ),
+        )
+
+    with Session(engine) as session:
+        case = session.query(ResolverCase).one()
+
+    assert result.detection_count == 1
+    assert result.opened_issue_count == 1
+    assert result.updated_issue_count == 0
+    assert open_issue_mock.call_count == 1
+    assert comment_mock.call_count == 0
+    assert case.failure_class == "assigned_ready_source_mismatch"
+    assert case.owner == "eval"
+    assert case.fingerprint == "assigned_ready_source_mismatch:source_commit_unsatisfied"
+    assert case.issue_number == 177
+    assert case.latest_item_id == "needs-source"
+    assert case.latest_run_key == "no_run"
     assert case.status == "awaiting_remote"
 
 

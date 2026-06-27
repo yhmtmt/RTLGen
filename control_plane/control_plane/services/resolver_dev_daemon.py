@@ -26,6 +26,7 @@ from control_plane.services.resolver_case_service import (
 )
 from control_plane.services.resolver_detection import (
     ResolverDetection,
+    detect_assigned_ready_source_mismatches,
     detect_blocked_submission_items,
     detect_orphaned_running_items,
 )
@@ -493,6 +494,12 @@ def _collect_detections(
             session,
             repo_root=repo_root,
             stale_grace_seconds=blocked_submission_stale_grace_seconds,
+        )
+    )
+    detections.extend(
+        detect_assigned_ready_source_mismatches(
+            session,
+            repo_root=repo_root,
         )
     )
     return sorted(detections, key=lambda row: (row.failure_class, row.item_id, row.run_key))

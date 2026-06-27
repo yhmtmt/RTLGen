@@ -7,6 +7,7 @@ import hashlib
 import json
 from pathlib import Path
 import re
+import subprocess
 from typing import Any
 
 from sqlalchemy.orm import Session
@@ -131,9 +132,39 @@ def _event_payload_dict(event: RunEvent) -> dict[str, Any]:
     return event.event_payload if isinstance(event.event_payload, dict) else {}
 
 
+def _source_head_satisfies_requirement(*, repo_root: str | None, worker_head: str, required_sha: str) -> bool:
+    worker = str(worker_head or "").strip()
+    required = str(required_sha or "").strip()
+    if not required:
+        return True
+    if not worker:
+        return False
+    if worker == required:
+        return True
+    if not repo_root:
+        return False
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(Path(repo_root).resolve()), "merge-base", "--is-ancestor", required, worker],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+    except (OSError, RuntimeError):
+        return False
+    return result.returncode == 0
+
+
 def _payload_has_submission_error(payload: dict[str, Any]) -> bool:
     error = str(payload.get("submission_error") or payload.get("error") or "").strip()
     return bool(error and error.lower() != "none")
+
+
+def _submission_error_reason(payload: dict[str, Any]) -> str | None:
+    error = str(payload.get("submission_error") or payload.get("error") or "").strip()
+    if error and error.lower() != "none":
+        return error
+    return None
 
 
 def _event_is_stable_submission_success(event: RunEvent) -> bool:
@@ -253,6 +284,72 @@ def detect_orphaned_running_items(
     return detections
 
 
+def detect_assigned_ready_source_mismatches(
+    session: Session,
+    *,
+    repo_root: str | None = None,
+) -> list[ResolverDetection]:
+    rows = (
+        session.query(WorkItem, WorkerMachine)
+        .join(WorkerMachine, WorkerMachine.machine_key == WorkItem.assigned_machine_key)
+        .filter(WorkItem.state == WorkItemState.READY)
+        .filter(WorkItem.source_commit.isnot(None))
+        .filter(~WorkItem.leases.any(WorkerLease.status == LeaseStatus.ACTIVE))
+        .order_by(WorkItem.priority.desc(), WorkItem.created_at.asc(), WorkItem.item_id.asc())
+        .all()
+    )
+    detections: list[ResolverDetection] = []
+    for work_item, machine in rows:
+        required_sha = str(work_item.source_commit or "").strip()
+        if not required_sha:
+            continue
+        capabilities = dict(machine.capabilities or {})
+        worker_source = capabilities.get("worker_source")
+        if not isinstance(worker_source, dict):
+            worker_source = {}
+        worker_head = str(worker_source.get("head") or "").strip()
+        if _source_head_satisfies_requirement(
+            repo_root=repo_root,
+            worker_head=worker_head,
+            required_sha=required_sha,
+        ):
+            continue
+        evidence = {
+            "item_id": work_item.item_id,
+            "work_item_state": work_item.state.value,
+            "machine_key": machine.machine_key,
+            "assigned_machine_key": work_item.assigned_machine_key,
+            "required_sha": required_sha,
+            "worker_head": worker_head or None,
+            "worker_source": worker_source,
+            "last_seen_at": machine.last_seen_at.isoformat() if machine.last_seen_at is not None else None,
+            "repo_root": repo_root,
+            "task_type": work_item.task_type,
+            "platform": work_item.platform,
+            "flow": work_item.flow.value if work_item.flow is not None else None,
+            "source_commit": work_item.source_commit,
+        }
+        detections.append(
+            ResolverDetection(
+                fingerprint="assigned_ready_source_mismatch:source_commit_unsatisfied",
+                failure_class="assigned_ready_source_mismatch",
+                owner="eval",
+                severity="high",
+                summary=(
+                    f"ready work item {work_item.item_id} requires source {required_sha}, "
+                    f"but assigned worker {machine.machine_key} reports {worker_head or 'no worker_source head'}"
+                ),
+                item_id=work_item.item_id,
+                run_key="no_run",
+                machine_key=machine.machine_key,
+                source_commit=work_item.source_commit,
+                repo_root=repo_root,
+                evidence=evidence,
+            )
+        )
+    return detections
+
+
 def detect_blocked_submission_items(
     session: Session,
     *,
@@ -275,6 +372,8 @@ def detect_blocked_submission_items(
         submission_failure_reason = None
         latest_event = _latest_event(session, run.id)
         latest_event_time = latest_event.event_time if latest_event is not None else None
+        if latest_event is not None and latest_event.event_type in _SUBMISSION_FAILURE_EVENT_TYPES:
+            submission_failure_reason = _submission_error_reason(_event_payload_dict(latest_event))
         if latest_event_time is not None and latest_event_time.tzinfo is None:
             latest_event_time = latest_event_time.replace(tzinfo=now.tzinfo)
         if _has_submission_progress_after_latest_failure(
@@ -285,12 +384,13 @@ def detect_blocked_submission_items(
         ):
             continue
         if latest_event_time is not None and (now - latest_event_time).total_seconds() < stale_grace_seconds:
-            submission_failure_reason = assess_submission_eligibility(
-                session,
-                work_item=work_item,
-                run=run,
-                repo_root=None,
-            ).reason
+            if not submission_failure_reason:
+                submission_failure_reason = assess_submission_eligibility(
+                    session,
+                    work_item=work_item,
+                    run=run,
+                    repo_root=None,
+                ).reason
             if not (submission_failure_reason and str(submission_failure_reason).strip().lower().startswith("gh pr create failed")):
                 continue
         eligibility = assess_submission_eligibility(
@@ -299,15 +399,19 @@ def detect_blocked_submission_items(
             run=run,
             repo_root=repo_path,
         )
-        if eligibility.eligible or not eligibility.reason:
+        reason = submission_failure_reason if (
+            submission_failure_reason
+            and str(submission_failure_reason).strip().lower().startswith("gh pr create failed")
+        ) else eligibility.reason
+        if eligibility.eligible or not reason:
             continue
-        reason_key, owner, severity = _artifact_sync_reason_classification(eligibility.reason)
+        reason_key, owner, severity = _artifact_sync_reason_classification(reason)
         evidence = {
             "item_id": work_item.item_id,
             "run_key": run.run_key,
             "run_status": run.status.value,
             "machine_key": work_item.assigned_machine_key,
-            "eligibility_reason": eligibility.reason,
+            "eligibility_reason": reason,
             "task_type": work_item.task_type,
             "work_item_state": work_item.state.value,
             "repo_root": repo_root,
@@ -319,7 +423,7 @@ def detect_blocked_submission_items(
                 failure_class="artifact_sync_blocked_submission",
                 owner=owner,
                 severity=severity,
-                summary=f"work item {work_item.item_id} is blocked in ARTIFACT_SYNC: {eligibility.reason}",
+                summary=f"work item {work_item.item_id} is blocked in ARTIFACT_SYNC: {reason}",
                 item_id=work_item.item_id,
                 run_key=run.run_key,
                 machine_key=work_item.assigned_machine_key,
