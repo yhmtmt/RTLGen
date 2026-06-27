@@ -52,6 +52,7 @@ def _operator_status_details(
                 f"active_slots={machine.get('active_slots')}, "
                 f"heartbeat_age_seconds={machine.get('heartbeat_age_seconds')}, "
                 f"worker_attention={machine.get('worker_attention')}, "
+                f"source_requirements={machine.get('source_requirements')}, "
                 f"capabilities={machine.get('capabilities')}, "
                 f"last_progress={machine.get('last_progress')}"
             )
