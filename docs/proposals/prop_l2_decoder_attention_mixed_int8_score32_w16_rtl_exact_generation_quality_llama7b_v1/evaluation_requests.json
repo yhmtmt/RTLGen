@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_decoder_attention_mixed_int8_score32_w16_rtl_exact_generation_quality_llama7b_v1",
-  "requests": [
+  "requested_items": [
     {
       "item_id": "l2_decoder_attention_mixed_int8_score32_w16_rtl_exact_generation_quality_llama7b_v1",
       "task_type": "l2_campaign",
