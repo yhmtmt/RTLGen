@@ -74,16 +74,25 @@ def test_quantized_softmax_variants_and_ranges() -> None:
     exact = _rtl_quantized_softmax(logits, score_bits=8, weight_bits=8, softmax_mode="rtl_exact")
     pow2sum = _rtl_quantized_softmax(logits, score_bits=8, weight_bits=8, softmax_mode="rtl_pow2sum")
     lut = _rtl_quantized_softmax(logits, score_bits=8, weight_bits=8, softmax_mode="rtl_recip_lut_q10")
+    lut_q16_w16 = _rtl_quantized_softmax(
+        logits,
+        score_bits=32,
+        weight_bits=16,
+        softmax_mode="rtl_recip_lut_q16",
+    )
 
     assert len(exact) == len(logits)
     assert len(pow2sum) == len(logits)
     assert len(lut) == len(logits)
+    assert len(lut_q16_w16) == len(logits)
     assert max(range(len(exact)), key=exact.__getitem__) == 1
     assert max(range(len(pow2sum)), key=pow2sum.__getitem__) == 1
     assert max(range(len(lut)), key=lut.__getitem__) == 1
+    assert max(range(len(lut_q16_w16)), key=lut_q16_w16.__getitem__) == 1
     assert all(0.0 <= value <= 1.0 for value in exact)
     assert all(0.0 <= value <= 1.0 for value in pow2sum)
     assert all(0.0 <= value <= 1.0 for value in lut)
+    assert all(0.0 <= value <= 1.0 for value in lut_q16_w16)
 
 
 def test_quantize_symmetric_list() -> None:
@@ -222,6 +231,12 @@ def test_parse_candidate_spec_and_list_compatibility() -> None:
     assert q12_pwl.score_bits == 12
     assert q12_pwl.weight_bits == 12
     assert q12_pwl.softmax_mode == "pwl_recip_lut_q12_bucket8"
+
+    q16_rtl = _parse_candidate_spec("score32_w16_rtl_recip_q16:q8,k8,v8,s32,w16,rtl_recip_lut_q16")
+    assert q16_rtl.candidate_id == "score32_w16_rtl_recip_q16"
+    assert q16_rtl.score_bits == 32
+    assert q16_rtl.weight_bits == 16
+    assert q16_rtl.softmax_mode == "rtl_recip_lut_q16"
 
     with pytest.raises(ValueError):
         _parse_candidate_spec("qkv8_score8:r8")

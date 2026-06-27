@@ -1,0 +1,26 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_mixed_int8_score32_w16_recip_lut_q16_generation_quality_llama7b_v1",
+  "requests": [
+    {
+      "item_id": "l2_decoder_attention_mixed_int8_score32_w16_recip_lut_q16_generation_quality_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Run bounded native-checkpoint generation/NLL quality for the score32/w16 RTL reciprocal-LUT q16 candidate that currently has the best physical recost.",
+      "evaluation_mode": "quality_gate",
+      "abstraction_layer": "decoder_attention_mixed_int8_score32_w16_recip_lut_q16_generation_quality",
+      "comparison_role": "score32_w16_recip_lut_q16_generation_quality",
+      "cost_class": "medium",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_composed_datapath_score32_w16_recip_lut_q16_reduced_replica_llama7b_v1",
+        "l2_decoder_attention_mixed_int8_generation_quality_llama7b_v1_r3"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "run_physical": false,
+      "expected_result": {
+        "direction": "accept_or_hold_q16_recip_lut_frontier",
+        "reason": "The result should decide whether the fastest q16 reciprocal-LUT physical recost can be treated as a quality-backed frontier candidate."
+      }
+    }
+  ],
+  "source_commit": null
+}

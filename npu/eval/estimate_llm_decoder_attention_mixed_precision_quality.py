@@ -134,8 +134,8 @@ def _rtl_quantized_softmax(logits: Vector, *, score_bits: int, weight_bits: int,
     reciprocal_bits = _rtl_reciprocal_bits(mode)
     if mode not in {"rtl_exact", "rtl_pow2sum"} and reciprocal_bits is None:
         raise ValueError(f"unsupported RTL softmax mode: {mode}")
-    if weight_bits > 8:
-        raise ValueError("RTL softmax modes model the int8 softmax weight block; weight_bits must be <= 8")
+    if weight_bits < 2 or weight_bits > 24:
+        raise ValueError("RTL softmax modes expect integer output weights in [2, 24]")
     qlogits, _scale = _quantize_symmetric(logits, score_bits)
     if not qlogits:
         return []
