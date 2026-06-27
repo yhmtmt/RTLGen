@@ -18,7 +18,11 @@ from control_plane.models.task_requests import TaskRequest
 from control_plane.models.work_items import WorkItem
 from control_plane.models.worker_leases import WorkerLease
 from control_plane.models.worker_machines import WorkerMachine
-from control_plane.services.resolver_detection import detect_blocked_submission_items, detect_orphaned_running_items
+from control_plane.services.resolver_detection import (
+    detect_assigned_ready_source_mismatches,
+    detect_blocked_submission_items,
+    detect_orphaned_running_items,
+)
 
 
 def make_session() -> Session:
@@ -351,6 +355,126 @@ def test_skip_orphan_detector_for_terminal_latest_event() -> None:
         session.commit()
 
         detections = detect_orphaned_running_items(session, repo_root="/repo")
+
+    assert detections == []
+
+
+def test_detect_assigned_ready_source_mismatch() -> None:
+    now = utcnow()
+    with make_session() as session, tempfile.TemporaryDirectory() as repo_root:
+        task = TaskRequest(
+            request_key="queue:needs-source",
+            source="test",
+            requested_by="tester",
+            title="needs source",
+            description="detect stale worker source",
+            layer=LayerName.LAYER2,
+            flow=FlowName.OPENROAD,
+            priority=1,
+            request_payload={"item_id": "needs-source"},
+        )
+        session.add(task)
+        session.flush()
+        work_item = WorkItem(
+            work_item_key="queue:needs-source",
+            task_request_id=task.id,
+            item_id="needs-source",
+            layer=LayerName.LAYER2,
+            flow=FlowName.OPENROAD,
+            platform="nangate45",
+            task_type="l2_campaign",
+            state=WorkItemState.READY,
+            priority=1,
+            source_commit="b" * 40,
+            assigned_machine_key="eval-source",
+            input_manifest={},
+            command_manifest=[],
+            expected_outputs=[],
+            acceptance_rules=[],
+        )
+        session.add(work_item)
+        session.add(
+            WorkerMachine(
+                machine_key="eval-source",
+                hostname="eval-source",
+                executor_kind="local_process",
+                role="evaluator",
+                slot_capacity=4,
+                capabilities={
+                    "flow": "openroad",
+                    "platform": "nangate45",
+                    "worker_source": {
+                        "head": "a" * 40,
+                        "repo_root": "/workspaces/rtlgen-eval-clean",
+                    },
+                },
+                last_seen_at=now - timedelta(minutes=30),
+            )
+        )
+        session.commit()
+
+        detections = detect_assigned_ready_source_mismatches(session, repo_root=repo_root)
+
+    assert len(detections) == 1
+    detection = detections[0]
+    assert detection.failure_class == "assigned_ready_source_mismatch"
+    assert detection.fingerprint == "assigned_ready_source_mismatch:source_commit_unsatisfied"
+    assert detection.owner == "eval"
+    assert detection.severity == "high"
+    assert detection.item_id == "needs-source"
+    assert detection.run_key == "no_run"
+    assert detection.machine_key == "eval-source"
+    assert detection.evidence["required_sha"] == "b" * 40
+    assert detection.evidence["worker_head"] == "a" * 40
+
+
+def test_detect_assigned_ready_source_mismatch_skips_matching_head() -> None:
+    with make_session() as session, tempfile.TemporaryDirectory() as repo_root:
+        task = TaskRequest(
+            request_key="queue:source-ok",
+            source="test",
+            requested_by="tester",
+            title="source ok",
+            description="matching worker source",
+            layer=LayerName.LAYER2,
+            flow=FlowName.OPENROAD,
+            priority=1,
+            request_payload={"item_id": "source-ok"},
+        )
+        session.add(task)
+        session.flush()
+        session.add(
+            WorkItem(
+                work_item_key="queue:source-ok",
+                task_request_id=task.id,
+                item_id="source-ok",
+                layer=LayerName.LAYER2,
+                flow=FlowName.OPENROAD,
+                platform="nangate45",
+                task_type="l2_campaign",
+                state=WorkItemState.READY,
+                priority=1,
+                source_commit="c" * 40,
+                assigned_machine_key="eval-source",
+                input_manifest={},
+                command_manifest=[],
+                expected_outputs=[],
+                acceptance_rules=[],
+            )
+        )
+        session.add(
+            WorkerMachine(
+                machine_key="eval-source",
+                hostname="eval-source",
+                executor_kind="local_process",
+                role="evaluator",
+                slot_capacity=4,
+                capabilities={"worker_source": {"head": "c" * 40}},
+            )
+        )
+        session.commit()
+
+        detections = detect_assigned_ready_source_mismatches(session, repo_root=repo_root)
 
     assert detections == []
 
