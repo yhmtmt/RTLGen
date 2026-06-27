@@ -6,6 +6,7 @@ from datetime import timedelta
 from dataclasses import dataclass, field
 import os
 from pathlib import Path
+import subprocess
 from typing import Any
 
 from sqlalchemy.orm import Session
@@ -61,6 +62,27 @@ def _submission_finalization_fields(link: GitHubLink) -> dict[str, Any]:
 
 def _default_repo_root() -> str:
     return os.environ.get("RTLGEN_SERVICE_REPO") or os.environ.get("REPO_ROOT") or "/workspaces/rtlgen-eval-clean"
+
+
+def _source_head_satisfies_requirement(*, repo_root: str, worker_head: str, required_sha: str) -> bool:
+    worker = str(worker_head or "").strip()
+    required = str(required_sha or "").strip()
+    if not required:
+        return True
+    if not worker:
+        return False
+    if worker == required:
+        return True
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(Path(repo_root).resolve()), "merge-base", "--is-ancestor", required, worker],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+    except (OSError, RuntimeError):
+        return False
+    return result.returncode == 0
 
 
 @dataclass(frozen=True)
@@ -137,8 +159,41 @@ def load_operator_status(session: Session, request: OperatorStatusRequest) -> Op
         last_progress = capabilities.get("last_progress")
         if not isinstance(last_progress, dict):
             last_progress = None
+        worker_source = capabilities.get("worker_source")
+        if not isinstance(worker_source, dict):
+            worker_source = {}
+        worker_head = str(worker_source.get("head") or "").strip()
+        source_requirements = []
+        source_blocked_items = []
+        for item in (
+            session.query(WorkItem)
+            .filter(WorkItem.assigned_machine_key == machine.machine_key, WorkItem.state == WorkItemState.READY)
+            .filter(WorkItem.source_commit.isnot(None))
+            .order_by(WorkItem.priority.desc(), WorkItem.created_at.asc(), WorkItem.item_id.asc())
+            .limit(request.recent_limit)
+            .all()
+        ):
+            required_sha = str(item.source_commit or "").strip()
+            if not required_sha:
+                continue
+            satisfied = _source_head_satisfies_requirement(
+                repo_root=request.repo_root,
+                worker_head=worker_head,
+                required_sha=required_sha,
+            )
+            row = {
+                "item_id": item.item_id,
+                "required_sha": required_sha,
+                "worker_head": worker_head or None,
+                "satisfied": satisfied,
+            }
+            source_requirements.append(row)
+            if not satisfied:
+                source_blocked_items.append(row)
         worker_attention = None
-        if active_slots == 0 and assigned_ready > 0 and last_seen_at is not None and last_seen_at >= fresh_machine_cutoff:
+        if active_slots == 0 and source_blocked_items:
+            worker_attention = "assigned_ready_requires_newer_source"
+        elif active_slots == 0 and assigned_ready > 0 and last_seen_at is not None and last_seen_at >= fresh_machine_cutoff:
             if last_progress is None:
                 if capabilities:
                     worker_attention = "fresh_heartbeat_assigned_ready_without_progress"
@@ -161,6 +216,7 @@ def load_operator_status(session: Session, request: OperatorStatusRequest) -> Op
                 "capabilities": capabilities,
                 "last_progress": last_progress,
                 "worker_attention": worker_attention,
+                "source_requirements": source_requirements,
             }
         )
 

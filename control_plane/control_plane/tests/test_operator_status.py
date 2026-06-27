@@ -382,6 +382,52 @@ def test_operator_status_reports_evaluator_machine_capacity() -> None:
         assert "stalled_workers=1" in status.health_summary["message"]
 
 
+def test_operator_status_flags_assigned_ready_source_requirement_mismatch() -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    create_all(engine)
+    now = utcnow()
+    with tempfile.TemporaryDirectory() as td:
+        with Session(engine) as session:
+            machine = WorkerMachine(
+                machine_key="worker-source-stale",
+                hostname="eval-host",
+                executor_kind="local_process",
+                capabilities={
+                    "flow": "openroad",
+                    "platform": "nangate45",
+                    "worker_source": {
+                        "head": "a" * 40,
+                        "repo_root": "/workspaces/rtlgen-eval-clean",
+                    },
+                },
+                role="evaluator",
+                slot_capacity=4,
+                last_seen_at=now - timedelta(hours=1),
+            )
+            session.add(machine)
+            session.flush()
+            ready_item = _seed_item(session, item_id="needs_new_source", state=WorkItemState.READY)
+            ready_item.assigned_machine_key = machine.machine_key
+            ready_item.source_commit = "b" * 40
+            session.commit()
+
+            status = load_operator_status(session, OperatorStatusRequest(recent_limit=5, repo_root=td))
+
+        row = next(r for r in status.evaluator_machines if r["machine_key"] == "worker-source-stale")
+        assert row["assigned_ready"] == 1
+        assert row["active_slots"] == 0
+        assert row["worker_attention"] == "assigned_ready_requires_newer_source"
+        assert row["source_requirements"] == [
+            {
+                "item_id": "needs_new_source",
+                "required_sha": "b" * 40,
+                "worker_head": "a" * 40,
+                "satisfied": False,
+            }
+        ]
+        assert "stalled_workers=1" in status.health_summary["message"]
+
+
 def test_operator_status_reports_empty_capability_stalled_worker() -> None:
     engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
     create_all(engine)
