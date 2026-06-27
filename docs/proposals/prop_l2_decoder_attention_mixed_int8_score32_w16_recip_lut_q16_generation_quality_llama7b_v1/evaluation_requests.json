@@ -22,5 +22,19 @@
       }
     }
   ],
-  "source_commit": null
+  "source_commit": "ae02ff76de4a6b5039eec31e25a1fa2e6a1384cd",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_mixed_int8_score32_w16_recip_lut_q16_generation_quality_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Run bounded native-checkpoint generation/NLL quality for the score32/w16 RTL reciprocal-LUT q16 candidate that currently has the best physical recost.",
+      "evaluation_mode": "quality_gate",
+      "abstraction_layer": "decoder_attention_mixed_int8_score32_w16_recip_lut_q16_generation_quality",
+      "status": "merged",
+      "merged_pr_number": 1053,
+      "merge_commit": "5a109805db04bbf49c456f19bfc7b795b6ebf7a4",
+      "merged_utc": "2026-06-27T01:20:31.912321Z",
+      "notes": "Merged via PR #1053 and merge 5a109805db04bbf49c456f19bfc7b795b6ebf7a4 at 2026-06-27T01:20:31.912321Z."
+    }
+  ]
 }
