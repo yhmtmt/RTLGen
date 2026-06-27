@@ -234,8 +234,8 @@ def _rtl_quantized_softmax(
     else:
         reciprocal_bits = 0
 
-    if weight_bits > 8:
-        raise ValueError("RTL softmax mode expects integer output weights (weight_bits <= 8)")
+    if weight_bits < 2 or weight_bits > 24:
+        raise ValueError("RTL softmax mode expects integer output weights in [2, 24]")
 
     q_logits, _ = _quantize_symmetric_list(logits, score_bits)
     if not q_logits:
