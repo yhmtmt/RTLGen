@@ -1724,6 +1724,167 @@ def test_consume_l2_result_frontier_attention_rtl_recip_precision_generation_qua
             )
 
 
+def test_consume_l2_result_frontier_attention_softmax_replacement_generation_quality_uses_decoder_evidence() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            item_id = "l2_decoder_attention_mixed_int8_softmax_replacement_generation_quality_llama7b_v1"
+            proposal_dir = (
+                repo_root
+                / "docs"
+                / "proposals"
+                / "prop_l2_decoder_attention_mixed_int8_softmax_replacement_generation_quality_llama7b_v1"
+            )
+            proposal_dir.mkdir(parents=True)
+            _write(
+                proposal_dir / "proposal.json",
+                json.dumps(
+                    {
+                        "proposal_id": (
+                            "prop_l2_decoder_attention_mixed_int8_softmax_replacement_generation_quality_llama7b_v1"
+                        ),
+                        "kind": "architecture",
+                        "title": "Attention mixed-int8 softmax replacement generation quality",
+                        "direct_comparison": {
+                            "primary_question": "Which replacement softmax shape recovers generation quality?"
+                        },
+                    },
+                    indent=2,
+                )
+                + "\n",
+            )
+            evidence_rel = (
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                f"decoder_attention_mixed_int8_softmax_replacement_generation_quality__{item_id}.json"
+            )
+            report_rel = (
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                f"decoder_attention_mixed_int8_softmax_replacement_generation_quality__{item_id}.md"
+            )
+            _write(
+                repo_root / evidence_rel,
+                json.dumps(
+                    {
+                        "quality_gate": "mixed_int8_generation_quality",
+                        "model": {
+                            "model_id": "mistralai/Mistral-7B-v0.1",
+                            "gqa_group_size": 4.0,
+                            "dtype": "bfloat16",
+                        },
+                        "decision": {
+                            "status": "mixed_int8_generation_quality_pass",
+                            "recommended_next_step": "embody q24 PWL reciprocal-LUT softmax",
+                        },
+                        "summary": {
+                            "candidate_id": "qkv8_q24_pwl_recip_q24_bucket8",
+                            "prompt_count": 8,
+                            "generation_steps": 8,
+                            "free_run_exact_match_rate": 1.0,
+                            "free_run_token_match_rate": 1.0,
+                            "teacher_forced_mean_nll_delta": 0.001,
+                        },
+                        "best_candidate": {
+                            "candidate_id": "qkv8_q24_pwl_recip_q24_bucket8",
+                            "decision_status": "mixed_int8_generation_quality_pass",
+                        },
+                        "candidate_summaries": [
+                            {"candidate_id": "score32_w16_rtl_exact"},
+                            {"candidate_id": "qkv8_q20_pwl_recip_q20_bucket8"},
+                            {"candidate_id": "qkv8_q24_pwl_recip_q24_bucket8"},
+                        ],
+                    },
+                    indent=2,
+                )
+                + "\n",
+            )
+            _write(repo_root / report_rel, "# softmax replacement generation quality\n")
+
+            task_request = TaskRequest(
+                request_key=f"l2_campaign:{item_id}",
+                source="test",
+                requested_by="@tester",
+                title=f"Layer2 {item_id}",
+                description="softmax replacement generation quality",
+                layer=LayerName.LAYER2,
+                flow=FlowName.OPENROAD,
+                priority=1,
+                request_payload={
+                    "item_id": item_id,
+                    "layer": "layer2",
+                    "flow": "openroad",
+                    "developer_loop": {
+                        "proposal_id": (
+                            "prop_l2_decoder_attention_mixed_int8_softmax_replacement_generation_quality_llama7b_v1"
+                        ),
+                        "proposal_path": str(proposal_dir.relative_to(repo_root)),
+                        "evaluation": {"mode": "quality_gate"},
+                        "abstraction": {"layer": "decoder_attention_mixed_int8_softmax_replacement_generation_quality"},
+                        "comparison": {"role": "softmax_replacement_generation_quality"},
+                    },
+                },
+                source_commit="deadbeef",
+            )
+            session.add(task_request)
+            session.flush()
+            work_item = WorkItem(
+                work_item_key=f"l2_campaign:{item_id}",
+                task_request_id=task_request.id,
+                item_id=item_id,
+                layer=LayerName.LAYER2,
+                flow=FlowName.OPENROAD,
+                platform="nangate45",
+                task_type="l2_campaign",
+                state=WorkItemState.ARTIFACT_SYNC,
+                priority=1,
+                source_mode="src_verilog",
+                input_manifest={
+                    "decoder_contract": {
+                        "attention_mixed_int8_softmax_replacement_generation_quality_out": evidence_rel,
+                        "attention_mixed_int8_softmax_replacement_generation_quality_report": report_rel,
+                    }
+                },
+                command_manifest=[],
+                expected_outputs=[evidence_rel, report_rel],
+                acceptance_rules=[],
+                source_commit="deadbeef",
+            )
+            session.add(work_item)
+            session.flush()
+            session.add(
+                Run(
+                    run_key=f"{item_id}_run_1",
+                    work_item_id=work_item.id,
+                    attempt=1,
+                    executor_type=ExecutorType.INTERNAL_WORKER,
+                    status=RunStatus.SUCCEEDED,
+                    started_at=utcnow(),
+                    completed_at=utcnow(),
+                    checkout_commit="deadbeef",
+                    result_summary="2/2 commands succeeded",
+                )
+            )
+            session.commit()
+
+            consume_l2_result(session, Layer2ConsumeRequest(repo_root=str(repo_root), item_id=item_id))
+
+            decision_payload = json.loads(
+                (repo_root / "control_plane" / "shadow_exports" / "l2_decisions" / f"{item_id}.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            assert decision_payload["proposal_assessment"]["outcome"] == "mixed_int8_generation_quality_pass"
+            assert "qkv8_q24_pwl_recip_q24_bucket8" in decision_payload["proposal_assessment"]["summary"]
+            assert (
+                decision_payload["source_refs"][
+                    "decoder_attention_mixed_int8_softmax_replacement_generation_quality_out"
+                ]
+                == evidence_rel
+            )
+
+
 def test_decoder_evidence_summary_recognizes_composed_datapath_physical_feasibility() -> None:
     outcome, summary = _decoder_evidence_summary(
         evidence_ref="runs/datasets/demo/composed_datapath.json",
