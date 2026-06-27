@@ -6734,6 +6734,73 @@ def _decoder_attention_mixed_int8_score32_w16_rtl_recip_precision_generation_qua
     }
 
 
+def _decoder_attention_mixed_int8_softmax_replacement_generation_quality_evidence(
+    *,
+    item_id: str,
+) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    generation_quality_baseline = (
+        f"{base}/decoder_attention_mixed_int8_generation_quality__"
+        "l2_decoder_attention_mixed_int8_generation_quality_llama7b_v1_r3.json"
+    )
+    rtl_exact_generation_quality = (
+        f"{base}/decoder_attention_mixed_int8_score32_w16_rtl_exact_generation_quality__"
+        "l2_decoder_attention_mixed_int8_score32_w16_rtl_exact_generation_quality_llama7b_v1.json"
+    )
+    score_precision_recovery = (
+        f"{base}/decoder_attention_mixed_int8_score_precision_recovery__"
+        "l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1.json"
+    )
+    out = f"{base}/decoder_attention_mixed_int8_softmax_replacement_generation_quality__{item_id}.json"
+    report = f"{base}/decoder_attention_mixed_int8_softmax_replacement_generation_quality__{item_id}.md"
+    return {
+        "inputs": {
+            "attention_mixed_int8_generation_quality_baseline": generation_quality_baseline,
+            "attention_mixed_int8_score32_w16_rtl_exact_generation_quality": rtl_exact_generation_quality,
+            "attention_mixed_int8_score_precision_recovery": score_precision_recovery,
+            "attention_mixed_int8_softmax_replacement_generation_quality_out": out,
+            "attention_mixed_int8_softmax_replacement_generation_quality_report": report,
+            "attention_mixed_int8_softmax_replacement_generation_quality_scope": (
+                "Run a bounded native-checkpoint generation/NLL recovery check for replacement "
+                "softmax shapes if score32/w16 RTL exact-divide quality fails. This compares the "
+                "failed RTL exact row against float baselines and q20/q24 PWL reciprocal-LUT "
+                "softmax so the next hardware embodiment can target the softmax approximation "
+                "rather than only reciprocal precision."
+            ),
+        },
+        "commands": [
+            {
+                "name": "evaluate_decoder_attention_mixed_int8_softmax_replacement_generation_quality",
+                "run": (
+                    "bash -lc '"
+                    "MODEL_ID=${RTLGEN_MODEL_NATIVE_7B_MODEL_ID:-mistralai/Mistral-7B-v0.1}; "
+                    "EXPECTED_GQA=${RTLGEN_MODEL_NATIVE_7B_EXPECTED_GQA_GROUP_SIZE:-4}; "
+                    "MAX_PROMPTS=${RTLGEN_MODEL_NATIVE_7B_GENERATION_MAX_PROMPTS:-8}; "
+                    "GEN_STEPS=${RTLGEN_MODEL_NATIVE_7B_GENERATION_STEPS:-8}; "
+                    "DTYPE=${RTLGEN_MODEL_NATIVE_7B_DTYPE:-bfloat16}; "
+                    "bash npu/eval/run_hf_eval_python.sh "
+                    "npu/eval/evaluate_llm_decoder_model_native_mixed_int8_generation_quality.py "
+                    "--model-id \"$MODEL_ID\" "
+                    "--expected-gqa-group-size \"$EXPECTED_GQA\" "
+                    "--max-prompts \"$MAX_PROMPTS\" "
+                    "--generation-steps \"$GEN_STEPS\" "
+                    "--dtype \"$DTYPE\" "
+                    "--candidate score32_float:q8,k8,v8,s32,w16,float_quantized "
+                    "--candidate qkv8_float_exact:q8,k8,v8,s24,w16,float_exact "
+                    "--candidate score32_w16_rtl_exact:q8,k8,v8,s32,w16,rtl_exact "
+                    "--candidate qkv8_q20_pwl_recip_q20_bucket8:q8,k8,v8,s20,w20,pwl_recip_lut_q20_bucket8 "
+                    "--candidate qkv8_q24_pwl_recip_q24_bucket8:q8,k8,v8,s24,w24,pwl_recip_lut_q24_bucket8 "
+                    "--primary-candidate-id qkv8_q24_pwl_recip_q24_bucket8 "
+                    f"--out {out} "
+                    f"--out-md {report}'"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+        "evidence_only": True,
+    }
+
+
 def _decoder_attention_mixed_int8_quality_backed_frontier_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     energy_closure = (
@@ -8680,6 +8747,7 @@ def _build_payload(
         "decoder_attention_mixed_int8_score32_w16_recip_lut_q16_generation_quality",
         "decoder_attention_mixed_int8_score32_w16_rtl_exact_generation_quality",
         "decoder_attention_mixed_int8_score32_w16_rtl_recip_precision_generation_quality",
+        "decoder_attention_mixed_int8_softmax_replacement_generation_quality",
         "decoder_attention_mixed_int8_quality_backed_frontier",
         "decoder_attention_kv_dual_stream_physical_feasibility",
         "decoder_attention_mixed_precision_quality",
@@ -8896,6 +8964,10 @@ def _build_payload(
                 _decoder_attention_mixed_int8_score32_w16_rtl_recip_precision_generation_quality_evidence(
                     item_id=item_id,
                 )
+            )
+        elif abstraction_layer_name == "decoder_attention_mixed_int8_softmax_replacement_generation_quality":
+            decoder_evidence = _decoder_attention_mixed_int8_softmax_replacement_generation_quality_evidence(
+                item_id=item_id,
             )
         elif abstraction_layer_name == "decoder_attention_mixed_int8_quality_backed_frontier":
             decoder_evidence = _decoder_attention_mixed_int8_quality_backed_frontier_evidence(item_id=item_id)
