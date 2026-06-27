@@ -112,9 +112,29 @@ than free or heuristic assumptions.
     dominated by measured compute density
   - next result: measure denser exact-FP16 dense GEMM tiles before accepting the
     measured-compute frontier as the best possible exact-FP16 architecture
-- There is no active queue item for this closure stage. New evaluations should
-  continue to dispatch only to the remote evaluator
-  `eval-daemon-b7c2d9c80c1c`.
+- The score32/w16 softmax quality branch is now the active precision-closure
+  frontier:
+  - the `score32_float` mixed-int8 generation-quality baseline passed with
+    teacher-forced mean NLL delta about `0.0023`, top-1 match about `0.96875`,
+    free-run exact match `0.75`, and free-run token match `0.84375`
+  - the q16 reciprocal-LUT RTL softmax candidate
+    `l2_decoder_attention_mixed_int8_score32_w16_recip_lut_q16_generation_quality_llama7b_v1`
+    is merged by PR #1053 and failed the same quality gate:
+    teacher-forced mean NLL delta `1.5337108926816854`, top-1 match
+    `0.515625`, free-run exact match `0.0`, and free-run token match
+    `0.078125`
+  - the pending diagnostic item
+    `l2_decoder_attention_mixed_int8_score32_w16_rtl_exact_generation_quality_llama7b_v1`
+    is queued at source commit
+    `cd87b3692ad7076b0f924ce3d866cfc0c6cc92d2` to separate reciprocal-LUT
+    precision loss from the shared RTL softmax exponent/weight approximation
+  - successor routes are prepared but intentionally not dispatched yet:
+    `l2_decoder_attention_mixed_int8_score32_w16_rtl_recip_precision_generation_quality_llama7b_v1`
+    for the reciprocal-precision branch, and
+    `l2_decoder_attention_mixed_int8_softmax_replacement_generation_quality_llama7b_v1`
+    for the softmax-replacement branch
+- New evaluations should continue to dispatch only to the remote evaluator
+  `eval-daemon-b7c2d9c80c1c`, not the devcontainer.
 
 ## Remaining Quantities
 
@@ -172,6 +192,17 @@ than free or heuristic assumptions.
    - Next result: schedule QAT, scale-granularity recovery, or a larger 7B-class
      confirmation before treating KV4 as a precision-safe frontier point.
 
+4a. Score32/w16 softmax quality closure
+   - Scope: close the quality gap between the passing `score32_float`
+     mixed-int8 baseline and an RTL-realizable score32/w16 softmax path.
+   - Status: q16 reciprocal-LUT RTL softmax failed the bounded Llama7B
+     generation-quality gate. The RTL exact-divide diagnostic is queued to
+     determine whether the failure is dominated by reciprocal precision or by
+     the shared RTL softmax exponent/weight approximation.
+   - Next result: run the queued RTL exact-divide diagnostic on the remote
+     evaluator. If exact-divide passes, sweep reciprocal precision. If
+     exact-divide fails, dispatch the softmax replacement quality sweep.
+
 5. SRAM timing and energy
    - Scope: tile-local score/value buffering, KV tile reads, partial-value
      buffering, and result writeback.
@@ -197,11 +228,22 @@ than free or heuristic assumptions.
 
 ## Ordering
 
-The next evaluation should test whether exact-FP16 dense compute can become
-denser before moving to lower precision or a wider generator. PR #981 already
-closed the abstract selected compute target and showed that the current
-measured dense-tile set makes the old `524288 MAC/cycle` point infeasible. The
-next job is `l1_npu_dense_gemm_tile_scaling_v3`: remeasure the 16x16 k1
-baseline and measure a 16x16 k2 depth point in the same larger macro floorplan.
-All new evaluation jobs should run on the remote evaluator, not the
-devcontainer.
+The current first step is the RTL exact-divide generation-quality diagnostic:
+`l2_decoder_attention_mixed_int8_score32_w16_rtl_exact_generation_quality_llama7b_v1`.
+It should stay pinned to source commit
+`cd87b3692ad7076b0f924ce3d866cfc0c6cc92d2` unless the evaluator cannot run
+that commit. The successor branch is conditional:
+
+1. If RTL exact-divide passes the quality gate, dispatch
+   `l2_decoder_attention_mixed_int8_score32_w16_rtl_recip_precision_generation_quality_llama7b_v1`
+   to find the smallest reciprocal-LUT precision that preserves quality.
+2. If RTL exact-divide fails, dispatch
+   `l2_decoder_attention_mixed_int8_softmax_replacement_generation_quality_llama7b_v1`
+   to replace the shared RTL softmax approximation before spending more PPA
+   runs on reciprocal precision.
+3. After one quality branch passes, run physical PPA for the selected
+   score32/w16 softmax embodiment and then feed that measured cost back into
+   the Llama7B integrated schedule.
+
+All new evaluation jobs should run on the remote evaluator
+`eval-daemon-b7c2d9c80c1c`, not the devcontainer.
