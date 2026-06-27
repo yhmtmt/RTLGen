@@ -20,7 +20,13 @@
       "expected_result": {
         "direction": "record_score32_recip_lut_q16_area_fit_recost",
         "reason": "The q16 recip-lut composed wrapper is a conservative path update of the prior score32 frontier."
-      }
+      },
+      "status": "merged",
+      "merged_pr_number": 1048,
+      "merge_commit": "e41cb1ef41af5b61e185fc3084a390a1cd25e971",
+      "merged_utc": "2026-06-27T00:24:05.434315Z",
+      "notes": "Merged via PR #1048 and merge e41cb1ef41af5b61e185fc3084a390a1cd25e971 at 2026-06-27T00:24:05.434315Z."
     }
-  ]
+  ],
+  "source_commit": "96cfb42937725d28dd0e3a0021c53f1a9a9dbbff"
 }
