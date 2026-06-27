@@ -1,0 +1,26 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_mixed_int8_score32_w16_rtl_recip_precision_generation_quality_llama7b_v1",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_mixed_int8_score32_w16_rtl_recip_precision_generation_quality_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Run bounded native-checkpoint generation/NLL quality for score32/w16 RTL reciprocal-LUT q16/q18/q20/q22/q24 after exact-divide softmax recovers the q16 failure.",
+      "evaluation_mode": "quality_gate",
+      "abstraction_layer": "decoder_attention_mixed_int8_score32_w16_rtl_recip_precision_generation_quality",
+      "comparison_role": "score32_w16_rtl_recip_precision_generation_quality",
+      "cost_class": "medium",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_mixed_int8_score32_w16_recip_lut_q16_generation_quality_llama7b_v1",
+        "l2_decoder_attention_mixed_int8_score32_w16_rtl_exact_generation_quality_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "run_physical": false,
+      "expected_result": {
+        "direction": "find_minimum_quality_safe_reciprocal_precision",
+        "reason": "If exact division passes, this job should identify the lowest reciprocal-LUT precision that is quality-safe enough to justify physical PPA measurement."
+      }
+    }
+  ],
+  "source_commit": null
+}
