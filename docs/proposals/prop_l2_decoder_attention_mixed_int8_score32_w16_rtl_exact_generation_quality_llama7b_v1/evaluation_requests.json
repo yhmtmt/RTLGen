@@ -20,8 +20,13 @@
       "expected_result": {
         "direction": "diagnose_rtl_softmax_quality_failure",
         "reason": "If RTL exact-divide passes, recover by improving reciprocal approximation. If it fails, recover by replacing the shared RTL softmax exponent/weight approximation."
-      }
+      },
+      "status": "merged",
+      "merged_pr_number": 1065,
+      "merge_commit": "c89f8b6d1f97bdf10c834edd66e45b7dc0f47eae",
+      "merged_utc": "2026-06-28T13:41:57.340627Z",
+      "notes": "Merged via PR #1065 and merge c89f8b6d1f97bdf10c834edd66e45b7dc0f47eae at 2026-06-28T13:41:57.340627Z."
     }
   ],
-  "source_commit": null
+  "source_commit": "cd87b3692ad7076b0f924ce3d866cfc0c6cc92d2"
 }
