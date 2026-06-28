@@ -1,0 +1,109 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "decoder_contract": {
+        "attention_mixed_int8_score_precision_recovery": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score_precision_recovery__l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1.json",
+        "attention_mixed_int8_generation_quality_baseline": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_generation_quality__l2_decoder_attention_mixed_int8_generation_quality_llama7b_v1_r3.json",
+        "attention_mixed_int8_score32_w16_rtl_exact_generation_quality": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score32_w16_rtl_exact_generation_quality__l2_decoder_attention_mixed_int8_score32_w16_rtl_exact_generation_quality_llama7b_v1.json",
+        "attention_mixed_int8_softmax_replacement_generation_quality_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_softmax_replacement_generation_quality__l2_decoder_attention_mixed_int8_softmax_replacement_generation_quality_llama7b_v1.json",
+        "attention_mixed_int8_softmax_replacement_generation_quality_scope": "Run a bounded native-checkpoint generation/NLL recovery check for replacement softmax shapes if score32/w16 RTL exact-divide quality fails. This compares the failed RTL exact row against float baselines and q20/q24 PWL reciprocal-LUT softmax so the next hardware embodiment can target the softmax approximation rather than only reciprocal precision.",
+        "attention_mixed_int8_softmax_replacement_generation_quality_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_softmax_replacement_generation_quality__l2_decoder_attention_mixed_int8_softmax_replacement_generation_quality_llama7b_v1.md"
+      }
+    },
+    "commands": [
+      {
+        "run": "bash -lc 'MODEL_ID=${RTLGEN_MODEL_NATIVE_7B_MODEL_ID:-mistralai/Mistral-7B-v0.1}; EXPECTED_GQA=${RTLGEN_MODEL_NATIVE_7B_EXPECTED_GQA_GROUP_SIZE:-4}; MAX_PROMPTS=${RTLGEN_MODEL_NATIVE_7B_GENERATION_MAX_PROMPTS:-8}; GEN_STEPS=${RTLGEN_MODEL_NATIVE_7B_GENERATION_STEPS:-8}; DTYPE=${RTLGEN_MODEL_NATIVE_7B_DTYPE:-bfloat16}; bash npu/eval/run_hf_eval_python.sh npu/eval/evaluate_llm_decoder_model_native_mixed_int8_generation_quality.py --model-id \"$MODEL_ID\" --expected-gqa-group-size \"$EXPECTED_GQA\" --max-prompts \"$MAX_PROMPTS\" --generation-steps \"$GEN_STEPS\" --dtype \"$DTYPE\" --candidate score32_float:q8,k8,v8,s32,w16,float_quantized --candidate qkv8_float_exact:q8,k8,v8,s24,w16,float_exact --candidate score32_w16_rtl_exact:q8,k8,v8,s32,w16,rtl_exact --candidate qkv8_q20_pwl_recip_q20_bucket8:q8,k8,v8,s20,w20,pwl_recip_lut_q20_bucket8 --candidate qkv8_q24_pwl_recip_q24_bucket8:q8,k8,v8,s24,w24,pwl_recip_lut_q24_bucket8 --primary-candidate-id qkv8_q24_pwl_recip_q24_bucket8 --out runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_softmax_replacement_generation_quality__l2_decoder_attention_mixed_int8_softmax_replacement_generation_quality_llama7b_v1.json --out-md runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_softmax_replacement_generation_quality__l2_decoder_attention_mixed_int8_softmax_replacement_generation_quality_llama7b_v1.md'",
+        "name": "evaluate_decoder_attention_mixed_int8_softmax_replacement_generation_quality"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate_runs"
+      }
+    ],
+    "objective": "Run bounded native-checkpoint generation/NLL quality for replacement softmax shapes after score32/w16 RTL exact-divide softmax failed the same gate.",
+    "acceptance": [
+      "Write all declared decoder evidence artifacts",
+      "Keep evidence artifact paths repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "source_mode": "src_verilog",
+    "expected_outputs": [
+      "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_softmax_replacement_generation_quality__l2_decoder_attention_mixed_int8_softmax_replacement_generation_quality_llama7b_v1.json",
+      "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_softmax_replacement_generation_quality__l2_decoder_attention_mixed_int8_softmax_replacement_generation_quality_llama7b_v1.md"
+    ]
+  },
+  "layer": "layer2",
+  "state": "evaluated",
+  "title": "Llama7B mixed/int8 softmax replacement generation quality",
+  "result": {
+    "branch": "eval/l2_decoder_attention_mixed_int8_softmax_replacement_generation_quality_llama7b_v1/s20260628t135137z",
+    "completed_utc": "2026-06-28T13:51:34.564951Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "b7c2d9c80c1c",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260628t135137z][host:b7c2d9c80c1c][item:l2_decoder_attention_mixed_int8_softmax_replacement_generation_quality_llama7b_v1]",
+    "metrics_rows": [],
+    "metrics_exempt_reason": "evidence_only_decoder_evidence",
+    "queue_item_id": "l2_decoder_attention_mixed_int8_softmax_replacement_generation_quality_llama7b_v1",
+    "session_id": "s20260628t135137z",
+    "status": "ok",
+    "summary": "2/2 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l2_decoder_attention_mixed_int8_softmax_replacement_generation_quality_llama7b_v1/s20260628t135137z",
+    "pr_title": "eval: run llama7b mixed/int8 softmax replacement generation quality",
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Include metrics row references in result.metrics_rows",
+      "Keep committed result_path fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260628t135137z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l2_decoder_attention_mixed_int8_softmax_replacement_generation_quality_llama7b_v1"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l2_decoder_attention_mixed_int8_softmax_replacement_generation_quality_llama7b_v1",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 1,
+  "created_utc": "2026-06-28T13:43:07.196776Z",
+  "requested_by": "@codex",
+  "developer_loop": {
+    "comparison": {
+      "role": "softmax_replacement_generation_quality",
+      "paired_baseline_item_id": ""
+    },
+    "evaluation": {
+      "mode": "quality_gate",
+      "expected_reason": "RTL exact-divide failed the same generation-quality gate as reciprocal-LUT q16, so sweep replacement softmax shapes before more PPA runs.",
+      "expected_direction": "choose_softmax_replacement_after_rtl_exact_failure"
+    },
+    "abstraction": {
+      "layer": "decoder_attention_mixed_int8_softmax_replacement_generation_quality"
+    },
+    "proposal_id": "prop_l2_decoder_attention_mixed_int8_softmax_replacement_generation_quality_llama7b_v1",
+    "dependencies": {
+      "item_ids": [
+        "l2_decoder_attention_mixed_int8_generation_quality_llama7b_v1_r3",
+        "l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1",
+        "l2_decoder_attention_mixed_int8_score32_w16_rtl_exact_generation_quality_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    },
+    "proposal_path": "docs/proposals/prop_l2_decoder_attention_mixed_int8_softmax_replacement_generation_quality_llama7b_v1/proposal.json"
+  },
+  "source_requirement": {
+    "repo": "",
+    "reason": "evaluator runtime must contain the queued job source commit",
+    "version": 1,
+    "required_ref": "origin/master",
+    "required_sha": "c697832fc58789af79c407266536866bd03aa31f",
+    "requires_daemon_restart": true
+  }
+}
