@@ -1,0 +1,95 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-06-29T14:43:35.326981Z",
+  "item_id": "l1_decoder_attention_dual_stream_composed_score24_w16_exact_div_ppa_v1",
+  "run_key": "l1_decoder_attention_dual_stream_composed_score24_w16_exact_div_ppa_v1_run_d2efdecf76c44b43",
+  "layer": "layer1",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l1_sweep",
+  "source_commit": "edc6f46629c27842ad6cfa6eb4326582815a7447",
+  "objective": "Measure Nangate45 PPA for the q8/k8/v8/a24/s24/w16 exact-divider composed dual-stream attention datapath as the closest local wrapper to the qkv8_float_exact quality-backed frontier.",
+  "input_manifest": {
+    "sweeps": [
+      "runs/campaigns/npu/attention_dual_stream_composed_v1/sweeps/nangate45_dual_stream_composed_hier_score24_w16_exact_div.json"
+    ],
+    "configs": [
+      "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_score24_w16_exact_div/config.json"
+    ],
+    "out_root": "runs/designs/npu_blocks",
+    "design_dirs": [],
+    "macro_manifests": [],
+    "candidate_manifests": [],
+    "required_submodules": []
+  },
+  "proposal_count": 1,
+  "evaluation_record": {
+    "evaluation_mode": "frontier_followup",
+    "abstraction_layer": "decoder_attention_dual_stream_composed_datapath",
+    "result_kind": "physical_metrics",
+    "physical_metrics_present": true,
+    "summary": "Physical metrics recorded from an accepted status=ok Layer 1 row."
+  },
+  "proposal_assessment": null,
+  "proposals": [
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_score24_w16_exact_div/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "e7038a18",
+        "tag": "attention_dual_stream_composed_v1_hier_score24_w16_exact_div",
+        "result_path": "/orfs/flow/reports/nangate45/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_score24_w16_exact_div/attention_dual_stream_composed_v1_hier_score24_w16_exact_div/6_finish.rpt",
+        "work_result_json": "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_score24_w16_exact_div/work/e7038a18/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 29.9544,
+        "die_area": 6250000.0,
+        "total_power_mw": 7.6
+      }
+    }
+  ],
+  "trial_summary": {
+    "item_id": "l1_decoder_attention_dual_stream_composed_score24_w16_exact_div_ppa_v1",
+    "completed_trials": 1,
+    "success_count": 1,
+    "failure_count": 0,
+    "success_rate": 1.0,
+    "metrics": {
+      "critical_path_ns": {
+        "best": 29.9544,
+        "mean": 29.9544,
+        "median": 29.9544,
+        "max": 29.9544,
+        "range": 0.0,
+        "stddev": 0.0
+      },
+      "die_area": {
+        "best": 6250000.0,
+        "mean": 6250000.0,
+        "median": 6250000.0,
+        "max": 6250000.0,
+        "range": 0.0,
+        "stddev": 0.0
+      },
+      "total_power_mw": {
+        "best": 7.6,
+        "mean": 7.6,
+        "median": 7.6,
+        "max": 7.6,
+        "range": 0.0,
+        "stddev": 0.0
+      }
+    }
+  },
+  "source_refs": {
+    "trial_metrics_csvs": [
+      "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_score24_w16_exact_div/metrics.csv"
+    ],
+    "summary_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_dual_stream_composed_score24_w16_exact_div_ppa_v1/summary_stats.json",
+    "failure_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_dual_stream_composed_score24_w16_exact_div_ppa_v1/failure_stats.json",
+    "trial_table_csv": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_dual_stream_composed_score24_w16_exact_div_ppa_v1/trial_table.csv"
+  }
+}
