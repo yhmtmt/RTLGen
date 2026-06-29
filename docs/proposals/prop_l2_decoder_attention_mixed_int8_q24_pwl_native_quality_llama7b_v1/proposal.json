@@ -1,0 +1,81 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_mixed_int8_q24_pwl_native_quality_llama7b_v1",
+  "created_utc": "2026-06-29T11:15:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Llama7B mixed-int8 q24-PWL native quality gate",
+  "abstraction_layer": "decoder_attention_mixed_int8_q24_pwl_native_quality",
+  "hypothesis": "The q24/PWL reciprocal-LUT softmax replacement that passed bounded 7B-class generation/NLL quality should be checked against the broader native attention-shadow gate before it becomes the next physical PPA and frontier-recost target.",
+  "direct_comparison": {
+    "primary_question": "Does q8/k8/v8 with q24/PWL reciprocal-LUT softmax preserve native 7B attention-shadow quality relative to float-exact and score24 float controls?",
+    "baseline": "l2_decoder_attention_mixed_int8_softmax_replacement_generation_quality_llama7b_v1",
+    "candidate": "qkv8_q24_pwl_recip_q24_bucket8",
+    "include": [
+      "q8/k8/v8 projection quantization",
+      "q20 and q24 PWL reciprocal-LUT softmax candidates",
+      "float-exact and score24 float-quantized controls",
+      "native 7B-class checkpoint attention-shadow comparisons",
+      "top1, top-k, logit cosine, probability KL, and maximum logit-delta evidence"
+    ],
+    "exclude": [
+      "new OpenROAD/PPA runs",
+      "QAT or fine-tuning recovery",
+      "new HBM/SRAM/NoC modeling",
+      "claiming the q24 PWL path as rankable before physical PPA and integrated recost"
+    ],
+    "metrics": [
+      "decision",
+      "candidate_summaries",
+      "top1_match_rate",
+      "topk_contains_rate",
+      "mean_logit_cosine",
+      "mean_probability_kl",
+      "max_abs_logit_delta_max",
+      "best_candidate"
+    ]
+  },
+  "expected_benefit": [
+    "turn the bounded generation pass into the same native attention-shadow evidence stream used by the mixed-int8 frontier",
+    "avoid launching q24 PWL physical PPA if the broader native quality gate rejects it",
+    "prepare a quality-backed q24 PWL target for measured softmax/datapath PPA and Llama7B frontier recost"
+  ],
+  "risks": [
+    "attention-shadow quality is not full downstream task accuracy",
+    "the default public 7B-class checkpoint is Mistral-7B unless the evaluator overrides the model id",
+    "a passing quality gate still leaves q24 PWL softmax PPA and integrated schedule recost unmeasured"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_mixed_int8_q24_pwl_native_quality_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Run the native 7B mixed-int8 attention-shadow gate for q8/k8/v8 with q24/PWL reciprocal-LUT softmax after q24 passed bounded generation/NLL quality.",
+      "evaluation_mode": "quality_gate",
+      "abstraction_layer": "decoder_attention_mixed_int8_q24_pwl_native_quality",
+      "comparison_role": "precision_validation",
+      "cost_class": "medium",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_mixed_int8_softmax_replacement_generation_quality_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "run_physical": false,
+      "expected_result": {
+        "direction": "validate_or_reject_q24_pwl_hardware_target",
+        "reason": "PR #1066 selected qkv8_q24_pwl_recip_q24_bucket8 from bounded generation/NLL evidence; this gate checks whether the same replacement is acceptable on the broader native attention-shadow path before PPA."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_softmax_replacement_generation_quality__l2_decoder_attention_mixed_int8_softmax_replacement_generation_quality_llama7b_v1.json"
+  ],
+  "source_refs": [
+    "control_plane/shadow_exports/l2_decisions/l2_decoder_attention_mixed_int8_softmax_replacement_generation_quality_llama7b_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/evaluate_llm_decoder_model_native_mixed_int8_attention.py",
+    "npu/eval/evaluate_llm_decoder_model_native_mixed_int8_generation_quality.py",
+    "docs/proposals/prop_l2_decoder_attention_mixed_int8_softmax_replacement_generation_quality_llama7b_v1/proposal.json"
+  ]
+}
