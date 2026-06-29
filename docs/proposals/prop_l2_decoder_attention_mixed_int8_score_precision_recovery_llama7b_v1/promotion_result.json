@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1",
   "decision": "iterate",
-  "pr_number": 1021,
-  "merge_commit": "b80ed72fe954873b1d24ac35d7ecd4b088ea4fa6",
-  "merged_utc": "2026-06-25T13:45:03.101234Z"
+  "pr_number": 1073,
+  "merge_commit": "5515e32984736e4f4f76d3c2672e558ac0f61c0e",
+  "merged_utc": "2026-06-29T11:47:26.459977Z"
 }

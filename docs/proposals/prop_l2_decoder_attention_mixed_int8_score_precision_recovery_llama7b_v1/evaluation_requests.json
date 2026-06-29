@@ -22,7 +22,7 @@
       }
     }
   ],
-  "source_commit": "68d78c106c9d3b4891657cc2aa259171397aa4ab",
+  "source_commit": "4cbba8c266e16f2bff24d5e2e54eab0461ab90c9",
   "requested_items": [
     {
       "item_id": "l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1_r2",
@@ -43,7 +43,11 @@
         "direction": "recover_quality_gate_or_hold_for_recost",
         "reason": "The merged v1 recovery run did not actually increase score fractional precision for s24/s28/s32; rerun with corrected score quantization before making PPA or frontier decisions."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 1073,
+      "merge_commit": "5515e32984736e4f4f76d3c2672e558ac0f61c0e",
+      "merged_utc": "2026-06-29T11:47:26.459977Z",
+      "notes": "Merged via PR #1073 and merge 5515e32984736e4f4f76d3c2672e558ac0f61c0e at 2026-06-29T11:47:26.459977Z."
     },
     {
       "item_id": "l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1",
