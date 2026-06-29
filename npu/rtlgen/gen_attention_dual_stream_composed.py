@@ -802,19 +802,14 @@ def _write_top(*, cfg: dict[str, Any], comp: dict[str, Any], out_path: Path) -> 
     total_macs = streams * macs_per_stream
     softmax_score_row_width = row_elems * softmax_score_bits
     softmax_weight_row_width = row_elems * softmax_weight_bits
-    softmax_name = (
-        "attention_softmax_weight_q12_pwl_recip_like"
-        if softmax_impl == "pwl_recip_lut"
-        else (
-            f"attention_softmax_weight_score32_w16_recip_lut_q{reciprocal_bits}_like"
-            if softmax_score_bits == 32 and softmax_weight_bits == 16 and softmax_impl == "recip_lut"
-            else (
-            "attention_softmax_weight_score32_w16_exact_div_like"
-            if softmax_score_bits == 32 and softmax_weight_bits == 16 and softmax_impl == "exact_div"
-            else "attention_softmax_weight_int8_r8_acc24_recip_q10_like"
-            )
-        )
-    )
+    if softmax_impl == "pwl_recip_lut":
+        softmax_name = "attention_softmax_weight_q12_pwl_recip_like"
+    elif softmax_impl == "exact_div" and (softmax_score_bits, softmax_weight_bits) != (8, 8):
+        softmax_name = f"attention_softmax_weight_score{softmax_score_bits}_w{softmax_weight_bits}_exact_div_like"
+    elif softmax_impl == "recip_lut" and (softmax_score_bits, softmax_weight_bits) == (32, 16):
+        softmax_name = f"attention_softmax_weight_score32_w16_recip_lut_q{reciprocal_bits}_like"
+    else:
+        softmax_name = "attention_softmax_weight_int8_r8_acc24_recip_q10_like"
     value_name = f"attention_full_value_stream_q8v{value_bits}_p8_ppc2"
 
     stream_regs = [f"  reg [{stream_buffer_bits - 1}:0] stream_buf_{stream};" for stream in range(streams)]

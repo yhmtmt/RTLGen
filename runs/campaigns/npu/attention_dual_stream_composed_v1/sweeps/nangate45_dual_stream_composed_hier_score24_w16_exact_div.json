@@ -1,0 +1,33 @@
+{
+  "flow_params": {
+    "TAG": [
+      "attention_dual_stream_composed_v1_hier_score24_w16_exact_div"
+    ],
+    "FLOW_VARIANT": [
+      "attention_dual_stream_composed_v1_hier_score24_w16_exact_div"
+    ],
+    "CLOCK_PERIOD": [
+      10.0
+    ],
+    "DIE_AREA": [
+      "0 0 2500 2500"
+    ],
+    "CORE_AREA": [
+      "50 50 2450 2450"
+    ],
+    "PLACE_DENSITY": [
+      0.3,
+      0.4
+    ],
+    "SYNTH_HIERARCHICAL": [
+      1
+    ],
+    "SYNTH_KEEP_MODULES": [
+      "int8_mac_s8s8_acc24 attention_softmax_weight_score24_w16_exact_div_like attention_full_value_stream_q8v8_p8_ppc2"
+    ],
+    "SYNTH_MEMORY_MAX_BITS": [
+      65536
+    ]
+  },
+  "tag_prefix": "attention_dual_stream_composed_v1_hier_score24_w16_exact_div"
+}
