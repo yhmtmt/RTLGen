@@ -2144,6 +2144,31 @@ def test_decoder_evidence_summary_recognizes_composed_datapath_score32_reduced_r
     assert "best_requested_replica_recost_latency_us=10100.0" in summary
 
 
+def test_decoder_evidence_summary_recognizes_composed_datapath_score24_reduced_replica_model() -> None:
+    outcome, summary = _decoder_evidence_summary(
+        evidence_ref="runs/datasets/demo/composed_datapath_score24_reduced_replica.json",
+        evidence_payload={
+            "model": "llm_decoder_attention_composed_datapath_score24_w16_exact_div_reduced_replica_llama7b_v1",
+            "diagnosis": {
+                "decision": "dual_stream_feasible",
+                "precision_profile": "q8_k8_v8_a24_s24_w16_exact_div_int8_compute",
+                "best_requested_mode": "dual_mac",
+                "best_requested_replica_recost_enabled": True,
+                "best_requested_replica_recost_area_fit_replica_count": 900,
+                "best_requested_replica_recost_macs_per_cycle": 115200,
+                "best_requested_replica_recost_latency_us": 8800.0,
+                "best_feasible_latency_us": 8800.0,
+            },
+        },
+    )
+
+    assert outcome == "dual_stream_feasible"
+    assert "score24/w16 exact-div reduced-replica recost" in summary
+    assert "precision_profile=q8_k8_v8_a24_s24_w16_exact_div_int8_compute" in summary
+    assert "best_requested_replica_recost_area_fit_replica_count=900" in summary
+    assert "best_requested_replica_recost_latency_us=8800.0" in summary
+
+
 def test_decoder_evidence_summary_recognizes_composed_datapath_score32_split2_reduced_replica_model() -> None:
     outcome, summary = _decoder_evidence_summary(
         evidence_ref="runs/datasets/demo/composed_datapath_score32_split2_reduced_replica.json",
