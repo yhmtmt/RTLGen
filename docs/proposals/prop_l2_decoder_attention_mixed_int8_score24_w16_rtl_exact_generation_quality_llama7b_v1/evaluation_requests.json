@@ -1,0 +1,26 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_mixed_int8_score24_w16_rtl_exact_generation_quality_llama7b_v1",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_mixed_int8_score24_w16_rtl_exact_generation_quality_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Run bounded native-checkpoint generation/NLL quality for the measured score24/w16 RTL exact-divide softmax profile after the reduced-replica Llama7B recost improved on score32/w16.",
+      "evaluation_mode": "quality_gate",
+      "abstraction_layer": "decoder_attention_mixed_int8_score24_w16_rtl_exact_generation_quality",
+      "comparison_role": "score24_w16_rtl_exact_generation_quality",
+      "cost_class": "medium",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_composed_datapath_score24_w16_exact_div_reduced_replica_llama7b_v1",
+        "l2_decoder_attention_mixed_int8_generation_quality_llama7b_v1_r3",
+        "l2_decoder_attention_mixed_int8_score32_w16_rtl_exact_generation_quality_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "run_physical": false,
+      "expected_result": {
+        "direction": "direct_score24_w16_quality_gate",
+        "reason": "If score24/w16 RTL exact-divide passes, use the measured lower-area score24/w16 recost as the active quality-backed frontier. If it fails, keep the recost as physical evidence but plan recovery through higher precision, a different softmax model, or QAT."
+      }
+    }
+  ]
+}
