@@ -1268,6 +1268,34 @@ def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, 
         summary = "; ".join(parts)
         return outcome, summary if summary.endswith(".") else summary + "."
 
+    if model == "llm_decoder_attention_mixed_int8_quality_energy_frontier_llama7b_v1":
+        diagnosis = evidence_payload.get("diagnosis")
+        diagnosis_dict = dict(diagnosis) if isinstance(diagnosis, dict) else {}
+        outcome = str(
+            diagnosis_dict.get("decision")
+            or evidence_payload.get("decision")
+            or "mixed_int8_quality_energy_frontier_recorded"
+        )
+        parts = [
+            f"Decoder mixed/int8 quality/energy frontier evidence recorded from {evidence_ref}: decision={outcome}",
+        ]
+        for key in (
+            "quality_best_candidate_id",
+            "quality_best_top1_match_rate",
+            "score32_top1_match_rate",
+            "q24_pwl_top1_match_rate",
+            "best_fp16_softmax_proxy_candidate_id",
+            "best_fp16_softmax_proxy_critical_path_ns",
+            "best_fp16_softmax_proxy_die_area_um2",
+            "best_fp16_softmax_proxy_total_power_mw",
+            "non_quality_backed_measured_recost_count",
+            "recommended_next_step",
+        ):
+            if key in diagnosis_dict:
+                parts.append(f"{key}={diagnosis_dict.get(key)}")
+        summary = "; ".join(parts)
+        return outcome, summary if summary.endswith(".") else summary + "."
+
     if model == "llm_decoder_attention_mixed_int8_score_margin_audit_llama7b_v1":
         decision = evidence_payload.get("decision")
         decision_dict = dict(decision) if isinstance(decision, dict) else {}

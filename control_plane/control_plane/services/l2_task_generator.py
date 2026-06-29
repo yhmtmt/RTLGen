@@ -6903,6 +6903,66 @@ def _decoder_attention_mixed_int8_quality_backed_frontier_evidence(*, item_id: s
     }
 
 
+def _decoder_attention_mixed_int8_quality_energy_frontier_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    quality_backed_frontier = (
+        f"{base}/decoder_attention_mixed_int8_quality_backed_frontier__"
+        "l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1.json"
+    )
+    score_precision_recovery = (
+        f"{base}/decoder_attention_mixed_int8_score_precision_recovery__"
+        "l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1_r2.json"
+    )
+    exact_div_recost = (
+        f"{base}/decoder_attention_composed_datapath_physical_feasibility__"
+        "l2_decoder_attention_composed_datapath_score32_w16_exact_div_reduced_replica_llama7b_v1_r2.json"
+    )
+    exact_div_split2_recost = (
+        f"{base}/decoder_attention_composed_datapath_physical_feasibility__"
+        "l2_decoder_attention_composed_datapath_score32_w16_exact_div_split2_reduced_replica_llama7b_v1.json"
+    )
+    fp16_softmax_nm1_metrics = "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/metrics.csv"
+    fp16_softmax_nm2_metrics = "runs/designs/npu_blocks/npu_fp16_cpp_nm2_softmaxcmp/metrics.csv"
+    out = f"{base}/decoder_attention_mixed_int8_quality_energy_frontier__{item_id}.json"
+    report = f"{base}/decoder_attention_mixed_int8_quality_energy_frontier__{item_id}.md"
+    return {
+        "inputs": {
+            "attention_mixed_int8_quality_backed_frontier": quality_backed_frontier,
+            "attention_mixed_int8_score_precision_recovery": score_precision_recovery,
+            "attention_score32_w16_exact_div_physical_recost": exact_div_recost,
+            "attention_score32_w16_exact_div_split2_physical_recost": exact_div_split2_recost,
+            "attention_fp16_softmax_nm1_metrics": fp16_softmax_nm1_metrics,
+            "attention_fp16_softmax_nm2_metrics": fp16_softmax_nm2_metrics,
+            "attention_mixed_int8_quality_energy_frontier_out": out,
+            "attention_mixed_int8_quality_energy_frontier_report": report,
+            "attention_mixed_int8_quality_energy_frontier_scope": (
+                "Audit the current quality-backed mixed/int8 frontier after corrected score precision. "
+                "Keep qkv8_float_exact as the only passing quality point, retain score32/exact-div PPA "
+                "as non-quality-backed diagnostics, and use measured FP16 softmax rows to decide whether "
+                "a composed q8/k8/v8 plus floating/near-exact softmax wrapper should be measured next."
+            ),
+        },
+        "commands": [
+            {
+                "name": "audit_decoder_attention_mixed_int8_quality_energy_frontier",
+                "run": (
+                    "python3 npu/eval/audit_llm_decoder_attention_mixed_int8_quality_energy_frontier.py "
+                    f"--quality-backed-frontier-json {quality_backed_frontier} "
+                    f"--score-precision-recovery-json {score_precision_recovery} "
+                    f"--exact-div-recost-json {exact_div_recost} "
+                    f"--exact-div-split2-recost-json {exact_div_split2_recost} "
+                    f"--fp16-softmax-nm1-metrics {fp16_softmax_nm1_metrics} "
+                    f"--fp16-softmax-nm2-metrics {fp16_softmax_nm2_metrics} "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+        "evidence_only": True,
+    }
+
+
 def _decoder_attention_mixed_precision_quality_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_mixed_precision_quality__{item_id}.json"
@@ -8804,6 +8864,7 @@ def _build_payload(
         "decoder_attention_mixed_int8_score32_w16_rtl_recip_precision_generation_quality",
         "decoder_attention_mixed_int8_softmax_replacement_generation_quality",
         "decoder_attention_mixed_int8_quality_backed_frontier",
+        "decoder_attention_mixed_int8_quality_energy_frontier",
         "decoder_attention_kv_dual_stream_physical_feasibility",
         "decoder_attention_mixed_precision_quality",
         "decoder_attention_softmax_pow2sum_quality",
@@ -9028,6 +9089,8 @@ def _build_payload(
             )
         elif abstraction_layer_name == "decoder_attention_mixed_int8_quality_backed_frontier":
             decoder_evidence = _decoder_attention_mixed_int8_quality_backed_frontier_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_attention_mixed_int8_quality_energy_frontier":
+            decoder_evidence = _decoder_attention_mixed_int8_quality_energy_frontier_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_dual_stream_physical_feasibility":
             decoder_evidence = _decoder_attention_kv_dual_stream_physical_feasibility_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_mixed_precision_quality":

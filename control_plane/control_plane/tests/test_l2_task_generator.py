@@ -8145,6 +8145,85 @@ def test_generate_l2_campaign_task_adds_mixed_int8_quality_backed_frontier_evide
             }
 
 
+def test_generate_l2_campaign_task_adds_mixed_int8_quality_energy_frontier_evidence() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id="l2_decoder_attention_mixed_int8_quality_energy_frontier_llama7b_v1",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    proposal_id="prop_l2_decoder_attention_mixed_int8_quality_energy_frontier_llama7b_v1",
+                    proposal_path=(
+                        "docs/proposals/"
+                        "prop_l2_decoder_attention_mixed_int8_quality_energy_frontier_llama7b_v1/"
+                        "proposal.json"
+                    ),
+                    abstraction_layer="decoder_attention_mixed_int8_quality_energy_frontier",
+                    evaluation_mode="frontier_detail",
+                    comparison_role="quality_energy_frontier",
+                    depends_on_item_ids=[
+                        "l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1",
+                        "l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1_r2",
+                    ],
+                    requires_merged_inputs=True,
+                    requires_materialized_refs=True,
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            commands = work_item.task_request.request_payload["task"]["commands"]
+            decoder_inputs = work_item.input_manifest["decoder_contract"]
+
+            assert [command["name"] for command in commands[:1]] == [
+                "audit_decoder_attention_mixed_int8_quality_energy_frontier",
+            ]
+            run = commands[0]["run"]
+            assert "audit_llm_decoder_attention_mixed_int8_quality_energy_frontier.py" in run
+            assert "--quality-backed-frontier-json" in run
+            assert "--score-precision-recovery-json" in run
+            assert "--fp16-softmax-nm1-metrics" in run
+            assert "--fp16-softmax-nm2-metrics" in run
+            assert decoder_inputs["attention_mixed_int8_quality_backed_frontier"].endswith(
+                "decoder_attention_mixed_int8_quality_backed_frontier__"
+                "l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1.json"
+            )
+            assert decoder_inputs["attention_mixed_int8_score_precision_recovery"].endswith(
+                "decoder_attention_mixed_int8_score_precision_recovery__"
+                "l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1_r2.json"
+            )
+            assert decoder_inputs["attention_fp16_softmax_nm1_metrics"].endswith(
+                "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/metrics.csv"
+            )
+            assert "attention_mixed_int8_quality_energy_frontier_out" in decoder_inputs
+            assert (
+                decoder_inputs["attention_mixed_int8_quality_energy_frontier_out"]
+                in work_item.expected_outputs
+            )
+            assert work_item.task_request.request_payload["developer_loop"]["abstraction"] == {
+                "layer": "decoder_attention_mixed_int8_quality_energy_frontier",
+            }
+            assert work_item.task_request.request_payload["developer_loop"]["dependencies"] == {
+                "item_ids": [
+                    "l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1",
+                    "l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1_r2",
+                ],
+                "requires_merged_inputs": True,
+                "requires_materialized_refs": True,
+            }
+
+
 def test_generate_l2_campaign_task_adds_attention_mixed_precision_quality_evidence() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"

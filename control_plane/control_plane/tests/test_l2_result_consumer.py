@@ -139,6 +139,36 @@ def test_decoder_evidence_summary_recognizes_mixed_int8_quality_backed_frontier(
     assert "old_energy_best_token_throughput_per_s=634.77" in summary
 
 
+def test_decoder_evidence_summary_recognizes_mixed_int8_quality_energy_frontier() -> None:
+    outcome, summary = _decoder_evidence_summary(
+        evidence_ref="runs/datasets/demo/mixed_int8_quality_energy_frontier.json",
+        evidence_payload={
+            "model": "llm_decoder_attention_mixed_int8_quality_energy_frontier_llama7b_v1",
+            "decision": "mixed_int8_quality_energy_frontier_composed_measurement_required",
+            "diagnosis": {
+                "decision": "mixed_int8_quality_energy_frontier_composed_measurement_required",
+                "quality_best_candidate_id": "qkv8_float_exact",
+                "quality_best_top1_match_rate": 1.0,
+                "score32_top1_match_rate": 0.984375,
+                "q24_pwl_top1_match_rate": 0.96875,
+                "best_fp16_softmax_proxy_candidate_id": "qkv8_float_exact_fp16_softmax_nm2_proxy",
+                "best_fp16_softmax_proxy_critical_path_ns": 5.47,
+                "best_fp16_softmax_proxy_die_area_um2": 2250000.0,
+                "best_fp16_softmax_proxy_total_power_mw": 0.189,
+                "non_quality_backed_measured_recost_count": 2,
+                "recommended_next_step": "measure composed q8/k8/v8 fp16 softmax wrapper",
+            },
+        },
+    )
+
+    assert outcome == "mixed_int8_quality_energy_frontier_composed_measurement_required"
+    assert "quality/energy frontier" in summary
+    assert "quality_best_candidate_id=qkv8_float_exact" in summary
+    assert "score32_top1_match_rate=0.984375" in summary
+    assert "best_fp16_softmax_proxy_candidate_id=qkv8_float_exact_fp16_softmax_nm2_proxy" in summary
+    assert "non_quality_backed_measured_recost_count=2" in summary
+
+
 def test_decoder_evidence_summary_recognizes_mixed_int8_q12_pwl_proxy_audit() -> None:
     outcome, summary = _decoder_evidence_summary(
         evidence_ref="runs/datasets/demo/mixed_int8_q12_pwl_proxy_audit.json",
