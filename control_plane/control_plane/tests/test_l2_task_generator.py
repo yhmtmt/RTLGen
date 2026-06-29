@@ -7600,6 +7600,10 @@ def test_generate_l2_campaign_task_adds_mixed_int8_score_precision_recovery_evid
                 "--candidate qkv8_q20_pwl_recip_q20_bucket8:q8,k8,v8,s20,w20,pwl_recip_lut_q20_bucket8"
                 in run
             )
+            assert (
+                "--candidate qkv8_q24_pwl_recip_q24_bucket8:q8,k8,v8,s24,w24,pwl_recip_lut_q24_bucket8"
+                in run
+            )
             assert "--primary-candidate-id score32_float" in run
             assert decoder_inputs["attention_mixed_int8_q12_pwl_proxy_audit"].endswith(
                 "decoder_attention_mixed_int8_q12_pwl_proxy_audit__"

@@ -140,6 +140,26 @@ def _quantize_symmetric_list(values: list[float], bits: int) -> tuple[list[int],
     return [max(-levels, min(levels, int(round(value / scale)))) for value in values], scale
 
 
+def _score_input_frac_bits(score_bits: int) -> int:
+    if score_bits < 5:
+        raise ValueError("score_bits must leave room for sign and integer score range")
+    return min(28, score_bits - 4)
+
+
+def _quantize_score_fixed_list(values: list[float], score_bits: int) -> tuple[list[int], float]:
+    frac_bits = _score_input_frac_bits(score_bits)
+    input_scale = 1 << frac_bits
+    min_score = -(1 << (score_bits - 1))
+    max_score = (1 << (score_bits - 1)) - 1
+    return (
+        [
+            max(min_score, min(max_score, int(round(value * input_scale))))
+            for value in values
+        ],
+        1.0 / float(input_scale),
+    )
+
+
 def _pwl_recip_lut_softmax(
     logits: list[float],
     *,
@@ -147,15 +167,17 @@ def _pwl_recip_lut_softmax(
     weight_bits: int,
     reciprocal_bits: int,
     bucket_shift: int,
-    input_frac_bits: int = 8,
+    input_frac_bits: int | None = None,
 ) -> list[float]:
-    if score_bits < 2 or score_bits > 24:
-        raise ValueError("PWL reciprocal softmax expects score_bits in [2, 24]")
+    if score_bits < 5 or score_bits > 24:
+        raise ValueError("PWL reciprocal softmax expects score_bits in [5, 24]")
     if weight_bits < 2 or weight_bits > 24:
         raise ValueError("PWL reciprocal softmax expects weight_bits in [2, 24]")
     if not logits:
         return []
 
+    if input_frac_bits is None:
+        input_frac_bits = _score_input_frac_bits(score_bits)
     input_scale = 1 << input_frac_bits
     output_scale = (1 << weight_bits) - 1
     min_score = -(1 << (score_bits - 1))
@@ -712,7 +734,7 @@ def _softmax_patch(score_bits: int, weight_bits: int, softmax_mode: str):
             row = row.float()
         values = row.reshape(-1).tolist()
         if softmax_mode == "float_quantized":
-            q_values, scale = _quantize_symmetric_list(values, score_bits)
+            q_values, scale = _quantize_score_fixed_list(values, score_bits)
             out = [value * scale for value in q_values]
             out = _safe_exp_softmax(out)
             return torch.tensor(out, dtype=torch.float32, device=row.device).reshape(row.shape)
