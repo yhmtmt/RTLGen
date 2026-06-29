@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_composed_datapath_score24_w16_exact_div_reduced_replica_v1",
+  "decision": "iterate",
+  "pr_number": 1080,
+  "merge_commit": "758aace099acb032a6b1a95d9aaeae7c4c0841b9",
+  "merged_utc": "2026-06-29T14:54:40.062141Z"
+}

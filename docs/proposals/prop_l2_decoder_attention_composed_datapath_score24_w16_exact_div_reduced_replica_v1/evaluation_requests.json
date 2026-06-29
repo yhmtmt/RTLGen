@@ -21,7 +21,12 @@
         "direction": "record_score24_area_fit_recost",
         "reason": "The mixed/int8 quality-energy frontier selected qkv8_float_exact as the only quality-backed point; this substitutes the closest measured score24/w16 q8/k8/v8 wrapper into the Llama7B schedule."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 1080,
+      "merge_commit": "758aace099acb032a6b1a95d9aaeae7c4c0841b9",
+      "merged_utc": "2026-06-29T14:54:40.062141Z",
+      "notes": "Merged via PR #1080 and merge 758aace099acb032a6b1a95d9aaeae7c4c0841b9 at 2026-06-29T14:54:40.062141Z."
     }
-  ]
+  ],
+  "source_commit": "af8c1790d89c94d7b7e6377e487aecacea8def42"
 }
