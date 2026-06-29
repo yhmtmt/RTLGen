@@ -1,0 +1,74 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_dual_stream_composed_score24_w16_exact_div_v1",
+  "created_utc": "2026-06-29T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit",
+  "title": "Composed dual-stream attention score24/w16 exact-div datapath",
+  "abstraction_layer": "decoder_attention_dual_stream_composed_datapath",
+  "hypothesis": "The current quality-backed mixed/int8 frontier only passes qkv8_float_exact, whose native attention quality control uses q8/k8/v8 with 24-bit scores and 16-bit softmax weights. Measuring a concrete q8/k8/v8 score24/w16 exact-divider composed wrapper removes the nearest local datapath PPA abstraction before a full Llama7B system recost.",
+  "direct_comparison": {
+    "primary_question": "What Nangate45 PPA cost is paid by a q8/k8/v8/a24/s24/w16 exact-divider composed dual-stream attention wrapper, and how does it compare to the prior score32/w16 exact-divider wrapper?",
+    "baseline": "l1_decoder_attention_dual_stream_composed_score32_w16_exact_div_ppa_v1",
+    "candidate": "l1_decoder_attention_dual_stream_composed_score24_w16_exact_div_ppa_v1",
+    "include": [
+      "generate RTL with mac_accum_bits=24",
+      "generate softmax_score_bits=24 and softmax_weight_bits=16",
+      "generate value_bits=8",
+      "run the composed datapath guard before OpenROAD",
+      "measure Nangate45 area, power, timing, and timing debug paths"
+    ],
+    "exclude": [
+      "new native checkpoint quality run",
+      "full floating-point exp softmax hardware",
+      "Llama7B system-level frontier recost"
+    ],
+    "metrics": [
+      "critical_path_ns",
+      "die_area",
+      "total_power_mw",
+      "stdcell_count",
+      "timing_debug_report"
+    ]
+  },
+  "remaining_abstractions": [
+    "This RTL is an exact-divider integer softmax wrapper, not full floating exp/div softmax.",
+    "The job measures the local composed datapath only; a dependent Layer 2 job must substitute measured PPA into the Llama7B schedule.",
+    "Quality backing comes from qkv8_float_exact native attention-shadow evidence; score24 exact-divider RTL quality remains a later equivalence/quality check if this PPA point is promising."
+  ],
+  "required_evaluations": [
+    {
+      "item_id": "l1_decoder_attention_dual_stream_composed_score24_w16_exact_div_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure Nangate45 PPA for the q8/k8/v8/a24/s24/w16 exact-divider composed dual-stream attention datapath as the closest local wrapper to the qkv8_float_exact quality-backed frontier.",
+      "evaluation_mode": "frontier_followup",
+      "abstraction_layer": "decoder_attention_dual_stream_composed_datapath",
+      "comparison_role": "score24_near_exact_quality_recost",
+      "paired_baseline_item_id": "l1_decoder_attention_dual_stream_composed_score32_w16_exact_div_ppa_v1",
+      "configs": [
+        "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_score24_w16_exact_div/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/attention_dual_stream_composed_v1/sweeps/nangate45_dual_stream_composed_hier_score24_w16_exact_div.json",
+      "out_root": "runs/designs/npu_blocks",
+      "expected_outputs": [
+        "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_score24_w16_exact_div/metrics.csv",
+        "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_score24_w16_exact_div/timing_debug_report.md"
+      ],
+      "expected_result": {
+        "direction": "measure_score24_near_exact_quality_recost_datapath",
+        "reason": "The merged quality/energy frontier audit selected qkv8_float_exact as the only passing mixed/int8 point and requested a composed q8/k8/v8 near-exact softmax wrapper measurement."
+      }
+    }
+  ],
+  "source_refs": [
+    "npu/rtlgen/gen_attention_dual_stream_composed.py",
+    "npu/eval/check_attention_dual_stream_composed_guard.py",
+    "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_score24_w16_exact_div/config.json",
+    "runs/campaigns/npu/attention_dual_stream_composed_v1/sweeps/nangate45_dual_stream_composed_hier_score24_w16_exact_div.json"
+  ],
+  "knowledge_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_quality_energy_frontier__l2_decoder_attention_mixed_int8_quality_energy_frontier_llama7b_v1.json",
+    "docs/proposals/prop_l2_decoder_attention_mixed_int8_quality_energy_frontier_llama7b_v1/proposal.json",
+    "docs/proposals/prop_l1_decoder_attention_dual_stream_composed_score32_w16_exact_div_v1/proposal.json"
+  ]
+}

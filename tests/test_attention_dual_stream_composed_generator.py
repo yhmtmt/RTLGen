@@ -16,6 +16,7 @@ def _write_config(
     softmax_score_bits: int | None = None,
     softmax_weight_bits: int | None = None,
     reciprocal_bits: int | None = None,
+    value_bits: int | None = None,
     softmax_input_frac_bits: int | None = None,
     softmax_reciprocal_lut_bucket_shift: int | None = None,
 ) -> None:
@@ -51,6 +52,8 @@ def _write_config(
         comp["softmax_weight_bits"] = softmax_weight_bits
     if reciprocal_bits is not None:
         comp["reciprocal_bits"] = reciprocal_bits
+    if value_bits is not None:
+        comp["value_bits"] = value_bits
     if softmax_input_frac_bits is not None:
         comp["softmax_input_frac_bits"] = softmax_input_frac_bits
     if softmax_reciprocal_lut_bucket_shift is not None:
@@ -305,6 +308,39 @@ def test_attention_dual_stream_composed_generator_score32_exact_softmax(tmp_path
     assert "wire [31:0] score_lane_00" in top_text
     assert "wire [63:0] softmax_weights" in top_text
     assert "input  wire [31:0] score_mix" in top_text
+
+
+def test_attention_dual_stream_composed_generator_score24_w16_exact_softmax(tmp_path: Path) -> None:
+    design_dir = tmp_path / "attention_dual_stream_composed_score24_w16"
+    config_path = design_dir / "config.json"
+    _write_config(
+        config_path,
+        softmax_pipeline_stages=1,
+        softmax_impl="exact_div",
+        mac_accum_bits=24,
+        softmax_accum_bits=32,
+        softmax_score_bits=24,
+        softmax_weight_bits=16,
+        value_bits=8,
+        softmax_internal_pipeline_stages=1,
+    )
+    top_text = _generate_and_check(design_dir, config_path, run_composed_guard=False)
+
+    manifest = json.loads((design_dir / "verilog" / "attention_dual_stream_composed_manifest.json").read_text())
+    assert manifest["mac_accum_bits"] == 24
+    assert manifest["mac_module"] == "int8_mac_s8s8_acc24"
+    assert manifest["softmax_score_bits"] == 24
+    assert manifest["softmax_weight_bits"] == 16
+    assert manifest["value_bits"] == 8
+    assert manifest["score_mix_bits"] == 24
+    assert manifest["score_bits_source"] == "mac_acc24_native"
+    assert "module int8_mac_s8s8_acc24" in top_text
+    assert "module attention_softmax_weight_score24_w16_exact_div_like" in top_text
+    assert "module attention_full_value_stream_q8v8_p8_ppc2" in top_text
+    assert "wire signed [23:0] mac_c_0000" in top_text
+    assert "wire [23:0] score_lane_00" in top_text
+    assert "wire [63:0] softmax_weights" in top_text
+    assert "input  wire [23:0] score_mix" in top_text
 
 
 def test_attention_dual_stream_composed_generator_score32_softmax_requires_acc32(tmp_path: Path) -> None:
