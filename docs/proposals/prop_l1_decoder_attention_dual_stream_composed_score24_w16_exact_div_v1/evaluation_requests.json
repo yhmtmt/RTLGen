@@ -26,7 +26,12 @@
         "direction": "measure_score24_near_exact_quality_recost_datapath",
         "reason": "The merged quality/energy frontier audit selected qkv8_float_exact as the only passing mixed/int8 point and requested a composed q8/k8/v8 near-exact softmax wrapper measurement."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 1079,
+      "merge_commit": "0683e31d11996c8c2cd9f2a670cc1150ff712172",
+      "merged_utc": "2026-06-29T14:50:01.711153Z",
+      "notes": "Merged via PR #1079 and merge 0683e31d11996c8c2cd9f2a670cc1150ff712172 at 2026-06-29T14:50:01.711153Z."
     }
-  ]
+  ],
+  "source_commit": "edc6f46629c27842ad6cfa6eb4326582815a7447"
 }
