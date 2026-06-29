@@ -1,0 +1,70 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-06-29T15:12:14.409453Z",
+  "item_id": "l2_decoder_attention_mixed_int8_score24_w16_rtl_exact_generation_quality_llama7b_v1",
+  "run_key": "l2_decoder_attention_mixed_int8_score24_w16_rtl_exact_generation_quality_llama7b_v1_run_fc00ad658cae8fc8",
+  "layer": "layer2",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l2_campaign",
+  "source_commit": "2422334f7e275ccc49334522d978700361598aaa",
+  "review_metadata_source_commit": "2422334f7e275ccc49334522d978700361598aaa",
+  "objective": "Run bounded native-checkpoint generation/NLL quality for the measured score24/w16 RTL exact-divide softmax profile after the reduced-replica Llama7B recost improved on score32/w16.",
+  "input_manifest": {
+    "decoder_contract": {
+      "attention_score24_w16_exact_div_physical_recost": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_score24_w16_exact_div_reduced_replica_llama7b_v1.json",
+      "attention_mixed_int8_generation_quality_baseline": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_generation_quality__l2_decoder_attention_mixed_int8_generation_quality_llama7b_v1_r3.json",
+      "attention_mixed_int8_score32_w16_rtl_exact_generation_quality": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score32_w16_rtl_exact_generation_quality__l2_decoder_attention_mixed_int8_score32_w16_rtl_exact_generation_quality_llama7b_v1.json",
+      "attention_mixed_int8_score24_w16_rtl_exact_generation_quality_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score24_w16_rtl_exact_generation_quality__l2_decoder_attention_mixed_int8_score24_w16_rtl_exact_generation_quality_llama7b_v1.json",
+      "attention_mixed_int8_score24_w16_rtl_exact_generation_quality_scope": "Run a bounded native-checkpoint generation/NLL gate for the measured score24/w16 RTL exact-divide softmax profile. This removes the quality-linkage inference from qkv8_float_exact before treating the score24/w16 PPA recost as a frontier point.",
+      "attention_mixed_int8_score24_w16_rtl_exact_generation_quality_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score24_w16_rtl_exact_generation_quality__l2_decoder_attention_mixed_int8_score24_w16_rtl_exact_generation_quality_llama7b_v1.md"
+    }
+  },
+  "recommendation": {
+    "source": "decoder_evidence",
+    "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score24_w16_rtl_exact_generation_quality__l2_decoder_attention_mixed_int8_score24_w16_rtl_exact_generation_quality_llama7b_v1.json",
+    "arch_id": "decoder_attention_mixed_int8_score24_w16_rtl_exact_generation_quality",
+    "macro_mode": "evidence_only",
+    "outcome": "mixed_int8_generation_quality_hold"
+  },
+  "objective_profiles": [],
+  "evaluation_record": {
+    "proposal_id": "prop_l2_decoder_attention_mixed_int8_score24_w16_rtl_exact_generation_quality_llama7b_v1",
+    "title": "Llama7B score24/w16 RTL exact-divide generation quality",
+    "primary_question": "Does the measured score24/w16 RTL exact-divide softmax profile preserve bounded greedy generation and teacher-forced reference-token likelihood on a 7B checkpoint?",
+    "evaluation_mode": "quality_gate",
+    "comparison_role": "score24_w16_rtl_exact_generation_quality",
+    "abstraction_layer": "decoder_attention_mixed_int8_score24_w16_rtl_exact_generation_quality",
+    "expected_direction": "direct_score24_w16_quality_gate",
+    "expected_reason": "If score24/w16 RTL exact-divide passes, use the measured lower-area score24/w16 recost as the active quality-backed frontier. If it fails, keep the recost as physical evidence but plan recovery through higher precision, a different softmax model, or QAT.",
+    "summary": "Decoder mixed/int8 generation quality evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score24_w16_rtl_exact_generation_quality__l2_decoder_attention_mixed_int8_score24_w16_rtl_exact_generation_quality_llama7b_v1.json: decision=mixed_int8_generation_quality_hold; candidate_id=score24_w16_rtl_exact; prompt_count=8; generation_steps=8; free_run_exact_match_rate=0.0; free_run_token_match_rate=0.078125; diverged_prompt_count=8; mean_first_divergence_step=0.5; teacher_forced_mean_reference_nll=1.073770096930964; teacher_forced_mean_candidate_nll=2.6074809896126507; teacher_forced_mean_nll_delta=1.5337108926816854; teacher_forced_reference_token_prob_mean=0.4479845997119758; teacher_forced_candidate_reference_token_prob_mean=0.25191303969855044; next_step=Hold this score32 mixed/int8 generation candidate until a narrower score-precision boundary demonstrates better free-running agreement.",
+    "outcome": "mixed_int8_generation_quality_hold",
+    "expectation_status": "unspecified"
+  },
+  "proposal_assessment": {
+    "proposal_id": "prop_l2_decoder_attention_mixed_int8_score24_w16_rtl_exact_generation_quality_llama7b_v1",
+    "title": "Llama7B score24/w16 RTL exact-divide generation quality",
+    "kind": "architecture",
+    "primary_question": "Does the measured score24/w16 RTL exact-divide softmax profile preserve bounded greedy generation and teacher-forced reference-token likelihood on a 7B checkpoint?",
+    "evaluation_mode": "quality_gate",
+    "comparison_role": "score24_w16_rtl_exact_generation_quality",
+    "outcome": "mixed_int8_generation_quality_hold",
+    "summary": "Decoder mixed/int8 generation quality evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score24_w16_rtl_exact_generation_quality__l2_decoder_attention_mixed_int8_score24_w16_rtl_exact_generation_quality_llama7b_v1.json: decision=mixed_int8_generation_quality_hold; candidate_id=score24_w16_rtl_exact; prompt_count=8; generation_steps=8; free_run_exact_match_rate=0.0; free_run_token_match_rate=0.078125; diverged_prompt_count=8; mean_first_divergence_step=0.5; teacher_forced_mean_reference_nll=1.073770096930964; teacher_forced_mean_candidate_nll=2.6074809896126507; teacher_forced_mean_nll_delta=1.5337108926816854; teacher_forced_reference_token_prob_mean=0.4479845997119758; teacher_forced_candidate_reference_token_prob_mean=0.25191303969855044; next_step=Hold this score32 mixed/int8 generation candidate until a narrower score-precision boundary demonstrates better free-running agreement.",
+    "baseline_ref": null,
+    "baseline_item_id": null,
+    "matched_row_count": 0,
+    "matched_rows": [],
+    "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score24_w16_rtl_exact_generation_quality__l2_decoder_attention_mixed_int8_score24_w16_rtl_exact_generation_quality_llama7b_v1.json",
+    "decoder_quality": {
+      "diagnosis": {}
+    }
+  },
+  "source_refs": {
+    "decoder_evidence_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score24_w16_rtl_exact_generation_quality__l2_decoder_attention_mixed_int8_score24_w16_rtl_exact_generation_quality_llama7b_v1.json",
+    "decoder_attention_mixed_int8_score24_w16_rtl_exact_generation_quality_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score24_w16_rtl_exact_generation_quality__l2_decoder_attention_mixed_int8_score24_w16_rtl_exact_generation_quality_llama7b_v1.json",
+    "decoder_attention_mixed_int8_score24_w16_rtl_exact_generation_quality_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score24_w16_rtl_exact_generation_quality__l2_decoder_attention_mixed_int8_score24_w16_rtl_exact_generation_quality_llama7b_v1.md"
+  },
+  "decoder_quality": {
+    "diagnosis": {}
+  }
+}

@@ -1,0 +1,109 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "decoder_contract": {
+        "attention_score24_w16_exact_div_physical_recost": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_score24_w16_exact_div_reduced_replica_llama7b_v1.json",
+        "attention_mixed_int8_generation_quality_baseline": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_generation_quality__l2_decoder_attention_mixed_int8_generation_quality_llama7b_v1_r3.json",
+        "attention_mixed_int8_score32_w16_rtl_exact_generation_quality": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score32_w16_rtl_exact_generation_quality__l2_decoder_attention_mixed_int8_score32_w16_rtl_exact_generation_quality_llama7b_v1.json",
+        "attention_mixed_int8_score24_w16_rtl_exact_generation_quality_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score24_w16_rtl_exact_generation_quality__l2_decoder_attention_mixed_int8_score24_w16_rtl_exact_generation_quality_llama7b_v1.json",
+        "attention_mixed_int8_score24_w16_rtl_exact_generation_quality_scope": "Run a bounded native-checkpoint generation/NLL gate for the measured score24/w16 RTL exact-divide softmax profile. This removes the quality-linkage inference from qkv8_float_exact before treating the score24/w16 PPA recost as a frontier point.",
+        "attention_mixed_int8_score24_w16_rtl_exact_generation_quality_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score24_w16_rtl_exact_generation_quality__l2_decoder_attention_mixed_int8_score24_w16_rtl_exact_generation_quality_llama7b_v1.md"
+      }
+    },
+    "commands": [
+      {
+        "run": "bash -lc 'MODEL_ID=${RTLGEN_MODEL_NATIVE_7B_MODEL_ID:-mistralai/Mistral-7B-v0.1}; EXPECTED_GQA=${RTLGEN_MODEL_NATIVE_7B_EXPECTED_GQA_GROUP_SIZE:-4}; MAX_PROMPTS=${RTLGEN_MODEL_NATIVE_7B_GENERATION_MAX_PROMPTS:-8}; GEN_STEPS=${RTLGEN_MODEL_NATIVE_7B_GENERATION_STEPS:-8}; DTYPE=${RTLGEN_MODEL_NATIVE_7B_DTYPE:-bfloat16}; bash npu/eval/run_hf_eval_python.sh npu/eval/evaluate_llm_decoder_model_native_mixed_int8_generation_quality.py --model-id \"$MODEL_ID\" --expected-gqa-group-size \"$EXPECTED_GQA\" --max-prompts \"$MAX_PROMPTS\" --generation-steps \"$GEN_STEPS\" --dtype \"$DTYPE\" --candidate score24_w16_rtl_exact:q8,k8,v8,s24,w16,rtl_exact --primary-candidate-id score24_w16_rtl_exact --out runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score24_w16_rtl_exact_generation_quality__l2_decoder_attention_mixed_int8_score24_w16_rtl_exact_generation_quality_llama7b_v1.json --out-md runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score24_w16_rtl_exact_generation_quality__l2_decoder_attention_mixed_int8_score24_w16_rtl_exact_generation_quality_llama7b_v1.md'",
+        "name": "evaluate_decoder_attention_mixed_int8_score24_w16_rtl_exact_generation_quality"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate_runs"
+      }
+    ],
+    "objective": "Run bounded native-checkpoint generation/NLL quality for the measured score24/w16 RTL exact-divide softmax profile after the reduced-replica Llama7B recost improved on score32/w16.",
+    "acceptance": [
+      "Write all declared decoder evidence artifacts",
+      "Keep evidence artifact paths repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "source_mode": "src_verilog",
+    "expected_outputs": [
+      "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score24_w16_rtl_exact_generation_quality__l2_decoder_attention_mixed_int8_score24_w16_rtl_exact_generation_quality_llama7b_v1.json",
+      "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score24_w16_rtl_exact_generation_quality__l2_decoder_attention_mixed_int8_score24_w16_rtl_exact_generation_quality_llama7b_v1.md"
+    ]
+  },
+  "layer": "layer2",
+  "state": "evaluated",
+  "title": "Llama7B score24/w16 RTL exact generation quality",
+  "result": {
+    "branch": "eval/l2_decoder_attention_mixed_int8_score24_w16_rtl_exact_generation_quality_llama7b_v1/local-rescue-20260629t1511z",
+    "completed_utc": "2026-06-29T15:06:54.621109Z",
+    "evaluator_id": "eval-daemon-b7c2d9c80c1c",
+    "executor": "@codex",
+    "host": "devcontainer",
+    "identity_block": "[role:evaluator][account:eval-daemon-b7c2d9c80c1c][session:local-rescue-20260629t1511z][host:devcontainer][item:l2_decoder_attention_mixed_int8_score24_w16_rtl_exact_generation_quality_llama7b_v1]",
+    "metrics_rows": [],
+    "metrics_exempt_reason": "evidence_only_decoder_evidence",
+    "queue_item_id": "l2_decoder_attention_mixed_int8_score24_w16_rtl_exact_generation_quality_llama7b_v1",
+    "session_id": "local-rescue-20260629t1511z",
+    "status": "ok",
+    "summary": "2/2 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l2_decoder_attention_mixed_int8_score24_w16_rtl_exact_generation_quality_llama7b_v1/local-rescue-20260629t1511z",
+    "pr_title": "eval: run llama7b score24/w16 rtl exact generation quality",
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Include metrics row references in result.metrics_rows",
+      "Keep committed result_path fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "devcontainer",
+      "session_id": "local-rescue-20260629t1511z",
+      "evaluator_id": "eval-daemon-b7c2d9c80c1c",
+      "queue_item_id": "l2_decoder_attention_mixed_int8_score24_w16_rtl_exact_generation_quality_llama7b_v1"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l2_decoder_attention_mixed_int8_score24_w16_rtl_exact_generation_quality_llama7b_v1",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 1,
+  "created_utc": "2026-06-29T15:05:12.315406Z",
+  "requested_by": "@codex",
+  "developer_loop": {
+    "comparison": {
+      "role": "score24_w16_rtl_exact_generation_quality",
+      "paired_baseline_item_id": ""
+    },
+    "evaluation": {
+      "mode": "quality_gate",
+      "expected_reason": "If score24/w16 RTL exact-divide passes, use the measured lower-area score24/w16 recost as the active quality-backed frontier. If it fails, keep the recost as physical evidence but plan recovery through higher precision, a different softmax model, or QAT.",
+      "expected_direction": "direct_score24_w16_quality_gate"
+    },
+    "abstraction": {
+      "layer": "decoder_attention_mixed_int8_score24_w16_rtl_exact_generation_quality"
+    },
+    "proposal_id": "prop_l2_decoder_attention_mixed_int8_score24_w16_rtl_exact_generation_quality_llama7b_v1",
+    "dependencies": {
+      "item_ids": [
+        "l2_decoder_attention_composed_datapath_score24_w16_exact_div_reduced_replica_llama7b_v1",
+        "l2_decoder_attention_mixed_int8_generation_quality_llama7b_v1_r3",
+        "l2_decoder_attention_mixed_int8_score32_w16_rtl_exact_generation_quality_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    },
+    "proposal_path": "docs/proposals/prop_l2_decoder_attention_mixed_int8_score24_w16_rtl_exact_generation_quality_llama7b_v1/proposal.json"
+  },
+  "source_requirement": {
+    "repo": "",
+    "reason": "evaluator runtime must contain the queued job source commit",
+    "version": 1,
+    "required_ref": "origin/master",
+    "required_sha": "2422334f7e275ccc49334522d978700361598aaa",
+    "requires_daemon_restart": true
+  }
+}
