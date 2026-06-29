@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_mixed_int8_softmax_replacement_generation_quality_llama7b_v1",
+  "decision": "iterate",
+  "pr_number": 1066,
+  "merge_commit": "92172ab714cb9ea7afa3fa3ba70a6a174a08736b",
+  "merged_utc": "2026-06-29T11:02:57.011892Z"
+}

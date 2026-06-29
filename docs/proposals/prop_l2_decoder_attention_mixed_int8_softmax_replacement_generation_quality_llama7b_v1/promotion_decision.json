@@ -1,0 +1,15 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_mixed_int8_softmax_replacement_generation_quality_llama7b_v1",
+  "candidate_id": "l2_decoder_attention_mixed_int8_softmax_replacement_generation_quality_llama7b_v1",
+  "decision": "iterate",
+  "reason": "Decoder mixed/int8 generation quality evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_softmax_replacement_generation_quality__l2_decoder_attention_mixed_int8_softmax_replacement_generation_quality_llama7b_v1.json: decision=mixed_int8_generation_quality_pass; candidate_id=qkv8_q24_pwl_recip_q24_bucket8; prompt_count=8; generation_steps=8; free_run_exact_match_rate=0.75; free_run_token_match_rate=0.875; diverged_prompt_count=2; mean_first_divergence_step=7.0; teacher_forced_mean_reference_nll=1.073770096930964; teacher_forced_mean_candidate_nll=1.0921800072287313; teacher_forced_mean_nll_delta=0.01840991029776741; teacher_forced_reference_token_prob_mean=0.4479845997119758; teacher_forced_candidate_reference_token_prob_mean=0.44199434749935546; next_step=Candidate passed the bounded generation-quality gate; route this score configuration into the native-checkpoint quality evidence stream.",
+  "evidence_refs": [
+    "item:l2_decoder_attention_mixed_int8_softmax_replacement_generation_quality_llama7b_v1",
+    "run:l2_decoder_attention_mixed_int8_softmax_replacement_generation_quality_llama7b_v1_run_c33510d19aaf6429",
+    "artifact:control_plane/shadow_exports/l2_decisions/l2_decoder_attention_mixed_int8_softmax_replacement_generation_quality_llama7b_v1.json",
+    "pr:#1066",
+    "https://github.com/yhmtmt/RTLGen/pull/1066"
+  ],
+  "next_action": "inspect follow-on work after l2_decoder_attention_mixed_int8_softmax_replacement_generation_quality_llama7b_v1",
+  "requires_human_approval": false
+}

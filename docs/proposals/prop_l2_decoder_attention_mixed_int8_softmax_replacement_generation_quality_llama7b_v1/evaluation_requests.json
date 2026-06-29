@@ -20,8 +20,13 @@
       "expected_result": {
         "direction": "choose_softmax_replacement_after_rtl_exact_failure",
         "reason": "If RTL exact-divide fails, this job should identify whether float-exact, float-quantized, or high-precision PWL reciprocal-LUT softmax is the next quality-backed embodiment target."
-      }
+      },
+      "status": "merged",
+      "merged_pr_number": 1066,
+      "merge_commit": "92172ab714cb9ea7afa3fa3ba70a6a174a08736b",
+      "merged_utc": "2026-06-29T11:02:57.011892Z",
+      "notes": "Merged via PR #1066 and merge 92172ab714cb9ea7afa3fa3ba70a6a174a08736b at 2026-06-29T11:02:57.011892Z."
     }
   ],
-  "source_commit": null
+  "source_commit": "c697832fc58789af79c407266536866bd03aa31f"
 }
