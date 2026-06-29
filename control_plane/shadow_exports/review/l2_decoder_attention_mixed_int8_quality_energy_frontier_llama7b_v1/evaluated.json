@@ -1,0 +1,113 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "decoder_contract": {
+        "attention_fp16_softmax_nm1_metrics": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/metrics.csv",
+        "attention_fp16_softmax_nm2_metrics": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_softmaxcmp/metrics.csv",
+        "attention_mixed_int8_quality_backed_frontier": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_quality_backed_frontier__l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1.json",
+        "attention_mixed_int8_score_precision_recovery": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score_precision_recovery__l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1_r2.json",
+        "attention_score32_w16_exact_div_physical_recost": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_score32_w16_exact_div_reduced_replica_llama7b_v1_r2.json",
+        "attention_mixed_int8_quality_energy_frontier_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_quality_energy_frontier__l2_decoder_attention_mixed_int8_quality_energy_frontier_llama7b_v1.json",
+        "attention_mixed_int8_quality_energy_frontier_scope": "Audit the current quality-backed mixed/int8 frontier after corrected score precision. Keep qkv8_float_exact as the only passing quality point, retain score32/exact-div PPA as non-quality-backed diagnostics, and use measured FP16 softmax rows to decide whether a composed q8/k8/v8 plus floating/near-exact softmax wrapper should be measured next.",
+        "attention_mixed_int8_quality_energy_frontier_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_quality_energy_frontier__l2_decoder_attention_mixed_int8_quality_energy_frontier_llama7b_v1.md",
+        "attention_score32_w16_exact_div_split2_physical_recost": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_score32_w16_exact_div_split2_reduced_replica_llama7b_v1.json"
+      }
+    },
+    "commands": [
+      {
+        "run": "python3 npu/eval/audit_llm_decoder_attention_mixed_int8_quality_energy_frontier.py --quality-backed-frontier-json runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_quality_backed_frontier__l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1.json --score-precision-recovery-json runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score_precision_recovery__l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1_r2.json --exact-div-recost-json runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_score32_w16_exact_div_reduced_replica_llama7b_v1_r2.json --exact-div-split2-recost-json runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_score32_w16_exact_div_split2_reduced_replica_llama7b_v1.json --fp16-softmax-nm1-metrics runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/metrics.csv --fp16-softmax-nm2-metrics runs/designs/npu_blocks/npu_fp16_cpp_nm2_softmaxcmp/metrics.csv --out runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_quality_energy_frontier__l2_decoder_attention_mixed_int8_quality_energy_frontier_llama7b_v1.json --out-md runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_quality_energy_frontier__l2_decoder_attention_mixed_int8_quality_energy_frontier_llama7b_v1.md",
+        "name": "audit_decoder_attention_mixed_int8_quality_energy_frontier"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate_runs"
+      }
+    ],
+    "objective": "Audit the current quality-backed mixed/int8 energy frontier and decide the next composed softmax measurement after score32/PWL softmax failed quality.",
+    "acceptance": [
+      "Write all declared decoder evidence artifacts",
+      "Keep evidence artifact paths repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "source_mode": "src_verilog",
+    "expected_outputs": [
+      "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_quality_energy_frontier__l2_decoder_attention_mixed_int8_quality_energy_frontier_llama7b_v1.json",
+      "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_quality_energy_frontier__l2_decoder_attention_mixed_int8_quality_energy_frontier_llama7b_v1.md"
+    ]
+  },
+  "layer": "layer2",
+  "state": "evaluated",
+  "title": "Llama7B mixed/int8 quality energy frontier",
+  "result": {
+    "branch": "eval/l2_decoder_attention_mixed_int8_quality_energy_frontier_llama7b_v1/s20260629t120552z",
+    "completed_utc": "2026-06-29T12:05:51.625568Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "b7c2d9c80c1c",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260629t120552z][host:b7c2d9c80c1c][item:l2_decoder_attention_mixed_int8_quality_energy_frontier_llama7b_v1]",
+    "metrics_rows": [],
+    "metrics_exempt_reason": "evidence_only_decoder_evidence",
+    "queue_item_id": "l2_decoder_attention_mixed_int8_quality_energy_frontier_llama7b_v1",
+    "session_id": "s20260629t120552z",
+    "status": "ok",
+    "summary": "2/2 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l2_decoder_attention_mixed_int8_quality_energy_frontier_llama7b_v1/s20260629t120552z",
+    "pr_title": "eval: run llama7b mixed/int8 quality energy frontier",
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Include metrics row references in result.metrics_rows",
+      "Keep committed result_path fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260629t120552z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l2_decoder_attention_mixed_int8_quality_energy_frontier_llama7b_v1"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l2_decoder_attention_mixed_int8_quality_energy_frontier_llama7b_v1",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 1,
+  "created_utc": "2026-06-29T12:05:33.214107Z",
+  "requested_by": "@codex",
+  "developer_loop": {
+    "comparison": {
+      "role": "quality_energy_frontier",
+      "paired_baseline_item_id": ""
+    },
+    "evaluation": {
+      "mode": "frontier_detail",
+      "expected_reason": "qkv8_float_exact is quality-backed but not physically composed; score32/PWL rows have PPA but fail quality. This audit chooses the next measured wrapper direction.",
+      "expected_direction": "select_quality_backed_softmax_measurement"
+    },
+    "abstraction": {
+      "layer": "decoder_attention_mixed_int8_quality_energy_frontier"
+    },
+    "proposal_id": "prop_l2_decoder_attention_mixed_int8_quality_energy_frontier_llama7b_v1",
+    "dependencies": {
+      "item_ids": [
+        "l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1",
+        "l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1_r2",
+        "l2_decoder_attention_composed_datapath_score32_w16_exact_div_reduced_replica_llama7b_v1_r2",
+        "l2_decoder_attention_composed_datapath_score32_w16_exact_div_split2_reduced_replica_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    },
+    "proposal_path": "docs/proposals/prop_l2_decoder_attention_mixed_int8_quality_energy_frontier_llama7b_v1/proposal.json"
+  },
+  "source_requirement": {
+    "repo": "",
+    "reason": "evaluator runtime must contain the queued job source commit",
+    "version": 1,
+    "required_ref": "origin/master",
+    "required_sha": "aee481ec8ebcf4cb07ee75b731ffdb48994c9aa2",
+    "requires_daemon_restart": true
+  }
+}
