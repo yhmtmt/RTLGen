@@ -1141,6 +1141,7 @@ def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, 
         "llm_decoder_attention_mixed_precision_int8_compute_physical_feasibility_softmax_recip_lut_llama7b_v1",
         "llm_decoder_attention_composed_datapath_physical_feasibility_softmax_recip_lut_llama7b_v1",
         "llm_decoder_attention_composed_datapath_recip_lut_variant_frontier_llama7b_v1",
+        "llm_decoder_attention_composed_datapath_score24_w16_exact_div_reduced_replica_llama7b_v1",
         "llm_decoder_attention_composed_datapath_score32_w16_exact_div_frontier_llama7b_v1",
         "llm_decoder_attention_composed_datapath_score32_w16_exact_div_reduced_replica_llama7b_v1",
         "llm_decoder_attention_composed_datapath_score32_w16_exact_div_split2_reduced_replica_llama7b_v1",
@@ -1159,6 +1160,8 @@ def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, 
             if model == "llm_decoder_attention_mixed_precision_physical_feasibility_llama7b_v1"
             else "Decoder composed dual-stream physical feasibility evidence (softmax-recip LUT variant frontier)"
             if model == "llm_decoder_attention_composed_datapath_recip_lut_variant_frontier_llama7b_v1"
+            else "Decoder composed dual-stream physical feasibility evidence (score24/w16 exact-div reduced-replica recost)"
+            if model == "llm_decoder_attention_composed_datapath_score24_w16_exact_div_reduced_replica_llama7b_v1"
             else "Decoder composed dual-stream physical feasibility evidence (score32/w16 exact-div frontier)"
             if model == "llm_decoder_attention_composed_datapath_score32_w16_exact_div_frontier_llama7b_v1"
             else "Decoder composed dual-stream physical feasibility evidence (score32/w16 exact-div reduced-replica recost)"

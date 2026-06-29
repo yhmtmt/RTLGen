@@ -1,0 +1,27 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_composed_datapath_score24_w16_exact_div_reduced_replica_v1",
+  "source_commit_note": "Dispatch should use the merge commit that adds score24/w16 reduced-replica recost support and should wait until the score24/w16 L1 PPA item is merged.",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_composed_datapath_score24_w16_exact_div_reduced_replica_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Recost the measured q8/k8/v8 score24/w16 exact-div composed dual-stream attention wrapper at the area-fit replica count and measured wrapper clock.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_composed_datapath_physical_feasibility",
+      "comparison_role": "score24_quality_reduced_replica_recost",
+      "paired_baseline_item_id": "l2_decoder_attention_composed_datapath_score32_w16_exact_div_reduced_replica_llama7b_v1_r2",
+      "depends_on_item_ids": [
+        "l1_decoder_attention_dual_stream_composed_score24_w16_exact_div_ppa_v1",
+        "l2_decoder_attention_composed_datapath_score32_w16_exact_div_reduced_replica_llama7b_v1_r2",
+        "l2_decoder_attention_kv_subtile_pipeline_schedule_softmax_recip_lut_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "record_score24_area_fit_recost",
+        "reason": "The mixed/int8 quality-energy frontier selected qkv8_float_exact as the only quality-backed point; this substitutes the closest measured score24/w16 q8/k8/v8 wrapper into the Llama7B schedule."
+      },
+      "status": "pending"
+    }
+  ]
+}
