@@ -18,7 +18,13 @@
       "expected_result": {
         "direction": "validate_or_reject_q24_pwl_hardware_target",
         "reason": "q24/PWL passed bounded generation/NLL evidence; verify it on the broader native attention-shadow gate before PPA and frontier recost."
-      }
+      },
+      "status": "merged",
+      "merged_pr_number": 1071,
+      "merge_commit": "85374112ccf6a27ea429b4a2330a992209756667",
+      "merged_utc": "2026-06-29T11:26:06.778010Z",
+      "notes": "Merged via PR #1071 and merge 85374112ccf6a27ea429b4a2330a992209756667 at 2026-06-29T11:26:06.778010Z."
     }
-  ]
+  ],
+  "source_commit": "d85cc4c3effe9e61aa4b4c4fa2e651e1f191995a"
 }
