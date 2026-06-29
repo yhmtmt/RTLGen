@@ -6356,6 +6356,59 @@ def _decoder_attention_mixed_int8_q12_pwl_native_quality_evidence(*, item_id: st
     }
 
 
+def _decoder_attention_mixed_int8_q24_pwl_native_quality_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_attention_mixed_int8_q24_pwl_native_quality__{item_id}.json"
+    report = f"{base}/decoder_attention_mixed_int8_q24_pwl_native_quality__{item_id}.md"
+    softmax_replacement_quality = (
+        f"{base}/decoder_attention_mixed_int8_softmax_replacement_generation_quality__"
+        "l2_decoder_attention_mixed_int8_softmax_replacement_generation_quality_llama7b_v1.json"
+    )
+    return {
+        "inputs": {
+            "attention_mixed_int8_softmax_replacement_generation_quality": softmax_replacement_quality,
+            "attention_mixed_int8_q24_pwl_native_quality_out": out,
+            "attention_mixed_int8_q24_pwl_native_quality_report": report,
+            "attention_mixed_int8_q24_pwl_native_quality_scope": (
+                "Validate the q24/PWL reciprocal-LUT softmax replacement that passed bounded "
+                "generation/NLL quality on the broader native 7B attention-shadow gate. This "
+                "keeps q8/k8/v8 fixed and compares q20/q24 PWL rows against float-exact and "
+                "score24 float controls before queueing q24 PWL physical embodiment or recost."
+            ),
+        },
+        "commands": [
+            {
+                "name": "evaluate_decoder_attention_mixed_int8_q24_pwl_native_quality",
+                "run": (
+                    "bash -lc '"
+                    "MODEL_ID=${RTLGEN_MODEL_NATIVE_7B_MODEL_ID:-mistralai/Mistral-7B-v0.1}; "
+                    "EXPECTED_GQA=${RTLGEN_MODEL_NATIVE_7B_EXPECTED_GQA_GROUP_SIZE:-4}; "
+                    "MAX_PROMPTS=${RTLGEN_MODEL_NATIVE_7B_BROAD_MAX_PROMPTS:-8}; "
+                    "GEN_STEPS=${RTLGEN_MODEL_NATIVE_7B_BROAD_GENERATION_STEPS:-8}; "
+                    "DTYPE=${RTLGEN_MODEL_NATIVE_7B_DTYPE:-bfloat16}; "
+                    "bash npu/eval/run_hf_eval_python.sh "
+                    "npu/eval/evaluate_llm_decoder_model_native_mixed_int8_attention.py "
+                    "--model-id \"$MODEL_ID\" "
+                    "--expected-gqa-group-size \"$EXPECTED_GQA\" "
+                    "--max-prompts \"$MAX_PROMPTS\" "
+                    "--generation-steps \"$GEN_STEPS\" "
+                    "--dtype \"$DTYPE\" "
+                    "--topk 5 "
+                    "--candidate qkv8_float_exact:q8,k8,v8,s24,w16,float_exact "
+                    "--candidate qkv8_score24_float:q8,k8,v8,s24,w16,float_quantized "
+                    "--candidate qkv8_q20_pwl_recip_q20_bucket8:q8,k8,v8,s20,w20,pwl_recip_lut_q20_bucket8 "
+                    "--candidate qkv8_q24_pwl_recip_q24_bucket8:q8,k8,v8,s24,w24,pwl_recip_lut_q24_bucket8 "
+                    "--primary-candidate-id qkv8_q24_pwl_recip_q24_bucket8 "
+                    f"--out {out} "
+                    f"--out-md {report}'"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+        "evidence_only": True,
+    }
+
+
 def _decoder_attention_mixed_int8_q12_pwl_proxy_audit_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_mixed_int8_q12_pwl_proxy_audit__{item_id}.json"
@@ -8740,6 +8793,7 @@ def _build_payload(
         "decoder_attention_mixed_int8_high_score_boundary",
         "decoder_attention_mixed_int8_broad_native_quality",
         "decoder_attention_mixed_int8_q12_pwl_native_quality",
+        "decoder_attention_mixed_int8_q24_pwl_native_quality",
         "decoder_attention_mixed_int8_q12_pwl_proxy_audit",
         "decoder_attention_mixed_int8_score_precision_recovery",
         "decoder_attention_mixed_int8_score_margin_audit",
@@ -8941,6 +8995,8 @@ def _build_payload(
             decoder_evidence = _decoder_attention_mixed_int8_broad_native_quality_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_mixed_int8_q12_pwl_native_quality":
             decoder_evidence = _decoder_attention_mixed_int8_q12_pwl_native_quality_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_attention_mixed_int8_q24_pwl_native_quality":
+            decoder_evidence = _decoder_attention_mixed_int8_q24_pwl_native_quality_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_mixed_int8_q12_pwl_proxy_audit":
             decoder_evidence = _decoder_attention_mixed_int8_q12_pwl_proxy_audit_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_mixed_int8_score_precision_recovery":
