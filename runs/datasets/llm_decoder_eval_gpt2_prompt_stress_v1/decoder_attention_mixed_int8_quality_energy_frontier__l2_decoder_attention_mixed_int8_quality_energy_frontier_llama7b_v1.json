@@ -1,0 +1,154 @@
+{
+  "assumptions": [
+    "qkv8_float_exact is the only broad native attention-shadow passing mixed/int8 candidate.",
+    "FP16 softmax metrics are measured hardware rows but not yet a composed q8/k8/v8 attention wrapper.",
+    "Score32 exact-div and PWL recosts are retained as measured diagnostic rows but are not quality-backed."
+  ],
+  "best_fp16_softmax_proxy_candidate": {
+    "candidate_id": "qkv8_float_exact_fp16_softmax_nm2_proxy",
+    "composition_status": "measured_softmax_only_not_composed_attention_wrapper",
+    "quality_backed": true,
+    "quality_source": "qkv8_float_exact",
+    "softmax_metrics": {
+      "critical_path_ns": 5.476841177082706,
+      "design": "npu_fp16_cpp_nm2_softmaxcmp",
+      "die_area_um2": 2250000.0,
+      "instance_area_um2": 0.0,
+      "path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_softmaxcmp/metrics.csv",
+      "status": "ok",
+      "stdcell_area_um2": 0.0,
+      "stdcell_count": 0.0,
+      "total_power_mw": 0.189074
+    }
+  },
+  "decision": "mixed_int8_quality_energy_frontier_composed_measurement_required",
+  "diagnosis": {
+    "best_fp16_softmax_proxy_candidate_id": "qkv8_float_exact_fp16_softmax_nm2_proxy",
+    "best_fp16_softmax_proxy_critical_path_ns": 5.476841177082706,
+    "best_fp16_softmax_proxy_die_area_um2": 2250000.0,
+    "best_fp16_softmax_proxy_total_power_mw": 0.189074,
+    "decision": "mixed_int8_quality_energy_frontier_composed_measurement_required",
+    "non_quality_backed_measured_recost_count": 2,
+    "q24_pwl_top1_match_rate": 0.96875,
+    "quality_best_candidate_id": "qkv8_float_exact",
+    "quality_best_top1_match_rate": 1.0,
+    "recommended_next_step": "Measure a composed q8/k8/v8 attention wrapper that keeps qkv8_float_exact quality semantics and substitutes a floating/near-exact softmax datapath; do not rank score32 exact-div or PWL rows as quality-backed frontier points.",
+    "score32_top1_match_rate": 0.984375
+  },
+  "fp16_softmax_proxy_candidates": [
+    {
+      "candidate_id": "qkv8_float_exact_fp16_softmax_nm1_proxy",
+      "composition_status": "measured_softmax_only_not_composed_attention_wrapper",
+      "quality_backed": true,
+      "quality_source": "qkv8_float_exact",
+      "softmax_metrics": {
+        "critical_path_ns": 5.690256573668907,
+        "design": "npu_fp16_cpp_nm1_softmaxcmp",
+        "die_area_um2": 2250000.0,
+        "instance_area_um2": 0.0,
+        "path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/metrics.csv",
+        "status": "ok",
+        "stdcell_area_um2": 0.0,
+        "stdcell_count": 0.0,
+        "total_power_mw": 0.184588
+      }
+    },
+    {
+      "candidate_id": "qkv8_float_exact_fp16_softmax_nm2_proxy",
+      "composition_status": "measured_softmax_only_not_composed_attention_wrapper",
+      "quality_backed": true,
+      "quality_source": "qkv8_float_exact",
+      "softmax_metrics": {
+        "critical_path_ns": 5.476841177082706,
+        "design": "npu_fp16_cpp_nm2_softmaxcmp",
+        "die_area_um2": 2250000.0,
+        "instance_area_um2": 0.0,
+        "path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_softmaxcmp/metrics.csv",
+        "status": "ok",
+        "stdcell_area_um2": 0.0,
+        "stdcell_count": 0.0,
+        "total_power_mw": 0.189074
+      }
+    }
+  ],
+  "inputs": {
+    "exact_div_recost_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_score32_w16_exact_div_reduced_replica_llama7b_v1_r2.json",
+    "exact_div_split2_recost_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_score32_w16_exact_div_split2_reduced_replica_llama7b_v1.json",
+    "fp16_softmax_nm1_metrics": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/metrics.csv",
+    "fp16_softmax_nm2_metrics": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_softmaxcmp/metrics.csv",
+    "quality_backed_frontier_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_quality_backed_frontier__l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1.json",
+    "score_precision_recovery_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score_precision_recovery__l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1_r2.json"
+  },
+  "measured_non_quality_backed_recosts": [
+    {
+      "best_feasible_latency_us": 9636.7536,
+      "decision": "dual_stream_feasible",
+      "label": "score32_w16_exact_div",
+      "precision_profile": "q8_k8_v8_a32_s32_w16_exact_div_int8_compute",
+      "quality_backed": false,
+      "quality_blocker": "score32 fixed-point/PWL candidates did not pass broad native attention-shadow gate",
+      "replica_recost_area_fit_replica_count": 801,
+      "replica_recost_compute_area_um2": 399091842.0,
+      "replica_recost_compute_power_mw": 9051.3,
+      "replica_recost_latency_us": 9636.7536,
+      "replica_recost_macs_per_cycle": 102528,
+      "substituted_compute_arch": "attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_score32_w16_exact_div"
+    },
+    {
+      "best_feasible_latency_us": 13187.938061,
+      "decision": "dual_stream_feasible",
+      "label": "score32_w16_exact_div_split2",
+      "precision_profile": "q8_k8_v8_a32_s32_w16_exact_div_int8_compute",
+      "quality_backed": false,
+      "quality_blocker": "score32 fixed-point/PWL candidates did not pass broad native attention-shadow gate",
+      "replica_recost_area_fit_replica_count": 745,
+      "replica_recost_compute_area_um2": 399282750.0,
+      "replica_recost_compute_power_mw": 12814.0,
+      "replica_recost_latency_us": 13187.938061,
+      "replica_recost_macs_per_cycle": 95360,
+      "substituted_compute_arch": "attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_score32_w16_exact_div_split2"
+    }
+  ],
+  "model": "llm_decoder_attention_mixed_int8_quality_energy_frontier_llama7b_v1",
+  "quality_gate": {
+    "qkv8_float_exact": {
+      "candidate_id": "qkv8_float_exact",
+      "mean_probability_kl": 0.0012425925766148221,
+      "quality_backed": true,
+      "top1_match_rate": 1.0
+    },
+    "qkv8_q24_pwl_recip_q24_bucket8": {
+      "candidate_id": "qkv8_q24_pwl_recip_q24_bucket8",
+      "comparison_count": 64,
+      "decision_status": "mixed_int8_native_attention_shadow_hold",
+      "k_bits": 8,
+      "max_abs_logit_delta_max": 3.625,
+      "mean_logit_cosine": 0.9989974107757253,
+      "mean_probability_kl": 0.013176719152554741,
+      "q_bits": 8,
+      "score_bits": 24,
+      "softmax_mode": "pwl_recip_lut_q24_bucket8",
+      "top1_match_rate": 0.96875,
+      "topk_contains_rate": 1.0,
+      "v_bits": 8,
+      "weight_bits": 24
+    },
+    "score32_float": {
+      "candidate_id": "score32_float",
+      "comparison_count": 64,
+      "decision_status": "mixed_int8_native_attention_shadow_hold",
+      "k_bits": 8,
+      "max_abs_logit_delta_max": 0.6875,
+      "mean_logit_cosine": 0.9998751206989908,
+      "mean_probability_kl": 0.0017210117614710435,
+      "q_bits": 8,
+      "score_bits": 32,
+      "softmax_mode": "float_quantized",
+      "top1_match_rate": 0.984375,
+      "topk_contains_rate": 1.0,
+      "v_bits": 8,
+      "weight_bits": 16
+    }
+  },
+  "version": 1
+}
