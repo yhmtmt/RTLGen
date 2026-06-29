@@ -22,7 +22,12 @@
         "direction": "select_quality_backed_softmax_measurement",
         "reason": "qkv8_float_exact is quality-backed but not physically composed; score32/PWL rows have PPA but fail quality. This audit chooses the next measured wrapper direction."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 1076,
+      "merge_commit": "5d28f394f504409a4e208619914cd7c07d3202b2",
+      "merged_utc": "2026-06-29T12:07:43.759348Z",
+      "notes": "Merged via PR #1076 and merge 5d28f394f504409a4e208619914cd7c07d3202b2 at 2026-06-29T12:07:43.759348Z."
     }
-  ]
+  ],
+  "source_commit": "aee481ec8ebcf4cb07ee75b731ffdb48994c9aa2"
 }
