@@ -14,9 +14,12 @@ from npu.eval.evaluate_llm_decoder_model_native_mixed_int8_attention import (
     _load_prompts,
     _parse_candidate_list,
     _parse_candidate_spec,
+    _pwl_recip_lut_softmax,
+    _quantize_score_fixed_list,
     _run_model_eval,
     _quantize_symmetric_list,
     _rtl_quantized_softmax,
+    _score_input_frac_bits,
     _summarize_rows,
     _install_attention_wrappers,
     _restore_attention_wrappers,
@@ -102,6 +105,40 @@ def test_quantize_symmetric_list() -> None:
     assert q[1] < 0
     assert q[2] > 0
     assert scale > 0.0
+
+
+def test_score_quantization_precision_scales_above_24_bits() -> None:
+    values = [0.0, 0.123456, -0.123456]
+
+    q24, scale24 = _quantize_score_fixed_list(values, score_bits=24)
+    q32, scale32 = _quantize_score_fixed_list(values, score_bits=32)
+
+    assert _score_input_frac_bits(12) == 8
+    assert _score_input_frac_bits(24) > _score_input_frac_bits(12)
+    assert _score_input_frac_bits(32) > _score_input_frac_bits(24)
+    assert scale32 < scale24
+    assert q32 != q24
+
+
+def test_pwl_softmax_uses_score_precision_for_input_fraction() -> None:
+    logits = [0.0, -0.001]
+
+    q12 = _pwl_recip_lut_softmax(
+        logits,
+        score_bits=12,
+        weight_bits=12,
+        reciprocal_bits=12,
+        bucket_shift=8,
+    )
+    q24 = _pwl_recip_lut_softmax(
+        logits,
+        score_bits=24,
+        weight_bits=24,
+        reciprocal_bits=24,
+        bucket_shift=8,
+    )
+
+    assert q12 != q24
 
 
 def test_fake_attention_patch_quantizes_qkv_once_and_restores() -> None:

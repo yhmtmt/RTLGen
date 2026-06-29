@@ -6512,6 +6512,7 @@ def _decoder_attention_mixed_int8_score_precision_recovery_evidence(*, item_id: 
                     "--candidate score32_float:q8,k8,v8,s32,w16,float_quantized "
                     "--candidate qkv8_q16_pwl_recip_q16_bucket8:q8,k8,v8,s16,w16,pwl_recip_lut_q16_bucket8 "
                     "--candidate qkv8_q20_pwl_recip_q20_bucket8:q8,k8,v8,s20,w20,pwl_recip_lut_q20_bucket8 "
+                    "--candidate qkv8_q24_pwl_recip_q24_bucket8:q8,k8,v8,s24,w24,pwl_recip_lut_q24_bucket8 "
                     "--primary-candidate-id score32_float "
                     f"--out {out} "
                     f"--out-md {report}'"
