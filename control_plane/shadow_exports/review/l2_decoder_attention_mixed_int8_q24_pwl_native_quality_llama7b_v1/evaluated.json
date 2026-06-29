@@ -1,0 +1,105 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "decoder_contract": {
+        "attention_mixed_int8_q24_pwl_native_quality_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_q24_pwl_native_quality__l2_decoder_attention_mixed_int8_q24_pwl_native_quality_llama7b_v1.json",
+        "attention_mixed_int8_q24_pwl_native_quality_scope": "Validate the q24/PWL reciprocal-LUT softmax replacement that passed bounded generation/NLL quality on the broader native 7B attention-shadow gate. This keeps q8/k8/v8 fixed and compares q20/q24 PWL rows against float-exact and score24 float controls before queueing q24 PWL physical embodiment or recost.",
+        "attention_mixed_int8_q24_pwl_native_quality_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_q24_pwl_native_quality__l2_decoder_attention_mixed_int8_q24_pwl_native_quality_llama7b_v1.md",
+        "attention_mixed_int8_softmax_replacement_generation_quality": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_softmax_replacement_generation_quality__l2_decoder_attention_mixed_int8_softmax_replacement_generation_quality_llama7b_v1.json"
+      }
+    },
+    "commands": [
+      {
+        "run": "bash -lc 'MODEL_ID=${RTLGEN_MODEL_NATIVE_7B_MODEL_ID:-mistralai/Mistral-7B-v0.1}; EXPECTED_GQA=${RTLGEN_MODEL_NATIVE_7B_EXPECTED_GQA_GROUP_SIZE:-4}; MAX_PROMPTS=${RTLGEN_MODEL_NATIVE_7B_BROAD_MAX_PROMPTS:-8}; GEN_STEPS=${RTLGEN_MODEL_NATIVE_7B_BROAD_GENERATION_STEPS:-8}; DTYPE=${RTLGEN_MODEL_NATIVE_7B_DTYPE:-bfloat16}; bash npu/eval/run_hf_eval_python.sh npu/eval/evaluate_llm_decoder_model_native_mixed_int8_attention.py --model-id \"$MODEL_ID\" --expected-gqa-group-size \"$EXPECTED_GQA\" --max-prompts \"$MAX_PROMPTS\" --generation-steps \"$GEN_STEPS\" --dtype \"$DTYPE\" --topk 5 --candidate qkv8_float_exact:q8,k8,v8,s24,w16,float_exact --candidate qkv8_score24_float:q8,k8,v8,s24,w16,float_quantized --candidate qkv8_q20_pwl_recip_q20_bucket8:q8,k8,v8,s20,w20,pwl_recip_lut_q20_bucket8 --candidate qkv8_q24_pwl_recip_q24_bucket8:q8,k8,v8,s24,w24,pwl_recip_lut_q24_bucket8 --primary-candidate-id qkv8_q24_pwl_recip_q24_bucket8 --out runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_q24_pwl_native_quality__l2_decoder_attention_mixed_int8_q24_pwl_native_quality_llama7b_v1.json --out-md runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_q24_pwl_native_quality__l2_decoder_attention_mixed_int8_q24_pwl_native_quality_llama7b_v1.md'",
+        "name": "evaluate_decoder_attention_mixed_int8_q24_pwl_native_quality"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate_runs"
+      }
+    ],
+    "objective": "Run native 7B attention-shadow quality for q8/k8/v8 with q24 PWL reciprocal-LUT softmax after q24 passed bounded generation/NLL quality.",
+    "acceptance": [
+      "Write all declared decoder evidence artifacts",
+      "Keep evidence artifact paths repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "source_mode": "src_verilog",
+    "expected_outputs": [
+      "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_q24_pwl_native_quality__l2_decoder_attention_mixed_int8_q24_pwl_native_quality_llama7b_v1.json",
+      "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_q24_pwl_native_quality__l2_decoder_attention_mixed_int8_q24_pwl_native_quality_llama7b_v1.md"
+    ]
+  },
+  "layer": "layer2",
+  "state": "evaluated",
+  "title": "Llama7B mixed/int8 q24 PWL native quality",
+  "result": {
+    "branch": "eval/l2_decoder_attention_mixed_int8_q24_pwl_native_quality_llama7b_v1/s20260629t112445z",
+    "completed_utc": "2026-06-29T11:15:23.190392Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "b7c2d9c80c1c",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260629t112445z][host:b7c2d9c80c1c][item:l2_decoder_attention_mixed_int8_q24_pwl_native_quality_llama7b_v1]",
+    "metrics_rows": [],
+    "metrics_exempt_reason": "evidence_only_decoder_evidence",
+    "queue_item_id": "l2_decoder_attention_mixed_int8_q24_pwl_native_quality_llama7b_v1",
+    "session_id": "s20260629t112445z",
+    "status": "ok",
+    "summary": "2/2 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l2_decoder_attention_mixed_int8_q24_pwl_native_quality_llama7b_v1/s20260629t112445z",
+    "pr_title": "eval: run llama7b mixed/int8 q24 pwl native quality",
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Include metrics row references in result.metrics_rows",
+      "Keep committed result_path fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260629t112445z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l2_decoder_attention_mixed_int8_q24_pwl_native_quality_llama7b_v1"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l2_decoder_attention_mixed_int8_q24_pwl_native_quality_llama7b_v1",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 1,
+  "created_utc": "2026-06-29T11:12:49.709675Z",
+  "requested_by": "@codex",
+  "developer_loop": {
+    "comparison": {
+      "role": "precision_validation",
+      "paired_baseline_item_id": ""
+    },
+    "evaluation": {
+      "mode": "quality_gate",
+      "expected_reason": "q24/PWL passed bounded generation/NLL evidence in PR #1066; verify it on broader native attention-shadow quality before PPA and frontier recost.",
+      "expected_direction": "validate_or_reject_q24_pwl_hardware_target"
+    },
+    "abstraction": {
+      "layer": "decoder_attention_mixed_int8_q24_pwl_native_quality"
+    },
+    "proposal_id": "prop_l2_decoder_attention_mixed_int8_q24_pwl_native_quality_llama7b_v1",
+    "dependencies": {
+      "item_ids": [
+        "l2_decoder_attention_mixed_int8_softmax_replacement_generation_quality_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    },
+    "proposal_path": "docs/proposals/prop_l2_decoder_attention_mixed_int8_q24_pwl_native_quality_llama7b_v1/proposal.json"
+  },
+  "source_requirement": {
+    "repo": "",
+    "reason": "evaluator runtime must contain the queued job source commit",
+    "version": 1,
+    "required_ref": "origin/master",
+    "required_sha": "d85cc4c3effe9e61aa4b4c4fa2e651e1f191995a",
+    "requires_daemon_restart": true
+  }
+}
