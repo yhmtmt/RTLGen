@@ -1,0 +1,69 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-06-30T13:34:32.855016Z",
+  "item_id": "l2_decoder_attention_pwl_recip_lut_boundary_llama7b_v1",
+  "run_key": "l2_decoder_attention_pwl_recip_lut_boundary_llama7b_v1_run_1702d173031660ca",
+  "layer": "layer2",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l2_campaign",
+  "source_commit": "a4cdd1137b7439085eda2bbc742d7eb2cdec1058",
+  "review_metadata_source_commit": "a4cdd1137b7439085eda2bbc742d7eb2cdec1058",
+  "objective": "Estimate direct reciprocal-LUT size for q12/q20/q24 bucket8 PWL softmax candidates before launching q20/q24 composed attention PPA.",
+  "input_manifest": {
+    "decoder_contract": {
+      "attention_pwl_recip_lut_boundary_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_pwl_recip_lut_boundary__l2_decoder_attention_pwl_recip_lut_boundary_llama7b_v1.json",
+      "attention_pwl_recip_lut_boundary_scope": "Estimate direct reciprocal-LUT case growth for the generation-passing q20/q24 PWL softmax candidates before launching composed OpenROAD PPA.",
+      "attention_pwl_recip_lut_boundary_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_pwl_recip_lut_boundary__l2_decoder_attention_pwl_recip_lut_boundary_llama7b_v1.md",
+      "attention_mixed_int8_softmax_replacement_generation_quality": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_softmax_replacement_generation_quality__l2_decoder_attention_mixed_int8_softmax_replacement_generation_quality_llama7b_v1.json",
+      "attention_mixed_int8_score24_w16_rtl_exact_generation_quality": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score24_w16_rtl_exact_generation_quality__l2_decoder_attention_mixed_int8_score24_w16_rtl_exact_generation_quality_llama7b_v1_r2.json"
+    }
+  },
+  "recommendation": {
+    "source": "decoder_evidence",
+    "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_pwl_recip_lut_boundary__l2_decoder_attention_pwl_recip_lut_boundary_llama7b_v1.json",
+    "arch_id": "decoder_attention_pwl_recip_lut_boundary",
+    "macro_mode": "evidence_only",
+    "outcome": "compact_reciprocal_required_for_widest_points"
+  },
+  "objective_profiles": [],
+  "evaluation_record": {
+    "proposal_id": "prop_l2_decoder_attention_pwl_recip_lut_boundary_llama7b_v1",
+    "title": "Bound direct PWL reciprocal-LUT size before q20/q24 composed attention PPA",
+    "primary_question": "",
+    "evaluation_mode": "frontier_followup",
+    "comparison_role": "pwl_recip_lut_synthesis_boundary",
+    "abstraction_layer": "decoder_attention_pwl_recip_lut_boundary",
+    "expected_direction": "bound_direct_lut_before_q20_q24_ppa",
+    "expected_reason": "q20/q24 PWL candidates passed bounded generation quality, but direct reciprocal-LUT case count grows with weight precision; avoid dispatching q24 OpenROAD PPA that mostly measures LUT explosion.",
+    "summary": "Decoder attention PWL reciprocal-LUT boundary evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_pwl_recip_lut_boundary__l2_decoder_attention_pwl_recip_lut_boundary_llama7b_v1.json: decision=compact_reciprocal_required_for_widest_points; candidate_count=3; reasonable_direct_lut_candidate_count=1; boundary_probe_candidate_count=1; blocked_direct_lut_candidate_count=1; qkv8_q12_pwl_recip_q12_bucket8_cases=128; qkv8_q12_pwl_recip_q12_bucket8_verdict=direct_lut_ppa_reasonable; qkv8_q20_pwl_recip_q20_bucket8_cases=32768; qkv8_q20_pwl_recip_q20_bucket8_verdict=boundary_probe_only; qkv8_q24_pwl_recip_q24_bucket8_cases=524288; qkv8_q24_pwl_recip_q24_bucket8_verdict=requires_compact_reciprocal_before_ppa.",
+    "outcome": "compact_reciprocal_required_for_widest_points",
+    "expectation_status": "unspecified"
+  },
+  "proposal_assessment": {
+    "proposal_id": "prop_l2_decoder_attention_pwl_recip_lut_boundary_llama7b_v1",
+    "title": "Bound direct PWL reciprocal-LUT size before q20/q24 composed attention PPA",
+    "kind": "",
+    "primary_question": "",
+    "evaluation_mode": "frontier_followup",
+    "comparison_role": "pwl_recip_lut_synthesis_boundary",
+    "outcome": "compact_reciprocal_required_for_widest_points",
+    "summary": "Decoder attention PWL reciprocal-LUT boundary evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_pwl_recip_lut_boundary__l2_decoder_attention_pwl_recip_lut_boundary_llama7b_v1.json: decision=compact_reciprocal_required_for_widest_points; candidate_count=3; reasonable_direct_lut_candidate_count=1; boundary_probe_candidate_count=1; blocked_direct_lut_candidate_count=1; qkv8_q12_pwl_recip_q12_bucket8_cases=128; qkv8_q12_pwl_recip_q12_bucket8_verdict=direct_lut_ppa_reasonable; qkv8_q20_pwl_recip_q20_bucket8_cases=32768; qkv8_q20_pwl_recip_q20_bucket8_verdict=boundary_probe_only; qkv8_q24_pwl_recip_q24_bucket8_cases=524288; qkv8_q24_pwl_recip_q24_bucket8_verdict=requires_compact_reciprocal_before_ppa.",
+    "baseline_ref": null,
+    "baseline_item_id": null,
+    "matched_row_count": 0,
+    "matched_rows": [],
+    "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_pwl_recip_lut_boundary__l2_decoder_attention_pwl_recip_lut_boundary_llama7b_v1.json",
+    "decoder_quality": {
+      "diagnosis": {}
+    }
+  },
+  "source_refs": {
+    "decoder_evidence_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_pwl_recip_lut_boundary__l2_decoder_attention_pwl_recip_lut_boundary_llama7b_v1.json",
+    "decoder_attention_pwl_recip_lut_boundary_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_pwl_recip_lut_boundary__l2_decoder_attention_pwl_recip_lut_boundary_llama7b_v1.json",
+    "decoder_attention_pwl_recip_lut_boundary_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_pwl_recip_lut_boundary__l2_decoder_attention_pwl_recip_lut_boundary_llama7b_v1.md"
+  },
+  "decoder_quality": {
+    "diagnosis": {}
+  }
+}
