@@ -26,7 +26,13 @@
       "expected_result": {
         "direction": "measure_q20_pwl_direct_lut_boundary_cost",
         "reason": "The merged direct-LUT boundary estimate marked q20 bucket8 as boundary_probe_only, while q24 requires compact reciprocal hardware before PPA."
-      }
+      },
+      "status": "merged",
+      "merged_pr_number": 1091,
+      "merge_commit": "66e3e05b7dd041d799508081d77d804b7f43988a",
+      "merged_utc": "2026-06-30T13:53:08.654438Z",
+      "notes": "Merged via PR #1091 and merge 66e3e05b7dd041d799508081d77d804b7f43988a at 2026-06-30T13:53:08.654438Z."
     }
-  ]
+  ],
+  "source_commit": "91656b74811cb776cfe2d4b546e781c93c0743f7"
 }

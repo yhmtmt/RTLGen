@@ -1,0 +1,14 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_dual_stream_composed_q20_pwl_recip_lut_boundary_v1",
+  "candidate_id": "l1_decoder_attention_dual_stream_composed_q20_pwl_recip_lut_boundary_ppa_v1",
+  "decision": "iterate",
+  "reason": "Accepted Layer 1 evidence merged, but no concrete promotion proposal entries were present.",
+  "evidence_refs": [
+    "item:l1_decoder_attention_dual_stream_composed_q20_pwl_recip_lut_boundary_ppa_v1",
+    "run:l1_decoder_attention_dual_stream_composed_q20_pwl_recip_lut_boundary_ppa_v1_run_4fc7783b1877ff1b",
+    "artifact:control_plane/shadow_exports/l1_promotions/l1_decoder_attention_dual_stream_composed_q20_pwl_recip_lut_boundary_ppa_v1.json",
+    "pr:#1091"
+  ],
+  "next_action": "inspect the next dependent item",
+  "requires_human_approval": false
+}
