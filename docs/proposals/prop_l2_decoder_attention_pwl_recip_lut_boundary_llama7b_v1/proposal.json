@@ -1,0 +1,46 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_pwl_recip_lut_boundary_llama7b_v1",
+  "title": "Bound direct PWL reciprocal-LUT size before q20/q24 composed attention PPA",
+  "layer": "layer2",
+  "abstraction_layer": "decoder_attention_pwl_recip_lut_boundary",
+  "objective": "Decide whether the generation-passing q20/q24 PWL reciprocal softmax candidates should be measured with the current direct-LUT RTL implementation or require a compact reciprocal implementation first.",
+  "context": {
+    "quality_evidence": [
+      "l2_decoder_attention_mixed_int8_softmax_replacement_generation_quality_llama7b_v1",
+      "l2_decoder_attention_mixed_int8_score24_w16_rtl_exact_generation_quality_llama7b_v1_r2"
+    ],
+    "motivation": "score24/w16 RTL exact-divide is physically attractive but failed direct generation quality. q20/q24 PWL reciprocal candidates passed bounded generation quality, but the current RTL generator emits one reciprocal case per bucketed denominator, so q24 may be a synthesis-size artifact rather than an architecture point."
+  },
+  "candidate_points": [
+    {
+      "candidate_id": "qkv8_q12_pwl_recip_q12_bucket8",
+      "purpose": "Measured direct-LUT reference point already used for q12/PWL composed attention.",
+      "score_bits": 12,
+      "weight_bits": 12,
+      "reciprocal_bits": 12,
+      "bucket_shift": 8
+    },
+    {
+      "candidate_id": "qkv8_q20_pwl_recip_q20_bucket8",
+      "purpose": "Generation-passing candidate; decide whether direct-LUT PPA is only a boundary probe.",
+      "score_bits": 20,
+      "weight_bits": 20,
+      "reciprocal_bits": 20,
+      "bucket_shift": 8
+    },
+    {
+      "candidate_id": "qkv8_q24_pwl_recip_q24_bucket8",
+      "purpose": "Generation-passing candidate; decide whether direct-LUT PPA must be replaced by compact reciprocal hardware first.",
+      "score_bits": 24,
+      "weight_bits": 24,
+      "reciprocal_bits": 24,
+      "bucket_shift": 8
+    }
+  ],
+  "review_questions": [
+    "How many reciprocal denominator cases does the current direct-LUT RTL emit for q12, q20, and q24 bucket8 PWL softmax?",
+    "Which of q20/q24 is reasonable to send to OpenROAD as-is, and which should instead get a compact reciprocal RTL implementation?",
+    "Does the result keep PPA measurements from being polluted by a known direct-LUT explosion?"
+  ],
+  "expected_decision": "q12 should remain direct-LUT measurable; q20 should be treated as a synthesis-boundary probe if measured; q24 should require a compact reciprocal implementation before composed PPA."
+}

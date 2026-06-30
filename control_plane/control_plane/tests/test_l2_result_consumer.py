@@ -6861,3 +6861,171 @@ def test_consume_l2_result_paired_comparison_matches_model_rows_by_model_id() ->
             assert matched_rows[1]["model_id"] == "model_b"
             assert matched_rows[1]["metrics"]["latency_ms_mean"]["baseline"] == 0.8
             assert matched_rows[1]["metrics"]["latency_ms_mean"]["candidate"] == 0.7
+
+
+def test_consume_l2_result_attention_pwl_recip_lut_boundary_uses_decoder_evidence() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            item_id = "l2_decoder_attention_pwl_recip_lut_boundary_llama7b_v1"
+            proposal_dir = (
+                repo_root
+                / "docs"
+                / "proposals"
+                / "prop_l2_decoder_attention_pwl_recip_lut_boundary_llama7b_v1"
+            )
+            proposal_dir.mkdir(parents=True)
+            _write(
+                proposal_dir / "proposal.json",
+                json.dumps(
+                    {
+                        "proposal_id": "prop_l2_decoder_attention_pwl_recip_lut_boundary_llama7b_v1",
+                        "kind": "architecture",
+                        "title": "PWL reciprocal LUT boundary",
+                        "direct_comparison": {
+                            "primary_question": "Should q20/q24 PWL direct-LUT candidates go to PPA?"
+                        },
+                    },
+                    indent=2,
+                )
+                + "\n",
+            )
+            evidence_rel = (
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                f"decoder_attention_pwl_recip_lut_boundary__{item_id}.json"
+            )
+            report_rel = (
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                f"decoder_attention_pwl_recip_lut_boundary__{item_id}.md"
+            )
+            _write(
+                repo_root / evidence_rel,
+                json.dumps(
+                    {
+                        "estimator": "attention_pwl_recip_lut_boundary_v1",
+                        "decision": "compact_reciprocal_required_for_widest_points",
+                        "candidate_count": 3,
+                        "reasonable_direct_lut_candidate_count": 1,
+                        "boundary_probe_candidate_count": 1,
+                        "blocked_direct_lut_candidate_count": 1,
+                        "candidate_rows": [
+                            {
+                                "candidate_id": "qkv8_q12_pwl_recip_q12_bucket8",
+                                "score_bits": 12,
+                                "weight_bits": 12,
+                                "reciprocal_bits": 12,
+                                "bucket_shift": 8,
+                                "reciprocal_case_count": 128,
+                                "direct_lut_verdict": "direct_lut_ppa_reasonable",
+                            },
+                            {
+                                "candidate_id": "qkv8_q20_pwl_recip_q20_bucket8",
+                                "score_bits": 20,
+                                "weight_bits": 20,
+                                "reciprocal_bits": 20,
+                                "bucket_shift": 8,
+                                "reciprocal_case_count": 32768,
+                                "direct_lut_verdict": "boundary_probe_only",
+                            },
+                            {
+                                "candidate_id": "qkv8_q24_pwl_recip_q24_bucket8",
+                                "score_bits": 24,
+                                "weight_bits": 24,
+                                "reciprocal_bits": 24,
+                                "bucket_shift": 8,
+                                "reciprocal_case_count": 524288,
+                                "direct_lut_verdict": "requires_compact_reciprocal_before_ppa",
+                            },
+                        ],
+                    },
+                    indent=2,
+                )
+                + "\n",
+            )
+            _write(repo_root / report_rel, "# boundary\n")
+
+            task_request = TaskRequest(
+                request_key=f"l2_campaign:{item_id}",
+                source="test",
+                requested_by="@tester",
+                title=f"Layer2 {item_id}",
+                description="pwl recip lut boundary",
+                layer=LayerName.LAYER2,
+                flow=FlowName.OPENROAD,
+                priority=1,
+                request_payload={
+                    "item_id": item_id,
+                    "layer": "layer2",
+                    "flow": "openroad",
+                    "developer_loop": {
+                        "proposal_id": "prop_l2_decoder_attention_pwl_recip_lut_boundary_llama7b_v1",
+                        "proposal_path": str(proposal_dir.relative_to(repo_root) / "proposal.json"),
+                        "evaluation": {"mode": "frontier_followup"},
+                        "abstraction": {"layer": "decoder_attention_pwl_recip_lut_boundary"},
+                        "comparison": {"role": "pwl_recip_lut_synthesis_boundary"},
+                    },
+                },
+                source_commit="deadbeef",
+            )
+            session.add(task_request)
+            session.flush()
+            work_item = WorkItem(
+                work_item_key=f"l2_campaign:{item_id}",
+                task_request_id=task_request.id,
+                item_id=item_id,
+                layer=LayerName.LAYER2,
+                flow=FlowName.OPENROAD,
+                platform="nangate45",
+                task_type="l2_campaign",
+                state=WorkItemState.ARTIFACT_SYNC,
+                priority=1,
+                source_mode="src_verilog",
+                input_manifest={
+                    "decoder_contract": {
+                        "attention_pwl_recip_lut_boundary_out": evidence_rel,
+                        "attention_pwl_recip_lut_boundary_report": report_rel,
+                    }
+                },
+                command_manifest=[],
+                expected_outputs=[evidence_rel, report_rel],
+                acceptance_rules=[],
+                source_commit="deadbeef",
+            )
+            session.add(work_item)
+            session.flush()
+            session.add(
+                Run(
+                    run_key=f"{item_id}_run_1",
+                    work_item_id=work_item.id,
+                    attempt=1,
+                    executor_type=ExecutorType.INTERNAL_WORKER,
+                    status=RunStatus.SUCCEEDED,
+                    started_at=utcnow(),
+                    completed_at=utcnow(),
+                    checkout_commit="deadbeef",
+                    result_summary="2/2 commands succeeded",
+                )
+            )
+            session.commit()
+
+            consume_l2_result(session, Layer2ConsumeRequest(repo_root=str(repo_root), item_id=item_id))
+
+            decision_payload = json.loads(
+                (repo_root / "control_plane" / "shadow_exports" / "l2_decisions" / f"{item_id}.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            assert (
+                decision_payload["proposal_assessment"]["outcome"]
+                == "compact_reciprocal_required_for_widest_points"
+            )
+            assert "qkv8_q24_pwl_recip_q24_bucket8_cases=524288" in decision_payload["proposal_assessment"][
+                "summary"
+            ]
+            assert (
+                decision_payload["source_refs"]["decoder_attention_pwl_recip_lut_boundary_out"]
+                == evidence_rel
+            )

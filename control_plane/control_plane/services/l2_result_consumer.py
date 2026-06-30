@@ -539,6 +539,10 @@ _DECODER_EVIDENCE_OUTPUT_KEYS: tuple[tuple[str, str], ...] = (
         "attention_mixed_int8_softmax_replacement_generation_quality_report",
     ),
     (
+        "attention_pwl_recip_lut_boundary_out",
+        "attention_pwl_recip_lut_boundary_report",
+    ),
+    (
         "attention_mixed_int8_quality_backed_frontier_out",
         "attention_mixed_int8_quality_backed_frontier_report",
     ),
@@ -822,6 +826,45 @@ def _decoder_recommendation_override(
 
 def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, Any]) -> tuple[str, str]:
     model = str(evidence_payload.get("model", "")).strip()
+    if evidence_payload.get("estimator") == "attention_pwl_recip_lut_boundary_v1":
+        outcome = str(evidence_payload.get("decision") or "attention_pwl_recip_lut_boundary_recorded")
+        parts = [
+            f"Decoder attention PWL reciprocal-LUT boundary evidence recorded from {evidence_ref}: decision={outcome}",
+        ]
+        for key in (
+            "candidate_count",
+            "reasonable_direct_lut_candidate_count",
+            "boundary_probe_candidate_count",
+            "blocked_direct_lut_candidate_count",
+        ):
+            if key in evidence_payload:
+                parts.append(f"{key}={evidence_payload.get(key)}")
+        rows = evidence_payload.get("candidate_rows")
+        if isinstance(rows, list):
+            for row in rows:
+                if not isinstance(row, dict):
+                    continue
+                candidate_id = str(row.get("candidate_id") or "").strip()
+                if candidate_id in {
+                    "qkv8_q12_pwl_recip_q12_bucket8",
+                    "qkv8_q20_pwl_recip_q20_bucket8",
+                    "qkv8_q24_pwl_recip_q24_bucket8",
+                }:
+                    parts.append(
+                        "{candidate_id}_cases={cases}".format(
+                            candidate_id=candidate_id,
+                            cases=row.get("reciprocal_case_count"),
+                        )
+                    )
+                    parts.append(
+                        "{candidate_id}_verdict={verdict}".format(
+                            candidate_id=candidate_id,
+                            verdict=row.get("direct_lut_verdict"),
+                        )
+                    )
+        summary = "; ".join(parts)
+        return outcome, summary if summary.endswith(".") else summary + "."
+
     if evidence_payload.get("quality_gate") == "mixed_int8_attention_shadow" and isinstance(
         evidence_payload.get("decision"),
         dict,
