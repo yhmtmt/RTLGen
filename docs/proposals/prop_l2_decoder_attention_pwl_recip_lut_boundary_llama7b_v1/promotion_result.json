@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_pwl_recip_lut_boundary_llama7b_v1",
+  "decision": "iterate",
+  "pr_number": 1089,
+  "merge_commit": "e4156d1da98fcb351f3261063d08610c6f4c0c98",
+  "merged_utc": "2026-06-30T13:37:23.275408Z"
+}

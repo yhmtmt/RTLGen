@@ -1,0 +1,32 @@
+# Analysis Report
+
+## Candidate
+- `proposal_id`: `prop_l2_decoder_attention_pwl_recip_lut_boundary_llama7b_v1`
+- `candidate_id`: `l2_decoder_attention_pwl_recip_lut_boundary_llama7b_v1`
+
+## Evaluations Consumed
+- `l2_decoder_attention_pwl_recip_lut_boundary_llama7b_v1`
+- `l2_decoder_attention_pwl_recip_lut_boundary_llama7b_v1_run_1702d173031660ca`
+- source commit: `a4cdd1137b7439085eda2bbc742d7eb2cdec1058`
+- review: PR #1089
+
+## Baseline Comparison
+- baseline_ref: `None`
+- baseline_item_id: `None`
+- outcome: `compact_reciprocal_required_for_widest_points`
+- summary: Decoder attention PWL reciprocal-LUT boundary evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_pwl_recip_lut_boundary__l2_decoder_attention_pwl_recip_lut_boundary_llama7b_v1.json: decision=compact_reciprocal_required_for_widest_points; candidate_count=3; reasonable_direct_lut_candidate_count=1; boundary_probe_candidate_count=1; blocked_direct_lut_candidate_count=1; qkv8_q12_pwl_recip_q12_bucket8_cases=128; qkv8_q12_pwl_recip_q12_bucket8_verdict=direct_lut_ppa_reasonable; qkv8_q20_pwl_recip_q20_bucket8_cases=32768; qkv8_q20_pwl_recip_q20_bucket8_verdict=boundary_probe_only; qkv8_q24_pwl_recip_q24_bucket8_cases=524288; qkv8_q24_pwl_recip_q24_bucket8_verdict=requires_compact_reciprocal_before_ppa.
+
+## Result
+- result: `iterate`
+- confidence level: merged accepted evidence
+- estimated optimization room: pending follow-on comparison
+- architecture conclusion robustness: staged evidence
+- summary: Decoder attention PWL reciprocal-LUT boundary evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_pwl_recip_lut_boundary__l2_decoder_attention_pwl_recip_lut_boundary_llama7b_v1.json: decision=compact_reciprocal_required_for_widest_points; candidate_count=3; reasonable_direct_lut_candidate_count=1; boundary_probe_candidate_count=1; blocked_direct_lut_candidate_count=1; qkv8_q12_pwl_recip_q12_bucket8_cases=128; qkv8_q12_pwl_recip_q12_bucket8_verdict=direct_lut_ppa_reasonable; qkv8_q20_pwl_recip_q20_bucket8_cases=32768; qkv8_q20_pwl_recip_q20_bucket8_verdict=boundary_probe_only; qkv8_q24_pwl_recip_q24_bucket8_cases=524288; qkv8_q24_pwl_recip_q24_bucket8_verdict=requires_compact_reciprocal_before_ppa.
+
+## Failures and Caveats
+- no additional caveats recorded during automatic finalization
+
+## Recommendation
+- `iterate`
+- reason: Decoder attention PWL reciprocal-LUT boundary evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_pwl_recip_lut_boundary__l2_decoder_attention_pwl_recip_lut_boundary_llama7b_v1.json: decision=compact_reciprocal_required_for_widest_points; candidate_count=3; reasonable_direct_lut_candidate_count=1; boundary_probe_candidate_count=1; blocked_direct_lut_candidate_count=1; qkv8_q12_pwl_recip_q12_bucket8_cases=128; qkv8_q12_pwl_recip_q12_bucket8_verdict=direct_lut_ppa_reasonable; qkv8_q20_pwl_recip_q20_bucket8_cases=32768; qkv8_q20_pwl_recip_q20_bucket8_verdict=boundary_probe_only; qkv8_q24_pwl_recip_q24_bucket8_cases=524288; qkv8_q24_pwl_recip_q24_bucket8_verdict=requires_compact_reciprocal_before_ppa.
+- next_action: inspect follow-on work after l2_decoder_attention_pwl_recip_lut_boundary_llama7b_v1

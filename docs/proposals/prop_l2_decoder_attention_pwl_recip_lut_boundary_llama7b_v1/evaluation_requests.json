@@ -33,7 +33,13 @@
       "expected_result": {
         "direction": "bound_direct_lut_before_q20_q24_ppa",
         "reason": "q20/q24 PWL candidates passed bounded generation quality, but direct reciprocal-LUT case count grows with weight precision; avoid dispatching a q24 OpenROAD job that mostly measures LUT explosion."
-      }
+      },
+      "status": "merged",
+      "merged_pr_number": 1089,
+      "merge_commit": "e4156d1da98fcb351f3261063d08610c6f4c0c98",
+      "merged_utc": "2026-06-30T13:37:23.275408Z",
+      "notes": "Merged via PR #1089 and merge e4156d1da98fcb351f3261063d08610c6f4c0c98 at 2026-06-30T13:37:23.275408Z."
     }
-  ]
+  ],
+  "source_commit": "a4cdd1137b7439085eda2bbc742d7eb2cdec1058"
 }

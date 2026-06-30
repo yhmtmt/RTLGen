@@ -1,0 +1,15 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_pwl_recip_lut_boundary_llama7b_v1",
+  "candidate_id": "l2_decoder_attention_pwl_recip_lut_boundary_llama7b_v1",
+  "decision": "iterate",
+  "reason": "Decoder attention PWL reciprocal-LUT boundary evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_pwl_recip_lut_boundary__l2_decoder_attention_pwl_recip_lut_boundary_llama7b_v1.json: decision=compact_reciprocal_required_for_widest_points; candidate_count=3; reasonable_direct_lut_candidate_count=1; boundary_probe_candidate_count=1; blocked_direct_lut_candidate_count=1; qkv8_q12_pwl_recip_q12_bucket8_cases=128; qkv8_q12_pwl_recip_q12_bucket8_verdict=direct_lut_ppa_reasonable; qkv8_q20_pwl_recip_q20_bucket8_cases=32768; qkv8_q20_pwl_recip_q20_bucket8_verdict=boundary_probe_only; qkv8_q24_pwl_recip_q24_bucket8_cases=524288; qkv8_q24_pwl_recip_q24_bucket8_verdict=requires_compact_reciprocal_before_ppa.",
+  "evidence_refs": [
+    "item:l2_decoder_attention_pwl_recip_lut_boundary_llama7b_v1",
+    "run:l2_decoder_attention_pwl_recip_lut_boundary_llama7b_v1_run_1702d173031660ca",
+    "artifact:control_plane/shadow_exports/l2_decisions/l2_decoder_attention_pwl_recip_lut_boundary_llama7b_v1.json",
+    "pr:#1089",
+    "https://github.com/yhmtmt/RTLGen/pull/1089"
+  ],
+  "next_action": "inspect follow-on work after l2_decoder_attention_pwl_recip_lut_boundary_llama7b_v1",
+  "requires_human_approval": false
+}
