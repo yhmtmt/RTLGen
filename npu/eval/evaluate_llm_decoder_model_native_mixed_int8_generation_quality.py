@@ -394,6 +394,40 @@ def _summarize_free_running_rows(rows: list[JsonDict], *, generation_steps: int,
     }
 
 
+def _candidate_label(summary: JsonDict) -> str:
+    candidate_id = str(summary.get("candidate_id") or "").strip()
+    if candidate_id:
+        return candidate_id.replace("_", " ")
+    score_bits = summary.get("score_bits")
+    weight_bits = summary.get("weight_bits")
+    softmax_mode = str(summary.get("softmax_mode") or "").strip()
+    parts: list[str] = []
+    if score_bits is not None:
+        parts.append(f"score{score_bits}")
+    if weight_bits is not None:
+        parts.append(f"w{weight_bits}")
+    if softmax_mode:
+        parts.append(softmax_mode.replace("_", " "))
+    return " ".join(parts) or "candidate"
+
+
+def _candidate_title_label(summary: JsonDict) -> str:
+    words: list[str] = []
+    for word in _candidate_label(summary).split():
+        lower = word.lower()
+        if lower in {"rtl", "pwl", "lut", "qkv"}:
+            words.append(lower.upper())
+        elif lower.startswith("q") and lower[1:].isdigit():
+            words.append(lower.upper())
+        elif lower.startswith("w") and lower[1:].isdigit():
+            words.append(lower.upper())
+        elif lower.startswith("score") and lower[5:].isdigit():
+            words.append("Score" + lower[5:])
+        else:
+            words.append(word.capitalize())
+    return " ".join(words)
+
+
 def _decision(summary: JsonDict, *, expected_gqa_group_size: int, actual_gqa_group_size: float) -> JsonDict:
     blockers: list[str] = []
     if expected_gqa_group_size > 0 and abs(actual_gqa_group_size - expected_gqa_group_size) > DIVISIBILITY_EPSILON:
@@ -413,8 +447,9 @@ def _decision(summary: JsonDict, *, expected_gqa_group_size: int, actual_gqa_gro
 
     if blockers:
         status = DECISION_HOLD
+        label = _candidate_label(summary)
         next_step = (
-            "Hold this score32 mixed/int8 generation candidate until a narrower score-precision boundary "
+            f"Hold this {label} mixed/int8 generation candidate until a narrower score-precision boundary "
             "demonstrates better free-running agreement."
         )
     else:
@@ -631,8 +666,10 @@ def build_payload(args: argparse.Namespace) -> JsonDict:
 
 
 def _write_report_md(payload: JsonDict) -> str:
+    primary_summary = payload["summary"]
+    label = _candidate_title_label(primary_summary)
     lines = [
-        "# Native-Checkpoint Mixed/Int8 Score32 Generation Quality",
+        f"# Native-Checkpoint Mixed/Int8 {label} Generation Quality",
         "",
         f"- model_id: `{payload['model']['model_id']}`",
         f"- decision: `{payload['decision']['status']}`",
@@ -675,7 +712,7 @@ def _write_report_md(payload: JsonDict) -> str:
             "",
             "- Teacher-forced rows compare against a non-quantized reference model.",
             "- Candidate applies LLaMA-style q/k/v projection quantization plus softmax approximation.",
-            "- Decision thresholds are conservative for score32-vs-reference drift in a bounded prompt sample.",
+            f"- Decision thresholds are conservative for {label}-vs-reference drift in a bounded prompt sample.",
         ]
     )
     return "\n".join(lines) + "\n"
