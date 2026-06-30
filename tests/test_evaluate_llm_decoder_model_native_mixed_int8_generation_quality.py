@@ -17,6 +17,7 @@ from npu.eval.evaluate_llm_decoder_model_native_mixed_int8_generation_quality im
     _resolve_candidates,
     _summarize_free_running_rows,
     _summarize_teacher_forced_rows,
+    _write_report_md,
 )
 from npu.eval import evaluate_llm_decoder_model_native_mixed_int8_attention as attention_eval
 
@@ -98,3 +99,41 @@ def test_default_candidates_resolves_score32_float() -> None:
     assert candidates[0].candidate_id == attention_eval._parse_candidate_spec(DEFAULT_CANDIDATE_SPEC).candidate_id
     assert candidates[0].score_bits == 32
     assert candidates[0].q_bits == 8
+
+
+def test_report_and_hold_message_use_primary_candidate_label() -> None:
+    summary = {
+        "candidate_id": "score24_w16_rtl_exact",
+        "score_bits": 24,
+        "weight_bits": 16,
+        "softmax_mode": "rtl_exact",
+        "teacher_forced_nll_delta_mean": 0.8,
+        "candidate_probability_assigned_to_reference_token_mean": 0.2,
+        "candidate_probability_assigned_to_reference_token_min": 0.01,
+        "free_running_match_rate": 0.5,
+        "decision_status": "mixed_int8_generation_quality_hold",
+        "free_running_first_divergence_step_mean": 0.5,
+    }
+    decision = _decision(summary, expected_gqa_group_size=4, actual_gqa_group_size=4.0)
+    summary["decision"] = decision
+    payload = {
+        "model": {"model_id": "test/model"},
+        "decision": decision,
+        "summary": summary,
+        "candidate_summaries": [summary],
+        "prompt_records": [
+            {
+                "candidate_id": "score24_w16_rtl_exact",
+                "prompt_index": 0,
+                "free_run_first_divergence_step": 0,
+                "free_run_match_count": 0,
+                "free_run_steps": 8,
+            }
+        ],
+    }
+
+    report = _write_report_md(payload)
+
+    assert "Hold this score24 w16 rtl exact mixed/int8 generation candidate" in decision["next_step"]
+    assert "# Native-Checkpoint Mixed/Int8 Score24 W16 RTL Exact Generation Quality" in report
+    assert "score32" not in report
