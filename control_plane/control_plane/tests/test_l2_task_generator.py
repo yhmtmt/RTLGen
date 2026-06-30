@@ -9689,3 +9689,54 @@ def test_generate_l2_campaign_task_adds_softmax_recip_lut_endpoint_router_sram_s
                 )
                 for output in expected_outputs
             )
+
+
+def test_generate_l2_campaign_task_adds_attention_pwl_recip_lut_boundary_evidence() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id="l2_decoder_attention_pwl_recip_lut_boundary_llama7b_v1",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    proposal_id="prop_l2_decoder_attention_pwl_recip_lut_boundary_llama7b_v1",
+                    proposal_path=(
+                        "docs/proposals/prop_l2_decoder_attention_pwl_recip_lut_boundary_llama7b_v1/proposal.json"
+                    ),
+                    abstraction_layer="decoder_attention_pwl_recip_lut_boundary",
+                    evaluation_mode="frontier_followup",
+                    comparison_role="pwl_recip_lut_synthesis_boundary",
+                    depends_on_item_ids=[
+                        "l2_decoder_attention_mixed_int8_softmax_replacement_generation_quality_llama7b_v1",
+                        "l2_decoder_attention_mixed_int8_score24_w16_rtl_exact_generation_quality_llama7b_v1_r2",
+                    ],
+                    requires_merged_inputs=True,
+                    requires_materialized_refs=True,
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            commands = work_item.task_request.request_payload["task"]["commands"]
+            decoder_inputs = work_item.input_manifest["decoder_contract"]
+            run = commands[0]["run"]
+
+            assert commands[0]["name"] == "estimate_attention_pwl_recip_lut_boundary"
+            assert "estimate_attention_pwl_recip_lut_boundary.py" in run
+            assert "qkv8_q20_pwl_recip_q20_bucket8:s=20,w=20,r=20,bucket=8" in run
+            assert "qkv8_q24_pwl_recip_q24_bucket8:s=24,w=24,r=24,bucket=8" in run
+            assert "attention_pwl_recip_lut_boundary_out" in decoder_inputs
+            assert decoder_inputs["attention_pwl_recip_lut_boundary_out"] in work_item.expected_outputs
+            assert work_item.task_request.request_payload["developer_loop"]["abstraction"] == {
+                "layer": "decoder_attention_pwl_recip_lut_boundary",
+            }

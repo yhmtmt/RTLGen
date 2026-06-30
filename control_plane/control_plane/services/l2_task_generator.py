@@ -6925,6 +6925,47 @@ def _decoder_attention_mixed_int8_softmax_replacement_generation_quality_evidenc
     }
 
 
+def _decoder_attention_pwl_recip_lut_boundary_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    softmax_replacement_quality = (
+        f"{base}/decoder_attention_mixed_int8_softmax_replacement_generation_quality__"
+        "l2_decoder_attention_mixed_int8_softmax_replacement_generation_quality_llama7b_v1.json"
+    )
+    score24_rtl_exact_quality = (
+        f"{base}/decoder_attention_mixed_int8_score24_w16_rtl_exact_generation_quality__"
+        "l2_decoder_attention_mixed_int8_score24_w16_rtl_exact_generation_quality_llama7b_v1_r2.json"
+    )
+    out = f"{base}/decoder_attention_pwl_recip_lut_boundary__{item_id}.json"
+    report = f"{base}/decoder_attention_pwl_recip_lut_boundary__{item_id}.md"
+    return {
+        "inputs": {
+            "attention_mixed_int8_softmax_replacement_generation_quality": softmax_replacement_quality,
+            "attention_mixed_int8_score24_w16_rtl_exact_generation_quality": score24_rtl_exact_quality,
+            "attention_pwl_recip_lut_boundary_out": out,
+            "attention_pwl_recip_lut_boundary_report": report,
+            "attention_pwl_recip_lut_boundary_scope": (
+                "Estimate direct reciprocal-LUT case growth for the generation-passing q20/q24 "
+                "PWL softmax candidates before launching composed OpenROAD PPA."
+            ),
+        },
+        "commands": [
+            {
+                "name": "estimate_attention_pwl_recip_lut_boundary",
+                "run": (
+                    "python3 npu/eval/estimate_attention_pwl_recip_lut_boundary.py "
+                    "--candidate qkv8_q12_pwl_recip_q12_bucket8:s=12,w=12,r=12,bucket=8,row_elems=8,accum_bits=28 "
+                    "--candidate qkv8_q20_pwl_recip_q20_bucket8:s=20,w=20,r=20,bucket=8,row_elems=8,accum_bits=32 "
+                    "--candidate qkv8_q24_pwl_recip_q24_bucket8:s=24,w=24,r=24,bucket=8,row_elems=8,accum_bits=40 "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+        "evidence_only": True,
+    }
+
+
 def _decoder_attention_mixed_int8_quality_backed_frontier_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     energy_closure = (
@@ -8934,6 +8975,7 @@ def _build_payload(
         "decoder_attention_mixed_int8_score24_w16_rtl_exact_generation_quality",
         "decoder_attention_mixed_int8_score32_w16_rtl_recip_precision_generation_quality",
         "decoder_attention_mixed_int8_softmax_replacement_generation_quality",
+        "decoder_attention_pwl_recip_lut_boundary",
         "decoder_attention_mixed_int8_quality_backed_frontier",
         "decoder_attention_mixed_int8_quality_energy_frontier",
         "decoder_attention_kv_dual_stream_physical_feasibility",
@@ -9162,6 +9204,8 @@ def _build_payload(
             decoder_evidence = _decoder_attention_mixed_int8_softmax_replacement_generation_quality_evidence(
                 item_id=item_id,
             )
+        elif abstraction_layer_name == "decoder_attention_pwl_recip_lut_boundary":
+            decoder_evidence = _decoder_attention_pwl_recip_lut_boundary_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_mixed_int8_quality_backed_frontier":
             decoder_evidence = _decoder_attention_mixed_int8_quality_backed_frontier_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_mixed_int8_quality_energy_frontier":
