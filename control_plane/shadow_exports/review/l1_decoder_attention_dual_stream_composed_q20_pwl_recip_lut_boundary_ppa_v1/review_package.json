@@ -1,0 +1,170 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-06-30T13:47:20.055610Z",
+  "control_plane_source_commit": "91656b74811cb776cfe2d4b546e781c93c0743f7",
+  "review_metadata_source_commit": "91656b74811cb776cfe2d4b546e781c93c0743f7",
+  "item_id": "l1_decoder_attention_dual_stream_composed_q20_pwl_recip_lut_boundary_ppa_v1",
+  "run_key": "l1_decoder_attention_dual_stream_composed_q20_pwl_recip_lut_boundary_ppa_v1_run_4fc7783b1877ff1b",
+  "layer": "layer1",
+  "flow": "openroad",
+  "task_type": "l1_sweep",
+  "source_commit": "91656b74811cb776cfe2d4b546e781c93c0743f7",
+  "queue_snapshot": {
+    "path": "control_plane/shadow_exports/review/l1_decoder_attention_dual_stream_composed_q20_pwl_recip_lut_boundary_ppa_v1/evaluated.json",
+    "result": {
+      "branch": "eval/l1_decoder_attention_dual_stream_composed_q20_pwl_recip_lut_boundary_ppa_v1/s20260630t134718z",
+      "completed_utc": "2026-06-30T13:47:17.463810Z",
+      "evaluator_id": "control_plane",
+      "executor": "@control_plane",
+      "host": "b7c2d9c80c1c",
+      "identity_block": "[role:evaluator][account:control_plane][session:s20260630t134718z][host:b7c2d9c80c1c][item:l1_decoder_attention_dual_stream_composed_q20_pwl_recip_lut_boundary_ppa_v1]",
+      "metrics_rows": [
+        {
+          "tag": "attention_dual_stream_composed_v1_hier_q20_pwl_recip_lut_boundary",
+          "status": "flow_failed",
+          "platform": "nangate45",
+          "param_hash": "7c9cceca",
+          "metrics_csv": "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q20_pwl_recip_q20_bucket8/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q20_pwl_recip_q20_bucket8/work/7c9cceca/result.json"
+        },
+        {
+          "tag": "attention_dual_stream_composed_v1_hier_q20_pwl_recip_lut_boundary",
+          "status": "flow_failed",
+          "platform": "nangate45",
+          "param_hash": "fb7e398a",
+          "metrics_csv": "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q20_pwl_recip_q20_bucket8/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q20_pwl_recip_q20_bucket8/work/fb7e398a/result.json"
+        }
+      ],
+      "queue_item_id": "l1_decoder_attention_dual_stream_composed_q20_pwl_recip_lut_boundary_ppa_v1",
+      "session_id": "s20260630t134718z",
+      "status": "ok",
+      "summary": "7/7 commands succeeded"
+    }
+  },
+  "review_artifact": {
+    "kind": "promotion_proposal",
+    "path": "control_plane/shadow_exports/l1_promotions/l1_decoder_attention_dual_stream_composed_q20_pwl_recip_lut_boundary_ppa_v1.json",
+    "storage_mode": "repo",
+    "sha256": "69f5581f683d1947c579ed40c3bb84b9f872e0d6d3202489308451d82622ac9c",
+    "payload": {
+      "version": 0.1,
+      "generated_utc": "2026-06-30T13:47:18.206373Z",
+      "item_id": "l1_decoder_attention_dual_stream_composed_q20_pwl_recip_lut_boundary_ppa_v1",
+      "run_key": "l1_decoder_attention_dual_stream_composed_q20_pwl_recip_lut_boundary_ppa_v1_run_4fc7783b1877ff1b",
+      "layer": "layer1",
+      "flow": "openroad",
+      "platform": "nangate45",
+      "task_type": "l1_sweep",
+      "source_commit": "91656b74811cb776cfe2d4b546e781c93c0743f7",
+      "objective": "Measure Nangate45 PPA for the q8/k8/v8 q20/PWL direct reciprocal-LUT composed dual-stream attention datapath as a synthesis-boundary probe.",
+      "input_manifest": {
+        "sweeps": [
+          "runs/campaigns/npu/attention_dual_stream_composed_v1/sweeps/nangate45_dual_stream_composed_hier_q20_pwl_recip_lut_boundary.json"
+        ],
+        "configs": [
+          "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q20_pwl_recip_q20_bucket8/config.json"
+        ],
+        "out_root": "runs/designs/npu_blocks",
+        "design_dirs": [],
+        "macro_manifests": [],
+        "candidate_manifests": [],
+        "required_submodules": []
+      },
+      "proposal_count": 0,
+      "evaluation_record": {
+        "evaluation_mode": "measurement_only",
+        "abstraction_layer": "decoder_attention_dual_stream_composed_datapath",
+        "result_kind": "boundary_evidence",
+        "physical_metrics_present": false,
+        "summary": "No status=ok Layer 1 rows were produced; non-ok metrics rows are recorded as explicit boundary evidence.",
+        "boundary_status_counts": {
+          "flow_failed": 2
+        }
+      },
+      "proposal_assessment": {
+        "outcome": "boundary_no_feasible_points",
+        "summary": "All current Layer 1 metrics rows are non-ok; this is accepted as frontier boundary evidence, not a promotable design point.",
+        "failure_row_count": 2
+      },
+      "proposals": [],
+      "trial_summary": {
+        "item_id": "l1_decoder_attention_dual_stream_composed_q20_pwl_recip_lut_boundary_ppa_v1",
+        "completed_trials": 1,
+        "success_count": 0,
+        "failure_count": 1,
+        "success_rate": 0.0,
+        "metrics": {}
+      },
+      "source_refs": {
+        "trial_metrics_csvs": [
+          "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q20_pwl_recip_q20_bucket8/metrics.csv"
+        ],
+        "summary_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_dual_stream_composed_q20_pwl_recip_lut_boundary_ppa_v1/summary_stats.json",
+        "failure_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_dual_stream_composed_q20_pwl_recip_lut_boundary_ppa_v1/failure_stats.json",
+        "trial_table_csv": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_dual_stream_composed_q20_pwl_recip_lut_boundary_ppa_v1/trial_table.csv"
+      },
+      "boundary_evidence": {
+        "row_count": 2,
+        "rows": [
+          {
+            "metrics_csv": "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q20_pwl_recip_q20_bucket8/metrics.csv",
+            "status": "flow_failed",
+            "design": "attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q20_pwl_recip_q20_bucket8",
+            "platform": "nangate45",
+            "config_hash": "14aeb0eb83e3",
+            "param_hash": "7c9cceca",
+            "tag": "attention_dual_stream_composed_v1_hier_q20_pwl_recip_lut_boundary",
+            "result_path": "/orfs/flow/logs/nangate45/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q20_pwl_recip_q20_bucket8/attention_dual_stream_composed_v1_hier_q20_pwl_recip_lut_boundary",
+            "work_result_json": "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q20_pwl_recip_q20_bucket8/work/7c9cceca/result.json",
+            "params_json": "{\"CLOCK_PERIOD\": 10.0, \"CORE_AREA\": \"50 50 2450 2450\", \"CORE_UTILIZATION\": \"\", \"DIE_AREA\": \"0 0 2500 2500\", \"FLOW_VARIANT\": \"attention_dual_stream_composed_v1_hier_q20_pwl_recip_lut_boundary\", \"PLACE_DENSITY\": 0.3, \"SYNTH_HIERARCHICAL\": 1, \"SYNTH_KEEP_MODULES\": \"int8_mac_s8s8_acc24 attention_softmax_weight_q12_pwl_recip_like attention_full_value_stream_q8v8_p8_ppc2\", \"SYNTH_MEMORY_MAX_BITS\": 65536, \"TAG\": \"attention_dual_stream_composed_v1_hier_q20_pwl_recip_lut_boundary\", \"tag_prefix\": \"attention_dual_stream_composed_v1_hier_q20_pwl_recip_lut_boundary\"}"
+          },
+          {
+            "metrics_csv": "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q20_pwl_recip_q20_bucket8/metrics.csv",
+            "status": "flow_failed",
+            "design": "attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q20_pwl_recip_q20_bucket8",
+            "platform": "nangate45",
+            "config_hash": "14aeb0eb83e3",
+            "param_hash": "fb7e398a",
+            "tag": "attention_dual_stream_composed_v1_hier_q20_pwl_recip_lut_boundary",
+            "result_path": "/orfs/flow/logs/nangate45/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q20_pwl_recip_q20_bucket8/attention_dual_stream_composed_v1_hier_q20_pwl_recip_lut_boundary",
+            "work_result_json": "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q20_pwl_recip_q20_bucket8/work/fb7e398a/result.json",
+            "params_json": "{\"CLOCK_PERIOD\": 10.0, \"CORE_AREA\": \"50 50 2450 2450\", \"CORE_UTILIZATION\": \"\", \"DIE_AREA\": \"0 0 2500 2500\", \"FLOW_VARIANT\": \"attention_dual_stream_composed_v1_hier_q20_pwl_recip_lut_boundary\", \"PLACE_DENSITY\": 0.4, \"SYNTH_HIERARCHICAL\": 1, \"SYNTH_KEEP_MODULES\": \"int8_mac_s8s8_acc24 attention_softmax_weight_q12_pwl_recip_like attention_full_value_stream_q8v8_p8_ppc2\", \"SYNTH_MEMORY_MAX_BITS\": 65536, \"TAG\": \"attention_dual_stream_composed_v1_hier_q20_pwl_recip_lut_boundary\", \"tag_prefix\": \"attention_dual_stream_composed_v1_hier_q20_pwl_recip_lut_boundary\"}"
+          }
+        ]
+      }
+    }
+  },
+  "developer_loop": {
+    "evaluation": {
+      "mode": "frontier_followup",
+      "trial_policy": {
+        "seed_start": 0,
+        "trial_count": 1,
+        "stop_after_failures": 1
+      }
+    },
+    "abstraction": {
+      "layer": "decoder_attention_dual_stream_composed_datapath"
+    },
+    "proposal_id": "prop_l1_decoder_attention_dual_stream_composed_q20_pwl_recip_lut_boundary_v1",
+    "proposal_path": "docs/proposals/prop_l1_decoder_attention_dual_stream_composed_q20_pwl_recip_lut_boundary_v1/proposal.json"
+  },
+  "submission_history": null,
+  "pr_payload": {
+    "branch": "eval/l1_decoder_attention_dual_stream_composed_q20_pwl_recip_lut_boundary_ppa_v1/s20260630t134718z",
+    "title": "eval: run layer1 q20 pwl direct reciprocal-lut composed attention boundary probe",
+    "body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260630t134718z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l1_decoder_attention_dual_stream_composed_q20_pwl_recip_lut_boundary_ppa_v1"
+    },
+    "body_md": "## Summary\n- item_id: `l1_decoder_attention_dual_stream_composed_q20_pwl_recip_lut_boundary_ppa_v1`\n- run_key: `l1_decoder_attention_dual_stream_composed_q20_pwl_recip_lut_boundary_ppa_v1_run_4fc7783b1877ff1b`\n- layer: `layer1`\n- task_type: `l1_sweep`\n- status: `ok`\n- summary: `7/7 commands succeeded`\n- queue_snapshot: `control_plane/shadow_exports/review/l1_decoder_attention_dual_stream_composed_q20_pwl_recip_lut_boundary_ppa_v1/evaluated.json`\n- metrics_rows_count: `2`\n- review_artifact: `promotion_proposal` at `control_plane/shadow_exports/l1_promotions/l1_decoder_attention_dual_stream_composed_q20_pwl_recip_lut_boundary_ppa_v1.json`\n\n## Developer Context\n- proposal_id: `prop_l1_decoder_attention_dual_stream_composed_q20_pwl_recip_lut_boundary_v1`\n- proposal_path: `docs/proposals/prop_l1_decoder_attention_dual_stream_composed_q20_pwl_recip_lut_boundary_v1/proposal.json`\n- reviewer_first_read: `docs/proposals/prop_l1_decoder_attention_dual_stream_composed_q20_pwl_recip_lut_boundary_v1/proposal.json` plus `docs/developer_agent_review.md`\n- execution_source_commit: `91656b74811cb776cfe2d4b546e781c93c0743f7`\n- review_metadata_source_commit: `91656b74811cb776cfe2d4b546e781c93c0743f7`\n\n## Evaluation Mode\n- evaluation_mode: `measurement_only`\n- abstraction_layer: `decoder_attention_dual_stream_composed_datapath`\n- evaluation_summary: `No status=ok Layer 1 rows were produced; non-ok metrics rows are recorded as explicit boundary evidence.`\n\n## Focused Comparison\n- proposal_outcome: `boundary_no_feasible_points`\n- comparison_summary: `All current Layer 1 metrics rows are non-ok; this is accepted as frontier boundary evidence, not a promotable design point.`\n\n## Checklist\n- [ ] Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge\n- [ ] Include metrics row references for each completed design\n- [ ] Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing\n",
+    "checklist": [
+      "Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge",
+      "Include metrics row references for each completed design",
+      "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ]
+  }
+}
