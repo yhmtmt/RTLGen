@@ -279,6 +279,40 @@ def test_attention_dual_stream_composed_generator_q12_pwl_softmax(tmp_path: Path
     assert "wire [11:0] weight_00" in top_text
 
 
+def test_attention_dual_stream_composed_generator_q20_pwl_v8_softmax(tmp_path: Path) -> None:
+    design_dir = tmp_path / "attention_dual_stream_composed_q20_pwl_v8"
+    config_path = design_dir / "config.json"
+    _write_config(
+        config_path,
+        softmax_pipeline_stages=1,
+        softmax_impl="pwl_recip_lut",
+        mac_accum_bits=24,
+        softmax_accum_bits=32,
+        softmax_score_bits=20,
+        softmax_weight_bits=20,
+        reciprocal_bits=20,
+        value_bits=8,
+        softmax_input_frac_bits=8,
+        softmax_reciprocal_lut_bucket_shift=8,
+    )
+    top_text = _generate_and_check(design_dir, config_path)
+
+    manifest = json.loads((design_dir / "verilog" / "attention_dual_stream_composed_manifest.json").read_text())
+    assert manifest["softmax_impl"] == "pwl_recip_lut"
+    assert manifest["mac_accum_bits"] == 24
+    assert manifest["softmax_score_bits"] == 20
+    assert manifest["softmax_weight_bits"] == 20
+    assert manifest["reciprocal_bits"] == 20
+    assert manifest["value_bits"] == 8
+    assert manifest["softmax_reciprocal_lut_bucket_shift"] == 8
+    assert "module attention_softmax_weight_q12_pwl_recip_like" in top_text
+    assert "localparam integer RECIP_BUCKET_SHIFT = 8;" in top_text
+    assert "wire [79:0] softmax_weights" in top_text
+    assert "wire [19:0] score_lane_00" in top_text
+    assert "wire [19:0] weight_00" in top_text
+    assert "module attention_full_value_stream_q8v8_p8_ppc2" in top_text
+
+
 def test_attention_dual_stream_composed_generator_score32_exact_softmax(tmp_path: Path) -> None:
     design_dir = tmp_path / "attention_dual_stream_composed_score32"
     config_path = design_dir / "config.json"
