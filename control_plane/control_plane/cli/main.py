@@ -75,6 +75,7 @@ def main(argv: list[str] | None = None) -> int:
     generate_l1_parser.add_argument("--item-id")
     generate_l1_parser.add_argument("--title")
     generate_l1_parser.add_argument("--objective")
+    generate_l1_parser.add_argument("--acceptance-notes")
     generate_l1_parser.add_argument("--source-commit")
     generate_l1_parser.add_argument("--mode", default="upsert")
     generate_l1_parser.add_argument("--proposal-id")
@@ -533,6 +534,7 @@ def main(argv: list[str] | None = None) -> int:
             ("--item-id", args.item_id),
             ("--title", args.title),
             ("--objective", args.objective),
+            ("--acceptance-notes", args.acceptance_notes),
             ("--source-commit", args.source_commit),
             ("--proposal-id", args.proposal_id),
             ("--proposal-path", args.proposal_path),

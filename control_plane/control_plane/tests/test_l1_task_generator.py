@@ -578,6 +578,48 @@ def test_generate_l1_sweep_task_uses_boundary_metrics_acceptance() -> None:
             assert work_item.task_request.request_payload["task"]["acceptance"] == work_item.acceptance_rules
 
 
+def test_generate_l1_sweep_task_uses_acceptance_notes_for_boundary_evidence() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        config_path, sweep_path = _write_example_repo(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            with patch(
+                "control_plane.services.l1_task_generator._image_provided_l1_runtime_deps_available",
+                return_value=False,
+            ):
+                result = generate_l1_sweep_task(
+                    session,
+                    Layer1SweepGenerateRequest(
+                        repo_root=str(repo_root),
+                        sweep_path=sweep_path,
+                        config_paths=[config_path],
+                        platform="nangate45",
+                        out_root="runs/designs/activations",
+                        requested_by="@tester",
+                        source_commit=source_commit,
+                        objective="Measure frontier behavior across throughput settings for review.",
+                        acceptance_notes=(
+                            "Treat both ok and failed rows as explicit boundary evidence "
+                            "when flow_failed appears."
+                        ),
+                    ),
+                )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            assert "allow non-ok metrics" in work_item.acceptance_rules[0]
+            assert "flow_failed" in work_item.acceptance_rules[0]
+            assert (
+                work_item.task_request.request_payload["task"]["metadata"]["acceptance_notes"]
+                == "Treat both ok and failed rows as explicit boundary evidence when flow_failed appears."
+            )
+            assert work_item.task_request.request_payload["task"]["acceptance"] == work_item.acceptance_rules
+
+
 def test_generate_l1_sweep_task_requeues_failed_item_on_upsert() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
@@ -897,6 +939,7 @@ def test_generate_l1_sweep_task_records_requested_item_in_proposal_evaluation_re
                     proposal_id="prop_l1_demo_v1",
                     proposal_path="docs/proposals/prop_l1_demo_v1",
                     abstraction_layer="circuit_block",
+                    acceptance_notes="Accept flow_failed rows as explicit boundary evidence.",
                 ),
             )
 
@@ -913,6 +956,7 @@ def test_generate_l1_sweep_task_records_requested_item_in_proposal_evaluation_re
                 ),
                 "evaluation_mode": "measurement_only",
                 "abstraction_layer": "circuit_block",
+                "acceptance_notes": "Accept flow_failed rows as explicit boundary evidence.",
                 "status": "pending",
             }
         ]

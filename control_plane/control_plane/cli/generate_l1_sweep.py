@@ -23,6 +23,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--item-id")
     parser.add_argument("--title")
     parser.add_argument("--objective")
+    parser.add_argument("--acceptance-notes")
     parser.add_argument("--source-commit")
     parser.add_argument("--mode", default="upsert")
     parser.add_argument("--proposal-id")
@@ -56,6 +57,7 @@ def main(argv: list[str] | None = None) -> int:
                 item_id=args.item_id,
                 title=args.title,
                 objective=args.objective,
+                acceptance_notes=args.acceptance_notes,
                 source_commit=args.source_commit,
                 mode=args.mode,
                 proposal_id=args.proposal_id,
