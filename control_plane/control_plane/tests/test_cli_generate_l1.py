@@ -31,6 +31,8 @@ def test_top_level_generate_l1_forwards_extended_generation_flags() -> None:
                 "measurement_only",
                 "--abstraction-layer",
                 "circuit_block",
+                "--acceptance-notes",
+                "accept timing/flow failures as boundary evidence",
                 "--trial-count",
                 "3",
                 "--seed-start",
@@ -48,6 +50,7 @@ def test_top_level_generate_l1_forwards_extended_generation_flags() -> None:
     assert forwarded[forwarded.index("--make-target") + 1] == "1_1_yosys_canonicalize"
     assert forwarded[forwarded.index("--evaluation-mode") + 1] == "measurement_only"
     assert forwarded[forwarded.index("--abstraction-layer") + 1] == "circuit_block"
+    assert forwarded[forwarded.index("--acceptance-notes") + 1] == "accept timing/flow failures as boundary evidence"
     assert forwarded[forwarded.index("--trial-count") + 1] == "3"
     assert forwarded[forwarded.index("--seed-start") + 1] == "100"
     assert forwarded[forwarded.index("--stop-after-failures") + 1] == "2"

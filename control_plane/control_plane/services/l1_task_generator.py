@@ -39,6 +39,7 @@ class Layer1SweepGenerateRequest:
     item_id: str | None = None
     title: str | None = None
     objective: str | None = None
+    acceptance_notes: str | None = None
     source_commit: str | None = None
     mode: str = "upsert"
     proposal_id: str | None = None
@@ -121,6 +122,7 @@ def _upsert_evaluation_request_entry(
     objective: str,
     evaluation_mode: str,
     abstraction_layer: str | None,
+    acceptance_notes: str | None,
     source_commit: str,
 ) -> None:
     proposal_id_text = str(proposal_id or "").strip()
@@ -176,6 +178,9 @@ def _upsert_evaluation_request_entry(
     entry["objective"] = objective
     entry["evaluation_mode"] = evaluation_mode
     entry["abstraction_layer"] = str(abstraction_layer or "").strip()
+    acceptance_notes_text = str(acceptance_notes or "").strip()
+    if acceptance_notes_text:
+        entry["acceptance_notes"] = acceptance_notes_text
     entry["status"] = "pending"
     payload["proposal_id"] = str(payload.get("proposal_id") or proposal_id or "").strip()
     payload["source_commit"] = source_commit
@@ -643,6 +648,24 @@ def _default_objective(*, platform: str, config_paths: list[str], sweep_path: st
     )
 
 
+_BOUNDARY_ACCEPTANCE_PHRASES = (
+    "boundary evidence",
+    "accept timing/flow failures",
+    "allow non-ok metrics",
+    "flow_failed",
+    "failed rows as explicit boundary evidence",
+)
+
+
+def _contains_boundary_acceptance_phrase(text: str | None) -> bool:
+    lower_text = str(text or "").strip().lower()
+    if not lower_text:
+        return False
+    if "boundary" in lower_text:
+        return True
+    return any(phrase in lower_text for phrase in _BOUNDARY_ACCEPTANCE_PHRASES)
+
+
 def _effective_trial_policy(*, trial_count: int, seed_start: int, stop_after_failures: int | None) -> dict[str, int]:
     effective_trial_count = max(int(trial_count), 1)
     effective_seed_start = int(seed_start)
@@ -722,9 +745,13 @@ def _build_payload(
     evaluation_mode: str,
     abstraction_layer: str | None,
     trial_policy: dict[str, int],
+    acceptance_notes: str | None,
 ) -> dict[str, Any]:
-    lower_objective = objective.lower()
-    boundary_acceptance = "boundary" in lower_objective or "accept timing/flow failures" in lower_objective
+    acceptance_notes_text = str(acceptance_notes or "").strip()
+    boundary_acceptance = (
+        _contains_boundary_acceptance_phrase(objective)
+        or _contains_boundary_acceptance_phrase(acceptance_notes_text)
+    )
     metrics_acceptance = (
         "Each generated wrapper metrics.csv contains recorded rows with a status column; "
         "allow non-ok metrics such as flow_failed when the row is boundary evidence"
@@ -772,6 +799,7 @@ def _build_payload(
                 "Committed outputs stay lightweight (metrics.csv only; runs/index.csv is exported centrally after merge)",
                 "python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue pass",
             ],
+            "metadata": {"acceptance_notes": acceptance_notes_text},
         },
         "handoff": {
             "branch": f"eval/{item_id}/<session_id>",
@@ -804,6 +832,8 @@ def _build_payload(
             payload["developer_loop"]["abstraction"] = {
                 "layer": abstraction_layer,
             }
+    if not acceptance_notes_text:
+        payload["task"].pop("metadata", None)
     return payload
 
 
@@ -894,6 +924,7 @@ def generate_l1_sweep_task(session: Session, request: Layer1SweepGenerateRequest
         ),
         abstraction_layer=effective_abstraction_layer,
         trial_policy=trial_policy,
+        acceptance_notes=request.acceptance_notes,
     )
     payload["source_requirement"] = build_source_requirement(
         repo_root=repo_root,
@@ -909,6 +940,7 @@ def generate_l1_sweep_task(session: Session, request: Layer1SweepGenerateRequest
             objective=objective,
             evaluation_mode=((payload.get("developer_loop") or {}).get("evaluation") or {}).get("mode") or "",
             abstraction_layer=effective_abstraction_layer,
+            acceptance_notes=request.acceptance_notes,
             source_commit=source_commit,
         )
 
