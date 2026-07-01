@@ -2,12 +2,12 @@
   "proposal_id": "prop_l1_decoder_attention_dual_stream_composed_pwl_recip_corrected_keep_modules_v1",
   "requested_items": [
     {
-      "item_id": "l1_decoder_attention_dual_stream_composed_q20_pwl_recip_div_ppa_v2",
+      "item_id": "l1_decoder_attention_dual_stream_composed_q20_pwl_recip_div_pd30_ppa_v3",
       "task_type": "l1_sweep",
-      "objective": "Rerun q20 compact reciprocal PWL composed attention PPA with a q20-only keep-module sweep.",
+      "objective": "Rerun q20 compact reciprocal PWL composed attention PPA with a q20-only keep-module sweep. Split to a single PLACE_DENSITY=0.3 point so evaluator crashes do not lose both density points.",
       "evaluation_mode": "frontier_correction",
       "abstraction_layer": "decoder_attention_dual_stream_composed_datapath",
-      "comparison_role": "q20_pwl_compact_reciprocal_corrected_keep_modules",
+      "comparison_role": "q20_pwl_compact_reciprocal_corrected_keep_modules_pd30",
       "paired_baseline_item_id": "l1_decoder_attention_dual_stream_composed_q20_q24_pwl_recip_div_ppa_v1_r2",
       "revision": {
         "reason": "wrong_configuration",
@@ -25,17 +25,63 @@
       "configs": [
         "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q20_pwl_recip_div_q20_bucket8/config.json"
       ],
-      "sweep_path": "runs/campaigns/npu/attention_dual_stream_composed_v1/sweeps/nangate45_dual_stream_composed_hier_q20_pwl_recip_div.json",
+      "sweep_path": "runs/campaigns/npu/attention_dual_stream_composed_v1/sweeps/nangate45_dual_stream_composed_hier_q20_pwl_recip_div_pd30.json",
       "out_root": "runs/designs/npu_blocks",
-      "acceptance_notes": "Accept timing/route flow failures as boundary evidence only after the keep-module setup guard passes; missing keep modules are invalid setup and must fail the job."
+      "acceptance_notes": "Accept timing/route flow failures as boundary evidence only after the keep-module setup guard passes; missing keep modules are invalid setup and must fail the job. Single-density recovery item: this request must contain only PLACE_DENSITY=0.3.",
+      "recovery_of_item_id": "l1_decoder_attention_dual_stream_composed_q20_pwl_recip_div_ppa_v2",
+      "resource_control": {
+        "split_reason": "two-density block sweep destabilized the evaluator host",
+        "place_density": 0.3,
+        "dispatch_policy": "single active OpenROAD block sweep on the evaluator"
+      },
+      "expected_result": {
+        "resource_recovery": "Supersedes the two-density item l1_decoder_attention_dual_stream_composed_q20_pwl_recip_div_ppa_v2 for crash recovery; preserve any valid v2 result if it completes, but use this pd30 item as the retry shape."
+      }
     },
     {
-      "item_id": "l1_decoder_attention_dual_stream_composed_q24_pwl_recip_div_ppa_v2",
+      "item_id": "l1_decoder_attention_dual_stream_composed_q20_pwl_recip_div_pd40_ppa_v3",
       "task_type": "l1_sweep",
-      "objective": "Rerun q24 compact reciprocal PWL composed attention PPA with a q24-only keep-module sweep.",
+      "objective": "Rerun q20 compact reciprocal PWL composed attention PPA with a q20-only keep-module sweep. Split to a single PLACE_DENSITY=0.4 point so evaluator crashes do not lose both density points.",
       "evaluation_mode": "frontier_correction",
       "abstraction_layer": "decoder_attention_dual_stream_composed_datapath",
-      "comparison_role": "q24_pwl_compact_reciprocal_corrected_keep_modules",
+      "comparison_role": "q20_pwl_compact_reciprocal_corrected_keep_modules_pd40",
+      "paired_baseline_item_id": "l1_decoder_attention_dual_stream_composed_q20_q24_pwl_recip_div_ppa_v1_r2",
+      "revision": {
+        "reason": "wrong_configuration",
+        "invalidates_item_ids": [
+          "l1_decoder_attention_dual_stream_composed_q20_q24_pwl_recip_div_ppa_v1_r2"
+        ],
+        "invalidates": [
+          {
+            "item_id": "l1_decoder_attention_dual_stream_composed_q20_q24_pwl_recip_div_ppa_v1_r2",
+            "pr_number": 1096,
+            "reason": "shared q20/q24 keep-module sweep referenced softmax modules absent from each single-precision RTL"
+          }
+        ]
+      },
+      "configs": [
+        "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q20_pwl_recip_div_q20_bucket8/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/attention_dual_stream_composed_v1/sweeps/nangate45_dual_stream_composed_hier_q20_pwl_recip_div_pd40.json",
+      "out_root": "runs/designs/npu_blocks",
+      "acceptance_notes": "Accept timing/route flow failures as boundary evidence only after the keep-module setup guard passes; missing keep modules are invalid setup and must fail the job. Single-density recovery item: this request must contain only PLACE_DENSITY=0.4.",
+      "recovery_of_item_id": "l1_decoder_attention_dual_stream_composed_q20_pwl_recip_div_ppa_v2",
+      "resource_control": {
+        "split_reason": "two-density block sweep destabilized the evaluator host",
+        "place_density": 0.4,
+        "dispatch_policy": "single active OpenROAD block sweep on the evaluator"
+      },
+      "expected_result": {
+        "resource_recovery": "Supersedes the two-density item l1_decoder_attention_dual_stream_composed_q20_pwl_recip_div_ppa_v2 for crash recovery; preserve any valid v2 result if it completes, but use this pd40 item as the retry shape."
+      }
+    },
+    {
+      "item_id": "l1_decoder_attention_dual_stream_composed_q24_pwl_recip_div_pd30_ppa_v3",
+      "task_type": "l1_sweep",
+      "objective": "Rerun q24 compact reciprocal PWL composed attention PPA with a q24-only keep-module sweep. Split to a single PLACE_DENSITY=0.3 point so evaluator crashes do not lose both density points.",
+      "evaluation_mode": "frontier_correction",
+      "abstraction_layer": "decoder_attention_dual_stream_composed_datapath",
+      "comparison_role": "q24_pwl_compact_reciprocal_corrected_keep_modules_pd30",
       "paired_baseline_item_id": "l1_decoder_attention_dual_stream_composed_q20_q24_pwl_recip_div_ppa_v1_r2",
       "revision": {
         "reason": "wrong_configuration",
@@ -53,17 +99,63 @@
       "configs": [
         "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q24_pwl_recip_div_q24_bucket8/config.json"
       ],
-      "sweep_path": "runs/campaigns/npu/attention_dual_stream_composed_v1/sweeps/nangate45_dual_stream_composed_hier_q24_pwl_recip_div.json",
+      "sweep_path": "runs/campaigns/npu/attention_dual_stream_composed_v1/sweeps/nangate45_dual_stream_composed_hier_q24_pwl_recip_div_pd30.json",
       "out_root": "runs/designs/npu_blocks",
-      "acceptance_notes": "Accept timing/route flow failures as boundary evidence only after the keep-module setup guard passes; missing keep modules are invalid setup and must fail the job."
+      "acceptance_notes": "Accept timing/route flow failures as boundary evidence only after the keep-module setup guard passes; missing keep modules are invalid setup and must fail the job. Single-density recovery item: this request must contain only PLACE_DENSITY=0.3.",
+      "recovery_of_item_id": "l1_decoder_attention_dual_stream_composed_q24_pwl_recip_div_ppa_v2",
+      "resource_control": {
+        "split_reason": "two-density block sweep destabilized the evaluator host",
+        "place_density": 0.3,
+        "dispatch_policy": "single active OpenROAD block sweep on the evaluator"
+      },
+      "expected_result": {
+        "resource_recovery": "Supersedes the two-density item l1_decoder_attention_dual_stream_composed_q24_pwl_recip_div_ppa_v2 for crash recovery; preserve any valid v2 result if it completes, but use this pd30 item as the retry shape."
+      }
     },
     {
-      "item_id": "l1_decoder_attention_dual_stream_composed_q20_pwl_recip_seqdiv_ppa_v2",
+      "item_id": "l1_decoder_attention_dual_stream_composed_q24_pwl_recip_div_pd40_ppa_v3",
       "task_type": "l1_sweep",
-      "objective": "Rerun q20 sequential reciprocal PWL composed attention PPA with a q20-only keep-module sweep.",
+      "objective": "Rerun q24 compact reciprocal PWL composed attention PPA with a q24-only keep-module sweep. Split to a single PLACE_DENSITY=0.4 point so evaluator crashes do not lose both density points.",
       "evaluation_mode": "frontier_correction",
       "abstraction_layer": "decoder_attention_dual_stream_composed_datapath",
-      "comparison_role": "q20_pwl_sequential_reciprocal_corrected_keep_modules",
+      "comparison_role": "q24_pwl_compact_reciprocal_corrected_keep_modules_pd40",
+      "paired_baseline_item_id": "l1_decoder_attention_dual_stream_composed_q20_q24_pwl_recip_div_ppa_v1_r2",
+      "revision": {
+        "reason": "wrong_configuration",
+        "invalidates_item_ids": [
+          "l1_decoder_attention_dual_stream_composed_q20_q24_pwl_recip_div_ppa_v1_r2"
+        ],
+        "invalidates": [
+          {
+            "item_id": "l1_decoder_attention_dual_stream_composed_q20_q24_pwl_recip_div_ppa_v1_r2",
+            "pr_number": 1096,
+            "reason": "shared q20/q24 keep-module sweep referenced softmax modules absent from each single-precision RTL"
+          }
+        ]
+      },
+      "configs": [
+        "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q24_pwl_recip_div_q24_bucket8/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/attention_dual_stream_composed_v1/sweeps/nangate45_dual_stream_composed_hier_q24_pwl_recip_div_pd40.json",
+      "out_root": "runs/designs/npu_blocks",
+      "acceptance_notes": "Accept timing/route flow failures as boundary evidence only after the keep-module setup guard passes; missing keep modules are invalid setup and must fail the job. Single-density recovery item: this request must contain only PLACE_DENSITY=0.4.",
+      "recovery_of_item_id": "l1_decoder_attention_dual_stream_composed_q24_pwl_recip_div_ppa_v2",
+      "resource_control": {
+        "split_reason": "two-density block sweep destabilized the evaluator host",
+        "place_density": 0.4,
+        "dispatch_policy": "single active OpenROAD block sweep on the evaluator"
+      },
+      "expected_result": {
+        "resource_recovery": "Supersedes the two-density item l1_decoder_attention_dual_stream_composed_q24_pwl_recip_div_ppa_v2 for crash recovery; preserve any valid v2 result if it completes, but use this pd40 item as the retry shape."
+      }
+    },
+    {
+      "item_id": "l1_decoder_attention_dual_stream_composed_q20_pwl_recip_seqdiv_pd30_ppa_v3",
+      "task_type": "l1_sweep",
+      "objective": "Rerun q20 sequential reciprocal PWL composed attention PPA with a q20-only keep-module sweep. Split to a single PLACE_DENSITY=0.3 point so evaluator crashes do not lose both density points.",
+      "evaluation_mode": "frontier_correction",
+      "abstraction_layer": "decoder_attention_dual_stream_composed_datapath",
+      "comparison_role": "q20_pwl_sequential_reciprocal_corrected_keep_modules_pd30",
       "paired_baseline_item_id": "l1_decoder_attention_dual_stream_composed_q20_q24_pwl_recip_seqdiv_ppa_v1",
       "revision": {
         "reason": "wrong_configuration",
@@ -81,17 +173,63 @@
       "configs": [
         "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q20_pwl_recip_seqdiv_q20_bucket8_lat40/config.json"
       ],
-      "sweep_path": "runs/campaigns/npu/attention_dual_stream_composed_v1/sweeps/nangate45_dual_stream_composed_hier_q20_pwl_recip_seqdiv.json",
+      "sweep_path": "runs/campaigns/npu/attention_dual_stream_composed_v1/sweeps/nangate45_dual_stream_composed_hier_q20_pwl_recip_seqdiv_pd30.json",
       "out_root": "runs/designs/npu_blocks",
-      "acceptance_notes": "Accept timing/route flow failures as boundary evidence only after the keep-module setup guard passes; missing keep modules are invalid setup and must fail the job."
+      "acceptance_notes": "Accept timing/route flow failures as boundary evidence only after the keep-module setup guard passes; missing keep modules are invalid setup and must fail the job. Single-density recovery item: this request must contain only PLACE_DENSITY=0.3.",
+      "recovery_of_item_id": "l1_decoder_attention_dual_stream_composed_q20_pwl_recip_seqdiv_ppa_v2",
+      "resource_control": {
+        "split_reason": "two-density block sweep destabilized the evaluator host",
+        "place_density": 0.3,
+        "dispatch_policy": "single active OpenROAD block sweep on the evaluator"
+      },
+      "expected_result": {
+        "resource_recovery": "Supersedes the two-density item l1_decoder_attention_dual_stream_composed_q20_pwl_recip_seqdiv_ppa_v2 for crash recovery; preserve any valid v2 result if it completes, but use this pd30 item as the retry shape."
+      }
     },
     {
-      "item_id": "l1_decoder_attention_dual_stream_composed_q24_pwl_recip_seqdiv_ppa_v2",
+      "item_id": "l1_decoder_attention_dual_stream_composed_q20_pwl_recip_seqdiv_pd40_ppa_v3",
       "task_type": "l1_sweep",
-      "objective": "Rerun q24 sequential reciprocal PWL composed attention PPA with a q24-only keep-module sweep.",
+      "objective": "Rerun q20 sequential reciprocal PWL composed attention PPA with a q20-only keep-module sweep. Split to a single PLACE_DENSITY=0.4 point so evaluator crashes do not lose both density points.",
       "evaluation_mode": "frontier_correction",
       "abstraction_layer": "decoder_attention_dual_stream_composed_datapath",
-      "comparison_role": "q24_pwl_sequential_reciprocal_corrected_keep_modules",
+      "comparison_role": "q20_pwl_sequential_reciprocal_corrected_keep_modules_pd40",
+      "paired_baseline_item_id": "l1_decoder_attention_dual_stream_composed_q20_q24_pwl_recip_seqdiv_ppa_v1",
+      "revision": {
+        "reason": "wrong_configuration",
+        "invalidates_item_ids": [
+          "l1_decoder_attention_dual_stream_composed_q20_q24_pwl_recip_seqdiv_ppa_v1"
+        ],
+        "invalidates": [
+          {
+            "item_id": "l1_decoder_attention_dual_stream_composed_q20_q24_pwl_recip_seqdiv_ppa_v1",
+            "pr_number": 1098,
+            "reason": "shared q20/q24 keep-module sweep referenced softmax modules absent from each single-precision RTL"
+          }
+        ]
+      },
+      "configs": [
+        "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q20_pwl_recip_seqdiv_q20_bucket8_lat40/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/attention_dual_stream_composed_v1/sweeps/nangate45_dual_stream_composed_hier_q20_pwl_recip_seqdiv_pd40.json",
+      "out_root": "runs/designs/npu_blocks",
+      "acceptance_notes": "Accept timing/route flow failures as boundary evidence only after the keep-module setup guard passes; missing keep modules are invalid setup and must fail the job. Single-density recovery item: this request must contain only PLACE_DENSITY=0.4.",
+      "recovery_of_item_id": "l1_decoder_attention_dual_stream_composed_q20_pwl_recip_seqdiv_ppa_v2",
+      "resource_control": {
+        "split_reason": "two-density block sweep destabilized the evaluator host",
+        "place_density": 0.4,
+        "dispatch_policy": "single active OpenROAD block sweep on the evaluator"
+      },
+      "expected_result": {
+        "resource_recovery": "Supersedes the two-density item l1_decoder_attention_dual_stream_composed_q20_pwl_recip_seqdiv_ppa_v2 for crash recovery; preserve any valid v2 result if it completes, but use this pd40 item as the retry shape."
+      }
+    },
+    {
+      "item_id": "l1_decoder_attention_dual_stream_composed_q24_pwl_recip_seqdiv_pd30_ppa_v3",
+      "task_type": "l1_sweep",
+      "objective": "Rerun q24 sequential reciprocal PWL composed attention PPA with a q24-only keep-module sweep. Split to a single PLACE_DENSITY=0.3 point so evaluator crashes do not lose both density points.",
+      "evaluation_mode": "frontier_correction",
+      "abstraction_layer": "decoder_attention_dual_stream_composed_datapath",
+      "comparison_role": "q24_pwl_sequential_reciprocal_corrected_keep_modules_pd30",
       "paired_baseline_item_id": "l1_decoder_attention_dual_stream_composed_q20_q24_pwl_recip_seqdiv_ppa_v1",
       "revision": {
         "reason": "wrong_configuration",
@@ -109,10 +247,75 @@
       "configs": [
         "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q24_pwl_recip_seqdiv_q24_bucket8_lat48/config.json"
       ],
-      "sweep_path": "runs/campaigns/npu/attention_dual_stream_composed_v1/sweeps/nangate45_dual_stream_composed_hier_q24_pwl_recip_seqdiv.json",
+      "sweep_path": "runs/campaigns/npu/attention_dual_stream_composed_v1/sweeps/nangate45_dual_stream_composed_hier_q24_pwl_recip_seqdiv_pd30.json",
       "out_root": "runs/designs/npu_blocks",
-      "acceptance_notes": "Accept timing/route flow failures as boundary evidence only after the keep-module setup guard passes; missing keep modules are invalid setup and must fail the job."
+      "acceptance_notes": "Accept timing/route flow failures as boundary evidence only after the keep-module setup guard passes; missing keep modules are invalid setup and must fail the job. Single-density recovery item: this request must contain only PLACE_DENSITY=0.3.",
+      "recovery_of_item_id": "l1_decoder_attention_dual_stream_composed_q24_pwl_recip_seqdiv_ppa_v2",
+      "resource_control": {
+        "split_reason": "two-density block sweep destabilized the evaluator host",
+        "place_density": 0.3,
+        "dispatch_policy": "single active OpenROAD block sweep on the evaluator"
+      },
+      "expected_result": {
+        "resource_recovery": "Supersedes the two-density item l1_decoder_attention_dual_stream_composed_q24_pwl_recip_seqdiv_ppa_v2 for crash recovery; preserve any valid v2 result if it completes, but use this pd30 item as the retry shape."
+      }
+    },
+    {
+      "item_id": "l1_decoder_attention_dual_stream_composed_q24_pwl_recip_seqdiv_pd40_ppa_v3",
+      "task_type": "l1_sweep",
+      "objective": "Rerun q24 sequential reciprocal PWL composed attention PPA with a q24-only keep-module sweep. Split to a single PLACE_DENSITY=0.4 point so evaluator crashes do not lose both density points.",
+      "evaluation_mode": "frontier_correction",
+      "abstraction_layer": "decoder_attention_dual_stream_composed_datapath",
+      "comparison_role": "q24_pwl_sequential_reciprocal_corrected_keep_modules_pd40",
+      "paired_baseline_item_id": "l1_decoder_attention_dual_stream_composed_q20_q24_pwl_recip_seqdiv_ppa_v1",
+      "revision": {
+        "reason": "wrong_configuration",
+        "invalidates_item_ids": [
+          "l1_decoder_attention_dual_stream_composed_q20_q24_pwl_recip_seqdiv_ppa_v1"
+        ],
+        "invalidates": [
+          {
+            "item_id": "l1_decoder_attention_dual_stream_composed_q20_q24_pwl_recip_seqdiv_ppa_v1",
+            "pr_number": 1098,
+            "reason": "shared q20/q24 keep-module sweep referenced softmax modules absent from each single-precision RTL"
+          }
+        ]
+      },
+      "configs": [
+        "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q24_pwl_recip_seqdiv_q24_bucket8_lat48/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/attention_dual_stream_composed_v1/sweeps/nangate45_dual_stream_composed_hier_q24_pwl_recip_seqdiv_pd40.json",
+      "out_root": "runs/designs/npu_blocks",
+      "acceptance_notes": "Accept timing/route flow failures as boundary evidence only after the keep-module setup guard passes; missing keep modules are invalid setup and must fail the job. Single-density recovery item: this request must contain only PLACE_DENSITY=0.4.",
+      "recovery_of_item_id": "l1_decoder_attention_dual_stream_composed_q24_pwl_recip_seqdiv_ppa_v2",
+      "resource_control": {
+        "split_reason": "two-density block sweep destabilized the evaluator host",
+        "place_density": 0.4,
+        "dispatch_policy": "single active OpenROAD block sweep on the evaluator"
+      },
+      "expected_result": {
+        "resource_recovery": "Supersedes the two-density item l1_decoder_attention_dual_stream_composed_q24_pwl_recip_seqdiv_ppa_v2 for crash recovery; preserve any valid v2 result if it completes, but use this pd40 item as the retry shape."
+      }
     }
   ],
-  "source_commit": "53f922aa7778e634be3b34c3e978ad296724ddc8"
+  "source_commit": "53f922aa7778e634be3b34c3e978ad296724ddc8",
+  "resource_recovery": {
+    "reason": "remote evaluator froze while running the corrected reciprocal PPA block sweep; split each density point into its own item",
+    "superseded_item_ids": [
+      "l1_decoder_attention_dual_stream_composed_q20_pwl_recip_div_ppa_v2",
+      "l1_decoder_attention_dual_stream_composed_q24_pwl_recip_div_ppa_v2",
+      "l1_decoder_attention_dual_stream_composed_q20_pwl_recip_seqdiv_ppa_v2",
+      "l1_decoder_attention_dual_stream_composed_q24_pwl_recip_seqdiv_ppa_v2"
+    ],
+    "replacement_item_ids": [
+      "l1_decoder_attention_dual_stream_composed_q20_pwl_recip_div_pd30_ppa_v3",
+      "l1_decoder_attention_dual_stream_composed_q20_pwl_recip_div_pd40_ppa_v3",
+      "l1_decoder_attention_dual_stream_composed_q24_pwl_recip_div_pd30_ppa_v3",
+      "l1_decoder_attention_dual_stream_composed_q24_pwl_recip_div_pd40_ppa_v3",
+      "l1_decoder_attention_dual_stream_composed_q20_pwl_recip_seqdiv_pd30_ppa_v3",
+      "l1_decoder_attention_dual_stream_composed_q20_pwl_recip_seqdiv_pd40_ppa_v3",
+      "l1_decoder_attention_dual_stream_composed_q24_pwl_recip_seqdiv_pd30_ppa_v3",
+      "l1_decoder_attention_dual_stream_composed_q24_pwl_recip_seqdiv_pd40_ppa_v3"
+    ]
+  }
 }
