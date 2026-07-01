@@ -1,0 +1,38 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_dual_stream_composed_q20_q24_pwl_recip_seqdiv_v1",
+  "requested_items": [
+    {
+      "item_id": "l1_decoder_attention_dual_stream_composed_q20_q24_pwl_recip_seqdiv_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure Nangate45 PPA for q20 and q24 PWL sequential reciprocal composed dual-stream attention datapaths after compact combinational reciprocal divider boundary failure.",
+      "evaluation_mode": "frontier_followup",
+      "abstraction_layer": "decoder_attention_dual_stream_composed_datapath",
+      "comparison_role": "q20_q24_pwl_sequential_reciprocal_boundary_probe",
+      "paired_baseline_item_id": "l1_decoder_attention_dual_stream_composed_q20_q24_pwl_recip_div_ppa_v1_r2",
+      "configs": [
+        "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q20_pwl_recip_seqdiv_q20_bucket8_lat40/config.json",
+        "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q24_pwl_recip_seqdiv_q24_bucket8_lat48/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/attention_dual_stream_composed_v1/sweeps/nangate45_dual_stream_composed_hier_q20_q24_pwl_recip_seqdiv.json",
+      "out_root": "runs/designs/npu_blocks",
+      "expected_outputs": [
+        "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q20_pwl_recip_seqdiv_q20_bucket8_lat40/metrics.csv",
+        "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q20_pwl_recip_seqdiv_q20_bucket8_lat40/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q24_pwl_recip_seqdiv_q24_bucket8_lat48/metrics.csv",
+        "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q24_pwl_recip_seqdiv_q24_bucket8_lat48/timing_debug_report.md"
+      ],
+      "acceptance_notes": "Accept non-ok metrics rows such as flow_failed as explicit boundary evidence; a no-feasible-points outcome is still useful for the q20/q24 sequential reciprocal frontier.",
+      "depends_on_item_ids": [
+        "l1_decoder_attention_dual_stream_composed_q20_pwl_recip_lut_boundary_ppa_v1",
+        "l1_decoder_attention_dual_stream_composed_q20_q24_pwl_recip_div_ppa_v1_r2",
+        "l2_decoder_attention_pwl_recip_lut_boundary_llama7b_v1",
+        "l2_decoder_attention_mixed_int8_softmax_replacement_generation_quality_llama7b_v1"
+      ],
+      "expected_result": {
+        "direction": "measure_sequential_reciprocal_boundary_cost",
+        "reason": "The compact combinational reciprocal divider had no feasible OpenROAD points; a fixed-latency sequential reciprocal divider is the next lower-combinational-complexity datapath."
+      }
+    }
+  ],
+  "source_commit": "67f08cd79f292503f2be1dc1e363b55ec38894b7"
+}
