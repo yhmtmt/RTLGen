@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_dual_stream_composed_q20_q24_pwl_recip_seqdiv_v1",
+  "decision": "iterate",
+  "pr_number": 1098,
+  "merge_commit": "dc9fa2f0aee7ca2deb0fbfa65c82bfdf49c54a97",
+  "merged_utc": "2026-07-01T10:18:58Z"
+}

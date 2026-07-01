@@ -31,8 +31,13 @@
       "expected_result": {
         "direction": "measure_sequential_reciprocal_boundary_cost",
         "reason": "The compact combinational reciprocal divider had no feasible OpenROAD points; a fixed-latency sequential reciprocal divider is the next lower-combinational-complexity datapath."
-      }
+      },
+      "status": "merged",
+      "merged_pr_number": 1098,
+      "merge_commit": "dc9fa2f0aee7ca2deb0fbfa65c82bfdf49c54a97",
+      "merged_utc": "2026-07-01T10:18:58Z",
+      "notes": "Merged via PR #1098 and merge dc9fa2f0aee7ca2deb0fbfa65c82bfdf49c54a97 at 2026-07-01T10:18:58Z."
     }
   ],
-  "source_commit": "67f08cd79f292503f2be1dc1e363b55ec38894b7"
+  "source_commit": "78a9417eebf722c68ebe6ace381856125452e8aa"
 }
