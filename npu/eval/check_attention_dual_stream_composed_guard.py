@@ -51,7 +51,7 @@ def main() -> int:
         raise SystemExit("expected exactly one shared softmax instance")
     if "stream_buf_0" not in top_text or "stream_buf_1" not in top_text:
         raise SystemExit("missing dual stream buffer registers")
-    if softmax_impl not in {"exact_div", "pow2sum", "recip_lut", "pwl_recip_lut"}:
+    if softmax_impl not in {"exact_div", "pow2sum", "recip_lut", "pwl_recip_lut", "pwl_recip_div"}:
         raise SystemExit(f"unsupported softmax_impl={softmax_impl}")
     if not 24 <= mac_accum_bits <= 32:
         raise SystemExit(f"unsupported mac_accum_bits={mac_accum_bits}")
@@ -117,17 +117,27 @@ def main() -> int:
             raise SystemExit("reciprocal-LUT replacement must not contain pow2 denominator shift logic")
         if "/ sum_weight" in top_text or "/ sum_weight_q" in top_text:
             raise SystemExit("reciprocal-LUT replacement must not contain a sum_weight divider")
-    if softmax_impl == "pwl_recip_lut":
+    if softmax_impl in {"pwl_recip_lut", "pwl_recip_div"}:
         if softmax_score_bits < 12 or softmax_weight_bits < 12:
             raise SystemExit("PWL reciprocal softmax should keep at least 12-bit scores and weights")
         for token in (
             "function [ACCUM_BITS-1:0] pwl_weight",
-            "function [RECIPROCAL_WIDTH-1:0] reciprocal_lut",
             "reciprocal_bucket",
             "lane_scaled",
         ):
             if token not in top_text:
                 raise SystemExit(f"missing PWL reciprocal softmax token: {token}")
+        if softmax_impl == "pwl_recip_lut":
+            if "function [RECIPROCAL_WIDTH-1:0] reciprocal_lut" not in top_text:
+                raise SystemExit("missing PWL reciprocal LUT function")
+            if "/ reciprocal_denominator" in top_text:
+                raise SystemExit("PWL reciprocal LUT mode must not contain compact reciprocal divider")
+        if softmax_impl == "pwl_recip_div":
+            for token in ("RECIPROCAL_NUMERATOR", "reciprocal_denominator", "/ reciprocal_denominator"):
+                if token not in top_text:
+                    raise SystemExit(f"missing compact PWL reciprocal divider token: {token}")
+            if "function [RECIPROCAL_WIDTH-1:0] reciprocal_lut" in top_text:
+                raise SystemExit("compact PWL reciprocal divider must not contain reciprocal LUT case table")
         if "denom_shift" in top_text:
             raise SystemExit("PWL reciprocal softmax must not contain pow2 denominator shift logic")
         if "/ sum_weight" in top_text or "/ sum_weight_q" in top_text:

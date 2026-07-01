@@ -1,0 +1,85 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_dual_stream_composed_q20_q24_pwl_recip_div_v1",
+  "created_utc": "2026-07-01T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit",
+  "title": "Composed dual-stream attention q20/q24 PWL compact reciprocal datapath",
+  "abstraction_layer": "decoder_attention_dual_stream_composed_datapath",
+  "hypothesis": "The q20 direct reciprocal-LUT boundary probe failed both OpenROAD density points, and the q24 boundary estimate was blocked by direct-LUT case growth. Replacing only the reciprocal table with a compact divider while preserving the same PWL weight and bucketed reciprocal arithmetic removes the LUT-size artifact without changing the quality candidate semantics.",
+  "direct_comparison": {
+    "primary_question": "Can the generation-passing q20/q24 PWL softmax candidates become physically measurable when the direct reciprocal case table is replaced by a compact reciprocal divider?",
+    "baselines": [
+      "l1_decoder_attention_dual_stream_composed_q20_pwl_recip_lut_boundary_ppa_v1",
+      "l1_decoder_attention_dual_stream_composed_q12_pwl_softmax_ppa_v1",
+      "l2_decoder_attention_pwl_recip_lut_boundary_llama7b_v1"
+    ],
+    "candidate": "l1_decoder_attention_dual_stream_composed_q20_q24_pwl_recip_div_ppa_v1",
+    "include": [
+      "generate q8/k8/v8 composed attention RTL for q20 and q24 PWL softmax",
+      "use the same bucket8 reciprocal rounding formula as the direct-LUT model",
+      "compute reciprocal with divider logic instead of a generated case table",
+      "keep equivalence_hash disabled for PPA",
+      "run the composed datapath guard before OpenROAD",
+      "measure Nangate45 area, power, timing, and timing debug paths"
+    ],
+    "exclude": [
+      "quality re-evaluation, because arithmetic semantics are intended to match the q20/q24 PWL candidates already evaluated",
+      "full Llama7B system recost",
+      "multi-cycle reciprocal scheduling"
+    ],
+    "metrics": [
+      "critical_path_ns",
+      "die_area",
+      "total_power_mw",
+      "stdcell_count",
+      "timing_debug_report"
+    ]
+  },
+  "remaining_abstractions": [
+    "This measures a single-cycle compact reciprocal divider inside the local composed datapath; a later architecture may pipeline or share this reciprocal unit.",
+    "The local composed datapath is measured independently; a dependent Layer 2 recost must substitute measured PPA into the Llama7B schedule.",
+    "RTL/perf equivalence for the new compact reciprocal implementation remains a separate gate if PPA is promising."
+  ],
+  "required_evaluations": [
+    {
+      "item_id": "l1_decoder_attention_dual_stream_composed_q20_q24_pwl_recip_div_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure Nangate45 PPA for q20 and q24 PWL compact reciprocal composed dual-stream attention datapaths after direct reciprocal-LUT q20/q24 proved infeasible or blocked.",
+      "evaluation_mode": "frontier_followup",
+      "abstraction_layer": "decoder_attention_dual_stream_composed_datapath",
+      "comparison_role": "q20_q24_pwl_compact_reciprocal_probe",
+      "paired_baseline_item_id": "l1_decoder_attention_dual_stream_composed_q20_pwl_recip_lut_boundary_ppa_v1",
+      "configs": [
+        "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q20_pwl_recip_div_q20_bucket8/config.json",
+        "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q24_pwl_recip_div_q24_bucket8/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/attention_dual_stream_composed_v1/sweeps/nangate45_dual_stream_composed_hier_q20_q24_pwl_recip_div.json",
+      "out_root": "runs/designs/npu_blocks",
+      "expected_outputs": [
+        "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q20_pwl_recip_div_q20_bucket8/metrics.csv",
+        "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q20_pwl_recip_div_q20_bucket8/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q24_pwl_recip_div_q24_bucket8/metrics.csv",
+        "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q24_pwl_recip_div_q24_bucket8/timing_debug_report.md"
+      ],
+      "expected_result": {
+        "direction": "measure_compact_reciprocal_replacement_cost",
+        "reason": "The q20 direct-LUT point failed physical flow and q24 direct-LUT was blocked by reciprocal table growth; compact reciprocal PPA is the next least-abstracted path."
+      }
+    }
+  ],
+  "source_refs": [
+    "npu/rtlgen/gen_attention_dual_stream_composed.py",
+    "npu/eval/check_attention_dual_stream_composed_guard.py",
+    "tests/test_attention_dual_stream_composed_generator.py",
+    "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q20_pwl_recip_div_q20_bucket8/config.json",
+    "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q24_pwl_recip_div_q24_bucket8/config.json",
+    "runs/campaigns/npu/attention_dual_stream_composed_v1/sweeps/nangate45_dual_stream_composed_hier_q20_q24_pwl_recip_div.json"
+  ],
+  "knowledge_refs": [
+    "docs/proposals/prop_l1_decoder_attention_dual_stream_composed_q20_pwl_recip_lut_boundary_v1/proposal.json",
+    "docs/proposals/prop_l2_decoder_attention_pwl_recip_lut_boundary_llama7b_v1/proposal.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_pwl_recip_lut_boundary__l2_decoder_attention_pwl_recip_lut_boundary_llama7b_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_softmax_replacement_generation_quality__l2_decoder_attention_mixed_int8_softmax_replacement_generation_quality_llama7b_v1.json"
+  ]
+}

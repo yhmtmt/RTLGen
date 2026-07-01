@@ -1,0 +1,35 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_dual_stream_composed_q20_q24_pwl_recip_div_v1",
+  "requested_items": [
+    {
+      "item_id": "l1_decoder_attention_dual_stream_composed_q20_q24_pwl_recip_div_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure Nangate45 PPA for q20 and q24 PWL compact reciprocal composed dual-stream attention datapaths after direct reciprocal-LUT q20/q24 proved infeasible or blocked.",
+      "evaluation_mode": "frontier_followup",
+      "abstraction_layer": "decoder_attention_dual_stream_composed_datapath",
+      "comparison_role": "q20_q24_pwl_compact_reciprocal_probe",
+      "paired_baseline_item_id": "l1_decoder_attention_dual_stream_composed_q20_pwl_recip_lut_boundary_ppa_v1",
+      "configs": [
+        "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q20_pwl_recip_div_q20_bucket8/config.json",
+        "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q24_pwl_recip_div_q24_bucket8/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/attention_dual_stream_composed_v1/sweeps/nangate45_dual_stream_composed_hier_q20_q24_pwl_recip_div.json",
+      "out_root": "runs/designs/npu_blocks",
+      "expected_outputs": [
+        "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q20_pwl_recip_div_q20_bucket8/metrics.csv",
+        "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q20_pwl_recip_div_q20_bucket8/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q24_pwl_recip_div_q24_bucket8/metrics.csv",
+        "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q24_pwl_recip_div_q24_bucket8/timing_debug_report.md"
+      ],
+      "depends_on_item_ids": [
+        "l1_decoder_attention_dual_stream_composed_q20_pwl_recip_lut_boundary_ppa_v1",
+        "l2_decoder_attention_pwl_recip_lut_boundary_llama7b_v1",
+        "l2_decoder_attention_mixed_int8_softmax_replacement_generation_quality_llama7b_v1"
+      ],
+      "expected_result": {
+        "direction": "measure_compact_reciprocal_replacement_cost",
+        "reason": "The q20 direct-LUT point failed physical flow and q24 direct-LUT was blocked by reciprocal table growth; compact reciprocal PPA is the next least-abstracted path."
+      }
+    }
+  ]
+}
