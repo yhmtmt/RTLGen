@@ -18,7 +18,8 @@ class WorkerLease(Base):
             "uq_worker_leases_active_work_item",
             "work_item_id",
             unique=True,
-            postgresql_where=text("status = 'active'"),
+            postgresql_where=text("status = 'ACTIVE'"),
+            sqlite_where=text("status = 'ACTIVE'"),
         ),
     )
 

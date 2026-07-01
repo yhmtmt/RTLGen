@@ -159,6 +159,7 @@ def acquire_next_lease(
         lease = (
             session.query(WorkerLease)
             .filter(WorkerLease.work_item_id == work_item.id)
+            .filter(WorkerLease.status == LeaseStatus.ACTIVE)
             .order_by(WorkerLease.leased_at.desc(), WorkerLease.id.desc())
             .first()
         )

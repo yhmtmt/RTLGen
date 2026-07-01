@@ -226,6 +226,21 @@ def test_expire_stale_leases_requeues_assigned_nonterminal_work_as_ready() -> No
         assert run.completed_at is not None
         assert run.failure_category == "lease_expired"
 
+        reacquired = acquire_next_lease(
+            session,
+            machine_key="machine-1",
+            capabilities={"platform": "nangate45", "flow": "openroad"},
+            lease_seconds=1,
+        )
+        new_lease = session.query(WorkerLease).filter_by(lease_token=reacquired.lease_token).one()
+        session.refresh(run)
+        session.refresh(lease)
+
+        assert new_lease.id != lease.id
+        assert new_lease.status == LeaseStatus.ACTIVE
+        assert lease.status == LeaseStatus.EXPIRED
+        assert run.lease_id == lease.id
+
 
 def test_lease_routes_work_in_process() -> None:
     with tempfile.TemporaryDirectory() as td:
