@@ -1,0 +1,8 @@
+{
+  "item_id": "l1_decoder_attention_dual_stream_composed_q20_q24_pwl_recip_seqdiv_ppa_v1",
+  "completed_trials": 1,
+  "success_count": 0,
+  "failure_count": 1,
+  "success_rate": 0.0,
+  "metrics": {}
+}

@@ -1,0 +1,175 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "sweeps": [
+        "runs/campaigns/npu/attention_dual_stream_composed_v1/sweeps/nangate45_dual_stream_composed_hier_q20_q24_pwl_recip_seqdiv.json"
+      ],
+      "configs": [
+        "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q20_pwl_recip_seqdiv_q20_bucket8_lat40/config.json",
+        "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q24_pwl_recip_seqdiv_q24_bucket8_lat48/config.json"
+      ],
+      "out_root": "runs/designs/npu_blocks",
+      "design_dirs": [],
+      "macro_manifests": [],
+      "candidate_manifests": [],
+      "required_submodules": []
+    },
+    "commands": [
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && cmake -S . -B build && cmake --build build --target rtlgen",
+        "name": "build_generator"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/rtlgen/gen_attention_dual_stream_composed.py --config runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q20_pwl_recip_seqdiv_q20_bucket8_lat40/config.json --out runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q20_pwl_recip_seqdiv_q20_bucket8_lat40/verilog",
+        "name": "generate_attention_dual_stream_composed_rtl_attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q20_pwl_recip_seqdiv_q20_bucket8_lat40"
+      },
+      {
+        "run": "python3 npu/eval/check_attention_dual_stream_composed_guard.py --design-dir runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q20_pwl_recip_seqdiv_q20_bucket8_lat40",
+        "name": "check_attention_dual_stream_composed_guard_attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q20_pwl_recip_seqdiv_q20_bucket8_lat40"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/synth/run_block_sweep.py --design_dir runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q20_pwl_recip_seqdiv_q20_bucket8_lat40 --platform nangate45 --top attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q20_pwl_recip_seqdiv_q20_bucket8_lat40 --sweep runs/campaigns/npu/attention_dual_stream_composed_v1/sweeps/nangate45_dual_stream_composed_hier_q20_q24_pwl_recip_seqdiv.json --out_root runs/designs/npu_blocks --skip_existing",
+        "name": "run_block_sweep_attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q20_pwl_recip_seqdiv_q20_bucket8_lat40"
+      },
+      {
+        "run": "python3 npu/eval/extract_openroad_timing_summary.py --design-dir runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q20_pwl_recip_seqdiv_q20_bucket8_lat40 --out runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q20_pwl_recip_seqdiv_q20_bucket8_lat40/timing_debug_report.md --max-paths 8",
+        "name": "extract_attention_dual_stream_timing_paths_attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q20_pwl_recip_seqdiv_q20_bucket8_lat40"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/rtlgen/gen_attention_dual_stream_composed.py --config runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q24_pwl_recip_seqdiv_q24_bucket8_lat48/config.json --out runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q24_pwl_recip_seqdiv_q24_bucket8_lat48/verilog",
+        "name": "generate_attention_dual_stream_composed_rtl_attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q24_pwl_recip_seqdiv_q24_bucket8_lat48"
+      },
+      {
+        "run": "python3 npu/eval/check_attention_dual_stream_composed_guard.py --design-dir runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q24_pwl_recip_seqdiv_q24_bucket8_lat48",
+        "name": "check_attention_dual_stream_composed_guard_attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q24_pwl_recip_seqdiv_q24_bucket8_lat48"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/synth/run_block_sweep.py --design_dir runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q24_pwl_recip_seqdiv_q24_bucket8_lat48 --platform nangate45 --top attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q24_pwl_recip_seqdiv_q24_bucket8_lat48 --sweep runs/campaigns/npu/attention_dual_stream_composed_v1/sweeps/nangate45_dual_stream_composed_hier_q20_q24_pwl_recip_seqdiv.json --out_root runs/designs/npu_blocks --skip_existing",
+        "name": "run_block_sweep_attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q24_pwl_recip_seqdiv_q24_bucket8_lat48"
+      },
+      {
+        "run": "python3 npu/eval/extract_openroad_timing_summary.py --design-dir runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q24_pwl_recip_seqdiv_q24_bucket8_lat48 --out runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q24_pwl_recip_seqdiv_q24_bucket8_lat48/timing_debug_report.md --max-paths 8",
+        "name": "extract_attention_dual_stream_timing_paths_attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q24_pwl_recip_seqdiv_q24_bucket8_lat48"
+      },
+      {
+        "run": "python3 scripts/build_runs_index.py",
+        "name": "build_runs_index"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate"
+      }
+    ],
+    "metadata": {
+      "acceptance_notes": "Accept non-ok metrics rows such as flow_failed as explicit boundary evidence; a no-feasible-points outcome is still useful for the q20/q24 sequential reciprocal frontier."
+    },
+    "objective": "Measure Nangate45 PPA for q20 and q24 PWL sequential reciprocal composed dual-stream attention datapaths after compact combinational reciprocal divider boundary failure.",
+    "acceptance": [
+      "Each generated wrapper metrics.csv contains recorded rows with a status column; allow non-ok metrics such as flow_failed when the row is boundary evidence",
+      "Committed outputs stay lightweight (metrics.csv only; runs/index.csv is exported centrally after merge)",
+      "python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue pass"
+    ],
+    "source_mode": "config",
+    "expected_outputs": [
+      "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q20_pwl_recip_seqdiv_q20_bucket8_lat40/metrics.csv",
+      "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q20_pwl_recip_seqdiv_q20_bucket8_lat40/timing_debug_report.md",
+      "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q24_pwl_recip_seqdiv_q24_bucket8_lat48/metrics.csv",
+      "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q24_pwl_recip_seqdiv_q24_bucket8_lat48/timing_debug_report.md"
+    ]
+  },
+  "layer": "layer1",
+  "state": "evaluated",
+  "title": "L1 composed attention q20/q24 PWL sequential reciprocal PPA",
+  "result": {
+    "branch": "eval/l1_decoder_attention_dual_stream_composed_q20_q24_pwl_recip_seqdiv_ppa_v1/s20260701t101622z",
+    "completed_utc": "2026-07-01T10:16:20.853172Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "b7c2d9c80c1c",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260701t101622z][host:b7c2d9c80c1c][item:l1_decoder_attention_dual_stream_composed_q20_q24_pwl_recip_seqdiv_ppa_v1]",
+    "metrics_rows": [
+      {
+        "tag": "attention_dual_stream_composed_v1_hier_q20_q24_pwl_recip_seqdiv",
+        "status": "flow_failed",
+        "platform": "nangate45",
+        "param_hash": "dbdbe032",
+        "metrics_csv": "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q20_pwl_recip_seqdiv_q20_bucket8_lat40/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q20_pwl_recip_seqdiv_q20_bucket8_lat40/work/dbdbe032/result.json"
+      },
+      {
+        "tag": "attention_dual_stream_composed_v1_hier_q20_q24_pwl_recip_seqdiv",
+        "status": "flow_failed",
+        "platform": "nangate45",
+        "param_hash": "3cfc56ea",
+        "metrics_csv": "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q20_pwl_recip_seqdiv_q20_bucket8_lat40/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q20_pwl_recip_seqdiv_q20_bucket8_lat40/work/3cfc56ea/result.json"
+      },
+      {
+        "tag": "attention_dual_stream_composed_v1_hier_q20_q24_pwl_recip_seqdiv",
+        "status": "flow_failed",
+        "platform": "nangate45",
+        "param_hash": "dbdbe032",
+        "metrics_csv": "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q24_pwl_recip_seqdiv_q24_bucket8_lat48/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q24_pwl_recip_seqdiv_q24_bucket8_lat48/work/dbdbe032/result.json"
+      },
+      {
+        "tag": "attention_dual_stream_composed_v1_hier_q20_q24_pwl_recip_seqdiv",
+        "status": "flow_failed",
+        "platform": "nangate45",
+        "param_hash": "3cfc56ea",
+        "metrics_csv": "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q24_pwl_recip_seqdiv_q24_bucket8_lat48/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q24_pwl_recip_seqdiv_q24_bucket8_lat48/work/3cfc56ea/result.json"
+      }
+    ],
+    "queue_item_id": "l1_decoder_attention_dual_stream_composed_q20_q24_pwl_recip_seqdiv_ppa_v1",
+    "session_id": "s20260701t101622z",
+    "status": "ok",
+    "summary": "11/11 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l1_decoder_attention_dual_stream_composed_q20_q24_pwl_recip_seqdiv_ppa_v1/s20260701t101622z",
+    "pr_title": "eval: run l1 composed attention q20/q24 pwl sequential reciprocal ppa",
+    "checklist": [
+      "Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge",
+      "Include metrics row references for each completed design",
+      "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260701t101622z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l1_decoder_attention_dual_stream_composed_q20_q24_pwl_recip_seqdiv_ppa_v1"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l1_decoder_attention_dual_stream_composed_q20_q24_pwl_recip_seqdiv_ppa_v1",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 1,
+  "created_utc": "2026-07-01T10:15:41.326543Z",
+  "requested_by": "developer_agent",
+  "developer_loop": {
+    "evaluation": {
+      "mode": "frontier_followup",
+      "trial_policy": {
+        "seed_start": 0,
+        "trial_count": 1,
+        "stop_after_failures": 1
+      }
+    },
+    "abstraction": {
+      "layer": "decoder_attention_dual_stream_composed_datapath"
+    },
+    "proposal_id": "prop_l1_decoder_attention_dual_stream_composed_q20_q24_pwl_recip_seqdiv_v1",
+    "proposal_path": "docs/proposals/prop_l1_decoder_attention_dual_stream_composed_q20_q24_pwl_recip_seqdiv_v1/proposal.json"
+  },
+  "source_requirement": {
+    "repo": "",
+    "reason": "evaluator runtime must contain the queued job source commit",
+    "version": 1,
+    "required_ref": "origin/master",
+    "required_sha": "78a9417eebf722c68ebe6ace381856125452e8aa",
+    "requires_daemon_restart": true
+  }
+}
