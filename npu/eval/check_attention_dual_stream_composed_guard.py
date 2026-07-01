@@ -32,6 +32,7 @@ def main() -> int:
     softmax_pipeline_stages = int(manifest.get("softmax_pipeline_stages", 0))
     softmax_internal_pipeline_stages = int(manifest.get("softmax_internal_pipeline_stages", 0))
     softmax_latency_stages = int(manifest.get("softmax_latency_stages", 1))
+    softmax_reciprocal_div_cycles = int(manifest.get("softmax_reciprocal_div_cycles", 0))
     value_alignment_delay_stages = int(manifest.get("value_alignment_delay_stages", 0))
     mac_accum_bits = int(manifest.get("mac_accum_bits", 24))
     softmax_score_bits = int(manifest.get("softmax_score_bits", 8))
@@ -51,7 +52,7 @@ def main() -> int:
         raise SystemExit("expected exactly one shared softmax instance")
     if "stream_buf_0" not in top_text or "stream_buf_1" not in top_text:
         raise SystemExit("missing dual stream buffer registers")
-    if softmax_impl not in {"exact_div", "pow2sum", "recip_lut", "pwl_recip_lut", "pwl_recip_div"}:
+    if softmax_impl not in {"exact_div", "pow2sum", "recip_lut", "pwl_recip_lut", "pwl_recip_div", "pwl_recip_seqdiv"}:
         raise SystemExit(f"unsupported softmax_impl={softmax_impl}")
     if not 24 <= mac_accum_bits <= 32:
         raise SystemExit(f"unsupported mac_accum_bits={mac_accum_bits}")
@@ -63,7 +64,12 @@ def main() -> int:
         )
     if not 2 <= softmax_weight_bits <= 24:
         raise SystemExit(f"unsupported softmax_weight_bits={softmax_weight_bits}")
-    if softmax_latency_stages != 1 + softmax_internal_pipeline_stages:
+    if softmax_impl == "pwl_recip_seqdiv":
+        if softmax_reciprocal_div_cycles <= 0:
+            raise SystemExit("sequential PWL reciprocal softmax must record softmax_reciprocal_div_cycles")
+        if softmax_latency_stages != softmax_reciprocal_div_cycles:
+            raise SystemExit("sequential PWL reciprocal softmax latency must equal reciprocal divider cycles")
+    elif softmax_latency_stages != 1 + softmax_internal_pipeline_stages:
         raise SystemExit("softmax latency must equal output register latency plus internal pipeline stages")
     if softmax_pipeline_stages:
         if softmax_pipeline_stages != 1:
@@ -117,7 +123,7 @@ def main() -> int:
             raise SystemExit("reciprocal-LUT replacement must not contain pow2 denominator shift logic")
         if "/ sum_weight" in top_text or "/ sum_weight_q" in top_text:
             raise SystemExit("reciprocal-LUT replacement must not contain a sum_weight divider")
-    if softmax_impl in {"pwl_recip_lut", "pwl_recip_div"}:
+    if softmax_impl in {"pwl_recip_lut", "pwl_recip_div", "pwl_recip_seqdiv"}:
         if softmax_score_bits < 12 or softmax_weight_bits < 12:
             raise SystemExit("PWL reciprocal softmax should keep at least 12-bit scores and weights")
         for token in (
@@ -138,6 +144,23 @@ def main() -> int:
                     raise SystemExit(f"missing compact PWL reciprocal divider token: {token}")
             if "function [RECIPROCAL_WIDTH-1:0] reciprocal_lut" in top_text:
                 raise SystemExit("compact PWL reciprocal divider must not contain reciprocal LUT case table")
+        if softmax_impl == "pwl_recip_seqdiv":
+            for token in (
+                "RECIPROCAL_NUMERATOR",
+                "div_busy",
+                "div_bit",
+                "div_quotient",
+                "div_remainder",
+                "softmax_valid",
+                ".softmax_valid(softmax_valid)",
+                "done <= softmax_valid",
+            ):
+                if token not in top_text:
+                    raise SystemExit(f"missing sequential PWL reciprocal divider token: {token}")
+            if "function [RECIPROCAL_WIDTH-1:0] reciprocal_lut" in top_text:
+                raise SystemExit("sequential PWL reciprocal divider must not contain reciprocal LUT case table")
+            if "/ reciprocal_denominator" in top_text:
+                raise SystemExit("sequential PWL reciprocal divider must not contain compact reciprocal divider")
         if "denom_shift" in top_text:
             raise SystemExit("PWL reciprocal softmax must not contain pow2 denominator shift logic")
         if "/ sum_weight" in top_text or "/ sum_weight_q" in top_text:
