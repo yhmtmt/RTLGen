@@ -19,7 +19,15 @@ def make_session() -> Session:
     return Session(engine)
 
 
-def _seed_ready_item(session: Session, *, item_id: str, platform: str, priority: int = 1) -> None:
+def _seed_ready_item(
+    session: Session,
+    *,
+    item_id: str,
+    platform: str,
+    priority: int = 1,
+    command_manifest: list[dict[str, str]] | None = None,
+    input_manifest: dict | None = None,
+) -> None:
     task = TaskRequest(
         request_key=f"queue:{item_id}",
         source="test",
@@ -44,8 +52,8 @@ def _seed_ready_item(session: Session, *, item_id: str, platform: str, priority:
             task_type="l2_campaign",
             state=WorkItemState.DISPATCH_PENDING,
             priority=priority,
-            input_manifest={},
-            command_manifest=[],
+            input_manifest=input_manifest or {},
+            command_manifest=command_manifest or [],
             expected_outputs=[],
             acceptance_rules=[],
         )
@@ -107,6 +115,32 @@ def test_dispatch_ready_items_respects_slot_capacity_and_existing_assignment() -
         assert item_b.state == WorkItemState.DISPATCH_PENDING
 
 
+def test_dispatch_ready_items_assigns_only_one_exclusive_block_sweep_per_machine() -> None:
+    with make_session() as session:
+        upsert_worker_machine(
+            session,
+            machine_key="eval-a",
+            hostname="eval-a",
+            role="evaluator",
+            slot_capacity=16,
+            capabilities={"platform": "nangate45", "flow": "openroad"},
+        )
+        block_sweep = [{"name": "ppa", "run": "python3 npu/synth/run_block_sweep.py --sweep sweep.json"}]
+        _seed_ready_item(session, item_id="exclusive_a", platform="nangate45", priority=5, command_manifest=block_sweep)
+        _seed_ready_item(session, item_id="exclusive_b", platform="nangate45", priority=4, command_manifest=block_sweep)
+        _seed_ready_item(session, item_id="normal_c", platform="nangate45", priority=3)
+
+        results = dispatch_ready_items(session, DispatchReadyRequest())
+
+        assert [row.item_id for row in results] == ["exclusive_a"]
+        exclusive_b = session.query(WorkItem).filter_by(item_id="exclusive_b").one()
+        normal_c = session.query(WorkItem).filter_by(item_id="normal_c").one()
+        assert exclusive_b.assigned_machine_key is None
+        assert exclusive_b.state == WorkItemState.DISPATCH_PENDING
+        assert normal_c.assigned_machine_key is None
+        assert normal_c.state == WorkItemState.DISPATCH_PENDING
+
+
 def test_auto_dispatch_item_assigns_single_matching_machine() -> None:
     with make_session() as session:
         upsert_worker_machine(
@@ -130,6 +164,42 @@ def test_auto_dispatch_item_assigns_single_matching_machine() -> None:
         item = session.query(WorkItem).filter_by(item_id="item_a").one()
         assert item.assigned_machine_key == "eval-a"
         assert item.state == WorkItemState.READY
+
+
+def test_auto_dispatch_item_skips_exclusive_when_machine_has_reserved_work() -> None:
+    with make_session() as session:
+        upsert_worker_machine(
+            session,
+            machine_key="eval-a",
+            hostname="eval-a",
+            role="evaluator",
+            slot_capacity=16,
+            capabilities={"platform": "nangate45", "flow": "openroad"},
+        )
+        _seed_ready_item(session, item_id="normal_a", platform="nangate45", priority=5)
+        _seed_ready_item(
+            session,
+            item_id="exclusive_b",
+            platform="nangate45",
+            priority=4,
+            command_manifest=[{"name": "ppa", "run": "python3 npu/synth/run_block_sweep.py --sweep sweep.json"}],
+        )
+        normal = session.query(WorkItem).filter_by(item_id="normal_a").one()
+        normal.assigned_machine_key = "eval-a"
+        normal.state = WorkItemState.READY
+        session.commit()
+
+        result = auto_dispatch_item(session, item_id="exclusive_b", machine_key="eval-a")
+
+        assert result == AutoDispatchItemResult(
+            item_id="exclusive_b",
+            status="skipped",
+            machine_key=None,
+            reason="exclusive_item_requires_empty_worker",
+        )
+        exclusive = session.query(WorkItem).filter_by(item_id="exclusive_b").one()
+        assert exclusive.assigned_machine_key is None
+        assert exclusive.state == WorkItemState.DISPATCH_PENDING
 
 
 def test_auto_dispatch_item_repairs_assigned_dispatch_pending_item() -> None:

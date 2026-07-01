@@ -12,7 +12,12 @@ from control_plane.models.enums import LeaseStatus, WorkItemState
 from control_plane.models.worker_leases import WorkerLease
 from control_plane.models.worker_machines import WorkerMachine
 from control_plane.models.work_items import WorkItem
-from control_plane.services.scheduler import NoEligibleWorkItem, assign_work_item
+from control_plane.services.scheduler import (
+    NoEligibleWorkItem,
+    assign_work_item,
+    machine_has_active_exclusive_work,
+    work_item_requires_exclusive_worker,
+)
 
 
 @dataclass(frozen=True)
@@ -45,12 +50,34 @@ def _as_comparable_utc(dt):
 
 
 def _machine_available_slots(session: Session, machine: WorkerMachine) -> int:
+    if machine_has_active_exclusive_work(session, machine.id):
+        return 0
     active = (
         session.query(WorkerLease)
         .filter(WorkerLease.machine_id == machine.id, WorkerLease.status == LeaseStatus.ACTIVE)
         .count()
     )
     return max(0, int(machine.slot_capacity or 1) - active)
+
+
+def _machine_has_reserved_work(session: Session, machine: WorkerMachine) -> bool:
+    return (
+        session.query(WorkItem)
+        .filter(WorkItem.assigned_machine_key == machine.machine_key)
+        .filter(WorkItem.state.in_([WorkItemState.READY, WorkItemState.LEASED, WorkItemState.RUNNING]))
+        .count()
+        > 0
+    )
+
+
+def _machine_has_reserved_exclusive_work(session: Session, machine: WorkerMachine) -> bool:
+    rows = (
+        session.query(WorkItem)
+        .filter(WorkItem.assigned_machine_key == machine.machine_key)
+        .filter(WorkItem.state.in_([WorkItemState.READY, WorkItemState.LEASED, WorkItemState.RUNNING]))
+        .all()
+    )
+    return any(work_item_requires_exclusive_worker(row) for row in rows)
 
 
 def _machine_matches_item(machine: WorkerMachine, work_item: WorkItem) -> bool:
@@ -86,8 +113,14 @@ def _next_unassigned_item_for_machine(session: Session, machine: WorkerMachine) 
         .filter(~WorkItem.leases.any(WorkerLease.status == LeaseStatus.ACTIVE))
         .order_by(WorkItem.priority.desc(), WorkItem.created_at.asc(), WorkItem.item_id.asc())
     )
+    has_reserved = _machine_has_reserved_work(session, machine)
+    has_reserved_exclusive = _machine_has_reserved_exclusive_work(session, machine)
+    if has_reserved_exclusive:
+        return None
     for item in query.all():
         if _machine_matches_item(machine, item):
+            if work_item_requires_exclusive_worker(item) and has_reserved:
+                continue
             return item
     return None
 
@@ -139,6 +172,10 @@ def auto_dispatch_item(
             return AutoDispatchItemResult(item_id=item_id, status="skipped", reason="machine_has_no_capacity")
         if not _machine_matches_item(machine, work_item):
             return AutoDispatchItemResult(item_id=item_id, status="skipped", reason="machine_capability_mismatch")
+        if _machine_has_reserved_exclusive_work(session, machine):
+            return AutoDispatchItemResult(item_id=item_id, status="skipped", reason="machine_has_reserved_exclusive_work")
+        if work_item_requires_exclusive_worker(work_item) and _machine_has_reserved_work(session, machine):
+            return AutoDispatchItemResult(item_id=item_id, status="skipped", reason="exclusive_item_requires_empty_worker")
         return _assign(machine.machine_key)
 
     candidates = [
@@ -147,6 +184,8 @@ def auto_dispatch_item(
         if _is_machine_dispatchable(machine, freshness_seconds=freshness_seconds)
         and _machine_available_slots(session, machine) > 0
         and _machine_matches_item(machine, work_item)
+        and not _machine_has_reserved_exclusive_work(session, machine)
+        and not (work_item_requires_exclusive_worker(work_item) and _machine_has_reserved_work(session, machine))
     ]
     if not candidates:
         return AutoDispatchItemResult(item_id=item_id, status="skipped", reason="no_eligible_machine")
