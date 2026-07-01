@@ -111,14 +111,14 @@ def _validate(cfg: dict[str, Any]) -> dict[str, Any]:
         raise SystemExit("attention_dual_stream_composed.softmax_input_frac_bits must be in [0, 16]")
     if softmax_reciprocal_lut_bucket_shift < 0 or softmax_reciprocal_lut_bucket_shift > 12:
         raise SystemExit("attention_dual_stream_composed.softmax_reciprocal_lut_bucket_shift must be in [0, 12]")
-    if softmax_impl not in {"exact_div", "pow2sum", "recip_lut", "pwl_recip_lut"}:
+    if softmax_impl not in {"exact_div", "pow2sum", "recip_lut", "pwl_recip_lut", "pwl_recip_div"}:
         raise SystemExit(
-            "attention_dual_stream_composed.softmax_impl must be exact_div, pow2sum, recip_lut, or pwl_recip_lut"
+            "attention_dual_stream_composed.softmax_impl must be exact_div, pow2sum, recip_lut, pwl_recip_lut, or pwl_recip_div"
         )
     if softmax_internal_pipeline_stages and softmax_impl != "exact_div":
         raise SystemExit("attention_dual_stream_composed.softmax_internal_pipeline_stages requires exact_div")
-    if softmax_impl == "pwl_recip_lut" and softmax_internal_pipeline_stages:
-        raise SystemExit("attention_dual_stream_composed.softmax_internal_pipeline_stages is not supported for pwl_recip_lut")
+    if softmax_impl in {"pwl_recip_lut", "pwl_recip_div"} and softmax_internal_pipeline_stages:
+        raise SystemExit("attention_dual_stream_composed.softmax_internal_pipeline_stages is not supported for PWL reciprocal softmax")
     return comp
 
 
@@ -166,7 +166,7 @@ def _softmax_module(
     output_scale = (1 << weight_bits) - 1
     shift_exp_max_weight = 128
     pwl_max_weight = output_scale
-    max_weight = pwl_max_weight if implementation == "pwl_recip_lut" else shift_exp_max_weight
+    max_weight = pwl_max_weight if implementation in {"pwl_recip_lut", "pwl_recip_div"} else shift_exp_max_weight
     product_bits = accum_bits + weight_bits
     hash_port = ",\n    output reg  [31:0]          weight_hash" if equivalence_hash else ""
     hash_reg = "  reg [31:0] next_hash;\n" if equivalence_hash else ""
@@ -179,17 +179,20 @@ def _softmax_module(
     )
     hash_seq = "    weight_hash <= next_hash;\n" if equivalence_hash else ""
     max_sum_weight = row_elems * max_weight
-    recip_lut_cases = "\n".join(
-        f"      {accum_bits}'d{denom}: reciprocal_lut = {reciprocal_bits + weight_bits}'d{((output_scale << reciprocal_bits) + (denom >> 1)) // denom};"
-        for denom in range(1, max_sum_weight + 1)
-    )
-    if implementation == "pwl_recip_lut":
+    recip_lut_cases = ""
+    if implementation in {"recip_lut"}:
+        recip_lut_cases = "\n".join(
+            f"      {accum_bits}'d{denom}: reciprocal_lut = {reciprocal_bits + weight_bits}'d{((output_scale << reciprocal_bits) + (denom >> 1)) // denom};"
+            for denom in range(1, max_sum_weight + 1)
+        )
+    if implementation in {"pwl_recip_lut", "pwl_recip_div"}:
         reciprocal_bucket_step = 1 << reciprocal_lut_bucket_shift
         max_bucket = (max_sum_weight + reciprocal_bucket_step - 1) >> reciprocal_lut_bucket_shift
-        recip_lut_cases = "\n".join(
-            f"      {accum_bits}'d{bucket}: reciprocal_lut = {reciprocal_bits + weight_bits}'d{((output_scale << reciprocal_bits) + ((bucket << reciprocal_lut_bucket_shift) >> 1)) // (bucket << reciprocal_lut_bucket_shift)};"
-            for bucket in range(1, max_bucket + 1)
-        )
+        if implementation == "pwl_recip_lut":
+            recip_lut_cases = "\n".join(
+                f"      {accum_bits}'d{bucket}: reciprocal_lut = {reciprocal_bits + weight_bits}'d{((output_scale << reciprocal_bits) + ((bucket << reciprocal_lut_bucket_shift) >> 1)) // (bucket << reciprocal_lut_bucket_shift)};"
+                for bucket in range(1, max_bucket + 1)
+            )
         input_scale = 1 << input_frac_bits
         x2 = 2 * input_scale
         x4 = 4 * input_scale
@@ -199,6 +202,45 @@ def _softmax_module(
         y2 = int(math.exp(-2.0) * output_scale + 0.5)
         y4 = int(math.exp(-4.0) * output_scale + 0.5)
         y8 = int(math.exp(-8.0) * output_scale + 0.5)
+        reciprocal_width = reciprocal_bits + weight_bits
+        reciprocal_numerator = output_scale << reciprocal_bits
+        reciprocal_div_regs = (
+            "  reg [ACCUM_BITS-1:0] reciprocal_denominator;\n"
+            "  reg [RECIPROCAL_WIDTH-1:0] reciprocal_numer;\n"
+            if implementation == "pwl_recip_div"
+            else ""
+        )
+        reciprocal_numerator_param = (
+            f"  localparam [RECIPROCAL_WIDTH-1:0] RECIPROCAL_NUMERATOR = {reciprocal_width}'d{reciprocal_numerator};\n"
+            if implementation == "pwl_recip_div"
+            else ""
+        )
+        reciprocal_function = (
+            f"""
+  function [RECIPROCAL_WIDTH-1:0] reciprocal_lut;
+    input [ACCUM_BITS-1:0] bucket;
+    begin
+      case (bucket)
+      {accum_bits}'d0: reciprocal_lut = {{RECIPROCAL_WIDTH{{1'b0}}}};
+{recip_lut_cases}
+      default: reciprocal_lut = {{RECIPROCAL_WIDTH{{1'b0}}}};
+      endcase
+    end
+  endfunction
+"""
+            if implementation == "pwl_recip_lut"
+            else ""
+        )
+        reciprocal_assign = (
+            "    reciprocal_q = reciprocal_lut(reciprocal_bucket);"
+            if implementation == "pwl_recip_lut"
+            else """    reciprocal_denominator = reciprocal_bucket << RECIP_BUCKET_SHIFT;
+    reciprocal_numer = RECIPROCAL_NUMERATOR + (reciprocal_denominator >> 1);
+    if (reciprocal_denominator != {ACCUM_BITS{1'b0}})
+      reciprocal_q = reciprocal_numer / reciprocal_denominator;
+    else
+      reciprocal_q = {RECIPROCAL_WIDTH{1'b0}};"""
+        )
         return f"""(* keep_hierarchy = 1 *)
 module {module_name} (
     input  wire                  clk,
@@ -221,6 +263,7 @@ module {module_name} (
   localparam integer PWL_Y2 = {y2};
   localparam integer PWL_Y4 = {y4};
   localparam integer PWL_Y8 = {y8};
+{reciprocal_numerator_param.rstrip()}
 
   integer i;
   integer signed lane_val;
@@ -230,6 +273,7 @@ module {module_name} (
   reg [ACCUM_BITS-1:0] sum_weight;
   reg [ACCUM_BITS-1:0] reciprocal_bucket;
   reg [RECIPROCAL_WIDTH-1:0] reciprocal_q;
+{reciprocal_div_regs.rstrip()}
   reg [PRODUCT_BITS+RECIPROCAL_WIDTH-1:0] lane_scaled;
   reg [WEIGHT_BITS-1:0] lane_out;
   reg [{weight_row_width - 1}:0] next_weights;
@@ -275,17 +319,7 @@ module {module_name} (
       end
     end
   endfunction
-
-  function [RECIPROCAL_WIDTH-1:0] reciprocal_lut;
-    input [ACCUM_BITS-1:0] bucket;
-    begin
-      case (bucket)
-      {accum_bits}'d0: reciprocal_lut = {{RECIPROCAL_WIDTH{{1'b0}}}};
-{recip_lut_cases}
-      default: reciprocal_lut = {{RECIPROCAL_WIDTH{{1'b0}}}};
-      endcase
-    end
-  endfunction
+{reciprocal_function.rstrip()}
 
   always @(*) begin
     row_max = -(1 << (SCORE_BITS - 1));
@@ -306,7 +340,7 @@ module {module_name} (
     end
 
     reciprocal_bucket = (sum_weight + {accum_bits}'d{reciprocal_bucket_step - 1}) >> RECIP_BUCKET_SHIFT;
-    reciprocal_q = reciprocal_lut(reciprocal_bucket);
+{reciprocal_assign}
     next_weights = {{{weight_row_width}{{1'b0}}}};
 {hash_init.rstrip()}
     for (i = 0; i < ROW_ELEMS; i = i + 1) begin
@@ -804,6 +838,8 @@ def _write_top(*, cfg: dict[str, Any], comp: dict[str, Any], out_path: Path) -> 
     softmax_weight_row_width = row_elems * softmax_weight_bits
     if softmax_impl == "pwl_recip_lut":
         softmax_name = "attention_softmax_weight_q12_pwl_recip_like"
+    elif softmax_impl == "pwl_recip_div":
+        softmax_name = f"attention_softmax_weight_q{softmax_score_bits}_pwl_recip_div_like"
     elif softmax_impl == "exact_div" and (softmax_score_bits, softmax_weight_bits) != (8, 8):
         softmax_name = f"attention_softmax_weight_score{softmax_score_bits}_w{softmax_weight_bits}_exact_div_like"
     elif softmax_impl == "recip_lut" and (softmax_score_bits, softmax_weight_bits) == (32, 16):
@@ -1101,8 +1137,8 @@ endmodule
         "components": {
             "compute": "two signed-int8 dense GEMM streams",
             "softmax_weight": (
-                "one shared q12 PWL reciprocal-normalized generator"
-                if softmax_impl == "pwl_recip_lut"
+                "one shared PWL reciprocal-normalized generator"
+                if softmax_impl in {"pwl_recip_lut", "pwl_recip_div"}
                 else (
                     "one shared score32/w16 shift-exp reciprocal-LUT-normalized generator"
                     if softmax_score_bits == 32 and softmax_weight_bits == 16 and softmax_impl == "recip_lut"

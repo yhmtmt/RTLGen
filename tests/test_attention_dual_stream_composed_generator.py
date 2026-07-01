@@ -313,6 +313,46 @@ def test_attention_dual_stream_composed_generator_q20_pwl_v8_softmax(tmp_path: P
     assert "module attention_full_value_stream_q8v8_p8_ppc2" in top_text
 
 
+def test_attention_dual_stream_composed_generator_q24_pwl_compact_recip_v8_softmax(
+    tmp_path: Path,
+) -> None:
+    design_dir = tmp_path / "attention_dual_stream_composed_q24_pwl_div_v8"
+    config_path = design_dir / "config.json"
+    _write_config(
+        config_path,
+        softmax_pipeline_stages=1,
+        softmax_impl="pwl_recip_div",
+        mac_accum_bits=24,
+        softmax_accum_bits=40,
+        softmax_score_bits=24,
+        softmax_weight_bits=24,
+        reciprocal_bits=24,
+        value_bits=8,
+        softmax_input_frac_bits=8,
+        softmax_reciprocal_lut_bucket_shift=8,
+    )
+    top_text = _generate_and_check(design_dir, config_path)
+
+    manifest = json.loads((design_dir / "verilog" / "attention_dual_stream_composed_manifest.json").read_text())
+    assert manifest["softmax_impl"] == "pwl_recip_div"
+    assert manifest["mac_accum_bits"] == 24
+    assert manifest["softmax_accum_bits"] == 40
+    assert manifest["softmax_score_bits"] == 24
+    assert manifest["softmax_weight_bits"] == 24
+    assert manifest["reciprocal_bits"] == 24
+    assert manifest["value_bits"] == 8
+    assert manifest["softmax_reciprocal_lut_bucket_shift"] == 8
+    assert "module attention_softmax_weight_q24_pwl_recip_div_like" in top_text
+    assert "localparam [RECIPROCAL_WIDTH-1:0] RECIPROCAL_NUMERATOR = 48'd281474959933440;" in top_text
+    assert "reciprocal_numer = RECIPROCAL_NUMERATOR + (reciprocal_denominator >> 1);" in top_text
+    assert "reciprocal_q = reciprocal_numer / reciprocal_denominator;" in top_text
+    assert "function [RECIPROCAL_WIDTH-1:0] reciprocal_lut" not in top_text
+    assert "wire [95:0] softmax_weights" in top_text
+    assert "wire [23:0] score_lane_00" in top_text
+    assert "wire [23:0] weight_00" in top_text
+    assert "module attention_full_value_stream_q8v8_p8_ppc2" in top_text
+
+
 def test_attention_dual_stream_composed_generator_score32_exact_softmax(tmp_path: Path) -> None:
     design_dir = tmp_path / "attention_dual_stream_composed_score32"
     config_path = design_dir / "config.json"
