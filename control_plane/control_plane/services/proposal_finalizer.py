@@ -50,6 +50,12 @@ class ProposalFinalizeResult:
     skip_reason: str | None
 
 
+@dataclass(frozen=True)
+class _RevisionInvalidationResult:
+    invalidated_item_ids: list[str]
+    touched_paths: list[Path]
+
+
 _RETRY_SUFFIX_RE = re.compile(r"_r\d+$")
 
 
@@ -468,6 +474,66 @@ def _apply_revision_invalidations(
     return invalidated
 
 
+def _candidate_evaluation_request_paths(repo_root: Path) -> list[Path]:
+    paths: list[Path] = []
+    for base_rel in ("docs/proposals", "docs/developer_loop"):
+        base = repo_root / base_rel
+        if not base.exists():
+            continue
+        paths.extend(sorted(base.glob("*/evaluation_requests.json")))
+    return paths
+
+
+def _apply_cross_proposal_revision_invalidations(
+    repo_root: Path,
+    *,
+    current_evaluation_requests_path: Path,
+    current_item_id: str,
+    revision: dict[str, Any],
+    artifact_rel: str,
+    already_invalidated_item_ids: list[str],
+) -> _RevisionInvalidationResult:
+    invalidated_item_ids = _revision_invalidated_item_ids(revision)
+    if not invalidated_item_ids:
+        return _RevisionInvalidationResult(invalidated_item_ids=[], touched_paths=[])
+    remaining = [item_id for item_id in invalidated_item_ids if item_id not in set(already_invalidated_item_ids)]
+    if not remaining:
+        return _RevisionInvalidationResult(invalidated_item_ids=[], touched_paths=[])
+
+    reason = str(revision.get("reason", revision.get("revision_reason", ""))).strip()
+    invalidated_at = utcnow().isoformat().replace("+00:00", "Z")
+    found: list[str] = []
+    touched_paths: list[Path] = []
+    current_eval_path = current_evaluation_requests_path.resolve()
+    for evaluation_requests_path in _candidate_evaluation_request_paths(repo_root):
+        if evaluation_requests_path.resolve() == current_eval_path:
+            continue
+        payload = _load_json(evaluation_requests_path)
+        requested_items = payload.get("requested_items")
+        if not isinstance(requested_items, list):
+            continue
+        changed = False
+        for entry in requested_items:
+            if not isinstance(entry, dict):
+                continue
+            item_id = str(entry.get("item_id", "")).strip()
+            if item_id not in remaining or item_id == current_item_id:
+                continue
+            entry["status"] = "retracted"
+            entry["retracted_utc"] = invalidated_at
+            entry["retracted_by_item_id"] = current_item_id
+            entry["retraction_reason"] = reason
+            entry["replacement_artifact"] = artifact_rel
+            if item_id not in found:
+                found.append(item_id)
+            changed = True
+        if changed:
+            _write_json(evaluation_requests_path, payload)
+            touched_paths.append(evaluation_requests_path)
+    ordered_found = [item_id for item_id in invalidated_item_ids if item_id in set(found)]
+    return _RevisionInvalidationResult(invalidated_item_ids=ordered_found, touched_paths=touched_paths)
+
+
 def _mark_merged_requested_item(
     entry: dict[str, Any],
     *,
@@ -694,6 +760,13 @@ def _prepare_repo(repo_root: Path) -> str:
 def finalize_after_merge(session: Session, request: ProposalFinalizeRequest) -> ProposalFinalizeResult:
     repo_root = Path(request.repo_root).resolve()
     work_item, run = _resolve_run(session, request)
+    merge_commit = request.merge_commit
+    prepared_repo_head: str | None = None
+    if request.git_publish:
+        prepared_repo_head = _prepare_repo(repo_root)
+        if not merge_commit:
+            merge_commit = prepared_repo_head
+
     proposal_path = _proposal_path(repo_root, work_item)
     if proposal_path is None:
         return ProposalFinalizeResult(
@@ -705,13 +778,6 @@ def finalize_after_merge(session: Session, request: ProposalFinalizeRequest) -> 
             skipped=True,
             skip_reason="work item has no developer_loop proposal metadata",
         )
-
-    merge_commit = request.merge_commit
-    prepared_repo_head: str | None = None
-    if request.git_publish:
-        prepared_repo_head = _prepare_repo(repo_root)
-        if not merge_commit:
-            merge_commit = prepared_repo_head
 
     _scaffold_proposal_artifacts(repo_root, work_item=work_item, run=run, proposal_path=proposal_path)
     proposal_payload = _load_json(proposal_path)
@@ -829,6 +895,7 @@ def finalize_after_merge(session: Session, request: ProposalFinalizeRequest) -> 
         merged_utc=merged_utc,
     )
     invalidated_item_ids: list[str] = []
+    revision_touched_paths: list[Path] = []
     if is_revision:
         matched_entry["revision"] = revision_payload
         matched_entry["revision_of_decision"] = existing_decision or str(promotion_result.get("decision", "")).strip()
@@ -838,6 +905,18 @@ def finalize_after_merge(session: Session, request: ProposalFinalizeRequest) -> 
             revision=revision_payload,
             artifact_rel=artifact_rel,
         )
+        cross_revision = _apply_cross_proposal_revision_invalidations(
+            repo_root,
+            current_evaluation_requests_path=evaluation_requests_path,
+            current_item_id=work_item.item_id,
+            revision=revision_payload,
+            artifact_rel=artifact_rel,
+            already_invalidated_item_ids=invalidated_item_ids,
+        )
+        invalidated_item_ids.extend(
+            item_id for item_id in cross_revision.invalidated_item_ids if item_id not in invalidated_item_ids
+        )
+        revision_touched_paths.extend(cross_revision.touched_paths)
     evaluation_requests["source_commit"] = str(payload.get("source_commit") or run.checkout_commit or work_item.source_commit or "")
     ready_items = _refresh_ready_items([entry for entry in requested_items if isinstance(entry, dict)])
 
@@ -927,6 +1006,7 @@ def finalize_after_merge(session: Session, request: ProposalFinalizeRequest) -> 
             str(promotion_result_path.relative_to(repo_root)),
             str(analysis_report_path.relative_to(repo_root)),
         ]
+        rel_paths.extend(str(path.relative_to(repo_root)) for path in revision_touched_paths)
         if not run_index_refresh.skipped:
             rel_paths.append("runs/index.csv")
         _run_git(repo_root, "add", *rel_paths)
