@@ -63,7 +63,13 @@
       "expected_result": {
         "direction": "measure_compact_reciprocal_boundary_cost",
         "reason": "The first compact reciprocal run generated valid RTL but all PPA metrics rows were flow_failed; rerun with boundary-aware acceptance so the frontier can record no feasible points if the result repeats."
-      }
+      },
+      "status": "merged",
+      "merged_pr_number": 1096,
+      "merge_commit": "935c6034b853922c1f1ebbc1cea38f767e8f7dc8",
+      "merged_utc": "2026-07-01T09:52:45Z",
+      "notes": "Merged via PR #1096 and merge 935c6034b853922c1f1ebbc1cea38f767e8f7dc8 at 2026-07-01T09:52:45Z."
     }
-  ]
+  ],
+  "source_commit": "50c3aede78967932d1e7aaf9f8510551bc31b9a3"
 }
