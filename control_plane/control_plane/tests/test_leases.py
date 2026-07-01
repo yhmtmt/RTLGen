@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 import tempfile
 
+import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
@@ -20,7 +21,7 @@ from control_plane.models.work_items import WorkItem
 from control_plane.models.worker_leases import WorkerLease
 from control_plane.models.worker_machines import WorkerMachine
 from control_plane.services.lease_service import acquire_next_lease, expire_stale_leases, heartbeat_lease
-from control_plane.services.scheduler import assign_work_item
+from control_plane.services.scheduler import NoEligibleWorkItem, assign_work_item
 
 
 def make_session() -> Session:
@@ -106,6 +107,67 @@ def test_acquire_next_lease_selects_matching_highest_priority_item() -> None:
         assert item_b.state == WorkItemState.LEASED
         lease = session.query(WorkerLease).filter_by(lease_token=result.lease_token).one()
         assert lease.status == LeaseStatus.ACTIVE
+
+
+def test_acquire_next_lease_blocks_parallel_work_behind_exclusive_block_sweep() -> None:
+    with make_session() as session:
+        _, item_b = seed_ready_items(session)
+        from control_plane.services.lease_service import upsert_worker_machine
+
+        upsert_worker_machine(session, machine_key="machine-1", slot_capacity=16)
+        item_b.command_manifest = [
+            {"name": "ppa", "run": "python3 npu/synth/run_block_sweep.py --sweep sweep.json"}
+        ]
+        assign_work_item(session, item_id=item_b.item_id, machine_key="machine-1")
+        acquired = acquire_next_lease(
+            session,
+            machine_key="machine-1",
+            capabilities={"platform": "nangate45", "flow": "openroad"},
+            lease_seconds=900,
+            slot_capacity=16,
+        )
+        assert acquired.item_id == item_b.item_id
+
+        task = TaskRequest(
+            request_key="queue:item_c",
+            source="test",
+            requested_by="tester",
+            title="item c",
+            description="objective c",
+            layer="layer2",
+            flow="openroad",
+            priority=4,
+            request_payload={"item_id": "item_c"},
+        )
+        session.add(task)
+        session.flush()
+        item_c = WorkItem(
+            work_item_key="queue:item_c",
+            task_request_id=task.id,
+            item_id="item_c",
+            layer="layer2",
+            flow="openroad",
+            platform="nangate45",
+            task_type="l2_campaign",
+            state=WorkItemState.DISPATCH_PENDING,
+            priority=4,
+            input_manifest={},
+            command_manifest=[],
+            expected_outputs=[],
+            acceptance_rules=[],
+        )
+        session.add(item_c)
+        session.commit()
+        assign_work_item(session, item_id=item_c.item_id, machine_key="machine-1")
+
+        with pytest.raises(NoEligibleWorkItem, match="exclusive work"):
+            acquire_next_lease(
+                session,
+                machine_key="machine-1",
+                capabilities={"platform": "nangate45", "flow": "openroad"},
+                lease_seconds=900,
+                slot_capacity=16,
+            )
 
 
 def test_acquire_next_lease_persists_capability_filter() -> None:
