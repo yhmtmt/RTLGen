@@ -1,0 +1,113 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-07-01T10:16:21.663748Z",
+  "item_id": "l1_decoder_attention_dual_stream_composed_q20_q24_pwl_recip_seqdiv_ppa_v1",
+  "run_key": "l1_decoder_attention_dual_stream_composed_q20_q24_pwl_recip_seqdiv_ppa_v1_run_d51696a71badc45f",
+  "layer": "layer1",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l1_sweep",
+  "source_commit": "78a9417eebf722c68ebe6ace381856125452e8aa",
+  "objective": "Measure Nangate45 PPA for q20 and q24 PWL sequential reciprocal composed dual-stream attention datapaths after compact combinational reciprocal divider boundary failure.",
+  "input_manifest": {
+    "sweeps": [
+      "runs/campaigns/npu/attention_dual_stream_composed_v1/sweeps/nangate45_dual_stream_composed_hier_q20_q24_pwl_recip_seqdiv.json"
+    ],
+    "configs": [
+      "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q20_pwl_recip_seqdiv_q20_bucket8_lat40/config.json",
+      "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q24_pwl_recip_seqdiv_q24_bucket8_lat48/config.json"
+    ],
+    "out_root": "runs/designs/npu_blocks",
+    "design_dirs": [],
+    "macro_manifests": [],
+    "candidate_manifests": [],
+    "required_submodules": []
+  },
+  "proposal_count": 0,
+  "evaluation_record": {
+    "evaluation_mode": "measurement_only",
+    "abstraction_layer": "decoder_attention_dual_stream_composed_datapath",
+    "result_kind": "boundary_evidence",
+    "physical_metrics_present": false,
+    "summary": "No status=ok Layer 1 rows were produced; non-ok metrics rows are recorded as explicit boundary evidence.",
+    "boundary_status_counts": {
+      "flow_failed": 4
+    }
+  },
+  "proposal_assessment": {
+    "outcome": "boundary_no_feasible_points",
+    "summary": "All current Layer 1 metrics rows are non-ok; this is accepted as frontier boundary evidence, not a promotable design point.",
+    "failure_row_count": 4
+  },
+  "proposals": [],
+  "trial_summary": {
+    "item_id": "l1_decoder_attention_dual_stream_composed_q20_q24_pwl_recip_seqdiv_ppa_v1",
+    "completed_trials": 1,
+    "success_count": 0,
+    "failure_count": 1,
+    "success_rate": 0.0,
+    "metrics": {}
+  },
+  "source_refs": {
+    "trial_metrics_csvs": [
+      "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q20_pwl_recip_seqdiv_q20_bucket8_lat40/metrics.csv",
+      "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q24_pwl_recip_seqdiv_q24_bucket8_lat48/metrics.csv"
+    ],
+    "summary_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_dual_stream_composed_q20_q24_pwl_recip_seqdiv_ppa_v1/summary_stats.json",
+    "failure_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_dual_stream_composed_q20_q24_pwl_recip_seqdiv_ppa_v1/failure_stats.json",
+    "trial_table_csv": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_dual_stream_composed_q20_q24_pwl_recip_seqdiv_ppa_v1/trial_table.csv"
+  },
+  "boundary_evidence": {
+    "row_count": 4,
+    "rows": [
+      {
+        "metrics_csv": "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q20_pwl_recip_seqdiv_q20_bucket8_lat40/metrics.csv",
+        "status": "flow_failed",
+        "design": "attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q20_pwl_recip_seqdiv_q20_bucket8_lat40",
+        "platform": "nangate45",
+        "config_hash": "f05abb729d3d",
+        "param_hash": "dbdbe032",
+        "tag": "attention_dual_stream_composed_v1_hier_q20_q24_pwl_recip_seqdiv",
+        "result_path": "/orfs/flow/logs/nangate45/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q20_pwl_recip_seqdiv_q20_bucket8_lat40/attention_dual_stream_composed_v1_hier_q20_q24_pwl_recip_seqdiv",
+        "work_result_json": "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q20_pwl_recip_seqdiv_q20_bucket8_lat40/work/dbdbe032/result.json",
+        "params_json": "{\"CLOCK_PERIOD\": 10.0, \"CORE_AREA\": \"50 50 2450 2450\", \"CORE_UTILIZATION\": \"\", \"DIE_AREA\": \"0 0 2500 2500\", \"FLOW_VARIANT\": \"attention_dual_stream_composed_v1_hier_q20_q24_pwl_recip_seqdiv\", \"PLACE_DENSITY\": 0.3, \"SYNTH_HIERARCHICAL\": 1, \"SYNTH_KEEP_MODULES\": \"int8_mac_s8s8_acc24 attention_softmax_weight_q20_pwl_recip_seqdiv_like attention_softmax_weight_q24_pwl_recip_seqdiv_like attention_full_value_stream_q8v8_p8_ppc2\", \"SYNTH_MEMORY_MAX_BITS\": 65536, \"TAG\": \"attention_dual_stream_composed_v1_hier_q20_q24_pwl_recip_seqdiv\", \"tag_prefix\": \"attention_dual_stream_composed_v1_hier_q20_q24_pwl_recip_seqdiv\"}"
+      },
+      {
+        "metrics_csv": "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q20_pwl_recip_seqdiv_q20_bucket8_lat40/metrics.csv",
+        "status": "flow_failed",
+        "design": "attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q20_pwl_recip_seqdiv_q20_bucket8_lat40",
+        "platform": "nangate45",
+        "config_hash": "f05abb729d3d",
+        "param_hash": "3cfc56ea",
+        "tag": "attention_dual_stream_composed_v1_hier_q20_q24_pwl_recip_seqdiv",
+        "result_path": "/orfs/flow/logs/nangate45/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q20_pwl_recip_seqdiv_q20_bucket8_lat40/attention_dual_stream_composed_v1_hier_q20_q24_pwl_recip_seqdiv",
+        "work_result_json": "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q20_pwl_recip_seqdiv_q20_bucket8_lat40/work/3cfc56ea/result.json",
+        "params_json": "{\"CLOCK_PERIOD\": 10.0, \"CORE_AREA\": \"50 50 2450 2450\", \"CORE_UTILIZATION\": \"\", \"DIE_AREA\": \"0 0 2500 2500\", \"FLOW_VARIANT\": \"attention_dual_stream_composed_v1_hier_q20_q24_pwl_recip_seqdiv\", \"PLACE_DENSITY\": 0.4, \"SYNTH_HIERARCHICAL\": 1, \"SYNTH_KEEP_MODULES\": \"int8_mac_s8s8_acc24 attention_softmax_weight_q20_pwl_recip_seqdiv_like attention_softmax_weight_q24_pwl_recip_seqdiv_like attention_full_value_stream_q8v8_p8_ppc2\", \"SYNTH_MEMORY_MAX_BITS\": 65536, \"TAG\": \"attention_dual_stream_composed_v1_hier_q20_q24_pwl_recip_seqdiv\", \"tag_prefix\": \"attention_dual_stream_composed_v1_hier_q20_q24_pwl_recip_seqdiv\"}"
+      },
+      {
+        "metrics_csv": "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q24_pwl_recip_seqdiv_q24_bucket8_lat48/metrics.csv",
+        "status": "flow_failed",
+        "design": "attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q24_pwl_recip_seqdiv_q24_bucket8_lat48",
+        "platform": "nangate45",
+        "config_hash": "5ca35260ee07",
+        "param_hash": "dbdbe032",
+        "tag": "attention_dual_stream_composed_v1_hier_q20_q24_pwl_recip_seqdiv",
+        "result_path": "/orfs/flow/logs/nangate45/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q24_pwl_recip_seqdiv_q24_bucket8_lat48/attention_dual_stream_composed_v1_hier_q20_q24_pwl_recip_seqdiv",
+        "work_result_json": "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q24_pwl_recip_seqdiv_q24_bucket8_lat48/work/dbdbe032/result.json",
+        "params_json": "{\"CLOCK_PERIOD\": 10.0, \"CORE_AREA\": \"50 50 2450 2450\", \"CORE_UTILIZATION\": \"\", \"DIE_AREA\": \"0 0 2500 2500\", \"FLOW_VARIANT\": \"attention_dual_stream_composed_v1_hier_q20_q24_pwl_recip_seqdiv\", \"PLACE_DENSITY\": 0.3, \"SYNTH_HIERARCHICAL\": 1, \"SYNTH_KEEP_MODULES\": \"int8_mac_s8s8_acc24 attention_softmax_weight_q20_pwl_recip_seqdiv_like attention_softmax_weight_q24_pwl_recip_seqdiv_like attention_full_value_stream_q8v8_p8_ppc2\", \"SYNTH_MEMORY_MAX_BITS\": 65536, \"TAG\": \"attention_dual_stream_composed_v1_hier_q20_q24_pwl_recip_seqdiv\", \"tag_prefix\": \"attention_dual_stream_composed_v1_hier_q20_q24_pwl_recip_seqdiv\"}"
+      },
+      {
+        "metrics_csv": "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q24_pwl_recip_seqdiv_q24_bucket8_lat48/metrics.csv",
+        "status": "flow_failed",
+        "design": "attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q24_pwl_recip_seqdiv_q24_bucket8_lat48",
+        "platform": "nangate45",
+        "config_hash": "5ca35260ee07",
+        "param_hash": "3cfc56ea",
+        "tag": "attention_dual_stream_composed_v1_hier_q20_q24_pwl_recip_seqdiv",
+        "result_path": "/orfs/flow/logs/nangate45/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q24_pwl_recip_seqdiv_q24_bucket8_lat48/attention_dual_stream_composed_v1_hier_q20_q24_pwl_recip_seqdiv",
+        "work_result_json": "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q24_pwl_recip_seqdiv_q24_bucket8_lat48/work/3cfc56ea/result.json",
+        "params_json": "{\"CLOCK_PERIOD\": 10.0, \"CORE_AREA\": \"50 50 2450 2450\", \"CORE_UTILIZATION\": \"\", \"DIE_AREA\": \"0 0 2500 2500\", \"FLOW_VARIANT\": \"attention_dual_stream_composed_v1_hier_q20_q24_pwl_recip_seqdiv\", \"PLACE_DENSITY\": 0.4, \"SYNTH_HIERARCHICAL\": 1, \"SYNTH_KEEP_MODULES\": \"int8_mac_s8s8_acc24 attention_softmax_weight_q20_pwl_recip_seqdiv_like attention_softmax_weight_q24_pwl_recip_seqdiv_like attention_full_value_stream_q8v8_p8_ppc2\", \"SYNTH_MEMORY_MAX_BITS\": 65536, \"TAG\": \"attention_dual_stream_composed_v1_hier_q20_q24_pwl_recip_seqdiv\", \"tag_prefix\": \"attention_dual_stream_composed_v1_hier_q20_q24_pwl_recip_seqdiv\"}"
+      }
+    ]
+  }
+}
