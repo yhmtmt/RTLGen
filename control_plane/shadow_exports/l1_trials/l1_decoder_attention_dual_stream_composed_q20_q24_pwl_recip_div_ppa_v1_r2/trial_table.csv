@@ -1,0 +1,2 @@
+run_key,attempt,trial_index,seed,status,metrics_csv,critical_path_ns,die_area,total_power_mw,failure_category,failure_stage,failure_signature
+l1_decoder_attention_dual_stream_composed_q20_q24_pwl_recip_div_ppa_v1_r2_run_cb97d0cbe3e1ac59,1,1,0,succeeded,,,,,none,,
