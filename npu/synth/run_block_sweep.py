@@ -48,6 +48,70 @@ def sha1_verilog_dir(verilog_dir: Path) -> str:
     return hashlib.sha1(payload.encode()).hexdigest()[:12]
 
 
+def parse_boolish(value: object, default: bool = False) -> bool:
+    if value is None:
+        return default
+    if isinstance(value, bool):
+        return value
+    text = str(value).strip().lower()
+    if text in {"1", "true", "yes", "on"}:
+        return True
+    if text in {"0", "false", "no", "off"}:
+        return False
+    return bool(text)
+
+
+def synth_keep_module_names(value: object) -> List[str]:
+    if value is None:
+        return []
+    raw_items: List[str] = []
+    if isinstance(value, list):
+        raw_items = [str(item) for item in value]
+    else:
+        raw_items = [str(value)]
+    names: List[str] = []
+    for raw in raw_items:
+        names.extend(token.strip() for token in raw.split() if token.strip())
+    return names
+
+
+def verilog_module_names(verilog_dir: Path) -> set[str]:
+    names: set[str] = set()
+    pattern = re.compile(r"^\s*module\s+([A-Za-z_][A-Za-z0-9_$]*)\b")
+    for path in sorted(verilog_dir.glob("*.v")):
+        for line in path.read_text(encoding="utf-8", errors="ignore").splitlines():
+            match = pattern.match(line)
+            if match:
+                names.add(match.group(1))
+    return names
+
+
+def validate_synth_keep_modules(
+    *,
+    verilog_dir: Path,
+    sweep_params: Dict[str, object],
+    macro_manifest: Optional[Dict[str, object]],
+) -> None:
+    if not parse_boolish(sweep_params.get("CHECK_SYNTH_KEEP_MODULES"), default=True):
+        return
+    requested = synth_keep_module_names(sweep_params.get("SYNTH_KEEP_MODULES"))
+    if not requested:
+        return
+    available = verilog_module_names(verilog_dir)
+    if macro_manifest is not None:
+        available.update(
+            str(name).strip()
+            for name in macro_manifest.get("blackboxes", [])
+            if str(name).strip()
+        )
+    missing = sorted(name for name in requested if name not in available)
+    if missing:
+        raise ValueError(
+            "SYNTH_KEEP_MODULES references modules not present in generated RTL: "
+            f"{', '.join(missing)}. Available modules: {', '.join(sorted(available))}"
+        )
+
+
 def load_json(path: Path):
     with path.open() as f:
         return json.load(f)
@@ -1633,6 +1697,11 @@ def run_single(design_dir: Path, design_name: str, platform: str, top: str, veri
             "compare_group": compare_group,
         }
 
+    validate_synth_keep_modules(
+        verilog_dir=verilog_dir,
+        sweep_params=sweep_params,
+        macro_manifest=macro_manifest,
+    )
     ensure_design_assets(
         design_name,
         platform,
