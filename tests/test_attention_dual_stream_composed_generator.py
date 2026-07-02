@@ -17,6 +17,7 @@ def _write_config(
     softmax_weight_bits: int | None = None,
     reciprocal_bits: int | None = None,
     value_bits: int | None = None,
+    semantic_profile: str | None = None,
     softmax_input_frac_bits: int | None = None,
     softmax_reciprocal_lut_bucket_shift: int | None = None,
     softmax_reciprocal_div_cycles: int | None = None,
@@ -55,6 +56,8 @@ def _write_config(
         comp["reciprocal_bits"] = reciprocal_bits
     if value_bits is not None:
         comp["value_bits"] = value_bits
+    if semantic_profile is not None:
+        comp["semantic_profile"] = semantic_profile
     if softmax_input_frac_bits is not None:
         comp["softmax_input_frac_bits"] = softmax_input_frac_bits
     if softmax_reciprocal_lut_bucket_shift is not None:
@@ -128,6 +131,7 @@ def test_attention_dual_stream_composed_generator_ppa_guard_and_syntax(tmp_path:
     assert manifest["value_lanes_per_stream"] == 4
     assert manifest["equivalence_hash"] is False
     assert manifest["softmax_impl"] == "exact_div"
+    assert manifest["semantic_profile"] == "fixed_point"
     assert manifest["softmax_pipeline_stages"] == 0
     assert manifest["softmax_internal_pipeline_stages"] == 0
     assert manifest["softmax_latency_stages"] == 1
@@ -141,6 +145,72 @@ def test_attention_dual_stream_composed_generator_ppa_guard_and_syntax(tmp_path:
     assert "result_hash" not in top_text
     assert "softmax_weight_hash" not in top_text
     assert "softmax_scores_pipe_0" not in top_text
+
+
+def test_attention_dual_stream_composed_generator_rejects_float_quality_profile_alias(tmp_path: Path) -> None:
+    design_dir = tmp_path / "attention_dual_stream_composed_qkv8_alias"
+    config_path = design_dir / "config.json"
+    _write_config(
+        config_path,
+        semantic_profile="qkv8_float_exact",
+        mac_accum_bits=32,
+        softmax_score_bits=32,
+        softmax_weight_bits=16,
+        reciprocal_bits=16,
+        value_bits=8,
+        softmax_impl="exact_div",
+    )
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "npu/rtlgen/gen_attention_dual_stream_composed.py",
+            "--config",
+            str(config_path),
+            "--out",
+            str(design_dir / "verilog"),
+        ],
+        check=False,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+
+    assert result.returncode != 0
+    assert "requires a distinct floating or near-exact softmax implementation" in result.stderr
+
+
+def test_attention_dual_stream_composed_guard_rejects_float_quality_profile_alias(tmp_path: Path) -> None:
+    design_dir = tmp_path / "attention_dual_stream_composed_guard_qkv8_alias"
+    config_path = design_dir / "config.json"
+    _write_config(
+        config_path,
+        mac_accum_bits=32,
+        softmax_score_bits=32,
+        softmax_weight_bits=16,
+        reciprocal_bits=16,
+        value_bits=8,
+        softmax_impl="recip_lut",
+    )
+    _generate_and_check(design_dir, config_path, run_composed_guard=False)
+    manifest_path = design_dir / "verilog" / "attention_dual_stream_composed_manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["semantic_profile"] = "score32_float"
+    manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "npu/eval/check_attention_dual_stream_composed_guard.py",
+            "--design-dir",
+            str(design_dir),
+        ],
+        check=False,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+
+    assert result.returncode != 0
+    assert "requires a distinct floating or near-exact softmax implementation" in result.stderr
 
 
 def test_attention_dual_stream_composed_generator_equivalence_hash_mode(tmp_path: Path) -> None:

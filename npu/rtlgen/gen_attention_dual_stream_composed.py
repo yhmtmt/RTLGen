@@ -43,6 +43,29 @@ def _as_str(config: dict[str, Any], key: str, default: str) -> str:
     return str(config.get(key, default)).strip()
 
 
+_INTEGER_SOFTMAX_IMPLS = {
+    "exact_div",
+    "pow2sum",
+    "recip_lut",
+    "pwl_recip_lut",
+    "pwl_recip_div",
+    "pwl_recip_seqdiv",
+}
+_QUALITY_BACKED_FLOAT_PROFILES = {"qkv8_float_exact", "score32_float"}
+_SUPPORTED_SEMANTIC_PROFILES = _QUALITY_BACKED_FLOAT_PROFILES | {
+    "fixed_point",
+    "score24_w16_exact_div",
+    "score32_w16_exact_div",
+    "score32_w16_recip_lut_q16",
+    "q12_pwl_recip_lut",
+    "q20_pwl_recip_lut",
+    "q20_pwl_recip_div",
+    "q20_pwl_recip_seqdiv",
+    "q24_pwl_recip_div",
+    "q24_pwl_recip_seqdiv",
+}
+
+
 def _validate(cfg: dict[str, Any]) -> dict[str, Any]:
     comp = cfg.get("attention_dual_stream_composed")
     if not isinstance(comp, dict):
@@ -60,6 +83,7 @@ def _validate(cfg: dict[str, Any]) -> dict[str, Any]:
     softmax_pipeline_stages = _as_int(comp, "softmax_pipeline_stages", 0)
     softmax_internal_pipeline_stages = _as_int(comp, "softmax_internal_pipeline_stages", 0)
     softmax_impl = _as_str(comp, "softmax_impl", "exact_div")
+    semantic_profile = _as_str(comp, "semantic_profile", "fixed_point")
     mac_accum_bits = _as_int(comp, "mac_accum_bits", 24)
     softmax_score_bits = _as_int(comp, "softmax_score_bits", 8)
     softmax_weight_bits = _as_int(comp, "softmax_weight_bits", 8)
@@ -117,10 +141,21 @@ def _validate(cfg: dict[str, Any]) -> dict[str, Any]:
         raise SystemExit("attention_dual_stream_composed.softmax_input_frac_bits must be in [0, 16]")
     if softmax_reciprocal_lut_bucket_shift < 0 or softmax_reciprocal_lut_bucket_shift > 12:
         raise SystemExit("attention_dual_stream_composed.softmax_reciprocal_lut_bucket_shift must be in [0, 12]")
-    if softmax_impl not in {"exact_div", "pow2sum", "recip_lut", "pwl_recip_lut", "pwl_recip_div", "pwl_recip_seqdiv"}:
+    if softmax_impl not in _INTEGER_SOFTMAX_IMPLS:
         raise SystemExit(
             "attention_dual_stream_composed.softmax_impl must be exact_div, pow2sum, recip_lut, "
             "pwl_recip_lut, pwl_recip_div, or pwl_recip_seqdiv"
+        )
+    if semantic_profile not in _SUPPORTED_SEMANTIC_PROFILES:
+        raise SystemExit(
+            "attention_dual_stream_composed.semantic_profile must be one of: "
+            + ", ".join(sorted(_SUPPORTED_SEMANTIC_PROFILES))
+        )
+    if semantic_profile in _QUALITY_BACKED_FLOAT_PROFILES and softmax_impl in _INTEGER_SOFTMAX_IMPLS:
+        raise SystemExit(
+            "attention_dual_stream_composed.semantic_profile="
+            f"{semantic_profile} requires a distinct floating or near-exact softmax implementation; "
+            f"softmax_impl={softmax_impl} is a fixed-point diagnostic implementation"
         )
     if softmax_internal_pipeline_stages and softmax_impl != "exact_div":
         raise SystemExit("attention_dual_stream_composed.softmax_internal_pipeline_stages requires exact_div")
@@ -136,6 +171,7 @@ def _validate(cfg: dict[str, Any]) -> dict[str, Any]:
                 "reciprocal_bits + softmax_weight_bits for the current one-bit-per-cycle seqdiv"
             )
     comp["softmax_reciprocal_div_cycles"] = softmax_reciprocal_div_cycles
+    comp["semantic_profile"] = semantic_profile
     return comp
 
 
@@ -1027,6 +1063,7 @@ def _write_top(*, cfg: dict[str, Any], comp: dict[str, Any], out_path: Path) -> 
     softmax_pipeline_stages = _as_int(comp, "softmax_pipeline_stages", 0)
     softmax_internal_pipeline_stages = _as_int(comp, "softmax_internal_pipeline_stages", 0)
     softmax_impl = _as_str(comp, "softmax_impl", "exact_div")
+    semantic_profile = _as_str(comp, "semantic_profile", "fixed_point")
     score_mix_bits = mac_accum_bits
     softmax_latency_stages = (
         softmax_reciprocal_div_cycles if softmax_impl == "pwl_recip_seqdiv" else 1 + softmax_internal_pipeline_stages
@@ -1345,6 +1382,7 @@ endmodule
         "stream_buffer_bits_per_stream": stream_buffer_bits,
         "equivalence_hash": equivalence_hash,
         "softmax_impl": softmax_impl,
+        "semantic_profile": semantic_profile,
         "softmax_pipeline_stages": softmax_pipeline_stages,
         "softmax_internal_pipeline_stages": softmax_internal_pipeline_stages,
         "softmax_latency_stages": softmax_latency_stages,
