@@ -1,0 +1,27 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_composed_datapath_score32_exp_lut_div_command_overhead_llama7b_v1",
+  "source_commit_note": "Dispatch should use the merge commit that adds command-overhead override support to the dual-stream composed recost path.",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_command_overhead_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Recost the score32 exp-LUT divider composed datapath under nonzero command-dispatch cycle assumptions after quality and L1 PPA conditions are met.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_composed_datapath_physical_feasibility",
+      "comparison_role": "score32_exp_lut_div_command_overhead_recost",
+      "paired_baseline_item_id": "l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_llama7b_v1",
+      "depends_on_item_ids": [
+        "l1_decoder_attention_dual_stream_composed_score32_exp_lut_div_b20_ppa_v1",
+        "l2_decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality_llama7b_v1",
+        "l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "run_physical": false,
+      "expected_result": {
+        "direction": "bound_command_overhead_on_exp_lut_composed_datapath",
+        "reason": "Sweep nonzero per-tile and per-wave command cycles in the same exp-LUT reduced-replica recost path; do not mark quality-backed if the exp-LUT quality gate fails."
+      }
+    }
+  ]
+}
