@@ -187,6 +187,24 @@ def _resolve_requested_entry_text(
     return candidate or None
 
 
+def _resolve_requested_entry_expected_result_text(
+    entry: dict[str, Any] | None,
+    *,
+    key: str,
+    explicit: str | None,
+) -> str | None:
+    resolved = str(explicit or "").strip()
+    if resolved:
+        return resolved
+    if not isinstance(entry, dict):
+        return None
+    expected_result = entry.get("expected_result")
+    if not isinstance(expected_result, dict):
+        return None
+    candidate = str(expected_result.get(key, "")).strip()
+    return candidate or None
+
+
 def _resolve_requested_entry_list(
     entry: dict[str, Any] | None,
     *,
@@ -9575,6 +9593,16 @@ def generate_l2_campaign_task(session: Session, request: Layer2CampaignGenerateR
         key="requires_materialized_refs",
         explicit=request.requires_materialized_refs,
     )
+    effective_expected_direction = _resolve_requested_entry_expected_result_text(
+        requested_entry,
+        key="direction",
+        explicit=request.expected_direction,
+    )
+    effective_expected_reason = _resolve_requested_entry_expected_result_text(
+        requested_entry,
+        key="reason",
+        explicit=request.expected_reason,
+    )
     source_commit = _resolve_source_commit(repo_root, request.source_commit)
     if request.update_proposal_files:
         _upsert_requested_item_entry(
@@ -9591,8 +9619,8 @@ def generate_l2_campaign_task(session: Session, request: Layer2CampaignGenerateR
             depends_on_item_ids=effective_depends_on_item_ids,
             requires_merged_inputs=effective_requires_merged_inputs,
             requires_materialized_refs=effective_requires_materialized_refs,
-            expected_direction=request.expected_direction,
-            expected_reason=request.expected_reason,
+            expected_direction=effective_expected_direction,
+            expected_reason=effective_expected_reason,
             source_commit=source_commit,
         )
     expected_outputs = _build_expected_outputs(
@@ -9622,8 +9650,8 @@ def generate_l2_campaign_task(session: Session, request: Layer2CampaignGenerateR
         proposal_path=proposal_path,
         evaluation_mode=effective_evaluation_mode,
         abstraction_layer=effective_abstraction_layer,
-        expected_direction=request.expected_direction,
-        expected_reason=request.expected_reason,
+        expected_direction=effective_expected_direction,
+        expected_reason=effective_expected_reason,
         comparison_role=effective_comparison_role,
         paired_baseline_item_id=effective_paired_baseline_item_id,
         depends_on_item_ids=effective_depends_on_item_ids,

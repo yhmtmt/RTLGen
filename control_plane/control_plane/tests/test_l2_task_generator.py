@@ -119,7 +119,9 @@ def _write_q20_pwl_recip_div_recost_proposal(repo_root: Path) -> None:
                             "l2_decoder_attention_composed_datapath_score32_w16_recip_lut_q16_reduced_replica_llama7b_v1"
                         ),
                         "depends_on_item_ids": [
-                            "l1_decoder_attention_dual_stream_composed_q20_pwl_recip_div_ppa_v2"
+                            "l1_decoder_attention_dual_stream_composed_q20_pwl_recip_div_ppa_v2",
+                            "l2_decoder_attention_composed_datapath_score32_w16_recip_lut_q16_reduced_replica_llama7b_v1",
+                            "l2_decoder_attention_kv_subtile_pipeline_schedule_softmax_recip_lut_llama7b_v1",
                         ],
                         "requires_merged_inputs": True,
                         "requires_materialized_refs": True,
@@ -6241,8 +6243,14 @@ def test_generate_l2_campaign_task_adds_attention_composed_datapath_q20_pwl_reci
             )
             assert payload["developer_loop"]["comparison"]["role"] == "q20_pwl_recip_div_reduced_replica_recost"
             assert payload["developer_loop"]["dependencies"]["item_ids"] == [
-                "l1_decoder_attention_dual_stream_composed_q20_pwl_recip_div_ppa_v2"
+                "l1_decoder_attention_dual_stream_composed_q20_pwl_recip_div_ppa_v2",
+                "l2_decoder_attention_composed_datapath_score32_w16_recip_lut_q16_reduced_replica_llama7b_v1",
+                "l2_decoder_attention_kv_subtile_pipeline_schedule_softmax_recip_lut_llama7b_v1",
             ]
+            assert payload["developer_loop"]["evaluation"]["expected_direction"] == (
+                "record_q20_pwl_recip_div_area_fit_recost"
+            )
+            assert payload["developer_loop"]["evaluation"]["expected_reason"] == "q20 boundary recost"
             assert decoder_inputs["attention_kv_composed_dual_stream_metrics"] == (
                 "runs/designs/npu_blocks/"
                 "attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q20_pwl_recip_div_q20_bucket8/"
