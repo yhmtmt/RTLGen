@@ -1,0 +1,15 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_dual_stream_composed_pwl_recip_corrected_keep_modules_v1",
+  "candidate_id": "l1_decoder_attention_dual_stream_composed_q20_pwl_recip_div_ppa_v2",
+  "decision": "promote",
+  "reason": "Accepted Layer 1 physical metrics were merged in PR #1105 for the current candidate.",
+  "evidence_refs": [
+    "item:l1_decoder_attention_dual_stream_composed_q20_pwl_recip_div_ppa_v2",
+    "run:l1_decoder_attention_dual_stream_composed_q20_pwl_recip_div_ppa_v2_run_be4c3fe0bd5b7837",
+    "artifact:control_plane/shadow_exports/l1_promotions/l1_decoder_attention_dual_stream_composed_q20_pwl_recip_div_ppa_v2.json",
+    "pr:#1105",
+    "https://github.com/yhmtmt/RTLGen/pull/1105"
+  ],
+  "next_action": "inspect the next dependent item",
+  "requires_human_approval": false
+}

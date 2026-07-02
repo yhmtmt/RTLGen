@@ -296,9 +296,21 @@
       "expected_result": {
         "resource_recovery": "Supersedes the two-density item l1_decoder_attention_dual_stream_composed_q24_pwl_recip_seqdiv_ppa_v2 for crash recovery; preserve any valid v2 result if it completes, but use this pd40 item as the retry shape."
       }
+    },
+    {
+      "item_id": "l1_decoder_attention_dual_stream_composed_q20_pwl_recip_div_ppa_v2",
+      "task_type": "l1_sweep",
+      "objective": "Rerun q20 compact reciprocal PWL composed attention PPA with a q20-only keep-module sweep.",
+      "evaluation_mode": "frontier_correction",
+      "abstraction_layer": "decoder_attention_dual_stream_composed_datapath",
+      "status": "merged",
+      "merged_pr_number": 1105,
+      "merge_commit": "189e72ebd664599000454559d4b77df80e6f0ad2",
+      "merged_utc": "2026-07-02T01:51:03.930715Z",
+      "notes": "Merged via PR #1105 and merge 189e72ebd664599000454559d4b77df80e6f0ad2 at 2026-07-02T01:51:03.930715Z."
     }
   ],
-  "source_commit": "53f922aa7778e634be3b34c3e978ad296724ddc8",
+  "source_commit": "e955237e6164bbaa2a6817a87ba689c7df4a7345",
   "resource_recovery": {
     "reason": "remote evaluator froze while running the corrected reciprocal PPA block sweep; split each density point into its own item",
     "superseded_item_ids": [
