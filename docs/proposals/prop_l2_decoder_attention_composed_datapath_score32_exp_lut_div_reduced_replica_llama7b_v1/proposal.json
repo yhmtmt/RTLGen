@@ -1,0 +1,72 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_llama7b_v1",
+  "created_utc": "2026-07-02T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Llama7B score32 exp-LUT divider composed datapath reduced-replica recost",
+  "abstraction_layer": "decoder_attention_composed_datapath_physical_feasibility",
+  "hypothesis": "The score32 exp-LUT divider composed datapath should be recosted at the measured area-fit replica count, but only after the exp-LUT divider quality gate passes and the L1 exp-LUT PPA datapath run is available.",
+  "direct_comparison": {
+    "primary_question": "What Llama7B latency/area/energy point is defined by the measured score32 exp-LUT divider composed datapath when bound by the same reduced-replica constraints?",
+    "baseline": "l2_decoder_attention_composed_datapath_score32_w16_exact_div_reduced_replica_llama7b_v1_r2",
+    "candidate": "l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_llama7b_v1",
+    "candidate_id": "score32_exp_lut_div",
+    "include": [
+      "load measured score32 exp-LUT divider composed datapath PPA artifacts",
+      "recompute Llama7B QKV, tile service, layer, and total latency at measured wrapper clock",
+      "record area-fit replica count and latency row under quality-gated candidate condition"
+    ],
+    "exclude": [
+      "new native-checkpoint quality campaign",
+      "new router/HBM/DRAM service model work",
+      "new L1 datapath synthesis"
+    ],
+    "metrics": [
+      "decision",
+      "precision_profile",
+      "best_requested_replica_recost_area_fit_replica_count",
+      "best_requested_replica_recost_latency_us",
+      "best_requested_replica_recost_energy_pj"
+    ]
+  },
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Recost the score32 exp-LUT divider composed datapath for Llama7B at the area-fit replica count once quality and L1 PPA inputs are available.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_composed_datapath_physical_feasibility",
+      "comparison_role": "score32_exp_lut_div_reduced_replica_recost",
+      "paired_baseline_item_id": "l2_decoder_attention_composed_datapath_score32_w16_exact_div_reduced_replica_llama7b_v1_r2",
+      "depends_on_item_ids": [
+        "l1_decoder_attention_dual_stream_composed_score32_exp_lut_div_b20_ppa_v1",
+        "l2_decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality_llama7b_v1",
+        "l2_decoder_attention_composed_datapath_score32_w16_exact_div_reduced_replica_llama7b_v1_r2"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "run_physical": false,
+      "expected_result": {
+        "direction": "recost_exp_lut_div_composed_datapath_after_quality_gate_and_l1_ppa",
+        "reason": "Recost the exp-LUT composed datapath only after the L1 exp-LUT divider gate is available and the L2 quality gate passes; do not treat this as quality-backed until the quality decision is affirmative."
+      }
+    }
+  ],
+  "source_refs": [
+    "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_score32_w16_exp_lut_div_b20/config.json",
+    "runs/campaigns/npu/attention_dual_stream_composed_v1/sweeps/nangate45_dual_stream_composed_hier_score32_w16_exp_lut_div_b20.json",
+    "npu/eval/estimate_llm_decoder_attention_kv_dual_stream_physical_feasibility.py",
+    "control_plane/control_plane/services/l2_task_generator.py",
+    "docs/proposals/prop_l2_decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality_llama7b_v1/proposal.json"
+  ],
+  "knowledge_refs": [
+    "docs/proposals/prop_l2_decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality_llama7b_v1/proposal.json",
+    "docs/proposals/prop_l1_decoder_attention_dual_stream_composed_score32_exp_lut_div_b20_v1/proposal.json"
+  ],
+  "remaining_abstractions": [
+    "This is a composed-PPA recost, not a new quality gate run.",
+    "The underlying service model remains inherited from the source Llama7B subtile schedule.",
+    "Do not promote this row as quality-backed unless the referenced quality gate is explicitly passing."
+  ]
+}
