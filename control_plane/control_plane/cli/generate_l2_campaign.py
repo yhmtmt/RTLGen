@@ -34,7 +34,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--expected-reason")
     parser.add_argument("--comparison-role")
     parser.add_argument("--paired-baseline-item-id")
-    parser.add_argument("--depends-on-item-id", action="append", default=[])
+    parser.add_argument("--depends-on-item-id", action="append")
     parser.add_argument("--requires-merged-inputs", action="store_true")
     parser.add_argument("--requires-materialized-refs", action="store_true")
     parser.add_argument("--no-run-physical", action="store_true")

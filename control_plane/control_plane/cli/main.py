@@ -144,7 +144,7 @@ def main(argv: list[str] | None = None) -> int:
     generate_l2_parser.add_argument("--expected-reason")
     generate_l2_parser.add_argument("--comparison-role")
     generate_l2_parser.add_argument("--paired-baseline-item-id")
-    generate_l2_parser.add_argument("--depends-on-item-id", action="append", default=[])
+    generate_l2_parser.add_argument("--depends-on-item-id", action="append")
     generate_l2_parser.add_argument("--requires-merged-inputs", action="store_true")
     generate_l2_parser.add_argument("--requires-materialized-refs", action="store_true")
     generate_l2_parser.add_argument("--no-run-physical", action="store_true")
