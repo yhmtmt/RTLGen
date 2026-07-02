@@ -9,6 +9,17 @@ import re
 from pathlib import Path
 
 
+INTEGER_SOFTMAX_IMPLS = {
+    "exact_div",
+    "pow2sum",
+    "recip_lut",
+    "pwl_recip_lut",
+    "pwl_recip_div",
+    "pwl_recip_seqdiv",
+}
+QUALITY_BACKED_FLOAT_PROFILES = {"qkv8_float_exact", "score32_float"}
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--design-dir", required=True)
@@ -29,6 +40,7 @@ def main() -> int:
     streams = int(manifest["streams"])
     equivalence_hash = bool(manifest.get("equivalence_hash", False))
     softmax_impl = str(manifest.get("softmax_impl", "exact_div"))
+    semantic_profile = str(manifest.get("semantic_profile", "fixed_point"))
     softmax_pipeline_stages = int(manifest.get("softmax_pipeline_stages", 0))
     softmax_internal_pipeline_stages = int(manifest.get("softmax_internal_pipeline_stages", 0))
     softmax_latency_stages = int(manifest.get("softmax_latency_stages", 1))
@@ -52,8 +64,13 @@ def main() -> int:
         raise SystemExit("expected exactly one shared softmax instance")
     if "stream_buf_0" not in top_text or "stream_buf_1" not in top_text:
         raise SystemExit("missing dual stream buffer registers")
-    if softmax_impl not in {"exact_div", "pow2sum", "recip_lut", "pwl_recip_lut", "pwl_recip_div", "pwl_recip_seqdiv"}:
+    if softmax_impl not in INTEGER_SOFTMAX_IMPLS:
         raise SystemExit(f"unsupported softmax_impl={softmax_impl}")
+    if semantic_profile in QUALITY_BACKED_FLOAT_PROFILES and softmax_impl in INTEGER_SOFTMAX_IMPLS:
+        raise SystemExit(
+            f"semantic_profile={semantic_profile} requires a distinct floating or near-exact softmax "
+            f"implementation; softmax_impl={softmax_impl} is fixed-point diagnostic hardware"
+        )
     if not 24 <= mac_accum_bits <= 32:
         raise SystemExit(f"unsupported mac_accum_bits={mac_accum_bits}")
     if not 2 <= softmax_score_bits <= 32:
@@ -201,6 +218,7 @@ def main() -> int:
                 "value_streams": value_instances,
                 "equivalence_hash": equivalence_hash,
                 "softmax_impl": softmax_impl,
+                "semantic_profile": semantic_profile,
                 "softmax_score_bits": softmax_score_bits,
                 "softmax_weight_bits": softmax_weight_bits,
                 "softmax_pipeline_stages": softmax_pipeline_stages,
