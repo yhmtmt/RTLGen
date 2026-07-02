@@ -9,6 +9,7 @@ import pytest
 from npu.eval.evaluate_llm_decoder_model_native_mixed_int8_attention import (
     _collect_reference_rows,
     _decision,
+    _exp_lut_div_softmax,
     _iter_llama_attention_modules,
     _load_runtime_modules,
     _load_prompts,
@@ -139,6 +140,21 @@ def test_pwl_softmax_uses_score_precision_for_input_fraction() -> None:
     )
 
     assert q12 != q24
+
+
+def test_exp_lut_div_softmax_mode_matches_range_and_precision() -> None:
+    logits = [1.0, 2.0, 0.5, 1.8]
+
+    q24 = _exp_lut_div_softmax(logits, score_bits=24, weight_bits=16, bucket_shift=12)
+    q32 = _exp_lut_div_softmax(logits, score_bits=32, weight_bits=16, bucket_shift=22)
+
+    assert len(q24) == len(logits)
+    assert len(q32) == len(logits)
+    assert max(range(len(q24)), key=q24.__getitem__) == 1
+    assert max(range(len(q32)), key=q32.__getitem__) == 1
+    assert all(0.0 <= value <= 1.0 for value in q24)
+    assert all(0.0 <= value <= 1.0 for value in q32)
+    assert q24 != q32
 
 
 def test_fake_attention_patch_quantizes_qkv_once_and_restores() -> None:
@@ -274,6 +290,12 @@ def test_parse_candidate_spec_and_list_compatibility() -> None:
     assert q16_rtl.score_bits == 32
     assert q16_rtl.weight_bits == 16
     assert q16_rtl.softmax_mode == "rtl_recip_lut_q16"
+
+    exp_lut = _parse_candidate_spec("score32_exp_lut_div:q8,k8,v8,s32,w16,exp_lut_div_bucket20")
+    assert exp_lut.candidate_id == "score32_exp_lut_div"
+    assert exp_lut.score_bits == 32
+    assert exp_lut.weight_bits == 16
+    assert exp_lut.softmax_mode == "exp_lut_div_bucket20"
 
     with pytest.raises(ValueError):
         _parse_candidate_spec("qkv8_score8:r8")

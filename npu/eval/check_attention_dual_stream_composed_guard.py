@@ -11,6 +11,7 @@ from pathlib import Path
 
 INTEGER_SOFTMAX_IMPLS = {
     "exact_div",
+    "exp_lut_div",
     "pow2sum",
     "recip_lut",
     "pwl_recip_lut",
@@ -140,6 +141,14 @@ def main() -> int:
             raise SystemExit("reciprocal-LUT replacement must not contain pow2 denominator shift logic")
         if "/ sum_weight" in top_text or "/ sum_weight_q" in top_text:
             raise SystemExit("reciprocal-LUT replacement must not contain a sum_weight divider")
+    if softmax_impl == "exp_lut_div":
+        for token in ("function [ACCUM_BITS-1:0] exp_lut", "EXP_BUCKET_SHIFT", "EXP_MAX_DELTA", "/ sum_weight"):
+            if token not in top_text:
+                raise SystemExit(f"missing exp-LUT exact-divider softmax token: {token}")
+        if "function [RECIPROCAL_WIDTH-1:0] reciprocal_lut" in top_text:
+            raise SystemExit("exp-LUT exact-divider mode must not contain reciprocal LUT normalization")
+        if "pwl_weight" in top_text:
+            raise SystemExit("exp-LUT exact-divider mode must not contain PWL exp approximation")
     if softmax_impl in {"pwl_recip_lut", "pwl_recip_div", "pwl_recip_seqdiv"}:
         if softmax_score_bits < 12 or softmax_weight_bits < 12:
             raise SystemExit("PWL reciprocal softmax should keep at least 12-bit scores and weights")

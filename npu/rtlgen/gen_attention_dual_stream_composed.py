@@ -45,6 +45,7 @@ def _as_str(config: dict[str, Any], key: str, default: str) -> str:
 
 _INTEGER_SOFTMAX_IMPLS = {
     "exact_div",
+    "exp_lut_div",
     "pow2sum",
     "recip_lut",
     "pwl_recip_lut",
@@ -57,6 +58,7 @@ _SUPPORTED_SEMANTIC_PROFILES = _QUALITY_BACKED_FLOAT_PROFILES | {
     "score24_w16_exact_div",
     "score32_w16_exact_div",
     "score32_w16_recip_lut_q16",
+    "score32_exp_lut_div",
     "q12_pwl_recip_lut",
     "q20_pwl_recip_lut",
     "q20_pwl_recip_div",
@@ -137,14 +139,22 @@ def _validate(cfg: dict[str, Any]) -> dict[str, Any]:
         raise SystemExit("attention_dual_stream_composed.softmax_weight_bits must be in [2, 24]")
     if reciprocal_bits < 2 or reciprocal_bits > 24:
         raise SystemExit("attention_dual_stream_composed.reciprocal_bits must be in [2, 24]")
-    if softmax_input_frac_bits < 0 or softmax_input_frac_bits > 16:
-        raise SystemExit("attention_dual_stream_composed.softmax_input_frac_bits must be in [0, 16]")
-    if softmax_reciprocal_lut_bucket_shift < 0 or softmax_reciprocal_lut_bucket_shift > 12:
-        raise SystemExit("attention_dual_stream_composed.softmax_reciprocal_lut_bucket_shift must be in [0, 12]")
     if softmax_impl not in _INTEGER_SOFTMAX_IMPLS:
         raise SystemExit(
-            "attention_dual_stream_composed.softmax_impl must be exact_div, pow2sum, recip_lut, "
+            "attention_dual_stream_composed.softmax_impl must be exact_div, exp_lut_div, pow2sum, recip_lut, "
             "pwl_recip_lut, pwl_recip_div, or pwl_recip_seqdiv"
+        )
+    max_input_frac_bits = 28 if softmax_impl == "exp_lut_div" else 16
+    if softmax_input_frac_bits < 0 or softmax_input_frac_bits > max_input_frac_bits:
+        raise SystemExit(
+            "attention_dual_stream_composed.softmax_input_frac_bits must be in "
+            f"[0, {max_input_frac_bits}] for softmax_impl={softmax_impl}"
+        )
+    max_bucket_shift = 24 if softmax_impl == "exp_lut_div" else 12
+    if softmax_reciprocal_lut_bucket_shift < 0 or softmax_reciprocal_lut_bucket_shift > max_bucket_shift:
+        raise SystemExit(
+            "attention_dual_stream_composed.softmax_reciprocal_lut_bucket_shift must be in "
+            f"[0, {max_bucket_shift}] for softmax_impl={softmax_impl}"
         )
     if semantic_profile not in _SUPPORTED_SEMANTIC_PROFILES:
         raise SystemExit(
@@ -582,6 +592,99 @@ module {module_name} (
         lane_out = OUTPUT_SCALE;
       else
         lane_out = lane_scaled[WEIGHT_BITS-1:0];
+      next_weights[(i*WEIGHT_BITS) +: WEIGHT_BITS] = lane_out;
+{hash_update.rstrip()}
+    end
+  end
+
+  always @(posedge clk) begin
+    weights <= next_weights;
+{hash_seq.rstrip()}
+  end
+endmodule
+"""
+    if implementation == "exp_lut_div":
+        input_scale = 1 << input_frac_bits
+        bucket_step = 1 << reciprocal_lut_bucket_shift
+        max_delta = 8 * input_scale
+        max_bucket = (max_delta + (bucket_step >> 1)) >> reciprocal_lut_bucket_shift
+        exp_lut_cases = "\n".join(
+            f"      {accum_bits}'d{bucket}: exp_lut = {accum_bits}'d{int(math.exp(-((bucket * bucket_step) / float(input_scale))) * output_scale + 0.5)};"
+            for bucket in range(0, max_bucket + 1)
+        )
+        return f"""(* keep_hierarchy = 1 *)
+module {module_name} (
+    input  wire                  clk,
+    input  wire [{score_row_width - 1}:0] scores,
+    output reg  [{weight_row_width - 1}:0] weights{hash_port}
+);
+  localparam integer ROW_ELEMS = {row_elems};
+  localparam integer SCORE_BITS = {score_bits};
+  localparam integer WEIGHT_BITS = {weight_bits};
+  localparam integer ACCUM_BITS = {accum_bits};
+  localparam integer PRODUCT_BITS = {product_bits};
+  localparam integer OUTPUT_SCALE = {output_scale};
+  localparam integer INPUT_FRAC_BITS = {input_frac_bits};
+  localparam integer EXP_BUCKET_SHIFT = {reciprocal_lut_bucket_shift};
+  localparam [ACCUM_BITS-1:0] EXP_MAX_DELTA = {accum_bits}'d{max_delta};
+  localparam [ACCUM_BITS-1:0] EXP_MAX_BUCKET = {accum_bits}'d{max_bucket};
+
+  integer i;
+  integer signed lane_val;
+  integer signed row_max;
+  reg [ACCUM_BITS-1:0] delta_q;
+  reg [ACCUM_BITS-1:0] exp_bucket;
+  reg [ACCUM_BITS-1:0] exp_weight [0:ROW_ELEMS-1];
+  reg [ACCUM_BITS-1:0] sum_weight;
+  reg [PRODUCT_BITS-1:0] numer;
+  reg [WEIGHT_BITS-1:0] lane_out;
+  reg [{weight_row_width - 1}:0] next_weights;
+{hash_reg.rstrip()}
+
+  function [ACCUM_BITS-1:0] exp_lut;
+    input [ACCUM_BITS-1:0] bucket;
+    begin
+      case (bucket)
+{exp_lut_cases}
+      default: exp_lut = {{ACCUM_BITS{{1'b0}}}};
+      endcase
+    end
+  endfunction
+
+  always @(*) begin
+    row_max = -(1 << (SCORE_BITS - 1));
+    for (i = 0; i < ROW_ELEMS; i = i + 1) begin
+      lane_val = $signed(scores[(i*SCORE_BITS) +: SCORE_BITS]);
+      if (lane_val > row_max)
+        row_max = lane_val;
+    end
+
+    sum_weight = {{ACCUM_BITS{{1'b0}}}};
+    for (i = 0; i < ROW_ELEMS; i = i + 1) begin
+      lane_val = $signed(scores[(i*SCORE_BITS) +: SCORE_BITS]);
+      if (row_max > lane_val)
+        delta_q = row_max - lane_val;
+      else
+        delta_q = {{ACCUM_BITS{{1'b0}}}};
+      if (delta_q > EXP_MAX_DELTA)
+        delta_q = EXP_MAX_DELTA;
+      exp_bucket = (delta_q + ({accum_bits}'d{bucket_step} >> 1)) >> EXP_BUCKET_SHIFT;
+      if (exp_bucket > EXP_MAX_BUCKET)
+        exp_bucket = EXP_MAX_BUCKET;
+      exp_weight[i] = exp_lut(exp_bucket);
+      sum_weight = sum_weight + exp_weight[i];
+    end
+
+    next_weights = {{{weight_row_width}{{1'b0}}}};
+{hash_init.rstrip()}
+    for (i = 0; i < ROW_ELEMS; i = i + 1) begin
+      numer = (exp_weight[i] * OUTPUT_SCALE) + (sum_weight >> 1);
+      if (sum_weight != 0)
+        lane_out = numer / sum_weight;
+      else
+        lane_out = {{WEIGHT_BITS{{1'b0}}}};
+      if (lane_out > OUTPUT_SCALE)
+        lane_out = OUTPUT_SCALE;
       next_weights[(i*WEIGHT_BITS) +: WEIGHT_BITS] = lane_out;
 {hash_update.rstrip()}
     end
@@ -1080,6 +1183,8 @@ def _write_top(*, cfg: dict[str, Any], comp: dict[str, Any], out_path: Path) -> 
         softmax_name = f"attention_softmax_weight_q{softmax_score_bits}_pwl_recip_div_like"
     elif softmax_impl == "pwl_recip_seqdiv":
         softmax_name = f"attention_softmax_weight_q{softmax_score_bits}_pwl_recip_seqdiv_like"
+    elif softmax_impl == "exp_lut_div":
+        softmax_name = f"attention_softmax_weight_score{softmax_score_bits}_w{softmax_weight_bits}_exp_lut_div_b{softmax_reciprocal_lut_bucket_shift}_like"
     elif softmax_impl == "exact_div" and (softmax_score_bits, softmax_weight_bits) != (8, 8):
         softmax_name = f"attention_softmax_weight_score{softmax_score_bits}_w{softmax_weight_bits}_exact_div_like"
     elif softmax_impl == "recip_lut" and (softmax_score_bits, softmax_weight_bits) == (32, 16):
@@ -1396,6 +1501,8 @@ endmodule
                 if softmax_impl == "pwl_recip_seqdiv"
                 else "one shared PWL reciprocal-normalized generator"
                 if softmax_impl in {"pwl_recip_lut", "pwl_recip_div"}
+                else "one shared bucketed-exp LUT exact-divider-normalized generator"
+                if softmax_impl == "exp_lut_div"
                 else (
                     "one shared score32/w16 shift-exp reciprocal-LUT-normalized generator"
                     if softmax_score_bits == 32 and softmax_weight_bits == 16 and softmax_impl == "recip_lut"
@@ -1410,6 +1517,18 @@ endmodule
             if equivalence_hash
             else "PPA mode exposes softmax weights, value accumulators, and score mixes directly; equivalence hash disabled"
         ),
+        "score_probability_contract": {
+            "score_representation": "signed fixed-point score slices from composed MAC accumulators",
+            "score_input_frac_bits": softmax_input_frac_bits,
+            "probability_representation": f"unsigned q{softmax_weight_bits} normalized weights",
+            "exp_implementation": "bucketed_exp_lut" if softmax_impl == "exp_lut_div" else softmax_impl,
+            "normalization": "exact row-sum divider" if softmax_impl == "exp_lut_div" else "implementation-specific",
+            "quality_status": (
+                "requires matching native quality gate before quality-backed ranking"
+                if softmax_impl == "exp_lut_div"
+                else "diagnostic unless semantic_profile is quality-backed and guard-supported"
+            ),
+        },
     }
     (out_path / "attention_dual_stream_composed_manifest.json").write_text(
         json.dumps(manifest, indent=2, sort_keys=True) + "\n",
