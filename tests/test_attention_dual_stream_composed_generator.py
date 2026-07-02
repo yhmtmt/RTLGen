@@ -4,6 +4,60 @@ import sys
 from pathlib import Path
 
 
+FRONTIER_CONFIG_SEMANTIC_PROFILES = {
+    (
+        "runs/designs/npu_blocks/"
+        "attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_score24_w16_exact_div/"
+        "config.json"
+    ): "score24_w16_exact_div",
+    (
+        "runs/designs/npu_blocks/"
+        "attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_score32_w16_exact_div/"
+        "config.json"
+    ): "score32_w16_exact_div",
+    (
+        "runs/designs/npu_blocks/"
+        "attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_score32_w16_exact_div_split2/"
+        "config.json"
+    ): "score32_w16_exact_div",
+    (
+        "runs/designs/npu_blocks/"
+        "attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_score32_w16_recip_lut_q16/"
+        "config.json"
+    ): "score32_w16_recip_lut_q16",
+    (
+        "runs/designs/npu_blocks/"
+        "attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_q12_pwl_recip_q12/"
+        "config.json"
+    ): "q12_pwl_recip_lut",
+    (
+        "runs/designs/npu_blocks/"
+        "attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q20_pwl_recip_q20_bucket8/"
+        "config.json"
+    ): "q20_pwl_recip_lut",
+    (
+        "runs/designs/npu_blocks/"
+        "attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q20_pwl_recip_div_q20_bucket8/"
+        "config.json"
+    ): "q20_pwl_recip_div",
+    (
+        "runs/designs/npu_blocks/"
+        "attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q20_pwl_recip_seqdiv_q20_bucket8_lat40/"
+        "config.json"
+    ): "q20_pwl_recip_seqdiv",
+    (
+        "runs/designs/npu_blocks/"
+        "attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q24_pwl_recip_div_q24_bucket8/"
+        "config.json"
+    ): "q24_pwl_recip_div",
+    (
+        "runs/designs/npu_blocks/"
+        "attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q24_pwl_recip_seqdiv_q24_bucket8_lat48/"
+        "config.json"
+    ): "q24_pwl_recip_seqdiv",
+}
+
+
 def _write_config(
     config_path: Path,
     *,
@@ -116,6 +170,14 @@ def _generate_and_check(
         check=True,
     )
     return (design_dir / "verilog" / "top.v").read_text(encoding="utf-8")
+
+
+def test_attention_dual_stream_frontier_configs_record_semantic_profiles() -> None:
+    for config_rel, expected_profile in FRONTIER_CONFIG_SEMANTIC_PROFILES.items():
+        config = json.loads(Path(config_rel).read_text(encoding="utf-8"))
+        comp = config["attention_dual_stream_composed"]
+        assert comp["semantic_profile"] == expected_profile
+        assert comp["semantic_profile"] not in {"qkv8_float_exact", "score32_float"}
 
 
 def test_attention_dual_stream_composed_generator_ppa_guard_and_syntax(tmp_path: Path) -> None:

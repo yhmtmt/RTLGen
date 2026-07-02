@@ -28,6 +28,12 @@ Minimum implementation requirements:
 - Queue a single bounded L1 PPA run only after generator and guard support are
   available and the remote evaluator checkout is clean.
 
+Existing measured fixed-point/PWL composed configs should carry diagnostic
+semantic profiles such as `score32_w16_exact_div`, `score32_w16_recip_lut_q16`,
+or `q20_pwl_recip_seqdiv`. These labels are not quality-backed profiles; they
+exist so recost and ranking code can distinguish measured diagnostic hardware
+from the future qkv8/score32 floating or near-exact composed wrapper.
+
 The dependent L2 recost should use the L1 metrics from that wrapper and mark the
 result quality-backed by the existing `qkv8_float_exact`/`score32_float`
 quality evidence.

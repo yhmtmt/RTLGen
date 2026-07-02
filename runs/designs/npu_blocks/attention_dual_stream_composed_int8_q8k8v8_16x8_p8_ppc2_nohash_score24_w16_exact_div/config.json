@@ -19,6 +19,7 @@
     "equivalence_hash": false,
     "softmax_pipeline_stages": 1,
     "softmax_internal_pipeline_stages": 1,
-    "softmax_impl": "exact_div"
+    "softmax_impl": "exact_div",
+    "semantic_profile": "score24_w16_exact_div"
   }
 }
