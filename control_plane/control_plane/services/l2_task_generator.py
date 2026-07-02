@@ -5524,6 +5524,7 @@ def _decoder_attention_composed_datapath_physical_feasibility_evidence(*, item_i
     score32_reduced_replica = "score32_w16_exact_div_reduced_replica" in item_id
     score32_recip_lut_q16_reduced_replica = "score32_w16_recip_lut_q16_reduced_replica" in item_id
     score32_exp_lut_div_reduced_replica = "score32_exp_lut_div_reduced_replica" in item_id
+    command_overhead = "command_overhead" in item_id
     q20_pwl_recip_div_reduced_replica = "q20_pwl_recip_div_reduced_replica" in item_id
     score32_frontier = "score32_w16_exact_div_frontier" in item_id
     variant_frontier = "variant_frontier" in item_id
@@ -5627,6 +5628,10 @@ def _decoder_attention_composed_datapath_physical_feasibility_evidence(*, item_i
         or score32_exp_lut_div_reduced_replica
         or q20_pwl_recip_div_reduced_replica
     )
+    command_overhead_flags = ""
+    if command_overhead:
+        model_name = f"{model_name}_command_overhead"
+        command_overhead_flags = "--command-cycles-per-tile 0,1,4,16 --command-cycles-per-wave 0,8,32 "
     return {
         "inputs": {
             "attention_kv_subtile_pipeline_schedule": subtile_pipeline,
@@ -5639,7 +5644,8 @@ def _decoder_attention_composed_datapath_physical_feasibility_evidence(*, item_i
             "attention_composed_datapath_physical_feasibility_scope": (
                 "Use the composed dual-stream RTL wrapper PPA "
                 "as a bounded next-step feasibility model, replacing separate full-value/softmax substitutions "
-                "while keeping the upstream source schedule."
+                "while keeping the upstream source schedule. If command-overhead mode is requested, sweep "
+                "nonzero per-tile and per-wave command-dispatch cycles before recosting the composed datapath."
             ),
         },
         "commands": [
@@ -5655,6 +5661,7 @@ def _decoder_attention_composed_datapath_physical_feasibility_evidence(*, item_i
                     f"--precision-profile {precision_profile} "
                     f"--model-name {model_name} "
                     f"{'--recompute-area-fit-replicas ' if recompute_area_fit else ''}"
+                    f"{command_overhead_flags}"
                     "--frontier-row-limit 8 "
                     "--buffer-area-um2-per-byte 0.0 "
                     f"--out {out} "

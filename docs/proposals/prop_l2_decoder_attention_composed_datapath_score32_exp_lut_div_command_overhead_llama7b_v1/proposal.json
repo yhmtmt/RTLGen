@@ -1,0 +1,70 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_composed_datapath_score32_exp_lut_div_command_overhead_llama7b_v1",
+  "created_utc": "2026-07-02T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Llama7B score32 exp-LUT divider command-overhead recost",
+  "abstraction_layer": "decoder_attention_composed_datapath_physical_feasibility",
+  "hypothesis": "The score32 exp-LUT divider composed datapath should remain interpretable after charging nonzero command-dispatch overhead, but the overhead must be swept explicitly before treating the reduced-replica schedule as a practical frontier point.",
+  "direct_comparison": {
+    "primary_question": "How much does nonzero per-tile and per-wave command-dispatch overhead move the score32 exp-LUT divider reduced-replica Llama7B latency point?",
+    "baseline": "l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_llama7b_v1",
+    "candidate": "l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_command_overhead_llama7b_v1",
+    "include": [
+      "reuse the measured score32 exp-LUT divider composed datapath PPA artifact",
+      "reuse the matched exp-LUT generation-quality gate as a dependency",
+      "sweep command_cycles_per_tile values 0, 1, 4, and 16",
+      "sweep command_cycles_per_wave values 0, 8, and 32",
+      "recompute area-fit replica latency after injecting command-dispatch cycles"
+    ],
+    "exclude": [
+      "new native-checkpoint quality campaign",
+      "new OpenROAD/PPA run",
+      "new HBM/DRAM controller model",
+      "new NoC/router physical synthesis"
+    ],
+    "metrics": [
+      "decision",
+      "precision_profile",
+      "command_overhead_variant",
+      "command_dispatch_cycles",
+      "replica_recost_latency_us",
+      "replica_recost_layer_cycles",
+      "replica_recost_area_fit_replica_count"
+    ]
+  },
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_command_overhead_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Recost the score32 exp-LUT divider composed datapath under nonzero command-dispatch cycle assumptions after the exp-LUT quality and PPA inputs are available.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_composed_datapath_physical_feasibility",
+      "comparison_role": "score32_exp_lut_div_command_overhead_recost",
+      "paired_baseline_item_id": "l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_llama7b_v1",
+      "depends_on_item_ids": [
+        "l1_decoder_attention_dual_stream_composed_score32_exp_lut_div_b20_ppa_v1",
+        "l2_decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality_llama7b_v1",
+        "l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "run_physical": false,
+      "expected_result": {
+        "direction": "bound_command_overhead_on_exp_lut_composed_datapath",
+        "reason": "Record whether command-dispatch overhead materially changes the exp-LUT reduced-replica latency ranking; keep the result dependency-gated and non-promotable if the exp-LUT quality gate fails."
+      }
+    }
+  ],
+  "source_refs": [
+    "npu/eval/estimate_llm_decoder_attention_kv_dual_stream_physical_feasibility.py",
+    "control_plane/control_plane/services/l2_task_generator.py",
+    "docs/proposals/prop_l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_llama7b_v1/proposal.json"
+  ],
+  "remaining_abstractions": [
+    "Command overhead is swept as cycle sensitivity, not measured from command-distribution RTL.",
+    "HBM/DRAM and NoC/SRAM service remain inherited from the upstream source schedule.",
+    "The result is only quality-backed if the referenced exp-LUT generation-quality gate passes."
+  ]
+}

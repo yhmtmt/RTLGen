@@ -123,16 +123,29 @@ than free or heuristic assumptions.
     teacher-forced mean NLL delta `1.5337108926816854`, top-1 match
     `0.515625`, free-run exact match `0.0`, and free-run token match
     `0.078125`
-  - the pending diagnostic item
+  - the exact-divide RTL diagnostic item
     `l2_decoder_attention_mixed_int8_score32_w16_rtl_exact_generation_quality_llama7b_v1`
-    is queued at source commit
-    `cd87b3692ad7076b0f924ce3d866cfc0c6cc92d2` to separate reciprocal-LUT
-    precision loss from the shared RTL softmax exponent/weight approximation
-  - successor routes are prepared but intentionally not dispatched yet:
-    `l2_decoder_attention_mixed_int8_score32_w16_rtl_recip_precision_generation_quality_llama7b_v1`
-    for the reciprocal-precision branch, and
+    is merged and also failed the generation-quality gate with the same
+    teacher-forced mean NLL delta `1.533711`, free-run exact match `0.0`, and
+    free-run token match `0.078125`. This indicates the reciprocal-LUT was not
+    the dominant quality loss; the shared RTL softmax exponent/weight path is
+    the problem.
+  - the softmax-replacement quality item
     `l2_decoder_attention_mixed_int8_softmax_replacement_generation_quality_llama7b_v1`
-    for the softmax-replacement branch
+    is merged and restored the replacement branch enough to continue physical
+    cost exploration.
+  - measured composed-PPA reduced-replica recosts exist for score32 exact-div
+    and score32 q16 reciprocal-LUT. Exact-div is area-fit only at a near-full
+    compute budget (`801` required replicas, density gain `0.998929`), while
+    the q16 reciprocal-LUT recost has more logic slack but is not
+    quality-backed because its generation-quality gate failed.
+  - the active follow-on branch is the score32 exp-LUT divider path:
+    `l1_decoder_attention_dual_stream_composed_score32_exp_lut_div_b20_ppa_v1`
+    and
+    `l2_decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality_llama7b_v1`
+    are queued. The dependent recost
+    `l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_llama7b_v1`
+    is intentionally blocked until both inputs are materialized.
 - New evaluations should continue to dispatch only to the remote evaluator
   `eval-daemon-b7c2d9c80c1c`, not the devcontainer.
 
@@ -164,14 +177,16 @@ than free or heuristic assumptions.
      with a more explicit controller, arbitration, and contention model.
    - Status: partially bounded by the HBM energy sensitivity result, the merged
      HBM/DRAM command-service energy result, and the source-backed aggregate HBM
-     energy calibration result, but not cycle-accurate. The aggregate
-     source-backed calibration preserved the selected family but changed the
-     dominant component to HBM.
-   - Next result: run
-     `l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1`,
-     consuming the merged HBM/DRAM service-energy result and source-backed HBM
-     energy calibration result, to retain command-mix and row-hit sensitivity
-     while calibrating to the HBM2 aggregate pJ/bit anchor.
+     energy calibration result, plus the command-calibrated service result, but
+     not cycle-accurate. The command-calibrated result preserved the selected
+     energy family under row-hit sensitivity, but still reports analytic
+     row-hit service, globally scaled HBM command energy, profile-scaled
+     NoC/SRAM energy, and scaled compute energy.
+   - Next result: keep HBM/DRAM as a bounded planning model for now, and move
+     the immediate frontier work to quality-backed exp-LUT physical recost and
+     explicit scheduler/control overhead accounting. A later HBM/controller job
+     should replace the row-hit analytic model with a cycle service model only
+     after the compute/softmax frontier is quality-backed.
 
 3. Composed q12/PWL softmax datapath density recovery
    - Scope: score max, exponent approximation, sum accumulation, reciprocal
@@ -196,12 +211,14 @@ than free or heuristic assumptions.
    - Scope: close the quality gap between the passing `score32_float`
      mixed-int8 baseline and an RTL-realizable score32/w16 softmax path.
    - Status: q16 reciprocal-LUT RTL softmax failed the bounded Llama7B
-     generation-quality gate. The RTL exact-divide diagnostic is queued to
-     determine whether the failure is dominated by reciprocal precision or by
-     the shared RTL softmax exponent/weight approximation.
-   - Next result: run the queued RTL exact-divide diagnostic on the remote
-     evaluator. If exact-divide passes, sweep reciprocal precision. If
-     exact-divide fails, dispatch the softmax replacement quality sweep.
+     generation-quality gate, and the RTL exact-divide diagnostic failed with
+     the same quality signature. The reciprocal precision branch should not be
+     promoted. The replacement branch is now the active path; the score32
+     exp-LUT divider datapath and matching generation-quality gate are queued.
+   - Next result: run the queued exp-LUT quality gate and exp-LUT L1 PPA on the
+     remote evaluator, then release the blocked exp-LUT reduced-replica L2
+     recost only if the quality gate passes and the measured PPA row is
+     materialized.
 
 5. SRAM timing and energy
    - Scope: tile-local score/value buffering, KV tile reads, partial-value
@@ -219,6 +236,20 @@ than free or heuristic assumptions.
      payload/cycle and arbitration-latency bounds under the selected
      producer/reducer traffic mix.
 
+6a. Command/scheduler/control overhead
+   - Scope: account for command generation, tile assignment, per-wave launch,
+     ready/valid backpressure, and control distribution in the Llama7B
+     composed-attention schedule.
+   - Status: the current reduced-replica rows still carry
+     `command_cycles_per_tile=0` and `command_cycles_per_wave=0`. The on-chip
+     endpoint/router/SRAM and HBM service models bound data movement, but the
+     command path is still idealized in the rows used for score32 exact-div and
+     reciprocal-LUT recost.
+   - Next result: create a command-overhead sensitivity or measured
+     scheduler-control job that sweeps nonzero per-tile and per-wave overhead
+     for the selected dual-stream schedule, then feeds the result into the same
+     Llama7B recost path.
+
 7. Integrated schedule closure audit
    - Scope: rerun the Llama7B attention schedule with measured compute,
      full-value tile, softmax, SRAM, NoC, HBM, and precision evidence.
@@ -228,22 +259,22 @@ than free or heuristic assumptions.
 
 ## Ordering
 
-The current first step is the RTL exact-divide generation-quality diagnostic:
-`l2_decoder_attention_mixed_int8_score32_w16_rtl_exact_generation_quality_llama7b_v1`.
-It should stay pinned to source commit
-`cd87b3692ad7076b0f924ce3d866cfc0c6cc92d2` unless the evaluator cannot run
-that commit. The successor branch is conditional:
+The current first step is to unblock the remote evaluator source checkout and
+run the already queued exp-LUT branch:
 
-1. If RTL exact-divide passes the quality gate, dispatch
-   `l2_decoder_attention_mixed_int8_score32_w16_rtl_recip_precision_generation_quality_llama7b_v1`
-   to find the smallest reciprocal-LUT precision that preserves quality.
-2. If RTL exact-divide fails, dispatch
-   `l2_decoder_attention_mixed_int8_softmax_replacement_generation_quality_llama7b_v1`
-   to replace the shared RTL softmax approximation before spending more PPA
-   runs on reciprocal precision.
-3. After one quality branch passes, run physical PPA for the selected
-   score32/w16 softmax embodiment and then feed that measured cost back into
-   the Llama7B integrated schedule.
+1. Run `l2_decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality_llama7b_v1`.
+   This decides whether the replacement score32 exp-LUT divider path is
+   quality-backed.
+2. Run `l1_decoder_attention_dual_stream_composed_score32_exp_lut_div_b20_ppa_v1`.
+   This measures the matching composed RTL wrapper PPA.
+3. If both inputs pass/materialize, release
+   `l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_llama7b_v1`
+   to recost the Llama7B point. If the quality gate fails, do not promote the
+   exp-LUT row as quality-backed; return to the softmax replacement design.
+4. In parallel with evaluator recovery or after exp-LUT recost, prepare the
+   command-overhead sensitivity job for the selected dual-stream schedule,
+   because current score32 reduced-replica rows still assume zero command
+   cycles.
 
 All new evaluation jobs should run on the remote evaluator
 `eval-daemon-b7c2d9c80c1c`, not the devcontainer.

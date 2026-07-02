@@ -140,6 +140,21 @@ def _parse_composed_metric_inputs(values: Any) -> list[Path]:
     return paths
 
 
+def _int_override_list(text: str | None) -> list[int | None]:
+    if text is None or not str(text).strip():
+        return [None]
+    values: list[int | None] = []
+    for piece in str(text).split(","):
+        piece = piece.strip()
+        if not piece:
+            continue
+        value = int(piece)
+        if value < 0:
+            raise argparse.ArgumentTypeError("command cycle overrides must be non-negative")
+        values.append(value)
+    return values or [None]
+
+
 def _load_composed_variants(paths: list[Path]) -> list[JsonDict]:
     variants: list[JsonDict] = []
     for path in paths:
@@ -153,6 +168,26 @@ def _load_composed_variants(paths: list[Path]) -> list[JsonDict]:
         )
         variants.append(metrics)
     return variants
+
+
+def _with_command_overhead(source_row: JsonDict, *, per_tile: int | None, per_wave: int | None) -> JsonDict:
+    if per_tile is None and per_wave is None:
+        return dict(source_row)
+    row = dict(source_row)
+    command_cycles_per_tile = int(row.get("command_cycles_per_tile", 0)) if per_tile is None else int(per_tile)
+    command_cycles_per_wave = int(row.get("command_cycles_per_wave", 0)) if per_wave is None else int(per_wave)
+    command_dispatch_cycles = int(row["tile_count"]) * command_cycles_per_tile + int(row["tile_waves"]) * command_cycles_per_wave
+    row.update(
+        {
+            "command_cycles_per_tile": command_cycles_per_tile,
+            "command_cycles_per_wave": command_cycles_per_wave,
+            "command_dispatch_cycles": command_dispatch_cycles,
+            "command_overhead_override_enabled": True,
+            "command_overhead_variant": f"ct{command_cycles_per_tile}_cw{command_cycles_per_wave}",
+        }
+    )
+    row.update(_scheduled_subtile_pipeline(row))
+    return row
 
 
 def _source_rows(payload: JsonDict, *, limit: int) -> list[JsonDict]:
@@ -638,6 +673,8 @@ def _effective_selection_key(row: JsonDict) -> tuple[float, float, float, str]:
 def build_report(args: argparse.Namespace) -> JsonDict:
     source = _load_json(args.subtile_pipeline_json)
     source_rows = _source_rows(source, limit=args.frontier_row_limit)
+    command_cycles_per_tile_overrides = _int_override_list(args.command_cycles_per_tile)
+    command_cycles_per_wave_overrides = _int_override_list(args.command_cycles_per_wave)
     full_value_tile = _best_ok_metrics(args.full_value_tile_metrics)
     softmax_weight = _best_ok_metrics(args.softmax_weight_metrics)
     composed_dual_stream_metrics = _parse_composed_metric_inputs(getattr(args, "composed_dual_stream_metrics", None))
@@ -645,15 +682,36 @@ def build_report(args: argparse.Namespace) -> JsonDict:
     compute_block = _best_ok_compute_metrics(args.compute_block_metrics) if args.compute_block_metrics else None
     quality_gate = _load_json(args.quality_gate_json) if args.quality_gate_json else None
     rows: list[JsonDict] = []
-    for row in source_rows:
-        if composed_variants:
-            for composed_dual_stream in composed_variants:
+    for source_row in source_rows:
+        overhead_rows = [
+            _with_command_overhead(source_row, per_tile=per_tile, per_wave=per_wave)
+            for per_tile in command_cycles_per_tile_overrides
+            for per_wave in command_cycles_per_wave_overrides
+        ]
+        for row in overhead_rows:
+            if composed_variants:
+                for composed_dual_stream in composed_variants:
+                    rows.append(
+                        _row_with_budget(
+                            row,
+                            full_value_tile=full_value_tile,
+                            softmax_weight=softmax_weight,
+                            composed_dual_stream=composed_dual_stream,
+                            compute_block=compute_block,
+                            compute_block_macs_per_cycle=args.compute_block_macs_per_cycle,
+                            compute_arch_name=args.compute_arch_name,
+                            buffer_area_um2_per_byte=args.buffer_area_um2_per_byte,
+                            precision_profile=args.precision_profile,
+                            recompute_area_fit_replicas=args.recompute_area_fit_replicas,
+                        )
+                    )
+            else:
                 rows.append(
                     _row_with_budget(
                         row,
                         full_value_tile=full_value_tile,
                         softmax_weight=softmax_weight,
-                        composed_dual_stream=composed_dual_stream,
+                        composed_dual_stream=None,
                         compute_block=compute_block,
                         compute_block_macs_per_cycle=args.compute_block_macs_per_cycle,
                         compute_arch_name=args.compute_arch_name,
@@ -662,21 +720,6 @@ def build_report(args: argparse.Namespace) -> JsonDict:
                         recompute_area_fit_replicas=args.recompute_area_fit_replicas,
                     )
                 )
-        else:
-            rows.append(
-                _row_with_budget(
-                    row,
-                    full_value_tile=full_value_tile,
-                    softmax_weight=softmax_weight,
-                    composed_dual_stream=None,
-                    compute_block=compute_block,
-                    compute_block_macs_per_cycle=args.compute_block_macs_per_cycle,
-                    compute_arch_name=args.compute_arch_name,
-                    buffer_area_um2_per_byte=args.buffer_area_um2_per_byte,
-                    precision_profile=args.precision_profile,
-                    recompute_area_fit_replicas=args.recompute_area_fit_replicas,
-                )
-            )
     feasible_rows = [row for row in rows if row["physical_feasible"]]
     best_requested = min(rows, key=_effective_selection_key) if rows else None
     best_feasible = min(feasible_rows, key=_effective_selection_key) if feasible_rows else None
@@ -721,6 +764,8 @@ def build_report(args: argparse.Namespace) -> JsonDict:
             "precision_profile": args.precision_profile,
             "buffer_area_um2_per_byte": args.buffer_area_um2_per_byte,
             "recompute_area_fit_replicas": args.recompute_area_fit_replicas,
+            "command_cycles_per_tile": args.command_cycles_per_tile,
+            "command_cycles_per_wave": args.command_cycles_per_wave,
         },
         "quality_gate": {
             "decision": (quality_gate or {}).get("diagnosis", {}).get("decision"),
@@ -848,6 +893,20 @@ def main() -> int:
     )
     parser.add_argument("--frontier-row-limit", type=int, default=8)
     parser.add_argument("--buffer-area-um2-per-byte", type=float, default=0.0)
+    parser.add_argument(
+        "--command-cycles-per-tile",
+        help=(
+            "Optional comma-separated command-dispatch cycle overrides per tile. "
+            "When omitted, source row command cycles are preserved."
+        ),
+    )
+    parser.add_argument(
+        "--command-cycles-per-wave",
+        help=(
+            "Optional comma-separated command-dispatch cycle overrides per wave. "
+            "When omitted, source row command cycles are preserved."
+        ),
+    )
     parser.add_argument(
         "--recompute-area-fit-replicas",
         action="store_true",
