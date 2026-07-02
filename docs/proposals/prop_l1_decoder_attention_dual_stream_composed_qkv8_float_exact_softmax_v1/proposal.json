@@ -1,0 +1,101 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_dual_stream_composed_qkv8_float_exact_softmax_v1",
+  "created_utc": "2026-07-02T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit",
+  "title": "Composed dual-stream qkv8 quality-backed floating/near-exact softmax datapath",
+  "abstraction_layer": "decoder_attention_dual_stream_composed_datapath",
+  "hypothesis": "The current mixed/int8 Llama7B frontier cannot be ranked by token throughput, energy, area, and precision until the quality-backed qkv8_float_exact/score32_float softmax semantics are embodied inside the composed dual-stream attention wrapper. Existing score32 exact-divider and PWL rows are measured diagnostic fixed-point datapaths, while the fp16 softmaxcmp rows are measured proxies outside the composed attention wrapper.",
+  "direct_comparison": {
+    "primary_question": "What Nangate45 PPA cost is paid by a composed q8/k8/v8 attention wrapper that preserves the quality-backed qkv8_float_exact or score32_float softmax semantics?",
+    "baselines": [
+      "l1_decoder_attention_dual_stream_composed_score32_w16_exact_div_ppa_v1",
+      "l1_decoder_attention_dual_stream_composed_score32_w16_recip_lut_q16_ppa_v1",
+      "l1_decoder_attention_dual_stream_composed_q20_pwl_recip_seqdiv_pd30_ppa_v3",
+      "npu_fp16_cpp_nm2_softmaxcmp"
+    ],
+    "candidate": "l1_decoder_attention_dual_stream_composed_qkv8_float_exact_softmax_ppa_v1",
+    "include": [
+      "q8/k8/v8 projection/value datapath inside the composed dual-stream wrapper",
+      "softmax score/weight path matching qkv8_float_exact or score32_float quality semantics",
+      "explicit conversion boundaries between int8 score/value datapaths and floating or near-exact softmax weights",
+      "guard checks that reject accidental substitution of the existing fixed-point/PWL or npu_top fp16-softmax proxy rows",
+      "Nangate45 area, power, timing, and timing debug paths after the wrapper is implemented"
+    ],
+    "exclude": [
+      "ranking npu_fp16_cpp_nm*_softmaxcmp as a composed attention datapath",
+      "claiming score32 exact-divider or PWL softmax rows are quality-backed after the broad quality gate rejected them",
+      "new HBM/DRAM modeling",
+      "QAT or model retraining"
+    ],
+    "metrics": [
+      "critical_path_ns",
+      "die_area",
+      "total_power_mw",
+      "stdcell_count",
+      "timing_debug_report",
+      "semantic_profile",
+      "quality_source_candidate_id"
+    ]
+  },
+  "implementation_plan": [
+    {
+      "step": "Add a composed-wrapper softmax mode that is distinct from existing integer softmax_impl values.",
+      "details": "npu/rtlgen/gen_attention_dual_stream_composed.py currently validates only exact_div, pow2sum, recip_lut, pwl_recip_lut, pwl_recip_div, and pwl_recip_seqdiv. Add a new mode only when the generated RTL contains the required floating or near-exact row-softmax datapath, not as an alias for fixed-point exact_div."
+    },
+    {
+      "step": "Define conversion and accumulation boundaries.",
+      "details": "The wrapper must state how q8/k8 scores become the softmax input, how probabilities are represented, and how the probability by v8 value product is accumulated. These boundaries must match the quality candidate labels qkv8_float_exact or score32_float."
+    },
+    {
+      "step": "Add a guard that records the semantic profile.",
+      "details": "check_attention_dual_stream_composed_guard.py should fail if a qkv8_float_exact measurement points at an integer/PWL softmax_impl or at the npu_top fp16-softmax proxy design."
+    },
+    {
+      "step": "Add one L1 PPA request after generator support exists.",
+      "details": "The first measured point should use the existing composed wrapper dimensions, q8/k8/v8, and a conservative single density/sweep to avoid overloading the evaluator while the q20 seqdiv queue drains."
+    },
+    {
+      "step": "Add a dependent L2 recost only after the L1 metrics are merged.",
+      "details": "The L2 recost should substitute this composed wrapper into the Llama7B schedule and mark it quality-backed by qkv8_float_exact/score32_float evidence."
+    }
+  ],
+  "required_evaluations": [
+    {
+      "item_id": "l1_decoder_attention_dual_stream_composed_qkv8_float_exact_softmax_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure Nangate45 PPA for a real composed q8/k8/v8 attention wrapper that preserves qkv8_float_exact or score32_float softmax semantics.",
+      "evaluation_mode": "frontier_followup",
+      "abstraction_layer": "decoder_attention_dual_stream_composed_datapath",
+      "comparison_role": "quality_backed_composed_softmax_recost",
+      "paired_baseline_item_id": "l1_decoder_attention_dual_stream_composed_score32_w16_exact_div_ppa_v1",
+      "blocked_until": [
+        "gen_attention_dual_stream_composed emits a distinct floating or near-exact softmax implementation",
+        "the composed-wrapper guard records and validates semantic_profile=qkv8_float_exact or score32_float",
+        "the evaluator source checkout is updated and able to accept new work"
+      ],
+      "run_physical": true,
+      "expected_result": {
+        "direction": "measure_quality_backed_composed_softmax_datapath",
+        "reason": "The current quality-energy audit requires a composed q8/k8/v8 wrapper with quality-backed softmax semantics before ranking the mixed/int8 frontier."
+      }
+    }
+  ],
+  "source_refs": [
+    "npu/rtlgen/gen_attention_dual_stream_composed.py",
+    "npu/eval/check_attention_dual_stream_composed_guard.py",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_quality_energy_frontier__l2_decoder_attention_mixed_int8_quality_energy_frontier_llama7b_v1.json",
+    "runs/designs/npu_blocks/npu_fp16_cpp_nm2_softmaxcmp/config_nm2_softmax.json"
+  ],
+  "knowledge_refs": [
+    "docs/proposals/prop_l2_decoder_attention_mixed_int8_quality_energy_frontier_llama7b_v1/proposal.json",
+    "docs/proposals/prop_l1_decoder_attention_dual_stream_composed_score32_w16_exact_div_v1/proposal.json",
+    "npu/eval/README.md"
+  ],
+  "remaining_abstractions": [
+    "No RTL for the floating or near-exact composed softmax path exists yet.",
+    "The fp16 softmaxcmp rows are npu_top proxy rows with the existing int8 row-wise SOFTMAX wrapper, not composed q8/k8/v8 attention wrappers.",
+    "The first L1 job must be queued only after generator and guard support exists."
+  ]
+}
