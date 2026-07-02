@@ -34,6 +34,12 @@ or `q20_pwl_recip_seqdiv`. These labels are not quality-backed profiles; they
 exist so recost and ranking code can distinguish measured diagnostic hardware
 from the future qkv8/score32 floating or near-exact composed wrapper.
 
+The detailed candidate-to-hardware contract is in
+`semantic_contract.md`. In particular, the existing `score32_w16_rtl_exact`
+generation-quality artifact failed, so an integer W16 exact-divider row must not
+stand in for `score32_float` or `qkv8_float_exact` without a new matching quality
+gate.
+
 The dependent L2 recost should use the L1 metrics from that wrapper and mark the
 result quality-backed by the existing `qkv8_float_exact`/`score32_float`
 quality evidence.
