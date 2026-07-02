@@ -188,3 +188,67 @@ def test_reconcile_service_repo_quarantines_untracked_checkout_blockers(
     assert (quarantine_dir / blocker_rel).read_text(encoding="utf-8") == "generated,old\n"
     assert (quarantine_dir / "manifest.json").exists()
     assert "quarantined untracked checkout blockers" in (result.message or "")
+
+
+def test_reconcile_service_repo_snapshots_tracked_modifications_before_update(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+    first, required = _init_repo_with_stale_head(repo_root)
+    tracked = repo_root / "README.md"
+    tracked.write_text("local diagnostic edit\n", encoding="utf-8")
+    monkeypatch.setenv("RTLCP_SOURCE_QUARANTINE_ROOT", str(tmp_path / "quarantine"))
+
+    result = reconcile_service_repo_source(
+        repo_root=str(repo_root),
+        required_sha=required,
+        update_ref="origin/master",
+        allow_update=True,
+    )
+
+    assert result.status == "updated"
+    assert result.required_sha == required
+    assert _run("git", "-C", str(repo_root), "rev-parse", "HEAD") == required
+    assert first != required
+    assert len(result.quarantine_paths) == 1
+    snapshot_dir = Path(result.quarantine_paths[0])
+    assert snapshot_dir.is_dir()
+    assert (snapshot_dir / "status.txt").read_text(encoding="utf-8") == "M README.md"
+    assert "local diagnostic edit" in (snapshot_dir / "diff.patch").read_text(encoding="utf-8")
+    assert (snapshot_dir / "diff_cached.patch").exists()
+    assert (snapshot_dir / "manifest.json").exists()
+    assert "snapshotted tracked modifications" in (result.message or "")
+    assert not _run("git", "-C", str(repo_root), "status", "--porcelain", "--untracked-files=no")
+
+
+def test_reconcile_service_repo_reports_snapshot_path_when_checkout_fails(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+    _, required = _init_repo_with_stale_head(repo_root)
+    (repo_root / "README.md").write_text("local diagnostic edit\n", encoding="utf-8")
+    monkeypatch.setenv("RTLCP_SOURCE_QUARANTINE_ROOT", str(tmp_path / "quarantine"))
+
+    def _fail_checkout(repo: Path, target: str) -> tuple[Path, ...]:
+        raise SourceReconciliationError("forced checkout failure")
+
+    monkeypatch.setattr(source_reconciler, "_checkout_source_target", _fail_checkout)
+
+    with pytest.raises(SourceReconciliationError) as exc_info:
+        reconcile_service_repo_source(
+            repo_root=str(repo_root),
+            required_sha=required,
+            update_ref="origin/master",
+            allow_update=True,
+        )
+
+    message = str(exc_info.value)
+    assert "forced checkout failure" in message
+    assert "tracked modifications snapshot at" in message
+    snapshot_dirs = list((tmp_path / "quarantine").glob("repo-tracked-modifications-*"))
+    assert len(snapshot_dirs) == 1
+    assert "local diagnostic edit" in (snapshot_dirs[0] / "diff.patch").read_text(encoding="utf-8")

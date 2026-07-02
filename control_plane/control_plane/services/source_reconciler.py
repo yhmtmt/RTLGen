@@ -281,6 +281,38 @@ def _quarantine_untracked_checkout_blockers(repo_root: Path, paths: list[str], t
     return quarantine_dir
 
 
+def _snapshot_tracked_modifications(repo_root: Path, status: str, target: str) -> Path:
+    """Preserve tracked service-repo edits before resetting for source checkout."""
+
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    snapshot_dir = _source_quarantine_root() / f"{repo_root.name}-tracked-modifications-{stamp}-{os.getpid()}"
+    snapshot_dir.mkdir(parents=True, exist_ok=True)
+    diff = _run_git(repo_root, "diff", check=False).stdout
+    diff_cached = _run_git(repo_root, "diff", "--cached", check=False).stdout
+    (snapshot_dir / "status.txt").write_text(status, encoding="utf-8")
+    (snapshot_dir / "diff.patch").write_text(diff, encoding="utf-8")
+    (snapshot_dir / "diff_cached.patch").write_text(diff_cached, encoding="utf-8")
+    manifest = {
+        "repo_root": str(repo_root),
+        "target": target,
+        "status": status.splitlines(),
+        "created_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "files": {
+            "status": "status.txt",
+            "diff": "diff.patch",
+            "diff_cached": "diff_cached.patch",
+        },
+    }
+    (snapshot_dir / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+    try:
+        _run_git(repo_root, "reset", "--hard", "HEAD")
+    except (OSError, subprocess.CalledProcessError) as exc:
+        raise SourceReconciliationError(
+            f"failed to reset tracked service-repo modifications after snapshot at {snapshot_dir}: {exc}"
+        ) from exc
+    return snapshot_dir
+
+
 def _checkout_error_message(target: str, exc: Exception, context: str | None = None) -> str:
     stderr = str(getattr(exc, "stderr", "") or "").strip()
     prefix = f"failed to checkout source target {target}"
@@ -465,16 +497,19 @@ def _reconcile_service_repo_source_locked(
         target = update_ref
 
     _recover_stale_git_index_lock(repo_path)
-    if _git_stdout(repo_path, "status", "--porcelain", "--untracked-files=no"):
-        return SourceReconciliationResult(
-            status="blocked",
-            required_sha=required,
-            current_sha=current,
-            source_commit_relation=relation,
-            message="service repo has tracked local modifications; refusing automatic checkout",
-        )
+    dirty_status = _git_stdout(repo_path, "status", "--porcelain", "--untracked-files=no")
+    tracked_snapshot_dir: Path | None = None
+    if dirty_status:
+        tracked_snapshot_dir = _snapshot_tracked_modifications(repo_path, dirty_status, target)
 
-    quarantine_paths = _checkout_source_target(repo_path, target)
+    try:
+        quarantine_paths = _checkout_source_target(repo_path, target)
+    except SourceReconciliationError as exc:
+        if tracked_snapshot_dir is not None:
+            raise SourceReconciliationError(
+                f"{exc}; tracked modifications snapshot at {tracked_snapshot_dir}"
+            ) from exc
+        raise
 
     new_head = _current_head(repo_path)
     new_relation = _source_relation(repo_path, required, new_head)
@@ -488,6 +523,11 @@ def _reconcile_service_repo_source_locked(
         )
 
     message = f"service repo updated to {target}"
+    all_quarantine_paths = tuple(
+        str(path) for path in ([tracked_snapshot_dir] if tracked_snapshot_dir is not None else [])
+    ) + tuple(str(path) for path in quarantine_paths)
+    if tracked_snapshot_dir is not None:
+        message = f"{message}; snapshotted tracked modifications at {tracked_snapshot_dir}"
     if quarantine_paths:
         message = f"{message}; quarantined untracked checkout blockers at {', '.join(str(path) for path in quarantine_paths)}"
 
@@ -498,7 +538,7 @@ def _reconcile_service_repo_source_locked(
         source_commit_relation=new_relation,
         restart_required=True,
         message=message,
-        quarantine_paths=tuple(str(path) for path in quarantine_paths),
+        quarantine_paths=all_quarantine_paths,
     )
 
 
