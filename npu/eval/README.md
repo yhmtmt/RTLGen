@@ -461,6 +461,16 @@ q8/k8/v8 projection path with matching high-precision or exact score-softmax
 hardware before comparing token throughput, energy, and area against the FP16
 baseline.
 
+Do not treat `runs/designs/npu_blocks/npu_fp16_cpp_nm*_softmaxcmp/metrics.csv`
+as that composed recost. Those rows are measured proxy hardware, but they are
+`npu_top` configurations with the existing dedicated row-wise SOFTMAX wrapper,
+not a composed q8/k8/v8 dual-stream attention datapath. The required L1 follow-up
+is tracked by
+`docs/proposals/prop_l1_decoder_attention_dual_stream_composed_qkv8_float_exact_softmax_v1/`;
+it remains blocked until the composed-wrapper generator emits a distinct
+floating or near-exact softmax path and the guard records the matching semantic
+profile.
+
 The measured q12/PWL reciprocal-LUT softmax path is a candidate proxy for that
 recost, but only after a native quality gate validates the same arithmetic. In
 the mixed/int8 native evaluator, use softmax mode
