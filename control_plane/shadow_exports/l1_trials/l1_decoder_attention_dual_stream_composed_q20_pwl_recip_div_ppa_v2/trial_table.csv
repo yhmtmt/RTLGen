@@ -1,0 +1,4 @@
+run_key,attempt,trial_index,seed,status,metrics_csv,critical_path_ns,die_area,total_power_mw,failure_category,failure_stage,failure_signature
+l1_decoder_attention_dual_stream_composed_q20_pwl_recip_div_ppa_v2_run_0c790f4c5393970e,1,1,,canceled,,,,,lease_expired,control_plane,lease expired before run completion
+l1_decoder_attention_dual_stream_composed_q20_pwl_recip_div_ppa_v2_run_cc5e1f71eab60e37,2,1,,canceled,,,,,lease_expired,control_plane,lease expired before run completion
+l1_decoder_attention_dual_stream_composed_q20_pwl_recip_div_ppa_v2_run_be4c3fe0bd5b7837,3,1,0,succeeded,runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q20_pwl_recip_div_q20_bucket8/metrics.csv,50.5545,6250000.0,32.4,none,,
