@@ -6812,6 +6812,68 @@ def _decoder_attention_mixed_int8_score32_w16_rtl_exact_generation_quality_evide
     }
 
 
+def _decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality_evidence(
+    *,
+    item_id: str,
+) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    generation_quality_baseline = (
+        f"{base}/decoder_attention_mixed_int8_generation_quality__"
+        "l2_decoder_attention_mixed_int8_generation_quality_llama7b_v1_r3.json"
+    )
+    rtl_exact_generation_quality = (
+        f"{base}/decoder_attention_mixed_int8_score32_w16_rtl_exact_generation_quality__"
+        "l2_decoder_attention_mixed_int8_score32_w16_rtl_exact_generation_quality_llama7b_v1.json"
+    )
+    composed_config = (
+        "runs/designs/npu_blocks/"
+        "attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_score32_w16_exp_lut_div_b20/"
+        "config.json"
+    )
+    out = f"{base}/decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality__{item_id}.json"
+    report = f"{base}/decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality__{item_id}.md"
+    return {
+        "inputs": {
+            "attention_mixed_int8_generation_quality_baseline": generation_quality_baseline,
+            "attention_mixed_int8_score32_w16_rtl_exact_generation_quality": rtl_exact_generation_quality,
+            "attention_score32_exp_lut_div_composed_config": composed_config,
+            "attention_mixed_int8_score32_exp_lut_div_generation_quality_out": out,
+            "attention_mixed_int8_score32_exp_lut_div_generation_quality_report": report,
+            "attention_mixed_int8_score32_exp_lut_div_generation_quality_scope": (
+                "Run a bounded native-checkpoint generation/NLL gate for the score32 exp-LUT "
+                "divider softmax bridge. This checks whether the matched native candidate can "
+                "recover generation quality before its composed RTL datapath is recosted."
+            ),
+        },
+        "commands": [
+            {
+                "name": "evaluate_decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality",
+                "run": (
+                    "bash -lc '"
+                    "MODEL_ID=${RTLGEN_MODEL_NATIVE_7B_MODEL_ID:-mistralai/Mistral-7B-v0.1}; "
+                    "EXPECTED_GQA=${RTLGEN_MODEL_NATIVE_7B_EXPECTED_GQA_GROUP_SIZE:-4}; "
+                    "MAX_PROMPTS=${RTLGEN_MODEL_NATIVE_7B_GENERATION_MAX_PROMPTS:-8}; "
+                    "GEN_STEPS=${RTLGEN_MODEL_NATIVE_7B_GENERATION_STEPS:-8}; "
+                    "DTYPE=${RTLGEN_MODEL_NATIVE_7B_DTYPE:-bfloat16}; "
+                    "bash npu/eval/run_hf_eval_python.sh "
+                    "npu/eval/evaluate_llm_decoder_model_native_mixed_int8_generation_quality.py "
+                    "--model-id \"$MODEL_ID\" "
+                    "--expected-gqa-group-size \"$EXPECTED_GQA\" "
+                    "--max-prompts \"$MAX_PROMPTS\" "
+                    "--generation-steps \"$GEN_STEPS\" "
+                    "--dtype \"$DTYPE\" "
+                    "--candidate score32_exp_lut_div:q8,k8,v8,s32,w16,exp_lut_div_bucket20 "
+                    "--primary-candidate-id score32_exp_lut_div "
+                    f"--out {out} "
+                    f"--out-md {report}'"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+        "evidence_only": True,
+    }
+
+
 def _decoder_attention_mixed_int8_score24_w16_rtl_exact_generation_quality_evidence(
     *,
     item_id: str,
@@ -9050,6 +9112,7 @@ def _build_payload(
         "decoder_attention_mixed_int8_generation_quality",
         "decoder_attention_mixed_int8_score32_w16_recip_lut_q16_generation_quality",
         "decoder_attention_mixed_int8_score32_w16_rtl_exact_generation_quality",
+        "decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality",
         "decoder_attention_mixed_int8_score24_w16_rtl_exact_generation_quality",
         "decoder_attention_mixed_int8_score32_w16_rtl_recip_precision_generation_quality",
         "decoder_attention_mixed_int8_softmax_replacement_generation_quality",
@@ -9266,6 +9329,10 @@ def _build_payload(
             )
         elif abstraction_layer_name == "decoder_attention_mixed_int8_score32_w16_rtl_exact_generation_quality":
             decoder_evidence = _decoder_attention_mixed_int8_score32_w16_rtl_exact_generation_quality_evidence(
+                item_id=item_id,
+            )
+        elif abstraction_layer_name == "decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality":
+            decoder_evidence = _decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality_evidence(
                 item_id=item_id,
             )
         elif abstraction_layer_name == "decoder_attention_mixed_int8_score24_w16_rtl_exact_generation_quality":

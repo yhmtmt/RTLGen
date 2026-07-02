@@ -1,0 +1,90 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality_llama7b_v1",
+  "created_utc": "2026-07-02T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Llama7B score32 exp-LUT divider generation quality",
+  "abstraction_layer": "decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality",
+  "hypothesis": "The `score32_exp_lut_div:q8,k8,v8,s32,w16,exp_lut_div_bucket20` candidate should recover native-checkpoint generation quality over the exact-divider bridge at the same mixed-int8 datapath boundary, enabling a quality-backed composed-PPA recost.",
+  "direct_comparison": {
+    "primary_question": "Does the exp-LUT divider bridge preserve bounded greedy generation and teacher-forced reference-token likelihood on a 7B checkpoint?",
+    "baseline": "l2_decoder_attention_mixed_int8_generation_quality_llama7b_v1_r3",
+    "negative_control": "l2_decoder_attention_mixed_int8_score32_w16_rtl_exact_generation_quality_llama7b_v1",
+    "candidate": "score32_exp_lut_div:q8,k8,v8,s32,w16,exp_lut_div_bucket20",
+    "physical_context": "l2_decoder_attention_composed_datapath_score32_w16_exact_div_reduced_replica_llama7b_v1",
+    "include": [
+      "run native-checkpoint reference and exp-LUT bridge candidate on the same bounded prompt set",
+      "measure teacher-forced reference-token NLL under reference and candidate",
+      "measure free-running greedy exact and token-match metrics and first divergence step",
+      "decide whether the bridge is safe to submit to composed-PPA recost"
+    ],
+    "exclude": [
+      "new OpenROAD/PPA runs",
+      "training or QAT",
+      "full downstream benchmark accuracy"
+    ],
+    "metrics": [
+      "decision",
+      "candidate_id",
+      "free_run_exact_match_rate",
+      "free_run_token_match_rate",
+      "diverged_prompt_count",
+      "mean_first_divergence_step",
+      "teacher_forced_mean_reference_nll",
+      "teacher_forced_mean_candidate_nll",
+      "teacher_forced_mean_nll_delta",
+      "teacher_forced_candidate_reference_token_prob_mean"
+    ]
+  },
+  "expected_benefit": [
+    "validate whether exp-LUT divider approximation can replace exact division without quality loss",
+    "remove a likely false-positive barrier before composing and recosting at PPA",
+    "define the next mixed/int8 precision recovery path if exp-LUT bridge fails"
+  ],
+  "risks": [
+    "bounded greedy generation is not full task accuracy",
+    "prompt and generation-step defaults may miss longer-horizon divergence",
+    "quality outcome remains checkpoint/distribution dependent"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Run a bounded native-checkpoint generation/NLL quality gate for score32 exp-LUT divider candidate before composing the corresponding PPA recost.",
+      "candidate": "score32_exp_lut_div:q8,k8,v8,s32,w16,exp_lut_div_bucket20",
+      "candidate_id": "score32_exp_lut_div",
+      "evaluation_mode": "quality_gate",
+      "abstraction_layer": "decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality",
+      "comparison_role": "score32_exp_lut_div_generation_quality",
+      "cost_class": "medium",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_mixed_int8_generation_quality_llama7b_v1_r3",
+        "l2_decoder_attention_mixed_int8_score32_w16_rtl_exact_generation_quality_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "run_physical": false,
+      "expected_result": {
+        "direction": "proceed_to_composed_ppa_recost_if_exp_lut_div_bridge_passes",
+        "reason": "If the exp-LUT divider bridge passes this quality gate, it can proceed to composed-PPA recost; if it fails, keep the candidate only as a diagnostic before further softmax/precision recovery."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_generation_quality__l2_decoder_attention_mixed_int8_generation_quality_llama7b_v1_r3.json"
+  ],
+  "source_refs": [
+    "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_score32_w16_exp_lut_div_b20/config.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score32_w16_rtl_exact_generation_quality__l2_decoder_attention_mixed_int8_score32_w16_rtl_exact_generation_quality_llama7b_v1.json",
+    "npu/eval/evaluate_llm_decoder_model_native_mixed_int8_generation_quality.py",
+    "npu/eval/gen_llm_candidate_suite.py",
+    "control_plane/control_plane/services/l2_task_generator.py",
+    "npu/rtlgen/gen_attention_dual_stream_composed.py"
+  ],
+  "knowledge_refs": [
+    "npu/eval/evaluate_llm_decoder_model_native_mixed_int8_attention.py",
+    "docs/proposals/prop_l2_decoder_attention_mixed_int8_score32_w16_rtl_exact_generation_quality_llama7b_v1/proposal.json"
+  ]
+}
