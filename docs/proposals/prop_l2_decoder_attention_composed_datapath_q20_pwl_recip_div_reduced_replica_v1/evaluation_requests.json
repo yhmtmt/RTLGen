@@ -1,0 +1,27 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_composed_datapath_q20_pwl_recip_div_reduced_replica_v1",
+  "source_commit_note": "Dispatch should use the merge commit that adds q20 PWL reciprocal-divider reduced-replica recost support and should wait until the q20 PWL reciprocal-divider L1 PPA item is merged.",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_composed_datapath_q20_pwl_recip_div_reduced_replica_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Recost the measured q20 PWL reciprocal-divider composed dual-stream attention wrapper at the area-fit replica count and measured wrapper clock.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_composed_datapath_physical_feasibility",
+      "comparison_role": "q20_pwl_recip_div_reduced_replica_recost",
+      "paired_baseline_item_id": "l2_decoder_attention_composed_datapath_score32_w16_recip_lut_q16_reduced_replica_llama7b_v1",
+      "depends_on_item_ids": [
+        "l1_decoder_attention_dual_stream_composed_q20_pwl_recip_div_ppa_v2",
+        "l2_decoder_attention_composed_datapath_score32_w16_recip_lut_q16_reduced_replica_llama7b_v1",
+        "l2_decoder_attention_kv_subtile_pipeline_schedule_softmax_recip_lut_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "record_q20_pwl_recip_div_area_fit_recost",
+        "reason": "The measured q20 PWL reciprocal-divider datapath is a high-cost but physically embodied softmax boundary; recost it to keep the Llama7B frontier comparison honest."
+      },
+      "status": "planned"
+    }
+  ]
+}

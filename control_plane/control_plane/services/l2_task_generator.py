@@ -122,6 +122,56 @@ def _load_requested_item_entry(repo_root: Path, proposal_path: str | None, item_
     return None
 
 
+def _proposal_mentions_item(payload: dict[str, Any], item_id: str) -> bool:
+    item_retry_base = _retry_base(item_id)
+    for key in ("requested_items", "required_evaluations"):
+        values = payload.get(key)
+        if not isinstance(values, list):
+            continue
+        for entry in values:
+            if not isinstance(entry, dict):
+                continue
+            candidate_item_id = str(entry.get("item_id", "")).strip()
+            if candidate_item_id == item_id or _retry_base(candidate_item_id) == item_retry_base:
+                return True
+    return False
+
+
+def _discover_proposal_for_item(repo_root: Path, item_id: str) -> tuple[str | None, str | None]:
+    proposal_root = repo_root / "docs" / "proposals"
+    if not proposal_root.exists():
+        return None, None
+
+    matches: list[tuple[str, str]] = []
+    for proposal_dir in sorted(path for path in proposal_root.iterdir() if path.is_dir()):
+        proposal_file = proposal_dir / "proposal.json"
+        proposal_id = proposal_dir.name
+        if proposal_file.exists():
+            try:
+                proposal_payload = _load_json(proposal_file)
+            except Exception:
+                proposal_payload = {}
+            proposal_id = str(proposal_payload.get("proposal_id", "")).strip() or proposal_id
+            if _proposal_mentions_item(proposal_payload, item_id):
+                matches.append((proposal_id, str(proposal_dir.relative_to(repo_root))))
+                continue
+
+        evaluation_requests_path = proposal_dir / "evaluation_requests.json"
+        if not evaluation_requests_path.exists():
+            continue
+        try:
+            evaluation_payload = _load_json(evaluation_requests_path)
+        except Exception:
+            continue
+        if _proposal_mentions_item(evaluation_payload, item_id):
+            request_proposal_id = str(evaluation_payload.get("proposal_id", "")).strip()
+            matches.append((request_proposal_id or proposal_id, str(proposal_dir.relative_to(repo_root))))
+
+    if len(matches) == 1:
+        return matches[0]
+    return None, None
+
+
 def _resolve_requested_entry_text(
     entry: dict[str, Any] | None,
     *,
@@ -9475,8 +9525,20 @@ def generate_l2_campaign_task(session: Session, request: Layer2CampaignGenerateR
     objective_profiles_json = (
         _repo_rel(request.objective_profiles_json, repo_root) if request.objective_profiles_json else None
     )
+    proposal_id = request.proposal_id
     proposal_path = _repo_rel(request.proposal_path, repo_root) if request.proposal_path else None
-    proposal_path = canonicalize_proposal_path(repo_root, proposal_path=proposal_path, proposal_id=request.proposal_id)
+    if not proposal_id and not proposal_path:
+        proposal_id, proposal_path = _discover_proposal_for_item(repo_root, item_id)
+    proposal_path = canonicalize_proposal_path(repo_root, proposal_path=proposal_path, proposal_id=proposal_id)
+    effective_proposal_id = str(proposal_id or "").strip()
+    if not effective_proposal_id:
+        proposal_path_text = str(proposal_path or "").strip()
+        if proposal_path_text:
+            proposal_path_obj = Path(proposal_path_text)
+            if proposal_path_obj.name == "proposal.json":
+                effective_proposal_id = str(proposal_path_obj.parent.name).strip()
+            else:
+                effective_proposal_id = str(proposal_path_obj.name).strip()
     requested_entry = _load_requested_item_entry(repo_root, proposal_path, item_id)
     effective_evaluation_mode = _resolve_requested_entry_text(
         requested_entry,
@@ -9517,7 +9579,7 @@ def generate_l2_campaign_task(session: Session, request: Layer2CampaignGenerateR
     if request.update_proposal_files:
         _upsert_requested_item_entry(
             repo_root=repo_root,
-            proposal_id=request.proposal_id,
+            proposal_id=effective_proposal_id,
             proposal_path=proposal_path,
             item_id=item_id,
             task_type='l2_campaign',
@@ -9556,7 +9618,7 @@ def generate_l2_campaign_task(session: Session, request: Layer2CampaignGenerateR
         jobs=request.jobs,
         batch_id=batch_id,
         objective_profiles_json=objective_profiles_json,
-        proposal_id=request.proposal_id,
+        proposal_id=effective_proposal_id,
         proposal_path=proposal_path,
         evaluation_mode=effective_evaluation_mode,
         abstraction_layer=effective_abstraction_layer,
