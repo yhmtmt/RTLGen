@@ -19,6 +19,7 @@
     "equivalence_hash": false,
     "softmax_pipeline_stages": 1,
     "softmax_internal_pipeline_stages": 0,
-    "softmax_impl": "recip_lut"
+    "softmax_impl": "recip_lut",
+    "semantic_profile": "score32_w16_recip_lut_q16"
   }
 }

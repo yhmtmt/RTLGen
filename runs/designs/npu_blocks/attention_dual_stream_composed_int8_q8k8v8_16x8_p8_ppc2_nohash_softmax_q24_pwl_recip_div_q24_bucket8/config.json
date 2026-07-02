@@ -20,6 +20,7 @@
     "stream_buffer_bits": 1024,
     "equivalence_hash": false,
     "softmax_pipeline_stages": 1,
-    "softmax_impl": "pwl_recip_div"
+    "softmax_impl": "pwl_recip_div",
+    "semantic_profile": "q24_pwl_recip_div"
   }
 }
