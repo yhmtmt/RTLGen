@@ -81,6 +81,61 @@ def _init_git_repo(repo_root: Path) -> str:
     return result.stdout.strip()
 
 
+def _write_q20_pwl_recip_div_recost_proposal(repo_root: Path) -> None:
+    proposal_dir = (
+        repo_root
+        / "docs"
+        / "proposals"
+        / "prop_l2_decoder_attention_composed_datapath_q20_pwl_recip_div_reduced_replica_v1"
+    )
+    proposal_dir.mkdir(parents=True)
+    proposal_id = "prop_l2_decoder_attention_composed_datapath_q20_pwl_recip_div_reduced_replica_v1"
+    item_id = "l2_decoder_attention_composed_datapath_q20_pwl_recip_div_reduced_replica_llama7b_v1"
+    proposal_dir.joinpath("proposal.json").write_text(
+        json.dumps(
+            {
+                "proposal_id": proposal_id,
+                "required_evaluations": [
+                    {
+                        "item_id": item_id,
+                    }
+                ],
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    proposal_dir.joinpath("evaluation_requests.json").write_text(
+        json.dumps(
+            {
+                "proposal_id": proposal_id,
+                "requested_items": [
+                    {
+                        "item_id": item_id,
+                        "evaluation_mode": "frontier_detail",
+                        "abstraction_layer": "decoder_attention_composed_datapath_physical_feasibility",
+                        "comparison_role": "q20_pwl_recip_div_reduced_replica_recost",
+                        "paired_baseline_item_id": (
+                            "l2_decoder_attention_composed_datapath_score32_w16_recip_lut_q16_reduced_replica_llama7b_v1"
+                        ),
+                        "depends_on_item_ids": [
+                            "l1_decoder_attention_dual_stream_composed_q20_pwl_recip_div_ppa_v2"
+                        ],
+                        "requires_merged_inputs": True,
+                        "requires_materialized_refs": True,
+                        "expected_result": {
+                            "direction": "record_q20_pwl_recip_div_area_fit_recost",
+                            "reason": "q20 boundary recost",
+                        },
+                    }
+                ],
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+
 def test_generate_l2_campaign_task_creates_ready_work_item() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
@@ -6146,6 +6201,7 @@ def test_generate_l2_campaign_task_adds_attention_composed_datapath_q20_pwl_reci
         repo_root = Path(td) / "repo"
         repo_root.mkdir()
         campaign_path = _write_campaign(repo_root)
+        _write_q20_pwl_recip_div_recost_proposal(repo_root)
         source_commit = _init_git_repo(repo_root)
         engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
         create_all(engine)
@@ -6168,6 +6224,7 @@ def test_generate_l2_campaign_task_adds_attention_composed_datapath_q20_pwl_reci
             commands = work_item.task_request.request_payload["task"]["commands"]
             run = commands[0]["run"]
             decoder_inputs = work_item.input_manifest["decoder_contract"]
+            payload = work_item.task_request.request_payload
 
             assert "estimate_decoder_attention_composed_datapath_physical_feasibility" in [c["name"] for c in commands]
             assert (
@@ -6176,6 +6233,16 @@ def test_generate_l2_campaign_task_adds_attention_composed_datapath_q20_pwl_reci
             )
             assert "--recompute-area-fit-replicas" in run
             assert "--precision-profile q8_k8_v8_a24_s20_w20_pwl_recip_div_q20_int8_compute" in run
+            assert payload["developer_loop"]["proposal_id"] == (
+                "prop_l2_decoder_attention_composed_datapath_q20_pwl_recip_div_reduced_replica_v1"
+            )
+            assert payload["developer_loop"]["proposal_path"] == (
+                "docs/proposals/prop_l2_decoder_attention_composed_datapath_q20_pwl_recip_div_reduced_replica_v1"
+            )
+            assert payload["developer_loop"]["comparison"]["role"] == "q20_pwl_recip_div_reduced_replica_recost"
+            assert payload["developer_loop"]["dependencies"]["item_ids"] == [
+                "l1_decoder_attention_dual_stream_composed_q20_pwl_recip_div_ppa_v2"
+            ]
             assert decoder_inputs["attention_kv_composed_dual_stream_metrics"] == (
                 "runs/designs/npu_blocks/"
                 "attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q20_pwl_recip_div_q20_bucket8/"

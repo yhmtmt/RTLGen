@@ -1,0 +1,69 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_composed_datapath_q20_pwl_recip_div_reduced_replica_v1",
+  "created_utc": "2026-07-02T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Llama7B q20 PWL reciprocal-divider composed datapath reduced-replica recost",
+  "abstraction_layer": "decoder_attention_composed_datapath_physical_feasibility",
+  "hypothesis": "The measured q20 PWL reciprocal-divider composed datapath is a conservative, physically embodied softmax boundary. Re-costing it at the area-fit replica count will show whether the higher-precision PWL reciprocal path has any Llama7B frontier value after accounting for its measured delay, power, and area.",
+  "direct_comparison": {
+    "primary_question": "What Llama7B latency/area/energy point remains when the measured q20 PWL reciprocal-divider composed datapath is constrained to the area-fit replica count?",
+    "baseline": "l2_decoder_attention_composed_datapath_score32_w16_recip_lut_q16_reduced_replica_llama7b_v1",
+    "candidate": "l2_decoder_attention_composed_datapath_q20_pwl_recip_div_reduced_replica_llama7b_v1",
+    "include": [
+      "consume measured q20 PWL reciprocal-divider composed datapath metrics",
+      "use the existing Llama7B sub-tile schedule structure",
+      "reduce compute replicas to the measured-area budgeted count",
+      "recompute QKV, QK, value, tile service, layer, and total latency at the measured wrapper clock",
+      "compare against the current score32/w16 reciprocal-LUT q16 reduced-replica recost"
+    ],
+    "exclude": [
+      "new native checkpoint quality run",
+      "new HBM/DRAM service model",
+      "new L1 datapath synthesis"
+    ],
+    "metrics": [
+      "decision",
+      "precision_profile",
+      "best_requested_replica_recost_area_fit_replica_count",
+      "best_requested_replica_recost_macs_per_cycle",
+      "best_requested_replica_recost_latency_us",
+      "best_requested_adjusted_speedup_vs_hbm_closed_source",
+      "best_feasible_latency_us"
+    ]
+  },
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_composed_datapath_q20_pwl_recip_div_reduced_replica_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Recost the measured q20 PWL reciprocal-divider composed dual-stream attention wrapper at the area-fit replica count and measured wrapper clock.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_composed_datapath_physical_feasibility",
+      "comparison_role": "q20_pwl_recip_div_reduced_replica_recost",
+      "paired_baseline_item_id": "l2_decoder_attention_composed_datapath_score32_w16_recip_lut_q16_reduced_replica_llama7b_v1",
+      "depends_on_item_ids": [
+        "l1_decoder_attention_dual_stream_composed_q20_pwl_recip_div_ppa_v2",
+        "l2_decoder_attention_composed_datapath_score32_w16_recip_lut_q16_reduced_replica_llama7b_v1",
+        "l2_decoder_attention_kv_subtile_pipeline_schedule_softmax_recip_lut_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "record_q20_pwl_recip_div_area_fit_recost",
+        "reason": "The measured q20 PWL reciprocal-divider datapath is a high-cost but physically embodied softmax boundary; recost it to keep the Llama7B frontier comparison honest."
+      }
+    }
+  ],
+  "source_refs": [
+    "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q20_pwl_recip_div_q20_bucket8/metrics.csv",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_score32_w16_recip_lut_q16_reduced_replica_llama7b_v1.json",
+    "npu/eval/estimate_llm_decoder_attention_kv_dual_stream_physical_feasibility.py"
+  ],
+  "remaining_abstractions": [
+    "This recosts the existing analytic schedule rather than running a new end-to-end simulator.",
+    "HBM/SRAM/NoC service models are inherited unchanged from the upstream sub-tile schedule.",
+    "The PWL reciprocal-divider softmax is an integer approximation boundary, not full floating-point softmax.",
+    "Quality backing remains inherited from upstream mixed-int8 evidence unless a follow-up native checkpoint quality run is scheduled."
+  ]
+}
