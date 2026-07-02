@@ -2373,6 +2373,30 @@ def test_decoder_evidence_summary_recognizes_composed_datapath_score32_recip_lut
     assert "best_requested_replica_recost_latency_us=9900.0" in summary
 
 
+def test_decoder_evidence_summary_recognizes_composed_datapath_q20_pwl_recip_div_reduced_replica_model() -> None:
+    outcome, summary = _decoder_evidence_summary(
+        evidence_ref="runs/datasets/demo/composed_datapath_q20_pwl_recip_div_reduced_replica.json",
+        evidence_payload={
+            "model": "llm_decoder_attention_composed_datapath_q20_pwl_recip_div_reduced_replica_llama7b_v1",
+            "diagnosis": {
+                "decision": "dual_stream_area_blocked",
+                "precision_profile": "q8_k8_v8_a24_s20_w20_pwl_recip_div_q20_int8_compute",
+                "best_requested_mode": "dual_mac",
+                "best_requested_replica_recost_enabled": True,
+                "best_requested_replica_recost_area_fit_replica_count": 512,
+                "best_requested_replica_recost_macs_per_cycle": 65536,
+                "best_requested_replica_recost_latency_us": 12000.0,
+                "best_feasible_latency_us": 12000.0,
+            },
+        },
+    )
+
+    assert outcome == "dual_stream_area_blocked"
+    assert "q20 PWL reciprocal-divider reduced-replica recost" in summary
+    assert "precision_profile=q8_k8_v8_a24_s20_w20_pwl_recip_div_q20_int8_compute" in summary
+    assert "best_requested_replica_recost_area_fit_replica_count=512" in summary
+
+
 def _seed_succeeded_l2_campaign(session: Session, repo_root: Path) -> tuple[str, str]:
     campaign_dir = repo_root / "runs" / "campaigns" / "npu" / "demo_campaign"
     schedule_rel = "runs/campaigns/npu/demo_campaign/artifacts/mapper/fp16_nm1_demo/demo_model/schedule.yml"
