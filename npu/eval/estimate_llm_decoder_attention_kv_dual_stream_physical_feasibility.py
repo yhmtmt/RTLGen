@@ -98,6 +98,27 @@ def _compose_variant_name(path: Path) -> str:
     return path.parent.name
 
 
+def _load_composed_semantic_profile(path: Path) -> str:
+    design_dir = path.parent
+    manifest_path = design_dir / "verilog" / "attention_dual_stream_composed_manifest.json"
+    config_path = design_dir / "config.json"
+    for candidate in (manifest_path, config_path):
+        if not candidate.exists():
+            continue
+        try:
+            payload = _load_json(candidate)
+        except json.JSONDecodeError:
+            continue
+        if candidate == manifest_path:
+            profile = payload.get("semantic_profile")
+        else:
+            comp = payload.get("attention_dual_stream_composed")
+            profile = comp.get("semantic_profile") if isinstance(comp, dict) else None
+        if isinstance(profile, str) and profile.strip():
+            return profile.strip()
+    return "fixed_point"
+
+
 def _parse_composed_metric_inputs(values: Any) -> list[Path]:
     if not values:
         return []
@@ -127,6 +148,7 @@ def _load_composed_variants(paths: list[Path]) -> list[JsonDict]:
             {
                 "composed_variant_label": _infer_composed_precision_profile(path),
                 "composed_variant_name": _compose_variant_name(path),
+                "composed_semantic_profile": _load_composed_semantic_profile(path),
             }
         )
         variants.append(metrics)
@@ -320,6 +342,9 @@ def _row_with_budget(
                     "measured_dual_stream_composed_precision_profile": composed_dual_stream[
                         "composed_variant_label"
                     ],
+                    "measured_dual_stream_composed_semantic_profile": composed_dual_stream[
+                        "composed_semantic_profile"
+                    ],
                 }
                 if use_composed_dual_stream
                 else {}
@@ -347,6 +372,9 @@ def _row_with_budget(
             "substituted_compute_power_mw": round(base_compute_power, 6) if compute_substitution_enabled else None,
             "substituted_compute_variant_label": (
                 composed_dual_stream["composed_variant_label"] if use_composed_dual_stream else None
+            ),
+            "substituted_compute_semantic_profile": (
+                composed_dual_stream["composed_semantic_profile"] if use_composed_dual_stream else None
             ),
             "logic_area_used_required_um2": round(logic_used_required, 6),
             "logic_area_slack_required_um2": round(logic_slack_required, 6),
@@ -721,6 +749,9 @@ def build_report(args: argparse.Namespace) -> JsonDict:
             "best_requested_compute_substitution_enabled": best_requested.get("compute_substitution_enabled"),
             "best_requested_substituted_compute_arch": best_requested.get("substituted_compute_arch"),
             "best_requested_substituted_compute_variant_label": best_requested.get("substituted_compute_variant_label"),
+            "best_requested_substituted_compute_semantic_profile": best_requested.get(
+                "substituted_compute_semantic_profile"
+            ),
             "best_requested_substituted_compute_area_um2": best_requested.get("substituted_compute_area_um2"),
             "best_requested_compute_clock_ok": best_requested.get("compute_clock_ok"),
             "best_requested_replica_recost_enabled": best_requested.get("replica_recost_enabled"),
@@ -767,29 +798,30 @@ def write_markdown(path: Path, payload: JsonDict) -> None:
         f"- best requested compute substitution: `{diag['best_requested_compute_substitution_enabled']}`",
         f"- best requested substituted compute arch: `{diag['best_requested_substituted_compute_arch']}`",
         f"- best requested substituted compute variant: `{diag['best_requested_substituted_compute_variant_label']}`",
+        f"- best requested substituted compute semantic profile: `{diag['best_requested_substituted_compute_semantic_profile']}`",
         f"- best requested substituted compute area um2: `{diag['best_requested_substituted_compute_area_um2']}`",
         f"- recommended next step: `{diag['recommended_next_step']}`",
         "",
         "## Best Requested",
         "",
-        "| mode | latency us | speedup | area fit | buffer fit | substituted variant | logic slack um2 | area over budget | "
+        "| mode | latency us | speedup | area fit | buffer fit | substituted variant | semantic profile | logic slack um2 | area over budget | "
         "density gain | required replicas | budget replicas | req buffer bytes |",
-        "|---|---:|---:|---|---|---|---:|---:|---:|---:|---:|---:|",
+        "|---|---:|---:|---|---|---|---|---:|---:|---:|---:|---:|---:|",
         "| {compute_mode} | {latency_us} | {latency_speedup_vs_hbm_closed_source} | {area_fit} | {buffer_fit} | "
-        "{substituted_compute_variant_label} | "
+        "{substituted_compute_variant_label} | {substituted_compute_semantic_profile} | "
         "{logic_area_slack_required_um2} | {compute_area_over_budget_um2} | "
         "{required_compute_density_gain} | {replica_count_required} | "
         "{replica_count_budgeted_at_current_compute_area} | {required_stream_buffer_bytes} |".format(**best),
         "",
         "## Rows",
         "",
-        "| mode | latency us | area fit | feasible | substituted variant | logic slack um2 | local datapath/cluster | compute area required |",
-        "|---|---:|---|---|---|---:|---:|---:|",
+        "| mode | latency us | area fit | feasible | substituted variant | semantic profile | logic slack um2 | local datapath/cluster | compute area required |",
+        "|---|---:|---|---|---|---|---:|---:|---:|",
     ]
     for row in payload["rows"]:
         lines.append(
             "| {compute_mode} | {latency_us} | {area_fit} | {physical_feasible} | "
-            "{substituted_compute_variant_label} | "
+            "{substituted_compute_variant_label} | {substituted_compute_semantic_profile} | "
             "{logic_area_slack_required_um2} | {selected_local_datapath_area_um2_per_cluster} | "
             "{compute_area_required_um2} |".format(**row)
         )

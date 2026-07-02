@@ -247,11 +247,83 @@ def test_composed_q12_pwl_wrapper_variant_label_is_concise(tmp_path: Path) -> No
         / "metrics.csv"
     )
     _write_metrics(metrics, die_area=30.0, power_mw=0.7, instance_area=28.0)
+    _write_json(
+        metrics.parent / "config.json",
+        {
+            "top_name": "attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_q12_pwl_recip_q12",
+            "attention_dual_stream_composed": {
+                "softmax_impl": "pwl_recip_lut",
+                "semantic_profile": "q12_pwl_recip_lut",
+            },
+        },
+    )
 
     result = build_report(_args(tmp_path, source=source, composed_metrics=[str(metrics)]))
 
     assert result["diagnosis"]["best_requested_substituted_compute_variant_label"] == "q12_pwl"
+    assert result["diagnosis"]["best_requested_substituted_compute_semantic_profile"] == "q12_pwl_recip_lut"
     assert result["best_requested"]["substituted_compute_variant_label"] == "q12_pwl"
+    assert result["best_requested"]["substituted_compute_semantic_profile"] == "q12_pwl_recip_lut"
+
+
+def test_composed_wrapper_semantic_profile_prefers_generated_manifest(tmp_path: Path) -> None:
+    source = tmp_path / "source.json"
+    _write_json(
+        source,
+        {
+            "model": "unit_source",
+            "best_by_compute_mode": [
+                {
+                    "compute_mode": "dual_mac",
+                    "latency_us": 100.0,
+                    "latency_speedup_vs_hbm_closed_source": 4.0,
+                    "tile_service_cycles": 12,
+                    "cluster_count": 1,
+                    "compute_area_multiplier": 1.0,
+                    "compute_area_um2": 120.0,
+                    "compute_budget_um2": 1000.0,
+                    "measured_l1_overhead_area_um2": 20.0,
+                    "local_datapath_area_um2": 10.0,
+                    "softmax_weight_generator_area_um2": 5.0,
+                    "logic_area_used_um2": 150.0,
+                    "required_stream_buffer_bytes": 16,
+                    "available_local_capacity_bytes": 32,
+                    "measured_block_area_um2": 120.0,
+                    "measured_block_clock_ns": 4.0,
+                    "measured_block_macs_per_cycle": 128,
+                    "measured_block_power_mw": 4.0,
+                    "compute_replica_count": 1,
+                    "compute_arch": "dense_gemm_16x8_k1_p1",
+                    "macs_per_cycle": 128,
+                    "clock_ns": 4.0,
+                }
+            ],
+        },
+    )
+    metrics = tmp_path / "score32" / "metrics.csv"
+    _write_metrics(metrics, die_area=30.0, power_mw=0.7, instance_area=28.0)
+    _write_json(
+        metrics.parent / "config.json",
+        {
+            "attention_dual_stream_composed": {
+                "semantic_profile": "score32_w16_exact_div",
+            },
+        },
+    )
+    _write_json(
+        metrics.parent / "verilog" / "attention_dual_stream_composed_manifest.json",
+        {
+            "semantic_profile": "score32_w16_recip_lut_q16",
+        },
+    )
+
+    result = build_report(_args(tmp_path, source=source, composed_metrics=[str(metrics)]))
+
+    assert (
+        result["diagnosis"]["best_requested_substituted_compute_semantic_profile"]
+        == "score32_w16_recip_lut_q16"
+    )
+    assert result["best_requested"]["measured_dual_stream_composed_semantic_profile"] == "score32_w16_recip_lut_q16"
 
 
 def test_composed_wrapper_can_recost_area_fit_replica_count(tmp_path: Path) -> None:
