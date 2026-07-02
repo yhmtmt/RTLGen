@@ -95,7 +95,11 @@
   ],
   "remaining_abstractions": [
     "No RTL for the floating or near-exact composed softmax path exists yet.",
+    "The native score32_float pass uses floating probabilities after score quantization; the measured score32_w16_rtl_exact generation-quality artifact failed and must remain diagnostic.",
     "The fp16 softmaxcmp rows are npu_top proxy rows with the existing int8 row-wise SOFTMAX wrapper, not composed q8/k8/v8 attention wrappers.",
     "The first L1 job must be queued only after generator and guard support exists."
+  ],
+  "contract_refs": [
+    "docs/proposals/prop_l1_decoder_attention_dual_stream_composed_qkv8_float_exact_softmax_v1/semantic_contract.md"
   ]
 }
