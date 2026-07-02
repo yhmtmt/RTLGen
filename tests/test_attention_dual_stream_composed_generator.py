@@ -27,6 +27,11 @@ FRONTIER_CONFIG_SEMANTIC_PROFILES = {
     ): "score32_w16_recip_lut_q16",
     (
         "runs/designs/npu_blocks/"
+        "attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_score32_w16_exp_lut_div_b20/"
+        "config.json"
+    ): "score32_exp_lut_div",
+    (
+        "runs/designs/npu_blocks/"
         "attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_q12_pwl_recip_q12/"
         "config.json"
     ): "q12_pwl_recip_lut",
@@ -710,6 +715,45 @@ def test_attention_dual_stream_composed_generator_score32_v8_recip_lut_q16_softm
     assert "/ sum_weight_q" not in top_text
     assert "wire [63:0] softmax_weights" in top_text
     assert "module attention_full_value_stream_q8v8_p8_ppc2" in top_text
+
+
+def test_attention_dual_stream_composed_generator_score32_exp_lut_div_softmax(
+    tmp_path: Path,
+) -> None:
+    design_dir = tmp_path / "attention_dual_stream_composed_score32_exp_lut_div"
+    config_path = design_dir / "config.json"
+    _write_config(
+        config_path,
+        softmax_pipeline_stages=1,
+        softmax_impl="exp_lut_div",
+        semantic_profile="score32_exp_lut_div",
+        mac_accum_bits=32,
+        softmax_accum_bits=40,
+        softmax_score_bits=32,
+        softmax_weight_bits=16,
+        softmax_input_frac_bits=28,
+        softmax_reciprocal_lut_bucket_shift=20,
+        value_bits=8,
+    )
+
+    top_text = _generate_and_check(design_dir, config_path)
+
+    manifest = json.loads((design_dir / "verilog" / "attention_dual_stream_composed_manifest.json").read_text())
+    assert manifest["mac_module"] == "int8_mac_s8s8_acc32"
+    assert manifest["softmax_impl"] == "exp_lut_div"
+    assert manifest["semantic_profile"] == "score32_exp_lut_div"
+    assert manifest["softmax_score_bits"] == 32
+    assert manifest["softmax_weight_bits"] == 16
+    assert manifest["softmax_input_frac_bits"] == 28
+    assert manifest["softmax_reciprocal_lut_bucket_shift"] == 20
+    assert manifest["score_probability_contract"]["exp_implementation"] == "bucketed_exp_lut"
+    assert "module attention_softmax_weight_score32_w16_exp_lut_div_b20_like" in top_text
+    assert "function [ACCUM_BITS-1:0] exp_lut" in top_text
+    assert "localparam integer EXP_BUCKET_SHIFT = 20" in top_text
+    assert "EXP_MAX_DELTA" in top_text
+    assert "numer / sum_weight" in top_text
+    assert "function [RECIPROCAL_WIDTH-1:0] reciprocal_lut" not in top_text
+    assert "function [ACCUM_BITS-1:0] pwl_weight" not in top_text
 
 
 def test_attention_dual_stream_composed_generator_score32_v8_exact_softmax_divider_operand_pipeline(

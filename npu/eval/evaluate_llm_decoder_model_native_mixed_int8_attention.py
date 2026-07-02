@@ -129,6 +129,19 @@ def _pwl_reciprocal_mode(mode: str) -> tuple[int, int]:
     return reciprocal_bits, bucket_shift
 
 
+def _exp_lut_div_mode(mode: str) -> int:
+    prefix = "exp_lut_div_bucket"
+    if not mode.startswith(prefix):
+        return -1
+    try:
+        bucket_shift = int(mode[len(prefix) :])
+    except ValueError as exc:
+        raise ValueError(f"unsupported softmax mode: {mode}") from exc
+    if bucket_shift < 0 or bucket_shift > 24:
+        raise ValueError(f"unsupported softmax mode: {mode}")
+    return bucket_shift
+
+
 def _quantize_symmetric_list(values: list[float], bits: int) -> tuple[list[int], float]:
     if bits >= 24:
         return [int(round(value * 1024.0)) for value in values], 1.0 / 1024.0
@@ -239,6 +252,55 @@ def _pwl_recip_lut_softmax(
         lane_scaled = (weight * reciprocal_q) + (1 << (reciprocal_bits - 1))
         lane_scaled >>= reciprocal_bits
         lanes.append(min(output_scale, lane_scaled))
+    return [lane / float(output_scale) for lane in lanes]
+
+
+def _exp_lut_div_softmax(
+    logits: list[float],
+    *,
+    score_bits: int,
+    weight_bits: int,
+    bucket_shift: int,
+    input_frac_bits: int | None = None,
+) -> list[float]:
+    if score_bits < 5 or score_bits > 32:
+        raise ValueError("exp_lut_div softmax expects score_bits in [5, 32]")
+    if weight_bits < 2 or weight_bits > 24:
+        raise ValueError("exp_lut_div softmax expects weight_bits in [2, 24]")
+    if bucket_shift < 0 or bucket_shift > 24:
+        raise ValueError("exp_lut_div softmax expects bucket_shift in [0, 24]")
+    if not logits:
+        return []
+
+    if input_frac_bits is None:
+        input_frac_bits = _score_input_frac_bits(score_bits)
+    input_scale = 1 << input_frac_bits
+    output_scale = (1 << weight_bits) - 1
+    min_score = -(1 << (score_bits - 1))
+    max_score = (1 << (score_bits - 1)) - 1
+    q_logits = [
+        max(min_score, min(max_score, int(round(value * input_scale))))
+        for value in logits
+    ]
+    row_max = max(q_logits)
+    bucket_step = 1 << bucket_shift
+    max_delta = 8 * input_scale
+    max_bucket = (max_delta + (bucket_step >> 1)) >> bucket_shift
+
+    exp_weights: list[int] = []
+    for value in q_logits:
+        delta = max(0, min(max_delta, row_max - value))
+        bucket = min(max_bucket, (delta + (bucket_step >> 1)) >> bucket_shift)
+        exp_arg = (bucket * bucket_step) / float(input_scale)
+        exp_weights.append(int(math.exp(-exp_arg) * output_scale + 0.5))
+
+    sum_weight = sum(exp_weights)
+    if sum_weight <= 0:
+        return _safe_exp_softmax(logits)
+    lanes = [
+        min(output_scale, ((weight * output_scale) + (sum_weight >> 1)) // sum_weight)
+        for weight in exp_weights
+    ]
     return [lane / float(output_scale) for lane in lanes]
 
 
@@ -381,6 +443,7 @@ def _parse_candidate_spec(spec: Any) -> CandidateConfig:
                     part in {"float_quantized", "float_exact", "rtl_exact", "rtl_pow2sum"}
                     or part.startswith("rtl_recip_lut_q")
                     or part.startswith("pwl_recip_lut_q")
+                    or part.startswith("exp_lut_div_bucket")
                 ):
                     if softmax_mode:
                         raise ValueError(f"candidate spec {spec!r} has duplicate softmax mode tokens")
@@ -451,6 +514,11 @@ def _parse_candidate_list(value: str) -> list[CandidateConfig]:
 
 def _parse_softmax_mode(value: str) -> str:
     supported = {"float_quantized", "float_exact", "rtl_exact", "rtl_pow2sum", "rtl_recip_lut_q8"}
+    if value.startswith("exp_lut_div_bucket"):
+        bucket_shift = _exp_lut_div_mode(value)
+        if bucket_shift < 0:
+            raise argparse.ArgumentTypeError(f"unsupported softmax mode: {value}")
+        return value
     if value.startswith("pwl_recip_lut_q"):
         reciprocal_bits, _ = _pwl_reciprocal_mode(value)
         if reciprocal_bits <= 0:
@@ -741,6 +809,14 @@ def _softmax_patch(score_bits: int, weight_bits: int, softmax_mode: str):
         if softmax_mode == "float_exact":
             out = _safe_exp_softmax(values)
             return torch.tensor(out, dtype=torch.float32, device=row.device).reshape(row.shape)
+        if softmax_mode.startswith("exp_lut_div_bucket"):
+            out = _exp_lut_div_softmax(
+                values,
+                score_bits=score_bits,
+                weight_bits=weight_bits,
+                bucket_shift=_exp_lut_div_mode(softmax_mode),
+            )
+            return torch.tensor(out, dtype=row.dtype if row.dtype.is_floating_point else torch.float32, device=row.device).reshape(row.shape)
         if softmax_mode.startswith("pwl_recip_lut_q"):
             reciprocal_bits, bucket_shift = _pwl_reciprocal_mode(softmax_mode)
             out = _pwl_recip_lut_softmax(

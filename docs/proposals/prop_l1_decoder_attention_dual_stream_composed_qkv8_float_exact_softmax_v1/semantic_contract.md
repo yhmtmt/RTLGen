@@ -63,12 +63,18 @@ the q8/k8/v8 composed attention wrapper.
 
 ## Next Implementable Target
 
-The next implementation should not reuse `softmax_impl=exact_div`,
-`recip_lut`, or any PWL implementation with a quality-backed semantic profile.
-It should introduce a distinct composed softmax implementation, for example a
-range-reduced exp datapath plus exact divider or sequential divider, and pair it
-with a native quality candidate that matches the same output probability
-representation.
+The next implementation should not reuse `softmax_impl=exact_div`, `recip_lut`,
+or any PWL implementation with a quality-backed semantic profile. The initial
+bridge mode is:
+
+- native quality candidate:
+  `score32_exp_lut_div:q8,k8,v8,s32,w16,exp_lut_div_bucket20`
+- composed RTL config:
+  `runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_score32_w16_exp_lut_div_b20/config.json`
+- score representation: signed S32 fixed-point with 28 fractional bits
+- probability representation: unsigned W16 normalized weights
+- exp implementation: bucketed `exp(-delta)` LUT with bucket shift 20
+- normalization: exact row-sum divider
 
 The first PPA job should remain blocked until both are true:
 

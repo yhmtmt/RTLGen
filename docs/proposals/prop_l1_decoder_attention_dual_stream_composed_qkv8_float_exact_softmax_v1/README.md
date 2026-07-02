@@ -40,6 +40,12 @@ generation-quality artifact failed, so an integer W16 exact-divider row must not
 stand in for `score32_float` or `qkv8_float_exact` without a new matching quality
 gate.
 
+The first implemented bridge toward that contract is `exp_lut_div`: signed
+fixed-point score input, bucketed `exp(-delta)` LUT, exact row-sum divider, and
+unsigned quantized probability weights. It is measurable in the composed wrapper
+but remains diagnostic until the matching native quality candidate, for example
+`score32_exp_lut_div:q8,k8,v8,s32,w16,exp_lut_div_bucket20`, passes.
+
 The dependent L2 recost should use the L1 metrics from that wrapper and mark the
 result quality-backed by the existing `qkv8_float_exact`/`score32_float`
 quality evidence.
