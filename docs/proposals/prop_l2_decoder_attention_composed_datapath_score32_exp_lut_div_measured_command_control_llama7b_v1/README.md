@@ -12,3 +12,9 @@ It is distinct from the command-overhead sensitivity job:
 
 The result should run only after the exp-LUT quality/PPA/base-recost chain and
 the L1 command-dispatch-control PPA item have materialized.
+
+The generated task runs the same score32 exp-LUT release gate as the base
+reduced-replica recost before charging command-control PPA. That gate verifies
+the primary quality candidate is `score32_exp_lut_div`, the generation-quality
+decision is pass, and the composed datapath metrics/config are the bucket-20
+exp-LUT divider wrapper.
