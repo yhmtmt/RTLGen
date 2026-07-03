@@ -71,7 +71,8 @@ Generated work items store the required runtime revision in two places:
 The worker daemon uses that value before dispatch:
 - if the evaluator service repo already contains the required commit, the item runs normally
 - if the required commit is reachable from `origin/master`, the service repo is updated and the daemon re-execs itself before leasing the item
-- if the commit is missing or the service repo has tracked local modifications, the daemon reports a `source_blocked` or `source_reconcile_error` result instead of running with stale control-plane code
+- if the commit is missing, the daemon reports a `source_blocked` or `source_reconcile_error` result instead of running with stale control-plane code
+- if the service repo has tracked local modifications, a current daemon snapshots the status and diffs under `/tmp/<repo>-tracked-modifications-*`, resets the service repo, updates to the requested source, and includes the snapshot path in the source reconciliation log
 - if Git reports untracked generated files that would be overwritten by the update, the daemon quarantines those files under `/tmp/<repo>-checkout-blockers-*`, writes a `manifest.json`, retries the checkout, and includes the quarantine path in the source reconciliation log
 
 The default evaluator service wrapper enables this behavior:
@@ -217,6 +218,10 @@ sudo systemctl stop rtlgen-evaluator-worker.service || true
 pkill -f 'run-worker-daemon.*<machine_key>' || true
 
 cd /workspaces/rtlgen-eval-clean
+mkdir -p /tmp/rtlgen-eval-clean-manual-recovery
+git status --porcelain --untracked-files=no > /tmp/rtlgen-eval-clean-manual-recovery/status.txt
+git diff > /tmp/rtlgen-eval-clean-manual-recovery/diff.patch
+git diff --cached > /tmp/rtlgen-eval-clean-manual-recovery/diff_cached.patch
 git fetch origin
 git reset --hard origin/master
 
@@ -237,6 +242,19 @@ A corrected worker should show non-empty capabilities, including
 connections from the evaluator host, check for duplicate worker processes before
 terminating database backends; idle DB sessions are a symptom, not proof of the
 root cause.
+
+### Bootstrap an old source reconciler
+
+If `worker_source.head` is older than the source-reconciler tracked-modification
+snapshot support and `last_progress.message` says
+`service repo has tracked local modifications; refusing automatic checkout`,
+automatic source update cannot repair itself. That old daemon blocks before it
+can reach the newer recovery code.
+
+Use the manual recovery sequence above once, preserving the diffs before
+`git reset --hard origin/master`. After the daemon restarts on current master,
+future tracked service-repo edits should be snapshotted automatically instead of
+blocking checkout.
 
 ## Recovery
 
