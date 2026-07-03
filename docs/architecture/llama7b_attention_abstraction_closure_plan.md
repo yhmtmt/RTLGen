@@ -145,7 +145,13 @@ than free or heuristic assumptions.
     `l2_decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality_llama7b_v1`
     are queued. The dependent recost
     `l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_llama7b_v1`
-    is intentionally blocked until both inputs are materialized.
+    is intentionally blocked until both inputs are materialized. As of PR
+    #1127, the exp-LUT recost chain also starts with
+    `check_attention_score32_exp_lut_div_frontier_release`, which verifies the
+    primary quality candidate is `score32_exp_lut_div`, the generation-quality
+    decision is pass, and the measured composed PPA metrics/config match the
+    score32/w16 exp-LUT divider bucket-20 wrapper before any reduced-replica
+    recost can run.
 - New evaluations should continue to dispatch only to the remote evaluator
   `eval-daemon-b7c2d9c80c1c`, not the devcontainer.
 
@@ -217,8 +223,8 @@ than free or heuristic assumptions.
      exp-LUT divider datapath and matching generation-quality gate are queued.
    - Next result: run the queued exp-LUT quality gate and exp-LUT L1 PPA on the
      remote evaluator, then release the blocked exp-LUT reduced-replica L2
-     recost only if the quality gate passes and the measured PPA row is
-     materialized.
+     recost only if the release gate confirms both the passing quality result
+     and the matching measured PPA row.
 
 5. SRAM timing and energy
    - Scope: tile-local score/value buffering, KV tile reads, partial-value
@@ -279,12 +285,16 @@ run the already queued exp-LUT branch:
    This measures the matching composed RTL wrapper PPA.
 3. If both inputs pass/materialize, release
    `l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_llama7b_v1`
-   to recost the Llama7B point. If the quality gate fails, do not promote the
-   exp-LUT row as quality-backed; return to the softmax replacement design.
+   to recost the Llama7B point. Its first command now runs
+   `npu/eval/check_attention_exp_lut_frontier_release.py`; if that release gate
+   fails, do not run or promote the exp-LUT recost row as quality-backed. Return
+   to the softmax replacement design or another score32/w16 implementation.
 4. In parallel with evaluator recovery or after exp-LUT recost, prepare the
    command-overhead sensitivity job for the selected dual-stream schedule. This
-   preparation is complete as of PR #1119; the item should remain blocked until
-   the exp-LUT quality/PPA/base-recost dependencies are merged and materialized.
+   preparation is complete as of PR #1119; as of PR #1127 the item also runs
+   the same exp-LUT release gate before sweeping command cycles. It should
+   remain blocked until the exp-LUT quality/PPA/base-recost dependencies are
+   merged and materialized.
 5. After the exp-LUT inputs are running or complete, dispatch
    `l1_decoder_attention_command_dispatch_control_ppa_v1` to measure the
    central scheduler/control block that will bound the command-cycle
@@ -293,7 +303,9 @@ run the already queued exp-LUT branch:
 6. After the L1 command-control PPA and exp-LUT recost materialize, run
    `l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_measured_command_control_llama7b_v1`
    to charge measured central control area/power/clock into the same Llama7B
-   reduced-replica point.
+   reduced-replica point. This item also starts with the exp-LUT release gate,
+   so measured command-control cost is charged only onto a quality/PPA-matched
+   exp-LUT branch.
 
 All new evaluation jobs should run on the remote evaluator
 `eval-daemon-b7c2d9c80c1c`, not the devcontainer.
