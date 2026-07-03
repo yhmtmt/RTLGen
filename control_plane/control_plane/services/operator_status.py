@@ -27,6 +27,9 @@ from control_plane.services.run_index_query import comparative_run_index
 from control_plane.services.trial_variance import load_seed_trial_variance
 
 
+_SOURCE_RECONCILER_TRACKED_SNAPSHOT_COMMIT = "989f3b00"
+
+
 def _as_comparable_utc(dt):
     if dt is None:
         return None
@@ -83,6 +86,41 @@ def _source_head_satisfies_requirement(*, repo_root: str, worker_head: str, requ
     except (OSError, RuntimeError):
         return False
     return result.returncode == 0
+
+
+def _source_reconciler_has_tracked_snapshot_support(*, repo_root: str, worker_head: str) -> bool:
+    worker = str(worker_head or "").strip()
+    if not worker:
+        return False
+    try:
+        result = subprocess.run(
+            [
+                "git",
+                "-C",
+                str(Path(repo_root).resolve()),
+                "merge-base",
+                "--is-ancestor",
+                _SOURCE_RECONCILER_TRACKED_SNAPSHOT_COMMIT,
+                worker,
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+    except (OSError, RuntimeError):
+        return False
+    return result.returncode == 0
+
+
+def _last_progress_is_legacy_tracked_modification_block(last_progress: dict[str, Any] | None) -> bool:
+    if not last_progress:
+        return False
+    return (
+        str(last_progress.get("phase") or "") == "source_reconcile"
+        and str(last_progress.get("status") or "") == "blocked"
+        and "service repo has tracked local modifications; refusing automatic checkout"
+        in str(last_progress.get("message") or "")
+    )
 
 
 @dataclass(frozen=True)
@@ -191,7 +229,17 @@ def load_operator_status(session: Session, request: OperatorStatusRequest) -> Op
             if not satisfied:
                 source_blocked_items.append(row)
         worker_attention = None
-        if active_slots == 0 and source_blocked_items:
+        if (
+            active_slots == 0
+            and source_blocked_items
+            and _last_progress_is_legacy_tracked_modification_block(last_progress)
+            and not _source_reconciler_has_tracked_snapshot_support(
+                repo_root=request.repo_root,
+                worker_head=worker_head,
+            )
+        ):
+            worker_attention = "old_source_reconciler_bootstrap_required"
+        elif active_slots == 0 and source_blocked_items:
             worker_attention = "assigned_ready_requires_newer_source"
         elif active_slots == 0 and assigned_ready > 0 and last_seen_at is not None and last_seen_at >= fresh_machine_cutoff:
             if last_progress is None:
