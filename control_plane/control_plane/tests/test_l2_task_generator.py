@@ -6400,10 +6400,24 @@ def test_generate_l2_campaign_task_adds_attention_composed_datapath_exp_lut_comm
 
             work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
             commands = work_item.task_request.request_payload["task"]["commands"]
-            run = commands[0]["run"]
+            gate_run = commands[0]["run"]
+            run = commands[1]["run"]
             decoder_inputs = work_item.input_manifest["decoder_contract"]
 
+            assert commands[0]["name"] == "check_attention_score32_exp_lut_div_frontier_release"
             assert "estimate_decoder_attention_composed_datapath_physical_feasibility" in [c["name"] for c in commands]
+            assert "npu/eval/check_attention_exp_lut_frontier_release.py" in gate_run
+            assert "--expected-candidate-id" not in gate_run
+            assert decoder_inputs["attention_score32_exp_lut_div_frontier_release_gate"].endswith(
+                "decoder_attention_score32_exp_lut_div_frontier_release_gate__"
+                "l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_"
+                "command_overhead_llama7b_v1.json"
+            )
+            assert decoder_inputs["attention_score32_exp_lut_div_composed_config"] == (
+                "runs/designs/npu_blocks/"
+                "attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_score32_w16_exp_lut_div_b20/"
+                "config.json"
+            )
             assert (
                 "--model-name llm_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_llama7b_v1_command_overhead"
                 in run
@@ -6420,6 +6434,14 @@ def test_generate_l2_campaign_task_adds_attention_composed_datapath_exp_lut_comm
                 "runs/designs/npu_blocks/"
                 "attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_score32_w16_exp_lut_div_b20/"
                 "metrics.csv"
+            )
+            assert any(
+                output.endswith(
+                    "decoder_attention_score32_exp_lut_div_frontier_release_gate__"
+                    "l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_"
+                    "command_overhead_llama7b_v1.json"
+                )
+                for output in work_item.task_request.request_payload["task"]["expected_outputs"]
             )
             assert any(
                 output.endswith(
@@ -6459,10 +6481,18 @@ def test_generate_l2_campaign_task_adds_attention_composed_datapath_exp_lut_meas
 
             work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
             commands = work_item.task_request.request_payload["task"]["commands"]
-            run = commands[0]["run"]
+            gate_run = commands[0]["run"]
+            run = commands[1]["run"]
             decoder_inputs = work_item.input_manifest["decoder_contract"]
 
+            assert commands[0]["name"] == "check_attention_score32_exp_lut_div_frontier_release"
             assert "estimate_decoder_attention_composed_datapath_physical_feasibility" in [c["name"] for c in commands]
+            assert "npu/eval/check_attention_exp_lut_frontier_release.py" in gate_run
+            assert decoder_inputs["attention_score32_exp_lut_div_frontier_release_gate"].endswith(
+                "decoder_attention_score32_exp_lut_div_frontier_release_gate__"
+                "l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_"
+                "measured_command_control_llama7b_v1.json"
+            )
             assert (
                 "--model-name llm_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_llama7b_v1_measured_command_control"
                 in run
@@ -6481,6 +6511,14 @@ def test_generate_l2_campaign_task_adds_attention_composed_datapath_exp_lut_meas
             assert decoder_inputs["attention_mixed_int8_score32_exp_lut_div_generation_quality"].endswith(
                 "decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality__"
                 "l2_decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality_llama7b_v1.json"
+            )
+            assert any(
+                output.endswith(
+                    "decoder_attention_score32_exp_lut_div_frontier_release_gate__"
+                    "l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_"
+                    "measured_command_control_llama7b_v1.json"
+                )
+                for output in work_item.task_request.request_payload["task"]["expected_outputs"]
             )
             assert any(
                 output.endswith(
@@ -6625,10 +6663,25 @@ def test_generate_l2_campaign_task_adds_attention_composed_datapath_score32_exp_
 
             work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
             commands = work_item.task_request.request_payload["task"]["commands"]
-            run = commands[0]["run"]
+            gate_run = commands[0]["run"]
+            run = commands[1]["run"]
             decoder_inputs = work_item.input_manifest["decoder_contract"]
 
+            assert commands[0]["name"] == "check_attention_score32_exp_lut_div_frontier_release"
             assert "estimate_decoder_attention_composed_datapath_physical_feasibility" in [c["name"] for c in commands]
+            assert "npu/eval/check_attention_exp_lut_frontier_release.py" in gate_run
+            assert "--quality-json runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/" in gate_run
+            assert "--metrics-csv runs/designs/npu_blocks/" in gate_run
+            assert "--config-json runs/designs/npu_blocks/" in gate_run
+            assert decoder_inputs["attention_score32_exp_lut_div_frontier_release_gate"].endswith(
+                "decoder_attention_score32_exp_lut_div_frontier_release_gate__"
+                "l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_llama7b_v1.json"
+            )
+            assert decoder_inputs["attention_score32_exp_lut_div_composed_config"] == (
+                "runs/designs/npu_blocks/"
+                "attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_score32_w16_exp_lut_div_b20/"
+                "config.json"
+            )
             assert (
                 "--model-name llm_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_llama7b_v1"
                 in run
@@ -6655,6 +6708,13 @@ def test_generate_l2_campaign_task_adds_attention_composed_datapath_score32_exp_
                 "attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_score32_w16_exp_lut_div_b20/"
                 "metrics.csv "
                 in run
+            )
+            assert any(
+                output.endswith(
+                    "decoder_attention_score32_exp_lut_div_frontier_release_gate__"
+                    "l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_llama7b_v1.json"
+                )
+                for output in work_item.task_request.request_payload["task"]["expected_outputs"]
             )
             assert any(
                 output.endswith(

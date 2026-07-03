@@ -5508,6 +5508,7 @@ def _decoder_attention_composed_datapath_physical_feasibility_evidence(*, item_i
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_composed_datapath_physical_feasibility__{item_id}.json"
     report = f"{base}/decoder_attention_composed_datapath_physical_feasibility__{item_id}.md"
+    exp_lut_release_gate = f"{base}/decoder_attention_score32_exp_lut_div_frontier_release_gate__{item_id}.json"
     subtile_pipeline = _decoder_attention_kv_dual_stream_physical_feasibility_source(item_id=item_id)
     quality_gate = f"{base}/decoder_attention_mixed_precision_quality__l2_decoder_attention_mixed_precision_quality_llama7b_v1.json"
     full_value_tile_metrics = (
@@ -5583,6 +5584,7 @@ def _decoder_attention_composed_datapath_physical_feasibility_evidence(*, item_i
         f"--composed-dual-stream-metrics {path}"
         for path in composed_dual_stream_metrics.split(",")
     )
+    exp_lut_composed_config = composed_dual_stream_metrics.replace("/metrics.csv", "/config.json")
     command_dispatch_control_metrics = (
         "runs/designs/npu_blocks/attention_command_dispatch_c8_q16/metrics.csv,"
         "runs/designs/npu_blocks/attention_command_dispatch_c16_q32/metrics.csv,"
@@ -5646,6 +5648,30 @@ def _decoder_attention_composed_datapath_physical_feasibility_evidence(*, item_i
     if measured_command_control:
         model_name = f"{model_name}_measured_command_control"
         measured_command_control_flags = f"{command_dispatch_control_metrics_flags} "
+    release_gate_inputs = (
+        {
+            "attention_score32_exp_lut_div_frontier_release_gate": exp_lut_release_gate,
+            "attention_score32_exp_lut_div_composed_config": exp_lut_composed_config,
+        }
+        if score32_exp_lut_div_reduced_replica
+        else {}
+    )
+    release_gate_commands = (
+        [
+            {
+                "name": "check_attention_score32_exp_lut_div_frontier_release",
+                "run": (
+                    "python3 npu/eval/check_attention_exp_lut_frontier_release.py "
+                    f"--quality-json {quality_gate} "
+                    f"--metrics-csv {composed_dual_stream_metrics} "
+                    f"--config-json {exp_lut_composed_config} "
+                    f"--out {exp_lut_release_gate}"
+                ),
+            }
+        ]
+        if score32_exp_lut_div_reduced_replica
+        else []
+    )
     return {
         "inputs": {
             "attention_kv_subtile_pipeline_schedule": subtile_pipeline,
@@ -5653,6 +5679,7 @@ def _decoder_attention_composed_datapath_physical_feasibility_evidence(*, item_i
             "attention_kv_full_value_tile_metrics": full_value_tile_metrics,
             "attention_kv_softmax_weight_metrics": softmax_weight_metrics,
             "attention_kv_composed_dual_stream_metrics": composed_dual_stream_metrics,
+            **release_gate_inputs,
             **(
                 {"attention_command_dispatch_control_metrics": command_dispatch_control_metrics}
                 if measured_command_control
@@ -5670,6 +5697,7 @@ def _decoder_attention_composed_datapath_physical_feasibility_evidence(*, item_i
             ),
         },
         "commands": [
+            *release_gate_commands,
             {
                 "name": "estimate_decoder_attention_composed_datapath_physical_feasibility",
                 "run": (
@@ -5691,7 +5719,7 @@ def _decoder_attention_composed_datapath_physical_feasibility_evidence(*, item_i
                 ),
             },
         ],
-        "expected_outputs": [out, report],
+        "expected_outputs": [*([exp_lut_release_gate] if score32_exp_lut_div_reduced_replica else []), out, report],
     }
 
 

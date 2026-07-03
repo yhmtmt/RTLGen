@@ -17,4 +17,14 @@ Dependencies:
 Execution is blocked until merged inputs and materialized references are present.
 `run_physical` is `false` for this task.
 
-Decision rule: recost the exp-LUT composed datapath **only after** the quality gate and L1 PPA dependencies are available; do not mark this as quality-backed unless the quality gate passes.
+Decision rule: recost the exp-LUT composed datapath **only after** the quality
+gate and L1 PPA dependencies are available; do not mark this as quality-backed
+unless the quality gate passes.
+
+The generated task first runs
+`npu/eval/check_attention_exp_lut_frontier_release.py` and writes
+`decoder_attention_score32_exp_lut_div_frontier_release_gate__<item>.json`.
+That release gate verifies the primary quality candidate is
+`score32_exp_lut_div`, the bounded generation-quality decision is pass, and the
+L1 metrics/config match the score32/w16 exp-LUT divider bucket-20 wrapper before
+the physical recost command can run.
