@@ -5525,6 +5525,7 @@ def _decoder_attention_composed_datapath_physical_feasibility_evidence(*, item_i
     score32_recip_lut_q16_reduced_replica = "score32_w16_recip_lut_q16_reduced_replica" in item_id
     score32_exp_lut_div_reduced_replica = "score32_exp_lut_div_reduced_replica" in item_id
     command_overhead = "command_overhead" in item_id
+    measured_command_control = "measured_command_control" in item_id
     q20_pwl_recip_div_reduced_replica = "q20_pwl_recip_div_reduced_replica" in item_id
     score32_frontier = "score32_w16_exact_div_frontier" in item_id
     variant_frontier = "variant_frontier" in item_id
@@ -5582,6 +5583,15 @@ def _decoder_attention_composed_datapath_physical_feasibility_evidence(*, item_i
         f"--composed-dual-stream-metrics {path}"
         for path in composed_dual_stream_metrics.split(",")
     )
+    command_dispatch_control_metrics = (
+        "runs/designs/npu_blocks/attention_command_dispatch_c8_q16/metrics.csv,"
+        "runs/designs/npu_blocks/attention_command_dispatch_c16_q32/metrics.csv,"
+        "runs/designs/npu_blocks/attention_command_dispatch_c32_q64/metrics.csv"
+    )
+    command_dispatch_control_metrics_flags = " ".join(
+        f"--command-dispatch-control-metrics {path}"
+        for path in command_dispatch_control_metrics.split(",")
+    )
     if score24_reduced_replica:
         model_name = "llm_decoder_attention_composed_datapath_score24_w16_exact_div_reduced_replica_llama7b_v1"
         precision_profile = "q8_k8_v8_a24_s24_w16_exact_div_int8_compute"
@@ -5632,6 +5642,10 @@ def _decoder_attention_composed_datapath_physical_feasibility_evidence(*, item_i
     if command_overhead:
         model_name = f"{model_name}_command_overhead"
         command_overhead_flags = "--command-cycles-per-tile 0,1,4,16 --command-cycles-per-wave 0,8,32 "
+    measured_command_control_flags = ""
+    if measured_command_control:
+        model_name = f"{model_name}_measured_command_control"
+        measured_command_control_flags = f"{command_dispatch_control_metrics_flags} "
     return {
         "inputs": {
             "attention_kv_subtile_pipeline_schedule": subtile_pipeline,
@@ -5639,13 +5653,20 @@ def _decoder_attention_composed_datapath_physical_feasibility_evidence(*, item_i
             "attention_kv_full_value_tile_metrics": full_value_tile_metrics,
             "attention_kv_softmax_weight_metrics": softmax_weight_metrics,
             "attention_kv_composed_dual_stream_metrics": composed_dual_stream_metrics,
+            **(
+                {"attention_command_dispatch_control_metrics": command_dispatch_control_metrics}
+                if measured_command_control
+                else {}
+            ),
             "attention_composed_datapath_physical_feasibility_out": out,
             "attention_composed_datapath_physical_feasibility_report": report,
             "attention_composed_datapath_physical_feasibility_scope": (
                 "Use the composed dual-stream RTL wrapper PPA "
                 "as a bounded next-step feasibility model, replacing separate full-value/softmax substitutions "
                 "while keeping the upstream source schedule. If command-overhead mode is requested, sweep "
-                "nonzero per-tile and per-wave command-dispatch cycles before recosting the composed datapath."
+                "nonzero per-tile and per-wave command-dispatch cycles before recosting the composed datapath. "
+                "If measured-command-control mode is requested, charge measured central command-dispatch "
+                "control area/power/clock from the L1 command-dispatch control run."
             ),
         },
         "commands": [
@@ -5662,6 +5683,7 @@ def _decoder_attention_composed_datapath_physical_feasibility_evidence(*, item_i
                     f"--model-name {model_name} "
                     f"{'--recompute-area-fit-replicas ' if recompute_area_fit else ''}"
                     f"{command_overhead_flags}"
+                    f"{measured_command_control_flags}"
                     "--frontier-row-limit 8 "
                     "--buffer-area-um2-per-byte 0.0 "
                     f"--out {out} "

@@ -254,6 +254,11 @@ than free or heuristic assumptions.
      can later replace or bound the per-tile/per-wave command-cycle sensitivity
      with measured control PPA, while leaving distributed control fanout as an
      explicit remaining abstraction.
+   - Follow-on recost path:
+     `prop_l2_decoder_attention_composed_datapath_score32_exp_lut_div_measured_command_control_llama7b_v1`
+     consumes the L1 command-dispatch-control PPA and charges the selected
+     measured central control variant into the score32 exp-LUT reduced-replica
+     Llama7B recost.
 
 7. Integrated schedule closure audit
    - Scope: rerun the Llama7B attention schedule with measured compute,
@@ -285,6 +290,10 @@ run the already queued exp-LUT branch:
    central scheduler/control block that will bound the command-cycle
    sensitivity model. Do not let it displace the already READY exp-LUT quality
    and PPA jobs.
+6. After the L1 command-control PPA and exp-LUT recost materialize, run
+   `l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_measured_command_control_llama7b_v1`
+   to charge measured central control area/power/clock into the same Llama7B
+   reduced-replica point.
 
 All new evaluation jobs should run on the remote evaluator
 `eval-daemon-b7c2d9c80c1c`, not the devcontainer.

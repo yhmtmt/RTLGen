@@ -1,0 +1,77 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_composed_datapath_score32_exp_lut_div_measured_command_control_llama7b_v1",
+  "created_utc": "2026-07-03T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Llama7B score32 exp-LUT divider measured command-control recost",
+  "abstraction_layer": "decoder_attention_composed_datapath_physical_feasibility",
+  "hypothesis": "The selected score32 exp-LUT divider reduced-replica point should remain interpretable after charging a measured central command-dispatch/control block, but this must be checked explicitly before treating scheduler/control as bounded.",
+  "direct_comparison": {
+    "primary_question": "How much do measured central command-dispatch/control area, power, and clock move the score32 exp-LUT divider reduced-replica Llama7B point?",
+    "baselines": [
+      "l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_llama7b_v1",
+      "l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_command_overhead_llama7b_v1"
+    ],
+    "candidate": "l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_measured_command_control_llama7b_v1",
+    "include": [
+      "reuse the measured score32 exp-LUT divider composed datapath PPA artifact",
+      "reuse the matched exp-LUT generation-quality gate",
+      "consume the L1 attention command-dispatch-control PPA for 8/16/32 clusters",
+      "select the smallest command-dispatch-control variant covering each L2 schedule row cluster count",
+      "charge central command-control area and power and require command-control clock compatibility"
+    ],
+    "exclude": [
+      "distributed per-cluster control fanout",
+      "new NoC/HBM controller detail",
+      "training or QAT"
+    ],
+    "metrics": [
+      "best_requested_measured_command_dispatch_control_area_um2",
+      "best_requested_command_dispatch_control_clock_ok",
+      "best_requested_logic_slack_um2",
+      "best_requested_replica_recost_latency_us",
+      "best_feasible_latency_us"
+    ]
+  },
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_measured_command_control_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Recost the score32 exp-LUT divider reduced-replica Llama7B point after charging measured central command-dispatch/control PPA.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_composed_datapath_physical_feasibility",
+      "comparison_role": "score32_exp_lut_div_measured_command_control_recost",
+      "paired_baseline_item_id": "l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_llama7b_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality_llama7b_v1",
+        "l1_decoder_attention_dual_stream_composed_score32_exp_lut_div_b20_ppa_v1",
+        "l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_llama7b_v1",
+        "l1_decoder_attention_command_dispatch_control_ppa_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "charge_measured_command_control_to_exp_lut_recost",
+        "reason": "This replaces a purely idealized scheduler/control area-power assumption with measured central command-dispatch PPA before final frontier promotion."
+      },
+      "status": "pending"
+    }
+  ],
+  "source_refs": [
+    "npu/eval/estimate_llm_decoder_attention_kv_dual_stream_physical_feasibility.py",
+    "runs/designs/npu_blocks/attention_command_dispatch_c8_q16/metrics.csv",
+    "runs/designs/npu_blocks/attention_command_dispatch_c16_q32/metrics.csv",
+    "runs/designs/npu_blocks/attention_command_dispatch_c32_q64/metrics.csv"
+  ],
+  "knowledge_refs": [
+    "docs/proposals/prop_l1_decoder_attention_command_dispatch_control_v1/proposal.json",
+    "docs/proposals/prop_l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_llama7b_v1/proposal.json",
+    "docs/proposals/prop_l2_decoder_attention_composed_datapath_score32_exp_lut_div_command_overhead_llama7b_v1/proposal.json"
+  ],
+  "remaining_abstractions": [
+    "Distributed command fanout and per-cluster local decode remain explicit future work.",
+    "This recost still uses the upstream analytic Llama7B schedule and measured local datapath PPA.",
+    "The result is quality-backed only if the referenced exp-LUT generation-quality gate passes."
+  ]
+}
