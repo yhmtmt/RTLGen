@@ -474,6 +474,59 @@ def _write_example_dual_stream_composed_repo(repo_root: Path) -> tuple[str, str]
     )
 
 
+def _write_example_attention_command_dispatch_repo(repo_root: Path) -> tuple[str, str]:
+    design_dir = repo_root / "runs" / "designs" / "npu_blocks" / "attention_command_dispatch_smoke"
+    design_dir.mkdir(parents=True, exist_ok=True)
+    config_path = design_dir / "config.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "top_name": "attention_command_dispatch_smoke",
+                "attention_command_dispatch": {
+                    "clusters": 8,
+                    "queue_depth": 16,
+                    "tile_id_bits": 12,
+                    "wave_id_bits": 8,
+                    "base_token_bits": 14,
+                    "max_inflight_per_cluster": 4,
+                },
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    sweep_path = (
+        repo_root
+        / "runs"
+        / "campaigns"
+        / "npu"
+        / "attention_command_dispatch_v1"
+        / "sweeps"
+        / "nangate45_attention_command_dispatch_frontier.json"
+    )
+    sweep_path.parent.mkdir(parents=True, exist_ok=True)
+    sweep_path.write_text(
+        json.dumps(
+            {
+                "flow_params": {
+                    "CLOCK_PERIOD": [1.0],
+                    "CORE_UTILIZATION": [40],
+                    "PLACE_DENSITY": [0.45],
+                },
+                "tag_prefix": "attention_command_dispatch_frontier",
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    return (
+        str(config_path.relative_to(repo_root)),
+        str(sweep_path.relative_to(repo_root)),
+    )
+
+
 
 def test_generate_l1_sweep_task_creates_ready_work_item() -> None:
     with tempfile.TemporaryDirectory() as td:
@@ -1356,6 +1409,66 @@ def test_generate_l1_sweep_task_supports_attention_dual_stream_composed_configs(
             ]
             assert work_item.task_request.request_payload["developer_loop"]["abstraction"] == {
                 "layer": "decoder_attention_dual_stream_composed_datapath"
+            }
+
+
+def test_generate_l1_sweep_task_supports_attention_command_dispatch_configs() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        config_path, sweep_path = _write_example_attention_command_dispatch_repo(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l1_sweep_task(
+                session,
+                Layer1SweepGenerateRequest(
+                    repo_root=str(repo_root),
+                    sweep_path=sweep_path,
+                    config_paths=[config_path],
+                    platform="nangate45",
+                    out_root="runs/designs/npu_blocks",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    abstraction_layer="decoder_attention_command_dispatch_control",
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            assert result.status == "applied"
+            assert [command["name"] for command in work_item.command_manifest] == [
+                "generate_attention_command_dispatch_rtl",
+                "check_attention_command_dispatch_guard",
+                "run_block_sweep",
+                "extract_attention_command_dispatch_timing_paths",
+                "build_runs_index",
+                "validate",
+            ]
+            assert work_item.command_manifest[0]["run"] == (
+                "export PATH=/oss-cad-suite/bin:$PATH && "
+                "python3 npu/rtlgen/gen_attention_command_dispatch.py "
+                "--config runs/designs/npu_blocks/attention_command_dispatch_smoke/config.json "
+                "--out runs/designs/npu_blocks/attention_command_dispatch_smoke/verilog"
+            )
+            assert work_item.command_manifest[1]["run"] == (
+                "python3 npu/eval/check_attention_command_dispatch_guard.py "
+                "--design-dir runs/designs/npu_blocks/attention_command_dispatch_smoke"
+            )
+            assert "--top attention_command_dispatch_smoke" in work_item.command_manifest[2]["run"]
+            assert work_item.command_manifest[3]["run"] == (
+                "python3 npu/eval/extract_openroad_timing_summary.py "
+                "--design-dir runs/designs/npu_blocks/attention_command_dispatch_smoke "
+                "--out runs/designs/npu_blocks/attention_command_dispatch_smoke/timing_debug_report.md "
+                "--max-paths 8"
+            )
+            assert work_item.expected_outputs == [
+                "runs/designs/npu_blocks/attention_command_dispatch_smoke/metrics.csv",
+                "runs/designs/npu_blocks/attention_command_dispatch_smoke/timing_debug_report.md",
+            ]
+            assert work_item.task_request.request_payload["developer_loop"]["abstraction"] == {
+                "layer": "decoder_attention_command_dispatch_control"
             }
 
 

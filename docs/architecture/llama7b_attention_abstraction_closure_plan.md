@@ -249,6 +249,11 @@ than free or heuristic assumptions.
    - Remaining work: run this job only after the exp-LUT quality/PPA chain
      materializes. It is still a cycle-sensitivity model for scheduler/control
      overhead, not measured command-distribution RTL.
+   - Follow-on measurement path: `prop_l1_decoder_attention_command_dispatch_control_v1`
+     adds a central command-dispatch RTL microblock for 8/16/32 clusters. This
+     can later replace or bound the per-tile/per-wave command-cycle sensitivity
+     with measured control PPA, while leaving distributed control fanout as an
+     explicit remaining abstraction.
 
 7. Integrated schedule closure audit
    - Scope: rerun the Llama7B attention schedule with measured compute,
@@ -275,6 +280,11 @@ run the already queued exp-LUT branch:
    command-overhead sensitivity job for the selected dual-stream schedule. This
    preparation is complete as of PR #1119; the item should remain blocked until
    the exp-LUT quality/PPA/base-recost dependencies are merged and materialized.
+5. After the exp-LUT inputs are running or complete, dispatch
+   `l1_decoder_attention_command_dispatch_control_ppa_v1` to measure the
+   central scheduler/control block that will bound the command-cycle
+   sensitivity model. Do not let it displace the already READY exp-LUT quality
+   and PPA jobs.
 
 All new evaluation jobs should run on the remote evaluator
 `eval-daemon-b7c2d9c80c1c`, not the devcontainer.
