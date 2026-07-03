@@ -1,0 +1,83 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_command_dispatch_control_v1",
+  "created_utc": "2026-07-03T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit",
+  "title": "Decoder-attention command dispatch control PPA",
+  "abstraction_layer": "decoder_attention_command_dispatch_control",
+  "hypothesis": "A small central command dispatcher can bound the previously idealized tile/wave command overhead before the Llama7B score32 exp-LUT reduced-replica schedule is promoted as practical.",
+  "direct_comparison": {
+    "primary_question": "What Nangate45 PPA and timing cost is introduced by a central attention tile command dispatcher as cluster count and command queue depth scale?",
+    "baselines": [
+      "l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_command_overhead_llama7b_v1"
+    ],
+    "candidate": "l1_decoder_attention_command_dispatch_control_ppa_v1",
+    "include": [
+      "generate RTL for central command FIFO and ready/valid command issue",
+      "sweep cluster counts 8, 16, and 32 with queue depths 16, 32, and 64",
+      "measure Nangate45 area, power, timing, and timing debug paths",
+      "keep outputs compact to measure scheduler/control logic before a distributed control network"
+    ],
+    "exclude": [
+      "distributed per-cluster control fanout and local decode",
+      "cycle-accurate NoC or HBM scheduling",
+      "new Llama7B recost; this is a measured Layer 1 anchor for a dependent L2 consumer"
+    ],
+    "metrics": [
+      "critical_path_ns",
+      "die_area",
+      "total_power_mw",
+      "stdcell_count",
+      "timing_debug_report"
+    ]
+  },
+  "remaining_abstractions": [
+    "This measures a central command dispatcher with compact dispatch outputs, not the full distributed control network.",
+    "The result must be consumed by a later L2 recost before it changes the Llama7B frontier ranking.",
+    "The existing command-overhead sensitivity remains the immediate L2 path until this measured control block is available."
+  ],
+  "required_evaluations": [
+    {
+      "item_id": "l1_decoder_attention_command_dispatch_control_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure Nangate45 PPA for central decoder-attention command dispatch control blocks at 8, 16, and 32 clusters.",
+      "evaluation_mode": "frontier_followup",
+      "abstraction_layer": "decoder_attention_command_dispatch_control",
+      "comparison_role": "command_dispatch_control_anchor",
+      "paired_baseline_item_id": "l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_command_overhead_llama7b_v1",
+      "configs": [
+        "runs/designs/npu_blocks/attention_command_dispatch_c8_q16/config.json",
+        "runs/designs/npu_blocks/attention_command_dispatch_c16_q32/config.json",
+        "runs/designs/npu_blocks/attention_command_dispatch_c32_q64/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/attention_command_dispatch_v1/sweeps/nangate45_attention_command_dispatch_frontier.json",
+      "out_root": "runs/designs/npu_blocks",
+      "expected_outputs": [
+        "runs/designs/npu_blocks/attention_command_dispatch_c8_q16/metrics.csv",
+        "runs/designs/npu_blocks/attention_command_dispatch_c8_q16/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_command_dispatch_c16_q32/metrics.csv",
+        "runs/designs/npu_blocks/attention_command_dispatch_c16_q32/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_command_dispatch_c32_q64/metrics.csv",
+        "runs/designs/npu_blocks/attention_command_dispatch_c32_q64/timing_debug_report.md"
+      ],
+      "expected_result": {
+        "direction": "measure_command_dispatch_control_cost",
+        "reason": "This converts a currently idealized scheduler/control term into a measured PPA anchor before later Llama7B recost integration."
+      },
+      "status": "pending"
+    }
+  ],
+  "source_refs": [
+    "npu/rtlgen/gen_attention_command_dispatch.py",
+    "npu/eval/check_attention_command_dispatch_guard.py",
+    "runs/designs/npu_blocks/attention_command_dispatch_c8_q16/config.json",
+    "runs/designs/npu_blocks/attention_command_dispatch_c16_q32/config.json",
+    "runs/designs/npu_blocks/attention_command_dispatch_c32_q64/config.json",
+    "runs/campaigns/npu/attention_command_dispatch_v1/sweeps/nangate45_attention_command_dispatch_frontier.json"
+  ],
+  "knowledge_refs": [
+    "docs/proposals/prop_l2_decoder_attention_composed_datapath_score32_exp_lut_div_command_overhead_llama7b_v1/proposal.json",
+    "docs/architecture/llama7b_attention_abstraction_closure_plan.md"
+  ]
+}

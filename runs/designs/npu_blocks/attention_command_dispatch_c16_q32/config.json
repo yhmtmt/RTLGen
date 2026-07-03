@@ -1,0 +1,11 @@
+{
+  "top_name": "attention_command_dispatch_c16_q32",
+  "attention_command_dispatch": {
+    "clusters": 16,
+    "queue_depth": 32,
+    "tile_id_bits": 16,
+    "wave_id_bits": 12,
+    "base_token_bits": 18,
+    "max_inflight_per_cluster": 4
+  }
+}
