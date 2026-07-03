@@ -36,6 +36,7 @@ def _args(
     source: Path,
     compute_metrics: Path | None = None,
     composed_metrics: list[str] | None = None,
+    command_dispatch_control_metrics: list[str] | None = None,
     recompute_area_fit_replicas: bool = False,
 ) -> argparse.Namespace:
     full_value = tmp_path / "full_value.csv"
@@ -48,6 +49,7 @@ def _args(
         softmax_weight_metrics=softmax,
         compute_block_metrics=compute_metrics,
         composed_dual_stream_metrics=composed_metrics,
+        command_dispatch_control_metrics=command_dispatch_control_metrics,
         compute_block_macs_per_cycle=128 if compute_metrics else None,
         compute_arch_name="dense_gemm_int8_16x8_k1_p1" if compute_metrics else None,
         quality_gate_json=None,
@@ -56,6 +58,8 @@ def _args(
         frontier_row_limit=8,
         buffer_area_um2_per_byte=0.0,
         recompute_area_fit_replicas=recompute_area_fit_replicas,
+        command_cycles_per_tile=None,
+        command_cycles_per_wave=None,
     )
 
 
@@ -204,6 +208,93 @@ def test_multi_composed_wrapper_variants_use_effective_variant_clock(tmp_path: P
     # source schedule latency is 100 us, so the q12 clock is 2/4 => 50 us
     assert result["diagnosis"]["best_requested_adjusted_latency_us_if_feasible"] == 50.0
     assert result["diagnosis"]["best_feasible_latency_us"] == 50.0
+
+
+def test_command_dispatch_control_metrics_are_charged_once_per_schedule(tmp_path: Path) -> None:
+    source = tmp_path / "source.json"
+    _write_json(
+        source,
+        {
+            "model": "unit_source",
+            "best_by_compute_mode": [
+                {
+                    "compute_mode": "dual_mac",
+                    "latency_us": 100.0,
+                    "latency_speedup_vs_hbm_closed_source": 4.0,
+                    "tile_service_cycles": 12,
+                    "cluster_count": 12,
+                    "compute_area_multiplier": 1.0,
+                    "compute_area_um2": 120.0,
+                    "compute_budget_um2": 1000.0,
+                    "measured_l1_overhead_area_um2": 20.0,
+                    "local_datapath_area_um2": 10.0,
+                    "softmax_weight_generator_area_um2": 5.0,
+                    "logic_area_used_um2": 150.0,
+                    "required_stream_buffer_bytes": 16,
+                    "available_local_capacity_bytes": 32,
+                    "measured_block_area_um2": 120.0,
+                    "measured_block_clock_ns": 4.0,
+                    "measured_block_macs_per_cycle": 128,
+                    "measured_block_power_mw": 4.0,
+                    "compute_replica_count": 1,
+                    "compute_arch": "dense_gemm_16x8_k1_p1",
+                    "macs_per_cycle": 128,
+                    "clock_ns": 4.0,
+                }
+            ],
+        },
+    )
+    metrics_c8 = tmp_path / "attention_command_dispatch_c8_q16" / "metrics.csv"
+    metrics_c16 = tmp_path / "attention_command_dispatch_c16_q32" / "metrics.csv"
+    metrics_c32 = tmp_path / "attention_command_dispatch_c32_q64" / "metrics.csv"
+    _write_metrics(metrics_c8, die_area=4.0, power_mw=0.04, instance_area=4.0)
+    _write_metrics(metrics_c16, die_area=7.0, power_mw=0.07, instance_area=7.0)
+    _write_metrics(metrics_c32, die_area=14.0, power_mw=0.14, instance_area=14.0)
+    for clusters, path in [(8, metrics_c8), (16, metrics_c16), (32, metrics_c32)]:
+        _write_json(
+            path.parent / "config.json",
+            {
+                "top_name": path.parent.name,
+                "attention_command_dispatch": {
+                    "clusters": clusters,
+                    "queue_depth": 16,
+                    "tile_id_bits": 16,
+                    "wave_id_bits": 12,
+                    "base_token_bits": 18,
+                    "max_inflight_per_cluster": 4,
+                },
+            },
+        )
+
+    baseline = build_report(_args(tmp_path, source=source))
+    measured_control = build_report(
+        _args(
+            tmp_path,
+            source=source,
+            command_dispatch_control_metrics=[
+                str(metrics_c8),
+                str(metrics_c16),
+                str(metrics_c32),
+            ],
+        )
+    )
+
+    assert baseline["best_requested"]["measured_command_dispatch_control_variant_name"] is None
+    assert measured_control["inputs"]["command_dispatch_control_metrics"] == [
+        str(metrics_c8),
+        str(metrics_c16),
+        str(metrics_c32),
+    ]
+    assert (
+        measured_control["best_requested"]["measured_command_dispatch_control_variant_name"]
+        == "attention_command_dispatch_c16_q32"
+    )
+    assert measured_control["best_requested"]["measured_command_dispatch_control_cluster_count"] == 16
+    assert measured_control["best_requested"]["measured_command_dispatch_control_area_um2"] == 7.0
+    assert measured_control["best_requested"]["command_dispatch_control_clock_ok"] is True
+    assert measured_control["best_requested"]["logic_area_used_required_um2"] == (
+        baseline["best_requested"]["logic_area_used_required_um2"] + 7.0
+    )
 
 
 def test_composed_q12_pwl_wrapper_variant_label_is_concise(tmp_path: Path) -> None:

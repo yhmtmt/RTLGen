@@ -1,0 +1,28 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_composed_datapath_score32_exp_lut_div_measured_command_control_llama7b_v1",
+  "source_commit_note": "Dispatch should use the merge commit that adds measured command-dispatch-control consumption to the dual-stream composed recost path.",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_measured_command_control_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Recost the score32 exp-LUT divider reduced-replica Llama7B point after charging measured central command-dispatch/control PPA.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_composed_datapath_physical_feasibility",
+      "comparison_role": "score32_exp_lut_div_measured_command_control_recost",
+      "paired_baseline_item_id": "l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_llama7b_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality_llama7b_v1",
+        "l1_decoder_attention_dual_stream_composed_score32_exp_lut_div_b20_ppa_v1",
+        "l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_llama7b_v1",
+        "l1_decoder_attention_command_dispatch_control_ppa_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "charge_measured_command_control_to_exp_lut_recost",
+        "reason": "This replaces a purely idealized scheduler/control area-power assumption with measured central command-dispatch PPA before final frontier promotion."
+      },
+      "status": "pending"
+    }
+  ]
+}

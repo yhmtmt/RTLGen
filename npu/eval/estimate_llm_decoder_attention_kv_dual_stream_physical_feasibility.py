@@ -170,6 +170,85 @@ def _load_composed_variants(paths: list[Path]) -> list[JsonDict]:
     return variants
 
 
+def _infer_command_dispatch_clusters(path: Path) -> int | None:
+    config_path = path.parent / "config.json"
+    if config_path.exists():
+        try:
+            payload = _load_json(config_path)
+        except json.JSONDecodeError:
+            payload = {}
+        ctrl = payload.get("attention_command_dispatch") if isinstance(payload, dict) else None
+        if isinstance(ctrl, dict):
+            try:
+                clusters = int(ctrl.get("clusters"))
+            except (TypeError, ValueError):
+                clusters = 0
+            if clusters > 0:
+                return clusters
+    match = re.search(r"(?:^|_)c(\d+)(?:_|$)", path.parent.name)
+    if match:
+        return int(match.group(1))
+    return None
+
+
+def _load_command_dispatch_control_variants(paths: list[Path]) -> list[JsonDict]:
+    variants: list[JsonDict] = []
+    for path in paths:
+        metrics = _best_ok_compute_metrics(path)
+        clusters = _infer_command_dispatch_clusters(path)
+        if clusters is None:
+            raise RuntimeError(
+                "could not infer command-dispatch cluster count from metrics path; "
+                f"add a sibling config.json with attention_command_dispatch.clusters: {path}"
+            )
+        metrics.update(
+            {
+                "command_dispatch_control_cluster_count": clusters,
+                "command_dispatch_control_variant_name": path.parent.name,
+            }
+        )
+        variants.append(metrics)
+    variants.sort(
+        key=lambda row: (
+            int(row["command_dispatch_control_cluster_count"]),
+            float(row["block_area_um2"]),
+            float(row["critical_path_ns"]),
+        )
+    )
+    return variants
+
+
+def _select_command_dispatch_control_variant(
+    variants: list[JsonDict],
+    *,
+    clusters: int,
+) -> JsonDict | None:
+    if not variants:
+        return None
+    covering = [
+        row
+        for row in variants
+        if int(row["command_dispatch_control_cluster_count"]) >= clusters
+    ]
+    if covering:
+        return min(
+            covering,
+            key=lambda row: (
+                int(row["command_dispatch_control_cluster_count"]),
+                float(row["block_area_um2"]),
+                float(row["critical_path_ns"]),
+            ),
+        )
+    return max(
+        variants,
+        key=lambda row: (
+            int(row["command_dispatch_control_cluster_count"]),
+            -float(row["block_area_um2"]),
+            -float(row["critical_path_ns"]),
+        ),
+    )
+
+
 def _with_command_overhead(source_row: JsonDict, *, per_tile: int | None, per_wave: int | None) -> JsonDict:
     if per_tile is None and per_wave is None:
         return dict(source_row)
@@ -225,6 +304,7 @@ def _row_with_budget(
     softmax_weight: JsonDict,
     composed_dual_stream: JsonDict | None,
     compute_block: JsonDict | None,
+    command_dispatch_control: JsonDict | None,
     compute_block_macs_per_cycle: int | None,
     compute_arch_name: str | None,
     buffer_area_um2_per_byte: float,
@@ -241,6 +321,9 @@ def _row_with_budget(
     current_logic_used = float(source_row["logic_area_used_um2"])
     required_buffer_bytes = int(source_row.get("required_stream_buffer_bytes", source_row.get("tile_local_buffer_bytes", 0)))
     available_local_capacity = int(source_row.get("available_local_capacity_bytes", source_row.get("local_capacity_bytes_per_cluster", 0)))
+    control_area = float(command_dispatch_control["block_area_um2"]) if command_dispatch_control else 0.0
+    control_clock_ns = float(command_dispatch_control["critical_path_ns"]) if command_dispatch_control else 0.0
+    control_power_mw = float(command_dispatch_control["total_power_mw"]) if command_dispatch_control else 0.0
 
     measured_stream_area = float(full_value_tile["die_area_um2"])
     measured_softmax_area = float(softmax_weight["die_area_um2"])
@@ -316,7 +399,7 @@ def _row_with_budget(
         compute_area_required = base_compute_area * compute_multiplier
     logic_used_required = current_logic_used + (compute_area_required - current_compute_area) + (
         selected_l1_overhead - current_l1_overhead
-    )
+    ) + control_area
     logic_slack_required = compute_budget - logic_used_required
     compute_area_over_budget = max(0.0, logic_used_required - compute_budget)
     required_compute_density_gain = (
@@ -332,7 +415,10 @@ def _row_with_budget(
     replica_shortfall = max(0, replica_count_required - replica_count_budgeted)
     area_fit = logic_slack_required >= 0.0
     buffer_fit = required_buffer_bytes <= available_local_capacity
-    feasible = area_fit and buffer_fit
+    command_dispatch_control_clock_ok = (
+        command_dispatch_control is None or control_clock_ns <= float(source_row["clock_ns"])
+    )
+    feasible = area_fit and buffer_fit and command_dispatch_control_clock_ok
 
     if feasible:
         if use_composed_dual_stream and composed_clock_ns > 0.0 and source_clock_ns > 0.0:
@@ -389,6 +475,28 @@ def _row_with_budget(
             "selected_local_datapath_area_um2_per_cluster": round(selected_local_datapath_area, 6),
             "selected_l1_overhead_area_um2": round(selected_l1_overhead, 6),
             "compute_area_required_um2": round(compute_area_required, 6),
+            "measured_command_dispatch_control_metrics_csv": (
+                command_dispatch_control["metrics_csv"] if command_dispatch_control else None
+            ),
+            "measured_command_dispatch_control_variant_name": (
+                command_dispatch_control["command_dispatch_control_variant_name"]
+                if command_dispatch_control
+                else None
+            ),
+            "measured_command_dispatch_control_cluster_count": (
+                command_dispatch_control["command_dispatch_control_cluster_count"]
+                if command_dispatch_control
+                else None
+            ),
+            "measured_command_dispatch_control_area_um2": (
+                round(control_area, 6) if command_dispatch_control else None
+            ),
+            "measured_command_dispatch_control_clock_ns": (
+                round(control_clock_ns, 6) if command_dispatch_control else None
+            ),
+            "measured_command_dispatch_control_power_mw": (
+                round(control_power_mw, 6) if command_dispatch_control else None
+            ),
             "compute_area_multiplier_required": compute_multiplier,
             "compute_substitution_enabled": compute_substitution_enabled,
             "source_compute_arch": source_row.get("compute_arch"),
@@ -405,6 +513,9 @@ def _row_with_budget(
             "substituted_compute_replica_count": target_replica_count if compute_substitution_enabled else None,
             "substituted_compute_area_um2": round(base_compute_area, 6) if compute_substitution_enabled else None,
             "substituted_compute_power_mw": round(base_compute_power, 6) if compute_substitution_enabled else None,
+            "substituted_compute_plus_control_power_mw": (
+                round(base_compute_power + control_power_mw, 6) if compute_substitution_enabled else None
+            ),
             "substituted_compute_variant_label": (
                 composed_dual_stream["composed_variant_label"] if use_composed_dual_stream else None
             ),
@@ -421,6 +532,7 @@ def _row_with_budget(
             "local_datapath_clock_ok": float(full_value_tile["critical_path_ns"]) <= float(source_row["clock_ns"]),
             "softmax_weight_clock_ok": float(softmax_weight["critical_path_ns"]) <= float(source_row["clock_ns"]),
             "compute_clock_ok": target_block_clock <= float(source_row["clock_ns"]),
+            "command_dispatch_control_clock_ok": command_dispatch_control_clock_ok,
             "area_fit": area_fit,
             "buffer_fit": buffer_fit,
             "physical_feasible": feasible,
@@ -453,6 +565,9 @@ def _row_with_budget(
             logic_area_used_um2=current_logic_used,
             selected_l1_overhead_area_um2=selected_l1_overhead,
             current_l1_overhead_area_um2=current_l1_overhead,
+            command_dispatch_control_area_um2=control_area,
+            command_dispatch_control_power_mw=control_power_mw,
+            command_dispatch_control_clock_ok=command_dispatch_control_clock_ok,
             buffer_fit=buffer_fit,
         )
         out.update(recost)
@@ -479,6 +594,9 @@ def _area_fit_replica_recost(
     logic_area_used_um2: float,
     selected_l1_overhead_area_um2: float,
     current_l1_overhead_area_um2: float,
+    command_dispatch_control_area_um2: float,
+    command_dispatch_control_power_mw: float,
+    command_dispatch_control_clock_ok: bool,
     buffer_fit: bool,
 ) -> JsonDict:
     new_macs = max(1, int(area_fit_replica_count) * max(1, int(block_macs_per_cycle)))
@@ -500,12 +618,12 @@ def _area_fit_replica_recost(
     compute_power = int(area_fit_replica_count) * block_power_mw
     logic_required = logic_area_used_um2 + (compute_area - current_compute_area_um2) + (
         selected_l1_overhead_area_um2 - current_l1_overhead_area_um2
-    )
+    ) + command_dispatch_control_area_um2
     logic_slack = compute_budget_um2 - logic_required
     compute_over_budget = max(0.0, logic_required - compute_budget_um2)
     density_gain = compute_area / max(1.0, compute_budget_um2 - selected_l1_overhead_area_um2)
     area_fit = logic_required <= compute_budget_um2
-    recost_feasible = area_fit and buffer_fit
+    recost_feasible = area_fit and buffer_fit and command_dispatch_control_clock_ok
     source_latency_us = float(source_row["latency_us"])
     latency_us = float(scheduled["latency_us"])
     return {
@@ -530,9 +648,14 @@ def _area_fit_replica_recost(
         "replica_recost_buffer_fit": buffer_fit,
         "replica_recost_physical_feasible": recost_feasible,
         "replica_recost_compute_clock_ok": True,
+        "replica_recost_command_dispatch_control_clock_ok": command_dispatch_control_clock_ok,
         "substituted_compute_replica_count": int(area_fit_replica_count),
         "substituted_compute_area_um2": round(compute_area, 6),
         "substituted_compute_power_mw": round(compute_power, 6),
+        "substituted_compute_plus_control_power_mw": round(
+            compute_power + command_dispatch_control_power_mw,
+            6,
+        ),
         "compute_area_required_um2": round(compute_area, 6),
         "logic_area_used_required_um2": round(logic_required, 6),
         "logic_area_slack_required_um2": round(logic_slack, 6),
@@ -541,6 +664,7 @@ def _area_fit_replica_recost(
         "replica_count_required": int(area_fit_replica_count),
         "replica_count_shortfall": 0 if area_fit else max(0, target_replica_count - area_fit_replica_count),
         "compute_clock_ok": True if recost_feasible else block_clock_ns <= source_clock_ns,
+        "command_dispatch_control_clock_ok": command_dispatch_control_clock_ok,
         "area_fit": True if recost_feasible else area_fit,
         "physical_feasible": recost_feasible,
         "adjusted_latency_us_if_feasible": latency_us if recost_feasible else None,
@@ -655,7 +779,9 @@ def _compute_stage_cycles(row: JsonDict, *, subtiles: int, compute_mode: str) ->
 
 def _effective_selection_key(row: JsonDict) -> tuple[float, float, float, str]:
     substituted_area = row.get("substituted_compute_area_um2")
-    substituted_power = row.get("substituted_compute_power_mw")
+    substituted_power = row.get("substituted_compute_plus_control_power_mw")
+    if substituted_power is None:
+        substituted_power = row.get("substituted_compute_power_mw")
     if substituted_area is None:
         substituted_area = row.get("compute_area_required_um2")
     if substituted_area is None:
@@ -679,6 +805,14 @@ def build_report(args: argparse.Namespace) -> JsonDict:
     softmax_weight = _best_ok_metrics(args.softmax_weight_metrics)
     composed_dual_stream_metrics = _parse_composed_metric_inputs(getattr(args, "composed_dual_stream_metrics", None))
     composed_variants = _load_composed_variants(composed_dual_stream_metrics) if composed_dual_stream_metrics else []
+    command_dispatch_control_metrics = _parse_composed_metric_inputs(
+        getattr(args, "command_dispatch_control_metrics", None)
+    )
+    command_dispatch_control_variants = (
+        _load_command_dispatch_control_variants(command_dispatch_control_metrics)
+        if command_dispatch_control_metrics
+        else []
+    )
     compute_block = _best_ok_compute_metrics(args.compute_block_metrics) if args.compute_block_metrics else None
     quality_gate = _load_json(args.quality_gate_json) if args.quality_gate_json else None
     rows: list[JsonDict] = []
@@ -689,6 +823,10 @@ def build_report(args: argparse.Namespace) -> JsonDict:
             for per_wave in command_cycles_per_wave_overrides
         ]
         for row in overhead_rows:
+            command_dispatch_control = _select_command_dispatch_control_variant(
+                command_dispatch_control_variants,
+                clusters=int(row["cluster_count"]),
+            )
             if composed_variants:
                 for composed_dual_stream in composed_variants:
                     rows.append(
@@ -698,6 +836,7 @@ def build_report(args: argparse.Namespace) -> JsonDict:
                             softmax_weight=softmax_weight,
                             composed_dual_stream=composed_dual_stream,
                             compute_block=compute_block,
+                            command_dispatch_control=command_dispatch_control,
                             compute_block_macs_per_cycle=args.compute_block_macs_per_cycle,
                             compute_arch_name=args.compute_arch_name,
                             buffer_area_um2_per_byte=args.buffer_area_um2_per_byte,
@@ -713,6 +852,7 @@ def build_report(args: argparse.Namespace) -> JsonDict:
                         softmax_weight=softmax_weight,
                         composed_dual_stream=None,
                         compute_block=compute_block,
+                        command_dispatch_control=command_dispatch_control,
                         compute_block_macs_per_cycle=args.compute_block_macs_per_cycle,
                         compute_arch_name=args.compute_arch_name,
                         buffer_area_um2_per_byte=args.buffer_area_um2_per_byte,
@@ -739,11 +879,15 @@ def build_report(args: argparse.Namespace) -> JsonDict:
         assumptions.append(
             "When composed dual-stream wrapper substitution is enabled, full-value and softmax measurements are treated as folded into the measured dual-stream RTL wrapper, and wrapper clock is used to scale feasible latency if it differs from source schedule clock."
         )
-    elif compute_block:
+    if command_dispatch_control_variants:
+        assumptions.append(
+            "When command-dispatch control metrics are provided, the smallest measured dispatcher variant covering the schedule cluster count is added as a central logic-area and power term; its clock must meet the schedule clock for measured-control feasibility."
+        )
+    if not composed_variants and compute_block:
         assumptions.append(
             "When compute-block substitution is enabled, measured block area/power/clock replace the source dense compute block, but the upstream schedule latency is not recomputed; this is an area-feasibility substitution and a conservative latency view when the substituted block clock is no slower than the source clock."
         )
-    else:
+    elif not composed_variants:
         assumptions.append("No compute-block substitution was requested; dense compute area comes from the source schedule.")
     return {
         "version": 1,
@@ -756,6 +900,11 @@ def build_report(args: argparse.Namespace) -> JsonDict:
             "softmax_weight_metrics": str(args.softmax_weight_metrics),
             "composed_dual_stream_metrics": (
                 [str(path) for path in composed_dual_stream_metrics] if composed_dual_stream_metrics else None
+            ),
+            "command_dispatch_control_metrics": (
+                [str(path) for path in command_dispatch_control_metrics]
+                if command_dispatch_control_metrics
+                else None
             ),
             "compute_block_metrics": str(args.compute_block_metrics) if args.compute_block_metrics else None,
             "compute_block_macs_per_cycle": args.compute_block_macs_per_cycle,
@@ -799,6 +948,18 @@ def build_report(args: argparse.Namespace) -> JsonDict:
             ),
             "best_requested_substituted_compute_area_um2": best_requested.get("substituted_compute_area_um2"),
             "best_requested_compute_clock_ok": best_requested.get("compute_clock_ok"),
+            "best_requested_command_dispatch_control_variant": best_requested.get(
+                "measured_command_dispatch_control_variant_name"
+            ),
+            "best_requested_command_dispatch_control_cluster_count": best_requested.get(
+                "measured_command_dispatch_control_cluster_count"
+            ),
+            "best_requested_command_dispatch_control_area_um2": best_requested.get(
+                "measured_command_dispatch_control_area_um2"
+            ),
+            "best_requested_command_dispatch_control_clock_ok": best_requested.get(
+                "command_dispatch_control_clock_ok"
+            ),
             "best_requested_replica_recost_enabled": best_requested.get("replica_recost_enabled"),
             "best_requested_replica_recost_area_fit_replica_count": best_requested.get(
                 "replica_recost_area_fit_replica_count"
@@ -845,6 +1006,9 @@ def write_markdown(path: Path, payload: JsonDict) -> None:
         f"- best requested substituted compute variant: `{diag['best_requested_substituted_compute_variant_label']}`",
         f"- best requested substituted compute semantic profile: `{diag['best_requested_substituted_compute_semantic_profile']}`",
         f"- best requested substituted compute area um2: `{diag['best_requested_substituted_compute_area_um2']}`",
+        f"- best requested command dispatch control variant: `{diag['best_requested_command_dispatch_control_variant']}`",
+        f"- best requested command dispatch control area um2: `{diag['best_requested_command_dispatch_control_area_um2']}`",
+        f"- best requested command dispatch control clock ok: `{diag['best_requested_command_dispatch_control_clock_ok']}`",
         f"- recommended next step: `{diag['recommended_next_step']}`",
         "",
         "## Best Requested",
@@ -860,13 +1024,14 @@ def write_markdown(path: Path, payload: JsonDict) -> None:
         "",
         "## Rows",
         "",
-        "| mode | latency us | area fit | feasible | substituted variant | semantic profile | logic slack um2 | local datapath/cluster | compute area required |",
-        "|---|---:|---|---|---|---|---:|---:|---:|",
+        "| mode | latency us | area fit | feasible | substituted variant | semantic profile | command ctrl | logic slack um2 | local datapath/cluster | compute area required |",
+        "|---|---:|---|---|---|---|---|---:|---:|---:|",
     ]
     for row in payload["rows"]:
         lines.append(
             "| {compute_mode} | {latency_us} | {area_fit} | {physical_feasible} | "
             "{substituted_compute_variant_label} | {substituted_compute_semantic_profile} | "
+            "{measured_command_dispatch_control_variant_name} | "
             "{logic_area_slack_required_um2} | {selected_local_datapath_area_um2_per_cluster} | "
             "{compute_area_required_um2} |".format(**row)
         )
@@ -882,6 +1047,7 @@ def main() -> int:
     parser.add_argument("--full-value-tile-metrics", type=Path, required=True)
     parser.add_argument("--softmax-weight-metrics", type=Path, required=True)
     parser.add_argument("--composed-dual-stream-metrics", type=Path, action="append")
+    parser.add_argument("--command-dispatch-control-metrics", type=Path, action="append")
     parser.add_argument("--compute-block-metrics", type=Path)
     parser.add_argument("--compute-block-macs-per-cycle", type=int)
     parser.add_argument("--compute-arch-name")
