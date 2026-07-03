@@ -240,15 +240,15 @@ than free or heuristic assumptions.
    - Scope: account for command generation, tile assignment, per-wave launch,
      ready/valid backpressure, and control distribution in the Llama7B
      composed-attention schedule.
-   - Status: the current reduced-replica rows still carry
-     `command_cycles_per_tile=0` and `command_cycles_per_wave=0`. The on-chip
-     endpoint/router/SRAM and HBM service models bound data movement, but the
-     command path is still idealized in the rows used for score32 exact-div and
-     reciprocal-LUT recost.
-   - Next result: create a command-overhead sensitivity or measured
-     scheduler-control job that sweeps nonzero per-tile and per-wave overhead
-     for the selected dual-stream schedule, then feeds the result into the same
-     Llama7B recost path.
+   - Status: prepared by PR #1119. The new blocked item
+     `l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_command_overhead_llama7b_v1`
+     sweeps `command_cycles_per_tile=0,1,4,16` and
+     `command_cycles_per_wave=0,8,32` in the same composed dual-stream
+     reduced-replica recost path. It is intentionally dependency-gated behind
+     the exp-LUT quality gate, exp-LUT L1 PPA, and the base exp-LUT recost.
+   - Remaining work: run this job only after the exp-LUT quality/PPA chain
+     materializes. It is still a cycle-sensitivity model for scheduler/control
+     overhead, not measured command-distribution RTL.
 
 7. Integrated schedule closure audit
    - Scope: rerun the Llama7B attention schedule with measured compute,
@@ -272,9 +272,9 @@ run the already queued exp-LUT branch:
    to recost the Llama7B point. If the quality gate fails, do not promote the
    exp-LUT row as quality-backed; return to the softmax replacement design.
 4. In parallel with evaluator recovery or after exp-LUT recost, prepare the
-   command-overhead sensitivity job for the selected dual-stream schedule,
-   because current score32 reduced-replica rows still assume zero command
-   cycles.
+   command-overhead sensitivity job for the selected dual-stream schedule. This
+   preparation is complete as of PR #1119; the item should remain blocked until
+   the exp-LUT quality/PPA/base-recost dependencies are merged and materialized.
 
 All new evaluation jobs should run on the remote evaluator
 `eval-daemon-b7c2d9c80c1c`, not the devcontainer.
