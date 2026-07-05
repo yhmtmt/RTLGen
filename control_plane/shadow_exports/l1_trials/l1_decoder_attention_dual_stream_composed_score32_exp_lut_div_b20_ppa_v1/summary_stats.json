@@ -1,0 +1,33 @@
+{
+  "item_id": "l1_decoder_attention_dual_stream_composed_score32_exp_lut_div_b20_ppa_v1",
+  "completed_trials": 2,
+  "success_count": 2,
+  "failure_count": 0,
+  "success_rate": 1.0,
+  "metrics": {
+    "critical_path_ns": {
+      "best": 47.1077,
+      "mean": 47.1077,
+      "median": 47.1077,
+      "max": 47.1077,
+      "range": 0.0,
+      "stddev": 0.0
+    },
+    "die_area": {
+      "best": 6250000.0,
+      "mean": 6250000.0,
+      "median": 6250000.0,
+      "max": 6250000.0,
+      "range": 0.0,
+      "stddev": 0.0
+    },
+    "total_power_mw": {
+      "best": 35.3,
+      "mean": 35.3,
+      "median": 35.3,
+      "max": 35.3,
+      "range": 0.0,
+      "stddev": 0.0
+    }
+  }
+}
