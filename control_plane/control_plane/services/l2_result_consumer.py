@@ -535,6 +535,10 @@ _DECODER_EVIDENCE_OUTPUT_KEYS: tuple[tuple[str, str], ...] = (
         "attention_mixed_int8_score32_w16_rtl_recip_precision_generation_quality_report",
     ),
     (
+        "attention_mixed_int8_score32_exp_lut_div_generation_quality_out",
+        "attention_mixed_int8_score32_exp_lut_div_generation_quality_report",
+    ),
+    (
         "attention_mixed_int8_softmax_replacement_generation_quality_out",
         "attention_mixed_int8_softmax_replacement_generation_quality_report",
     ),
