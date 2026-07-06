@@ -1,0 +1,15 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_llama7b_v1",
+  "candidate_id": "l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_llama7b_v1",
+  "decision": "iterate",
+  "reason": "Ranking/frontier evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.",
+  "evidence_refs": [
+    "item:l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_llama7b_v1",
+    "run:l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_llama7b_v1_run_ff57a9e29c709725",
+    "artifact:control_plane/shadow_exports/l2_decisions/l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_llama7b_v1.json",
+    "pr:#1188",
+    "https://github.com/yhmtmt/RTLGen/pull/1188"
+  ],
+  "next_action": "inspect follow-on work after l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_llama7b_v1",
+  "requires_human_approval": false
+}

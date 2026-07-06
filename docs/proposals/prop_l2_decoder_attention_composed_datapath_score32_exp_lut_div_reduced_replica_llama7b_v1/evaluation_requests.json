@@ -21,7 +21,13 @@
       "expected_result": {
         "direction": "recost_score32_exp_lut_div_composed_datapath_after_quality_gate",
         "reason": "Record this recost only if the score32 exp-LUT quality gate passes and the L1 exp-LUT PPA baseline is available; otherwise keep as blocked dependency, not quality-backed."
-      }
+      },
+      "status": "merged",
+      "merged_pr_number": 1188,
+      "merge_commit": "6dc402784774ddde5693a61cecd7169d894ab20d",
+      "merged_utc": "2026-07-06T08:32:19.443022Z",
+      "notes": "Merged via PR #1188 and merge 6dc402784774ddde5693a61cecd7169d894ab20d at 2026-07-06T08:32:19.443022Z."
     }
-  ]
+  ],
+  "source_commit": "711696b8304bc02537b6e7aa59757eb42f55d078"
 }
