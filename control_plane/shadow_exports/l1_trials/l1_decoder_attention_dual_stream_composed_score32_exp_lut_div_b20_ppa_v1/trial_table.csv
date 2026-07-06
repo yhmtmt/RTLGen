@@ -1,0 +1,7 @@
+run_key,attempt,trial_index,seed,status,metrics_csv,critical_path_ns,die_area,total_power_mw,failure_category,failure_stage,failure_signature
+l1_decoder_attention_dual_stream_composed_score32_exp_lut_div_b20_ppa_v1_run_aa4be98ca6456c6d,1,1,0,succeeded,runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_score32_w16_exp_lut_div_b20/metrics.csv,47.1077,6250000.0,35.3,worker_error,worker,"heartbeat_error=(psycopg.errors.ConnectionTimeout) connection timeout expired
+(Background on this error at: https://sqlalche.me/e/20/e3q8)"
+l1_decoder_attention_dual_stream_composed_score32_exp_lut_div_b20_ppa_v1_run_1d69e46c4c21a245,3,1,0,succeeded,runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_score32_w16_exp_lut_div_b20/metrics.csv,47.1077,6250000.0,35.3,worker_error,worker,"heartbeat_error=(psycopg.OperationalError) connection failed: connection to server at ""192.168.128.8"", port 5432 failed: server closed the connection unexpectedly
+	This probably means the server terminated abnormally
+	before or while processing the request.
+(Background on this error at: https://sqlalche.me/e/20/e3q8)"
