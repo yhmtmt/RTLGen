@@ -1,0 +1,3 @@
+run_key,attempt,trial_index,seed,status,metrics_csv,critical_path_ns,die_area,total_power_mw,failure_category,failure_stage,failure_signature
+l1_decoder_attention_command_dispatch_control_ppa_v1_run_9d27294f290e6553,1,1,0,failed,,,,,command_failure,check_attention_command_dispatch_guard_attention_command_dispatch_c16_q32,exit_code=1
+l1_decoder_attention_command_dispatch_control_ppa_v1_run_22384c8b4b8b7d03,2,2,1,succeeded,runs/designs/npu_blocks/attention_command_dispatch_c8_q16/metrics.csv,0.3899,11830.9129,0.029,none,,

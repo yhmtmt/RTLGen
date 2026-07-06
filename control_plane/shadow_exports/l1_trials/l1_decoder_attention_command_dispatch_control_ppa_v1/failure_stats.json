@@ -1,0 +1,12 @@
+{
+  "item_id": "l1_decoder_attention_command_dispatch_control_ppa_v1",
+  "completed_trials": 2,
+  "success_count": 1,
+  "failure_count": 1,
+  "by_category": {
+    "command_failure": 1
+  },
+  "by_stage": {
+    "check_attention_command_dispatch_guard_attention_command_dispatch_c16_q32": 1
+  }
+}

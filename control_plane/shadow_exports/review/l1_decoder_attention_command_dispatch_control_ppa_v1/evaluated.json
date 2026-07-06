@@ -1,0 +1,227 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "sweeps": [
+        "runs/campaigns/npu/attention_command_dispatch_v1/sweeps/nangate45_attention_command_dispatch_frontier.json"
+      ],
+      "configs": [
+        "runs/designs/npu_blocks/attention_command_dispatch_c8_q16/config.json",
+        "runs/designs/npu_blocks/attention_command_dispatch_c16_q32/config.json",
+        "runs/designs/npu_blocks/attention_command_dispatch_c32_q64/config.json"
+      ],
+      "out_root": "runs/designs/npu_blocks",
+      "design_dirs": [],
+      "macro_manifests": [],
+      "candidate_manifests": [],
+      "required_submodules": []
+    },
+    "commands": [
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/rtlgen/gen_attention_command_dispatch.py --config runs/designs/npu_blocks/attention_command_dispatch_c8_q16/config.json --out runs/designs/npu_blocks/attention_command_dispatch_c8_q16/verilog",
+        "name": "generate_attention_command_dispatch_rtl_attention_command_dispatch_c8_q16"
+      },
+      {
+        "run": "python3 npu/eval/check_attention_command_dispatch_guard.py --design-dir runs/designs/npu_blocks/attention_command_dispatch_c8_q16",
+        "name": "check_attention_command_dispatch_guard_attention_command_dispatch_c8_q16"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/synth/run_block_sweep.py --design_dir runs/designs/npu_blocks/attention_command_dispatch_c8_q16 --platform nangate45 --top attention_command_dispatch_c8_q16 --sweep runs/campaigns/npu/attention_command_dispatch_v1/sweeps/nangate45_attention_command_dispatch_frontier.json --out_root runs/designs/npu_blocks --skip_existing",
+        "name": "run_block_sweep_attention_command_dispatch_c8_q16"
+      },
+      {
+        "run": "python3 npu/eval/extract_openroad_timing_summary.py --design-dir runs/designs/npu_blocks/attention_command_dispatch_c8_q16 --out runs/designs/npu_blocks/attention_command_dispatch_c8_q16/timing_debug_report.md --max-paths 8",
+        "name": "extract_attention_command_dispatch_timing_paths_attention_command_dispatch_c8_q16"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/rtlgen/gen_attention_command_dispatch.py --config runs/designs/npu_blocks/attention_command_dispatch_c16_q32/config.json --out runs/designs/npu_blocks/attention_command_dispatch_c16_q32/verilog",
+        "name": "generate_attention_command_dispatch_rtl_attention_command_dispatch_c16_q32"
+      },
+      {
+        "run": "python3 npu/eval/check_attention_command_dispatch_guard.py --design-dir runs/designs/npu_blocks/attention_command_dispatch_c16_q32",
+        "name": "check_attention_command_dispatch_guard_attention_command_dispatch_c16_q32"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/synth/run_block_sweep.py --design_dir runs/designs/npu_blocks/attention_command_dispatch_c16_q32 --platform nangate45 --top attention_command_dispatch_c16_q32 --sweep runs/campaigns/npu/attention_command_dispatch_v1/sweeps/nangate45_attention_command_dispatch_frontier.json --out_root runs/designs/npu_blocks --skip_existing",
+        "name": "run_block_sweep_attention_command_dispatch_c16_q32"
+      },
+      {
+        "run": "python3 npu/eval/extract_openroad_timing_summary.py --design-dir runs/designs/npu_blocks/attention_command_dispatch_c16_q32 --out runs/designs/npu_blocks/attention_command_dispatch_c16_q32/timing_debug_report.md --max-paths 8",
+        "name": "extract_attention_command_dispatch_timing_paths_attention_command_dispatch_c16_q32"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/rtlgen/gen_attention_command_dispatch.py --config runs/designs/npu_blocks/attention_command_dispatch_c32_q64/config.json --out runs/designs/npu_blocks/attention_command_dispatch_c32_q64/verilog",
+        "name": "generate_attention_command_dispatch_rtl_attention_command_dispatch_c32_q64"
+      },
+      {
+        "run": "python3 npu/eval/check_attention_command_dispatch_guard.py --design-dir runs/designs/npu_blocks/attention_command_dispatch_c32_q64",
+        "name": "check_attention_command_dispatch_guard_attention_command_dispatch_c32_q64"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/synth/run_block_sweep.py --design_dir runs/designs/npu_blocks/attention_command_dispatch_c32_q64 --platform nangate45 --top attention_command_dispatch_c32_q64 --sweep runs/campaigns/npu/attention_command_dispatch_v1/sweeps/nangate45_attention_command_dispatch_frontier.json --out_root runs/designs/npu_blocks --skip_existing",
+        "name": "run_block_sweep_attention_command_dispatch_c32_q64"
+      },
+      {
+        "run": "python3 npu/eval/extract_openroad_timing_summary.py --design-dir runs/designs/npu_blocks/attention_command_dispatch_c32_q64 --out runs/designs/npu_blocks/attention_command_dispatch_c32_q64/timing_debug_report.md --max-paths 8",
+        "name": "extract_attention_command_dispatch_timing_paths_attention_command_dispatch_c32_q64"
+      },
+      {
+        "run": "python3 scripts/build_runs_index.py",
+        "name": "build_runs_index"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate"
+      }
+    ],
+    "objective": "Measure Nangate45 PPA for central decoder-attention command dispatch control blocks at 8, 16, and 32 clusters.",
+    "acceptance": [
+      "Each generated wrapper metrics.csv contains at least one status=ok row for the queued sweep",
+      "Committed outputs stay lightweight (metrics.csv only; runs/index.csv is exported centrally after merge)",
+      "python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue pass"
+    ],
+    "source_mode": "config",
+    "expected_outputs": [
+      "runs/designs/npu_blocks/attention_command_dispatch_c8_q16/metrics.csv",
+      "runs/designs/npu_blocks/attention_command_dispatch_c8_q16/timing_debug_report.md",
+      "runs/designs/npu_blocks/attention_command_dispatch_c16_q32/metrics.csv",
+      "runs/designs/npu_blocks/attention_command_dispatch_c16_q32/timing_debug_report.md",
+      "runs/designs/npu_blocks/attention_command_dispatch_c32_q64/metrics.csv",
+      "runs/designs/npu_blocks/attention_command_dispatch_c32_q64/timing_debug_report.md"
+    ]
+  },
+  "layer": "layer1",
+  "state": "evaluated",
+  "title": "Decoder-attention command dispatch control PPA",
+  "result": {
+    "branch": "eval/l1_decoder_attention_command_dispatch_control_ppa_v1/s20260706t091416z",
+    "completed_utc": "2026-07-06T09:14:15.092767Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "b7c2d9c80c1c",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260706t091416z][host:b7c2d9c80c1c][item:l1_decoder_attention_command_dispatch_control_ppa_v1]",
+    "metrics_rows": [
+      {
+        "tag": "attention_command_dispatch_frontier_ea4c1138",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "ea4c1138",
+        "metrics_csv": "runs/designs/npu_blocks/attention_command_dispatch_c8_q16/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_command_dispatch_c8_q16/work/ea4c1138/result.json"
+      },
+      {
+        "tag": "attention_command_dispatch_frontier_cf4d98b2",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "cf4d98b2",
+        "metrics_csv": "runs/designs/npu_blocks/attention_command_dispatch_c8_q16/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_command_dispatch_c8_q16/work/cf4d98b2/result.json"
+      },
+      {
+        "tag": "attention_command_dispatch_frontier_5a29a082",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "5a29a082",
+        "metrics_csv": "runs/designs/npu_blocks/attention_command_dispatch_c8_q16/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_command_dispatch_c8_q16/work/5a29a082/result.json"
+      },
+      {
+        "tag": "attention_command_dispatch_frontier_ea4c1138",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "ea4c1138",
+        "metrics_csv": "runs/designs/npu_blocks/attention_command_dispatch_c16_q32/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_command_dispatch_c16_q32/work/ea4c1138/result.json"
+      },
+      {
+        "tag": "attention_command_dispatch_frontier_cf4d98b2",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "cf4d98b2",
+        "metrics_csv": "runs/designs/npu_blocks/attention_command_dispatch_c16_q32/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_command_dispatch_c16_q32/work/cf4d98b2/result.json"
+      },
+      {
+        "tag": "attention_command_dispatch_frontier_5a29a082",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "5a29a082",
+        "metrics_csv": "runs/designs/npu_blocks/attention_command_dispatch_c16_q32/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_command_dispatch_c16_q32/work/5a29a082/result.json"
+      },
+      {
+        "tag": "attention_command_dispatch_frontier_ea4c1138",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "ea4c1138",
+        "metrics_csv": "runs/designs/npu_blocks/attention_command_dispatch_c32_q64/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_command_dispatch_c32_q64/work/ea4c1138/result.json"
+      },
+      {
+        "tag": "attention_command_dispatch_frontier_cf4d98b2",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "cf4d98b2",
+        "metrics_csv": "runs/designs/npu_blocks/attention_command_dispatch_c32_q64/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_command_dispatch_c32_q64/work/cf4d98b2/result.json"
+      },
+      {
+        "tag": "attention_command_dispatch_frontier_5a29a082",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "5a29a082",
+        "metrics_csv": "runs/designs/npu_blocks/attention_command_dispatch_c32_q64/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_command_dispatch_c32_q64/work/5a29a082/result.json"
+      }
+    ],
+    "queue_item_id": "l1_decoder_attention_command_dispatch_control_ppa_v1",
+    "session_id": "s20260706t091416z",
+    "status": "ok",
+    "summary": "14/14 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l1_decoder_attention_command_dispatch_control_ppa_v1/s20260706t091416z",
+    "pr_title": "eval: run decoder-attention command dispatch control ppa",
+    "checklist": [
+      "Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge",
+      "Include metrics row references for each completed design",
+      "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260706t091416z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l1_decoder_attention_command_dispatch_control_ppa_v1"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l1_decoder_attention_command_dispatch_control_ppa_v1",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 1,
+  "created_utc": "2026-07-06T08:56:19.809964Z",
+  "requested_by": "@developer",
+  "developer_loop": {
+    "evaluation": {
+      "mode": "frontier_followup",
+      "trial_policy": {
+        "seed_start": 0,
+        "trial_count": 1,
+        "stop_after_failures": 1
+      }
+    },
+    "abstraction": {
+      "layer": "decoder_attention_command_dispatch_control"
+    },
+    "proposal_id": "prop_l1_decoder_attention_command_dispatch_control_v1",
+    "proposal_path": "docs/proposals/prop_l1_decoder_attention_command_dispatch_control_v1/proposal.json"
+  },
+  "source_requirement": {
+    "repo": "",
+    "reason": "evaluator runtime must contain the queued job source commit",
+    "version": 1,
+    "required_ref": "origin/master",
+    "required_sha": "0d883e8154a93bed1a455f48beeae3b239be6e44",
+    "requires_daemon_restart": true
+  }
+}
