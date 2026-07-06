@@ -21,7 +21,12 @@
         "direction": "record_score32_compute_activity_energy",
         "reason": "The result should state whether active-cycle/clock-gating accounting changes the score32 energy ranking versus the measured exact-FP16 reference."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 1209,
+      "merge_commit": "c116ee720513e08a66cfa146d17d0a0f0ecd135e",
+      "merged_utc": "2026-07-06T11:05:49.696363Z",
+      "notes": "Merged via PR #1209 and merge c116ee720513e08a66cfa146d17d0a0f0ecd135e at 2026-07-06T11:05:49.696363Z."
     }
-  ]
+  ],
+  "source_commit": "089e8c6c1e2286701bf758caf99703a081a12f51"
 }

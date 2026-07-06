@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_score32_compute_activity_energy_llama7b_v1",
+  "decision": "iterate",
+  "pr_number": 1209,
+  "merge_commit": "c116ee720513e08a66cfa146d17d0a0f0ecd135e",
+  "merged_utc": "2026-07-06T11:05:49.696363Z"
+}
