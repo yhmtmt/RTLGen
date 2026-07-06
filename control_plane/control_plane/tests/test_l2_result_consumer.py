@@ -5233,6 +5233,124 @@ def test_consume_l2_result_frontier_attention_measured_sram_rebalance_uses_decod
             )
 
 
+def test_consume_l2_result_score32_exp_lut_service_closure_uses_decoder_evidence() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            proposal_dir = repo_root / "docs" / "proposals" / "prop_l2_score32_service_closure_v1"
+            _write(
+                proposal_dir / "proposal.json",
+                json.dumps(
+                    {
+                        "proposal_id": "prop_l2_score32_service_closure_v1",
+                        "kind": "architecture",
+                        "title": "Score32 exp-LUT service closure",
+                        "direct_comparison": {
+                            "primary_question": "Which service components remain abstract for score32 exp-LUT?"
+                        },
+                    },
+                    indent=2,
+                )
+                + "\n",
+            )
+            evidence_rel = (
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_score32_exp_lut_service_closure__l2_score32_service_closure.json"
+            )
+            report_rel = (
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_score32_exp_lut_service_closure__l2_score32_service_closure.md"
+            )
+            _write(
+                repo_root / evidence_rel,
+                json.dumps(
+                    {
+                        "version": 1,
+                        "model": "llm_decoder_attention_score32_exp_lut_service_closure_audit_v1",
+                        "decision": "score32_exp_lut_service_closure_recorded",
+                        "diagnosis": {
+                            "score32_supported": True,
+                            "wrapper_metrics_match": True,
+                            "selected_semantic_profile": "score32_exp_lut_div",
+                            "latency_us": 12519.342352,
+                            "source_latency_us": 1575.373891,
+                            "macs_per_cycle": 104320,
+                            "dominant_tile_resource": "pipeline_attention",
+                            "remaining_abstractions": [
+                                "tile_local_and_shared_sram",
+                                "hbm_dram_service",
+                            ],
+                        },
+                        "next_step": {
+                            "requires_hbm_dram_closure": True,
+                            "requires_new_wrapper_ppa": False,
+                        },
+                    },
+                    indent=2,
+                )
+                + "\n",
+            )
+            _write(repo_root / report_rel, "# score32 service closure\n")
+            item_id = _seed_campaign_work_item(
+                session,
+                repo_root,
+                item_id="l2_score32_service_closure",
+                campaign_dir_rel="runs/campaigns/npu/score32_service_closure_campaign",
+                summary_rows=(
+                    "scope,arch_id,macro_mode,objective_rank,latency_ms_mean,energy_mj_mean,critical_path_ns_mean,total_power_mw_mean,flow_elapsed_s_mean,throughput_infer_per_s_mean\n"
+                    "aggregate,fp16_nm1_demo,flat_nomacro,1,0.4,0.15,5.5,0.18,1000,1.0\n"
+                ),
+                proposal_path="docs/proposals/prop_l2_score32_service_closure_v1",
+                comparison={"role": "frontier_closure"},
+            )
+            work_item = session.query(WorkItem).filter_by(item_id=item_id).one()
+            payload = copy.deepcopy(work_item.task_request.request_payload or {})
+            payload["developer_loop"]["evaluation"] = {
+                "mode": "frontier_detail",
+                "expected_direction": "record_score32_service_closure",
+                "expected_reason": "Use the score32 exp-LUT service closure record to choose the next abstraction.",
+            }
+            payload["developer_loop"]["abstraction"] = {
+                "layer": "decoder_attention_score32_exp_lut_service_closure",
+            }
+            work_item.task_request.request_payload = payload
+            work_item.input_manifest = {
+                "decoder_contract": {
+                    "attention_score32_exp_lut_service_closure_out": evidence_rel,
+                    "attention_score32_exp_lut_service_closure_report": report_rel,
+                }
+            }
+            work_item.expected_outputs = [*(work_item.expected_outputs or []), evidence_rel, report_rel]
+            session.commit()
+
+            consume_l2_result(session, Layer2ConsumeRequest(repo_root=str(repo_root), item_id=item_id))
+
+            decision_payload = json.loads(
+                (repo_root / "control_plane" / "shadow_exports" / "l2_decisions" / f"{item_id}.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            assessment = decision_payload["proposal_assessment"]
+            assert assessment["outcome"] == "score32_exp_lut_service_closure_recorded"
+            assert assessment["decoder_evidence_ref"] == evidence_rel
+            assert "score32_supported=True" in assessment["summary"]
+            assert "latency_us=12519.342352" in assessment["summary"]
+            assert "requires_hbm_dram_closure=True" in assessment["summary"]
+            assert (
+                decision_payload["evaluation_record"]["abstraction_layer"]
+                == "decoder_attention_score32_exp_lut_service_closure"
+            )
+            assert decision_payload["source_refs"]["decoder_attention_score32_exp_lut_service_closure_out"] == evidence_rel
+            assert (
+                decision_payload["source_refs"]["decoder_attention_score32_exp_lut_service_closure_report"]
+                == report_rel
+            )
+
+
 def test_consume_l2_result_frontier_attention_measured_hbm_service_uses_decoder_evidence() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"

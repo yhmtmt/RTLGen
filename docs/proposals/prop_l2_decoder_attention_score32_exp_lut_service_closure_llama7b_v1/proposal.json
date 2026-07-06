@@ -1,0 +1,71 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_score32_exp_lut_service_closure_llama7b_v1",
+  "created_utc": "2026-07-06T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Score32 exp-LUT service closure audit",
+  "abstraction_layer": "decoder_attention_score32_exp_lut_service_closure",
+  "hypothesis": "After the measured-wrapper promotion audit, the score32 exp-LUT Llama7B row can become the active compute/service baseline only if its measured wrapper, command-control, endpoint/router/SRAM, and inherited HBM/DRAM provenance are recorded explicitly.",
+  "direct_comparison": {
+    "primary_question": "Which service components are measured, measured-estimated, or still inherited for the promoted score32 exp-LUT Llama7B attention row?",
+    "include": [
+      "consume the merged score32 exp-LUT measured-command-control result",
+      "consume the merged score32 exp-LUT measured-wrapper promotion result",
+      "consume the endpoint/router/SRAM composition evidence",
+      "consume the measured-SRAM rebalance evidence",
+      "record remaining HBM/DRAM and SRAM packing abstractions explicitly"
+    ],
+    "exclude": [
+      "new OpenROAD PPA",
+      "new generation-quality evaluation",
+      "new HBM/DRAM controller calibration",
+      "new NoC topology search"
+    ]
+  },
+  "expected_benefit": [
+    "prevents accidental mixing of old softmax-era service rows with the promoted score32 exp-LUT compute row",
+    "creates a stable provenance record for the current Llama7B frontier baseline",
+    "identifies the next abstraction to close before claiming a fully embodied architecture point"
+  ],
+  "risks": [
+    "the audit is a provenance and accounting closure, not a new physical integration run",
+    "HBM/DRAM service and SRAM macro packing remain modeled until their dedicated closure jobs replace them"
+  ],
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_score32_exp_lut_service_closure_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Audit service-component provenance for the promoted score32 exp-LUT Llama7B attention row.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_score32_exp_lut_service_closure",
+      "comparison_role": "score32_exp_lut_service_closure_audit",
+      "paired_baseline_item_id": "l2_decoder_attention_score32_exp_lut_measured_wrapper_promotion_llama7b_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_measured_command_control_llama7b_v1",
+        "l2_decoder_attention_score32_exp_lut_measured_wrapper_promotion_llama7b_v1",
+        "l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_llama7b_v1_r4",
+        "l2_decoder_attention_kv_measured_sram_rebalance_softmax_recip_lut_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "record_score32_exp_lut_service_closure",
+        "reason": "The result should state whether score32 exp-LUT is supported by measured wrapper evidence and list remaining inherited service abstractions before the next frontier job."
+      },
+      "status": "pending"
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_measured_command_control_llama7b_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exp_lut_measured_wrapper_promotion__l2_decoder_attention_score32_exp_lut_measured_wrapper_promotion_llama7b_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_endpoint_router_sram_composition__l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_llama7b_v1_r4.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_measured_sram_rebalance__l2_decoder_attention_kv_measured_sram_rebalance_softmax_recip_lut_llama7b_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/audit_llm_decoder_attention_score32_exp_lut_service_closure.py",
+    "docs/architecture/llama7b_attention_abstraction_closure_plan.md",
+    "docs/proposals/prop_l2_decoder_attention_score32_exp_lut_measured_wrapper_promotion_llama7b_v1/proposal.json",
+    "docs/proposals/prop_l2_decoder_attention_kv_measured_sram_rebalance_softmax_recip_lut_v1/proposal.json"
+  ]
+}

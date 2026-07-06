@@ -1,0 +1,9 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_score32_exp_lut_service_closure_llama7b_v1",
+  "candidate_id": "l2_decoder_attention_score32_exp_lut_service_closure_llama7b_v1",
+  "decision": "pending",
+  "reason": "Evaluation not yet run.",
+  "evidence_refs": [],
+  "next_action": "dispatch l2_decoder_attention_score32_exp_lut_service_closure_llama7b_v1",
+  "requires_human_approval": false
+}

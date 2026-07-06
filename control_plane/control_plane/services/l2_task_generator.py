@@ -5766,6 +5766,64 @@ def _decoder_attention_score32_exp_lut_measured_wrapper_promotion_evidence(*, it
     }
 
 
+def _decoder_attention_score32_exp_lut_service_closure_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_attention_score32_exp_lut_service_closure__{item_id}.json"
+    report = f"{base}/decoder_attention_score32_exp_lut_service_closure__{item_id}.md"
+    measured_command_control_item = (
+        "l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_"
+        "measured_command_control_llama7b_v1"
+    )
+    measured_command_control = (
+        f"{base}/decoder_attention_composed_datapath_physical_feasibility__{measured_command_control_item}.json"
+    )
+    wrapper_promotion = (
+        f"{base}/decoder_attention_score32_exp_lut_measured_wrapper_promotion__"
+        "l2_decoder_attention_score32_exp_lut_measured_wrapper_promotion_llama7b_v1.json"
+    )
+    endpoint_router_sram = (
+        f"{base}/decoder_attention_kv_endpoint_router_sram_composition__"
+        "l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_llama7b_v1_r4.json"
+    )
+    measured_sram = (
+        f"{base}/decoder_attention_kv_measured_sram_rebalance__"
+        "l2_decoder_attention_kv_measured_sram_rebalance_softmax_recip_lut_llama7b_v1.json"
+    )
+    return {
+        "inputs": {
+            "attention_score32_exp_lut_measured_command_control": measured_command_control,
+            "attention_score32_exp_lut_measured_wrapper_promotion": wrapper_promotion,
+            "attention_kv_endpoint_router_sram_composition": endpoint_router_sram,
+            "attention_kv_measured_sram_rebalance": measured_sram,
+            "attention_score32_exp_lut_service_closure_out": out,
+            "attention_score32_exp_lut_service_closure_report": report,
+            "attention_score32_exp_lut_service_closure_scope": (
+                "Audit the score32 exp-LUT measured-command-control row against the measured "
+                "wrapper promotion and inherited endpoint/router/SRAM service evidence. Record "
+                "which service components are measured, which are measured estimates, and which "
+                "remain inherited HBM/DRAM abstractions before using this row as the Llama7B "
+                "frontier baseline."
+            ),
+        },
+        "commands": [
+            {
+                "name": "audit_decoder_attention_score32_exp_lut_service_closure",
+                "run": (
+                    "python3 npu/eval/audit_llm_decoder_attention_score32_exp_lut_service_closure.py "
+                    f"--measured-command-control-json {measured_command_control} "
+                    f"--wrapper-promotion-json {wrapper_promotion} "
+                    f"--endpoint-router-sram-composition-json {endpoint_router_sram} "
+                    f"--measured-sram-rebalance-json {measured_sram} "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+        "evidence_only": True,
+    }
+
+
 def _decoder_attention_integrated_abstraction_closure_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_integrated_abstraction_closure__{item_id}.json"
@@ -9220,6 +9278,7 @@ def _build_payload(
         "decoder_attention_integrated_energy_closure",
         "decoder_attention_hbm_energy_sensitivity",
         "decoder_attention_score32_exp_lut_measured_wrapper_promotion",
+        "decoder_attention_score32_exp_lut_service_closure",
         "decoder_attention_hbm_dram_service_energy",
         "decoder_attention_hbm_energy_calibration",
         "decoder_attention_hbm_command_calibrated_service",
@@ -9416,6 +9475,8 @@ def _build_payload(
             decoder_evidence = _decoder_attention_hbm_energy_sensitivity_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_score32_exp_lut_measured_wrapper_promotion":
             decoder_evidence = _decoder_attention_score32_exp_lut_measured_wrapper_promotion_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_attention_score32_exp_lut_service_closure":
+            decoder_evidence = _decoder_attention_score32_exp_lut_service_closure_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_hbm_dram_service_energy":
             decoder_evidence = _decoder_attention_hbm_dram_service_energy_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_hbm_energy_calibration":
