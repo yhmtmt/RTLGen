@@ -155,11 +155,18 @@ than free or heuristic assumptions.
     merged by PR #1199. It records `score32_supported=True`,
     `wrapper_metrics_match=True`, `latency_us=12519.342352`, and remaining
     abstractions `tile_local_and_shared_sram` plus `hbm_dram_service`.
+  - the SRAM hierarchy envelope audit
+    `l2_decoder_attention_score32_exp_lut_sram_hierarchy_envelope_llama7b_v1`
+    is merged by PR #1201. It records `score32_exp_lut_sram_hierarchy_envelope_stable`;
+    the conservative placement envelope changes HBM byte share by only
+    `0.008045196` and projects `12621.763263 us`, so the score32 frontier is
+    not materially reranked by SRAM placement efficiency alone.
   - the current immediate follow-on is
-    `l2_decoder_attention_score32_exp_lut_sram_hierarchy_envelope_llama7b_v1`.
-    It bounds the shared-SRAM CACTI packing assumption with an explicit macro
-    placement-efficiency envelope before deciding whether SRAM hierarchy or
-    HBM/DRAM service should be closed next.
+    `l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1`.
+    It should replace the inherited HBM service abstraction with a
+    score32-specific command/burst/row-hit HBM/DRAM service and calibrated HBM
+    energy account before treating the score32 row as the active Llama7B
+    frontier.
 - New evaluations should continue to dispatch only to the remote evaluator
   `eval-daemon-b7c2d9c80c1c`, not the devcontainer.
 
@@ -311,9 +318,16 @@ run the already queued exp-LUT branch:
 6. Run
    `l2_decoder_attention_score32_exp_lut_sram_hierarchy_envelope_llama7b_v1`
    to replace the ideal shared-SRAM packing estimate with an explicit SRAM
-   macro placement-efficiency envelope. If the conservative envelope does not
-   materially change HBM byte share or latency, prioritize HBM/DRAM service
-   closure next; otherwise schedule a stronger SRAM macro floorplan study.
+   macro placement-efficiency envelope. This is complete: PR #1201 records a
+   stable score32 frontier under the explicit SRAM macro placement-efficiency
+   envelope.
+7. Run
+   `l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1`
+   to close the inherited HBM/DRAM service abstraction for the score32 exp-LUT
+   row. The job should combine the score32 SRAM envelope, measured
+   command-control row, and command-calibrated HBM pJ terms, then report
+   latency, throughput, HBM energy, compute energy, total energy, and remaining
+   controller/signoff abstractions.
 
 All new evaluation jobs should run on the remote evaluator
 `eval-daemon-b7c2d9c80c1c`, not the devcontainer.

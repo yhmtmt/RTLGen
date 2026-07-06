@@ -1,0 +1,71 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1",
+  "created_utc": "2026-07-06T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Score32 exp-LUT HBM/DRAM service closure audit",
+  "abstraction_layer": "decoder_attention_score32_exp_lut_hbm_dram_service_closure",
+  "hypothesis": "The promoted score32 exp-LUT Llama7B frontier can keep the current latency ranking after replacing the inherited HBM byte-share abstraction with a score32-specific command/burst/row-hit HBM/DRAM service and calibrated HBM energy account.",
+  "direct_comparison": {
+    "primary_question": "Does score32-specific HBM/DRAM service and calibrated HBM energy materially change the current score32 exp-LUT Llama7B frontier account?",
+    "include": [
+      "consume the merged score32 exp-LUT SRAM hierarchy envelope",
+      "consume the merged score32 exp-LUT measured-command-control row",
+      "consume the merged HBM command-calibrated service energy parameters",
+      "sweep channel count, per-channel bandwidth, burst size, outstanding requests, row-hit rate, row-miss penalty, and scheduler efficiency",
+      "report latency, HBM energy, compute energy, and total energy for the score32 frontier row"
+    ],
+    "exclude": [
+      "new OpenROAD PPA",
+      "new generation-quality evaluation",
+      "cycle-accurate HBM controller RTL",
+      "vendor HBM current signoff",
+      "new SRAM macro floorplan PnR"
+    ]
+  },
+  "expected_benefit": [
+    "prevents accidental reuse of older softmax-era HBM service rows for the score32 frontier",
+    "bounds whether HBM service latency can rerank the current score32 exp-LUT point",
+    "records the calibrated HBM energy contribution beside measured score32 compute energy"
+  ],
+  "risks": [
+    "the service model is still command/burst/row-hit accounting rather than controller RTL",
+    "HBM energy uses calibrated public/reference pJ terms rather than vendor signoff current traces",
+    "SRAM macro placement remains an envelope unless a follow-on floorplan PnR job is run"
+  ],
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Audit score32-specific HBM/DRAM service latency and calibrated HBM energy for the promoted Llama7B attention frontier row.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_score32_exp_lut_hbm_dram_service_closure",
+      "comparison_role": "score32_exp_lut_hbm_dram_service_closure_audit",
+      "paired_baseline_item_id": "l2_decoder_attention_score32_exp_lut_sram_hierarchy_envelope_llama7b_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_score32_exp_lut_sram_hierarchy_envelope_llama7b_v1",
+        "l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_measured_command_control_llama7b_v1",
+        "l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "record_score32_hbm_dram_service_closure",
+        "reason": "The result should state whether score32-specific HBM/DRAM service latency or calibrated HBM energy changes the current frontier account before moving to remaining controller/signoff abstractions."
+      },
+      "status": "pending"
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exp_lut_sram_hierarchy_envelope__l2_decoder_attention_score32_exp_lut_sram_hierarchy_envelope_llama7b_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_measured_command_control_llama7b_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_hbm_command_calibrated_service__l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/audit_llm_decoder_attention_score32_exp_lut_hbm_dram_service_closure.py",
+    "docs/architecture/llama7b_attention_abstraction_closure_plan.md",
+    "docs/proposals/prop_l2_decoder_attention_score32_exp_lut_sram_hierarchy_envelope_llama7b_v1/proposal.json",
+    "docs/proposals/prop_l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1/proposal.json"
+  ]
+}
