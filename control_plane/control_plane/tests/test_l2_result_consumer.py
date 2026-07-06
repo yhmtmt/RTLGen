@@ -5351,6 +5351,135 @@ def test_consume_l2_result_score32_exp_lut_service_closure_uses_decoder_evidence
             )
 
 
+def test_consume_l2_result_score32_exp_lut_hbm_dram_service_closure_uses_decoder_evidence() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            proposal_dir = repo_root / "docs" / "proposals" / "prop_l2_score32_hbm_dram_service_closure_v1"
+            _write(
+                proposal_dir / "proposal.json",
+                json.dumps(
+                    {
+                        "proposal_id": "prop_l2_score32_hbm_dram_service_closure_v1",
+                        "kind": "architecture",
+                        "title": "Score32 exp-LUT HBM/DRAM service closure",
+                        "direct_comparison": {
+                            "primary_question": "Which frontier points are robust to HBM/DRAM service assumptions?"
+                        },
+                    },
+                    indent=2,
+                )
+                + "\n",
+            )
+            evidence_rel = (
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_score32_exp_lut_hbm_dram_service_closure__"
+                "l2_score32_hbm_dram_service_closure.json"
+            )
+            report_rel = (
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_score32_exp_lut_hbm_dram_service_closure__"
+                "l2_score32_hbm_dram_service_closure.md"
+            )
+            _write(
+                repo_root / evidence_rel,
+                json.dumps(
+                    {
+                        "version": 1,
+                        "model": "llm_decoder_attention_score32_exp_lut_hbm_dram_service_closure_v1",
+                        "decision": "score32_exp_lut_hbm_dram_service_closure_compute_dominant",
+                        "diagnosis": {
+                            "best_latency_us": 12034.5123,
+                            "best_latency_token_throughput_per_s": 78.9,
+                            "best_latency_hbm_energy_mj_per_token": 2.34,
+                            "best_energy_hbm_energy_mj_per_token": 3.21,
+                            "source_score32_latency_us": 13567.89,
+                            "source_controller_service_cycles": 9876,
+                            "remaining_abstractions": [
+                                "cycle_accurate_hbm_controller_rtl",
+                                "hbm_vendor_current_signoff",
+                            ],
+                        },
+                        "next_step": {
+                            "requires_cycle_accurate_hbm_controller": True,
+                            "requires_vendor_hbm_current_signoff": True,
+                        },
+                    },
+                    indent=2,
+                )
+                + "\n",
+            )
+            _write(repo_root / report_rel, "# score32 hbm dram service closure\n")
+            item_id = _seed_campaign_work_item(
+                session,
+                repo_root,
+                item_id="l2_score32_hbm_dram_service_closure",
+                campaign_dir_rel="runs/campaigns/npu/score32_hbm_dram_service_closure_campaign",
+                summary_rows=(
+                    "scope,arch_id,macro_mode,objective_rank,latency_ms_mean,energy_mj_mean,critical_path_ns_mean,total_power_mw_mean,flow_elapsed_s_mean,throughput_infer_per_s_mean\n"
+                    "aggregate,fp16_nm1_demo,flat_nomacro,1,0.4,0.15,5.5,0.18,1000,1.0\n"
+                ),
+                proposal_path="docs/proposals/prop_l2_score32_hbm_dram_service_closure_v1",
+                comparison={"role": "frontier_closure"},
+            )
+            work_item = session.query(WorkItem).filter_by(item_id=item_id).one()
+            payload = copy.deepcopy(work_item.task_request.request_payload or {})
+            payload["developer_loop"]["evaluation"] = {
+                "mode": "frontier_detail",
+                "expected_direction": "record_score32_hbm_dram_service_closure",
+                "expected_reason": "Use score32 HBM/DRAM service closure evidence to choose the next abstraction.",
+            }
+            payload["developer_loop"]["abstraction"] = {
+                "layer": "decoder_attention_score32_exp_lut_hbm_dram_service_closure",
+            }
+            work_item.task_request.request_payload = payload
+            work_item.input_manifest = {
+                "decoder_contract": {
+                    "attention_score32_exp_lut_hbm_dram_service_closure_out": evidence_rel,
+                    "attention_score32_exp_lut_hbm_dram_service_closure_report": report_rel,
+                }
+            }
+            work_item.expected_outputs = [*(work_item.expected_outputs or []), evidence_rel, report_rel]
+            session.commit()
+
+            consume_l2_result(session, Layer2ConsumeRequest(repo_root=str(repo_root), item_id=item_id))
+
+            decision_payload = json.loads(
+                (repo_root / "control_plane" / "shadow_exports" / "l2_decisions" / f"{item_id}.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            assessment = decision_payload["proposal_assessment"]
+            assert assessment["outcome"] == "score32_exp_lut_hbm_dram_service_closure_compute_dominant"
+            assert assessment["decoder_evidence_ref"] == evidence_rel
+            assert "decision=score32_exp_lut_hbm_dram_service_closure_compute_dominant" in assessment["summary"]
+            assert "best_latency_us=12034.5123" in assessment["summary"]
+            assert "best_latency_token_throughput_per_s=78.9" in assessment["summary"]
+            assert "best_latency_hbm_energy_mj_per_token=2.34" in assessment["summary"]
+            assert "best_energy_hbm_energy_mj_per_token=3.21" in assessment["summary"]
+            assert "source_score32_latency_us=13567.89" in assessment["summary"]
+            assert "source_controller_service_cycles=9876" in assessment["summary"]
+            assert "remaining_abstractions=['cycle_accurate_hbm_controller_rtl', 'hbm_vendor_current_signoff']" in assessment[
+                "summary"
+            ]
+            assert (
+                decision_payload["evaluation_record"]["abstraction_layer"]
+                == "decoder_attention_score32_exp_lut_hbm_dram_service_closure"
+            )
+            assert (
+                decision_payload["source_refs"]["decoder_attention_score32_exp_lut_hbm_dram_service_closure_out"]
+                == evidence_rel
+            )
+            assert (
+                decision_payload["source_refs"]["decoder_attention_score32_exp_lut_hbm_dram_service_closure_report"]
+                == report_rel
+            )
+
+
 def test_consume_l2_result_score32_exp_lut_sram_hierarchy_envelope_uses_decoder_evidence() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"

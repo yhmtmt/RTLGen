@@ -567,6 +567,10 @@ _DECODER_EVIDENCE_OUTPUT_KEYS: tuple[tuple[str, str], ...] = (
         "attention_score32_exp_lut_service_closure_report",
     ),
     (
+        "attention_score32_exp_lut_hbm_dram_service_closure_out",
+        "attention_score32_exp_lut_hbm_dram_service_closure_report",
+    ),
+    (
         "attention_score32_exp_lut_sram_hierarchy_envelope_out",
         "attention_score32_exp_lut_sram_hierarchy_envelope_report",
     ),
@@ -1321,6 +1325,29 @@ def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, 
                 parts.append(f"{key}={diagnosis_dict.get(key)}")
         if "requires_hbm_dram_closure" in next_step_dict:
             parts.append(f"requires_hbm_dram_closure={next_step_dict.get('requires_hbm_dram_closure')}")
+        summary = "; ".join(parts)
+        return outcome, summary if summary.endswith(".") else summary + "."
+
+    if model == "llm_decoder_attention_score32_exp_lut_hbm_dram_service_closure_v1":
+        diagnosis = evidence_payload.get("diagnosis")
+        diagnosis_dict = dict(diagnosis) if isinstance(diagnosis, dict) else {}
+        outcome = str(
+            diagnosis_dict.get("decision") or evidence_payload.get("decision") or "score32_exp_lut_hbm_dram_service_closure_recorded"
+        )
+        parts = [
+            f"Decoder score32 exp-LUT HBM/DRAM service-closure evidence recorded from {evidence_ref}: decision={outcome}",
+        ]
+        for key in (
+            "best_latency_us",
+            "best_latency_token_throughput_per_s",
+            "best_latency_hbm_energy_mj_per_token",
+            "best_energy_hbm_energy_mj_per_token",
+            "source_score32_latency_us",
+            "source_controller_service_cycles",
+            "remaining_abstractions",
+        ):
+            if key in diagnosis_dict:
+                parts.append(f"{key}={diagnosis_dict.get(key)}")
         summary = "; ".join(parts)
         return outcome, summary if summary.endswith(".") else summary + "."
 

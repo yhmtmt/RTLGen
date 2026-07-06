@@ -5824,6 +5824,54 @@ def _decoder_attention_score32_exp_lut_service_closure_evidence(*, item_id: str)
     }
 
 
+def _decoder_attention_score32_exp_lut_hbm_dram_service_closure_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_attention_score32_exp_lut_hbm_dram_service_closure__{item_id}.json"
+    report = f"{base}/decoder_attention_score32_exp_lut_hbm_dram_service_closure__{item_id}.md"
+    sram_hierarchy_envelope = (
+        f"{base}/decoder_attention_score32_exp_lut_sram_hierarchy_envelope__"
+        "l2_decoder_attention_score32_exp_lut_sram_hierarchy_envelope_llama7b_v1.json"
+    )
+    measured_command_control = (
+        f"{base}/decoder_attention_composed_datapath_physical_feasibility__"
+        "l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_"
+        "measured_command_control_llama7b_v1.json"
+    )
+    hbm_command_calibrated = (
+        f"{base}/decoder_attention_hbm_command_calibrated_service__"
+        "l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1.json"
+    )
+    return {
+        "inputs": {
+            "attention_score32_exp_lut_sram_hierarchy_envelope": sram_hierarchy_envelope,
+            "attention_score32_exp_lut_measured_command_control": measured_command_control,
+            "attention_hbm_command_calibrated_service": hbm_command_calibrated,
+            "attention_score32_exp_lut_hbm_dram_service_closure_out": out,
+            "attention_score32_exp_lut_hbm_dram_service_closure_report": report,
+            "attention_score32_exp_lut_hbm_dram_service_closure_scope": (
+                "Close score32 exp-LUT HBM/DRAM service accounting by combining the "
+                "score32 SRAM envelope, score32 measured-command-control row, and command-calibrated "
+                "HBM service energy into a best-latency / best-energy frontier."
+            ),
+        },
+        "commands": [
+            {
+                "name": "audit_decoder_attention_score32_exp_lut_hbm_dram_service_closure",
+                "run": (
+                    "python3 npu/eval/audit_llm_decoder_attention_score32_exp_lut_hbm_dram_service_closure.py "
+                    f"--score32-sram-envelope-json {sram_hierarchy_envelope} "
+                    f"--score32-measured-command-control-json {measured_command_control} "
+                    f"--hbm-command-calibrated-service-json {hbm_command_calibrated} "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+        "evidence_only": True,
+    }
+
+
 def _decoder_attention_score32_exp_lut_sram_hierarchy_envelope_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_score32_exp_lut_sram_hierarchy_envelope__{item_id}.json"
@@ -9334,6 +9382,7 @@ def _build_payload(
         "decoder_attention_score32_exp_lut_measured_wrapper_promotion",
         "decoder_attention_score32_exp_lut_service_closure",
         "decoder_attention_score32_exp_lut_sram_hierarchy_envelope",
+        "decoder_attention_score32_exp_lut_hbm_dram_service_closure",
         "decoder_attention_hbm_dram_service_energy",
         "decoder_attention_hbm_energy_calibration",
         "decoder_attention_hbm_command_calibrated_service",
@@ -9534,6 +9583,8 @@ def _build_payload(
             decoder_evidence = _decoder_attention_score32_exp_lut_service_closure_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_score32_exp_lut_sram_hierarchy_envelope":
             decoder_evidence = _decoder_attention_score32_exp_lut_sram_hierarchy_envelope_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_attention_score32_exp_lut_hbm_dram_service_closure":
+            decoder_evidence = _decoder_attention_score32_exp_lut_hbm_dram_service_closure_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_hbm_dram_service_energy":
             decoder_evidence = _decoder_attention_hbm_dram_service_energy_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_hbm_energy_calibration":
