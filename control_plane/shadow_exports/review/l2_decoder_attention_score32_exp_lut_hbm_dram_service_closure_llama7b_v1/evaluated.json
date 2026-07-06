@@ -1,0 +1,109 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "decoder_contract": {
+        "attention_hbm_command_calibrated_service": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_hbm_command_calibrated_service__l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1.json",
+        "attention_score32_exp_lut_sram_hierarchy_envelope": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exp_lut_sram_hierarchy_envelope__l2_decoder_attention_score32_exp_lut_sram_hierarchy_envelope_llama7b_v1.json",
+        "attention_score32_exp_lut_measured_command_control": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_measured_command_control_llama7b_v1.json",
+        "attention_score32_exp_lut_hbm_dram_service_closure_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exp_lut_hbm_dram_service_closure__l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1.json",
+        "attention_score32_exp_lut_hbm_dram_service_closure_scope": "Close score32 exp-LUT HBM/DRAM service accounting by combining the score32 SRAM envelope, score32 measured-command-control row, and command-calibrated HBM service energy into a best-latency / best-energy frontier.",
+        "attention_score32_exp_lut_hbm_dram_service_closure_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exp_lut_hbm_dram_service_closure__l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1.md"
+      }
+    },
+    "commands": [
+      {
+        "run": "python3 npu/eval/audit_llm_decoder_attention_score32_exp_lut_hbm_dram_service_closure.py --score32-sram-envelope-json runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exp_lut_sram_hierarchy_envelope__l2_decoder_attention_score32_exp_lut_sram_hierarchy_envelope_llama7b_v1.json --score32-measured-command-control-json runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_measured_command_control_llama7b_v1.json --hbm-command-calibrated-service-json runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_hbm_command_calibrated_service__l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1.json --out runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exp_lut_hbm_dram_service_closure__l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1.json --out-md runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exp_lut_hbm_dram_service_closure__l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1.md",
+        "name": "audit_decoder_attention_score32_exp_lut_hbm_dram_service_closure"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate_runs"
+      }
+    ],
+    "objective": "Audit score32-specific HBM/DRAM service latency and calibrated HBM energy for the promoted Llama7B attention frontier row.",
+    "acceptance": [
+      "Write all declared decoder evidence artifacts",
+      "Keep evidence artifact paths repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "source_mode": "src_verilog",
+    "expected_outputs": [
+      "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exp_lut_hbm_dram_service_closure__l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1.json",
+      "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exp_lut_hbm_dram_service_closure__l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1.md"
+    ]
+  },
+  "layer": "layer2",
+  "state": "evaluated",
+  "title": "Score32 exp-LUT HBM/DRAM service closure",
+  "result": {
+    "branch": "eval/l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1/s20260706t102721z",
+    "completed_utc": "2026-07-06T10:27:20.476647Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "b7c2d9c80c1c",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260706t102721z][host:b7c2d9c80c1c][item:l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1]",
+    "metrics_rows": [],
+    "metrics_exempt_reason": "evidence_only_decoder_evidence",
+    "queue_item_id": "l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1",
+    "session_id": "s20260706t102721z",
+    "status": "ok",
+    "summary": "2/2 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1/s20260706t102721z",
+    "pr_title": "eval: run score32 exp-lut hbm/dram service closure",
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Include metrics row references in result.metrics_rows",
+      "Keep committed result_path fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260706t102721z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 70,
+  "created_utc": "2026-07-06T10:26:59.111305Z",
+  "requested_by": "developer_agent",
+  "developer_loop": {
+    "comparison": {
+      "role": "score32_exp_lut_hbm_dram_service_closure_audit",
+      "paired_baseline_item_id": "l2_decoder_attention_score32_exp_lut_sram_hierarchy_envelope_llama7b_v1"
+    },
+    "evaluation": {
+      "mode": "frontier_detail",
+      "expected_reason": "Record whether score32-specific HBM/DRAM service latency or calibrated HBM energy changes the current frontier account.",
+      "expected_direction": "record_score32_hbm_dram_service_closure"
+    },
+    "abstraction": {
+      "layer": "decoder_attention_score32_exp_lut_hbm_dram_service_closure"
+    },
+    "proposal_id": "prop_l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1",
+    "dependencies": {
+      "item_ids": [
+        "l2_decoder_attention_score32_exp_lut_sram_hierarchy_envelope_llama7b_v1",
+        "l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_measured_command_control_llama7b_v1",
+        "l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    },
+    "proposal_path": "docs/proposals/prop_l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1/proposal.json"
+  },
+  "source_requirement": {
+    "repo": "",
+    "reason": "evaluator runtime must contain the queued job source commit",
+    "version": 1,
+    "required_ref": "origin/master",
+    "required_sha": "7270e2c9e95e17b1adb592ca35e4a3e313357dff",
+    "requires_daemon_restart": true
+  }
+}
