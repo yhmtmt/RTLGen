@@ -1,0 +1,132 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-07-06T11:03:39.109193Z",
+  "item_id": "l2_decoder_attention_score32_compute_activity_energy_llama7b_v1",
+  "run_key": "l2_decoder_attention_score32_compute_activity_energy_llama7b_v1_run_a695f985b7bd8ec0",
+  "layer": "layer2",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l2_campaign",
+  "source_commit": "089e8c6c1e2286701bf758caf99703a081a12f51",
+  "review_metadata_source_commit": "d9c05a6def61ebddae647a65ced20c63d0e9f27c",
+  "objective": "Bound score32 exp-LUT compute energy using active-cycle duty and idle-power fractions.",
+  "input_manifest": {
+    "decoder_contract": {
+      "attention_score32_compute_activity_energy_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_compute_activity_energy__l2_decoder_attention_score32_compute_activity_energy_llama7b_v1.json",
+      "attention_score32_integrated_frontier_ranking": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_integrated_frontier_ranking__l2_decoder_attention_score32_integrated_frontier_ranking_llama7b_v1.json",
+      "attention_score32_compute_activity_energy_scope": "Replace the score32 wall-time compute-energy ambiguity with explicit active-cycle duty accounting from the measured command-control row. Sweep idle-power fractions to bound clock-gating benefit and report whether score32 remains energy-worse than the measured exact-FP16 reference.",
+      "attention_score32_compute_activity_energy_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_compute_activity_energy__l2_decoder_attention_score32_compute_activity_energy_llama7b_v1.md",
+      "attention_score32_exp_lut_hbm_dram_service_closure": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exp_lut_hbm_dram_service_closure__l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1.json",
+      "attention_score32_exp_lut_measured_command_control": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_measured_command_control_llama7b_v1.json"
+    }
+  },
+  "recommendation": {
+    "source": "decoder_evidence",
+    "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_compute_activity_energy__l2_decoder_attention_score32_compute_activity_energy_llama7b_v1.json",
+    "arch_id": "decoder_attention_score32_compute_activity_energy",
+    "macro_mode": "evidence_only",
+    "outcome": "score32_compute_activity_energy_still_energy_worse"
+  },
+  "objective_profiles": [],
+  "evaluation_record": {
+    "proposal_id": "prop_l2_decoder_attention_score32_compute_activity_energy_llama7b_v1",
+    "title": "Score32 compute activity energy closure",
+    "primary_question": "Does clock-gating/active-cycle accounting materially reduce score32 energy enough to change the current Llama7B energy ranking?",
+    "evaluation_mode": "frontier_detail",
+    "comparison_role": "score32_compute_activity_energy_closure",
+    "abstraction_layer": "decoder_attention_score32_compute_activity_energy",
+    "expected_direction": "record_score32_compute_activity_energy",
+    "expected_reason": "State whether active-cycle/clock-gating accounting changes the score32 energy ranking versus the measured exact-FP16 reference.",
+    "summary": "Decoder score32 compute-activity energy evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_compute_activity_energy__l2_decoder_attention_score32_compute_activity_energy_llama7b_v1.json: decision=score32_compute_activity_energy_still_energy_worse; compute_active_duty=0.957495485; wall_time_compute_energy_mj_per_token=360.550392645; best_clock_gated_compute_energy_mj_per_token=345.225372946; best_clock_gated_total_energy_mj_per_token=479.505988187; energy_reduction_fraction_vs_wall_time=0.030970209; clock_gated_score32_vs_measured_fp16_energy_ratio=5.871684274; score32_latency_us=12532.357427; recommended_next_step=Clock gating does not erase the score32 energy gap; prioritize lower-power score32/softmax datapath variants or quality-close a lower-energy mixed/int8 path.; remaining_abstractions=['compute active duty is derived from L2 cycle accounting, not RTL toggle activity', 'idle power fractions are analytic clock-gating scenarios, not gate-level power simulation'].",
+    "outcome": "score32_compute_activity_energy_still_energy_worse",
+    "expectation_status": "unspecified"
+  },
+  "proposal_assessment": {
+    "proposal_id": "prop_l2_decoder_attention_score32_compute_activity_energy_llama7b_v1",
+    "title": "Score32 compute activity energy closure",
+    "kind": "architecture",
+    "primary_question": "Does clock-gating/active-cycle accounting materially reduce score32 energy enough to change the current Llama7B energy ranking?",
+    "evaluation_mode": "frontier_detail",
+    "comparison_role": "score32_compute_activity_energy_closure",
+    "outcome": "score32_compute_activity_energy_still_energy_worse",
+    "summary": "Decoder score32 compute-activity energy evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_compute_activity_energy__l2_decoder_attention_score32_compute_activity_energy_llama7b_v1.json: decision=score32_compute_activity_energy_still_energy_worse; compute_active_duty=0.957495485; wall_time_compute_energy_mj_per_token=360.550392645; best_clock_gated_compute_energy_mj_per_token=345.225372946; best_clock_gated_total_energy_mj_per_token=479.505988187; energy_reduction_fraction_vs_wall_time=0.030970209; clock_gated_score32_vs_measured_fp16_energy_ratio=5.871684274; score32_latency_us=12532.357427; recommended_next_step=Clock gating does not erase the score32 energy gap; prioritize lower-power score32/softmax datapath variants or quality-close a lower-energy mixed/int8 path.; remaining_abstractions=['compute active duty is derived from L2 cycle accounting, not RTL toggle activity', 'idle power fractions are analytic clock-gating scenarios, not gate-level power simulation'].",
+    "baseline_ref": null,
+    "baseline_item_id": null,
+    "matched_row_count": 0,
+    "matched_rows": [],
+    "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_compute_activity_energy__l2_decoder_attention_score32_compute_activity_energy_llama7b_v1.json",
+    "decoder_quality": {
+      "diagnosis": {
+        "active_cycles_per_layer": 7952,
+        "best_clock_gated_compute_energy_mj_per_token": 345.225372946,
+        "best_clock_gated_total_energy_mj_per_token": 479.505988187,
+        "clock_gated_score32_vs_measured_fp16_energy_ratio": 5.871684274,
+        "clock_gated_score32_vs_measured_fp16_throughput_ratio": 5.788540788,
+        "compute_active_duty": 0.957495485,
+        "decision": "score32_compute_activity_energy_still_energy_worse",
+        "energy_reduction_fraction_vs_wall_time": 0.030970209,
+        "layer_cycles": 8305,
+        "measured_fp16_energy_reference_mj_per_token": 81.66413005453946,
+        "measured_fp16_token_throughput_per_s": 13.784725731954872,
+        "recommended_next_step": "Clock gating does not erase the score32 energy gap; prioritize lower-power score32/softmax datapath variants or quality-close a lower-energy mixed/int8 path.",
+        "remaining_abstractions": [
+          "compute active duty is derived from L2 cycle accounting, not RTL toggle activity",
+          "idle power fractions are analytic clock-gating scenarios, not gate-level power simulation"
+        ],
+        "score32_latency_us": 12532.357427,
+        "score32_token_throughput_per_s": 79.793447149,
+        "wall_time_compute_energy_mj_per_token": 360.550392645,
+        "wall_time_total_energy_mj_per_token": 494.831007886
+      },
+      "assumptions": [
+        "Score32 compute power is inherited from measured dual-stream composed PPA and measured command-control recost.",
+        "Active compute cycles use replica_recost_tile_service_cycles * tile_waves per layer.",
+        "Idle energy is swept as a fraction of the non-active wall-time compute-energy remainder.",
+        "HBM energy is unchanged from the score32 HBM/DRAM service closure."
+      ],
+      "next_step": {
+        "recommended_next_step": "Explore score32 datapath energy reduction and lower-power quality-backed mixed/int8 variants; clock gating alone is a small correction because the active duty is high.",
+        "requires_score32_datapath_energy_optimization": true
+      }
+    }
+  },
+  "source_refs": {
+    "decoder_evidence_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_compute_activity_energy__l2_decoder_attention_score32_compute_activity_energy_llama7b_v1.json",
+    "decoder_attention_score32_compute_activity_energy_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_compute_activity_energy__l2_decoder_attention_score32_compute_activity_energy_llama7b_v1.json",
+    "decoder_attention_score32_compute_activity_energy_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_compute_activity_energy__l2_decoder_attention_score32_compute_activity_energy_llama7b_v1.md"
+  },
+  "decoder_quality": {
+    "diagnosis": {
+      "active_cycles_per_layer": 7952,
+      "best_clock_gated_compute_energy_mj_per_token": 345.225372946,
+      "best_clock_gated_total_energy_mj_per_token": 479.505988187,
+      "clock_gated_score32_vs_measured_fp16_energy_ratio": 5.871684274,
+      "clock_gated_score32_vs_measured_fp16_throughput_ratio": 5.788540788,
+      "compute_active_duty": 0.957495485,
+      "decision": "score32_compute_activity_energy_still_energy_worse",
+      "energy_reduction_fraction_vs_wall_time": 0.030970209,
+      "layer_cycles": 8305,
+      "measured_fp16_energy_reference_mj_per_token": 81.66413005453946,
+      "measured_fp16_token_throughput_per_s": 13.784725731954872,
+      "recommended_next_step": "Clock gating does not erase the score32 energy gap; prioritize lower-power score32/softmax datapath variants or quality-close a lower-energy mixed/int8 path.",
+      "remaining_abstractions": [
+        "compute active duty is derived from L2 cycle accounting, not RTL toggle activity",
+        "idle power fractions are analytic clock-gating scenarios, not gate-level power simulation"
+      ],
+      "score32_latency_us": 12532.357427,
+      "score32_token_throughput_per_s": 79.793447149,
+      "wall_time_compute_energy_mj_per_token": 360.550392645,
+      "wall_time_total_energy_mj_per_token": 494.831007886
+    },
+    "assumptions": [
+      "Score32 compute power is inherited from measured dual-stream composed PPA and measured command-control recost.",
+      "Active compute cycles use replica_recost_tile_service_cycles * tile_waves per layer.",
+      "Idle energy is swept as a fraction of the non-active wall-time compute-energy remainder.",
+      "HBM energy is unchanged from the score32 HBM/DRAM service closure."
+    ],
+    "next_step": {
+      "recommended_next_step": "Explore score32 datapath energy reduction and lower-power quality-backed mixed/int8 variants; clock gating alone is a small correction because the active duty is high.",
+      "requires_score32_datapath_energy_optimization": true
+    }
+  }
+}
