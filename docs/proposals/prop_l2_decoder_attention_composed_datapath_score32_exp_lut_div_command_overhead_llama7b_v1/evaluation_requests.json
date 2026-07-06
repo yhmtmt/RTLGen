@@ -21,7 +21,13 @@
       "expected_result": {
         "direction": "bound_command_overhead_on_exp_lut_composed_datapath",
         "reason": "Sweep nonzero per-tile and per-wave command cycles in the same exp-LUT reduced-replica recost path; do not mark quality-backed if the exp-LUT quality gate fails."
-      }
+      },
+      "status": "merged",
+      "merged_pr_number": 1189,
+      "merge_commit": "f08f7d6534d7026bcf386a83796c6ebe8df0b310",
+      "merged_utc": "2026-07-06T08:40:46.223802Z",
+      "notes": "Merged via PR #1189 and merge f08f7d6534d7026bcf386a83796c6ebe8df0b310 at 2026-07-06T08:40:46.223802Z."
     }
-  ]
+  ],
+  "source_commit": "6dc402784774ddde5693a61cecd7169d894ab20d"
 }
