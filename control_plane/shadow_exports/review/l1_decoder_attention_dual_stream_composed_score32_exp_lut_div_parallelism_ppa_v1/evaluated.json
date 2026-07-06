@@ -1,0 +1,207 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "sweeps": [
+        "runs/campaigns/npu/attention_dual_stream_composed_v1/sweeps/nangate45_dual_stream_composed_hier_score32_w16_exp_lut_div_b20_parallelism.json"
+      ],
+      "configs": [
+        "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_8x8_p8_ppc1_nohash_score32_w16_exp_lut_div_b20/config.json",
+        "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_8x4_p8_ppc1_nohash_score32_w16_exp_lut_div_b20/config.json",
+        "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_4x4_p8_ppc1_nohash_score32_w16_exp_lut_div_b20/config.json"
+      ],
+      "out_root": "runs/designs/npu_blocks",
+      "design_dirs": [],
+      "macro_manifests": [],
+      "candidate_manifests": [],
+      "required_submodules": []
+    },
+    "commands": [
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && cmake -S . -B build && cmake --build build --target rtlgen",
+        "name": "build_generator"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/rtlgen/gen_attention_dual_stream_composed.py --config runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_8x8_p8_ppc1_nohash_score32_w16_exp_lut_div_b20/config.json --out runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_8x8_p8_ppc1_nohash_score32_w16_exp_lut_div_b20/verilog",
+        "name": "generate_attention_dual_stream_composed_rtl_attention_dual_stream_composed_int8_q8k8v8_8x8_p8_ppc1_nohash_score32_w16_exp_lut_div_b20"
+      },
+      {
+        "run": "python3 npu/eval/check_attention_dual_stream_composed_guard.py --design-dir runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_8x8_p8_ppc1_nohash_score32_w16_exp_lut_div_b20",
+        "name": "check_attention_dual_stream_composed_guard_attention_dual_stream_composed_int8_q8k8v8_8x8_p8_ppc1_nohash_score32_w16_exp_lut_div_b20"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/synth/run_block_sweep.py --design_dir runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_8x8_p8_ppc1_nohash_score32_w16_exp_lut_div_b20 --platform nangate45 --top attention_dual_stream_composed_int8_q8k8v8_8x8_p8_ppc1_nohash_score32_w16_exp_lut_div_b20 --sweep runs/campaigns/npu/attention_dual_stream_composed_v1/sweeps/nangate45_dual_stream_composed_hier_score32_w16_exp_lut_div_b20_parallelism.json --out_root runs/designs/npu_blocks --skip_existing",
+        "name": "run_block_sweep_attention_dual_stream_composed_int8_q8k8v8_8x8_p8_ppc1_nohash_score32_w16_exp_lut_div_b20"
+      },
+      {
+        "run": "python3 npu/eval/extract_openroad_timing_summary.py --design-dir runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_8x8_p8_ppc1_nohash_score32_w16_exp_lut_div_b20 --out runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_8x8_p8_ppc1_nohash_score32_w16_exp_lut_div_b20/timing_debug_report.md --max-paths 8",
+        "name": "extract_attention_dual_stream_timing_paths_attention_dual_stream_composed_int8_q8k8v8_8x8_p8_ppc1_nohash_score32_w16_exp_lut_div_b20"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/rtlgen/gen_attention_dual_stream_composed.py --config runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_8x4_p8_ppc1_nohash_score32_w16_exp_lut_div_b20/config.json --out runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_8x4_p8_ppc1_nohash_score32_w16_exp_lut_div_b20/verilog",
+        "name": "generate_attention_dual_stream_composed_rtl_attention_dual_stream_composed_int8_q8k8v8_8x4_p8_ppc1_nohash_score32_w16_exp_lut_div_b20"
+      },
+      {
+        "run": "python3 npu/eval/check_attention_dual_stream_composed_guard.py --design-dir runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_8x4_p8_ppc1_nohash_score32_w16_exp_lut_div_b20",
+        "name": "check_attention_dual_stream_composed_guard_attention_dual_stream_composed_int8_q8k8v8_8x4_p8_ppc1_nohash_score32_w16_exp_lut_div_b20"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/synth/run_block_sweep.py --design_dir runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_8x4_p8_ppc1_nohash_score32_w16_exp_lut_div_b20 --platform nangate45 --top attention_dual_stream_composed_int8_q8k8v8_8x4_p8_ppc1_nohash_score32_w16_exp_lut_div_b20 --sweep runs/campaigns/npu/attention_dual_stream_composed_v1/sweeps/nangate45_dual_stream_composed_hier_score32_w16_exp_lut_div_b20_parallelism.json --out_root runs/designs/npu_blocks --skip_existing",
+        "name": "run_block_sweep_attention_dual_stream_composed_int8_q8k8v8_8x4_p8_ppc1_nohash_score32_w16_exp_lut_div_b20"
+      },
+      {
+        "run": "python3 npu/eval/extract_openroad_timing_summary.py --design-dir runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_8x4_p8_ppc1_nohash_score32_w16_exp_lut_div_b20 --out runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_8x4_p8_ppc1_nohash_score32_w16_exp_lut_div_b20/timing_debug_report.md --max-paths 8",
+        "name": "extract_attention_dual_stream_timing_paths_attention_dual_stream_composed_int8_q8k8v8_8x4_p8_ppc1_nohash_score32_w16_exp_lut_div_b20"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/rtlgen/gen_attention_dual_stream_composed.py --config runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_4x4_p8_ppc1_nohash_score32_w16_exp_lut_div_b20/config.json --out runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_4x4_p8_ppc1_nohash_score32_w16_exp_lut_div_b20/verilog",
+        "name": "generate_attention_dual_stream_composed_rtl_attention_dual_stream_composed_int8_q8k8v8_4x4_p8_ppc1_nohash_score32_w16_exp_lut_div_b20"
+      },
+      {
+        "run": "python3 npu/eval/check_attention_dual_stream_composed_guard.py --design-dir runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_4x4_p8_ppc1_nohash_score32_w16_exp_lut_div_b20",
+        "name": "check_attention_dual_stream_composed_guard_attention_dual_stream_composed_int8_q8k8v8_4x4_p8_ppc1_nohash_score32_w16_exp_lut_div_b20"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/synth/run_block_sweep.py --design_dir runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_4x4_p8_ppc1_nohash_score32_w16_exp_lut_div_b20 --platform nangate45 --top attention_dual_stream_composed_int8_q8k8v8_4x4_p8_ppc1_nohash_score32_w16_exp_lut_div_b20 --sweep runs/campaigns/npu/attention_dual_stream_composed_v1/sweeps/nangate45_dual_stream_composed_hier_score32_w16_exp_lut_div_b20_parallelism.json --out_root runs/designs/npu_blocks --skip_existing",
+        "name": "run_block_sweep_attention_dual_stream_composed_int8_q8k8v8_4x4_p8_ppc1_nohash_score32_w16_exp_lut_div_b20"
+      },
+      {
+        "run": "python3 npu/eval/extract_openroad_timing_summary.py --design-dir runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_4x4_p8_ppc1_nohash_score32_w16_exp_lut_div_b20 --out runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_4x4_p8_ppc1_nohash_score32_w16_exp_lut_div_b20/timing_debug_report.md --max-paths 8",
+        "name": "extract_attention_dual_stream_timing_paths_attention_dual_stream_composed_int8_q8k8v8_4x4_p8_ppc1_nohash_score32_w16_exp_lut_div_b20"
+      },
+      {
+        "run": "python3 scripts/build_runs_index.py",
+        "name": "build_runs_index"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate"
+      }
+    ],
+    "objective": "Measure reduced-parallel score32 exp-LUT composed wrapper PPA on Nangate45.",
+    "acceptance": [
+      "Each generated wrapper metrics.csv contains at least one status=ok row for the queued sweep",
+      "Committed outputs stay lightweight (metrics.csv only; runs/index.csv is exported centrally after merge)",
+      "python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue pass"
+    ],
+    "source_mode": "config",
+    "expected_outputs": [
+      "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_8x8_p8_ppc1_nohash_score32_w16_exp_lut_div_b20/metrics.csv",
+      "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_8x8_p8_ppc1_nohash_score32_w16_exp_lut_div_b20/timing_debug_report.md",
+      "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_8x4_p8_ppc1_nohash_score32_w16_exp_lut_div_b20/metrics.csv",
+      "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_8x4_p8_ppc1_nohash_score32_w16_exp_lut_div_b20/timing_debug_report.md",
+      "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_4x4_p8_ppc1_nohash_score32_w16_exp_lut_div_b20/metrics.csv",
+      "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_4x4_p8_ppc1_nohash_score32_w16_exp_lut_div_b20/timing_debug_report.md"
+    ]
+  },
+  "layer": "layer1",
+  "state": "evaluated",
+  "title": "Score32 exp-LUT composed wrapper parallelism PPA",
+  "result": {
+    "branch": "eval/l1_decoder_attention_dual_stream_composed_score32_exp_lut_div_parallelism_ppa_v1/s20260706t203455z",
+    "completed_utc": "2026-07-06T20:34:53.363865Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "b7c2d9c80c1c",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260706t203455z][host:b7c2d9c80c1c][item:l1_decoder_attention_dual_stream_composed_score32_exp_lut_div_parallelism_ppa_v1]",
+    "metrics_rows": [
+      {
+        "tag": "attention_dual_stream_composed_v1_hier_score32_w16_exp_lut_div_b20_parallelism",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "5d4f4ca3",
+        "metrics_csv": "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_8x8_p8_ppc1_nohash_score32_w16_exp_lut_div_b20/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_8x8_p8_ppc1_nohash_score32_w16_exp_lut_div_b20/work/5d4f4ca3/result.json"
+      },
+      {
+        "tag": "attention_dual_stream_composed_v1_hier_score32_w16_exp_lut_div_b20_parallelism",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "06a3b292",
+        "metrics_csv": "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_8x8_p8_ppc1_nohash_score32_w16_exp_lut_div_b20/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_8x8_p8_ppc1_nohash_score32_w16_exp_lut_div_b20/work/06a3b292/result.json"
+      },
+      {
+        "tag": "attention_dual_stream_composed_v1_hier_score32_w16_exp_lut_div_b20_parallelism",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "5d4f4ca3",
+        "metrics_csv": "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_8x4_p8_ppc1_nohash_score32_w16_exp_lut_div_b20/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_8x4_p8_ppc1_nohash_score32_w16_exp_lut_div_b20/work/5d4f4ca3/result.json"
+      },
+      {
+        "tag": "attention_dual_stream_composed_v1_hier_score32_w16_exp_lut_div_b20_parallelism",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "06a3b292",
+        "metrics_csv": "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_8x4_p8_ppc1_nohash_score32_w16_exp_lut_div_b20/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_8x4_p8_ppc1_nohash_score32_w16_exp_lut_div_b20/work/06a3b292/result.json"
+      },
+      {
+        "tag": "attention_dual_stream_composed_v1_hier_score32_w16_exp_lut_div_b20_parallelism",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "5d4f4ca3",
+        "metrics_csv": "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_4x4_p8_ppc1_nohash_score32_w16_exp_lut_div_b20/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_4x4_p8_ppc1_nohash_score32_w16_exp_lut_div_b20/work/5d4f4ca3/result.json"
+      },
+      {
+        "tag": "attention_dual_stream_composed_v1_hier_score32_w16_exp_lut_div_b20_parallelism",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "06a3b292",
+        "metrics_csv": "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_4x4_p8_ppc1_nohash_score32_w16_exp_lut_div_b20/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_4x4_p8_ppc1_nohash_score32_w16_exp_lut_div_b20/work/06a3b292/result.json"
+      }
+    ],
+    "queue_item_id": "l1_decoder_attention_dual_stream_composed_score32_exp_lut_div_parallelism_ppa_v1",
+    "session_id": "s20260706t203455z",
+    "status": "ok",
+    "summary": "15/15 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l1_decoder_attention_dual_stream_composed_score32_exp_lut_div_parallelism_ppa_v1/s20260706t203455z",
+    "pr_title": "eval: run score32 exp-lut composed wrapper parallelism ppa",
+    "checklist": [
+      "Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge",
+      "Include metrics row references for each completed design",
+      "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260706t203455z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l1_decoder_attention_dual_stream_composed_score32_exp_lut_div_parallelism_ppa_v1"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l1_decoder_attention_dual_stream_composed_score32_exp_lut_div_parallelism_ppa_v1",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 75,
+  "created_utc": "2026-07-06T11:23:04.103272Z",
+  "requested_by": "developer_agent",
+  "developer_loop": {
+    "evaluation": {
+      "mode": "frontier_followup",
+      "trial_policy": {
+        "seed_start": 0,
+        "trial_count": 1,
+        "stop_after_failures": 1
+      }
+    },
+    "abstraction": {
+      "layer": "decoder_attention_dual_stream_composed_datapath"
+    },
+    "proposal_id": "prop_l1_decoder_attention_dual_stream_composed_score32_exp_lut_div_parallelism_v1",
+    "proposal_path": "docs/proposals/prop_l1_decoder_attention_dual_stream_composed_score32_exp_lut_div_parallelism_v1/proposal.json"
+  },
+  "source_requirement": {
+    "repo": "",
+    "reason": "evaluator runtime must contain the queued job source commit",
+    "version": 1,
+    "required_ref": "origin/master",
+    "required_sha": "f7218288fb8ef0057559f6f9cbbf91b81cf045fc",
+    "requires_daemon_restart": true
+  }
+}

@@ -1,0 +1,2 @@
+run_key,attempt,trial_index,seed,status,metrics_csv,critical_path_ns,die_area,total_power_mw,failure_category,failure_stage,failure_signature
+l1_decoder_attention_dual_stream_composed_score32_exp_lut_div_parallelism_ppa_v1_run_8267373119f80f74,1,1,0,succeeded,runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_4x4_p8_ppc1_nohash_score32_w16_exp_lut_div_b20/metrics.csv,46.2248,6250000.0,26.9,none,,
