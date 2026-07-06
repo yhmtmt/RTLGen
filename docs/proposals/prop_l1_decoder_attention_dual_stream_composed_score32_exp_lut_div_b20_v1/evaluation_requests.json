@@ -23,7 +23,12 @@
         "direction": "measure_score32_exp_lut_div_b20_datapath",
         "reason": "This measures the concrete exp-LUT divider softmax bridge before the Llama7B reduced-replica recost uses it."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 1186,
+      "merge_commit": "393f489d4f8944d0d6de9e950d93023fd48025c9",
+      "merged_utc": "2026-07-06T08:19:26.122084Z",
+      "notes": "Merged via PR #1186 and merge 393f489d4f8944d0d6de9e950d93023fd48025c9 at 2026-07-06T08:19:26.122084Z."
     }
-  ]
+  ],
+  "source_commit": "432be4180b3abc5f0257109038e3b7e3ecc02a14"
 }
