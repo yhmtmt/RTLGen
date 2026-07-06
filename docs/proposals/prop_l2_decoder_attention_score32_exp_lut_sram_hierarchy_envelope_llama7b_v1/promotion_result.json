@@ -1,4 +1,7 @@
 {
   "proposal_id": "prop_l2_decoder_attention_score32_exp_lut_sram_hierarchy_envelope_llama7b_v1",
-  "decision": "pending"
+  "decision": "iterate",
+  "pr_number": 1201,
+  "merge_commit": "c398eacc94c42cac7f23ac2cb8040596730f80c5",
+  "merged_utc": "2026-07-06T10:13:01.539902Z"
 }

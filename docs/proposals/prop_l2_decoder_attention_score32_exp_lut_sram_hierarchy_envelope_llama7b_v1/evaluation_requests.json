@@ -22,8 +22,12 @@
         "direction": "record_score32_sram_hierarchy_envelope",
         "reason": "The result should bound shared-SRAM capacity and HBM-share sensitivity under explicit macro placement efficiency before choosing the next frontier abstraction."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 1201,
+      "merge_commit": "c398eacc94c42cac7f23ac2cb8040596730f80c5",
+      "merged_utc": "2026-07-06T10:13:01.539902Z",
+      "notes": "Merged via PR #1201 and merge c398eacc94c42cac7f23ac2cb8040596730f80c5 at 2026-07-06T10:13:01.539902Z."
     }
   ],
-  "source_commit": null
+  "source_commit": "b759c0945ffb23a9f331b41e5d4d714cb58eb9c5"
 }
