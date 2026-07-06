@@ -405,8 +405,10 @@ def _ensure_queue_snapshot_artifact(
 
 
 def _is_evidence_only_decision_run(*, session: Session, repo_root: Path, work_item: WorkItem, run: Run) -> bool:
-    if work_item.task_type != "l2_campaign":
+    if str(getattr(work_item.task_type, "value", work_item.task_type)) != "l2_campaign":
         return False
+    if _is_decoder_evidence_only_contract(work_item):
+        return True
     artifact = (
         session.query(Artifact)
         .filter(Artifact.run_id == run.id, Artifact.kind == "decision_proposal")
@@ -430,6 +432,22 @@ def _is_evidence_only_decision_run(*, session: Session, repo_root: Path, work_it
         str(recommendation.get("source", "")).strip() == "decoder_evidence"
         and str(recommendation.get("macro_mode", "")).strip() == "evidence_only"
     )
+
+
+def _is_decoder_evidence_only_contract(work_item: WorkItem) -> bool:
+    if str(getattr(work_item.task_type, "value", work_item.task_type)) != "l2_campaign":
+        return False
+    decoder_contract = (work_item.input_manifest or {}).get("decoder_contract")
+    if not isinstance(decoder_contract, dict):
+        return False
+    expected_outputs = {str(path).strip() for path in (work_item.expected_outputs or []) if str(path).strip()}
+    if any(str(path).endswith(suffix) for path in expected_outputs for suffix in ("/best_point.json", "/summary.csv", "/results.csv")):
+        return False
+    for key, value in decoder_contract.items():
+        rel_path = str(value).strip()
+        if str(key).endswith("_out") and rel_path and rel_path in expected_outputs:
+            return True
+    return False
 
 
 def sync_run_artifacts(session: Session, request: ArtifactSyncRequest) -> ArtifactSyncResult:
