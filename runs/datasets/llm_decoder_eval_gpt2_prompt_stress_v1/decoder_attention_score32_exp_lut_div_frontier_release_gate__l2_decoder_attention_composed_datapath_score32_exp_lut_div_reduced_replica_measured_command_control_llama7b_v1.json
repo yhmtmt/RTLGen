@@ -1,0 +1,37 @@
+{
+  "config": {
+    "equivalence_hash": false,
+    "semantic_profile": "score32_exp_lut_div",
+    "softmax_impl": "exp_lut_div",
+    "softmax_reciprocal_lut_bucket_shift": 20,
+    "top_name": "attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_score32_w16_exp_lut_div_b20"
+  },
+  "failures": [],
+  "inputs": {
+    "config_json": "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_score32_w16_exp_lut_div_b20/config.json",
+    "expected_bucket_shift": 20,
+    "expected_candidate_id": "score32_exp_lut_div",
+    "metrics_csv": "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_score32_w16_exp_lut_div_b20/metrics.csv",
+    "quality_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality__l2_decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality_llama7b_v1.json"
+  },
+  "metrics": {
+    "area_um2": 490074.0,
+    "best_param_hash": "beda508d",
+    "best_tag": "attention_dual_stream_composed_v1_hier_score32_w16_exp_lut_div_b20",
+    "critical_path_ns": 47.1077,
+    "ok_row_count": 2,
+    "row_count": 2,
+    "total_power_mw": 35.3
+  },
+  "model": "attention_score32_exp_lut_div_frontier_release_gate_v1",
+  "quality": {
+    "candidate_id": "score32_exp_lut_div",
+    "decision_status": "mixed_int8_generation_quality_pass",
+    "free_run_token_match_rate": 0.890625,
+    "softmax_mode": "exp_lut_div_bucket20",
+    "teacher_forced_candidate_reference_token_prob_mean": 0.44889021134685153,
+    "teacher_forced_mean_nll_delta": 0.0008945953623444368
+  },
+  "release_ready": true,
+  "version": 1
+}
