@@ -150,11 +150,16 @@ than free or heuristic assumptions.
     `requires_partitioned_or_cluster_validation=False`, so the reduced-replica
     score32 exp-LUT row can be treated as backed by the measured dual-stream
     wrapper metrics.
+  - the service-closure audit
+    `l2_decoder_attention_score32_exp_lut_service_closure_llama7b_v1` is
+    merged by PR #1199. It records `score32_supported=True`,
+    `wrapper_metrics_match=True`, `latency_us=12519.342352`, and remaining
+    abstractions `tile_local_and_shared_sram` plus `hbm_dram_service`.
   - the current immediate follow-on is
-    `l2_decoder_attention_score32_exp_lut_service_closure_llama7b_v1`. It
-    records which service components of the promoted score32 exp-LUT row are
-    measured, measured estimates, or inherited models before using the row as
-    the next Llama7B frontier baseline.
+    `l2_decoder_attention_score32_exp_lut_sram_hierarchy_envelope_llama7b_v1`.
+    It bounds the shared-SRAM CACTI packing assumption with an explicit macro
+    placement-efficiency envelope before deciding whether SRAM hierarchy or
+    HBM/DRAM service should be closed next.
 - New evaluations should continue to dispatch only to the remote evaluator
   `eval-daemon-b7c2d9c80c1c`, not the devcontainer.
 
@@ -300,9 +305,15 @@ run the already queued exp-LUT branch:
 5. Run
    `l2_decoder_attention_score32_exp_lut_service_closure_llama7b_v1` to record
    the measured/inherited service provenance of the promoted score32 exp-LUT
-   row. If it records score32 support, choose the next frontier from its
-   remaining abstractions, currently expected to be HBM/DRAM service closure or
-   a stronger placed SRAM hierarchy model.
+   row. This is complete: PR #1199 records score32 support and identifies
+   SRAM capacity placement plus HBM/DRAM service as the remaining service
+   abstractions.
+6. Run
+   `l2_decoder_attention_score32_exp_lut_sram_hierarchy_envelope_llama7b_v1`
+   to replace the ideal shared-SRAM packing estimate with an explicit SRAM
+   macro placement-efficiency envelope. If the conservative envelope does not
+   materially change HBM byte share or latency, prioritize HBM/DRAM service
+   closure next; otherwise schedule a stronger SRAM macro floorplan study.
 
 All new evaluation jobs should run on the remote evaluator
 `eval-daemon-b7c2d9c80c1c`, not the devcontainer.

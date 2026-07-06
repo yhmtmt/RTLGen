@@ -1,0 +1,71 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_score32_exp_lut_sram_hierarchy_envelope_llama7b_v1",
+  "created_utc": "2026-07-06T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Score32 exp-LUT SRAM hierarchy placement envelope",
+  "abstraction_layer": "decoder_attention_score32_exp_lut_sram_hierarchy_envelope",
+  "hypothesis": "The promoted score32 exp-LUT Llama7B frontier is not materially reranked by replacing ideal shared-SRAM CACTI packing with an explicit SRAM macro placement-efficiency envelope; HBM/DRAM service remains the dominant unresolved service abstraction.",
+  "direct_comparison": {
+    "primary_question": "Does a physically constrained SRAM macro placement envelope materially change the score32 exp-LUT frontier latency/HBM-share conclusion?",
+    "include": [
+      "consume the merged score32 exp-LUT service-closure result",
+      "consume the measured-SRAM rebalance result",
+      "consume the local SRAM CACTI macro library",
+      "reserve tile-local SRAM and endpoint/router/FIFO area before packing shared SRAM",
+      "sweep shared-SRAM macro placement efficiency and report HBM-share/latency sensitivity"
+    ],
+    "exclude": [
+      "new SRAM compiler floorplan PnR",
+      "new OpenROAD logic PPA",
+      "new HBM/DRAM controller calibration",
+      "new precision or generation-quality evaluation"
+    ]
+  },
+  "expected_benefit": [
+    "bounds the current SRAM CACTI packing abstraction using an explicit physical placement envelope",
+    "tests whether SRAM hierarchy realism can rerank the active score32 exp-LUT Llama7B point",
+    "clarifies whether the next abstraction should be full SRAM macro floorplanning or HBM/DRAM closure"
+  ],
+  "risks": [
+    "placement efficiency is still a parametric envelope, not an SRAM macro floorplan",
+    "latency sensitivity only scales the inherited HBM byte-share term and does not replace HBM/DRAM service modeling"
+  ],
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_score32_exp_lut_sram_hierarchy_envelope_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Audit SRAM macro placement-envelope sensitivity for the promoted score32 exp-LUT Llama7B attention row.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_score32_exp_lut_sram_hierarchy_envelope",
+      "comparison_role": "score32_exp_lut_sram_hierarchy_envelope_audit",
+      "paired_baseline_item_id": "l2_decoder_attention_score32_exp_lut_service_closure_llama7b_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_score32_exp_lut_service_closure_llama7b_v1",
+        "l2_decoder_attention_kv_measured_sram_rebalance_softmax_recip_lut_llama7b_v1",
+        "l2_decoder_attention_local_sram_capacity_llama7b_v1",
+        "l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_llama7b_v1_r4"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "record_score32_sram_hierarchy_envelope",
+        "reason": "The result should bound shared-SRAM capacity and HBM-share sensitivity under explicit macro placement efficiency before choosing the next frontier abstraction."
+      },
+      "status": "pending"
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exp_lut_service_closure__l2_decoder_attention_score32_exp_lut_service_closure_llama7b_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_measured_sram_rebalance__l2_decoder_attention_kv_measured_sram_rebalance_softmax_recip_lut_llama7b_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_local_sram_capacity__l2_decoder_attention_local_sram_capacity_llama7b_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_endpoint_router_sram_composition__l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_llama7b_v1_r4.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/audit_llm_decoder_attention_score32_exp_lut_sram_hierarchy_envelope.py",
+    "docs/architecture/llama7b_attention_abstraction_closure_plan.md",
+    "docs/proposals/prop_l2_decoder_attention_score32_exp_lut_service_closure_llama7b_v1/proposal.json",
+    "docs/proposals/prop_l2_decoder_attention_kv_measured_sram_rebalance_softmax_recip_lut_v1/proposal.json"
+  ]
+}

@@ -5824,6 +5824,60 @@ def _decoder_attention_score32_exp_lut_service_closure_evidence(*, item_id: str)
     }
 
 
+def _decoder_attention_score32_exp_lut_sram_hierarchy_envelope_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_attention_score32_exp_lut_sram_hierarchy_envelope__{item_id}.json"
+    report = f"{base}/decoder_attention_score32_exp_lut_sram_hierarchy_envelope__{item_id}.md"
+    service_closure = (
+        f"{base}/decoder_attention_score32_exp_lut_service_closure__"
+        "l2_decoder_attention_score32_exp_lut_service_closure_llama7b_v1.json"
+    )
+    measured_sram = (
+        f"{base}/decoder_attention_kv_measured_sram_rebalance__"
+        "l2_decoder_attention_kv_measured_sram_rebalance_softmax_recip_lut_llama7b_v1.json"
+    )
+    local_capacity = _decoder_attention_local_sram_capacity_source(item_id=item_id)
+    endpoint_router_sram = (
+        f"{base}/decoder_attention_kv_endpoint_router_sram_composition__"
+        "l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_llama7b_v1_r4.json"
+    )
+    return {
+        "inputs": {
+            "attention_score32_exp_lut_service_closure": service_closure,
+            "attention_kv_measured_sram_rebalance": measured_sram,
+            "attention_local_sram_capacity": local_capacity,
+            "attention_kv_endpoint_router_sram_composition": endpoint_router_sram,
+            "attention_score32_exp_lut_sram_hierarchy_envelope_out": out,
+            "attention_score32_exp_lut_sram_hierarchy_envelope_report": report,
+            "attention_score32_exp_lut_sram_hierarchy_envelope_scope": (
+                "Replace the prior score32 exp-LUT SRAM packing abstraction with an explicit "
+                "macro-placement envelope. Reserve tile-local SRAM and endpoint/router/FIFO area, "
+                "sweep shared-SRAM macro placement efficiency, and report whether the score32 "
+                "frontier latency/HBM-share conclusion changes before HBM/DRAM closure."
+            ),
+        },
+        "commands": [
+            {
+                "name": "audit_decoder_attention_score32_exp_lut_sram_hierarchy_envelope",
+                "run": (
+                    "python3 npu/eval/audit_llm_decoder_attention_score32_exp_lut_sram_hierarchy_envelope.py "
+                    f"--service-closure-json {service_closure} "
+                    f"--measured-sram-rebalance-json {measured_sram} "
+                    f"--local-sram-capacity-json {local_capacity} "
+                    f"--endpoint-router-sram-composition-json {endpoint_router_sram} "
+                    "--placement-efficiency 1.0,0.85,0.75,0.65,0.55 "
+                    "--nominal-efficiency 0.75 "
+                    "--placement-overhead-fraction 0.05 "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+        "evidence_only": True,
+    }
+
+
 def _decoder_attention_integrated_abstraction_closure_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_integrated_abstraction_closure__{item_id}.json"
@@ -9279,6 +9333,7 @@ def _build_payload(
         "decoder_attention_hbm_energy_sensitivity",
         "decoder_attention_score32_exp_lut_measured_wrapper_promotion",
         "decoder_attention_score32_exp_lut_service_closure",
+        "decoder_attention_score32_exp_lut_sram_hierarchy_envelope",
         "decoder_attention_hbm_dram_service_energy",
         "decoder_attention_hbm_energy_calibration",
         "decoder_attention_hbm_command_calibrated_service",
@@ -9477,6 +9532,8 @@ def _build_payload(
             decoder_evidence = _decoder_attention_score32_exp_lut_measured_wrapper_promotion_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_score32_exp_lut_service_closure":
             decoder_evidence = _decoder_attention_score32_exp_lut_service_closure_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_attention_score32_exp_lut_sram_hierarchy_envelope":
+            decoder_evidence = _decoder_attention_score32_exp_lut_sram_hierarchy_envelope_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_hbm_dram_service_energy":
             decoder_evidence = _decoder_attention_hbm_dram_service_energy_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_hbm_energy_calibration":
