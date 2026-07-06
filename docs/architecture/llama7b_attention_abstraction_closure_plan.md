@@ -169,11 +169,20 @@ than free or heuristic assumptions.
     `134.280615241 mJ/token`, compute energy `360.550392645 mJ/token`, and
     total energy `494.831007886 mJ/token`. Remaining abstractions are
     cycle-accurate HBM controller RTL and vendor HBM current signoff.
+  - the integrated score32 frontier ranking
+    `l2_decoder_attention_score32_integrated_frontier_ranking_llama7b_v1` is
+    merged by PR #1205. It records score32 as the current precision-safe
+    throughput frontier at `79.793447149 token/s`, `12532.357427 us/token`,
+    `494.831007886 mJ/token`, and `800.0 mm2`. The measured exact-FP16 row
+    remains the promotable energy reference at `81.66413005453946 mJ/token`.
+    Score32 is `5.788540788x` faster but `6.059343405x` higher energy than
+    that reference.
   - the current immediate follow-on is
-    `l2_decoder_attention_score32_integrated_frontier_ranking_llama7b_v1`.
-    It should compare the newly closed score32 row against measured exact-FP16,
-    mixed/int8, and older integrated rows across throughput, energy, area, and
-    precision status before selecting the next architecture-improvement target.
+    `l2_decoder_attention_score32_compute_activity_energy_llama7b_v1`. It
+    should replace the wall-time compute-energy ambiguity with explicit
+    active-cycle duty and clock-gating bounds before deciding whether the next
+    target is score32 circuit energy reduction or a lower-energy mixed/int8
+    quality closure.
 - New evaluations should continue to dispatch only to the remote evaluator
   `eval-daemon-b7c2d9c80c1c`, not the devcontainer.
 
@@ -342,7 +351,15 @@ run the already queued exp-LUT branch:
    exact-FP16, and mixed/int8 evidence. The result should explicitly distinguish
    promotable precision-safe rows from planning-only or quality-unclosed rows,
    then identify the current throughput frontier, energy reference, and next
-   architecture target.
+   architecture target. This is complete: PR #1205 records score32 as the
+   precision-safe throughput frontier and measured exact-FP16 as the energy
+   reference.
+9. Run
+   `l2_decoder_attention_score32_compute_activity_energy_llama7b_v1` to close
+   the score32 wall-time compute-energy ambiguity. The result should derive
+   compute active duty from the measured command-control cycle fields, sweep
+   idle-power fractions, and state whether clock-gating/active-cycle accounting
+   can close the score32 energy gap.
 
 All new evaluation jobs should run on the remote evaluator
 `eval-daemon-b7c2d9c80c1c`, not the devcontainer.

@@ -5939,6 +5939,56 @@ def _decoder_attention_score32_integrated_frontier_ranking_evidence(*, item_id: 
     }
 
 
+def _decoder_attention_score32_compute_activity_energy_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_attention_score32_compute_activity_energy__{item_id}.json"
+    report = f"{base}/decoder_attention_score32_compute_activity_energy__{item_id}.md"
+    score32_hbm = (
+        f"{base}/decoder_attention_score32_exp_lut_hbm_dram_service_closure__"
+        "l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1.json"
+    )
+    measured_command_control = (
+        f"{base}/decoder_attention_composed_datapath_physical_feasibility__"
+        "l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_"
+        "measured_command_control_llama7b_v1.json"
+    )
+    integrated_ranking = (
+        f"{base}/decoder_attention_score32_integrated_frontier_ranking__"
+        "l2_decoder_attention_score32_integrated_frontier_ranking_llama7b_v1.json"
+    )
+    return {
+        "inputs": {
+            "attention_score32_exp_lut_hbm_dram_service_closure": score32_hbm,
+            "attention_score32_exp_lut_measured_command_control": measured_command_control,
+            "attention_score32_integrated_frontier_ranking": integrated_ranking,
+            "attention_score32_compute_activity_energy_out": out,
+            "attention_score32_compute_activity_energy_report": report,
+            "attention_score32_compute_activity_energy_scope": (
+                "Replace the score32 wall-time compute-energy ambiguity with explicit active-cycle "
+                "duty accounting from the measured command-control row. Sweep idle-power fractions "
+                "to bound clock-gating benefit and report whether score32 remains energy-worse than "
+                "the measured exact-FP16 reference."
+            ),
+        },
+        "commands": [
+            {
+                "name": "audit_decoder_attention_score32_compute_activity_energy",
+                "run": (
+                    "python3 npu/eval/audit_llm_decoder_attention_score32_compute_activity_energy.py "
+                    f"--score32-hbm-dram-service-json {score32_hbm} "
+                    f"--score32-measured-command-control-json {measured_command_control} "
+                    f"--score32-integrated-frontier-ranking-json {integrated_ranking} "
+                    "--idle-power-fraction 0.0,0.05,0.1,0.25,1.0 "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+        "evidence_only": True,
+    }
+
+
 def _decoder_attention_score32_exp_lut_sram_hierarchy_envelope_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_score32_exp_lut_sram_hierarchy_envelope__{item_id}.json"
@@ -9451,6 +9501,7 @@ def _build_payload(
         "decoder_attention_score32_exp_lut_sram_hierarchy_envelope",
         "decoder_attention_score32_exp_lut_hbm_dram_service_closure",
         "decoder_attention_score32_integrated_frontier_ranking",
+        "decoder_attention_score32_compute_activity_energy",
         "decoder_attention_hbm_dram_service_energy",
         "decoder_attention_hbm_energy_calibration",
         "decoder_attention_hbm_command_calibrated_service",
@@ -9655,6 +9706,8 @@ def _build_payload(
             decoder_evidence = _decoder_attention_score32_exp_lut_hbm_dram_service_closure_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_score32_integrated_frontier_ranking":
             decoder_evidence = _decoder_attention_score32_integrated_frontier_ranking_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_attention_score32_compute_activity_energy":
+            decoder_evidence = _decoder_attention_score32_compute_activity_energy_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_hbm_dram_service_energy":
             decoder_evidence = _decoder_attention_hbm_dram_service_energy_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_hbm_energy_calibration":
