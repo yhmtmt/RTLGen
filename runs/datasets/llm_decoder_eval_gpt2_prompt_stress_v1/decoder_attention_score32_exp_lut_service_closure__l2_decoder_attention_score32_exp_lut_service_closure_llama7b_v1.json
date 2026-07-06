@@ -1,0 +1,118 @@
+{
+  "decision": "score32_exp_lut_service_closure_recorded",
+  "diagnosis": {
+    "dominant_tile_resource": "pipeline_attention",
+    "latency_us": 12519.342352,
+    "macs_per_cycle": 104320,
+    "measured_command_decision": "dual_stream_feasible",
+    "remaining_abstractions": [
+      "tile_local_and_shared_sram",
+      "hbm_dram_service"
+    ],
+    "score32_supported": true,
+    "selected_semantic_profile": "score32_exp_lut_div",
+    "selected_wrapper_metrics_csv": "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_score32_w16_exp_lut_div_b20/metrics.csv",
+    "source_latency_us": 1575.373891,
+    "wrapper_metrics_match": true,
+    "wrapper_promotion_decision": "decoder_attention_score32_exp_lut_measured_wrapper_promotion_recorded"
+  },
+  "inputs": {
+    "endpoint_router_sram_composition_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_endpoint_router_sram_composition__l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_llama7b_v1_r4.json",
+    "measured_command_control_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_measured_command_control_llama7b_v1.json",
+    "measured_sram_rebalance_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_measured_sram_rebalance__l2_decoder_attention_kv_measured_sram_rebalance_softmax_recip_lut_llama7b_v1.json",
+    "wrapper_promotion_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exp_lut_measured_wrapper_promotion__l2_decoder_attention_score32_exp_lut_measured_wrapper_promotion_llama7b_v1.json"
+  },
+  "model": "llm_decoder_attention_score32_exp_lut_service_closure_audit_v1",
+  "next_step": {
+    "recommended_next_step": "Use this score32 exp-LUT row as the quality-backed compute/service baseline, then close the inherited HBM/DRAM service or replace SRAM macro packing with a placed memory hierarchy.",
+    "requires_hbm_dram_closure": true,
+    "requires_new_wrapper_ppa": false
+  },
+  "selected_score32_row": {
+    "adjusted_latency_us_if_feasible": 12519.342352,
+    "dominant_tile_resource": "pipeline_attention",
+    "effective_hbm_bytes_per_cycle": 792.596465,
+    "hbm_byte_share": 0.983398438,
+    "latency_us": 1575.373891,
+    "measured_command_dispatch_control_metrics_csv": "runs/designs/npu_blocks/attention_command_dispatch_c16_q32/metrics.csv",
+    "measured_dual_stream_composed_metrics_csv": "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_score32_w16_exp_lut_div_b20/metrics.csv",
+    "measured_hbm_service_model": "channel_burst_row_window_v1",
+    "measured_sram_rebalance_model": "cacti_tile_local_shared_capacity_v1",
+    "replica_recost_area_fit_replica_count": 815,
+    "replica_recost_latency_us": 12519.342352,
+    "replica_recost_macs_per_cycle": 104320,
+    "substituted_compute_semantic_profile": "score32_exp_lut_div"
+  },
+  "service_components": [
+    {
+      "component": "compute_datapath",
+      "details": {
+        "measured_command_dispatch_control_metrics_csv": "runs/designs/npu_blocks/attention_command_dispatch_c16_q32/metrics.csv",
+        "replica_recost_area_fit_replica_count": 815,
+        "replica_recost_latency_us": 12519.342352,
+        "replica_recost_macs_per_cycle": 104320,
+        "substituted_compute_replica_count": 815,
+        "substituted_compute_semantic_profile": "score32_exp_lut_div"
+      },
+      "source": "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_score32_w16_exp_lut_div_b20/metrics.csv",
+      "status": "measured"
+    },
+    {
+      "component": "command_dispatch_control",
+      "details": {
+        "command_dispatch_control_clock_ok": true,
+        "measured_command_dispatch_control_area_um2": 15775.9,
+        "measured_command_dispatch_control_clock_ns": 0.4629,
+        "measured_command_dispatch_control_cluster_count": 16,
+        "measured_command_dispatch_control_variant_name": "attention_command_dispatch_c16_q32"
+      },
+      "source": "runs/designs/npu_blocks/attention_command_dispatch_c16_q32/metrics.csv",
+      "status": "measured"
+    },
+    {
+      "component": "endpoint_ready_valid",
+      "details": {
+        "endpoint_ppa_width_matched": null,
+        "endpoint_width_ratio_vs_measured_ppa": null
+      },
+      "source": null,
+      "status": "measured_with_width_note"
+    },
+    {
+      "component": "router_fifo_noc",
+      "details": {},
+      "source": {
+        "composition": null,
+        "segmented_l1_promotion": null
+      },
+      "status": "measured_with_lane_replication"
+    },
+    {
+      "component": "tile_local_and_shared_sram",
+      "details": {
+        "abstract_local_capacity_bytes_per_cluster_replaced": 19140624,
+        "local_capacity_bytes_per_cluster": 614656,
+        "measured_shared_sram_capacity_mib": 68.0,
+        "measured_shared_sram_used_area_um2": 240066036.89536,
+        "measured_tile_local_sram_area_um2": 39803772.916944
+      },
+      "source": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_local_sram_capacity__l2_decoder_attention_local_sram_capacity_llama7b_v1.json",
+      "status": "measured_capacity_estimate"
+    },
+    {
+      "component": "hbm_dram_service",
+      "details": {
+        "channel_bandwidth_bytes_per_cycle": 256.0,
+        "channel_count": 4,
+        "controller_service_cycles": 1301,
+        "effective_hbm_bytes_per_cycle": 792.596465,
+        "hbm_byte_share": 0.983398438,
+        "measured_hbm_service_model": "channel_burst_row_window_v1",
+        "tile_hbm_cycles": 1301
+      },
+      "source": "channel_burst_row_window_v1",
+      "status": "inherited_model"
+    }
+  ],
+  "version": 1
+}
