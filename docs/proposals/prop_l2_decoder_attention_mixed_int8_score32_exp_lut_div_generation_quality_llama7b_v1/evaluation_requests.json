@@ -21,7 +21,13 @@
       "expected_result": {
         "direction": "proceed_to_composed_ppa_recost_if_exp_lut_div_bridge_passes",
         "reason": "A pass promotes the exp-LUT divider bridge as a quality-backed candidate for composed PPA recost; a fail keeps it diagnostic for further softmax approximation work."
-      }
+      },
+      "status": "merged",
+      "merged_pr_number": 1184,
+      "merge_commit": "622554d9b5ece743ab5fafa8187fd98124fd1204",
+      "merged_utc": "2026-07-06T08:19:22.185490Z",
+      "notes": "Merged via PR #1184 and merge 622554d9b5ece743ab5fafa8187fd98124fd1204 at 2026-07-06T08:19:22.185490Z."
     }
-  ]
+  ],
+  "source_commit": "99337b77f24d954b59e1318f6c0b52b28f3cb78f"
 }
