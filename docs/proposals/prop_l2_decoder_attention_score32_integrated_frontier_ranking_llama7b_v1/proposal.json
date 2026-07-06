@@ -1,0 +1,78 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_score32_integrated_frontier_ranking_llama7b_v1",
+  "created_utc": "2026-07-06T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Score32 integrated Llama7B frontier ranking",
+  "abstraction_layer": "decoder_attention_score32_integrated_frontier_ranking",
+  "hypothesis": "After score32 exp-LUT HBM/DRAM service closure, the score32 row is the current precision-safe throughput frontier, while measured exact-FP16 remains the energy reference; non-quality-backed and abstract rows must remain visible but excluded from promotion.",
+  "direct_comparison": {
+    "primary_question": "Which Llama7B attention candidate is currently best when latency, energy, area, and precision evidence are compared together?",
+    "include": [
+      "consume the merged score32 exp-LUT HBM/DRAM service closure",
+      "consume the score32 measured command-control row and bounded generation-quality gate",
+      "consume measured exact-FP16 compute-energy closure",
+      "consume mixed/int8 energy closure as a non-promotable latency candidate",
+      "consume older integrated-energy closure as planning-only evidence",
+      "report promotable latency rank, promotable energy rank, area, precision status, and remaining abstractions"
+    ],
+    "exclude": [
+      "new OpenROAD PPA",
+      "new generation-quality evaluation",
+      "new HBM controller RTL",
+      "new SRAM macro floorplan PnR",
+      "scalarizing latency, energy, area, and precision into one opaque score"
+    ]
+  },
+  "expected_benefit": [
+    "turns the recent component-closure chain into a directly inspectable architecture ranking",
+    "prevents abstract or quality-unclosed rows from being mistaken for promotable frontier points",
+    "identifies whether the next useful work is score32 energy reduction or lower-precision quality closure"
+  ],
+  "risks": [
+    "the audit ranks existing evidence only and does not synthesize new circuits",
+    "remaining HBM vendor-current and cycle-accurate controller abstractions are reported but not closed",
+    "the ranking depends on the bounded generation-quality gate rather than a full task-suite accuracy study"
+  ],
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_score32_integrated_frontier_ranking_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Rank the closed score32 exp-LUT Llama7B attention row against current integrated, measured-compute, and mixed/int8 frontier evidence.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_score32_integrated_frontier_ranking",
+      "comparison_role": "score32_integrated_frontier_ranking",
+      "paired_baseline_item_id": "l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1",
+        "l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_measured_command_control_llama7b_v1",
+        "l2_decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality_llama7b_v1",
+        "l2_decoder_attention_measured_compute_energy_closure_llama7b_v1",
+        "l2_decoder_attention_mixed_int8_energy_closure_llama7b_v1_r2",
+        "l2_decoder_attention_integrated_energy_closure_llama7b_v1_r2"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "record_score32_integrated_frontier_ranking",
+        "reason": "The result should identify the current promotable throughput and energy frontier candidates while explicitly excluding abstract or quality-unclosed rows from promotion."
+      },
+      "status": "pending"
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exp_lut_hbm_dram_service_closure__l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_measured_command_control_llama7b_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality__l2_decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality_llama7b_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_measured_compute_energy_closure__l2_decoder_attention_measured_compute_energy_closure_llama7b_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_energy_closure__l2_decoder_attention_mixed_int8_energy_closure_llama7b_v1_r2.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_integrated_energy_closure__l2_decoder_attention_integrated_energy_closure_llama7b_v1_r2.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/audit_llm_decoder_attention_score32_integrated_frontier_ranking.py",
+    "docs/architecture/llama7b_attention_abstraction_closure_plan.md",
+    "docs/proposals/prop_l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1/proposal.json",
+    "docs/proposals/prop_l2_decoder_attention_measured_compute_energy_closure_llama7b_v1/proposal.json"
+  ]
+}
