@@ -1,0 +1,9 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_score32_exp_lut_measured_wrapper_promotion_llama7b_v1",
+  "candidate_id": "l2_decoder_attention_score32_exp_lut_measured_wrapper_promotion_llama7b_v1",
+  "decision": "iterate",
+  "reason": "Proposal seeded; awaiting measured-wrapper promotion audit evidence.",
+  "evidence_refs": [],
+  "next_action": "run l2_decoder_attention_score32_exp_lut_measured_wrapper_promotion_llama7b_v1",
+  "requires_human_approval": false
+}

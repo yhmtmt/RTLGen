@@ -1,0 +1,27 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_score32_exp_lut_measured_wrapper_promotion_llama7b_v1",
+  "source_commit_note": "Dispatch should use the merge commit that adds the score32 exp-LUT measured-wrapper promotion audit hook.",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_score32_exp_lut_measured_wrapper_promotion_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Audit whether the score32 exp-LUT measured-command-control reduced-replica result is backed by the merged measured dual-stream wrapper PPA.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_score32_exp_lut_measured_wrapper_promotion",
+      "comparison_role": "score32_exp_lut_wrapper_promotion_audit",
+      "paired_baseline_item_id": "l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_measured_command_control_llama7b_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_measured_command_control_llama7b_v1",
+        "l1_decoder_attention_dual_stream_composed_score32_exp_lut_div_b20_ppa_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "close_score32_exp_lut_wrapper_promotion_linkage",
+        "reason": "The result should report whether the L2 selected wrapper metrics match the merged L1 wrapper PPA and whether partitioned/cluster physical validation is still required."
+      },
+      "status": "pending"
+    }
+  ],
+  "source_commit": ""
+}

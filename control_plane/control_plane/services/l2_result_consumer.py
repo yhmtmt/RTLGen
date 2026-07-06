@@ -559,6 +559,10 @@ _DECODER_EVIDENCE_OUTPUT_KEYS: tuple[tuple[str, str], ...] = (
         "attention_composed_datapath_physical_feasibility_report",
     ),
     (
+        "attention_score32_exp_lut_measured_wrapper_promotion_out",
+        "attention_score32_exp_lut_measured_wrapper_promotion_report",
+    ),
+    (
         "attention_integrated_abstraction_closure_out",
         "attention_integrated_abstraction_closure_report",
     ),
@@ -658,6 +662,8 @@ def _decoder_quality_brief(evidence_payload: dict[str, Any]) -> dict[str, Any]:
         "best",
         "sweep_summary",
         "assumptions",
+        "next_step",
+        "source_artifacts",
     ):
         if key in evidence_payload:
             brief[key] = evidence_payload[key]
@@ -1254,6 +1260,33 @@ def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, 
         ):
             if key in diagnosis_dict:
                 parts.append(f"{key}={diagnosis_dict.get(key)}")
+        summary = "; ".join(parts)
+        return outcome, summary if summary.endswith(".") else summary + "."
+
+    if model == "llm_decoder_attention_score32_exp_lut_measured_wrapper_promotion_v1":
+        diagnosis = evidence_payload.get("diagnosis")
+        diagnosis_dict = dict(diagnosis) if isinstance(diagnosis, dict) else {}
+        next_step = evidence_payload.get("next_step")
+        next_step_dict = dict(next_step) if isinstance(next_step, dict) else {}
+        outcome = str(diagnosis_dict.get("decision") or evidence_payload.get("decision") or "score32_exp_lut_measured_wrapper_promotion_recorded")
+        parts = [
+            f"Decoder score32 exp-LUT measured-wrapper promotion evidence recorded from {evidence_ref}: decision={outcome}",
+        ]
+        for key in (
+            "l2_measured_decision",
+            "l2_candidate_supported",
+            "l1_wrapper_accepted",
+            "l1_wrapper_metrics_match",
+            "l2_selected_wrapper_metrics_csv",
+            "recommended_next_step",
+        ):
+            if key in diagnosis_dict:
+                parts.append(f"{key}={diagnosis_dict.get(key)}")
+        if "requires_partitioned_or_cluster_validation" in next_step_dict:
+            parts.append(
+                "requires_partitioned_or_cluster_validation="
+                f"{next_step_dict.get('requires_partitioned_or_cluster_validation')}"
+            )
         summary = "; ".join(parts)
         return outcome, summary if summary.endswith(".") else summary + "."
 

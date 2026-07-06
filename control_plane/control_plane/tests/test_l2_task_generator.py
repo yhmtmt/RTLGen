@@ -6530,6 +6530,103 @@ def test_generate_l2_campaign_task_adds_attention_composed_datapath_exp_lut_meas
             )
 
 
+def test_generate_l2_campaign_task_adds_attention_score32_exp_lut_measured_wrapper_promotion_evidence() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id="l2_decoder_attention_score32_exp_lut_measured_wrapper_promotion_llama7b_v1",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    abstraction_layer="decoder_attention_score32_exp_lut_measured_wrapper_promotion",
+                    evaluation_mode="frontier_detail",
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            commands = work_item.task_request.request_payload["task"]["commands"]
+            run = commands[0]["run"]
+            decoder_inputs = work_item.input_manifest["decoder_contract"]
+
+            assert [command["name"] for command in commands[:1]] == [
+                "audit_decoder_attention_score32_exp_lut_measured_wrapper_promotion",
+            ]
+            assert "audit_llm_decoder_attention_score32_exp_lut_measured_wrapper_promotion.py" in run
+            assert (
+                "--measured-composed-datapath-json "
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_composed_datapath_physical_feasibility__"
+                "l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_"
+                "measured_command_control_llama7b_v1.json"
+            ) in run
+            assert (
+                "--measured-dual-stream-wrapper-json "
+                "control_plane/shadow_exports/l1_promotions/"
+                "l1_decoder_attention_dual_stream_composed_score32_exp_lut_div_b20_ppa_v1.json"
+            ) in run
+            assert (
+                "--out runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_score32_exp_lut_measured_wrapper_promotion__"
+                "l2_decoder_attention_score32_exp_lut_measured_wrapper_promotion_llama7b_v1.json"
+            ) in run
+            assert (
+                "--out-md runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_score32_exp_lut_measured_wrapper_promotion__"
+                "l2_decoder_attention_score32_exp_lut_measured_wrapper_promotion_llama7b_v1.md"
+            ) in run
+            assert decoder_inputs["attention_score32_exp_lut_measured_command_control"] == (
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_composed_datapath_physical_feasibility__"
+                "l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_"
+                "measured_command_control_llama7b_v1.json"
+            )
+            assert (
+                decoder_inputs["attention_score32_exp_lut_dual_stream_wrapper_ppa"] ==
+                "control_plane/shadow_exports/l1_promotions/"
+                "l1_decoder_attention_dual_stream_composed_score32_exp_lut_div_b20_ppa_v1.json"
+            )
+            assert (
+                decoder_inputs["attention_score32_exp_lut_measured_wrapper_promotion_out"] ==
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_score32_exp_lut_measured_wrapper_promotion__"
+                "l2_decoder_attention_score32_exp_lut_measured_wrapper_promotion_llama7b_v1.json"
+            )
+            assert (
+                decoder_inputs["attention_score32_exp_lut_measured_wrapper_promotion_report"]
+                == "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_score32_exp_lut_measured_wrapper_promotion__"
+                "l2_decoder_attention_score32_exp_lut_measured_wrapper_promotion_llama7b_v1.md"
+            )
+            assert decoder_inputs["attention_score32_exp_lut_measured_wrapper_promotion_scope"].startswith(
+                "Audit whether the reduced-replica score32 exp-LUT composed datapath schedule"
+            )
+            assert any(
+                output.endswith(
+                    "decoder_attention_score32_exp_lut_measured_wrapper_promotion__"
+                    "l2_decoder_attention_score32_exp_lut_measured_wrapper_promotion_llama7b_v1.json"
+                )
+                for output in work_item.task_request.request_payload["task"]["expected_outputs"]
+            )
+            assert any(
+                output.endswith(
+                    "decoder_attention_score32_exp_lut_measured_wrapper_promotion__"
+                    "l2_decoder_attention_score32_exp_lut_measured_wrapper_promotion_llama7b_v1.md"
+                )
+                for output in work_item.task_request.request_payload["task"]["expected_outputs"]
+            )
+
+
 def test_generate_l2_campaign_task_adds_attention_composed_datapath_score24_reduced_replica_evidence() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"

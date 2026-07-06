@@ -5723,6 +5723,49 @@ def _decoder_attention_composed_datapath_physical_feasibility_evidence(*, item_i
     }
 
 
+def _decoder_attention_score32_exp_lut_measured_wrapper_promotion_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_attention_score32_exp_lut_measured_wrapper_promotion__{item_id}.json"
+    report = f"{base}/decoder_attention_score32_exp_lut_measured_wrapper_promotion__{item_id}.md"
+    measured_command_control_item = (
+        "l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_"
+        "measured_command_control_llama7b_v1"
+    )
+    composed_decision = f"{base}/decoder_attention_composed_datapath_physical_feasibility__{measured_command_control_item}.json"
+    l1_wrapper = (
+        "control_plane/shadow_exports/l1_promotions/"
+        "l1_decoder_attention_dual_stream_composed_score32_exp_lut_div_b20_ppa_v1.json"
+    )
+    return {
+        "inputs": {
+            "attention_score32_exp_lut_measured_command_control": composed_decision,
+            "attention_score32_exp_lut_dual_stream_wrapper_ppa": l1_wrapper,
+            "attention_score32_exp_lut_measured_wrapper_promotion_out": out,
+            "attention_score32_exp_lut_measured_wrapper_promotion_report": report,
+            "attention_score32_exp_lut_measured_wrapper_promotion_scope": (
+                "Audit whether the reduced-replica score32 exp-LUT composed datapath schedule from "
+                "measured command-control merged evidence is backed by a measured dual-stream "
+                "score32 exp-LUT wrapper result. If not fully backed, mark the follow-up job "
+                "to validate partitioned/cluster wrapper physical schedules."
+            ),
+        },
+        "commands": [
+            {
+                "name": "audit_decoder_attention_score32_exp_lut_measured_wrapper_promotion",
+                "run": (
+                    "python3 npu/eval/audit_llm_decoder_attention_score32_exp_lut_measured_wrapper_promotion.py "
+                    f"--measured-composed-datapath-json {composed_decision} "
+                    f"--measured-dual-stream-wrapper-json {l1_wrapper} "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+        "evidence_only": True,
+    }
+
+
 def _decoder_attention_integrated_abstraction_closure_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_integrated_abstraction_closure__{item_id}.json"
@@ -9176,6 +9219,7 @@ def _build_payload(
         "decoder_attention_integrated_abstraction_closure",
         "decoder_attention_integrated_energy_closure",
         "decoder_attention_hbm_energy_sensitivity",
+        "decoder_attention_score32_exp_lut_measured_wrapper_promotion",
         "decoder_attention_hbm_dram_service_energy",
         "decoder_attention_hbm_energy_calibration",
         "decoder_attention_hbm_command_calibrated_service",
@@ -9370,6 +9414,8 @@ def _build_payload(
             decoder_evidence = _decoder_attention_integrated_energy_closure_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_hbm_energy_sensitivity":
             decoder_evidence = _decoder_attention_hbm_energy_sensitivity_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_attention_score32_exp_lut_measured_wrapper_promotion":
+            decoder_evidence = _decoder_attention_score32_exp_lut_measured_wrapper_promotion_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_hbm_dram_service_energy":
             decoder_evidence = _decoder_attention_hbm_dram_service_energy_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_hbm_energy_calibration":
