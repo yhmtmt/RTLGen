@@ -1,0 +1,212 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-07-06T10:27:23.023005Z",
+  "control_plane_source_commit": "7270e2c9e95e17b1adb592ca35e4a3e313357dff",
+  "review_metadata_source_commit": "7270e2c9e95e17b1adb592ca35e4a3e313357dff",
+  "item_id": "l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1",
+  "run_key": "l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1_run_b4033016c25d2334",
+  "layer": "layer2",
+  "flow": "openroad",
+  "task_type": "l2_campaign",
+  "source_commit": "7270e2c9e95e17b1adb592ca35e4a3e313357dff",
+  "queue_snapshot": {
+    "path": "control_plane/shadow_exports/review/l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1/evaluated.json",
+    "result": {
+      "branch": "eval/l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1/s20260706t102721z",
+      "completed_utc": "2026-07-06T10:27:20.476647Z",
+      "evaluator_id": "control_plane",
+      "executor": "@control_plane",
+      "host": "b7c2d9c80c1c",
+      "identity_block": "[role:evaluator][account:control_plane][session:s20260706t102721z][host:b7c2d9c80c1c][item:l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1]",
+      "metrics_rows": [],
+      "metrics_exempt_reason": "evidence_only_decoder_evidence",
+      "queue_item_id": "l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1",
+      "session_id": "s20260706t102721z",
+      "status": "ok",
+      "summary": "2/2 commands succeeded"
+    }
+  },
+  "review_artifact": {
+    "kind": "decision_proposal",
+    "path": "control_plane/shadow_exports/l2_decisions/l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1.json",
+    "storage_mode": "repo",
+    "sha256": "2adccd3ffc7eac896084c228551376429bb7c181d9dc9ddcc8bab7ad9fae9e00",
+    "payload": {
+      "version": 0.1,
+      "generated_utc": "2026-07-06T10:27:21.067644Z",
+      "item_id": "l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1",
+      "run_key": "l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1_run_b4033016c25d2334",
+      "layer": "layer2",
+      "flow": "openroad",
+      "platform": "nangate45",
+      "task_type": "l2_campaign",
+      "source_commit": "7270e2c9e95e17b1adb592ca35e4a3e313357dff",
+      "review_metadata_source_commit": "7270e2c9e95e17b1adb592ca35e4a3e313357dff",
+      "objective": "Audit score32-specific HBM/DRAM service latency and calibrated HBM energy for the promoted Llama7B attention frontier row.",
+      "input_manifest": {
+        "decoder_contract": {
+          "attention_hbm_command_calibrated_service": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_hbm_command_calibrated_service__l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1.json",
+          "attention_score32_exp_lut_sram_hierarchy_envelope": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exp_lut_sram_hierarchy_envelope__l2_decoder_attention_score32_exp_lut_sram_hierarchy_envelope_llama7b_v1.json",
+          "attention_score32_exp_lut_measured_command_control": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_measured_command_control_llama7b_v1.json",
+          "attention_score32_exp_lut_hbm_dram_service_closure_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exp_lut_hbm_dram_service_closure__l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1.json",
+          "attention_score32_exp_lut_hbm_dram_service_closure_scope": "Close score32 exp-LUT HBM/DRAM service accounting by combining the score32 SRAM envelope, score32 measured-command-control row, and command-calibrated HBM service energy into a best-latency / best-energy frontier.",
+          "attention_score32_exp_lut_hbm_dram_service_closure_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exp_lut_hbm_dram_service_closure__l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1.md"
+        }
+      },
+      "recommendation": {
+        "source": "decoder_evidence",
+        "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exp_lut_hbm_dram_service_closure__l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1.json",
+        "arch_id": "decoder_attention_score32_exp_lut_hbm_dram_service_closure",
+        "macro_mode": "evidence_only",
+        "outcome": "score32_exp_lut_hbm_dram_service_closure_hbm_sensitive"
+      },
+      "objective_profiles": [],
+      "evaluation_record": {
+        "proposal_id": "prop_l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1",
+        "title": "Score32 exp-LUT HBM/DRAM service closure audit",
+        "primary_question": "Does score32-specific HBM/DRAM service and calibrated HBM energy materially change the current score32 exp-LUT Llama7B frontier account?",
+        "evaluation_mode": "frontier_detail",
+        "comparison_role": "score32_exp_lut_hbm_dram_service_closure_audit",
+        "abstraction_layer": "decoder_attention_score32_exp_lut_hbm_dram_service_closure",
+        "expected_direction": "record_score32_hbm_dram_service_closure",
+        "expected_reason": "Record whether score32-specific HBM/DRAM service latency or calibrated HBM energy changes the current frontier account.",
+        "summary": "Decoder score32 exp-LUT HBM/DRAM service-closure evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exp_lut_hbm_dram_service_closure__l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1.json: decision=score32_exp_lut_hbm_dram_service_closure_hbm_sensitive; best_latency_us=12532.357427; best_latency_token_throughput_per_s=79.793447149; best_latency_hbm_energy_mj_per_token=134.280615241; best_energy_hbm_energy_mj_per_token=134.280615241; source_score32_latency_us=12519.342352; source_controller_service_cycles=1301; remaining_abstractions=['cycle_accurate_hbm_controller_rtl', 'hbm_vendor_current_signoff'].",
+        "outcome": "score32_exp_lut_hbm_dram_service_closure_hbm_sensitive",
+        "expectation_status": "unspecified"
+      },
+      "proposal_assessment": {
+        "proposal_id": "prop_l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1",
+        "title": "Score32 exp-LUT HBM/DRAM service closure audit",
+        "kind": "architecture",
+        "primary_question": "Does score32-specific HBM/DRAM service and calibrated HBM energy materially change the current score32 exp-LUT Llama7B frontier account?",
+        "evaluation_mode": "frontier_detail",
+        "comparison_role": "score32_exp_lut_hbm_dram_service_closure_audit",
+        "outcome": "score32_exp_lut_hbm_dram_service_closure_hbm_sensitive",
+        "summary": "Decoder score32 exp-LUT HBM/DRAM service-closure evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exp_lut_hbm_dram_service_closure__l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1.json: decision=score32_exp_lut_hbm_dram_service_closure_hbm_sensitive; best_latency_us=12532.357427; best_latency_token_throughput_per_s=79.793447149; best_latency_hbm_energy_mj_per_token=134.280615241; best_energy_hbm_energy_mj_per_token=134.280615241; source_score32_latency_us=12519.342352; source_controller_service_cycles=1301; remaining_abstractions=['cycle_accurate_hbm_controller_rtl', 'hbm_vendor_current_signoff'].",
+        "baseline_ref": null,
+        "baseline_item_id": null,
+        "matched_row_count": 0,
+        "matched_rows": [],
+        "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exp_lut_hbm_dram_service_closure__l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1.json",
+        "decoder_quality": {
+          "diagnosis": {
+            "best_energy_compute_energy_mj_per_token": 360.550392645,
+            "best_energy_hbm_energy_mj_per_token": 134.280615241,
+            "best_energy_token_throughput_per_s": 79.793447149,
+            "best_energy_total_energy_mj_per_token": 494.831007886,
+            "best_energy_us": 12532.357427,
+            "best_latency_compute_energy_mj_per_token": 360.550392645,
+            "best_latency_hbm_energy_mj_per_token": 134.280615241,
+            "best_latency_token_throughput_per_s": 79.793447149,
+            "best_latency_total_energy_mj_per_token": 494.831007886,
+            "best_latency_us": 12532.357427,
+            "hbm_dominant_row_count": 35413,
+            "precision_profile": "score32_exp_lut_div",
+            "remaining_abstractions": [
+              "cycle_accurate_hbm_controller_rtl",
+              "hbm_vendor_current_signoff"
+            ],
+            "row_count": 43740,
+            "source_controller_service_cycles": 1301,
+            "source_score32_latency_us": 12519.342352,
+            "source_tile_service_cycles": 994
+          },
+          "assumptions": [
+            "The score32 exp-LUT compute/datapath, command control, SRAM envelope, and precision evidence are inherited from merged score32 results.",
+            "HBM service is modeled with channel count, per-channel bytes/cycle, burst size, outstanding window, row-hit rate, and scheduler efficiency.",
+            "HBM energy uses the existing command-calibrated pJ parameters from the design registry calibration chain.",
+            "This is not a cycle-accurate HBM/DRAM controller RTL simulation or vendor current signoff."
+          ],
+          "next_step": {
+            "recommended_next_step": "Use this score32 HBM/DRAM service closure as the current frontier account; next close either HBM controller RTL/timing or aggregate full-token energy ranking.",
+            "requires_cycle_accurate_hbm_controller": true,
+            "requires_vendor_hbm_current_signoff": true
+          }
+        }
+      },
+      "source_refs": {
+        "decoder_evidence_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exp_lut_hbm_dram_service_closure__l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1.json",
+        "decoder_attention_score32_exp_lut_hbm_dram_service_closure_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exp_lut_hbm_dram_service_closure__l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1.json",
+        "decoder_attention_score32_exp_lut_hbm_dram_service_closure_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exp_lut_hbm_dram_service_closure__l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1.md"
+      },
+      "decoder_quality": {
+        "diagnosis": {
+          "best_energy_compute_energy_mj_per_token": 360.550392645,
+          "best_energy_hbm_energy_mj_per_token": 134.280615241,
+          "best_energy_token_throughput_per_s": 79.793447149,
+          "best_energy_total_energy_mj_per_token": 494.831007886,
+          "best_energy_us": 12532.357427,
+          "best_latency_compute_energy_mj_per_token": 360.550392645,
+          "best_latency_hbm_energy_mj_per_token": 134.280615241,
+          "best_latency_token_throughput_per_s": 79.793447149,
+          "best_latency_total_energy_mj_per_token": 494.831007886,
+          "best_latency_us": 12532.357427,
+          "hbm_dominant_row_count": 35413,
+          "precision_profile": "score32_exp_lut_div",
+          "remaining_abstractions": [
+            "cycle_accurate_hbm_controller_rtl",
+            "hbm_vendor_current_signoff"
+          ],
+          "row_count": 43740,
+          "source_controller_service_cycles": 1301,
+          "source_score32_latency_us": 12519.342352,
+          "source_tile_service_cycles": 994
+        },
+        "assumptions": [
+          "The score32 exp-LUT compute/datapath, command control, SRAM envelope, and precision evidence are inherited from merged score32 results.",
+          "HBM service is modeled with channel count, per-channel bytes/cycle, burst size, outstanding window, row-hit rate, and scheduler efficiency.",
+          "HBM energy uses the existing command-calibrated pJ parameters from the design registry calibration chain.",
+          "This is not a cycle-accurate HBM/DRAM controller RTL simulation or vendor current signoff."
+        ],
+        "next_step": {
+          "recommended_next_step": "Use this score32 HBM/DRAM service closure as the current frontier account; next close either HBM controller RTL/timing or aggregate full-token energy ranking.",
+          "requires_cycle_accurate_hbm_controller": true,
+          "requires_vendor_hbm_current_signoff": true
+        }
+      }
+    }
+  },
+  "developer_loop": {
+    "comparison": {
+      "role": "score32_exp_lut_hbm_dram_service_closure_audit",
+      "paired_baseline_item_id": "l2_decoder_attention_score32_exp_lut_sram_hierarchy_envelope_llama7b_v1"
+    },
+    "evaluation": {
+      "mode": "frontier_detail",
+      "expected_reason": "Record whether score32-specific HBM/DRAM service latency or calibrated HBM energy changes the current frontier account.",
+      "expected_direction": "record_score32_hbm_dram_service_closure"
+    },
+    "abstraction": {
+      "layer": "decoder_attention_score32_exp_lut_hbm_dram_service_closure"
+    },
+    "proposal_id": "prop_l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1",
+    "dependencies": {
+      "item_ids": [
+        "l2_decoder_attention_score32_exp_lut_sram_hierarchy_envelope_llama7b_v1",
+        "l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_measured_command_control_llama7b_v1",
+        "l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    },
+    "proposal_path": "docs/proposals/prop_l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1/proposal.json"
+  },
+  "submission_history": null,
+  "pr_payload": {
+    "branch": "eval/l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1/s20260706t102721z",
+    "title": "eval: run score32 exp-lut hbm/dram service closure",
+    "body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260706t102721z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1"
+    },
+    "body_md": "## Summary\n- item_id: `l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1`\n- run_key: `l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1_run_b4033016c25d2334`\n- layer: `layer2`\n- task_type: `l2_campaign`\n- status: `ok`\n- summary: `2/2 commands succeeded`\n- queue_snapshot: `control_plane/shadow_exports/review/l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1/evaluated.json`\n- metrics_rows_count: `0`\n- review_artifact: `decision_proposal` at `control_plane/shadow_exports/l2_decisions/l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1.json`\n\n## Developer Context\n- proposal_id: `prop_l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1`\n- proposal_path: `docs/proposals/prop_l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1/proposal.json`\n- reviewer_first_read: `docs/proposals/prop_l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1/proposal.json` plus `docs/developer_agent_review.md`\n- execution_source_commit: `7270e2c9e95e17b1adb592ca35e4a3e313357dff`\n- review_metadata_source_commit: `7270e2c9e95e17b1adb592ca35e4a3e313357dff`\n\n## Evaluation Mode\n- evaluation_mode: `frontier_detail`\n- abstraction_layer: `decoder_attention_score32_exp_lut_hbm_dram_service_closure`\n- comparison_role: `score32_exp_lut_hbm_dram_service_closure_audit`\n- expected_direction: `record_score32_hbm_dram_service_closure`\n- expected_reason: `Record whether score32-specific HBM/DRAM service latency or calibrated HBM energy changes the current frontier account.`\n- expectation_status: `unspecified`\n- evaluation_summary: `Decoder score32 exp-LUT HBM/DRAM service-closure evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exp_lut_hbm_dram_service_closure__l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1.json: decision=score32_exp_lut_hbm_dram_service_closure_hbm_sensitive; best_latency_us=12532.357427; best_latency_token_throughput_per_s=79.793447149; best_latency_hbm_energy_mj_per_token=134.280615241; best_energy_hbm_energy_mj_per_token=134.280615241; source_score32_latency_us=12519.342352; source_controller_service_cycles=1301; remaining_abstractions=['cycle_accurate_hbm_controller_rtl', 'hbm_vendor_current_signoff'].`\n\n## Focused Comparison\n- primary_question: `Does score32-specific HBM/DRAM service and calibrated HBM energy materially change the current score32 exp-LUT Llama7B frontier account?`\n- comparison_role: `score32_exp_lut_hbm_dram_service_closure_audit`\n- proposal_outcome: `score32_exp_lut_hbm_dram_service_closure_hbm_sensitive`\n- comparison_summary: `Decoder score32 exp-LUT HBM/DRAM service-closure evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exp_lut_hbm_dram_service_closure__l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1.json: decision=score32_exp_lut_hbm_dram_service_closure_hbm_sensitive; best_latency_us=12532.357427; best_latency_token_throughput_per_s=79.793447149; best_latency_hbm_energy_mj_per_token=134.280615241; best_energy_hbm_energy_mj_per_token=134.280615241; source_score32_latency_us=12519.342352; source_controller_service_cycles=1301; remaining_abstractions=['cycle_accurate_hbm_controller_rtl', 'hbm_vendor_current_signoff'].`\n- baseline_ref: `None`\n- baseline_item_id: `None`\n\n## Checklist\n- [ ] Commit lightweight campaign artifacts only\n- [ ] Include metrics row references in result.metrics_rows\n- [ ] Keep committed result_path fields repo-portable\n- [ ] Run python3 scripts/validate_runs.py --skip_eval_queue before pushing\n",
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Include metrics row references in result.metrics_rows",
+      "Keep committed result_path fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ]
+  }
+}
