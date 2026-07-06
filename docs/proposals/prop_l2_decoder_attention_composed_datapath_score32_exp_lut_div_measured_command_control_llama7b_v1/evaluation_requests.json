@@ -22,7 +22,12 @@
         "direction": "charge_measured_command_control_to_exp_lut_recost",
         "reason": "This replaces a purely idealized scheduler/control area-power assumption with measured central command-dispatch PPA before final frontier promotion."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 1194,
+      "merge_commit": "222f020386f6bb7b117a4adbfe23c3cd1fb2af69",
+      "merged_utc": "2026-07-06T09:21:01.375803Z",
+      "notes": "Merged via PR #1194 and merge 222f020386f6bb7b117a4adbfe23c3cd1fb2af69 at 2026-07-06T09:21:01.375803Z."
     }
-  ]
+  ],
+  "source_commit": "ac37f5b6eae677d83c9a872ae99df446d8596096"
 }
