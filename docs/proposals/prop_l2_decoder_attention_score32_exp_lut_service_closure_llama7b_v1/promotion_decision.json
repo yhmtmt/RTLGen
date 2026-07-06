@@ -1,9 +1,15 @@
 {
   "proposal_id": "prop_l2_decoder_attention_score32_exp_lut_service_closure_llama7b_v1",
   "candidate_id": "l2_decoder_attention_score32_exp_lut_service_closure_llama7b_v1",
-  "decision": "pending",
-  "reason": "Evaluation not yet run.",
-  "evidence_refs": [],
-  "next_action": "dispatch l2_decoder_attention_score32_exp_lut_service_closure_llama7b_v1",
+  "decision": "iterate",
+  "reason": "Decoder score32 exp-LUT service-closure evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exp_lut_service_closure__l2_decoder_attention_score32_exp_lut_service_closure_llama7b_v1.json: decision=score32_exp_lut_service_closure_recorded; score32_supported=True; wrapper_metrics_match=True; selected_semantic_profile=score32_exp_lut_div; latency_us=12519.342352; source_latency_us=1575.373891; macs_per_cycle=104320; dominant_tile_resource=pipeline_attention; remaining_abstractions=['tile_local_and_shared_sram', 'hbm_dram_service']; requires_hbm_dram_closure=True.",
+  "evidence_refs": [
+    "item:l2_decoder_attention_score32_exp_lut_service_closure_llama7b_v1",
+    "run:l2_decoder_attention_score32_exp_lut_service_closure_llama7b_v1_run_b3e9867f98ad3184",
+    "artifact:control_plane/shadow_exports/l2_decisions/l2_decoder_attention_score32_exp_lut_service_closure_llama7b_v1.json",
+    "pr:#1199",
+    "https://github.com/yhmtmt/RTLGen/pull/1199"
+  ],
+  "next_action": "inspect follow-on work after l2_decoder_attention_score32_exp_lut_service_closure_llama7b_v1",
   "requires_human_approval": false
 }

@@ -22,8 +22,12 @@
         "direction": "record_score32_exp_lut_service_closure",
         "reason": "The result should state whether score32 exp-LUT is supported by measured wrapper evidence and list remaining inherited service abstractions before the next frontier job."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 1199,
+      "merge_commit": "910d266f74c414035ae7da7630a3fbeee426ec79",
+      "merged_utc": "2026-07-06T10:01:26.327609Z",
+      "notes": "Merged via PR #1199 and merge 910d266f74c414035ae7da7630a3fbeee426ec79 at 2026-07-06T10:01:26.327609Z."
     }
   ],
-  "source_commit": null
+  "source_commit": "241c0c1b8daef4cf4a59a3c687d67feb5fef28e5"
 }
