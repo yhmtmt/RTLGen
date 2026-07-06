@@ -313,6 +313,111 @@ def test_sync_run_artifacts_allows_evidence_only_decision_without_metrics_rows()
         assert evaluated["result"]["metrics_exempt_reason"] == "evidence_only_decoder_evidence"
 
 
+def test_sync_run_artifacts_allows_decoder_evidence_contract_before_decision_without_metrics_rows() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        item_id = "l2_decoder_attention_score32_compute_activity_energy_llama7b_v1"
+        evidence_rel = (
+            "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+            f"decoder_attention_score32_compute_activity_energy__{item_id}.json"
+        )
+        report_rel = (
+            "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+            f"decoder_attention_score32_compute_activity_energy__{item_id}.md"
+        )
+        queue_path = repo_root / "runs" / "eval_queue" / "openroad" / "queued" / f"{item_id}.json"
+        queue_path.parent.mkdir(parents=True, exist_ok=True)
+        queue_path.write_text(
+            json.dumps(
+                {
+                    "version": 0.1,
+                    "item_id": item_id,
+                    "title": "score32 compute activity",
+                    "layer": "layer2",
+                    "flow": "openroad",
+                    "state": "queued",
+                    "priority": 1,
+                    "requested_by": "@tester",
+                    "platform": "nangate45",
+                    "task": {
+                        "objective": "record decoder evidence",
+                        "source_mode": "src_verilog",
+                        "inputs": {
+                            "decoder_contract": {
+                                "attention_score32_compute_activity_energy_out": evidence_rel,
+                                "attention_score32_compute_activity_energy_report": report_rel,
+                            }
+                        },
+                        "commands": [],
+                        "expected_outputs": [evidence_rel, report_rel],
+                        "acceptance": [],
+                    },
+                    "handoff": {
+                        "branch": f"eval/{item_id}/<session_id>",
+                        "pr_title": "eval: score32 compute activity",
+                        "identity_block_format": (
+                            "[role:evaluator][account:<evaluator_id>]"
+                            "[session:<session_id>][host:<host>][item:<queue_item_id>]"
+                        ),
+                    },
+                },
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            import_queue_item(
+                session,
+                QueueImportRequest(
+                    repo_root=str(repo_root),
+                    queue_path=str(queue_path.relative_to(repo_root)),
+                ),
+            )
+            work_item = session.query(WorkItem).filter_by(item_id=item_id).one()
+            work_item.state = WorkItemState.ARTIFACT_SYNC
+            work_item.task_type = "l2_campaign"
+            run = Run(
+                run_key=f"{item_id}_run_1",
+                work_item_id=work_item.id,
+                attempt=1,
+                executor_type=ExecutorType.INTERNAL_WORKER,
+                status=RunStatus.SUCCEEDED,
+                started_at=utcnow(),
+                completed_at=utcnow(),
+                result_summary="2/2 commands succeeded",
+                result_payload={"queue_result": {"status": "ok", "metrics_rows": []}},
+            )
+            session.add(run)
+            session.commit()
+
+            result = sync_run_artifacts(
+                session,
+                ArtifactSyncRequest(
+                    repo_root=str(repo_root),
+                    item_id=item_id,
+                    evaluator_id="cpbot",
+                    session_id="s20260308t120000z",
+                    host="cp-host",
+                    executor="@control_plane",
+                    target_path=f"runs/eval_queue/openroad/evaluated/{item_id}.json",
+                ),
+            )
+            assert result.metrics_row_count == 0
+
+        evaluated = json.loads(
+            (repo_root / "runs" / "eval_queue" / "openroad" / "evaluated" / f"{item_id}.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        assert evaluated["result"]["status"] == "ok"
+        assert evaluated["result"]["metrics_rows"] == []
+        assert evaluated["result"]["metrics_exempt_reason"] == "evidence_only_decoder_evidence"
+
+
 def test_sync_run_artifacts_deduplicates_queue_snapshot_artifacts() -> None:
     engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
     create_all(engine)
