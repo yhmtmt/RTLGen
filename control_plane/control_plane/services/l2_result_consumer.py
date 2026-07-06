@@ -575,6 +575,10 @@ _DECODER_EVIDENCE_OUTPUT_KEYS: tuple[tuple[str, str], ...] = (
         "attention_score32_integrated_frontier_ranking_report",
     ),
     (
+        "attention_score32_compute_activity_energy_out",
+        "attention_score32_compute_activity_energy_report",
+    ),
+    (
         "attention_score32_exp_lut_sram_hierarchy_envelope_out",
         "attention_score32_exp_lut_sram_hierarchy_envelope_report",
     ),
@@ -1375,6 +1379,33 @@ def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, 
             "score32_die_area_mm2",
             "score32_quality_status",
             "current_recommended_candidate",
+            "remaining_abstractions",
+        ):
+            if key in diagnosis_dict:
+                parts.append(f"{key}={diagnosis_dict.get(key)}")
+        summary = "; ".join(parts)
+        return outcome, summary if summary.endswith(".") else summary + "."
+
+    if model == "llm_decoder_attention_score32_compute_activity_energy_v1":
+        diagnosis = evidence_payload.get("diagnosis")
+        diagnosis_dict = dict(diagnosis) if isinstance(diagnosis, dict) else {}
+        outcome = str(
+            diagnosis_dict.get("decision")
+            or evidence_payload.get("decision")
+            or "score32_compute_activity_energy_recorded"
+        )
+        parts = [
+            f"Decoder score32 compute-activity energy evidence recorded from {evidence_ref}: decision={outcome}",
+        ]
+        for key in (
+            "compute_active_duty",
+            "wall_time_compute_energy_mj_per_token",
+            "best_clock_gated_compute_energy_mj_per_token",
+            "best_clock_gated_total_energy_mj_per_token",
+            "energy_reduction_fraction_vs_wall_time",
+            "clock_gated_score32_vs_measured_fp16_energy_ratio",
+            "score32_latency_us",
+            "recommended_next_step",
             "remaining_abstractions",
         ):
             if key in diagnosis_dict:

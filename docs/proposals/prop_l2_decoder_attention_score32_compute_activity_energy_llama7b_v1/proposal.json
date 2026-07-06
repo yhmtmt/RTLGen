@@ -1,0 +1,70 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_score32_compute_activity_energy_llama7b_v1",
+  "created_utc": "2026-07-06T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Score32 compute activity energy closure",
+  "abstraction_layer": "decoder_attention_score32_compute_activity_energy",
+  "hypothesis": "The score32 exp-LUT energy gap is not primarily caused by charging compute power over idle wall time; explicit active-cycle accounting will show high duty factor and keep score32 energy worse than the measured exact-FP16 reference.",
+  "direct_comparison": {
+    "primary_question": "Does clock-gating/active-cycle accounting materially reduce score32 energy enough to change the current Llama7B energy ranking?",
+    "include": [
+      "consume the score32 HBM/DRAM service closure",
+      "consume the score32 measured command-control row",
+      "consume the score32 integrated frontier ranking",
+      "derive compute active duty from tile service cycles, tile waves, and layer cycles",
+      "sweep idle-power fractions to bound clock-gating benefit",
+      "compare the best clock-gated score32 total energy to the measured exact-FP16 energy reference"
+    ],
+    "exclude": [
+      "new OpenROAD PPA",
+      "new gate-level switching activity simulation",
+      "new generation-quality evaluation",
+      "new HBM controller RTL"
+    ]
+  },
+  "expected_benefit": [
+    "removes ambiguity in the score32 wall-time compute-energy assumption",
+    "determines whether clock gating is enough before spending effort on circuit-level energy optimization",
+    "clarifies the next frontier target after integrated ranking"
+  ],
+  "risks": [
+    "active duty is derived from L2 schedule accounting rather than RTL toggle traces",
+    "idle-power fractions are analytic scenarios",
+    "if duty is high, the result will mainly rule out a cheap energy fix rather than improve the architecture"
+  ],
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_score32_compute_activity_energy_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Bound score32 exp-LUT compute energy using active-cycle duty and idle-power fractions.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_score32_compute_activity_energy",
+      "comparison_role": "score32_compute_activity_energy_closure",
+      "paired_baseline_item_id": "l2_decoder_attention_score32_integrated_frontier_ranking_llama7b_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1",
+        "l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_measured_command_control_llama7b_v1",
+        "l2_decoder_attention_score32_integrated_frontier_ranking_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "record_score32_compute_activity_energy",
+        "reason": "The result should state whether active-cycle/clock-gating accounting changes the score32 energy ranking versus the measured exact-FP16 reference."
+      },
+      "status": "pending"
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exp_lut_hbm_dram_service_closure__l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_measured_command_control_llama7b_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_integrated_frontier_ranking__l2_decoder_attention_score32_integrated_frontier_ranking_llama7b_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/audit_llm_decoder_attention_score32_compute_activity_energy.py",
+    "docs/architecture/llama7b_attention_abstraction_closure_plan.md",
+    "docs/proposals/prop_l2_decoder_attention_score32_integrated_frontier_ranking_llama7b_v1/proposal.json"
+  ]
+}
