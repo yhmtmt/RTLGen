@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_command_dispatch_control_v1",
+  "decision": "promote",
+  "pr_number": 1192,
+  "merge_commit": "ac37f5b6eae677d83c9a872ae99df446d8596096",
+  "merged_utc": "2026-07-06T09:17:45.547665Z"
+}

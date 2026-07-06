@@ -29,7 +29,12 @@
         "direction": "measure_command_dispatch_control_cost",
         "reason": "This converts a currently idealized scheduler/control term into a measured PPA anchor before later Llama7B recost integration."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 1192,
+      "merge_commit": "ac37f5b6eae677d83c9a872ae99df446d8596096",
+      "merged_utc": "2026-07-06T09:17:45.547665Z",
+      "notes": "Merged via PR #1192 and merge ac37f5b6eae677d83c9a872ae99df446d8596096 at 2026-07-06T09:17:45.547665Z."
     }
-  ]
+  ],
+  "source_commit": "0d883e8154a93bed1a455f48beeae3b239be6e44"
 }
