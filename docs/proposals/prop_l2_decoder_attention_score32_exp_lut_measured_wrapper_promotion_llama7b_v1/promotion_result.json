@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l2_decoder_attention_score32_exp_lut_measured_wrapper_promotion_llama7b_v1",
-  "decision": "pending",
-  "pr_number": null,
-  "merge_commit": "",
-  "merged_utc": ""
+  "decision": "iterate",
+  "pr_number": 1197,
+  "merge_commit": "54180036429705b7e12a6d0e24b8ab7e9bc9d034",
+  "merged_utc": "2026-07-06T09:43:27.101255Z"
 }

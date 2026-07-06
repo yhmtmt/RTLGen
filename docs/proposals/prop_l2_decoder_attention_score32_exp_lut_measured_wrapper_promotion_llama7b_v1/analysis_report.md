@@ -1,3 +1,32 @@
 # Analysis Report
 
-Pending evaluation.
+## Candidate
+- `proposal_id`: `prop_l2_decoder_attention_score32_exp_lut_measured_wrapper_promotion_llama7b_v1`
+- `candidate_id`: `l2_decoder_attention_score32_exp_lut_measured_wrapper_promotion_llama7b_v1`
+
+## Evaluations Consumed
+- `l2_decoder_attention_score32_exp_lut_measured_wrapper_promotion_llama7b_v1`
+- `l2_decoder_attention_score32_exp_lut_measured_wrapper_promotion_llama7b_v1_run_21c02f26440cc217`
+- source commit: `636af107a21652571d024749ce453e11fe576667`
+- review: PR #1197
+
+## Baseline Comparison
+- baseline_ref: `None`
+- baseline_item_id: `None`
+- outcome: `decoder_attention_score32_exp_lut_measured_wrapper_promotion_recorded`
+- summary: Decoder score32 exp-LUT measured-wrapper promotion evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exp_lut_measured_wrapper_promotion__l2_decoder_attention_score32_exp_lut_measured_wrapper_promotion_llama7b_v1.json: decision=decoder_attention_score32_exp_lut_measured_wrapper_promotion_recorded; l2_measured_decision=dual_stream_feasible; l2_candidate_supported=True; l1_wrapper_accepted=True; l1_wrapper_metrics_match=True; l2_selected_wrapper_metrics_csv=runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_score32_w16_exp_lut_div_b20/metrics.csv; recommended_next_step=promote reduced-replica score32 exp-LUT datapath using the measured dual-stream wrapper instead of partitioned-wrapper physical follow-up.; requires_partitioned_or_cluster_validation=False.
+
+## Result
+- result: `iterate`
+- confidence level: merged accepted evidence
+- estimated optimization room: pending follow-on comparison
+- architecture conclusion robustness: staged evidence
+- summary: Decoder score32 exp-LUT measured-wrapper promotion evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exp_lut_measured_wrapper_promotion__l2_decoder_attention_score32_exp_lut_measured_wrapper_promotion_llama7b_v1.json: decision=decoder_attention_score32_exp_lut_measured_wrapper_promotion_recorded; l2_measured_decision=dual_stream_feasible; l2_candidate_supported=True; l1_wrapper_accepted=True; l1_wrapper_metrics_match=True; l2_selected_wrapper_metrics_csv=runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_score32_w16_exp_lut_div_b20/metrics.csv; recommended_next_step=promote reduced-replica score32 exp-LUT datapath using the measured dual-stream wrapper instead of partitioned-wrapper physical follow-up.; requires_partitioned_or_cluster_validation=False.
+
+## Failures and Caveats
+- no additional caveats recorded during automatic finalization
+
+## Recommendation
+- `iterate`
+- reason: Decoder score32 exp-LUT measured-wrapper promotion evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exp_lut_measured_wrapper_promotion__l2_decoder_attention_score32_exp_lut_measured_wrapper_promotion_llama7b_v1.json: decision=decoder_attention_score32_exp_lut_measured_wrapper_promotion_recorded; l2_measured_decision=dual_stream_feasible; l2_candidate_supported=True; l1_wrapper_accepted=True; l1_wrapper_metrics_match=True; l2_selected_wrapper_metrics_csv=runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_score32_w16_exp_lut_div_b20/metrics.csv; recommended_next_step=promote reduced-replica score32 exp-LUT datapath using the measured dual-stream wrapper instead of partitioned-wrapper physical follow-up.; requires_partitioned_or_cluster_validation=False.
+- next_action: inspect follow-on work after l2_decoder_attention_score32_exp_lut_measured_wrapper_promotion_llama7b_v1

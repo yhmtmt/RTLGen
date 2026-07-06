@@ -20,8 +20,12 @@
         "direction": "close_score32_exp_lut_wrapper_promotion_linkage",
         "reason": "The result should report whether the L2 selected wrapper metrics match the merged L1 wrapper PPA and whether partitioned/cluster physical validation is still required."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 1197,
+      "merge_commit": "54180036429705b7e12a6d0e24b8ab7e9bc9d034",
+      "merged_utc": "2026-07-06T09:43:27.101255Z",
+      "notes": "Merged via PR #1197 and merge 54180036429705b7e12a6d0e24b8ab7e9bc9d034 at 2026-07-06T09:43:27.101255Z."
     }
   ],
-  "source_commit": ""
+  "source_commit": "636af107a21652571d024749ce453e11fe576667"
 }
