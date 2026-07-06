@@ -1,0 +1,107 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "decoder_contract": {
+        "attention_score32_exp_lut_dual_stream_wrapper_ppa": "control_plane/shadow_exports/l1_promotions/l1_decoder_attention_dual_stream_composed_score32_exp_lut_div_b20_ppa_v1.json",
+        "attention_score32_exp_lut_measured_command_control": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_measured_command_control_llama7b_v1.json",
+        "attention_score32_exp_lut_measured_wrapper_promotion_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exp_lut_measured_wrapper_promotion__l2_decoder_attention_score32_exp_lut_measured_wrapper_promotion_llama7b_v1.json",
+        "attention_score32_exp_lut_measured_wrapper_promotion_scope": "Audit whether the reduced-replica score32 exp-LUT composed datapath schedule from measured command-control merged evidence is backed by a measured dual-stream score32 exp-LUT wrapper result. If not fully backed, mark the follow-up job to validate partitioned/cluster wrapper physical schedules.",
+        "attention_score32_exp_lut_measured_wrapper_promotion_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exp_lut_measured_wrapper_promotion__l2_decoder_attention_score32_exp_lut_measured_wrapper_promotion_llama7b_v1.md"
+      }
+    },
+    "commands": [
+      {
+        "run": "python3 npu/eval/audit_llm_decoder_attention_score32_exp_lut_measured_wrapper_promotion.py --measured-composed-datapath-json runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_measured_command_control_llama7b_v1.json --measured-dual-stream-wrapper-json control_plane/shadow_exports/l1_promotions/l1_decoder_attention_dual_stream_composed_score32_exp_lut_div_b20_ppa_v1.json --out runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exp_lut_measured_wrapper_promotion__l2_decoder_attention_score32_exp_lut_measured_wrapper_promotion_llama7b_v1.json --out-md runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exp_lut_measured_wrapper_promotion__l2_decoder_attention_score32_exp_lut_measured_wrapper_promotion_llama7b_v1.md",
+        "name": "audit_decoder_attention_score32_exp_lut_measured_wrapper_promotion"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate_runs"
+      }
+    ],
+    "objective": "Audit whether the score32 exp-LUT measured-command-control reduced-replica result is backed by the merged measured dual-stream wrapper PPA.",
+    "acceptance": [
+      "Write all declared decoder evidence artifacts",
+      "Keep evidence artifact paths repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "source_mode": "src_verilog",
+    "expected_outputs": [
+      "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exp_lut_measured_wrapper_promotion__l2_decoder_attention_score32_exp_lut_measured_wrapper_promotion_llama7b_v1.json",
+      "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exp_lut_measured_wrapper_promotion__l2_decoder_attention_score32_exp_lut_measured_wrapper_promotion_llama7b_v1.md"
+    ]
+  },
+  "layer": "layer2",
+  "state": "evaluated",
+  "title": "Score32 exp-LUT measured wrapper promotion audit",
+  "result": {
+    "branch": "eval/l2_decoder_attention_score32_exp_lut_measured_wrapper_promotion_llama7b_v1/s20260706t094150z",
+    "completed_utc": "2026-07-06T09:41:49.521378Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "b7c2d9c80c1c",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260706t094150z][host:b7c2d9c80c1c][item:l2_decoder_attention_score32_exp_lut_measured_wrapper_promotion_llama7b_v1]",
+    "metrics_rows": [],
+    "metrics_exempt_reason": "evidence_only_decoder_evidence",
+    "queue_item_id": "l2_decoder_attention_score32_exp_lut_measured_wrapper_promotion_llama7b_v1",
+    "session_id": "s20260706t094150z",
+    "status": "ok",
+    "summary": "2/2 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l2_decoder_attention_score32_exp_lut_measured_wrapper_promotion_llama7b_v1/s20260706t094150z",
+    "pr_title": "eval: run score32 exp-lut measured wrapper promotion audit",
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Include metrics row references in result.metrics_rows",
+      "Keep committed result_path fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260706t094150z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l2_decoder_attention_score32_exp_lut_measured_wrapper_promotion_llama7b_v1"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l2_decoder_attention_score32_exp_lut_measured_wrapper_promotion_llama7b_v1",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 1,
+  "created_utc": "2026-07-06T09:41:37.338214Z",
+  "requested_by": "control_plane",
+  "developer_loop": {
+    "comparison": {
+      "role": "score32_exp_lut_wrapper_promotion_audit",
+      "paired_baseline_item_id": "l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_measured_command_control_llama7b_v1"
+    },
+    "evaluation": {
+      "mode": "frontier_detail",
+      "expected_reason": "The result should report whether the L2 selected wrapper metrics match the merged L1 wrapper PPA and whether partitioned/cluster physical validation is still required.",
+      "expected_direction": "close_score32_exp_lut_wrapper_promotion_linkage"
+    },
+    "abstraction": {
+      "layer": "decoder_attention_score32_exp_lut_measured_wrapper_promotion"
+    },
+    "proposal_id": "prop_l2_decoder_attention_score32_exp_lut_measured_wrapper_promotion_llama7b_v1",
+    "dependencies": {
+      "item_ids": [
+        "l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_measured_command_control_llama7b_v1",
+        "l1_decoder_attention_dual_stream_composed_score32_exp_lut_div_b20_ppa_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    },
+    "proposal_path": "docs/proposals/prop_l2_decoder_attention_score32_exp_lut_measured_wrapper_promotion_llama7b_v1/proposal.json"
+  },
+  "source_requirement": {
+    "repo": "",
+    "reason": "evaluator runtime must contain the queued job source commit",
+    "version": 1,
+    "required_ref": "origin/master",
+    "required_sha": "636af107a21652571d024749ce453e11fe576667",
+    "requires_daemon_restart": true
+  }
+}

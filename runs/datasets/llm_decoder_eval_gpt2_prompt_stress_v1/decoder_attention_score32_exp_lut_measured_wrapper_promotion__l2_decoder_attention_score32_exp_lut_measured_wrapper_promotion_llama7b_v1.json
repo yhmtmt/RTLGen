@@ -1,0 +1,25 @@
+{
+  "decision": "decoder_attention_score32_exp_lut_measured_wrapper_promotion_recorded",
+  "diagnosis": {
+    "decision": "decoder_attention_score32_exp_lut_measured_wrapper_promotion_recorded",
+    "l1_wrapper_accepted": true,
+    "l1_wrapper_metrics_match": true,
+    "l1_wrapper_present": true,
+    "l2_candidate_supported": true,
+    "l2_measured_decision": "dual_stream_feasible",
+    "l2_recommended_next_step": "promote dual-stream schedule into a measured RTL/PPA wrapper",
+    "l2_selected_wrapper_metrics_csv": "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_score32_w16_exp_lut_div_b20/metrics.csv",
+    "recommended_next_step": "promote reduced-replica score32 exp-LUT datapath using the measured dual-stream wrapper instead of partitioned-wrapper physical follow-up."
+  },
+  "model": "llm_decoder_attention_score32_exp_lut_measured_wrapper_promotion_v1",
+  "next_step": {
+    "decision_scope": "score32 exp-LUT reduced-replica composed-datapath L2 to measured wrapper promotion",
+    "recommended_next_step": "promote reduced-replica score32 exp-LUT datapath using the measured dual-stream wrapper instead of partitioned-wrapper physical follow-up.",
+    "requires_partitioned_or_cluster_validation": false
+  },
+  "source_artifacts": {
+    "measured_composed_decision": "decoder_attention_composed_datapath_physical_feasibility",
+    "measured_wrapper_ppa": "control_plane/shadow_exports/l1_promotions/l1_decoder_attention_dual_stream_composed_score32_exp_lut_div_b20_ppa_v1.json"
+  },
+  "version": 1
+}
