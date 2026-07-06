@@ -567,6 +567,10 @@ _DECODER_EVIDENCE_OUTPUT_KEYS: tuple[tuple[str, str], ...] = (
         "attention_score32_exp_lut_service_closure_report",
     ),
     (
+        "attention_score32_exp_lut_sram_hierarchy_envelope_out",
+        "attention_score32_exp_lut_sram_hierarchy_envelope_report",
+    ),
+    (
         "attention_integrated_abstraction_closure_out",
         "attention_integrated_abstraction_closure_report",
     ),
@@ -1311,6 +1315,36 @@ def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, 
             "source_latency_us",
             "macs_per_cycle",
             "dominant_tile_resource",
+            "remaining_abstractions",
+        ):
+            if key in diagnosis_dict:
+                parts.append(f"{key}={diagnosis_dict.get(key)}")
+        if "requires_hbm_dram_closure" in next_step_dict:
+            parts.append(f"requires_hbm_dram_closure={next_step_dict.get('requires_hbm_dram_closure')}")
+        summary = "; ".join(parts)
+        return outcome, summary if summary.endswith(".") else summary + "."
+
+    if model == "llm_decoder_attention_score32_exp_lut_sram_hierarchy_envelope_v1":
+        diagnosis = evidence_payload.get("diagnosis")
+        diagnosis_dict = dict(diagnosis) if isinstance(diagnosis, dict) else {}
+        next_step = evidence_payload.get("next_step")
+        next_step_dict = dict(next_step) if isinstance(next_step, dict) else {}
+        outcome = str(evidence_payload.get("decision") or "score32_exp_lut_sram_hierarchy_envelope_recorded")
+        parts = [
+            f"Decoder score32 exp-LUT SRAM hierarchy envelope evidence recorded from {evidence_ref}: decision={outcome}",
+        ]
+        for key in (
+            "score32_supported",
+            "source_score32_latency_us",
+            "source_hbm_byte_share",
+            "nominal_efficiency",
+            "nominal_shared_sram_capacity_mib",
+            "nominal_hbm_byte_share",
+            "conservative_efficiency",
+            "conservative_shared_sram_capacity_mib",
+            "conservative_hbm_byte_share",
+            "conservative_hbm_share_delta",
+            "conservative_projected_latency_us_hbm_share_scaled",
             "remaining_abstractions",
         ):
             if key in diagnosis_dict:

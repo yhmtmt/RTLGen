@@ -5351,6 +5351,131 @@ def test_consume_l2_result_score32_exp_lut_service_closure_uses_decoder_evidence
             )
 
 
+def test_consume_l2_result_score32_exp_lut_sram_hierarchy_envelope_uses_decoder_evidence() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            proposal_dir = repo_root / "docs" / "proposals" / "prop_l2_score32_sram_envelope_v1"
+            _write(
+                proposal_dir / "proposal.json",
+                json.dumps(
+                    {
+                        "proposal_id": "prop_l2_score32_sram_envelope_v1",
+                        "kind": "architecture",
+                        "title": "Score32 exp-LUT SRAM hierarchy envelope",
+                        "direct_comparison": {
+                            "primary_question": "Does SRAM macro placement efficiency rerank score32 exp-LUT?"
+                        },
+                    },
+                    indent=2,
+                )
+                + "\n",
+            )
+            evidence_rel = (
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_score32_exp_lut_sram_hierarchy_envelope__l2_score32_sram_envelope.json"
+            )
+            report_rel = (
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_score32_exp_lut_sram_hierarchy_envelope__l2_score32_sram_envelope.md"
+            )
+            _write(
+                repo_root / evidence_rel,
+                json.dumps(
+                    {
+                        "version": 1,
+                        "model": "llm_decoder_attention_score32_exp_lut_sram_hierarchy_envelope_v1",
+                        "decision": "score32_exp_lut_sram_hierarchy_envelope_stable",
+                        "diagnosis": {
+                            "score32_supported": True,
+                            "source_score32_latency_us": 12519.342352,
+                            "source_hbm_byte_share": 0.983398438,
+                            "nominal_efficiency": 0.75,
+                            "nominal_shared_sram_capacity_mib": 47.8125,
+                            "nominal_hbm_byte_share": 0.988327026,
+                            "conservative_efficiency": 0.55,
+                            "conservative_shared_sram_capacity_mib": 35.046875,
+                            "conservative_hbm_byte_share": 0.991443634,
+                            "conservative_hbm_share_delta": 0.008045196,
+                            "conservative_projected_latency_us_hbm_share_scaled": 12621.763263,
+                            "remaining_abstractions": [
+                                "hbm_dram_service",
+                                "sram_macro_floorplan_pnr",
+                            ],
+                        },
+                        "next_step": {
+                            "requires_hbm_dram_closure": True,
+                            "requires_full_sram_macro_floorplan": True,
+                        },
+                    },
+                    indent=2,
+                )
+                + "\n",
+            )
+            _write(repo_root / report_rel, "# score32 sram envelope\n")
+            item_id = _seed_campaign_work_item(
+                session,
+                repo_root,
+                item_id="l2_score32_sram_envelope",
+                campaign_dir_rel="runs/campaigns/npu/score32_sram_envelope_campaign",
+                summary_rows=(
+                    "scope,arch_id,macro_mode,objective_rank,latency_ms_mean,energy_mj_mean,critical_path_ns_mean,total_power_mw_mean,flow_elapsed_s_mean,throughput_infer_per_s_mean\n"
+                    "aggregate,fp16_nm1_demo,flat_nomacro,1,0.4,0.15,5.5,0.18,1000,1.0\n"
+                ),
+                proposal_path="docs/proposals/prop_l2_score32_sram_envelope_v1",
+                comparison={"role": "frontier_closure"},
+            )
+            work_item = session.query(WorkItem).filter_by(item_id=item_id).one()
+            payload = copy.deepcopy(work_item.task_request.request_payload or {})
+            payload["developer_loop"]["evaluation"] = {
+                "mode": "frontier_detail",
+                "expected_direction": "record_score32_sram_hierarchy_envelope",
+                "expected_reason": "Use SRAM placement-envelope sensitivity to choose the next abstraction.",
+            }
+            payload["developer_loop"]["abstraction"] = {
+                "layer": "decoder_attention_score32_exp_lut_sram_hierarchy_envelope",
+            }
+            work_item.task_request.request_payload = payload
+            work_item.input_manifest = {
+                "decoder_contract": {
+                    "attention_score32_exp_lut_sram_hierarchy_envelope_out": evidence_rel,
+                    "attention_score32_exp_lut_sram_hierarchy_envelope_report": report_rel,
+                }
+            }
+            work_item.expected_outputs = [*(work_item.expected_outputs or []), evidence_rel, report_rel]
+            session.commit()
+
+            consume_l2_result(session, Layer2ConsumeRequest(repo_root=str(repo_root), item_id=item_id))
+
+            decision_payload = json.loads(
+                (repo_root / "control_plane" / "shadow_exports" / "l2_decisions" / f"{item_id}.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            assessment = decision_payload["proposal_assessment"]
+            assert assessment["outcome"] == "score32_exp_lut_sram_hierarchy_envelope_stable"
+            assert assessment["decoder_evidence_ref"] == evidence_rel
+            assert "nominal_shared_sram_capacity_mib=47.8125" in assessment["summary"]
+            assert "conservative_hbm_share_delta=0.008045196" in assessment["summary"]
+            assert "requires_hbm_dram_closure=True" in assessment["summary"]
+            assert (
+                decision_payload["evaluation_record"]["abstraction_layer"]
+                == "decoder_attention_score32_exp_lut_sram_hierarchy_envelope"
+            )
+            assert (
+                decision_payload["source_refs"]["decoder_attention_score32_exp_lut_sram_hierarchy_envelope_out"]
+                == evidence_rel
+            )
+            assert (
+                decision_payload["source_refs"]["decoder_attention_score32_exp_lut_sram_hierarchy_envelope_report"]
+                == report_rel
+            )
+
+
 def test_consume_l2_result_frontier_attention_measured_hbm_service_uses_decoder_evidence() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
