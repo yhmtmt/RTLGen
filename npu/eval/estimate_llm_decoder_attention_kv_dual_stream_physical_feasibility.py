@@ -119,6 +119,41 @@ def _load_composed_semantic_profile(path: Path) -> str:
     return "fixed_point"
 
 
+def _load_composed_total_macs(path: Path) -> int | None:
+    design_dir = path.parent
+    manifest_path = design_dir / "verilog" / "attention_dual_stream_composed_manifest.json"
+    config_path = design_dir / "config.json"
+    if manifest_path.exists():
+        try:
+            manifest = _load_json(manifest_path)
+        except json.JSONDecodeError:
+            manifest = {}
+        try:
+            total_macs = int(manifest.get("total_macs"))
+        except (TypeError, ValueError):
+            total_macs = 0
+        if total_macs > 0:
+            return total_macs
+    if config_path.exists():
+        try:
+            payload = _load_json(config_path)
+        except json.JSONDecodeError:
+            payload = {}
+        comp = payload.get("attention_dual_stream_composed") if isinstance(payload, dict) else None
+        if isinstance(comp, dict):
+            try:
+                streams = int(comp.get("streams", 2))
+                array_m = int(comp.get("array_m", 16))
+                array_n = int(comp.get("array_n", 8))
+                k_unroll = int(comp.get("k_unroll", 1))
+            except (TypeError, ValueError):
+                return None
+            total_macs = streams * array_m * array_n * k_unroll
+            if total_macs > 0:
+                return total_macs
+    return None
+
+
 def _parse_composed_metric_inputs(values: Any) -> list[Path]:
     if not values:
         return []
@@ -159,11 +194,13 @@ def _load_composed_variants(paths: list[Path]) -> list[JsonDict]:
     variants: list[JsonDict] = []
     for path in paths:
         metrics = _best_ok_compute_metrics(path)
+        total_macs = _load_composed_total_macs(path)
         metrics.update(
             {
                 "composed_variant_label": _infer_composed_precision_profile(path),
                 "composed_variant_name": _compose_variant_name(path),
                 "composed_semantic_profile": _load_composed_semantic_profile(path),
+                "composed_total_macs_per_cycle": total_macs,
             }
         )
         variants.append(metrics)
@@ -333,7 +370,10 @@ def _row_with_budget(
         composed_area = float(composed_dual_stream.get("block_area_um2") or composed_dual_stream["die_area_um2"])
         composed_clock_ns = float(composed_dual_stream["critical_path_ns"])
         composed_power = float(composed_dual_stream["total_power_mw"])
-        source_block_macs_per_cycle = int(source_row["measured_block_macs_per_cycle"])
+        source_block_macs_per_cycle = int(
+            composed_dual_stream.get("composed_total_macs_per_cycle")
+            or source_row["measured_block_macs_per_cycle"]
+        )
         composed_replica_count = int(
             math.ceil(float(source_row["macs_per_cycle"]) / max(1, source_block_macs_per_cycle))
         )

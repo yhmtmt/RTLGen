@@ -1,0 +1,26 @@
+{
+  "top_name": "attention_dual_stream_composed_int8_q8k8v8_8x4_p8_ppc1_nohash_score32_w16_exp_lut_div_b20",
+  "attention_dual_stream_composed": {
+    "streams": 2,
+    "array_m": 8,
+    "array_n": 4,
+    "k_unroll": 1,
+    "mac_accum_bits": 32,
+    "softmax_row_elems": 8,
+    "softmax_score_bits": 32,
+    "softmax_weight_bits": 16,
+    "softmax_input_frac_bits": 28,
+    "softmax_accum_bits": 40,
+    "reciprocal_bits": 16,
+    "softmax_reciprocal_lut_bucket_shift": 20,
+    "value_bits": 8,
+    "value_lanes": 8,
+    "partials": 8,
+    "partials_per_cycle": 1,
+    "stream_buffer_bits": 512,
+    "equivalence_hash": false,
+    "softmax_pipeline_stages": 1,
+    "softmax_impl": "exp_lut_div",
+    "semantic_profile": "score32_exp_lut_div"
+  }
+}

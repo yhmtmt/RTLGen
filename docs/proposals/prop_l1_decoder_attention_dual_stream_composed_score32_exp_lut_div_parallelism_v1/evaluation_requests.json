@@ -1,0 +1,27 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_dual_stream_composed_score32_exp_lut_div_parallelism_v1",
+  "source_commit_note": "Dispatch should use the merge commit that adds the reduced-parallel score32 exp-LUT configs and recost MAC-accounting fix.",
+  "requested_items": [
+    {
+      "item_id": "l1_decoder_attention_dual_stream_composed_score32_exp_lut_div_parallelism_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure reduced-parallel score32 exp-LUT composed wrapper PPA on Nangate45.",
+      "evaluation_mode": "frontier_followup",
+      "abstraction_layer": "decoder_attention_dual_stream_composed_datapath",
+      "comparison_role": "score32_exp_lut_parallelism_ppa",
+      "paired_baseline_item_id": "l1_decoder_attention_dual_stream_composed_score32_exp_lut_div_b20_ppa_v1",
+      "configs": [
+        "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_8x8_p8_ppc1_nohash_score32_w16_exp_lut_div_b20/config.json",
+        "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_8x4_p8_ppc1_nohash_score32_w16_exp_lut_div_b20/config.json",
+        "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_4x4_p8_ppc1_nohash_score32_w16_exp_lut_div_b20/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/attention_dual_stream_composed_v1/sweeps/nangate45_dual_stream_composed_hier_score32_w16_exp_lut_div_b20_parallelism.json",
+      "out_root": "runs/designs/npu_blocks",
+      "expected_result": {
+        "direction": "measure_score32_exp_lut_parallelism_ppa",
+        "reason": "The dependent L2 recost needs measured area, power, timing, and block MACs/cycle for lower-parallel score32 exp-LUT wrappers."
+      },
+      "status": "pending"
+    }
+  ]
+}

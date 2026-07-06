@@ -417,6 +417,102 @@ def test_composed_wrapper_semantic_profile_prefers_generated_manifest(tmp_path: 
     assert result["best_requested"]["measured_dual_stream_composed_semantic_profile"] == "score32_w16_recip_lut_q16"
 
 
+def test_composed_wrapper_total_macs_prefers_generated_manifest_then_config(tmp_path: Path) -> None:
+    source = tmp_path / "source.json"
+    _write_json(
+        source,
+        {
+            "model": "unit_source",
+            "best_by_compute_mode": [
+                {
+                    "compute_mode": "dual_mac",
+                    "latency_us": 1.6,
+                    "source_latency_us": 3.2,
+                    "latency_speedup_vs_hbm_closed_source": 2.0,
+                    "cluster_count": 1,
+                    "compute_area_multiplier": 1.0,
+                    "compute_area_um2": 180.0,
+                    "compute_budget_um2": 260.0,
+                    "measured_l1_overhead_area_um2": 10.0,
+                    "local_datapath_area_um2": 4.0,
+                    "softmax_weight_generator_area_um2": 2.0,
+                    "logic_area_used_um2": 250.0,
+                    "required_stream_buffer_bytes": 16,
+                    "available_local_capacity_bytes": 32,
+                    "measured_block_area_um2": 45.0,
+                    "measured_block_clock_ns": 1.0,
+                    "measured_block_macs_per_cycle": 128,
+                    "measured_block_power_mw": 1.0,
+                    "compute_replica_count": 2,
+                    "compute_arch": "dense_gemm_16x8_k1_p1",
+                    "macs_per_cycle": 256,
+                    "clock_ns": 1.0,
+                    "layers": 1,
+                    "qkv_cycles": 10,
+                    "tile_qk_cycles": 80,
+                    "tile_stats_cycles": 8,
+                    "tile_value_cycles": 80,
+                    "tile_hbm_cycles": 10,
+                    "tile_local_sram_cycles": 1,
+                    "tile_shared_path_cycles": 1,
+                    "tile_waves": 1,
+                    "command_dispatch_cycles": 0,
+                    "cross_tile_reduction_cycles": 0,
+                    "kv_write_cycles": 0,
+                    "subtile_count": 1,
+                    "subtile_buffer_count": 1,
+                    "prefetch_distance": 0,
+                    "normalize_strategy": "online_correction",
+                    "online_rescale_penalty_cycles": 0,
+                    "subtile_stats_cycles": 8,
+                    "subtile_hbm_cycles": 10,
+                    "subtile_aux_memory_cycles": 1,
+                    "tile_service_cycles": 88,
+                }
+            ],
+        },
+    )
+    full_metrics = tmp_path / "full" / "metrics.csv"
+    half_metrics = tmp_path / "half" / "metrics.csv"
+    _write_metrics(full_metrics, die_area=90.0, power_mw=1.0, instance_area=90.0)
+    _write_metrics(half_metrics, die_area=40.0, power_mw=0.5, instance_area=40.0)
+    _write_json(
+        full_metrics.parent / "verilog" / "attention_dual_stream_composed_manifest.json",
+        {
+            "semantic_profile": "score32_exp_lut_div",
+            "total_macs": 256,
+        },
+    )
+    _write_json(
+        half_metrics.parent / "config.json",
+        {
+            "attention_dual_stream_composed": {
+                "streams": 2,
+                "array_m": 8,
+                "array_n": 4,
+                "k_unroll": 1,
+                "semantic_profile": "score32_exp_lut_div",
+            },
+        },
+    )
+
+    result = build_report(
+        _args(
+            tmp_path,
+            source=source,
+            composed_metrics=[str(full_metrics), str(half_metrics)],
+            recompute_area_fit_replicas=True,
+        )
+    )
+
+    rows_by_name = {row["substituted_compute_arch"]: row for row in result["rows"]}
+    assert rows_by_name["full"]["substituted_block_macs_per_cycle"] == 256
+    assert rows_by_name["full"]["substituted_compute_replica_count"] == 1
+    assert rows_by_name["half"]["substituted_block_macs_per_cycle"] == 64
+    assert rows_by_name["half"]["substituted_compute_replica_count"] == 4
+    assert rows_by_name["half"]["replica_recost_macs_per_cycle"] == 256
+
+
 def test_composed_wrapper_can_recost_area_fit_replica_count(tmp_path: Path) -> None:
     source = tmp_path / "source.json"
     _write_json(

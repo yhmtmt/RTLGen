@@ -1,0 +1,57 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_composed_datapath_score32_exp_lut_div_parallelism_recost_llama7b_v1",
+  "created_utc": "2026-07-06T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Score32 exp-LUT parallelism Llama7B recost",
+  "abstraction_layer": "decoder_attention_composed_datapath_physical_feasibility",
+  "hypothesis": "A lower-parallel score32 exp-LUT wrapper may reduce compute power and area enough that the Llama7B token energy improves, even if token latency increases relative to the current 16x8 score32 throughput frontier.",
+  "direct_comparison": {
+    "primary_question": "Which measured score32 exp-LUT wrapper parallelism point gives the best Llama7B latency, energy, and area tradeoff under the same quality-backed precision semantics?",
+    "baseline": "l2_decoder_attention_score32_compute_activity_energy_llama7b_v1",
+    "include": [
+      "base 16x8 score32 exp-LUT wrapper metrics",
+      "new reduced-parallel score32 exp-LUT wrapper metrics",
+      "manifest/config-derived block MACs/cycle for each wrapper",
+      "same score32 exp-LUT generation-quality evidence",
+      "area-fit replica recost against the Llama7B schedule"
+    ],
+    "exclude": [
+      "new precision quality run",
+      "new HBM/DRAM controller model",
+      "new command-dispatch-control measurement"
+    ]
+  },
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_composed_datapath_score32_exp_lut_div_parallelism_recost_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Recost Llama7B score32 exp-LUT attention using measured composed-wrapper parallelism variants.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_composed_datapath_physical_feasibility",
+      "comparison_role": "score32_exp_lut_parallelism_recost",
+      "paired_baseline_item_id": "l2_decoder_attention_score32_compute_activity_energy_llama7b_v1",
+      "depends_on_item_ids": [
+        "l1_decoder_attention_dual_stream_composed_score32_exp_lut_div_parallelism_ppa_v1",
+        "l2_decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality_llama7b_v1",
+        "l2_decoder_attention_score32_compute_activity_energy_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "rank_score32_exp_lut_parallelism_tradeoff",
+        "reason": "The result should identify whether reduced local parallelism improves score32 Llama7B energy/area enough to justify the latency loss."
+      },
+      "status": "blocked"
+    }
+  ],
+  "source_refs": [
+    "npu/eval/estimate_llm_decoder_attention_kv_dual_stream_physical_feasibility.py",
+    "control_plane/control_plane/services/l2_task_generator.py"
+  ],
+  "knowledge_refs": [
+    "docs/proposals/prop_l1_decoder_attention_dual_stream_composed_score32_exp_lut_div_parallelism_v1/proposal.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_compute_activity_energy__l2_decoder_attention_score32_compute_activity_energy_llama7b_v1.json"
+  ]
+}
