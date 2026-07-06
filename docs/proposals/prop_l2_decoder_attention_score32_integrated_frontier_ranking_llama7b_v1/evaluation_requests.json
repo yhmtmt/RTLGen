@@ -24,7 +24,12 @@
         "direction": "record_score32_integrated_frontier_ranking",
         "reason": "The result should identify the current promotable throughput and energy frontier candidates while explicitly excluding abstract or quality-unclosed rows from promotion."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 1205,
+      "merge_commit": "598f13cd1c4d8c1682f40e733c9145b63599e377",
+      "merged_utc": "2026-07-06T10:42:35Z",
+      "notes": "Merged via PR #1205 and merge 598f13cd1c4d8c1682f40e733c9145b63599e377 at 2026-07-06T10:42:35Z."
     }
-  ]
+  ],
+  "source_commit": "012109248187b40667ae7570f380a8a902fb3c5a"
 }

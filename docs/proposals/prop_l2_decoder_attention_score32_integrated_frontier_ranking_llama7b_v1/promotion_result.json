@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_score32_integrated_frontier_ranking_llama7b_v1",
+  "decision": "iterate",
+  "pr_number": 1205,
+  "merge_commit": "598f13cd1c4d8c1682f40e733c9145b63599e377",
+  "merged_utc": "2026-07-06T10:42:35Z"
+}
