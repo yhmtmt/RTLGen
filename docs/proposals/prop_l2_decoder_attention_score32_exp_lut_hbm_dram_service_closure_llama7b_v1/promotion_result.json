@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1",
+  "decision": "iterate",
+  "pr_number": 1203,
+  "merge_commit": "baf1d2d4d2fa757b59de04b3320c3bad28ab3ad1",
+  "merged_utc": "2026-07-06T10:29:03.678130Z"
+}

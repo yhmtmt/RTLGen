@@ -21,7 +21,12 @@
         "direction": "record_score32_hbm_dram_service_closure",
         "reason": "The result should state whether score32-specific HBM/DRAM service latency or calibrated HBM energy changes the current frontier account before moving to remaining controller/signoff abstractions."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 1203,
+      "merge_commit": "baf1d2d4d2fa757b59de04b3320c3bad28ab3ad1",
+      "merged_utc": "2026-07-06T10:29:03.678130Z",
+      "notes": "Merged via PR #1203 and merge baf1d2d4d2fa757b59de04b3320c3bad28ab3ad1 at 2026-07-06T10:29:03.678130Z."
     }
-  ]
+  ],
+  "source_commit": "7270e2c9e95e17b1adb592ca35e4a3e313357dff"
 }
