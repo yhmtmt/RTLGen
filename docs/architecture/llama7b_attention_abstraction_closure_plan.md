@@ -144,12 +144,17 @@ than free or heuristic assumptions.
     sensitivity, L1 command-dispatch-control PPA, and measured command-control
     recost. The measured command-control result is merged by PR #1194 and still
     reports `dual_stream_feasible`.
+  - the wrapper-promotion audit
+    `l2_decoder_attention_score32_exp_lut_measured_wrapper_promotion_llama7b_v1`
+    is merged by PR #1197. It records `l1_wrapper_metrics_match=True` and
+    `requires_partitioned_or_cluster_validation=False`, so the reduced-replica
+    score32 exp-LUT row can be treated as backed by the measured dual-stream
+    wrapper metrics.
   - the current immediate follow-on is
-    `l2_decoder_attention_score32_exp_lut_measured_wrapper_promotion_llama7b_v1`.
-    It audits whether the reduced-replica measured-command-control result is
-    directly backed by the measured score32 exp-LUT dual-stream wrapper metrics,
-    or whether a partitioned/cluster wrapper PPA validation is still required
-    before treating the reduced-replica result as promoted.
+    `l2_decoder_attention_score32_exp_lut_service_closure_llama7b_v1`. It
+    records which service components of the promoted score32 exp-LUT row are
+    measured, measured estimates, or inherited models before using the row as
+    the next Llama7B frontier baseline.
 - New evaluations should continue to dispatch only to the remote evaluator
   `eval-daemon-b7c2d9c80c1c`, not the devcontainer.
 
@@ -289,11 +294,15 @@ run the already queued exp-LUT branch:
    to the softmax replacement design or another score32/w16 implementation.
 4. Run
    `l2_decoder_attention_score32_exp_lut_measured_wrapper_promotion_llama7b_v1`
-   to close the reduced-replica-to-measured-wrapper promotion audit. If it
-   records a wrapper metrics match, the next frontier work should move to the
-   surviving memory/NoC/SRAM/HBM service abstractions. If it requires
-   partitioned or cluster validation, schedule that L1 wrapper PPA before
-   treating the reduced-replica score32 exp-LUT path as promoted.
+   to close the reduced-replica-to-measured-wrapper promotion audit. This is
+   complete: PR #1197 records a wrapper metrics match and no required
+   partitioned/cluster wrapper validation.
+5. Run
+   `l2_decoder_attention_score32_exp_lut_service_closure_llama7b_v1` to record
+   the measured/inherited service provenance of the promoted score32 exp-LUT
+   row. If it records score32 support, choose the next frontier from its
+   remaining abstractions, currently expected to be HBM/DRAM service closure or
+   a stronger placed SRAM hierarchy model.
 
 All new evaluation jobs should run on the remote evaluator
 `eval-daemon-b7c2d9c80c1c`, not the devcontainer.
