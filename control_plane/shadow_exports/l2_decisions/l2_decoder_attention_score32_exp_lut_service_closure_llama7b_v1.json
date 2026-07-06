@@ -1,0 +1,111 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-07-06T09:57:22.151901Z",
+  "item_id": "l2_decoder_attention_score32_exp_lut_service_closure_llama7b_v1",
+  "run_key": "l2_decoder_attention_score32_exp_lut_service_closure_llama7b_v1_run_b3e9867f98ad3184",
+  "layer": "layer2",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l2_campaign",
+  "source_commit": "241c0c1b8daef4cf4a59a3c687d67feb5fef28e5",
+  "review_metadata_source_commit": "241c0c1b8daef4cf4a59a3c687d67feb5fef28e5",
+  "objective": "Audit service-component provenance for the promoted score32 exp-LUT Llama7B attention row.",
+  "input_manifest": {
+    "decoder_contract": {
+      "attention_kv_measured_sram_rebalance": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_measured_sram_rebalance__l2_decoder_attention_kv_measured_sram_rebalance_softmax_recip_lut_llama7b_v1.json",
+      "attention_kv_endpoint_router_sram_composition": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_endpoint_router_sram_composition__l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_llama7b_v1_r4.json",
+      "attention_score32_exp_lut_service_closure_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exp_lut_service_closure__l2_decoder_attention_score32_exp_lut_service_closure_llama7b_v1.json",
+      "attention_score32_exp_lut_service_closure_scope": "Audit the score32 exp-LUT measured-command-control row against the measured wrapper promotion and inherited endpoint/router/SRAM service evidence. Record which service components are measured, which are measured estimates, and which remain inherited HBM/DRAM abstractions before using this row as the Llama7B frontier baseline.",
+      "attention_score32_exp_lut_service_closure_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exp_lut_service_closure__l2_decoder_attention_score32_exp_lut_service_closure_llama7b_v1.md",
+      "attention_score32_exp_lut_measured_command_control": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_measured_command_control_llama7b_v1.json",
+      "attention_score32_exp_lut_measured_wrapper_promotion": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exp_lut_measured_wrapper_promotion__l2_decoder_attention_score32_exp_lut_measured_wrapper_promotion_llama7b_v1.json"
+    }
+  },
+  "recommendation": {
+    "source": "decoder_evidence",
+    "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exp_lut_service_closure__l2_decoder_attention_score32_exp_lut_service_closure_llama7b_v1.json",
+    "arch_id": "decoder_attention_score32_exp_lut_service_closure",
+    "macro_mode": "evidence_only",
+    "outcome": "score32_exp_lut_service_closure_recorded"
+  },
+  "objective_profiles": [],
+  "evaluation_record": {
+    "proposal_id": "prop_l2_decoder_attention_score32_exp_lut_service_closure_llama7b_v1",
+    "title": "Score32 exp-LUT service closure audit",
+    "primary_question": "Which service components are measured, measured-estimated, or still inherited for the promoted score32 exp-LUT Llama7B attention row?",
+    "evaluation_mode": "frontier_detail",
+    "comparison_role": "score32_exp_lut_service_closure_audit",
+    "abstraction_layer": "decoder_attention_score32_exp_lut_service_closure",
+    "expected_direction": "record_score32_exp_lut_service_closure",
+    "expected_reason": "The result should state whether score32 exp-LUT is supported by measured wrapper evidence and list remaining inherited service abstractions before the next frontier job.",
+    "summary": "Decoder score32 exp-LUT service-closure evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exp_lut_service_closure__l2_decoder_attention_score32_exp_lut_service_closure_llama7b_v1.json: decision=score32_exp_lut_service_closure_recorded; score32_supported=True; wrapper_metrics_match=True; selected_semantic_profile=score32_exp_lut_div; latency_us=12519.342352; source_latency_us=1575.373891; macs_per_cycle=104320; dominant_tile_resource=pipeline_attention; remaining_abstractions=['tile_local_and_shared_sram', 'hbm_dram_service']; requires_hbm_dram_closure=True.",
+    "outcome": "score32_exp_lut_service_closure_recorded",
+    "expectation_status": "unspecified"
+  },
+  "proposal_assessment": {
+    "proposal_id": "prop_l2_decoder_attention_score32_exp_lut_service_closure_llama7b_v1",
+    "title": "Score32 exp-LUT service closure audit",
+    "kind": "architecture",
+    "primary_question": "Which service components are measured, measured-estimated, or still inherited for the promoted score32 exp-LUT Llama7B attention row?",
+    "evaluation_mode": "frontier_detail",
+    "comparison_role": "score32_exp_lut_service_closure_audit",
+    "outcome": "score32_exp_lut_service_closure_recorded",
+    "summary": "Decoder score32 exp-LUT service-closure evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exp_lut_service_closure__l2_decoder_attention_score32_exp_lut_service_closure_llama7b_v1.json: decision=score32_exp_lut_service_closure_recorded; score32_supported=True; wrapper_metrics_match=True; selected_semantic_profile=score32_exp_lut_div; latency_us=12519.342352; source_latency_us=1575.373891; macs_per_cycle=104320; dominant_tile_resource=pipeline_attention; remaining_abstractions=['tile_local_and_shared_sram', 'hbm_dram_service']; requires_hbm_dram_closure=True.",
+    "baseline_ref": null,
+    "baseline_item_id": null,
+    "matched_row_count": 0,
+    "matched_rows": [],
+    "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exp_lut_service_closure__l2_decoder_attention_score32_exp_lut_service_closure_llama7b_v1.json",
+    "decoder_quality": {
+      "diagnosis": {
+        "dominant_tile_resource": "pipeline_attention",
+        "latency_us": 12519.342352,
+        "macs_per_cycle": 104320,
+        "measured_command_decision": "dual_stream_feasible",
+        "remaining_abstractions": [
+          "tile_local_and_shared_sram",
+          "hbm_dram_service"
+        ],
+        "score32_supported": true,
+        "selected_semantic_profile": "score32_exp_lut_div",
+        "selected_wrapper_metrics_csv": "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_score32_w16_exp_lut_div_b20/metrics.csv",
+        "source_latency_us": 1575.373891,
+        "wrapper_metrics_match": true,
+        "wrapper_promotion_decision": "decoder_attention_score32_exp_lut_measured_wrapper_promotion_recorded"
+      },
+      "next_step": {
+        "recommended_next_step": "Use this score32 exp-LUT row as the quality-backed compute/service baseline, then close the inherited HBM/DRAM service or replace SRAM macro packing with a placed memory hierarchy.",
+        "requires_hbm_dram_closure": true,
+        "requires_new_wrapper_ppa": false
+      }
+    }
+  },
+  "source_refs": {
+    "decoder_evidence_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exp_lut_service_closure__l2_decoder_attention_score32_exp_lut_service_closure_llama7b_v1.json",
+    "decoder_attention_score32_exp_lut_service_closure_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exp_lut_service_closure__l2_decoder_attention_score32_exp_lut_service_closure_llama7b_v1.json",
+    "decoder_attention_score32_exp_lut_service_closure_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exp_lut_service_closure__l2_decoder_attention_score32_exp_lut_service_closure_llama7b_v1.md"
+  },
+  "decoder_quality": {
+    "diagnosis": {
+      "dominant_tile_resource": "pipeline_attention",
+      "latency_us": 12519.342352,
+      "macs_per_cycle": 104320,
+      "measured_command_decision": "dual_stream_feasible",
+      "remaining_abstractions": [
+        "tile_local_and_shared_sram",
+        "hbm_dram_service"
+      ],
+      "score32_supported": true,
+      "selected_semantic_profile": "score32_exp_lut_div",
+      "selected_wrapper_metrics_csv": "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_score32_w16_exp_lut_div_b20/metrics.csv",
+      "source_latency_us": 1575.373891,
+      "wrapper_metrics_match": true,
+      "wrapper_promotion_decision": "decoder_attention_score32_exp_lut_measured_wrapper_promotion_recorded"
+    },
+    "next_step": {
+      "recommended_next_step": "Use this score32 exp-LUT row as the quality-backed compute/service baseline, then close the inherited HBM/DRAM service or replace SRAM macro packing with a placed memory hierarchy.",
+      "requires_hbm_dram_closure": true,
+      "requires_new_wrapper_ppa": false
+    }
+  }
+}

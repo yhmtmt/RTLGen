@@ -1,0 +1,111 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "decoder_contract": {
+        "attention_kv_measured_sram_rebalance": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_measured_sram_rebalance__l2_decoder_attention_kv_measured_sram_rebalance_softmax_recip_lut_llama7b_v1.json",
+        "attention_kv_endpoint_router_sram_composition": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_endpoint_router_sram_composition__l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_llama7b_v1_r4.json",
+        "attention_score32_exp_lut_service_closure_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exp_lut_service_closure__l2_decoder_attention_score32_exp_lut_service_closure_llama7b_v1.json",
+        "attention_score32_exp_lut_service_closure_scope": "Audit the score32 exp-LUT measured-command-control row against the measured wrapper promotion and inherited endpoint/router/SRAM service evidence. Record which service components are measured, which are measured estimates, and which remain inherited HBM/DRAM abstractions before using this row as the Llama7B frontier baseline.",
+        "attention_score32_exp_lut_service_closure_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exp_lut_service_closure__l2_decoder_attention_score32_exp_lut_service_closure_llama7b_v1.md",
+        "attention_score32_exp_lut_measured_command_control": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_measured_command_control_llama7b_v1.json",
+        "attention_score32_exp_lut_measured_wrapper_promotion": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exp_lut_measured_wrapper_promotion__l2_decoder_attention_score32_exp_lut_measured_wrapper_promotion_llama7b_v1.json"
+      }
+    },
+    "commands": [
+      {
+        "run": "python3 npu/eval/audit_llm_decoder_attention_score32_exp_lut_service_closure.py --measured-command-control-json runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_measured_command_control_llama7b_v1.json --wrapper-promotion-json runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exp_lut_measured_wrapper_promotion__l2_decoder_attention_score32_exp_lut_measured_wrapper_promotion_llama7b_v1.json --endpoint-router-sram-composition-json runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_endpoint_router_sram_composition__l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_llama7b_v1_r4.json --measured-sram-rebalance-json runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_measured_sram_rebalance__l2_decoder_attention_kv_measured_sram_rebalance_softmax_recip_lut_llama7b_v1.json --out runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exp_lut_service_closure__l2_decoder_attention_score32_exp_lut_service_closure_llama7b_v1.json --out-md runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exp_lut_service_closure__l2_decoder_attention_score32_exp_lut_service_closure_llama7b_v1.md",
+        "name": "audit_decoder_attention_score32_exp_lut_service_closure"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate_runs"
+      }
+    ],
+    "objective": "Audit service-component provenance for the promoted score32 exp-LUT Llama7B attention row.",
+    "acceptance": [
+      "Write all declared decoder evidence artifacts",
+      "Keep evidence artifact paths repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "source_mode": "src_verilog",
+    "expected_outputs": [
+      "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exp_lut_service_closure__l2_decoder_attention_score32_exp_lut_service_closure_llama7b_v1.json",
+      "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exp_lut_service_closure__l2_decoder_attention_score32_exp_lut_service_closure_llama7b_v1.md"
+    ]
+  },
+  "layer": "layer2",
+  "state": "evaluated",
+  "title": "Score32 exp-LUT service closure audit",
+  "result": {
+    "branch": "eval/l2_decoder_attention_score32_exp_lut_service_closure_llama7b_v1/s20260706t095722z",
+    "completed_utc": "2026-07-06T09:57:21.411375Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "b7c2d9c80c1c",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260706t095722z][host:b7c2d9c80c1c][item:l2_decoder_attention_score32_exp_lut_service_closure_llama7b_v1]",
+    "metrics_rows": [],
+    "metrics_exempt_reason": "evidence_only_decoder_evidence",
+    "queue_item_id": "l2_decoder_attention_score32_exp_lut_service_closure_llama7b_v1",
+    "session_id": "s20260706t095722z",
+    "status": "ok",
+    "summary": "2/2 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l2_decoder_attention_score32_exp_lut_service_closure_llama7b_v1/s20260706t095722z",
+    "pr_title": "eval: run score32 exp-lut service closure audit",
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Include metrics row references in result.metrics_rows",
+      "Keep committed result_path fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260706t095722z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l2_decoder_attention_score32_exp_lut_service_closure_llama7b_v1"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l2_decoder_attention_score32_exp_lut_service_closure_llama7b_v1",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 1,
+  "created_utc": "2026-07-06T09:57:03.643039Z",
+  "requested_by": "control_plane",
+  "developer_loop": {
+    "comparison": {
+      "role": "score32_exp_lut_service_closure_audit",
+      "paired_baseline_item_id": "l2_decoder_attention_score32_exp_lut_measured_wrapper_promotion_llama7b_v1"
+    },
+    "evaluation": {
+      "mode": "frontier_detail",
+      "expected_reason": "The result should state whether score32 exp-LUT is supported by measured wrapper evidence and list remaining inherited service abstractions before the next frontier job.",
+      "expected_direction": "record_score32_exp_lut_service_closure"
+    },
+    "abstraction": {
+      "layer": "decoder_attention_score32_exp_lut_service_closure"
+    },
+    "proposal_id": "prop_l2_decoder_attention_score32_exp_lut_service_closure_llama7b_v1",
+    "dependencies": {
+      "item_ids": [
+        "l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_measured_command_control_llama7b_v1",
+        "l2_decoder_attention_score32_exp_lut_measured_wrapper_promotion_llama7b_v1",
+        "l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_llama7b_v1_r4",
+        "l2_decoder_attention_kv_measured_sram_rebalance_softmax_recip_lut_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    },
+    "proposal_path": "docs/proposals/prop_l2_decoder_attention_score32_exp_lut_service_closure_llama7b_v1/proposal.json"
+  },
+  "source_requirement": {
+    "repo": "",
+    "reason": "evaluator runtime must contain the queued job source commit",
+    "version": 1,
+    "required_ref": "origin/master",
+    "required_sha": "241c0c1b8daef4cf4a59a3c687d67feb5fef28e5",
+    "requires_daemon_restart": true
+  }
+}
