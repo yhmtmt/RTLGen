@@ -527,6 +527,31 @@ def _write_example_attention_command_dispatch_repo(repo_root: Path) -> tuple[str
     )
 
 
+def _write_second_attention_command_dispatch_repo(repo_root: Path) -> str:
+    design_dir = repo_root / "runs" / "designs" / "npu_blocks" / "attention_command_dispatch_c16_q32"
+    design_dir.mkdir(parents=True, exist_ok=True)
+    config_path = design_dir / "config.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "top_name": "attention_command_dispatch_c16_q32",
+                "attention_command_dispatch": {
+                    "clusters": 16,
+                    "queue_depth": 32,
+                    "tile_id_bits": 12,
+                    "wave_id_bits": 8,
+                    "base_token_bits": 14,
+                    "max_inflight_per_cluster": 4,
+                },
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    return str(config_path.relative_to(repo_root))
+
+
 
 def test_generate_l1_sweep_task_creates_ready_work_item() -> None:
     with tempfile.TemporaryDirectory() as td:
@@ -1470,6 +1495,54 @@ def test_generate_l1_sweep_task_supports_attention_command_dispatch_configs() ->
             assert work_item.task_request.request_payload["developer_loop"]["abstraction"] == {
                 "layer": "decoder_attention_command_dispatch_control"
             }
+
+
+def test_generate_l1_sweep_task_supports_multi_attention_command_dispatch_configs() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        config_path, sweep_path = _write_example_attention_command_dispatch_repo(repo_root)
+        second_config_path = _write_second_attention_command_dispatch_repo(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l1_sweep_task(
+                session,
+                Layer1SweepGenerateRequest(
+                    repo_root=str(repo_root),
+                    sweep_path=sweep_path,
+                    config_paths=[config_path, second_config_path],
+                    platform="nangate45",
+                    out_root="runs/designs/npu_blocks",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    abstraction_layer="decoder_attention_command_dispatch_control",
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            assert [command["name"] for command in work_item.command_manifest] == [
+                "generate_attention_command_dispatch_rtl_attention_command_dispatch_smoke",
+                "check_attention_command_dispatch_guard_attention_command_dispatch_smoke",
+                "run_block_sweep_attention_command_dispatch_smoke",
+                "extract_attention_command_dispatch_timing_paths_attention_command_dispatch_smoke",
+                "generate_attention_command_dispatch_rtl_attention_command_dispatch_c16_q32",
+                "check_attention_command_dispatch_guard_attention_command_dispatch_c16_q32",
+                "run_block_sweep_attention_command_dispatch_c16_q32",
+                "extract_attention_command_dispatch_timing_paths_attention_command_dispatch_c16_q32",
+                "build_runs_index",
+                "validate",
+            ]
+            assert "attention_command_dispatch_smoke/config.json" in work_item.command_manifest[0]["run"]
+            assert "attention_command_dispatch_c16_q32/config.json" in work_item.command_manifest[4]["run"]
+            assert work_item.expected_outputs == [
+                "runs/designs/npu_blocks/attention_command_dispatch_smoke/metrics.csv",
+                "runs/designs/npu_blocks/attention_command_dispatch_smoke/timing_debug_report.md",
+                "runs/designs/npu_blocks/attention_command_dispatch_c16_q32/metrics.csv",
+                "runs/designs/npu_blocks/attention_command_dispatch_c16_q32/timing_debug_report.md",
+            ]
 
 
 def test_generate_l1_sweep_task_emits_commands_for_each_integrated_block_config() -> None:

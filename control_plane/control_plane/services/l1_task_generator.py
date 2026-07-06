@@ -750,12 +750,15 @@ def _command_manifest_for_targets(targets: list[Layer1ConfigTarget]) -> list[dic
     if targets[0].design_kind != "block":
         return [dict(command) for command in targets[0].commands]
 
-    commands = [dict(targets[0].commands[0])]
     multi_target = len(targets) > 1
-    for target in targets:
-        for command in target.commands[1:]:
+    commands = []
+    for target_idx, target in enumerate(targets):
+        for command_idx, command in enumerate(target.commands):
+            command_name = str(command["name"]).strip()
+            if multi_target and command_idx == 0 and target_idx > 0 and command_name == "build_generator":
+                continue
             entry = dict(command)
-            if multi_target:
+            if multi_target and not (command_idx == 0 and target_idx == 0 and command_name == "build_generator"):
                 entry["name"] = f"{entry['name']}_{target.design_name}"
             commands.append(entry)
     return commands
