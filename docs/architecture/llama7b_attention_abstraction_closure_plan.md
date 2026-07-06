@@ -139,19 +139,17 @@ than free or heuristic assumptions.
     compute budget (`801` required replicas, density gain `0.998929`), while
     the q16 reciprocal-LUT recost has more logic slack but is not
     quality-backed because its generation-quality gate failed.
-  - the active follow-on branch is the score32 exp-LUT divider path:
-    `l1_decoder_attention_dual_stream_composed_score32_exp_lut_div_b20_ppa_v1`
-    and
-    `l2_decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality_llama7b_v1`
-    are queued. The dependent recost
-    `l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_llama7b_v1`
-    is intentionally blocked until both inputs are materialized. As of PR
-    #1127, the exp-LUT recost chain also starts with
-    `check_attention_score32_exp_lut_div_frontier_release`, which verifies the
-    primary quality candidate is `score32_exp_lut_div`, the generation-quality
-    decision is pass, and the measured composed PPA metrics/config match the
-    score32/w16 exp-LUT divider bucket-20 wrapper before any reduced-replica
-    recost can run.
+  - the active score32 exp-LUT divider path has now materialized through
+    quality, L1 composed-wrapper PPA, reduced-replica recost, command-overhead
+    sensitivity, L1 command-dispatch-control PPA, and measured command-control
+    recost. The measured command-control result is merged by PR #1194 and still
+    reports `dual_stream_feasible`.
+  - the current immediate follow-on is
+    `l2_decoder_attention_score32_exp_lut_measured_wrapper_promotion_llama7b_v1`.
+    It audits whether the reduced-replica measured-command-control result is
+    directly backed by the measured score32 exp-LUT dual-stream wrapper metrics,
+    or whether a partitioned/cluster wrapper PPA validation is still required
+    before treating the reduced-replica result as promoted.
 - New evaluations should continue to dispatch only to the remote evaluator
   `eval-daemon-b7c2d9c80c1c`, not the devcontainer.
 
@@ -289,23 +287,13 @@ run the already queued exp-LUT branch:
    `npu/eval/check_attention_exp_lut_frontier_release.py`; if that release gate
    fails, do not run or promote the exp-LUT recost row as quality-backed. Return
    to the softmax replacement design or another score32/w16 implementation.
-4. In parallel with evaluator recovery or after exp-LUT recost, prepare the
-   command-overhead sensitivity job for the selected dual-stream schedule. This
-   preparation is complete as of PR #1119; as of PR #1127 the item also runs
-   the same exp-LUT release gate before sweeping command cycles. It should
-   remain blocked until the exp-LUT quality/PPA/base-recost dependencies are
-   merged and materialized.
-5. After the exp-LUT inputs are running or complete, dispatch
-   `l1_decoder_attention_command_dispatch_control_ppa_v1` to measure the
-   central scheduler/control block that will bound the command-cycle
-   sensitivity model. Do not let it displace the already READY exp-LUT quality
-   and PPA jobs.
-6. After the L1 command-control PPA and exp-LUT recost materialize, run
-   `l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_measured_command_control_llama7b_v1`
-   to charge measured central control area/power/clock into the same Llama7B
-   reduced-replica point. This item also starts with the exp-LUT release gate,
-   so measured command-control cost is charged only onto a quality/PPA-matched
-   exp-LUT branch.
+4. Run
+   `l2_decoder_attention_score32_exp_lut_measured_wrapper_promotion_llama7b_v1`
+   to close the reduced-replica-to-measured-wrapper promotion audit. If it
+   records a wrapper metrics match, the next frontier work should move to the
+   surviving memory/NoC/SRAM/HBM service abstractions. If it requires
+   partitioned or cluster validation, schedule that L1 wrapper PPA before
+   treating the reduced-replica score32 exp-LUT path as promoted.
 
 All new evaluation jobs should run on the remote evaluator
 `eval-daemon-b7c2d9c80c1c`, not the devcontainer.

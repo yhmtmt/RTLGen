@@ -1,0 +1,66 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_score32_exp_lut_measured_wrapper_promotion_llama7b_v1",
+  "created_utc": "2026-07-06T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Score32 exp-LUT measured wrapper promotion audit",
+  "abstraction_layer": "decoder_attention_score32_exp_lut_measured_wrapper_promotion",
+  "hypothesis": "The score32 exp-LUT reduced-replica measured-command-control result can be promoted without another physical wrapper run if its selected composed datapath metrics exactly match the merged L1 score32 exp-LUT dual-stream wrapper PPA.",
+  "direct_comparison": {
+    "primary_question": "Is the reduced-replica score32 exp-LUT measured-command-control L2 result directly backed by the measured L1 dual-stream wrapper metrics, or does it still require partitioned/cluster wrapper physical validation?",
+    "include": [
+      "consume the merged measured-command-control L2 decision",
+      "consume the merged L1 score32 exp-LUT dual-stream wrapper promotion",
+      "compare the selected L2 substituted wrapper metrics path against the L1 promotion metrics path",
+      "report whether partitioned or cluster wrapper validation remains required"
+    ],
+    "exclude": [
+      "new OpenROAD PPA",
+      "new quality or QAT evidence",
+      "HBM/DRAM controller modeling",
+      "NoC/SRAM service rescheduling"
+    ]
+  },
+  "expected_benefit": [
+    "closes the immediate promotion ambiguity left by the measured command-control recost",
+    "prevents an unnecessary heavy physical job if the selected L2 row already uses the measured wrapper",
+    "makes the next frontier decision explicit: either wrapper partition validation or memory/NoC/SRAM service closure"
+  ],
+  "risks": [
+    "the audit proves metric linkage only; it does not prove a monolithic 800-plus replica SoC physical closure",
+    "partitioned cluster integration could still introduce routing and clocking overhead not visible in the single-wrapper PPA"
+  ],
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_score32_exp_lut_measured_wrapper_promotion_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Audit whether the score32 exp-LUT measured-command-control reduced-replica result is backed by the merged measured dual-stream wrapper PPA.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_score32_exp_lut_measured_wrapper_promotion",
+      "comparison_role": "score32_exp_lut_wrapper_promotion_audit",
+      "paired_baseline_item_id": "l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_measured_command_control_llama7b_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_measured_command_control_llama7b_v1",
+        "l1_decoder_attention_dual_stream_composed_score32_exp_lut_div_b20_ppa_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "close_score32_exp_lut_wrapper_promotion_linkage",
+        "reason": "The result should report whether the L2 selected wrapper metrics match the merged L1 wrapper PPA and whether partitioned/cluster physical validation is still required."
+      },
+      "status": "pending"
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_measured_command_control_llama7b_v1.json",
+    "control_plane/shadow_exports/l1_promotions/l1_decoder_attention_dual_stream_composed_score32_exp_lut_div_b20_ppa_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/audit_llm_decoder_attention_score32_exp_lut_measured_wrapper_promotion.py",
+    "docs/architecture/llama7b_attention_abstraction_closure_plan.md",
+    "docs/proposals/prop_l2_decoder_attention_composed_datapath_score32_exp_lut_div_measured_command_control_llama7b_v1/proposal.json",
+    "docs/proposals/prop_l1_decoder_attention_dual_stream_composed_score32_exp_lut_div_b20_v1/proposal.json"
+  ]
+}
