@@ -161,12 +161,19 @@ than free or heuristic assumptions.
     the conservative placement envelope changes HBM byte share by only
     `0.008045196` and projects `12621.763263 us`, so the score32 frontier is
     not materially reranked by SRAM placement efficiency alone.
+  - the score32 HBM/DRAM service closure
+    `l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1`
+    is merged by PR #1203. It records
+    `score32_exp_lut_hbm_dram_service_closure_hbm_sensitive`, best latency
+    `12532.357427 us/token`, throughput `79.793447149 token/s`, HBM energy
+    `134.280615241 mJ/token`, compute energy `360.550392645 mJ/token`, and
+    total energy `494.831007886 mJ/token`. Remaining abstractions are
+    cycle-accurate HBM controller RTL and vendor HBM current signoff.
   - the current immediate follow-on is
-    `l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1`.
-    It should replace the inherited HBM service abstraction with a
-    score32-specific command/burst/row-hit HBM/DRAM service and calibrated HBM
-    energy account before treating the score32 row as the active Llama7B
-    frontier.
+    `l2_decoder_attention_score32_integrated_frontier_ranking_llama7b_v1`.
+    It should compare the newly closed score32 row against measured exact-FP16,
+    mixed/int8, and older integrated rows across throughput, energy, area, and
+    precision status before selecting the next architecture-improvement target.
 - New evaluations should continue to dispatch only to the remote evaluator
   `eval-daemon-b7c2d9c80c1c`, not the devcontainer.
 
@@ -327,7 +334,15 @@ run the already queued exp-LUT branch:
    row. The job should combine the score32 SRAM envelope, measured
    command-control row, and command-calibrated HBM pJ terms, then report
    latency, throughput, HBM energy, compute energy, total energy, and remaining
-   controller/signoff abstractions.
+   controller/signoff abstractions. This is complete: PR #1203 records the
+   score32 row as HBM-sensitive but keeps the same latency-scale frontier.
+8. Run
+   `l2_decoder_attention_score32_integrated_frontier_ranking_llama7b_v1` to
+   rank the closed score32 row against the prior integrated, measured
+   exact-FP16, and mixed/int8 evidence. The result should explicitly distinguish
+   promotable precision-safe rows from planning-only or quality-unclosed rows,
+   then identify the current throughput frontier, energy reference, and next
+   architecture target.
 
 All new evaluation jobs should run on the remote evaluator
 `eval-daemon-b7c2d9c80c1c`, not the devcontainer.

@@ -6765,6 +6765,73 @@ def test_generate_l2_campaign_task_adds_attention_score32_exp_lut_hbm_dram_servi
             )
 
 
+def test_generate_l2_campaign_task_adds_attention_score32_integrated_frontier_ranking_evidence() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id="l2_decoder_attention_score32_integrated_frontier_ranking_llama7b_v1",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    abstraction_layer="decoder_attention_score32_integrated_frontier_ranking",
+                    evaluation_mode="frontier_detail",
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            commands = work_item.task_request.request_payload["task"]["commands"]
+            run = commands[0]["run"]
+            decoder_inputs = work_item.input_manifest["decoder_contract"]
+
+            assert [command["name"] for command in commands[:1]] == [
+                "audit_decoder_attention_score32_integrated_frontier_ranking",
+            ]
+            assert "audit_llm_decoder_attention_score32_integrated_frontier_ranking.py" in run
+            assert "--score32-hbm-dram-service-json" in run
+            assert "--score32-measured-command-control-json" in run
+            assert "--score32-quality-json" in run
+            assert "--measured-compute-energy-json" in run
+            assert "--mixed-int8-energy-json" in run
+            assert "--integrated-energy-json" in run
+            assert (
+                "decoder_attention_score32_exp_lut_hbm_dram_service_closure__"
+                "l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1.json"
+            ) in run
+            assert (
+                "decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality__"
+                "l2_decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality_llama7b_v1.json"
+            ) in run
+            assert (
+                decoder_inputs["attention_score32_integrated_frontier_ranking_out"]
+                == "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_score32_integrated_frontier_ranking__"
+                "l2_decoder_attention_score32_integrated_frontier_ranking_llama7b_v1.json"
+            )
+            assert (
+                decoder_inputs["attention_score32_integrated_frontier_ranking_scope"].startswith(
+                    "Rank the closed score32 exp-LUT Llama7B attention row"
+                )
+            )
+            assert any(
+                output.endswith(
+                    "decoder_attention_score32_integrated_frontier_ranking__"
+                    "l2_decoder_attention_score32_integrated_frontier_ranking_llama7b_v1.json"
+                )
+                for output in work_item.task_request.request_payload["task"]["expected_outputs"]
+            )
+
+
 def test_generate_l2_campaign_task_adds_attention_score32_exp_lut_sram_hierarchy_envelope_evidence() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"

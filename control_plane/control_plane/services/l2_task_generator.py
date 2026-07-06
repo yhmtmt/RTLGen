@@ -5872,6 +5872,73 @@ def _decoder_attention_score32_exp_lut_hbm_dram_service_closure_evidence(*, item
     }
 
 
+def _decoder_attention_score32_integrated_frontier_ranking_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_attention_score32_integrated_frontier_ranking__{item_id}.json"
+    report = f"{base}/decoder_attention_score32_integrated_frontier_ranking__{item_id}.md"
+    score32_hbm = (
+        f"{base}/decoder_attention_score32_exp_lut_hbm_dram_service_closure__"
+        "l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1.json"
+    )
+    measured_command_control = (
+        f"{base}/decoder_attention_composed_datapath_physical_feasibility__"
+        "l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_"
+        "measured_command_control_llama7b_v1.json"
+    )
+    score32_quality = (
+        f"{base}/decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality__"
+        "l2_decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality_llama7b_v1.json"
+    )
+    measured_compute = (
+        f"{base}/decoder_attention_measured_compute_energy_closure__"
+        "l2_decoder_attention_measured_compute_energy_closure_llama7b_v1.json"
+    )
+    mixed_int8 = (
+        f"{base}/decoder_attention_mixed_int8_energy_closure__"
+        "l2_decoder_attention_mixed_int8_energy_closure_llama7b_v1_r2.json"
+    )
+    integrated_energy = (
+        f"{base}/decoder_attention_integrated_energy_closure__"
+        "l2_decoder_attention_integrated_energy_closure_llama7b_v1_r2.json"
+    )
+    return {
+        "inputs": {
+            "attention_score32_exp_lut_hbm_dram_service_closure": score32_hbm,
+            "attention_score32_exp_lut_measured_command_control": measured_command_control,
+            "attention_score32_exp_lut_generation_quality": score32_quality,
+            "attention_measured_compute_energy_closure": measured_compute,
+            "attention_mixed_int8_energy_closure": mixed_int8,
+            "attention_integrated_energy_closure": integrated_energy,
+            "attention_score32_integrated_frontier_ranking_out": out,
+            "attention_score32_integrated_frontier_ranking_report": report,
+            "attention_score32_integrated_frontier_ranking_scope": (
+                "Rank the closed score32 exp-LUT Llama7B attention row against prior integrated, "
+                "measured-compute, and mixed/int8 energy evidence. Report latency, energy, area, "
+                "precision status, promotability, and remaining abstractions without promoting "
+                "planning-only or quality-unclosed rows."
+            ),
+        },
+        "commands": [
+            {
+                "name": "audit_decoder_attention_score32_integrated_frontier_ranking",
+                "run": (
+                    "python3 npu/eval/audit_llm_decoder_attention_score32_integrated_frontier_ranking.py "
+                    f"--score32-hbm-dram-service-json {score32_hbm} "
+                    f"--score32-measured-command-control-json {measured_command_control} "
+                    f"--score32-quality-json {score32_quality} "
+                    f"--measured-compute-energy-json {measured_compute} "
+                    f"--mixed-int8-energy-json {mixed_int8} "
+                    f"--integrated-energy-json {integrated_energy} "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+        "evidence_only": True,
+    }
+
+
 def _decoder_attention_score32_exp_lut_sram_hierarchy_envelope_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_score32_exp_lut_sram_hierarchy_envelope__{item_id}.json"
@@ -9383,6 +9450,7 @@ def _build_payload(
         "decoder_attention_score32_exp_lut_service_closure",
         "decoder_attention_score32_exp_lut_sram_hierarchy_envelope",
         "decoder_attention_score32_exp_lut_hbm_dram_service_closure",
+        "decoder_attention_score32_integrated_frontier_ranking",
         "decoder_attention_hbm_dram_service_energy",
         "decoder_attention_hbm_energy_calibration",
         "decoder_attention_hbm_command_calibrated_service",
@@ -9585,6 +9653,8 @@ def _build_payload(
             decoder_evidence = _decoder_attention_score32_exp_lut_sram_hierarchy_envelope_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_score32_exp_lut_hbm_dram_service_closure":
             decoder_evidence = _decoder_attention_score32_exp_lut_hbm_dram_service_closure_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_attention_score32_integrated_frontier_ranking":
+            decoder_evidence = _decoder_attention_score32_integrated_frontier_ranking_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_hbm_dram_service_energy":
             decoder_evidence = _decoder_attention_hbm_dram_service_energy_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_hbm_energy_calibration":
