@@ -1,0 +1,63 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_dual_stream_composed_score32_exp_lut_div_parallelism_v1",
+  "created_utc": "2026-07-06T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit",
+  "title": "Score32 exp-LUT composed wrapper parallelism sweep",
+  "abstraction_layer": "decoder_attention_dual_stream_composed_datapath",
+  "hypothesis": "The current score32 exp-LUT Llama7B point is throughput-leading but energy-worse. Reducing local composed-wrapper compute/value parallelism may expose lower-power and lower-area points whose added cycles are acceptable for the Llama7B schedule.",
+  "direct_comparison": {
+    "primary_question": "How do Nangate45 area, power, and timing change when the quality-backed score32 exp-LUT composed wrapper is measured at lower local parallelism?",
+    "baseline": "l1_decoder_attention_dual_stream_composed_score32_exp_lut_div_b20_ppa_v1",
+    "candidates": [
+      "attention_dual_stream_composed_int8_q8k8v8_8x8_p8_ppc1_nohash_score32_w16_exp_lut_div_b20",
+      "attention_dual_stream_composed_int8_q8k8v8_8x4_p8_ppc1_nohash_score32_w16_exp_lut_div_b20",
+      "attention_dual_stream_composed_int8_q8k8v8_4x4_p8_ppc1_nohash_score32_w16_exp_lut_div_b20"
+    ],
+    "include": [
+      "same score32 exp-LUT divider softmax semantics as the current score32 frontier",
+      "reduced MAC-array dimensions",
+      "reduced value lanes and partials-per-cycle",
+      "generated manifest total_macs so L2 recost can use the measured block MACs/cycle",
+      "Nangate45 area, power, timing, and timing-debug report for each variant"
+    ],
+    "exclude": [
+      "new precision quality gate",
+      "new HBM/DRAM model",
+      "claiming energy improvement before the dependent L2 recost"
+    ]
+  },
+  "required_evaluations": [
+    {
+      "item_id": "l1_decoder_attention_dual_stream_composed_score32_exp_lut_div_parallelism_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure reduced-parallel score32 exp-LUT composed wrapper PPA on Nangate45.",
+      "evaluation_mode": "frontier_followup",
+      "abstraction_layer": "decoder_attention_dual_stream_composed_datapath",
+      "comparison_role": "score32_exp_lut_parallelism_ppa",
+      "paired_baseline_item_id": "l1_decoder_attention_dual_stream_composed_score32_exp_lut_div_b20_ppa_v1",
+      "configs": [
+        "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_8x8_p8_ppc1_nohash_score32_w16_exp_lut_div_b20/config.json",
+        "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_8x4_p8_ppc1_nohash_score32_w16_exp_lut_div_b20/config.json",
+        "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_4x4_p8_ppc1_nohash_score32_w16_exp_lut_div_b20/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/attention_dual_stream_composed_v1/sweeps/nangate45_dual_stream_composed_hier_score32_w16_exp_lut_div_b20_parallelism.json",
+      "out_root": "runs/designs/npu_blocks",
+      "expected_result": {
+        "direction": "measure_score32_exp_lut_parallelism_ppa",
+        "reason": "The dependent L2 recost needs measured area, power, timing, and block MACs/cycle for lower-parallel score32 exp-LUT wrappers."
+      },
+      "status": "pending"
+    }
+  ],
+  "source_refs": [
+    "npu/rtlgen/gen_attention_dual_stream_composed.py",
+    "npu/eval/check_attention_dual_stream_composed_guard.py",
+    "runs/campaigns/npu/attention_dual_stream_composed_v1/sweeps/nangate45_dual_stream_composed_hier_score32_w16_exp_lut_div_b20_parallelism.json"
+  ],
+  "knowledge_refs": [
+    "docs/proposals/prop_l1_decoder_attention_dual_stream_composed_score32_exp_lut_div_b20_v1/proposal.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_compute_activity_energy__l2_decoder_attention_score32_compute_activity_energy_llama7b_v1.json"
+  ]
+}

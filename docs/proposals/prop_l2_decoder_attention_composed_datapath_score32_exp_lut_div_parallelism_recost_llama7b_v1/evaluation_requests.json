@@ -1,0 +1,27 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_composed_datapath_score32_exp_lut_div_parallelism_recost_llama7b_v1",
+  "source_commit_note": "Dispatch after the L1 score32 exp-LUT parallelism PPA item is merged.",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_composed_datapath_score32_exp_lut_div_parallelism_recost_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Recost Llama7B score32 exp-LUT attention using measured composed-wrapper parallelism variants.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_composed_datapath_physical_feasibility",
+      "comparison_role": "score32_exp_lut_parallelism_recost",
+      "paired_baseline_item_id": "l2_decoder_attention_score32_compute_activity_energy_llama7b_v1",
+      "depends_on_item_ids": [
+        "l1_decoder_attention_dual_stream_composed_score32_exp_lut_div_parallelism_ppa_v1",
+        "l2_decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality_llama7b_v1",
+        "l2_decoder_attention_score32_compute_activity_energy_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "rank_score32_exp_lut_parallelism_tradeoff",
+        "reason": "The result should identify whether reduced local parallelism improves score32 Llama7B energy/area enough to justify the latency loss."
+      },
+      "status": "blocked"
+    }
+  ]
+}

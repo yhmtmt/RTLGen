@@ -178,11 +178,15 @@ than free or heuristic assumptions.
     Score32 is `5.788540788x` faster but `6.059343405x` higher energy than
     that reference.
   - the current immediate follow-on is
-    `l2_decoder_attention_score32_compute_activity_energy_llama7b_v1`. It
-    should replace the wall-time compute-energy ambiguity with explicit
-    active-cycle duty and clock-gating bounds before deciding whether the next
-    target is score32 circuit energy reduction or a lower-energy mixed/int8
-    quality closure.
+    `l1_decoder_attention_dual_stream_composed_score32_exp_lut_div_parallelism_ppa_v1`.
+    The score32 compute-activity audit is merged and records active duty
+    `0.957495485`, best clock-gated total energy
+    `479.505988187 mJ/token`, and
+    `5.871684274x` higher energy than the measured exact-FP16 reference. Since
+    clock gating is only a small correction, the next target is measured
+    score32 exp-LUT circuit parallelism: reduce local compute/value parallelism,
+    measure PPA, then recost Llama7B latency/energy/area with per-variant
+    block MACs/cycle.
 - New evaluations should continue to dispatch only to the remote evaluator
   `eval-daemon-b7c2d9c80c1c`, not the devcontainer.
 
@@ -359,7 +363,19 @@ run the already queued exp-LUT branch:
    the score32 wall-time compute-energy ambiguity. The result should derive
    compute active duty from the measured command-control cycle fields, sweep
    idle-power fractions, and state whether clock-gating/active-cycle accounting
-   can close the score32 energy gap.
+   can close the score32 energy gap. This is complete: PR #1209 records that
+   score32 remains energy-worse after ideal clock-gating bounds.
+10. Run
+    `l1_decoder_attention_dual_stream_composed_score32_exp_lut_div_parallelism_ppa_v1`
+    to measure reduced-parallel score32 exp-LUT composed wrapper variants
+    (`8x8`, `8x4`, and `4x4`) against the current `16x8` wrapper. This closes
+    the immediate circuit-level question left by the activity audit: whether
+    lower local parallelism can materially reduce score32 power/area.
+11. After the L1 parallelism metrics merge, run
+    `l2_decoder_attention_composed_datapath_score32_exp_lut_div_parallelism_recost_llama7b_v1`.
+    This recost must consume each wrapper's generated manifest/config
+    `total_macs` so latency, replica count, area, and energy are not
+    accidentally inherited from the full `16x8` wrapper.
 
 All new evaluation jobs should run on the remote evaluator
 `eval-daemon-b7c2d9c80c1c`, not the devcontainer.

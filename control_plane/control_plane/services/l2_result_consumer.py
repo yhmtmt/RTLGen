@@ -1223,6 +1223,8 @@ def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, 
         "llm_decoder_attention_composed_datapath_score32_w16_exact_div_reduced_replica_llama7b_v1",
         "llm_decoder_attention_composed_datapath_score32_w16_exact_div_split2_reduced_replica_llama7b_v1",
         "llm_decoder_attention_composed_datapath_score32_w16_recip_lut_q16_reduced_replica_llama7b_v1",
+        "llm_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_llama7b_v1",
+        "llm_decoder_attention_composed_datapath_score32_exp_lut_div_parallelism_recost_llama7b_v1",
         "llm_decoder_attention_composed_datapath_q20_pwl_recip_div_reduced_replica_llama7b_v1",
     }:
         diagnosis = evidence_payload.get("diagnosis")
@@ -1248,6 +1250,10 @@ def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, 
             if model == "llm_decoder_attention_composed_datapath_score32_w16_exact_div_split2_reduced_replica_llama7b_v1"
             else "Decoder composed dual-stream physical feasibility evidence (score32/w16 recip-lut q16 reduced-replica recost)"
             if model == "llm_decoder_attention_composed_datapath_score32_w16_recip_lut_q16_reduced_replica_llama7b_v1"
+            else "Decoder composed dual-stream physical feasibility evidence (score32 exp-LUT reduced-replica recost)"
+            if model == "llm_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_llama7b_v1"
+            else "Decoder composed dual-stream physical feasibility evidence (score32 exp-LUT parallelism recost)"
+            if model == "llm_decoder_attention_composed_datapath_score32_exp_lut_div_parallelism_recost_llama7b_v1"
             else "Decoder composed dual-stream physical feasibility evidence (q20 PWL reciprocal-divider reduced-replica recost)"
             if model == "llm_decoder_attention_composed_datapath_q20_pwl_recip_div_reduced_replica_llama7b_v1"
             else "Decoder dual-stream physical feasibility evidence"
