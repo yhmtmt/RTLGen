@@ -21,7 +21,12 @@
         "direction": "measure_score32_exp_lut_parallelism_ppa",
         "reason": "The dependent L2 recost needs measured area, power, timing, and block MACs/cycle for lower-parallel score32 exp-LUT wrappers."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 1212,
+      "merge_commit": "dd39a3da34279ad71b9ed3cfbca4751b05b052d3",
+      "merged_utc": "2026-07-07T01:12:09Z",
+      "notes": "Merged via PR #1212 and merge dd39a3da34279ad71b9ed3cfbca4751b05b052d3 at 2026-07-07T01:12:09Z."
     }
-  ]
+  ],
+  "source_commit": "f7218288fb8ef0057559f6f9cbbf91b81cf045fc"
 }
