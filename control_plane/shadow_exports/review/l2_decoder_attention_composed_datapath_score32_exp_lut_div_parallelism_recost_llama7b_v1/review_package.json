@@ -1,0 +1,442 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-07-07T01:14:49.321523Z",
+  "control_plane_source_commit": "007e1319917bd5f8926462fd36c0702d9ef88cfb",
+  "review_metadata_source_commit": "007e1319917bd5f8926462fd36c0702d9ef88cfb",
+  "item_id": "l2_decoder_attention_composed_datapath_score32_exp_lut_div_parallelism_recost_llama7b_v1",
+  "run_key": "l2_decoder_attention_composed_datapath_score32_exp_lut_div_parallelism_recost_llama7b_v1_run_05cc5820296dc7c1",
+  "layer": "layer2",
+  "flow": "openroad",
+  "task_type": "l2_campaign",
+  "source_commit": "007e1319917bd5f8926462fd36c0702d9ef88cfb",
+  "queue_snapshot": {
+    "path": "control_plane/shadow_exports/review/l2_decoder_attention_composed_datapath_score32_exp_lut_div_parallelism_recost_llama7b_v1/evaluated.json",
+    "result": {
+      "branch": "eval/l2_decoder_attention_composed_datapath_score32_exp_lut_div_parallelism_recost_llama7b_v1/s20260707t011447z",
+      "completed_utc": "2026-07-07T01:14:46.128926Z",
+      "evaluator_id": "control_plane",
+      "executor": "@control_plane",
+      "host": "b7c2d9c80c1c",
+      "identity_block": "[role:evaluator][account:control_plane][session:s20260707t011447z][host:b7c2d9c80c1c][item:l2_decoder_attention_composed_datapath_score32_exp_lut_div_parallelism_recost_llama7b_v1]",
+      "metrics_rows": [
+        {
+          "tag": "npu_fp16_nm1_cmp33_flat_nomacro",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "362e11ef",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/362e11ef/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_hier_macro",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "6f738885",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/6f738885/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r1",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "3e84d92b",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/3e84d92b/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r2",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "13a2c990",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/13a2c990/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r3",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "34eeb6e5",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/34eeb6e5/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r4",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "439adb1e",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/439adb1e/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r5",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "936b2a7b",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/936b2a7b/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_hier_macro_r1",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "54a235ae",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/54a235ae/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_hier_macro_r2",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "f190a078",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/f190a078/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_hier_macro_r3",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "b874bef7",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/b874bef7/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_hier_macro_r4",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "3a650f98",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/3a650f98/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_hier_macro_r5",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "3fa4f194",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/3fa4f194/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_flat_nomacro",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "033cdfdc",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/033cdfdc/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_hier_macro",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "c4548bca",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/c4548bca/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_flat_nomacro_r1",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "258015dc",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/258015dc/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_flat_nomacro_r2",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "95526f98",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/95526f98/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_flat_nomacro_r3",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "099823db",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/099823db/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_flat_nomacro_r4",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "b276f2e7",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/b276f2e7/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_flat_nomacro_r5",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "f0b4f9e6",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/f0b4f9e6/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_hier_macro_r1",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "5d0ac971",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/5d0ac971/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_hier_macro_r2",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "a9ae3c35",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/a9ae3c35/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_hier_macro_r3",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "c51fa4a2",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/c51fa4a2/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_hier_macro_r4",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "98a03366",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/98a03366/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_hier_macro_r5",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "41f8b4a8",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/41f8b4a8/result.json"
+        }
+      ],
+      "queue_item_id": "l2_decoder_attention_composed_datapath_score32_exp_lut_div_parallelism_recost_llama7b_v1",
+      "session_id": "s20260707t011447z",
+      "status": "ok",
+      "summary": "6/6 commands succeeded"
+    }
+  },
+  "review_artifact": {
+    "kind": "decision_proposal",
+    "path": "control_plane/shadow_exports/l2_decisions/l2_decoder_attention_composed_datapath_score32_exp_lut_div_parallelism_recost_llama7b_v1.json",
+    "storage_mode": "repo",
+    "sha256": "2eb747570f3fdcf9fe99195eca55d407d864ebb221a9f363b4b9e5cf9e22a7f3",
+    "payload": {
+      "version": 0.1,
+      "generated_utc": "2026-07-07T01:14:47.151241Z",
+      "item_id": "l2_decoder_attention_composed_datapath_score32_exp_lut_div_parallelism_recost_llama7b_v1",
+      "run_key": "l2_decoder_attention_composed_datapath_score32_exp_lut_div_parallelism_recost_llama7b_v1_run_05cc5820296dc7c1",
+      "layer": "layer2",
+      "flow": "openroad",
+      "platform": "nangate45",
+      "task_type": "l2_campaign",
+      "source_commit": "007e1319917bd5f8926462fd36c0702d9ef88cfb",
+      "review_metadata_source_commit": "007e1319917bd5f8926462fd36c0702d9ef88cfb",
+      "objective": "Recost Llama7B score32 exp-LUT attention using measured composed-wrapper parallelism variants.",
+      "input_manifest": {
+        "sweeps": [
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/sweep_compare_33.json",
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/sweep_compare_33.json"
+        ],
+        "configs": [
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/config_nm1.json",
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/config_nm2.json"
+        ],
+        "design_dirs": [
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp",
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp"
+        ],
+        "macro_manifests": [
+          "runs/designs/npu_macros/gemm_compute_array_fp16_nm1_c250/macro_manifest.json",
+          "runs/designs/npu_macros/gemm_compute_array_fp16_2slot_c300/macro_manifest.json"
+        ],
+        "decoder_contract": {
+          "attention_kv_softmax_weight_metrics": "runs/designs/activations/attention_softmax_weight_int8_r8_acc24_recip_q10_wrapper/metrics.csv",
+          "attention_kv_full_value_tile_metrics": "runs/designs/activations/attention_kv_full_value_hd64_kv8_v6_tl16_b128_p8_ppc2_w22_a40_wrapper/metrics.csv",
+          "attention_kv_subtile_pipeline_schedule": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_subtile_pipeline_schedule__l2_decoder_attention_kv_subtile_pipeline_schedule_llama7b_v1.json",
+          "attention_kv_composed_dual_stream_metrics": "runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_score32_w16_exp_lut_div_b20/metrics.csv,runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_8x8_p8_ppc1_nohash_score32_w16_exp_lut_div_b20/metrics.csv,runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_8x4_p8_ppc1_nohash_score32_w16_exp_lut_div_b20/metrics.csv,runs/designs/npu_blocks/attention_dual_stream_composed_int8_q8k8v8_4x4_p8_ppc1_nohash_score32_w16_exp_lut_div_b20/metrics.csv",
+          "attention_composed_datapath_physical_feasibility_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_score32_exp_lut_div_parallelism_recost_llama7b_v1.json",
+          "attention_composed_datapath_physical_feasibility_scope": "Use the composed dual-stream RTL wrapper PPA as a bounded next-step feasibility model, replacing separate full-value/softmax substitutions while keeping the upstream source schedule. If command-overhead mode is requested, sweep nonzero per-tile and per-wave command-dispatch cycles before recosting the composed datapath. If measured-command-control mode is requested, charge measured central command-dispatch control area/power/clock from the L1 command-dispatch control run.",
+          "attention_composed_datapath_physical_feasibility_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_score32_exp_lut_div_parallelism_recost_llama7b_v1.md",
+          "attention_mixed_int8_score32_exp_lut_div_generation_quality": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality__l2_decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality_llama7b_v1.json"
+        },
+        "generated_campaign": {
+          "path": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1/campaign__l2_decoder_attention_composed_datapath_score32_exp_lut_div_parallelism_recost_llama7b_v1.json",
+          "outputs": {
+            "report_md": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_composed_datapath_score32_exp_lut_div_parallelism_recost_llama7b_v1/report.md",
+            "results_csv": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_composed_datapath_score32_exp_lut_div_parallelism_recost_llama7b_v1/results.csv",
+            "campaign_dir": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_composed_datapath_score32_exp_lut_div_parallelism_recost_llama7b_v1"
+          },
+          "clean_outputs": true,
+          "base_campaign_path": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1/campaign.json"
+        },
+        "candidate_manifests": [
+          "runs/candidates/nangate45/module_candidates.json"
+        ]
+      },
+      "recommendation": {
+        "arch_id": "fp16_nm1",
+        "macro_mode": "flat_nomacro",
+        "objective_rank": 1,
+        "objective_score": "0.0",
+        "latency_ms_mean": 0.144262,
+        "energy_mj_mean": 2.7860165964e-05,
+        "critical_path_ns_mean": 5.557037432204143,
+        "die_area_um2_mean": 2250000.0,
+        "total_power_mw_mean": 0.193122,
+        "flow_elapsed_s_mean": 844.5733333333334
+      },
+      "objective_profiles": [],
+      "evaluation_record": {
+        "proposal_id": "prop_l2_decoder_attention_composed_datapath_score32_exp_lut_div_parallelism_recost_llama7b_v1",
+        "title": "Score32 exp-LUT parallelism Llama7B recost",
+        "primary_question": "Which measured score32 exp-LUT wrapper parallelism point gives the best Llama7B latency, energy, and area tradeoff under the same quality-backed precision semantics?",
+        "evaluation_mode": "frontier_detail",
+        "comparison_role": "score32_exp_lut_parallelism_recost",
+        "abstraction_layer": "decoder_attention_composed_datapath_physical_feasibility",
+        "expected_direction": "rank_score32_exp_lut_parallelism_tradeoff",
+        "expected_reason": "Identify whether reduced local parallelism improves score32 Llama7B energy/area enough to justify the latency loss.",
+        "summary": "Decoder composed dual-stream physical feasibility evidence (score32 exp-LUT parallelism recost) recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_score32_exp_lut_div_parallelism_recost_llama7b_v1.json: decision=dual_stream_feasible; precision_profile=q8_k8_v8_a32_s32_w16_exp_lut_div_b20_int8_compute; best_requested_mode=dual_mac; best_requested_latency_us=1575.373891; best_requested_adjusted_latency_us_if_feasible=12322.504989; best_requested_adjusted_speedup_vs_hbm_closed_source=0.17357196137549075; best_requested_area_fit=True; best_requested_logic_slack_um2=99510464.0692; best_requested_compute_area_over_budget_um2=0.0; best_requested_required_compute_density_gain=0.750925; best_requested_compute_substitution_enabled=True; best_requested_substituted_compute_arch=attention_dual_stream_composed_int8_q8k8v8_8x8_p8_ppc1_nohash_score32_w16_exp_lut_div_b20; best_requested_substituted_compute_area_um2=300009168.0; best_requested_substituted_compute_variant_label=attention_dual_stream_composed_int8_q8k8v8_8x8_p8_ppc1_nohash_score32_w16_exp_lut_div_b20; best_requested_compute_clock_ok=True; best_requested_replica_recost_enabled=True; best_requested_replica_recost_area_fit_replica_count=856; best_requested_replica_recost_macs_per_cycle=109568; best_requested_replica_recost_latency_us=12322.504989; best_feasible_mode=dual_mac; best_feasible_latency_us=12322.504989; recommended_next_step=promote dual-stream schedule into a measured RTL/PPA wrapper.",
+        "outcome": "dual_stream_feasible",
+        "expectation_status": "unspecified"
+      },
+      "proposal_assessment": {
+        "proposal_id": "prop_l2_decoder_attention_composed_datapath_score32_exp_lut_div_parallelism_recost_llama7b_v1",
+        "title": "Score32 exp-LUT parallelism Llama7B recost",
+        "kind": "architecture",
+        "primary_question": "Which measured score32 exp-LUT wrapper parallelism point gives the best Llama7B latency, energy, and area tradeoff under the same quality-backed precision semantics?",
+        "evaluation_mode": "frontier_detail",
+        "comparison_role": "score32_exp_lut_parallelism_recost",
+        "outcome": "dual_stream_feasible",
+        "summary": "Decoder composed dual-stream physical feasibility evidence (score32 exp-LUT parallelism recost) recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_score32_exp_lut_div_parallelism_recost_llama7b_v1.json: decision=dual_stream_feasible; precision_profile=q8_k8_v8_a32_s32_w16_exp_lut_div_b20_int8_compute; best_requested_mode=dual_mac; best_requested_latency_us=1575.373891; best_requested_adjusted_latency_us_if_feasible=12322.504989; best_requested_adjusted_speedup_vs_hbm_closed_source=0.17357196137549075; best_requested_area_fit=True; best_requested_logic_slack_um2=99510464.0692; best_requested_compute_area_over_budget_um2=0.0; best_requested_required_compute_density_gain=0.750925; best_requested_compute_substitution_enabled=True; best_requested_substituted_compute_arch=attention_dual_stream_composed_int8_q8k8v8_8x8_p8_ppc1_nohash_score32_w16_exp_lut_div_b20; best_requested_substituted_compute_area_um2=300009168.0; best_requested_substituted_compute_variant_label=attention_dual_stream_composed_int8_q8k8v8_8x8_p8_ppc1_nohash_score32_w16_exp_lut_div_b20; best_requested_compute_clock_ok=True; best_requested_replica_recost_enabled=True; best_requested_replica_recost_area_fit_replica_count=856; best_requested_replica_recost_macs_per_cycle=109568; best_requested_replica_recost_latency_us=12322.504989; best_feasible_mode=dual_mac; best_feasible_latency_us=12322.504989; recommended_next_step=promote dual-stream schedule into a measured RTL/PPA wrapper.",
+        "baseline_ref": null,
+        "baseline_item_id": null,
+        "matched_row_count": 0,
+        "matched_rows": [],
+        "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_score32_exp_lut_div_parallelism_recost_llama7b_v1.json",
+        "decoder_quality": {
+          "diagnosis": {
+            "best_area_fit_latency_us": 12322.504989,
+            "best_area_fit_mode": "dual_mac",
+            "best_area_fit_source_latency_us": 1575.373891,
+            "best_feasible_latency_us": 12322.504989,
+            "best_feasible_mode": "dual_mac",
+            "best_feasible_source_latency_us": 1575.373891,
+            "best_requested_adjusted_latency_us_if_feasible": 12322.504989,
+            "best_requested_adjusted_speedup_vs_hbm_closed_source": 0.17357196137549075,
+            "best_requested_adjusted_tile_service_cycles": 986,
+            "best_requested_area_fit": true,
+            "best_requested_command_dispatch_control_area_um2": null,
+            "best_requested_command_dispatch_control_clock_ok": true,
+            "best_requested_command_dispatch_control_cluster_count": null,
+            "best_requested_command_dispatch_control_variant": null,
+            "best_requested_compute_area_over_budget_um2": 0.0,
+            "best_requested_compute_clock_ok": true,
+            "best_requested_compute_substitution_enabled": true,
+            "best_requested_latency_us": 1575.373891,
+            "best_requested_logic_slack_um2": 99510464.0692,
+            "best_requested_mode": "dual_mac",
+            "best_requested_replica_recost_area_fit_replica_count": 856,
+            "best_requested_replica_recost_enabled": true,
+            "best_requested_replica_recost_latency_us": 12322.504989,
+            "best_requested_replica_recost_macs_per_cycle": 109568,
+            "best_requested_required_compute_density_gain": 0.750925,
+            "best_requested_speedup_vs_hbm_closed_source": 1.357672,
+            "best_requested_substituted_compute_arch": "attention_dual_stream_composed_int8_q8k8v8_8x8_p8_ppc1_nohash_score32_w16_exp_lut_div_b20",
+            "best_requested_substituted_compute_area_um2": 300009168.0,
+            "best_requested_substituted_compute_semantic_profile": "score32_exp_lut_div",
+            "best_requested_substituted_compute_variant_label": "attention_dual_stream_composed_int8_q8k8v8_8x8_p8_ppc1_nohash_score32_w16_exp_lut_div_b20",
+            "decision": "dual_stream_feasible",
+            "physical_feasible_rows": 12,
+            "precision_profile": "q8_k8_v8_a32_s32_w16_exp_lut_div_b20_int8_compute",
+            "recommended_next_step": "promote dual-stream schedule into a measured RTL/PPA wrapper",
+            "source_rows_used": 3
+          },
+          "assumptions": [
+            "The dual_mac schedule requires an explicit compute_area_multiplier from the sub-tile scheduler.",
+            "Measured full-value tile and softmax-weight generator PPA are used for local datapath overhead only.",
+            "The dense GEMM compute array is treated as already packed into the current logic budget; extra dual-stream compute must fit that same budget to be feasible.",
+            "Buffer capacity is checked against measured local SRAM bytes; an optional buffer-area proxy can be added for sensitivity but defaults to zero to avoid double-counting measured local SRAM.",
+            "When composed dual-stream wrapper substitution is enabled, full-value and softmax measurements are treated as folded into the measured dual-stream RTL wrapper, and wrapper clock is used to scale feasible latency if it differs from source schedule clock."
+          ]
+        }
+      },
+      "source_refs": {
+        "best_point_json": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_composed_datapath_score32_exp_lut_div_parallelism_recost_llama7b_v1/best_point.json",
+        "summary_csv": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_composed_datapath_score32_exp_lut_div_parallelism_recost_llama7b_v1/summary.csv",
+        "results_csv": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_composed_datapath_score32_exp_lut_div_parallelism_recost_llama7b_v1/results.csv",
+        "report_md": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_composed_datapath_score32_exp_lut_div_parallelism_recost_llama7b_v1/report.md",
+        "focused_candidate_schedule_yml": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_composed_datapath_score32_exp_lut_div_parallelism_recost_llama7b_v1/artifacts/mapper/fp16_nm1/tail_attn4_s256_h64/schedule.yml",
+        "focused_candidate_descriptors_bin": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_composed_datapath_score32_exp_lut_div_parallelism_recost_llama7b_v1/artifacts/mapper/fp16_nm1/tail_attn4_s256_h64/descriptors.bin",
+        "focused_candidate_perf_trace_json": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_composed_datapath_score32_exp_lut_div_parallelism_recost_llama7b_v1/artifacts/perf/fp16_nm1/tail_attn4_s256_h64/trace.json",
+        "focused_model_artifacts": [
+          {
+            "model_id": "tail_attn4_s256_h64",
+            "schedule_yml": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_composed_datapath_score32_exp_lut_div_parallelism_recost_llama7b_v1/artifacts/mapper/fp16_nm1/tail_attn4_s256_h64/schedule.yml",
+            "descriptors_bin": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_composed_datapath_score32_exp_lut_div_parallelism_recost_llama7b_v1/artifacts/mapper/fp16_nm1/tail_attn4_s256_h64/descriptors.bin",
+            "perf_trace_json": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_composed_datapath_score32_exp_lut_div_parallelism_recost_llama7b_v1/artifacts/perf/fp16_nm1/tail_attn4_s256_h64/trace.json"
+          },
+          {
+            "model_id": "tail_attn6_s128_h64",
+            "schedule_yml": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_composed_datapath_score32_exp_lut_div_parallelism_recost_llama7b_v1/artifacts/mapper/fp16_nm1/tail_attn6_s128_h64/schedule.yml",
+            "descriptors_bin": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_composed_datapath_score32_exp_lut_div_parallelism_recost_llama7b_v1/artifacts/mapper/fp16_nm1/tail_attn6_s128_h64/descriptors.bin",
+            "perf_trace_json": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_composed_datapath_score32_exp_lut_div_parallelism_recost_llama7b_v1/artifacts/perf/fp16_nm1/tail_attn6_s128_h64/trace.json"
+          },
+          {
+            "model_id": "tail_attn6_s256_h64",
+            "schedule_yml": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_composed_datapath_score32_exp_lut_div_parallelism_recost_llama7b_v1/artifacts/mapper/fp16_nm1/tail_attn6_s256_h64/schedule.yml",
+            "descriptors_bin": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_composed_datapath_score32_exp_lut_div_parallelism_recost_llama7b_v1/artifacts/mapper/fp16_nm1/tail_attn6_s256_h64/descriptors.bin",
+            "perf_trace_json": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_composed_datapath_score32_exp_lut_div_parallelism_recost_llama7b_v1/artifacts/perf/fp16_nm1/tail_attn6_s256_h64/trace.json"
+          }
+        ],
+        "decoder_attention_composed_datapath_physical_feasibility_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_score32_exp_lut_div_parallelism_recost_llama7b_v1.json",
+        "decoder_attention_composed_datapath_physical_feasibility_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_score32_exp_lut_div_parallelism_recost_llama7b_v1.md"
+      }
+    }
+  },
+  "developer_loop": {
+    "comparison": {
+      "role": "score32_exp_lut_parallelism_recost",
+      "paired_baseline_item_id": "l2_decoder_attention_score32_compute_activity_energy_llama7b_v1"
+    },
+    "evaluation": {
+      "mode": "frontier_detail",
+      "expected_reason": "Identify whether reduced local parallelism improves score32 Llama7B energy/area enough to justify the latency loss.",
+      "expected_direction": "rank_score32_exp_lut_parallelism_tradeoff"
+    },
+    "abstraction": {
+      "layer": "decoder_attention_composed_datapath_physical_feasibility"
+    },
+    "proposal_id": "prop_l2_decoder_attention_composed_datapath_score32_exp_lut_div_parallelism_recost_llama7b_v1",
+    "dependencies": {
+      "item_ids": [
+        "l1_decoder_attention_dual_stream_composed_score32_exp_lut_div_parallelism_ppa_v1",
+        "l2_decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality_llama7b_v1",
+        "l2_decoder_attention_score32_compute_activity_energy_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    },
+    "proposal_path": "docs/proposals/prop_l2_decoder_attention_composed_datapath_score32_exp_lut_div_parallelism_recost_llama7b_v1/proposal.json"
+  },
+  "submission_history": null,
+  "pr_payload": {
+    "branch": "eval/l2_decoder_attention_composed_datapath_score32_exp_lut_div_parallelism_recost_llama7b_v1/s20260707t011447z",
+    "title": "eval: run score32 exp-lut parallelism llama7b recost",
+    "body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260707t011447z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l2_decoder_attention_composed_datapath_score32_exp_lut_div_parallelism_recost_llama7b_v1"
+    },
+    "body_md": "## Summary\n- item_id: `l2_decoder_attention_composed_datapath_score32_exp_lut_div_parallelism_recost_llama7b_v1`\n- run_key: `l2_decoder_attention_composed_datapath_score32_exp_lut_div_parallelism_recost_llama7b_v1_run_05cc5820296dc7c1`\n- layer: `layer2`\n- task_type: `l2_campaign`\n- status: `ok`\n- summary: `6/6 commands succeeded`\n- queue_snapshot: `control_plane/shadow_exports/review/l2_decoder_attention_composed_datapath_score32_exp_lut_div_parallelism_recost_llama7b_v1/evaluated.json`\n- metrics_rows_count: `24`\n- review_artifact: `decision_proposal` at `control_plane/shadow_exports/l2_decisions/l2_decoder_attention_composed_datapath_score32_exp_lut_div_parallelism_recost_llama7b_v1.json`\n\n## Developer Context\n- proposal_id: `prop_l2_decoder_attention_composed_datapath_score32_exp_lut_div_parallelism_recost_llama7b_v1`\n- proposal_path: `docs/proposals/prop_l2_decoder_attention_composed_datapath_score32_exp_lut_div_parallelism_recost_llama7b_v1/proposal.json`\n- reviewer_first_read: `docs/proposals/prop_l2_decoder_attention_composed_datapath_score32_exp_lut_div_parallelism_recost_llama7b_v1/proposal.json` plus `docs/developer_agent_review.md`\n- execution_source_commit: `007e1319917bd5f8926462fd36c0702d9ef88cfb`\n- review_metadata_source_commit: `007e1319917bd5f8926462fd36c0702d9ef88cfb`\n\n## Evaluation Mode\n- evaluation_mode: `frontier_detail`\n- abstraction_layer: `decoder_attention_composed_datapath_physical_feasibility`\n- comparison_role: `score32_exp_lut_parallelism_recost`\n- expected_direction: `rank_score32_exp_lut_parallelism_tradeoff`\n- expected_reason: `Identify whether reduced local parallelism improves score32 Llama7B energy/area enough to justify the latency loss.`\n- expectation_status: `unspecified`\n- evaluation_summary: `Decoder composed dual-stream physical feasibility evidence (score32 exp-LUT parallelism recost) recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_score32_exp_lut_div_parallelism_recost_llama7b_v1.json: decision=dual_stream_feasible; precision_profile=q8_k8_v8_a32_s32_w16_exp_lut_div_b20_int8_compute; best_requested_mode=dual_mac; best_requested_latency_us=1575.373891; best_requested_adjusted_latency_us_if_feasible=12322.504989; best_requested_adjusted_speedup_vs_hbm_closed_source=0.17357196137549075; best_requested_area_fit=True; best_requested_logic_slack_um2=99510464.0692; best_requested_compute_area_over_budget_um2=0.0; best_requested_required_compute_density_gain=0.750925; best_requested_compute_substitution_enabled=True; best_requested_substituted_compute_arch=attention_dual_stream_composed_int8_q8k8v8_8x8_p8_ppc1_nohash_score32_w16_exp_lut_div_b20; best_requested_substituted_compute_area_um2=300009168.0; best_requested_substituted_compute_variant_label=attention_dual_stream_composed_int8_q8k8v8_8x8_p8_ppc1_nohash_score32_w16_exp_lut_div_b20; best_requested_compute_clock_ok=True; best_requested_replica_recost_enabled=True; best_requested_replica_recost_area_fit_replica_count=856; best_requested_replica_recost_macs_per_cycle=109568; best_requested_replica_recost_latency_us=12322.504989; best_feasible_mode=dual_mac; best_feasible_latency_us=12322.504989; recommended_next_step=promote dual-stream schedule into a measured RTL/PPA wrapper.`\n\n## Focused Comparison\n- primary_question: `Which measured score32 exp-LUT wrapper parallelism point gives the best Llama7B latency, energy, and area tradeoff under the same quality-backed precision semantics?`\n- comparison_role: `score32_exp_lut_parallelism_recost`\n- proposal_outcome: `dual_stream_feasible`\n- comparison_summary: `Decoder composed dual-stream physical feasibility evidence (score32 exp-LUT parallelism recost) recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_score32_exp_lut_div_parallelism_recost_llama7b_v1.json: decision=dual_stream_feasible; precision_profile=q8_k8_v8_a32_s32_w16_exp_lut_div_b20_int8_compute; best_requested_mode=dual_mac; best_requested_latency_us=1575.373891; best_requested_adjusted_latency_us_if_feasible=12322.504989; best_requested_adjusted_speedup_vs_hbm_closed_source=0.17357196137549075; best_requested_area_fit=True; best_requested_logic_slack_um2=99510464.0692; best_requested_compute_area_over_budget_um2=0.0; best_requested_required_compute_density_gain=0.750925; best_requested_compute_substitution_enabled=True; best_requested_substituted_compute_arch=attention_dual_stream_composed_int8_q8k8v8_8x8_p8_ppc1_nohash_score32_w16_exp_lut_div_b20; best_requested_substituted_compute_area_um2=300009168.0; best_requested_substituted_compute_variant_label=attention_dual_stream_composed_int8_q8k8v8_8x8_p8_ppc1_nohash_score32_w16_exp_lut_div_b20; best_requested_compute_clock_ok=True; best_requested_replica_recost_enabled=True; best_requested_replica_recost_area_fit_replica_count=856; best_requested_replica_recost_macs_per_cycle=109568; best_requested_replica_recost_latency_us=12322.504989; best_feasible_mode=dual_mac; best_feasible_latency_us=12322.504989; recommended_next_step=promote dual-stream schedule into a measured RTL/PPA wrapper.`\n- baseline_ref: `None`\n- baseline_item_id: `None`\n\n## Checklist\n- [ ] Commit lightweight campaign artifacts only\n- [ ] Include metrics row references in result.metrics_rows\n- [ ] Keep committed result_path fields repo-portable\n- [ ] Run python3 scripts/validate_runs.py --skip_eval_queue before pushing\n",
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Include metrics row references in result.metrics_rows",
+      "Keep committed result_path fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ]
+  }
+}
