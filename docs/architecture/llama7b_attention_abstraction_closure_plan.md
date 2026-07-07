@@ -177,16 +177,23 @@ than free or heuristic assumptions.
     remains the promotable energy reference at `81.66413005453946 mJ/token`.
     Score32 is `5.788540788x` faster but `6.059343405x` higher energy than
     that reference.
-  - the current immediate follow-on is
-    `l1_decoder_attention_dual_stream_composed_score32_exp_lut_div_parallelism_ppa_v1`.
+  - the reduced-parallel composed-wrapper PPA and recost are merged by
+    PR #1212 and PR #1213. The L2 recost records that the selected measured
+    local wrapper is
+    `attention_dual_stream_composed_int8_q8k8v8_8x8_p8_ppc1_nohash_score32_w16_exp_lut_div_b20`,
+    with `856` area-fit replicas, `109568 MAC/cycle`, and
+    `12322.504989 us/token` after measured wrapper clock/replica recost.
     The score32 compute-activity audit is merged and records active duty
     `0.957495485`, best clock-gated total energy
     `479.505988187 mJ/token`, and
-    `5.871684274x` higher energy than the measured exact-FP16 reference. Since
-    clock gating is only a small correction, the next target is measured
-    score32 exp-LUT circuit parallelism: reduce local compute/value parallelism,
-    measure PPA, then recost Llama7B latency/energy/area with per-variant
-    block MACs/cycle.
+    `5.871684274x` higher energy than the measured exact-FP16 reference.
+  - the current immediate follow-on is
+    `l1_decoder_attention_dual_stream_schedule_wrapper_score32_exp_lut_ppa_v1`.
+    This measures a bounded c2/c4 RTL wrapper that composes central command
+    dispatch, local issue/done accounting, and the selected score32 exp-LUT
+    8x8 ppc1 dual-stream datapath. The purpose is to replace the modeled sum
+    of command control plus local datapath with measured schedule-wrapper PPA
+    before the full Llama7B array is recosted.
 - New evaluations should continue to dispatch only to the remote evaluator
   `eval-daemon-b7c2d9c80c1c`, not the devcontainer.
 
@@ -375,7 +382,18 @@ run the already queued exp-LUT branch:
     `l2_decoder_attention_composed_datapath_score32_exp_lut_div_parallelism_recost_llama7b_v1`.
     This recost must consume each wrapper's generated manifest/config
     `total_macs` so latency, replica count, area, and energy are not
-    accidentally inherited from the full `16x8` wrapper.
+    accidentally inherited from the full `16x8` wrapper. This is complete:
+    PR #1213 records the `8x8 ppc1` measured wrapper as the selected local
+    point and keeps `12322.504989 us/token` as the recosted feasible latency.
+12. Run
+    `l1_decoder_attention_dual_stream_schedule_wrapper_score32_exp_lut_ppa_v1`
+    to measure bounded c2/c4 score32 exp-LUT schedule-wrapper slices. This
+    reduces the remaining scheduler/control abstraction by putting central
+    dispatch, local ready/valid issue, local completion accounting, and the
+    selected composed datapath replicas into one measured RTL/PPA wrapper. The
+    follow-on L2 recost should scale from this wrapper evidence and keep
+    external SRAM, NoC, HBM/DRAM service, and full-array physical signoff as
+    explicit remaining abstractions.
 
 All new evaluation jobs should run on the remote evaluator
 `eval-daemon-b7c2d9c80c1c`, not the devcontainer.

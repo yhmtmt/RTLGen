@@ -1,0 +1,37 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_dual_stream_schedule_wrapper_score32_exp_lut_v1",
+  "source_commit_note": "Dispatch should use the merge commit that adds the schedule-wrapper generator, guard, configs, and L1 task-generator support.",
+  "requested_items": [
+    {
+      "item_id": "l1_decoder_attention_dual_stream_schedule_wrapper_score32_exp_lut_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure bounded score32 exp-LUT dual-stream schedule-wrapper PPA on Nangate45.",
+      "evaluation_mode": "frontier_followup",
+      "abstraction_layer": "decoder_attention_dual_stream_schedule_wrapper",
+      "comparison_role": "score32_exp_lut_schedule_wrapper_ppa",
+      "config_paths": [
+        "runs/designs/npu_blocks/attention_dual_stream_schedule_wrapper_score32_exp_lut_8x8_c2/config.json",
+        "runs/designs/npu_blocks/attention_dual_stream_schedule_wrapper_score32_exp_lut_8x8_c4/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/attention_dual_stream_schedule_wrapper_v1/sweeps/nangate45_attention_dual_stream_schedule_wrapper_score32_exp_lut.json",
+      "expected_outputs": [
+        "runs/designs/npu_blocks/attention_dual_stream_schedule_wrapper_score32_exp_lut_8x8_c2/metrics.csv",
+        "runs/designs/npu_blocks/attention_dual_stream_schedule_wrapper_score32_exp_lut_8x8_c2/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_dual_stream_schedule_wrapper_score32_exp_lut_8x8_c4/metrics.csv",
+        "runs/designs/npu_blocks/attention_dual_stream_schedule_wrapper_score32_exp_lut_8x8_c4/timing_debug_report.md"
+      ],
+      "depends_on_item_ids": [
+        "l1_decoder_attention_dual_stream_composed_score32_exp_lut_div_parallelism_ppa_v1",
+        "l1_decoder_attention_command_dispatch_control_ppa_v1",
+        "l2_decoder_attention_composed_datapath_score32_exp_lut_div_parallelism_recost_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "measure_schedule_wrapper_overhead",
+        "reason": "Replace the modeled sum of command dispatch plus composed datapath with a measured bounded wrapper slice before full Llama7B recost."
+      },
+      "status": "pending"
+    }
+  ]
+}

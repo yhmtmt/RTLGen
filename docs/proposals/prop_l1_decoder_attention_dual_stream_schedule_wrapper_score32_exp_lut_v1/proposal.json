@@ -1,0 +1,82 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_dual_stream_schedule_wrapper_score32_exp_lut_v1",
+  "created_utc": "2026-07-07T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "architecture",
+  "title": "Score32 exp-LUT dual-stream schedule-wrapper PPA",
+  "abstraction_layer": "decoder_attention_dual_stream_schedule_wrapper",
+  "hypothesis": "The current score32 exp-LUT Llama7B frontier still treats schedule/control composition as modeled pieces. A bounded RTL wrapper that composes command dispatch, local issue/done accounting, and score32 dual-stream datapath replicas can expose the physical overhead and timing risk before the full array is recosted.",
+  "direct_comparison": {
+    "primary_question": "What are the Nangate45 area, power, and timing of bounded c2/c4 schedule-wrapper slices around the selected score32 exp-LUT 8x8 ppc1 dual-stream datapath?",
+    "baselines": [
+      "l1_decoder_attention_dual_stream_composed_score32_exp_lut_div_parallelism_ppa_v1",
+      "l1_decoder_attention_command_dispatch_control_ppa_v1"
+    ],
+    "candidate": "l1_decoder_attention_dual_stream_schedule_wrapper_score32_exp_lut_ppa_v1",
+    "include": [
+      "central command dispatch",
+      "per-cluster local issue start and completion accounting",
+      "2-cluster and 4-cluster bounded wrappers",
+      "selected score32 exp-LUT 8x8 ppc1 datapath semantics and manifest total_macs"
+    ],
+    "exclude": [
+      "full 856-replica physical implementation",
+      "external SRAM, NoC, HBM/DRAM controller RTL",
+      "vendor HBM current signoff"
+    ],
+    "metrics": [
+      "critical_path_ns",
+      "die_area",
+      "total_power_mw",
+      "stdcell_count",
+      "datapath_total_macs_per_cluster",
+      "total_macs"
+    ]
+  },
+  "required_evaluations": [
+    {
+      "item_id": "l1_decoder_attention_dual_stream_schedule_wrapper_score32_exp_lut_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure bounded score32 exp-LUT dual-stream schedule-wrapper PPA on Nangate45.",
+      "evaluation_mode": "frontier_followup",
+      "abstraction_layer": "decoder_attention_dual_stream_schedule_wrapper",
+      "comparison_role": "score32_exp_lut_schedule_wrapper_ppa",
+      "config_paths": [
+        "runs/designs/npu_blocks/attention_dual_stream_schedule_wrapper_score32_exp_lut_8x8_c2/config.json",
+        "runs/designs/npu_blocks/attention_dual_stream_schedule_wrapper_score32_exp_lut_8x8_c4/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/attention_dual_stream_schedule_wrapper_v1/sweeps/nangate45_attention_dual_stream_schedule_wrapper_score32_exp_lut.json",
+      "expected_outputs": [
+        "runs/designs/npu_blocks/attention_dual_stream_schedule_wrapper_score32_exp_lut_8x8_c2/metrics.csv",
+        "runs/designs/npu_blocks/attention_dual_stream_schedule_wrapper_score32_exp_lut_8x8_c2/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_dual_stream_schedule_wrapper_score32_exp_lut_8x8_c4/metrics.csv",
+        "runs/designs/npu_blocks/attention_dual_stream_schedule_wrapper_score32_exp_lut_8x8_c4/timing_debug_report.md"
+      ],
+      "depends_on_item_ids": [
+        "l1_decoder_attention_dual_stream_composed_score32_exp_lut_div_parallelism_ppa_v1",
+        "l1_decoder_attention_command_dispatch_control_ppa_v1",
+        "l2_decoder_attention_composed_datapath_score32_exp_lut_div_parallelism_recost_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "measure_schedule_wrapper_overhead",
+        "reason": "Replace the modeled sum of command dispatch plus composed datapath with a measured bounded wrapper slice before full Llama7B recost."
+      },
+      "status": "pending"
+    }
+  ],
+  "source_refs": [
+    "npu/rtlgen/gen_attention_dual_stream_schedule_wrapper.py",
+    "npu/eval/check_attention_dual_stream_schedule_wrapper_guard.py",
+    "runs/designs/npu_blocks/attention_dual_stream_schedule_wrapper_score32_exp_lut_8x8_c2/config.json",
+    "runs/designs/npu_blocks/attention_dual_stream_schedule_wrapper_score32_exp_lut_8x8_c4/config.json",
+    "runs/campaigns/npu/attention_dual_stream_schedule_wrapper_v1/sweeps/nangate45_attention_dual_stream_schedule_wrapper_score32_exp_lut.json"
+  ],
+  "remaining_abstractions": [
+    "The c2/c4 wrapper is a bounded slice and must be scaled or recosted before claiming full Llama7B array PPA.",
+    "External SRAM, NoC, HBM/DRAM service, and distributed clock/reset signoff remain outside this L1 wrapper.",
+    "The wrapper uses deterministic local datapath stimulus for PPA visibility rather than full token-data replay."
+  ]
+}
