@@ -1,0 +1,80 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_score32_schedule_wrapper_integrated_frontier_ranking_llama7b_v1",
+  "created_utc": "2026-07-07T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Score32 schedule-wrapper integrated Llama7B frontier ranking",
+  "abstraction_layer": "decoder_attention_score32_integrated_frontier_ranking",
+  "hypothesis": "After the measured c2/c4 schedule-wrapper recost lands, the integrated Llama7B frontier ranking should consume that recost directly so the score32 row reflects measured schedule/control wrapper overhead instead of the older separated command-control composition.",
+  "direct_comparison": {
+    "primary_question": "Does substituting measured schedule-wrapper recost into the integrated Llama7B frontier ranking change the precision-safe throughput, energy, or area decision?",
+    "include": [
+      "consume the schedule-wrapper physical-feasibility recost",
+      "reuse score32 HBM/DRAM service and energy closure for unchanged memory traffic",
+      "consume the score32 mixed-int8 generation-quality gate",
+      "compare against measured exact-FP16, mixed/int8 energy, and abstract planning rows",
+      "report promotable latency rank, promotable energy rank, area, precision status, and remaining abstractions"
+    ],
+    "exclude": [
+      "new OpenROAD PPA",
+      "new generation-quality evaluation",
+      "new HBM controller RTL",
+      "vendor HBM current-signoff traces"
+    ]
+  },
+  "expected_benefit": [
+    "keeps the integrated frontier ranking synchronized with the latest abstraction-removal result",
+    "prevents the older measured-command-control score32 row from remaining the promoted frontier after schedule-wrapper data lands",
+    "makes the next architecture decision compare token throughput, energy, area, and precision on the same evidence set"
+  ],
+  "risks": [
+    "HBM/DRAM service and energy are reused from the score32 HBM closure because wrapper recost does not change token memory traffic",
+    "the ranking remains an evidence audit and does not synthesize new circuits",
+    "the quality status is still the bounded Llama7B generation-quality gate rather than a broader downstream task suite"
+  ],
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_score32_schedule_wrapper_integrated_frontier_ranking_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Rank the score32 exp-LUT schedule-wrapper recost against current Llama7B frontier alternatives.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_score32_integrated_frontier_ranking",
+      "comparison_role": "score32_schedule_wrapper_integrated_frontier_ranking",
+      "paired_baseline_item_id": "l2_decoder_attention_score32_integrated_frontier_ranking_llama7b_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_composed_datapath_score32_exp_lut_div_schedule_wrapper_recost_llama7b_v1",
+        "l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1",
+        "l2_decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality_llama7b_v1",
+        "l2_decoder_attention_measured_compute_energy_closure_llama7b_v1",
+        "l2_decoder_attention_mixed_int8_energy_closure_llama7b_v1_r2",
+        "l2_decoder_attention_integrated_energy_closure_llama7b_v1_r2"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "record_schedule_wrapper_integrated_frontier_ranking",
+        "reason": "The result should show whether measured schedule-wrapper overhead changes the current precision-safe Llama7B score32 recommendation."
+      },
+      "status": "blocked"
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_score32_exp_lut_div_schedule_wrapper_recost_llama7b_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exp_lut_hbm_dram_service_closure__l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality__l2_decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality_llama7b_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_measured_compute_energy_closure__l2_decoder_attention_measured_compute_energy_closure_llama7b_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_energy_closure__l2_decoder_attention_mixed_int8_energy_closure_llama7b_v1_r2.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_integrated_energy_closure__l2_decoder_attention_integrated_energy_closure_llama7b_v1_r2.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/audit_llm_decoder_attention_score32_integrated_frontier_ranking.py",
+    "npu/eval/estimate_llm_decoder_attention_kv_dual_stream_physical_feasibility.py",
+    "docs/proposals/prop_l2_decoder_attention_composed_datapath_score32_exp_lut_div_schedule_wrapper_recost_llama7b_v1/proposal.json"
+  ],
+  "remaining_abstractions": [
+    "HBM/DRAM service remains command/burst/row-hit accounting, not cycle-accurate controller RTL.",
+    "HBM energy remains calibrated command-class pJ accounting, not vendor current-signoff traces.",
+    "The schedule-wrapper recost scales measured c2/c4 wrapper slices rather than executing a cycle-accurate full-array token replay."
+  ]
+}
