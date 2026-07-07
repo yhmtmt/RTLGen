@@ -5921,6 +5921,12 @@ def _decoder_attention_score32_integrated_frontier_ranking_evidence(*, item_id: 
         "l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_"
         "measured_command_control_llama7b_v1.json"
     )
+    schedule_wrapper_recost = (
+        f"{base}/decoder_attention_composed_datapath_physical_feasibility__"
+        "l2_decoder_attention_composed_datapath_score32_exp_lut_div_"
+        "schedule_wrapper_recost_llama7b_v1.json"
+    )
+    use_schedule_wrapper_recost = "schedule_wrapper" in item_id
     score32_quality = (
         f"{base}/decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality__"
         "l2_decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality_llama7b_v1.json"
@@ -5937,10 +5943,30 @@ def _decoder_attention_score32_integrated_frontier_ranking_evidence(*, item_id: 
         f"{base}/decoder_attention_integrated_energy_closure__"
         "l2_decoder_attention_integrated_energy_closure_llama7b_v1_r2.json"
     )
+    command = (
+        "python3 npu/eval/audit_llm_decoder_attention_score32_integrated_frontier_ranking.py "
+        f"--score32-hbm-dram-service-json {score32_hbm} "
+        f"--score32-measured-command-control-json {measured_command_control} "
+    )
+    if use_schedule_wrapper_recost:
+        command += f"--score32-physical-feasibility-json {schedule_wrapper_recost} "
+    command += (
+        f"--score32-quality-json {score32_quality} "
+        f"--measured-compute-energy-json {measured_compute} "
+        f"--mixed-int8-energy-json {mixed_int8} "
+        f"--integrated-energy-json {integrated_energy} "
+        f"--out {out} "
+        f"--out-md {report}"
+    )
     return {
         "inputs": {
             "attention_score32_exp_lut_hbm_dram_service_closure": score32_hbm,
             "attention_score32_exp_lut_measured_command_control": measured_command_control,
+            **(
+                {"attention_score32_exp_lut_schedule_wrapper_recost": schedule_wrapper_recost}
+                if use_schedule_wrapper_recost
+                else {}
+            ),
             "attention_score32_exp_lut_generation_quality": score32_quality,
             "attention_measured_compute_energy_closure": measured_compute,
             "attention_mixed_int8_energy_closure": mixed_int8,
@@ -5957,17 +5983,7 @@ def _decoder_attention_score32_integrated_frontier_ranking_evidence(*, item_id: 
         "commands": [
             {
                 "name": "audit_decoder_attention_score32_integrated_frontier_ranking",
-                "run": (
-                    "python3 npu/eval/audit_llm_decoder_attention_score32_integrated_frontier_ranking.py "
-                    f"--score32-hbm-dram-service-json {score32_hbm} "
-                    f"--score32-measured-command-control-json {measured_command_control} "
-                    f"--score32-quality-json {score32_quality} "
-                    f"--measured-compute-energy-json {measured_compute} "
-                    f"--mixed-int8-energy-json {mixed_int8} "
-                    f"--integrated-energy-json {integrated_energy} "
-                    f"--out {out} "
-                    f"--out-md {report}"
-                ),
+                "run": command,
             },
         ],
         "expected_outputs": [out, report],
