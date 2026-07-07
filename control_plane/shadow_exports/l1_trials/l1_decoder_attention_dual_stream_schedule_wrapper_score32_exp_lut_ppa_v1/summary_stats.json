@@ -1,0 +1,33 @@
+{
+  "item_id": "l1_decoder_attention_dual_stream_schedule_wrapper_score32_exp_lut_ppa_v1",
+  "completed_trials": 1,
+  "success_count": 1,
+  "failure_count": 0,
+  "success_rate": 1.0,
+  "metrics": {
+    "critical_path_ns": {
+      "best": 48.6509,
+      "mean": 48.6509,
+      "median": 48.6509,
+      "max": 48.6509,
+      "range": 0.0,
+      "stddev": 0.0
+    },
+    "die_area": {
+      "best": 9000000.0,
+      "mean": 9000000.0,
+      "median": 9000000.0,
+      "max": 9000000.0,
+      "range": 0.0,
+      "stddev": 0.0
+    },
+    "total_power_mw": {
+      "best": 60.7,
+      "mean": 60.7,
+      "median": 60.7,
+      "max": 60.7,
+      "range": 0.0,
+      "stddev": 0.0
+    }
+  }
+}
