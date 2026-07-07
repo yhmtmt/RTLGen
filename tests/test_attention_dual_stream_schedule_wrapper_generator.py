@@ -3,6 +3,12 @@ import subprocess
 import sys
 from pathlib import Path
 
+from npu.eval.estimate_llm_decoder_attention_kv_dual_stream_physical_feasibility import (
+    _load_composed_semantic_profile,
+    _load_composed_total_macs,
+    _load_composed_variant_kind,
+)
+
 
 def _write_config(config_path: Path, *, clusters: int = 2) -> None:
     config_path.parent.mkdir(parents=True)
@@ -102,3 +108,31 @@ def test_attention_dual_stream_schedule_wrapper_generator_guard_and_syntax(tmp_p
     assert "local_issue_valid" in top_text
     assert "cluster_done_valid" in top_text
     assert "datapath_result_fold" in top_text
+
+
+def test_schedule_wrapper_metrics_are_loaded_as_composed_compute_variant(tmp_path: Path) -> None:
+    design_dir = tmp_path / "attention_dual_stream_schedule_wrapper_smoke_c4"
+    config_path = design_dir / "config.json"
+    _write_config(config_path, clusters=4)
+
+    subprocess.run(
+        [
+            sys.executable,
+            "npu/rtlgen/gen_attention_dual_stream_schedule_wrapper.py",
+            "--config",
+            str(config_path),
+            "--out",
+            str(design_dir / "verilog"),
+        ],
+        check=True,
+    )
+    metrics_path = design_dir / "metrics.csv"
+    metrics_path.write_text(
+        "design,status,critical_path_ns,die_area,total_power_mw,instance_area_um2,param_hash,tag,result_path\n"
+        "attention_dual_stream_schedule_wrapper_smoke_c4,ok,12.5,1000,3.25,900,abc,tag,out\n",
+        encoding="utf-8",
+    )
+
+    assert _load_composed_variant_kind(metrics_path) == "dual_stream_schedule_wrapper"
+    assert _load_composed_semantic_profile(metrics_path) == "score32_exp_lut_div"
+    assert _load_composed_total_macs(metrics_path) == 32

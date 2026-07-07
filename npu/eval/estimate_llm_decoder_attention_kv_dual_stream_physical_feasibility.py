@@ -101,8 +101,9 @@ def _compose_variant_name(path: Path) -> str:
 def _load_composed_semantic_profile(path: Path) -> str:
     design_dir = path.parent
     manifest_path = design_dir / "verilog" / "attention_dual_stream_composed_manifest.json"
+    schedule_manifest_path = design_dir / "verilog" / "attention_dual_stream_schedule_wrapper_manifest.json"
     config_path = design_dir / "config.json"
-    for candidate in (manifest_path, config_path):
+    for candidate in (manifest_path, schedule_manifest_path, config_path):
         if not candidate.exists():
             continue
         try:
@@ -111,8 +112,15 @@ def _load_composed_semantic_profile(path: Path) -> str:
             continue
         if candidate == manifest_path:
             profile = payload.get("semantic_profile")
+        elif candidate == schedule_manifest_path:
+            datapath = payload.get("datapath_manifest")
+            profile = datapath.get("semantic_profile") if isinstance(datapath, dict) else None
         else:
             comp = payload.get("attention_dual_stream_composed")
+            if not isinstance(comp, dict):
+                wrapper = payload.get("attention_dual_stream_schedule_wrapper")
+                datapath = wrapper.get("datapath") if isinstance(wrapper, dict) else None
+                comp = datapath if isinstance(datapath, dict) else None
             profile = comp.get("semantic_profile") if isinstance(comp, dict) else None
         if isinstance(profile, str) and profile.strip():
             return profile.strip()
@@ -122,10 +130,22 @@ def _load_composed_semantic_profile(path: Path) -> str:
 def _load_composed_total_macs(path: Path) -> int | None:
     design_dir = path.parent
     manifest_path = design_dir / "verilog" / "attention_dual_stream_composed_manifest.json"
+    schedule_manifest_path = design_dir / "verilog" / "attention_dual_stream_schedule_wrapper_manifest.json"
     config_path = design_dir / "config.json"
     if manifest_path.exists():
         try:
             manifest = _load_json(manifest_path)
+        except json.JSONDecodeError:
+            manifest = {}
+        try:
+            total_macs = int(manifest.get("total_macs"))
+        except (TypeError, ValueError):
+            total_macs = 0
+        if total_macs > 0:
+            return total_macs
+    if schedule_manifest_path.exists():
+        try:
+            manifest = _load_json(schedule_manifest_path)
         except json.JSONDecodeError:
             manifest = {}
         try:
@@ -140,6 +160,16 @@ def _load_composed_total_macs(path: Path) -> int | None:
         except json.JSONDecodeError:
             payload = {}
         comp = payload.get("attention_dual_stream_composed") if isinstance(payload, dict) else None
+        if not isinstance(comp, dict):
+            wrapper = payload.get("attention_dual_stream_schedule_wrapper") if isinstance(payload, dict) else None
+            if isinstance(wrapper, dict):
+                datapath = wrapper.get("datapath")
+                clusters = int(wrapper.get("clusters", 1))
+                comp = datapath if isinstance(datapath, dict) else None
+            else:
+                clusters = 1
+        else:
+            clusters = 1
         if isinstance(comp, dict):
             try:
                 streams = int(comp.get("streams", 2))
@@ -148,10 +178,29 @@ def _load_composed_total_macs(path: Path) -> int | None:
                 k_unroll = int(comp.get("k_unroll", 1))
             except (TypeError, ValueError):
                 return None
-            total_macs = streams * array_m * array_n * k_unroll
+            total_macs = clusters * streams * array_m * array_n * k_unroll
             if total_macs > 0:
                 return total_macs
     return None
+
+
+def _load_composed_variant_kind(path: Path) -> str:
+    design_dir = path.parent
+    if (design_dir / "verilog" / "attention_dual_stream_schedule_wrapper_manifest.json").exists():
+        return "dual_stream_schedule_wrapper"
+    if (design_dir / "verilog" / "attention_dual_stream_composed_manifest.json").exists():
+        return "dual_stream_composed_datapath"
+    config_path = design_dir / "config.json"
+    if config_path.exists():
+        try:
+            payload = _load_json(config_path)
+        except json.JSONDecodeError:
+            payload = {}
+        if isinstance(payload.get("attention_dual_stream_schedule_wrapper"), dict):
+            return "dual_stream_schedule_wrapper"
+        if isinstance(payload.get("attention_dual_stream_composed"), dict):
+            return "dual_stream_composed_datapath"
+    return "unknown_composed_compute_block"
 
 
 def _parse_composed_metric_inputs(values: Any) -> list[Path]:
@@ -199,6 +248,7 @@ def _load_composed_variants(paths: list[Path]) -> list[JsonDict]:
             {
                 "composed_variant_label": _infer_composed_precision_profile(path),
                 "composed_variant_name": _compose_variant_name(path),
+                "composed_variant_kind": _load_composed_variant_kind(path),
                 "composed_semantic_profile": _load_composed_semantic_profile(path),
                 "composed_total_macs_per_cycle": total_macs,
             }
@@ -416,6 +466,7 @@ def _row_with_budget(
             composed_dual_stream.get("composed_variant_name")
             or "attention_dual_stream_composed_int8_q8k8v6_16x8_p8_ppc2_nohash_softmax_recip_lut_q10"
         )
+        composed_variant_kind = str(composed_dual_stream.get("composed_variant_kind") or "dual_stream_composed_datapath")
         compute_area_required = base_compute_area
     elif compute_block is None:
         base_compute_area = current_compute_area
@@ -426,6 +477,7 @@ def _row_with_budget(
         target_block_clock = float(source_row["measured_block_clock_ns"])
         target_block_power = float(source_row.get("measured_block_power_mw", 0.0))
         target_arch = str(source_row.get("compute_arch", ""))
+        composed_variant_kind = None
         compute_area_required = base_compute_area * compute_multiplier
     else:
         target_block_area = float(compute_block["block_area_um2"])
@@ -436,6 +488,7 @@ def _row_with_budget(
         target_block_power = float(compute_block["total_power_mw"])
         base_compute_power = target_replica_count * target_block_power
         target_arch = str(compute_arch_name or source_row.get("compute_arch", ""))
+        composed_variant_kind = None
         compute_area_required = base_compute_area * compute_multiplier
     logic_used_required = current_logic_used + (compute_area_required - current_compute_area) + (
         selected_l1_overhead - current_l1_overhead
@@ -480,7 +533,9 @@ def _row_with_budget(
     out.update(
         {
             "dual_stream_physical_model": (
-                "measured_dual_stream_composed_budget_v1"
+                "measured_dual_stream_schedule_wrapper_budget_v1"
+                if use_composed_dual_stream and composed_variant_kind == "dual_stream_schedule_wrapper"
+                else "measured_dual_stream_composed_budget_v1"
                 if use_composed_dual_stream
                 else "measured_full_value_tile_budget_v1"
             ),
@@ -503,6 +558,7 @@ def _row_with_budget(
                     "measured_dual_stream_composed_precision_profile": composed_dual_stream[
                         "composed_variant_label"
                     ],
+                    "measured_dual_stream_composed_variant_kind": composed_variant_kind,
                     "measured_dual_stream_composed_semantic_profile": composed_dual_stream[
                         "composed_semantic_profile"
                     ],
@@ -562,6 +618,7 @@ def _row_with_budget(
             "substituted_compute_semantic_profile": (
                 composed_dual_stream["composed_semantic_profile"] if use_composed_dual_stream else None
             ),
+            "substituted_compute_variant_kind": composed_variant_kind if use_composed_dual_stream else None,
             "logic_area_used_required_um2": round(logic_used_required, 6),
             "logic_area_slack_required_um2": round(logic_slack_required, 6),
             "compute_area_over_budget_um2": round(compute_area_over_budget, 6),
@@ -986,6 +1043,9 @@ def build_report(args: argparse.Namespace) -> JsonDict:
             "best_requested_substituted_compute_semantic_profile": best_requested.get(
                 "substituted_compute_semantic_profile"
             ),
+            "best_requested_substituted_compute_variant_kind": best_requested.get(
+                "substituted_compute_variant_kind"
+            ),
             "best_requested_substituted_compute_area_um2": best_requested.get("substituted_compute_area_um2"),
             "best_requested_compute_clock_ok": best_requested.get("compute_clock_ok"),
             "best_requested_command_dispatch_control_variant": best_requested.get(
@@ -1044,6 +1104,7 @@ def write_markdown(path: Path, payload: JsonDict) -> None:
         f"- best requested compute substitution: `{diag['best_requested_compute_substitution_enabled']}`",
         f"- best requested substituted compute arch: `{diag['best_requested_substituted_compute_arch']}`",
         f"- best requested substituted compute variant: `{diag['best_requested_substituted_compute_variant_label']}`",
+        f"- best requested substituted compute kind: `{diag['best_requested_substituted_compute_variant_kind']}`",
         f"- best requested substituted compute semantic profile: `{diag['best_requested_substituted_compute_semantic_profile']}`",
         f"- best requested substituted compute area um2: `{diag['best_requested_substituted_compute_area_um2']}`",
         f"- best requested command dispatch control variant: `{diag['best_requested_command_dispatch_control_variant']}`",

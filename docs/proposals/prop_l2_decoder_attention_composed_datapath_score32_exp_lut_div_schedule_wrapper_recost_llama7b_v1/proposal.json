@@ -1,0 +1,58 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_composed_datapath_score32_exp_lut_div_schedule_wrapper_recost_llama7b_v1",
+  "created_utc": "2026-07-07T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Score32 exp-LUT schedule-wrapper Llama7B recost",
+  "abstraction_layer": "decoder_attention_composed_datapath_physical_feasibility",
+  "hypothesis": "The current score32 exp-LUT Llama7B recost still scales measured datapaths plus modeled command/control composition. Substituting the measured c2/c4 schedule-wrapper slices should expose whether local issue/done accounting and central dispatch materially change area-fit token latency, energy, and ranking.",
+  "direct_comparison": {
+    "primary_question": "Does measured bounded schedule-wrapper PPA change the score32 exp-LUT Llama7B frontier versus the prior parallelism recost?",
+    "baseline": "l2_decoder_attention_composed_datapath_score32_exp_lut_div_parallelism_recost_llama7b_v1",
+    "include": [
+      "c2/c4 schedule-wrapper metrics",
+      "manifest-derived wrapper MACs/cycle",
+      "same score32 exp-LUT quality evidence",
+      "area-fit replica recost against the Llama7B schedule"
+    ],
+    "exclude": [
+      "full 856-replica place-and-route",
+      "new precision quality run",
+      "new HBM/DRAM controller RTL"
+    ]
+  },
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_composed_datapath_score32_exp_lut_div_schedule_wrapper_recost_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Recost Llama7B score32 exp-LUT attention using measured c2/c4 dual-stream schedule-wrapper PPA.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_composed_datapath_physical_feasibility",
+      "comparison_role": "score32_exp_lut_schedule_wrapper_recost",
+      "paired_baseline_item_id": "l2_decoder_attention_composed_datapath_score32_exp_lut_div_parallelism_recost_llama7b_v1",
+      "depends_on_item_ids": [
+        "l1_decoder_attention_dual_stream_schedule_wrapper_score32_exp_lut_ppa_v1",
+        "l2_decoder_attention_composed_datapath_score32_exp_lut_div_parallelism_recost_llama7b_v1",
+        "l2_decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "replace_modeled_schedule_control_with_measured_wrapper",
+        "reason": "The result should show whether measured bounded schedule/control wrapper overhead changes the current score32 exp-LUT Llama7B frontier ranking."
+      },
+      "status": "blocked"
+    }
+  ],
+  "source_refs": [
+    "npu/eval/estimate_llm_decoder_attention_kv_dual_stream_physical_feasibility.py",
+    "control_plane/control_plane/services/l2_task_generator.py",
+    "docs/proposals/prop_l1_decoder_attention_dual_stream_schedule_wrapper_score32_exp_lut_v1/proposal.json"
+  ],
+  "remaining_abstractions": [
+    "The L1 input is a bounded c2/c4 wrapper slice, not a full-chip implementation.",
+    "External SRAM, NoC, HBM/DRAM service, and package-level memory energy remain from the existing Llama7B model.",
+    "The recost scales the measured wrapper by area-fit replicas rather than executing a cycle-accurate full-array token replay."
+  ]
+}

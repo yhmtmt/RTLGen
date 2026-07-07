@@ -1,0 +1,26 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_composed_datapath_score32_exp_lut_div_schedule_wrapper_recost_llama7b_v1",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_composed_datapath_score32_exp_lut_div_schedule_wrapper_recost_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Recost Llama7B score32 exp-LUT attention using measured c2/c4 dual-stream schedule-wrapper PPA.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_composed_datapath_physical_feasibility",
+      "comparison_role": "score32_exp_lut_schedule_wrapper_recost",
+      "paired_baseline_item_id": "l2_decoder_attention_composed_datapath_score32_exp_lut_div_parallelism_recost_llama7b_v1",
+      "depends_on_item_ids": [
+        "l1_decoder_attention_dual_stream_schedule_wrapper_score32_exp_lut_ppa_v1",
+        "l2_decoder_attention_composed_datapath_score32_exp_lut_div_parallelism_recost_llama7b_v1",
+        "l2_decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "replace_modeled_schedule_control_with_measured_wrapper",
+        "reason": "The result should show whether measured bounded schedule/control wrapper overhead changes the current score32 exp-LUT Llama7B frontier ranking."
+      },
+      "status": "blocked"
+    }
+  ]
+}
