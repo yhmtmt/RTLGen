@@ -527,6 +527,85 @@ def _write_example_attention_command_dispatch_repo(repo_root: Path) -> tuple[str
     )
 
 
+def _write_example_attention_schedule_wrapper_repo(repo_root: Path) -> tuple[str, str]:
+    design_dir = repo_root / "runs" / "designs" / "npu_blocks" / "attention_dual_stream_schedule_wrapper_smoke_c2"
+    design_dir.mkdir(parents=True, exist_ok=True)
+    config_path = design_dir / "config.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "top_name": "attention_dual_stream_schedule_wrapper_smoke_c2",
+                "attention_dual_stream_schedule_wrapper": {
+                    "clusters": 2,
+                    "queue_depth": 8,
+                    "tile_id_bits": 16,
+                    "wave_id_bits": 12,
+                    "base_token_bits": 18,
+                    "max_inflight_per_cluster": 2,
+                    "cluster_service_cycles": 4,
+                    "datapath": {
+                        "streams": 2,
+                        "array_m": 2,
+                        "array_n": 2,
+                        "k_unroll": 1,
+                        "mac_accum_bits": 32,
+                        "softmax_row_elems": 4,
+                        "softmax_score_bits": 32,
+                        "softmax_weight_bits": 16,
+                        "softmax_input_frac_bits": 28,
+                        "softmax_accum_bits": 40,
+                        "reciprocal_bits": 16,
+                        "softmax_reciprocal_lut_bucket_shift": 20,
+                        "value_bits": 8,
+                        "value_lanes": 4,
+                        "partials": 4,
+                        "partials_per_cycle": 1,
+                        "stream_buffer_bits": 256,
+                        "equivalence_hash": False,
+                        "softmax_pipeline_stages": 1,
+                        "softmax_impl": "exp_lut_div",
+                        "semantic_profile": "score32_exp_lut_div",
+                    },
+                },
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    sweep_path = (
+        repo_root
+        / "runs"
+        / "campaigns"
+        / "npu"
+        / "attention_dual_stream_schedule_wrapper_v1"
+        / "sweeps"
+        / "nangate45_attention_dual_stream_schedule_wrapper_score32_exp_lut.json"
+    )
+    sweep_path.parent.mkdir(parents=True, exist_ok=True)
+    sweep_path.write_text(
+        json.dumps(
+            {
+                "flow_params": {
+                    "CLOCK_PERIOD": [10.0],
+                    "DIE_AREA": ["0 0 2500 2500"],
+                    "CORE_AREA": ["50 50 2450 2450"],
+                    "PLACE_DENSITY": [0.35],
+                    "SYNTH_HIERARCHICAL": [1],
+                },
+                "tag_prefix": "attention_dual_stream_schedule_wrapper_score32_exp_lut",
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    return (
+        str(config_path.relative_to(repo_root)),
+        str(sweep_path.relative_to(repo_root)),
+    )
+
+
 def _write_second_attention_command_dispatch_repo(repo_root: Path) -> str:
     design_dir = repo_root / "runs" / "designs" / "npu_blocks" / "attention_command_dispatch_c16_q32"
     design_dir.mkdir(parents=True, exist_ok=True)
@@ -1494,6 +1573,66 @@ def test_generate_l1_sweep_task_supports_attention_command_dispatch_configs() ->
             ]
             assert work_item.task_request.request_payload["developer_loop"]["abstraction"] == {
                 "layer": "decoder_attention_command_dispatch_control"
+            }
+
+
+def test_generate_l1_sweep_task_supports_attention_schedule_wrapper_configs() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        config_path, sweep_path = _write_example_attention_schedule_wrapper_repo(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l1_sweep_task(
+                session,
+                Layer1SweepGenerateRequest(
+                    repo_root=str(repo_root),
+                    sweep_path=sweep_path,
+                    config_paths=[config_path],
+                    platform="nangate45",
+                    out_root="runs/designs/npu_blocks",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    abstraction_layer="decoder_attention_dual_stream_schedule_wrapper",
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            assert result.status == "applied"
+            assert [command["name"] for command in work_item.command_manifest] == [
+                "generate_attention_dual_stream_schedule_wrapper_rtl",
+                "check_attention_dual_stream_schedule_wrapper_guard",
+                "run_block_sweep",
+                "extract_attention_dual_stream_schedule_wrapper_timing_paths",
+                "build_runs_index",
+                "validate",
+            ]
+            assert work_item.command_manifest[0]["run"] == (
+                "export PATH=/oss-cad-suite/bin:$PATH && "
+                "python3 npu/rtlgen/gen_attention_dual_stream_schedule_wrapper.py "
+                "--config runs/designs/npu_blocks/attention_dual_stream_schedule_wrapper_smoke_c2/config.json "
+                "--out runs/designs/npu_blocks/attention_dual_stream_schedule_wrapper_smoke_c2/verilog"
+            )
+            assert work_item.command_manifest[1]["run"] == (
+                "python3 npu/eval/check_attention_dual_stream_schedule_wrapper_guard.py "
+                "--design-dir runs/designs/npu_blocks/attention_dual_stream_schedule_wrapper_smoke_c2"
+            )
+            assert "--top attention_dual_stream_schedule_wrapper_smoke_c2" in work_item.command_manifest[2]["run"]
+            assert work_item.command_manifest[3]["run"] == (
+                "python3 npu/eval/extract_openroad_timing_summary.py "
+                "--design-dir runs/designs/npu_blocks/attention_dual_stream_schedule_wrapper_smoke_c2 "
+                "--out runs/designs/npu_blocks/attention_dual_stream_schedule_wrapper_smoke_c2/timing_debug_report.md "
+                "--max-paths 8"
+            )
+            assert work_item.expected_outputs == [
+                "runs/designs/npu_blocks/attention_dual_stream_schedule_wrapper_smoke_c2/metrics.csv",
+                "runs/designs/npu_blocks/attention_dual_stream_schedule_wrapper_smoke_c2/timing_debug_report.md",
+            ]
+            assert work_item.task_request.request_payload["developer_loop"]["abstraction"] == {
+                "layer": "decoder_attention_dual_stream_schedule_wrapper"
             }
 
 

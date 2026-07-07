@@ -1,0 +1,35 @@
+{
+  "top_name": "attention_dual_stream_schedule_wrapper_score32_exp_lut_8x8_c4",
+  "attention_dual_stream_schedule_wrapper": {
+    "clusters": 4,
+    "queue_depth": 32,
+    "tile_id_bits": 16,
+    "wave_id_bits": 12,
+    "base_token_bits": 18,
+    "max_inflight_per_cluster": 2,
+    "cluster_service_cycles": 4,
+    "datapath": {
+      "streams": 2,
+      "array_m": 8,
+      "array_n": 8,
+      "k_unroll": 1,
+      "mac_accum_bits": 32,
+      "softmax_row_elems": 8,
+      "softmax_score_bits": 32,
+      "softmax_weight_bits": 16,
+      "softmax_input_frac_bits": 28,
+      "softmax_accum_bits": 40,
+      "reciprocal_bits": 16,
+      "softmax_reciprocal_lut_bucket_shift": 20,
+      "value_bits": 8,
+      "value_lanes": 8,
+      "partials": 8,
+      "partials_per_cycle": 1,
+      "stream_buffer_bits": 512,
+      "equivalence_hash": false,
+      "softmax_pipeline_stages": 1,
+      "softmax_impl": "exp_lut_div",
+      "semantic_profile": "score32_exp_lut_div"
+    }
+  }
+}
