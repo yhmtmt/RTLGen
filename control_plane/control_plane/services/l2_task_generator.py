@@ -5526,6 +5526,7 @@ def _decoder_attention_composed_datapath_physical_feasibility_evidence(*, item_i
     score32_recip_lut_q16_reduced_replica = "score32_w16_recip_lut_q16_reduced_replica" in item_id
     score32_exp_lut_div_reduced_replica = "score32_exp_lut_div_reduced_replica" in item_id
     score32_exp_lut_div_parallelism_recost = "score32_exp_lut_div_parallelism_recost" in item_id
+    score32_exp_lut_div_schedule_wrapper_recost = "score32_exp_lut_div_schedule_wrapper_recost" in item_id
     command_overhead = "command_overhead" in item_id
     measured_command_control = "measured_command_control" in item_id
     q20_pwl_recip_div_reduced_replica = "q20_pwl_recip_div_reduced_replica" in item_id
@@ -5570,6 +5571,13 @@ def _decoder_attention_composed_datapath_physical_feasibility_evidence(*, item_i
             "runs/designs/npu_blocks/"
             "attention_dual_stream_composed_int8_q8k8v8_4x4_p8_ppc1_nohash_score32_w16_exp_lut_div_b20/"
             "metrics.csv"
+        )
+    elif score32_exp_lut_div_schedule_wrapper_recost:
+        composed_dual_stream_metrics = (
+            "runs/designs/npu_blocks/"
+            "attention_dual_stream_schedule_wrapper_score32_exp_lut_8x8_c2/metrics.csv,"
+            "runs/designs/npu_blocks/"
+            "attention_dual_stream_schedule_wrapper_score32_exp_lut_8x8_c4/metrics.csv"
         )
     elif q20_pwl_recip_div_reduced_replica:
         composed_dual_stream_metrics = (
@@ -5625,6 +5633,9 @@ def _decoder_attention_composed_datapath_physical_feasibility_evidence(*, item_i
     elif score32_exp_lut_div_parallelism_recost:
         model_name = "llm_decoder_attention_composed_datapath_score32_exp_lut_div_parallelism_recost_llama7b_v1"
         precision_profile = "q8_k8_v8_a32_s32_w16_exp_lut_div_b20_int8_compute"
+    elif score32_exp_lut_div_schedule_wrapper_recost:
+        model_name = "llm_decoder_attention_composed_datapath_score32_exp_lut_div_schedule_wrapper_recost_llama7b_v1"
+        precision_profile = "q8_k8_v8_a32_s32_w16_exp_lut_div_b20_int8_compute"
     elif q20_pwl_recip_div_reduced_replica:
         model_name = "llm_decoder_attention_composed_datapath_q20_pwl_recip_div_reduced_replica_llama7b_v1"
         precision_profile = "q8_k8_v8_a24_s20_w20_pwl_recip_div_q20_int8_compute"
@@ -5643,7 +5654,11 @@ def _decoder_attention_composed_datapath_physical_feasibility_evidence(*, item_i
     else:
         model_name = "llm_decoder_attention_composed_datapath_physical_feasibility_softmax_recip_lut_llama7b_v1"
         precision_profile = "q8_k8_v6_a24_s8_w8_recip_lut_q10_int8_compute"
-    if score32_exp_lut_div_reduced_replica or score32_exp_lut_div_parallelism_recost:
+    if (
+        score32_exp_lut_div_reduced_replica
+        or score32_exp_lut_div_parallelism_recost
+        or score32_exp_lut_div_schedule_wrapper_recost
+    ):
         quality_gate = (
             f"{base}/decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality__"
             "l2_decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality_llama7b_v1.json"
@@ -5658,6 +5673,7 @@ def _decoder_attention_composed_datapath_physical_feasibility_evidence(*, item_i
         or score32_recip_lut_q16_reduced_replica
         or score32_exp_lut_div_reduced_replica
         or score32_exp_lut_div_parallelism_recost
+        or score32_exp_lut_div_schedule_wrapper_recost
         or q20_pwl_recip_div_reduced_replica
     )
     command_overhead_flags = ""

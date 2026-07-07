@@ -194,6 +194,11 @@ than free or heuristic assumptions.
     8x8 ppc1 dual-stream datapath. The purpose is to replace the modeled sum
     of command control plus local datapath with measured schedule-wrapper PPA
     before the full Llama7B array is recosted.
+  - the prepared dependent recost is
+    `l2_decoder_attention_composed_datapath_score32_exp_lut_div_schedule_wrapper_recost_llama7b_v1`.
+    It must wait for the schedule-wrapper L1 PR to merge, then consume the
+    c2/c4 metrics as measured compute/control blocks with manifest-derived
+    wrapper MAC counts.
 - New evaluations should continue to dispatch only to the remote evaluator
   `eval-daemon-b7c2d9c80c1c`, not the devcontainer.
 
@@ -391,9 +396,11 @@ run the already queued exp-LUT branch:
     reduces the remaining scheduler/control abstraction by putting central
     dispatch, local ready/valid issue, local completion accounting, and the
     selected composed datapath replicas into one measured RTL/PPA wrapper. The
-    follow-on L2 recost should scale from this wrapper evidence and keep
-    external SRAM, NoC, HBM/DRAM service, and full-array physical signoff as
-    explicit remaining abstractions.
+    follow-on L2 item is
+    `l2_decoder_attention_composed_datapath_score32_exp_lut_div_schedule_wrapper_recost_llama7b_v1`.
+    It should scale from this wrapper evidence and keep external SRAM, NoC,
+    HBM/DRAM service, and full-array physical signoff as explicit remaining
+    abstractions.
 
 All new evaluation jobs should run on the remote evaluator
 `eval-daemon-b7c2d9c80c1c`, not the devcontainer.
