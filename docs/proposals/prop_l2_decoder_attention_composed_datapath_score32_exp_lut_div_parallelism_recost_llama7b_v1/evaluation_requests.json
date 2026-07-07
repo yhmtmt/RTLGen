@@ -21,7 +21,12 @@
         "direction": "rank_score32_exp_lut_parallelism_tradeoff",
         "reason": "The result should identify whether reduced local parallelism improves score32 Llama7B energy/area enough to justify the latency loss."
       },
-      "status": "blocked"
+      "status": "merged",
+      "merged_pr_number": 1213,
+      "merge_commit": "0e4e2fd7d957134c8eae12fc97e72508b1841e0b",
+      "merged_utc": "2026-07-07T01:16:43.708436Z",
+      "notes": "Merged via PR #1213 and merge 0e4e2fd7d957134c8eae12fc97e72508b1841e0b at 2026-07-07T01:16:43.708436Z."
     }
-  ]
+  ],
+  "source_commit": "007e1319917bd5f8926462fd36c0702d9ef88cfb"
 }
