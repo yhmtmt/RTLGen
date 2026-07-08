@@ -26,6 +26,13 @@ def _as_float(value: Any, default: float = 0.0) -> float:
         return default
 
 
+def _opt_float(value: Any) -> float | None:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
 def _quality_status(score32_quality: JsonDict) -> JsonDict:
     decision = score32_quality.get("decision")
     decision_dict = _as_dict(decision)
@@ -43,11 +50,73 @@ def _quality_status(score32_quality: JsonDict) -> JsonDict:
     }
 
 
+def _extract_ppa_best_metrics(ppa_payload: JsonDict, *, channel_count: int | None = None) -> JsonDict | None:
+    preferred_markers = []
+    if channel_count is not None and channel_count > 0:
+        preferred_markers = [f"_c{channel_count}/", f"_c{channel_count}_"]
+
+    proposal_metrics: list[JsonDict] = []
+    for proposal in ppa_payload.get("proposals", []):
+        if not isinstance(proposal, dict):
+            continue
+        if not isinstance(proposal.get("metric_summary"), dict):
+            continue
+        metrics_ref = _as_dict(proposal.get("metrics_ref"))
+        if str(metrics_ref.get("status") or "").strip() != "ok":
+            continue
+        metric_summary = _as_dict(proposal.get("metric_summary"))
+        critical_path = _opt_float(metric_summary.get("critical_path_ns"))
+        die_area = _opt_float(metric_summary.get("die_area"))
+        total_power = _opt_float(metric_summary.get("total_power_mw"))
+        if any(v is not None for v in (critical_path, die_area, total_power)):
+            proposal_metrics.append(
+                {
+                    "critical_path_ns_best": critical_path,
+                    "die_area_best": die_area,
+                    "total_power_mw_best": total_power,
+                    "source": "proposals",
+                    "artifact_item_id": ppa_payload.get("item_id"),
+                    "metrics_csv": metrics_ref.get("metrics_csv"),
+                }
+            )
+
+    if proposal_metrics:
+        if preferred_markers:
+            for metrics in proposal_metrics:
+                metrics_csv = str(metrics.get("metrics_csv") or "")
+                if any(marker in metrics_csv for marker in preferred_markers):
+                    return metrics
+        return proposal_metrics[0]
+
+    trial_summary = _as_dict(ppa_payload.get("trial_summary"))
+    metrics = _as_dict(trial_summary.get("metrics"))
+    if metrics:
+        critical_path = _opt_float(_as_dict(metrics.get("critical_path_ns")).get("best"))
+        die_area = _opt_float(_as_dict(metrics.get("die_area")).get("best"))
+        total_power = _opt_float(_as_dict(metrics.get("total_power_mw")).get("best"))
+        if any(v is not None for v in (critical_path, die_area, total_power)):
+            return {
+                "critical_path_ns_best": critical_path,
+                "die_area_best": die_area,
+                "total_power_mw_best": total_power,
+                "source": "trial_summary",
+                "artifact_item_id": ppa_payload.get("item_id"),
+            }
+    return None
+
+
+def _load_ppa_metrics(path: Path | None, *, channel_count: int | None = None) -> JsonDict | None:
+    if path is None:
+        return None
+    return _extract_ppa_best_metrics(_load_json(path), channel_count=channel_count)
+
+
 def _score32_row(
     score32_hbm: JsonDict,
     measured_command: JsonDict,
     score32_quality: JsonDict,
     score32_hbm_controller_replay: JsonDict | None = None,
+    score32_hbm_controller_replay_ppa: JsonDict | None = None,
     score32_physical: JsonDict | None = None,
 ) -> JsonDict:
     replay_best = _as_dict(score32_hbm_controller_replay.get("best_latency")) if score32_hbm_controller_replay else {}
@@ -103,7 +172,17 @@ def _score32_row(
         candidate_id = str(best.get("candidate_id") or "score32_exp_lut_schedule_wrapper_hbm_controller_replay_best")
         source_artifact = str(best.get("source_artifact") or "score32_schedule_wrapper_hbm_controller_replay")
         abstraction_status = "measured_schedule_wrapper_sram_envelope_hbm_controller_replay"
-        remaining_abstractions = list(best.get("remaining_abstractions") or [])
+        if score32_hbm_controller_replay_ppa is not None:
+            remaining_abstractions = [
+                item
+                for item in list(best.get("remaining_abstractions") or [])
+                if "deterministic cycle-level" not in str(item).lower()
+            ]
+            remaining_abstractions.append(
+                "HBM replay controller control timing is backed by measured Nangate45 RTL PPA."
+            )
+        else:
+            remaining_abstractions = list(best.get("remaining_abstractions") or [])
         latency_us = _as_float(best.get("latency_us"), latency_us)
         token_throughput_per_s = _as_float(best.get("token_throughput_per_s"), token_throughput_per_s)
         compute_energy_mj_per_token = _as_float(best.get("compute_energy_mj_per_token"), compute_energy_mj_per_token)
@@ -115,6 +194,7 @@ def _score32_row(
             _as_float(measured.get("replica_recost_compute_area_um2") or measured.get("compute_area_um2")) / 1.0e6,
         )
         macs_per_cycle = _as_float(best.get("macs_per_cycle"), _as_float(measured.get("replica_recost_macs_per_cycle") or best.get("macs_per_cycle")))
+        remaining_abstractions = sorted(set(remaining_abstractions))
 
     return {
         "candidate_id": candidate_id,
@@ -131,6 +211,7 @@ def _score32_row(
         "precision_status": quality["status"],
         "quality_backed": quality["quality_backed"],
         "quality": quality,
+        "score32_hbm_controller_replay_ppa": score32_hbm_controller_replay_ppa,
         "abstraction_status": abstraction_status,
         "remaining_abstractions": remaining_abstractions,
         "promotable": bool(quality["quality_backed"]),
@@ -230,6 +311,13 @@ def build_report(args: argparse.Namespace) -> JsonDict:
         if args.score32_hbm_controller_replay_json
         else None
     )
+    replay_channel_count = None
+    if score32_hbm_controller_replay is not None:
+        replay_channel_count = int(_as_float(_as_dict(score32_hbm_controller_replay.get("best_latency")).get("channel_count")))
+    score32_hbm_controller_replay_ppa = _load_ppa_metrics(
+        args.score32_hbm_controller_replay_ppa_json,
+        channel_count=replay_channel_count,
+    )
     score32_physical = _load_json(args.score32_physical_feasibility_json) if args.score32_physical_feasibility_json else None
     score32_quality = _load_json(args.score32_quality_json)
     measured_compute = _load_json(args.measured_compute_energy_json)
@@ -242,6 +330,7 @@ def build_report(args: argparse.Namespace) -> JsonDict:
             measured_command,
             score32_quality,
             score32_hbm_controller_replay,
+            score32_hbm_controller_replay_ppa,
             score32_physical,
         ),
         _prior_row(
@@ -297,6 +386,10 @@ def build_report(args: argparse.Namespace) -> JsonDict:
             "score32_hbm_controller_replay_json": str(args.score32_hbm_controller_replay_json)
             if args.score32_hbm_controller_replay_json
             else None,
+            "score32_hbm_controller_replay_ppa_json": str(args.score32_hbm_controller_replay_ppa_json)
+            if args.score32_hbm_controller_replay_ppa_json
+            else None,
+            "score32_hbm_controller_replay_ppa_metrics": score32_hbm_controller_replay_ppa,
             "score32_physical_feasibility_json": str(args.score32_physical_feasibility_json)
             if args.score32_physical_feasibility_json
             else None,
@@ -346,8 +439,14 @@ def build_report(args: argparse.Namespace) -> JsonDict:
                 "The score32 row is quality-backed by the bounded generation-quality gate and measured through "
                 "wrapper, command-control, SRAM-envelope, and HBM/DRAM service closure."
                 if not args.score32_hbm_controller_replay_json
-                else "The score32 row is quality-backed by the bounded generation-quality gate and measured through "
-                "wrapper, command-control, SRAM-envelope, and deterministic cycle-level HBM controller replay."
+                else (
+                    "The score32 row is quality-backed by the bounded generation-quality gate and measured through "
+                    "wrapper, command-control, SRAM-envelope, and deterministic cycle-level HBM controller replay."
+                    if args.score32_hbm_controller_replay_ppa_json is None
+                    else "The score32 row is quality-backed by the bounded generation-quality gate and measured "
+                    "through wrapper, command-control, SRAM-envelope, deterministic HBM replay, and measured "
+                    "Nangate45 RTL PPA for the replay controller control path."
+                )
             ),
             "The mixed-int8 energy row is retained as a fast non-promotable latency candidate because its precision path is not promoted by the current real-checkpoint evidence.",
             "The older integrated-energy row is retained as planning-only because measured-compute closure made its abstract compute target infeasible.",
@@ -405,6 +504,7 @@ def main() -> int:
     parser.add_argument("--score32-hbm-dram-service-json", type=Path, required=True)
     parser.add_argument("--score32-measured-command-control-json", type=Path, required=True)
     parser.add_argument("--score32-hbm-controller-replay-json", type=Path)
+    parser.add_argument("--score32-hbm-controller-replay-ppa-json", type=Path)
     parser.add_argument("--score32-physical-feasibility-json", type=Path)
     parser.add_argument("--score32-quality-json", type=Path, required=True)
     parser.add_argument("--measured-compute-energy-json", type=Path, required=True)
