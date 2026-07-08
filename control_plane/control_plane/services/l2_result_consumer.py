@@ -571,6 +571,10 @@ _DECODER_EVIDENCE_OUTPUT_KEYS: tuple[tuple[str, str], ...] = (
         "attention_score32_exp_lut_hbm_dram_service_closure_report",
     ),
     (
+        "attention_score32_hbm_controller_replay_out",
+        "attention_score32_hbm_controller_replay_report",
+    ),
+    (
         "attention_score32_integrated_frontier_ranking_out",
         "attention_score32_integrated_frontier_ranking_report",
     ),
@@ -1358,6 +1362,33 @@ def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, 
             "best_energy_hbm_energy_mj_per_token",
             "source_score32_latency_us",
             "source_controller_service_cycles",
+            "remaining_abstractions",
+        ):
+            if key in diagnosis_dict:
+                parts.append(f"{key}={diagnosis_dict.get(key)}")
+        summary = "; ".join(parts)
+        return outcome, summary if summary.endswith(".") else summary + "."
+
+    if model == "llm_decoder_attention_score32_hbm_controller_replay_v1":
+        diagnosis = evidence_payload.get("diagnosis")
+        diagnosis_dict = dict(diagnosis) if isinstance(diagnosis, dict) else {}
+        outcome = str(
+            diagnosis_dict.get("decision")
+            or evidence_payload.get("decision")
+            or "score32_hbm_controller_replay_recorded"
+        )
+        parts = [
+            f"Decoder score32 HBM controller replay evidence recorded from {evidence_ref}: decision={outcome}",
+        ]
+        for key in (
+            "best_latency_us",
+            "best_latency_token_throughput_per_s",
+            "best_latency_total_energy_mj_per_token",
+            "best_latency_hbm_dominates_tile",
+            "best_latency_row_miss_count",
+            "best_requested_row_latency_us",
+            "compute_power_mw_source",
+            "hbm_energy_source",
             "remaining_abstractions",
         ):
             if key in diagnosis_dict:
