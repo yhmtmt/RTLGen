@@ -1,0 +1,129 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-07-08T03:14:20.608073Z",
+  "item_id": "l2_decoder_attention_score32_hbm_controller_replay_llama7b_v1",
+  "run_key": "l2_decoder_attention_score32_hbm_controller_replay_llama7b_v1_run_a6c628b0eb7aeb4b",
+  "layer": "layer2",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l2_campaign",
+  "source_commit": "c6dc69bd7982f988ccc231f6cbfd3438d3fd9b74",
+  "review_metadata_source_commit": "c892ca1f7545ec2d0391ddd299d88593e1e2710f",
+  "objective": "Replay the score32 schedule-wrapper HBM burst stream through a deterministic controller model and report the resulting Llama7B latency and energy.",
+  "input_manifest": {
+    "decoder_contract": {
+      "attention_score32_hbm_controller_replay_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_hbm_controller_replay__l2_decoder_attention_score32_hbm_controller_replay_llama7b_v1.json",
+      "attention_score32_hbm_controller_replay_scope": "Replace the score32 analytic HBM service formula with a deterministic cycle-level controller replay over burst requests, channel queues, row-buffer state, outstanding windows, request overhead, row-miss penalty, and scheduler gaps.",
+      "attention_score32_hbm_controller_replay_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_hbm_controller_replay__l2_decoder_attention_score32_hbm_controller_replay_llama7b_v1.md",
+      "attention_score32_exp_lut_schedule_wrapper_recost": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_score32_exp_lut_div_schedule_wrapper_recost_llama7b_v1.json",
+      "attention_score32_exp_lut_hbm_dram_service_closure": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exp_lut_hbm_dram_service_closure__l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1.json"
+    }
+  },
+  "recommendation": {
+    "source": "decoder_evidence",
+    "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_hbm_controller_replay__l2_decoder_attention_score32_hbm_controller_replay_llama7b_v1.json",
+    "arch_id": "decoder_attention_score32_hbm_controller_replay",
+    "macro_mode": "evidence_only",
+    "outcome": "score32_hbm_controller_replay_compute_dominant"
+  },
+  "objective_profiles": [],
+  "evaluation_record": {
+    "proposal_id": "prop_l2_decoder_attention_score32_hbm_controller_replay_llama7b_v1",
+    "title": "Score32 schedule-wrapper HBM controller replay",
+    "primary_question": "Does replacing analytic score32 HBM service with deterministic cycle-level controller replay materially move the precision-safe Llama7B throughput or energy point?",
+    "evaluation_mode": "frontier_detail",
+    "comparison_role": "score32_hbm_controller_replay",
+    "abstraction_layer": "decoder_attention_score32_hbm_controller_replay",
+    "expected_direction": "replace_analytic_hbm_service_with_controller_replay",
+    "expected_reason": "The result should show whether deterministic HBM controller replay changes the score32 schedule-wrapper latency, energy, and remaining-abstraction account.",
+    "summary": "Decoder score32 HBM controller replay evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_hbm_controller_replay__l2_decoder_attention_score32_hbm_controller_replay_llama7b_v1.json: decision=score32_hbm_controller_replay_compute_dominant; best_latency_us=12814.257853; best_latency_token_throughput_per_s=78.038073798; best_latency_total_energy_mj_per_token=467.189908559; best_latency_hbm_dominates_tile=False; best_latency_row_miss_count=64; best_requested_row_latency_us=12814.257853; compute_power_mw_source=25979.6; hbm_energy_source=134.280615241; remaining_abstractions=['controller replay is deterministic cycle-level, not RTL timing', 'vendor HBM current signoff is not represented'].",
+    "outcome": "score32_hbm_controller_replay_compute_dominant",
+    "expectation_status": "unspecified"
+  },
+  "proposal_assessment": {
+    "proposal_id": "prop_l2_decoder_attention_score32_hbm_controller_replay_llama7b_v1",
+    "title": "Score32 schedule-wrapper HBM controller replay",
+    "kind": "architecture",
+    "primary_question": "Does replacing analytic score32 HBM service with deterministic cycle-level controller replay materially move the precision-safe Llama7B throughput or energy point?",
+    "evaluation_mode": "frontier_detail",
+    "comparison_role": "score32_hbm_controller_replay",
+    "outcome": "score32_hbm_controller_replay_compute_dominant",
+    "summary": "Decoder score32 HBM controller replay evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_hbm_controller_replay__l2_decoder_attention_score32_hbm_controller_replay_llama7b_v1.json: decision=score32_hbm_controller_replay_compute_dominant; best_latency_us=12814.257853; best_latency_token_throughput_per_s=78.038073798; best_latency_total_energy_mj_per_token=467.189908559; best_latency_hbm_dominates_tile=False; best_latency_row_miss_count=64; best_requested_row_latency_us=12814.257853; compute_power_mw_source=25979.6; hbm_energy_source=134.280615241; remaining_abstractions=['controller replay is deterministic cycle-level, not RTL timing', 'vendor HBM current signoff is not represented'].",
+    "baseline_ref": null,
+    "baseline_item_id": null,
+    "matched_row_count": 0,
+    "matched_rows": [],
+    "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_hbm_controller_replay__l2_decoder_attention_score32_hbm_controller_replay_llama7b_v1.json",
+    "decoder_quality": {
+      "diagnosis": {
+        "best_energy_hbm_service_cycles": 1136,
+        "best_energy_total_energy_mj_per_token": 467.189908559,
+        "best_energy_us": 12814.257853,
+        "best_latency_hbm_dominates_tile": false,
+        "best_latency_row_miss_count": 64,
+        "best_latency_token_throughput_per_s": 78.038073798,
+        "best_latency_total_energy_mj_per_token": 467.189908559,
+        "best_latency_us": 12814.257853,
+        "best_requested_row_latency_us": 12814.257853,
+        "compute_power_mw_source": 25979.6,
+        "hbm_energy_source": 134.280615241,
+        "remaining_abstractions": [
+          "controller replay is deterministic cycle-level, not RTL timing",
+          "vendor HBM current signoff is not represented"
+        ],
+        "row_count": 23328
+      },
+      "assumptions": [
+        "Replay builds a deterministic burst stream with round-robin channel interleave.",
+        "Each channel has row-window state with misses determined by row_span_bursts and adjusted to hit_rate.",
+        "Per-request cycles include burst transfer payload, request overhead, row-miss penalty, and scheduler gap.",
+        "Outstanding requests are enforced as a global in-flight limit.",
+        "Replay latency is added to the schedule-wrapper recost source latency by mapping replay-cycle delta vs source HBM/service cycles.",
+        "HBM energy is inherited from the score32 HBM closure; compute energy is rebuilt from physical wrapper compute power."
+      ],
+      "next_step": {
+        "recommended_next_step": "Use this deterministic replay as the current schedule-wrapper HBM abstraction, then replace with cycle-accurate controller timing before collapsing HBM abstraction for final frontier ranking.",
+        "requires_cycle_accurate_hbm_controller_rtl": true,
+        "requires_vendor_hbm_current_signoff": true
+      }
+    }
+  },
+  "source_refs": {
+    "decoder_evidence_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_hbm_controller_replay__l2_decoder_attention_score32_hbm_controller_replay_llama7b_v1.json",
+    "decoder_attention_score32_hbm_controller_replay_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_hbm_controller_replay__l2_decoder_attention_score32_hbm_controller_replay_llama7b_v1.json",
+    "decoder_attention_score32_hbm_controller_replay_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_hbm_controller_replay__l2_decoder_attention_score32_hbm_controller_replay_llama7b_v1.md"
+  },
+  "decoder_quality": {
+    "diagnosis": {
+      "best_energy_hbm_service_cycles": 1136,
+      "best_energy_total_energy_mj_per_token": 467.189908559,
+      "best_energy_us": 12814.257853,
+      "best_latency_hbm_dominates_tile": false,
+      "best_latency_row_miss_count": 64,
+      "best_latency_token_throughput_per_s": 78.038073798,
+      "best_latency_total_energy_mj_per_token": 467.189908559,
+      "best_latency_us": 12814.257853,
+      "best_requested_row_latency_us": 12814.257853,
+      "compute_power_mw_source": 25979.6,
+      "hbm_energy_source": 134.280615241,
+      "remaining_abstractions": [
+        "controller replay is deterministic cycle-level, not RTL timing",
+        "vendor HBM current signoff is not represented"
+      ],
+      "row_count": 23328
+    },
+    "assumptions": [
+      "Replay builds a deterministic burst stream with round-robin channel interleave.",
+      "Each channel has row-window state with misses determined by row_span_bursts and adjusted to hit_rate.",
+      "Per-request cycles include burst transfer payload, request overhead, row-miss penalty, and scheduler gap.",
+      "Outstanding requests are enforced as a global in-flight limit.",
+      "Replay latency is added to the schedule-wrapper recost source latency by mapping replay-cycle delta vs source HBM/service cycles.",
+      "HBM energy is inherited from the score32 HBM closure; compute energy is rebuilt from physical wrapper compute power."
+    ],
+    "next_step": {
+      "recommended_next_step": "Use this deterministic replay as the current schedule-wrapper HBM abstraction, then replace with cycle-accurate controller timing before collapsing HBM abstraction for final frontier ranking.",
+      "requires_cycle_accurate_hbm_controller_rtl": true,
+      "requires_vendor_hbm_current_signoff": true
+    }
+  }
+}
