@@ -1,0 +1,73 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_score32_hbm_controller_replay_llama7b_v1",
+  "created_utc": "2026-07-08T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Score32 schedule-wrapper HBM controller replay",
+  "abstraction_layer": "decoder_attention_score32_hbm_controller_replay",
+  "hypothesis": "The current precision-safe score32 schedule-wrapper frontier is still charged with an analytic HBM service formula. Replaying the score32 tile HBM burst stream through deterministic channel queues, row-window state, request overhead, row-miss penalty, scheduler gap, and outstanding-request limits should bound the cycle-level HBM-controller cost before a full RTL controller exists.",
+  "direct_comparison": {
+    "primary_question": "Does replacing analytic score32 HBM service with deterministic cycle-level controller replay materially move the precision-safe Llama7B throughput or energy point?",
+    "include": [
+      "consume the merged score32 HBM/DRAM service closure",
+      "consume the merged score32 schedule-wrapper physical recost",
+      "sweep channel count, per-channel bandwidth, burst size, row span, row miss penalty, request overhead, scheduler gap, and outstanding window",
+      "report replay service cycles, latency delta, throughput, energy, area, and remaining HBM abstractions"
+    ],
+    "exclude": [
+      "new OpenROAD PPA",
+      "HBM controller RTL timing",
+      "vendor HBM current signoff",
+      "new generation-quality evaluation"
+    ]
+  },
+  "expected_benefit": [
+    "reduces the score32 frontier HBM service abstraction from a closed-form estimate to a deterministic cycle replay",
+    "bounds whether the schedule-wrapper frontier remains throughput-best when HBM replay cycles exceed the source HBM/service budget",
+    "produces a concrete artifact that can be consumed by a follow-on integrated frontier ranking"
+  ],
+  "risks": [
+    "the replay is deterministic and cycle-level but still not RTL timing",
+    "HBM energy remains inherited from the command-calibrated service closure rather than vendor signoff current traces",
+    "row locality is controlled by replay parameters rather than measured physical address traces"
+  ],
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_score32_hbm_controller_replay_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Replay the score32 schedule-wrapper HBM burst stream through a deterministic controller model and report the resulting Llama7B latency and energy.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_score32_hbm_controller_replay",
+      "comparison_role": "score32_hbm_controller_replay",
+      "paired_baseline_item_id": "l2_decoder_attention_score32_schedule_wrapper_integrated_frontier_ranking_llama7b_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_score32_schedule_wrapper_integrated_frontier_ranking_llama7b_v1",
+        "l2_decoder_attention_composed_datapath_score32_exp_lut_div_schedule_wrapper_recost_llama7b_v1",
+        "l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "replace_analytic_hbm_service_with_controller_replay",
+        "reason": "The result should show whether deterministic HBM controller replay changes the score32 schedule-wrapper latency, energy, and remaining-abstraction account."
+      },
+      "status": "ready_to_dispatch_after_code_merge"
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_integrated_frontier_ranking__l2_decoder_attention_score32_schedule_wrapper_integrated_frontier_ranking_llama7b_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_score32_exp_lut_div_schedule_wrapper_recost_llama7b_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exp_lut_hbm_dram_service_closure__l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/audit_llm_decoder_attention_score32_hbm_controller_replay.py",
+    "npu/eval/audit_llm_decoder_attention_score32_exp_lut_hbm_dram_service_closure.py",
+    "npu/eval/audit_llm_decoder_attention_score32_integrated_frontier_ranking.py"
+  ],
+  "remaining_abstractions_after_this_step": [
+    "HBM controller replay is deterministic cycle-level modeling, not RTL timing.",
+    "HBM energy remains command-calibrated and not vendor current signoff.",
+    "Row locality is parameterized rather than measured from physical address traces."
+  ]
+}
