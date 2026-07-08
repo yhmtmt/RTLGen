@@ -1,0 +1,108 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "decoder_contract": {
+        "attention_score32_hbm_controller_replay_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_hbm_controller_replay__l2_decoder_attention_score32_hbm_controller_replay_llama7b_v1.json",
+        "attention_score32_hbm_controller_replay_scope": "Replace the score32 analytic HBM service formula with a deterministic cycle-level controller replay over burst requests, channel queues, row-buffer state, outstanding windows, request overhead, row-miss penalty, and scheduler gaps.",
+        "attention_score32_hbm_controller_replay_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_hbm_controller_replay__l2_decoder_attention_score32_hbm_controller_replay_llama7b_v1.md",
+        "attention_score32_exp_lut_schedule_wrapper_recost": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_score32_exp_lut_div_schedule_wrapper_recost_llama7b_v1.json",
+        "attention_score32_exp_lut_hbm_dram_service_closure": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exp_lut_hbm_dram_service_closure__l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1.json"
+      }
+    },
+    "commands": [
+      {
+        "run": "python3 npu/eval/audit_llm_decoder_attention_score32_hbm_controller_replay.py --score32-hbm-dram-service-json runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exp_lut_hbm_dram_service_closure__l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1.json --score32-physical-feasibility-json runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_score32_exp_lut_div_schedule_wrapper_recost_llama7b_v1.json --channel-count 4,8,16 --channel-bandwidth-bytes-per-cycle 256,512,1024 --burst-bytes 512,1024 --hbm-outstanding 4,8,16,32 --request-overhead-cycles 2,4,8 --row-miss-penalty-cycles 8,16,32 --row-span-bursts 1,4,16 --scheduler-gap-cycles 0,1,2 --out runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_hbm_controller_replay__l2_decoder_attention_score32_hbm_controller_replay_llama7b_v1.json --out-md runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_hbm_controller_replay__l2_decoder_attention_score32_hbm_controller_replay_llama7b_v1.md",
+        "name": "audit_decoder_attention_score32_hbm_controller_replay"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate_runs"
+      }
+    ],
+    "objective": "Replay the score32 schedule-wrapper HBM burst stream through a deterministic controller model and report the resulting Llama7B latency and energy.",
+    "acceptance": [
+      "Write all declared decoder evidence artifacts",
+      "Keep evidence artifact paths repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "source_mode": "src_verilog",
+    "expected_outputs": [
+      "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_hbm_controller_replay__l2_decoder_attention_score32_hbm_controller_replay_llama7b_v1.json",
+      "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_hbm_controller_replay__l2_decoder_attention_score32_hbm_controller_replay_llama7b_v1.md"
+    ]
+  },
+  "layer": "layer2",
+  "state": "evaluated",
+  "title": "Score32 schedule-wrapper HBM controller replay",
+  "result": {
+    "branch": "eval/l2_decoder_attention_score32_hbm_controller_replay_llama7b_v1",
+    "completed_utc": "2026-07-08T03:00:33.755571Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "b7c2d9c80c1c",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260708t031503z][host:b7c2d9c80c1c][item:l2_decoder_attention_score32_hbm_controller_replay_llama7b_v1]",
+    "metrics_rows": [],
+    "metrics_exempt_reason": "evidence_only_decoder_evidence",
+    "queue_item_id": "l2_decoder_attention_score32_hbm_controller_replay_llama7b_v1",
+    "session_id": "s20260708t031503z",
+    "status": "ok",
+    "summary": "2/2 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l2_decoder_attention_score32_hbm_controller_replay_llama7b_v1/s20260708t031503z",
+    "pr_title": "eval: run score32 schedule-wrapper hbm controller replay",
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Include metrics row references in result.metrics_rows",
+      "Keep committed result_path fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260708t031503z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l2_decoder_attention_score32_hbm_controller_replay_llama7b_v1"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l2_decoder_attention_score32_hbm_controller_replay_llama7b_v1",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 1,
+  "created_utc": "2026-07-08T02:59:41.447243Z",
+  "requested_by": "developer_agent",
+  "developer_loop": {
+    "comparison": {
+      "role": "score32_hbm_controller_replay",
+      "paired_baseline_item_id": "l2_decoder_attention_score32_schedule_wrapper_integrated_frontier_ranking_llama7b_v1"
+    },
+    "evaluation": {
+      "mode": "frontier_detail",
+      "expected_reason": "The result should show whether deterministic HBM controller replay changes the score32 schedule-wrapper latency, energy, and remaining-abstraction account.",
+      "expected_direction": "replace_analytic_hbm_service_with_controller_replay"
+    },
+    "abstraction": {
+      "layer": "decoder_attention_score32_hbm_controller_replay"
+    },
+    "proposal_id": "prop_l2_decoder_attention_score32_hbm_controller_replay_llama7b_v1",
+    "dependencies": {
+      "item_ids": [
+        "l2_decoder_attention_score32_schedule_wrapper_integrated_frontier_ranking_llama7b_v1",
+        "l2_decoder_attention_composed_datapath_score32_exp_lut_div_schedule_wrapper_recost_llama7b_v1",
+        "l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    },
+    "proposal_path": "docs/proposals/prop_l2_decoder_attention_score32_hbm_controller_replay_llama7b_v1/proposal.json"
+  },
+  "source_requirement": {
+    "repo": "",
+    "reason": "evaluator runtime must contain the queued job source commit",
+    "version": 1,
+    "required_ref": "origin/master",
+    "required_sha": "c6dc69bd7982f988ccc231f6cbfd3438d3fd9b74",
+    "requires_daemon_restart": true
+  }
+}
