@@ -31,7 +31,12 @@
         "direction": "measure_schedule_wrapper_overhead",
         "reason": "Replace the modeled sum of command dispatch plus composed datapath with a measured bounded wrapper slice before full Llama7B recost."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 1217,
+      "merge_commit": "ea8827725629262304c2eff8fc5a1adf12ef91d7",
+      "merged_utc": "2026-07-08T02:27:45.427033Z",
+      "notes": "Merged via PR #1217 and merge ea8827725629262304c2eff8fc5a1adf12ef91d7 at 2026-07-08T02:27:45.427033Z."
     }
-  ]
+  ],
+  "source_commit": "7aecdaf43829dddbbe497bb668e04a64b0c7f4d3"
 }
