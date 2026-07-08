@@ -25,7 +25,12 @@
         "direction": "record_score32_integrated_frontier_ranking",
         "reason": "The result should provide a deterministic replay-based score32 ranking row and keep remaining abstractions explicit before controller RTL timing work."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 1229,
+      "merge_commit": "6b427df8dd17258f9d62a5ae9c0c999e158b5fe0",
+      "merged_utc": "2026-07-08T03:30:34.256566Z",
+      "notes": "Merged via PR #1229 and merge 6b427df8dd17258f9d62a5ae9c0c999e158b5fe0 at 2026-07-08T03:30:34.256566Z."
     }
-  ]
+  ],
+  "source_commit": "94fe59542b7f634ed048c8eb25e7538735fb64a3"
 }
