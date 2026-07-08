@@ -20,7 +20,12 @@
         "direction": "replace_modeled_schedule_control_with_measured_wrapper",
         "reason": "The result should show whether measured bounded schedule/control wrapper overhead changes the current score32 exp-LUT Llama7B frontier ranking."
       },
-      "status": "blocked"
+      "status": "merged",
+      "merged_pr_number": 1218,
+      "merge_commit": "1160f1db1a3d71e3936b74c0c0b7620998dc5c12",
+      "merged_utc": "2026-07-08T02:33:04.260228Z",
+      "notes": "Merged via PR #1218 and merge 1160f1db1a3d71e3936b74c0c0b7620998dc5c12 at 2026-07-08T02:33:04.260228Z."
     }
-  ]
+  ],
+  "source_commit": "ea8827725629262304c2eff8fc5a1adf12ef91d7"
 }

@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_composed_datapath_score32_exp_lut_div_schedule_wrapper_recost_llama7b_v1",
+  "decision": "iterate",
+  "pr_number": 1218,
+  "merge_commit": "1160f1db1a3d71e3936b74c0c0b7620998dc5c12",
+  "merged_utc": "2026-07-08T02:33:04.260228Z"
+}
