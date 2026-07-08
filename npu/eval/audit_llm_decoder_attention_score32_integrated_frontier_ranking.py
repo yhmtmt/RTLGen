@@ -47,9 +47,12 @@ def _score32_row(
     score32_hbm: JsonDict,
     measured_command: JsonDict,
     score32_quality: JsonDict,
+    score32_hbm_controller_replay: JsonDict | None = None,
     score32_physical: JsonDict | None = None,
 ) -> JsonDict:
-    best = _as_dict(score32_hbm.get("best_latency"))
+    replay_best = _as_dict(score32_hbm_controller_replay.get("best_latency")) if score32_hbm_controller_replay else {}
+    best = replay_best or _as_dict(score32_hbm.get("best_latency"))
+    uses_hbm_controller_replay = bool(replay_best)
     measured_source = score32_physical if score32_physical is not None else measured_command
     measured = _as_dict(measured_source.get("best_requested"))
     quality = _quality_status(score32_quality)
@@ -59,6 +62,11 @@ def _score32_row(
     compute_energy_mj_per_token = _as_float(best.get("compute_energy_mj_per_token"))
     hbm_energy_mj_per_token = _as_float(best.get("hbm_energy_mj_per_token"))
     total_energy_mj_per_token = _as_float(best.get("total_energy_mj_per_token"))
+    die_area_mm2 = _as_float(measured.get("die_area_mm2"))
+    compute_area_mm2 = (
+        _as_float(measured.get("replica_recost_compute_area_um2") or measured.get("compute_area_um2")) / 1.0e6
+    )
+    macs_per_cycle = _as_float(measured.get("replica_recost_macs_per_cycle") or best.get("macs_per_cycle"))
     source_artifact = "score32_hbm_dram_service_closure"
     candidate_id = "score32_exp_lut_hbm_dram_service_closure_best"
     abstraction_status = "measured_wrapper_command_control_sram_envelope_hbm_command_service"
@@ -91,6 +99,23 @@ def _score32_row(
             }
         )
 
+    if uses_hbm_controller_replay:
+        candidate_id = str(best.get("candidate_id") or "score32_exp_lut_schedule_wrapper_hbm_controller_replay_best")
+        source_artifact = str(best.get("source_artifact") or "score32_schedule_wrapper_hbm_controller_replay")
+        abstraction_status = "measured_schedule_wrapper_sram_envelope_hbm_controller_replay"
+        remaining_abstractions = list(best.get("remaining_abstractions") or [])
+        latency_us = _as_float(best.get("latency_us"), latency_us)
+        token_throughput_per_s = _as_float(best.get("token_throughput_per_s"), token_throughput_per_s)
+        compute_energy_mj_per_token = _as_float(best.get("compute_energy_mj_per_token"), compute_energy_mj_per_token)
+        hbm_energy_mj_per_token = _as_float(best.get("hbm_energy_mj_per_token"), hbm_energy_mj_per_token)
+        total_energy_mj_per_token = _as_float(best.get("total_energy_mj_per_token"), total_energy_mj_per_token)
+        die_area_mm2 = _as_float(best.get("die_area_mm2"), _as_float(measured.get("die_area_mm2")))
+        compute_area_mm2 = _as_float(
+            best.get("compute_area_mm2"),
+            _as_float(measured.get("replica_recost_compute_area_um2") or measured.get("compute_area_um2")) / 1.0e6,
+        )
+        macs_per_cycle = _as_float(best.get("macs_per_cycle"), _as_float(measured.get("replica_recost_macs_per_cycle") or best.get("macs_per_cycle")))
+
     return {
         "candidate_id": candidate_id,
         "family": "score32_exp_lut_div",
@@ -100,12 +125,9 @@ def _score32_row(
         "energy_mj_per_token": total_energy_mj_per_token,
         "compute_energy_mj_per_token": compute_energy_mj_per_token,
         "hbm_energy_mj_per_token": hbm_energy_mj_per_token,
-        "die_area_mm2": _as_float(measured.get("die_area_mm2")),
-        "compute_area_mm2": _as_float(
-            measured.get("replica_recost_compute_area_um2") or measured.get("compute_area_um2")
-        )
-        / 1.0e6,
-        "macs_per_cycle": _as_float(measured.get("replica_recost_macs_per_cycle") or best.get("macs_per_cycle")),
+        "die_area_mm2": die_area_mm2,
+        "compute_area_mm2": _as_float(compute_area_mm2),
+        "macs_per_cycle": _as_float(macs_per_cycle),
         "precision_status": quality["status"],
         "quality_backed": quality["quality_backed"],
         "quality": quality,
@@ -203,6 +225,11 @@ def _energy_rank(rows: list[JsonDict], *, promotable_only: bool = False) -> list
 def build_report(args: argparse.Namespace) -> JsonDict:
     score32_hbm = _load_json(args.score32_hbm_dram_service_json)
     measured_command = _load_json(args.score32_measured_command_control_json)
+    score32_hbm_controller_replay = (
+        _load_json(args.score32_hbm_controller_replay_json)
+        if args.score32_hbm_controller_replay_json
+        else None
+    )
     score32_physical = _load_json(args.score32_physical_feasibility_json) if args.score32_physical_feasibility_json else None
     score32_quality = _load_json(args.score32_quality_json)
     measured_compute = _load_json(args.measured_compute_energy_json)
@@ -210,7 +237,13 @@ def build_report(args: argparse.Namespace) -> JsonDict:
     integrated = _load_json(args.integrated_energy_json)
 
     rows = [
-        _score32_row(score32_hbm, measured_command, score32_quality, score32_physical),
+        _score32_row(
+            score32_hbm,
+            measured_command,
+            score32_quality,
+            score32_hbm_controller_replay,
+            score32_physical,
+        ),
         _prior_row(
             candidate_id=str(_best_row(measured_compute).get("candidate_id") or "measured_fp16_compute_energy_best"),
             family="measured_exact_fp16_gqa8_kv8",
@@ -261,6 +294,9 @@ def build_report(args: argparse.Namespace) -> JsonDict:
         "inputs": {
             "score32_hbm_dram_service_json": str(args.score32_hbm_dram_service_json),
             "score32_measured_command_control_json": str(args.score32_measured_command_control_json),
+            "score32_hbm_controller_replay_json": str(args.score32_hbm_controller_replay_json)
+            if args.score32_hbm_controller_replay_json
+            else None,
             "score32_physical_feasibility_json": str(args.score32_physical_feasibility_json)
             if args.score32_physical_feasibility_json
             else None,
@@ -306,7 +342,13 @@ def build_report(args: argparse.Namespace) -> JsonDict:
         "promotable_energy_rank": promotable_energy_rank,
         "assumptions": [
             "Rows are ranked by explicit metrics from merged evidence; no new PPA is synthesized in this audit.",
-            "The score32 row is quality-backed by the bounded generation-quality gate and measured through wrapper, command-control, SRAM-envelope, and HBM/DRAM service closure.",
+            (
+                "The score32 row is quality-backed by the bounded generation-quality gate and measured through "
+                "wrapper, command-control, SRAM-envelope, and HBM/DRAM service closure."
+                if not args.score32_hbm_controller_replay_json
+                else "The score32 row is quality-backed by the bounded generation-quality gate and measured through "
+                "wrapper, command-control, SRAM-envelope, and deterministic cycle-level HBM controller replay."
+            ),
             "The mixed-int8 energy row is retained as a fast non-promotable latency candidate because its precision path is not promoted by the current real-checkpoint evidence.",
             "The older integrated-energy row is retained as planning-only because measured-compute closure made its abstract compute target infeasible.",
         ],
@@ -362,6 +404,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--score32-hbm-dram-service-json", type=Path, required=True)
     parser.add_argument("--score32-measured-command-control-json", type=Path, required=True)
+    parser.add_argument("--score32-hbm-controller-replay-json", type=Path)
     parser.add_argument("--score32-physical-feasibility-json", type=Path)
     parser.add_argument("--score32-quality-json", type=Path, required=True)
     parser.add_argument("--measured-compute-energy-json", type=Path, required=True)

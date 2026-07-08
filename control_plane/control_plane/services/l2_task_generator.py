@@ -5976,7 +5976,12 @@ def _decoder_attention_score32_integrated_frontier_ranking_evidence(*, item_id: 
         "l2_decoder_attention_composed_datapath_score32_exp_lut_div_"
         "schedule_wrapper_recost_llama7b_v1.json"
     )
+    score32_hbm_controller_replay = (
+        f"{base}/decoder_attention_score32_hbm_controller_replay__"
+        "l2_decoder_attention_score32_hbm_controller_replay_llama7b_v1.json"
+    )
     use_schedule_wrapper_recost = "schedule_wrapper" in item_id
+    use_hbm_controller_replay = "hbm_controller_replay" in item_id
     score32_quality = (
         f"{base}/decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality__"
         "l2_decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality_llama7b_v1.json"
@@ -5998,6 +6003,8 @@ def _decoder_attention_score32_integrated_frontier_ranking_evidence(*, item_id: 
         f"--score32-hbm-dram-service-json {score32_hbm} "
         f"--score32-measured-command-control-json {measured_command_control} "
     )
+    if use_hbm_controller_replay:
+        command += f"--score32-hbm-controller-replay-json {score32_hbm_controller_replay} "
     if use_schedule_wrapper_recost:
         command += f"--score32-physical-feasibility-json {schedule_wrapper_recost} "
     command += (
@@ -6012,6 +6019,11 @@ def _decoder_attention_score32_integrated_frontier_ranking_evidence(*, item_id: 
         "inputs": {
             "attention_score32_exp_lut_hbm_dram_service_closure": score32_hbm,
             "attention_score32_exp_lut_measured_command_control": measured_command_control,
+            **(
+                {"attention_score32_hbm_controller_replay": score32_hbm_controller_replay}
+                if use_hbm_controller_replay
+                else {}
+            ),
             **(
                 {"attention_score32_exp_lut_schedule_wrapper_recost": schedule_wrapper_recost}
                 if use_schedule_wrapper_recost
