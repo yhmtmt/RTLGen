@@ -1,0 +1,171 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "sweeps": [
+        "runs/campaigns/npu/attention_dual_stream_schedule_wrapper_v1/sweeps/nangate45_attention_dual_stream_schedule_wrapper_score32_exp_lut.json"
+      ],
+      "configs": [
+        "runs/designs/npu_blocks/attention_dual_stream_schedule_wrapper_score32_exp_lut_8x8_c2/config.json",
+        "runs/designs/npu_blocks/attention_dual_stream_schedule_wrapper_score32_exp_lut_8x8_c4/config.json"
+      ],
+      "out_root": "runs/designs/npu_blocks",
+      "design_dirs": [],
+      "macro_manifests": [],
+      "candidate_manifests": [],
+      "required_submodules": []
+    },
+    "commands": [
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/rtlgen/gen_attention_dual_stream_schedule_wrapper.py --config runs/designs/npu_blocks/attention_dual_stream_schedule_wrapper_score32_exp_lut_8x8_c2/config.json --out runs/designs/npu_blocks/attention_dual_stream_schedule_wrapper_score32_exp_lut_8x8_c2/verilog",
+        "name": "generate_attention_dual_stream_schedule_wrapper_rtl_attention_dual_stream_schedule_wrapper_score32_exp_lut_8x8_c2"
+      },
+      {
+        "run": "python3 npu/eval/check_attention_dual_stream_schedule_wrapper_guard.py --design-dir runs/designs/npu_blocks/attention_dual_stream_schedule_wrapper_score32_exp_lut_8x8_c2",
+        "name": "check_attention_dual_stream_schedule_wrapper_guard_attention_dual_stream_schedule_wrapper_score32_exp_lut_8x8_c2"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/synth/run_block_sweep.py --design_dir runs/designs/npu_blocks/attention_dual_stream_schedule_wrapper_score32_exp_lut_8x8_c2 --platform nangate45 --top attention_dual_stream_schedule_wrapper_score32_exp_lut_8x8_c2 --sweep runs/campaigns/npu/attention_dual_stream_schedule_wrapper_v1/sweeps/nangate45_attention_dual_stream_schedule_wrapper_score32_exp_lut.json --out_root runs/designs/npu_blocks --skip_existing",
+        "name": "run_block_sweep_attention_dual_stream_schedule_wrapper_score32_exp_lut_8x8_c2"
+      },
+      {
+        "run": "python3 npu/eval/extract_openroad_timing_summary.py --design-dir runs/designs/npu_blocks/attention_dual_stream_schedule_wrapper_score32_exp_lut_8x8_c2 --out runs/designs/npu_blocks/attention_dual_stream_schedule_wrapper_score32_exp_lut_8x8_c2/timing_debug_report.md --max-paths 8",
+        "name": "extract_attention_dual_stream_schedule_wrapper_timing_paths_attention_dual_stream_schedule_wrapper_score32_exp_lut_8x8_c2"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/rtlgen/gen_attention_dual_stream_schedule_wrapper.py --config runs/designs/npu_blocks/attention_dual_stream_schedule_wrapper_score32_exp_lut_8x8_c4/config.json --out runs/designs/npu_blocks/attention_dual_stream_schedule_wrapper_score32_exp_lut_8x8_c4/verilog",
+        "name": "generate_attention_dual_stream_schedule_wrapper_rtl_attention_dual_stream_schedule_wrapper_score32_exp_lut_8x8_c4"
+      },
+      {
+        "run": "python3 npu/eval/check_attention_dual_stream_schedule_wrapper_guard.py --design-dir runs/designs/npu_blocks/attention_dual_stream_schedule_wrapper_score32_exp_lut_8x8_c4",
+        "name": "check_attention_dual_stream_schedule_wrapper_guard_attention_dual_stream_schedule_wrapper_score32_exp_lut_8x8_c4"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/synth/run_block_sweep.py --design_dir runs/designs/npu_blocks/attention_dual_stream_schedule_wrapper_score32_exp_lut_8x8_c4 --platform nangate45 --top attention_dual_stream_schedule_wrapper_score32_exp_lut_8x8_c4 --sweep runs/campaigns/npu/attention_dual_stream_schedule_wrapper_v1/sweeps/nangate45_attention_dual_stream_schedule_wrapper_score32_exp_lut.json --out_root runs/designs/npu_blocks --skip_existing",
+        "name": "run_block_sweep_attention_dual_stream_schedule_wrapper_score32_exp_lut_8x8_c4"
+      },
+      {
+        "run": "python3 npu/eval/extract_openroad_timing_summary.py --design-dir runs/designs/npu_blocks/attention_dual_stream_schedule_wrapper_score32_exp_lut_8x8_c4 --out runs/designs/npu_blocks/attention_dual_stream_schedule_wrapper_score32_exp_lut_8x8_c4/timing_debug_report.md --max-paths 8",
+        "name": "extract_attention_dual_stream_schedule_wrapper_timing_paths_attention_dual_stream_schedule_wrapper_score32_exp_lut_8x8_c4"
+      },
+      {
+        "run": "python3 scripts/build_runs_index.py",
+        "name": "build_runs_index"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate"
+      }
+    ],
+    "metadata": {
+      "acceptance_notes": "Metrics/index/timing artifacts cover c2 and c4 schedule-wrapper variants and preserve datapath outputs against optimization."
+    },
+    "objective": "Measure bounded c2/c4 score32 exp-LUT dual-stream schedule-wrapper PPA on Nangate45.",
+    "acceptance": [
+      "Each generated wrapper metrics.csv contains at least one status=ok row for the queued sweep",
+      "Committed outputs stay lightweight (metrics.csv only; runs/index.csv is exported centrally after merge)",
+      "python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue pass"
+    ],
+    "source_mode": "config",
+    "expected_outputs": [
+      "runs/designs/npu_blocks/attention_dual_stream_schedule_wrapper_score32_exp_lut_8x8_c2/metrics.csv",
+      "runs/designs/npu_blocks/attention_dual_stream_schedule_wrapper_score32_exp_lut_8x8_c2/timing_debug_report.md",
+      "runs/designs/npu_blocks/attention_dual_stream_schedule_wrapper_score32_exp_lut_8x8_c4/metrics.csv",
+      "runs/designs/npu_blocks/attention_dual_stream_schedule_wrapper_score32_exp_lut_8x8_c4/timing_debug_report.md"
+    ]
+  },
+  "layer": "layer1",
+  "state": "evaluated",
+  "title": "Score32 exp-LUT schedule-wrapper PPA",
+  "result": {
+    "branch": "eval/l1_decoder_attention_dual_stream_schedule_wrapper_score32_exp_lut_ppa_v1/s20260707t215404z",
+    "completed_utc": "2026-07-07T21:54:02.229016Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "b7c2d9c80c1c",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260707t215404z][host:b7c2d9c80c1c][item:l1_decoder_attention_dual_stream_schedule_wrapper_score32_exp_lut_ppa_v1]",
+    "metrics_rows": [
+      {
+        "tag": "attention_dual_stream_schedule_wrapper_score32_exp_lut",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "2870c215",
+        "metrics_csv": "runs/designs/npu_blocks/attention_dual_stream_schedule_wrapper_score32_exp_lut_8x8_c2/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_dual_stream_schedule_wrapper_score32_exp_lut_8x8_c2/work/2870c215/result.json"
+      },
+      {
+        "tag": "attention_dual_stream_schedule_wrapper_score32_exp_lut",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "78fa1b5e",
+        "metrics_csv": "runs/designs/npu_blocks/attention_dual_stream_schedule_wrapper_score32_exp_lut_8x8_c2/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_dual_stream_schedule_wrapper_score32_exp_lut_8x8_c2/work/78fa1b5e/result.json"
+      },
+      {
+        "tag": "attention_dual_stream_schedule_wrapper_score32_exp_lut",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "2870c215",
+        "metrics_csv": "runs/designs/npu_blocks/attention_dual_stream_schedule_wrapper_score32_exp_lut_8x8_c4/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_dual_stream_schedule_wrapper_score32_exp_lut_8x8_c4/work/2870c215/result.json"
+      },
+      {
+        "tag": "attention_dual_stream_schedule_wrapper_score32_exp_lut",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "78fa1b5e",
+        "metrics_csv": "runs/designs/npu_blocks/attention_dual_stream_schedule_wrapper_score32_exp_lut_8x8_c4/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_dual_stream_schedule_wrapper_score32_exp_lut_8x8_c4/work/78fa1b5e/result.json"
+      }
+    ],
+    "queue_item_id": "l1_decoder_attention_dual_stream_schedule_wrapper_score32_exp_lut_ppa_v1",
+    "session_id": "s20260707t215404z",
+    "status": "ok",
+    "summary": "10/10 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l1_decoder_attention_dual_stream_schedule_wrapper_score32_exp_lut_ppa_v1/s20260707t215404z",
+    "pr_title": "eval: run score32 exp-lut schedule-wrapper ppa",
+    "checklist": [
+      "Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge",
+      "Include metrics row references for each completed design",
+      "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260707t215404z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l1_decoder_attention_dual_stream_schedule_wrapper_score32_exp_lut_ppa_v1"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l1_decoder_attention_dual_stream_schedule_wrapper_score32_exp_lut_ppa_v1",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 73,
+  "created_utc": "2026-07-07T11:25:36.737823Z",
+  "requested_by": "developer_agent",
+  "developer_loop": {
+    "evaluation": {
+      "mode": "frontier_followup",
+      "trial_policy": {
+        "seed_start": 0,
+        "trial_count": 1,
+        "stop_after_failures": 1
+      }
+    },
+    "abstraction": {
+      "layer": "decoder_attention_dual_stream_schedule_wrapper"
+    },
+    "proposal_id": "prop_l1_decoder_attention_dual_stream_schedule_wrapper_score32_exp_lut_v1",
+    "proposal_path": "docs/proposals/prop_l1_decoder_attention_dual_stream_schedule_wrapper_score32_exp_lut_v1/proposal.json"
+  },
+  "source_requirement": {
+    "repo": "",
+    "reason": "evaluator runtime must contain the queued job source commit",
+    "version": 1,
+    "required_ref": "origin/master",
+    "required_sha": "7aecdaf43829dddbbe497bb668e04a64b0c7f4d3",
+    "requires_daemon_restart": true
+  }
+}

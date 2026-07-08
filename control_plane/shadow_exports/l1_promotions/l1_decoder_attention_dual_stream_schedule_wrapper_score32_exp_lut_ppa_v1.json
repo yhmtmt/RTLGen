@@ -1,0 +1,115 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-07-07T21:54:03.212899Z",
+  "item_id": "l1_decoder_attention_dual_stream_schedule_wrapper_score32_exp_lut_ppa_v1",
+  "run_key": "l1_decoder_attention_dual_stream_schedule_wrapper_score32_exp_lut_ppa_v1_run_814ef636a2fedb99",
+  "layer": "layer1",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l1_sweep",
+  "source_commit": "7aecdaf43829dddbbe497bb668e04a64b0c7f4d3",
+  "objective": "Measure bounded c2/c4 score32 exp-LUT dual-stream schedule-wrapper PPA on Nangate45.",
+  "input_manifest": {
+    "sweeps": [
+      "runs/campaigns/npu/attention_dual_stream_schedule_wrapper_v1/sweeps/nangate45_attention_dual_stream_schedule_wrapper_score32_exp_lut.json"
+    ],
+    "configs": [
+      "runs/designs/npu_blocks/attention_dual_stream_schedule_wrapper_score32_exp_lut_8x8_c2/config.json",
+      "runs/designs/npu_blocks/attention_dual_stream_schedule_wrapper_score32_exp_lut_8x8_c4/config.json"
+    ],
+    "out_root": "runs/designs/npu_blocks",
+    "design_dirs": [],
+    "macro_manifests": [],
+    "candidate_manifests": [],
+    "required_submodules": []
+  },
+  "proposal_count": 2,
+  "evaluation_record": {
+    "evaluation_mode": "frontier_followup",
+    "abstraction_layer": "decoder_attention_dual_stream_schedule_wrapper",
+    "result_kind": "physical_metrics",
+    "physical_metrics_present": true,
+    "summary": "Physical metrics recorded from an accepted status=ok Layer 1 row."
+  },
+  "proposal_assessment": null,
+  "proposals": [
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/npu_blocks/attention_dual_stream_schedule_wrapper_score32_exp_lut_8x8_c2/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "78fa1b5e",
+        "tag": "attention_dual_stream_schedule_wrapper_score32_exp_lut",
+        "result_path": "/orfs/flow/reports/nangate45/attention_dual_stream_schedule_wrapper_score32_exp_lut_8x8_c2/attention_dual_stream_schedule_wrapper_score32_exp_lut/6_finish.rpt",
+        "work_result_json": "runs/designs/npu_blocks/attention_dual_stream_schedule_wrapper_score32_exp_lut_8x8_c2/work/78fa1b5e/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 48.6509,
+        "die_area": 9000000.0,
+        "total_power_mw": 60.7
+      }
+    },
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/npu_blocks/attention_dual_stream_schedule_wrapper_score32_exp_lut_8x8_c4/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "78fa1b5e",
+        "tag": "attention_dual_stream_schedule_wrapper_score32_exp_lut",
+        "result_path": "/orfs/flow/reports/nangate45/attention_dual_stream_schedule_wrapper_score32_exp_lut_8x8_c4/attention_dual_stream_schedule_wrapper_score32_exp_lut/6_finish.rpt",
+        "work_result_json": "runs/designs/npu_blocks/attention_dual_stream_schedule_wrapper_score32_exp_lut_8x8_c4/work/78fa1b5e/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 49.6702,
+        "die_area": 9000000.0,
+        "total_power_mw": 126.0
+      }
+    }
+  ],
+  "trial_summary": {
+    "item_id": "l1_decoder_attention_dual_stream_schedule_wrapper_score32_exp_lut_ppa_v1",
+    "completed_trials": 1,
+    "success_count": 1,
+    "failure_count": 0,
+    "success_rate": 1.0,
+    "metrics": {
+      "critical_path_ns": {
+        "best": 48.6509,
+        "mean": 48.6509,
+        "median": 48.6509,
+        "max": 48.6509,
+        "range": 0.0,
+        "stddev": 0.0
+      },
+      "die_area": {
+        "best": 9000000.0,
+        "mean": 9000000.0,
+        "median": 9000000.0,
+        "max": 9000000.0,
+        "range": 0.0,
+        "stddev": 0.0
+      },
+      "total_power_mw": {
+        "best": 60.7,
+        "mean": 60.7,
+        "median": 60.7,
+        "max": 60.7,
+        "range": 0.0,
+        "stddev": 0.0
+      }
+    }
+  },
+  "source_refs": {
+    "trial_metrics_csvs": [
+      "runs/designs/npu_blocks/attention_dual_stream_schedule_wrapper_score32_exp_lut_8x8_c2/metrics.csv",
+      "runs/designs/npu_blocks/attention_dual_stream_schedule_wrapper_score32_exp_lut_8x8_c4/metrics.csv"
+    ],
+    "summary_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_dual_stream_schedule_wrapper_score32_exp_lut_ppa_v1/summary_stats.json",
+    "failure_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_dual_stream_schedule_wrapper_score32_exp_lut_ppa_v1/failure_stats.json",
+    "trial_table_csv": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_dual_stream_schedule_wrapper_score32_exp_lut_ppa_v1/trial_table.csv"
+  }
+}
