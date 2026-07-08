@@ -24,7 +24,12 @@
         "direction": "record_schedule_wrapper_integrated_frontier_ranking",
         "reason": "The result should show whether measured schedule-wrapper overhead changes the current precision-safe Llama7B score32 recommendation."
       },
-      "status": "blocked"
+      "status": "merged",
+      "merged_pr_number": 1221,
+      "merge_commit": "a4044c10fcbd5fb06680caf8e1b9a456549fccc7",
+      "merged_utc": "2026-07-08T02:40:40.573390Z",
+      "notes": "Merged via PR #1221 and merge a4044c10fcbd5fb06680caf8e1b9a456549fccc7 at 2026-07-08T02:40:40.573390Z."
     }
-  ]
+  ],
+  "source_commit": "6143775a9fe6c30a6b48e5fcc08df02be11e5632"
 }
