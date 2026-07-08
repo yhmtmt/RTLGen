@@ -5958,7 +5958,11 @@ def _decoder_attention_score32_hbm_controller_replay_evidence(*, item_id: str) -
     }
 
 
-def _decoder_attention_score32_integrated_frontier_ranking_evidence(*, item_id: str) -> dict[str, Any]:
+def _decoder_attention_score32_integrated_frontier_ranking_evidence(
+    *,
+    item_id: str,
+    depends_on_item_ids: list[str] | None = None,
+) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_score32_integrated_frontier_ranking__{item_id}.json"
     report = f"{base}/decoder_attention_score32_integrated_frontier_ranking__{item_id}.md"
@@ -5979,6 +5983,16 @@ def _decoder_attention_score32_integrated_frontier_ranking_evidence(*, item_id: 
     score32_hbm_controller_replay = (
         f"{base}/decoder_attention_score32_hbm_controller_replay__"
         "l2_decoder_attention_score32_hbm_controller_replay_llama7b_v1.json"
+    )
+    use_hbm_controller_replay_ppa = any(
+        str(dep).startswith("l1_decoder_attention_hbm_replay_controller_ppa_v1")
+        for dep in (depends_on_item_ids or [])
+    )
+    score32_hbm_controller_replay_ppa = (
+        "control_plane/shadow_exports/l1_promotions/"
+        "l1_decoder_attention_hbm_replay_controller_ppa_v1.json"
+        if use_hbm_controller_replay_ppa
+        else None
     )
     use_schedule_wrapper_recost = "schedule_wrapper" in item_id
     use_hbm_controller_replay = "hbm_controller_replay" in item_id
@@ -6005,6 +6019,8 @@ def _decoder_attention_score32_integrated_frontier_ranking_evidence(*, item_id: 
     )
     if use_hbm_controller_replay:
         command += f"--score32-hbm-controller-replay-json {score32_hbm_controller_replay} "
+        if score32_hbm_controller_replay_ppa:
+            command += f"--score32-hbm-controller-replay-ppa-json {score32_hbm_controller_replay_ppa} "
     if use_schedule_wrapper_recost:
         command += f"--score32-physical-feasibility-json {schedule_wrapper_recost} "
     command += (
@@ -6022,6 +6038,11 @@ def _decoder_attention_score32_integrated_frontier_ranking_evidence(*, item_id: 
             **(
                 {"attention_score32_hbm_controller_replay": score32_hbm_controller_replay}
                 if use_hbm_controller_replay
+                else {}
+            ),
+            **(
+                {"attention_score32_hbm_controller_replay_ppa_json": score32_hbm_controller_replay_ppa}
+                if score32_hbm_controller_replay_ppa
                 else {}
             ),
             **(
@@ -9822,7 +9843,10 @@ def _build_payload(
         elif abstraction_layer_name == "decoder_attention_score32_hbm_controller_replay":
             decoder_evidence = _decoder_attention_score32_hbm_controller_replay_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_score32_integrated_frontier_ranking":
-            decoder_evidence = _decoder_attention_score32_integrated_frontier_ranking_evidence(item_id=item_id)
+            decoder_evidence = _decoder_attention_score32_integrated_frontier_ranking_evidence(
+                item_id=item_id,
+                depends_on_item_ids=depends_on_item_ids,
+            )
         elif abstraction_layer_name == "decoder_attention_score32_compute_activity_energy":
             decoder_evidence = _decoder_attention_score32_compute_activity_energy_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_hbm_dram_service_energy":

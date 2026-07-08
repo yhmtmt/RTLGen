@@ -7071,6 +7071,60 @@ def test_generate_l2_campaign_task_adds_attention_score32_hbm_controller_replay_
             }
 
 
+def test_generate_l2_campaign_task_adds_attention_score32_hbm_controller_replay_integrated_frontier_ranking_ppa_dependency(
+) -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id="l2_decoder_attention_score32_hbm_controller_replay_integrated_frontier_ranking_llama7b_v1",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    proposal_id=(
+                        "prop_l2_decoder_attention_score32_hbm_controller_replay_integrated_frontier_ranking_llama7b_v1"
+                    ),
+                    proposal_path=(
+                        "docs/proposals/"
+                        "prop_l2_decoder_attention_score32_hbm_controller_replay_integrated_frontier_ranking_llama7b_v1/proposal.json"
+                    ),
+                    abstraction_layer="decoder_attention_score32_integrated_frontier_ranking",
+                    evaluation_mode="frontier_detail",
+                    comparison_role="score32_hbm_controller_replay_integrated_frontier_ranking",
+                    depends_on_item_ids=[
+                        "l1_decoder_attention_hbm_replay_controller_ppa_v1",
+                    ],
+                    requires_merged_inputs=True,
+                    requires_materialized_refs=True,
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            run = work_item.task_request.request_payload["task"]["commands"][0]["run"]
+            decoder_inputs = work_item.input_manifest["decoder_contract"]
+
+            assert "--score32-hbm-controller-replay-ppa-json" in run
+            assert (
+                "control_plane/shadow_exports/l1_promotions/"
+                "l1_decoder_attention_hbm_replay_controller_ppa_v1.json"
+            ) in run
+            assert (
+                decoder_inputs["attention_score32_hbm_controller_replay_ppa_json"]
+                == "control_plane/shadow_exports/l1_promotions/"
+                "l1_decoder_attention_hbm_replay_controller_ppa_v1.json"
+            )
+
+
 def test_generate_l2_campaign_task_adds_attention_score32_compute_activity_energy_evidence() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"

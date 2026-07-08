@@ -1,0 +1,33 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_score32_hbm_controller_replay_rtl_ppa_integrated_frontier_ranking_llama7b_v1",
+  "source_commit_note": "Dispatch after the L2 generator patch that adds optional score32 HBM replay controller PPA input support is merged and after l1_decoder_attention_hbm_replay_controller_ppa_v1 is merged.",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_score32_hbm_controller_replay_rtl_ppa_integrated_frontier_ranking_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Rank the current score32 HBM replay Llama7B frontier row while consuming measured RTL PPA evidence for the HBM replay controller control path.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_score32_integrated_frontier_ranking",
+      "comparison_role": "score32_hbm_controller_replay_rtl_ppa_integrated_frontier_ranking",
+      "paired_baseline_item_id": "l2_decoder_attention_score32_hbm_controller_replay_integrated_frontier_ranking_llama7b_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_score32_hbm_controller_replay_integrated_frontier_ranking_llama7b_v1",
+        "l2_decoder_attention_score32_hbm_controller_replay_llama7b_v1",
+        "l1_decoder_attention_hbm_replay_controller_ppa_v1",
+        "l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_measured_command_control_llama7b_v1",
+        "l2_decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality_llama7b_v1",
+        "l2_decoder_attention_measured_compute_energy_closure_llama7b_v1",
+        "l2_decoder_attention_mixed_int8_energy_closure_llama7b_v1_r2",
+        "l2_decoder_attention_integrated_energy_closure_llama7b_v1_r2"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "record_score32_integrated_frontier_ranking_with_replay_controller_ppa",
+        "reason": "The result should keep HBM PHY/current-signoff caveats explicit while replacing the replay-controller RTL-timing abstraction with a measured controller-control PPA reference."
+      },
+      "status": "ready_to_dispatch_after_l1_result_merge"
+    }
+  ],
+  "source_commit": "03af3a1c8d98e77d3a2eb5d5358b06f33482f38b"
+}
