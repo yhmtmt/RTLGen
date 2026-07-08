@@ -21,7 +21,12 @@
         "direction": "replace_analytic_hbm_service_with_controller_replay",
         "reason": "The result should show whether deterministic HBM controller replay changes the score32 schedule-wrapper latency, energy, and remaining-abstraction account."
       },
-      "status": "ready_to_dispatch_after_code_merge"
+      "status": "merged",
+      "merged_pr_number": 1226,
+      "merge_commit": "12e9fa133a7997550ea512219aae51662c86c390",
+      "merged_utc": "2026-07-08T03:17:04.550891Z",
+      "notes": "Merged via PR #1226 and merge 12e9fa133a7997550ea512219aae51662c86c390 at 2026-07-08T03:17:04.550891Z."
     }
-  ]
+  ],
+  "source_commit": "c6dc69bd7982f988ccc231f6cbfd3438d3fd9b74"
 }

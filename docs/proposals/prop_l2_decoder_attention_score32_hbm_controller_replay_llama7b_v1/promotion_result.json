@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_score32_hbm_controller_replay_llama7b_v1",
+  "decision": "iterate",
+  "pr_number": 1226,
+  "merge_commit": "12e9fa133a7997550ea512219aae51662c86c390",
+  "merged_utc": "2026-07-08T03:17:04.550891Z"
+}
