@@ -1,0 +1,26 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_hbm_replay_controller_v1",
+  "requested_items": [
+    {
+      "item_id": "l1_decoder_attention_hbm_replay_controller_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure Nangate45 PPA for the score32 HBM replay controller at 4, 8, and 16 channels.",
+      "evaluation_mode": "frontier_followup",
+      "abstraction_layer": "decoder_attention_hbm_replay_controller",
+      "comparison_role": "hbm_replay_controller_rtl_anchor",
+      "paired_baseline_item_id": "l2_decoder_attention_score32_hbm_controller_replay_integrated_frontier_ranking_llama7b_v1",
+      "configs": [
+        "runs/designs/npu_blocks/attention_hbm_replay_controller_c4/config.json",
+        "runs/designs/npu_blocks/attention_hbm_replay_controller_c8/config.json",
+        "runs/designs/npu_blocks/attention_hbm_replay_controller_c16/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/attention_hbm_replay_controller_v1/sweeps/nangate45_attention_hbm_replay_controller_frontier.json",
+      "out_root": "runs/designs/npu_blocks",
+      "expected_result": {
+        "direction": "measure_hbm_replay_controller_rtl_cost",
+        "reason": "This converts the current score32 HBM replay controller timing abstraction into a measured Nangate45 control-block anchor."
+      },
+      "status": "pending"
+    }
+  ]
+}
