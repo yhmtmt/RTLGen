@@ -5908,6 +5908,56 @@ def _decoder_attention_score32_exp_lut_hbm_dram_service_closure_evidence(*, item
     }
 
 
+def _decoder_attention_score32_hbm_controller_replay_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_attention_score32_hbm_controller_replay__{item_id}.json"
+    report = f"{base}/decoder_attention_score32_hbm_controller_replay__{item_id}.md"
+    score32_hbm = (
+        f"{base}/decoder_attention_score32_exp_lut_hbm_dram_service_closure__"
+        "l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1.json"
+    )
+    schedule_wrapper_recost = (
+        f"{base}/decoder_attention_composed_datapath_physical_feasibility__"
+        "l2_decoder_attention_composed_datapath_score32_exp_lut_div_"
+        "schedule_wrapper_recost_llama7b_v1.json"
+    )
+    return {
+        "inputs": {
+            "attention_score32_exp_lut_hbm_dram_service_closure": score32_hbm,
+            "attention_score32_exp_lut_schedule_wrapper_recost": schedule_wrapper_recost,
+            "attention_score32_hbm_controller_replay_out": out,
+            "attention_score32_hbm_controller_replay_report": report,
+            "attention_score32_hbm_controller_replay_scope": (
+                "Replace the score32 analytic HBM service formula with a deterministic "
+                "cycle-level controller replay over burst requests, channel queues, row-buffer "
+                "state, outstanding windows, request overhead, row-miss penalty, and scheduler gaps."
+            ),
+        },
+        "commands": [
+            {
+                "name": "audit_decoder_attention_score32_hbm_controller_replay",
+                "run": (
+                    "python3 npu/eval/audit_llm_decoder_attention_score32_hbm_controller_replay.py "
+                    f"--score32-hbm-dram-service-json {score32_hbm} "
+                    f"--score32-physical-feasibility-json {schedule_wrapper_recost} "
+                    "--channel-count 4,8,16 "
+                    "--channel-bandwidth-bytes-per-cycle 256,512,1024 "
+                    "--burst-bytes 512,1024 "
+                    "--hbm-outstanding 4,8,16,32 "
+                    "--request-overhead-cycles 2,4,8 "
+                    "--row-miss-penalty-cycles 8,16,32 "
+                    "--row-span-bursts 1,4,16 "
+                    "--scheduler-gap-cycles 0,1,2 "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+        "evidence_only": True,
+    }
+
+
 def _decoder_attention_score32_integrated_frontier_ranking_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_score32_integrated_frontier_ranking__{item_id}.json"
@@ -9552,6 +9602,7 @@ def _build_payload(
         "decoder_attention_score32_exp_lut_service_closure",
         "decoder_attention_score32_exp_lut_sram_hierarchy_envelope",
         "decoder_attention_score32_exp_lut_hbm_dram_service_closure",
+        "decoder_attention_score32_hbm_controller_replay",
         "decoder_attention_score32_integrated_frontier_ranking",
         "decoder_attention_score32_compute_activity_energy",
         "decoder_attention_hbm_dram_service_energy",
@@ -9756,6 +9807,8 @@ def _build_payload(
             decoder_evidence = _decoder_attention_score32_exp_lut_sram_hierarchy_envelope_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_score32_exp_lut_hbm_dram_service_closure":
             decoder_evidence = _decoder_attention_score32_exp_lut_hbm_dram_service_closure_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_attention_score32_hbm_controller_replay":
+            decoder_evidence = _decoder_attention_score32_hbm_controller_replay_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_score32_integrated_frontier_ranking":
             decoder_evidence = _decoder_attention_score32_integrated_frontier_ranking_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_score32_compute_activity_energy":
