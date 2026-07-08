@@ -1,0 +1,92 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_hbm_replay_controller_v1",
+  "created_utc": "2026-07-08T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit",
+  "title": "Decoder attention HBM replay controller PPA",
+  "abstraction_layer": "decoder_attention_hbm_replay_controller",
+  "hypothesis": "The current score32 Llama7B frontier is bounded by deterministic HBM controller replay, but that controller has not been synthesized. Measuring a compact ready/valid replay-controller RTL block across 4, 8, and 16 channels will replace the replay timing abstraction with a physical control-block anchor.",
+  "direct_comparison": {
+    "primary_question": "What Nangate45 timing, area, and power cost is introduced by an RTL HBM replay controller matching the current score32 replay parameters?",
+    "baselines": [
+      "l2_decoder_attention_score32_hbm_controller_replay_integrated_frontier_ranking_llama7b_v1"
+    ],
+    "candidate": "l1_decoder_attention_hbm_replay_controller_ppa_v1",
+    "include": [
+      "generate RTL for request queueing, channel selection, row-window tracking, row miss penalty, service countdown, outstanding request accounting, and response signalling",
+      "measure 4, 8, and 16 channel variants with the current best replay parameters",
+      "sweep core utilization 40, 50, and 60 percent on Nangate45",
+      "emit metrics.csv and timing debug report for each controller variant"
+    ],
+    "exclude": [
+      "full HBM PHY or DRAM data path",
+      "vendor HBM current signoff",
+      "new Llama7B recost; this is an L1 measured anchor for the dependent L2 consumer"
+    ],
+    "metrics": [
+      "critical_path_ns",
+      "die_area",
+      "total_power_mw",
+      "stdcell_count",
+      "timing_debug_report"
+    ]
+  },
+  "replay_parameters": {
+    "burst_bytes": 1024,
+    "row_span_bursts": 16,
+    "row_miss_penalty_cycles": 8,
+    "request_overhead_cycles": 2,
+    "scheduler_gap_cycles": 0,
+    "outstanding": 4,
+    "channel_count_sweep": [4, 8, 16]
+  },
+  "remaining_abstractions": [
+    "The generated block measures controller/control timing only, not HBM PHY or DRAM data movement.",
+    "The result must be consumed by a later L2 recost before it changes the Llama7B frontier ranking.",
+    "HBM energy remains command-calibrated until a vendor current-signoff source is available."
+  ],
+  "required_evaluations": [
+    {
+      "item_id": "l1_decoder_attention_hbm_replay_controller_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure Nangate45 PPA for the score32 HBM replay controller at 4, 8, and 16 channels.",
+      "evaluation_mode": "frontier_followup",
+      "abstraction_layer": "decoder_attention_hbm_replay_controller",
+      "comparison_role": "hbm_replay_controller_rtl_anchor",
+      "paired_baseline_item_id": "l2_decoder_attention_score32_hbm_controller_replay_integrated_frontier_ranking_llama7b_v1",
+      "configs": [
+        "runs/designs/npu_blocks/attention_hbm_replay_controller_c4/config.json",
+        "runs/designs/npu_blocks/attention_hbm_replay_controller_c8/config.json",
+        "runs/designs/npu_blocks/attention_hbm_replay_controller_c16/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/attention_hbm_replay_controller_v1/sweeps/nangate45_attention_hbm_replay_controller_frontier.json",
+      "out_root": "runs/designs/npu_blocks",
+      "expected_outputs": [
+        "runs/designs/npu_blocks/attention_hbm_replay_controller_c4/metrics.csv",
+        "runs/designs/npu_blocks/attention_hbm_replay_controller_c4/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_hbm_replay_controller_c8/metrics.csv",
+        "runs/designs/npu_blocks/attention_hbm_replay_controller_c8/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_hbm_replay_controller_c16/metrics.csv",
+        "runs/designs/npu_blocks/attention_hbm_replay_controller_c16/timing_debug_report.md"
+      ],
+      "expected_result": {
+        "direction": "measure_hbm_replay_controller_rtl_cost",
+        "reason": "This converts the current score32 HBM replay controller timing abstraction into a measured Nangate45 control-block anchor."
+      },
+      "status": "pending"
+    }
+  ],
+  "source_refs": [
+    "npu/rtlgen/gen_attention_hbm_replay_controller.py",
+    "npu/eval/check_attention_hbm_replay_controller_guard.py",
+    "runs/designs/npu_blocks/attention_hbm_replay_controller_c4/config.json",
+    "runs/designs/npu_blocks/attention_hbm_replay_controller_c8/config.json",
+    "runs/designs/npu_blocks/attention_hbm_replay_controller_c16/config.json",
+    "runs/campaigns/npu/attention_hbm_replay_controller_v1/sweeps/nangate45_attention_hbm_replay_controller_frontier.json"
+  ],
+  "knowledge_refs": [
+    "docs/proposals/prop_l2_decoder_attention_score32_hbm_controller_replay_integrated_frontier_ranking_llama7b_v1/proposal.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_hbm_controller_replay__l2_decoder_attention_score32_hbm_controller_replay_llama7b_v1.json"
+  ]
+}

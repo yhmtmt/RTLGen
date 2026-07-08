@@ -606,6 +606,90 @@ def _write_example_attention_schedule_wrapper_repo(repo_root: Path) -> tuple[str
     )
 
 
+def _write_example_attention_hbm_replay_controller_repo(repo_root: Path) -> tuple[str, str]:
+    design_dir = repo_root / "runs" / "designs" / "npu_blocks" / "attention_hbm_replay_controller_smoke"
+    design_dir.mkdir(parents=True, exist_ok=True)
+    config_path = design_dir / "config.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "top_name": "attention_hbm_replay_controller_smoke",
+                "attention_hbm_replay_controller": {
+                    "channel_count": 4,
+                    "burst_bytes": 64,
+                    "row_span_bursts": 4,
+                    "row_miss_penalty_cycles": 8,
+                    "request_overhead_cycles": 2,
+                    "scheduler_gap_cycles": 1,
+                    "outstanding": 8,
+                    "address_bits": 32,
+                    "row_id_bits": 16,
+                },
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    sweep_path = (
+        repo_root
+        / "runs"
+        / "campaigns"
+        / "npu"
+        / "attention_hbm_replay_controller_v1"
+        / "sweeps"
+        / "nangate45_attention_hbm_replay_controller_frontier.json"
+    )
+    sweep_path.parent.mkdir(parents=True, exist_ok=True)
+    sweep_path.write_text(
+        json.dumps(
+            {
+                "flow_params": {
+                    "CLOCK_PERIOD": [1.0],
+                    "CORE_UTILIZATION": [40],
+                    "PLACE_DENSITY": [0.45],
+                },
+                "tag_prefix": "attention_hbm_replay_controller_frontier",
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    return (
+        str(config_path.relative_to(repo_root)),
+        str(sweep_path.relative_to(repo_root)),
+    )
+
+
+def _write_second_attention_hbm_replay_controller_repo(repo_root: Path) -> str:
+    design_dir = repo_root / "runs" / "designs" / "npu_blocks" / "attention_hbm_replay_controller_c16_q32"
+    design_dir.mkdir(parents=True, exist_ok=True)
+    config_path = design_dir / "config.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "top_name": "attention_hbm_replay_controller_c16_q32",
+                "attention_hbm_replay_controller": {
+                    "channel_count": 16,
+                    "burst_bytes": 64,
+                    "row_span_bursts": 4,
+                    "row_miss_penalty_cycles": 8,
+                    "request_overhead_cycles": 2,
+                    "scheduler_gap_cycles": 1,
+                    "outstanding": 16,
+                    "address_bits": 32,
+                    "row_id_bits": 16,
+                },
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    return str(config_path.relative_to(repo_root))
+
+
 def _write_second_attention_command_dispatch_repo(repo_root: Path) -> str:
     design_dir = repo_root / "runs" / "designs" / "npu_blocks" / "attention_command_dispatch_c16_q32"
     design_dir.mkdir(parents=True, exist_ok=True)
@@ -1574,6 +1658,114 @@ def test_generate_l1_sweep_task_supports_attention_command_dispatch_configs() ->
             assert work_item.task_request.request_payload["developer_loop"]["abstraction"] == {
                 "layer": "decoder_attention_command_dispatch_control"
             }
+
+
+def test_generate_l1_sweep_task_supports_attention_hbm_replay_controller_configs() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        config_path, sweep_path = _write_example_attention_hbm_replay_controller_repo(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l1_sweep_task(
+                session,
+                Layer1SweepGenerateRequest(
+                    repo_root=str(repo_root),
+                    sweep_path=sweep_path,
+                    config_paths=[config_path],
+                    platform="nangate45",
+                    out_root="runs/designs/npu_blocks",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    abstraction_layer="decoder_attention_hbm_replay_controller",
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            assert result.status == "applied"
+            assert [command["name"] for command in work_item.command_manifest] == [
+                "generate_attention_hbm_replay_controller_rtl",
+                "check_attention_hbm_replay_controller_guard",
+                "run_block_sweep",
+                "extract_attention_hbm_replay_controller_timing_paths",
+                "build_runs_index",
+                "validate",
+            ]
+            assert work_item.command_manifest[0]["run"] == (
+                "export PATH=/oss-cad-suite/bin:$PATH && "
+                "python3 npu/rtlgen/gen_attention_hbm_replay_controller.py "
+                "--config runs/designs/npu_blocks/attention_hbm_replay_controller_smoke/config.json "
+                "--out runs/designs/npu_blocks/attention_hbm_replay_controller_smoke/verilog"
+            )
+            assert work_item.command_manifest[1]["run"] == (
+                "python3 npu/eval/check_attention_hbm_replay_controller_guard.py "
+                "--design-dir runs/designs/npu_blocks/attention_hbm_replay_controller_smoke"
+            )
+            assert "--top attention_hbm_replay_controller_smoke" in work_item.command_manifest[2]["run"]
+            assert work_item.command_manifest[3]["run"] == (
+                "python3 npu/eval/extract_openroad_timing_summary.py "
+                "--design-dir runs/designs/npu_blocks/attention_hbm_replay_controller_smoke "
+                "--out runs/designs/npu_blocks/attention_hbm_replay_controller_smoke/timing_debug_report.md "
+                "--max-paths 8"
+            )
+            assert work_item.expected_outputs == [
+                "runs/designs/npu_blocks/attention_hbm_replay_controller_smoke/metrics.csv",
+                "runs/designs/npu_blocks/attention_hbm_replay_controller_smoke/timing_debug_report.md",
+            ]
+            assert work_item.task_request.request_payload["developer_loop"]["abstraction"] == {
+                "layer": "decoder_attention_hbm_replay_controller"
+            }
+
+
+def test_generate_l1_sweep_task_supports_multi_attention_hbm_replay_controller_configs() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        config_path, sweep_path = _write_example_attention_hbm_replay_controller_repo(repo_root)
+        second_config_path = _write_second_attention_hbm_replay_controller_repo(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l1_sweep_task(
+                session,
+                Layer1SweepGenerateRequest(
+                    repo_root=str(repo_root),
+                    sweep_path=sweep_path,
+                    config_paths=[config_path, second_config_path],
+                    platform="nangate45",
+                    out_root="runs/designs/npu_blocks",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    abstraction_layer="decoder_attention_hbm_replay_controller",
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            assert [command["name"] for command in work_item.command_manifest] == [
+                "generate_attention_hbm_replay_controller_rtl_attention_hbm_replay_controller_smoke",
+                "check_attention_hbm_replay_controller_guard_attention_hbm_replay_controller_smoke",
+                "run_block_sweep_attention_hbm_replay_controller_smoke",
+                "extract_attention_hbm_replay_controller_timing_paths_attention_hbm_replay_controller_smoke",
+                "generate_attention_hbm_replay_controller_rtl_attention_hbm_replay_controller_c16_q32",
+                "check_attention_hbm_replay_controller_guard_attention_hbm_replay_controller_c16_q32",
+                "run_block_sweep_attention_hbm_replay_controller_c16_q32",
+                "extract_attention_hbm_replay_controller_timing_paths_attention_hbm_replay_controller_c16_q32",
+                "build_runs_index",
+                "validate",
+            ]
+            assert "attention_hbm_replay_controller_smoke/config.json" in work_item.command_manifest[0]["run"]
+            assert "attention_hbm_replay_controller_c16_q32/config.json" in work_item.command_manifest[4]["run"]
+            assert work_item.expected_outputs == [
+                "runs/designs/npu_blocks/attention_hbm_replay_controller_smoke/metrics.csv",
+                "runs/designs/npu_blocks/attention_hbm_replay_controller_smoke/timing_debug_report.md",
+                "runs/designs/npu_blocks/attention_hbm_replay_controller_c16_q32/metrics.csv",
+                "runs/designs/npu_blocks/attention_hbm_replay_controller_c16_q32/timing_debug_report.md",
+            ]
 
 
 def test_generate_l1_sweep_task_supports_attention_schedule_wrapper_configs() -> None:
