@@ -1,0 +1,40 @@
+## Summary
+- item_id: `l2_decoder_attention_composed_datapath_q20_pwl_recip_div_reduced_replica_llama7b_v1`
+- run_key: `l2_decoder_attention_composed_datapath_q20_pwl_recip_div_reduced_replica_llama7b_v1_run_06c1113411daee0b`
+- layer: `layer2`
+- task_type: `l2_campaign`
+- status: `ok`
+- summary: `6/6 commands succeeded`
+- queue_snapshot: `control_plane/shadow_exports/review/l2_decoder_attention_composed_datapath_q20_pwl_recip_div_reduced_replica_llama7b_v1/evaluated.json`
+- metrics_rows_count: `24`
+- review_artifact: `decision_proposal` at `control_plane/shadow_exports/l2_decisions/l2_decoder_attention_composed_datapath_q20_pwl_recip_div_reduced_replica_llama7b_v1.json`
+
+## Developer Context
+- proposal_id: `prop_l2_decoder_attention_composed_datapath_q20_pwl_recip_div_reduced_replica_v1`
+- proposal_path: `docs/proposals/prop_l2_decoder_attention_composed_datapath_q20_pwl_recip_div_reduced_replica_v1`
+- reviewer_first_read: `docs/proposals/prop_l2_decoder_attention_composed_datapath_q20_pwl_recip_div_reduced_replica_v1` plus `docs/developer_agent_review.md`
+- execution_source_commit: `6a2ebdea63ddf983869a4ba6460b6e35465eeb55`
+- review_metadata_source_commit: `6a2ebdea63ddf983869a4ba6460b6e35465eeb55`
+
+## Evaluation Mode
+- evaluation_mode: `frontier_detail`
+- abstraction_layer: `decoder_attention_composed_datapath_physical_feasibility`
+- comparison_role: `q20_pwl_recip_div_reduced_replica_recost`
+- expected_direction: `record_q20_pwl_recip_div_area_fit_recost`
+- expected_reason: `The measured q20 PWL reciprocal-divider datapath is a high-cost but physically embodied softmax boundary; recost it to keep the Llama7B frontier comparison honest.`
+- expectation_status: `unspecified`
+- evaluation_summary: `Decoder composed dual-stream physical feasibility evidence (q20 PWL reciprocal-divider reduced-replica recost) recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_q20_pwl_recip_div_reduced_replica_llama7b_v1.json: decision=dual_stream_feasible; precision_profile=q8_k8_v8_a24_s20_w20_pwl_recip_div_q20_int8_compute; best_requested_mode=dual_mac; best_requested_latency_us=1575.373891; best_requested_adjusted_latency_us_if_feasible=13676.407776; best_requested_adjusted_speedup_vs_hbm_closed_source=0.15638911876796616; best_requested_area_fit=True; best_requested_logic_slack_um2=194331.0692; best_requested_compute_area_over_budget_um2=0.0; best_requested_required_compute_density_gain=0.999514; best_requested_compute_substitution_enabled=True; best_requested_substituted_compute_arch=attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q20_pwl_recip_div_q20_bucket8; best_requested_substituted_compute_area_um2=399325301.0; best_requested_substituted_compute_variant_label=attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q20_pwl_recip_div_q20_bucket8; best_requested_compute_clock_ok=True; best_requested_replica_recost_enabled=True; best_requested_replica_recost_area_fit_replica_count=739; best_requested_replica_recost_macs_per_cycle=94592; best_requested_replica_recost_latency_us=13676.407776; best_feasible_mode=dual_mac; best_feasible_latency_us=13676.407776; recommended_next_step=promote dual-stream schedule into a measured RTL/PPA wrapper.`
+
+## Focused Comparison
+- primary_question: `What Llama7B latency/area/energy point remains when the measured q20 PWL reciprocal-divider composed datapath is constrained to the area-fit replica count?`
+- comparison_role: `q20_pwl_recip_div_reduced_replica_recost`
+- proposal_outcome: `dual_stream_feasible`
+- comparison_summary: `Decoder composed dual-stream physical feasibility evidence (q20 PWL reciprocal-divider reduced-replica recost) recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_q20_pwl_recip_div_reduced_replica_llama7b_v1.json: decision=dual_stream_feasible; precision_profile=q8_k8_v8_a24_s20_w20_pwl_recip_div_q20_int8_compute; best_requested_mode=dual_mac; best_requested_latency_us=1575.373891; best_requested_adjusted_latency_us_if_feasible=13676.407776; best_requested_adjusted_speedup_vs_hbm_closed_source=0.15638911876796616; best_requested_area_fit=True; best_requested_logic_slack_um2=194331.0692; best_requested_compute_area_over_budget_um2=0.0; best_requested_required_compute_density_gain=0.999514; best_requested_compute_substitution_enabled=True; best_requested_substituted_compute_arch=attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q20_pwl_recip_div_q20_bucket8; best_requested_substituted_compute_area_um2=399325301.0; best_requested_substituted_compute_variant_label=attention_dual_stream_composed_int8_q8k8v8_16x8_p8_ppc2_nohash_softmax_q20_pwl_recip_div_q20_bucket8; best_requested_compute_clock_ok=True; best_requested_replica_recost_enabled=True; best_requested_replica_recost_area_fit_replica_count=739; best_requested_replica_recost_macs_per_cycle=94592; best_requested_replica_recost_latency_us=13676.407776; best_feasible_mode=dual_mac; best_feasible_latency_us=13676.407776; recommended_next_step=promote dual-stream schedule into a measured RTL/PPA wrapper.`
+- baseline_ref: `None`
+- baseline_item_id: `None`
+
+## Checklist
+- [ ] Commit lightweight campaign artifacts only
+- [ ] Include metrics row references in result.metrics_rows
+- [ ] Keep committed result_path fields repo-portable
+- [ ] Run python3 scripts/validate_runs.py --skip_eval_queue before pushing
