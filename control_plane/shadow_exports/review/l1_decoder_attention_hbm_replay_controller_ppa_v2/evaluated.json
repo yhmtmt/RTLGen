@@ -1,0 +1,230 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "sweeps": [
+        "runs/campaigns/npu/attention_hbm_replay_controller_v1/sweeps/nangate45_attention_hbm_replay_controller_frontier.json"
+      ],
+      "configs": [
+        "runs/designs/npu_blocks/attention_hbm_replay_controller_c4/config.json",
+        "runs/designs/npu_blocks/attention_hbm_replay_controller_c8/config.json",
+        "runs/designs/npu_blocks/attention_hbm_replay_controller_c16/config.json"
+      ],
+      "out_root": "runs/designs/npu_blocks",
+      "design_dirs": [],
+      "macro_manifests": [],
+      "candidate_manifests": [],
+      "required_submodules": []
+    },
+    "commands": [
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/rtlgen/gen_attention_hbm_replay_controller.py --config runs/designs/npu_blocks/attention_hbm_replay_controller_c4/config.json --out runs/designs/npu_blocks/attention_hbm_replay_controller_c4/verilog",
+        "name": "generate_attention_hbm_replay_controller_rtl_attention_hbm_replay_controller_c4"
+      },
+      {
+        "run": "python3 npu/eval/check_attention_hbm_replay_controller_guard.py --design-dir runs/designs/npu_blocks/attention_hbm_replay_controller_c4",
+        "name": "check_attention_hbm_replay_controller_guard_attention_hbm_replay_controller_c4"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/synth/run_block_sweep.py --design_dir runs/designs/npu_blocks/attention_hbm_replay_controller_c4 --platform nangate45 --top attention_hbm_replay_controller_c4 --sweep runs/campaigns/npu/attention_hbm_replay_controller_v1/sweeps/nangate45_attention_hbm_replay_controller_frontier.json --out_root runs/designs/npu_blocks --skip_existing",
+        "name": "run_block_sweep_attention_hbm_replay_controller_c4"
+      },
+      {
+        "run": "python3 npu/eval/extract_openroad_timing_summary.py --design-dir runs/designs/npu_blocks/attention_hbm_replay_controller_c4 --out runs/designs/npu_blocks/attention_hbm_replay_controller_c4/timing_debug_report.md --max-paths 8",
+        "name": "extract_attention_hbm_replay_controller_timing_paths_attention_hbm_replay_controller_c4"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/rtlgen/gen_attention_hbm_replay_controller.py --config runs/designs/npu_blocks/attention_hbm_replay_controller_c8/config.json --out runs/designs/npu_blocks/attention_hbm_replay_controller_c8/verilog",
+        "name": "generate_attention_hbm_replay_controller_rtl_attention_hbm_replay_controller_c8"
+      },
+      {
+        "run": "python3 npu/eval/check_attention_hbm_replay_controller_guard.py --design-dir runs/designs/npu_blocks/attention_hbm_replay_controller_c8",
+        "name": "check_attention_hbm_replay_controller_guard_attention_hbm_replay_controller_c8"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/synth/run_block_sweep.py --design_dir runs/designs/npu_blocks/attention_hbm_replay_controller_c8 --platform nangate45 --top attention_hbm_replay_controller_c8 --sweep runs/campaigns/npu/attention_hbm_replay_controller_v1/sweeps/nangate45_attention_hbm_replay_controller_frontier.json --out_root runs/designs/npu_blocks --skip_existing",
+        "name": "run_block_sweep_attention_hbm_replay_controller_c8"
+      },
+      {
+        "run": "python3 npu/eval/extract_openroad_timing_summary.py --design-dir runs/designs/npu_blocks/attention_hbm_replay_controller_c8 --out runs/designs/npu_blocks/attention_hbm_replay_controller_c8/timing_debug_report.md --max-paths 8",
+        "name": "extract_attention_hbm_replay_controller_timing_paths_attention_hbm_replay_controller_c8"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/rtlgen/gen_attention_hbm_replay_controller.py --config runs/designs/npu_blocks/attention_hbm_replay_controller_c16/config.json --out runs/designs/npu_blocks/attention_hbm_replay_controller_c16/verilog",
+        "name": "generate_attention_hbm_replay_controller_rtl_attention_hbm_replay_controller_c16"
+      },
+      {
+        "run": "python3 npu/eval/check_attention_hbm_replay_controller_guard.py --design-dir runs/designs/npu_blocks/attention_hbm_replay_controller_c16",
+        "name": "check_attention_hbm_replay_controller_guard_attention_hbm_replay_controller_c16"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/synth/run_block_sweep.py --design_dir runs/designs/npu_blocks/attention_hbm_replay_controller_c16 --platform nangate45 --top attention_hbm_replay_controller_c16 --sweep runs/campaigns/npu/attention_hbm_replay_controller_v1/sweeps/nangate45_attention_hbm_replay_controller_frontier.json --out_root runs/designs/npu_blocks --skip_existing",
+        "name": "run_block_sweep_attention_hbm_replay_controller_c16"
+      },
+      {
+        "run": "python3 npu/eval/extract_openroad_timing_summary.py --design-dir runs/designs/npu_blocks/attention_hbm_replay_controller_c16 --out runs/designs/npu_blocks/attention_hbm_replay_controller_c16/timing_debug_report.md --max-paths 8",
+        "name": "extract_attention_hbm_replay_controller_timing_paths_attention_hbm_replay_controller_c16"
+      },
+      {
+        "run": "python3 scripts/build_runs_index.py",
+        "name": "build_runs_index"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate"
+      }
+    ],
+    "metadata": {
+      "acceptance_notes": "Accept status=ok rows and non-ok rows such as flow_failed as explicit boundary evidence; c8/c16 infeasible rows must be preserved rather than rejected."
+    },
+    "objective": "Measure Nangate45 PPA for the score32 HBM replay controller at 4, 8, and 16 channels, accepting flow_failed rows as physical boundary evidence for infeasible larger controllers.",
+    "acceptance": [
+      "Each generated wrapper metrics.csv contains recorded rows with a status column; allow non-ok metrics such as flow_failed when the row is boundary evidence",
+      "Committed outputs stay lightweight (metrics.csv only; runs/index.csv is exported centrally after merge)",
+      "python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue pass"
+    ],
+    "source_mode": "config",
+    "expected_outputs": [
+      "runs/designs/npu_blocks/attention_hbm_replay_controller_c4/metrics.csv",
+      "runs/designs/npu_blocks/attention_hbm_replay_controller_c4/timing_debug_report.md",
+      "runs/designs/npu_blocks/attention_hbm_replay_controller_c8/metrics.csv",
+      "runs/designs/npu_blocks/attention_hbm_replay_controller_c8/timing_debug_report.md",
+      "runs/designs/npu_blocks/attention_hbm_replay_controller_c16/metrics.csv",
+      "runs/designs/npu_blocks/attention_hbm_replay_controller_c16/timing_debug_report.md"
+    ]
+  },
+  "layer": "layer1",
+  "state": "evaluated",
+  "title": "HBM replay controller RTL PPA boundary rerun",
+  "result": {
+    "branch": "eval/l1_decoder_attention_hbm_replay_controller_ppa_v2/s20260709t175937z",
+    "completed_utc": "2026-07-09T17:59:35.996893Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "b7c2d9c80c1c",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260709t175937z][host:b7c2d9c80c1c][item:l1_decoder_attention_hbm_replay_controller_ppa_v2]",
+    "metrics_rows": [
+      {
+        "tag": "attention_hbm_replay_controller_frontier_855f34cb",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "855f34cb",
+        "metrics_csv": "runs/designs/npu_blocks/attention_hbm_replay_controller_c4/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_hbm_replay_controller_c4/work/855f34cb/result.json"
+      },
+      {
+        "tag": "attention_hbm_replay_controller_frontier_9422c7e7",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "9422c7e7",
+        "metrics_csv": "runs/designs/npu_blocks/attention_hbm_replay_controller_c4/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_hbm_replay_controller_c4/work/9422c7e7/result.json"
+      },
+      {
+        "tag": "attention_hbm_replay_controller_frontier_5168ba2a",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "5168ba2a",
+        "metrics_csv": "runs/designs/npu_blocks/attention_hbm_replay_controller_c4/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_hbm_replay_controller_c4/work/5168ba2a/result.json"
+      },
+      {
+        "tag": "attention_hbm_replay_controller_frontier_855f34cb",
+        "status": "flow_failed",
+        "platform": "nangate45",
+        "param_hash": "855f34cb",
+        "metrics_csv": "runs/designs/npu_blocks/attention_hbm_replay_controller_c8/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_hbm_replay_controller_c8/work/855f34cb/result.json"
+      },
+      {
+        "tag": "attention_hbm_replay_controller_frontier_9422c7e7",
+        "status": "flow_failed",
+        "platform": "nangate45",
+        "param_hash": "9422c7e7",
+        "metrics_csv": "runs/designs/npu_blocks/attention_hbm_replay_controller_c8/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_hbm_replay_controller_c8/work/9422c7e7/result.json"
+      },
+      {
+        "tag": "attention_hbm_replay_controller_frontier_5168ba2a",
+        "status": "flow_failed",
+        "platform": "nangate45",
+        "param_hash": "5168ba2a",
+        "metrics_csv": "runs/designs/npu_blocks/attention_hbm_replay_controller_c8/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_hbm_replay_controller_c8/work/5168ba2a/result.json"
+      },
+      {
+        "tag": "attention_hbm_replay_controller_frontier_855f34cb",
+        "status": "flow_failed",
+        "platform": "nangate45",
+        "param_hash": "855f34cb",
+        "metrics_csv": "runs/designs/npu_blocks/attention_hbm_replay_controller_c16/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_hbm_replay_controller_c16/work/855f34cb/result.json"
+      },
+      {
+        "tag": "attention_hbm_replay_controller_frontier_9422c7e7",
+        "status": "flow_failed",
+        "platform": "nangate45",
+        "param_hash": "9422c7e7",
+        "metrics_csv": "runs/designs/npu_blocks/attention_hbm_replay_controller_c16/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_hbm_replay_controller_c16/work/9422c7e7/result.json"
+      },
+      {
+        "tag": "attention_hbm_replay_controller_frontier_5168ba2a",
+        "status": "flow_failed",
+        "platform": "nangate45",
+        "param_hash": "5168ba2a",
+        "metrics_csv": "runs/designs/npu_blocks/attention_hbm_replay_controller_c16/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_hbm_replay_controller_c16/work/5168ba2a/result.json"
+      }
+    ],
+    "queue_item_id": "l1_decoder_attention_hbm_replay_controller_ppa_v2",
+    "session_id": "s20260709t175937z",
+    "status": "ok",
+    "summary": "14/14 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l1_decoder_attention_hbm_replay_controller_ppa_v2/s20260709t175937z",
+    "pr_title": "eval: run hbm replay controller rtl ppa boundary rerun",
+    "checklist": [
+      "Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge",
+      "Include metrics row references for each completed design",
+      "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260709t175937z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l1_decoder_attention_hbm_replay_controller_ppa_v2"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l1_decoder_attention_hbm_replay_controller_ppa_v2",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 1,
+  "created_utc": "2026-07-09T12:40:38.220374Z",
+  "requested_by": "developer_agent",
+  "developer_loop": {
+    "evaluation": {
+      "mode": "frontier_followup",
+      "trial_policy": {
+        "seed_start": 0,
+        "trial_count": 1,
+        "stop_after_failures": 1
+      }
+    },
+    "abstraction": {
+      "layer": "decoder_attention_hbm_replay_controller"
+    },
+    "proposal_id": "prop_l1_decoder_attention_hbm_replay_controller_v1",
+    "proposal_path": "docs/proposals/prop_l1_decoder_attention_hbm_replay_controller_v1/proposal.json"
+  },
+  "source_requirement": {
+    "repo": "",
+    "reason": "evaluator runtime must contain the queued job source commit",
+    "version": 1,
+    "required_ref": "origin/master",
+    "required_sha": "de5a546bfa7d0f7f34c9bd4872f5e7e689b67924",
+    "requires_daemon_restart": true
+  }
+}
