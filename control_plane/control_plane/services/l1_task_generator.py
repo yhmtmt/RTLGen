@@ -934,6 +934,7 @@ def _build_payload(
     boundary_acceptance = (
         _contains_boundary_acceptance_phrase(objective)
         or _contains_boundary_acceptance_phrase(acceptance_notes_text)
+        or str(abstraction_layer or "").strip() == "decoder_attention_hbm_replay_controller"
     )
     metrics_acceptance = (
         "Each generated wrapper metrics.csv contains recorded rows with a status column; "

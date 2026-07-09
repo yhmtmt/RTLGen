@@ -46,7 +46,7 @@
       "depends_on_item_ids": [
         "l2_decoder_attention_score32_hbm_controller_replay_integrated_frontier_ranking_llama7b_v1",
         "l2_decoder_attention_score32_hbm_controller_replay_llama7b_v1",
-        "l1_decoder_attention_hbm_replay_controller_ppa_v1",
+        "l1_decoder_attention_hbm_replay_controller_ppa_v2",
         "l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_measured_command_control_llama7b_v1",
         "l2_decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality_llama7b_v1",
         "l2_decoder_attention_measured_compute_energy_closure_llama7b_v1",
@@ -65,7 +65,7 @@
   "baseline_refs": [
     "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_integrated_frontier_ranking__l2_decoder_attention_score32_hbm_controller_replay_integrated_frontier_ranking_llama7b_v1.json",
     "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_hbm_controller_replay__l2_decoder_attention_score32_hbm_controller_replay_llama7b_v1.json",
-    "control_plane/shadow_exports/l1_promotions/l1_decoder_attention_hbm_replay_controller_ppa_v1.json"
+    "control_plane/shadow_exports/l1_promotions/l1_decoder_attention_hbm_replay_controller_ppa_v2.json"
   ],
   "knowledge_refs": [
     "npu/eval/audit_llm_decoder_attention_score32_integrated_frontier_ranking.py",
