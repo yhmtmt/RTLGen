@@ -1718,6 +1718,8 @@ def test_generate_l1_sweep_task_supports_attention_hbm_replay_controller_configs
             assert work_item.task_request.request_payload["developer_loop"]["abstraction"] == {
                 "layer": "decoder_attention_hbm_replay_controller"
             }
+            assert "allow non-ok metrics" in work_item.acceptance_rules[0]
+            assert "flow_failed" in work_item.acceptance_rules[0]
 
 
 def test_generate_l1_sweep_task_supports_multi_attention_hbm_replay_controller_configs() -> None:
@@ -1766,6 +1768,8 @@ def test_generate_l1_sweep_task_supports_multi_attention_hbm_replay_controller_c
                 "runs/designs/npu_blocks/attention_hbm_replay_controller_c16_q32/metrics.csv",
                 "runs/designs/npu_blocks/attention_hbm_replay_controller_c16_q32/timing_debug_report.md",
             ]
+            assert "allow non-ok metrics" in work_item.acceptance_rules[0]
+            assert "flow_failed" in work_item.acceptance_rules[0]
 
 
 def test_generate_l1_sweep_task_supports_attention_schedule_wrapper_configs() -> None:

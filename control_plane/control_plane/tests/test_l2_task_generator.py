@@ -7101,7 +7101,7 @@ def test_generate_l2_campaign_task_adds_attention_score32_hbm_controller_replay_
                     evaluation_mode="frontier_detail",
                     comparison_role="score32_hbm_controller_replay_integrated_frontier_ranking",
                     depends_on_item_ids=[
-                        "l1_decoder_attention_hbm_replay_controller_ppa_v1",
+                        "l1_decoder_attention_hbm_replay_controller_ppa_v2",
                     ],
                     requires_merged_inputs=True,
                     requires_materialized_refs=True,
@@ -7116,12 +7116,12 @@ def test_generate_l2_campaign_task_adds_attention_score32_hbm_controller_replay_
             assert "--score32-hbm-controller-replay-ppa-json" in run
             assert (
                 "control_plane/shadow_exports/l1_promotions/"
-                "l1_decoder_attention_hbm_replay_controller_ppa_v1.json"
+                "l1_decoder_attention_hbm_replay_controller_ppa_v2.json"
             ) in run
             assert (
                 decoder_inputs["attention_score32_hbm_controller_replay_ppa_json"]
                 == "control_plane/shadow_exports/l1_promotions/"
-                "l1_decoder_attention_hbm_replay_controller_ppa_v1.json"
+                "l1_decoder_attention_hbm_replay_controller_ppa_v2.json"
             )
 
 

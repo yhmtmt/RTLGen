@@ -5984,14 +5984,18 @@ def _decoder_attention_score32_integrated_frontier_ranking_evidence(
         f"{base}/decoder_attention_score32_hbm_controller_replay__"
         "l2_decoder_attention_score32_hbm_controller_replay_llama7b_v1.json"
     )
-    use_hbm_controller_replay_ppa = any(
-        str(dep).startswith("l1_decoder_attention_hbm_replay_controller_ppa_v1")
-        for dep in (depends_on_item_ids or [])
+    hbm_controller_replay_ppa_item_id = next(
+        (
+            dep_id
+            for dep in (depends_on_item_ids or [])
+            for dep_id in [str(dep)]
+            if dep_id.startswith("l1_decoder_attention_hbm_replay_controller_ppa_v")
+        ),
+        None,
     )
     score32_hbm_controller_replay_ppa = (
-        "control_plane/shadow_exports/l1_promotions/"
-        "l1_decoder_attention_hbm_replay_controller_ppa_v1.json"
-        if use_hbm_controller_replay_ppa
+        f"control_plane/shadow_exports/l1_promotions/{hbm_controller_replay_ppa_item_id}.json"
+        if hbm_controller_replay_ppa_item_id
         else None
     )
     use_schedule_wrapper_recost = "schedule_wrapper" in item_id
