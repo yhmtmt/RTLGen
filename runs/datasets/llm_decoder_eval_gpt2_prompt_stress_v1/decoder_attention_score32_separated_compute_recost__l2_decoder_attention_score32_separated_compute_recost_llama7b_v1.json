@@ -1,0 +1,137 @@
+{
+  "assumptions": [
+    "Dense-int8 latency and external HBM/NoC/SRAM traffic are inherited unchanged from the measured mixed-int8 schedule.",
+    "The inherited energy source and desired score32 target retain their explicit precision profiles; quality is not attributed across a profile mismatch.",
+    "The selected score32/vector overhead is shared at cluster scope instead of replicated with every GEMM lane.",
+    "All component powers are conservatively charged for the full token latency.",
+    "Measured-component recost is evidence for prioritizing RTL work, not evidence that the composition is physically promotable."
+  ],
+  "candidate": {
+    "abstraction_status": "measured_components_unmeasured_composition",
+    "active_power_mw": 975.8133,
+    "candidate_id": "score32_separated_dense_int8_shared_vector_softmax_c16_hbm_c4",
+    "components": [
+      {
+        "area_um2": 179098560.0,
+        "clock_ok": true,
+        "component": "dense_int8_gemm_fabric",
+        "critical_path_ns": 2.8003,
+        "power_mw": 974.7,
+        "replica_count": 855,
+        "source": "runs/designs/npu_blocks/npu_dense_gemm_tile_int8_16x8_k1_p1/metrics.csv"
+      },
+      {
+        "area_um2": 480367.9308,
+        "clock_ok": true,
+        "cluster_count": 16,
+        "component": "shared_score32_vector_softmax_overhead",
+        "critical_path_ns": 5.5948,
+        "power_mw": 0.9456,
+        "source": "runs/designs/activations/attention_softmax_weight_int8_r8_acc24_recip_q10_wrapper/metrics.csv"
+      },
+      {
+        "area_um2": 15775.9,
+        "clock_ok": true,
+        "component": "command_dispatch_control",
+        "critical_path_ns": 0.4629,
+        "power_mw": 0.0587,
+        "source": "runs/designs/npu_blocks/attention_command_dispatch_c16_q32/metrics.csv"
+      },
+      {
+        "area_um2": 28910.2009,
+        "clock_ok": true,
+        "component": "hbm_replay_controller_c4",
+        "critical_path_ns": 2.2087,
+        "power_mw": 0.109,
+        "source": "runs/designs/npu_blocks/attention_hbm_replay_controller_c4/metrics.csv"
+      }
+    ],
+    "compute_control_energy_mj_per_token": 1.537270795311,
+    "die_area_mm2": 800.0,
+    "energy_mj_per_token": 135.755919226219,
+    "energy_source_precision_profile": "q8_k8_v6_a24_s8_w8_recip_lut_q10_int8_compute",
+    "hbm_energy_mj_per_token": 134.14461348516411,
+    "latency_us": 1575.373891,
+    "logic_area_mm2": 179.6236140317,
+    "noc_energy_mj_per_token": 0.07399145446230194,
+    "precision_aligned": false,
+    "precision_profile": "q8_k8_v8_a32_s32_w16_exp_lut_div_b20_int8_compute",
+    "promotable": false,
+    "quality": {
+      "candidate_id": "score32_exp_lut_div",
+      "candidate_probability_assigned_to_reference_token_mean": 0.44889021134685153,
+      "free_running_match_rate": 0.890625,
+      "precision": {
+        "candidate_id": "score32_exp_lut_div",
+        "k_bits": 8,
+        "q_bits": 8,
+        "score_bits": 32,
+        "softmax_mode": "exp_lut_div_bucket20",
+        "v_bits": 8,
+        "weight_bits": 16
+      },
+      "quality_backed": true,
+      "status": "mixed_int8_generation_quality_pass",
+      "teacher_forced_nll_delta_mean": 0.0008945953623444368
+    },
+    "quality_backed": false,
+    "quality_target_backed": true,
+    "remaining_abstractions": [
+      "the inherited q8/k8/v6 reciprocal-LUT energy row is not precision-aligned with the q8/k8/v8 score32 exp-LUT/div target",
+      "producer-to-score32 ready/valid queues and backpressure are not yet embodied in one composed RTL block",
+      "the inherited dense-int8 schedule has not yet been replayed against the separated score32 consumer",
+      "full QK-to-softmax-to-V RTL/perf-sim tensor-hash equivalence is pending for the separated composition",
+      "NoC and SRAM energy remain profile-scaled rather than gate-level toggle power",
+      "HBM energy is source-backed aggregate energy, not vendor current signoff"
+    ],
+    "schedule_clock_ns": 5.9811,
+    "sram_energy_mj_per_token": 4.349128155786915e-05,
+    "timing_ok": true,
+    "token_throughput_per_s": 634.769946177812
+  },
+  "comparisons": {
+    "vs_current_score32": {
+      "candidate_id": "score32_exp_lut_schedule_wrapper_hbm_controller_replay_best",
+      "energy_ratio": 0.290578865,
+      "logic_area_ratio": 0.605147098,
+      "throughput_ratio": 8.134105768
+    },
+    "vs_exact_fp16": {
+      "candidate_id": "die1200_dense_gemm_16x8_k1_p1_mac132736_lat1872.29_hbm0.465654_tt512",
+      "energy_ratio": 1.662369012,
+      "logic_area_ratio": 0.374526306,
+      "throughput_ratio": 46.048790416
+    }
+  },
+  "decision": "score32_separated_compute_recost_requires_precision_aligned_rtl",
+  "diagnosis": {
+    "decision": "score32_separated_compute_recost_requires_precision_aligned_rtl",
+    "full_wrapper_replication_removed": true,
+    "old_full_wrapper_area_um2": 490074.0,
+    "old_full_wrapper_power_mw": 35.3,
+    "old_full_wrapper_replica_count": 815,
+    "precision_aligned": false,
+    "promotable": false,
+    "quality_backed": false,
+    "quality_target_backed": true,
+    "recommended_next_step": "Build and measure the precision-aligned separated producer/consumer RTL composition, then run full-path tensor-hash equivalence.",
+    "remaining_abstractions": [
+      "the inherited q8/k8/v6 reciprocal-LUT energy row is not precision-aligned with the q8/k8/v8 score32 exp-LUT/div target",
+      "producer-to-score32 ready/valid queues and backpressure are not yet embodied in one composed RTL block",
+      "the inherited dense-int8 schedule has not yet been replayed against the separated score32 consumer",
+      "full QK-to-softmax-to-V RTL/perf-sim tensor-hash equivalence is pending for the separated composition",
+      "NoC and SRAM energy remain profile-scaled rather than gate-level toggle power",
+      "HBM energy is source-backed aggregate energy, not vendor current signoff"
+    ],
+    "timing_ok": true
+  },
+  "inputs": {
+    "hbm_controller_ppa_json": "control_plane/shadow_exports/l1_promotions/l1_decoder_attention_hbm_replay_controller_ppa_v2.json",
+    "mixed_int8_energy_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_energy_closure__l2_decoder_attention_mixed_int8_energy_closure_llama7b_v1_r2.json",
+    "quality_aware_frontier_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_integrated_frontier_ranking__l2_decoder_attention_score32_quality_aware_hbm_controller_replay_rtl_ppa_recost_frontier_llama7b_v1.json",
+    "score32_measured_command_control_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_measured_command_control_llama7b_v1.json",
+    "score32_quality_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality__l2_decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality_llama7b_v1.json"
+  },
+  "model": "llm_decoder_attention_score32_separated_compute_recost_v1",
+  "version": 1
+}
