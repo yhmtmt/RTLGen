@@ -26,7 +26,12 @@
         "direction": "record_score32_integrated_frontier_ranking_with_replay_controller_ppa",
         "reason": "The result should keep HBM PHY/current-signoff caveats explicit while replacing the replay-controller RTL-timing abstraction with a measured controller-control PPA reference."
       },
-      "status": "ready_to_dispatch_after_l1_result_merge"
+      "status": "merged",
+      "merged_pr_number": 1237,
+      "merge_commit": "5c33b9f58fc1748cf4886cafa4336130d2486d8f",
+      "merged_utc": "2026-07-10T10:29:20.261225Z",
+      "notes": "Merged via PR #1237 and merge 5c33b9f58fc1748cf4886cafa4336130d2486d8f at 2026-07-10T10:29:20.261225Z."
     }
-  ]
+  ],
+  "source_commit": "f6589e4939ccc215db450c4a5d0d1de8de6f9661"
 }
