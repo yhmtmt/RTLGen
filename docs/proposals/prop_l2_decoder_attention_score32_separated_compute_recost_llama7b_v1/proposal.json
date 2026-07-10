@@ -1,0 +1,81 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_score32_separated_compute_recost_llama7b_v1",
+  "created_utc": "2026-07-10T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Score32 separated compute recost",
+  "abstraction_layer": "decoder_attention_score32_separated_compute_recost",
+  "hypothesis": "Replacing the replicated score32 wrapper subtotal with separated measured dense-int8, shared score32/vector-softmax, command-dispatch, and HBM replay-controller components will expose a materially smaller score32 compute/control cost while still leaving full composed RTL integration as the gating follow-on step.",
+  "direct_comparison": {
+    "primary_question": "Does measured-component separated compute recost make the current quality-aware score32 frontier compelling enough to prioritize composed RTL work?",
+    "baseline": "l2_decoder_attention_score32_quality_aware_hbm_controller_replay_rtl_ppa_recost_frontier_llama7b_v1",
+    "include": [
+      "mixed-int8 dense compute latency and traffic terms",
+      "measured score32 command-control and shared vector-softmax overhead",
+      "measured HBM replay-controller PPA",
+      "current quality-aware score32 frontier rows",
+      "bounded score32 generation-quality evidence"
+    ],
+    "exclude": [
+      "new OpenROAD synthesis",
+      "new vendor HBM current-signoff data",
+      "full producer-to-consumer composed RTL timing",
+      "new generation-quality benchmark runs"
+    ]
+  },
+  "expected_benefit": [
+    "removes the full-wrapper replication assumption from the current score32 compute/control subtotal",
+    "shows whether separated measured components materially improve score32 energy and logic area before composing RTL",
+    "gives a cleaner priority signal for the next producer-consumer composition task"
+  ],
+  "risks": [
+    "the recost still inherits mixed-int8 latency and external HBM/NoC/SRAM traffic unchanged",
+    "measured components are not yet embodied in one composed score32 producer-consumer RTL block",
+    "HBM energy remains source-backed aggregate energy rather than vendor current signoff"
+  ],
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_score32_separated_compute_recost_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Recost the current quality-aware score32 Llama7B frontier using separated measured compute/control components.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_score32_separated_compute_recost",
+      "comparison_role": "score32_separated_compute_recost",
+      "paired_baseline_item_id": "l2_decoder_attention_score32_quality_aware_hbm_controller_replay_rtl_ppa_recost_frontier_llama7b_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_mixed_int8_energy_closure_llama7b_v1_r2",
+        "l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_measured_command_control_llama7b_v1",
+        "l2_decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality_llama7b_v1",
+        "l1_decoder_attention_hbm_replay_controller_ppa_v2",
+        "l2_decoder_attention_score32_quality_aware_hbm_controller_replay_rtl_ppa_recost_frontier_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "record_score32_separated_compute_recost",
+        "reason": "The result should say whether the measured-component score32 subtotal is strong enough to justify building and measuring the composed producer-consumer RTL path next."
+      },
+      "status": "ready_to_dispatch_after_implementation_merge"
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_energy_closure__l2_decoder_attention_mixed_int8_energy_closure_llama7b_v1_r2.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_measured_command_control_llama7b_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality__l2_decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality_llama7b_v1.json",
+    "control_plane/shadow_exports/l1_promotions/l1_decoder_attention_hbm_replay_controller_ppa_v2.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_integrated_frontier_ranking__l2_decoder_attention_score32_quality_aware_hbm_controller_replay_rtl_ppa_recost_frontier_llama7b_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/audit_llm_decoder_attention_score32_separated_compute_recost.py",
+    "docs/proposals/prop_l2_decoder_attention_score32_quality_aware_hbm_controller_ppa_recost_frontier_llama7b_v1/proposal.json",
+    "docs/proposals/prop_l2_decoder_attention_score32_hbm_controller_replay_rtl_ppa_recost_integrated_frontier_ranking_llama7b_v1/proposal.json"
+  ],
+  "remaining_abstractions_after_this_step": [
+    "Producer-to-score32 ready/valid queues and backpressure are not yet measured in one composed RTL block.",
+    "The inherited dense-int8 schedule has not yet been replayed against the separated score32 consumer.",
+    "Full QK-to-softmax-to-V RTL/perf-sim tensor-hash equivalence is still pending.",
+    "NoC and SRAM energy remain profile-scaled rather than gate-level toggle power.",
+    "HBM energy remains source-backed aggregate energy rather than vendor current signoff."
+  ]
+}

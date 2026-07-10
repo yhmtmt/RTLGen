@@ -5857,6 +5857,157 @@ def test_consume_l2_result_score32_compute_activity_energy_uses_decoder_evidence
             )
 
 
+def test_consume_l2_result_score32_separated_compute_recost_uses_decoder_evidence() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            proposal_dir = (
+                repo_root
+                / "docs"
+                / "proposals"
+                / "prop_l2_decoder_attention_score32_separated_compute_recost_llama7b_v1"
+            )
+            _write(
+                proposal_dir / "proposal.json",
+                json.dumps(
+                    {
+                        "proposal_id": "prop_l2_decoder_attention_score32_separated_compute_recost_llama7b_v1",
+                        "kind": "architecture",
+                        "title": "Score32 separated compute recost",
+                        "direct_comparison": {
+                            "primary_question": "Does separated score32 compute/control recost justify composed RTL follow-on work?"
+                        },
+                    },
+                    indent=2,
+                )
+                + "\n",
+            )
+            evidence_rel = (
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_score32_separated_compute_recost__"
+                "l2_decoder_attention_score32_separated_compute_recost_llama7b_v1.json"
+            )
+            report_rel = (
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_score32_separated_compute_recost__"
+                "l2_decoder_attention_score32_separated_compute_recost_llama7b_v1.md"
+            )
+            _write(
+                repo_root / evidence_rel,
+                json.dumps(
+                    {
+                        "version": 1,
+                        "model": "llm_decoder_attention_score32_separated_compute_recost_v1",
+                        "decision": "score32_separated_compute_measured_component_frontier_requires_rtl",
+                        "candidate": {
+                            "candidate_id": "score32_separated_dense_int8_shared_vector_softmax_c16_hbm_c4",
+                            "latency_us": 12814.257853,
+                            "token_throughput_per_s": 78.038123662,
+                            "energy_mj_per_token": 431.662917531,
+                            "compute_control_energy_mj_per_token": 287.114203118,
+                            "logic_area_mm2": 142.553201,
+                            "schedule_clock_ns": 5.5,
+                            "timing_ok": True,
+                            "quality_backed": True,
+                            "promotable": False,
+                            "abstraction_status": "measured_components_unmeasured_composition",
+                        },
+                        "diagnosis": {
+                            "decision": "score32_separated_compute_measured_component_frontier_requires_rtl",
+                            "full_wrapper_replication_removed": True,
+                            "old_full_wrapper_replica_count": 856,
+                            "old_full_wrapper_area_um2": 201553201.0,
+                            "old_full_wrapper_power_mw": 22410.0,
+                            "recommended_next_step": (
+                                "Build and measure the separated producer/consumer RTL composition, "
+                                "then run full-path tensor-hash equivalence."
+                            ),
+                            "remaining_abstractions": [
+                                "producer-to-score32 ready/valid queues remain uncomposed RTL",
+                                "NoC and SRAM energy remain profile-scaled",
+                            ],
+                        },
+                    },
+                    indent=2,
+                )
+                + "\n",
+            )
+            _write(repo_root / report_rel, "# score32 separated compute recost\n")
+            item_id = _seed_campaign_work_item(
+                session,
+                repo_root,
+                item_id="l2_decoder_attention_score32_separated_compute_recost_llama7b_v1",
+                campaign_dir_rel="runs/campaigns/npu/score32_separated_compute_recost_campaign",
+                summary_rows=(
+                    "scope,arch_id,macro_mode,objective_rank,latency_ms_mean,energy_mj_mean,critical_path_ns_mean,total_power_mw_mean,flow_elapsed_s_mean,throughput_infer_per_s_mean\n"
+                    "aggregate,fp16_nm1_demo,flat_nomacro,1,0.4,0.15,5.5,0.18,1000,1.0\n"
+                ),
+                proposal_path=(
+                    "docs/proposals/"
+                    "prop_l2_decoder_attention_score32_separated_compute_recost_llama7b_v1"
+                ),
+                comparison={"role": "score32_separated_compute_recost"},
+            )
+            work_item = session.query(WorkItem).filter_by(item_id=item_id).one()
+            payload = copy.deepcopy(work_item.task_request.request_payload or {})
+            payload["developer_loop"]["evaluation"] = {
+                "mode": "frontier_detail",
+                "expected_direction": "record_score32_separated_compute_recost",
+                "expected_reason": "Use measured-component score32 recost evidence to prioritize composed RTL follow-on work.",
+            }
+            payload["developer_loop"]["abstraction"] = {
+                "layer": "decoder_attention_score32_separated_compute_recost",
+            }
+            work_item.task_request.request_payload = payload
+            work_item.input_manifest = {
+                "decoder_contract": {
+                    "attention_score32_separated_compute_recost_out": evidence_rel,
+                    "attention_score32_separated_compute_recost_report": report_rel,
+                }
+            }
+            work_item.expected_outputs = [*(work_item.expected_outputs or []), evidence_rel, report_rel]
+            session.commit()
+
+            consume_l2_result(session, Layer2ConsumeRequest(repo_root=str(repo_root), item_id=item_id))
+
+            decision_payload = json.loads(
+                (repo_root / "control_plane" / "shadow_exports" / "l2_decisions" / f"{item_id}.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            assessment = decision_payload["proposal_assessment"]
+            assert assessment["outcome"] == "score32_separated_compute_measured_component_frontier_requires_rtl"
+            assert assessment["decoder_evidence_ref"] == evidence_rel
+            assert (
+                "candidate_id=score32_separated_dense_int8_shared_vector_softmax_c16_hbm_c4"
+                in assessment["summary"]
+            )
+            assert "energy_mj_per_token=431.662917531" in assessment["summary"]
+            assert "timing_ok=True" in assessment["summary"]
+            assert "quality_backed=True" in assessment["summary"]
+            assert "old_full_wrapper_replica_count=856" in assessment["summary"]
+            assert (
+                "recommended_next_step=Build and measure the separated producer/consumer RTL composition, "
+                "then run full-path tensor-hash equivalence."
+            ) in assessment["summary"]
+            assert (
+                decision_payload["evaluation_record"]["abstraction_layer"]
+                == "decoder_attention_score32_separated_compute_recost"
+            )
+            assert (
+                decision_payload["source_refs"]["decoder_attention_score32_separated_compute_recost_out"]
+                == evidence_rel
+            )
+            assert (
+                decision_payload["source_refs"]["decoder_attention_score32_separated_compute_recost_report"]
+                == report_rel
+            )
+
+
 def test_consume_l2_result_score32_exp_lut_sram_hierarchy_envelope_uses_decoder_evidence() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
