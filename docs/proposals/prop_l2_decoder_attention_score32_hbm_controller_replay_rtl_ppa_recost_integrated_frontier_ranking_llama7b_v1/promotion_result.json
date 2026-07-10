@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_score32_hbm_controller_replay_rtl_ppa_recost_integrated_frontier_ranking_llama7b_v1",
+  "decision": "iterate",
+  "pr_number": 1239,
+  "merge_commit": "8a523c61acc278481a5c2e2ccf0ec831d7beeccc",
+  "merged_utc": "2026-07-10T10:39:33.879274Z"
+}

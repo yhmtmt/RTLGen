@@ -26,7 +26,12 @@
         "direction": "record_score32_integrated_frontier_ranking_with_replay_controller_ppa_recost",
         "reason": "Fold the measured controller cost into the score32 totals and preserve the ranking only if the recosted evidence supports it."
       },
-      "status": "ready_to_dispatch_after_implementation_merge"
+      "status": "merged",
+      "merged_pr_number": 1239,
+      "merge_commit": "8a523c61acc278481a5c2e2ccf0ec831d7beeccc",
+      "merged_utc": "2026-07-10T10:39:33.879274Z",
+      "notes": "Merged via PR #1239 and merge 8a523c61acc278481a5c2e2ccf0ec831d7beeccc at 2026-07-10T10:39:33.879274Z."
     }
-  ]
+  ],
+  "source_commit": "157ba5f01d2e1ee0d47a86d1eb71a630b23492ed"
 }
