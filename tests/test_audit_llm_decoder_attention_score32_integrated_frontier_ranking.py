@@ -19,6 +19,7 @@ def _args(tmp_path: Path) -> Namespace:
         score32_quality_json=tmp_path / "score32_quality.json",
         measured_compute_energy_json=tmp_path / "measured_compute.json",
         mixed_int8_energy_json=tmp_path / "mixed_int8.json",
+        mixed_int8_quality_backed_frontier_json=None,
         integrated_energy_json=tmp_path / "integrated.json",
     )
 
@@ -109,7 +110,10 @@ def _populate_inputs(tmp_path: Path) -> None:
                 "die_area_mm2": 2.9,
                 "compute_area_um2": 3200000,
                 "macs_per_cycle": 256,
-                "energy_components": {"compute_mj": 2.5, "hbm_mj": 1.5},
+                "energy_components": {
+                    "compute": {"energy_mj": 2.5},
+                    "hbm": {"energy_mj": 1.5},
+                },
             },
         },
     )
@@ -260,3 +264,39 @@ def test_integrated_frontier_ranking_with_controller_replay_ppa_records_clock_mi
         "HBM replay controller requires pipelining or a schedule-clock recost to meet timing."
         in score32_row["remaining_abstractions"]
     )
+
+
+def test_integrated_frontier_ranking_invalidates_stale_mixed_int8_energy_row(tmp_path: Path) -> None:
+    _populate_inputs(tmp_path)
+    args = _args(tmp_path)
+    args.mixed_int8_quality_backed_frontier_json = tmp_path / "mixed_int8_quality_frontier.json"
+    _write_json(
+        args.mixed_int8_quality_backed_frontier_json,
+        {
+            "model": "llm_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1",
+            "decision": "mixed_int8_quality_backed_frontier_recost_required",
+            "invalidated_energy_candidates": [
+                {
+                    "candidate_id": "mixed_int8_energy",
+                    "precision": {"precision_profile": "q8_k8_v6_a24_s8_w8_recip_lut_q10_int8_compute"},
+                    "reason": "low-precision score/softmax path failed the quality-backed frontier gate",
+                }
+            ],
+        },
+    )
+
+    report = build_report(args)
+    mixed_row = report["rows"][2]
+
+    assert mixed_row["precision_status"] == "quality_invalidated_low_precision_score_softmax"
+    assert mixed_row["compute_energy_mj_per_token"] == 2.5
+    assert mixed_row["hbm_energy_mj_per_token"] == 1.5
+    assert mixed_row["abstraction_status"] == "measured_int8_compute_quality_invalidated"
+    assert mixed_row["quality_invalidation"]["precision_profile"] == (
+        "q8_k8_v6_a24_s8_w8_recip_lut_q10_int8_compute"
+    )
+    assert report["diagnosis"]["mixed_int8_quality_status"] == (
+        "quality_invalidated_low_precision_score_softmax"
+    )
+    assert report["next_step"]["mixed_int8_old_candidate_quality_invalidated"] is True
+    assert report["next_step"]["mixed_int8_requires_quality_closure"] is False

@@ -7046,6 +7046,7 @@ def test_generate_l2_campaign_task_adds_attention_score32_hbm_controller_replay_
             decoder_inputs = work_item.input_manifest["decoder_contract"]
 
             assert "--score32-hbm-controller-replay-json" in run
+            assert "--mixed-int8-quality-backed-frontier-json" in run
             assert (
                 "decoder_attention_score32_hbm_controller_replay__"
                 "l2_decoder_attention_score32_hbm_controller_replay_llama7b_v1.json"
@@ -7055,6 +7056,10 @@ def test_generate_l2_campaign_task_adds_attention_score32_hbm_controller_replay_
                 == "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
                 "decoder_attention_score32_hbm_controller_replay__"
                 "l2_decoder_attention_score32_hbm_controller_replay_llama7b_v1.json"
+            )
+            assert decoder_inputs["attention_mixed_int8_quality_backed_frontier"].endswith(
+                "decoder_attention_mixed_int8_quality_backed_frontier__"
+                "l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1.json"
             )
             assert (
                 decoder_inputs["attention_score32_integrated_frontier_ranking_out"].endswith(

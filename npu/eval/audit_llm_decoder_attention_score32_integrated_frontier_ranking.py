@@ -283,6 +283,9 @@ def _prior_row(
     promotable: bool,
     remaining_abstractions: list[str],
 ) -> JsonDict:
+    energy_components = _as_dict(row.get("energy_components"))
+    compute_component = _as_dict(energy_components.get("compute"))
+    hbm_component = _as_dict(energy_components.get("hbm"))
     return {
         "candidate_id": candidate_id,
         "family": family,
@@ -290,8 +293,12 @@ def _prior_row(
         "latency_us": _as_float(row.get("latency_us")),
         "token_throughput_per_s": _as_float(row.get("token_throughput_per_s")),
         "energy_mj_per_token": _as_float(row.get("energy_mj")),
-        "compute_energy_mj_per_token": _as_float(_as_dict(row.get("energy_components")).get("compute_mj")),
-        "hbm_energy_mj_per_token": _as_float(_as_dict(row.get("energy_components")).get("hbm_mj")),
+        "compute_energy_mj_per_token": _as_float(
+            compute_component.get("energy_mj", energy_components.get("compute_mj"))
+        ),
+        "hbm_energy_mj_per_token": _as_float(
+            hbm_component.get("energy_mj", energy_components.get("hbm_mj"))
+        ),
         "die_area_mm2": _as_float(row.get("die_area_mm2")),
         "compute_area_mm2": _as_float(row.get("compute_area_um2")) / 1.0e6,
         "macs_per_cycle": _as_float(row.get("macs_per_cycle")),
@@ -326,6 +333,44 @@ def _abstract_integrated_row(integrated_energy: JsonDict) -> JsonDict:
         ],
         "promotable": False,
     }
+
+
+def _apply_mixed_int8_quality_frontier(row: JsonDict, quality_frontier: JsonDict | None) -> JsonDict:
+    if quality_frontier is None:
+        return row
+    candidate_id = str(row.get("candidate_id") or "")
+    invalidated = next(
+        (
+            dict(item)
+            for item in quality_frontier.get("invalidated_energy_candidates", [])
+            if isinstance(item, dict) and str(item.get("candidate_id") or "") == candidate_id
+        ),
+        None,
+    )
+    if invalidated is None:
+        return row
+    reason = str(invalidated.get("reason") or "mixed/int8 candidate failed the quality-backed frontier gate")
+    result = dict(row)
+    result.update(
+        {
+            "precision_status": "quality_invalidated_low_precision_score_softmax",
+            "quality_backed": False,
+            "promotable": False,
+            "abstraction_status": "measured_int8_compute_quality_invalidated",
+            "quality_invalidation": {
+                "source_model": quality_frontier.get("model"),
+                "source_decision": quality_frontier.get("decision"),
+                "candidate_id": candidate_id,
+                "precision_profile": _as_dict(invalidated.get("precision")).get("precision_profile"),
+                "reason": reason,
+            },
+            "remaining_abstractions": [
+                "quality_invalidated_by_broad_native_attention_shadow",
+                reason,
+            ],
+        }
+    )
+    return result
 
 
 def _rank_rows(rows: list[JsonDict], *, promotable_only: bool = False) -> list[JsonDict]:
@@ -371,8 +416,30 @@ def build_report(args: argparse.Namespace) -> JsonDict:
     score32_quality = _load_json(args.score32_quality_json)
     measured_compute = _load_json(args.measured_compute_energy_json)
     mixed_int8 = _load_json(args.mixed_int8_energy_json)
+    mixed_int8_quality_frontier = (
+        _load_json(args.mixed_int8_quality_backed_frontier_json)
+        if args.mixed_int8_quality_backed_frontier_json
+        else None
+    )
     integrated = _load_json(args.integrated_energy_json)
 
+    mixed_int8_row = _apply_mixed_int8_quality_frontier(
+        _prior_row(
+            candidate_id=str(_best_row(mixed_int8).get("candidate_id") or "mixed_int8_energy_best"),
+            family="mixed_int8_compute",
+            source_artifact="mixed_int8_energy_closure_r2",
+            row=_best_row(mixed_int8),
+            precision_status="latency_candidate_pending_real_checkpoint_quality",
+            quality_backed=False,
+            abstraction_status="measured_int8_compute_with_source_backed_hbm_energy",
+            promotable=False,
+            remaining_abstractions=[
+                "real_checkpoint_quality_not_promoted_for_this_compute_path",
+                "source_backed_aggregate_hbm_energy_not_vendor_current_signoff",
+            ],
+        ),
+        mixed_int8_quality_frontier,
+    )
     rows = [
         _score32_row(
             score32_hbm,
@@ -396,20 +463,7 @@ def build_report(args: argparse.Namespace) -> JsonDict:
                 "profile_scaled_noc_sram_energy",
             ],
         ),
-        _prior_row(
-            candidate_id=str(_best_row(mixed_int8).get("candidate_id") or "mixed_int8_energy_best"),
-            family="mixed_int8_compute",
-            source_artifact="mixed_int8_energy_closure_r2",
-            row=_best_row(mixed_int8),
-            precision_status="latency_candidate_pending_real_checkpoint_quality",
-            quality_backed=False,
-            abstraction_status="measured_int8_compute_with_source_backed_hbm_energy",
-            promotable=False,
-            remaining_abstractions=[
-                "real_checkpoint_quality_not_promoted_for_this_compute_path",
-                "source_backed_aggregate_hbm_energy_not_vendor_current_signoff",
-            ],
-        ),
+        mixed_int8_row,
         _abstract_integrated_row(integrated),
     ]
 
@@ -445,6 +499,9 @@ def build_report(args: argparse.Namespace) -> JsonDict:
             "score32_quality_json": str(args.score32_quality_json),
             "measured_compute_energy_json": str(args.measured_compute_energy_json),
             "mixed_int8_energy_json": str(args.mixed_int8_energy_json),
+            "mixed_int8_quality_backed_frontier_json": str(args.mixed_int8_quality_backed_frontier_json)
+            if args.mixed_int8_quality_backed_frontier_json
+            else None,
             "integrated_energy_json": str(args.integrated_energy_json),
         },
         "diagnosis": {
@@ -471,6 +528,7 @@ def build_report(args: argparse.Namespace) -> JsonDict:
                 score32.get("score32_hbm_controller_replay_ppa")
             ).get("controller_clock_ok"),
             "score32_quality_status": score32["precision_status"],
+            "mixed_int8_quality_status": mixed_int8_row["precision_status"],
             "score32_vs_measured_fp16_energy_ratio": round(
                 score32["energy_mj_per_token"] / max(1.0e-12, best_energy_safe["energy_mj_per_token"]), 9
             ),
@@ -509,16 +567,24 @@ def build_report(args: argparse.Namespace) -> JsonDict:
                     "Nangate45 RTL PPA recost for replay-controller area, active energy, and control timing."
                 )
             ),
-            "The mixed-int8 energy row is retained as a fast non-promotable latency candidate because its precision path is not promoted by the current real-checkpoint evidence.",
+            (
+                "The old mixed-int8 energy row is retained only as measured historical evidence because the "
+                "quality-backed frontier invalidated its low-precision score/softmax profile."
+                if mixed_int8_row.get("quality_invalidation")
+                else "The mixed-int8 energy row is retained as a fast non-promotable latency candidate because "
+                "its precision path is not promoted by the current real-checkpoint evidence."
+            ),
             "The older integrated-energy row is retained as planning-only because measured-compute closure made its abstract compute target infeasible.",
         ],
         "next_step": {
             "recommended_next_step": (
                 "Use score32 as the current precision-safe throughput frontier and measured exact-FP16 as the "
-                "energy reference; next reduce score32 compute energy or validate a lower-energy mixed/int8 path."
+                "energy reference; next reduce score32 compute energy or build a quality-backed q8/k8/v8 path "
+                "with high-precision score/softmax."
             ),
             "score32_energy_reduction_required_for_energy_best": True,
-            "mixed_int8_requires_quality_closure": True,
+            "mixed_int8_requires_quality_closure": not bool(mixed_int8_row.get("quality_invalidation")),
+            "mixed_int8_old_candidate_quality_invalidated": bool(mixed_int8_row.get("quality_invalidation")),
         },
     }
 
@@ -570,6 +636,7 @@ def main() -> int:
     parser.add_argument("--score32-quality-json", type=Path, required=True)
     parser.add_argument("--measured-compute-energy-json", type=Path, required=True)
     parser.add_argument("--mixed-int8-energy-json", type=Path, required=True)
+    parser.add_argument("--mixed-int8-quality-backed-frontier-json", type=Path)
     parser.add_argument("--integrated-energy-json", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--out-md", type=Path, required=True)
