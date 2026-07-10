@@ -1,0 +1,30 @@
+{
+  "flow_params": {
+    "TAG": [
+      "attention_separated_cluster_v1"
+    ],
+    "FLOW_VARIANT": [
+      "attention_separated_cluster_v1"
+    ],
+    "CLOCK_PERIOD": [
+      10
+    ],
+    "DIE_AREA": [
+      "0 0 2500 2500"
+    ],
+    "CORE_AREA": [
+      "50 50 2450 2450"
+    ],
+    "PLACE_DENSITY": [
+      0.3,
+      0.4
+    ],
+    "SYNTH_HIERARCHICAL": [
+      1
+    ],
+    "SYNTH_MEMORY_MAX_BITS": [
+      65536
+    ]
+  },
+  "tag_prefix": "attention_separated_cluster_v1"
+}

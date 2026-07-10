@@ -6008,6 +6008,94 @@ def test_consume_l2_result_score32_separated_compute_recost_uses_decoder_evidenc
             )
 
 
+def test_consume_l2_result_attention_separated_cluster_equivalence_uses_decoder_evidence() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            proposal_dir = repo_root / "docs" / "proposals" / "prop_attention_separated_cluster_v1"
+            _write(
+                proposal_dir / "proposal.json",
+                json.dumps(
+                    {
+                        "proposal_id": "prop_attention_separated_cluster_v1",
+                        "kind": "architecture",
+                        "title": "Separated attention cluster",
+                        "direct_comparison": {"primary_question": "Does exact perf/RTL equivalence pass?"},
+                    }
+                ),
+            )
+            evidence_rel = (
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_separated_cluster_equivalence__item.json"
+            )
+            report_rel = evidence_rel.removesuffix(".json") + ".md"
+            _write(
+                repo_root / evidence_rel,
+                json.dumps(
+                    {
+                        "version": 1,
+                        "model": "attention_separated_cluster_perf_rtl_equivalence_v1",
+                        "decision": "attention_separated_cluster_equivalence_pass",
+                        "equivalence_pass": True,
+                        "semantic_profile": "q8_k8_v8_a32_s32_w16_exp_lut_div_b20",
+                        "ratios": ["1:1", "4:1", "4:2", "8:2"],
+                        "command_count": 8,
+                        "scenarios": ["always_ready", "result_backpressure"],
+                        "gates": {
+                            "exact_score_rows": True,
+                            "exact_softmax_weights": True,
+                            "exact_weighted_value_vectors": True,
+                            "exact_ready_valid_schedule": True,
+                            "loss_or_duplication": False,
+                        },
+                        "remaining_abstractions": ["full Llama7B scaling"],
+                        "next_step": "Measure producer-to-consumer ratio PPA.",
+                    }
+                ),
+            )
+            _write(repo_root / report_rel, "# equivalence\n")
+            item_id = _seed_campaign_work_item(
+                session,
+                repo_root,
+                item_id="item",
+                campaign_dir_rel="runs/campaigns/npu/attention_separated_equivalence",
+                summary_rows=(
+                    "scope,arch_id,macro_mode,objective_rank,latency_ms_mean,energy_mj_mean,critical_path_ns_mean,total_power_mw_mean,flow_elapsed_s_mean,throughput_infer_per_s_mean\n"
+                    "aggregate,attention,flat_nomacro,1,0.1,0.1,1,1,1,1\n"
+                ),
+                proposal_path="docs/proposals/prop_attention_separated_cluster_v1",
+                comparison={"role": "equivalence_gate"},
+            )
+            work_item = session.query(WorkItem).filter_by(item_id=item_id).one()
+            payload = copy.deepcopy(work_item.task_request.request_payload or {})
+            payload["developer_loop"]["abstraction"] = {
+                "layer": "decoder_attention_separated_cluster_equivalence"
+            }
+            work_item.task_request.request_payload = payload
+            work_item.input_manifest = {
+                "decoder_contract": {
+                    "attention_separated_cluster_equivalence_out": evidence_rel,
+                    "attention_separated_cluster_equivalence_report": report_rel,
+                }
+            }
+            work_item.expected_outputs = [*(work_item.expected_outputs or []), evidence_rel, report_rel]
+            session.commit()
+
+            consume_l2_result(session, Layer2ConsumeRequest(repo_root=str(repo_root), item_id=item_id))
+            decision_payload = json.loads(
+                (repo_root / "control_plane" / "shadow_exports" / "l2_decisions" / "item.json").read_text()
+            )
+            assessment = decision_payload["proposal_assessment"]
+            assert assessment["outcome"] == "attention_separated_cluster_equivalence_pass"
+            assert "equivalence_pass=True" in assessment["summary"]
+            assert "exact_ready_valid_schedule" in assessment["summary"]
+            assert decision_payload["source_refs"]["decoder_attention_separated_cluster_equivalence_out"] == evidence_rel
+
+
 def test_consume_l2_result_score32_exp_lut_sram_hierarchy_envelope_uses_decoder_evidence() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"

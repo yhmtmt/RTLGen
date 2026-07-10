@@ -6206,6 +6206,35 @@ def _decoder_attention_score32_separated_compute_recost_evidence(
     }
 
 
+def _decoder_attention_separated_cluster_equivalence_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_attention_separated_cluster_equivalence__{item_id}.json"
+    report = f"{base}/decoder_attention_separated_cluster_equivalence__{item_id}.md"
+    return {
+        "inputs": {
+            "attention_separated_cluster_equivalence_out": out,
+            "attention_separated_cluster_equivalence_report": report,
+            "attention_separated_cluster_equivalence_scope": (
+                "Compare exact QK score rows, score32 exp-LUT/div weights, weighted-V vectors, and ready/valid "
+                "schedules between the bounded separated-cluster perf model and RTL for 1:1, 2:1, 4:1, "
+                "8:1, 4:2, and 8:2 producer-to-consumer sharing."
+            ),
+        },
+        "commands": [
+            {
+                "name": "probe_attention_separated_cluster_equivalence",
+                "run": (
+                    "python3 npu/eval/probe_attention_separated_equivalence.py "
+                    "--ratios 1:1,2:1,4:1,8:1,4:2,8:2 --command-count 8 "
+                    f"--out {out} --out-md {report}"
+                ),
+            }
+        ],
+        "expected_outputs": [out, report],
+        "evidence_only": True,
+    }
+
+
 def _decoder_attention_score32_exp_lut_sram_hierarchy_envelope_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_score32_exp_lut_sram_hierarchy_envelope__{item_id}.json"
@@ -9721,6 +9750,7 @@ def _build_payload(
         "decoder_attention_score32_integrated_frontier_ranking",
         "decoder_attention_score32_compute_activity_energy",
         "decoder_attention_score32_separated_compute_recost",
+        "decoder_attention_separated_cluster_equivalence",
         "decoder_attention_hbm_dram_service_energy",
         "decoder_attention_hbm_energy_calibration",
         "decoder_attention_hbm_command_calibrated_service",
@@ -9937,6 +9967,8 @@ def _build_payload(
                 item_id=item_id,
                 depends_on_item_ids=depends_on_item_ids,
             )
+        elif abstraction_layer_name == "decoder_attention_separated_cluster_equivalence":
+            decoder_evidence = _decoder_attention_separated_cluster_equivalence_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_hbm_dram_service_energy":
             decoder_evidence = _decoder_attention_hbm_dram_service_energy_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_hbm_energy_calibration":

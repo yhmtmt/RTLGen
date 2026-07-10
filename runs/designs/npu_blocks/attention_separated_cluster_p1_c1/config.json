@@ -1,0 +1,15 @@
+{
+  "version": "0.1",
+  "top_name": "attention_separated_cluster_p1_c1",
+  "attention_separated_cluster": {
+    "producer_count": 1,
+    "consumer_count": 1,
+    "row_elems": 8,
+    "head_dim": 8,
+    "value_dim": 8,
+    "score_bits": 32,
+    "weight_bits": 16,
+    "input_frac_bits": 28,
+    "exp_bucket_shift": 20
+  }
+}
