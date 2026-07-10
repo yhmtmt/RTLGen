@@ -599,6 +599,10 @@ _DECODER_EVIDENCE_OUTPUT_KEYS: tuple[tuple[str, str], ...] = (
         "attention_two_pass_global_max_equivalence_report",
     ),
     (
+        "attention_two_pass_stream_equivalence_out",
+        "attention_two_pass_stream_equivalence_report",
+    ),
+    (
         "attention_score32_exp_lut_sram_hierarchy_envelope_out",
         "attention_score32_exp_lut_sram_hierarchy_envelope_report",
     ),
@@ -1562,6 +1566,23 @@ def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, 
             "scenarios",
             "gates",
             "remaining_abstractions",
+        ):
+            if key in evidence_payload:
+                parts.append(f"{key}={evidence_payload.get(key)}")
+        summary = "; ".join(parts)
+        return outcome, summary if summary.endswith(".") else summary + "."
+
+    if model == "attention_two_pass_stream_perf_rtl_equivalence_v1":
+        outcome = str(evidence_payload.get("decision") or "two_pass_stream_equivalence_recorded")
+        parts = [f"Two-pass external-memory stream equivalence recorded from {evidence_ref}: decision={outcome}"]
+        for key in (
+            "equivalence_pass",
+            "semantic_profile",
+            "score_storage",
+            "kv_replay",
+            "block_counts",
+            "div_lanes_per_cycle",
+            "scenarios",
         ):
             if key in evidence_payload:
                 parts.append(f"{key}={evidence_payload.get(key)}")
