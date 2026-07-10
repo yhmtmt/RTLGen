@@ -3,9 +3,11 @@
 Build a global runs/index.csv by aggregating metrics.csv under runs/designs/.
 """
 
+import argparse
 import csv
 import json
 import re
+import subprocess
 from pathlib import Path, PureWindowsPath
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -13,8 +15,21 @@ DESIGNS_ROOT = REPO_ROOT / "runs" / "designs"
 OUT_PATH = REPO_ROOT / "runs" / "index.csv"
 
 
-def iter_metrics_files(root: Path):
-    paths = (path for path in root.rglob("metrics.csv") if path.is_file())
+def iter_metrics_files(root: Path, *, tracked_only: bool = False, repo_root: Path = REPO_ROOT):
+    if tracked_only:
+        completed = subprocess.run(
+            ["git", "-C", str(repo_root), "ls-files", "-z", "--", "runs/designs"],
+            check=True,
+            capture_output=True,
+        )
+        paths = (
+            repo_root / rel.decode("utf-8")
+            for rel in completed.stdout.split(b"\0")
+            if rel and rel.decode("utf-8").endswith("/metrics.csv")
+        )
+        paths = (path for path in paths if path.is_file() and path.is_relative_to(root))
+    else:
+        paths = (path for path in root.rglob("metrics.csv") if path.is_file())
     yield from sorted(paths, key=lambda path: path.relative_to(root).as_posix())
 
 
@@ -166,9 +181,16 @@ def index_sort_key(row):
     )
 
 
-def main():
+def main(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--tracked-only",
+        action="store_true",
+        help="Index only metrics.csv files tracked by Git; use for central post-merge export.",
+    )
+    args = parser.parse_args(argv)
     rows = []
-    for metrics_path in iter_metrics_files(DESIGNS_ROOT):
+    for metrics_path in iter_metrics_files(DESIGNS_ROOT, tracked_only=args.tracked_only):
         circuit_type, design = parse_design_info(metrics_path)
         sram_summary_path = (
             REPO_ROOT

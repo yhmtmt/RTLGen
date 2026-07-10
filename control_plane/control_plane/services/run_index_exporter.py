@@ -75,7 +75,7 @@ def refresh_run_index(session: Session, *, repo_root: str) -> RunIndexRefreshRes
 
     try:
         subprocess.run(
-            ["python3", str(script_path)],
+            ["python3", str(script_path), "--tracked-only"],
             cwd=str(repo_path),
             check=True,
             capture_output=True,
