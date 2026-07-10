@@ -1,0 +1,104 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "decoder_contract": {
+        "attention_two_pass_global_max_equivalence_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_two_pass_global_max_equivalence__l2_decoder_attention_two_pass_global_max_rtl_equivalence_llama7b_v1.json",
+        "attention_two_pass_global_max_equivalence_scope": "Prove exact q8 QK block generation, complete score/value storage, global-max reduction, zero-tail score32 exp accumulation, signed weighted-value accumulation, one final divide, and ready/valid behavior for bounded 4- and 8-block engines.",
+        "attention_two_pass_global_max_equivalence_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_two_pass_global_max_equivalence__l2_decoder_attention_two_pass_global_max_rtl_equivalence_llama7b_v1.md"
+      }
+    },
+    "commands": [
+      {
+        "run": "python3 npu/eval/probe_attention_two_pass_equivalence.py --block-counts 4,8 --command-count 3 --out runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_two_pass_global_max_equivalence__l2_decoder_attention_two_pass_global_max_rtl_equivalence_llama7b_v1.json --out-md runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_two_pass_global_max_equivalence__l2_decoder_attention_two_pass_global_max_rtl_equivalence_llama7b_v1.md",
+        "name": "probe_attention_two_pass_global_max_equivalence"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate_runs"
+      }
+    ],
+    "objective": "Prove q8 QK generation, score/value storage, global max, zero-tail exp sum, weighted numerator, final normalization, ordering, and backpressure equivalence for bounded 4- and 8-block engines.",
+    "acceptance": [
+      "Write all declared decoder evidence artifacts",
+      "Keep evidence artifact paths repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "source_mode": "src_verilog",
+    "expected_outputs": [
+      "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_two_pass_global_max_equivalence__l2_decoder_attention_two_pass_global_max_rtl_equivalence_llama7b_v1.json",
+      "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_two_pass_global_max_equivalence__l2_decoder_attention_two_pass_global_max_rtl_equivalence_llama7b_v1.md"
+    ]
+  },
+  "layer": "layer2",
+  "state": "evaluated",
+  "title": "Prove exact two-pass global-max attention equivalence",
+  "result": {
+    "branch": "eval/l2_decoder_attention_two_pass_global_max_rtl_equivalence_llama7b_v1/s20260710t124321z",
+    "completed_utc": "2026-07-10T12:43:19.921801Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "b7c2d9c80c1c",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260710t124321z][host:b7c2d9c80c1c][item:l2_decoder_attention_two_pass_global_max_rtl_equivalence_llama7b_v1]",
+    "metrics_rows": [],
+    "metrics_exempt_reason": "evidence_only_decoder_evidence",
+    "queue_item_id": "l2_decoder_attention_two_pass_global_max_rtl_equivalence_llama7b_v1",
+    "session_id": "s20260710t124321z",
+    "status": "ok",
+    "summary": "2/2 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l2_decoder_attention_two_pass_global_max_rtl_equivalence_llama7b_v1/s20260710t124321z",
+    "pr_title": "eval: run prove exact two-pass global-max attention equivalence",
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Include metrics row references in result.metrics_rows",
+      "Keep committed result_path fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260710t124321z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l2_decoder_attention_two_pass_global_max_rtl_equivalence_llama7b_v1"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l2_decoder_attention_two_pass_global_max_rtl_equivalence_llama7b_v1",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 1,
+  "created_utc": "2026-07-10T12:42:58.420505Z",
+  "requested_by": "control_plane",
+  "developer_loop": {
+    "comparison": {
+      "role": "semantic_equivalence_gate",
+      "paired_baseline_item_id": ""
+    },
+    "evaluation": {
+      "mode": "equivalence_gate",
+      "expected_reason": "Full-model PPA recost remains ineligible until the scalable normalization path is embodied and exact.",
+      "expected_direction": "prove_two_pass_attention_equivalence"
+    },
+    "abstraction": {
+      "layer": "decoder_attention_two_pass_global_max_equivalence"
+    },
+    "proposal_id": "prop_decoder_attention_hierarchical_softmax_frontier_llama7b_v1",
+    "dependencies": {
+      "item_ids": [
+        "l2_decoder_attention_hierarchical_softmax_architecture_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    },
+    "proposal_path": "docs/proposals/prop_decoder_attention_hierarchical_softmax_frontier_llama7b_v1/proposal.json"
+  },
+  "source_requirement": {
+    "repo": "",
+    "reason": "evaluator runtime must contain the queued job source commit",
+    "version": 1,
+    "required_ref": "origin/master",
+    "required_sha": "1e00b8d5a1e74eb8fc9b7209b844b609844e6a43",
+    "requires_daemon_restart": true
+  }
+}

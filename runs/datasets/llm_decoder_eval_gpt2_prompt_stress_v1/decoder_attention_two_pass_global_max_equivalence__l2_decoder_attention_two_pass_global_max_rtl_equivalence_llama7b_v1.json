@@ -1,0 +1,72 @@
+{
+  "block_counts": [
+    4,
+    8
+  ],
+  "command_count": 3,
+  "decision": "attention_two_pass_equivalence_pass",
+  "equivalence_pass": true,
+  "gates": {
+    "exact_exp_sum": true,
+    "exact_global_max": true,
+    "exact_ready_valid_schedule": true,
+    "exact_weighted_value": true
+  },
+  "model": "attention_two_pass_perf_rtl_equivalence_v1",
+  "remaining_abstractions": [
+    "bounded internal score/value registers must be replaced with measured score-SRAM and KV replay ports",
+    "final divider lane folding and full 16384-block scheduling require physical exploration"
+  ],
+  "rows": [
+    {
+      "block_count": 4,
+      "context_tokens": 32,
+      "equivalence_pass": true,
+      "final_cycle": 41,
+      "functional_failures": [],
+      "functional_pass": true,
+      "scenario": "always_ready",
+      "schedule_failures": [],
+      "schedule_pass": true
+    },
+    {
+      "block_count": 4,
+      "context_tokens": 32,
+      "equivalence_pass": true,
+      "final_cycle": 41,
+      "functional_failures": [],
+      "functional_pass": true,
+      "scenario": "result_backpressure",
+      "schedule_failures": [],
+      "schedule_pass": true
+    },
+    {
+      "block_count": 8,
+      "context_tokens": 64,
+      "equivalence_pass": true,
+      "final_cycle": 77,
+      "functional_failures": [],
+      "functional_pass": true,
+      "scenario": "always_ready",
+      "schedule_failures": [],
+      "schedule_pass": true
+    },
+    {
+      "block_count": 8,
+      "context_tokens": 64,
+      "equivalence_pass": true,
+      "final_cycle": 77,
+      "functional_failures": [],
+      "functional_pass": true,
+      "scenario": "result_backpressure",
+      "schedule_failures": [],
+      "schedule_pass": true
+    }
+  ],
+  "scenarios": [
+    "always_ready",
+    "result_backpressure"
+  ],
+  "semantic_profile": "q8_k8_v8_a32_s32_exp_lut_b20_zero_tail_two_pass_global_max",
+  "version": 1
+}
