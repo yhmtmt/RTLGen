@@ -1,0 +1,104 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "decoder_contract": {
+        "attention_separated_cluster_equivalence_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_separated_cluster_equivalence__l2_decoder_attention_separated_cluster_equivalence_llama7b_v1.json",
+        "attention_separated_cluster_equivalence_scope": "Compare exact QK score rows, score32 exp-LUT/div weights, weighted-V vectors, and ready/valid schedules between the bounded separated-cluster perf model and RTL for 1:1, 2:1, 4:1, 8:1, 4:2, and 8:2 producer-to-consumer sharing.",
+        "attention_separated_cluster_equivalence_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_separated_cluster_equivalence__l2_decoder_attention_separated_cluster_equivalence_llama7b_v1.md"
+      }
+    },
+    "commands": [
+      {
+        "run": "python3 npu/eval/probe_attention_separated_equivalence.py --ratios 1:1,2:1,4:1,8:1,4:2,8:2 --command-count 8 --out runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_separated_cluster_equivalence__l2_decoder_attention_separated_cluster_equivalence_llama7b_v1.json --out-md runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_separated_cluster_equivalence__l2_decoder_attention_separated_cluster_equivalence_llama7b_v1.md",
+        "name": "probe_attention_separated_cluster_equivalence"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate_runs"
+      }
+    ],
+    "objective": "Prove exact QK score-row, score32 exp-LUT/div weight, weighted-V vector, ordering, and ready/valid equivalence for all six separated-cluster physical ratios.",
+    "acceptance": [
+      "Write all declared decoder evidence artifacts",
+      "Keep evidence artifact paths repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "source_mode": "src_verilog",
+    "expected_outputs": [
+      "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_separated_cluster_equivalence__l2_decoder_attention_separated_cluster_equivalence_llama7b_v1.json",
+      "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_separated_cluster_equivalence__l2_decoder_attention_separated_cluster_equivalence_llama7b_v1.md"
+    ]
+  },
+  "layer": "layer2",
+  "state": "evaluated",
+  "title": "Prove exact separated attention cluster equivalence",
+  "result": {
+    "branch": "eval/l2_decoder_attention_separated_cluster_equivalence_llama7b_v1/s20260710t120202z",
+    "completed_utc": "2026-07-10T12:02:01.536549Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "b7c2d9c80c1c",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260710t120202z][host:b7c2d9c80c1c][item:l2_decoder_attention_separated_cluster_equivalence_llama7b_v1]",
+    "metrics_rows": [],
+    "metrics_exempt_reason": "evidence_only_decoder_evidence",
+    "queue_item_id": "l2_decoder_attention_separated_cluster_equivalence_llama7b_v1",
+    "session_id": "s20260710t120202z",
+    "status": "ok",
+    "summary": "2/2 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l2_decoder_attention_separated_cluster_equivalence_llama7b_v1/s20260710t120202z",
+    "pr_title": "eval: run prove exact separated attention cluster equivalence",
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Include metrics row references in result.metrics_rows",
+      "Keep committed result_path fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260710t120202z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l2_decoder_attention_separated_cluster_equivalence_llama7b_v1"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l2_decoder_attention_separated_cluster_equivalence_llama7b_v1",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 1,
+  "created_utc": "2026-07-10T12:01:39.433996Z",
+  "requested_by": "control_plane",
+  "developer_loop": {
+    "comparison": {
+      "role": "semantic_equivalence_gate",
+      "paired_baseline_item_id": "l2_decoder_attention_score32_separated_compute_recost_llama7b_v1"
+    },
+    "evaluation": {
+      "mode": "equivalence_gate",
+      "expected_reason": "Physical evaluation is ineligible until exact QK, softmax, weighted-V, ordering, and backpressure behavior match the perf model.",
+      "expected_direction": "prove_attention_separated_cluster_equivalence"
+    },
+    "abstraction": {
+      "layer": "decoder_attention_separated_cluster_equivalence"
+    },
+    "proposal_id": "prop_decoder_attention_separated_cluster_frontier_llama7b_v1",
+    "dependencies": {
+      "item_ids": [
+        "l2_decoder_attention_score32_separated_compute_recost_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    },
+    "proposal_path": "docs/proposals/prop_decoder_attention_separated_cluster_frontier_llama7b_v1/proposal.json"
+  },
+  "source_requirement": {
+    "repo": "",
+    "reason": "evaluator runtime must contain the queued job source commit",
+    "version": 1,
+    "required_ref": "origin/master",
+    "required_sha": "6efe80945e1c3a2424a7f25fa532f5b2a3c7cd60",
+    "requires_daemon_restart": true
+  }
+}
