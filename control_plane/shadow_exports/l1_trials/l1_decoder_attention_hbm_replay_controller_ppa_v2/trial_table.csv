@@ -1,0 +1,6 @@
+run_key,attempt,trial_index,seed,status,metrics_csv,critical_path_ns,die_area,total_power_mw,failure_category,failure_stage,failure_signature
+l1_decoder_attention_hbm_replay_controller_ppa_v2_run_983caf25591f8c6d,1,1,0,succeeded,runs/designs/npu_blocks/attention_hbm_replay_controller_c4/metrics.csv,2.2087,28910.2009,0.109,worker_error,worker,"heartbeat_error=(psycopg.OperationalError) connection failed: connection to server at ""192.168.128.8"", port 5432 failed: server closed the connection unexpectedly
+	This probably means the server terminated abnormally
+	before or while processing the request.
+(Background on this error at: https://sqlalche.me/e/20/e3q8)"
+l1_decoder_attention_hbm_replay_controller_ppa_v2_run_09cd3d8c1647ed2c,2,1,0,succeeded,runs/designs/npu_blocks/attention_hbm_replay_controller_c4/metrics.csv,2.2087,28910.2009,0.109,none,,

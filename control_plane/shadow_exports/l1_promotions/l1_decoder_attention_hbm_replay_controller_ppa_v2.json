@@ -1,0 +1,176 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-07-09T17:59:36.767806Z",
+  "item_id": "l1_decoder_attention_hbm_replay_controller_ppa_v2",
+  "run_key": "l1_decoder_attention_hbm_replay_controller_ppa_v2_run_09cd3d8c1647ed2c",
+  "layer": "layer1",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l1_sweep",
+  "source_commit": "de5a546bfa7d0f7f34c9bd4872f5e7e689b67924",
+  "objective": "Measure Nangate45 PPA for the score32 HBM replay controller at 4, 8, and 16 channels, accepting flow_failed rows as physical boundary evidence for infeasible larger controllers.",
+  "input_manifest": {
+    "sweeps": [
+      "runs/campaigns/npu/attention_hbm_replay_controller_v1/sweeps/nangate45_attention_hbm_replay_controller_frontier.json"
+    ],
+    "configs": [
+      "runs/designs/npu_blocks/attention_hbm_replay_controller_c4/config.json",
+      "runs/designs/npu_blocks/attention_hbm_replay_controller_c8/config.json",
+      "runs/designs/npu_blocks/attention_hbm_replay_controller_c16/config.json"
+    ],
+    "out_root": "runs/designs/npu_blocks",
+    "design_dirs": [],
+    "macro_manifests": [],
+    "candidate_manifests": [],
+    "required_submodules": []
+  },
+  "proposal_count": 1,
+  "evaluation_record": {
+    "evaluation_mode": "frontier_followup",
+    "abstraction_layer": "decoder_attention_hbm_replay_controller",
+    "result_kind": "physical_metrics",
+    "physical_metrics_present": true,
+    "summary": "Physical metrics recorded from an accepted status=ok Layer 1 row."
+  },
+  "proposal_assessment": null,
+  "proposals": [
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/npu_blocks/attention_hbm_replay_controller_c4/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "9422c7e7",
+        "tag": "attention_hbm_replay_controller_frontier_9422c7e7",
+        "result_path": "/orfs/flow/reports/nangate45/attention_hbm_replay_controller_c4/base/6_finish.rpt",
+        "work_result_json": "runs/designs/npu_blocks/attention_hbm_replay_controller_c4/work/9422c7e7/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 2.2087,
+        "die_area": 28910.2009,
+        "total_power_mw": 0.109
+      }
+    }
+  ],
+  "trial_summary": {
+    "item_id": "l1_decoder_attention_hbm_replay_controller_ppa_v2",
+    "completed_trials": 2,
+    "success_count": 2,
+    "failure_count": 0,
+    "success_rate": 1.0,
+    "metrics": {
+      "critical_path_ns": {
+        "best": 2.2087,
+        "mean": 2.2087,
+        "median": 2.2087,
+        "max": 2.2087,
+        "range": 0.0,
+        "stddev": 0.0
+      },
+      "die_area": {
+        "best": 28910.2009,
+        "mean": 28910.2009,
+        "median": 28910.2009,
+        "max": 28910.2009,
+        "range": 0.0,
+        "stddev": 0.0
+      },
+      "total_power_mw": {
+        "best": 0.109,
+        "mean": 0.109,
+        "median": 0.109,
+        "max": 0.109,
+        "range": 0.0,
+        "stddev": 0.0
+      }
+    }
+  },
+  "source_refs": {
+    "trial_metrics_csvs": [
+      "runs/designs/npu_blocks/attention_hbm_replay_controller_c4/metrics.csv",
+      "runs/designs/npu_blocks/attention_hbm_replay_controller_c8/metrics.csv",
+      "runs/designs/npu_blocks/attention_hbm_replay_controller_c16/metrics.csv"
+    ],
+    "summary_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_hbm_replay_controller_ppa_v2/summary_stats.json",
+    "failure_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_hbm_replay_controller_ppa_v2/failure_stats.json",
+    "trial_table_csv": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_hbm_replay_controller_ppa_v2/trial_table.csv"
+  },
+  "boundary_evidence": {
+    "row_count": 6,
+    "rows": [
+      {
+        "metrics_csv": "runs/designs/npu_blocks/attention_hbm_replay_controller_c8/metrics.csv",
+        "status": "flow_failed",
+        "design": "attention_hbm_replay_controller_c8",
+        "platform": "nangate45",
+        "config_hash": "ca1cad557ca6",
+        "param_hash": "855f34cb",
+        "tag": "attention_hbm_replay_controller_frontier_855f34cb",
+        "result_path": "/orfs/flow/logs/nangate45/attention_hbm_replay_controller_c8/base",
+        "work_result_json": "runs/designs/npu_blocks/attention_hbm_replay_controller_c8/work/855f34cb/result.json",
+        "params_json": "{\"CLOCK_PERIOD\": 1.0, \"CORE_UTILIZATION\": 40, \"PLACE_DENSITY\": 0.45, \"tag_prefix\": \"attention_hbm_replay_controller_frontier\"}"
+      },
+      {
+        "metrics_csv": "runs/designs/npu_blocks/attention_hbm_replay_controller_c8/metrics.csv",
+        "status": "flow_failed",
+        "design": "attention_hbm_replay_controller_c8",
+        "platform": "nangate45",
+        "config_hash": "ca1cad557ca6",
+        "param_hash": "9422c7e7",
+        "tag": "attention_hbm_replay_controller_frontier_9422c7e7",
+        "result_path": "/orfs/flow/logs/nangate45/attention_hbm_replay_controller_c8/base",
+        "work_result_json": "runs/designs/npu_blocks/attention_hbm_replay_controller_c8/work/9422c7e7/result.json",
+        "params_json": "{\"CLOCK_PERIOD\": 1.0, \"CORE_UTILIZATION\": 50, \"PLACE_DENSITY\": 0.45, \"tag_prefix\": \"attention_hbm_replay_controller_frontier\"}"
+      },
+      {
+        "metrics_csv": "runs/designs/npu_blocks/attention_hbm_replay_controller_c8/metrics.csv",
+        "status": "flow_failed",
+        "design": "attention_hbm_replay_controller_c8",
+        "platform": "nangate45",
+        "config_hash": "ca1cad557ca6",
+        "param_hash": "5168ba2a",
+        "tag": "attention_hbm_replay_controller_frontier_5168ba2a",
+        "result_path": "/orfs/flow/logs/nangate45/attention_hbm_replay_controller_c8/base",
+        "work_result_json": "runs/designs/npu_blocks/attention_hbm_replay_controller_c8/work/5168ba2a/result.json",
+        "params_json": "{\"CLOCK_PERIOD\": 1.0, \"CORE_UTILIZATION\": 60, \"PLACE_DENSITY\": 0.45, \"tag_prefix\": \"attention_hbm_replay_controller_frontier\"}"
+      },
+      {
+        "metrics_csv": "runs/designs/npu_blocks/attention_hbm_replay_controller_c16/metrics.csv",
+        "status": "flow_failed",
+        "design": "attention_hbm_replay_controller_c16",
+        "platform": "nangate45",
+        "config_hash": "5ef44f8c04f8",
+        "param_hash": "855f34cb",
+        "tag": "attention_hbm_replay_controller_frontier_855f34cb",
+        "result_path": "/orfs/flow/logs/nangate45/attention_hbm_replay_controller_c16/base",
+        "work_result_json": "runs/designs/npu_blocks/attention_hbm_replay_controller_c16/work/855f34cb/result.json",
+        "params_json": "{\"CLOCK_PERIOD\": 1.0, \"CORE_UTILIZATION\": 40, \"PLACE_DENSITY\": 0.45, \"tag_prefix\": \"attention_hbm_replay_controller_frontier\"}"
+      },
+      {
+        "metrics_csv": "runs/designs/npu_blocks/attention_hbm_replay_controller_c16/metrics.csv",
+        "status": "flow_failed",
+        "design": "attention_hbm_replay_controller_c16",
+        "platform": "nangate45",
+        "config_hash": "5ef44f8c04f8",
+        "param_hash": "9422c7e7",
+        "tag": "attention_hbm_replay_controller_frontier_9422c7e7",
+        "result_path": "/orfs/flow/logs/nangate45/attention_hbm_replay_controller_c16/base",
+        "work_result_json": "runs/designs/npu_blocks/attention_hbm_replay_controller_c16/work/9422c7e7/result.json",
+        "params_json": "{\"CLOCK_PERIOD\": 1.0, \"CORE_UTILIZATION\": 50, \"PLACE_DENSITY\": 0.45, \"tag_prefix\": \"attention_hbm_replay_controller_frontier\"}"
+      },
+      {
+        "metrics_csv": "runs/designs/npu_blocks/attention_hbm_replay_controller_c16/metrics.csv",
+        "status": "flow_failed",
+        "design": "attention_hbm_replay_controller_c16",
+        "platform": "nangate45",
+        "config_hash": "5ef44f8c04f8",
+        "param_hash": "5168ba2a",
+        "tag": "attention_hbm_replay_controller_frontier_5168ba2a",
+        "result_path": "/orfs/flow/logs/nangate45/attention_hbm_replay_controller_c16/base",
+        "work_result_json": "runs/designs/npu_blocks/attention_hbm_replay_controller_c16/work/5168ba2a/result.json",
+        "params_json": "{\"CLOCK_PERIOD\": 1.0, \"CORE_UTILIZATION\": 60, \"PLACE_DENSITY\": 0.45, \"tag_prefix\": \"attention_hbm_replay_controller_frontier\"}"
+      }
+    ]
+  }
+}

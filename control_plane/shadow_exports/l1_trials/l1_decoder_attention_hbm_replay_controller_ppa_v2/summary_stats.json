@@ -1,0 +1,33 @@
+{
+  "item_id": "l1_decoder_attention_hbm_replay_controller_ppa_v2",
+  "completed_trials": 2,
+  "success_count": 2,
+  "failure_count": 0,
+  "success_rate": 1.0,
+  "metrics": {
+    "critical_path_ns": {
+      "best": 2.2087,
+      "mean": 2.2087,
+      "median": 2.2087,
+      "max": 2.2087,
+      "range": 0.0,
+      "stddev": 0.0
+    },
+    "die_area": {
+      "best": 28910.2009,
+      "mean": 28910.2009,
+      "median": 28910.2009,
+      "max": 28910.2009,
+      "range": 0.0,
+      "stddev": 0.0
+    },
+    "total_power_mw": {
+      "best": 0.109,
+      "mean": 0.109,
+      "median": 0.109,
+      "max": 0.109,
+      "range": 0.0,
+      "stddev": 0.0
+    }
+  }
+}
