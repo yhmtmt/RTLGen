@@ -5,6 +5,7 @@ import importlib.util
 import json
 import os
 import shutil
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -174,6 +175,32 @@ class RunsParserRegressionTest(unittest.TestCase):
             ],
             rel_paths,
         )
+
+    def test_build_runs_index_tracked_only_excludes_untracked_metrics(self):
+        with tempfile.TemporaryDirectory() as td:
+            repo_root = Path(td)
+            designs_root = repo_root / "runs" / "designs"
+            tracked = designs_root / "demo" / "tracked" / "metrics.csv"
+            untracked = designs_root / "demo" / "untracked" / "metrics.csv"
+            for path in (tracked, untracked):
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(HEADER + "\n", encoding="utf-8")
+            subprocess.run(["git", "init", "-q", str(repo_root)], check=True)
+            subprocess.run(
+                ["git", "-C", str(repo_root), "add", str(tracked.relative_to(repo_root))],
+                check=True,
+            )
+
+            rel_paths = [
+                path.relative_to(designs_root).as_posix()
+                for path in self.build_runs_index.iter_metrics_files(
+                    designs_root,
+                    tracked_only=True,
+                    repo_root=repo_root,
+                )
+            ]
+
+        self.assertEqual(["demo/tracked/metrics.csv"], rel_paths)
 
     def test_build_runs_index_sort_key_breaks_param_hash_ties(self):
         base = {
