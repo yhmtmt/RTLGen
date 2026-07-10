@@ -1,0 +1,145 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-07-10T12:25:58.226767Z",
+  "control_plane_source_commit": "7dd3b32a12c2dcc4acc528aa88dd71fd3d88ad12",
+  "review_metadata_source_commit": "7dd3b32a12c2dcc4acc528aa88dd71fd3d88ad12",
+  "item_id": "l2_decoder_attention_hierarchical_softmax_architecture_llama7b_v1",
+  "run_key": "l2_decoder_attention_hierarchical_softmax_architecture_llama7b_v1_run_103d4896d0c3ea53",
+  "layer": "layer2",
+  "flow": "openroad",
+  "task_type": "l2_campaign",
+  "source_commit": "7dd3b32a12c2dcc4acc528aa88dd71fd3d88ad12",
+  "queue_snapshot": {
+    "path": "control_plane/shadow_exports/review/l2_decoder_attention_hierarchical_softmax_architecture_llama7b_v1/evaluated.json",
+    "result": {
+      "branch": "eval/l2_decoder_attention_hierarchical_softmax_architecture_llama7b_v1/s20260710t122557z",
+      "completed_utc": "2026-07-10T12:25:56.305870Z",
+      "evaluator_id": "control_plane",
+      "executor": "@control_plane",
+      "host": "b7c2d9c80c1c",
+      "identity_block": "[role:evaluator][account:control_plane][session:s20260710t122557z][host:b7c2d9c80c1c][item:l2_decoder_attention_hierarchical_softmax_architecture_llama7b_v1]",
+      "metrics_rows": [],
+      "metrics_exempt_reason": "evidence_only_decoder_evidence",
+      "queue_item_id": "l2_decoder_attention_hierarchical_softmax_architecture_llama7b_v1",
+      "session_id": "s20260710t122557z",
+      "status": "ok",
+      "summary": "2/2 commands succeeded"
+    }
+  },
+  "review_artifact": {
+    "kind": "decision_proposal",
+    "path": "control_plane/shadow_exports/l2_decisions/l2_decoder_attention_hierarchical_softmax_architecture_llama7b_v1.json",
+    "storage_mode": "repo",
+    "sha256": "5c71b81b6745f57c1d32cda5aab7643d77219f571cf35c6412a45f6157ee9802",
+    "payload": {
+      "version": 0.1,
+      "generated_utc": "2026-07-10T12:25:56.879834Z",
+      "item_id": "l2_decoder_attention_hierarchical_softmax_architecture_llama7b_v1",
+      "run_key": "l2_decoder_attention_hierarchical_softmax_architecture_llama7b_v1_run_103d4896d0c3ea53",
+      "layer": "layer2",
+      "flow": "openroad",
+      "platform": "nangate45",
+      "task_type": "l2_campaign",
+      "source_commit": "7dd3b32a12c2dcc4acc528aa88dd71fd3d88ad12",
+      "review_metadata_source_commit": "7dd3b32a12c2dcc4acc528aa88dd71fd3d88ad12",
+      "objective": "Stress streaming and balanced online score32 composition against exact two-pass global-max score replay through the 131072-token Llama7B context.",
+      "input_manifest": {
+        "decoder_contract": {
+          "attention_hierarchical_softmax_architecture_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_hierarchical_softmax_architecture__l2_decoder_attention_hierarchical_softmax_architecture_llama7b_v1.json",
+          "attention_hierarchical_softmax_architecture_scope": "Stress scalable score32 attention composition at 128, 4096, and 131072 tokens across normal, wide, and monotonic-max score distributions. Compare streaming and balanced online merges against an exact two-pass global-max/score-replay reference.",
+          "attention_hierarchical_softmax_architecture_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_hierarchical_softmax_architecture__l2_decoder_attention_hierarchical_softmax_architecture_llama7b_v1.md"
+        }
+      },
+      "recommendation": {
+        "source": "decoder_evidence",
+        "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_hierarchical_softmax_architecture__l2_decoder_attention_hierarchical_softmax_architecture_llama7b_v1.json",
+        "arch_id": "decoder_attention_hierarchical_softmax_architecture",
+        "macro_mode": "evidence_only",
+        "outcome": "two_pass_exact_selected"
+      },
+      "objective_profiles": [],
+      "evaluation_record": {
+        "proposal_id": "prop_decoder_attention_hierarchical_softmax_frontier_llama7b_v1",
+        "title": "Scalable exact hierarchical softmax for Llama7B",
+        "primary_question": "Can one-pass online composition remain within a 0.01 output-value error bound across long-context score distributions, or should the scalable RTL use exact two-pass global-max score replay?",
+        "evaluation_mode": "frontier_detail",
+        "comparison_role": "hierarchical_composition_gate",
+        "abstraction_layer": "decoder_attention_hierarchical_softmax_architecture",
+        "expected_direction": "select_scalable_softmax_composition",
+        "expected_reason": "Do not extrapolate locally normalized 8-token outputs into a full Llama7B row.",
+        "summary": "Hierarchical attention composition evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_hierarchical_softmax_architecture__l2_decoder_attention_hierarchical_softmax_architecture_llama7b_v1.json: decision=two_pass_exact_selected; online_pass=False; online_error_bound_q16=655; lengths=[128, 4096, 131072]; distributions=['normal_std1', 'normal_std4', 'monotonic_ramp16']; llama7b_score_buffer={'bytes': 16777216, 'current_shared_sram_mib': 68, 'fits_current_shared_sram': True, 'mib': 16.0}; width_bounds={'exp_sum_bits': 33, 'exp_sum_bits_required': 33, 'max_block_count': 16384, 'max_context_tokens': 131072, 'max_exp_sum': 8589803520, 'max_weighted_numerator_magnitude': 1099494850560, 'merge_scale_bits': 24, 'weighted_numerator_bits': 41, 'weighted_numerator_signed_bits_required': 41}; next_step=Implement the two-pass global-max/score-replay datapath and retain online merge only as an approximate comparison.",
+        "outcome": "two_pass_exact_selected",
+        "expectation_status": "unspecified"
+      },
+      "proposal_assessment": {
+        "proposal_id": "prop_decoder_attention_hierarchical_softmax_frontier_llama7b_v1",
+        "title": "Scalable exact hierarchical softmax for Llama7B",
+        "kind": "architecture",
+        "primary_question": "Can one-pass online composition remain within a 0.01 output-value error bound across long-context score distributions, or should the scalable RTL use exact two-pass global-max score replay?",
+        "evaluation_mode": "frontier_detail",
+        "comparison_role": "hierarchical_composition_gate",
+        "outcome": "two_pass_exact_selected",
+        "summary": "Hierarchical attention composition evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_hierarchical_softmax_architecture__l2_decoder_attention_hierarchical_softmax_architecture_llama7b_v1.json: decision=two_pass_exact_selected; online_pass=False; online_error_bound_q16=655; lengths=[128, 4096, 131072]; distributions=['normal_std1', 'normal_std4', 'monotonic_ramp16']; llama7b_score_buffer={'bytes': 16777216, 'current_shared_sram_mib': 68, 'fits_current_shared_sram': True, 'mib': 16.0}; width_bounds={'exp_sum_bits': 33, 'exp_sum_bits_required': 33, 'max_block_count': 16384, 'max_context_tokens': 131072, 'max_exp_sum': 8589803520, 'max_weighted_numerator_magnitude': 1099494850560, 'merge_scale_bits': 24, 'weighted_numerator_bits': 41, 'weighted_numerator_signed_bits_required': 41}; next_step=Implement the two-pass global-max/score-replay datapath and retain online merge only as an approximate comparison.",
+        "baseline_ref": null,
+        "baseline_item_id": null,
+        "matched_row_count": 0,
+        "matched_rows": [],
+        "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_hierarchical_softmax_architecture__l2_decoder_attention_hierarchical_softmax_architecture_llama7b_v1.json",
+        "decoder_quality": {
+          "diagnosis": {},
+          "next_step": "Implement the two-pass global-max/score-replay datapath and retain online merge only as an approximate comparison."
+        }
+      },
+      "source_refs": {
+        "decoder_evidence_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_hierarchical_softmax_architecture__l2_decoder_attention_hierarchical_softmax_architecture_llama7b_v1.json",
+        "decoder_attention_hierarchical_softmax_architecture_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_hierarchical_softmax_architecture__l2_decoder_attention_hierarchical_softmax_architecture_llama7b_v1.json",
+        "decoder_attention_hierarchical_softmax_architecture_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_hierarchical_softmax_architecture__l2_decoder_attention_hierarchical_softmax_architecture_llama7b_v1.md"
+      },
+      "decoder_quality": {
+        "diagnosis": {},
+        "next_step": "Implement the two-pass global-max/score-replay datapath and retain online merge only as an approximate comparison."
+      }
+    }
+  },
+  "developer_loop": {
+    "comparison": {
+      "role": "hierarchical_composition_gate",
+      "paired_baseline_item_id": "l2_decoder_attention_separated_cluster_equivalence_llama7b_v1"
+    },
+    "evaluation": {
+      "mode": "frontier_detail",
+      "expected_reason": "Do not extrapolate locally normalized 8-token outputs into a full Llama7B row.",
+      "expected_direction": "select_scalable_softmax_composition"
+    },
+    "abstraction": {
+      "layer": "decoder_attention_hierarchical_softmax_architecture"
+    },
+    "proposal_id": "prop_decoder_attention_hierarchical_softmax_frontier_llama7b_v1",
+    "dependencies": {
+      "item_ids": [
+        "l2_decoder_attention_separated_cluster_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    },
+    "proposal_path": "docs/proposals/prop_decoder_attention_hierarchical_softmax_frontier_llama7b_v1/proposal.json"
+  },
+  "submission_history": null,
+  "pr_payload": {
+    "branch": "eval/l2_decoder_attention_hierarchical_softmax_architecture_llama7b_v1/s20260710t122557z",
+    "title": "eval: run select scalable hierarchical softmax architecture",
+    "body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260710t122557z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l2_decoder_attention_hierarchical_softmax_architecture_llama7b_v1"
+    },
+    "body_md": "## Summary\n- item_id: `l2_decoder_attention_hierarchical_softmax_architecture_llama7b_v1`\n- run_key: `l2_decoder_attention_hierarchical_softmax_architecture_llama7b_v1_run_103d4896d0c3ea53`\n- layer: `layer2`\n- task_type: `l2_campaign`\n- status: `ok`\n- summary: `2/2 commands succeeded`\n- queue_snapshot: `control_plane/shadow_exports/review/l2_decoder_attention_hierarchical_softmax_architecture_llama7b_v1/evaluated.json`\n- metrics_rows_count: `0`\n- review_artifact: `decision_proposal` at `control_plane/shadow_exports/l2_decisions/l2_decoder_attention_hierarchical_softmax_architecture_llama7b_v1.json`\n\n## Developer Context\n- proposal_id: `prop_decoder_attention_hierarchical_softmax_frontier_llama7b_v1`\n- proposal_path: `docs/proposals/prop_decoder_attention_hierarchical_softmax_frontier_llama7b_v1/proposal.json`\n- reviewer_first_read: `docs/proposals/prop_decoder_attention_hierarchical_softmax_frontier_llama7b_v1/proposal.json` plus `docs/developer_agent_review.md`\n- execution_source_commit: `7dd3b32a12c2dcc4acc528aa88dd71fd3d88ad12`\n- review_metadata_source_commit: `7dd3b32a12c2dcc4acc528aa88dd71fd3d88ad12`\n\n## Evaluation Mode\n- evaluation_mode: `frontier_detail`\n- abstraction_layer: `decoder_attention_hierarchical_softmax_architecture`\n- comparison_role: `hierarchical_composition_gate`\n- expected_direction: `select_scalable_softmax_composition`\n- expected_reason: `Do not extrapolate locally normalized 8-token outputs into a full Llama7B row.`\n- expectation_status: `unspecified`\n- evaluation_summary: `Hierarchical attention composition evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_hierarchical_softmax_architecture__l2_decoder_attention_hierarchical_softmax_architecture_llama7b_v1.json: decision=two_pass_exact_selected; online_pass=False; online_error_bound_q16=655; lengths=[128, 4096, 131072]; distributions=['normal_std1', 'normal_std4', 'monotonic_ramp16']; llama7b_score_buffer={'bytes': 16777216, 'current_shared_sram_mib': 68, 'fits_current_shared_sram': True, 'mib': 16.0}; width_bounds={'exp_sum_bits': 33, 'exp_sum_bits_required': 33, 'max_block_count': 16384, 'max_context_tokens': 131072, 'max_exp_sum': 8589803520, 'max_weighted_numerator_magnitude': 1099494850560, 'merge_scale_bits': 24, 'weighted_numerator_bits': 41, 'weighted_numerator_signed_bits_required': 41}; next_step=Implement the two-pass global-max/score-replay datapath and retain online merge only as an approximate comparison.`\n\n## Focused Comparison\n- primary_question: `Can one-pass online composition remain within a 0.01 output-value error bound across long-context score distributions, or should the scalable RTL use exact two-pass global-max score replay?`\n- comparison_role: `hierarchical_composition_gate`\n- proposal_outcome: `two_pass_exact_selected`\n- comparison_summary: `Hierarchical attention composition evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_hierarchical_softmax_architecture__l2_decoder_attention_hierarchical_softmax_architecture_llama7b_v1.json: decision=two_pass_exact_selected; online_pass=False; online_error_bound_q16=655; lengths=[128, 4096, 131072]; distributions=['normal_std1', 'normal_std4', 'monotonic_ramp16']; llama7b_score_buffer={'bytes': 16777216, 'current_shared_sram_mib': 68, 'fits_current_shared_sram': True, 'mib': 16.0}; width_bounds={'exp_sum_bits': 33, 'exp_sum_bits_required': 33, 'max_block_count': 16384, 'max_context_tokens': 131072, 'max_exp_sum': 8589803520, 'max_weighted_numerator_magnitude': 1099494850560, 'merge_scale_bits': 24, 'weighted_numerator_bits': 41, 'weighted_numerator_signed_bits_required': 41}; next_step=Implement the two-pass global-max/score-replay datapath and retain online merge only as an approximate comparison.`\n- baseline_ref: `None`\n- baseline_item_id: `None`\n\n## Checklist\n- [ ] Commit lightweight campaign artifacts only\n- [ ] Include metrics row references in result.metrics_rows\n- [ ] Keep committed result_path fields repo-portable\n- [ ] Run python3 scripts/validate_runs.py --skip_eval_queue before pushing\n",
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Include metrics row references in result.metrics_rows",
+      "Keep committed result_path fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ]
+  }
+}
