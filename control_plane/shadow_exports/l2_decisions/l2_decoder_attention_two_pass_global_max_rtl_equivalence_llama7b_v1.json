@@ -1,0 +1,75 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-07-10T12:43:20.612265Z",
+  "item_id": "l2_decoder_attention_two_pass_global_max_rtl_equivalence_llama7b_v1",
+  "run_key": "l2_decoder_attention_two_pass_global_max_rtl_equivalence_llama7b_v1_run_04a9ff06d7526af6",
+  "layer": "layer2",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l2_campaign",
+  "source_commit": "1e00b8d5a1e74eb8fc9b7209b844b609844e6a43",
+  "review_metadata_source_commit": "1e00b8d5a1e74eb8fc9b7209b844b609844e6a43",
+  "objective": "Prove q8 QK generation, score/value storage, global max, zero-tail exp sum, weighted numerator, final normalization, ordering, and backpressure equivalence for bounded 4- and 8-block engines.",
+  "input_manifest": {
+    "decoder_contract": {
+      "attention_two_pass_global_max_equivalence_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_two_pass_global_max_equivalence__l2_decoder_attention_two_pass_global_max_rtl_equivalence_llama7b_v1.json",
+      "attention_two_pass_global_max_equivalence_scope": "Prove exact q8 QK block generation, complete score/value storage, global-max reduction, zero-tail score32 exp accumulation, signed weighted-value accumulation, one final divide, and ready/valid behavior for bounded 4- and 8-block engines.",
+      "attention_two_pass_global_max_equivalence_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_two_pass_global_max_equivalence__l2_decoder_attention_two_pass_global_max_rtl_equivalence_llama7b_v1.md"
+    }
+  },
+  "recommendation": {
+    "source": "decoder_evidence",
+    "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_two_pass_global_max_equivalence__l2_decoder_attention_two_pass_global_max_rtl_equivalence_llama7b_v1.json",
+    "arch_id": "decoder_attention_two_pass_global_max_equivalence",
+    "macro_mode": "evidence_only",
+    "outcome": "attention_two_pass_equivalence_pass"
+  },
+  "objective_profiles": [],
+  "evaluation_record": {
+    "proposal_id": "prop_decoder_attention_hierarchical_softmax_frontier_llama7b_v1",
+    "title": "Scalable exact hierarchical softmax for Llama7B",
+    "primary_question": "Can one-pass online composition remain within a 0.01 output-value error bound across long-context score distributions, or should the scalable RTL use exact two-pass global-max score replay?",
+    "evaluation_mode": "equivalence_gate",
+    "comparison_role": "semantic_equivalence_gate",
+    "abstraction_layer": "decoder_attention_two_pass_global_max_equivalence",
+    "expected_direction": "prove_two_pass_attention_equivalence",
+    "expected_reason": "Full-model PPA recost remains ineligible until the scalable normalization path is embodied and exact.",
+    "summary": "Two-pass attention perf/RTL equivalence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_two_pass_global_max_equivalence__l2_decoder_attention_two_pass_global_max_rtl_equivalence_llama7b_v1.json: decision=attention_two_pass_equivalence_pass; equivalence_pass=True; semantic_profile=q8_k8_v8_a32_s32_exp_lut_b20_zero_tail_two_pass_global_max; block_counts=[4, 8]; command_count=3; scenarios=['always_ready', 'result_backpressure']; gates={'exact_exp_sum': True, 'exact_global_max': True, 'exact_ready_valid_schedule': True, 'exact_weighted_value': True}; remaining_abstractions=['bounded internal score/value registers must be replaced with measured score-SRAM and KV replay ports', 'final divider lane folding and full 16384-block scheduling require physical exploration'].",
+    "outcome": "attention_two_pass_equivalence_pass",
+    "expectation_status": "unspecified"
+  },
+  "proposal_assessment": {
+    "proposal_id": "prop_decoder_attention_hierarchical_softmax_frontier_llama7b_v1",
+    "title": "Scalable exact hierarchical softmax for Llama7B",
+    "kind": "architecture",
+    "primary_question": "Can one-pass online composition remain within a 0.01 output-value error bound across long-context score distributions, or should the scalable RTL use exact two-pass global-max score replay?",
+    "evaluation_mode": "equivalence_gate",
+    "comparison_role": "semantic_equivalence_gate",
+    "outcome": "attention_two_pass_equivalence_pass",
+    "summary": "Two-pass attention perf/RTL equivalence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_two_pass_global_max_equivalence__l2_decoder_attention_two_pass_global_max_rtl_equivalence_llama7b_v1.json: decision=attention_two_pass_equivalence_pass; equivalence_pass=True; semantic_profile=q8_k8_v8_a32_s32_exp_lut_b20_zero_tail_two_pass_global_max; block_counts=[4, 8]; command_count=3; scenarios=['always_ready', 'result_backpressure']; gates={'exact_exp_sum': True, 'exact_global_max': True, 'exact_ready_valid_schedule': True, 'exact_weighted_value': True}; remaining_abstractions=['bounded internal score/value registers must be replaced with measured score-SRAM and KV replay ports', 'final divider lane folding and full 16384-block scheduling require physical exploration'].",
+    "baseline_ref": null,
+    "baseline_item_id": null,
+    "matched_row_count": 0,
+    "matched_rows": [],
+    "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_two_pass_global_max_equivalence__l2_decoder_attention_two_pass_global_max_rtl_equivalence_llama7b_v1.json",
+    "decoder_quality": {
+      "diagnosis": {},
+      "remaining_abstractions": [
+        "bounded internal score/value registers must be replaced with measured score-SRAM and KV replay ports",
+        "final divider lane folding and full 16384-block scheduling require physical exploration"
+      ]
+    }
+  },
+  "source_refs": {
+    "decoder_evidence_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_two_pass_global_max_equivalence__l2_decoder_attention_two_pass_global_max_rtl_equivalence_llama7b_v1.json",
+    "decoder_attention_two_pass_global_max_equivalence_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_two_pass_global_max_equivalence__l2_decoder_attention_two_pass_global_max_rtl_equivalence_llama7b_v1.json",
+    "decoder_attention_two_pass_global_max_equivalence_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_two_pass_global_max_equivalence__l2_decoder_attention_two_pass_global_max_rtl_equivalence_llama7b_v1.md"
+  },
+  "decoder_quality": {
+    "diagnosis": {},
+    "remaining_abstractions": [
+      "bounded internal score/value registers must be replaced with measured score-SRAM and KV replay ports",
+      "final divider lane folding and full 16384-block scheduling require physical exploration"
+    ]
+  }
+}
