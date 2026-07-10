@@ -9,6 +9,8 @@ from npu.sim.perf.attention_online import (
     merge_sequence,
     merge_stats,
     score_buffer_bytes,
+    simulate_two_pass,
+    two_pass_command,
     two_pass_stats,
     width_bounds,
 )
@@ -109,3 +111,28 @@ def test_attention_two_pass_score_buffer_fits_current_shared_sram() -> None:
 
     assert required == 16 * 1024 * 1024
     assert required < 68 * 1024 * 1024
+
+
+def test_attention_two_pass_command_covers_all_blocks() -> None:
+    command = default_commands(1)[0]
+
+    result = two_pass_command(command, block_count=4)
+
+    assert result["command_id"] == command.command_id
+    assert result["block_count"] == 4
+    assert result["exp_sum"] > 0
+    assert len(result["value"]) == 8
+
+
+def test_attention_two_pass_cycle_model_preserves_backpressured_commands() -> None:
+    result = simulate_two_pass(
+        default_commands(3),
+        block_count=4,
+        scenario="result_backpressure",
+    )
+
+    assert result["accepted_count"] == 3
+    assert result["completed_count"] == 3
+    assert [event["command_id"] for event in result["result_events"]] == [
+        command.command_id for command in default_commands(3)
+    ]

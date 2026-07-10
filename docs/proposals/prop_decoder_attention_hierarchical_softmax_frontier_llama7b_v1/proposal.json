@@ -68,7 +68,7 @@
         "direction": "prove_two_pass_attention_equivalence",
         "reason": "Full-model PPA recost remains ineligible until the scalable normalization path is embodied and exact."
       },
-      "status": "blocked_on_implementation"
+      "status": "pending_implementation_merge"
     }
   ],
   "remaining_abstractions_after_this_step": [
