@@ -19,7 +19,11 @@
         "direction": "select_scalable_softmax_composition",
         "reason": "Do not extrapolate locally normalized 8-token outputs into a full Llama7B row."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 1251,
+      "merge_commit": "6ec5fde0f7b5ab372d31f1c92bb2db1b534b13a3",
+      "merged_utc": "2026-07-10T12:28:24.954671Z",
+      "notes": "Merged via PR #1251 and merge 6ec5fde0f7b5ab372d31f1c92bb2db1b534b13a3 at 2026-07-10T12:28:24.954671Z."
     },
     {
       "item_id": "l2_decoder_attention_two_pass_global_max_rtl_equivalence_llama7b_v1",
@@ -37,7 +41,9 @@
         "direction": "prove_two_pass_attention_equivalence",
         "reason": "Full-model PPA recost remains ineligible until the scalable normalization path is embodied and exact."
       },
-      "status": "blocked_on_implementation"
+      "status": "ready_to_queue",
+      "notes": "Prerequisites are merged; item is ready to queue."
     }
-  ]
+  ],
+  "source_commit": "7dd3b32a12c2dcc4acc528aa88dd71fd3d88ad12"
 }
