@@ -19,7 +19,11 @@
         "direction": "prove_attention_separated_cluster_equivalence",
         "reason": "Physical evaluation is ineligible until exact QK, softmax, weighted-V, ordering, and backpressure behavior match the perf model."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 1248,
+      "merge_commit": "d46c7de6624a412663e34519030cf9e2f7a0492d",
+      "merged_utc": "2026-07-10T12:02:58.576287Z",
+      "notes": "Merged via PR #1248 and merge d46c7de6624a412663e34519030cf9e2f7a0492d at 2026-07-10T12:02:58.576287Z."
     },
     {
       "item_id": "l1_decoder_attention_separated_cluster_ppa_v1",
@@ -63,5 +67,6 @@
       },
       "status": "blocked_on_equivalence_merge"
     }
-  ]
+  ],
+  "source_commit": "6efe80945e1c3a2424a7f25fa532f5b2a3c7cd60"
 }

@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_decoder_attention_separated_cluster_frontier_llama7b_v1",
+  "decision": "iterate",
+  "pr_number": 1248,
+  "merge_commit": "d46c7de6624a412663e34519030cf9e2f7a0492d",
+  "merged_utc": "2026-07-10T12:02:58.576287Z"
+}
