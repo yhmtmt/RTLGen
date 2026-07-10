@@ -27,7 +27,12 @@
         "direction": "record_quality_aware_score32_hbm_controller_ppa_recost_frontier",
         "reason": "Use merged quality evidence to invalidate stale low-precision rows before ranking."
       },
-      "status": "ready_to_dispatch_after_implementation_merge"
+      "status": "merged",
+      "merged_pr_number": 1242,
+      "merge_commit": "fc30f151d464cbc69c1ea772185138ea04d5641c",
+      "merged_utc": "2026-07-10T10:46:57.245890Z",
+      "notes": "Merged via PR #1242 and merge fc30f151d464cbc69c1ea772185138ea04d5641c at 2026-07-10T10:46:57.245890Z."
     }
-  ]
+  ],
+  "source_commit": "3ee947a3dd8f67e932782ea1cd6b3a24f73bac44"
 }
