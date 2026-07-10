@@ -655,6 +655,45 @@ def _write_example_attention_separated_cluster_repo(repo_root: Path) -> tuple[st
     return str(config_path.relative_to(repo_root)), str(sweep_path.relative_to(repo_root))
 
 
+def _write_example_attention_two_pass_stream_repo(repo_root: Path) -> tuple[str, str]:
+    design_dir = repo_root / "runs" / "designs" / "npu_blocks" / "attention_two_pass_stream_d2"
+    design_dir.mkdir(parents=True, exist_ok=True)
+    config_path = design_dir / "config.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "top_name": "attention_two_pass_stream_d2",
+                "attention_two_pass_stream": {"max_blocks": 16384, "div_lanes_per_cycle": 2},
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    sweep_path = (
+        repo_root
+        / "runs"
+        / "campaigns"
+        / "npu"
+        / "attention_two_pass_stream_v1"
+        / "sweeps"
+        / "nangate45_attention_two_pass_stream.json"
+    )
+    sweep_path.parent.mkdir(parents=True, exist_ok=True)
+    sweep_path.write_text(
+        json.dumps(
+            {
+                "flow_params": {"CLOCK_PERIOD": [10.0], "PLACE_DENSITY": [0.35]},
+                "tag_prefix": "attention_two_pass_stream",
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    return str(config_path.relative_to(repo_root)), str(sweep_path.relative_to(repo_root))
+
+
 def _write_example_attention_hbm_replay_controller_repo(repo_root: Path) -> tuple[str, str]:
     design_dir = repo_root / "runs" / "designs" / "npu_blocks" / "attention_hbm_replay_controller_smoke"
     design_dir.mkdir(parents=True, exist_ok=True)
@@ -1921,6 +1960,48 @@ def test_generate_l1_sweep_task_supports_attention_separated_cluster_configs() -
             assert work_item.expected_outputs == [
                 "runs/designs/npu_blocks/attention_separated_cluster_p4_c1/metrics.csv",
                 "runs/designs/npu_blocks/attention_separated_cluster_p4_c1/timing_debug_report.md",
+            ]
+
+
+def test_generate_l1_sweep_task_supports_attention_two_pass_stream_configs() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        config_path, sweep_path = _write_example_attention_two_pass_stream_repo(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l1_sweep_task(
+                session,
+                Layer1SweepGenerateRequest(
+                    repo_root=str(repo_root),
+                    sweep_path=sweep_path,
+                    config_paths=[config_path],
+                    platform="nangate45",
+                    out_root="runs/designs/npu_blocks",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    abstraction_layer="decoder_attention_two_pass_stream",
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            assert [command["name"] for command in work_item.command_manifest] == [
+                "generate_attention_two_pass_stream_rtl",
+                "check_attention_two_pass_stream_guard",
+                "run_block_sweep",
+                "extract_attention_two_pass_stream_timing_paths",
+                "build_runs_index",
+                "validate",
+            ]
+            assert "gen_attention_two_pass_stream.py" in work_item.command_manifest[0]["run"]
+            assert "check_attention_two_pass_stream_guard.py" in work_item.command_manifest[1]["run"]
+            assert "--top attention_two_pass_stream_d2" in work_item.command_manifest[2]["run"]
+            assert work_item.expected_outputs == [
+                "runs/designs/npu_blocks/attention_two_pass_stream_d2/metrics.csv",
+                "runs/designs/npu_blocks/attention_two_pass_stream_d2/timing_debug_report.md",
             ]
 
 

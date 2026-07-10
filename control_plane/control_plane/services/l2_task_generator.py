@@ -6293,6 +6293,35 @@ def _decoder_attention_two_pass_global_max_equivalence_evidence(*, item_id: str)
     }
 
 
+def _decoder_attention_two_pass_stream_equivalence_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_attention_two_pass_stream_equivalence__{item_id}.json"
+    report = f"{base}/decoder_attention_two_pass_stream_equivalence__{item_id}.md"
+    return {
+        "inputs": {
+            "attention_two_pass_stream_equivalence_out": out,
+            "attention_two_pass_stream_equivalence_report": report,
+            "attention_two_pass_stream_equivalence_scope": (
+                "Prove the external score-SRAM write/read boundary, KV replay stream, zero-tail score32 "
+                "accumulation, divider folding at 1/2/4/8 lanes per cycle, and independent memory/result "
+                "backpressure for 4- and 8-block semantic contexts."
+            ),
+        },
+        "commands": [
+            {
+                "name": "probe_attention_two_pass_stream_equivalence",
+                "run": (
+                    "python3 npu/eval/probe_attention_two_pass_stream_equivalence.py "
+                    "--block-counts 4,8 --div-lanes 1,2,4,8 "
+                    f"--out {out} --out-md {report}"
+                ),
+            }
+        ],
+        "expected_outputs": [out, report],
+        "evidence_only": True,
+    }
+
+
 def _decoder_attention_score32_exp_lut_sram_hierarchy_envelope_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_score32_exp_lut_sram_hierarchy_envelope__{item_id}.json"
@@ -9811,6 +9840,7 @@ def _build_payload(
         "decoder_attention_separated_cluster_equivalence",
         "decoder_attention_hierarchical_softmax_architecture",
         "decoder_attention_two_pass_global_max_equivalence",
+        "decoder_attention_two_pass_stream_equivalence",
         "decoder_attention_hbm_dram_service_energy",
         "decoder_attention_hbm_energy_calibration",
         "decoder_attention_hbm_command_calibrated_service",
@@ -10033,6 +10063,8 @@ def _build_payload(
             decoder_evidence = _decoder_attention_hierarchical_softmax_architecture_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_two_pass_global_max_equivalence":
             decoder_evidence = _decoder_attention_two_pass_global_max_equivalence_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_attention_two_pass_stream_equivalence":
+            decoder_evidence = _decoder_attention_two_pass_stream_equivalence_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_hbm_dram_service_energy":
             decoder_evidence = _decoder_attention_hbm_dram_service_energy_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_hbm_energy_calibration":

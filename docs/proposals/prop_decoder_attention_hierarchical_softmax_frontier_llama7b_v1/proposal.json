@@ -69,6 +69,49 @@
         "reason": "Full-model PPA recost remains ineligible until the scalable normalization path is embodied and exact."
       },
       "status": "pending_implementation_merge"
+    },
+    {
+      "item_id": "l2_decoder_attention_two_pass_stream_rtl_equivalence_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Prove exact external score-SRAM and KV-replay stream behavior for all divider-folding points.",
+      "evaluation_mode": "equivalence_gate",
+      "abstraction_layer": "decoder_attention_two_pass_stream_equivalence",
+      "comparison_role": "memory_interface_equivalence_gate",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_two_pass_global_max_rtl_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "prove_two_pass_stream_equivalence",
+        "reason": "Physical measurement is ineligible until score-SRAM and KV replay handshakes preserve the selected arithmetic under independent stalls."
+      },
+      "status": "pending_implementation_merge"
+    },
+    {
+      "item_id": "l1_decoder_attention_two_pass_stream_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure Nangate45 timing, area, power, and cell count for 1/2/4/8 final-divider lanes.",
+      "evaluation_mode": "frontier_followup",
+      "abstraction_layer": "decoder_attention_two_pass_stream",
+      "comparison_role": "divider_folding_ppa",
+      "config_paths": [
+        "runs/designs/npu_blocks/attention_two_pass_stream_d1/config.json",
+        "runs/designs/npu_blocks/attention_two_pass_stream_d2/config.json",
+        "runs/designs/npu_blocks/attention_two_pass_stream_d4/config.json",
+        "runs/designs/npu_blocks/attention_two_pass_stream_d8/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/attention_two_pass_stream_v1/sweeps/nangate45_attention_two_pass_stream.json",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_two_pass_stream_rtl_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "measure_two_pass_divider_frontier",
+        "reason": "Choose the minimum-area divider width that remains hidden by full-context replay service."
+      },
+      "status": "blocked_on_stream_equivalence_merge"
     }
   ],
   "remaining_abstractions_after_this_step": [
