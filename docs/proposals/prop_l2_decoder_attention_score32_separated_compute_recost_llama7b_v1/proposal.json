@@ -31,6 +31,7 @@
   ],
   "risks": [
     "the recost still inherits mixed-int8 latency and external HBM/NoC/SRAM traffic unchanged",
+    "the inherited energy row uses a q8/k8/v6 reciprocal-LUT profile while the target is the q8/k8/v8 score32 exp-LUT/div profile, so quality cannot be attributed until precision-aligned RTL and schedule evidence exist",
     "measured components are not yet embodied in one composed score32 producer-consumer RTL block",
     "HBM energy remains source-backed aggregate energy rather than vendor current signoff"
   ],
@@ -75,6 +76,7 @@
     "Producer-to-score32 ready/valid queues and backpressure are not yet measured in one composed RTL block.",
     "The inherited dense-int8 schedule has not yet been replayed against the separated score32 consumer.",
     "Full QK-to-softmax-to-V RTL/perf-sim tensor-hash equivalence is still pending.",
+    "The inherited energy source and desired score32 target are not precision-aligned.",
     "NoC and SRAM energy remain profile-scaled rather than gate-level toggle power.",
     "HBM energy remains source-backed aggregate energy rather than vendor current signoff."
   ]

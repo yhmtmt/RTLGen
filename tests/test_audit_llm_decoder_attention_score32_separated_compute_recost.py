@@ -22,6 +22,7 @@ def _inputs(tmp_path: Path) -> Namespace:
         {
             "best": {
                 "latency_us": 1000,
+                "precision_profile": "q8_k8_v8_score32",
                 "token_throughput_per_s": 1000,
                 "compute_area_um2": 1000000,
                 "substituted_block_clock_ns": 2,
@@ -42,6 +43,7 @@ def _inputs(tmp_path: Path) -> Namespace:
         {
             "best_requested": {
                 "clock_ns": 5,
+                "precision_profile": "q8_k8_v8_score32",
                 "die_area_mm2": 20,
                 "cluster_count": 4,
                 "selected_l1_overhead_area_um2": 200000,
@@ -116,6 +118,8 @@ def test_separated_recost_uses_measured_components_and_remains_nonpromotable(tmp
     assert candidate["token_throughput_per_s"] == 1000
     assert candidate["timing_ok"] is True
     assert candidate["quality_backed"] is True
+    assert candidate["quality_target_backed"] is True
+    assert candidate["precision_aligned"] is True
     assert candidate["promotable"] is False
     assert report["comparisons"]["vs_current_score32"] == {
         "candidate_id": "old_score32",
@@ -136,6 +140,22 @@ def test_separated_recost_records_component_clock_miss(tmp_path: Path) -> None:
     assert report["decision"] == "score32_separated_compute_recost_not_ready"
     assert report["candidate"]["timing_ok"] is False
     assert report["candidate"]["components"][1]["clock_ok"] is False
+
+
+def test_separated_recost_does_not_join_quality_across_precision_profiles(tmp_path: Path) -> None:
+    args = _inputs(tmp_path)
+    payload = json.loads(args.mixed_int8_energy_json.read_text(encoding="utf-8"))
+    payload["best"]["precision_profile"] = "q8_k8_v6_recip_lut"
+    _write(args.mixed_int8_energy_json, payload)
+
+    report = build_report(args)
+    candidate = report["candidate"]
+
+    assert report["decision"] == "score32_separated_compute_recost_requires_precision_aligned_rtl"
+    assert candidate["quality_target_backed"] is True
+    assert candidate["quality_backed"] is False
+    assert candidate["precision_aligned"] is False
+    assert candidate["energy_source_precision_profile"] == "q8_k8_v6_recip_lut"
 
 
 def test_separated_recost_rejects_missing_energy_component(tmp_path: Path) -> None:

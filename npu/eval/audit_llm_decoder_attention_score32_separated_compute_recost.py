@@ -46,6 +46,7 @@ def _quality_evidence(payload: JsonDict) -> JsonDict:
             "candidate_probability_assigned_to_reference_token_mean"
         ),
         "quality_backed": status.endswith("_pass"),
+        "precision": _as_dict(payload.get("precision")),
     }
 
 
@@ -174,7 +175,16 @@ def build_report(args: argparse.Namespace) -> JsonDict:
     total_energy_mj = round(compute_control_energy_mj + sum(inherited.values()), 12)
     token_throughput_per_s = round(1_000_000.0 / latency_us, 12)
 
+    energy_source_precision_profile = str(dense.get("precision_profile") or "unknown")
+    target_precision_profile = str(command.get("precision_profile") or "unknown")
+    precision_aligned = (
+        energy_source_precision_profile != "unknown"
+        and target_precision_profile != "unknown"
+        and energy_source_precision_profile == target_precision_profile
+    )
+
     remaining_abstractions = [
+        "the inherited q8/k8/v6 reciprocal-LUT energy row is not precision-aligned with the q8/k8/v8 score32 exp-LUT/div target",
         "producer-to-score32 ready/valid queues and backpressure are not yet embodied in one composed RTL block",
         "the inherited dense-int8 schedule has not yet been replayed against the separated score32 consumer",
         "full QK-to-softmax-to-V RTL/perf-sim tensor-hash equivalence is pending for the separated composition",
@@ -182,14 +192,17 @@ def build_report(args: argparse.Namespace) -> JsonDict:
         "HBM energy is source-backed aggregate energy, not vendor current signoff",
     ]
     promotable = False
-    decision = (
-        "score32_separated_compute_measured_component_frontier_requires_rtl"
-        if quality["quality_backed"] and timing_ok
-        else "score32_separated_compute_recost_not_ready"
-    )
+    if quality["quality_backed"] and timing_ok and precision_aligned:
+        decision = "score32_separated_compute_measured_component_frontier_requires_rtl"
+    elif quality["quality_backed"] and timing_ok:
+        decision = "score32_separated_compute_recost_requires_precision_aligned_rtl"
+    else:
+        decision = "score32_separated_compute_recost_not_ready"
     candidate = {
         "candidate_id": "score32_separated_dense_int8_shared_vector_softmax_c16_hbm_c4",
-        "precision_profile": "q8_k8_v8_a32_s32_w16_exp_lut_div_b20_int8_compute",
+        "precision_profile": target_precision_profile,
+        "energy_source_precision_profile": energy_source_precision_profile,
+        "precision_aligned": precision_aligned,
         "latency_us": latency_us,
         "token_throughput_per_s": token_throughput_per_s,
         "energy_mj_per_token": total_energy_mj,
@@ -202,7 +215,8 @@ def build_report(args: argparse.Namespace) -> JsonDict:
         "active_power_mw": active_power_mw,
         "schedule_clock_ns": schedule_clock_ns,
         "timing_ok": timing_ok,
-        "quality_backed": quality["quality_backed"],
+        "quality_target_backed": quality["quality_backed"],
+        "quality_backed": bool(quality["quality_backed"] and precision_aligned),
         "quality": quality,
         "promotable": promotable,
         "abstraction_status": "measured_components_unmeasured_composition",
@@ -240,14 +254,16 @@ def build_report(args: argparse.Namespace) -> JsonDict:
         "diagnosis": {
             "decision": decision,
             "timing_ok": timing_ok,
-            "quality_backed": quality["quality_backed"],
+            "quality_target_backed": quality["quality_backed"],
+            "quality_backed": bool(quality["quality_backed"] and precision_aligned),
+            "precision_aligned": precision_aligned,
             "promotable": promotable,
             "full_wrapper_replication_removed": True,
             "old_full_wrapper_replica_count": command.get("substituted_compute_replica_count"),
             "old_full_wrapper_area_um2": command.get("substituted_block_area_um2"),
             "old_full_wrapper_power_mw": command.get("substituted_block_power_mw"),
             "recommended_next_step": (
-                "Build and measure the separated producer/consumer RTL composition, then run full-path tensor-hash equivalence."
+                "Build and measure the precision-aligned separated producer/consumer RTL composition, then run full-path tensor-hash equivalence."
                 if quality["quality_backed"] and timing_ok
                 else "Resolve failed quality or component timing evidence before composing RTL."
             ),
@@ -255,6 +271,7 @@ def build_report(args: argparse.Namespace) -> JsonDict:
         },
         "assumptions": [
             "Dense-int8 latency and external HBM/NoC/SRAM traffic are inherited unchanged from the measured mixed-int8 schedule.",
+            "The inherited energy source and desired score32 target retain their explicit precision profiles; quality is not attributed across a profile mismatch.",
             "The selected score32/vector overhead is shared at cluster scope instead of replicated with every GEMM lane.",
             "All component powers are conservatively charged for the full token latency.",
             "Measured-component recost is evidence for prioritizing RTL work, not evidence that the composition is physically promotable.",
