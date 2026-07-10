@@ -1,0 +1,147 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-07-10T10:35:39.526821Z",
+  "item_id": "l2_decoder_attention_score32_hbm_controller_replay_rtl_ppa_recost_integrated_frontier_ranking_llama7b_v1",
+  "run_key": "l2_decoder_attention_score32_hbm_controller_replay_rtl_ppa_recost_integrated_frontier_ranking_llama7b_v1_run_b170d126a0ce27b5",
+  "layer": "layer2",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l2_campaign",
+  "source_commit": "157ba5f01d2e1ee0d47a86d1eb71a630b23492ed",
+  "review_metadata_source_commit": "157ba5f01d2e1ee0d47a86d1eb71a630b23492ed",
+  "objective": "Recost the current score32 HBM replay Llama7B frontier with measured replay-controller area, active energy, and timing margin.",
+  "input_manifest": {
+    "decoder_contract": {
+      "attention_integrated_energy_closure": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_integrated_energy_closure__l2_decoder_attention_integrated_energy_closure_llama7b_v1_r2.json",
+      "attention_mixed_int8_energy_closure": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_energy_closure__l2_decoder_attention_mixed_int8_energy_closure_llama7b_v1_r2.json",
+      "attention_score32_hbm_controller_replay": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_hbm_controller_replay__l2_decoder_attention_score32_hbm_controller_replay_llama7b_v1.json",
+      "attention_measured_compute_energy_closure": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_measured_compute_energy_closure__l2_decoder_attention_measured_compute_energy_closure_llama7b_v1.json",
+      "attention_score32_exp_lut_generation_quality": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality__l2_decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality_llama7b_v1.json",
+      "attention_score32_hbm_controller_replay_ppa_json": "control_plane/shadow_exports/l1_promotions/l1_decoder_attention_hbm_replay_controller_ppa_v2.json",
+      "attention_score32_integrated_frontier_ranking_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_integrated_frontier_ranking__l2_decoder_attention_score32_hbm_controller_replay_rtl_ppa_recost_integrated_frontier_ranking_llama7b_v1.json",
+      "attention_score32_exp_lut_hbm_dram_service_closure": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exp_lut_hbm_dram_service_closure__l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1.json",
+      "attention_score32_exp_lut_measured_command_control": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_measured_command_control_llama7b_v1.json",
+      "attention_score32_integrated_frontier_ranking_scope": "Rank the closed score32 exp-LUT Llama7B attention row against prior integrated, measured-compute, and mixed/int8 energy evidence. Report latency, energy, area, precision status, promotability, and remaining abstractions without promoting planning-only or quality-unclosed rows.",
+      "attention_score32_integrated_frontier_ranking_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_integrated_frontier_ranking__l2_decoder_attention_score32_hbm_controller_replay_rtl_ppa_recost_integrated_frontier_ranking_llama7b_v1.md"
+    }
+  },
+  "recommendation": {
+    "source": "decoder_evidence",
+    "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_integrated_frontier_ranking__l2_decoder_attention_score32_hbm_controller_replay_rtl_ppa_recost_integrated_frontier_ranking_llama7b_v1.json",
+    "arch_id": "decoder_attention_score32_integrated_frontier_ranking",
+    "macro_mode": "evidence_only",
+    "outcome": "score32_integrated_frontier_best_precision_safe_throughput"
+  },
+  "objective_profiles": [],
+  "evaluation_record": {
+    "proposal_id": "prop_l2_decoder_attention_score32_hbm_controller_replay_rtl_ppa_recost_integrated_frontier_ranking_llama7b_v1",
+    "title": "Score32 HBM replay controller RTL-PPA exact recost",
+    "primary_question": "Does exact replay-controller PPA recost change the score32 Llama7B throughput, energy, area, precision, or promotability ranking?",
+    "evaluation_mode": "frontier_detail",
+    "comparison_role": "score32_hbm_controller_replay_rtl_ppa_recost_integrated_frontier_ranking",
+    "abstraction_layer": "decoder_attention_score32_integrated_frontier_ranking",
+    "expected_direction": "record_score32_integrated_frontier_ranking_with_replay_controller_ppa_recost",
+    "expected_reason": "Fold the measured controller cost into score32 totals and preserve the ranking only if recosted evidence supports it.",
+    "summary": "Decoder score32 integrated frontier ranking recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_integrated_frontier_ranking__l2_decoder_attention_score32_hbm_controller_replay_rtl_ppa_recost_integrated_frontier_ranking_llama7b_v1.json: decision=score32_integrated_frontier_best_precision_safe_throughput; best_latency_candidate=physical_hbm_gqa8_kv8_service_frontier; best_energy_candidate=physical_hbm_gqa8_kv8_service_frontier; best_precision_safe_candidate=score32_exp_lut_schedule_wrapper_hbm_controller_replay_best; score32_latency_us=12814.257853; score32_total_energy_mj_per_token=467.191305313106; score32_die_area_mm2=800.0; score32_quality_status=mixed_int8_generation_quality_pass; current_recommended_candidate=score32_exp_lut_schedule_wrapper_hbm_controller_replay_best; remaining_abstractions=['HBM replay controller area, active energy, and control timing are backed by measured Nangate45 RTL PPA.', 'does not include vendor HBM current signoff', 'profile_scaled_noc_sram_energy', 'source_backed_aggregate_hbm_energy_not_vendor_current_signoff'].",
+    "outcome": "score32_integrated_frontier_best_precision_safe_throughput",
+    "expectation_status": "unspecified"
+  },
+  "proposal_assessment": {
+    "proposal_id": "prop_l2_decoder_attention_score32_hbm_controller_replay_rtl_ppa_recost_integrated_frontier_ranking_llama7b_v1",
+    "title": "Score32 HBM replay controller RTL-PPA exact recost",
+    "kind": "architecture",
+    "primary_question": "Does exact replay-controller PPA recost change the score32 Llama7B throughput, energy, area, precision, or promotability ranking?",
+    "evaluation_mode": "frontier_detail",
+    "comparison_role": "score32_hbm_controller_replay_rtl_ppa_recost_integrated_frontier_ranking",
+    "outcome": "score32_integrated_frontier_best_precision_safe_throughput",
+    "summary": "Decoder score32 integrated frontier ranking recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_integrated_frontier_ranking__l2_decoder_attention_score32_hbm_controller_replay_rtl_ppa_recost_integrated_frontier_ranking_llama7b_v1.json: decision=score32_integrated_frontier_best_precision_safe_throughput; best_latency_candidate=physical_hbm_gqa8_kv8_service_frontier; best_energy_candidate=physical_hbm_gqa8_kv8_service_frontier; best_precision_safe_candidate=score32_exp_lut_schedule_wrapper_hbm_controller_replay_best; score32_latency_us=12814.257853; score32_total_energy_mj_per_token=467.191305313106; score32_die_area_mm2=800.0; score32_quality_status=mixed_int8_generation_quality_pass; current_recommended_candidate=score32_exp_lut_schedule_wrapper_hbm_controller_replay_best; remaining_abstractions=['HBM replay controller area, active energy, and control timing are backed by measured Nangate45 RTL PPA.', 'does not include vendor HBM current signoff', 'profile_scaled_noc_sram_energy', 'source_backed_aggregate_hbm_energy_not_vendor_current_signoff'].",
+    "baseline_ref": null,
+    "baseline_item_id": null,
+    "matched_row_count": 0,
+    "matched_rows": [],
+    "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_integrated_frontier_ranking__l2_decoder_attention_score32_hbm_controller_replay_rtl_ppa_recost_integrated_frontier_ranking_llama7b_v1.json",
+    "decoder_quality": {
+      "diagnosis": {
+        "best_energy_candidate": "physical_hbm_gqa8_kv8_service_frontier",
+        "best_latency_candidate": "physical_hbm_gqa8_kv8_service_frontier",
+        "best_precision_safe_candidate": "score32_exp_lut_schedule_wrapper_hbm_controller_replay_best",
+        "best_precision_safe_energy_candidate": "die1200_dense_gemm_16x8_k1_p1_mac132736_lat1872.29_hbm0.465654_tt512",
+        "current_recommended_candidate": "score32_exp_lut_schedule_wrapper_hbm_controller_replay_best",
+        "decision": "score32_integrated_frontier_best_precision_safe_throughput",
+        "excluded_fastest_candidate": "physical_hbm_gqa8_kv8_service_frontier",
+        "remaining_abstractions": [
+          "HBM replay controller area, active energy, and control timing are backed by measured Nangate45 RTL PPA.",
+          "does not include vendor HBM current signoff",
+          "profile_scaled_noc_sram_energy",
+          "source_backed_aggregate_hbm_energy_not_vendor_current_signoff"
+        ],
+        "score32_compute_plus_controller_area_mm2": 296.8263662009,
+        "score32_controller_area_mm2": 0.0289102009,
+        "score32_controller_clock_ok": true,
+        "score32_controller_energy_mj_per_token": 0.001396754106,
+        "score32_die_area_mm2": 800.0,
+        "score32_latency_us": 12814.257853,
+        "score32_quality_status": "mixed_int8_generation_quality_pass",
+        "score32_token_throughput_per_s": 78.038073798,
+        "score32_total_energy_mj_per_token": 467.191305313106,
+        "score32_vs_measured_fp16_energy_ratio": 5.720887555,
+        "score32_vs_measured_fp16_throughput_ratio": 5.661198874
+      },
+      "assumptions": [
+        "Rows are ranked by explicit metrics from merged evidence; no new PPA is synthesized in this audit.",
+        "The score32 row is quality-backed by the bounded generation-quality gate and measured through wrapper, command-control, SRAM-envelope, deterministic HBM replay, and measured Nangate45 RTL PPA recost for replay-controller area, active energy, and control timing.",
+        "The mixed-int8 energy row is retained as a fast non-promotable latency candidate because its precision path is not promoted by the current real-checkpoint evidence.",
+        "The older integrated-energy row is retained as planning-only because measured-compute closure made its abstract compute target infeasible."
+      ],
+      "next_step": {
+        "mixed_int8_requires_quality_closure": true,
+        "recommended_next_step": "Use score32 as the current precision-safe throughput frontier and measured exact-FP16 as the energy reference; next reduce score32 compute energy or validate a lower-energy mixed/int8 path.",
+        "score32_energy_reduction_required_for_energy_best": true
+      }
+    }
+  },
+  "source_refs": {
+    "decoder_evidence_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_integrated_frontier_ranking__l2_decoder_attention_score32_hbm_controller_replay_rtl_ppa_recost_integrated_frontier_ranking_llama7b_v1.json",
+    "decoder_attention_score32_integrated_frontier_ranking_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_integrated_frontier_ranking__l2_decoder_attention_score32_hbm_controller_replay_rtl_ppa_recost_integrated_frontier_ranking_llama7b_v1.json",
+    "decoder_attention_score32_integrated_frontier_ranking_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_integrated_frontier_ranking__l2_decoder_attention_score32_hbm_controller_replay_rtl_ppa_recost_integrated_frontier_ranking_llama7b_v1.md"
+  },
+  "decoder_quality": {
+    "diagnosis": {
+      "best_energy_candidate": "physical_hbm_gqa8_kv8_service_frontier",
+      "best_latency_candidate": "physical_hbm_gqa8_kv8_service_frontier",
+      "best_precision_safe_candidate": "score32_exp_lut_schedule_wrapper_hbm_controller_replay_best",
+      "best_precision_safe_energy_candidate": "die1200_dense_gemm_16x8_k1_p1_mac132736_lat1872.29_hbm0.465654_tt512",
+      "current_recommended_candidate": "score32_exp_lut_schedule_wrapper_hbm_controller_replay_best",
+      "decision": "score32_integrated_frontier_best_precision_safe_throughput",
+      "excluded_fastest_candidate": "physical_hbm_gqa8_kv8_service_frontier",
+      "remaining_abstractions": [
+        "HBM replay controller area, active energy, and control timing are backed by measured Nangate45 RTL PPA.",
+        "does not include vendor HBM current signoff",
+        "profile_scaled_noc_sram_energy",
+        "source_backed_aggregate_hbm_energy_not_vendor_current_signoff"
+      ],
+      "score32_compute_plus_controller_area_mm2": 296.8263662009,
+      "score32_controller_area_mm2": 0.0289102009,
+      "score32_controller_clock_ok": true,
+      "score32_controller_energy_mj_per_token": 0.001396754106,
+      "score32_die_area_mm2": 800.0,
+      "score32_latency_us": 12814.257853,
+      "score32_quality_status": "mixed_int8_generation_quality_pass",
+      "score32_token_throughput_per_s": 78.038073798,
+      "score32_total_energy_mj_per_token": 467.191305313106,
+      "score32_vs_measured_fp16_energy_ratio": 5.720887555,
+      "score32_vs_measured_fp16_throughput_ratio": 5.661198874
+    },
+    "assumptions": [
+      "Rows are ranked by explicit metrics from merged evidence; no new PPA is synthesized in this audit.",
+      "The score32 row is quality-backed by the bounded generation-quality gate and measured through wrapper, command-control, SRAM-envelope, deterministic HBM replay, and measured Nangate45 RTL PPA recost for replay-controller area, active energy, and control timing.",
+      "The mixed-int8 energy row is retained as a fast non-promotable latency candidate because its precision path is not promoted by the current real-checkpoint evidence.",
+      "The older integrated-energy row is retained as planning-only because measured-compute closure made its abstract compute target infeasible."
+    ],
+    "next_step": {
+      "mixed_int8_requires_quality_closure": true,
+      "recommended_next_step": "Use score32 as the current precision-safe throughput frontier and measured exact-FP16 as the energy reference; next reduce score32 compute energy or validate a lower-energy mixed/int8 path.",
+      "score32_energy_reduction_required_for_energy_best": true
+    }
+  }
+}
