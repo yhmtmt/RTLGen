@@ -41,8 +41,12 @@
         "direction": "prove_two_pass_attention_equivalence",
         "reason": "Full-model PPA recost remains ineligible until the scalable normalization path is embodied and exact."
       },
-      "status": "pending_implementation_merge"
+      "status": "merged",
+      "merged_pr_number": 1253,
+      "merge_commit": "edae0e6b123963ab0f8d486b59ab374300bef612",
+      "merged_utc": "2026-07-10T12:45:30.987367Z",
+      "notes": "Merged via PR #1253 and merge edae0e6b123963ab0f8d486b59ab374300bef612 at 2026-07-10T12:45:30.987367Z."
     }
   ],
-  "source_commit": "7dd3b32a12c2dcc4acc528aa88dd71fd3d88ad12"
+  "source_commit": "1e00b8d5a1e74eb8fc9b7209b844b609844e6a43"
 }
