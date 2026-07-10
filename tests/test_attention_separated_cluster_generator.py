@@ -120,7 +120,7 @@ def test_attention_separated_cluster_generator_configurations(
         "dispatch_consumer_rr_ptr",
         "result_rr_ptr",
         "exp_lut",
-        "weight_numer = (exp_weight[row_idx] * 16'd65535) + (sum_exp >> 1);",
+        "weight_numer = ({1'b0, exp_weight[row_idx]} * 17'd65535)",
         "accum_lane = accum_lane + ($signed(value_lane) * $signed({1'b0, weight_lane[row_idx]}));",
     ):
         assert token in top_text

@@ -1,0 +1,67 @@
+{
+  "proposal_id": "prop_decoder_attention_separated_cluster_frontier_llama7b_v1",
+  "source_commit_note": "Dispatch equivalence after implementation merge; dispatch PPA only after equivalence result merges.",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_separated_cluster_equivalence_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Prove exact stage-tensor and ready/valid schedule equivalence for every bounded separated-attention ratio in the physical sweep.",
+      "evaluation_mode": "equivalence_gate",
+      "abstraction_layer": "decoder_attention_separated_cluster_equivalence",
+      "comparison_role": "semantic_equivalence_gate",
+      "paired_baseline_item_id": "l2_decoder_attention_score32_separated_compute_recost_llama7b_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_score32_separated_compute_recost_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "prove_attention_separated_cluster_equivalence",
+        "reason": "Physical evaluation is ineligible until exact QK, softmax, weighted-V, ordering, and backpressure behavior match the perf model."
+      },
+      "status": "pending"
+    },
+    {
+      "item_id": "l1_decoder_attention_separated_cluster_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure Nangate45 PPA for precision-aligned separated attention producer-to-consumer ratios.",
+      "evaluation_mode": "frontier_followup",
+      "abstraction_layer": "decoder_attention_separated_cluster",
+      "comparison_role": "producer_consumer_ratio_ppa",
+      "config_paths": [
+        "runs/designs/npu_blocks/attention_separated_cluster_p1_c1/config.json",
+        "runs/designs/npu_blocks/attention_separated_cluster_p2_c1/config.json",
+        "runs/designs/npu_blocks/attention_separated_cluster_p4_c1/config.json",
+        "runs/designs/npu_blocks/attention_separated_cluster_p8_c1/config.json",
+        "runs/designs/npu_blocks/attention_separated_cluster_p4_c2/config.json",
+        "runs/designs/npu_blocks/attention_separated_cluster_p8_c2/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/attention_separated_cluster_v1/sweeps/nangate45_attention_separated_cluster.json",
+      "expected_outputs": [
+        "runs/designs/npu_blocks/attention_separated_cluster_p1_c1/metrics.csv",
+        "runs/designs/npu_blocks/attention_separated_cluster_p1_c1/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_separated_cluster_p2_c1/metrics.csv",
+        "runs/designs/npu_blocks/attention_separated_cluster_p2_c1/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_separated_cluster_p4_c1/metrics.csv",
+        "runs/designs/npu_blocks/attention_separated_cluster_p4_c1/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_separated_cluster_p8_c1/metrics.csv",
+        "runs/designs/npu_blocks/attention_separated_cluster_p8_c1/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_separated_cluster_p4_c2/metrics.csv",
+        "runs/designs/npu_blocks/attention_separated_cluster_p4_c2/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_separated_cluster_p8_c2/metrics.csv",
+        "runs/designs/npu_blocks/attention_separated_cluster_p8_c2/timing_debug_report.md"
+      ],
+      "depends_on_item_ids": [
+        "l2_decoder_attention_separated_cluster_equivalence_llama7b_v1",
+        "l2_decoder_attention_score32_separated_compute_recost_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "measure_attention_separated_cluster_ratio_frontier",
+        "reason": "Replace analytical producer/consumer sharing area and timing with measured macro PPA before Llama7B recost."
+      },
+      "status": "blocked_on_equivalence_merge"
+    }
+  ]
+}

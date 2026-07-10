@@ -587,6 +587,10 @@ _DECODER_EVIDENCE_OUTPUT_KEYS: tuple[tuple[str, str], ...] = (
         "attention_score32_separated_compute_recost_report",
     ),
     (
+        "attention_separated_cluster_equivalence_out",
+        "attention_separated_cluster_equivalence_report",
+    ),
+    (
         "attention_score32_exp_lut_sram_hierarchy_envelope_out",
         "attention_score32_exp_lut_sram_hierarchy_envelope_report",
     ),
@@ -1495,6 +1499,28 @@ def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, 
         ):
             if key in diagnosis_dict:
                 parts.append(f"{key}={diagnosis_dict.get(key)}")
+        summary = "; ".join(parts)
+        return outcome, summary if summary.endswith(".") else summary + "."
+
+    if model == "attention_separated_cluster_perf_rtl_equivalence_v1":
+        outcome = str(
+            evidence_payload.get("decision") or "attention_separated_cluster_equivalence_recorded"
+        )
+        parts = [
+            f"Separated attention perf/RTL equivalence recorded from {evidence_ref}: decision={outcome}",
+        ]
+        for key in (
+            "equivalence_pass",
+            "semantic_profile",
+            "ratios",
+            "command_count",
+            "scenarios",
+            "gates",
+            "remaining_abstractions",
+            "next_step",
+        ):
+            if key in evidence_payload:
+                parts.append(f"{key}={evidence_payload.get(key)}")
         summary = "; ".join(parts)
         return outcome, summary if summary.endswith(".") else summary + "."
 

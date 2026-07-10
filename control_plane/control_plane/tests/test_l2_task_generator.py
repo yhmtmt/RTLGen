@@ -7262,6 +7262,49 @@ def test_generate_l2_campaign_task_adds_attention_score32_separated_compute_reco
             }
 
 
+def test_generate_l2_campaign_task_adds_attention_separated_cluster_equivalence() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id="l2_decoder_attention_separated_cluster_equivalence_llama7b_v1",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    abstraction_layer="decoder_attention_separated_cluster_equivalence",
+                    evaluation_mode="equivalence_gate",
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            commands = work_item.command_manifest
+            assert [command["name"] for command in commands] == [
+                "probe_attention_separated_cluster_equivalence",
+                "validate_runs",
+            ]
+            assert "probe_attention_separated_equivalence.py" in commands[0]["run"]
+            assert "--ratios 1:1,2:1,4:1,8:1,4:2,8:2" in commands[0]["run"]
+            decoder_inputs = work_item.input_manifest["decoder_contract"]
+            assert decoder_inputs["attention_separated_cluster_equivalence_out"].endswith(
+                "decoder_attention_separated_cluster_equivalence__"
+                "l2_decoder_attention_separated_cluster_equivalence_llama7b_v1.json"
+            )
+            assert work_item.expected_outputs == [
+                decoder_inputs["attention_separated_cluster_equivalence_out"],
+                decoder_inputs["attention_separated_cluster_equivalence_report"],
+            ]
+
+
 def test_generate_l2_campaign_task_adds_attention_score32_exp_lut_sram_hierarchy_envelope_evidence() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"

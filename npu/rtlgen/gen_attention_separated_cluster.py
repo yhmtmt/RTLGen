@@ -87,7 +87,9 @@ def _validate(cfg: dict[str, Any]) -> dict[str, Any]:
     return cluster
 
 
-def _producer_module(*, module_name: str, row_elems: int, head_dim: int, value_dim: int, score_bits: int) -> str:
+def _producer_module(
+    *, module_name: str, row_elems: int, head_dim: int, value_dim: int, score_bits: int, score_frac_bits: int
+) -> str:
     score_width = row_elems * score_bits
     value_matrix_width = row_elems * value_dim * 8
     return f"""module {module_name} #(parameter integer PRODUCER_INDEX = 0) (
@@ -109,20 +111,18 @@ def _producer_module(*, module_name: str, row_elems: int, head_dim: int, value_d
   function automatic signed [7:0] derive_q8;
     input [31:0] seed;
     input [15:0] command_id;
-    input integer producer_idx;
     input integer tag;
     input integer lane_a;
     input integer lane_b;
     reg [31:0] mixed;
     begin
       mixed = seed ^ {{16'h0, command_id}};
-      mixed = mixed ^ (producer_idx * 32'h45d9_f3b1);
       mixed = mixed ^ (tag * 32'h119d_e1f3);
       mixed = mixed ^ (lane_a * 32'h344b_5409);
       mixed = mixed ^ (lane_b * 32'h27d4_eb2d);
       mixed = mixed ^ (mixed >> 16);
       mixed = mixed ^ (mixed >> 8);
-      derive_q8 = mixed[7:0];
+      derive_q8 = {{{{4{{mixed[3]}}}}, mixed[3:0]}};
     end
   endfunction
 
@@ -140,12 +140,12 @@ def _producer_module(*, module_name: str, row_elems: int, head_dim: int, value_d
           score_accum = 32'sd0;
           for (dim_idx = 0; dim_idx < {head_dim}; dim_idx = dim_idx + 1) begin
             score_accum = score_accum
-                + $signed(derive_q8(load_seed, load_command_id, PRODUCER_INDEX, 17, 0, dim_idx))
-                * $signed(derive_q8(load_seed, load_command_id, PRODUCER_INDEX, 51, row_idx, dim_idx));
+                + $signed(derive_q8(load_seed, load_command_id, 17, 0, dim_idx))
+                * $signed(derive_q8(load_seed, load_command_id, 51, row_idx, dim_idx));
             payload_value_matrix[(((row_idx * {value_dim}) + dim_idx) * 8) +: 8]
-                <= derive_q8(load_seed, load_command_id, PRODUCER_INDEX, 85, row_idx, dim_idx);
+                <= derive_q8(load_seed, load_command_id, 85, row_idx, dim_idx);
           end
-          payload_score_row[(row_idx * {score_bits}) +: {score_bits}] <= score_accum;
+          payload_score_row[(row_idx * {score_bits}) +: {score_bits}] <= score_accum <<< {score_frac_bits};
         end
       end
       if (pop_valid) begin
@@ -164,15 +164,18 @@ def _consumer_module(
     value_dim: int,
     score_bits: int,
     weight_bits: int,
+    input_frac_bits: int,
     exp_bucket_shift: int,
 ) -> str:
     score_width = row_elems * score_bits
     weight_width = row_elems * weight_bits
     value_matrix_width = row_elems * value_dim * 8
     result_value_width = value_dim * 40
+    max_bucket = 8 << (input_frac_bits - exp_bucket_shift)
+    bucket_scale = float(1 << exp_bucket_shift) / float(1 << input_frac_bits)
     exp_entries = [
-        (bucket, max(1, int(round(math.exp(-float(bucket)) * ((1 << weight_bits) - 1)))))
-        for bucket in range(8)
+        (bucket, max(1, int(math.exp(-(bucket * bucket_scale)) * ((1 << weight_bits) - 1) + 0.5)))
+        for bucket in range(max_bucket + 1)
     ]
     exp_cases = "\n".join(
         f"      32'd{bucket}: exp_lut = 16'd{value};" for bucket, value in exp_entries
@@ -198,7 +201,7 @@ def _consumer_module(
   reg signed [31:0] score_lane;
   reg signed [31:0] delta_score;
   reg [31:0] exp_bucket;
-  reg [31:0] weight_numer;
+  reg [33:0] weight_numer;
   reg [15:0] exp_weight [0:{row_elems - 1}];
   reg [15:0] weight_lane [0:{row_elems - 1}];
   reg signed [7:0] value_lane;
@@ -243,13 +246,17 @@ def _consumer_module(
             delta_score = 32'sd0;
           end
           exp_bucket = delta_score >> {exp_bucket_shift};
+          if (exp_bucket > 32'd{max_bucket}) begin
+            exp_bucket = 32'd{max_bucket};
+          end
           exp_weight[row_idx] = exp_lut(exp_bucket);
           sum_exp = sum_exp + exp_weight[row_idx];
         end
 
         for (row_idx = 0; row_idx < {row_elems}; row_idx = row_idx + 1) begin
           if (sum_exp != 0) begin
-            weight_numer = (exp_weight[row_idx] * 16'd{(1 << weight_bits) - 1}) + (sum_exp >> 1);
+            weight_numer = ({{1'b0, exp_weight[row_idx]}} * 17'd{(1 << weight_bits) - 1})
+                + (sum_exp >> 1);
             weight_lane[row_idx] = weight_numer / sum_exp;
           end else begin
             weight_lane[row_idx] = 16'd0;
@@ -733,6 +740,7 @@ def _write_top(*, cfg: dict[str, Any], comp: dict[str, Any], out_path: Path) -> 
         head_dim=int(comp["head_dim"]),
         value_dim=int(comp["value_dim"]),
         score_bits=int(comp["score_bits"]),
+        score_frac_bits=int(comp["exp_bucket_shift"]),
     )
     consumer_module = _consumer_module(
         module_name=f"{top_name}_consumer",
@@ -740,6 +748,7 @@ def _write_top(*, cfg: dict[str, Any], comp: dict[str, Any], out_path: Path) -> 
         value_dim=int(comp["value_dim"]),
         score_bits=int(comp["score_bits"]),
         weight_bits=int(comp["weight_bits"]),
+        input_frac_bits=int(comp["input_frac_bits"]),
         exp_bucket_shift=int(comp["exp_bucket_shift"]),
     )
     top_module = _top_module(top_name=top_name, params=comp)
@@ -786,9 +795,14 @@ def _write_top(*, cfg: dict[str, Any], comp: dict[str, Any], out_path: Path) -> 
             "top": ["result_command_id", "result_score_row", "result_weights", "result_value"],
         },
         "score_contract": {
-            "representation": "8 signed score lanes, each lane is an exact sum of 8 signed q8*k8 products",
+            "representation": "8 signed Q20 score lanes, each lane is an exact sum of 8 signed q8*k8 products",
             "softmax": "bucketed exp LUT with exact normalized divide",
             "value_accumulation": "8 signed q8 value dimensions accumulated with unsigned q16 weights into signed 40-bit sums",
+        },
+        "ppa_stimulus": {
+            "mode": "seeded_internal_input_expansion",
+            "purpose": "keep all QK and V lanes observable through a narrow registered macro boundary",
+            "cost_caveat": "small seed-mix XOR logic is harness overhead and must be reported separately from MAC/softmax/value scaling",
         },
     }
     (out_path / "attention_separated_cluster_manifest.json").write_text(

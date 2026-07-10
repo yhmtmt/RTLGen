@@ -172,6 +172,28 @@ Do not use relaxed boundary acceptance for ordinary winner-selection sweeps.
 Those should continue to require at least one `status=ok` row for each expected
 metrics file.
 
+## Semantic Equivalence And Proxy Rule
+
+Do not treat generator syntax checks, a folded result hash, or agreement on
+independent single operations as proof of composed datapath equivalence.
+
+For a producer-consumer datapath claim, the evidence must cover:
+
+- the producer's complete architectural output, not an XOR/fold proxy
+- every stateful intermediate consumed by the next stage
+- the final architectural output vector
+- sequential visibility: a consumer cannot observe data before producer
+  completion
+- ready/valid ordering, backpressure, loss, and duplication behavior
+- the same precision profile and rounding rules on both perf and RTL sides
+
+A hash is acceptable as secondary compression after exact stage traces have
+established the contract. Hash-only evidence is not sufficient for first
+promotion of a composed path. PPA stimulus generation must also be separated
+from the claimed datapath cost, or its hardware overhead must be identified
+explicitly; expensive pseudo-random or modulo logic is not a valid substitute
+for ordinary input registers.
+
 ## Merge Policy
 
 Evaluation PR merge rule:
