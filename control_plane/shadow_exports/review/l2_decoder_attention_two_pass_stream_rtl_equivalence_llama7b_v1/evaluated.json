@@ -1,0 +1,104 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "decoder_contract": {
+        "attention_two_pass_stream_equivalence_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_two_pass_stream_equivalence__l2_decoder_attention_two_pass_stream_rtl_equivalence_llama7b_v1.json",
+        "attention_two_pass_stream_equivalence_scope": "Prove the external score-SRAM write/read boundary, KV replay stream, zero-tail score32 accumulation, divider folding at 1/2/4/8 lanes per cycle, and independent memory/result backpressure for 4- and 8-block semantic contexts.",
+        "attention_two_pass_stream_equivalence_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_two_pass_stream_equivalence__l2_decoder_attention_two_pass_stream_rtl_equivalence_llama7b_v1.md"
+      }
+    },
+    "commands": [
+      {
+        "run": "python3 npu/eval/probe_attention_two_pass_stream_equivalence.py --block-counts 4,8 --div-lanes 1,2,4,8 --out runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_two_pass_stream_equivalence__l2_decoder_attention_two_pass_stream_rtl_equivalence_llama7b_v1.json --out-md runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_two_pass_stream_equivalence__l2_decoder_attention_two_pass_stream_rtl_equivalence_llama7b_v1.md",
+        "name": "probe_attention_two_pass_stream_equivalence"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate_runs"
+      }
+    ],
+    "objective": "Prove exact score-SRAM and KV-replay stream behavior for divider lanes 1,2,4,8 under independent stalls.",
+    "acceptance": [
+      "Write all declared decoder evidence artifacts",
+      "Keep evidence artifact paths repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "source_mode": "src_verilog",
+    "expected_outputs": [
+      "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_two_pass_stream_equivalence__l2_decoder_attention_two_pass_stream_rtl_equivalence_llama7b_v1.json",
+      "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_two_pass_stream_equivalence__l2_decoder_attention_two_pass_stream_rtl_equivalence_llama7b_v1.md"
+    ]
+  },
+  "layer": "layer2",
+  "state": "evaluated",
+  "title": "Prove external-memory two-pass attention RTL equivalence",
+  "result": {
+    "branch": "eval/l2_decoder_attention_two_pass_stream_rtl_equivalence_llama7b_v1/s20260710t130208z",
+    "completed_utc": "2026-07-10T13:02:07.378977Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "b7c2d9c80c1c",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260710t130208z][host:b7c2d9c80c1c][item:l2_decoder_attention_two_pass_stream_rtl_equivalence_llama7b_v1]",
+    "metrics_rows": [],
+    "metrics_exempt_reason": "evidence_only_decoder_evidence",
+    "queue_item_id": "l2_decoder_attention_two_pass_stream_rtl_equivalence_llama7b_v1",
+    "session_id": "s20260710t130208z",
+    "status": "ok",
+    "summary": "2/2 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l2_decoder_attention_two_pass_stream_rtl_equivalence_llama7b_v1/s20260710t130208z",
+    "pr_title": "eval: run prove external-memory two-pass attention rtl equivalence",
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Include metrics row references in result.metrics_rows",
+      "Keep committed result_path fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260710t130208z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l2_decoder_attention_two_pass_stream_rtl_equivalence_llama7b_v1"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l2_decoder_attention_two_pass_stream_rtl_equivalence_llama7b_v1",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 1,
+  "created_utc": "2026-07-10T13:01:44.815459Z",
+  "requested_by": "developer_agent",
+  "developer_loop": {
+    "comparison": {
+      "role": "memory_interface_equivalence_gate",
+      "paired_baseline_item_id": ""
+    },
+    "evaluation": {
+      "mode": "equivalence_gate",
+      "expected_reason": "Physical measurement is ineligible until score-SRAM and KV replay handshakes preserve the selected arithmetic under independent stalls.",
+      "expected_direction": "prove_two_pass_stream_equivalence"
+    },
+    "abstraction": {
+      "layer": "decoder_attention_two_pass_stream_equivalence"
+    },
+    "proposal_id": "prop_decoder_attention_hierarchical_softmax_frontier_llama7b_v1",
+    "dependencies": {
+      "item_ids": [
+        "l2_decoder_attention_two_pass_global_max_rtl_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    },
+    "proposal_path": "docs/proposals/prop_decoder_attention_hierarchical_softmax_frontier_llama7b_v1/proposal.json"
+  },
+  "source_requirement": {
+    "repo": "",
+    "reason": "evaluator runtime must contain the queued job source commit",
+    "version": 1,
+    "required_ref": "origin/master",
+    "required_sha": "638989e3b2353bf1fe41c55c51fdc25246359cf2",
+    "requires_daemon_restart": true
+  }
+}
