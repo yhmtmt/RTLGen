@@ -1,0 +1,541 @@
+{
+  "assumptions": [
+    "Rows are ranked by explicit metrics from merged evidence; no new PPA is synthesized in this audit.",
+    "The score32 row is quality-backed by the bounded generation-quality gate and measured through wrapper, command-control, SRAM-envelope, deterministic HBM replay, and measured Nangate45 RTL PPA recost for replay-controller area, active energy, and control timing.",
+    "The old mixed-int8 energy row is retained only as measured historical evidence because the quality-backed frontier invalidated its low-precision score/softmax profile.",
+    "The older integrated-energy row is retained as planning-only because measured-compute closure made its abstract compute target infeasible."
+  ],
+  "decision": "score32_integrated_frontier_best_precision_safe_throughput",
+  "diagnosis": {
+    "best_energy_candidate": "physical_hbm_gqa8_kv8_service_frontier",
+    "best_latency_candidate": "physical_hbm_gqa8_kv8_service_frontier",
+    "best_precision_safe_candidate": "score32_exp_lut_schedule_wrapper_hbm_controller_replay_best",
+    "best_precision_safe_energy_candidate": "die1200_dense_gemm_16x8_k1_p1_mac132736_lat1872.29_hbm0.465654_tt512",
+    "current_recommended_candidate": "score32_exp_lut_schedule_wrapper_hbm_controller_replay_best",
+    "decision": "score32_integrated_frontier_best_precision_safe_throughput",
+    "excluded_fastest_candidate": "physical_hbm_gqa8_kv8_service_frontier",
+    "mixed_int8_quality_status": "quality_invalidated_low_precision_score_softmax",
+    "remaining_abstractions": [
+      "HBM replay controller area, active energy, and control timing are backed by measured Nangate45 RTL PPA.",
+      "does not include vendor HBM current signoff",
+      "profile_scaled_noc_sram_energy",
+      "source_backed_aggregate_hbm_energy_not_vendor_current_signoff"
+    ],
+    "score32_compute_plus_controller_area_mm2": 296.8263662009,
+    "score32_controller_area_mm2": 0.0289102009,
+    "score32_controller_clock_ok": true,
+    "score32_controller_energy_mj_per_token": 0.001396754106,
+    "score32_die_area_mm2": 800.0,
+    "score32_latency_us": 12814.257853,
+    "score32_quality_status": "mixed_int8_generation_quality_pass",
+    "score32_token_throughput_per_s": 78.038073798,
+    "score32_total_energy_mj_per_token": 467.191305313106,
+    "score32_vs_measured_fp16_energy_ratio": 5.720887555,
+    "score32_vs_measured_fp16_throughput_ratio": 5.661198874
+  },
+  "energy_rank": [
+    {
+      "abstraction_status": "abstract_compute_target_infeasible_after_measured_compute_closure",
+      "candidate_id": "physical_hbm_gqa8_kv8_service_frontier",
+      "compute_area_mm2": 0.0,
+      "compute_energy_mj_per_token": 0.0,
+      "die_area_mm2": 100.0,
+      "energy_mj_per_token": 8.14357724928343,
+      "family": "abstract_integrated_gqa8_kv8",
+      "hbm_energy_mj_per_token": 0.0,
+      "latency_us": 30.944,
+      "macs_per_cycle": 524288.0,
+      "precision_status": "planning_only_native_gqa8_kv8",
+      "promotable": false,
+      "quality_backed": false,
+      "remaining_abstractions": [
+        "abstract_compute_capacity",
+        "parameterized_energy"
+      ],
+      "source_artifact": "integrated_energy_closure_r2",
+      "token_throughput_per_s": 32316.442605997934
+    },
+    {
+      "abstraction_status": "measured_compute_with_source_backed_hbm_energy",
+      "candidate_id": "die1200_dense_gemm_16x8_k1_p1_mac132736_lat1872.29_hbm0.465654_tt512",
+      "compute_area_mm2": 479.60213,
+      "compute_energy_mj_per_token": 18.095420734855,
+      "die_area_mm2": 1200.0,
+      "energy_mj_per_token": 81.66413005453946,
+      "family": "measured_exact_fp16_gqa8_kv8",
+      "hbm_energy_mj_per_token": 63.520046663430314,
+      "latency_us": 72544.06213406654,
+      "macs_per_cycle": 132736.0,
+      "precision_status": "conservative_native_gqa8_kv8",
+      "promotable": true,
+      "quality_backed": true,
+      "remaining_abstractions": [
+        "source_backed_aggregate_hbm_energy_not_vendor_current_signoff",
+        "profile_scaled_noc_sram_energy"
+      ],
+      "source_artifact": "measured_compute_energy_closure",
+      "token_throughput_per_s": 13.784725731954872
+    },
+    {
+      "abstraction_status": "measured_int8_compute_quality_invalidated",
+      "candidate_id": "die800_dense_gemm_int8_16x8_k1_p1_rep855_lat1575.37_hbm0.983398_tt1024",
+      "compute_area_mm2": 179.09856,
+      "compute_energy_mj_per_token": 1.5372362316073815,
+      "die_area_mm2": 800.0,
+      "energy_mj_per_token": 135.75588466251537,
+      "family": "mixed_int8_compute",
+      "hbm_energy_mj_per_token": 134.14461348516411,
+      "latency_us": 1575.373891,
+      "macs_per_cycle": 109440.0,
+      "precision_status": "quality_invalidated_low_precision_score_softmax",
+      "promotable": false,
+      "quality_backed": false,
+      "quality_invalidation": {
+        "candidate_id": "die800_dense_gemm_int8_16x8_k1_p1_rep855_lat1575.37_hbm0.983398_tt1024",
+        "precision_profile": "q8_k8_v6_a24_s8_w8_recip_lut_q10_int8_compute",
+        "reason": "energy row uses score/softmax quantization or reciprocal-LUT softmax evidence, while broad native quality only passed qkv8_float_exact",
+        "source_decision": "mixed_int8_quality_backed_frontier_recost_required",
+        "source_model": "llm_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1"
+      },
+      "remaining_abstractions": [
+        "quality_invalidated_by_broad_native_attention_shadow",
+        "energy row uses score/softmax quantization or reciprocal-LUT softmax evidence, while broad native quality only passed qkv8_float_exact"
+      ],
+      "source_artifact": "mixed_int8_energy_closure_r2",
+      "token_throughput_per_s": 634.7699461778119
+    },
+    {
+      "abstraction_status": "measured_schedule_wrapper_sram_envelope_hbm_controller_replay_ppa_recost",
+      "candidate_id": "score32_exp_lut_schedule_wrapper_hbm_controller_replay_best",
+      "compute_area_mm2": 296.8263662009,
+      "compute_energy_mj_per_token": 332.910690072106,
+      "die_area_mm2": 800.0,
+      "energy_mj_per_token": 467.191305313106,
+      "family": "score32_exp_lut_div",
+      "hbm_energy_mj_per_token": 134.280615241,
+      "latency_us": 12814.257853,
+      "macs_per_cycle": 109568.0,
+      "precision_status": "mixed_int8_generation_quality_pass",
+      "promotable": true,
+      "quality": {
+        "candidate_id": "score32_exp_lut_div",
+        "candidate_probability_assigned_to_reference_token_mean": 0.44889021134685153,
+        "free_running_match_rate": 0.890625,
+        "quality_backed": true,
+        "status": "mixed_int8_generation_quality_pass",
+        "teacher_forced_nll_delta_mean": 0.0008945953623444368
+      },
+      "quality_backed": true,
+      "remaining_abstractions": [
+        "HBM replay controller area, active energy, and control timing are backed by measured Nangate45 RTL PPA.",
+        "does not include vendor HBM current signoff"
+      ],
+      "score32_hbm_controller_replay_ppa": {
+        "artifact_item_id": "l1_decoder_attention_hbm_replay_controller_ppa_v2",
+        "controller_area_mm2": 0.0289102009,
+        "controller_clock_margin_ns": 3.7724,
+        "controller_clock_ok": true,
+        "controller_energy_mj_per_token": 0.001396754106,
+        "controller_power_mw": 0.109,
+        "critical_path_ns_best": 2.2087,
+        "die_area_best": 28910.2009,
+        "metrics_csv": "runs/designs/npu_blocks/attention_hbm_replay_controller_c4/metrics.csv",
+        "schedule_clock_ns": 5.9811,
+        "source": "proposals",
+        "total_power_mw_best": 0.109
+      },
+      "source_artifact": "score32_schedule_wrapper_hbm_controller_replay",
+      "token_throughput_per_s": 78.038073798
+    }
+  ],
+  "inputs": {
+    "integrated_energy_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_integrated_energy_closure__l2_decoder_attention_integrated_energy_closure_llama7b_v1_r2.json",
+    "measured_compute_energy_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_measured_compute_energy_closure__l2_decoder_attention_measured_compute_energy_closure_llama7b_v1.json",
+    "mixed_int8_energy_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_energy_closure__l2_decoder_attention_mixed_int8_energy_closure_llama7b_v1_r2.json",
+    "mixed_int8_quality_backed_frontier_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_quality_backed_frontier__l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1.json",
+    "score32_hbm_controller_replay_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_hbm_controller_replay__l2_decoder_attention_score32_hbm_controller_replay_llama7b_v1.json",
+    "score32_hbm_controller_replay_ppa_json": "control_plane/shadow_exports/l1_promotions/l1_decoder_attention_hbm_replay_controller_ppa_v2.json",
+    "score32_hbm_controller_replay_ppa_metrics": {
+      "artifact_item_id": "l1_decoder_attention_hbm_replay_controller_ppa_v2",
+      "critical_path_ns_best": 2.2087,
+      "die_area_best": 28910.2009,
+      "metrics_csv": "runs/designs/npu_blocks/attention_hbm_replay_controller_c4/metrics.csv",
+      "source": "proposals",
+      "total_power_mw_best": 0.109
+    },
+    "score32_hbm_dram_service_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exp_lut_hbm_dram_service_closure__l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1.json",
+    "score32_measured_command_control_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_measured_command_control_llama7b_v1.json",
+    "score32_physical_feasibility_json": null,
+    "score32_quality_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality__l2_decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality_llama7b_v1.json"
+  },
+  "latency_rank": [
+    {
+      "abstraction_status": "abstract_compute_target_infeasible_after_measured_compute_closure",
+      "candidate_id": "physical_hbm_gqa8_kv8_service_frontier",
+      "compute_area_mm2": 0.0,
+      "compute_energy_mj_per_token": 0.0,
+      "die_area_mm2": 100.0,
+      "energy_mj_per_token": 8.14357724928343,
+      "family": "abstract_integrated_gqa8_kv8",
+      "hbm_energy_mj_per_token": 0.0,
+      "latency_us": 30.944,
+      "macs_per_cycle": 524288.0,
+      "precision_status": "planning_only_native_gqa8_kv8",
+      "promotable": false,
+      "quality_backed": false,
+      "remaining_abstractions": [
+        "abstract_compute_capacity",
+        "parameterized_energy"
+      ],
+      "source_artifact": "integrated_energy_closure_r2",
+      "token_throughput_per_s": 32316.442605997934
+    },
+    {
+      "abstraction_status": "measured_int8_compute_quality_invalidated",
+      "candidate_id": "die800_dense_gemm_int8_16x8_k1_p1_rep855_lat1575.37_hbm0.983398_tt1024",
+      "compute_area_mm2": 179.09856,
+      "compute_energy_mj_per_token": 1.5372362316073815,
+      "die_area_mm2": 800.0,
+      "energy_mj_per_token": 135.75588466251537,
+      "family": "mixed_int8_compute",
+      "hbm_energy_mj_per_token": 134.14461348516411,
+      "latency_us": 1575.373891,
+      "macs_per_cycle": 109440.0,
+      "precision_status": "quality_invalidated_low_precision_score_softmax",
+      "promotable": false,
+      "quality_backed": false,
+      "quality_invalidation": {
+        "candidate_id": "die800_dense_gemm_int8_16x8_k1_p1_rep855_lat1575.37_hbm0.983398_tt1024",
+        "precision_profile": "q8_k8_v6_a24_s8_w8_recip_lut_q10_int8_compute",
+        "reason": "energy row uses score/softmax quantization or reciprocal-LUT softmax evidence, while broad native quality only passed qkv8_float_exact",
+        "source_decision": "mixed_int8_quality_backed_frontier_recost_required",
+        "source_model": "llm_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1"
+      },
+      "remaining_abstractions": [
+        "quality_invalidated_by_broad_native_attention_shadow",
+        "energy row uses score/softmax quantization or reciprocal-LUT softmax evidence, while broad native quality only passed qkv8_float_exact"
+      ],
+      "source_artifact": "mixed_int8_energy_closure_r2",
+      "token_throughput_per_s": 634.7699461778119
+    },
+    {
+      "abstraction_status": "measured_schedule_wrapper_sram_envelope_hbm_controller_replay_ppa_recost",
+      "candidate_id": "score32_exp_lut_schedule_wrapper_hbm_controller_replay_best",
+      "compute_area_mm2": 296.8263662009,
+      "compute_energy_mj_per_token": 332.910690072106,
+      "die_area_mm2": 800.0,
+      "energy_mj_per_token": 467.191305313106,
+      "family": "score32_exp_lut_div",
+      "hbm_energy_mj_per_token": 134.280615241,
+      "latency_us": 12814.257853,
+      "macs_per_cycle": 109568.0,
+      "precision_status": "mixed_int8_generation_quality_pass",
+      "promotable": true,
+      "quality": {
+        "candidate_id": "score32_exp_lut_div",
+        "candidate_probability_assigned_to_reference_token_mean": 0.44889021134685153,
+        "free_running_match_rate": 0.890625,
+        "quality_backed": true,
+        "status": "mixed_int8_generation_quality_pass",
+        "teacher_forced_nll_delta_mean": 0.0008945953623444368
+      },
+      "quality_backed": true,
+      "remaining_abstractions": [
+        "HBM replay controller area, active energy, and control timing are backed by measured Nangate45 RTL PPA.",
+        "does not include vendor HBM current signoff"
+      ],
+      "score32_hbm_controller_replay_ppa": {
+        "artifact_item_id": "l1_decoder_attention_hbm_replay_controller_ppa_v2",
+        "controller_area_mm2": 0.0289102009,
+        "controller_clock_margin_ns": 3.7724,
+        "controller_clock_ok": true,
+        "controller_energy_mj_per_token": 0.001396754106,
+        "controller_power_mw": 0.109,
+        "critical_path_ns_best": 2.2087,
+        "die_area_best": 28910.2009,
+        "metrics_csv": "runs/designs/npu_blocks/attention_hbm_replay_controller_c4/metrics.csv",
+        "schedule_clock_ns": 5.9811,
+        "source": "proposals",
+        "total_power_mw_best": 0.109
+      },
+      "source_artifact": "score32_schedule_wrapper_hbm_controller_replay",
+      "token_throughput_per_s": 78.038073798
+    },
+    {
+      "abstraction_status": "measured_compute_with_source_backed_hbm_energy",
+      "candidate_id": "die1200_dense_gemm_16x8_k1_p1_mac132736_lat1872.29_hbm0.465654_tt512",
+      "compute_area_mm2": 479.60213,
+      "compute_energy_mj_per_token": 18.095420734855,
+      "die_area_mm2": 1200.0,
+      "energy_mj_per_token": 81.66413005453946,
+      "family": "measured_exact_fp16_gqa8_kv8",
+      "hbm_energy_mj_per_token": 63.520046663430314,
+      "latency_us": 72544.06213406654,
+      "macs_per_cycle": 132736.0,
+      "precision_status": "conservative_native_gqa8_kv8",
+      "promotable": true,
+      "quality_backed": true,
+      "remaining_abstractions": [
+        "source_backed_aggregate_hbm_energy_not_vendor_current_signoff",
+        "profile_scaled_noc_sram_energy"
+      ],
+      "source_artifact": "measured_compute_energy_closure",
+      "token_throughput_per_s": 13.784725731954872
+    }
+  ],
+  "model": "llm_decoder_attention_score32_integrated_frontier_ranking_v1",
+  "next_step": {
+    "mixed_int8_old_candidate_quality_invalidated": true,
+    "mixed_int8_requires_quality_closure": false,
+    "recommended_next_step": "Use score32 as the current precision-safe throughput frontier and measured exact-FP16 as the energy reference; next reduce score32 compute energy or build a quality-backed q8/k8/v8 path with high-precision score/softmax.",
+    "score32_energy_reduction_required_for_energy_best": true
+  },
+  "promotable_energy_rank": [
+    {
+      "abstraction_status": "measured_compute_with_source_backed_hbm_energy",
+      "candidate_id": "die1200_dense_gemm_16x8_k1_p1_mac132736_lat1872.29_hbm0.465654_tt512",
+      "compute_area_mm2": 479.60213,
+      "compute_energy_mj_per_token": 18.095420734855,
+      "die_area_mm2": 1200.0,
+      "energy_mj_per_token": 81.66413005453946,
+      "family": "measured_exact_fp16_gqa8_kv8",
+      "hbm_energy_mj_per_token": 63.520046663430314,
+      "latency_us": 72544.06213406654,
+      "macs_per_cycle": 132736.0,
+      "precision_status": "conservative_native_gqa8_kv8",
+      "promotable": true,
+      "quality_backed": true,
+      "remaining_abstractions": [
+        "source_backed_aggregate_hbm_energy_not_vendor_current_signoff",
+        "profile_scaled_noc_sram_energy"
+      ],
+      "source_artifact": "measured_compute_energy_closure",
+      "token_throughput_per_s": 13.784725731954872
+    },
+    {
+      "abstraction_status": "measured_schedule_wrapper_sram_envelope_hbm_controller_replay_ppa_recost",
+      "candidate_id": "score32_exp_lut_schedule_wrapper_hbm_controller_replay_best",
+      "compute_area_mm2": 296.8263662009,
+      "compute_energy_mj_per_token": 332.910690072106,
+      "die_area_mm2": 800.0,
+      "energy_mj_per_token": 467.191305313106,
+      "family": "score32_exp_lut_div",
+      "hbm_energy_mj_per_token": 134.280615241,
+      "latency_us": 12814.257853,
+      "macs_per_cycle": 109568.0,
+      "precision_status": "mixed_int8_generation_quality_pass",
+      "promotable": true,
+      "quality": {
+        "candidate_id": "score32_exp_lut_div",
+        "candidate_probability_assigned_to_reference_token_mean": 0.44889021134685153,
+        "free_running_match_rate": 0.890625,
+        "quality_backed": true,
+        "status": "mixed_int8_generation_quality_pass",
+        "teacher_forced_nll_delta_mean": 0.0008945953623444368
+      },
+      "quality_backed": true,
+      "remaining_abstractions": [
+        "HBM replay controller area, active energy, and control timing are backed by measured Nangate45 RTL PPA.",
+        "does not include vendor HBM current signoff"
+      ],
+      "score32_hbm_controller_replay_ppa": {
+        "artifact_item_id": "l1_decoder_attention_hbm_replay_controller_ppa_v2",
+        "controller_area_mm2": 0.0289102009,
+        "controller_clock_margin_ns": 3.7724,
+        "controller_clock_ok": true,
+        "controller_energy_mj_per_token": 0.001396754106,
+        "controller_power_mw": 0.109,
+        "critical_path_ns_best": 2.2087,
+        "die_area_best": 28910.2009,
+        "metrics_csv": "runs/designs/npu_blocks/attention_hbm_replay_controller_c4/metrics.csv",
+        "schedule_clock_ns": 5.9811,
+        "source": "proposals",
+        "total_power_mw_best": 0.109
+      },
+      "source_artifact": "score32_schedule_wrapper_hbm_controller_replay",
+      "token_throughput_per_s": 78.038073798
+    }
+  ],
+  "promotable_latency_rank": [
+    {
+      "abstraction_status": "measured_schedule_wrapper_sram_envelope_hbm_controller_replay_ppa_recost",
+      "candidate_id": "score32_exp_lut_schedule_wrapper_hbm_controller_replay_best",
+      "compute_area_mm2": 296.8263662009,
+      "compute_energy_mj_per_token": 332.910690072106,
+      "die_area_mm2": 800.0,
+      "energy_mj_per_token": 467.191305313106,
+      "family": "score32_exp_lut_div",
+      "hbm_energy_mj_per_token": 134.280615241,
+      "latency_us": 12814.257853,
+      "macs_per_cycle": 109568.0,
+      "precision_status": "mixed_int8_generation_quality_pass",
+      "promotable": true,
+      "quality": {
+        "candidate_id": "score32_exp_lut_div",
+        "candidate_probability_assigned_to_reference_token_mean": 0.44889021134685153,
+        "free_running_match_rate": 0.890625,
+        "quality_backed": true,
+        "status": "mixed_int8_generation_quality_pass",
+        "teacher_forced_nll_delta_mean": 0.0008945953623444368
+      },
+      "quality_backed": true,
+      "remaining_abstractions": [
+        "HBM replay controller area, active energy, and control timing are backed by measured Nangate45 RTL PPA.",
+        "does not include vendor HBM current signoff"
+      ],
+      "score32_hbm_controller_replay_ppa": {
+        "artifact_item_id": "l1_decoder_attention_hbm_replay_controller_ppa_v2",
+        "controller_area_mm2": 0.0289102009,
+        "controller_clock_margin_ns": 3.7724,
+        "controller_clock_ok": true,
+        "controller_energy_mj_per_token": 0.001396754106,
+        "controller_power_mw": 0.109,
+        "critical_path_ns_best": 2.2087,
+        "die_area_best": 28910.2009,
+        "metrics_csv": "runs/designs/npu_blocks/attention_hbm_replay_controller_c4/metrics.csv",
+        "schedule_clock_ns": 5.9811,
+        "source": "proposals",
+        "total_power_mw_best": 0.109
+      },
+      "source_artifact": "score32_schedule_wrapper_hbm_controller_replay",
+      "token_throughput_per_s": 78.038073798
+    },
+    {
+      "abstraction_status": "measured_compute_with_source_backed_hbm_energy",
+      "candidate_id": "die1200_dense_gemm_16x8_k1_p1_mac132736_lat1872.29_hbm0.465654_tt512",
+      "compute_area_mm2": 479.60213,
+      "compute_energy_mj_per_token": 18.095420734855,
+      "die_area_mm2": 1200.0,
+      "energy_mj_per_token": 81.66413005453946,
+      "family": "measured_exact_fp16_gqa8_kv8",
+      "hbm_energy_mj_per_token": 63.520046663430314,
+      "latency_us": 72544.06213406654,
+      "macs_per_cycle": 132736.0,
+      "precision_status": "conservative_native_gqa8_kv8",
+      "promotable": true,
+      "quality_backed": true,
+      "remaining_abstractions": [
+        "source_backed_aggregate_hbm_energy_not_vendor_current_signoff",
+        "profile_scaled_noc_sram_energy"
+      ],
+      "source_artifact": "measured_compute_energy_closure",
+      "token_throughput_per_s": 13.784725731954872
+    }
+  ],
+  "rows": [
+    {
+      "abstraction_status": "measured_schedule_wrapper_sram_envelope_hbm_controller_replay_ppa_recost",
+      "candidate_id": "score32_exp_lut_schedule_wrapper_hbm_controller_replay_best",
+      "compute_area_mm2": 296.8263662009,
+      "compute_energy_mj_per_token": 332.910690072106,
+      "die_area_mm2": 800.0,
+      "energy_mj_per_token": 467.191305313106,
+      "family": "score32_exp_lut_div",
+      "hbm_energy_mj_per_token": 134.280615241,
+      "latency_us": 12814.257853,
+      "macs_per_cycle": 109568.0,
+      "precision_status": "mixed_int8_generation_quality_pass",
+      "promotable": true,
+      "quality": {
+        "candidate_id": "score32_exp_lut_div",
+        "candidate_probability_assigned_to_reference_token_mean": 0.44889021134685153,
+        "free_running_match_rate": 0.890625,
+        "quality_backed": true,
+        "status": "mixed_int8_generation_quality_pass",
+        "teacher_forced_nll_delta_mean": 0.0008945953623444368
+      },
+      "quality_backed": true,
+      "remaining_abstractions": [
+        "HBM replay controller area, active energy, and control timing are backed by measured Nangate45 RTL PPA.",
+        "does not include vendor HBM current signoff"
+      ],
+      "score32_hbm_controller_replay_ppa": {
+        "artifact_item_id": "l1_decoder_attention_hbm_replay_controller_ppa_v2",
+        "controller_area_mm2": 0.0289102009,
+        "controller_clock_margin_ns": 3.7724,
+        "controller_clock_ok": true,
+        "controller_energy_mj_per_token": 0.001396754106,
+        "controller_power_mw": 0.109,
+        "critical_path_ns_best": 2.2087,
+        "die_area_best": 28910.2009,
+        "metrics_csv": "runs/designs/npu_blocks/attention_hbm_replay_controller_c4/metrics.csv",
+        "schedule_clock_ns": 5.9811,
+        "source": "proposals",
+        "total_power_mw_best": 0.109
+      },
+      "source_artifact": "score32_schedule_wrapper_hbm_controller_replay",
+      "token_throughput_per_s": 78.038073798
+    },
+    {
+      "abstraction_status": "measured_compute_with_source_backed_hbm_energy",
+      "candidate_id": "die1200_dense_gemm_16x8_k1_p1_mac132736_lat1872.29_hbm0.465654_tt512",
+      "compute_area_mm2": 479.60213,
+      "compute_energy_mj_per_token": 18.095420734855,
+      "die_area_mm2": 1200.0,
+      "energy_mj_per_token": 81.66413005453946,
+      "family": "measured_exact_fp16_gqa8_kv8",
+      "hbm_energy_mj_per_token": 63.520046663430314,
+      "latency_us": 72544.06213406654,
+      "macs_per_cycle": 132736.0,
+      "precision_status": "conservative_native_gqa8_kv8",
+      "promotable": true,
+      "quality_backed": true,
+      "remaining_abstractions": [
+        "source_backed_aggregate_hbm_energy_not_vendor_current_signoff",
+        "profile_scaled_noc_sram_energy"
+      ],
+      "source_artifact": "measured_compute_energy_closure",
+      "token_throughput_per_s": 13.784725731954872
+    },
+    {
+      "abstraction_status": "measured_int8_compute_quality_invalidated",
+      "candidate_id": "die800_dense_gemm_int8_16x8_k1_p1_rep855_lat1575.37_hbm0.983398_tt1024",
+      "compute_area_mm2": 179.09856,
+      "compute_energy_mj_per_token": 1.5372362316073815,
+      "die_area_mm2": 800.0,
+      "energy_mj_per_token": 135.75588466251537,
+      "family": "mixed_int8_compute",
+      "hbm_energy_mj_per_token": 134.14461348516411,
+      "latency_us": 1575.373891,
+      "macs_per_cycle": 109440.0,
+      "precision_status": "quality_invalidated_low_precision_score_softmax",
+      "promotable": false,
+      "quality_backed": false,
+      "quality_invalidation": {
+        "candidate_id": "die800_dense_gemm_int8_16x8_k1_p1_rep855_lat1575.37_hbm0.983398_tt1024",
+        "precision_profile": "q8_k8_v6_a24_s8_w8_recip_lut_q10_int8_compute",
+        "reason": "energy row uses score/softmax quantization or reciprocal-LUT softmax evidence, while broad native quality only passed qkv8_float_exact",
+        "source_decision": "mixed_int8_quality_backed_frontier_recost_required",
+        "source_model": "llm_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1"
+      },
+      "remaining_abstractions": [
+        "quality_invalidated_by_broad_native_attention_shadow",
+        "energy row uses score/softmax quantization or reciprocal-LUT softmax evidence, while broad native quality only passed qkv8_float_exact"
+      ],
+      "source_artifact": "mixed_int8_energy_closure_r2",
+      "token_throughput_per_s": 634.7699461778119
+    },
+    {
+      "abstraction_status": "abstract_compute_target_infeasible_after_measured_compute_closure",
+      "candidate_id": "physical_hbm_gqa8_kv8_service_frontier",
+      "compute_area_mm2": 0.0,
+      "compute_energy_mj_per_token": 0.0,
+      "die_area_mm2": 100.0,
+      "energy_mj_per_token": 8.14357724928343,
+      "family": "abstract_integrated_gqa8_kv8",
+      "hbm_energy_mj_per_token": 0.0,
+      "latency_us": 30.944,
+      "macs_per_cycle": 524288.0,
+      "precision_status": "planning_only_native_gqa8_kv8",
+      "promotable": false,
+      "quality_backed": false,
+      "remaining_abstractions": [
+        "abstract_compute_capacity",
+        "parameterized_energy"
+      ],
+      "source_artifact": "integrated_energy_closure_r2",
+      "token_throughput_per_s": 32316.442605997934
+    }
+  ],
+  "version": 1
+}
