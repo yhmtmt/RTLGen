@@ -591,6 +591,10 @@ _DECODER_EVIDENCE_OUTPUT_KEYS: tuple[tuple[str, str], ...] = (
         "attention_separated_cluster_equivalence_report",
     ),
     (
+        "attention_hierarchical_softmax_architecture_out",
+        "attention_hierarchical_softmax_architecture_report",
+    ),
+    (
         "attention_score32_exp_lut_sram_hierarchy_envelope_out",
         "attention_score32_exp_lut_sram_hierarchy_envelope_report",
     ),
@@ -1517,6 +1521,25 @@ def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, 
             "scenarios",
             "gates",
             "remaining_abstractions",
+            "next_step",
+        ):
+            if key in evidence_payload:
+                parts.append(f"{key}={evidence_payload.get(key)}")
+        summary = "; ".join(parts)
+        return outcome, summary if summary.endswith(".") else summary + "."
+
+    if model == "attention_hierarchical_softmax_architecture_probe_v1":
+        outcome = str(evidence_payload.get("decision") or "hierarchical_softmax_architecture_recorded")
+        parts = [
+            f"Hierarchical attention composition evidence recorded from {evidence_ref}: decision={outcome}",
+        ]
+        for key in (
+            "online_pass",
+            "online_error_bound_q16",
+            "lengths",
+            "distributions",
+            "llama7b_score_buffer",
+            "width_bounds",
             "next_step",
         ):
             if key in evidence_payload:

@@ -7305,6 +7305,48 @@ def test_generate_l2_campaign_task_adds_attention_separated_cluster_equivalence(
             ]
 
 
+def test_generate_l2_campaign_task_adds_attention_hierarchical_softmax_architecture() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id="l2_decoder_attention_hierarchical_softmax_architecture_llama7b_v1",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    abstraction_layer="decoder_attention_hierarchical_softmax_architecture",
+                    evaluation_mode="frontier_detail",
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            assert [command["name"] for command in work_item.command_manifest] == [
+                "probe_attention_hierarchical_softmax_architecture",
+                "validate_runs",
+            ]
+            assert "probe_attention_hierarchical_softmax.py" in work_item.command_manifest[0]["run"]
+            assert "--lengths 128,4096,131072" in work_item.command_manifest[0]["run"]
+            decoder_inputs = work_item.input_manifest["decoder_contract"]
+            assert decoder_inputs["attention_hierarchical_softmax_architecture_out"].endswith(
+                "decoder_attention_hierarchical_softmax_architecture__"
+                "l2_decoder_attention_hierarchical_softmax_architecture_llama7b_v1.json"
+            )
+            assert work_item.expected_outputs == [
+                decoder_inputs["attention_hierarchical_softmax_architecture_out"],
+                decoder_inputs["attention_hierarchical_softmax_architecture_report"],
+            ]
+
+
 def test_generate_l2_campaign_task_adds_attention_score32_exp_lut_sram_hierarchy_envelope_evidence() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
