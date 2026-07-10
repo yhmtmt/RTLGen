@@ -9,8 +9,13 @@ from pathlib import Path
 import re
 import shutil
 import subprocess
+import sys
 import tempfile
 from typing import Any
+
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
 
 from npu.rtlgen.gen_attention_separated_cluster import _validate, _write_top
 from npu.sim.perf.attention_separated import (

@@ -1,3 +1,7 @@
+from pathlib import Path
+import subprocess
+import sys
+
 from npu.eval.probe_attention_separated_equivalence import build_report
 from npu.eval.evaluate_llm_decoder_model_native_mixed_int8_attention import _exp_lut_div_softmax
 from npu.sim.perf.attention_separated import default_commands, exact_reference, simulate
@@ -55,3 +59,25 @@ def test_attention_separated_rtl_matches_perf_for_physical_sweep() -> None:
     assert report["equivalence_pass"] is True
     assert len(report["rows"]) == 24
     assert all(row["equivalence_pass"] for row in report["rows"])
+
+
+def test_attention_separated_probe_runs_directly_without_pythonpath(tmp_path: Path) -> None:
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "npu/eval/probe_attention_separated_equivalence.py",
+            "--ratios",
+            "1:1",
+            "--command-count",
+            "1",
+            "--out",
+            str(tmp_path / "equivalence.json"),
+            "--out-md",
+            str(tmp_path / "equivalence.md"),
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert completed.returncode == 0, completed.stderr
