@@ -1,0 +1,15 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_hbm_replay_controller_v1",
+  "candidate_id": "l1_decoder_attention_hbm_replay_controller_ppa_v2",
+  "decision": "promote",
+  "reason": "Accepted Layer 1 physical metrics were merged in PR #1236 for the current candidate.",
+  "evidence_refs": [
+    "item:l1_decoder_attention_hbm_replay_controller_ppa_v2",
+    "run:l1_decoder_attention_hbm_replay_controller_ppa_v2_run_09cd3d8c1647ed2c",
+    "artifact:control_plane/shadow_exports/l1_promotions/l1_decoder_attention_hbm_replay_controller_ppa_v2.json",
+    "pr:#1236",
+    "https://github.com/yhmtmt/RTLGen/pull/1236"
+  ],
+  "next_action": "inspect the next dependent item",
+  "requires_human_approval": false
+}

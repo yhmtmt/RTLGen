@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_hbm_replay_controller_v1",
+  "decision": "promote",
+  "pr_number": 1236,
+  "merge_commit": "f6589e4939ccc215db450c4a5d0d1de8de6f9661",
+  "merged_utc": "2026-07-10T10:24:12.857268Z"
+}

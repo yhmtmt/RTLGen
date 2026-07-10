@@ -42,7 +42,12 @@
         "direction": "measure_hbm_replay_controller_rtl_cost_with_boundary_rows",
         "reason": "This converts the current score32 HBM replay controller timing abstraction into a measured Nangate45 control-block anchor while preserving larger-controller physical boundary evidence."
       },
-      "status": "ready_to_dispatch_after_contract_fix"
+      "status": "merged",
+      "merged_pr_number": 1236,
+      "merge_commit": "f6589e4939ccc215db450c4a5d0d1de8de6f9661",
+      "merged_utc": "2026-07-10T10:24:12.857268Z",
+      "notes": "Merged via PR #1236 and merge f6589e4939ccc215db450c4a5d0d1de8de6f9661 at 2026-07-10T10:24:12.857268Z."
     }
-  ]
+  ],
+  "source_commit": "de5a546bfa7d0f7f34c9bd4872f5e7e689b67924"
 }
