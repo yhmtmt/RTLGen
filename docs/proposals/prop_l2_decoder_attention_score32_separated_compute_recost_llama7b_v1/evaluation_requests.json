@@ -23,7 +23,12 @@
         "direction": "record_score32_separated_compute_recost",
         "reason": "Use the measured-component recost to decide whether the next score32 priority should be composed RTL implementation rather than another analytical subtotal adjustment."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 1244,
+      "merge_commit": "00a50b942102224b65b1860b70aebd10fbfb3548",
+      "merged_utc": "2026-07-10T11:09:50.629434Z",
+      "notes": "Merged via PR #1244 and merge 00a50b942102224b65b1860b70aebd10fbfb3548 at 2026-07-10T11:09:50.629434Z."
     }
-  ]
+  ],
+  "source_commit": "d50b265d58b2390374577422d11ed84502663414"
 }

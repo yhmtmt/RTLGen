@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_score32_separated_compute_recost_llama7b_v1",
+  "decision": "iterate",
+  "pr_number": 1244,
+  "merge_commit": "00a50b942102224b65b1860b70aebd10fbfb3548",
+  "merged_utc": "2026-07-10T11:09:50.629434Z"
+}
