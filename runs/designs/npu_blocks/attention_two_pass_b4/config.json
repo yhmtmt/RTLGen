@@ -1,0 +1,13 @@
+{
+  "top_name": "attention_two_pass_b4",
+  "attention_two_pass": {
+    "block_count": 4,
+    "row_elems": 8,
+    "head_dim": 8,
+    "value_dim": 8,
+    "score_bits": 32,
+    "weight_bits": 16,
+    "input_frac_bits": 28,
+    "exp_bucket_shift": 20
+  }
+}

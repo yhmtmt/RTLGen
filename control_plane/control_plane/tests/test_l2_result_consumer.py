@@ -25,6 +25,28 @@ def _write(path: Path, text: str) -> None:
     path.write_text(text, encoding="utf-8")
 
 
+def test_decoder_evidence_summary_recognizes_two_pass_attention_equivalence() -> None:
+    outcome, summary = _decoder_evidence_summary(
+        evidence_ref="runs/datasets/demo/two_pass.json",
+        evidence_payload={
+            "model": "attention_two_pass_perf_rtl_equivalence_v1",
+            "decision": "attention_two_pass_equivalence_pass",
+            "equivalence_pass": True,
+            "semantic_profile": "q8_k8_v8_a32_s32_exp_lut_b20_zero_tail_two_pass_global_max",
+            "block_counts": [4, 8],
+            "command_count": 3,
+            "scenarios": ["always_ready", "result_backpressure"],
+            "gates": {"exact_global_max": True, "exact_weighted_value": True},
+            "remaining_abstractions": ["external score SRAM"],
+        },
+    )
+
+    assert outcome == "attention_two_pass_equivalence_pass"
+    assert "equivalence_pass=True" in summary
+    assert "exact_global_max" in summary
+    assert "external score SRAM" in summary
+
+
 def test_decoder_evidence_summary_recognizes_mixed_precision_int8_compute_physical_feasibility() -> None:
     outcome, summary = _decoder_evidence_summary(
         evidence_ref="runs/datasets/demo/int8_compute.json",

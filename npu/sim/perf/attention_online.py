@@ -7,12 +7,15 @@ import math
 from typing import Iterable
 
 from npu.sim.perf.attention_separated import (
+    AttentionSeparatedCommand,
     EXP_BUCKET_SHIFT,
     MAX_EXP_BUCKET,
     ROW_ELEMS,
     VALUE_DIM,
     WEIGHT_SCALE,
     _exp_lut,
+    producer_result,
+    result_ready,
 )
 
 MAX_CONTEXT_TOKENS = 131072
@@ -207,6 +210,105 @@ def score_buffer_bytes(*, context_tokens: int, attention_heads: int, score_bits:
     return context_tokens * attention_heads * (score_bits // 8)
 
 
+def two_pass_command(command: AttentionSeparatedCommand, *, block_count: int) -> dict[str, object]:
+    if block_count < 2 or block_count > MAX_BLOCK_COUNT:
+        raise ValueError(f"block_count must be in [2, {MAX_BLOCK_COUNT}]")
+    command = command.normalized()
+    payloads = [
+        producer_result(
+            AttentionSeparatedCommand(
+                command_id=(command.command_id + index) & 0xFFFF,
+                seed=(command.seed ^ ((index * 0x9E3779B9) & 0xFFFFFFFF)) & 0xFFFFFFFF,
+            )
+        )
+        for index in range(block_count)
+    ]
+    stats = two_pass_stats(
+        [payload["score_row"] for payload in payloads],
+        [payload["value_matrix"] for payload in payloads],
+    )
+    return {
+        "command_id": command.command_id,
+        "seed": command.seed,
+        "block_count": block_count,
+        "global_max": stats.max_score,
+        "exp_sum": stats.exp_sum,
+        "value": list(finalize_value(stats)),
+        "stats": stats,
+    }
+
+
+def simulate_two_pass(
+    commands: Iterable[AttentionSeparatedCommand],
+    *,
+    block_count: int,
+    scenario: str,
+    max_cycles: int = 10000,
+) -> dict[str, object]:
+    command_list = [command.normalized() for command in commands]
+    if scenario not in {"always_ready", "result_backpressure"}:
+        raise ValueError(f"unsupported scenario: {scenario}")
+    state = "idle"
+    command_index = 0
+    issue_index = stored_count = replay_index = 0
+    producer_payload: dict[str, object] | None = None
+    active: AttentionSeparatedCommand | None = None
+    pending_result: dict[str, object] | None = None
+    accept_events: list[dict[str, int]] = []
+    result_events: list[dict[str, object]] = []
+
+    for cycle in range(max_cycles):
+        if len(result_events) == len(command_list):
+            break
+        old_state = state
+        if old_state == "hold" and pending_result is not None and result_ready(scenario, cycle=cycle):
+            result_events.append({"cycle": cycle, **pending_result})
+            pending_result = None
+            state = "idle"
+        if old_state == "idle" and command_index < len(command_list):
+            active = command_list[command_index]
+            accept_events.append(
+                {"cycle": cycle, "command_id": active.command_id, "seed": active.seed}
+            )
+            command_index += 1
+            issue_index = stored_count = replay_index = 0
+            state = "fill"
+        elif old_state == "fill":
+            if producer_payload is not None:
+                producer_payload = None
+                stored_count += 1
+                if stored_count == block_count:
+                    replay_index = 0
+                    state = "replay"
+            elif issue_index < block_count:
+                assert active is not None
+                producer_payload = producer_result(
+                    AttentionSeparatedCommand(
+                        command_id=(active.command_id + issue_index) & 0xFFFF,
+                        seed=(active.seed ^ ((issue_index * 0x9E3779B9) & 0xFFFFFFFF)) & 0xFFFFFFFF,
+                    )
+                )
+                issue_index += 1
+        elif old_state == "replay":
+            replay_index += 1
+            if replay_index == block_count:
+                assert active is not None
+                pending_result = two_pass_command(active, block_count=block_count)
+                pending_result.pop("stats")
+                state = "hold"
+    else:
+        raise RuntimeError(f"two-pass scenario {scenario} exceeded {max_cycles} cycles")
+    return {
+        "scenario": scenario,
+        "block_count": block_count,
+        "accepted_count": len(accept_events),
+        "completed_count": len(result_events),
+        "accept_events": accept_events,
+        "result_events": result_events,
+        "final_cycle": result_events[-1]["cycle"] if result_events else -1,
+    }
+
+
 def finalize_value(stats: AttentionOnlineStats) -> tuple[int, ...]:
     if stats.exp_sum <= 0:
         raise ValueError("cannot finalize an empty exponent sum")
@@ -252,6 +354,8 @@ __all__ = [
     "merge_stats",
     "score_buffer_bytes",
     "sum_same_max",
+    "simulate_two_pass",
+    "two_pass_command",
     "two_pass_stats",
     "width_bounds",
 ]
