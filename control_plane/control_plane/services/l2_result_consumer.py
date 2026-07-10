@@ -583,6 +583,10 @@ _DECODER_EVIDENCE_OUTPUT_KEYS: tuple[tuple[str, str], ...] = (
         "attention_score32_compute_activity_energy_report",
     ),
     (
+        "attention_score32_separated_compute_recost_out",
+        "attention_score32_separated_compute_recost_report",
+    ),
+    (
         "attention_score32_exp_lut_sram_hierarchy_envelope_out",
         "attention_score32_exp_lut_sram_hierarchy_envelope_report",
     ),
@@ -1442,6 +1446,50 @@ def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, 
             "energy_reduction_fraction_vs_wall_time",
             "clock_gated_score32_vs_measured_fp16_energy_ratio",
             "score32_latency_us",
+            "recommended_next_step",
+            "remaining_abstractions",
+        ):
+            if key in diagnosis_dict:
+                parts.append(f"{key}={diagnosis_dict.get(key)}")
+        summary = "; ".join(parts)
+        return outcome, summary if summary.endswith(".") else summary + "."
+
+    if model == "llm_decoder_attention_score32_separated_compute_recost_v1":
+        candidate = evidence_payload.get("candidate")
+        candidate_dict = dict(candidate) if isinstance(candidate, dict) else {}
+        diagnosis = evidence_payload.get("diagnosis")
+        diagnosis_dict = dict(diagnosis) if isinstance(diagnosis, dict) else {}
+        outcome = str(
+            diagnosis_dict.get("decision")
+            or evidence_payload.get("decision")
+            or "score32_separated_compute_recost_recorded"
+        )
+        parts = [
+            f"Decoder score32 separated-compute recost evidence recorded from {evidence_ref}: decision={outcome}",
+        ]
+        for key in (
+            "candidate_id",
+            "latency_us",
+            "token_throughput_per_s",
+            "energy_mj_per_token",
+            "compute_control_energy_mj_per_token",
+            "logic_area_mm2",
+            "schedule_clock_ns",
+            "timing_ok",
+            "energy_source_precision_profile",
+            "precision_aligned",
+            "quality_target_backed",
+            "quality_backed",
+            "promotable",
+            "abstraction_status",
+        ):
+            if key in candidate_dict:
+                parts.append(f"{key}={candidate_dict.get(key)}")
+        for key in (
+            "full_wrapper_replication_removed",
+            "old_full_wrapper_replica_count",
+            "old_full_wrapper_area_um2",
+            "old_full_wrapper_power_mw",
             "recommended_next_step",
             "remaining_abstractions",
         ):

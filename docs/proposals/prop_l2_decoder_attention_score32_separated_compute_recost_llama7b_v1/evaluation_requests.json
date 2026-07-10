@@ -1,0 +1,29 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_score32_separated_compute_recost_llama7b_v1",
+  "source_commit_note": "Dispatch after the score32 separated-compute recost control-plane integration is merged.",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_score32_separated_compute_recost_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Recost the current quality-aware score32 Llama7B frontier using separated measured compute/control components.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_score32_separated_compute_recost",
+      "comparison_role": "score32_separated_compute_recost",
+      "paired_baseline_item_id": "l2_decoder_attention_score32_quality_aware_hbm_controller_replay_rtl_ppa_recost_frontier_llama7b_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_mixed_int8_energy_closure_llama7b_v1_r2",
+        "l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_measured_command_control_llama7b_v1",
+        "l2_decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality_llama7b_v1",
+        "l1_decoder_attention_hbm_replay_controller_ppa_v2",
+        "l2_decoder_attention_score32_quality_aware_hbm_controller_replay_rtl_ppa_recost_frontier_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "record_score32_separated_compute_recost",
+        "reason": "Use the measured-component recost to decide whether the next score32 priority should be composed RTL implementation rather than another analytical subtotal adjustment."
+      },
+      "status": "pending"
+    }
+  ]
+}

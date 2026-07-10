@@ -6134,6 +6134,78 @@ def _decoder_attention_score32_compute_activity_energy_evidence(*, item_id: str)
     }
 
 
+def _decoder_attention_score32_separated_compute_recost_evidence(
+    *,
+    item_id: str,
+    depends_on_item_ids: list[str] | None = None,
+) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_attention_score32_separated_compute_recost__{item_id}.json"
+    report = f"{base}/decoder_attention_score32_separated_compute_recost__{item_id}.md"
+    mixed_int8 = (
+        f"{base}/decoder_attention_mixed_int8_energy_closure__"
+        "l2_decoder_attention_mixed_int8_energy_closure_llama7b_v1_r2.json"
+    )
+    measured_command_control = (
+        f"{base}/decoder_attention_composed_datapath_physical_feasibility__"
+        "l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_"
+        "measured_command_control_llama7b_v1.json"
+    )
+    score32_quality = (
+        f"{base}/decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality__"
+        "l2_decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality_llama7b_v1.json"
+    )
+    quality_aware_frontier = (
+        f"{base}/decoder_attention_score32_integrated_frontier_ranking__"
+        "l2_decoder_attention_score32_quality_aware_hbm_controller_replay_rtl_ppa_recost_frontier_llama7b_v1.json"
+    )
+    hbm_controller_ppa_item_id = next(
+        (
+            dep_id
+            for dep in (depends_on_item_ids or [])
+            for dep_id in [str(dep)]
+            if dep_id.startswith("l1_decoder_attention_hbm_replay_controller_ppa_v")
+        ),
+        "l1_decoder_attention_hbm_replay_controller_ppa_v2",
+    )
+    hbm_controller_ppa = (
+        f"control_plane/shadow_exports/l1_promotions/{hbm_controller_ppa_item_id}.json"
+    )
+    return {
+        "inputs": {
+            "attention_mixed_int8_energy_closure": mixed_int8,
+            "attention_score32_exp_lut_measured_command_control": measured_command_control,
+            "attention_score32_exp_lut_generation_quality": score32_quality,
+            "attention_score32_hbm_controller_ppa_json": hbm_controller_ppa,
+            "attention_score32_quality_aware_frontier": quality_aware_frontier,
+            "attention_score32_separated_compute_recost_out": out,
+            "attention_score32_separated_compute_recost_report": report,
+            "attention_score32_separated_compute_recost_scope": (
+                "Rebuild the score32 Llama7B compute/control subtotal from separated measured dense-int8, "
+                "shared vector-softmax overhead, command dispatch, and HBM replay-controller PPA components "
+                "while inheriting the current quality-aware frontier traffic terms."
+            ),
+        },
+        "commands": [
+            {
+                "name": "audit_decoder_attention_score32_separated_compute_recost",
+                "run": (
+                    "python3 npu/eval/audit_llm_decoder_attention_score32_separated_compute_recost.py "
+                    f"--mixed-int8-energy-json {mixed_int8} "
+                    f"--score32-measured-command-control-json {measured_command_control} "
+                    f"--score32-quality-json {score32_quality} "
+                    f"--hbm-controller-ppa-json {hbm_controller_ppa} "
+                    f"--quality-aware-frontier-json {quality_aware_frontier} "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+        "evidence_only": True,
+    }
+
+
 def _decoder_attention_score32_exp_lut_sram_hierarchy_envelope_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_score32_exp_lut_sram_hierarchy_envelope__{item_id}.json"
@@ -9648,6 +9720,7 @@ def _build_payload(
         "decoder_attention_score32_hbm_controller_replay",
         "decoder_attention_score32_integrated_frontier_ranking",
         "decoder_attention_score32_compute_activity_energy",
+        "decoder_attention_score32_separated_compute_recost",
         "decoder_attention_hbm_dram_service_energy",
         "decoder_attention_hbm_energy_calibration",
         "decoder_attention_hbm_command_calibrated_service",
@@ -9859,6 +9932,11 @@ def _build_payload(
             )
         elif abstraction_layer_name == "decoder_attention_score32_compute_activity_energy":
             decoder_evidence = _decoder_attention_score32_compute_activity_energy_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_attention_score32_separated_compute_recost":
+            decoder_evidence = _decoder_attention_score32_separated_compute_recost_evidence(
+                item_id=item_id,
+                depends_on_item_ids=depends_on_item_ids,
+            )
         elif abstraction_layer_name == "decoder_attention_hbm_dram_service_energy":
             decoder_evidence = _decoder_attention_hbm_dram_service_energy_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_hbm_energy_calibration":
