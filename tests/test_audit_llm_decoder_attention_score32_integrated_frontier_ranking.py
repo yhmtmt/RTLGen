@@ -46,6 +46,7 @@ def _populate_inputs(tmp_path: Path) -> None:
         {
             "best_requested": {
                 "die_area_mm2": 2.4,
+                "clock_ns": 2.0,
             }
         },
     )
@@ -196,8 +197,21 @@ def test_integrated_frontier_ranking_with_controller_replay_ppa_marks_rtl_timing
         "source": "proposals",
         "artifact_item_id": "l1_decoder_attention_hbm_replay_controller_ppa_v1",
         "metrics_csv": "runs/designs/npu_blocks/attention_hbm_replay_controller_c4/metrics.csv",
+        "controller_area_mm2": 0.01245,
+        "controller_power_mw": 0.014,
+        "controller_energy_mj_per_token": 0.0000014,
+        "schedule_clock_ns": 2.0,
+        "controller_clock_ok": True,
+        "controller_clock_margin_ns": 1.58,
     }
-    assert "HBM replay controller control timing is backed by measured Nangate45 RTL PPA." in score32_row[
+    assert score32_row["compute_area_mm2"] == 1.21245
+    assert score32_row["compute_energy_mj_per_token"] == 1.2000014
+    assert score32_row["energy_mj_per_token"] == 1.9000014
+    assert (
+        score32_row["abstraction_status"]
+        == "measured_schedule_wrapper_sram_envelope_hbm_controller_replay_ppa_recost"
+    )
+    assert "HBM replay controller area, active energy, and control timing are backed by measured Nangate45 RTL PPA." in score32_row[
         "remaining_abstractions"
     ]
     assert "controller replay is deterministic cycle-level but not RTL-timing accurate" not in score32_row[
@@ -212,6 +226,37 @@ def test_integrated_frontier_ranking_with_controller_replay_ppa_marks_rtl_timing
         "artifact_item_id": "l1_decoder_attention_hbm_replay_controller_ppa_v1",
         "metrics_csv": "runs/designs/npu_blocks/attention_hbm_replay_controller_c4/metrics.csv",
     }
-    assert any(
-        "RTL PPA for the replay controller control path." in item for item in report["assumptions"]
+    assert report["diagnosis"]["score32_controller_area_mm2"] == 0.01245
+    assert report["diagnosis"]["score32_controller_energy_mj_per_token"] == 0.0000014
+    assert report["diagnosis"]["score32_controller_clock_ok"] is True
+    assert any("RTL PPA recost for replay-controller area" in item for item in report["assumptions"])
+
+
+def test_integrated_frontier_ranking_with_controller_replay_ppa_records_clock_miss(tmp_path: Path) -> None:
+    _populate_inputs(tmp_path)
+    args = _args(tmp_path)
+    args.score32_hbm_controller_replay_ppa_json = tmp_path / "replay_ppa_clock_miss.json"
+    _write_json(
+        args.score32_hbm_controller_replay_ppa_json,
+        {
+            "item_id": "l1_decoder_attention_hbm_replay_controller_ppa_clock_miss",
+            "trial_summary": {
+                "metrics": {
+                    "critical_path_ns": {"best": 2.5},
+                    "die_area": {"best": 10000.0},
+                    "total_power_mw": {"best": 0.02},
+                }
+            },
+        },
+    )
+
+    report = build_report(args)
+    score32_row = report["rows"][0]
+    recost = score32_row["score32_hbm_controller_replay_ppa"]
+
+    assert recost["controller_clock_ok"] is False
+    assert recost["controller_clock_margin_ns"] == -0.5
+    assert (
+        "HBM replay controller requires pipelining or a schedule-clock recost to meet timing."
+        in score32_row["remaining_abstractions"]
     )

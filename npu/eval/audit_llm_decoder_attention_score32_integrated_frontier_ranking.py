@@ -179,7 +179,7 @@ def _score32_row(
                 if "deterministic cycle-level" not in str(item).lower()
             ]
             remaining_abstractions.append(
-                "HBM replay controller control timing is backed by measured Nangate45 RTL PPA."
+                "HBM replay controller area, active energy, and control timing are backed by measured Nangate45 RTL PPA."
             )
         else:
             remaining_abstractions = list(best.get("remaining_abstractions") or [])
@@ -196,6 +196,55 @@ def _score32_row(
         macs_per_cycle = _as_float(best.get("macs_per_cycle"), _as_float(measured.get("replica_recost_macs_per_cycle") or best.get("macs_per_cycle")))
         remaining_abstractions = sorted(set(remaining_abstractions))
 
+    controller_ppa_recost = None
+    if uses_hbm_controller_replay and score32_hbm_controller_replay_ppa is not None:
+        controller_area_mm2 = round(
+            _as_float(score32_hbm_controller_replay_ppa.get("die_area_best")) / 1.0e6,
+            12,
+        )
+        controller_power_mw = _as_float(score32_hbm_controller_replay_ppa.get("total_power_mw_best"))
+        controller_energy_mj_per_token = round(controller_power_mw * latency_us * 1.0e-6, 12)
+        controller_critical_path_ns = _opt_float(
+            score32_hbm_controller_replay_ppa.get("critical_path_ns_best")
+        )
+        schedule_clock_ns = _opt_float(measured.get("clock_ns"))
+        controller_clock_ok = (
+            controller_critical_path_ns <= schedule_clock_ns
+            if controller_critical_path_ns is not None and schedule_clock_ns is not None
+            else None
+        )
+        controller_clock_margin_ns = (
+            round(schedule_clock_ns - controller_critical_path_ns, 12)
+            if controller_critical_path_ns is not None and schedule_clock_ns is not None
+            else None
+        )
+        compute_area_mm2 = round(compute_area_mm2 + controller_area_mm2, 12)
+        compute_energy_mj_per_token = round(
+            compute_energy_mj_per_token + controller_energy_mj_per_token,
+            12,
+        )
+        total_energy_mj_per_token = round(
+            total_energy_mj_per_token + controller_energy_mj_per_token,
+            12,
+        )
+        controller_ppa_recost = {
+            **score32_hbm_controller_replay_ppa,
+            "controller_area_mm2": controller_area_mm2,
+            "controller_power_mw": controller_power_mw,
+            "controller_energy_mj_per_token": controller_energy_mj_per_token,
+            "schedule_clock_ns": schedule_clock_ns,
+            "controller_clock_ok": controller_clock_ok,
+            "controller_clock_margin_ns": controller_clock_margin_ns,
+        }
+        abstraction_status = "measured_schedule_wrapper_sram_envelope_hbm_controller_replay_ppa_recost"
+        if controller_clock_ok is False:
+            remaining_abstractions = sorted(
+                {
+                    *remaining_abstractions,
+                    "HBM replay controller requires pipelining or a schedule-clock recost to meet timing.",
+                }
+            )
+
     return {
         "candidate_id": candidate_id,
         "family": "score32_exp_lut_div",
@@ -211,7 +260,7 @@ def _score32_row(
         "precision_status": quality["status"],
         "quality_backed": quality["quality_backed"],
         "quality": quality,
-        "score32_hbm_controller_replay_ppa": score32_hbm_controller_replay_ppa,
+        "score32_hbm_controller_replay_ppa": controller_ppa_recost,
         "abstraction_status": abstraction_status,
         "remaining_abstractions": remaining_abstractions,
         "promotable": bool(quality["quality_backed"]),
@@ -409,6 +458,18 @@ def build_report(args: argparse.Namespace) -> JsonDict:
             "score32_token_throughput_per_s": score32["token_throughput_per_s"],
             "score32_total_energy_mj_per_token": score32["energy_mj_per_token"],
             "score32_die_area_mm2": score32["die_area_mm2"],
+            "score32_compute_plus_controller_area_mm2": score32["compute_area_mm2"],
+            "score32_controller_area_mm2": _as_float(
+                _as_dict(score32.get("score32_hbm_controller_replay_ppa")).get("controller_area_mm2")
+            ),
+            "score32_controller_energy_mj_per_token": _as_float(
+                _as_dict(score32.get("score32_hbm_controller_replay_ppa")).get(
+                    "controller_energy_mj_per_token"
+                )
+            ),
+            "score32_controller_clock_ok": _as_dict(
+                score32.get("score32_hbm_controller_replay_ppa")
+            ).get("controller_clock_ok"),
             "score32_quality_status": score32["precision_status"],
             "score32_vs_measured_fp16_energy_ratio": round(
                 score32["energy_mj_per_token"] / max(1.0e-12, best_energy_safe["energy_mj_per_token"]), 9
@@ -445,7 +506,7 @@ def build_report(args: argparse.Namespace) -> JsonDict:
                     if args.score32_hbm_controller_replay_ppa_json is None
                     else "The score32 row is quality-backed by the bounded generation-quality gate and measured "
                     "through wrapper, command-control, SRAM-envelope, deterministic HBM replay, and measured "
-                    "Nangate45 RTL PPA for the replay controller control path."
+                    "Nangate45 RTL PPA recost for replay-controller area, active energy, and control timing."
                 )
             ),
             "The mixed-int8 energy row is retained as a fast non-promotable latency candidate because its precision path is not promoted by the current real-checkpoint evidence.",
