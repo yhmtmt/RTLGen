@@ -369,7 +369,7 @@ def build_report(*, ratios: list[tuple[int, int]], command_count: int) -> JsonDi
             "PPA and toggle-based power for each producer-to-consumer ratio are not measured by this equivalence probe",
         ],
         "next_step": (
-            "Measure Nangate45 PPA for 1:1, 2:1, 4:1, and 8:1 producer-to-consumer ratios."
+            "Measure Nangate45 PPA for 1:1, 2:1, 4:1, 8:1, 4:2, and 8:2 producer-to-consumer ratios."
             if passed
             else "Fix exact stage or schedule mismatches before physical evaluation."
         ),

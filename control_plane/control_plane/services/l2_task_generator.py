@@ -6216,7 +6216,8 @@ def _decoder_attention_separated_cluster_equivalence_evidence(*, item_id: str) -
             "attention_separated_cluster_equivalence_report": report,
             "attention_separated_cluster_equivalence_scope": (
                 "Compare exact QK score rows, score32 exp-LUT/div weights, weighted-V vectors, and ready/valid "
-                "schedules between the bounded separated-cluster perf model and RTL for 1:1 and 4:1 sharing."
+                "schedules between the bounded separated-cluster perf model and RTL for 1:1, 2:1, 4:1, "
+                "8:1, 4:2, and 8:2 producer-to-consumer sharing."
             ),
         },
         "commands": [
