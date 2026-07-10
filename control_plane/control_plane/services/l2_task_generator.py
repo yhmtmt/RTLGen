@@ -6012,6 +6012,10 @@ def _decoder_attention_score32_integrated_frontier_ranking_evidence(
         f"{base}/decoder_attention_mixed_int8_energy_closure__"
         "l2_decoder_attention_mixed_int8_energy_closure_llama7b_v1_r2.json"
     )
+    mixed_int8_quality_backed_frontier = (
+        f"{base}/decoder_attention_mixed_int8_quality_backed_frontier__"
+        "l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1.json"
+    )
     integrated_energy = (
         f"{base}/decoder_attention_integrated_energy_closure__"
         "l2_decoder_attention_integrated_energy_closure_llama7b_v1_r2.json"
@@ -6031,6 +6035,7 @@ def _decoder_attention_score32_integrated_frontier_ranking_evidence(
         f"--score32-quality-json {score32_quality} "
         f"--measured-compute-energy-json {measured_compute} "
         f"--mixed-int8-energy-json {mixed_int8} "
+        f"--mixed-int8-quality-backed-frontier-json {mixed_int8_quality_backed_frontier} "
         f"--integrated-energy-json {integrated_energy} "
         f"--out {out} "
         f"--out-md {report}"
@@ -6057,6 +6062,7 @@ def _decoder_attention_score32_integrated_frontier_ranking_evidence(
             "attention_score32_exp_lut_generation_quality": score32_quality,
             "attention_measured_compute_energy_closure": measured_compute,
             "attention_mixed_int8_energy_closure": mixed_int8,
+            "attention_mixed_int8_quality_backed_frontier": mixed_int8_quality_backed_frontier,
             "attention_integrated_energy_closure": integrated_energy,
             "attention_score32_integrated_frontier_ranking_out": out,
             "attention_score32_integrated_frontier_ranking_report": report,

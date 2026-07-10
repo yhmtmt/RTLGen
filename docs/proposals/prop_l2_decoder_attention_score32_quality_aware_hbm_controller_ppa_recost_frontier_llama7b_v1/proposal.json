@@ -1,0 +1,59 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_score32_quality_aware_hbm_controller_ppa_recost_frontier_llama7b_v1",
+  "created_utc": "2026-07-10T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Quality-aware score32 HBM-controller PPA recost frontier",
+  "abstraction_layer": "decoder_attention_score32_integrated_frontier_ranking",
+  "hypothesis": "Consuming the existing quality-backed frontier will explicitly invalidate the stale low-precision mixed/int8 row while preserving score32 as the best precision-safe throughput candidate and exact-FP16 as the energy reference.",
+  "direct_comparison": {
+    "primary_question": "Which measured Llama7B rows remain rankable after controller PPA recost and merged quality invalidation evidence?",
+    "include": [
+      "consume the exact HBM-controller PPA recost result",
+      "consume mixed/int8 quality-backed frontier invalidation evidence",
+      "retain invalidated measured rows as historical evidence without promotion",
+      "report correct nested compute and HBM energy components",
+      "rerank throughput, energy, area, and precision"
+    ],
+    "exclude": [
+      "new PPA synthesis",
+      "new checkpoint training",
+      "vendor HBM current-signoff data"
+    ]
+  },
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_score32_quality_aware_hbm_controller_replay_rtl_ppa_recost_frontier_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Correct the recosted score32 Llama7B frontier with merged mixed/int8 quality invalidation and nested energy-component evidence.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_score32_integrated_frontier_ranking",
+      "comparison_role": "score32_quality_aware_hbm_controller_ppa_recost_frontier",
+      "paired_baseline_item_id": "l2_decoder_attention_score32_hbm_controller_replay_rtl_ppa_recost_integrated_frontier_ranking_llama7b_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_score32_hbm_controller_replay_rtl_ppa_recost_integrated_frontier_ranking_llama7b_v1",
+        "l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1",
+        "l2_decoder_attention_score32_hbm_controller_replay_llama7b_v1",
+        "l1_decoder_attention_hbm_replay_controller_ppa_v2",
+        "l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_measured_command_control_llama7b_v1",
+        "l2_decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality_llama7b_v1",
+        "l2_decoder_attention_measured_compute_energy_closure_llama7b_v1",
+        "l2_decoder_attention_mixed_int8_energy_closure_llama7b_v1_r2",
+        "l2_decoder_attention_integrated_energy_closure_llama7b_v1_r2"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "record_quality_aware_score32_hbm_controller_ppa_recost_frontier",
+        "reason": "The old low-precision mixed/int8 row must be explicitly quality-invalidated; score32 should remain the precision-safe throughput winner."
+      },
+      "status": "ready_to_dispatch_after_implementation_merge"
+    }
+  ],
+  "remaining_abstractions_after_this_step": [
+    "HBM energy is command-calibrated rather than vendor current-signoff backed.",
+    "NoC and SRAM energy remain profile-scaled.",
+    "The score32 generation-quality gate is bounded rather than a complete Llama7B downstream-task suite."
+  ]
+}
