@@ -1,0 +1,62 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_score32_hbm_controller_replay_rtl_ppa_recost_integrated_frontier_ranking_llama7b_v1",
+  "created_utc": "2026-07-10T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Score32 HBM replay controller RTL-PPA exact recost",
+  "abstraction_layer": "decoder_attention_score32_integrated_frontier_ranking",
+  "hypothesis": "Folding measured c4 replay-controller area and active energy into the score32 Llama7B row will close the remaining controller-cost accounting gap without changing the precision-safe throughput ranking.",
+  "direct_comparison": {
+    "primary_question": "Does exact replay-controller PPA recost change the score32 Llama7B throughput, energy, area, precision, or promotability ranking?",
+    "include": [
+      "add measured replay-controller die area to the score32 logic-area subtotal",
+      "add measured controller power multiplied by token latency to score32 energy",
+      "check measured controller critical path against the schedule clock",
+      "rerank promotable latency and energy rows"
+    ],
+    "exclude": [
+      "vendor HBM PHY or DRAM-array timing",
+      "vendor HBM current-signoff energy",
+      "new precision training or checkpoint evaluation"
+    ]
+  },
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_score32_hbm_controller_replay_rtl_ppa_recost_integrated_frontier_ranking_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Recost the current score32 HBM replay Llama7B frontier with measured replay-controller area, active energy, and timing margin.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_score32_integrated_frontier_ranking",
+      "comparison_role": "score32_hbm_controller_replay_rtl_ppa_recost_integrated_frontier_ranking",
+      "paired_baseline_item_id": "l2_decoder_attention_score32_hbm_controller_replay_rtl_ppa_integrated_frontier_ranking_llama7b_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_score32_hbm_controller_replay_rtl_ppa_integrated_frontier_ranking_llama7b_v1",
+        "l2_decoder_attention_score32_hbm_controller_replay_llama7b_v1",
+        "l1_decoder_attention_hbm_replay_controller_ppa_v2",
+        "l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_measured_command_control_llama7b_v1",
+        "l2_decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality_llama7b_v1",
+        "l2_decoder_attention_measured_compute_energy_closure_llama7b_v1",
+        "l2_decoder_attention_mixed_int8_energy_closure_llama7b_v1_r2",
+        "l2_decoder_attention_integrated_energy_closure_llama7b_v1_r2"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "record_score32_integrated_frontier_ranking_with_replay_controller_ppa_recost",
+        "reason": "The controller should meet the schedule clock and add only a small measured area and energy increment, leaving score32 as the precision-safe throughput frontier."
+      },
+      "status": "ready_to_dispatch_after_implementation_merge"
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_integrated_frontier_ranking__l2_decoder_attention_score32_hbm_controller_replay_rtl_ppa_integrated_frontier_ranking_llama7b_v1.json",
+    "control_plane/shadow_exports/l1_promotions/l1_decoder_attention_hbm_replay_controller_ppa_v2.json"
+  ],
+  "remaining_abstractions_after_this_step": [
+    "HBM PHY and DRAM arrays are not vendor-signoff timing models.",
+    "HBM energy remains command-calibrated rather than vendor current-signoff backed.",
+    "NoC and SRAM energy remain profile-scaled rather than full token-level RTL activity signoff.",
+    "Precision evidence remains bounded by the current real-checkpoint generation-quality gate."
+  ]
+}
