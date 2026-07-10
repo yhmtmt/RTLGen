@@ -245,7 +245,7 @@ def _consumer_module(
           if (delta_score < 0) begin
             delta_score = 32'sd0;
           end
-          exp_bucket = delta_score >> {exp_bucket_shift};
+          exp_bucket = (delta_score + 32'd{1 << (exp_bucket_shift - 1)}) >> {exp_bucket_shift};
           if (exp_bucket > 32'd{max_bucket}) begin
             exp_bucket = 32'd{max_bucket};
           end
@@ -795,7 +795,7 @@ def _write_top(*, cfg: dict[str, Any], comp: dict[str, Any], out_path: Path) -> 
             "top": ["result_command_id", "result_score_row", "result_weights", "result_value"],
         },
         "score_contract": {
-            "representation": "8 signed Q20 score lanes, each lane is an exact sum of 8 signed q8*k8 products",
+            "representation": "8 signed Q28 score lanes from exact 8-term q8*k8 dot products with fixed 1/256 dequantization scale",
             "softmax": "bucketed exp LUT with exact normalized divide",
             "value_accumulation": "8 signed q8 value dimensions accumulated with unsigned q16 weights into signed 40-bit sums",
         },

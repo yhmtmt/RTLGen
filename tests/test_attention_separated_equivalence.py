@@ -1,4 +1,5 @@
 from npu.eval.probe_attention_separated_equivalence import build_report
+from npu.eval.evaluate_llm_decoder_model_native_mixed_int8_attention import _exp_lut_div_softmax
 from npu.sim.perf.attention_separated import default_commands, exact_reference, simulate
 
 
@@ -12,6 +13,20 @@ def test_attention_separated_reference_is_deterministic_and_semantic() -> None:
     assert len(first["consumer"]["weights"]) == 8
     assert len(first["consumer"]["value"]) == 8
     assert sum(first["consumer"]["weights"]) in range(65531, 65540)
+
+
+def test_attention_separated_softmax_matches_quality_model_profile() -> None:
+    reference = exact_reference(default_commands(1)[0])["consumer"]
+    logits = [score / float(1 << 28) for score in reference["score_row"]]
+    quality_probs = _exp_lut_div_softmax(
+        logits,
+        score_bits=32,
+        weight_bits=16,
+        bucket_shift=20,
+        input_frac_bits=28,
+    )
+
+    assert reference["weights"] == [round(probability * 65535) for probability in quality_probs]
 
 
 def test_attention_separated_perf_scheduler_preserves_commands_under_backpressure() -> None:

@@ -99,7 +99,10 @@ def _exp_lut(bucket: int) -> int:
 def consumer_result(payload: JsonDict) -> JsonDict:
     scores = [int(value) for value in payload["score_row"]]
     row_max = max(scores)
-    exp_values = [_exp_lut((row_max - score) >> EXP_BUCKET_SHIFT) for score in scores]
+    exp_values = [
+        _exp_lut(((row_max - score) + (1 << (EXP_BUCKET_SHIFT - 1))) >> EXP_BUCKET_SHIFT)
+        for score in scores
+    ]
     exp_sum = sum(exp_values)
     weights = [(value * WEIGHT_SCALE + (exp_sum >> 1)) // exp_sum for value in exp_values]
     value_matrix = payload["value_matrix"]

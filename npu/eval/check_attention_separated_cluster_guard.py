@@ -62,6 +62,7 @@ def main(argv: list[str] | None = None) -> int:
         "result_fire",
         "consumer_enable",
         "score_accum <<< 20",
+        "delta_score + 32'd524288",
         "32'd2048",
         "17'd65535",
         "weight_numer / sum_exp",
