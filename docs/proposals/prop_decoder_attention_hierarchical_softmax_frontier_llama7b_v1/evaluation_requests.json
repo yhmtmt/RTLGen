@@ -1,0 +1,43 @@
+{
+  "proposal_id": "prop_decoder_attention_hierarchical_softmax_frontier_llama7b_v1",
+  "source_commit_note": "Dispatch the architecture probe after implementation merge; keep scalable RTL equivalence blocked until its implementation is merged.",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_hierarchical_softmax_architecture_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Stress long-context hierarchical score32 attention composition and select the scalable arithmetic architecture.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_hierarchical_softmax_architecture",
+      "comparison_role": "hierarchical_composition_gate",
+      "paired_baseline_item_id": "l2_decoder_attention_separated_cluster_equivalence_llama7b_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_separated_cluster_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "select_scalable_softmax_composition",
+        "reason": "Do not extrapolate locally normalized 8-token outputs into a full Llama7B row."
+      },
+      "status": "pending"
+    },
+    {
+      "item_id": "l2_decoder_attention_two_pass_global_max_rtl_equivalence_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Prove score-buffer, global-max, exp-sum, weighted-numerator, final-divider, and backpressure equivalence for the selected scalable architecture.",
+      "evaluation_mode": "equivalence_gate",
+      "abstraction_layer": "decoder_attention_two_pass_global_max_equivalence",
+      "comparison_role": "semantic_equivalence_gate",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_hierarchical_softmax_architecture_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "prove_two_pass_attention_equivalence",
+        "reason": "Full-model PPA recost remains ineligible until the scalable normalization path is embodied and exact."
+      },
+      "status": "blocked_on_implementation"
+    }
+  ]
+}

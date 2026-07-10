@@ -6096,6 +6096,90 @@ def test_consume_l2_result_attention_separated_cluster_equivalence_uses_decoder_
             assert decision_payload["source_refs"]["decoder_attention_separated_cluster_equivalence_out"] == evidence_rel
 
 
+def test_consume_l2_result_hierarchical_softmax_architecture_uses_decoder_evidence() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            proposal_dir = repo_root / "docs" / "proposals" / "prop_hierarchical_softmax_v1"
+            _write(
+                proposal_dir / "proposal.json",
+                json.dumps(
+                    {
+                        "proposal_id": "prop_hierarchical_softmax_v1",
+                        "kind": "architecture",
+                        "title": "Hierarchical softmax",
+                        "direct_comparison": {"primary_question": "Which composition is scalable?"},
+                    }
+                ),
+            )
+            evidence_rel = (
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_hierarchical_softmax_architecture__item.json"
+            )
+            report_rel = evidence_rel.removesuffix(".json") + ".md"
+            _write(
+                repo_root / evidence_rel,
+                json.dumps(
+                    {
+                        "version": 1,
+                        "model": "attention_hierarchical_softmax_architecture_probe_v1",
+                        "decision": "two_pass_exact_selected",
+                        "online_pass": False,
+                        "online_error_bound_q16": 655,
+                        "lengths": [128, 4096, 131072],
+                        "distributions": ["normal_std1", "normal_std4", "monotonic_ramp16"],
+                        "llama7b_score_buffer": {"mib": 16, "fits_current_shared_sram": True},
+                        "width_bounds": {"exp_sum_bits": 33, "weighted_numerator_bits": 41},
+                        "next_step": "Implement exact two-pass RTL.",
+                    }
+                ),
+            )
+            _write(repo_root / report_rel, "# hierarchy\n")
+            item_id = _seed_campaign_work_item(
+                session,
+                repo_root,
+                item_id="item",
+                campaign_dir_rel="runs/campaigns/npu/attention_hierarchical_softmax",
+                summary_rows=(
+                    "scope,arch_id,macro_mode,objective_rank,latency_ms_mean,energy_mj_mean,critical_path_ns_mean,total_power_mw_mean,flow_elapsed_s_mean,throughput_infer_per_s_mean\n"
+                    "aggregate,attention,flat_nomacro,1,0.1,0.1,1,1,1,1\n"
+                ),
+                proposal_path="docs/proposals/prop_hierarchical_softmax_v1",
+                comparison={"role": "hierarchical_composition_gate"},
+            )
+            work_item = session.query(WorkItem).filter_by(item_id=item_id).one()
+            payload = copy.deepcopy(work_item.task_request.request_payload or {})
+            payload["developer_loop"]["abstraction"] = {
+                "layer": "decoder_attention_hierarchical_softmax_architecture"
+            }
+            work_item.task_request.request_payload = payload
+            work_item.input_manifest = {
+                "decoder_contract": {
+                    "attention_hierarchical_softmax_architecture_out": evidence_rel,
+                    "attention_hierarchical_softmax_architecture_report": report_rel,
+                }
+            }
+            work_item.expected_outputs = [*(work_item.expected_outputs or []), evidence_rel, report_rel]
+            session.commit()
+
+            consume_l2_result(session, Layer2ConsumeRequest(repo_root=str(repo_root), item_id=item_id))
+            decision_payload = json.loads(
+                (repo_root / "control_plane" / "shadow_exports" / "l2_decisions" / "item.json").read_text()
+            )
+            assessment = decision_payload["proposal_assessment"]
+            assert assessment["outcome"] == "two_pass_exact_selected"
+            assert "online_pass=False" in assessment["summary"]
+            assert "fits_current_shared_sram" in assessment["summary"]
+            assert (
+                decision_payload["source_refs"]["decoder_attention_hierarchical_softmax_architecture_out"]
+                == evidence_rel
+            )
+
+
 def test_consume_l2_result_score32_exp_lut_sram_hierarchy_envelope_uses_decoder_evidence() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
