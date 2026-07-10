@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_decoder_attention_hierarchical_softmax_frontier_llama7b_v1",
   "decision": "iterate",
-  "pr_number": 1253,
-  "merge_commit": "edae0e6b123963ab0f8d486b59ab374300bef612",
-  "merged_utc": "2026-07-10T12:45:30.987367Z"
+  "pr_number": 1255,
+  "merge_commit": "a8c56fb7fd27b2be25d95abab5912aeaa47ee5dd",
+  "merged_utc": "2026-07-10T13:03:54.154779Z"
 }

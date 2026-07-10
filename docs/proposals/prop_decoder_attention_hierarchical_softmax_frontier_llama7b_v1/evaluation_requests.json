@@ -63,7 +63,11 @@
         "direction": "prove_two_pass_stream_equivalence",
         "reason": "Physical measurement is ineligible until score-SRAM and KV replay handshakes preserve the selected arithmetic under independent stalls."
       },
-      "status": "pending_implementation_merge"
+      "status": "merged",
+      "merged_pr_number": 1255,
+      "merge_commit": "a8c56fb7fd27b2be25d95abab5912aeaa47ee5dd",
+      "merged_utc": "2026-07-10T13:03:54.154779Z",
+      "notes": "Merged via PR #1255 and merge a8c56fb7fd27b2be25d95abab5912aeaa47ee5dd at 2026-07-10T13:03:54.154779Z."
     },
     {
       "item_id": "l1_decoder_attention_two_pass_stream_ppa_v1",
@@ -88,8 +92,9 @@
         "direction": "measure_two_pass_divider_frontier",
         "reason": "Choose the minimum-area divider width that remains hidden by full-context replay service."
       },
-      "status": "blocked_on_stream_equivalence_merge"
+      "status": "ready_to_queue",
+      "notes": "Prerequisites are merged; item is ready to queue."
     }
   ],
-  "source_commit": "1e00b8d5a1e74eb8fc9b7209b844b609844e6a43"
+  "source_commit": "638989e3b2353bf1fe41c55c51fdc25246359cf2"
 }
