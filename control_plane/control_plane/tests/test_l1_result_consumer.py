@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import csv
 import json
 from pathlib import Path
 import tempfile
@@ -29,12 +30,14 @@ def _write_metrics(path: Path, rows: list[dict[str, str]]) -> None:
         "critical_path_ns",
         "die_area",
         "total_power_mw",
+        "params_json",
         "result_path",
     ]
     with path.open("w", encoding="utf-8", newline="") as handle:
-        handle.write(",".join(headers) + "\n")
+        writer = csv.DictWriter(handle, fieldnames=headers)
+        writer.writeheader()
         for row in rows:
-            handle.write(",".join(row.get(key, "") for key in headers) + "\n")
+            writer.writerow({key: row.get(key, "") for key in headers})
 
 
 def _seed_succeeded_l1_sweep(session: Session, repo_root: Path) -> tuple[str, str]:
@@ -182,6 +185,53 @@ def test_consume_l1_result_writes_promotion_proposal() -> None:
 
             artifact = session.query(Artifact).filter_by(kind="promotion_proposal").one()
             assert artifact.path == f"control_plane/shadow_exports/l1_promotions/{item_id}.json"
+
+
+def test_consume_l1_result_records_completed_timing_misses_as_boundary_evidence() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            item_id, _run_key = _seed_succeeded_l1_sweep(session, repo_root)
+            work_item = session.query(WorkItem).filter_by(item_id=item_id).one()
+            metrics_paths = [Path(path) for path in work_item.expected_outputs if str(path).endswith("metrics.csv")]
+            for index, metrics_path in enumerate(metrics_paths):
+                _write_metrics(
+                    repo_root / metrics_path,
+                    [{
+                        "platform": "nangate45",
+                        "status": "ok",
+                        "param_hash": f"timingmiss{index}",
+                        "tag": f"tag_timing_miss_{index}",
+                        "critical_path_ns": str(42.0 + index),
+                        "die_area": str(100000 + index),
+                        "total_power_mw": str(7.0 + index),
+                        "params_json": json.dumps({"CLOCK_PERIOD": 10}),
+                        "result_path": f"runs/timing_miss_{index}/result.json",
+                    }],
+                )
+
+            result = consume_l1_result(
+                session,
+                Layer1ConsumeRequest(repo_root=str(repo_root), item_id=item_id),
+            )
+
+            assert result.proposal_count == 0
+            proposal_path = repo_root / "control_plane" / "shadow_exports" / "l1_promotions" / f"{item_id}.json"
+            payload = json.loads(proposal_path.read_text(encoding="utf-8"))
+            assert payload["proposal_assessment"]["outcome"] == "boundary_no_feasible_points"
+            assert payload["evaluation_record"]["timing_feasible"] is False
+            assert payload["evaluation_record"]["physical_metrics_present"] is True
+            assert payload["evaluation_record"]["boundary_status_counts"] == {"timing_infeasible": 2}
+            assert payload["boundary_evidence"]["row_count"] == 2
+            first = payload["boundary_evidence"]["rows"][0]
+            assert first["status"] == "timing_infeasible"
+            assert first["flow_status"] == "ok"
+            assert first["clock_period_ns"] == 10.0
+            assert first["timing_slack_ns"] == -32.0
 
 
 def test_consume_l1_result_records_failure_only_boundary_evidence() -> None:
