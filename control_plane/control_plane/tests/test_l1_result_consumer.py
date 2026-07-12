@@ -197,6 +197,10 @@ def test_consume_l1_result_records_completed_timing_misses_as_boundary_evidence(
         with Session(engine) as session:
             item_id, _run_key = _seed_succeeded_l1_sweep(session, repo_root)
             work_item = session.query(WorkItem).filter_by(item_id=item_id).one()
+            request_payload = dict(work_item.task_request.request_payload or {})
+            request_payload["developer_loop"] = {"evaluation": {"mode": "frontier_followup"}}
+            work_item.task_request.request_payload = request_payload
+            session.flush()
             metrics_paths = [Path(path) for path in work_item.expected_outputs if str(path).endswith("metrics.csv")]
             for index, metrics_path in enumerate(metrics_paths):
                 _write_metrics(
@@ -223,6 +227,7 @@ def test_consume_l1_result_records_completed_timing_misses_as_boundary_evidence(
             proposal_path = repo_root / "control_plane" / "shadow_exports" / "l1_promotions" / f"{item_id}.json"
             payload = json.loads(proposal_path.read_text(encoding="utf-8"))
             assert payload["proposal_assessment"]["outcome"] == "boundary_no_feasible_points"
+            assert payload["evaluation_record"]["evaluation_mode"] == "frontier_followup"
             assert payload["evaluation_record"]["timing_feasible"] is False
             assert payload["evaluation_record"]["physical_metrics_present"] is True
             assert payload["evaluation_record"]["boundary_status_counts"] == {"timing_infeasible": 2}
