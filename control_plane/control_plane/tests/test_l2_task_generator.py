@@ -9518,6 +9518,48 @@ def test_generate_l2_campaign_task_adds_score32_exp_lut_div_generation_quality_e
             }
 
 
+def test_generate_l2_campaign_task_adds_score32_zero_tail_generation_quality_evidence() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id="l2_decoder_attention_score32_zero_tail_two_pass_generation_quality_llama7b_v1",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    abstraction_layer="decoder_attention_mixed_int8_score32_zero_tail_generation_quality",
+                    evaluation_mode="quality_gate",
+                    comparison_role="two_pass_zero_tail_generation_quality",
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            command = work_item.command_manifest[0]
+            decoder_inputs = work_item.input_manifest["decoder_contract"]
+            assert command["name"] == "evaluate_decoder_attention_mixed_int8_score32_zero_tail_generation_quality"
+            assert (
+                "--candidate score32_zero_tail_two_pass:q8,k8,v8,s32,w16,"
+                "exp_lut_div_zero_tail_bucket20"
+            ) in command["run"]
+            assert "--primary-candidate-id score32_zero_tail_two_pass" in command["run"]
+            assert decoder_inputs["attention_two_pass_stream_iterdiv_config"].endswith(
+                "attention_two_pass_stream_iterdiv/config.json"
+            )
+            assert "zero weight beyond the exp(-8) LUT boundary" in decoder_inputs[
+                "attention_mixed_int8_score32_exp_lut_div_generation_quality_scope"
+            ]
+
+
 def test_generate_l2_campaign_task_adds_score24_w16_rtl_exact_generation_quality_evidence() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"

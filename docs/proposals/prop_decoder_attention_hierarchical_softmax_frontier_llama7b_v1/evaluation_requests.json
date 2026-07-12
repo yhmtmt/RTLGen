@@ -160,6 +160,24 @@
         "reason": "The two-pass score store must consume concrete SRAM area, ports, and energy instead of borrowing the full shared-KV capacity envelope."
       },
       "status": "pending_implementation_merge"
+    },
+    {
+      "item_id": "l2_decoder_attention_score32_zero_tail_two_pass_generation_quality_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Measure native-checkpoint generation quality for the exact zero-tail two-pass score32 arithmetic.",
+      "evaluation_mode": "quality_gate",
+      "abstraction_layer": "decoder_attention_mixed_int8_score32_zero_tail_generation_quality",
+      "comparison_role": "two_pass_zero_tail_generation_quality",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_two_pass_stream_iterdiv_rtl_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "qualify_zero_tail_two_pass_precision",
+        "reason": "The earlier score32 quality pass clamps out-of-range LUT deltas to exp(-8) and cannot be transferred to the implemented zero-tail profile."
+      },
+      "status": "pending_implementation_merge"
     }
   ],
   "source_commit": "d34ba91f06cc149de6ab71b5bd5f783586c629c4"

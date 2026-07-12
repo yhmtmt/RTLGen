@@ -157,6 +157,32 @@ def test_exp_lut_div_softmax_mode_matches_range_and_precision() -> None:
     assert q24 != q32
 
 
+def test_exp_lut_div_zero_tail_matches_two_pass_lut_boundary() -> None:
+    logits = [1.0, -7.0, -7.01, -8.0]
+
+    clamped = _exp_lut_div_softmax(
+        logits,
+        score_bits=32,
+        weight_bits=16,
+        bucket_shift=20,
+        input_frac_bits=28,
+    )
+    zero_tail = _exp_lut_div_softmax(
+        logits,
+        score_bits=32,
+        weight_bits=16,
+        bucket_shift=20,
+        input_frac_bits=28,
+        zero_tail=True,
+    )
+
+    assert clamped[2] > 0.0
+    assert clamped[3] > 0.0
+    assert zero_tail[1] > 0.0
+    assert zero_tail[2] == 0.0
+    assert zero_tail[3] == 0.0
+
+
 def test_fake_attention_patch_quantizes_qkv_once_and_restores() -> None:
     torch = pytest.importorskip("torch")
 
@@ -296,6 +322,12 @@ def test_parse_candidate_spec_and_list_compatibility() -> None:
     assert exp_lut.score_bits == 32
     assert exp_lut.weight_bits == 16
     assert exp_lut.softmax_mode == "exp_lut_div_bucket20"
+
+    zero_tail = _parse_candidate_spec(
+        "score32_exp_lut_zero_tail_two_pass:q8,k8,v8,s32,w16,exp_lut_div_zero_tail_bucket20"
+    )
+    assert zero_tail.candidate_id == "score32_exp_lut_zero_tail_two_pass"
+    assert zero_tail.softmax_mode == "exp_lut_div_zero_tail_bucket20"
 
     with pytest.raises(ValueError):
         _parse_candidate_spec("qkv8_score8:r8")

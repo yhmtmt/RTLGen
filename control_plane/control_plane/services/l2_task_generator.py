@@ -7653,6 +7653,49 @@ def _decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality_evidenc
     }
 
 
+def _decoder_attention_mixed_int8_score32_zero_tail_generation_quality_evidence(
+    *,
+    item_id: str,
+) -> dict[str, Any]:
+    evidence = _decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality_evidence(item_id=item_id)
+    inputs = evidence["inputs"]
+    old_out = inputs["attention_mixed_int8_score32_exp_lut_div_generation_quality_out"]
+    old_report = inputs["attention_mixed_int8_score32_exp_lut_div_generation_quality_report"]
+    out = old_out.replace(
+        "decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality__",
+        "decoder_attention_mixed_int8_score32_zero_tail_two_pass_generation_quality__",
+    )
+    report = old_report.replace(
+        "decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality__",
+        "decoder_attention_mixed_int8_score32_zero_tail_two_pass_generation_quality__",
+    )
+    inputs["attention_mixed_int8_score32_exp_lut_div_generation_quality_out"] = out
+    inputs["attention_mixed_int8_score32_exp_lut_div_generation_quality_report"] = report
+    inputs.pop("attention_score32_exp_lut_div_composed_config", None)
+    inputs["attention_two_pass_stream_iterdiv_config"] = (
+        "runs/designs/npu_blocks/attention_two_pass_stream_iterdiv/config.json"
+    )
+    inputs["attention_mixed_int8_score32_exp_lut_div_generation_quality_scope"] = (
+        "Run the native-checkpoint generation/NLL gate for the exact two-pass score32 profile: "
+        "global row max, bucket20 q16 exp LUT, zero weight beyond the exp(-8) LUT boundary, "
+        "signed weighted-value accumulation, and one final exact divide."
+    )
+    command = evidence["commands"][0]
+    command["name"] = "evaluate_decoder_attention_mixed_int8_score32_zero_tail_generation_quality"
+    command["run"] = (
+        command["run"]
+        .replace(old_out, out)
+        .replace(old_report, report)
+        .replace(
+            "score32_exp_lut_div:q8,k8,v8,s32,w16,exp_lut_div_bucket20",
+            "score32_zero_tail_two_pass:q8,k8,v8,s32,w16,exp_lut_div_zero_tail_bucket20",
+        )
+        .replace("--primary-candidate-id score32_exp_lut_div", "--primary-candidate-id score32_zero_tail_two_pass")
+    )
+    evidence["expected_outputs"] = [out, report]
+    return evidence
+
+
 def _decoder_attention_mixed_int8_score24_w16_rtl_exact_generation_quality_evidence(
     *,
     item_id: str,
@@ -9906,6 +9949,7 @@ def _build_payload(
         "decoder_attention_mixed_int8_score32_w16_recip_lut_q16_generation_quality",
         "decoder_attention_mixed_int8_score32_w16_rtl_exact_generation_quality",
         "decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality",
+        "decoder_attention_mixed_int8_score32_zero_tail_generation_quality",
         "decoder_attention_mixed_int8_score24_w16_rtl_exact_generation_quality",
         "decoder_attention_mixed_int8_score32_w16_rtl_recip_precision_generation_quality",
         "decoder_attention_mixed_int8_softmax_replacement_generation_quality",
@@ -10160,6 +10204,10 @@ def _build_payload(
             )
         elif abstraction_layer_name == "decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality":
             decoder_evidence = _decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality_evidence(
+                item_id=item_id,
+            )
+        elif abstraction_layer_name == "decoder_attention_mixed_int8_score32_zero_tail_generation_quality":
+            decoder_evidence = _decoder_attention_mixed_int8_score32_zero_tail_generation_quality_evidence(
                 item_id=item_id,
             )
         elif abstraction_layer_name == "decoder_attention_mixed_int8_score24_w16_rtl_exact_generation_quality":
