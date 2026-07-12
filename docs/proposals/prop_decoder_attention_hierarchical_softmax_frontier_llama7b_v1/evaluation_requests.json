@@ -92,9 +92,12 @@
         "direction": "measure_two_pass_divider_frontier",
         "reason": "Choose the minimum-area divider width that remains hidden by full-context replay service."
       },
-      "status": "ready_to_queue",
-      "notes": "Prerequisites are merged; item is ready to queue."
+      "status": "merged",
+      "notes": "Prerequisites are merged; item is ready to queue. Merged via PR #1256 and merge 2431b5500e8700b573d6a18215619e0ac2b99eb5 at 2026-07-12T09:59:34.180012Z.",
+      "merged_pr_number": 1256,
+      "merge_commit": "2431b5500e8700b573d6a18215619e0ac2b99eb5",
+      "merged_utc": "2026-07-12T09:59:34.180012Z"
     }
   ],
-  "source_commit": "638989e3b2353bf1fe41c55c51fdc25246359cf2"
+  "source_commit": "636d3d67ff149b5fa9066750d26240d7723c11b0"
 }
