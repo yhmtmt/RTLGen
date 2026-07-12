@@ -152,11 +152,29 @@
         "reason": "A 480-cycle final divide adds less than one percent to a 131072-token two-pass row while removing the 42.7 ns path."
       },
       "status": "blocked_on_iterdiv_equivalence_merge"
+    },
+    {
+      "item_id": "l2_decoder_attention_two_pass_score_sram_reservation_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Reserve a measured 16 MiB score SRAM before KV packing and recost Llama7B latency, area, and energy.",
+      "evaluation_mode": "frontier_recost",
+      "abstraction_layer": "decoder_attention_two_pass_score_sram_reservation",
+      "comparison_role": "measured_score_memory_recost",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_two_pass_stream_iterdiv_rtl_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "reserve_measured_score_sram_before_kv",
+        "reason": "The two-pass score store must consume concrete SRAM area, ports, and energy instead of borrowing the full shared-KV capacity envelope."
+      },
+      "status": "pending_implementation_merge"
     }
   ],
   "remaining_abstractions_after_this_step": [
     "The exact iterative divider still requires remote equivalence and PPA measurement.",
-    "The score buffer must be mapped to measured SRAM ports and scheduled with QK and V traffic.",
+    "The measured score-SRAM macro reservation still requires a placed macro floorplan and composed QK/KV schedule recost.",
     "The resulting arithmetic profile requires model-native Llama quality evaluation before promotion."
   ]
 }

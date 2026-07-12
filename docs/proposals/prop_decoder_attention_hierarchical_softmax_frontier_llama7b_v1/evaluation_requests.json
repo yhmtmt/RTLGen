@@ -142,6 +142,24 @@
       },
       "status": "ready_to_queue",
       "notes": "Prerequisites are merged; item is ready to queue."
+    },
+    {
+      "item_id": "l2_decoder_attention_two_pass_score_sram_reservation_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Reserve a measured 16 MiB score SRAM before KV packing and recost Llama7B latency, area, and energy.",
+      "evaluation_mode": "frontier_recost",
+      "abstraction_layer": "decoder_attention_two_pass_score_sram_reservation",
+      "comparison_role": "measured_score_memory_recost",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_two_pass_stream_iterdiv_rtl_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "reserve_measured_score_sram_before_kv",
+        "reason": "The two-pass score store must consume concrete SRAM area, ports, and energy instead of borrowing the full shared-KV capacity envelope."
+      },
+      "status": "pending_implementation_merge"
     }
   ],
   "source_commit": "d34ba91f06cc149de6ab71b5bd5f783586c629c4"
