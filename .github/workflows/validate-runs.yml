@@ -8,12 +8,14 @@ on:
       - 'scripts/validate_runs.py'
       - 'scripts/build_runs_index.py'
       - 'tests/test_runs_parsers.py'
+      - '.github/workflows/validate-runs.yml'
   pull_request:
     paths:
       - 'runs/**'
       - 'scripts/validate_runs.py'
       - 'scripts/build_runs_index.py'
       - 'tests/test_runs_parsers.py'
+      - '.github/workflows/validate-runs.yml'
   workflow_dispatch:
 
 jobs:
