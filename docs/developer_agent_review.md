@@ -168,9 +168,15 @@ When preparing or reviewing a boundary job:
 - the report must distinguish a useful boundary failure from an infrastructure,
   checkout, or validation failure
 
+Treat `metrics.csv status=ok` as flow completion, not proof that the requested
+clock closed. When `critical_path_ns` and the declared `CLOCK_PERIOD` are both
+available, a row is promotable only if `critical_path_ns <= CLOCK_PERIOD`.
+Completed rows that miss the period must retain `flow_status=ok` but be reported
+as `timing_infeasible` boundary evidence with the clock period and signed slack.
+
 Do not use relaxed boundary acceptance for ordinary winner-selection sweeps.
-Those should continue to require at least one `status=ok` row for each expected
-metrics file.
+Those should continue to require at least one completed, timing-feasible row for
+each expected metrics file.
 
 ## Semantic Equivalence And Proxy Rule
 
@@ -203,6 +209,9 @@ Evaluation PR merge rule:
 - do not hold merge until after notebook-side analysis artifacts are updated
 - a flat or negative result can still be merge-worthy if the evidence is
   correct
+- evaluator branches commit per-design metrics but do not update the shared
+  `runs/index.csv`; CI validates their artifacts without enforcing index
+  freshness, and the post-merge finalizer rebuilds the index from tracked files
 
 Post-merge rule:
 

@@ -108,6 +108,34 @@ def _safe_float(value: str | None) -> float | None:
         return None
 
 
+def _row_timing_assessment(row: dict[str, Any]) -> dict[str, Any]:
+    critical_path_ns = _safe_float(row.get("critical_path_ns"))
+    clock_period_ns = _safe_float(row.get("clock_period_ns"))
+    if clock_period_ns is None:
+        params_text = str(row.get("params_json", "")).strip()
+        if params_text:
+            try:
+                params = json.loads(params_text)
+            except (TypeError, ValueError, json.JSONDecodeError):
+                params = {}
+            if isinstance(params, dict):
+                clock_period_ns = _safe_float(params.get("CLOCK_PERIOD"))
+
+    if critical_path_ns is None or clock_period_ns is None or clock_period_ns <= 0:
+        return {
+            "timing_feasible": None,
+            "clock_period_ns": clock_period_ns,
+            "timing_slack_ns": None,
+        }
+
+    slack_ns = clock_period_ns - critical_path_ns
+    return {
+        "timing_feasible": slack_ns >= 0.0,
+        "clock_period_ns": clock_period_ns,
+        "timing_slack_ns": slack_ns,
+    }
+
+
 def _row_sort_key(row: dict[str, Any]) -> tuple[float, float, float, str, str]:
     cp = _safe_float(row.get("critical_path_ns"))
     area = _safe_float(row.get("die_area"))
@@ -329,14 +357,18 @@ def _effective_evaluation_record(*, repo_root: Path, work_item: WorkItem, best_r
             + "; no physical metrics are recorded yet."
         )
     else:
-        summary = "Physical metrics recorded from an accepted status=ok Layer 1 row."
-    return {
+        summary = "Physical metrics recorded from a completed, timing-feasible Layer 1 row."
+    record = {
         "evaluation_mode": mode,
         "abstraction_layer": _developer_loop_abstraction_layer(repo_root, work_item),
         "result_kind": result_kind,
         "physical_metrics_present": has_physical_metrics,
         "summary": summary,
     }
+    timing = _row_timing_assessment(best_row)
+    if timing["timing_feasible"] is not None:
+        record.update(timing)
+    return record
 
 
 def _best_metrics_row(
@@ -344,6 +376,7 @@ def _best_metrics_row(
     repo_root: Path,
     metrics_csv: str,
     tag_prefixes: tuple[str, ...] = (),
+    require_timing_feasible: bool = True,
 ) -> dict[str, Any] | None:
     path = _resolve_path(repo_root=repo_root, path_text=metrics_csv)
     if not path.exists():
@@ -353,6 +386,8 @@ def _best_metrics_row(
         if str(row.get("status", "")).strip() != "ok":
             continue
         if not _row_in_current_sweep_scope(row, tag_prefixes=tag_prefixes):
+            continue
+        if require_timing_feasible and _row_timing_assessment(row)["timing_feasible"] is False:
             continue
         rows.append(dict(row))
     if not rows:
@@ -372,15 +407,21 @@ def _boundary_metrics_rows(
         if not path.exists():
             continue
         for raw_row in _load_metrics_rows(path):
-            status = str(raw_row.get("status", "")).strip()
-            if status == "ok":
+            flow_status = str(raw_row.get("status", "")).strip()
+            timing = _row_timing_assessment(raw_row)
+            timing_infeasible = flow_status == "ok" and timing["timing_feasible"] is False
+            if flow_status == "ok" and not timing_infeasible:
                 continue
             if not _row_in_current_sweep_scope(raw_row, tag_prefixes=tag_prefixes):
                 continue
+            status = "timing_infeasible" if timing_infeasible else flow_status
             evidence: dict[str, Any] = {
                 "metrics_csv": metrics_csv,
                 "status": status,
             }
+            if timing_infeasible:
+                evidence["flow_status"] = flow_status
+                evidence.update(timing)
             for key in (
                 "design",
                 "platform",
@@ -403,12 +444,21 @@ def _boundary_metrics_rows(
 
 def _boundary_evaluation_record(*, repo_root: Path, work_item: WorkItem, boundary_rows: list[dict[str, Any]]) -> dict[str, Any]:
     status_counts = Counter(str(row.get("status", "")).strip() or "unknown" for row in boundary_rows)
+    timing_infeasible_count = status_counts.get("timing_infeasible", 0)
+    if timing_infeasible_count:
+        summary = (
+            "No timing-feasible Layer 1 rows were produced; completed flows that miss their "
+            "declared clock period are retained as explicit timing-boundary evidence."
+        )
+    else:
+        summary = "No status=ok Layer 1 rows were produced; non-ok metrics rows are recorded as explicit boundary evidence."
     return {
         "evaluation_mode": "measurement_only",
         "abstraction_layer": _developer_loop_abstraction_layer(repo_root, work_item),
         "result_kind": "boundary_evidence",
-        "physical_metrics_present": False,
-        "summary": "No status=ok Layer 1 rows were produced; non-ok metrics rows are recorded as explicit boundary evidence.",
+        "physical_metrics_present": bool(timing_infeasible_count),
+        "timing_feasible": False if timing_infeasible_count else None,
+        "summary": summary,
         "boundary_status_counts": dict(status_counts),
     }
 
@@ -501,7 +551,12 @@ def _best_trial_row(repo_root: Path, run: Run) -> tuple[str, dict[str, Any]] | N
     candidates: list[tuple[str, dict[str, Any]]] = []
     tag_prefixes = _current_sweep_tag_prefixes(repo_root, run.work_item)
     for metrics_csv in _metrics_csvs_from_run(run, work_item=run.work_item):
-        best_row = _best_metrics_row(repo_root=repo_root, metrics_csv=metrics_csv, tag_prefixes=tag_prefixes)
+        best_row = _best_metrics_row(
+            repo_root=repo_root,
+            metrics_csv=metrics_csv,
+            tag_prefixes=tag_prefixes,
+            require_timing_feasible=False,
+        )
         if best_row is None:
             continue
         candidates.append((metrics_csv, best_row))
@@ -898,9 +953,22 @@ def consume_l1_result(session: Session, request: Layer1ConsumeRequest) -> Layer1
     payload["trial_summary"] = summary_stats
     if boundary_rows:
         if not proposals:
+            timing_infeasible_count = sum(
+                1 for row in boundary_rows if str(row.get("status", "")).strip() == "timing_infeasible"
+            )
+            if timing_infeasible_count:
+                assessment_summary = (
+                    "All completed physical rows miss their declared clock period; retain them as "
+                    "timing-boundary evidence and do not promote a feasible design point."
+                )
+            else:
+                assessment_summary = (
+                    "All current Layer 1 metrics rows are non-ok; this is accepted as frontier "
+                    "boundary evidence, not a promotable design point."
+                )
             payload["proposal_assessment"] = {
                 "outcome": "boundary_no_feasible_points",
-                "summary": "All current Layer 1 metrics rows are non-ok; this is accepted as frontier boundary evidence, not a promotable design point.",
+                "summary": assessment_summary,
                 "failure_row_count": len(boundary_rows),
             }
         payload["boundary_evidence"] = {

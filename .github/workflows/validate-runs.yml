@@ -34,9 +34,11 @@ jobs:
         run: python scripts/validate_runs.py
 
       - name: Regenerate index
+        if: github.event_name != 'pull_request' || !startsWith(github.head_ref, 'eval/')
         run: python scripts/build_runs_index.py
 
       - name: Check index is up to date
+        if: github.event_name != 'pull_request' || !startsWith(github.head_ref, 'eval/')
         run: |
           if git diff --ignore-cr-at-eol --exit-code runs/index.csv; then
             echo "Index is up to date"
@@ -44,3 +46,7 @@ jobs:
             echo "::error::runs/index.csv is out of date. Run 'python scripts/build_runs_index.py' and commit the result."
             exit 1
           fi
+
+      - name: Confirm central index ownership for evaluator PR
+        if: github.event_name == 'pull_request' && startsWith(github.head_ref, 'eval/')
+        run: echo "Evaluator PR validated without regenerating runs/index.csv; the post-merge finalizer owns the shared index."
