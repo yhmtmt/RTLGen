@@ -1,0 +1,247 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-07-12T09:57:24.624640Z",
+  "item_id": "l1_decoder_attention_two_pass_stream_ppa_v1",
+  "run_key": "l1_decoder_attention_two_pass_stream_ppa_v1_run_d88cdb5818618a63",
+  "layer": "layer1",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l1_sweep",
+  "source_commit": "636d3d67ff149b5fa9066750d26240d7723c11b0",
+  "objective": "Measure timing, area, power, and cell count for 1/2/4/8 final-divider lanes and select the minimum-area lane count hidden by full-context replay.",
+  "input_manifest": {
+    "sweeps": [
+      "runs/campaigns/npu/attention_two_pass_stream_v1/sweeps/nangate45_attention_two_pass_stream.json"
+    ],
+    "configs": [
+      "runs/designs/npu_blocks/attention_two_pass_stream_d1/config.json",
+      "runs/designs/npu_blocks/attention_two_pass_stream_d2/config.json",
+      "runs/designs/npu_blocks/attention_two_pass_stream_d4/config.json",
+      "runs/designs/npu_blocks/attention_two_pass_stream_d8/config.json"
+    ],
+    "out_root": "runs/designs/npu_blocks",
+    "design_dirs": [],
+    "macro_manifests": [],
+    "candidate_manifests": [],
+    "required_submodules": []
+  },
+  "proposal_count": 0,
+  "evaluation_record": {
+    "evaluation_mode": "frontier_followup",
+    "abstraction_layer": "decoder_attention_two_pass_stream",
+    "result_kind": "boundary_evidence",
+    "physical_metrics_present": true,
+    "timing_feasible": false,
+    "summary": "No timing-feasible Layer 1 rows were produced; completed flows that miss their declared clock period are retained as explicit timing-boundary evidence.",
+    "boundary_status_counts": {
+      "timing_infeasible": 8
+    }
+  },
+  "proposal_assessment": {
+    "outcome": "boundary_no_feasible_points",
+    "summary": "All completed physical rows miss their declared clock period; retain them as timing-boundary evidence and do not promote a feasible design point.",
+    "failure_row_count": 8
+  },
+  "proposals": [],
+  "trial_summary": {
+    "item_id": "l1_decoder_attention_two_pass_stream_ppa_v1",
+    "completed_trials": 1,
+    "success_count": 1,
+    "failure_count": 0,
+    "success_rate": 1.0,
+    "metrics": {
+      "critical_path_ns": {
+        "best": 42.7317,
+        "mean": 42.7317,
+        "median": 42.7317,
+        "max": 42.7317,
+        "range": 0.0,
+        "stddev": 0.0
+      },
+      "die_area": {
+        "best": 6250000.0,
+        "mean": 6250000.0,
+        "median": 6250000.0,
+        "max": 6250000.0,
+        "range": 0.0,
+        "stddev": 0.0
+      },
+      "total_power_mw": {
+        "best": 7.35,
+        "mean": 7.35,
+        "median": 7.35,
+        "max": 7.35,
+        "range": 0.0,
+        "stddev": 0.0
+      }
+    }
+  },
+  "source_refs": {
+    "trial_metrics_csvs": [
+      "runs/designs/npu_blocks/attention_two_pass_stream_d1/metrics.csv",
+      "runs/designs/npu_blocks/attention_two_pass_stream_d2/metrics.csv",
+      "runs/designs/npu_blocks/attention_two_pass_stream_d4/metrics.csv",
+      "runs/designs/npu_blocks/attention_two_pass_stream_d8/metrics.csv"
+    ],
+    "summary_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_two_pass_stream_ppa_v1/summary_stats.json",
+    "failure_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_two_pass_stream_ppa_v1/failure_stats.json",
+    "trial_table_csv": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_two_pass_stream_ppa_v1/trial_table.csv"
+  },
+  "boundary_evidence": {
+    "row_count": 8,
+    "rows": [
+      {
+        "metrics_csv": "runs/designs/npu_blocks/attention_two_pass_stream_d1/metrics.csv",
+        "status": "timing_infeasible",
+        "flow_status": "ok",
+        "timing_feasible": false,
+        "clock_period_ns": 10.0,
+        "timing_slack_ns": -33.0822,
+        "design": "attention_two_pass_stream_d1",
+        "platform": "nangate45",
+        "config_hash": "e01610fcc20c",
+        "param_hash": "8f240871",
+        "tag": "attention_two_pass_stream_v1",
+        "critical_path_ns": "43.0822",
+        "die_area": "6250000.0",
+        "total_power_mw": "7.36",
+        "result_path": "/orfs/flow/reports/nangate45/attention_two_pass_stream_d1/attention_two_pass_stream_v1/6_finish.rpt",
+        "work_result_json": "runs/designs/npu_blocks/attention_two_pass_stream_d1/work/8f240871/result.json",
+        "params_json": "{\"CLOCK_PERIOD\": 10, \"CORE_AREA\": \"50 50 2450 2450\", \"CORE_UTILIZATION\": \"\", \"DIE_AREA\": \"0 0 2500 2500\", \"FLOW_VARIANT\": \"attention_two_pass_stream_v1\", \"PLACE_DENSITY\": 0.3, \"SYNTH_HIERARCHICAL\": 1, \"SYNTH_MEMORY_MAX_BITS\": 65536, \"TAG\": \"attention_two_pass_stream_v1\", \"tag_prefix\": \"attention_two_pass_stream_v1\"}"
+      },
+      {
+        "metrics_csv": "runs/designs/npu_blocks/attention_two_pass_stream_d1/metrics.csv",
+        "status": "timing_infeasible",
+        "flow_status": "ok",
+        "timing_feasible": false,
+        "clock_period_ns": 10.0,
+        "timing_slack_ns": -32.7317,
+        "design": "attention_two_pass_stream_d1",
+        "platform": "nangate45",
+        "config_hash": "e01610fcc20c",
+        "param_hash": "59c51083",
+        "tag": "attention_two_pass_stream_v1",
+        "critical_path_ns": "42.7317",
+        "die_area": "6250000.0",
+        "total_power_mw": "7.35",
+        "result_path": "/orfs/flow/reports/nangate45/attention_two_pass_stream_d1/attention_two_pass_stream_v1/6_finish.rpt",
+        "work_result_json": "runs/designs/npu_blocks/attention_two_pass_stream_d1/work/59c51083/result.json",
+        "params_json": "{\"CLOCK_PERIOD\": 10, \"CORE_AREA\": \"50 50 2450 2450\", \"CORE_UTILIZATION\": \"\", \"DIE_AREA\": \"0 0 2500 2500\", \"FLOW_VARIANT\": \"attention_two_pass_stream_v1\", \"PLACE_DENSITY\": 0.4, \"SYNTH_HIERARCHICAL\": 1, \"SYNTH_MEMORY_MAX_BITS\": 65536, \"TAG\": \"attention_two_pass_stream_v1\", \"tag_prefix\": \"attention_two_pass_stream_v1\"}"
+      },
+      {
+        "metrics_csv": "runs/designs/npu_blocks/attention_two_pass_stream_d2/metrics.csv",
+        "status": "timing_infeasible",
+        "flow_status": "ok",
+        "timing_feasible": false,
+        "clock_period_ns": 10.0,
+        "timing_slack_ns": -35.8322,
+        "design": "attention_two_pass_stream_d2",
+        "platform": "nangate45",
+        "config_hash": "f8694ef8c3a7",
+        "param_hash": "8f240871",
+        "tag": "attention_two_pass_stream_v1",
+        "critical_path_ns": "45.8322",
+        "die_area": "6250000.0",
+        "total_power_mw": "11.6",
+        "result_path": "/orfs/flow/reports/nangate45/attention_two_pass_stream_d2/attention_two_pass_stream_v1/6_finish.rpt",
+        "work_result_json": "runs/designs/npu_blocks/attention_two_pass_stream_d2/work/8f240871/result.json",
+        "params_json": "{\"CLOCK_PERIOD\": 10, \"CORE_AREA\": \"50 50 2450 2450\", \"CORE_UTILIZATION\": \"\", \"DIE_AREA\": \"0 0 2500 2500\", \"FLOW_VARIANT\": \"attention_two_pass_stream_v1\", \"PLACE_DENSITY\": 0.3, \"SYNTH_HIERARCHICAL\": 1, \"SYNTH_MEMORY_MAX_BITS\": 65536, \"TAG\": \"attention_two_pass_stream_v1\", \"tag_prefix\": \"attention_two_pass_stream_v1\"}"
+      },
+      {
+        "metrics_csv": "runs/designs/npu_blocks/attention_two_pass_stream_d2/metrics.csv",
+        "status": "timing_infeasible",
+        "flow_status": "ok",
+        "timing_feasible": false,
+        "clock_period_ns": 10.0,
+        "timing_slack_ns": -35.2992,
+        "design": "attention_two_pass_stream_d2",
+        "platform": "nangate45",
+        "config_hash": "f8694ef8c3a7",
+        "param_hash": "59c51083",
+        "tag": "attention_two_pass_stream_v1",
+        "critical_path_ns": "45.2992",
+        "die_area": "6250000.0",
+        "total_power_mw": "11.7",
+        "result_path": "/orfs/flow/reports/nangate45/attention_two_pass_stream_d2/attention_two_pass_stream_v1/6_finish.rpt",
+        "work_result_json": "runs/designs/npu_blocks/attention_two_pass_stream_d2/work/59c51083/result.json",
+        "params_json": "{\"CLOCK_PERIOD\": 10, \"CORE_AREA\": \"50 50 2450 2450\", \"CORE_UTILIZATION\": \"\", \"DIE_AREA\": \"0 0 2500 2500\", \"FLOW_VARIANT\": \"attention_two_pass_stream_v1\", \"PLACE_DENSITY\": 0.4, \"SYNTH_HIERARCHICAL\": 1, \"SYNTH_MEMORY_MAX_BITS\": 65536, \"TAG\": \"attention_two_pass_stream_v1\", \"tag_prefix\": \"attention_two_pass_stream_v1\"}"
+      },
+      {
+        "metrics_csv": "runs/designs/npu_blocks/attention_two_pass_stream_d4/metrics.csv",
+        "status": "timing_infeasible",
+        "flow_status": "ok",
+        "timing_feasible": false,
+        "clock_period_ns": 10.0,
+        "timing_slack_ns": -37.5293,
+        "design": "attention_two_pass_stream_d4",
+        "platform": "nangate45",
+        "config_hash": "9704322aba9a",
+        "param_hash": "8f240871",
+        "tag": "attention_two_pass_stream_v1",
+        "critical_path_ns": "47.5293",
+        "die_area": "6250000.0",
+        "total_power_mw": "20.1",
+        "result_path": "/orfs/flow/reports/nangate45/attention_two_pass_stream_d4/attention_two_pass_stream_v1/6_finish.rpt",
+        "work_result_json": "runs/designs/npu_blocks/attention_two_pass_stream_d4/work/8f240871/result.json",
+        "params_json": "{\"CLOCK_PERIOD\": 10, \"CORE_AREA\": \"50 50 2450 2450\", \"CORE_UTILIZATION\": \"\", \"DIE_AREA\": \"0 0 2500 2500\", \"FLOW_VARIANT\": \"attention_two_pass_stream_v1\", \"PLACE_DENSITY\": 0.3, \"SYNTH_HIERARCHICAL\": 1, \"SYNTH_MEMORY_MAX_BITS\": 65536, \"TAG\": \"attention_two_pass_stream_v1\", \"tag_prefix\": \"attention_two_pass_stream_v1\"}"
+      },
+      {
+        "metrics_csv": "runs/designs/npu_blocks/attention_two_pass_stream_d4/metrics.csv",
+        "status": "timing_infeasible",
+        "flow_status": "ok",
+        "timing_feasible": false,
+        "clock_period_ns": 10.0,
+        "timing_slack_ns": -37.3708,
+        "design": "attention_two_pass_stream_d4",
+        "platform": "nangate45",
+        "config_hash": "9704322aba9a",
+        "param_hash": "59c51083",
+        "tag": "attention_two_pass_stream_v1",
+        "critical_path_ns": "47.3708",
+        "die_area": "6250000.0",
+        "total_power_mw": "19.9",
+        "result_path": "/orfs/flow/reports/nangate45/attention_two_pass_stream_d4/attention_two_pass_stream_v1/6_finish.rpt",
+        "work_result_json": "runs/designs/npu_blocks/attention_two_pass_stream_d4/work/59c51083/result.json",
+        "params_json": "{\"CLOCK_PERIOD\": 10, \"CORE_AREA\": \"50 50 2450 2450\", \"CORE_UTILIZATION\": \"\", \"DIE_AREA\": \"0 0 2500 2500\", \"FLOW_VARIANT\": \"attention_two_pass_stream_v1\", \"PLACE_DENSITY\": 0.4, \"SYNTH_HIERARCHICAL\": 1, \"SYNTH_MEMORY_MAX_BITS\": 65536, \"TAG\": \"attention_two_pass_stream_v1\", \"tag_prefix\": \"attention_two_pass_stream_v1\"}"
+      },
+      {
+        "metrics_csv": "runs/designs/npu_blocks/attention_two_pass_stream_d8/metrics.csv",
+        "status": "timing_infeasible",
+        "flow_status": "ok",
+        "timing_feasible": false,
+        "clock_period_ns": 10.0,
+        "timing_slack_ns": -39.367,
+        "design": "attention_two_pass_stream_d8",
+        "platform": "nangate45",
+        "config_hash": "733b9e127c12",
+        "param_hash": "8f240871",
+        "tag": "attention_two_pass_stream_v1",
+        "critical_path_ns": "49.367",
+        "die_area": "6250000.0",
+        "total_power_mw": "38.6",
+        "result_path": "/orfs/flow/reports/nangate45/attention_two_pass_stream_d8/attention_two_pass_stream_v1/6_finish.rpt",
+        "work_result_json": "runs/designs/npu_blocks/attention_two_pass_stream_d8/work/8f240871/result.json",
+        "params_json": "{\"CLOCK_PERIOD\": 10, \"CORE_AREA\": \"50 50 2450 2450\", \"CORE_UTILIZATION\": \"\", \"DIE_AREA\": \"0 0 2500 2500\", \"FLOW_VARIANT\": \"attention_two_pass_stream_v1\", \"PLACE_DENSITY\": 0.3, \"SYNTH_HIERARCHICAL\": 1, \"SYNTH_MEMORY_MAX_BITS\": 65536, \"TAG\": \"attention_two_pass_stream_v1\", \"tag_prefix\": \"attention_two_pass_stream_v1\"}"
+      },
+      {
+        "metrics_csv": "runs/designs/npu_blocks/attention_two_pass_stream_d8/metrics.csv",
+        "status": "timing_infeasible",
+        "flow_status": "ok",
+        "timing_feasible": false,
+        "clock_period_ns": 10.0,
+        "timing_slack_ns": -38.92,
+        "design": "attention_two_pass_stream_d8",
+        "platform": "nangate45",
+        "config_hash": "733b9e127c12",
+        "param_hash": "59c51083",
+        "tag": "attention_two_pass_stream_v1",
+        "critical_path_ns": "48.92",
+        "die_area": "6250000.0",
+        "total_power_mw": "38.4",
+        "result_path": "/orfs/flow/reports/nangate45/attention_two_pass_stream_d8/attention_two_pass_stream_v1/6_finish.rpt",
+        "work_result_json": "runs/designs/npu_blocks/attention_two_pass_stream_d8/work/59c51083/result.json",
+        "params_json": "{\"CLOCK_PERIOD\": 10, \"CORE_AREA\": \"50 50 2450 2450\", \"CORE_UTILIZATION\": \"\", \"DIE_AREA\": \"0 0 2500 2500\", \"FLOW_VARIANT\": \"attention_two_pass_stream_v1\", \"PLACE_DENSITY\": 0.4, \"SYNTH_HIERARCHICAL\": 1, \"SYNTH_MEMORY_MAX_BITS\": 65536, \"TAG\": \"attention_two_pass_stream_v1\", \"tag_prefix\": \"attention_two_pass_stream_v1\"}"
+      }
+    ]
+  }
+}
