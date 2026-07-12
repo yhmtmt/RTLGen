@@ -6397,6 +6397,28 @@ def _decoder_attention_score32_exp_lut_sram_hierarchy_envelope_evidence(*, item_
     }
 
 
+def _decoder_attention_two_pass_score_sram_reservation_evidence(*, item_id: str) -> dict[str, Any]:
+    evidence = _decoder_attention_score32_exp_lut_sram_hierarchy_envelope_evidence(item_id=item_id)
+    inputs = evidence["inputs"]
+    score_sram_metrics = "runs/designs/sram/llama7b_attention_tile_buffers_v1/sram_metrics.json"
+    inputs["attention_two_pass_score_sram_metrics"] = score_sram_metrics
+    inputs["attention_score32_exp_lut_sram_hierarchy_envelope_scope"] = (
+        "Reserve one measured 512 KiB x 256-bit score SRAM macro per Llama7B attention head before "
+        "packing remaining KV SRAM capacity; account score write/replay energy and propagate reduced "
+        "KV residency into HBM share and token latency."
+    )
+    command = evidence["commands"][0]
+    command["name"] = "audit_decoder_attention_two_pass_score_sram_reservation"
+    command["run"] = command["run"].replace(
+        "--placement-efficiency",
+        f"--score-buffer-sram-metrics-json {score_sram_metrics} "
+        "--score-buffer-macro-name kv_tile_read_buffer "
+        "--score-buffer-bytes 16777216 --attention-heads 32 --score-block-bytes 32 "
+        "--clock-period-ns 10 --placement-efficiency",
+    )
+    return evidence
+
+
 def _decoder_attention_integrated_abstraction_closure_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_integrated_abstraction_closure__{item_id}.json"
@@ -9853,6 +9875,7 @@ def _build_payload(
         "decoder_attention_score32_exp_lut_measured_wrapper_promotion",
         "decoder_attention_score32_exp_lut_service_closure",
         "decoder_attention_score32_exp_lut_sram_hierarchy_envelope",
+        "decoder_attention_two_pass_score_sram_reservation",
         "decoder_attention_score32_exp_lut_hbm_dram_service_closure",
         "decoder_attention_score32_hbm_controller_replay",
         "decoder_attention_score32_integrated_frontier_ranking",
@@ -10063,6 +10086,8 @@ def _build_payload(
             decoder_evidence = _decoder_attention_score32_exp_lut_service_closure_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_score32_exp_lut_sram_hierarchy_envelope":
             decoder_evidence = _decoder_attention_score32_exp_lut_sram_hierarchy_envelope_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_attention_two_pass_score_sram_reservation":
+            decoder_evidence = _decoder_attention_two_pass_score_sram_reservation_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_score32_exp_lut_hbm_dram_service_closure":
             decoder_evidence = _decoder_attention_score32_exp_lut_hbm_dram_service_closure_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_score32_hbm_controller_replay":

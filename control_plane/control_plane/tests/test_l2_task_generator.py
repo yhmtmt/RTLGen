@@ -7522,6 +7522,47 @@ def test_generate_l2_campaign_task_adds_attention_score32_exp_lut_sram_hierarchy
             )
 
 
+def test_generate_l2_campaign_task_adds_two_pass_score_sram_reservation() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id="l2_decoder_attention_two_pass_score_sram_reservation_llama7b_v1",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    abstraction_layer="decoder_attention_two_pass_score_sram_reservation",
+                    evaluation_mode="frontier_recost",
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            commands = work_item.task_request.request_payload["task"]["commands"]
+            run = commands[0]["run"]
+            decoder_inputs = work_item.input_manifest["decoder_contract"]
+
+            assert commands[0]["name"] == "audit_decoder_attention_two_pass_score_sram_reservation"
+            assert "--score-buffer-sram-metrics-json" in run
+            assert "llama7b_attention_tile_buffers_v1/sram_metrics.json" in run
+            assert "--score-buffer-macro-name kv_tile_read_buffer" in run
+            assert "--score-buffer-bytes 16777216" in run
+            assert "--attention-heads 32" in run
+            assert "--score-block-bytes 32" in run
+            assert decoder_inputs["attention_two_pass_score_sram_metrics"].endswith(
+                "llama7b_attention_tile_buffers_v1/sram_metrics.json"
+            )
+
+
 def test_generate_l2_campaign_task_adds_attention_composed_datapath_score24_reduced_replica_evidence() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
