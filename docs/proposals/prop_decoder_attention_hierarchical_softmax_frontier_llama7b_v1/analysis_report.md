@@ -22,9 +22,18 @@
 - summary: No timing-feasible Layer 1 rows were produced; completed flows that miss their declared clock period are retained as explicit timing-boundary evidence.
 
 ## Failures and Caveats
-- no additional caveats recorded during automatic finalization
+- every 10 ns point completed place-and-route but failed timing; the best
+  critical paths were 42.7317/45.2992/47.3708/48.9200 ns for 1/2/4/8
+  combinational divider lanes
+- each longest path runs from divider control into `result_value`, so the
+  external score-SRAM and KV-replay interfaces are not the timing cause
+- the one-lane combinational point is also smallest and lowest power
+  (138432 um2 standard-cell area and 7.35 mW at density 0.4), but is not a
+  feasible clocked architecture
 
 ## Recommendation
 - `iterate`
 - reason: Accepted Layer 1 evidence merged, but no concrete promotion proposal entries were present.
-- next_action: inspect the next dependent item
+- next_action: prove and measure one exact shared restoring divider; its 480
+  finalization cycles add less than one percent to the 131072-token two-pass
+  fill/replay schedule while removing the combinational divide path

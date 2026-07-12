@@ -1582,6 +1582,7 @@ def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, 
             "kv_replay",
             "block_counts",
             "div_lanes_per_cycle",
+            "divider_impl",
             "scenarios",
         ):
             if key in evidence_payload:

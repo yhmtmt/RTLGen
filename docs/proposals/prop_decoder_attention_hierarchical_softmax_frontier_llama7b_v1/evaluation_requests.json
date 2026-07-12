@@ -97,6 +97,46 @@
       "merged_pr_number": 1256,
       "merge_commit": "2431b5500e8700b573d6a18215619e0ac2b99eb5",
       "merged_utc": "2026-07-12T09:59:34.180012Z"
+    },
+    {
+      "item_id": "l2_decoder_attention_two_pass_stream_iterdiv_rtl_equivalence_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Prove exact two-pass stream behavior after replacing the timing-infeasible combinational divider with one restoring divider.",
+      "evaluation_mode": "equivalence_gate",
+      "abstraction_layer": "decoder_attention_two_pass_stream_iterdiv_equivalence",
+      "comparison_role": "timing_repair_equivalence_gate",
+      "depends_on_item_ids": [
+        "l1_decoder_attention_two_pass_stream_ppa_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "prove_exact_iterative_divider_replacement",
+        "reason": "The replacement must preserve every final value bit and ready/valid schedule before physical promotion."
+      },
+      "status": "pending_implementation_merge"
+    },
+    {
+      "item_id": "l1_decoder_attention_two_pass_stream_iterdiv_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure whether the exact shared restoring divider closes 10 ns and quantify its area and power.",
+      "evaluation_mode": "frontier_followup",
+      "abstraction_layer": "decoder_attention_two_pass_stream_iterdiv",
+      "comparison_role": "timing_repair_ppa",
+      "config_paths": [
+        "runs/designs/npu_blocks/attention_two_pass_stream_iterdiv/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/attention_two_pass_stream_iterdiv_v1/sweeps/nangate45_attention_two_pass_stream_iterdiv.json",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_two_pass_stream_iterdiv_rtl_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "close_exact_two_pass_stream_timing",
+        "reason": "A 480-cycle final divide adds less than one percent to a 131072-token two-pass row while removing the 42.7 ns path."
+      },
+      "status": "blocked_on_iterdiv_equivalence_merge"
     }
   ],
   "source_commit": "636d3d67ff149b5fa9066750d26240d7723c11b0"

@@ -56,10 +56,14 @@ def _pack_values(matrix: list[list[int]]) -> int:
     return _pack([value for row in matrix for value in row], 8)
 
 
-def _config(*, top_name: str, div_lanes: int) -> JsonDict:
+def _config(*, top_name: str, div_lanes: int, divider_impl: str = "combinational") -> JsonDict:
     return {
         "top_name": top_name,
-        "attention_two_pass_stream": {"max_blocks": 16384, "div_lanes_per_cycle": div_lanes},
+        "attention_two_pass_stream": {
+            "max_blocks": 16384,
+            "div_lanes_per_cycle": div_lanes,
+            "divider_impl": divider_impl,
+        },
     }
 
 
@@ -74,9 +78,10 @@ def _ready(kind: str, scenario: str, cycle: int) -> bool:
     return True
 
 
-def _expected_cycle(*, block_count: int, div_lanes: int, scenario: str) -> int:
+def _expected_cycle(*, block_count: int, div_lanes: int, divider_impl: str, scenario: str) -> int:
     state = "idle"
     fill_index = read_index = div_index = 0
+    div_bit_index = 0
     pending = False
     for cycle in range(10000):
         old = state
@@ -97,9 +102,23 @@ def _expected_cycle(*, block_count: int, div_lanes: int, scenario: str) -> int:
             else:
                 state = "read_req"
         elif old == "divide":
-            div_index += div_lanes
-            if div_index >= 8:
-                state = "hold"
+            if divider_impl == "iterative_restoring":
+                state = "div_load"
+            else:
+                div_index += div_lanes
+                if div_index >= 8:
+                    state = "hold"
+        elif old == "div_load":
+            div_bit_index = 0
+            state = "div_iter"
+        elif old == "div_iter":
+            div_bit_index += 1
+            if div_bit_index == 58:
+                div_index += 1
+                if div_index == 8:
+                    state = "hold"
+                else:
+                    state = "divide"
         elif old == "hold" and _ready("result", scenario, cycle):
             return cycle
     raise RuntimeError("expected-cycle model timed out")
@@ -215,12 +234,13 @@ endmodule
 _RESULT = re.compile(r"RESULT cycle=(\d+) id=(\d+) max=(-?\d+) sum=(\d+) value=([0-9a-fA-F]+)")
 
 
-def _run_rtl(*, block_count: int, div_lanes: int, scenario: str) -> JsonDict:
-    top_name = f"attention_two_pass_stream_d{div_lanes}"
+def _run_rtl(*, block_count: int, div_lanes: int, divider_impl: str, scenario: str) -> JsonDict:
+    suffix = "iterdiv" if divider_impl == "iterative_restoring" else f"d{div_lanes}"
+    top_name = f"attention_two_pass_stream_{suffix}"
     with tempfile.TemporaryDirectory(prefix="attention-two-pass-stream-") as tmp_text:
         tmp = Path(tmp_text)
         rtl = tmp / "rtl"
-        generate(_config(top_name=top_name, div_lanes=div_lanes), rtl)
+        generate(_config(top_name=top_name, div_lanes=div_lanes, divider_impl=divider_impl), rtl)
         tb = tmp / "tb.sv"
         tb.write_text(
             _testbench(top_name=top_name, block_count=block_count, div_lanes=div_lanes, scenario=scenario),
@@ -246,15 +266,30 @@ def _run_rtl(*, block_count: int, div_lanes: int, scenario: str) -> JsonDict:
         }
 
 
-def build_report(*, block_counts: list[int], div_lanes: list[int]) -> JsonDict:
+def build_report(
+    *,
+    block_counts: list[int],
+    div_lanes: list[int],
+    divider_impl: str = "combinational",
+) -> JsonDict:
     command = default_commands(1)[0]
     rows: list[JsonDict] = []
     for block_count in block_counts:
         expected = two_pass_command(command, block_count=block_count)
         for lanes in div_lanes:
             for scenario in ("always_ready", "memory_stalls", "result_backpressure"):
-                rtl = _run_rtl(block_count=block_count, div_lanes=lanes, scenario=scenario)
-                expected_cycle = _expected_cycle(block_count=block_count, div_lanes=lanes, scenario=scenario)
+                rtl = _run_rtl(
+                    block_count=block_count,
+                    div_lanes=lanes,
+                    divider_impl=divider_impl,
+                    scenario=scenario,
+                )
+                expected_cycle = _expected_cycle(
+                    block_count=block_count,
+                    div_lanes=lanes,
+                    divider_impl=divider_impl,
+                    scenario=scenario,
+                )
                 functional = all(
                     rtl[key] == expected[key] for key in ("command_id", "global_max", "exp_sum", "value")
                 )
@@ -263,6 +298,7 @@ def build_report(*, block_counts: list[int], div_lanes: list[int]) -> JsonDict:
                     {
                         "block_count": block_count,
                         "div_lanes_per_cycle": lanes,
+                        "divider_impl": divider_impl,
                         "scenario": scenario,
                         "functional_pass": functional,
                         "schedule_pass": schedule,
@@ -282,6 +318,7 @@ def build_report(*, block_counts: list[int], div_lanes: list[int]) -> JsonDict:
         "kv_replay": "external_ready_valid_stream",
         "block_counts": block_counts,
         "div_lanes_per_cycle": div_lanes,
+        "divider_impl": divider_impl,
         "scenarios": ["always_ready", "memory_stalls", "result_backpressure"],
         "rows": rows,
     }
@@ -291,12 +328,14 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--block-counts", default="4,8")
     parser.add_argument("--div-lanes", default="1,2,4,8")
+    parser.add_argument("--divider-impl", choices=("combinational", "iterative_restoring"), default="combinational")
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--out-md", type=Path, required=True)
     args = parser.parse_args()
     payload = build_report(
         block_counts=[int(value) for value in args.block_counts.split(",") if value],
         div_lanes=[int(value) for value in args.div_lanes.split(",") if value],
+        divider_impl=args.divider_impl,
     )
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")

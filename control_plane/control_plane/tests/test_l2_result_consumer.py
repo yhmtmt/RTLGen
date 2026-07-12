@@ -59,6 +59,7 @@ def test_decoder_evidence_summary_recognizes_two_pass_stream_equivalence() -> No
             "kv_replay": "external_ready_valid_stream",
             "block_counts": [4, 8],
             "div_lanes_per_cycle": [1, 2, 4, 8],
+            "divider_impl": "iterative_restoring",
             "scenarios": ["always_ready", "memory_stalls", "result_backpressure"],
         },
     )
@@ -66,6 +67,7 @@ def test_decoder_evidence_summary_recognizes_two_pass_stream_equivalence() -> No
     assert outcome == "attention_two_pass_stream_equivalence_pass"
     assert "external_ready_valid_sram" in summary
     assert "memory_stalls" in summary
+    assert "iterative_restoring" in summary
 
 
 def test_decoder_evidence_summary_recognizes_mixed_precision_int8_compute_physical_feasibility() -> None:

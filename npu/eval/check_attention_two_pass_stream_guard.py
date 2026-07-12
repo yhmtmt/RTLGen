@@ -32,6 +32,9 @@ def main() -> int:
     for key in ("max_blocks", "div_lanes_per_cycle"):
         if int(manifest.get(key, 0)) != int(body.get(key, 0)):
             raise SystemExit(f"manifest {key} does not match config")
+    divider_impl = str(body.get("divider_impl", "combinational"))
+    if manifest.get("divider_impl") != divider_impl:
+        raise SystemExit("manifest divider_impl does not match config")
     if manifest.get("score_storage") != "external_ready_valid_sram":
         raise SystemExit("score storage must use external ready/valid SRAM")
     text = paths["top"].read_text(encoding="utf-8")
@@ -47,9 +50,13 @@ def main() -> int:
         "replay_ready",
         "default: exp_lut = 16'd0",
         "numerator_accum",
-        "final_magnitude / exp_sum_accum",
-        "DIV_LANES",
     )
+    if divider_impl == "iterative_restoring":
+        required += ("DIV_ITER", "div_remainder", "div_bit_count", "div_trial_remainder")
+        if "final_magnitude / exp_sum_accum" in text:
+            raise SystemExit("iterative stream RTL must not contain a combinational final divider")
+    else:
+        required += ("final_magnitude / exp_sum_accum", "DIV_LANES")
     for token in required:
         if token not in text:
             raise SystemExit(f"stream RTL missing semantic token: {token}")
