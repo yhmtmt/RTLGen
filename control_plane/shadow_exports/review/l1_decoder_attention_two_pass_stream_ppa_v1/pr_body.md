@@ -14,12 +14,22 @@
 - proposal_path: `docs/proposals/prop_decoder_attention_hierarchical_softmax_frontier_llama7b_v1/proposal.json`
 - reviewer_first_read: `docs/proposals/prop_decoder_attention_hierarchical_softmax_frontier_llama7b_v1/proposal.json` plus `docs/developer_agent_review.md`
 - execution_source_commit: `636d3d67ff149b5fa9066750d26240d7723c11b0`
-- review_metadata_source_commit: `636d3d67ff149b5fa9066750d26240d7723c11b0`
+- review_metadata_source_commit: `84c0c4434d89f2e45680abbd948b1ae4ad75aba9`
 
 ## Evaluation Mode
 - evaluation_mode: `frontier_followup`
 - abstraction_layer: `decoder_attention_two_pass_stream`
-- evaluation_summary: `Physical metrics recorded from an accepted status=ok Layer 1 row.`
+- evaluation_summary: `No timing-feasible Layer 1 rows were produced; completed flows that miss their declared clock period are retained as explicit timing-boundary evidence.`
+
+## Focused Comparison
+- proposal_outcome: `boundary_no_feasible_points`
+- comparison_summary: `All completed physical rows miss their declared clock period; retain them as timing-boundary evidence and do not promote a feasible design point.`
+
+## Submission Recovery
+- submission_failure_count: `1`
+- retry_request_count: `0`
+- last_submission_failure: `Command '['git', 'push', '--force-with-lease', '-u', 'origin', 'eval/l1_decoder_attention_two_pass_stream_ppa_v1/s20260710t231825z']' returned non-zero exit status 1.`
+- final_submission_pr: `https://github.com/yhmtmt/RTLGen/pull/1256`
 
 ## Checklist
 - [ ] Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge
