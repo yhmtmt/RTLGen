@@ -1,15 +1,15 @@
 {
   "proposal_id": "prop_decoder_attention_hierarchical_softmax_frontier_llama7b_v1",
-  "candidate_id": "l1_decoder_attention_two_pass_stream_ppa_v1",
+  "candidate_id": "l2_decoder_attention_two_pass_stream_iterdiv_rtl_equivalence_llama7b_v1",
   "decision": "iterate",
-  "reason": "Accepted Layer 1 evidence merged, but no concrete promotion proposal entries were present.",
+  "reason": "Two-pass external-memory stream equivalence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_two_pass_stream_equivalence__l2_decoder_attention_two_pass_stream_iterdiv_rtl_equivalence_llama7b_v1.json: decision=attention_two_pass_stream_equivalence_pass; equivalence_pass=True; semantic_profile=q8_k8_v8_a32_s32_exp_lut_b20_zero_tail_two_pass_global_max; score_storage=external_ready_valid_sram; kv_replay=external_ready_valid_stream; block_counts=[4, 8]; div_lanes_per_cycle=[1]; scenarios=['always_ready', 'memory_stalls', 'result_backpressure'].",
   "evidence_refs": [
-    "item:l1_decoder_attention_two_pass_stream_ppa_v1",
-    "run:l1_decoder_attention_two_pass_stream_ppa_v1_run_d88cdb5818618a63",
-    "artifact:control_plane/shadow_exports/l1_promotions/l1_decoder_attention_two_pass_stream_ppa_v1.json",
-    "pr:#1256",
-    "https://github.com/yhmtmt/RTLGen/pull/1256"
+    "item:l2_decoder_attention_two_pass_stream_iterdiv_rtl_equivalence_llama7b_v1",
+    "run:l2_decoder_attention_two_pass_stream_iterdiv_rtl_equivalence_llama7b_v1_run_1f217b64ac11a117",
+    "artifact:control_plane/shadow_exports/l2_decisions/l2_decoder_attention_two_pass_stream_iterdiv_rtl_equivalence_llama7b_v1.json",
+    "pr:#1261",
+    "https://github.com/yhmtmt/RTLGen/pull/1261"
   ],
-  "next_action": "inspect the next dependent item",
+  "next_action": "inspect follow-on work after l2_decoder_attention_two_pass_stream_iterdiv_rtl_equivalence_llama7b_v1",
   "requires_human_approval": false
 }

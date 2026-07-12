@@ -114,7 +114,11 @@
         "direction": "prove_exact_iterative_divider_replacement",
         "reason": "The replacement must preserve every final value bit and ready/valid schedule before physical promotion."
       },
-      "status": "pending_implementation_merge"
+      "status": "merged",
+      "merged_pr_number": 1261,
+      "merge_commit": "d0a65345357b89b68e5ff53031392639c497e1eb",
+      "merged_utc": "2026-07-12T10:12:47.875168Z",
+      "notes": "Merged via PR #1261 and merge d0a65345357b89b68e5ff53031392639c497e1eb at 2026-07-12T10:12:47.875168Z."
     },
     {
       "item_id": "l1_decoder_attention_two_pass_stream_iterdiv_ppa_v1",
@@ -136,8 +140,9 @@
         "direction": "close_exact_two_pass_stream_timing",
         "reason": "A 480-cycle final divide adds less than one percent to a 131072-token two-pass row while removing the 42.7 ns path."
       },
-      "status": "blocked_on_iterdiv_equivalence_merge"
+      "status": "ready_to_queue",
+      "notes": "Prerequisites are merged; item is ready to queue."
     }
   ],
-  "source_commit": "636d3d67ff149b5fa9066750d26240d7723c11b0"
+  "source_commit": "d34ba91f06cc149de6ab71b5bd5f783586c629c4"
 }
