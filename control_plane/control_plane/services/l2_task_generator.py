@@ -6322,6 +6322,27 @@ def _decoder_attention_two_pass_stream_equivalence_evidence(*, item_id: str) -> 
     }
 
 
+def _decoder_attention_two_pass_stream_iterdiv_equivalence_evidence(*, item_id: str) -> dict[str, Any]:
+    evidence = _decoder_attention_two_pass_stream_equivalence_evidence(item_id=item_id)
+    inputs = evidence["inputs"]
+    inputs["attention_two_pass_stream_equivalence_scope"] = (
+        "Prove the exact single-unit restoring divider preserves the external score-SRAM/KV-replay "
+        "stream arithmetic and schedule under independent memory/result backpressure."
+    )
+    evidence["commands"] = [
+        {
+            "name": "probe_attention_two_pass_stream_iterdiv_equivalence",
+            "run": (
+                "python3 npu/eval/probe_attention_two_pass_stream_equivalence.py "
+                "--block-counts 4,8 --div-lanes 1 --divider-impl iterative_restoring "
+                f"--out {inputs['attention_two_pass_stream_equivalence_out']} "
+                f"--out-md {inputs['attention_two_pass_stream_equivalence_report']}"
+            ),
+        }
+    ]
+    return evidence
+
+
 def _decoder_attention_score32_exp_lut_sram_hierarchy_envelope_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_score32_exp_lut_sram_hierarchy_envelope__{item_id}.json"
@@ -9841,6 +9862,7 @@ def _build_payload(
         "decoder_attention_hierarchical_softmax_architecture",
         "decoder_attention_two_pass_global_max_equivalence",
         "decoder_attention_two_pass_stream_equivalence",
+        "decoder_attention_two_pass_stream_iterdiv_equivalence",
         "decoder_attention_hbm_dram_service_energy",
         "decoder_attention_hbm_energy_calibration",
         "decoder_attention_hbm_command_calibrated_service",
@@ -10065,6 +10087,8 @@ def _build_payload(
             decoder_evidence = _decoder_attention_two_pass_global_max_equivalence_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_two_pass_stream_equivalence":
             decoder_evidence = _decoder_attention_two_pass_stream_equivalence_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_attention_two_pass_stream_iterdiv_equivalence":
+            decoder_evidence = _decoder_attention_two_pass_stream_iterdiv_equivalence_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_hbm_dram_service_energy":
             decoder_evidence = _decoder_attention_hbm_dram_service_energy_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_hbm_energy_calibration":

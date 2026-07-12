@@ -14,7 +14,7 @@ def _load(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def _validate(config: dict[str, Any]) -> dict[str, int]:
+def _validate(config: dict[str, Any]) -> dict[str, int | str]:
     if not str(config.get("top_name") or "").strip():
         raise SystemExit("config top_name must not be empty")
     body = config.get("attention_two_pass_stream")
@@ -22,11 +22,22 @@ def _validate(config: dict[str, Any]) -> dict[str, int]:
         raise SystemExit("config must contain attention_two_pass_stream object")
     max_blocks = int(body.get("max_blocks", 16384))
     div_lanes = int(body.get("div_lanes_per_cycle", 1))
+    divider_impl = str(body.get("divider_impl", "combinational")).strip()
     if max_blocks < 8 or max_blocks > 16384 or max_blocks & (max_blocks - 1):
         raise SystemExit("attention_two_pass_stream.max_blocks must be a power of two in [8, 16384]")
     if div_lanes not in {1, 2, 4, 8}:
         raise SystemExit("attention_two_pass_stream.div_lanes_per_cycle must be one of 1,2,4,8")
-    params = {"max_blocks": max_blocks, "div_lanes_per_cycle": div_lanes}
+    if divider_impl not in {"combinational", "iterative_restoring"}:
+        raise SystemExit(
+            "attention_two_pass_stream.divider_impl must be combinational or iterative_restoring"
+        )
+    if divider_impl == "iterative_restoring" and div_lanes != 1:
+        raise SystemExit("iterative_restoring uses one shared divider; div_lanes_per_cycle must be 1")
+    params: dict[str, int | str] = {
+        "max_blocks": max_blocks,
+        "div_lanes_per_cycle": div_lanes,
+        "divider_impl": divider_impl,
+    }
     body.update(params)
     return params
 
@@ -42,11 +53,12 @@ def _exp_cases() -> str:
     )
 
 
-def _top(*, top_name: str, params: dict[str, int]) -> str:
-    max_blocks = params["max_blocks"]
+def _top(*, top_name: str, params: dict[str, int | str]) -> str:
+    max_blocks = int(params["max_blocks"])
     addr_bits = _clog2(max_blocks)
     count_bits = _clog2(max_blocks + 1)
-    div_lanes = params["div_lanes_per_cycle"]
+    div_lanes = int(params["div_lanes_per_cycle"])
+    divider_impl = str(params["divider_impl"])
     reset_num = "\n".join(f"      numerator_accum[{lane}] <= 41'sd0;" for lane in range(8))
     clear_num = "\n".join(f"        numerator_accum[{lane}] <= 41'sd0;" for lane in range(8))
     init_block = "\n".join(f"        block_numerator[{lane}] = 41'sd0;" for lane in range(8))
@@ -54,6 +66,106 @@ def _top(*, top_name: str, params: dict[str, int]) -> str:
         f"        numerator_next[{lane}] = numerator_accum[{lane}] + block_numerator[{lane}];" for lane in range(8)
     )
     store_num = "\n".join(f"        numerator_accum[{lane}] <= numerator_next[{lane}];" for lane in range(8))
+    if divider_impl == "iterative_restoring":
+        state_params = (
+            "  localparam [2:0] IDLE = 3'd0, FILL = 3'd1, READ_REQ = 3'd2,\n"
+            "      READ_DATA = 3'd3, DIVIDE = 3'd4, DIV_LOAD = 3'd5,\n"
+            "      DIV_ITER = 3'd6, HOLD = 3'd7;"
+        )
+        divider_regs = """
+  reg div_negative;
+  reg [6:0] div_bit_count;
+  reg [57:0] div_quotient;
+  reg [33:0] div_remainder;
+  reg [33:0] div_trial_remainder;
+  reg [57:0] div_next_quotient;
+"""
+        divider_reset = """
+      div_negative <= 1'b0;
+      div_bit_count <= 7'd0;
+      div_quotient <= 58'd0;
+      div_remainder <= 34'd0;
+"""
+        divider_logic = """
+      if (state == DIVIDE) begin
+        div_negative <= numerator_accum[div_index] < 0;
+        if (numerator_accum[div_index] < 0)
+          numerator_magnitude <= (~numerator_accum[div_index]) + 1'b1;
+        else
+          numerator_magnitude <= numerator_accum[div_index];
+        state <= DIV_LOAD;
+      end
+
+      if (state == DIV_LOAD) begin
+        final_magnitude <= ({17'd0, numerator_magnitude} << 16)
+            - {17'd0, numerator_magnitude} + (exp_sum_accum >> 1);
+        div_quotient <= 58'd0;
+        div_remainder <= 34'd0;
+        div_bit_count <= 7'd58;
+        state <= DIV_ITER;
+      end
+
+      if (state == DIV_ITER) begin
+        div_trial_remainder = {div_remainder[32:0], final_magnitude[57]};
+        div_next_quotient = {div_quotient[56:0], 1'b0};
+        if (div_trial_remainder >= {1'b0, exp_sum_accum}) begin
+          div_remainder <= div_trial_remainder - {1'b0, exp_sum_accum};
+          div_next_quotient[0] = 1'b1;
+        end else begin
+          div_remainder <= div_trial_remainder;
+        end
+        final_magnitude <= {final_magnitude[56:0], 1'b0};
+        div_quotient <= div_next_quotient;
+        if (div_bit_count == 1) begin
+          if (div_negative)
+            result_value[(div_index * 40) +: 40] <= (~div_next_quotient[39:0]) + 1'b1;
+          else
+            result_value[(div_index * 40) +: 40] <= div_next_quotient[39:0];
+          if (div_index == 7) begin
+            state <= HOLD;
+            result_valid <= 1'b1;
+          end else begin
+            div_index <= div_index + 1'b1;
+            state <= DIVIDE;
+          end
+        end else begin
+          div_bit_count <= div_bit_count - 1'b1;
+        end
+      end
+"""
+    else:
+        state_params = (
+            "  localparam [2:0] IDLE = 3'd0, FILL = 3'd1, READ_REQ = 3'd2,\n"
+            "      READ_DATA = 3'd3, DIVIDE = 3'd4, HOLD = 3'd5;"
+        )
+        divider_regs = ""
+        divider_reset = ""
+        divider_logic = """
+      if (state == DIVIDE) begin
+        for (lane_iter = 0; lane_iter < DIV_LANES; lane_iter = lane_iter + 1) begin
+          lane_index = div_index + lane_iter;
+          if (lane_index < 8) begin
+            if (numerator_accum[lane_index] < 0) begin
+              numerator_magnitude = (~numerator_accum[lane_index]) + 1'b1;
+              final_magnitude = (numerator_magnitude * 17'd65535) + (exp_sum_accum >> 1);
+              final_quotient = final_magnitude / exp_sum_accum;
+              result_value[(lane_index * 40) +: 40] <= (~final_quotient) + 1'b1;
+            end else begin
+              numerator_magnitude = numerator_accum[lane_index];
+              final_magnitude = (numerator_magnitude * 17'd65535) + (exp_sum_accum >> 1);
+              final_quotient = final_magnitude / exp_sum_accum;
+              result_value[(lane_index * 40) +: 40] <= final_quotient;
+            end
+          end
+        end
+        if (div_index + DIV_LANES >= 8) begin
+          state <= HOLD;
+          result_valid <= 1'b1;
+        end else begin
+          div_index <= div_index + DIV_LANES;
+        end
+      end
+"""
     return f"""module {top_name} (
     input  wire         clk,
     input  wire         rst_n,
@@ -92,8 +204,7 @@ def _top(*, top_name: str, params: dict[str, int]) -> str:
   localparam integer ADDR_W = {addr_bits};
   localparam integer COUNT_W = {count_bits};
   localparam integer DIV_LANES = {div_lanes};
-  localparam [2:0] IDLE = 3'd0, FILL = 3'd1, READ_REQ = 3'd2,
-      READ_DATA = 3'd3, DIVIDE = 3'd4, HOLD = 3'd5;
+{state_params}
 
   reg [2:0] state;
   reg [15:0] active_command_id;
@@ -122,6 +233,7 @@ def _top(*, top_name: str, params: dict[str, int]) -> str:
   reg [40:0] numerator_magnitude;
   reg [57:0] final_magnitude;
   reg [39:0] final_quotient;
+{divider_regs}
 
   assign command_ready = state == IDLE;
   assign fill_ready = state == FILL && score_write_ready;
@@ -160,6 +272,7 @@ def _top(*, top_name: str, params: dict[str, int]) -> str:
       accepted_count <= 32'd0;
       completed_count <= 32'd0;
       cycle_count <= 32'd0;
+{divider_reset}
 {reset_num}
     end else begin
       cycle_count <= cycle_count + 1'b1;
@@ -224,30 +337,7 @@ def _top(*, top_name: str, params: dict[str, int]) -> str:
         end
       end
 
-      if (state == DIVIDE) begin
-        for (lane_iter = 0; lane_iter < DIV_LANES; lane_iter = lane_iter + 1) begin
-          lane_index = div_index + lane_iter;
-          if (lane_index < 8) begin
-            if (numerator_accum[lane_index] < 0) begin
-              numerator_magnitude = (~numerator_accum[lane_index]) + 1'b1;
-              final_magnitude = (numerator_magnitude * 17'd65535) + (exp_sum_accum >> 1);
-              final_quotient = final_magnitude / exp_sum_accum;
-              result_value[(lane_index * 40) +: 40] <= (~final_quotient) + 1'b1;
-            end else begin
-              numerator_magnitude = numerator_accum[lane_index];
-              final_magnitude = (numerator_magnitude * 17'd65535) + (exp_sum_accum >> 1);
-              final_quotient = final_magnitude / exp_sum_accum;
-              result_value[(lane_index * 40) +: 40] <= final_quotient;
-            end
-          end
-        end
-        if (div_index + DIV_LANES >= 8) begin
-          state <= HOLD;
-          result_valid <= 1'b1;
-        end else begin
-          div_index <= div_index + DIV_LANES;
-        end
-      end
+{divider_logic}
 
       if (state == HOLD && result_valid && result_ready) begin
         result_valid <= 1'b0;
@@ -271,8 +361,16 @@ def generate(config: dict[str, Any], out_dir: Path) -> None:
         "top_name": top_name,
         "semantic_profile": "q8_k8_v8_a32_s32_exp_lut_b20_zero_tail_two_pass_global_max",
         "max_blocks": params["max_blocks"],
-        "max_context_tokens": params["max_blocks"] * 8,
+        "max_context_tokens": int(params["max_blocks"]) * 8,
         "div_lanes_per_cycle": params["div_lanes_per_cycle"],
+        "divider_impl": params["divider_impl"],
+        "divider_units": 1 if params["divider_impl"] == "iterative_restoring" else params["div_lanes_per_cycle"],
+        "divider_bits_per_cycle": 1 if params["divider_impl"] == "iterative_restoring" else None,
+        "divider_cycles_per_command": (
+            8 * (1 + 1 + 58)
+            if params["divider_impl"] == "iterative_restoring"
+            else math.ceil(8 / int(params["div_lanes_per_cycle"]))
+        ),
         "score_storage": "external_ready_valid_sram",
         "kv_replay": "external_ready_valid_stream",
         "read_outstanding": 1,

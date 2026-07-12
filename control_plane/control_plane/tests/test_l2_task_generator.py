@@ -7423,6 +7423,45 @@ def test_generate_l2_campaign_task_adds_attention_two_pass_stream_equivalence() 
             ]
 
 
+def test_generate_l2_campaign_task_adds_attention_two_pass_stream_iterdiv_equivalence() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id="l2_decoder_attention_two_pass_stream_iterdiv_rtl_equivalence_llama7b_v1",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    abstraction_layer="decoder_attention_two_pass_stream_iterdiv_equivalence",
+                    evaluation_mode="equivalence_gate",
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            assert [command["name"] for command in work_item.command_manifest] == [
+                "probe_attention_two_pass_stream_iterdiv_equivalence",
+                "validate_runs",
+            ]
+            command = work_item.command_manifest[0]["run"]
+            assert "--divider-impl iterative_restoring" in command
+            assert "--div-lanes 1" in command
+            decoder_inputs = work_item.input_manifest["decoder_contract"]
+            assert work_item.expected_outputs == [
+                decoder_inputs["attention_two_pass_stream_equivalence_out"],
+                decoder_inputs["attention_two_pass_stream_equivalence_report"],
+            ]
+
+
 def test_generate_l2_campaign_task_adds_attention_score32_exp_lut_sram_hierarchy_envelope_evidence() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"

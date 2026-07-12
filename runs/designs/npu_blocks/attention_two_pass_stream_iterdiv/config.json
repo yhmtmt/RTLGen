@@ -1,0 +1,8 @@
+{
+  "top_name": "attention_two_pass_stream_iterdiv",
+  "attention_two_pass_stream": {
+    "max_blocks": 16384,
+    "div_lanes_per_cycle": 1,
+    "divider_impl": "iterative_restoring"
+  }
+}
