@@ -445,6 +445,9 @@ def _boundary_metrics_rows(
 def _boundary_evaluation_record(*, repo_root: Path, work_item: WorkItem, boundary_rows: list[dict[str, Any]]) -> dict[str, Any]:
     status_counts = Counter(str(row.get("status", "")).strip() or "unknown" for row in boundary_rows)
     timing_infeasible_count = status_counts.get("timing_infeasible", 0)
+    developer_loop = _developer_loop_payload(work_item)
+    evaluation = developer_loop.get("evaluation") if isinstance(developer_loop.get("evaluation"), dict) else {}
+    evaluation_mode = str(evaluation.get("mode", "")).strip() or "measurement_only"
     if timing_infeasible_count:
         summary = (
             "No timing-feasible Layer 1 rows were produced; completed flows that miss their "
@@ -453,7 +456,7 @@ def _boundary_evaluation_record(*, repo_root: Path, work_item: WorkItem, boundar
     else:
         summary = "No status=ok Layer 1 rows were produced; non-ok metrics rows are recorded as explicit boundary evidence."
     return {
-        "evaluation_mode": "measurement_only",
+        "evaluation_mode": evaluation_mode,
         "abstraction_layer": _developer_loop_abstraction_layer(repo_root, work_item),
         "result_kind": "boundary_evidence",
         "physical_metrics_present": bool(timing_infeasible_count),
