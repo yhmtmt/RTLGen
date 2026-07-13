@@ -162,7 +162,11 @@
         "direction": "reserve_measured_score_sram_before_kv",
         "reason": "The two-pass score store must consume concrete SRAM area, ports, and energy instead of borrowing the full shared-KV capacity envelope."
       },
-      "status": "pending_implementation_merge"
+      "status": "merged",
+      "merged_pr_number": 1273,
+      "merge_commit": "81fc7d8c9e7347407cf8a95ee49c7fb3c691f1fd",
+      "merged_utc": "2026-07-13T11:27:05.617258Z",
+      "notes": "Merged via PR #1273 and merge 81fc7d8c9e7347407cf8a95ee49c7fb3c691f1fd at 2026-07-13T11:27:05.617258Z."
     },
     {
       "item_id": "l2_decoder_attention_score32_zero_tail_two_pass_generation_quality_llama7b_v1",
@@ -183,5 +187,5 @@
       "status": "pending_implementation_merge"
     }
   ],
-  "source_commit": "4d6378820949839c78531e56a3429c7956ff2ce8"
+  "source_commit": "275673eb674626455a988b848941edbf28fd02cd"
 }
