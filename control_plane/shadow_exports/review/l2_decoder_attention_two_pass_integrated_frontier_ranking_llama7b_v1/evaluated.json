@@ -1,0 +1,110 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "decoder_contract": {
+        "two_pass_iterdiv_ppa": "control_plane/shadow_exports/l1_promotions/l1_decoder_attention_two_pass_stream_iterdiv_ppa_v1.json",
+        "two_pass_score_sram_recost": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exp_lut_sram_hierarchy_envelope__l2_decoder_attention_two_pass_score_sram_reservation_llama7b_v1.json",
+        "two_pass_zero_tail_quality": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score32_zero_tail_two_pass_generation_quality__l2_decoder_attention_score32_zero_tail_two_pass_generation_quality_llama7b_v1.json",
+        "source_score32_frontier_ranking": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_integrated_frontier_ranking__l2_decoder_attention_score32_quality_aware_hbm_controller_replay_rtl_ppa_recost_frontier_llama7b_v1.json",
+        "two_pass_integrated_frontier_ranking_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_two_pass_integrated_frontier_ranking__l2_decoder_attention_two_pass_integrated_frontier_ranking_llama7b_v1.json",
+        "two_pass_integrated_frontier_ranking_scope": "Recost the current Llama7B score32 frontier with measured iterative-divider PPA, measured 16 MiB score SRAM, and zero-tail generation quality. Compare one divider per head against a shared divider under nominal and conservative SRAM packing.",
+        "two_pass_integrated_frontier_ranking_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_two_pass_integrated_frontier_ranking__l2_decoder_attention_two_pass_integrated_frontier_ranking_llama7b_v1.md"
+      }
+    },
+    "commands": [
+      {
+        "run": "python3 npu/eval/audit_llm_decoder_attention_two_pass_integrated_frontier_ranking.py --source-frontier-ranking-json runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_integrated_frontier_ranking__l2_decoder_attention_score32_quality_aware_hbm_controller_replay_rtl_ppa_recost_frontier_llama7b_v1.json --score-sram-recost-json runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exp_lut_sram_hierarchy_envelope__l2_decoder_attention_two_pass_score_sram_reservation_llama7b_v1.json --zero-tail-quality-json runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score32_zero_tail_two_pass_generation_quality__l2_decoder_attention_score32_zero_tail_two_pass_generation_quality_llama7b_v1.json --iterdiv-ppa-json control_plane/shadow_exports/l1_promotions/l1_decoder_attention_two_pass_stream_iterdiv_ppa_v1.json --head-count 32 --divide-cycles-per-head 480 --clock-ns 10 --out runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_two_pass_integrated_frontier_ranking__l2_decoder_attention_two_pass_integrated_frontier_ranking_llama7b_v1.json --out-md runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_two_pass_integrated_frontier_ranking__l2_decoder_attention_two_pass_integrated_frontier_ranking_llama7b_v1.md",
+        "name": "audit_decoder_attention_two_pass_integrated_frontier_ranking"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate_runs"
+      }
+    ],
+    "objective": "Integrate measured iterative-divider PPA, score SRAM, zero-tail quality, and current controller-replay frontier.",
+    "acceptance": [
+      "Write all declared decoder evidence artifacts",
+      "Keep evidence artifact paths repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "source_mode": "src_verilog",
+    "expected_outputs": [
+      "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_two_pass_integrated_frontier_ranking__l2_decoder_attention_two_pass_integrated_frontier_ranking_llama7b_v1.json",
+      "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_two_pass_integrated_frontier_ranking__l2_decoder_attention_two_pass_integrated_frontier_ranking_llama7b_v1.md"
+    ]
+  },
+  "layer": "layer2",
+  "state": "evaluated",
+  "title": "Llama7B measured two-pass integrated frontier ranking",
+  "result": {
+    "branch": "eval/l2_decoder_attention_two_pass_integrated_frontier_ranking_llama7b_v1/s20260713t121259z",
+    "completed_utc": "2026-07-13T11:42:19.896975Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "b7c2d9c80c1c",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260713t121259z][host:b7c2d9c80c1c][item:l2_decoder_attention_two_pass_integrated_frontier_ranking_llama7b_v1]",
+    "metrics_rows": [],
+    "metrics_exempt_reason": "evidence_only_decoder_evidence",
+    "queue_item_id": "l2_decoder_attention_two_pass_integrated_frontier_ranking_llama7b_v1",
+    "session_id": "s20260713t121259z",
+    "status": "ok",
+    "summary": "2/2 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l2_decoder_attention_two_pass_integrated_frontier_ranking_llama7b_v1/s20260713t121259z",
+    "pr_title": "eval: run llama7b measured two-pass integrated frontier ranking",
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Include metrics row references in result.metrics_rows",
+      "Keep committed result_path fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260713t121259z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l2_decoder_attention_two_pass_integrated_frontier_ranking_llama7b_v1"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l2_decoder_attention_two_pass_integrated_frontier_ranking_llama7b_v1",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 1,
+  "created_utc": "2026-07-13T11:42:05.638764Z",
+  "requested_by": "@codex",
+  "developer_loop": {
+    "comparison": {
+      "role": "measured_two_pass_frontier_ranking",
+      "paired_baseline_item_id": ""
+    },
+    "evaluation": {
+      "mode": "frontier_recost",
+      "expected_reason": "Charge measured divider, score SRAM, and zero-tail quality together while preserving controller replay.",
+      "expected_direction": "rank_measured_two_pass_deployments"
+    },
+    "abstraction": {
+      "layer": "decoder_attention_two_pass_integrated_frontier_ranking"
+    },
+    "proposal_id": "prop_decoder_attention_hierarchical_softmax_frontier_llama7b_v1",
+    "dependencies": {
+      "item_ids": [
+        "l1_decoder_attention_two_pass_stream_iterdiv_ppa_v1",
+        "l2_decoder_attention_two_pass_score_sram_reservation_llama7b_v1",
+        "l2_decoder_attention_score32_zero_tail_two_pass_generation_quality_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    },
+    "proposal_path": "docs/proposals/prop_decoder_attention_hierarchical_softmax_frontier_llama7b_v1/proposal.json"
+  },
+  "source_requirement": {
+    "repo": "",
+    "reason": "evaluator runtime must contain the queued job source commit",
+    "version": 1,
+    "required_ref": "origin/master",
+    "required_sha": "8f41146c030f8f3324eac52250932983a5ff75f9",
+    "requires_daemon_restart": true
+  }
+}
