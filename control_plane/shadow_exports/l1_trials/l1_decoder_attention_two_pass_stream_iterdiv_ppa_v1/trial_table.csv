@@ -1,0 +1,2 @@
+run_key,attempt,trial_index,seed,status,metrics_csv,critical_path_ns,die_area,total_power_mw,failure_category,failure_stage,failure_signature
+l1_decoder_attention_two_pass_stream_iterdiv_ppa_v1_run_a8210397583c2e7d,1,1,0,succeeded,runs/designs/npu_blocks/attention_two_pass_stream_iterdiv/metrics.csv,7.5913,6250000.0,1.9,none,,
