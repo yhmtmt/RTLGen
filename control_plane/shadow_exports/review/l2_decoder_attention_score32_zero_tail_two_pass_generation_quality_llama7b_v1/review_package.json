@@ -1,0 +1,180 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-07-13T11:21:29.138761Z",
+  "control_plane_source_commit": "98812adafb0c9fa81aaf526f38ed790ed84cdf52",
+  "review_metadata_source_commit": "98812adafb0c9fa81aaf526f38ed790ed84cdf52",
+  "item_id": "l2_decoder_attention_score32_zero_tail_two_pass_generation_quality_llama7b_v1",
+  "run_key": "l2_decoder_attention_score32_zero_tail_two_pass_generation_quality_llama7b_v1_run_17f8c31b94bbdc4a",
+  "layer": "layer2",
+  "flow": "openroad",
+  "task_type": "l2_campaign",
+  "source_commit": "0f76c959af3d547b55491546970268d88586e85c",
+  "queue_snapshot": {
+    "path": "control_plane/shadow_exports/review/l2_decoder_attention_score32_zero_tail_two_pass_generation_quality_llama7b_v1/evaluated.json",
+    "result": {
+      "branch": "eval/l2_decoder_attention_score32_zero_tail_two_pass_generation_quality_llama7b_v1/s20260713t112126z",
+      "completed_utc": "2026-07-13T11:11:32.716421Z",
+      "evaluator_id": "control_plane",
+      "executor": "@control_plane",
+      "host": "b7c2d9c80c1c",
+      "identity_block": "[role:evaluator][account:control_plane][session:s20260713t112126z][host:b7c2d9c80c1c][item:l2_decoder_attention_score32_zero_tail_two_pass_generation_quality_llama7b_v1]",
+      "metrics_rows": [],
+      "metrics_exempt_reason": "evidence_only_decoder_evidence",
+      "queue_item_id": "l2_decoder_attention_score32_zero_tail_two_pass_generation_quality_llama7b_v1",
+      "session_id": "s20260713t112126z",
+      "status": "ok",
+      "summary": "2/2 commands succeeded"
+    }
+  },
+  "review_artifact": {
+    "kind": "decision_proposal",
+    "path": "control_plane/shadow_exports/l2_decisions/l2_decoder_attention_score32_zero_tail_two_pass_generation_quality_llama7b_v1.json",
+    "storage_mode": "repo",
+    "sha256": "9b51e75e8ec4b2a16823fbe198abf7aa60ec08565998218382aef90862e41834",
+    "payload": {
+      "version": 0.1,
+      "generated_utc": "2026-07-13T11:21:26.417934Z",
+      "item_id": "l2_decoder_attention_score32_zero_tail_two_pass_generation_quality_llama7b_v1",
+      "run_key": "l2_decoder_attention_score32_zero_tail_two_pass_generation_quality_llama7b_v1_run_17f8c31b94bbdc4a",
+      "layer": "layer2",
+      "flow": "openroad",
+      "platform": "nangate45",
+      "task_type": "l2_campaign",
+      "source_commit": "0f76c959af3d547b55491546970268d88586e85c",
+      "review_metadata_source_commit": "98812adafb0c9fa81aaf526f38ed790ed84cdf52",
+      "objective": "Measure native-checkpoint generation and NLL quality for global-max score32 bucket20 exp-LUT softmax with zero weight beyond bucket 2048 and one exact final divide.",
+      "input_manifest": {
+        "decoder_contract": {
+          "attention_two_pass_stream_iterdiv_config": "runs/designs/npu_blocks/attention_two_pass_stream_iterdiv/config.json",
+          "attention_mixed_int8_generation_quality_baseline": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_generation_quality__l2_decoder_attention_mixed_int8_generation_quality_llama7b_v1_r3.json",
+          "attention_mixed_int8_score32_w16_rtl_exact_generation_quality": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score32_w16_rtl_exact_generation_quality__l2_decoder_attention_mixed_int8_score32_w16_rtl_exact_generation_quality_llama7b_v1.json",
+          "attention_mixed_int8_score32_exp_lut_div_generation_quality_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score32_zero_tail_two_pass_generation_quality__l2_decoder_attention_score32_zero_tail_two_pass_generation_quality_llama7b_v1.json",
+          "attention_mixed_int8_score32_exp_lut_div_generation_quality_scope": "Run the native-checkpoint generation/NLL gate for the exact two-pass score32 profile: global row max, bucket20 q16 exp LUT, zero weight beyond the exp(-8) LUT boundary, signed weighted-value accumulation, and one final exact divide.",
+          "attention_mixed_int8_score32_exp_lut_div_generation_quality_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score32_zero_tail_two_pass_generation_quality__l2_decoder_attention_score32_zero_tail_two_pass_generation_quality_llama7b_v1.md"
+        }
+      },
+      "recommendation": {
+        "source": "decoder_evidence",
+        "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score32_zero_tail_two_pass_generation_quality__l2_decoder_attention_score32_zero_tail_two_pass_generation_quality_llama7b_v1.json",
+        "arch_id": "decoder_attention_mixed_int8_score32_zero_tail_generation_quality",
+        "macro_mode": "evidence_only",
+        "outcome": "mixed_int8_generation_quality_pass"
+      },
+      "objective_profiles": [],
+      "evaluation_record": {
+        "proposal_id": "prop_decoder_attention_hierarchical_softmax_frontier_llama7b_v1",
+        "title": "Scalable exact hierarchical softmax for Llama7B",
+        "primary_question": "Can one-pass online composition remain within a 0.01 output-value error bound across long-context score distributions, or should the scalable RTL use exact two-pass global-max score replay?",
+        "evaluation_mode": "quality_gate",
+        "comparison_role": "two_pass_zero_tail_generation_quality",
+        "abstraction_layer": "decoder_attention_mixed_int8_score32_zero_tail_generation_quality",
+        "expected_direction": "qualify_zero_tail_two_pass_precision",
+        "expected_reason": "The earlier score32 quality pass clamps out-of-range LUT deltas to exp(-8) and cannot be transferred to the implemented zero-tail profile.",
+        "summary": "Decoder mixed/int8 generation quality evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score32_zero_tail_two_pass_generation_quality__l2_decoder_attention_score32_zero_tail_two_pass_generation_quality_llama7b_v1.json: decision=mixed_int8_generation_quality_pass; candidate_id=score32_zero_tail_two_pass; prompt_count=8; generation_steps=8; free_run_exact_match_rate=0.875; free_run_token_match_rate=0.890625; diverged_prompt_count=1; mean_first_divergence_step=7.0; teacher_forced_mean_reference_nll=1.073770096930964; teacher_forced_mean_candidate_nll=1.0759302119170522; teacher_forced_mean_nll_delta=0.0021601149860883124; teacher_forced_reference_token_prob_mean=0.4479845997119758; teacher_forced_candidate_reference_token_prob_mean=0.4479474380335404; next_step=Candidate passed the bounded generation-quality gate; route this score configuration into the native-checkpoint quality evidence stream.",
+        "outcome": "mixed_int8_generation_quality_pass",
+        "expectation_status": "unspecified"
+      },
+      "proposal_assessment": {
+        "proposal_id": "prop_decoder_attention_hierarchical_softmax_frontier_llama7b_v1",
+        "title": "Scalable exact hierarchical softmax for Llama7B",
+        "kind": "architecture",
+        "primary_question": "Can one-pass online composition remain within a 0.01 output-value error bound across long-context score distributions, or should the scalable RTL use exact two-pass global-max score replay?",
+        "evaluation_mode": "quality_gate",
+        "comparison_role": "two_pass_zero_tail_generation_quality",
+        "outcome": "mixed_int8_generation_quality_pass",
+        "summary": "Decoder mixed/int8 generation quality evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score32_zero_tail_two_pass_generation_quality__l2_decoder_attention_score32_zero_tail_two_pass_generation_quality_llama7b_v1.json: decision=mixed_int8_generation_quality_pass; candidate_id=score32_zero_tail_two_pass; prompt_count=8; generation_steps=8; free_run_exact_match_rate=0.875; free_run_token_match_rate=0.890625; diverged_prompt_count=1; mean_first_divergence_step=7.0; teacher_forced_mean_reference_nll=1.073770096930964; teacher_forced_mean_candidate_nll=1.0759302119170522; teacher_forced_mean_nll_delta=0.0021601149860883124; teacher_forced_reference_token_prob_mean=0.4479845997119758; teacher_forced_candidate_reference_token_prob_mean=0.4479474380335404; next_step=Candidate passed the bounded generation-quality gate; route this score configuration into the native-checkpoint quality evidence stream.",
+        "baseline_ref": null,
+        "baseline_item_id": null,
+        "matched_row_count": 0,
+        "matched_rows": [],
+        "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score32_zero_tail_two_pass_generation_quality__l2_decoder_attention_score32_zero_tail_two_pass_generation_quality_llama7b_v1.json",
+        "decoder_quality": {
+          "diagnosis": {}
+        }
+      },
+      "source_refs": {
+        "decoder_evidence_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score32_zero_tail_two_pass_generation_quality__l2_decoder_attention_score32_zero_tail_two_pass_generation_quality_llama7b_v1.json",
+        "decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score32_zero_tail_two_pass_generation_quality__l2_decoder_attention_score32_zero_tail_two_pass_generation_quality_llama7b_v1.json",
+        "decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score32_zero_tail_two_pass_generation_quality__l2_decoder_attention_score32_zero_tail_two_pass_generation_quality_llama7b_v1.md"
+      },
+      "decoder_quality": {
+        "diagnosis": {}
+      }
+    }
+  },
+  "developer_loop": {
+    "comparison": {
+      "role": "two_pass_zero_tail_generation_quality",
+      "paired_baseline_item_id": ""
+    },
+    "evaluation": {
+      "mode": "quality_gate",
+      "expected_reason": "The earlier score32 quality pass clamps out-of-range LUT deltas to exp(-8) and cannot be transferred to the implemented zero-tail profile.",
+      "expected_direction": "qualify_zero_tail_two_pass_precision"
+    },
+    "abstraction": {
+      "layer": "decoder_attention_mixed_int8_score32_zero_tail_generation_quality"
+    },
+    "proposal_id": "prop_decoder_attention_hierarchical_softmax_frontier_llama7b_v1",
+    "dependencies": {
+      "item_ids": [
+        "l2_decoder_attention_two_pass_stream_iterdiv_rtl_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    },
+    "proposal_path": "docs/proposals/prop_decoder_attention_hierarchical_softmax_frontier_llama7b_v1/proposal.json"
+  },
+  "submission_history": {
+    "event_count": 3,
+    "failure_count": 1,
+    "retry_request_count": 1,
+    "retry_processed_count": 0,
+    "retry_failed_count": 0,
+    "had_retry": true,
+    "events": [
+      {
+        "event_time": "2026-07-13T11:11:34.399191Z",
+        "event_type": "submission_failed",
+        "error": "work item l2_decoder_attention_score32_zero_tail_two_pass_generation_quality_llama7b_v1 is not eligible for submission: proposal already finalized with decision=promote"
+      },
+      {
+        "event_time": "2026-07-13T11:21:13.778372Z",
+        "event_type": "submission_retry_requested",
+        "request_id": "resume_3e32b2f009c2d882"
+      },
+      {
+        "event_time": "2026-07-13T11:21:25.090066Z",
+        "event_type": "submission_retry_started",
+        "request_id": "resume_3e32b2f009c2d882"
+      }
+    ],
+    "last_failure": {
+      "event_time": "2026-07-13T11:11:34.399191Z",
+      "event_type": "submission_failed",
+      "error": "work item l2_decoder_attention_score32_zero_tail_two_pass_generation_quality_llama7b_v1 is not eligible for submission: proposal already finalized with decision=promote"
+    },
+    "last_retry_request": {
+      "event_time": "2026-07-13T11:21:13.778372Z",
+      "event_type": "submission_retry_requested",
+      "request_id": "resume_3e32b2f009c2d882"
+    }
+  },
+  "pr_payload": {
+    "branch": "eval/l2_decoder_attention_score32_zero_tail_two_pass_generation_quality_llama7b_v1/s20260713t112126z",
+    "title": "eval: run qualify exact zero-tail two-pass score32 generation",
+    "body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260713t112126z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l2_decoder_attention_score32_zero_tail_two_pass_generation_quality_llama7b_v1"
+    },
+    "body_md": "## Summary\n- item_id: `l2_decoder_attention_score32_zero_tail_two_pass_generation_quality_llama7b_v1`\n- run_key: `l2_decoder_attention_score32_zero_tail_two_pass_generation_quality_llama7b_v1_run_17f8c31b94bbdc4a`\n- layer: `layer2`\n- task_type: `l2_campaign`\n- status: `ok`\n- summary: `2/2 commands succeeded`\n- queue_snapshot: `control_plane/shadow_exports/review/l2_decoder_attention_score32_zero_tail_two_pass_generation_quality_llama7b_v1/evaluated.json`\n- metrics_rows_count: `0`\n- review_artifact: `decision_proposal` at `control_plane/shadow_exports/l2_decisions/l2_decoder_attention_score32_zero_tail_two_pass_generation_quality_llama7b_v1.json`\n\n## Developer Context\n- proposal_id: `prop_decoder_attention_hierarchical_softmax_frontier_llama7b_v1`\n- proposal_path: `docs/proposals/prop_decoder_attention_hierarchical_softmax_frontier_llama7b_v1/proposal.json`\n- reviewer_first_read: `docs/proposals/prop_decoder_attention_hierarchical_softmax_frontier_llama7b_v1/proposal.json` plus `docs/developer_agent_review.md`\n- execution_source_commit: `0f76c959af3d547b55491546970268d88586e85c`\n- review_metadata_source_commit: `98812adafb0c9fa81aaf526f38ed790ed84cdf52`\n\n## Evaluation Mode\n- evaluation_mode: `quality_gate`\n- abstraction_layer: `decoder_attention_mixed_int8_score32_zero_tail_generation_quality`\n- comparison_role: `two_pass_zero_tail_generation_quality`\n- expected_direction: `qualify_zero_tail_two_pass_precision`\n- expected_reason: `The earlier score32 quality pass clamps out-of-range LUT deltas to exp(-8) and cannot be transferred to the implemented zero-tail profile.`\n- expectation_status: `unspecified`\n- evaluation_summary: `Decoder mixed/int8 generation quality evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score32_zero_tail_two_pass_generation_quality__l2_decoder_attention_score32_zero_tail_two_pass_generation_quality_llama7b_v1.json: decision=mixed_int8_generation_quality_pass; candidate_id=score32_zero_tail_two_pass; prompt_count=8; generation_steps=8; free_run_exact_match_rate=0.875; free_run_token_match_rate=0.890625; diverged_prompt_count=1; mean_first_divergence_step=7.0; teacher_forced_mean_reference_nll=1.073770096930964; teacher_forced_mean_candidate_nll=1.0759302119170522; teacher_forced_mean_nll_delta=0.0021601149860883124; teacher_forced_reference_token_prob_mean=0.4479845997119758; teacher_forced_candidate_reference_token_prob_mean=0.4479474380335404; next_step=Candidate passed the bounded generation-quality gate; route this score configuration into the native-checkpoint quality evidence stream.`\n\n## Focused Comparison\n- primary_question: `Can one-pass online composition remain within a 0.01 output-value error bound across long-context score distributions, or should the scalable RTL use exact two-pass global-max score replay?`\n- comparison_role: `two_pass_zero_tail_generation_quality`\n- proposal_outcome: `mixed_int8_generation_quality_pass`\n- comparison_summary: `Decoder mixed/int8 generation quality evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score32_zero_tail_two_pass_generation_quality__l2_decoder_attention_score32_zero_tail_two_pass_generation_quality_llama7b_v1.json: decision=mixed_int8_generation_quality_pass; candidate_id=score32_zero_tail_two_pass; prompt_count=8; generation_steps=8; free_run_exact_match_rate=0.875; free_run_token_match_rate=0.890625; diverged_prompt_count=1; mean_first_divergence_step=7.0; teacher_forced_mean_reference_nll=1.073770096930964; teacher_forced_mean_candidate_nll=1.0759302119170522; teacher_forced_mean_nll_delta=0.0021601149860883124; teacher_forced_reference_token_prob_mean=0.4479845997119758; teacher_forced_candidate_reference_token_prob_mean=0.4479474380335404; next_step=Candidate passed the bounded generation-quality gate; route this score configuration into the native-checkpoint quality evidence stream.`\n- baseline_ref: `None`\n- baseline_item_id: `None`\n\n## Submission Recovery\n- resolver_retry_path: `true`\n- submission_failure_count: `1`\n- retry_request_count: `1`\n- last_submission_failure: `work item l2_decoder_attention_score32_zero_tail_two_pass_generation_quality_llama7b_v1 is not eligible for submission: proposal already finalized with decision=promote`\n- retry_request_id: `resume_3e32b2f009c2d882`\n\n## Checklist\n- [ ] Commit lightweight campaign artifacts only\n- [ ] Include metrics row references in result.metrics_rows\n- [ ] Keep committed result_path fields repo-portable\n- [ ] Run python3 scripts/validate_runs.py --skip_eval_queue before pushing\n",
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Include metrics row references in result.metrics_rows",
+      "Keep committed result_path fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ]
+  }
+}
