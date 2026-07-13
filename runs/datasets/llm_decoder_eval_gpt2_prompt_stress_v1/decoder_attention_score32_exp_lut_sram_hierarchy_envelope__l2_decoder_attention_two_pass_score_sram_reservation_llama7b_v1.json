@@ -1,0 +1,392 @@
+{
+  "assumptions": [
+    "SRAM macro placement efficiency is modeled as macro_area/envelope_area and swept explicitly.",
+    "Tile-local SRAM area and endpoint/router/FIFO area are reserved before packing shared SRAM.",
+    "Shared SRAM capacity uses the existing CACTI macro library; this is a placement envelope, not a placed memory compiler floorplan.",
+    "When supplied, the measured score-buffer macro set is reserved before packing remaining KV SRAM capacity.",
+    "Latency sensitivity scales the score32 baseline by HBM byte-share change only; HBM/DRAM service remains inherited."
+  ],
+  "decision": "score32_exp_lut_sram_hierarchy_envelope_changes_frontier",
+  "diagnosis": {
+    "conservative_efficiency": 0.55,
+    "conservative_hbm_byte_share": 0.9960289,
+    "conservative_hbm_share_delta": 0.012630462,
+    "conservative_projected_latency_us_hbm_share_scaled": 12680.136872,
+    "conservative_shared_sram_capacity_mib": 16.265625,
+    "nominal_efficiency": 0.75,
+    "nominal_hbm_byte_share": 0.992916107,
+    "nominal_shared_sram_capacity_mib": 29.015625,
+    "remaining_abstractions": [
+      "hbm_dram_service",
+      "sram_macro_floorplan_pnr"
+    ],
+    "score32_supported": true,
+    "score_buffer_area_mm2": 66.636897,
+    "score_buffer_energy_mj_per_token": 0.277849571328,
+    "score_buffer_feasible_across_envelope": true,
+    "score_buffer_macro_count": 32,
+    "score_buffer_macro_name": "kv_tile_read_buffer",
+    "score_buffer_reserved": true,
+    "selected_semantic_profile": "score32_exp_lut_div",
+    "source_hbm_byte_share": 0.983398438,
+    "source_score32_latency_us": 12519.342352,
+    "sram_hierarchy_status": "placement_envelope_not_full_sram_pnr"
+  },
+  "inputs": {
+    "endpoint_router_sram_composition_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_endpoint_router_sram_composition__l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_llama7b_v1_r4.json",
+    "local_sram_capacity_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_local_sram_capacity__l2_decoder_attention_local_sram_capacity_llama7b_v1.json",
+    "measured_sram_rebalance_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_measured_sram_rebalance__l2_decoder_attention_kv_measured_sram_rebalance_softmax_recip_lut_llama7b_v1.json",
+    "score_buffer_sram_metrics_json": "runs/designs/sram/llama7b_attention_tile_buffers_v1/sram_metrics.json",
+    "service_closure_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exp_lut_service_closure__l2_decoder_attention_score32_exp_lut_service_closure_llama7b_v1.json"
+  },
+  "model": "llm_decoder_attention_score32_exp_lut_sram_hierarchy_envelope_v1",
+  "next_step": {
+    "recommended_next_step": "Prioritize HBM/DRAM service closure if the conservative SRAM placement envelope does not materially change hbm_byte_share; otherwise revisit SRAM hierarchy capacity.",
+    "requires_full_sram_macro_floorplan": true,
+    "requires_hbm_dram_closure": true
+  },
+  "rows": [
+    {
+      "endpoint_router_fifo_area_um2": 2498020.394,
+      "fits_sram_area_budget": true,
+      "hbm_byte_share": 0.989009857,
+      "hbm_share_scale_vs_measured_sram": 1.00570615,
+      "kv_shared_sram_macro_area_budget_um2": 159176399.061803,
+      "placement_efficiency": 1.0,
+      "placement_overhead_fraction": 0.05,
+      "projected_latency_us_hbm_share_scaled": 12590.7796,
+      "projected_tile_hbm_cycles": null,
+      "replaced_abstract_local_capacity_bytes_per_cluster": 19140624,
+      "score_buffer_access_time_ns": 1.4124,
+      "score_buffer_energy_mj_per_token": 0.277849571328,
+      "score_buffer_envelope_area_um2": 66636897.2928,
+      "score_buffer_fits_macro_budget": true,
+      "score_buffer_macro_area_um2": 66636897.2928,
+      "score_buffer_meets_clock": true,
+      "shared_byte_share": 0.010990143,
+      "shared_sram_capacity_mib": 45.015625,
+      "shared_sram_envelope_area_um2": 159039885.568626,
+      "shared_sram_envelope_budget_um2": 237698206.689056,
+      "shared_sram_macro_area_budget_um2": 225813296.354603,
+      "shared_sram_macro_area_um2": 159039885.568626,
+      "shared_sram_pack": {
+        "capacity_bytes": 47202304,
+        "capacity_mib": 45.015625,
+        "macro_area_um2": 159039885.568626,
+        "max_access_time_ns": 1.22148,
+        "read_energy_pj": 32053.223,
+        "selected_macros": [
+          {
+            "area_um2_each": 882595.72388,
+            "count": 180,
+            "macro_area_um2_total": 158867230.2984,
+            "name": "local_capacity_chunk_02_256kib",
+            "size_bytes_each": 262144,
+            "size_bytes_total": 47185920
+          },
+          {
+            "area_um2_each": 172655.270226,
+            "count": 1,
+            "macro_area_um2_total": 172655.270226,
+            "name": "local_capacity_chunk_03_16kib",
+            "size_bytes_each": 16384,
+            "size_bytes_total": 16384
+          }
+        ],
+        "unused_macro_area_budget_um2": 136513.493177,
+        "write_energy_pj": 112279.822
+      },
+      "source_score32_latency_us": 12519.342352,
+      "source_tile_hbm_cycles": 0,
+      "sram_budget_area_um2": 280000000.0,
+      "tile_local_capacity_bytes_per_cluster": 614656,
+      "tile_local_sram_area_um2": 39803772.916944
+    },
+    {
+      "endpoint_router_fifo_area_um2": 2498020.394,
+      "fits_sram_area_budget": true,
+      "hbm_byte_share": 0.991378784,
+      "hbm_share_scale_vs_measured_sram": 1.008115069,
+      "kv_shared_sram_macro_area_budget_um2": 125304404.608613,
+      "placement_efficiency": 0.85,
+      "placement_overhead_fraction": 0.05,
+      "projected_latency_us_hbm_share_scaled": 12620.937679,
+      "projected_tile_hbm_cycles": null,
+      "replaced_abstract_local_capacity_bytes_per_cluster": 19140624,
+      "score_buffer_access_time_ns": 1.4124,
+      "score_buffer_energy_mj_per_token": 0.277849571328,
+      "score_buffer_envelope_area_um2": 78396349.756235,
+      "score_buffer_fits_macro_budget": true,
+      "score_buffer_macro_area_um2": 66636897.2928,
+      "score_buffer_meets_clock": true,
+      "shared_byte_share": 0.008621216,
+      "shared_sram_capacity_mib": 35.3125,
+      "shared_sram_envelope_area_um2": 147219550.762334,
+      "shared_sram_envelope_budget_um2": 237698206.689056,
+      "shared_sram_macro_area_budget_um2": 191941301.901413,
+      "shared_sram_macro_area_um2": 125136618.147984,
+      "shared_sram_pack": {
+        "capacity_bytes": 37027840,
+        "capacity_mib": 35.3125,
+        "macro_area_um2": 125136618.147984,
+        "max_access_time_ns": 1.22148,
+        "read_energy_pj": 25427.075,
+        "selected_macros": [
+          {
+            "area_um2_each": 882595.72388,
+            "count": 141,
+            "macro_area_um2_total": 124445997.06708,
+            "name": "local_capacity_chunk_02_256kib",
+            "size_bytes_each": 262144,
+            "size_bytes_total": 36962304
+          },
+          {
+            "area_um2_each": 172655.270226,
+            "count": 4,
+            "macro_area_um2_total": 690621.080904,
+            "name": "local_capacity_chunk_03_16kib",
+            "size_bytes_each": 16384,
+            "size_bytes_total": 65536
+          }
+        ],
+        "unused_macro_area_budget_um2": 167786.460629,
+        "write_energy_pj": 88344.388
+      },
+      "source_score32_latency_us": 12519.342352,
+      "source_tile_hbm_cycles": 0,
+      "sram_budget_area_um2": 280000000.0,
+      "tile_local_capacity_bytes_per_cluster": 614656,
+      "tile_local_sram_area_um2": 39803772.916944
+    },
+    {
+      "endpoint_router_fifo_area_um2": 2498020.394,
+      "fits_sram_area_budget": true,
+      "hbm_byte_share": 0.992916107,
+      "hbm_share_scale_vs_measured_sram": 1.009678345,
+      "kv_shared_sram_macro_area_budget_um2": 102723074.973152,
+      "placement_efficiency": 0.75,
+      "placement_overhead_fraction": 0.05,
+      "projected_latency_us_hbm_share_scaled": 12640.508864,
+      "projected_tile_hbm_cycles": null,
+      "replaced_abstract_local_capacity_bytes_per_cluster": 19140624,
+      "score_buffer_access_time_ns": 1.4124,
+      "score_buffer_energy_mj_per_token": 0.277849571328,
+      "score_buffer_envelope_area_um2": 88849196.3904,
+      "score_buffer_fits_macro_budget": true,
+      "score_buffer_macro_area_um2": 66636897.2928,
+      "score_buffer_meets_clock": true,
+      "shared_byte_share": 0.007083893,
+      "shared_sram_capacity_mib": 29.015625,
+      "shared_sram_envelope_area_um2": 136738345.653741,
+      "shared_sram_envelope_budget_um2": 237698206.689056,
+      "shared_sram_macro_area_budget_um2": 169359972.265952,
+      "shared_sram_macro_area_um2": 102553759.240306,
+      "shared_sram_pack": {
+        "capacity_bytes": 30425088,
+        "capacity_mib": 29.015625,
+        "macro_area_um2": 102553759.240306,
+        "max_access_time_ns": 1.22148,
+        "read_energy_pj": 20691.751,
+        "selected_macros": [
+          {
+            "area_um2_each": 882595.72388,
+            "count": 116,
+            "macro_area_um2_total": 102381103.97008,
+            "name": "local_capacity_chunk_02_256kib",
+            "size_bytes_each": 262144,
+            "size_bytes_total": 30408704
+          },
+          {
+            "area_um2_each": 172655.270226,
+            "count": 1,
+            "macro_area_um2_total": 172655.270226,
+            "name": "local_capacity_chunk_03_16kib",
+            "size_bytes_each": 16384,
+            "size_bytes_total": 16384
+          }
+        ],
+        "unused_macro_area_budget_um2": 169315.732846,
+        "write_energy_pj": 72401.422
+      },
+      "source_score32_latency_us": 12519.342352,
+      "source_tile_hbm_cycles": 0,
+      "sram_budget_area_um2": 280000000.0,
+      "tile_local_capacity_bytes_per_cluster": 614656,
+      "tile_local_sram_area_um2": 39803772.916944
+    },
+    {
+      "endpoint_router_fifo_area_um2": 2498020.394,
+      "fits_sram_area_budget": true,
+      "hbm_byte_share": 0.994491577,
+      "hbm_share_scale_vs_measured_sram": 1.011280412,
+      "kv_shared_sram_macro_area_budget_um2": 80141745.337692,
+      "placement_efficiency": 0.65,
+      "placement_overhead_fraction": 0.05,
+      "projected_latency_us_hbm_share_scaled": 12660.565687,
+      "projected_tile_hbm_cycles": null,
+      "replaced_abstract_local_capacity_bytes_per_cluster": 19140624,
+      "score_buffer_access_time_ns": 1.4124,
+      "score_buffer_energy_mj_per_token": 0.277849571328,
+      "score_buffer_envelope_area_um2": 102518303.527385,
+      "score_buffer_fits_macro_budget": true,
+      "score_buffer_macro_area_um2": 66636897.2928,
+      "score_buffer_meets_clock": true,
+      "shared_byte_share": 0.005508423,
+      "shared_sram_capacity_mib": 22.5625,
+      "shared_sram_envelope_area_um2": 123268055.738622,
+      "shared_sram_envelope_budget_um2": 237698206.689056,
+      "shared_sram_macro_area_budget_um2": 146778642.630492,
+      "shared_sram_macro_area_um2": 80124236.230104,
+      "shared_sram_pack": {
+        "capacity_bytes": 23658496,
+        "capacity_mib": 22.5625,
+        "macro_area_um2": 80124236.230104,
+        "max_access_time_ns": 1.22148,
+        "read_energy_pj": 16373.402,
+        "selected_macros": [
+          {
+            "area_um2_each": 882595.72388,
+            "count": 90,
+            "macro_area_um2_total": 79433615.1492,
+            "name": "local_capacity_chunk_02_256kib",
+            "size_bytes_each": 262144,
+            "size_bytes_total": 23592960
+          },
+          {
+            "area_um2_each": 172655.270226,
+            "count": 4,
+            "macro_area_um2_total": 690621.080904,
+            "name": "local_capacity_chunk_03_16kib",
+            "size_bytes_each": 16384,
+            "size_bytes_total": 65536
+          }
+        ],
+        "unused_macro_area_budget_um2": 17509.107588,
+        "write_energy_pj": 56566.288
+      },
+      "source_score32_latency_us": 12519.342352,
+      "source_tile_hbm_cycles": 0,
+      "sram_budget_area_um2": 280000000.0,
+      "tile_local_capacity_bytes_per_cluster": 614656,
+      "tile_local_sram_area_um2": 39803772.916944
+    },
+    {
+      "endpoint_router_fifo_area_um2": 2498020.394,
+      "fits_sram_area_budget": true,
+      "hbm_byte_share": 0.9960289,
+      "hbm_share_scale_vs_measured_sram": 1.012843687,
+      "kv_shared_sram_macro_area_budget_um2": 57560415.702232,
+      "placement_efficiency": 0.55,
+      "placement_overhead_fraction": 0.05,
+      "projected_latency_us_hbm_share_scaled": 12680.136872,
+      "projected_tile_hbm_cycles": null,
+      "replaced_abstract_local_capacity_bytes_per_cluster": 19140624,
+      "score_buffer_access_time_ns": 1.4124,
+      "score_buffer_energy_mj_per_token": 0.277849571328,
+      "score_buffer_envelope_area_um2": 121157995.077818,
+      "score_buffer_fits_macro_budget": true,
+      "score_buffer_macro_area_um2": 66636897.2928,
+      "score_buffer_meets_clock": true,
+      "shared_byte_share": 0.0039711,
+      "shared_sram_capacity_mib": 16.265625,
+      "shared_sram_envelope_area_um2": 104620686.040775,
+      "shared_sram_envelope_budget_um2": 237698206.689056,
+      "shared_sram_macro_area_budget_um2": 124197312.995032,
+      "shared_sram_macro_area_um2": 57541377.322426,
+      "shared_sram_pack": {
+        "capacity_bytes": 17055744,
+        "capacity_mib": 16.265625,
+        "macro_area_um2": 57541377.322426,
+        "max_access_time_ns": 1.22148,
+        "read_energy_pj": 11638.078,
+        "selected_macros": [
+          {
+            "area_um2_each": 882595.72388,
+            "count": 65,
+            "macro_area_um2_total": 57368722.0522,
+            "name": "local_capacity_chunk_02_256kib",
+            "size_bytes_each": 262144,
+            "size_bytes_total": 17039360
+          },
+          {
+            "area_um2_each": 172655.270226,
+            "count": 1,
+            "macro_area_um2_total": 172655.270226,
+            "name": "local_capacity_chunk_03_16kib",
+            "size_bytes_each": 16384,
+            "size_bytes_total": 16384
+          }
+        ],
+        "unused_macro_area_budget_um2": 19038.379806,
+        "write_energy_pj": 40623.322
+      },
+      "source_score32_latency_us": 12519.342352,
+      "source_tile_hbm_cycles": 0,
+      "sram_budget_area_um2": 280000000.0,
+      "tile_local_capacity_bytes_per_cluster": 614656,
+      "tile_local_sram_area_um2": 39803772.916944
+    }
+  ],
+  "score_buffer": {
+    "access_time_ns": 1.4124,
+    "allocated_capacity_bytes": 16777216,
+    "attention_heads": 32,
+    "bytes_per_head": 524288,
+    "macro_area_um2": 66636897.2928,
+    "macro_count": 32,
+    "macro_name": "kv_tile_read_buffer",
+    "macro_size_bytes": 524288,
+    "macro_width_bits": 256,
+    "macros_per_head": 1,
+    "read_accesses_per_token": 524288,
+    "read_energy_mj_per_token": 0.12664438784,
+    "read_energy_pj_per_access": 241.55499999999998,
+    "score_block_bytes": 32,
+    "score_buffer_bytes": 16777216,
+    "score_buffer_mib": 16.0,
+    "source_metrics_json": "runs/designs/sram/llama7b_attention_tile_buffers_v1/sram_metrics.json",
+    "total_energy_mj_per_token": 0.277849571328,
+    "write_accesses_per_token": 524288,
+    "write_energy_mj_per_token": 0.151205183488,
+    "write_energy_pj_per_access": 288.401
+  },
+  "sram_macro_library": [
+    {
+      "access_time_ns": 1.22148,
+      "area_um2": 882595.7238800001,
+      "bytes_per_um2": 0.2970148086006836,
+      "name": "local_capacity_chunk_02_256kib",
+      "read_energy_pj": 177.523,
+      "size_bytes": 262144,
+      "write_energy_pj": 623.1
+    },
+    {
+      "access_time_ns": 6.39009,
+      "area_um2": 71282253.00800002,
+      "bytes_per_um2": 0.23536315551245401,
+      "name": "local_capacity_chunk_00_16384kib",
+      "read_energy_pj": 3403.82,
+      "size_bytes": 16777216,
+      "write_energy_pj": 4126.839999999999
+    },
+    {
+      "access_time_ns": 2.80412,
+      "area_um2": 9338999.8472,
+      "bytes_per_um2": 0.22455852171673005,
+      "name": "local_capacity_chunk_01_2048kib",
+      "read_energy_pj": 1001.04,
+      "size_bytes": 2097152,
+      "write_energy_pj": 1361.25
+    },
+    {
+      "access_time_ns": 0.389435,
+      "area_um2": 172655.270226,
+      "bytes_per_um2": 0.09489429415362699,
+      "name": "local_capacity_chunk_03_16kib",
+      "read_energy_pj": 99.083,
+      "size_bytes": 16384,
+      "write_energy_pj": 121.822
+    }
+  ],
+  "version": 1
+}
