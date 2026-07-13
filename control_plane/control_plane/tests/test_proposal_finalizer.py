@@ -197,6 +197,8 @@ def test_finalize_accepts_directory_style_proposal_path() -> None:
 
 def test_iterate_decision_is_terminal_for_idempotent_finalize() -> None:
     assert proposal_finalizer._is_terminal_decision("iterate")
+    assert not proposal_finalizer._closes_proposal("iterate")
+    assert proposal_finalizer._closes_proposal("promote")
 
 
 
