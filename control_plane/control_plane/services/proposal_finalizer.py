@@ -326,7 +326,7 @@ def _supersede_stale_sibling_reviews(
     current_item_id: str,
     decision: str,
 ) -> list[str]:
-    if not _is_terminal_decision(decision):
+    if not _closes_proposal(decision):
         return []
     superseded: list[str] = []
     reason = f"proposal finalized with decision={decision}"
@@ -383,6 +383,11 @@ def _is_merged_status(status: str) -> bool:
 def _is_terminal_decision(decision: str) -> bool:
     normalized = str(decision or "").strip().lower()
     return normalized in {"promote", "promoted", "iterate", "reject", "rejected", "close", "closed", "superseded"}
+
+
+def _closes_proposal(decision: str) -> bool:
+    normalized = str(decision or "").strip().lower()
+    return normalized in {"promote", "promoted", "reject", "rejected", "close", "closed", "superseded"}
 
 
 def _revision_payload_from_entry(entry: dict[str, Any]) -> dict[str, Any]:
