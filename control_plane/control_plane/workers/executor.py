@@ -1173,7 +1173,7 @@ def execute_one_work_item(session_factory: sessionmaker, *, config: WorkerConfig
             config=config,
             work_item=work_item,
             run_key=run_key,
-            completion_repo_root=checkout_info.work_dir,
+            completion_repo_root=config.repo_root,
         )
 
     cleanup_checkout(checkout_info)

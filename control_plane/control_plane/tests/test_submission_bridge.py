@@ -37,6 +37,23 @@ def _git(repo_root: Path, *args: str) -> str:
     return result.stdout.strip()
 
 
+def _commit(repo_root: Path, message: str, *paths: str) -> None:
+    _git(repo_root, "add", *paths)
+    subprocess.run(
+        ["git", "-C", str(repo_root), "commit", "-m", message],
+        check=True,
+        capture_output=True,
+        text=True,
+        env={
+            **__import__("os").environ,
+            "GIT_AUTHOR_NAME": "Test",
+            "GIT_AUTHOR_EMAIL": "test@example.com",
+            "GIT_COMMITTER_NAME": "Test",
+            "GIT_COMMITTER_EMAIL": "test@example.com",
+        },
+    )
+
+
 def _init_repo(repo_root: Path) -> None:
     subprocess.run(["git", "-C", str(repo_root), "init", "-b", "master"], check=True, capture_output=True, text=True)
     _write(repo_root / "README.md", "demo\n")
@@ -506,11 +523,68 @@ def test_prepare_submission_branch_packages_only_specific_proposal_file_parent()
             manifest = json.loads(
                 (repo_root / "control_plane" / "shadow_exports" / "review" / item_id / "submission_manifest.json").read_text()
             )
+            assert "docs/proposals/prop_l2_submit_demo/proposal.json" in manifest["proposal_context_paths"]
+            assert "docs/proposals/prop_l2_submit_demo/evaluation_requests.json" in manifest["proposal_context_paths"]
+            assert "docs/proposals/prop_unrelated/proposal.json" not in manifest["proposal_context_paths"]
             assert "docs/proposals/prop_l2_submit_demo/proposal.json" in manifest["supporting_paths"]
             assert "docs/proposals/prop_l2_submit_demo/evaluation_requests.json" in manifest["supporting_paths"]
             assert "docs/proposals/prop_unrelated/proposal.json" not in manifest["supporting_paths"]
             assert (Path(result.worktree_path) / "docs/proposals/prop_l2_submit_demo/proposal.json").exists()
             assert not (Path(result.worktree_path) / "docs/proposals/prop_unrelated/proposal.json").exists()
+
+
+def test_prepare_submission_branch_preserves_newer_proposal_state_from_current_base() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        _init_repo(repo_root)
+
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            item_id, _run_key = _seed_l2_reviewable(session, repo_root)
+            _commit(repo_root, "add proposal", "docs/proposals/prop_l2_submit_demo")
+            source_commit = _git(repo_root, "rev-parse", "HEAD")
+            requests_path = repo_root / "docs/proposals/prop_l2_submit_demo/evaluation_requests.json"
+            requests = json.loads(requests_path.read_text(encoding="utf-8"))
+            requests["requested_items"][0]["status"] = "merged"
+            requests["requested_items"].append(
+                {
+                    "item_id": "l2_newer_sibling",
+                    "task_type": "l2_campaign",
+                    "status": "pending_implementation_merge",
+                }
+            )
+            _write(requests_path, json.dumps(requests, indent=2) + "\n")
+            _commit(
+                repo_root,
+                "advance proposal state",
+                "docs/proposals/prop_l2_submit_demo/evaluation_requests.json",
+            )
+            master_head = _git(repo_root, "rev-parse", "master")
+            _git(repo_root, "checkout", source_commit)
+
+            result = prepare_submission_branch(
+                session,
+                SubmissionPrepareRequest(
+                    repo_root=str(repo_root),
+                    item_id=item_id,
+                    evaluator_id="cpbot",
+                    session_id="s20260310t080013z",
+                    host="cp-host",
+                    worktree_root=str(repo_root / "tmp_submit"),
+                ),
+            )
+
+            branch_requests = json.loads(
+                (Path(result.worktree_path) / "docs/proposals/prop_l2_submit_demo/evaluation_requests.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            assert branch_requests == requests
+            assert _git(repo_root, "rev-parse", f"{result.branch_name}^") == master_head
+            changed_paths = _git(repo_root, "diff", "--name-only", f"master...{result.branch_name}").splitlines()
+            assert not any(path.startswith("docs/proposals/prop_l2_submit_demo/") for path in changed_paths)
 
 
 def test_prepare_submission_branch_rejects_broad_proposal_path() -> None:
