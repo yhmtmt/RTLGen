@@ -189,6 +189,26 @@
       "merge_commit": "3862bc198ff013db559fa64f0710a55a7cfd4a9d",
       "merged_utc": "2026-07-13T11:27:09.946354Z",
       "notes": "Merged via PR #1272 and merge 3862bc198ff013db559fa64f0710a55a7cfd4a9d at 2026-07-13T11:27:09.946354Z."
+    },
+    {
+      "item_id": "l2_decoder_attention_two_pass_integrated_frontier_ranking_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Integrate measured iterative-divider PPA, score-SRAM cost, and zero-tail quality into the Llama7B frontier.",
+      "evaluation_mode": "frontier_recost",
+      "abstraction_layer": "decoder_attention_two_pass_integrated_frontier_ranking",
+      "comparison_role": "measured_two_pass_frontier_ranking",
+      "depends_on_item_ids": [
+        "l1_decoder_attention_two_pass_stream_iterdiv_ppa_v1",
+        "l2_decoder_attention_two_pass_score_sram_reservation_llama7b_v1",
+        "l2_decoder_attention_score32_zero_tail_two_pass_generation_quality_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "rank_measured_two_pass_deployments",
+        "reason": "The frontier must charge divider latency, area, and energy together with score SRAM and the implemented zero-tail quality result."
+      },
+      "status": "pending_implementation_merge"
     }
   ],
   "source_commit": "0f76c959af3d547b55491546970268d88586e85c"
