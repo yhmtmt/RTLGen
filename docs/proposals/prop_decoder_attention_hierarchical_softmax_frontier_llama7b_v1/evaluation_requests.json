@@ -208,8 +208,12 @@
         "direction": "rank_measured_two_pass_deployments",
         "reason": "The frontier must charge divider latency, area, and energy together with score SRAM and the implemented zero-tail quality result."
       },
-      "status": "pending_implementation_merge"
+      "status": "merged",
+      "merged_pr_number": 1277,
+      "merge_commit": "daea1186cc1a11d78c5d97015f30b72066d375a6",
+      "merged_utc": "2026-07-13T12:14:48.219668Z",
+      "notes": "Merged via PR #1277 and merge daea1186cc1a11d78c5d97015f30b72066d375a6 at 2026-07-13T12:14:48.219668Z."
     }
   ],
-  "source_commit": "0f76c959af3d547b55491546970268d88586e85c"
+  "source_commit": "8f41146c030f8f3324eac52250932983a5ff75f9"
 }
