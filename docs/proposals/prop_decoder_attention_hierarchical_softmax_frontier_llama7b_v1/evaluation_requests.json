@@ -184,8 +184,12 @@
         "direction": "qualify_zero_tail_two_pass_precision",
         "reason": "The earlier score32 quality pass clamps out-of-range LUT deltas to exp(-8) and cannot be transferred to the implemented zero-tail profile."
       },
-      "status": "pending_implementation_merge"
+      "status": "merged",
+      "merged_pr_number": 1272,
+      "merge_commit": "3862bc198ff013db559fa64f0710a55a7cfd4a9d",
+      "merged_utc": "2026-07-13T11:27:09.946354Z",
+      "notes": "Merged via PR #1272 and merge 3862bc198ff013db559fa64f0710a55a7cfd4a9d at 2026-07-13T11:27:09.946354Z."
     }
   ],
-  "source_commit": "275673eb674626455a988b848941edbf28fd02cd"
+  "source_commit": "0f76c959af3d547b55491546970268d88586e85c"
 }
