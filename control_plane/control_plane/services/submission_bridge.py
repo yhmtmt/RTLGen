@@ -117,30 +117,54 @@ def _collect_existing_file_refs(*, repo_root: Path, value: Any, files: list[str]
     files.append(rel_path)
 
 
-def _collect_proposal_files(*, repo_root: Path, package_payload: dict[str, Any], files: list[str], seen: set[str]) -> None:
+def _proposal_file(*, repo_root: Path, package_payload: dict[str, Any]) -> Path | None:
     developer_loop = package_payload.get("developer_loop")
     if not isinstance(developer_loop, dict):
-        return
+        return None
     proposal_id = str(developer_loop.get("proposal_id", "")).strip() or None
     proposal_path = str(developer_loop.get("proposal_path", "")).strip() or None
     proposal_file = resolve_proposal_file(repo_root, proposal_path=proposal_path, proposal_id=proposal_id)
     if proposal_file is None or not proposal_file.exists() or proposal_file.name != "proposal.json":
         if proposal_id or proposal_path:
             raise SubmissionPrepareError("developer_loop proposal linkage does not resolve to a proposal")
-        return
+        return None
     placeholder_reason = proposal_placeholder_reason(proposal_file)
     if placeholder_reason is not None:
         raise SubmissionPrepareError(placeholder_reason)
+    return proposal_file
+
+
+def _proposal_context_files(*, repo_root: Path, package_payload: dict[str, Any]) -> list[str]:
+    proposal_file = _proposal_file(repo_root=repo_root, package_payload=package_payload)
+    if proposal_file is None:
+        return []
     proposal_dir = proposal_file.parent
+    files: list[str] = []
     for candidate in sorted(path for path in proposal_dir.rglob("*") if path.is_file()):
         try:
             rel_path = str(candidate.resolve().relative_to(repo_root.resolve()))
         except ValueError:
             continue
-        if rel_path in seen:
-            continue
-        seen.add(rel_path)
         files.append(rel_path)
+    return files
+
+
+def _path_exists_at_ref(repo_root: Path, ref: str, rel_path: str) -> bool:
+    result = subprocess.run(
+        ["git", "-C", str(repo_root), "cat-file", "-e", f"{ref}:{rel_path}"],
+        capture_output=True,
+        text=True,
+    )
+    return result.returncode == 0
+
+
+def _path_tracked_at_head(repo_root: Path, rel_path: str) -> bool:
+    result = subprocess.run(
+        ["git", "-C", str(repo_root), "ls-files", "--error-unmatch", rel_path],
+        capture_output=True,
+        text=True,
+    )
+    return result.returncode == 0
 
 
 def _review_linked_supporting_files(*, repo_root: Path, package_payload: dict[str, Any]) -> list[str]:
@@ -148,14 +172,12 @@ def _review_linked_supporting_files(*, repo_root: Path, package_payload: dict[st
     seen: set[str] = set()
     review_artifact = package_payload.get("review_artifact")
     if not isinstance(review_artifact, dict):
-        _collect_proposal_files(repo_root=repo_root, package_payload=package_payload, files=files, seen=seen)
         return files
     payload = review_artifact.get("payload")
     if isinstance(payload, dict):
         source_refs = payload.get("source_refs")
         if isinstance(source_refs, dict):
             _collect_existing_file_refs(repo_root=repo_root, value=source_refs, files=files, seen=seen)
-    _collect_proposal_files(repo_root=repo_root, package_payload=package_payload, files=files, seen=seen)
     return files
 
 
@@ -370,6 +392,23 @@ def prepare_submission_branch(session: Session, request: SubmissionPrepareReques
             existing=[*evidence_files, *supporting_files],
         )
     )
+    source_proposal_file = _proposal_file(repo_root=repo_root, package_payload=package_payload)
+    source_proposal_context = _proposal_context_files(repo_root=repo_root, package_payload=package_payload)
+    submission_base_ref, submission_base_commit = _resolve_submission_base(repo_root, request.pr_base)
+    proposal_files_to_copy: list[str] = []
+    if source_proposal_file is not None:
+        proposal_rel = str(source_proposal_file.resolve().relative_to(repo_root.resolve()))
+        if not _path_exists_at_ref(repo_root, submission_base_ref, proposal_rel):
+            if _path_tracked_at_head(repo_root, proposal_rel):
+                raise SubmissionPrepareError(
+                    f"developer_loop proposal was removed from current submission base: {proposal_rel}"
+                )
+            # Preserve legacy scaffolding that has not been committed anywhere
+            # yet. Once tracked, mutable proposal state always comes from base.
+            proposal_files_to_copy = source_proposal_context
+            for rel_path in proposal_files_to_copy:
+                if rel_path not in supporting_files:
+                    supporting_files.append(rel_path)
     files_to_copy = [snapshot_rel, package_rel]
     if review_rel:
         files_to_copy.append(review_rel)
@@ -396,7 +435,6 @@ def prepare_submission_branch(session: Session, request: SubmissionPrepareReques
 
     worktree_root = _worktree_root(work_item.item_id, request.worktree_root)
     worktree_path = worktree_root / "repo"
-    submission_base_ref, submission_base_commit = _resolve_submission_base(repo_root, request.pr_base)
     if _branch_exists(repo_root, branch_name):
         raise SubmissionPrepareError(f"branch already exists: {branch_name}")
     _run_git(repo_root, "worktree", "add", "-b", branch_name, str(worktree_path), submission_base_ref)
@@ -409,6 +447,13 @@ def prepare_submission_branch(session: Session, request: SubmissionPrepareReques
                 rel_path=frozen_file_map[rel_path],
                 target_rel_path=rel_path,
             )
+
+        # Validate against the materialized current base. Tracked proposal files
+        # were intentionally not copied from the pinned execution checkout.
+        proposal_context_files = _proposal_context_files(
+            repo_root=worktree_path,
+            package_payload=package_payload,
+        )
 
         _copy_into_worktree(
             repo_root=repo_root,
@@ -467,6 +512,7 @@ def prepare_submission_branch(session: Session, request: SubmissionPrepareReques
         "review_artifact_path": review_rel or None,
         "evidence_paths": evidence_files,
         "supporting_paths": supporting_files,
+        "proposal_context_paths": proposal_context_files,
         "canonical_diff_paths": canonical_diff_paths,
         "frozen_file_map": frozen_file_map,
         "pr_title": pr_title,

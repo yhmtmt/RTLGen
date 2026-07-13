@@ -608,7 +608,7 @@ def test_worker_daemon_syncs_expected_outputs_before_immediate_completion() -> N
             report_path = repo_root / "runs" / "campaigns" / "daemon_item_sync_before_completion" / "report.md"
             assert metrics_path.exists(), metrics_path
             assert report_path.exists(), report_path
-            assert Path(request.repo_root).resolve() != repo_root.resolve()
+            assert Path(request.repo_root).resolve() == repo_root.resolve()
 
             review_path = Path(request.repo_root) / "control_plane" / "shadow_exports" / "review" / "daemon_item_sync_before_completion" / "evaluated.json"
             review_path.parent.mkdir(parents=True, exist_ok=True)

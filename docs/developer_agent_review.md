@@ -54,6 +54,15 @@ The artifact PR must also include the proposal workspace files referenced by
 points to files absent from the PR branch, the evidence package is incomplete;
 fix packaging before reviewing or merging the PR.
 
+Tracked proposal files are mutable control-plane state owned by the artifact
+PR's current base branch. A pinned evaluator checkout supplies reproducible run
+evidence, but must not overwrite, delete, or regress proposal files that changed
+while the job was running. Submission preparation validates proposal linkage in
+the current-base worktree and copies proposal files from the execution checkout
+only for a new, still-untracked scaffold. Reviewers should block any artifact PR
+that changes sibling request entries or regresses merged/queued statuses without
+an explicit revision operation.
+
 ## Review Questions
 
 The reviewer must answer:
