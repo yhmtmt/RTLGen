@@ -433,14 +433,15 @@ def _is_pending_requested_evaluation(*, proposal_json: Path, item_id: str) -> bo
     requested_items = payload.get("requested_items")
     if not isinstance(requested_items, list):
         return False
-    active_statuses = {"", "pending", "queued", "ready", "running", "artifact_sync", "awaiting_review"}
     for entry in requested_items:
         if not isinstance(entry, dict):
             continue
         if str(entry.get("item_id", "")).strip() != item_id:
             continue
         status = str(entry.get("status", "")).strip().lower()
-        return status in active_statuses
+        if status.startswith("merged"):
+            return False
+        return status not in {"retracted", "invalidated", "superseded", "canceled", "cancelled"}
     return False
 
 

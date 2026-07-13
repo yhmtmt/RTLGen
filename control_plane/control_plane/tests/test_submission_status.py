@@ -24,7 +24,10 @@ from control_plane.models.runs import Run
 from control_plane.models.work_items import WorkItem
 from control_plane.services.l1_result_consumer import Layer1ConsumeRequest, consume_l1_result
 from control_plane.services.l2_result_consumer import Layer2ConsumeRequest, consume_l2_result
-from control_plane.services.operator_submission import assess_submission_eligibility
+from control_plane.services.operator_submission import (
+    _is_pending_requested_evaluation,
+    assess_submission_eligibility,
+)
 
 
 def _write(path: Path, text: str) -> None:
@@ -595,6 +598,63 @@ def test_assess_submission_eligibility_allows_pending_followon_after_promotion()
             status = assess_submission_eligibility(session, work_item=work_item, run=run, repo_root=repo_root)
             assert status.eligible is True
             assert status.reason is None
+
+
+def test_pending_requested_evaluation_accepts_nonterminal_status_vocabulary() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        proposal_json = Path(td) / "proposal.json"
+        _write(proposal_json, json.dumps({"proposal_id": "prop_status_vocabulary"}) + "\n")
+        evaluation_requests = proposal_json.parent / "evaluation_requests.json"
+
+        for status in (
+            "pending_implementation_merge",
+            "ready_to_queue",
+            "dispatch_pending",
+            "queued",
+            "running",
+            "artifact_sync",
+            "awaiting_review",
+        ):
+            _write(
+                evaluation_requests,
+                json.dumps(
+                    {
+                        "requested_items": [
+                            {
+                                "item_id": "l2_followup",
+                                "task_type": "l2_campaign",
+                                "status": status,
+                            }
+                        ]
+                    }
+                )
+                + "\n",
+            )
+            assert _is_pending_requested_evaluation(
+                proposal_json=proposal_json,
+                item_id="l2_followup",
+            )
+
+        for status in ("merged", "merged_with_evidence", "retracted", "invalidated", "superseded"):
+            _write(
+                evaluation_requests,
+                json.dumps(
+                    {
+                        "requested_items": [
+                            {
+                                "item_id": "l2_followup",
+                                "task_type": "l2_campaign",
+                                "status": status,
+                            }
+                        ]
+                    }
+                )
+                + "\n",
+            )
+            assert not _is_pending_requested_evaluation(
+                proposal_json=proposal_json,
+                item_id="l2_followup",
+            )
 
 
 def test_assess_submission_eligibility_allows_revision_after_promotion() -> None:
