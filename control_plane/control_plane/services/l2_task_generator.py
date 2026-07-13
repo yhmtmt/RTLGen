@@ -6419,6 +6419,66 @@ def _decoder_attention_two_pass_score_sram_reservation_evidence(*, item_id: str)
     return evidence
 
 
+def _decoder_attention_two_pass_integrated_frontier_ranking_evidence(
+    *, item_id: str, depends_on_item_ids: list[str] | None = None
+) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    source_frontier = (
+        f"{base}/decoder_attention_score32_integrated_frontier_ranking__"
+        "l2_decoder_attention_score32_quality_aware_hbm_controller_replay_rtl_ppa_recost_frontier_llama7b_v1.json"
+    )
+    score_sram = (
+        f"{base}/decoder_attention_score32_exp_lut_sram_hierarchy_envelope__"
+        "l2_decoder_attention_two_pass_score_sram_reservation_llama7b_v1.json"
+    )
+    zero_tail_quality = (
+        f"{base}/decoder_attention_mixed_int8_score32_zero_tail_two_pass_generation_quality__"
+        "l2_decoder_attention_score32_zero_tail_two_pass_generation_quality_llama7b_v1.json"
+    )
+    iterdiv_item_id = next(
+        (
+            str(dep)
+            for dep in (depends_on_item_ids or [])
+            if str(dep).startswith("l1_decoder_attention_two_pass_stream_iterdiv_ppa_v")
+        ),
+        "l1_decoder_attention_two_pass_stream_iterdiv_ppa_v1",
+    )
+    iterdiv_ppa = f"control_plane/shadow_exports/l1_promotions/{iterdiv_item_id}.json"
+    out = f"{base}/decoder_attention_two_pass_integrated_frontier_ranking__{item_id}.json"
+    report = f"{base}/decoder_attention_two_pass_integrated_frontier_ranking__{item_id}.md"
+    return {
+        "inputs": {
+            "source_score32_frontier_ranking": source_frontier,
+            "two_pass_score_sram_recost": score_sram,
+            "two_pass_zero_tail_quality": zero_tail_quality,
+            "two_pass_iterdiv_ppa": iterdiv_ppa,
+            "two_pass_integrated_frontier_ranking_out": out,
+            "two_pass_integrated_frontier_ranking_report": report,
+            "two_pass_integrated_frontier_ranking_scope": (
+                "Recost the current Llama7B score32 frontier with measured iterative-divider PPA, "
+                "measured 16 MiB score SRAM, and zero-tail generation quality. Compare one divider "
+                "per head against a shared divider under nominal and conservative SRAM packing."
+            ),
+        },
+        "commands": [
+            {
+                "name": "audit_decoder_attention_two_pass_integrated_frontier_ranking",
+                "run": (
+                    "python3 npu/eval/audit_llm_decoder_attention_two_pass_integrated_frontier_ranking.py "
+                    f"--source-frontier-ranking-json {source_frontier} "
+                    f"--score-sram-recost-json {score_sram} "
+                    f"--zero-tail-quality-json {zero_tail_quality} "
+                    f"--iterdiv-ppa-json {iterdiv_ppa} "
+                    "--head-count 32 --divide-cycles-per-head 480 --clock-ns 10 "
+                    f"--out {out} --out-md {report}"
+                ),
+            }
+        ],
+        "expected_outputs": [out, report],
+        "evidence_only": True,
+    }
+
+
 def _decoder_attention_integrated_abstraction_closure_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_integrated_abstraction_closure__{item_id}.json"
@@ -9919,6 +9979,7 @@ def _build_payload(
         "decoder_attention_score32_exp_lut_service_closure",
         "decoder_attention_score32_exp_lut_sram_hierarchy_envelope",
         "decoder_attention_two_pass_score_sram_reservation",
+        "decoder_attention_two_pass_integrated_frontier_ranking",
         "decoder_attention_score32_exp_lut_hbm_dram_service_closure",
         "decoder_attention_score32_hbm_controller_replay",
         "decoder_attention_score32_integrated_frontier_ranking",
@@ -10132,6 +10193,11 @@ def _build_payload(
             decoder_evidence = _decoder_attention_score32_exp_lut_sram_hierarchy_envelope_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_two_pass_score_sram_reservation":
             decoder_evidence = _decoder_attention_two_pass_score_sram_reservation_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_attention_two_pass_integrated_frontier_ranking":
+            decoder_evidence = _decoder_attention_two_pass_integrated_frontier_ranking_evidence(
+                item_id=item_id,
+                depends_on_item_ids=depends_on_item_ids,
+            )
         elif abstraction_layer_name == "decoder_attention_score32_exp_lut_hbm_dram_service_closure":
             decoder_evidence = _decoder_attention_score32_exp_lut_hbm_dram_service_closure_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_score32_hbm_controller_replay":
