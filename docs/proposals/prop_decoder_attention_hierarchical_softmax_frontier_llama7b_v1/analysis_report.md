@@ -2,31 +2,28 @@
 
 ## Candidate
 - `proposal_id`: `prop_decoder_attention_hierarchical_softmax_frontier_llama7b_v1`
-- `candidate_id`: `l2_decoder_attention_two_pass_stream_iterdiv_rtl_equivalence_llama7b_v1`
+- `candidate_id`: `l1_decoder_attention_two_pass_stream_iterdiv_ppa_v1`
 
 ## Evaluations Consumed
-- `l2_decoder_attention_two_pass_stream_iterdiv_rtl_equivalence_llama7b_v1`
-- `l2_decoder_attention_two_pass_stream_iterdiv_rtl_equivalence_llama7b_v1_run_1f217b64ac11a117`
-- source commit: `d34ba91f06cc149de6ab71b5bd5f783586c629c4`
-- review: PR #1261
+- `l1_decoder_attention_two_pass_stream_iterdiv_ppa_v1`
+- `l1_decoder_attention_two_pass_stream_iterdiv_ppa_v1_run_a8210397583c2e7d`
+- source commit: `4d6378820949839c78531e56a3429c7956ff2ce8`
+- review: PR #1265
 
 ## Baseline Comparison
-- baseline_ref: `None`
-- baseline_item_id: `None`
-- outcome: `attention_two_pass_stream_equivalence_pass`
-- summary: Two-pass external-memory stream equivalence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_two_pass_stream_equivalence__l2_decoder_attention_two_pass_stream_iterdiv_rtl_equivalence_llama7b_v1.json: decision=attention_two_pass_stream_equivalence_pass; equivalence_pass=True; semantic_profile=q8_k8_v8_a32_s32_exp_lut_b20_zero_tail_two_pass_global_max; score_storage=external_ready_valid_sram; kv_replay=external_ready_valid_stream; block_counts=[4, 8]; div_lanes_per_cycle=[1]; scenarios=['always_ready', 'memory_stalls', 'result_backpressure'].
+- not applicable
 
 ## Result
-- result: `iterate`
+- result: `promote`
 - confidence level: merged accepted evidence
-- estimated optimization room: pending follow-on comparison
-- architecture conclusion robustness: staged evidence
-- summary: Two-pass external-memory stream equivalence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_two_pass_stream_equivalence__l2_decoder_attention_two_pass_stream_iterdiv_rtl_equivalence_llama7b_v1.json: decision=attention_two_pass_stream_equivalence_pass; equivalence_pass=True; semantic_profile=q8_k8_v8_a32_s32_exp_lut_b20_zero_tail_two_pass_global_max; score_storage=external_ready_valid_sram; kv_replay=external_ready_valid_stream; block_counts=[4, 8]; div_lanes_per_cycle=[1]; scenarios=['always_ready', 'memory_stalls', 'result_backpressure'].
+- estimated optimization room: accepted at current stage
+- architecture conclusion robustness: accepted for the current proposal scope
+- summary: Physical metrics recorded from a completed, timing-feasible Layer 1 row.
 
 ## Failures and Caveats
 - no additional caveats recorded during automatic finalization
 
 ## Recommendation
-- `iterate`
-- reason: Two-pass external-memory stream equivalence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_two_pass_stream_equivalence__l2_decoder_attention_two_pass_stream_iterdiv_rtl_equivalence_llama7b_v1.json: decision=attention_two_pass_stream_equivalence_pass; equivalence_pass=True; semantic_profile=q8_k8_v8_a32_s32_exp_lut_b20_zero_tail_two_pass_global_max; score_storage=external_ready_valid_sram; kv_replay=external_ready_valid_stream; block_counts=[4, 8]; div_lanes_per_cycle=[1]; scenarios=['always_ready', 'memory_stalls', 'result_backpressure'].
-- next_action: inspect follow-on work after l2_decoder_attention_two_pass_stream_iterdiv_rtl_equivalence_llama7b_v1
+- `promote`
+- reason: Accepted Layer 1 physical metrics were merged in PR #1265 for the current candidate.
+- next_action: inspect the next dependent item

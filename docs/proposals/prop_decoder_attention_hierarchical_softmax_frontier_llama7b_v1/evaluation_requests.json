@@ -140,8 +140,11 @@
         "direction": "close_exact_two_pass_stream_timing",
         "reason": "A 480-cycle final divide adds less than one percent to a 131072-token two-pass row while removing the 42.7 ns path."
       },
-      "status": "ready_to_queue",
-      "notes": "Prerequisites are merged; item is ready to queue."
+      "status": "merged",
+      "notes": "Prerequisites are merged; item is ready to queue. Merged via PR #1265 and merge bad2ede11695ba20cbdbe1127e28a75773d409a4 at 2026-07-13T11:09:16.338455Z.",
+      "merged_pr_number": 1265,
+      "merge_commit": "bad2ede11695ba20cbdbe1127e28a75773d409a4",
+      "merged_utc": "2026-07-13T11:09:16.338455Z"
     },
     {
       "item_id": "l2_decoder_attention_two_pass_score_sram_reservation_llama7b_v1",
@@ -180,5 +183,5 @@
       "status": "pending_implementation_merge"
     }
   ],
-  "source_commit": "d34ba91f06cc149de6ab71b5bd5f783586c629c4"
+  "source_commit": "4d6378820949839c78531e56a3429c7956ff2ce8"
 }
