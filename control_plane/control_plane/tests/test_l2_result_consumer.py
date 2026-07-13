@@ -47,6 +47,26 @@ def test_decoder_evidence_summary_recognizes_two_pass_attention_equivalence() ->
     assert "external score SRAM" in summary
 
 
+def test_decoder_evidence_summary_recognizes_two_pass_integrated_frontier() -> None:
+    outcome, summary = _decoder_evidence_summary(
+        evidence_ref="runs/datasets/demo/two_pass_frontier.json",
+        evidence_payload={
+            "model": "llm_decoder_attention_two_pass_integrated_frontier_ranking_v1",
+            "decision": "two_pass_measured_components_integrated_frontier_ranked",
+            "diagnosis": {
+                "recommended_candidate": "score32_zero_tail_two_pass_nominal_per_head_iterdiv",
+                "recommended_latency_us": 12940.2,
+                "minimum_area_candidate": "score32_zero_tail_two_pass_nominal_shared_iterdiv",
+                "remaining_abstractions": ["hbm_dram_service", "sram_macro_floorplan_pnr"],
+            },
+        },
+    )
+
+    assert outcome == "two_pass_measured_components_integrated_frontier_ranked"
+    assert "recommended_latency_us=12940.2" in summary
+    assert "sram_macro_floorplan_pnr" in summary
+
+
 def test_decoder_evidence_summary_recognizes_two_pass_stream_equivalence() -> None:
     outcome, summary = _decoder_evidence_summary(
         evidence_ref="runs/datasets/demo/two_pass_stream.json",

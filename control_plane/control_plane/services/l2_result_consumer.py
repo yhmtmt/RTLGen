@@ -603,6 +603,10 @@ _DECODER_EVIDENCE_OUTPUT_KEYS: tuple[tuple[str, str], ...] = (
         "attention_two_pass_stream_equivalence_report",
     ),
     (
+        "two_pass_integrated_frontier_ranking_out",
+        "two_pass_integrated_frontier_ranking_report",
+    ),
+    (
         "attention_score32_exp_lut_sram_hierarchy_envelope_out",
         "attention_score32_exp_lut_sram_hierarchy_envelope_report",
     ),
@@ -1436,6 +1440,31 @@ def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, 
             "score32_die_area_mm2",
             "score32_quality_status",
             "current_recommended_candidate",
+            "remaining_abstractions",
+        ):
+            if key in diagnosis_dict:
+                parts.append(f"{key}={diagnosis_dict.get(key)}")
+        summary = "; ".join(parts)
+        return outcome, summary if summary.endswith(".") else summary + "."
+
+    if model == "llm_decoder_attention_two_pass_integrated_frontier_ranking_v1":
+        diagnosis = evidence_payload.get("diagnosis")
+        diagnosis_dict = dict(diagnosis) if isinstance(diagnosis, dict) else {}
+        outcome = str(
+            evidence_payload.get("decision")
+            or "two_pass_integrated_frontier_ranking_recorded"
+        )
+        parts = [
+            f"Decoder two-pass integrated frontier ranking recorded from {evidence_ref}: decision={outcome}",
+        ]
+        for key in (
+            "recommended_candidate",
+            "recommended_latency_us",
+            "recommended_token_throughput_per_s",
+            "minimum_area_candidate",
+            "shared_divider_latency_penalty_us",
+            "per_head_divider_area_premium_mm2",
+            "quality_status",
             "remaining_abstractions",
         ):
             if key in diagnosis_dict:
