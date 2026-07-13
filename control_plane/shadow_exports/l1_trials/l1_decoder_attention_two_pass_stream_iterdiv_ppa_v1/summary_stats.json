@@ -1,0 +1,33 @@
+{
+  "item_id": "l1_decoder_attention_two_pass_stream_iterdiv_ppa_v1",
+  "completed_trials": 1,
+  "success_count": 1,
+  "failure_count": 0,
+  "success_rate": 1.0,
+  "metrics": {
+    "critical_path_ns": {
+      "best": 7.5913,
+      "mean": 7.5913,
+      "median": 7.5913,
+      "max": 7.5913,
+      "range": 0.0,
+      "stddev": 0.0
+    },
+    "die_area": {
+      "best": 6250000.0,
+      "mean": 6250000.0,
+      "median": 6250000.0,
+      "max": 6250000.0,
+      "range": 0.0,
+      "stddev": 0.0
+    },
+    "total_power_mw": {
+      "best": 1.9,
+      "mean": 1.9,
+      "median": 1.9,
+      "max": 1.9,
+      "range": 0.0,
+      "stddev": 0.0
+    }
+  }
+}
