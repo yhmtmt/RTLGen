@@ -1,0 +1,98 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-07-14T06:30:08.367457Z",
+  "item_id": "l1_decoder_attention_score_bank_proxy_pnr_v1",
+  "run_key": "l1_decoder_attention_score_bank_proxy_pnr_v1_run_03f8a35ea97d7f03",
+  "layer": "layer1",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l1_sweep",
+  "source_commit": "cda8e38dd420e1ef41109b76a0b3710d359771ac",
+  "objective": "Place and route one logically banked 16Kx256 score store using Nangate45 FakeRAM LEF and Liberty proxy views.",
+  "input_manifest": {
+    "sweeps": [
+      "runs/campaigns/npu/attention_score_bank_proxy_v1/sweeps/nangate45_attention_score_bank_proxy.json"
+    ],
+    "configs": [
+      "runs/designs/npu_blocks/attention_score_bank_proxy_16kx256/config.json"
+    ],
+    "out_root": "runs/designs/npu_blocks",
+    "design_dirs": [],
+    "macro_manifests": [],
+    "candidate_manifests": [],
+    "required_submodules": []
+  },
+  "proposal_count": 1,
+  "evaluation_record": {
+    "evaluation_mode": "frontier_followup",
+    "abstraction_layer": "decoder_attention_score_bank_proxy",
+    "result_kind": "physical_metrics",
+    "physical_metrics_present": true,
+    "summary": "Physical metrics recorded from a completed, timing-feasible Layer 1 row.",
+    "timing_feasible": true,
+    "clock_period_ns": 10.0,
+    "timing_slack_ns": 7.1838
+  },
+  "proposal_assessment": null,
+  "proposals": [
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/npu_blocks/attention_score_bank_proxy_16kx256/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "a17d9d2f",
+        "tag": "attention_score_bank_proxy_v1_proxy_die_3000",
+        "result_path": "/orfs/flow/reports/nangate45/attention_score_bank_proxy_16kx256/attention_score_bank_proxy_v1_proxy_die_3000/6_finish.rpt",
+        "work_result_json": "runs/designs/npu_blocks/attention_score_bank_proxy_16kx256/work/a17d9d2f/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 2.8162,
+        "die_area": 9000000.0,
+        "total_power_mw": 0.19
+      }
+    }
+  ],
+  "trial_summary": {
+    "item_id": "l1_decoder_attention_score_bank_proxy_pnr_v1",
+    "completed_trials": 2,
+    "success_count": 2,
+    "failure_count": 0,
+    "success_rate": 1.0,
+    "metrics": {
+      "critical_path_ns": {
+        "best": 2.8162,
+        "mean": 2.8162,
+        "median": 2.8162,
+        "max": 2.8162,
+        "range": 0.0,
+        "stddev": 0.0
+      },
+      "die_area": {
+        "best": 9000000.0,
+        "mean": 9000000.0,
+        "median": 9000000.0,
+        "max": 9000000.0,
+        "range": 0.0,
+        "stddev": 0.0
+      },
+      "total_power_mw": {
+        "best": 0.19,
+        "mean": 0.19,
+        "median": 0.19,
+        "max": 0.19,
+        "range": 0.0,
+        "stddev": 0.0
+      }
+    }
+  },
+  "source_refs": {
+    "trial_metrics_csvs": [
+      "runs/designs/npu_blocks/attention_score_bank_proxy_16kx256/metrics.csv"
+    ],
+    "summary_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_score_bank_proxy_pnr_v1/summary_stats.json",
+    "failure_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_score_bank_proxy_pnr_v1/failure_stats.json",
+    "trial_table_csv": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_score_bank_proxy_pnr_v1/trial_table.csv"
+  }
+}
