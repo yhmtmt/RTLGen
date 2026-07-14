@@ -1,0 +1,164 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "sweeps": [
+        "runs/campaigns/npu/dense_gemm_tile_stream_int8_v1/sweeps/nangate45_dense_gemm_tile_stream_int8.json"
+      ],
+      "configs": [
+        "runs/designs/npu_blocks/dense_gemm_tile_stream_int8_16x8/config.json"
+      ],
+      "out_root": "runs/designs/npu_blocks",
+      "design_dirs": [],
+      "macro_manifests": [],
+      "candidate_manifests": [],
+      "required_submodules": []
+    },
+    "commands": [
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/rtlgen/gen_dense_gemm_tile_stream.py --config runs/designs/npu_blocks/dense_gemm_tile_stream_int8_16x8/config.json --out runs/designs/npu_blocks/dense_gemm_tile_stream_int8_16x8/verilog",
+        "name": "generate_dense_gemm_tile_stream_rtl"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/synth/run_block_sweep.py --design_dir runs/designs/npu_blocks/dense_gemm_tile_stream_int8_16x8 --platform nangate45 --top dense_gemm_tile_stream_int8_16x8 --sweep runs/campaigns/npu/dense_gemm_tile_stream_int8_v1/sweeps/nangate45_dense_gemm_tile_stream_int8.json --out_root runs/designs/npu_blocks --skip_existing",
+        "name": "run_block_sweep"
+      },
+      {
+        "run": "python3 npu/eval/extract_openroad_timing_summary.py --design-dir runs/designs/npu_blocks/dense_gemm_tile_stream_int8_16x8 --out runs/designs/npu_blocks/dense_gemm_tile_stream_int8_16x8/timing_debug_report.md --max-paths 8",
+        "name": "extract_dense_gemm_tile_stream_timing_paths"
+      },
+      {
+        "run": "python3 scripts/build_runs_index.py",
+        "name": "build_runs_index"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate"
+      }
+    ],
+    "metadata": {
+      "acceptance_notes": "Record every timing-feasible and failed 10ns/6ns/5ns density point; compare instance area to the narrow hash harness."
+    },
+    "objective": "Measure Nangate45 PPA for the operational 16x8 signed-int8 accumulating tile.",
+    "acceptance": [
+      "Each generated wrapper metrics.csv contains at least one status=ok row for the queued sweep",
+      "Committed outputs stay lightweight (metrics.csv only; runs/index.csv is exported centrally after merge)",
+      "python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue pass"
+    ],
+    "source_mode": "config",
+    "expected_outputs": [
+      "runs/designs/npu_blocks/dense_gemm_tile_stream_int8_16x8/metrics.csv",
+      "runs/designs/npu_blocks/dense_gemm_tile_stream_int8_16x8/timing_debug_report.md"
+    ]
+  },
+  "layer": "layer1",
+  "state": "evaluated",
+  "title": "Operational INT8 dense tile PPA",
+  "result": {
+    "branch": "eval/l1_decoder_attention_operational_dense_tile_ppa_v1/s20260714t045755z",
+    "completed_utc": "2026-07-14T04:57:53.565200Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "b7c2d9c80c1c",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260714t045755z][host:b7c2d9c80c1c][item:l1_decoder_attention_operational_dense_tile_ppa_v1]",
+    "metrics_rows": [
+      {
+        "tag": "dense_gemm_tile_stream_int8_v1",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "a52e4f7e",
+        "metrics_csv": "runs/designs/npu_blocks/dense_gemm_tile_stream_int8_16x8/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/dense_gemm_tile_stream_int8_16x8/work/a52e4f7e/result.json"
+      },
+      {
+        "tag": "dense_gemm_tile_stream_int8_v1",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "95d8f5f6",
+        "metrics_csv": "runs/designs/npu_blocks/dense_gemm_tile_stream_int8_16x8/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/dense_gemm_tile_stream_int8_16x8/work/95d8f5f6/result.json"
+      },
+      {
+        "tag": "dense_gemm_tile_stream_int8_v1",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "620348b1",
+        "metrics_csv": "runs/designs/npu_blocks/dense_gemm_tile_stream_int8_16x8/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/dense_gemm_tile_stream_int8_16x8/work/620348b1/result.json"
+      },
+      {
+        "tag": "dense_gemm_tile_stream_int8_v1",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "dfa52013",
+        "metrics_csv": "runs/designs/npu_blocks/dense_gemm_tile_stream_int8_16x8/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/dense_gemm_tile_stream_int8_16x8/work/dfa52013/result.json"
+      },
+      {
+        "tag": "dense_gemm_tile_stream_int8_v1",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "f670b337",
+        "metrics_csv": "runs/designs/npu_blocks/dense_gemm_tile_stream_int8_16x8/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/dense_gemm_tile_stream_int8_16x8/work/f670b337/result.json"
+      },
+      {
+        "tag": "dense_gemm_tile_stream_int8_v1",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "0b32dd12",
+        "metrics_csv": "runs/designs/npu_blocks/dense_gemm_tile_stream_int8_16x8/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/dense_gemm_tile_stream_int8_16x8/work/0b32dd12/result.json"
+      }
+    ],
+    "queue_item_id": "l1_decoder_attention_operational_dense_tile_ppa_v1",
+    "session_id": "s20260714t045755z",
+    "status": "ok",
+    "summary": "5/5 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l1_decoder_attention_operational_dense_tile_ppa_v1/s20260714t045755z",
+    "pr_title": "eval: run operational int8 dense tile ppa",
+    "checklist": [
+      "Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge",
+      "Include metrics row references for each completed design",
+      "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260714t045755z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l1_decoder_attention_operational_dense_tile_ppa_v1"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l1_decoder_attention_operational_dense_tile_ppa_v1",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 1,
+  "created_utc": "2026-07-14T03:29:11.996469Z",
+  "requested_by": "control_plane",
+  "developer_loop": {
+    "evaluation": {
+      "mode": "frontier_followup",
+      "trial_policy": {
+        "seed_start": 0,
+        "trial_count": 1,
+        "stop_after_failures": 1
+      }
+    },
+    "abstraction": {
+      "layer": "decoder_attention_operational_dense_tile"
+    },
+    "proposal_id": "prop_decoder_attention_operational_cluster_physical_closure_llama7b_v1",
+    "proposal_path": "docs/proposals/prop_decoder_attention_operational_cluster_physical_closure_llama7b_v1/proposal.json"
+  },
+  "source_requirement": {
+    "repo": "",
+    "reason": "evaluator runtime must contain the queued job source commit",
+    "version": 1,
+    "required_ref": "origin/master",
+    "required_sha": "cda8e38dd420e1ef41109b76a0b3710d359771ac",
+    "requires_daemon_restart": true
+  }
+}

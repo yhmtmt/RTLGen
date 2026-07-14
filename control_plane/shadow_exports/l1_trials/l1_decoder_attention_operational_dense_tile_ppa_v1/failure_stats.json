@@ -1,0 +1,12 @@
+{
+  "item_id": "l1_decoder_attention_operational_dense_tile_ppa_v1",
+  "completed_trials": 2,
+  "success_count": 1,
+  "failure_count": 1,
+  "by_category": {
+    "command_canceled": 1
+  },
+  "by_stage": {
+    "run_block_sweep": 1
+  }
+}

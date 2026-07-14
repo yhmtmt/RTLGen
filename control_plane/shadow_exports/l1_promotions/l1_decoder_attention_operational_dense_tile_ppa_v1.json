@@ -1,0 +1,98 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-07-14T04:57:54.568492Z",
+  "item_id": "l1_decoder_attention_operational_dense_tile_ppa_v1",
+  "run_key": "l1_decoder_attention_operational_dense_tile_ppa_v1_run_cb0b9acc6498034e",
+  "layer": "layer1",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l1_sweep",
+  "source_commit": "cda8e38dd420e1ef41109b76a0b3710d359771ac",
+  "objective": "Measure Nangate45 PPA for the operational 16x8 signed-int8 accumulating tile.",
+  "input_manifest": {
+    "sweeps": [
+      "runs/campaigns/npu/dense_gemm_tile_stream_int8_v1/sweeps/nangate45_dense_gemm_tile_stream_int8.json"
+    ],
+    "configs": [
+      "runs/designs/npu_blocks/dense_gemm_tile_stream_int8_16x8/config.json"
+    ],
+    "out_root": "runs/designs/npu_blocks",
+    "design_dirs": [],
+    "macro_manifests": [],
+    "candidate_manifests": [],
+    "required_submodules": []
+  },
+  "proposal_count": 1,
+  "evaluation_record": {
+    "evaluation_mode": "frontier_followup",
+    "abstraction_layer": "decoder_attention_operational_dense_tile",
+    "result_kind": "physical_metrics",
+    "physical_metrics_present": true,
+    "summary": "Physical metrics recorded from a completed, timing-feasible Layer 1 row.",
+    "timing_feasible": true,
+    "clock_period_ns": 5.0,
+    "timing_slack_ns": 0.6976000000000004
+  },
+  "proposal_assessment": null,
+  "proposals": [
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/npu_blocks/dense_gemm_tile_stream_int8_16x8/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "f670b337",
+        "tag": "dense_gemm_tile_stream_int8_v1",
+        "result_path": "/orfs/flow/reports/nangate45/dense_gemm_tile_stream_int8_16x8/dense_gemm_tile_stream_int8_v1/6_finish.rpt",
+        "work_result_json": "runs/designs/npu_blocks/dense_gemm_tile_stream_int8_16x8/work/f670b337/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 4.3024,
+        "die_area": 2560000.0,
+        "total_power_mw": 0.25
+      }
+    }
+  ],
+  "trial_summary": {
+    "item_id": "l1_decoder_attention_operational_dense_tile_ppa_v1",
+    "completed_trials": 2,
+    "success_count": 1,
+    "failure_count": 1,
+    "success_rate": 0.5,
+    "metrics": {
+      "critical_path_ns": {
+        "best": 4.3024,
+        "mean": 4.3024,
+        "median": 4.3024,
+        "max": 4.3024,
+        "range": 0.0,
+        "stddev": 0.0
+      },
+      "die_area": {
+        "best": 2560000.0,
+        "mean": 2560000.0,
+        "median": 2560000.0,
+        "max": 2560000.0,
+        "range": 0.0,
+        "stddev": 0.0
+      },
+      "total_power_mw": {
+        "best": 0.25,
+        "mean": 0.25,
+        "median": 0.25,
+        "max": 0.25,
+        "range": 0.0,
+        "stddev": 0.0
+      }
+    }
+  },
+  "source_refs": {
+    "trial_metrics_csvs": [
+      "runs/designs/npu_blocks/dense_gemm_tile_stream_int8_16x8/metrics.csv"
+    ],
+    "summary_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_operational_dense_tile_ppa_v1/summary_stats.json",
+    "failure_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_operational_dense_tile_ppa_v1/failure_stats.json",
+    "trial_table_csv": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_operational_dense_tile_ppa_v1/trial_table.csv"
+  }
+}
