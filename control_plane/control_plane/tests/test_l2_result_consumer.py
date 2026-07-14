@@ -89,6 +89,26 @@ def test_decoder_evidence_summary_recognizes_separated_two_pass_frontier() -> No
     assert "sram_macro_floorplan_pnr" in summary
 
 
+def test_decoder_evidence_summary_recognizes_rtl_component_equivalence() -> None:
+    outcome, summary = _decoder_evidence_summary(
+        evidence_ref="runs/datasets/demo/operational_tile_equivalence.json",
+        evidence_payload={
+            "model": "rtl_component_reference_equivalence_v1",
+            "decision": "operational_dense_gemm_tile_int8_16x8_equivalence_pass",
+            "component": "operational_dense_gemm_tile_int8_16x8",
+            "semantic_profile": "operational_dense_gemm_outer_product_stream_s8_s8_acc32",
+            "reference": "python_signed_outer_product_gemm",
+            "equivalence_pass": True,
+            "passed_test_count": 2,
+            "test_target": "tests/test_dense_gemm_tile_stream.py",
+        },
+    )
+
+    assert outcome == "operational_dense_gemm_tile_int8_16x8_equivalence_pass"
+    assert "equivalence_pass=True" in summary
+    assert "python_signed_outer_product_gemm" in summary
+
+
 def test_decoder_evidence_summary_recognizes_two_pass_stream_equivalence() -> None:
     outcome, summary = _decoder_evidence_summary(
         evidence_ref="runs/datasets/demo/two_pass_stream.json",

@@ -465,6 +465,49 @@ def _read_config_target(
                 },
             ],
         )
+    elif "top_name" in cfg and "dense_gemm_tile_stream" in cfg:
+        top_name = str(cfg["top_name"]).strip()
+        if not top_name:
+            raise Layer1TaskGenerationError(f"top_name must not be empty in {config_path}")
+        try:
+            design_dir = str(config_path.parent.resolve().relative_to(repo_root.resolve()))
+        except ValueError as exc:
+            raise Layer1TaskGenerationError(
+                f"operational dense GEMM tile config must live under repo_root/runs/designs/...: {config_path}"
+            ) from exc
+        design_name = config_path.parent.name
+        return Layer1ConfigTarget(
+            design_kind="block",
+            design_name=design_name,
+            expected_metrics_path=block_metrics_path(design_name),
+            expected_report_paths=[f"{design_dir}/timing_debug_report.md"],
+            commands=[
+                {
+                    "name": "generate_dense_gemm_tile_stream_rtl",
+                    "run": _with_oss_cad_path(
+                        "python3 npu/rtlgen/gen_dense_gemm_tile_stream.py "
+                        f"--config {config_rel} --out {design_dir}/verilog"
+                    ),
+                },
+                {
+                    "name": "run_block_sweep",
+                    "run": _with_oss_cad_path(
+                        "python3 npu/synth/run_block_sweep.py "
+                        f"--design_dir {design_dir} --platform {{platform}} --top {top_name} "
+                        f"--sweep {{sweep_path}} --out_root {out_root} "
+                        + (f"--make_target {make_target} " if make_target else "")
+                        + "--skip_existing"
+                    ),
+                },
+                {
+                    "name": "extract_dense_gemm_tile_stream_timing_paths",
+                    "run": (
+                        "python3 npu/eval/extract_openroad_timing_summary.py "
+                        f"--design-dir {design_dir} --out {design_dir}/timing_debug_report.md --max-paths 8"
+                    ),
+                },
+            ],
+        )
     elif "top_name" in cfg and "dense_gemm_tile" in cfg:
         top_name = str(cfg["top_name"]).strip()
         if not top_name:
@@ -512,6 +555,51 @@ def _read_config_target(
                         + (f"--make_target {make_target} " if make_target else "")
                         + "--skip_existing"
                         )
+                    ),
+                },
+            ],
+        )
+    elif "top_name" in cfg and "attention_score_bank_proxy" in cfg:
+        top_name = str(cfg["top_name"]).strip()
+        if not top_name:
+            raise Layer1TaskGenerationError(f"top_name must not be empty in {config_path}")
+        try:
+            design_dir = str(config_path.parent.resolve().relative_to(repo_root.resolve()))
+        except ValueError as exc:
+            raise Layer1TaskGenerationError(
+                f"attention score-bank proxy config must live under repo_root/runs/designs/...: {config_path}"
+            ) from exc
+        design_name = config_path.parent.name
+        macro_manifest = f"{design_dir}/macro_manifest.json"
+        return Layer1ConfigTarget(
+            design_kind="block",
+            design_name=design_name,
+            expected_metrics_path=block_metrics_path(design_name),
+            expected_report_paths=[f"{design_dir}/timing_debug_report.md"],
+            commands=[
+                {
+                    "name": "generate_attention_score_bank_proxy_rtl",
+                    "run": _with_oss_cad_path(
+                        "python3 npu/rtlgen/gen_attention_score_bank_proxy.py "
+                        f"--config {config_rel} --out {design_dir}/verilog"
+                    ),
+                },
+                {
+                    "name": "run_block_sweep",
+                    "run": _with_oss_cad_path(
+                        "python3 npu/synth/run_block_sweep.py "
+                        f"--design_dir {design_dir} --platform {{platform}} --top {top_name} "
+                        f"--sweep {{sweep_path}} --out_root {out_root} "
+                        f"--macro_manifest {macro_manifest} "
+                        + (f"--make_target {make_target} " if make_target else "")
+                        + "--skip_existing"
+                    ),
+                },
+                {
+                    "name": "extract_attention_score_bank_proxy_timing_paths",
+                    "run": (
+                        "python3 npu/eval/extract_openroad_timing_summary.py "
+                        f"--design-dir {design_dir} --out {design_dir}/timing_debug_report.md --max-paths 8"
                     ),
                 },
             ],

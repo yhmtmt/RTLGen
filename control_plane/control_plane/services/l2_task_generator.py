@@ -6539,6 +6539,68 @@ def _decoder_attention_separated_two_pass_frontier_evidence(
     }
 
 
+def _decoder_attention_operational_dense_tile_equivalence_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_attention_operational_dense_tile_equivalence__{item_id}.json"
+    report = f"{base}/decoder_attention_operational_dense_tile_equivalence__{item_id}.md"
+    return {
+        "inputs": {
+            "operational_dense_tile_equivalence_out": out,
+            "operational_dense_tile_equivalence_report": report,
+            "operational_dense_tile_equivalence_scope": (
+                "Prove complete signed-int8 outer-product accumulation, final-beat inclusion, result ordering, "
+                "clear/reuse, and ready/valid backpressure behavior against the reference GEMM."
+            ),
+        },
+        "commands": [
+            {
+                "name": "audit_operational_dense_tile_equivalence",
+                "run": (
+                    "python3 npu/eval/audit_rtl_component_equivalence.py "
+                    "--component operational_dense_gemm_tile_int8_16x8 "
+                    "--semantic-profile operational_dense_gemm_outer_product_stream_s8_s8_acc32 "
+                    "--test-target tests/test_dense_gemm_tile_stream.py "
+                    "--reference python_signed_outer_product_gemm "
+                    f"--out {out} --out-md {report}"
+                ),
+            }
+        ],
+        "expected_outputs": [out, report],
+        "evidence_only": True,
+    }
+
+
+def _decoder_attention_score_bank_proxy_equivalence_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_attention_score_bank_proxy_equivalence__{item_id}.json"
+    report = f"{base}/decoder_attention_score_bank_proxy_equivalence__{item_id}.md"
+    return {
+        "inputs": {
+            "score_bank_proxy_equivalence_out": out,
+            "score_bank_proxy_equivalence_report": report,
+            "score_bank_proxy_equivalence_scope": (
+                "Prove the eight-depth-group, seven-width-slice FakeRAM network implements a non-aliasing "
+                "synchronous 16Kx256 1RW score bank with one-cycle read response."
+            ),
+        },
+        "commands": [
+            {
+                "name": "audit_score_bank_proxy_equivalence",
+                "run": (
+                    "python3 npu/eval/audit_rtl_component_equivalence.py "
+                    "--component attention_score_bank_proxy "
+                    "--semantic-profile synchronous_16kx256_1rw_eight_by_seven_banking "
+                    "--test-target tests/test_attention_score_bank_proxy.py "
+                    "--reference behavioral_synchronous_1rw_memory "
+                    f"--out {out} --out-md {report}"
+                ),
+            }
+        ],
+        "expected_outputs": [out, report],
+        "evidence_only": True,
+    }
+
+
 def _decoder_attention_integrated_abstraction_closure_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_integrated_abstraction_closure__{item_id}.json"
@@ -10041,6 +10103,8 @@ def _build_payload(
         "decoder_attention_two_pass_score_sram_reservation",
         "decoder_attention_two_pass_integrated_frontier_ranking",
         "decoder_attention_separated_two_pass_frontier",
+        "decoder_attention_operational_dense_tile_equivalence",
+        "decoder_attention_score_bank_proxy_equivalence",
         "decoder_attention_score32_exp_lut_hbm_dram_service_closure",
         "decoder_attention_score32_hbm_controller_replay",
         "decoder_attention_score32_integrated_frontier_ranking",
@@ -10264,6 +10328,10 @@ def _build_payload(
                 item_id=item_id,
                 depends_on_item_ids=depends_on_item_ids,
             )
+        elif abstraction_layer_name == "decoder_attention_operational_dense_tile_equivalence":
+            decoder_evidence = _decoder_attention_operational_dense_tile_equivalence_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_attention_score_bank_proxy_equivalence":
+            decoder_evidence = _decoder_attention_score_bank_proxy_equivalence_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_score32_exp_lut_hbm_dram_service_closure":
             decoder_evidence = _decoder_attention_score32_exp_lut_hbm_dram_service_closure_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_score32_hbm_controller_replay":

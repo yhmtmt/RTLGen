@@ -1,0 +1,43 @@
+{
+  "tag_prefix": "attention_score_bank_proxy_v1",
+  "flow_params": {
+    "TAG": [
+      "attention_score_bank_proxy_v1"
+    ],
+    "FLOW_VARIANT": [
+      "attention_score_bank_proxy_v1"
+    ],
+    "CLOCK_PERIOD": [
+      10
+    ],
+    "PLACE_DENSITY": [
+      0.4
+    ],
+    "SYNTH_HIERARCHICAL": [
+      1
+    ],
+    "SYNTH_MEMORY_MAX_BITS": [
+      65536
+    ]
+  },
+  "mode_compare": {
+    "modes": [
+      {
+        "name": "proxy_die_2500",
+        "use_macro": true,
+        "param_overrides": {
+          "DIE_AREA": "0 0 2500 2500",
+          "CORE_AREA": "50 50 2450 2450"
+        }
+      },
+      {
+        "name": "proxy_die_3000",
+        "use_macro": true,
+        "param_overrides": {
+          "DIE_AREA": "0 0 3000 3000",
+          "CORE_AREA": "50 50 2950 2950"
+        }
+      }
+    ]
+  }
+}
