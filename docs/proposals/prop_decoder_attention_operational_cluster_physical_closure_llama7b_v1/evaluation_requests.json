@@ -18,7 +18,11 @@
         "direction": "prove_operational_dense_tile_equivalence",
         "reason": "Do not scale the narrow hash harness as an operational producer."
       },
-      "status": "pending_implementation_merge"
+      "status": "merged",
+      "merged_pr_number": 1282,
+      "merge_commit": "572d71eff3f737d90201b25aa772f538f14b71b2",
+      "merged_utc": "2026-07-14T02:21:32.359253Z",
+      "notes": "Merged via PR #1282 and merge 572d71eff3f737d90201b25aa772f538f14b71b2 at 2026-07-14T02:21:32.359253Z."
     },
     {
       "item_id": "l1_decoder_attention_operational_dense_tile_ppa_v1",
@@ -40,7 +44,8 @@
         "direction": "replace_hash_harness_compute_cost",
         "reason": "Charge complete operational accumulator state before scaling dual_mac compute."
       },
-      "status": "blocked_on_operational_dense_tile_equivalence"
+      "status": "ready_to_queue",
+      "notes": "Prerequisites are merged; item is ready to queue."
     },
     {
       "item_id": "l2_decoder_attention_score_bank_proxy_equivalence_llama7b_v1",
