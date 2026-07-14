@@ -1,15 +1,15 @@
 {
   "proposal_id": "prop_decoder_attention_operational_cluster_physical_closure_llama7b_v1",
-  "candidate_id": "l2_decoder_attention_operational_dense_tile_equivalence_llama7b_v1",
-  "decision": "iterate",
-  "reason": "RTL component/reference equivalence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_operational_dense_tile_equivalence__l2_decoder_attention_operational_dense_tile_equivalence_llama7b_v1.json: decision=operational_dense_gemm_tile_int8_16x8_equivalence_pass; component=operational_dense_gemm_tile_int8_16x8; semantic_profile=operational_dense_gemm_outer_product_stream_s8_s8_acc32; reference=python_signed_outer_product_gemm; equivalence_pass=True; passed_test_count=2; test_target=tests/test_dense_gemm_tile_stream.py.",
+  "candidate_id": "l1_decoder_attention_operational_dense_tile_ppa_v1",
+  "decision": "promote",
+  "reason": "Accepted Layer 1 physical metrics were merged in PR #1287 for the current candidate.",
   "evidence_refs": [
-    "item:l2_decoder_attention_operational_dense_tile_equivalence_llama7b_v1",
-    "run:l2_decoder_attention_operational_dense_tile_equivalence_llama7b_v1_run_c800ccde0a40caa8",
-    "artifact:control_plane/shadow_exports/l2_decisions/l2_decoder_attention_operational_dense_tile_equivalence_llama7b_v1.json",
-    "pr:#1282",
-    "https://github.com/yhmtmt/RTLGen/pull/1282"
+    "item:l1_decoder_attention_operational_dense_tile_ppa_v1",
+    "run:l1_decoder_attention_operational_dense_tile_ppa_v1_run_cb0b9acc6498034e",
+    "artifact:control_plane/shadow_exports/l1_promotions/l1_decoder_attention_operational_dense_tile_ppa_v1.json",
+    "pr:#1287",
+    "https://github.com/yhmtmt/RTLGen/pull/1287"
   ],
-  "next_action": "inspect follow-on work after l2_decoder_attention_operational_dense_tile_equivalence_llama7b_v1",
+  "next_action": "queue l1_decoder_attention_score_bank_proxy_pnr_v1",
   "requires_human_approval": false
 }

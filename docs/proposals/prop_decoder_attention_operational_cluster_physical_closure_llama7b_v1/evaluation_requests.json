@@ -44,8 +44,11 @@
         "direction": "replace_hash_harness_compute_cost",
         "reason": "Charge complete operational accumulator state before scaling dual_mac compute."
       },
-      "status": "ready_to_queue",
-      "notes": "Prerequisites are merged; item is ready to queue."
+      "status": "merged",
+      "notes": "Prerequisites are merged; item is ready to queue. Merged via PR #1287 and merge ba5c01888fa8e0d644fb42630dcf94109015eca1 at 2026-07-14T06:15:47.245082Z.",
+      "merged_pr_number": 1287,
+      "merge_commit": "ba5c01888fa8e0d644fb42630dcf94109015eca1",
+      "merged_utc": "2026-07-14T06:15:47.245082Z"
     },
     {
       "item_id": "l2_decoder_attention_score_bank_proxy_equivalence_llama7b_v1",
@@ -131,5 +134,5 @@
       "status": "blocked_on_component_measurements"
     }
   ],
-  "source_commit": "875614d6bd207082d81f1cef2a27e8ccfcaee746"
+  "source_commit": "cda8e38dd420e1ef41109b76a0b3710d359771ac"
 }
