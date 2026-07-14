@@ -6539,6 +6539,48 @@ def _decoder_attention_separated_two_pass_frontier_evidence(
     }
 
 
+def _decoder_attention_operational_component_frontier_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    frontier = (
+        f"{base}/decoder_attention_separated_two_pass_frontier__"
+        "l2_decoder_attention_separated_two_pass_frontier_llama7b_v1.json"
+    )
+    operational_tile = "runs/designs/npu_blocks/dense_gemm_tile_stream_int8_16x8/metrics.csv"
+    old_tile = "runs/designs/npu_blocks/npu_dense_gemm_tile_int8_16x8_k1_p1/metrics.csv"
+    score_bank = "runs/designs/npu_blocks/attention_score_bank_proxy_16kx256/metrics.csv"
+    out = f"{base}/decoder_attention_operational_component_frontier__{item_id}.json"
+    report = f"{base}/decoder_attention_operational_component_frontier__{item_id}.md"
+    return {
+        "inputs": {
+            "operational_component_frontier_source": frontier,
+            "operational_dense_tile_metrics": operational_tile,
+            "narrow_dense_tile_metrics": old_tile,
+            "score_bank_proxy_metrics": score_bank,
+            "operational_component_frontier_out": out,
+            "operational_component_frontier_report": report,
+            "operational_component_frontier_scope": (
+                "Replace proxy dense-tile and analytical score-bank area/timing with measured operational "
+                "component PPA. Retain activity-backed token energy until operational SAIF/VCD calibration."
+            ),
+        },
+        "commands": [
+            {
+                "name": "audit_decoder_attention_operational_component_frontier",
+                "run": (
+                    "python3 npu/eval/audit_llm_decoder_attention_operational_component_frontier.py "
+                    f"--frontier-json {frontier} "
+                    f"--operational-tile-metrics-csv {operational_tile} "
+                    f"--old-tile-metrics-csv {old_tile} "
+                    f"--score-bank-metrics-csv {score_bank} "
+                    f"--out-json {out} --out-md {report}"
+                ),
+            }
+        ],
+        "expected_outputs": [out, report],
+        "evidence_only": True,
+    }
+
+
 def _decoder_attention_operational_dense_tile_equivalence_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_operational_dense_tile_equivalence__{item_id}.json"
@@ -10103,6 +10145,7 @@ def _build_payload(
         "decoder_attention_two_pass_score_sram_reservation",
         "decoder_attention_two_pass_integrated_frontier_ranking",
         "decoder_attention_separated_two_pass_frontier",
+        "decoder_attention_operational_component_frontier",
         "decoder_attention_operational_dense_tile_equivalence",
         "decoder_attention_score_bank_proxy_equivalence",
         "decoder_attention_score32_exp_lut_hbm_dram_service_closure",
@@ -10328,6 +10371,8 @@ def _build_payload(
                 item_id=item_id,
                 depends_on_item_ids=depends_on_item_ids,
             )
+        elif abstraction_layer_name == "decoder_attention_operational_component_frontier":
+            decoder_evidence = _decoder_attention_operational_component_frontier_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_operational_dense_tile_equivalence":
             decoder_evidence = _decoder_attention_operational_dense_tile_equivalence_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_score_bank_proxy_equivalence":

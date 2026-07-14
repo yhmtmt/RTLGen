@@ -118,6 +118,25 @@
       "status": "pending_implementation_merge"
     },
     {
+      "item_id": "l2_decoder_attention_operational_component_frontier_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Replace proxy compute and analytical score-memory area/timing in the separated two-pass frontier with measured operational component PPA.",
+      "evaluation_mode": "frontier_recost",
+      "abstraction_layer": "decoder_attention_operational_component_frontier",
+      "comparison_role": "operational_component_frontier_recost",
+      "depends_on_item_ids": [
+        "l1_decoder_attention_operational_dense_tile_ppa_v1",
+        "l1_decoder_attention_score_bank_proxy_pnr_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "reprice_frontier_with_operational_components",
+        "reason": "Measured component area and timing must be propagated before selecting the physical cluster; vectorless power must not replace activity-backed token energy."
+      },
+      "status": "blocked_on_component_measurements"
+    },
+    {
       "item_id": "l1_decoder_attention_two_head_operational_cluster_pnr_v1",
       "task_type": "l1_sweep",
       "objective": "Measure a two-head cluster with operational dual compute streams, two score banks, and shared versus per-head dividers.",
@@ -125,8 +144,7 @@
       "abstraction_layer": "decoder_attention_two_head_operational_cluster",
       "comparison_role": "hierarchical_cluster_pnr",
       "depends_on_item_ids": [
-        "l1_decoder_attention_operational_dense_tile_ppa_v1",
-        "l1_decoder_attention_score_bank_proxy_pnr_v1",
+        "l2_decoder_attention_operational_component_frontier_llama7b_v1",
         "l1_decoder_attention_two_pass_stream_iterdiv_ppa_v1"
       ],
       "requires_merged_inputs": true,
