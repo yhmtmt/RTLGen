@@ -607,6 +607,10 @@ _DECODER_EVIDENCE_OUTPUT_KEYS: tuple[tuple[str, str], ...] = (
         "two_pass_integrated_frontier_ranking_report",
     ),
     (
+        "separated_two_pass_frontier_out",
+        "separated_two_pass_frontier_report",
+    ),
+    (
         "attention_score32_exp_lut_sram_hierarchy_envelope_out",
         "attention_score32_exp_lut_sram_hierarchy_envelope_report",
     ),
@@ -1465,6 +1469,33 @@ def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, 
             "shared_divider_latency_penalty_us",
             "per_head_divider_area_premium_mm2",
             "quality_status",
+            "remaining_abstractions",
+        ):
+            if key in diagnosis_dict:
+                parts.append(f"{key}={diagnosis_dict.get(key)}")
+        summary = "; ".join(parts)
+        return outcome, summary if summary.endswith(".") else summary + "."
+
+    if model == "llm_decoder_attention_separated_two_pass_frontier_v1":
+        diagnosis = evidence_payload.get("diagnosis")
+        diagnosis_dict = dict(diagnosis) if isinstance(diagnosis, dict) else {}
+        outcome = str(
+            evidence_payload.get("decision")
+            or diagnosis_dict.get("decision")
+            or "separated_two_pass_frontier_recorded"
+        )
+        parts = [
+            f"Decoder separated-producer two-pass frontier recorded from {evidence_ref}: decision={outcome}",
+        ]
+        for key in (
+            "recommended_candidate",
+            "recommended_latency_us",
+            "recommended_token_throughput_per_s",
+            "recommended_total_energy_mj_per_token",
+            "recommended_embodied_area_mm2",
+            "minimum_area_candidate",
+            "quality_status",
+            "precision_status",
             "remaining_abstractions",
         ):
             if key in diagnosis_dict:

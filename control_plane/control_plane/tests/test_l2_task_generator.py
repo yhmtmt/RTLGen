@@ -7603,6 +7603,49 @@ def test_generate_l2_campaign_task_adds_two_pass_integrated_frontier_ranking() -
             )
 
 
+def test_generate_l2_campaign_task_adds_separated_two_pass_frontier() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id="l2_decoder_attention_separated_two_pass_frontier_llama7b_v1",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    abstraction_layer="decoder_attention_separated_two_pass_frontier",
+                    evaluation_mode="frontier_recost",
+                    depends_on_item_ids=["l1_decoder_attention_two_pass_stream_iterdiv_ppa_v1"],
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            command = work_item.task_request.request_payload["task"]["commands"][0]
+            decoder_inputs = work_item.input_manifest["decoder_contract"]
+
+            assert command["name"] == "audit_decoder_attention_separated_two_pass_frontier"
+            assert "--head-count 32 --divide-cycles-per-head 480 --clock-ns 10" in command["run"]
+            assert "l1_decoder_attention_two_pass_stream_iterdiv_ppa_v1.json" in command["run"]
+            assert decoder_inputs["separated_two_pass_compute_recost"].endswith(
+                "l2_decoder_attention_score32_separated_compute_recost_llama7b_v1.json"
+            )
+            assert decoder_inputs["separated_two_pass_score_sram_recost"].endswith(
+                "l2_decoder_attention_two_pass_score_sram_reservation_llama7b_v1.json"
+            )
+            assert decoder_inputs["separated_two_pass_zero_tail_quality"].endswith(
+                "l2_decoder_attention_score32_zero_tail_two_pass_generation_quality_llama7b_v1.json"
+            )
+
+
 def test_generate_l2_campaign_task_adds_attention_composed_datapath_score24_reduced_replica_evidence() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
