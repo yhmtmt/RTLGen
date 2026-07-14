@@ -1,0 +1,143 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-07-14T02:19:58.813195Z",
+  "control_plane_source_commit": "875614d6bd207082d81f1cef2a27e8ccfcaee746",
+  "review_metadata_source_commit": "875614d6bd207082d81f1cef2a27e8ccfcaee746",
+  "item_id": "l2_decoder_attention_score_bank_proxy_equivalence_llama7b_v1",
+  "run_key": "l2_decoder_attention_score_bank_proxy_equivalence_llama7b_v1_run_2853d6d96dbd808e",
+  "layer": "layer2",
+  "flow": "openroad",
+  "task_type": "l2_campaign",
+  "source_commit": "875614d6bd207082d81f1cef2a27e8ccfcaee746",
+  "queue_snapshot": {
+    "path": "control_plane/shadow_exports/review/l2_decoder_attention_score_bank_proxy_equivalence_llama7b_v1/evaluated.json",
+    "result": {
+      "branch": "eval/l2_decoder_attention_score_bank_proxy_equivalence_llama7b_v1/s20260714t021957z",
+      "completed_utc": "2026-07-14T02:19:55.600441Z",
+      "evaluator_id": "control_plane",
+      "executor": "@control_plane",
+      "host": "b7c2d9c80c1c",
+      "identity_block": "[role:evaluator][account:control_plane][session:s20260714t021957z][host:b7c2d9c80c1c][item:l2_decoder_attention_score_bank_proxy_equivalence_llama7b_v1]",
+      "metrics_rows": [],
+      "metrics_exempt_reason": "evidence_only_decoder_evidence",
+      "queue_item_id": "l2_decoder_attention_score_bank_proxy_equivalence_llama7b_v1",
+      "session_id": "s20260714t021957z",
+      "status": "ok",
+      "summary": "2/2 commands succeeded"
+    }
+  },
+  "review_artifact": {
+    "kind": "decision_proposal",
+    "path": "control_plane/shadow_exports/l2_decisions/l2_decoder_attention_score_bank_proxy_equivalence_llama7b_v1.json",
+    "storage_mode": "repo",
+    "sha256": "8c7be2941fc4e92e5329351e2e7b66e892ae5ae89bb040574a378fd59be7076d",
+    "payload": {
+      "version": 0.1,
+      "generated_utc": "2026-07-14T02:19:56.542587Z",
+      "item_id": "l2_decoder_attention_score_bank_proxy_equivalence_llama7b_v1",
+      "run_key": "l2_decoder_attention_score_bank_proxy_equivalence_llama7b_v1_run_2853d6d96dbd808e",
+      "layer": "layer2",
+      "flow": "openroad",
+      "platform": "nangate45",
+      "task_type": "l2_campaign",
+      "source_commit": "875614d6bd207082d81f1cef2a27e8ccfcaee746",
+      "review_metadata_source_commit": "875614d6bd207082d81f1cef2a27e8ccfcaee746",
+      "objective": "Prove the 56 macro depth and width banking network implements a synchronous 16Kx256 1RW score store.",
+      "input_manifest": {
+        "decoder_contract": {
+          "score_bank_proxy_equivalence_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score_bank_proxy_equivalence__l2_decoder_attention_score_bank_proxy_equivalence_llama7b_v1.json",
+          "score_bank_proxy_equivalence_scope": "Prove the eight-depth-group, seven-width-slice FakeRAM network implements a non-aliasing synchronous 16Kx256 1RW score bank with one-cycle read response.",
+          "score_bank_proxy_equivalence_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score_bank_proxy_equivalence__l2_decoder_attention_score_bank_proxy_equivalence_llama7b_v1.md"
+        }
+      },
+      "recommendation": {
+        "source": "decoder_evidence",
+        "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score_bank_proxy_equivalence__l2_decoder_attention_score_bank_proxy_equivalence_llama7b_v1.json",
+        "arch_id": "decoder_attention_score_bank_proxy_equivalence",
+        "macro_mode": "evidence_only",
+        "outcome": "attention_score_bank_proxy_equivalence_pass"
+      },
+      "objective_profiles": [],
+      "evaluation_record": {
+        "proposal_id": "prop_decoder_attention_operational_cluster_physical_closure_llama7b_v1",
+        "title": "Operational dense-tile and score-SRAM cluster closure for Llama7B",
+        "primary_question": "How far do operational accumulator state, banked SRAM wiring, divider sharing, and local cluster routing move the measured Llama7B throughput, energy, and area frontier?",
+        "evaluation_mode": "equivalence_gate",
+        "comparison_role": "score_memory_semantic_gate",
+        "abstraction_layer": "decoder_attention_score_bank_proxy_equivalence",
+        "expected_direction": "prove_banked_score_memory_equivalence",
+        "expected_reason": "Do not place an area-only SRAM rectangle without a valid address and data mapping.",
+        "summary": "RTL component/reference equivalence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score_bank_proxy_equivalence__l2_decoder_attention_score_bank_proxy_equivalence_llama7b_v1.json: decision=attention_score_bank_proxy_equivalence_pass; component=attention_score_bank_proxy; semantic_profile=synchronous_16kx256_1rw_eight_by_seven_banking; reference=behavioral_synchronous_1rw_memory; equivalence_pass=True; passed_test_count=2; test_target=tests/test_attention_score_bank_proxy.py.",
+        "outcome": "attention_score_bank_proxy_equivalence_pass",
+        "expectation_status": "unspecified"
+      },
+      "proposal_assessment": {
+        "proposal_id": "prop_decoder_attention_operational_cluster_physical_closure_llama7b_v1",
+        "title": "Operational dense-tile and score-SRAM cluster closure for Llama7B",
+        "kind": "architecture",
+        "primary_question": "How far do operational accumulator state, banked SRAM wiring, divider sharing, and local cluster routing move the measured Llama7B throughput, energy, and area frontier?",
+        "evaluation_mode": "equivalence_gate",
+        "comparison_role": "score_memory_semantic_gate",
+        "outcome": "attention_score_bank_proxy_equivalence_pass",
+        "summary": "RTL component/reference equivalence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score_bank_proxy_equivalence__l2_decoder_attention_score_bank_proxy_equivalence_llama7b_v1.json: decision=attention_score_bank_proxy_equivalence_pass; component=attention_score_bank_proxy; semantic_profile=synchronous_16kx256_1rw_eight_by_seven_banking; reference=behavioral_synchronous_1rw_memory; equivalence_pass=True; passed_test_count=2; test_target=tests/test_attention_score_bank_proxy.py.",
+        "baseline_ref": null,
+        "baseline_item_id": null,
+        "matched_row_count": 0,
+        "matched_rows": [],
+        "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score_bank_proxy_equivalence__l2_decoder_attention_score_bank_proxy_equivalence_llama7b_v1.json",
+        "decoder_quality": {
+          "diagnosis": {}
+        }
+      },
+      "source_refs": {
+        "decoder_evidence_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score_bank_proxy_equivalence__l2_decoder_attention_score_bank_proxy_equivalence_llama7b_v1.json",
+        "decoder_score_bank_proxy_equivalence_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score_bank_proxy_equivalence__l2_decoder_attention_score_bank_proxy_equivalence_llama7b_v1.json",
+        "decoder_score_bank_proxy_equivalence_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score_bank_proxy_equivalence__l2_decoder_attention_score_bank_proxy_equivalence_llama7b_v1.md"
+      },
+      "decoder_quality": {
+        "diagnosis": {}
+      }
+    }
+  },
+  "developer_loop": {
+    "comparison": {
+      "role": "score_memory_semantic_gate",
+      "paired_baseline_item_id": ""
+    },
+    "evaluation": {
+      "mode": "equivalence_gate",
+      "expected_reason": "Do not place an area-only SRAM rectangle without a valid address and data mapping.",
+      "expected_direction": "prove_banked_score_memory_equivalence"
+    },
+    "abstraction": {
+      "layer": "decoder_attention_score_bank_proxy_equivalence"
+    },
+    "proposal_id": "prop_decoder_attention_operational_cluster_physical_closure_llama7b_v1",
+    "dependencies": {
+      "item_ids": [
+        "l2_decoder_attention_two_pass_score_sram_reservation_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    },
+    "proposal_path": "docs/proposals/prop_decoder_attention_operational_cluster_physical_closure_llama7b_v1/proposal.json"
+  },
+  "submission_history": null,
+  "pr_payload": {
+    "branch": "eval/l2_decoder_attention_score_bank_proxy_equivalence_llama7b_v1/s20260714t021957z",
+    "title": "eval: run llama7b score bank proxy equivalence",
+    "body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260714t021957z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l2_decoder_attention_score_bank_proxy_equivalence_llama7b_v1"
+    },
+    "body_md": "## Summary\n- item_id: `l2_decoder_attention_score_bank_proxy_equivalence_llama7b_v1`\n- run_key: `l2_decoder_attention_score_bank_proxy_equivalence_llama7b_v1_run_2853d6d96dbd808e`\n- layer: `layer2`\n- task_type: `l2_campaign`\n- status: `ok`\n- summary: `2/2 commands succeeded`\n- queue_snapshot: `control_plane/shadow_exports/review/l2_decoder_attention_score_bank_proxy_equivalence_llama7b_v1/evaluated.json`\n- metrics_rows_count: `0`\n- review_artifact: `decision_proposal` at `control_plane/shadow_exports/l2_decisions/l2_decoder_attention_score_bank_proxy_equivalence_llama7b_v1.json`\n\n## Developer Context\n- proposal_id: `prop_decoder_attention_operational_cluster_physical_closure_llama7b_v1`\n- proposal_path: `docs/proposals/prop_decoder_attention_operational_cluster_physical_closure_llama7b_v1/proposal.json`\n- reviewer_first_read: `docs/proposals/prop_decoder_attention_operational_cluster_physical_closure_llama7b_v1/proposal.json` plus `docs/developer_agent_review.md`\n- execution_source_commit: `875614d6bd207082d81f1cef2a27e8ccfcaee746`\n- review_metadata_source_commit: `875614d6bd207082d81f1cef2a27e8ccfcaee746`\n\n## Evaluation Mode\n- evaluation_mode: `equivalence_gate`\n- abstraction_layer: `decoder_attention_score_bank_proxy_equivalence`\n- comparison_role: `score_memory_semantic_gate`\n- expected_direction: `prove_banked_score_memory_equivalence`\n- expected_reason: `Do not place an area-only SRAM rectangle without a valid address and data mapping.`\n- expectation_status: `unspecified`\n- evaluation_summary: `RTL component/reference equivalence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score_bank_proxy_equivalence__l2_decoder_attention_score_bank_proxy_equivalence_llama7b_v1.json: decision=attention_score_bank_proxy_equivalence_pass; component=attention_score_bank_proxy; semantic_profile=synchronous_16kx256_1rw_eight_by_seven_banking; reference=behavioral_synchronous_1rw_memory; equivalence_pass=True; passed_test_count=2; test_target=tests/test_attention_score_bank_proxy.py.`\n\n## Focused Comparison\n- primary_question: `How far do operational accumulator state, banked SRAM wiring, divider sharing, and local cluster routing move the measured Llama7B throughput, energy, and area frontier?`\n- comparison_role: `score_memory_semantic_gate`\n- proposal_outcome: `attention_score_bank_proxy_equivalence_pass`\n- comparison_summary: `RTL component/reference equivalence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score_bank_proxy_equivalence__l2_decoder_attention_score_bank_proxy_equivalence_llama7b_v1.json: decision=attention_score_bank_proxy_equivalence_pass; component=attention_score_bank_proxy; semantic_profile=synchronous_16kx256_1rw_eight_by_seven_banking; reference=behavioral_synchronous_1rw_memory; equivalence_pass=True; passed_test_count=2; test_target=tests/test_attention_score_bank_proxy.py.`\n- baseline_ref: `None`\n- baseline_item_id: `None`\n\n## Checklist\n- [ ] Commit lightweight campaign artifacts only\n- [ ] Include metrics row references in result.metrics_rows\n- [ ] Keep committed result_path fields repo-portable\n- [ ] Run python3 scripts/validate_runs.py --skip_eval_queue before pushing\n",
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Include metrics row references in result.metrics_rows",
+      "Keep committed result_path fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ]
+  }
+}
