@@ -1,0 +1,22 @@
+{
+  "command": [
+    "/workspaces/rtlgen-eval-clean/control_plane/.venv/bin/python3",
+    "-m",
+    "pytest",
+    "-q",
+    "tests/test_dense_gemm_tile_stream.py"
+  ],
+  "component": "operational_dense_gemm_tile_int8_16x8",
+  "decision": "operational_dense_gemm_tile_int8_16x8_equivalence_pass",
+  "equivalence_pass": true,
+  "generated_utc": "2026-07-14T02:19:52.067990Z",
+  "model": "rtl_component_reference_equivalence_v1",
+  "passed_test_count": 2,
+  "reference": "python_signed_outer_product_gemm",
+  "returncode": 0,
+  "semantic_profile": "operational_dense_gemm_outer_product_stream_s8_s8_acc32",
+  "test_output_sha256": "042f6ccf3c8b8b93cc398fb099363d4af09c78db74e1ea6ea8d3807fbf0e1a9d",
+  "test_output_tail": "..                                                                       [100%]\n2 passed in 0.03s",
+  "test_target": "tests/test_dense_gemm_tile_stream.py",
+  "version": 1
+}

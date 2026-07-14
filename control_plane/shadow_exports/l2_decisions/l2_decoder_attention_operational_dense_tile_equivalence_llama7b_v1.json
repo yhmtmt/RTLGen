@@ -1,0 +1,67 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-07-14T02:19:56.481477Z",
+  "item_id": "l2_decoder_attention_operational_dense_tile_equivalence_llama7b_v1",
+  "run_key": "l2_decoder_attention_operational_dense_tile_equivalence_llama7b_v1_run_c800ccde0a40caa8",
+  "layer": "layer2",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l2_campaign",
+  "source_commit": "875614d6bd207082d81f1cef2a27e8ccfcaee746",
+  "review_metadata_source_commit": "875614d6bd207082d81f1cef2a27e8ccfcaee746",
+  "objective": "Prove complete operational dense tile accumulation and result stream equivalence.",
+  "input_manifest": {
+    "decoder_contract": {
+      "operational_dense_tile_equivalence_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_operational_dense_tile_equivalence__l2_decoder_attention_operational_dense_tile_equivalence_llama7b_v1.json",
+      "operational_dense_tile_equivalence_scope": "Prove complete signed-int8 outer-product accumulation, final-beat inclusion, result ordering, clear/reuse, and ready/valid backpressure behavior against the reference GEMM.",
+      "operational_dense_tile_equivalence_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_operational_dense_tile_equivalence__l2_decoder_attention_operational_dense_tile_equivalence_llama7b_v1.md"
+    }
+  },
+  "recommendation": {
+    "source": "decoder_evidence",
+    "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_operational_dense_tile_equivalence__l2_decoder_attention_operational_dense_tile_equivalence_llama7b_v1.json",
+    "arch_id": "decoder_attention_operational_dense_tile_equivalence",
+    "macro_mode": "evidence_only",
+    "outcome": "operational_dense_gemm_tile_int8_16x8_equivalence_pass"
+  },
+  "objective_profiles": [],
+  "evaluation_record": {
+    "proposal_id": "prop_decoder_attention_operational_cluster_physical_closure_llama7b_v1",
+    "title": "Operational dense-tile and score-SRAM cluster closure for Llama7B",
+    "primary_question": "How far do operational accumulator state, banked SRAM wiring, divider sharing, and local cluster routing move the measured Llama7B throughput, energy, and area frontier?",
+    "evaluation_mode": "equivalence_gate",
+    "comparison_role": "operational_compute_semantic_gate",
+    "abstraction_layer": "decoder_attention_operational_dense_tile_equivalence",
+    "expected_direction": "prove_operational_dense_tile_equivalence",
+    "expected_reason": "Do not scale the narrow hash harness as an operational producer.",
+    "summary": "RTL component/reference equivalence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_operational_dense_tile_equivalence__l2_decoder_attention_operational_dense_tile_equivalence_llama7b_v1.json: decision=operational_dense_gemm_tile_int8_16x8_equivalence_pass; component=operational_dense_gemm_tile_int8_16x8; semantic_profile=operational_dense_gemm_outer_product_stream_s8_s8_acc32; reference=python_signed_outer_product_gemm; equivalence_pass=True; passed_test_count=2; test_target=tests/test_dense_gemm_tile_stream.py.",
+    "outcome": "operational_dense_gemm_tile_int8_16x8_equivalence_pass",
+    "expectation_status": "unspecified"
+  },
+  "proposal_assessment": {
+    "proposal_id": "prop_decoder_attention_operational_cluster_physical_closure_llama7b_v1",
+    "title": "Operational dense-tile and score-SRAM cluster closure for Llama7B",
+    "kind": "architecture",
+    "primary_question": "How far do operational accumulator state, banked SRAM wiring, divider sharing, and local cluster routing move the measured Llama7B throughput, energy, and area frontier?",
+    "evaluation_mode": "equivalence_gate",
+    "comparison_role": "operational_compute_semantic_gate",
+    "outcome": "operational_dense_gemm_tile_int8_16x8_equivalence_pass",
+    "summary": "RTL component/reference equivalence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_operational_dense_tile_equivalence__l2_decoder_attention_operational_dense_tile_equivalence_llama7b_v1.json: decision=operational_dense_gemm_tile_int8_16x8_equivalence_pass; component=operational_dense_gemm_tile_int8_16x8; semantic_profile=operational_dense_gemm_outer_product_stream_s8_s8_acc32; reference=python_signed_outer_product_gemm; equivalence_pass=True; passed_test_count=2; test_target=tests/test_dense_gemm_tile_stream.py.",
+    "baseline_ref": null,
+    "baseline_item_id": null,
+    "matched_row_count": 0,
+    "matched_rows": [],
+    "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_operational_dense_tile_equivalence__l2_decoder_attention_operational_dense_tile_equivalence_llama7b_v1.json",
+    "decoder_quality": {
+      "diagnosis": {}
+    }
+  },
+  "source_refs": {
+    "decoder_evidence_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_operational_dense_tile_equivalence__l2_decoder_attention_operational_dense_tile_equivalence_llama7b_v1.json",
+    "decoder_operational_dense_tile_equivalence_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_operational_dense_tile_equivalence__l2_decoder_attention_operational_dense_tile_equivalence_llama7b_v1.json",
+    "decoder_operational_dense_tile_equivalence_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_operational_dense_tile_equivalence__l2_decoder_attention_operational_dense_tile_equivalence_llama7b_v1.md"
+  },
+  "decoder_quality": {
+    "diagnosis": {}
+  }
+}
