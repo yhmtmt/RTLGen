@@ -208,10 +208,33 @@
         "reason": "The frontier must charge divider latency, area, and energy together with score SRAM and the implemented zero-tail quality result."
       },
       "status": "pending_implementation_merge"
+    },
+    {
+      "item_id": "l2_decoder_attention_separated_two_pass_frontier_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Replace the slow replicated score32 wrapper with the measured dense producer plus exact global two-pass service and rerank Llama7B.",
+      "evaluation_mode": "frontier_recost",
+      "abstraction_layer": "decoder_attention_separated_two_pass_frontier",
+      "comparison_role": "precision_aligned_separated_two_pass_frontier",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_score32_separated_compute_recost_llama7b_v1",
+        "l1_decoder_attention_two_pass_stream_iterdiv_ppa_v1",
+        "l2_decoder_attention_two_pass_score_sram_reservation_llama7b_v1",
+        "l2_decoder_attention_score32_zero_tail_two_pass_generation_quality_llama7b_v1",
+        "l2_decoder_attention_two_pass_integrated_frontier_ranking_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "rank_precision_aligned_separated_two_pass_frontier",
+        "reason": "Transfer the measured score-SRAM bandwidth share into the fast dense-producer baseline while replacing, rather than double-counting, the old local vector-softmax component."
+      },
+      "status": "pending_implementation_merge"
     }
   ],
   "remaining_abstractions_after_this_step": [
-    "The measured score-SRAM macros still require composed floorplan and PNR evidence.",
+    "The separated dense producer, exact two-pass service, and score-SRAM macros still require composed scheduling, floorplan, and PNR evidence.",
+    "Toggle-accurate composed energy remains unmeasured.",
     "HBM/DRAM service and vendor-current signoff remain external to the current measured datapath."
   ]
 }

@@ -67,6 +67,28 @@ def test_decoder_evidence_summary_recognizes_two_pass_integrated_frontier() -> N
     assert "sram_macro_floorplan_pnr" in summary
 
 
+def test_decoder_evidence_summary_recognizes_separated_two_pass_frontier() -> None:
+    outcome, summary = _decoder_evidence_summary(
+        evidence_ref="runs/datasets/demo/separated_two_pass_frontier.json",
+        evidence_payload={
+            "model": "llm_decoder_attention_separated_two_pass_frontier_v1",
+            "decision": "precision_aligned_separated_two_pass_frontier_ranked",
+            "diagnosis": {
+                "recommended_candidate": "separated_two_pass_nominal_per_head_iterdiv",
+                "recommended_latency_us": 1595.4,
+                "recommended_token_throughput_per_s": 626.8,
+                "recommended_embodied_area_mm2": 249.4,
+                "quality_status": "zero_tail_quality_pass",
+                "remaining_abstractions": ["hbm_dram_service", "sram_macro_floorplan_pnr"],
+            },
+        },
+    )
+
+    assert outcome == "precision_aligned_separated_two_pass_frontier_ranked"
+    assert "recommended_token_throughput_per_s=626.8" in summary
+    assert "sram_macro_floorplan_pnr" in summary
+
+
 def test_decoder_evidence_summary_recognizes_two_pass_stream_equivalence() -> None:
     outcome, summary = _decoder_evidence_summary(
         evidence_ref="runs/datasets/demo/two_pass_stream.json",
