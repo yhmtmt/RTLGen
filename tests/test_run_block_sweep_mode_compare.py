@@ -44,6 +44,40 @@ class ModeCompareRegressionTest(unittest.TestCase):
         self.assertEqual("hier_macro", cfg["modes"][1]["name"])
         self.assertTrue(cfg["modes"][1]["use_macro"])
 
+    def test_fixed_floorplan_clears_template_core_utilization(self):
+        self.assertEqual(
+            ["CORE_UTILIZATION="],
+            self.run_block_sweep.fixed_floorplan_make_overrides(
+                {"DIE_AREA": "0 0 2500 2500", "CORE_AREA": "50 50 2450 2450"}
+            ),
+        )
+        self.assertEqual(
+            [],
+            self.run_block_sweep.fixed_floorplan_make_overrides(
+                {"CORE_AREA": "0 0 100 100", "CORE_UTILIZATION": 40}
+            ),
+        )
+        self.assertEqual(
+            [],
+            self.run_block_sweep.fixed_floorplan_make_overrides(
+                {"CORE_UTILIZATION": 40}
+            ),
+        )
+
+    def test_hierarchical_macro_synth_disables_cost_threshold_without_macro_liberty(self):
+        self.assertEqual(
+            ["SYNTH_MINIMUM_KEEP_SIZE=", "ADDITIONAL_LIBS="],
+            self.run_block_sweep.macro_synth_make_overrides(
+                {"SYNTH_HIERARCHICAL": 1}
+            ),
+        )
+        self.assertEqual(
+            ["ADDITIONAL_LIBS="],
+            self.run_block_sweep.macro_synth_make_overrides(
+                {"SYNTH_HIERARCHICAL": 0}
+            ),
+        )
+
     def test_parse_mode_compare_custom_modes(self):
         raw = {
             "mode_compare": {

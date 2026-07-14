@@ -61,6 +61,27 @@ def parse_boolish(value: object, default: bool = False) -> bool:
     return bool(text)
 
 
+def fixed_floorplan_make_overrides(sweep_params: Dict[str, object]) -> List[str]:
+    """Disable the template utilization initializer for explicit floorplans."""
+    has_fixed_area = any(
+        str(sweep_params.get(key, "")).strip()
+        for key in ("DIE_AREA", "CORE_AREA")
+    )
+    if has_fixed_area and "CORE_UTILIZATION" not in sweep_params:
+        return ["CORE_UTILIZATION="]
+    return []
+
+
+def macro_synth_make_overrides(sweep_params: Dict[str, object]) -> List[str]:
+    overrides: List[str] = []
+    if parse_boolish(sweep_params.get("SYNTH_HIERARCHICAL")):
+        # Macro Liberty is deliberately absent in this pass, so Yosys cannot
+        # calculate the cost used by threshold-based hierarchy selection.
+        overrides.append("SYNTH_MINIMUM_KEEP_SIZE=")
+    overrides.append("ADDITIONAL_LIBS=")
+    return overrides
+
+
 def synth_keep_module_names(value: object) -> List[str]:
     if value is None:
         return []
@@ -1737,6 +1758,7 @@ def run_single(design_dir: Path, design_name: str, platform: str, top: str, veri
     ]
     for k, v in sweep_params.items():
         make_cmd.append(f"{k.upper()}={v}")
+    make_cmd.extend(fixed_floorplan_make_overrides(sweep_params))
 
     blackboxes = []
     synth_script_override: Optional[Path] = None
@@ -1758,7 +1780,7 @@ def run_single(design_dir: Path, design_name: str, platform: str, top: str, veri
     )
     if use_macro_synth_workaround:
         synth_cmd = list(make_cmd)
-        synth_cmd.append("ADDITIONAL_LIBS=")
+        synth_cmd.extend(macro_synth_make_overrides(sweep_params))
         synth_cmd.append("synth")
         print(f"[INFO] Running OpenROAD flow: {' '.join(synth_cmd)}")
         try:
