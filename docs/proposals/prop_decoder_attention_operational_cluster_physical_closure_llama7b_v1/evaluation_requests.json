@@ -58,7 +58,11 @@
         "direction": "prove_banked_score_memory_equivalence",
         "reason": "Do not place an area-only SRAM rectangle without a valid address and data mapping."
       },
-      "status": "pending_implementation_merge"
+      "status": "merged",
+      "merged_pr_number": 1281,
+      "merge_commit": "54cfe4266c43e388131617bfcdcd2d76b945968f",
+      "merged_utc": "2026-07-14T02:21:03Z",
+      "notes": "Merged via PR #1281 and merge 54cfe4266c43e388131617bfcdcd2d76b945968f at 2026-07-14T02:21:03Z."
     },
     {
       "item_id": "l1_decoder_attention_score_bank_proxy_pnr_v1",
@@ -80,7 +84,8 @@
         "direction": "measure_score_bank_proxy_floorplan",
         "reason": "Measure the concrete banking and pin-routing overhead while retaining the no-GDS proxy qualification."
       },
-      "status": "blocked_on_score_bank_proxy_equivalence"
+      "status": "ready_to_queue",
+      "notes": "Prerequisites are merged; item is ready to queue."
     },
     {
       "item_id": "l1_decoder_attention_two_head_operational_cluster_pnr_v1",
@@ -102,5 +107,6 @@
       },
       "status": "blocked_on_component_measurements"
     }
-  ]
+  ],
+  "source_commit": "875614d6bd207082d81f1cef2a27e8ccfcaee746"
 }

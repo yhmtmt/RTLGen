@@ -1,0 +1,15 @@
+{
+  "proposal_id": "prop_decoder_attention_operational_cluster_physical_closure_llama7b_v1",
+  "candidate_id": "l2_decoder_attention_score_bank_proxy_equivalence_llama7b_v1",
+  "decision": "iterate",
+  "reason": "RTL component/reference equivalence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score_bank_proxy_equivalence__l2_decoder_attention_score_bank_proxy_equivalence_llama7b_v1.json: decision=attention_score_bank_proxy_equivalence_pass; component=attention_score_bank_proxy; semantic_profile=synchronous_16kx256_1rw_eight_by_seven_banking; reference=behavioral_synchronous_1rw_memory; equivalence_pass=True; passed_test_count=2; test_target=tests/test_attention_score_bank_proxy.py.",
+  "evidence_refs": [
+    "item:l2_decoder_attention_score_bank_proxy_equivalence_llama7b_v1",
+    "run:l2_decoder_attention_score_bank_proxy_equivalence_llama7b_v1_run_2853d6d96dbd808e",
+    "artifact:control_plane/shadow_exports/l2_decisions/l2_decoder_attention_score_bank_proxy_equivalence_llama7b_v1.json",
+    "pr:#1281",
+    "https://github.com/yhmtmt/RTLGen/pull/1281"
+  ],
+  "next_action": "inspect follow-on work after l2_decoder_attention_score_bank_proxy_equivalence_llama7b_v1",
+  "requires_human_approval": false
+}
