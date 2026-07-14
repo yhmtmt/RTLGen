@@ -7646,6 +7646,49 @@ def test_generate_l2_campaign_task_adds_separated_two_pass_frontier() -> None:
             )
 
 
+def test_generate_l2_campaign_task_adds_operational_component_frontier() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id="l2_decoder_attention_operational_component_frontier_llama7b_v1",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    abstraction_layer="decoder_attention_operational_component_frontier",
+                    evaluation_mode="frontier_recost",
+                    depends_on_item_ids=[
+                        "l1_decoder_attention_operational_dense_tile_ppa_v1",
+                        "l1_decoder_attention_score_bank_proxy_pnr_v1",
+                    ],
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            command = work_item.task_request.request_payload["task"]["commands"][0]
+            decoder_inputs = work_item.input_manifest["decoder_contract"]
+
+            assert command["name"] == "audit_decoder_attention_operational_component_frontier"
+            assert "--operational-tile-metrics-csv" in command["run"]
+            assert "--score-bank-metrics-csv" in command["run"]
+            assert decoder_inputs["operational_dense_tile_metrics"].endswith(
+                "dense_gemm_tile_stream_int8_16x8/metrics.csv"
+            )
+            assert decoder_inputs["score_bank_proxy_metrics"].endswith(
+                "attention_score_bank_proxy_16kx256/metrics.csv"
+            )
+
+
 def test_generate_l2_campaign_task_adds_operational_dense_tile_equivalence() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
