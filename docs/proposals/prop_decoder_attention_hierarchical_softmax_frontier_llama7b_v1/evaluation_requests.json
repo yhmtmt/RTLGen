@@ -234,8 +234,12 @@
         "direction": "rank_precision_aligned_separated_two_pass_frontier",
         "reason": "Transfer the measured score-SRAM bandwidth share into the fast dense-producer baseline while replacing, rather than double-counting, the old local vector-softmax component."
       },
-      "status": "pending_implementation_merge"
+      "status": "merged",
+      "merged_pr_number": 1279,
+      "merge_commit": "0b2ad601e1f6d333b93ffaa6cef7becee6124f0d",
+      "merged_utc": "2026-07-14T01:53:36Z",
+      "notes": "Merged via PR #1279 and merge 0b2ad601e1f6d333b93ffaa6cef7becee6124f0d at 2026-07-14T01:53:36Z."
     }
   ],
-  "source_commit": "8f41146c030f8f3324eac52250932983a5ff75f9"
+  "source_commit": "de542f5067d64273b0c110faf5945f04ae43c092"
 }
