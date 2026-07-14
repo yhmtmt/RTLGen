@@ -1,0 +1,33 @@
+{
+  "item_id": "l1_decoder_attention_operational_dense_tile_ppa_v1",
+  "completed_trials": 2,
+  "success_count": 1,
+  "failure_count": 1,
+  "success_rate": 0.5,
+  "metrics": {
+    "critical_path_ns": {
+      "best": 4.3024,
+      "mean": 4.3024,
+      "median": 4.3024,
+      "max": 4.3024,
+      "range": 0.0,
+      "stddev": 0.0
+    },
+    "die_area": {
+      "best": 2560000.0,
+      "mean": 2560000.0,
+      "median": 2560000.0,
+      "max": 2560000.0,
+      "range": 0.0,
+      "stddev": 0.0
+    },
+    "total_power_mw": {
+      "best": 0.25,
+      "mean": 0.25,
+      "median": 0.25,
+      "max": 0.25,
+      "range": 0.0,
+      "stddev": 0.0
+    }
+  }
+}
