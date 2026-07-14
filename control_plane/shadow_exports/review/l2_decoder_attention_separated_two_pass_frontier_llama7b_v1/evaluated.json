@@ -1,0 +1,112 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "decoder_contract": {
+        "separated_two_pass_iterdiv_ppa": "control_plane/shadow_exports/l1_promotions/l1_decoder_attention_two_pass_stream_iterdiv_ppa_v1.json",
+        "separated_two_pass_frontier_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_separated_two_pass_frontier__l2_decoder_attention_separated_two_pass_frontier_llama7b_v1.json",
+        "separated_two_pass_compute_recost": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_separated_compute_recost__l2_decoder_attention_score32_separated_compute_recost_llama7b_v1.json",
+        "separated_two_pass_frontier_scope": "Replace the slow replicated score32 wrapper with the measured dense-int8 producer and exact global two-pass iterative service. Transfer measured score-SRAM HBM-share deltas and rank per-head/shared service deployments without attributing old local softmax cost.",
+        "separated_two_pass_frontier_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_separated_two_pass_frontier__l2_decoder_attention_separated_two_pass_frontier_llama7b_v1.md",
+        "separated_two_pass_score_sram_recost": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exp_lut_sram_hierarchy_envelope__l2_decoder_attention_two_pass_score_sram_reservation_llama7b_v1.json",
+        "separated_two_pass_zero_tail_quality": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score32_zero_tail_two_pass_generation_quality__l2_decoder_attention_score32_zero_tail_two_pass_generation_quality_llama7b_v1.json"
+      }
+    },
+    "commands": [
+      {
+        "run": "python3 npu/eval/audit_llm_decoder_attention_separated_two_pass_frontier.py --separated-compute-recost-json runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_separated_compute_recost__l2_decoder_attention_score32_separated_compute_recost_llama7b_v1.json --score-sram-recost-json runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exp_lut_sram_hierarchy_envelope__l2_decoder_attention_two_pass_score_sram_reservation_llama7b_v1.json --zero-tail-quality-json runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score32_zero_tail_two_pass_generation_quality__l2_decoder_attention_score32_zero_tail_two_pass_generation_quality_llama7b_v1.json --iterdiv-ppa-json control_plane/shadow_exports/l1_promotions/l1_decoder_attention_two_pass_stream_iterdiv_ppa_v1.json --head-count 32 --divide-cycles-per-head 480 --clock-ns 10 --out runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_separated_two_pass_frontier__l2_decoder_attention_separated_two_pass_frontier_llama7b_v1.json --out-md runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_separated_two_pass_frontier__l2_decoder_attention_separated_two_pass_frontier_llama7b_v1.md",
+        "name": "audit_decoder_attention_separated_two_pass_frontier"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate_runs"
+      }
+    ],
+    "objective": "Replace the slow replicated score32 wrapper with the measured dense producer plus exact global two-pass service and rerank Llama7B.",
+    "acceptance": [
+      "Write all declared decoder evidence artifacts",
+      "Keep evidence artifact paths repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "source_mode": "src_verilog",
+    "expected_outputs": [
+      "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_separated_two_pass_frontier__l2_decoder_attention_separated_two_pass_frontier_llama7b_v1.json",
+      "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_separated_two_pass_frontier__l2_decoder_attention_separated_two_pass_frontier_llama7b_v1.md"
+    ]
+  },
+  "layer": "layer2",
+  "state": "evaluated",
+  "title": "Llama7B precision-aligned separated exact two-pass frontier",
+  "result": {
+    "branch": "eval/l2_decoder_attention_separated_two_pass_frontier_llama7b_v1/s20260714t015214z",
+    "completed_utc": "2026-07-14T01:52:13.223033Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "b7c2d9c80c1c",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260714t015214z][host:b7c2d9c80c1c][item:l2_decoder_attention_separated_two_pass_frontier_llama7b_v1]",
+    "metrics_rows": [],
+    "metrics_exempt_reason": "evidence_only_decoder_evidence",
+    "queue_item_id": "l2_decoder_attention_separated_two_pass_frontier_llama7b_v1",
+    "session_id": "s20260714t015214z",
+    "status": "ok",
+    "summary": "2/2 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l2_decoder_attention_separated_two_pass_frontier_llama7b_v1/s20260714t015214z",
+    "pr_title": "eval: run llama7b precision-aligned separated exact two-pass frontier",
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Include metrics row references in result.metrics_rows",
+      "Keep committed result_path fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260714t015214z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l2_decoder_attention_separated_two_pass_frontier_llama7b_v1"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l2_decoder_attention_separated_two_pass_frontier_llama7b_v1",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 1,
+  "created_utc": "2026-07-14T01:52:02.605460Z",
+  "requested_by": "@codex",
+  "developer_loop": {
+    "comparison": {
+      "role": "precision_aligned_separated_two_pass_frontier",
+      "paired_baseline_item_id": ""
+    },
+    "evaluation": {
+      "mode": "frontier_recost",
+      "expected_reason": "Transfer measured score-SRAM HBM-share deltas into the dense-producer baseline and replace the old local softmax component.",
+      "expected_direction": "rank_precision_aligned_separated_two_pass_frontier"
+    },
+    "abstraction": {
+      "layer": "decoder_attention_separated_two_pass_frontier"
+    },
+    "proposal_id": "prop_decoder_attention_hierarchical_softmax_frontier_llama7b_v1",
+    "dependencies": {
+      "item_ids": [
+        "l2_decoder_attention_score32_separated_compute_recost_llama7b_v1",
+        "l1_decoder_attention_two_pass_stream_iterdiv_ppa_v1",
+        "l2_decoder_attention_two_pass_score_sram_reservation_llama7b_v1",
+        "l2_decoder_attention_score32_zero_tail_two_pass_generation_quality_llama7b_v1",
+        "l2_decoder_attention_two_pass_integrated_frontier_ranking_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    },
+    "proposal_path": "docs/proposals/prop_decoder_attention_hierarchical_softmax_frontier_llama7b_v1/proposal.json"
+  },
+  "source_requirement": {
+    "repo": "",
+    "reason": "evaluator runtime must contain the queued job source commit",
+    "version": 1,
+    "required_ref": "origin/master",
+    "required_sha": "de542f5067d64273b0c110faf5945f04ae43c092",
+    "requires_daemon_restart": true
+  }
+}
