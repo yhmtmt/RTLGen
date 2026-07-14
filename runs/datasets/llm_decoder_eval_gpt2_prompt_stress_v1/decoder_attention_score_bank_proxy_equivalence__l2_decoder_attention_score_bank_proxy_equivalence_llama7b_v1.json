@@ -1,0 +1,22 @@
+{
+  "command": [
+    "/workspaces/rtlgen-eval-clean/control_plane/.venv/bin/python3",
+    "-m",
+    "pytest",
+    "-q",
+    "tests/test_attention_score_bank_proxy.py"
+  ],
+  "component": "attention_score_bank_proxy",
+  "decision": "attention_score_bank_proxy_equivalence_pass",
+  "equivalence_pass": true,
+  "generated_utc": "2026-07-14T02:19:52.361345Z",
+  "model": "rtl_component_reference_equivalence_v1",
+  "passed_test_count": 2,
+  "reference": "behavioral_synchronous_1rw_memory",
+  "returncode": 0,
+  "semantic_profile": "synchronous_16kx256_1rw_eight_by_seven_banking",
+  "test_output_sha256": "d413ff3bbf48f49a562839d76588b6f3f2a853393dd64894293fa9fb24a9959b",
+  "test_output_tail": "..                                                                       [100%]\n2 passed in 0.07s",
+  "test_target": "tests/test_attention_score_bank_proxy.py",
+  "version": 1
+}
