@@ -1,0 +1,10 @@
+{
+  "version": "0.1",
+  "top_name": "dense_gemm_tile_stream_int8_16x8",
+  "dense_gemm_tile_stream": {
+    "array_m": 16,
+    "array_n": 8,
+    "precision": "int8",
+    "accum_bits": 32
+  }
+}

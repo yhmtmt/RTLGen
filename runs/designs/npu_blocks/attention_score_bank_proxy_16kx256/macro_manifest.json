@@ -1,0 +1,31 @@
+{
+  "version": "0.1",
+  "design_id": "attention_score_bank_proxy_16kx256",
+  "module": "attention_score_bank_proxy_16kx256",
+  "platform": "nangate45",
+  "flow_variant": "score_bank_proxy_v1",
+  "blackboxes": [
+    "fakeram45_2048x39"
+  ],
+  "additional_lefs": [
+    "/orfs/flow/platforms/nangate45/lef/fakeram45_2048x39.lef"
+  ],
+  "additional_libs": [
+    "/orfs/flow/platforms/nangate45/lib/fakeram45_2048x39.lib"
+  ],
+  "additional_gds": [],
+  "blackbox_verilog": [
+    "npu/rtl/fakeram45_2048x39_blackbox.v"
+  ],
+  "source": {
+    "mode": "generated_proxy_bank",
+    "generator": "npu/rtlgen/gen_attention_score_bank_proxy.py",
+    "config": "runs/designs/npu_blocks/attention_score_bank_proxy_16kx256/config.json"
+  },
+  "manifest_params": {
+    "evaluation_scope": "lef_lib_proxy_floorplan_routing_timing",
+    "sram_signoff": false,
+    "macro_count": 56,
+    "logical_capacity_bytes": 524288
+  }
+}

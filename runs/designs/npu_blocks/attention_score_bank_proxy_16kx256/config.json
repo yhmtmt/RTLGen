@@ -1,0 +1,11 @@
+{
+  "version": "0.1",
+  "top_name": "attention_score_bank_proxy_16kx256",
+  "attention_score_bank_proxy": {
+    "logical_depth": 16384,
+    "logical_width": 256,
+    "macro_name": "fakeram45_2048x39",
+    "depth_groups": 8,
+    "width_slices": 7
+  }
+}

@@ -611,6 +611,14 @@ _DECODER_EVIDENCE_OUTPUT_KEYS: tuple[tuple[str, str], ...] = (
         "separated_two_pass_frontier_report",
     ),
     (
+        "operational_dense_tile_equivalence_out",
+        "operational_dense_tile_equivalence_report",
+    ),
+    (
+        "score_bank_proxy_equivalence_out",
+        "score_bank_proxy_equivalence_report",
+    ),
+    (
         "attention_score32_exp_lut_sram_hierarchy_envelope_out",
         "attention_score32_exp_lut_sram_hierarchy_envelope_report",
     ),
@@ -1500,6 +1508,24 @@ def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, 
         ):
             if key in diagnosis_dict:
                 parts.append(f"{key}={diagnosis_dict.get(key)}")
+        summary = "; ".join(parts)
+        return outcome, summary if summary.endswith(".") else summary + "."
+
+    if model == "rtl_component_reference_equivalence_v1":
+        outcome = str(evidence_payload.get("decision") or "rtl_component_equivalence_recorded")
+        parts = [
+            f"RTL component/reference equivalence recorded from {evidence_ref}: decision={outcome}",
+        ]
+        for key in (
+            "component",
+            "semantic_profile",
+            "reference",
+            "equivalence_pass",
+            "passed_test_count",
+            "test_target",
+        ):
+            if key in evidence_payload:
+                parts.append(f"{key}={evidence_payload.get(key)}")
         summary = "; ".join(parts)
         return outcome, summary if summary.endswith(".") else summary + "."
 

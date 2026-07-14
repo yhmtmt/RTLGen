@@ -411,6 +411,51 @@ def _write_example_dense_gemm_tile_repo(repo_root: Path) -> tuple[str, str]:
     )
 
 
+def _write_example_dense_gemm_tile_stream_repo(repo_root: Path) -> tuple[str, str]:
+    design_dir = repo_root / "runs" / "designs" / "npu_blocks" / "dense_gemm_tile_stream_int8_16x8"
+    design_dir.mkdir(parents=True, exist_ok=True)
+    config_path = design_dir / "config.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "version": "0.1",
+                "top_name": "dense_gemm_tile_stream_int8_16x8",
+                "dense_gemm_tile_stream": {
+                    "precision": "int8",
+                    "array_m": 16,
+                    "array_n": 8,
+                    "accum_bits": 32,
+                },
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    sweep_path = (
+        repo_root
+        / "runs"
+        / "campaigns"
+        / "npu"
+        / "dense_gemm_tile_stream_int8_v1"
+        / "sweeps"
+        / "nangate45_dense_gemm_tile_stream_int8.json"
+    )
+    sweep_path.parent.mkdir(parents=True, exist_ok=True)
+    sweep_path.write_text(
+        json.dumps(
+            {
+                "flow_params": {"CLOCK_PERIOD": [10.0], "PLACE_DENSITY": [0.35]},
+                "tag_prefix": "dense_gemm_tile_stream_int8",
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    return str(config_path.relative_to(repo_root)), str(sweep_path.relative_to(repo_root))
+
+
 def _write_example_dual_stream_composed_repo(repo_root: Path) -> tuple[str, str]:
     design_dir = repo_root / "runs" / "designs" / "npu_blocks" / "attention_dual_stream_composed_smoke"
     design_dir.mkdir(parents=True, exist_ok=True)
@@ -685,6 +730,49 @@ def _write_example_attention_two_pass_stream_repo(repo_root: Path) -> tuple[str,
             {
                 "flow_params": {"CLOCK_PERIOD": [10.0], "PLACE_DENSITY": [0.35]},
                 "tag_prefix": "attention_two_pass_stream",
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    return str(config_path.relative_to(repo_root)), str(sweep_path.relative_to(repo_root))
+
+
+def _write_example_attention_score_bank_proxy_repo(repo_root: Path) -> tuple[str, str]:
+    design_dir = repo_root / "runs" / "designs" / "npu_blocks" / "attention_score_bank_proxy_16kx256"
+    design_dir.mkdir(parents=True, exist_ok=True)
+    config_path = design_dir / "config.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "top_name": "attention_score_bank_proxy_16kx256",
+                "attention_score_bank_proxy": {
+                    "logical_depth": 16384,
+                    "logical_width": 256,
+                },
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    (design_dir / "macro_manifest.json").write_text("{}\n", encoding="utf-8")
+    sweep_path = (
+        repo_root
+        / "runs"
+        / "campaigns"
+        / "npu"
+        / "attention_score_bank_proxy_v1"
+        / "sweeps"
+        / "nangate45_attention_score_bank_proxy.json"
+    )
+    sweep_path.parent.mkdir(parents=True, exist_ok=True)
+    sweep_path.write_text(
+        json.dumps(
+            {
+                "flow_params": {"CLOCK_PERIOD": [10.0], "PLACE_DENSITY": [0.4]},
+                "tag_prefix": "attention_score_bank_proxy",
             },
             indent=2,
         )
@@ -1627,6 +1715,46 @@ def test_generate_l1_sweep_task_supports_dense_gemm_tile_configs() -> None:
             }
 
 
+def test_generate_l1_sweep_task_supports_dense_gemm_tile_stream_configs() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        config_path, sweep_path = _write_example_dense_gemm_tile_stream_repo(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l1_sweep_task(
+                session,
+                Layer1SweepGenerateRequest(
+                    repo_root=str(repo_root),
+                    sweep_path=sweep_path,
+                    config_paths=[config_path],
+                    platform="nangate45",
+                    out_root="runs/designs/npu_blocks",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    abstraction_layer="decoder_attention_operational_dense_tile",
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            assert [command["name"] for command in work_item.command_manifest] == [
+                "generate_dense_gemm_tile_stream_rtl",
+                "run_block_sweep",
+                "extract_dense_gemm_tile_stream_timing_paths",
+                "build_runs_index",
+                "validate",
+            ]
+            assert "gen_dense_gemm_tile_stream.py" in work_item.command_manifest[0]["run"]
+            assert "--top dense_gemm_tile_stream_int8_16x8" in work_item.command_manifest[1]["run"]
+            assert work_item.expected_outputs == [
+                "runs/designs/npu_blocks/dense_gemm_tile_stream_int8_16x8/metrics.csv",
+                "runs/designs/npu_blocks/dense_gemm_tile_stream_int8_16x8/timing_debug_report.md",
+            ]
+
+
 def test_generate_l1_sweep_task_supports_attention_dual_stream_composed_configs() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
@@ -2002,6 +2130,47 @@ def test_generate_l1_sweep_task_supports_attention_two_pass_stream_configs() -> 
             assert work_item.expected_outputs == [
                 "runs/designs/npu_blocks/attention_two_pass_stream_d2/metrics.csv",
                 "runs/designs/npu_blocks/attention_two_pass_stream_d2/timing_debug_report.md",
+            ]
+
+
+def test_generate_l1_sweep_task_supports_attention_score_bank_proxy_configs() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        config_path, sweep_path = _write_example_attention_score_bank_proxy_repo(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l1_sweep_task(
+                session,
+                Layer1SweepGenerateRequest(
+                    repo_root=str(repo_root),
+                    sweep_path=sweep_path,
+                    config_paths=[config_path],
+                    platform="nangate45",
+                    out_root="runs/designs/npu_blocks",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    abstraction_layer="decoder_attention_score_bank_proxy",
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            assert [command["name"] for command in work_item.command_manifest] == [
+                "generate_attention_score_bank_proxy_rtl",
+                "run_block_sweep",
+                "extract_attention_score_bank_proxy_timing_paths",
+                "build_runs_index",
+                "validate",
+            ]
+            assert "gen_attention_score_bank_proxy.py" in work_item.command_manifest[0]["run"]
+            assert "--top attention_score_bank_proxy_16kx256" in work_item.command_manifest[1]["run"]
+            assert "--macro_manifest runs/designs/npu_blocks/attention_score_bank_proxy_16kx256/macro_manifest.json" in work_item.command_manifest[1]["run"]
+            assert work_item.expected_outputs == [
+                "runs/designs/npu_blocks/attention_score_bank_proxy_16kx256/metrics.csv",
+                "runs/designs/npu_blocks/attention_score_bank_proxy_16kx256/timing_debug_report.md",
             ]
 
 

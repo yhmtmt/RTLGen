@@ -1,0 +1,32 @@
+{
+  "tag_prefix": "dense_gemm_tile_stream_int8_v1",
+  "flow_params": {
+    "TAG": [
+      "dense_gemm_tile_stream_int8_v1"
+    ],
+    "FLOW_VARIANT": [
+      "dense_gemm_tile_stream_int8_v1"
+    ],
+    "CLOCK_PERIOD": [
+      10,
+      6,
+      5
+    ],
+    "DIE_AREA": [
+      "0 0 1600 1600"
+    ],
+    "CORE_AREA": [
+      "50 50 1550 1550"
+    ],
+    "PLACE_DENSITY": [
+      0.35,
+      0.45
+    ],
+    "SYNTH_HIERARCHICAL": [
+      1
+    ],
+    "SYNTH_MEMORY_MAX_BITS": [
+      65536
+    ]
+  }
+}

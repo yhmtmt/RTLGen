@@ -1,0 +1,152 @@
+{
+  "proposal_id": "prop_decoder_attention_operational_cluster_physical_closure_llama7b_v1",
+  "created_utc": "2026-07-14T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Operational dense-tile and score-SRAM cluster closure for Llama7B",
+  "abstraction_layer": "decoder_attention_operational_cluster_physical_closure",
+  "hypothesis": "The precision-aligned separated two-pass point can remain near 1.595 ms/token after replacing the narrow dense-tile PPA harness with an operational accumulating tile and placing logically banked score SRAM beside two attention heads in a hierarchical cluster.",
+  "direct_comparison": {
+    "primary_question": "How far do operational accumulator state, banked SRAM wiring, divider sharing, and local cluster routing move the measured Llama7B throughput, energy, and area frontier?",
+    "baseline": "l2_decoder_attention_separated_two_pass_frontier_llama7b_v1",
+    "include": [
+      "16x8 signed-int8 outer-product tile with all 128 signed accumulators observable through a result stream",
+      "16Kx256 synchronous score bank composed from 56 fakeram45_2048x39 proxy macros",
+      "two score banks and two heads per cluster",
+      "one cluster-shared divider versus one divider per head",
+      "dual_mac accounting with 1710 operational tile instances distributed across 16 clusters",
+      "hierarchical Nangate45 synthesis and proxy-macro placement"
+    ],
+    "exclude": [
+      "do not claim SRAM signoff from FakeRAM LEF/LIB views without GDS",
+      "do not promote a 16-cluster result before operational tile and score-bank equivalence pass",
+      "HBM vendor-current signoff remains a later boundary"
+    ],
+    "metrics": [
+      "rtl_reference_equivalence",
+      "critical_path_ns",
+      "instance_area_um2",
+      "total_power_mw",
+      "macro_count",
+      "routed_wirelength",
+      "placement_utilization",
+      "latency_us",
+      "token_throughput_per_s",
+      "energy_mj_per_token"
+    ]
+  },
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_operational_dense_tile_equivalence_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Prove the operational 16x8 signed-int8 tile accumulates and streams the same complete GEMM state as the reference model under stalls and backpressure.",
+      "evaluation_mode": "equivalence_gate",
+      "abstraction_layer": "decoder_attention_operational_dense_tile_equivalence",
+      "comparison_role": "operational_compute_semantic_gate",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_separated_two_pass_frontier_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "prove_operational_dense_tile_equivalence",
+        "reason": "The prior compute PPA harness folds MAC outputs into a hash and does not embody the complete accumulating producer state."
+      },
+      "status": "pending_implementation_merge"
+    },
+    {
+      "item_id": "l1_decoder_attention_operational_dense_tile_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure Nangate45 PPA for the operational 16x8 signed-int8 accumulating tile at 10 ns, 6 ns, and the feasible timing boundary.",
+      "evaluation_mode": "frontier_followup",
+      "abstraction_layer": "decoder_attention_operational_dense_tile",
+      "comparison_role": "operational_compute_ppa",
+      "config_paths": [
+        "runs/designs/npu_blocks/dense_gemm_tile_stream_int8_16x8/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/dense_gemm_tile_stream_int8_v1/sweeps/nangate45_dense_gemm_tile_stream_int8.json",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_operational_dense_tile_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "replace_hash_harness_compute_cost",
+        "reason": "Operational accumulator area, power, and delay must replace the narrow harness values before cluster scaling."
+      },
+      "status": "pending_implementation_merge"
+    },
+    {
+      "item_id": "l2_decoder_attention_score_bank_proxy_equivalence_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Prove the 56-macro bank implements one non-aliasing synchronous 16Kx256 1RW score store with one-cycle read selection.",
+      "evaluation_mode": "equivalence_gate",
+      "abstraction_layer": "decoder_attention_score_bank_proxy_equivalence",
+      "comparison_role": "score_memory_semantic_gate",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_two_pass_score_sram_reservation_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "prove_banked_score_memory_equivalence",
+        "reason": "The CACTI score-store quantity must map to an explicit depth/width banking network before physical placement."
+      },
+      "status": "pending_implementation_merge"
+    },
+    {
+      "item_id": "l1_decoder_attention_score_bank_proxy_pnr_v1",
+      "task_type": "l1_sweep",
+      "objective": "Place and route one logically banked 16Kx256 score store using Nangate45 FakeRAM LEF/LIB proxy views.",
+      "evaluation_mode": "frontier_followup",
+      "abstraction_layer": "decoder_attention_score_bank_proxy",
+      "comparison_role": "score_memory_proxy_pnr",
+      "config_paths": [
+        "runs/designs/npu_blocks/attention_score_bank_proxy_16kx256/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/attention_score_bank_proxy_v1/sweeps/nangate45_attention_score_bank_proxy.json",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_score_bank_proxy_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "measure_score_bank_proxy_floorplan",
+        "reason": "Measure banking mux, macro pin, halo, congestion, and timing overhead while retaining an explicit no-GDS proxy qualification."
+      },
+      "status": "pending_implementation_merge"
+    },
+    {
+      "item_id": "l1_decoder_attention_two_head_operational_cluster_pnr_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure a two-head cluster with operational dual compute streams, two score banks, and shared versus per-head dividers.",
+      "evaluation_mode": "frontier_followup",
+      "abstraction_layer": "decoder_attention_two_head_operational_cluster",
+      "comparison_role": "hierarchical_cluster_pnr",
+      "depends_on_item_ids": [
+        "l1_decoder_attention_operational_dense_tile_ppa_v1",
+        "l1_decoder_attention_score_bank_proxy_pnr_v1",
+        "l1_decoder_attention_two_pass_stream_iterdiv_ppa_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "select_cluster_divider_and_floorplan",
+        "reason": "Local composition must close before extrapolating 16 clusters or charging chip-level NoC."
+      },
+      "status": "blocked_on_component_measurements"
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_separated_two_pass_frontier__l2_decoder_attention_separated_two_pass_frontier_llama7b_v1.json",
+    "runs/designs/npu_blocks/npu_dense_gemm_tile_int8_16x8_k1_p1/metrics.csv",
+    "runs/designs/npu_blocks/attention_two_pass_stream_iterdiv/metrics.csv",
+    "runs/designs/sram/llama7b_attention_tile_buffers_v1/sram_metrics.json"
+  ],
+  "remaining_abstractions_after_this_step": [
+    "The installed FakeRAM views have LEF/LIB but no SRAM GDS and therefore remain physical proxies.",
+    "The 16-cluster NoC, global clock/reset, and top-level power distribution remain to be composed.",
+    "HBM/DRAM vendor-current signoff remains external."
+  ]
+}
