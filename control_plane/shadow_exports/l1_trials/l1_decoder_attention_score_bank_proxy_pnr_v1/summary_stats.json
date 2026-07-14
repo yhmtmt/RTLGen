@@ -1,0 +1,33 @@
+{
+  "item_id": "l1_decoder_attention_score_bank_proxy_pnr_v1",
+  "completed_trials": 2,
+  "success_count": 2,
+  "failure_count": 0,
+  "success_rate": 1.0,
+  "metrics": {
+    "critical_path_ns": {
+      "best": 2.8162,
+      "mean": 2.8162,
+      "median": 2.8162,
+      "max": 2.8162,
+      "range": 0.0,
+      "stddev": 0.0
+    },
+    "die_area": {
+      "best": 9000000.0,
+      "mean": 9000000.0,
+      "median": 9000000.0,
+      "max": 9000000.0,
+      "range": 0.0,
+      "stddev": 0.0
+    },
+    "total_power_mw": {
+      "best": 0.19,
+      "mean": 0.19,
+      "median": 0.19,
+      "max": 0.19,
+      "range": 0.0,
+      "stddev": 0.0
+    }
+  }
+}
