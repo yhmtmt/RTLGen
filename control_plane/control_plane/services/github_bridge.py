@@ -110,13 +110,29 @@ def _other_active_review_prs(session: Session, link: GitHubLink) -> list[int]:
     return sorted(int(row.pr_number) for row in query.all() if row.pr_number is not None)
 
 
+def _link_targets_latest_run(session: Session, link: GitHubLink) -> bool:
+    if link.run_id is None:
+        return False
+    latest_run_id = (
+        session.query(Run.id)
+        .filter(Run.work_item_id == link.work_item_id)
+        .order_by(Run.attempt.desc(), Run.created_at.desc())
+        .limit(1)
+        .scalar()
+    )
+    return latest_run_id == link.run_id
+
+
 def _advance_work_item_state(
     work_item: WorkItem,
     state: GitHubLinkState,
     *,
     close_is_terminal: bool = True,
+    reopen_superseded: bool = False,
 ) -> None:
-    if state == GitHubLinkState.PR_OPEN and work_item.state not in {WorkItemState.MERGED, WorkItemState.SUPERSEDED}:
+    if state == GitHubLinkState.PR_OPEN and work_item.state != WorkItemState.MERGED:
+        if work_item.state == WorkItemState.SUPERSEDED and not reopen_superseded:
+            return
         if work_item.state not in {WorkItemState.AWAITING_REVIEW, WorkItemState.MERGED}:
             work_item.state = WorkItemState.AWAITING_REVIEW
     elif state == GitHubLinkState.PR_MERGED:
@@ -187,7 +203,14 @@ def reconcile_github_link(session: Session, request: GitHubReconcileRequest) -> 
     session.flush()
     other_active_prs = _other_active_review_prs(session, link) if state == GitHubLinkState.PR_CLOSED else []
     close_is_terminal = not other_active_prs
-    _advance_work_item_state(work_item, state, close_is_terminal=close_is_terminal)
+    prior_work_item_state = work_item.state
+    reopen_superseded = state == GitHubLinkState.PR_OPEN and _link_targets_latest_run(session, link)
+    _advance_work_item_state(
+        work_item,
+        state,
+        close_is_terminal=close_is_terminal,
+        reopen_superseded=reopen_superseded,
+    )
 
     event_payload = {
         "repo": request.repo,
@@ -232,6 +255,16 @@ def reconcile_github_link(session: Session, request: GitHubReconcileRequest) -> 
                     "other_active_pr_numbers": other_active_prs,
                 },
             )
+    elif prior_work_item_state == WorkItemState.SUPERSEDED and work_item.state == WorkItemState.AWAITING_REVIEW:
+        _emit_run_event(
+            session,
+            run,
+            "work_item_review_reactivated",
+            {
+                **event_payload,
+                "reason": "latest_run_review_pr_active",
+            },
+        )
     else:
         _emit_run_event(session, run, "pr_linked", event_payload)
 

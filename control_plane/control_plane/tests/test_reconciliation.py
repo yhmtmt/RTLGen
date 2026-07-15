@@ -428,3 +428,56 @@ def test_reconcile_stale_closed_pr_preserves_newer_open_review() -> None:
         assert "work_item_superseded" not in [event.event_type for event in events]
         nonterminal = next(event for event in events if event.event_type == "nonterminal_pr_closed")
         assert nonterminal.event_payload["other_active_pr_numbers"] == [43]
+
+
+def test_reconcile_latest_run_open_pr_recovers_stale_supersession() -> None:
+    with make_session() as session:
+        first_run = seed_reviewable_run(session)
+        second_run = Run(
+            run_key="run-review-2",
+            work_item_id=first_run.work_item_id,
+            lease_id=first_run.lease_id,
+            attempt=2,
+            executor_type="internal_worker",
+            machine_id=first_run.machine_id,
+            branch_name="eval/item_review/s20260308t010000z",
+            status="succeeded",
+            started_at=utcnow(),
+            completed_at=utcnow(),
+            result_summary="retry review ok",
+            result_payload={"queue_result": {"status": "ok", "metrics_rows": []}},
+        )
+        session.add(second_run)
+        session.commit()
+
+        reconcile_github_link(
+            session,
+            GitHubReconcileRequest(
+                repo="yhmtmt/RTLGen",
+                item_id="item_review",
+                branch_name="eval/item_review/s20260308t010000z",
+                pr_number=43,
+                state="pr_open",
+                run_key=second_run.run_key,
+            ),
+        )
+        work_item = session.query(WorkItem).filter_by(item_id="item_review").one()
+        work_item.state = WorkItemState.SUPERSEDED
+        session.commit()
+
+        result = reconcile_github_link(
+            session,
+            GitHubReconcileRequest(
+                repo="yhmtmt/RTLGen",
+                item_id="item_review",
+                branch_name="eval/item_review/s20260308t010000z",
+                pr_number=43,
+                state="pr_open",
+                run_key=second_run.run_key,
+            ),
+        )
+
+        events = session.query(RunEvent).filter_by(run_id=second_run.id).all()
+        assert result.work_item_state == WorkItemState.AWAITING_REVIEW.value
+        assert work_item.state == WorkItemState.AWAITING_REVIEW
+        assert "work_item_review_reactivated" in [event.event_type for event in events]
