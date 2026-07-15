@@ -1,0 +1,104 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "decoder_contract": {
+        "decode_score_multivalue_cluster_equivalence_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_cluster_equivalence__l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1.json",
+        "decode_score_multivalue_cluster_equivalence_scope": "Prove one M1x8 score-row fill per 8-token block, shared score storage, 16 eight-dimensional value-slice replays, streamed eight-dimension result beats, and one iterative divider preserve the signed-int8 Q/K/V, s32 score, LUT-softmax integer contract.",
+        "decode_score_multivalue_cluster_equivalence_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_cluster_equivalence__l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1.md"
+      }
+    },
+    "commands": [
+      {
+        "run": "python3 -m npu.eval.probe_attention_decode_score_multivalue_cluster_equivalence --config runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/config.json --out runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_cluster_equivalence__l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1.json --out-md runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_cluster_equivalence__l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1.md",
+        "name": "probe_decode_score_multivalue_cluster_equivalence"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate_runs"
+      }
+    ],
+    "objective": "Prove one score write/read per block, sixteen ordered value slices, complete 128D result streaming, and exact integer Llama7B semantics.",
+    "acceptance": [
+      "Write all declared decoder evidence artifacts",
+      "Keep evidence artifact paths repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "source_mode": "src_verilog",
+    "expected_outputs": [
+      "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_cluster_equivalence__l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1.json",
+      "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_cluster_equivalence__l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1.md"
+    ]
+  },
+  "layer": "layer2",
+  "state": "evaluated",
+  "title": "Prove shared-score multivalue cluster equivalence",
+  "result": {
+    "branch": "eval/l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1/s20260715t064958z",
+    "completed_utc": "2026-07-15T06:49:56.780838Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "b7c2d9c80c1c",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260715t064958z][host:b7c2d9c80c1c][item:l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1]",
+    "metrics_rows": [],
+    "metrics_exempt_reason": "evidence_only_decoder_evidence",
+    "queue_item_id": "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1",
+    "session_id": "s20260715t064958z",
+    "status": "ok",
+    "summary": "2/2 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1/s20260715t064958z",
+    "pr_title": "eval: run prove shared-score multivalue cluster equivalence",
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Include metrics row references in result.metrics_rows",
+      "Keep committed result_path fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260715t064958z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 80,
+  "created_utc": "2026-07-15T06:49:44.340456Z",
+  "requested_by": "developer_agent",
+  "developer_loop": {
+    "comparison": {
+      "role": "shared_score_multivalue_cluster_semantic_gate",
+      "paired_baseline_item_id": ""
+    },
+    "evaluation": {
+      "mode": "equivalence_gate",
+      "expected_reason": "PPA is ineligible until sharing, replay ordering, all 128 output dimensions, and backpressure match the integer model.",
+      "expected_direction": "prove_shared_score_multivalue_cluster_equivalence"
+    },
+    "abstraction": {
+      "layer": "decoder_attention_decode_score_multivalue_cluster_equivalence"
+    },
+    "proposal_id": "prop_decoder_attention_decode_score_multivalue_cluster_llama7b_v1",
+    "dependencies": {
+      "item_ids": [
+        "l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    },
+    "proposal_path": "docs/proposals/prop_decoder_attention_decode_score_multivalue_cluster_llama7b_v1"
+  },
+  "source_requirement": {
+    "repo": "",
+    "reason": "evaluator runtime must contain the queued job source commit",
+    "version": 1,
+    "required_ref": "origin/master",
+    "required_sha": "2fddedef260a26ff99e2c51a5ffa65ff8b1f4939",
+    "requires_daemon_restart": true
+  }
+}
