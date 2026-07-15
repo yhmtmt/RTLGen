@@ -33,11 +33,12 @@ def main() -> int:
         parser.error("--timeout-seconds must be positive")
 
     repo_root = Path(__file__).resolve().parents[2]
-    command = [sys.executable, "-m", "pytest", "-q", args.test_target]
+    execution_command = [sys.executable, "-m", "pytest", "-q", args.test_target]
+    recorded_command = ["python3", "-m", "pytest", "-q", args.test_target]
     timed_out = False
     try:
         run = subprocess.run(
-            command,
+            execution_command,
             cwd=repo_root,
             capture_output=True,
             text=True,
@@ -61,7 +62,7 @@ def main() -> int:
         "semantic_profile": args.semantic_profile,
         "reference": args.reference,
         "test_target": args.test_target,
-        "command": command,
+        "command": recorded_command,
         "returncode": returncode,
         "timed_out": timed_out,
         "timeout_seconds": args.timeout_seconds,

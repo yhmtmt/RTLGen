@@ -4,6 +4,6 @@
   "decision": "pending",
   "reason": "Await exact M1x8 equivalence and comparative Nangate45 PPA.",
   "evidence_refs": [],
-  "next_action": "merge implementation and dispatch equivalence gate",
+  "next_action": "merge portable evidence fix and rerun equivalence gate",
   "requires_human_approval": false
 }
