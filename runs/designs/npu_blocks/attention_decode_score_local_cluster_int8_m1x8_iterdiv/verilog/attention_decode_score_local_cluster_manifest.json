@@ -1,0 +1,112 @@
+{
+  "divider_cycles_per_command": 480,
+  "divider_impl": "iterative_restoring",
+  "generator": "npu/rtlgen/gen_attention_decode_score_local_cluster.py",
+  "max_blocks": 16384,
+  "read_outstanding": 1,
+  "result_value_bits": 320,
+  "score_bank_macro_count": 56,
+  "score_bank_proxy_semantics": "lef_lib_physical_proxy_only",
+  "score_scale_lanes_per_cycle": 1,
+  "score_scaling": {
+    "metadata_source": "external_command_multiplier_shift",
+    "product_bits": 64,
+    "rounding": "symmetric_magnitude_round_to_nearest",
+    "saturation": "signed_s32",
+    "shift_bits": 6,
+    "shift_zero_valid": true
+  },
+  "score_tile_array_n": 8,
+  "score_tile_result_mode": "packed_score_row",
+  "semantic_profile": "decode_m1x8_score_sram_two_pass_iterdiv_v1",
+  "submodule_manifests": {
+    "score_bank": {
+      "depth_groups": 8,
+      "integration_target": "attention_two_pass_stream_score_bank_adapter",
+      "interface": {
+        "max_requests_per_cycle": 1,
+        "read_latency_cycles": 1,
+        "request": [
+          "req_valid",
+          "req_ready",
+          "req_write",
+          "req_addr",
+          "req_wdata",
+          "req_wmask"
+        ],
+        "response": [
+          "rsp_valid",
+          "rsp_rdata"
+        ],
+        "type": "synchronous_1rw"
+      },
+      "logical_depth": 16384,
+      "logical_width": 256,
+      "macro_count": 56,
+      "macro_depth": 2048,
+      "macro_name": "fakeram45_2048x39",
+      "macro_width": 39,
+      "proxy_semantics": "lef_lib_physical_proxy_only",
+      "sram_signoff": false,
+      "top_name": "attention_decode_score_local_cluster_int8_m1x8_iterdiv__score_bank",
+      "unused_pad_bits": 17,
+      "version": 1,
+      "width_slices_per_group": 7
+    },
+    "score_tile": {
+      "accum_bits": 32,
+      "accum_signed": true,
+      "all_accumulators_observable": true,
+      "array_m": 1,
+      "array_n": 8,
+      "command_clears_accumulators": true,
+      "command_interface": "ready_valid_start",
+      "functional_observability": "packed_score_row",
+      "generator": "npu/rtlgen/gen_dense_gemm_tile_stream.py",
+      "input_accepts_same_cycle_as_command": false,
+      "input_interface": "ready_valid_vector_outer_product",
+      "operand_bits": 8,
+      "operand_signed": true,
+      "packed_score_row_semantics": {
+        "array_m_required": 1,
+        "backpressure": "result_score_row_stable_while_result_valid_and_not_ready",
+        "emission": "single_result_beat_per_command_after_final_input_accept",
+        "fill_score_row_compatible": true,
+        "lane_bits": 32,
+        "lane_order": "result_score_row[j*32 +: 32] == lane_j",
+        "lane_signed": true
+      },
+      "result_interface": "ready_valid_packed_score_row",
+      "result_mode": "packed_score_row",
+      "result_order": "packed_score_row_lane_major",
+      "semantic_profile": "operational_dense_gemm_outer_product_stream_s8_s8_acc32",
+      "top_name": "attention_decode_score_local_cluster_int8_m1x8_iterdiv__score_tile",
+      "version": 1
+    },
+    "two_pass": {
+      "div_lanes_per_cycle": 1,
+      "divider_bits_per_cycle": 1,
+      "divider_cycles_per_command": 480,
+      "divider_impl": "iterative_restoring",
+      "divider_units": 1,
+      "exp_sum_bits": 33,
+      "kv_replay": "external_ready_valid_stream",
+      "max_blocks": 16384,
+      "max_context_tokens": 131072,
+      "read_outstanding": 1,
+      "score_storage": "external_ready_valid_sram",
+      "semantic_profile": "q8_k8_v8_a32_s32_exp_lut_b20_zero_tail_two_pass_global_max",
+      "top_name": "attention_decode_score_local_cluster_int8_m1x8_iterdiv__two_pass",
+      "version": 1,
+      "weighted_numerator_bits": 41
+    }
+  },
+  "submodules": {
+    "score_bank_top_name": "attention_decode_score_local_cluster_int8_m1x8_iterdiv__score_bank",
+    "score_tile_top_name": "attention_decode_score_local_cluster_int8_m1x8_iterdiv__score_tile",
+    "two_pass_top_name": "attention_decode_score_local_cluster_int8_m1x8_iterdiv__two_pass"
+  },
+  "top_name": "attention_decode_score_local_cluster_int8_m1x8_iterdiv",
+  "value_replay": "external_ready_valid_address_matched",
+  "version": 1
+}

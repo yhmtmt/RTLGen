@@ -25,6 +25,7 @@ WEIGHTED_NUMERATOR_BITS = 41
 FINAL_VALUE_BITS = 40
 MERGE_SCALE_BITS = 24
 MERGE_SCALE = (1 << MERGE_SCALE_BITS) - 1
+SCORE_BITS = 32
 
 
 @dataclass(frozen=True)
@@ -64,6 +65,35 @@ def _round_div_signed(numerator: int, denominator: int) -> int:
         raise ValueError("denominator must be positive")
     magnitude = (abs(numerator) + denominator // 2) // denominator
     return -magnitude if numerator < 0 else magnitude
+
+
+def requantize_score(value: int, *, multiplier: int, shift: int) -> int:
+    """Apply the decode-cluster score scale with symmetric rounding and S32 saturation."""
+    if not -(1 << 31) <= int(value) < (1 << 31):
+        raise ValueError("score input must fit signed 32 bits")
+    if not 0 <= int(multiplier) < (1 << 32):
+        raise ValueError("score multiplier must fit unsigned 32 bits")
+    if not 0 <= int(shift) < (1 << 6):
+        raise ValueError("score shift must fit unsigned 6 bits")
+    product = int(value) * int(multiplier)
+    if shift:
+        magnitude = (abs(product) + (1 << (shift - 1))) >> shift
+        scaled = -magnitude if product < 0 else magnitude
+    else:
+        scaled = product
+    return min((1 << 31) - 1, max(-(1 << 31), scaled))
+
+
+def requantize_score_row(
+    values: Iterable[int],
+    *,
+    multiplier: int,
+    shift: int,
+) -> tuple[int, ...]:
+    scores = tuple(int(value) for value in values)
+    if len(scores) != ROW_ELEMS:
+        raise ValueError(f"score row must contain {ROW_ELEMS} lanes")
+    return tuple(requantize_score(value, multiplier=multiplier, shift=shift) for value in scores)
 
 
 def _scale_unsigned(value: int, scale: int, *, scale_one: int) -> int:
@@ -352,6 +382,8 @@ __all__ = [
     "merge_sequence",
     "merge_balanced",
     "merge_stats",
+    "requantize_score",
+    "requantize_score_row",
     "score_buffer_bytes",
     "sum_same_max",
     "simulate_two_pass",

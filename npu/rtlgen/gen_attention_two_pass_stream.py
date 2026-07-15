@@ -222,8 +222,8 @@ def _top(*, top_name: str, params: dict[str, int | str]) -> str:
   integer lane_index;
   reg signed [31:0] block_max;
   reg signed [31:0] score_lane;
-  reg signed [31:0] delta_score;
-  reg [31:0] exp_bucket;
+  reg signed [32:0] delta_score;
+  reg [32:0] exp_bucket;
   reg [15:0] exp_weight;
   reg signed [7:0] value_lane;
   reg [19:0] block_sum;
@@ -310,10 +310,11 @@ def _top(*, top_name: str, params: dict[str, int | str]) -> str:
 {init_block}
         for (row_idx = 0; row_idx < 8; row_idx = row_idx + 1) begin
           score_lane = $signed(replay_score_row[(row_idx * 32) +: 32]);
-          delta_score = global_max - score_lane;
-          if (delta_score < 0) delta_score = 32'sd0;
-          exp_bucket = (delta_score + 32'd524288) >> 20;
-          exp_weight = exp_lut(exp_bucket);
+          delta_score = $signed({{global_max[31], global_max}})
+              - $signed({{score_lane[31], score_lane}});
+          if (delta_score < 0) delta_score = 33'sd0;
+          exp_bucket = (delta_score + 33'd524288) >> 20;
+          exp_weight = exp_lut(exp_bucket[31:0]);
           block_sum = block_sum + exp_weight;
           for (dim_idx = 0; dim_idx < 8; dim_idx = dim_idx + 1) begin
             value_lane = $signed(replay_value_matrix[((row_idx * 8 + dim_idx) * 8) +: 8]);

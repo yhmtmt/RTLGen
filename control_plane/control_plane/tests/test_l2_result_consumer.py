@@ -182,6 +182,32 @@ def test_decoder_evidence_paths_recognizes_decode_score_tile_equivalence(tmp_pat
     }
 
 
+def test_decoder_evidence_paths_recognizes_decode_score_local_cluster_equivalence(tmp_path: Path) -> None:
+    evidence_rel = "runs/datasets/demo/decode_score_local_cluster_equivalence.json"
+    report_rel = "runs/datasets/demo/decode_score_local_cluster_equivalence.md"
+    _write(tmp_path / evidence_rel, "{}\n")
+    _write(tmp_path / report_rel, "# Decode score local-cluster equivalence\n")
+    work_item = SimpleNamespace(
+        input_manifest={
+            "decoder_contract": {
+                "decode_score_local_cluster_equivalence_out": evidence_rel,
+                "decode_score_local_cluster_equivalence_report": report_rel,
+            }
+        }
+    )
+
+    evidence_ref, source_refs = _decoder_evidence_paths(
+        repo_root=tmp_path,
+        work_item=work_item,
+    )
+
+    assert evidence_ref == evidence_rel
+    assert source_refs == {
+        "decoder_decode_score_local_cluster_equivalence_out": evidence_rel,
+        "decoder_decode_score_local_cluster_equivalence_report": report_rel,
+    }
+
+
 def test_decoder_evidence_paths_recognizes_decode_score_tile_frontier(tmp_path: Path) -> None:
     evidence_rel = "runs/datasets/demo/decode_score_tile_frontier.json"
     report_rel = "runs/datasets/demo/decode_score_tile_frontier.md"

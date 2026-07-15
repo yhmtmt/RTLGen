@@ -34,6 +34,8 @@ def test_attention_two_pass_stream_generator_has_external_memory_ports(tmp_path:
     assert "score_write_valid" in text
     assert "score_read_req_valid" in text
     assert "score_mem" not in text
+    assert "reg signed [32:0] delta_score" in text
+    assert "$signed({global_max[31], global_max})" in text
 
 
 def test_attention_two_pass_stream_generator_compiles(tmp_path: Path) -> None:

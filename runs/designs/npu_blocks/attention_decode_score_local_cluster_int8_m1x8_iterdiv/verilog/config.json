@@ -1,0 +1,10 @@
+{
+  "attention_decode_score_local_cluster": {
+    "array_n": 8,
+    "divider_impl": "iterative_restoring",
+    "max_blocks": 16384,
+    "score_scale_lanes_per_cycle": 1
+  },
+  "top_name": "attention_decode_score_local_cluster_int8_m1x8_iterdiv",
+  "version": "0.1"
+}

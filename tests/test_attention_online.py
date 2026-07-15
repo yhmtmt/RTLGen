@@ -8,6 +8,8 @@ from npu.sim.perf.attention_online import (
     finalize_value,
     merge_sequence,
     merge_stats,
+    requantize_score,
+    requantize_score_row,
     score_buffer_bytes,
     simulate_two_pass,
     two_pass_command,
@@ -30,6 +32,38 @@ def test_attention_online_widths_cover_llama7b_context() -> None:
     assert bounds["max_block_count"] == 16384
     assert bounds["exp_sum_bits_required"] <= bounds["exp_sum_bits"]
     assert bounds["weighted_numerator_signed_bits_required"] <= bounds["weighted_numerator_bits"]
+
+
+def test_attention_score_requantization_rounds_symmetrically() -> None:
+    assert requantize_score(3, multiplier=1, shift=1) == 2
+    assert requantize_score(-3, multiplier=1, shift=1) == -2
+    assert requantize_score(1, multiplier=1, shift=1) == 1
+    assert requantize_score(-1, multiplier=1, shift=1) == -1
+    assert requantize_score(-7, multiplier=3, shift=0) == -21
+
+
+def test_attention_score_requantization_saturates_signed_32_bits() -> None:
+    assert requantize_score((1 << 31) - 1, multiplier=(1 << 32) - 1, shift=0) == (1 << 31) - 1
+    assert requantize_score(-(1 << 31), multiplier=(1 << 32) - 1, shift=0) == -(1 << 31)
+    assert requantize_score_row(range(8), multiplier=7, shift=2) == (0, 2, 4, 5, 7, 9, 11, 12)
+
+
+@pytest.mark.parametrize(
+    ("value", "multiplier", "shift", "message"),
+    [
+        (1 << 31, 1, 0, "signed 32"),
+        (0, 1 << 32, 0, "unsigned 32"),
+        (0, 1, 64, "unsigned 6"),
+    ],
+)
+def test_attention_score_requantization_rejects_out_of_range_contract(
+    value: int,
+    multiplier: int,
+    shift: int,
+    message: str,
+) -> None:
+    with pytest.raises(ValueError, match=message):
+        requantize_score(value, multiplier=multiplier, shift=shift)
 
 
 def test_attention_online_identity_scale_preserves_left_stats() -> None:

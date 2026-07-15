@@ -76,7 +76,7 @@
         "direction": "select_decode_score_result_interface",
         "reason": "The packed interface removes eight scalar drain cycles but its 256-bit physical interface must be charged."
       },
-      "status": "running"
+      "status": "merged"
     },
     {
       "item_id": "l2_decoder_attention_decode_score_tile_frontier_recost_llama7b_v1",
@@ -109,7 +109,26 @@
         "direction": "reprice_frontier_with_decode_exact_compute_shape",
         "reason": "The active Llama7B decision path must not scale an M16 tile as if all rows were useful during M1 decode."
       },
-      "status": "blocked_on_ppa"
+      "status": "merged"
+    },
+    {
+      "item_id": "l2_decoder_attention_decode_score_local_cluster_equivalence_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Prove the composed M1x8 producer, explicit score requantizer, score SRAM, two-pass replay, value rendezvous, and iterative divider against the integer performance model.",
+      "evaluation_mode": "equivalence_gate",
+      "abstraction_layer": "decoder_attention_decode_score_local_cluster_equivalence",
+      "comparison_role": "decode_exact_cluster_semantic_gate",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_decode_score_tile_frontier_recost_llama7b_v1",
+        "l1_decoder_attention_two_pass_stream_iterdiv_ppa_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "prove_composed_decode_cluster_equivalence",
+        "reason": "Cluster PPA is ineligible until scaling, score storage, replay ordering, value rendezvous, division, and backpressure preserve the end-to-end integer contract."
+      },
+      "status": "ready_to_queue"
     },
     {
       "item_id": "l1_decoder_attention_decode_score_local_cluster_pnr_v1",
@@ -119,8 +138,7 @@
       "abstraction_layer": "decoder_attention_decode_score_local_cluster",
       "comparison_role": "decode_exact_cluster_pnr",
       "depends_on_item_ids": [
-        "l2_decoder_attention_decode_score_tile_frontier_recost_llama7b_v1",
-        "l1_decoder_attention_two_pass_stream_iterdiv_ppa_v1"
+        "l2_decoder_attention_decode_score_local_cluster_equivalence_llama7b_v1"
       ],
       "requires_merged_inputs": true,
       "requires_materialized_refs": true,
@@ -128,7 +146,7 @@
         "direction": "measure_semantically_valid_local_cluster",
         "reason": "Only a composed producer, score store, replay engine, and divider can close local routing and activity energy."
       },
-      "status": "blocked_on_corrective_recost"
+      "status": "blocked_on_cluster_equivalence"
     }
   ],
   "baseline_refs": [
@@ -138,6 +156,7 @@
     "runs/designs/npu_blocks/attention_two_pass_stream_iterdiv/metrics.csv"
   ],
   "remaining_abstractions_after_this_step": [
+    "Per-command score multiplier and shift are explicit cluster inputs; deriving that metadata from dynamic Q/K quantization scales remains outside this cluster.",
     "The two-pass value replay matrix remains tiled at eight value dimensions until outer value-dimension accumulation is composed.",
     "The installed FakeRAM views have no SRAM GDS and remain physical proxies.",
     "Chip-level NoC, clock/reset, power delivery, and external HBM/DRAM remain later boundaries."
