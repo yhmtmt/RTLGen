@@ -1,0 +1,109 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "decoder_contract": {
+        "score_bank_proxy_metrics": "runs/designs/npu_blocks/attention_score_bank_proxy_16kx256/metrics.csv",
+        "narrow_dense_tile_metrics": "runs/designs/npu_blocks/npu_dense_gemm_tile_int8_16x8_k1_p1/metrics.csv",
+        "operational_dense_tile_metrics": "runs/designs/npu_blocks/dense_gemm_tile_stream_int8_16x8/metrics.csv",
+        "operational_component_frontier_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_operational_component_frontier__l2_decoder_attention_operational_component_frontier_llama7b_v1.json",
+        "operational_component_frontier_scope": "Replace proxy dense-tile and analytical score-bank area/timing with measured operational component PPA. Retain activity-backed token energy until operational SAIF/VCD calibration.",
+        "operational_component_frontier_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_operational_component_frontier__l2_decoder_attention_operational_component_frontier_llama7b_v1.md",
+        "operational_component_frontier_source": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_separated_two_pass_frontier__l2_decoder_attention_separated_two_pass_frontier_llama7b_v1.json"
+      }
+    },
+    "commands": [
+      {
+        "run": "python3 npu/eval/audit_llm_decoder_attention_operational_component_frontier.py --frontier-json runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_separated_two_pass_frontier__l2_decoder_attention_separated_two_pass_frontier_llama7b_v1.json --operational-tile-metrics-csv runs/designs/npu_blocks/dense_gemm_tile_stream_int8_16x8/metrics.csv --old-tile-metrics-csv runs/designs/npu_blocks/npu_dense_gemm_tile_int8_16x8_k1_p1/metrics.csv --score-bank-metrics-csv runs/designs/npu_blocks/attention_score_bank_proxy_16kx256/metrics.csv --out-json runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_operational_component_frontier__l2_decoder_attention_operational_component_frontier_llama7b_v1.json --out-md runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_operational_component_frontier__l2_decoder_attention_operational_component_frontier_llama7b_v1.md",
+        "name": "audit_decoder_attention_operational_component_frontier"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate_runs"
+      }
+    ],
+    "objective": "Propagate measured operational dense-tile and score-bank area/timing into the separated Llama7B frontier while retaining activity-backed energy.",
+    "acceptance": [
+      "Write all declared decoder evidence artifacts",
+      "Keep evidence artifact paths repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "source_mode": "src_verilog",
+    "expected_outputs": [
+      "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_operational_component_frontier__l2_decoder_attention_operational_component_frontier_llama7b_v1.json",
+      "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_operational_component_frontier__l2_decoder_attention_operational_component_frontier_llama7b_v1.md"
+    ]
+  },
+  "layer": "layer2",
+  "state": "evaluated",
+  "title": "Llama7B operational component frontier recost",
+  "result": {
+    "branch": "eval/l2_decoder_attention_operational_component_frontier_llama7b_v1/s20260715t014728z",
+    "completed_utc": "2026-07-15T01:47:27.055619Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "b7c2d9c80c1c",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260715t014728z][host:b7c2d9c80c1c][item:l2_decoder_attention_operational_component_frontier_llama7b_v1]",
+    "metrics_rows": [],
+    "metrics_exempt_reason": "evidence_only_decoder_evidence",
+    "queue_item_id": "l2_decoder_attention_operational_component_frontier_llama7b_v1",
+    "session_id": "s20260715t014728z",
+    "status": "ok",
+    "summary": "2/2 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l2_decoder_attention_operational_component_frontier_llama7b_v1/s20260715t014728z",
+    "pr_title": "eval: run llama7b operational component frontier recost",
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Include metrics row references in result.metrics_rows",
+      "Keep committed result_path fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260715t014728z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l2_decoder_attention_operational_component_frontier_llama7b_v1"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l2_decoder_attention_operational_component_frontier_llama7b_v1",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 1,
+  "created_utc": "2026-07-15T01:47:04.769175Z",
+  "requested_by": "control_plane",
+  "developer_loop": {
+    "comparison": {
+      "role": "operational_component_frontier_recost",
+      "paired_baseline_item_id": ""
+    },
+    "evaluation": {
+      "mode": "frontier_recost",
+      "expected_reason": "Use measured component area/timing while retaining activity-backed token energy until SAIF/VCD calibration.",
+      "expected_direction": "reprice_frontier_with_operational_components"
+    },
+    "abstraction": {
+      "layer": "decoder_attention_operational_component_frontier"
+    },
+    "proposal_id": "prop_decoder_attention_operational_cluster_physical_closure_llama7b_v1",
+    "dependencies": {
+      "item_ids": [
+        "l1_decoder_attention_operational_dense_tile_ppa_v1",
+        "l1_decoder_attention_score_bank_proxy_pnr_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    },
+    "proposal_path": "docs/proposals/prop_decoder_attention_operational_cluster_physical_closure_llama7b_v1/proposal.json"
+  },
+  "source_requirement": {
+    "repo": "",
+    "reason": "evaluator runtime must contain the queued job source commit",
+    "version": 1,
+    "required_ref": "origin/master",
+    "required_sha": "12e07e61c696e5724c038ba5343dbe73f73770da",
+    "requires_daemon_restart": true
+  }
+}
