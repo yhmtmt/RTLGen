@@ -1,0 +1,98 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-07-15T06:02:36.786610Z",
+  "item_id": "l1_decoder_attention_decode_score_local_cluster_pnr_v1",
+  "run_key": "l1_decoder_attention_decode_score_local_cluster_pnr_v1_run_3d37e8dbd632f172",
+  "layer": "layer1",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l1_sweep",
+  "source_commit": "ac7651a62e8ee462b84714729f1f8911b747bb8f",
+  "objective": "Measure timing, area, and vectorless power for the equivalence-proven M1x8 score producer, requantizer, 56-macro score bank, replay rendezvous, and iterative two-pass engine.",
+  "input_manifest": {
+    "sweeps": [
+      "runs/campaigns/npu/decode_score_local_cluster_v1/sweeps/nangate45_decode_score_local_cluster.json"
+    ],
+    "configs": [
+      "runs/designs/npu_blocks/attention_decode_score_local_cluster_int8_m1x8_iterdiv/config.json"
+    ],
+    "out_root": "runs/designs/npu_blocks",
+    "design_dirs": [],
+    "macro_manifests": [],
+    "candidate_manifests": [],
+    "required_submodules": []
+  },
+  "proposal_count": 1,
+  "evaluation_record": {
+    "evaluation_mode": "frontier_followup",
+    "abstraction_layer": "decoder_attention_decode_score_local_cluster",
+    "result_kind": "physical_metrics",
+    "physical_metrics_present": true,
+    "summary": "Physical metrics recorded from a completed, timing-feasible Layer 1 row.",
+    "timing_feasible": true,
+    "clock_period_ns": 8.0,
+    "timing_slack_ns": 1.5617
+  },
+  "proposal_assessment": null,
+  "proposals": [
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/npu_blocks/attention_decode_score_local_cluster_int8_m1x8_iterdiv/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "71791d94",
+        "tag": "decode_score_local_cluster_v1_proxy_die_2500",
+        "result_path": "/orfs/flow/reports/nangate45/attention_decode_score_local_cluster_int8_m1x8_iterdiv/decode_score_local_cluster_v1_proxy_die_2500/6_finish.rpt",
+        "work_result_json": "runs/designs/npu_blocks/attention_decode_score_local_cluster_int8_m1x8_iterdiv/work/71791d94/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 6.4383,
+        "die_area": 6250000.0,
+        "total_power_mw": 0.215
+      }
+    }
+  ],
+  "trial_summary": {
+    "item_id": "l1_decoder_attention_decode_score_local_cluster_pnr_v1",
+    "completed_trials": 1,
+    "success_count": 1,
+    "failure_count": 0,
+    "success_rate": 1.0,
+    "metrics": {
+      "critical_path_ns": {
+        "best": 6.4383,
+        "mean": 6.4383,
+        "median": 6.4383,
+        "max": 6.4383,
+        "range": 0.0,
+        "stddev": 0.0
+      },
+      "die_area": {
+        "best": 6250000.0,
+        "mean": 6250000.0,
+        "median": 6250000.0,
+        "max": 6250000.0,
+        "range": 0.0,
+        "stddev": 0.0
+      },
+      "total_power_mw": {
+        "best": 0.215,
+        "mean": 0.215,
+        "median": 0.215,
+        "max": 0.215,
+        "range": 0.0,
+        "stddev": 0.0
+      }
+    }
+  },
+  "source_refs": {
+    "trial_metrics_csvs": [
+      "runs/designs/npu_blocks/attention_decode_score_local_cluster_int8_m1x8_iterdiv/metrics.csv"
+    ],
+    "summary_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_decode_score_local_cluster_pnr_v1/summary_stats.json",
+    "failure_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_decode_score_local_cluster_pnr_v1/failure_stats.json",
+    "trial_table_csv": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_decode_score_local_cluster_pnr_v1/trial_table.csv"
+  }
+}

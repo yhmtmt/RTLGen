@@ -1,0 +1,2 @@
+run_key,attempt,trial_index,seed,status,metrics_csv,critical_path_ns,die_area,total_power_mw,failure_category,failure_stage,failure_signature
+l1_decoder_attention_decode_score_local_cluster_pnr_v1_run_3d37e8dbd632f172,1,1,1,succeeded,runs/designs/npu_blocks/attention_decode_score_local_cluster_int8_m1x8_iterdiv/metrics.csv,6.4383,6250000.0,0.215,none,,

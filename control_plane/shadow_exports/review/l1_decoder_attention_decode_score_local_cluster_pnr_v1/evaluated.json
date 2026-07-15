@@ -1,0 +1,152 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "sweeps": [
+        "runs/campaigns/npu/decode_score_local_cluster_v1/sweeps/nangate45_decode_score_local_cluster.json"
+      ],
+      "configs": [
+        "runs/designs/npu_blocks/attention_decode_score_local_cluster_int8_m1x8_iterdiv/config.json"
+      ],
+      "out_root": "runs/designs/npu_blocks",
+      "design_dirs": [],
+      "macro_manifests": [],
+      "candidate_manifests": [],
+      "required_submodules": []
+    },
+    "commands": [
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/rtlgen/gen_attention_decode_score_local_cluster.py --config runs/designs/npu_blocks/attention_decode_score_local_cluster_int8_m1x8_iterdiv/config.json --out runs/designs/npu_blocks/attention_decode_score_local_cluster_int8_m1x8_iterdiv/verilog",
+        "name": "generate_attention_decode_score_local_cluster_rtl"
+      },
+      {
+        "run": "python3 npu/eval/check_attention_decode_score_local_cluster_guard.py --design-dir runs/designs/npu_blocks/attention_decode_score_local_cluster_int8_m1x8_iterdiv",
+        "name": "check_attention_decode_score_local_cluster_guard"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/synth/run_block_sweep.py --design_dir runs/designs/npu_blocks/attention_decode_score_local_cluster_int8_m1x8_iterdiv --platform nangate45 --top attention_decode_score_local_cluster_int8_m1x8_iterdiv --sweep runs/campaigns/npu/decode_score_local_cluster_v1/sweeps/nangate45_decode_score_local_cluster.json --out_root runs/designs/npu_blocks --macro_manifest runs/designs/npu_blocks/attention_decode_score_local_cluster_int8_m1x8_iterdiv/macro_manifest.json --skip_existing",
+        "name": "run_block_sweep"
+      },
+      {
+        "run": "python3 npu/eval/extract_openroad_timing_summary.py --design-dir runs/designs/npu_blocks/attention_decode_score_local_cluster_int8_m1x8_iterdiv --out runs/designs/npu_blocks/attention_decode_score_local_cluster_int8_m1x8_iterdiv/timing_debug_report.md --max-paths 8",
+        "name": "extract_attention_decode_score_local_cluster_timing_paths"
+      },
+      {
+        "run": "python3 scripts/build_runs_index.py",
+        "name": "build_runs_index"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate"
+      }
+    ],
+    "metadata": {
+      "acceptance_notes": "Require generated-cluster guard, complete metrics rows for each attempted point, explicit timing feasibility, and no hash/equivalence logic in measured RTL."
+    },
+    "objective": "Measure timing, area, and vectorless power for the equivalence-proven M1x8 score producer, requantizer, 56-macro score bank, replay rendezvous, and iterative two-pass engine.",
+    "acceptance": [
+      "Each generated wrapper metrics.csv contains at least one status=ok row for the queued sweep",
+      "Committed outputs stay lightweight (metrics.csv only; runs/index.csv is exported centrally after merge)",
+      "python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue pass"
+    ],
+    "source_mode": "config",
+    "expected_outputs": [
+      "runs/designs/npu_blocks/attention_decode_score_local_cluster_int8_m1x8_iterdiv/metrics.csv",
+      "runs/designs/npu_blocks/attention_decode_score_local_cluster_int8_m1x8_iterdiv/timing_debug_report.md"
+    ]
+  },
+  "layer": "layer1",
+  "state": "evaluated",
+  "title": "Decode score local-cluster macro PPA",
+  "result": {
+    "branch": "eval/l1_decoder_attention_decode_score_local_cluster_pnr_v1/s20260715t060238z",
+    "completed_utc": "2026-07-15T06:02:35.104972Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "b7c2d9c80c1c",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260715t060238z][host:b7c2d9c80c1c][item:l1_decoder_attention_decode_score_local_cluster_pnr_v1]",
+    "metrics_rows": [
+      {
+        "tag": "decode_score_local_cluster_v1_proxy_die_2500",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "ad55485e",
+        "metrics_csv": "runs/designs/npu_blocks/attention_decode_score_local_cluster_int8_m1x8_iterdiv/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_decode_score_local_cluster_int8_m1x8_iterdiv/work/ad55485e/result.json"
+      },
+      {
+        "tag": "decode_score_local_cluster_v1_proxy_die_3000",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "b4932c49",
+        "metrics_csv": "runs/designs/npu_blocks/attention_decode_score_local_cluster_int8_m1x8_iterdiv/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_decode_score_local_cluster_int8_m1x8_iterdiv/work/b4932c49/result.json"
+      },
+      {
+        "tag": "decode_score_local_cluster_v1_proxy_die_2500",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "71791d94",
+        "metrics_csv": "runs/designs/npu_blocks/attention_decode_score_local_cluster_int8_m1x8_iterdiv/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_decode_score_local_cluster_int8_m1x8_iterdiv/work/71791d94/result.json"
+      },
+      {
+        "tag": "decode_score_local_cluster_v1_proxy_die_3000",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "987a3959",
+        "metrics_csv": "runs/designs/npu_blocks/attention_decode_score_local_cluster_int8_m1x8_iterdiv/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_decode_score_local_cluster_int8_m1x8_iterdiv/work/987a3959/result.json"
+      }
+    ],
+    "queue_item_id": "l1_decoder_attention_decode_score_local_cluster_pnr_v1",
+    "session_id": "s20260715t060238z",
+    "status": "ok",
+    "summary": "6/6 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l1_decoder_attention_decode_score_local_cluster_pnr_v1/s20260715t060238z",
+    "pr_title": "eval: run decode score local-cluster macro ppa",
+    "checklist": [
+      "Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge",
+      "Include metrics row references for each completed design",
+      "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260715t060238z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l1_decoder_attention_decode_score_local_cluster_pnr_v1"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l1_decoder_attention_decode_score_local_cluster_pnr_v1",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 80,
+  "created_utc": "2026-07-15T04:06:41.560522Z",
+  "requested_by": "developer_agent",
+  "developer_loop": {
+    "evaluation": {
+      "mode": "frontier_followup",
+      "trial_policy": {
+        "seed_start": 1,
+        "trial_count": 1,
+        "stop_after_failures": 1
+      }
+    },
+    "abstraction": {
+      "layer": "decoder_attention_decode_score_local_cluster"
+    },
+    "proposal_id": "prop_decoder_attention_decode_score_tile_m1x8_llama7b_v1",
+    "proposal_path": "docs/proposals/prop_decoder_attention_decode_score_tile_m1x8_llama7b_v1"
+  },
+  "source_requirement": {
+    "repo": "",
+    "reason": "evaluator runtime must contain the queued job source commit",
+    "version": 1,
+    "required_ref": "origin/master",
+    "required_sha": "ac7651a62e8ee462b84714729f1f8911b747bb8f",
+    "requires_daemon_restart": true
+  }
+}
