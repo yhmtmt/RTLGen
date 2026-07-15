@@ -1,11 +1,32 @@
 # Analysis Report
 
-Status: implementation complete; remote equivalence and PPA pending.
+## Candidate
+- `proposal_id`: `prop_decoder_attention_decode_score_tile_m1x8_llama7b_v1`
+- `candidate_id`: `l2_decoder_attention_decode_score_tile_m1x8_equivalence_llama7b_v1`
 
-The current M16x8 operational tile proves complete accumulator behavior but is
-not a direct M1 decoder score producer. This proposal establishes the exact
-compute shape before updating the Llama7B area, throughput, and energy frontier.
+## Evaluations Consumed
+- `l2_decoder_attention_decode_score_tile_m1x8_equivalence_llama7b_v1`
+- `l2_decoder_attention_decode_score_tile_m1x8_equivalence_llama7b_v1_run_e48bf396c0f803b6`
+- source commit: `500e5fd8f51f51ca7014d9fa74c00a80528fe84f`
+- review: PR #1300
 
-The local RTL/reference audit passes for the packed M1x8 tile. No frontier value
-is revised until the remote equivalence evidence and comparative Nangate45 PPA
-are merged.
+## Baseline Comparison
+- baseline_ref: `None`
+- baseline_item_id: `None`
+- outcome: `attention_decode_score_tile_int8_1x8_equivalence_pass`
+- summary: RTL component/reference equivalence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_tile_equivalence__l2_decoder_attention_decode_score_tile_m1x8_equivalence_llama7b_v1.json: decision=attention_decode_score_tile_int8_1x8_equivalence_pass; component=attention_decode_score_tile_int8_1x8; semantic_profile=llama_decode_qk_score_row_m1_n8_s8_s8_acc32; reference=python_signed_m1_n8_dot_products; equivalence_pass=True; passed_test_count=1; test_target=tests/test_dense_gemm_tile_stream.py::test_packed_decode_score_tile_matches_reference_and_protocol.
+
+## Result
+- result: `iterate`
+- confidence level: merged accepted evidence
+- estimated optimization room: pending follow-on comparison
+- architecture conclusion robustness: staged evidence
+- summary: RTL component/reference equivalence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_tile_equivalence__l2_decoder_attention_decode_score_tile_m1x8_equivalence_llama7b_v1.json: decision=attention_decode_score_tile_int8_1x8_equivalence_pass; component=attention_decode_score_tile_int8_1x8; semantic_profile=llama_decode_qk_score_row_m1_n8_s8_s8_acc32; reference=python_signed_m1_n8_dot_products; equivalence_pass=True; passed_test_count=1; test_target=tests/test_dense_gemm_tile_stream.py::test_packed_decode_score_tile_matches_reference_and_protocol.
+
+## Failures and Caveats
+- no additional caveats recorded during automatic finalization
+
+## Recommendation
+- `iterate`
+- reason: RTL component/reference equivalence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_tile_equivalence__l2_decoder_attention_decode_score_tile_m1x8_equivalence_llama7b_v1.json: decision=attention_decode_score_tile_int8_1x8_equivalence_pass; component=attention_decode_score_tile_int8_1x8; semantic_profile=llama_decode_qk_score_row_m1_n8_s8_s8_acc32; reference=python_signed_m1_n8_dot_products; equivalence_pass=True; passed_test_count=1; test_target=tests/test_dense_gemm_tile_stream.py::test_packed_decode_score_tile_matches_reference_and_protocol.
+- next_action: inspect follow-on work after l2_decoder_attention_decode_score_tile_m1x8_equivalence_llama7b_v1
