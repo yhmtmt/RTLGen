@@ -99,13 +99,33 @@ def _select_existing_link(session: Session, work_item_id: str, request: GitHubRe
     return None
 
 
-def _advance_work_item_state(work_item: WorkItem, state: GitHubLinkState) -> None:
+def _other_active_review_prs(session: Session, link: GitHubLink) -> list[int]:
+    query = session.query(GitHubLink).filter(
+        GitHubLink.work_item_id == link.work_item_id,
+        GitHubLink.repo == link.repo,
+        GitHubLink.state.in_((GitHubLinkState.PR_OPEN, GitHubLinkState.PR_MERGED)),
+    )
+    if link.id is not None:
+        query = query.filter(GitHubLink.id != link.id)
+    return sorted(int(row.pr_number) for row in query.all() if row.pr_number is not None)
+
+
+def _advance_work_item_state(
+    work_item: WorkItem,
+    state: GitHubLinkState,
+    *,
+    close_is_terminal: bool = True,
+) -> None:
     if state == GitHubLinkState.PR_OPEN and work_item.state not in {WorkItemState.MERGED, WorkItemState.SUPERSEDED}:
         if work_item.state not in {WorkItemState.AWAITING_REVIEW, WorkItemState.MERGED}:
             work_item.state = WorkItemState.AWAITING_REVIEW
     elif state == GitHubLinkState.PR_MERGED:
         work_item.state = WorkItemState.MERGED
-    elif state == GitHubLinkState.PR_CLOSED and work_item.state not in {WorkItemState.MERGED, WorkItemState.SUPERSEDED}:
+    elif (
+        state == GitHubLinkState.PR_CLOSED
+        and close_is_terminal
+        and work_item.state not in {WorkItemState.MERGED, WorkItemState.SUPERSEDED}
+    ):
         work_item.state = WorkItemState.SUPERSEDED
 
 
@@ -164,7 +184,10 @@ def reconcile_github_link(session: Session, request: GitHubReconcileRequest) -> 
     if run is not None and request.branch_name and run.branch_name != request.branch_name:
         run.branch_name = request.branch_name
 
-    _advance_work_item_state(work_item, state)
+    session.flush()
+    other_active_prs = _other_active_review_prs(session, link) if state == GitHubLinkState.PR_CLOSED else []
+    close_is_terminal = not other_active_prs
+    _advance_work_item_state(work_item, state, close_is_terminal=close_is_terminal)
 
     event_payload = {
         "repo": request.repo,
@@ -183,17 +206,32 @@ def reconcile_github_link(session: Session, request: GitHubReconcileRequest) -> 
                 event_payload["released_dependent_items"] = released
         _emit_run_event(session, run, "pr_merged", event_payload)
     elif state == GitHubLinkState.PR_CLOSED:
+        if other_active_prs:
+            event_payload["other_active_pr_numbers"] = other_active_prs
         _emit_run_event(session, run, "pr_closed", event_payload)
-        _emit_run_event(
-            session,
-            run,
-            "work_item_superseded",
-            {
-                "reason": "review_pr_closed",
-                "actor": "github_reconcile",
-                "pr_number": request.pr_number,
-            },
-        )
+        if close_is_terminal:
+            _emit_run_event(
+                session,
+                run,
+                "work_item_superseded",
+                {
+                    "reason": "review_pr_closed",
+                    "actor": "github_reconcile",
+                    "pr_number": request.pr_number,
+                },
+            )
+        else:
+            _emit_run_event(
+                session,
+                run,
+                "nonterminal_pr_closed",
+                {
+                    "reason": "newer_review_pr_active",
+                    "actor": "github_reconcile",
+                    "pr_number": request.pr_number,
+                    "other_active_pr_numbers": other_active_prs,
+                },
+            )
     else:
         _emit_run_event(session, run, "pr_linked", event_payload)
 
