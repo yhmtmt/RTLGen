@@ -107,7 +107,7 @@
     {
       "item_id": "l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v1",
       "task_type": "l2_campaign",
-      "status": "superseded",
+      "status": "retracted",
       "objective": "Retract the bare-M1x8 frontier and recompute a no-stall Llama7B bound from measured composed-cluster area, timing, fill, replay, divider, and value-slice service.",
       "evaluation_mode": "frontier_recost",
       "abstraction_layer": "decoder_attention_decode_score_local_cluster_frontier",
@@ -128,12 +128,16 @@
         "direction": "reprice_with_composed_cluster_lower_bound",
         "reason": "The active frontier must charge the measured 512 KiB score bank and all 16 eight-dimensional value slices per head."
       },
-      "notes": "Superseded after review found evaluator-local result_path and synth_script_path values in the committed metric provenance."
+      "notes": "Superseded after review found evaluator-local result_path and synth_script_path values in the committed metric provenance.",
+      "retracted_utc": "2026-07-15T06:27:39.300391Z",
+      "retracted_by_item_id": "l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2",
+      "retraction_reason": "remove_evaluator_local_paths_from_cluster_metric_provenance",
+      "replacement_artifact": "control_plane/shadow_exports/l2_decisions/l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2.json"
     },
     {
       "item_id": "l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2",
       "task_type": "l2_campaign",
-      "status": "ready_to_queue",
+      "status": "merged",
       "objective": "Repeat the composed-cluster corrective recost with repo-portable metric provenance.",
       "evaluation_mode": "frontier_recost",
       "abstraction_layer": "decoder_attention_decode_score_local_cluster_frontier",
@@ -153,8 +157,13 @@
       "expected_result": {
         "direction": "reprice_with_composed_cluster_lower_bound",
         "reason": "The corrected evidence must preserve the composed result while removing evaluator-local paths."
-      }
+      },
+      "merged_pr_number": 1314,
+      "merge_commit": "cb2450238e37df51f99710f1a89d1e8de26fcf20",
+      "merged_utc": "2026-07-15T06:27:39.300334Z",
+      "notes": "Merged via PR #1314 and merge cb2450238e37df51f99710f1a89d1e8de26fcf20 at 2026-07-15T06:27:39.300334Z.",
+      "revision_of_decision": "promote"
     }
   ],
-  "source_commit": "ac7651a62e8ee462b84714729f1f8911b747bb8f"
+  "source_commit": "eaef7adde86bab3e3d0a0d7fba256aca2e9252ab"
 }

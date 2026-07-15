@@ -1,22 +1,22 @@
 {
   "proposal_id": "prop_decoder_attention_decode_score_tile_m1x8_llama7b_v1",
-  "candidate_id": "l1_decoder_attention_decode_score_local_cluster_pnr_v1",
-  "decision": "promote",
-  "reason": "Accepted Layer 1 physical metrics were merged in PR #1309 for the current candidate.",
+  "candidate_id": "l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2",
+  "decision": "iterate",
+  "reason": "Decoder composed score-cluster frontier recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_local_cluster_frontier__l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2.json: decision=prior_decode_score_tile_frontier_retracted_composed_cluster_lower_bound_only; prior_best_token_throughput_per_s_retracted=669.792507491203; best_no_stall_candidate=decode_score_local_cluster_c128_vl1; best_no_stall_token_throughput_upper_bound_per_s=0.521229054458; best_no_stall_latency_lower_bound_us=1918542.321168; best_no_stall_area_mm2=634.909914937; promotion_blocked=True; next_architecture=Split the QK producer/score bank from replicated value-slice accumulators so one score fill and replay stream serves all 16 value slices; then measure composed routing and activity.",
   "evidence_refs": [
-    "item:l1_decoder_attention_decode_score_local_cluster_pnr_v1",
-    "run:l1_decoder_attention_decode_score_local_cluster_pnr_v1_run_3d37e8dbd632f172",
-    "artifact:control_plane/shadow_exports/l1_promotions/l1_decoder_attention_decode_score_local_cluster_pnr_v1.json",
-    "pr:#1309",
-    "https://github.com/yhmtmt/RTLGen/pull/1309"
+    "item:l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2",
+    "run:l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2_run_cb65b821177b511e",
+    "artifact:control_plane/shadow_exports/l2_decisions/l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2.json",
+    "pr:#1314",
+    "https://github.com/yhmtmt/RTLGen/pull/1314"
   ],
-  "next_action": "inspect the next dependent item",
+  "next_action": "inspect follow-on work after l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2",
   "requires_human_approval": false,
   "revision": {
-    "reason": "wrong_compute_shape_for_autoregressive_decode",
+    "reason": "remove_evaluator_local_paths_from_cluster_metric_provenance",
     "invalidated_item_ids": [
-      "l2_decoder_attention_operational_component_frontier_llama7b_v1"
+      "l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v1"
     ],
-    "replacement_item_id": "l2_decoder_attention_decode_score_tile_frontier_recost_llama7b_v1"
+    "replacement_item_id": "l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2"
   }
 }
