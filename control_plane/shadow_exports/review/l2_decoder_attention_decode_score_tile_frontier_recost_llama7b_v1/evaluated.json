@@ -1,0 +1,109 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "decoder_contract": {
+        "decode_score_tile_frontier_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_tile_frontier__l2_decoder_attention_decode_score_tile_frontier_recost_llama7b_v1.json",
+        "decode_score_tile_frontier_scope": "Replace the M16x8 decode mismatch with measured M1x8 scalar and packed interfaces, then recompute stage service, subtile scheduling, HBM-share latency, area feasibility, and Pareto rank.",
+        "decode_score_tile_packed_metrics": "runs/designs/npu_blocks/attention_decode_score_tile_int8_1x8/metrics.csv",
+        "decode_score_tile_scalar_metrics": "runs/designs/npu_blocks/dense_gemm_tile_stream_int8_1x8/metrics.csv",
+        "decode_score_tile_frontier_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_tile_frontier__l2_decoder_attention_decode_score_tile_frontier_recost_llama7b_v1.md",
+        "decode_score_tile_subtile_schedule_source": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_subtile_pipeline_schedule__l2_decoder_attention_kv_subtile_pipeline_schedule_softmax_recip_lut_llama7b_v1.json",
+        "decode_score_tile_operational_frontier_source": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_operational_component_frontier__l2_decoder_attention_operational_component_frontier_llama7b_v1.json"
+      }
+    },
+    "commands": [
+      {
+        "run": "python3 -m npu.eval.audit_llm_decoder_attention_decode_score_tile_frontier --operational-frontier-json runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_operational_component_frontier__l2_decoder_attention_operational_component_frontier_llama7b_v1.json --subtile-schedule-json runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_subtile_pipeline_schedule__l2_decoder_attention_kv_subtile_pipeline_schedule_softmax_recip_lut_llama7b_v1.json --scalar-metrics-csv runs/designs/npu_blocks/dense_gemm_tile_stream_int8_1x8/metrics.csv --packed-metrics-csv runs/designs/npu_blocks/attention_decode_score_tile_int8_1x8/metrics.csv --out-json runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_tile_frontier__l2_decoder_attention_decode_score_tile_frontier_recost_llama7b_v1.json --out-md runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_tile_frontier__l2_decoder_attention_decode_score_tile_frontier_recost_llama7b_v1.md",
+        "name": "audit_decode_score_tile_frontier"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate_runs"
+      }
+    ],
+    "objective": "Replace M16x8 dense-tile scaling with measured decode-shaped M1x8 area, timing, and result service, then recompute the Llama7B operational frontier.",
+    "acceptance": [
+      "Write all declared decoder evidence artifacts",
+      "Keep evidence artifact paths repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "source_mode": "src_verilog",
+    "expected_outputs": [
+      "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_tile_frontier__l2_decoder_attention_decode_score_tile_frontier_recost_llama7b_v1.json",
+      "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_tile_frontier__l2_decoder_attention_decode_score_tile_frontier_recost_llama7b_v1.md"
+    ]
+  },
+  "layer": "layer2",
+  "state": "evaluated",
+  "title": "Corrective Llama7B decode-shaped M1x8 frontier recost",
+  "result": {
+    "branch": "eval/l2_decoder_attention_decode_score_tile_frontier_recost_llama7b_v1/s20260715t030828z",
+    "completed_utc": "2026-07-15T03:08:26.320538Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "b7c2d9c80c1c",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260715t030828z][host:b7c2d9c80c1c][item:l2_decoder_attention_decode_score_tile_frontier_recost_llama7b_v1]",
+    "metrics_rows": [],
+    "metrics_exempt_reason": "evidence_only_decoder_evidence",
+    "queue_item_id": "l2_decoder_attention_decode_score_tile_frontier_recost_llama7b_v1",
+    "session_id": "s20260715t030828z",
+    "status": "ok",
+    "summary": "2/2 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l2_decoder_attention_decode_score_tile_frontier_recost_llama7b_v1/s20260715t030828z",
+    "pr_title": "eval: run corrective llama7b decode-shaped m1x8 frontier recost",
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Include metrics row references in result.metrics_rows",
+      "Keep committed result_path fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260715t030828z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l2_decoder_attention_decode_score_tile_frontier_recost_llama7b_v1"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l2_decoder_attention_decode_score_tile_frontier_recost_llama7b_v1",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 90,
+  "created_utc": "2026-07-15T03:08:04.847142Z",
+  "requested_by": "developer_agent",
+  "developer_loop": {
+    "comparison": {
+      "role": "decode_shape_corrective_recost",
+      "paired_baseline_item_id": ""
+    },
+    "evaluation": {
+      "mode": "frontier_recost",
+      "expected_reason": "The active Llama7B decision path must recompute stage service instead of scaling an M16 tile as if all rows were useful during M1 decode.",
+      "expected_direction": "reprice_frontier_with_decode_exact_compute_shape"
+    },
+    "abstraction": {
+      "layer": "decoder_attention_decode_score_tile_frontier"
+    },
+    "proposal_id": "prop_decoder_attention_decode_score_tile_m1x8_llama7b_v1",
+    "dependencies": {
+      "item_ids": [
+        "l1_decoder_attention_decode_score_tile_m1x8_ppa_v1",
+        "l1_decoder_attention_score_bank_proxy_pnr_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    },
+    "proposal_path": "docs/proposals/prop_decoder_attention_decode_score_tile_m1x8_llama7b_v1/proposal.json"
+  },
+  "source_requirement": {
+    "repo": "",
+    "reason": "evaluator runtime must contain the queued job source commit",
+    "version": 1,
+    "required_ref": "origin/master",
+    "required_sha": "2613af1091ac00621b505ba27ab7e231da2cbd5e",
+    "requires_daemon_restart": true
+  }
+}
