@@ -115,3 +115,14 @@ def test_transportable_expected_output_allows_compact_attention_kv_dataset() -> 
         "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
         "decoder_attention_noc_profile__l2_decoder_attention_noc_profile_v1.md"
     )
+
+
+def test_transportable_expected_output_allows_operational_component_frontier() -> None:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+    stem = (
+        "decoder_attention_operational_component_frontier__"
+        "l2_decoder_attention_operational_component_frontier_llama7b_v1"
+    )
+
+    assert is_transportable_expected_output(f"{base}{stem}.json")
+    assert is_transportable_expected_output(f"{base}{stem}.md")

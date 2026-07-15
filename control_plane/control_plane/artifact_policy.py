@@ -27,6 +27,7 @@ _ALLOWED_DATASET_PREFIXES = {
     "decoder_attention_kv_",
     "decoder_attention_mixed_int8_",
     "decoder_attention_noc_profile__",
+    "decoder_attention_operational_component_frontier__",
     "decoder_attention_sram_profile__",
 }
 
