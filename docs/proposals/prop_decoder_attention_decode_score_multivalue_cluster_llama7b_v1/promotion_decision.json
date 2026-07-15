@@ -1,0 +1,15 @@
+{
+  "proposal_id": "prop_decoder_attention_decode_score_multivalue_cluster_llama7b_v1",
+  "candidate_id": "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1",
+  "decision": "iterate",
+  "reason": "Decoder score multivalue-cluster equivalence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_cluster_equivalence__l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1.json: decision=decode_score_multivalue_cluster_equivalence_pass; equivalence_pass=True; semantic_profile=decode_m1x8_shared_score_16x8d_value_iterdiv_v1; scenario_count=5; score_tensor_hash=dcdf04e9e1981a3447a532037c35bc10afc81c339014d09fc9bc039578c34387; final_tensor_hash=fbbbe51bfe1d4ebf5f9910fdfdbf7e5eb322fe7633c9d523ac5a3587545cd457; value_slices=16; value_dimensions=128; score_passes_per_command=1; score_writes_per_block=1; score_reads_per_block=1; result_beats_per_command=16.",
+  "evidence_refs": [
+    "item:l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1",
+    "run:l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1_run_437953cdf5316d7f",
+    "artifact:control_plane/shadow_exports/l2_decisions/l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1.json",
+    "pr:#1316",
+    "https://github.com/yhmtmt/RTLGen/pull/1316"
+  ],
+  "next_action": "inspect follow-on work after l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1",
+  "requires_human_approval": false
+}

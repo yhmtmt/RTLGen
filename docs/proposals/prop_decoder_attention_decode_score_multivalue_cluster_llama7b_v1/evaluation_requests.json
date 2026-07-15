@@ -29,7 +29,11 @@
         "direction": "prove_shared_score_multivalue_cluster_equivalence",
         "reason": "The architecture only earns PPA if one score fill and 16 replayed value-slice groups preserve the existing integer decode contract."
       },
-      "status": "pending_implementation_merge"
+      "status": "merged",
+      "merged_pr_number": 1316,
+      "merge_commit": "cff562f13db8e7c503d063c26bf599aa0d8f74f8",
+      "merged_utc": "2026-07-15T06:51:22.363611Z",
+      "notes": "Merged via PR #1316 and merge cff562f13db8e7c503d063c26bf599aa0d8f74f8 at 2026-07-15T06:51:22.363611Z."
     },
     {
       "item_id": "l1_decoder_attention_decode_score_multivalue_cluster_pnr_v1",
@@ -54,5 +58,5 @@
       "status": "pending_implementation_merge"
     }
   ],
-  "source_commit": ""
+  "source_commit": "2fddedef260a26ff99e2c51a5ffa65ff8b1f4939"
 }
