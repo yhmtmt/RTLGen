@@ -36,7 +36,7 @@
     {
       "item_id": "l2_decoder_attention_decode_score_tile_frontier_recost_llama7b_v1",
       "task_type": "l2_campaign",
-      "status": "blocked_on_ppa",
+      "status": "merged",
       "objective": "Correct the Llama7B frontier with the decode-exact compute shape.",
       "evaluation_mode": "frontier_recost",
       "abstraction_layer": "decoder_attention_decode_score_tile_frontier",
@@ -62,7 +62,11 @@
         "direction": "reprice_frontier_with_decode_exact_compute_shape",
         "reason": "The active Llama7B decision path must recompute stage service instead of scaling an M16 tile as if all rows were useful during M1 decode."
       },
-      "notes": "Exact M1x8 equivalence is merged; comparative scalar/packed PPA is running."
+      "notes": "Exact M1x8 equivalence is merged; comparative scalar/packed PPA is running. Merged via PR #1306 and merge 8a756172a1f59c64e5a2246071c3d5927bde50f0 at 2026-07-15T03:10:19.991479Z.",
+      "merged_pr_number": 1306,
+      "merge_commit": "8a756172a1f59c64e5a2246071c3d5927bde50f0",
+      "merged_utc": "2026-07-15T03:10:19.991479Z",
+      "revision_of_decision": "promote"
     },
     {
       "item_id": "l1_decoder_attention_decode_score_local_cluster_pnr_v1",
@@ -72,5 +76,5 @@
       "notes": "Wait for the decode-shaped PPA and corrective schedule recost before composing the cluster. Prerequisites are merged; item is ready to queue."
     }
   ],
-  "source_commit": "26d98127bae70b4660666b6a7fd284bd8ba117e2"
+  "source_commit": "2613af1091ac00621b505ba27ab7e231da2cbd5e"
 }

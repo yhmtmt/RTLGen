@@ -115,11 +115,15 @@
         "direction": "reprice_frontier_with_operational_components",
         "reason": "Use measured component area/timing while retaining activity-backed token energy until SAIF/VCD calibration."
       },
-      "status": "merged",
+      "status": "retracted",
       "notes": "Prerequisites are merged; item is ready to queue. Merged via PR #1293 and merge bfd0aa83d0f4609937aa65a5266189c2f67fe3bd at 2026-07-15T01:55:42.479767Z.",
       "merged_pr_number": 1293,
       "merge_commit": "bfd0aa83d0f4609937aa65a5266189c2f67fe3bd",
-      "merged_utc": "2026-07-15T01:55:42.479767Z"
+      "merged_utc": "2026-07-15T01:55:42.479767Z",
+      "retracted_utc": "2026-07-15T03:10:19.991517Z",
+      "retracted_by_item_id": "l2_decoder_attention_decode_score_tile_frontier_recost_llama7b_v1",
+      "retraction_reason": "wrong_compute_shape_for_autoregressive_decode",
+      "replacement_artifact": "control_plane/shadow_exports/l2_decisions/l2_decoder_attention_decode_score_tile_frontier_recost_llama7b_v1.json"
     },
     {
       "item_id": "l1_decoder_attention_two_head_operational_cluster_pnr_v1",

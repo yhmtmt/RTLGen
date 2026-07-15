@@ -1,7 +1,15 @@
 {
   "proposal_id": "prop_decoder_attention_decode_score_tile_m1x8_llama7b_v1",
-  "decision": "promote",
-  "pr_number": 1303,
-  "merge_commit": "2ec3685397990c39b3c463a8357cd43ab2d6f273",
-  "merged_utc": "2026-07-15T03:04:19.526968Z"
+  "decision": "iterate",
+  "pr_number": 1306,
+  "merge_commit": "8a756172a1f59c64e5a2246071c3d5927bde50f0",
+  "merged_utc": "2026-07-15T03:10:19.991479Z",
+  "revision": {
+    "reason": "wrong_compute_shape_for_autoregressive_decode",
+    "invalidated_item_ids": [
+      "l2_decoder_attention_operational_component_frontier_llama7b_v1"
+    ],
+    "replacement_item_id": "l2_decoder_attention_decode_score_tile_frontier_recost_llama7b_v1",
+    "previous_decision": "promote"
+  }
 }

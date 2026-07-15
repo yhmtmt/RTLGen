@@ -2,28 +2,31 @@
 
 ## Candidate
 - `proposal_id`: `prop_decoder_attention_decode_score_tile_m1x8_llama7b_v1`
-- `candidate_id`: `l1_decoder_attention_decode_score_tile_m1x8_ppa_v1`
+- `candidate_id`: `l2_decoder_attention_decode_score_tile_frontier_recost_llama7b_v1`
 
 ## Evaluations Consumed
-- `l1_decoder_attention_decode_score_tile_m1x8_ppa_v1`
-- `l1_decoder_attention_decode_score_tile_m1x8_ppa_v1_run_ceec4b1c3e107057`
-- source commit: `26d98127bae70b4660666b6a7fd284bd8ba117e2`
-- review: PR #1303
+- `l2_decoder_attention_decode_score_tile_frontier_recost_llama7b_v1`
+- `l2_decoder_attention_decode_score_tile_frontier_recost_llama7b_v1_run_341202d7fe3e5639`
+- source commit: `2613af1091ac00621b505ba27ab7e231da2cbd5e`
+- review: PR #1306
 
 ## Baseline Comparison
-- not applicable
+- baseline_ref: `None`
+- baseline_item_id: `None`
+- outcome: `decode_shaped_m1x8_schedule_and_area_recosted_energy_retained`
+- summary: Decoder M1x8 score-tile frontier recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_tile_frontier__l2_decoder_attention_decode_score_tile_frontier_recost_llama7b_v1.json: decision=decode_shaped_m1x8_schedule_and_area_recosted_energy_retained; best_throughput_candidate=score32_separated_zero_tail_two_pass_nominal_per_head_iterdiv_operational_components_decode_m1x8_scalar_area_budget; best_throughput_token_per_s=669.792507491203; best_throughput_area_mm2=482.5046840209; best_area_candidate=score32_separated_zero_tail_two_pass_nominal_shared_iterdiv_operational_components_decode_m1x8_scalar_nominal_peak; best_area_mm2=323.4220925409; best_area_token_per_s=570.666388631788; energy_promotion_blocked=True; next_step=physically compose one selected M1x8 tile, score bank, and two-pass service cluster with activity.
 
 ## Result
-- result: `promote`
+- result: `iterate`
 - confidence level: merged accepted evidence
-- estimated optimization room: accepted at current stage
-- architecture conclusion robustness: accepted for the current proposal scope
-- summary: Physical metrics recorded from a completed, timing-feasible Layer 1 row.
+- estimated optimization room: pending follow-on comparison
+- architecture conclusion robustness: staged evidence
+- summary: Decoder M1x8 score-tile frontier recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_tile_frontier__l2_decoder_attention_decode_score_tile_frontier_recost_llama7b_v1.json: decision=decode_shaped_m1x8_schedule_and_area_recosted_energy_retained; best_throughput_candidate=score32_separated_zero_tail_two_pass_nominal_per_head_iterdiv_operational_components_decode_m1x8_scalar_area_budget; best_throughput_token_per_s=669.792507491203; best_throughput_area_mm2=482.5046840209; best_area_candidate=score32_separated_zero_tail_two_pass_nominal_shared_iterdiv_operational_components_decode_m1x8_scalar_nominal_peak; best_area_mm2=323.4220925409; best_area_token_per_s=570.666388631788; energy_promotion_blocked=True; next_step=physically compose one selected M1x8 tile, score bank, and two-pass service cluster with activity.
 
 ## Failures and Caveats
 - no additional caveats recorded during automatic finalization
 
 ## Recommendation
-- `promote`
-- reason: Accepted Layer 1 physical metrics were merged in PR #1303 for the current candidate.
-- next_action: queue l1_decoder_attention_decode_score_local_cluster_pnr_v1
+- `iterate`
+- reason: Decoder M1x8 score-tile frontier recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_tile_frontier__l2_decoder_attention_decode_score_tile_frontier_recost_llama7b_v1.json: decision=decode_shaped_m1x8_schedule_and_area_recosted_energy_retained; best_throughput_candidate=score32_separated_zero_tail_two_pass_nominal_per_head_iterdiv_operational_components_decode_m1x8_scalar_area_budget; best_throughput_token_per_s=669.792507491203; best_throughput_area_mm2=482.5046840209; best_area_candidate=score32_separated_zero_tail_two_pass_nominal_shared_iterdiv_operational_components_decode_m1x8_scalar_nominal_peak; best_area_mm2=323.4220925409; best_area_token_per_s=570.666388631788; energy_promotion_blocked=True; next_step=physically compose one selected M1x8 tile, score bank, and two-pass service cluster with activity.
+- next_action: inspect follow-on work after l2_decoder_attention_decode_score_tile_frontier_recost_llama7b_v1
