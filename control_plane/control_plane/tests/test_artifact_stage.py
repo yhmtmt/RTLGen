@@ -104,6 +104,32 @@ def test_collect_expected_output_artifacts_includes_attention_kv_dataset(tmp_pat
     assert all("inline_utf8" in artifact.metadata for artifact in artifacts)
 
 
+def test_collect_expected_output_artifacts_includes_operational_component_frontier(
+    tmp_path: Path,
+) -> None:
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+    stem = (
+        "decoder_attention_operational_component_frontier__"
+        "l2_decoder_attention_operational_component_frontier_llama7b_v1"
+    )
+    json_rel = f"{base}{stem}.json"
+    report_rel = f"{base}{stem}.md"
+    _write_json(repo_root / json_rel, {"decision": "operational_component_area_timing_recosted_energy_retained"})
+    (repo_root / report_rel).write_text("# Operational component frontier\n", encoding="utf-8")
+
+    artifacts = collect_expected_output_artifacts(
+        repo_root=str(repo_root),
+        expected_outputs=[json_rel, report_rel],
+    )
+
+    assert [artifact.path for artifact in artifacts] == [json_rel, report_rel]
+    assert all(artifact.kind == "expected_output" for artifact in artifacts)
+    assert all(artifact.metadata["transport_policy"] == "inline_text_evidence" for artifact in artifacts)
+    assert all("inline_utf8" in artifact.metadata for artifact in artifacts)
+
+
 def test_collect_expected_output_artifacts_includes_large_attention_schedule_dataset(tmp_path: Path) -> None:
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
