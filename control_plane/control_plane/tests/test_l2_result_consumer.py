@@ -231,6 +231,29 @@ def test_decoder_evidence_paths_recognizes_decode_score_tile_frontier(tmp_path: 
     }
 
 
+def test_decoder_evidence_paths_recognizes_decode_score_local_cluster_frontier(tmp_path: Path) -> None:
+    evidence_rel = "runs/datasets/demo/decode_score_local_cluster_frontier.json"
+    report_rel = "runs/datasets/demo/decode_score_local_cluster_frontier.md"
+    _write(tmp_path / evidence_rel, "{}\n")
+    _write(tmp_path / report_rel, "# Decode score local-cluster frontier\n")
+    work_item = SimpleNamespace(
+        input_manifest={
+            "decoder_contract": {
+                "decode_score_local_cluster_frontier_out": evidence_rel,
+                "decode_score_local_cluster_frontier_report": report_rel,
+            }
+        }
+    )
+
+    evidence_ref, source_refs = _decoder_evidence_paths(repo_root=tmp_path, work_item=work_item)
+
+    assert evidence_ref == evidence_rel
+    assert source_refs == {
+        "decoder_decode_score_local_cluster_frontier_out": evidence_rel,
+        "decoder_decode_score_local_cluster_frontier_report": report_rel,
+    }
+
+
 def test_decoder_evidence_summary_recognizes_rtl_component_equivalence() -> None:
     outcome, summary = _decoder_evidence_summary(
         evidence_ref="runs/datasets/demo/operational_tile_equivalence.json",
@@ -273,6 +296,29 @@ def test_decoder_evidence_summary_recognizes_decode_score_tile_frontier() -> Non
     assert "best_throughput_candidate=packed_area_budget" in summary
     assert "best_area_mm2=350.0" in summary
     assert "energy_promotion_blocked=True" in summary
+
+
+def test_decoder_evidence_summary_recognizes_decode_score_local_cluster_frontier() -> None:
+    outcome, summary = _decoder_evidence_summary(
+        evidence_ref="runs/datasets/demo/decode_score_local_cluster_frontier.json",
+        evidence_payload={
+            "model": "llm_decoder_attention_decode_score_local_cluster_frontier_v1",
+            "decision": "prior_decode_score_tile_frontier_retracted_composed_cluster_lower_bound_only",
+            "diagnosis": {
+                "prior_best_token_throughput_per_s_retracted": 669.8,
+                "best_no_stall_candidate": "decode_score_local_cluster_c128_vl1",
+                "best_no_stall_token_throughput_upper_bound_per_s": 0.521,
+                "best_no_stall_latency_lower_bound_us": 1_918_542.0,
+                "best_no_stall_area_mm2": 634.9,
+                "promotion_blocked": True,
+            },
+        },
+    )
+
+    assert outcome.startswith("prior_decode_score_tile_frontier_retracted")
+    assert "best_no_stall_candidate=decode_score_local_cluster_c128_vl1" in summary
+    assert "best_no_stall_token_throughput_upper_bound_per_s=0.521" in summary
+    assert "promotion_blocked=True" in summary
 
 
 def test_decoder_evidence_summary_recognizes_two_pass_stream_equivalence() -> None:

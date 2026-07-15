@@ -631,6 +631,10 @@ _DECODER_EVIDENCE_OUTPUT_KEYS: tuple[tuple[str, str], ...] = (
         "decode_score_tile_frontier_report",
     ),
     (
+        "decode_score_local_cluster_frontier_out",
+        "decode_score_local_cluster_frontier_report",
+    ),
+    (
         "score_bank_proxy_equivalence_out",
         "score_bank_proxy_equivalence_report",
     ),
@@ -1574,6 +1578,27 @@ def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, 
             "best_area_token_per_s",
             "energy_promotion_blocked",
             "next_step",
+        ):
+            if key in diagnosis_dict:
+                parts.append(f"{key}={diagnosis_dict.get(key)}")
+        summary = "; ".join(parts)
+        return outcome, summary if summary.endswith(".") else summary + "."
+
+    if model == "llm_decoder_attention_decode_score_local_cluster_frontier_v1":
+        diagnosis = evidence_payload.get("diagnosis")
+        diagnosis_dict = dict(diagnosis) if isinstance(diagnosis, dict) else {}
+        outcome = str(evidence_payload.get("decision") or "decode_score_local_cluster_frontier_recorded")
+        parts = [
+            f"Decoder composed score-cluster frontier recorded from {evidence_ref}: decision={outcome}",
+        ]
+        for key in (
+            "prior_best_token_throughput_per_s_retracted",
+            "best_no_stall_candidate",
+            "best_no_stall_token_throughput_upper_bound_per_s",
+            "best_no_stall_latency_lower_bound_us",
+            "best_no_stall_area_mm2",
+            "promotion_blocked",
+            "next_architecture",
         ):
             if key in diagnosis_dict:
                 parts.append(f"{key}={diagnosis_dict.get(key)}")
