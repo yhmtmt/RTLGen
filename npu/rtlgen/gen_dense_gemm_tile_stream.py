@@ -67,9 +67,11 @@ def _top(*, top_name: str, params: dict[str, int | str]) -> str:
     packed_mode = result_mode == "packed_score_row"
 
     clear_lines = "\n".join(f"        accum[{idx}] <= 32'sd0;" for idx in range(acc_count))
-    pack_clear = f"      result_score_row_q <= {{{array_n * 32}{{1'b0}}}};"
     if packed_mode:
-        result_score_row_assign = "  assign result_score_row = result_score_row_q;"
+        result_outputs = f"    output wire signed [{array_n * 32 - 1}:0] result_score_row"
+        result_register = f"  reg signed [{array_n * 32 - 1}:0] result_score_row_q;"
+        result_assigns = "  assign result_score_row = result_score_row_q;"
+        pack_clear = f"      result_score_row_q <= {{{array_n * 32}{{1'b0}}}};"
         pack_capture_lines = "\n".join(
             f"            result_score_row_q[({col} * 32) +: 32] <= accum[{col}]"
             f" + ($signed(input_a[0 +: 8]) * $signed(input_b[({col} * 8) +: 8]));"
@@ -77,7 +79,16 @@ def _top(*, top_name: str, params: dict[str, int | str]) -> str:
         )
         result_step = "        state <= STATE_IDLE;"
     else:
-        result_score_row_assign = f"  assign result_score_row = {{{array_n * 32}{{1'b0}}}};"
+        result_outputs = f"""    output wire [{row_bits - 1}:0]      result_row,
+    output wire [{col_bits - 1}:0]      result_col,
+    output wire [{index_bits - 1}:0]    result_index,
+    output wire signed [31:0]           result_value"""
+        result_register = ""
+        result_assigns = """  assign result_index = result_index_q;
+  assign result_row = result_row_q;
+  assign result_col = result_col_q;
+  assign result_value = accum[result_index_q];"""
+        pack_clear = ""
         pack_capture_lines = ""
         result_step = """        if (result_index_q == ACC_COUNT - 1) begin
           state <= STATE_IDLE;
@@ -106,11 +117,7 @@ module {top_name} (
     input  wire signed [{array_n * 8 - 1}:0] input_b,
     output wire                         result_valid,
     input  wire                         result_ready,
-    output wire [{row_bits - 1}:0]      result_row,
-    output wire [{col_bits - 1}:0]      result_col,
-    output wire [{index_bits - 1}:0]    result_index,
-    output wire signed [31:0]           result_value,
-    output wire signed [{array_n * 32 - 1}:0] result_score_row
+{result_outputs}
 );
   localparam integer ARRAY_M = {array_m};
   localparam integer ARRAY_N = {array_n};
@@ -127,7 +134,7 @@ module {top_name} (
   reg [ROW_BITS-1:0] result_row_q;
   reg [COL_BITS-1:0] result_col_q;
   reg signed [31:0] accum [0:ACC_COUNT-1];
-  reg signed [{array_n * 32 - 1}:0] result_score_row_q;
+{result_register}
 
   integer row_iter;
   integer col_iter;
@@ -135,11 +142,7 @@ module {top_name} (
   assign command_ready = state == STATE_IDLE;
   assign input_ready = state == STATE_ACCUM;
   assign result_valid = state == STATE_RESULT;
-  assign result_index = result_index_q;
-  assign result_row = result_row_q;
-  assign result_col = result_col_q;
-  assign result_value = accum[result_index_q];
-{result_score_row_assign}
+{result_assigns}
 
   always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
