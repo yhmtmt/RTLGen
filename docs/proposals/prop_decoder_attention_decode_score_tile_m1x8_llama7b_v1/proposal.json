@@ -147,6 +147,31 @@
         "reason": "Only a composed producer, score store, replay engine, and divider can close local routing and activity energy."
       },
       "status": "blocked_on_cluster_equivalence"
+    },
+    {
+      "item_id": "l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Recompute the Llama7B bound from the measured composed cluster and explicitly charge all value-dimension slices.",
+      "evaluation_mode": "frontier_recost",
+      "abstraction_layer": "decoder_attention_decode_score_local_cluster_frontier",
+      "comparison_role": "decode_composed_cluster_corrective_recost",
+      "depends_on_item_ids": [
+        "l1_decoder_attention_decode_score_local_cluster_pnr_v1",
+        "l2_decoder_attention_decode_score_local_cluster_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "revision": {
+        "reason": "bare_tile_scaling_omitted_composed_service_and_value_slices",
+        "invalidates_item_ids": [
+          "l2_decoder_attention_decode_score_tile_frontier_recost_llama7b_v1"
+        ]
+      },
+      "expected_result": {
+        "direction": "reprice_with_composed_cluster_lower_bound",
+        "reason": "A full Llama7B head requires 16 eight-dimensional value commands at the measured cluster boundary."
+      },
+      "status": "ready_to_queue"
     }
   ],
   "baseline_refs": [
