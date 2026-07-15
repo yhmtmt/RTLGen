@@ -4,8 +4,20 @@
     {
       "item_id": "l2_decoder_attention_decode_score_tile_m1x8_equivalence_llama7b_v1",
       "task_type": "l2_campaign",
-      "status": "pending_implementation_merge",
-      "objective": "Prove exact M1x8 packed score-row semantics before physical measurement."
+      "status": "pending_equivalence_rerun",
+      "objective": "Prove exact M1x8 packed score-row semantics before physical measurement.",
+      "evaluation_mode": "equivalence_gate",
+      "abstraction_layer": "decoder_attention_decode_score_tile_equivalence",
+      "comparison_role": "decode_score_compute_semantic_gate",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_operational_dense_tile_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "prove_decode_shaped_score_equivalence",
+        "reason": "PPA and cluster composition must use the single-query score shape exercised by autoregressive Llama7B decode."
+      }
     },
     {
       "item_id": "l1_decoder_attention_decode_score_tile_m1x8_ppa_v1",
