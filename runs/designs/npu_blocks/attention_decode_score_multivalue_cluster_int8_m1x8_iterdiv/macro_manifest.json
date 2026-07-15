@@ -1,0 +1,34 @@
+{
+  "version": "0.1",
+  "design_id": "attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv",
+  "module": "attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv",
+  "platform": "nangate45",
+  "flow_variant": "decode_score_multivalue_cluster_v1",
+  "blackboxes": [
+    "fakeram45_2048x39"
+  ],
+  "additional_lefs": [
+    "/orfs/flow/platforms/nangate45/lef/fakeram45_2048x39.lef"
+  ],
+  "additional_libs": [
+    "/orfs/flow/platforms/nangate45/lib/fakeram45_2048x39.lib"
+  ],
+  "additional_gds": [],
+  "blackbox_verilog": [
+    "npu/rtl/fakeram45_2048x39_blackbox.v"
+  ],
+  "source": {
+    "mode": "generated_composed_multivalue_cluster",
+    "generator": "npu/rtlgen/gen_attention_decode_score_multivalue_cluster.py",
+    "config": "runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/config.json"
+  },
+  "manifest_params": {
+    "semantic_profile": "decode_m1x8_shared_score_16x8d_value_iterdiv_v1",
+    "score_bank_macro_count": 56,
+    "score_scale_lanes_per_cycle": 1,
+    "score_passes_per_command": 1,
+    "score_writes_per_block": 1,
+    "value_slices": 16,
+    "result_interface": "ready_valid_8d_slice_stream"
+  }
+}

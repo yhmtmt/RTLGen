@@ -213,6 +213,8 @@ The quality precheck must also:
 - identify the numeric domain, scale, zero point, saturation, and rounding rule at every component boundary
 - embody required boundary conversion logic in the measured RTL rather than adapting only the performance model or testbench
 - prove end-to-end RTL/performance-model equivalence through storage, replay, backpressure, and final observable outputs
+- for sliced or tiled outputs, prove the complete logical output dimensionality and exact request/result transaction counts
+- distinguish work shared across slices from work repeated per slice; encode that distinction in RTL protocol tests and cycle recosts
 - keep hashes and trace-only observability disabled outside explicit equivalence runs so they do not contaminate PPA
 - record any externally supplied quantization metadata or scale derivation as a remaining abstraction
 

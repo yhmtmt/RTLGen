@@ -6676,6 +6676,38 @@ def _decoder_attention_decode_score_local_cluster_equivalence_evidence(*, item_i
     }
 
 
+def _decoder_attention_decode_score_multivalue_cluster_equivalence_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_attention_decode_score_multivalue_cluster_equivalence__{item_id}.json"
+    report = f"{base}/decoder_attention_decode_score_multivalue_cluster_equivalence__{item_id}.md"
+    config = (
+        "runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/"
+        "config.json"
+    )
+    return {
+        "inputs": {
+            "decode_score_multivalue_cluster_equivalence_out": out,
+            "decode_score_multivalue_cluster_equivalence_report": report,
+            "decode_score_multivalue_cluster_equivalence_scope": (
+                "Prove one M1x8 score-row fill per 8-token block, shared score storage, 16 eight-dimensional "
+                "value-slice replays, streamed eight-dimension result beats, and one iterative divider preserve "
+                "the signed-int8 Q/K/V, s32 score, LUT-softmax integer contract."
+            ),
+        },
+        "commands": [
+            {
+                "name": "probe_decode_score_multivalue_cluster_equivalence",
+                "run": (
+                    "python3 -m npu.eval.probe_attention_decode_score_multivalue_cluster_equivalence "
+                    f"--config {config} --out {out} --out-md {report}"
+                ),
+            }
+        ],
+        "expected_outputs": [out, report],
+        "evidence_only": True,
+    }
+
+
 def _decoder_attention_decode_score_tile_frontier_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     operational = (
@@ -10297,6 +10329,7 @@ def _build_payload(
         "decoder_attention_operational_dense_tile_equivalence",
         "decoder_attention_decode_score_tile_equivalence",
         "decoder_attention_decode_score_local_cluster_equivalence",
+        "decoder_attention_decode_score_multivalue_cluster_equivalence",
         "decoder_attention_decode_score_tile_frontier",
         "decoder_attention_decode_score_local_cluster_frontier",
         "decoder_attention_score_bank_proxy_equivalence",
@@ -10531,6 +10564,10 @@ def _build_payload(
             decoder_evidence = _decoder_attention_decode_score_tile_equivalence_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_decode_score_local_cluster_equivalence":
             decoder_evidence = _decoder_attention_decode_score_local_cluster_equivalence_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_attention_decode_score_multivalue_cluster_equivalence":
+            decoder_evidence = _decoder_attention_decode_score_multivalue_cluster_equivalence_evidence(
+                item_id=item_id
+            )
         elif abstraction_layer_name == "decoder_attention_decode_score_tile_frontier":
             decoder_evidence = _decoder_attention_decode_score_tile_frontier_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_decode_score_local_cluster_frontier":
