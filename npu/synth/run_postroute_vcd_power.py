@@ -192,10 +192,15 @@ def _run_openroad_phase(
     result: Path,
     timeout_seconds: int,
 ) -> JsonDict:
+    resolved_config = design_config.resolve()
+    if not resolved_config.is_file():
+        raise FileNotFoundError(f"ORFS design config does not exist: {resolved_config}")
     try:
-        config_rel = design_config.resolve().relative_to(ORFS_FLOW.resolve())
-    except ValueError as exc:
-        raise ValueError(f"design config must be below {ORFS_FLOW}: {design_config}") from exc
+        config_arg = str(resolved_config.relative_to(ORFS_FLOW.resolve()))
+    except ValueError:
+        # ORFS includes DESIGN_CONFIG directly, so an absolute out-of-tree
+        # config is valid and useful for isolated workspaces.
+        config_arg = str(resolved_config)
     recipe = (
         ".PHONY: rtlgen_activity_power\n"
         "rtlgen_activity_power:\n"
@@ -207,7 +212,7 @@ def _run_openroad_phase(
     command = [
         "make",
         "--no-print-directory",
-        f"DESIGN_CONFIG={config_rel}",
+        f"DESIGN_CONFIG={config_arg}",
         f"FLOW_VARIANT={flow_variant}",
         "--eval",
         recipe,
@@ -252,7 +257,10 @@ def _orfs_relative_path(path: Path) -> str:
     try:
         return str(path.resolve().relative_to(ORFS_FLOW.resolve()))
     except ValueError:
-        return path.name
+        try:
+            return str(path.resolve().relative_to(Path.cwd().resolve()))
+        except ValueError:
+            return path.name
 
 
 def build_report(
@@ -264,6 +272,8 @@ def build_report(
     scope: str,
     min_vcd_coverage: float,
     min_vcd_pins: int,
+    min_macro_active_coverage: float,
+    min_macro_active_pins: int,
     timeout_seconds: int,
 ) -> JsonDict:
     clock_period_ns = float(manifest.get("clock_period_ns", 0.0))
@@ -290,8 +300,13 @@ def build_report(
             annotated = int(power.get("vcd_annotated_pin_count", 0))
             coverage = annotated / annotatable if annotatable else 0.0
             macro_active = int(power.get("macro_trace_active_pin_count", 0))
+            macro_annotatable = int(power.get("macro_annotatable_pin_count", 0))
+            macro_coverage = macro_active / macro_annotatable if macro_annotatable else 0.0
             coverage_pass = annotated >= min_vcd_pins and coverage >= min_vcd_coverage
-            macro_pass = not phase["requires_macro_activity"] or macro_active > 0
+            macro_pass = not phase["requires_macro_activity"] or (
+                macro_active >= min_macro_active_pins
+                and macro_coverage >= min_macro_active_coverage
+            )
             sdc_period_value = power.get("sdc_clock_period_ns")
             sdc_period_ns = float(sdc_period_value) if sdc_period_value is not None else 0.0
             clock_period_pass = abs(sdc_period_ns - clock_period_ns) <= 1e-6
@@ -313,6 +328,7 @@ def build_report(
                     "vcd_annotation_coverage": coverage,
                     "annotation_gate_pass": coverage_pass,
                     "macro_activity_gate_pass": macro_pass,
+                    "macro_trace_active_coverage": macro_coverage,
                     "clock_period_gate_pass": clock_period_pass,
                     "power_numeric_gate_pass": power_numeric_pass,
                     "phase_gate_pass": coverage_pass and macro_pass and clock_period_pass and power_numeric_pass,
@@ -333,11 +349,15 @@ def build_report(
         "orfs_design_config": _orfs_relative_path(design_config),
         "min_vcd_annotation_coverage": min_vcd_coverage,
         "min_vcd_annotated_pins": min_vcd_pins,
+        "min_macro_trace_active_coverage": min_macro_active_coverage,
+        "min_macro_trace_active_pins": min_macro_active_pins,
         "full_context_cycles": total_cycles,
         "full_context_latency_s": total_cycles * clock_period_ns * 1e-9,
         "full_context_energy_j": total_energy_j if gate_pass else None,
         "phases": measured,
         "source_activity_manifest": _portable_repo_path(manifest_path),
+        "source_activity_manifest_sha256": _sha256(manifest_path),
+        "orfs_design_config_sha256": _sha256(design_config),
         "remaining_abstractions": [
             "FakeRAM power uses the Nangate45 proxy Liberty model, not SRAM compiler signoff.",
             "RTL-generated VCD is mapped onto the post-route netlist; annotation coverage is explicit and gated.",
@@ -389,6 +409,8 @@ def main() -> int:
     parser.add_argument("--scope", default="tb/dut")
     parser.add_argument("--min-vcd-coverage", type=float, default=0.05)
     parser.add_argument("--min-vcd-pins", type=int, default=32)
+    parser.add_argument("--min-macro-active-coverage", type=float, default=0.01)
+    parser.add_argument("--min-macro-active-pins", type=int, default=16)
     parser.add_argument("--timeout-seconds", type=int, default=1800)
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--out-md", type=Path)
@@ -397,6 +419,10 @@ def main() -> int:
         parser.error("--min-vcd-coverage must be in (0, 1]")
     if args.min_vcd_pins <= 0:
         parser.error("--min-vcd-pins must be positive")
+    if not 0.0 < args.min_macro_active_coverage <= 1.0:
+        parser.error("--min-macro-active-coverage must be in (0, 1]")
+    if args.min_macro_active_pins <= 0:
+        parser.error("--min-macro-active-pins must be positive")
     manifest = _load_json(args.activity_manifest)
     payload = build_report(
         manifest=manifest,
@@ -406,6 +432,8 @@ def main() -> int:
         scope=args.scope,
         min_vcd_coverage=args.min_vcd_coverage,
         min_vcd_pins=args.min_vcd_pins,
+        min_macro_active_coverage=args.min_macro_active_coverage,
+        min_macro_active_pins=args.min_macro_active_pins,
         timeout_seconds=args.timeout_seconds,
     )
     args.out.parent.mkdir(parents=True, exist_ok=True)

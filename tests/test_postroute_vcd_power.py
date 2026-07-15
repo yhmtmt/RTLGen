@@ -7,6 +7,7 @@ import importlib.util
 import json
 from pathlib import Path
 import tempfile
+from types import SimpleNamespace
 import unittest
 from unittest import mock
 
@@ -30,6 +31,49 @@ class PostrouteVcdPowerTests(unittest.TestCase):
             {"vcd": 35, "saif": 2, "input": 3, "unannotated": 664519},
         )
 
+    def test_openroad_phase_accepts_absolute_out_of_tree_design_config(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_text:
+            root = Path(temp_text)
+            orfs = root / "orfs"
+            orfs.mkdir()
+            config = root / "external" / "config.mk"
+            config.parent.mkdir()
+            config.write_text("", encoding="utf-8")
+            vcd = root / "trace.vcd"
+            vcd.write_text("$enddefinitions $end\n", encoding="utf-8")
+            tcl = root / "power.tcl"
+            tcl.write_text("", encoding="utf-8")
+            result = root / "result.json"
+            result.write_text(
+                json.dumps(
+                    {
+                        "total_w": 1.0,
+                        "internal_w": 0.5,
+                        "switching_w": 0.4,
+                        "leakage_w": 0.1,
+                    }
+                ),
+                encoding="utf-8",
+            )
+            completed = SimpleNamespace(
+                returncode=0,
+                stdout="vcd 2\nunannotated 8\n",
+                stderr="",
+            )
+            with mock.patch.object(MODULE, "ORFS_FLOW", orfs), mock.patch.object(
+                MODULE.subprocess, "run", return_value=completed
+            ) as run:
+                MODULE._run_openroad_phase(
+                    design_config=config,
+                    flow_variant="test",
+                    vcd=vcd,
+                    scope="tb/dut",
+                    tcl=tcl,
+                    result=result,
+                    timeout_seconds=10,
+                )
+            command = run.call_args.args[0]
+            self.assertIn(f"DESIGN_CONFIG={config.resolve()}", command)
     def _fixture(self, root: Path) -> tuple[dict, Path]:
         phases = []
         for name, measured, full in (
@@ -78,6 +122,7 @@ class PostrouteVcdPowerTests(unittest.TestCase):
                         "annotatable_pin_count": 1000,
                         "vcd_annotated_pin_count": 500,
                         "macro_trace_active_pin_count": 10,
+                        "macro_annotatable_pin_count": 100,
                     },
                     {
                         "total_w": 3.0,
@@ -88,6 +133,7 @@ class PostrouteVcdPowerTests(unittest.TestCase):
                         "annotatable_pin_count": 1000,
                         "vcd_annotated_pin_count": 400,
                         "macro_trace_active_pin_count": 8,
+                        "macro_annotatable_pin_count": 100,
                     },
                     {
                         "total_w": 1.0,
@@ -98,6 +144,7 @@ class PostrouteVcdPowerTests(unittest.TestCase):
                         "annotatable_pin_count": 1000,
                         "vcd_annotated_pin_count": 300,
                         "macro_trace_active_pin_count": 0,
+                        "macro_annotatable_pin_count": 100,
                     },
                 ]
             )
@@ -110,6 +157,8 @@ class PostrouteVcdPowerTests(unittest.TestCase):
                     scope="tb/dut",
                     min_vcd_coverage=0.25,
                     min_vcd_pins=32,
+                    min_macro_active_coverage=0.05,
+                    min_macro_active_pins=8,
                     timeout_seconds=10,
                 )
             self.assertTrue(report["promotion_gate_pass"])
@@ -128,7 +177,8 @@ class PostrouteVcdPowerTests(unittest.TestCase):
                 "sdc_clock_period_ns": 8.0,
                 "annotatable_pin_count": 100,
                 "vcd_annotated_pin_count": 80,
-                "macro_trace_active_pin_count": 0,
+                "macro_trace_active_pin_count": 1,
+                "macro_annotatable_pin_count": 100,
             }
             with mock.patch.object(MODULE, "_run_openroad_phase", return_value=power):
                 report = MODULE.build_report(
@@ -139,10 +189,13 @@ class PostrouteVcdPowerTests(unittest.TestCase):
                     scope="tb/dut",
                     min_vcd_coverage=0.05,
                     min_vcd_pins=2,
+                    min_macro_active_coverage=0.05,
+                    min_macro_active_pins=8,
                     timeout_seconds=10,
                 )
             self.assertFalse(report["promotion_gate_pass"])
             self.assertIsNone(report["full_context_energy_j"])
+            self.assertLess(report["phases"][0]["macro_trace_active_coverage"], 0.05)
 
     def test_nan_or_missing_power_component_cannot_promote(self) -> None:
         with tempfile.TemporaryDirectory() as temp_text:
@@ -159,6 +212,7 @@ class PostrouteVcdPowerTests(unittest.TestCase):
                 "annotatable_pin_count": 100,
                 "vcd_annotated_pin_count": 80,
                 "macro_trace_active_pin_count": 10,
+                "macro_annotatable_pin_count": 100,
             }
             with mock.patch.object(MODULE, "_run_openroad_phase", return_value=power):
                 report = MODULE.build_report(
@@ -169,6 +223,8 @@ class PostrouteVcdPowerTests(unittest.TestCase):
                     scope="tb/dut",
                     min_vcd_coverage=0.05,
                     min_vcd_pins=2,
+                    min_macro_active_coverage=0.05,
+                    min_macro_active_pins=8,
                     timeout_seconds=10,
                 )
             self.assertFalse(report["promotion_gate_pass"])
