@@ -1,0 +1,9 @@
+{
+  "proposal_id": "prop_decoder_attention_decode_score_tile_m1x8_llama7b_v1",
+  "candidate_id": null,
+  "decision": "pending",
+  "reason": "Await exact M1x8 equivalence and comparative Nangate45 PPA.",
+  "evidence_refs": [],
+  "next_action": "merge implementation and dispatch equivalence gate",
+  "requires_human_approval": false
+}

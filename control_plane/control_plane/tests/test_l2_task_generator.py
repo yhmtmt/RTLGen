@@ -7725,6 +7725,42 @@ def test_generate_l2_campaign_task_adds_operational_dense_tile_equivalence() -> 
             )
 
 
+def test_generate_l2_campaign_task_adds_decode_score_tile_equivalence() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id="l2_decoder_attention_decode_score_tile_m1x8_equivalence_llama7b_v1",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    abstraction_layer="decoder_attention_decode_score_tile_equivalence",
+                    evaluation_mode="equivalence_gate",
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            command = work_item.task_request.request_payload["task"]["commands"][0]
+            decoder_inputs = work_item.input_manifest["decoder_contract"]
+
+            assert command["name"] == "audit_decode_score_tile_equivalence"
+            assert "attention_decode_score_tile_int8_1x8" in command["run"]
+            assert "test_packed_decode_score_tile_matches_reference_and_protocol" in command["run"]
+            assert decoder_inputs["decode_score_tile_equivalence_out"].endswith(
+                "l2_decoder_attention_decode_score_tile_m1x8_equivalence_llama7b_v1.json"
+            )
+
+
 def test_generate_l2_campaign_task_adds_score_bank_proxy_equivalence() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"

@@ -1,0 +1,40 @@
+{
+  "proposal_id": "prop_decoder_attention_decode_score_tile_m1x8_llama7b_v1",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_decode_score_tile_m1x8_equivalence_llama7b_v1",
+      "task_type": "l2_campaign",
+      "status": "pending_implementation_merge",
+      "objective": "Prove exact M1x8 packed score-row semantics before physical measurement."
+    },
+    {
+      "item_id": "l1_decoder_attention_decode_score_tile_m1x8_ppa_v1",
+      "task_type": "l1_sweep",
+      "status": "blocked_on_equivalence",
+      "objective": "Compare scalar and packed M1x8 PPA under identical physical constraints."
+    },
+    {
+      "item_id": "l2_decoder_attention_decode_score_tile_frontier_recost_llama7b_v1",
+      "task_type": "l2_campaign",
+      "status": "blocked_on_ppa",
+      "objective": "Correct the Llama7B frontier with the decode-exact compute shape.",
+      "revision": {
+        "reason": "wrong_compute_shape_for_autoregressive_decode",
+        "invalidates_item_ids": [
+          "l2_decoder_attention_operational_component_frontier_llama7b_v1"
+        ],
+        "invalidates": {
+          "pr_numbers": [
+            1293
+          ]
+        }
+      }
+    },
+    {
+      "item_id": "l1_decoder_attention_decode_score_local_cluster_pnr_v1",
+      "task_type": "l1_sweep",
+      "status": "blocked_on_corrective_recost",
+      "objective": "Measure the semantically valid local score producer/store/replay composition."
+    }
+  ]
+}

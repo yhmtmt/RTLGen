@@ -6612,6 +6612,38 @@ def _decoder_attention_operational_dense_tile_equivalence_evidence(*, item_id: s
     }
 
 
+def _decoder_attention_decode_score_tile_equivalence_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_attention_decode_score_tile_equivalence__{item_id}.json"
+    report = f"{base}/decoder_attention_decode_score_tile_equivalence__{item_id}.md"
+    return {
+        "inputs": {
+            "decode_score_tile_equivalence_out": out,
+            "decode_score_tile_equivalence_report": report,
+            "decode_score_tile_equivalence_scope": (
+                "Prove exact signed-int8 M=1,N=8 decoder QK accumulation, final-beat inclusion, packed score-row "
+                "lane order, clear/reuse, and ready/valid backpressure behavior against the dot-product reference."
+            ),
+        },
+        "commands": [
+            {
+                "name": "audit_decode_score_tile_equivalence",
+                "run": (
+                    "python3 npu/eval/audit_rtl_component_equivalence.py "
+                    "--component attention_decode_score_tile_int8_1x8 "
+                    "--semantic-profile llama_decode_qk_score_row_m1_n8_s8_s8_acc32 "
+                    "--test-target tests/test_dense_gemm_tile_stream.py::"
+                    "test_packed_decode_score_tile_matches_reference_and_protocol "
+                    "--reference python_signed_m1_n8_dot_products "
+                    f"--out {out} --out-md {report}"
+                ),
+            }
+        ],
+        "expected_outputs": [out, report],
+        "evidence_only": True,
+    }
+
+
 def _decoder_attention_score_bank_proxy_equivalence_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_score_bank_proxy_equivalence__{item_id}.json"
@@ -10147,6 +10179,7 @@ def _build_payload(
         "decoder_attention_separated_two_pass_frontier",
         "decoder_attention_operational_component_frontier",
         "decoder_attention_operational_dense_tile_equivalence",
+        "decoder_attention_decode_score_tile_equivalence",
         "decoder_attention_score_bank_proxy_equivalence",
         "decoder_attention_score32_exp_lut_hbm_dram_service_closure",
         "decoder_attention_score32_hbm_controller_replay",
@@ -10375,6 +10408,8 @@ def _build_payload(
             decoder_evidence = _decoder_attention_operational_component_frontier_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_operational_dense_tile_equivalence":
             decoder_evidence = _decoder_attention_operational_dense_tile_equivalence_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_attention_decode_score_tile_equivalence":
+            decoder_evidence = _decoder_attention_decode_score_tile_equivalence_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_score_bank_proxy_equivalence":
             decoder_evidence = _decoder_attention_score_bank_proxy_equivalence_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_score32_exp_lut_hbm_dram_service_closure":

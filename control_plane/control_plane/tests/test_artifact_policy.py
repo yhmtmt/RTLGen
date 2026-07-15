@@ -126,3 +126,14 @@ def test_transportable_expected_output_allows_operational_component_frontier() -
 
     assert is_transportable_expected_output(f"{base}{stem}.json")
     assert is_transportable_expected_output(f"{base}{stem}.md")
+
+
+def test_transportable_expected_output_allows_decode_score_tile_equivalence() -> None:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+    stem = (
+        "decoder_attention_decode_score_tile_equivalence__"
+        "l2_decoder_attention_decode_score_tile_m1x8_equivalence_llama7b_v1"
+    )
+
+    assert is_transportable_expected_output(f"{base}{stem}.json")
+    assert is_transportable_expected_output(f"{base}{stem}.md")
