@@ -6675,7 +6675,7 @@ def _decoder_attention_decode_score_tile_frontier_evidence(*, item_id: str) -> d
             {
                 "name": "audit_decode_score_tile_frontier",
                 "run": (
-                    "python3 npu/eval/audit_llm_decoder_attention_decode_score_tile_frontier.py "
+                    "python3 -m npu.eval.audit_llm_decoder_attention_decode_score_tile_frontier "
                     f"--operational-frontier-json {operational} "
                     f"--subtile-schedule-json {schedule} "
                     f"--scalar-metrics-csv {scalar} --packed-metrics-csv {packed} "

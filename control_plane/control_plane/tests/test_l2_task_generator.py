@@ -7790,7 +7790,9 @@ def test_generate_l2_campaign_task_adds_decode_score_tile_frontier() -> None:
             decoder_inputs = work_item.input_manifest["decoder_contract"]
 
             assert command["name"] == "audit_decode_score_tile_frontier"
-            assert "audit_llm_decoder_attention_decode_score_tile_frontier.py" in command["run"]
+            assert command["run"].startswith(
+                "python3 -m npu.eval.audit_llm_decoder_attention_decode_score_tile_frontier "
+            )
             assert "--scalar-metrics-csv" in command["run"]
             assert "--packed-metrics-csv" in command["run"]
             assert decoder_inputs["decode_score_tile_frontier_out"] in work_item.expected_outputs
