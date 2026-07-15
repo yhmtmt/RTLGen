@@ -6708,6 +6708,69 @@ def _decoder_attention_decode_score_multivalue_cluster_equivalence_evidence(*, i
     }
 
 
+def _decoder_attention_decode_score_multivalue_cluster_activity_power_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    config = (
+        "runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/"
+        "config.json"
+    )
+    cluster_metrics_csv = (
+        "runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/"
+        "metrics.csv"
+    )
+    equivalence_json = (
+        f"{base}/decoder_attention_decode_score_multivalue_cluster_equivalence__"
+        "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1.json"
+    )
+    orfs_design_config = (
+        "/orfs/flow/designs/nangate45/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/"
+        "config.mk"
+    )
+    activity_dir = "/tmp/rtlgen_multivalue_cluster_activity"
+    out = f"{base}/decoder_attention_decode_score_multivalue_cluster_activity_power__{item_id}.json"
+    report = f"{base}/decoder_attention_decode_score_multivalue_cluster_activity_power__{item_id}.md"
+    return {
+        "inputs": {
+            "decode_score_multivalue_cluster_config": config,
+            "decode_score_multivalue_cluster_pnr_metrics_csv": cluster_metrics_csv,
+            "decode_score_multivalue_cluster_equivalence_json": equivalence_json,
+            "decode_score_multivalue_cluster_orfs_design_config": orfs_design_config,
+            "decode_score_multivalue_cluster_activity_dir": activity_dir,
+            "decode_score_multivalue_cluster_activity_power_out": out,
+            "decode_score_multivalue_cluster_activity_power_report": report,
+            "decode_score_multivalue_cluster_activity_power_scope": (
+                "Audit the shared-score multivalue cluster with activity-backed power evidence after merged "
+                "equivalence and PNR. Keep VCD/ODB/SPEF evaluator-local, commit only repo-portable JSON/MD "
+                "artifacts, preserve the FakeRAM proxy qualification, and reject vectorless power as a "
+                "substitute for annotated power or token-energy claims."
+            ),
+            "decode_score_multivalue_cluster_activity_power_promotion_gate": (
+                "Promotion requires explicit annotation coverage, declared clock assumptions, macro activity "
+                "attribution, and finite power-gate accounting."
+            ),
+            "decode_score_multivalue_cluster_activity_power_local_only_artifacts": ["VCD", "ODB", "SPEF"],
+        },
+        "commands": [
+            {
+                "name": "audit_decode_score_multivalue_cluster_activity_power",
+                "run": (
+                    "python3 -m npu.eval.audit_attention_decode_score_multivalue_cluster_activity_power "
+                    f"--config {config} "
+                    f"--cluster-metrics-csv {cluster_metrics_csv} "
+                    f"--equivalence-json {equivalence_json} "
+                    f"--orfs-design-config {orfs_design_config} "
+                    "--clock-period-ns 8 "
+                    f"--activity-dir {activity_dir} "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            }
+        ],
+        "expected_outputs": [out, report],
+        "evidence_only": True,
+    }
+
+
 def _decoder_attention_decode_score_tile_frontier_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     operational = (
@@ -10330,6 +10393,7 @@ def _build_payload(
         "decoder_attention_decode_score_tile_equivalence",
         "decoder_attention_decode_score_local_cluster_equivalence",
         "decoder_attention_decode_score_multivalue_cluster_equivalence",
+        "decoder_attention_decode_score_multivalue_cluster_activity_power",
         "decoder_attention_decode_score_tile_frontier",
         "decoder_attention_decode_score_local_cluster_frontier",
         "decoder_attention_score_bank_proxy_equivalence",
@@ -10566,6 +10630,10 @@ def _build_payload(
             decoder_evidence = _decoder_attention_decode_score_local_cluster_equivalence_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_decode_score_multivalue_cluster_equivalence":
             decoder_evidence = _decoder_attention_decode_score_multivalue_cluster_equivalence_evidence(
+                item_id=item_id
+            )
+        elif abstraction_layer_name == "decoder_attention_decode_score_multivalue_cluster_activity_power":
+            decoder_evidence = _decoder_attention_decode_score_multivalue_cluster_activity_power_evidence(
                 item_id=item_id
             )
         elif abstraction_layer_name == "decoder_attention_decode_score_tile_frontier":

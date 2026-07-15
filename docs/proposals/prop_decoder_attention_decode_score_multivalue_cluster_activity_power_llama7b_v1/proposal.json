@@ -1,0 +1,88 @@
+{
+  "proposal_id": "prop_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1",
+  "created_utc": "2026-07-15T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Activity-backed power gate for the shared-score multivalue decode cluster",
+  "abstraction_layer": "decoder_attention_decode_score_multivalue_cluster_activity_power",
+  "hypothesis": "The shared-score multivalue decode cluster can only become promotable if activity-annotated power remains coherent after the merged equivalence proof and merged Nangate45 PNR row are combined with evaluator-local switching evidence; vectorless power alone is insufficient.",
+  "direct_comparison": {
+    "primary_question": "Does the shared-score multivalue cluster remain physically interesting once evaluator-local activity evidence replaces the current vectorless-power placeholder?",
+    "baseline": "l1_decoder_attention_decode_score_multivalue_cluster_pnr_v1",
+    "include": [
+      "merged shared-score multivalue-cluster equivalence evidence",
+      "merged Nangate45 PNR metrics at the committed 8 ns point",
+      "evaluator-local VCD, ODB, and SPEF used only to derive portable JSON/MD outputs",
+      "annotation, clock, macro activity, and finite power-gate assumptions called out explicitly",
+      "repo-portable evidence outputs under runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    ],
+    "exclude": [
+      "do not commit raw VCD, ODB, SPEF, or temporary activity directories",
+      "do not treat OpenROAD vectorless power as a substitute for activity-backed power",
+      "do not claim SRAM signoff or silicon-current accuracy from FakeRAM proxy views alone",
+      "do not promote token-energy claims without the explicit activity-power gate"
+    ],
+    "metrics": [
+      "critical_path_ns",
+      "instance_area_um2",
+      "vectorless_total_power_mw",
+      "phase_internal_power_w",
+      "phase_switching_power_w",
+      "phase_leakage_power_w",
+      "phase_total_power_w",
+      "macro_trace_active_coverage",
+      "vcd_annotation_coverage",
+      "full_context_head_energy_j",
+      "promotion_ready"
+    ]
+  },
+  "expected_benefit": [
+    "replaces a vectorless-only power placeholder with an activity-backed audit",
+    "preserves evaluator-local heavy artifacts while keeping committed evidence portable",
+    "states exactly what remains blocked before promotion or token-energy reuse"
+  ],
+  "risks": [
+    "annotation coverage may be partial or require explicit caveats",
+    "FakeRAM macro power remains a proxy rather than final SRAM signoff",
+    "the audit may prove the current cluster is still not promotable even after activity accounting"
+  ],
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Audit shared-score multivalue-cluster activity-backed power using merged PNR, merged equivalence, evaluator-local switching artifacts, and portable JSON/MD outputs.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_decode_score_multivalue_cluster_activity_power",
+      "comparison_role": "shared_score_multivalue_cluster_activity_power_gate",
+      "depends_on_item_ids": [
+        "l1_decoder_attention_decode_score_multivalue_cluster_pnr_v1",
+        "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "record_shared_score_multivalue_cluster_activity_power_gate",
+        "reason": "Promotion requires explicit annotation, clock, macro activity, and finite power-gate evidence; vectorless power cannot substitute."
+      },
+      "status": "pending_implementation_merge"
+    }
+  ],
+  "baseline_refs": [
+    "runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/config.json",
+    "runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/metrics.csv",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_cluster_equivalence__l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1.json",
+    "docs/proposals/prop_decoder_attention_decode_score_multivalue_cluster_llama7b_v1/proposal.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/audit_attention_decode_score_multivalue_cluster_activity_power.py",
+    "npu/synth/run_postroute_vcd_power.py",
+    "docs/proposals/prop_decoder_attention_decode_score_multivalue_cluster_llama7b_v1/evaluation_gate.md"
+  ],
+  "remaining_abstractions_after_this_step": [
+    "VCD, ODB, SPEF, and temporary activity directories remain evaluator-local and must be summarized into portable JSON/MD rather than committed verbatim.",
+    "Promotion still requires explicit annotation coverage, named clock assumptions, macro activity attribution, and finite power-gate accounting.",
+    "The installed FakeRAM views remain LEF/LIB physical proxies without SRAM GDS or signoff current models.",
+    "Vectorless OpenROAD power remains diagnostic only and cannot substitute for activity-backed power or token-energy claims."
+  ]
+}

@@ -7833,6 +7833,86 @@ def test_generate_l2_campaign_task_adds_decode_score_multivalue_cluster_equivale
             )
 
 
+def test_generate_l2_campaign_task_adds_decode_score_multivalue_cluster_activity_power() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id="l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    abstraction_layer="decoder_attention_decode_score_multivalue_cluster_activity_power",
+                    evaluation_mode="frontier_detail",
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            commands = work_item.task_request.request_payload["task"]["commands"]
+            run = commands[0]["run"]
+            decoder_inputs = work_item.input_manifest["decoder_contract"]
+
+            assert [command["name"] for command in commands[:2]] == [
+                "audit_decode_score_multivalue_cluster_activity_power",
+                "validate_runs",
+            ]
+            assert "-m npu.eval.audit_attention_decode_score_multivalue_cluster_activity_power" in run
+            assert "--config runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/config.json" in run
+            assert (
+                "--cluster-metrics-csv "
+                "runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/metrics.csv"
+            ) in run
+            assert (
+                "--equivalence-json "
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_decode_score_multivalue_cluster_equivalence__"
+                "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1.json"
+            ) in run
+            assert (
+                "--orfs-design-config "
+                "/orfs/flow/designs/nangate45/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/config.mk"
+            ) in run
+            assert "--clock-period-ns 8" in run
+            assert "--activity-dir /tmp/rtlgen_multivalue_cluster_activity" in run
+            assert decoder_inputs["decode_score_multivalue_cluster_equivalence_json"].endswith(
+                "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1.json"
+            )
+            assert decoder_inputs["decode_score_multivalue_cluster_activity_power_local_only_artifacts"] == [
+                "VCD",
+                "ODB",
+                "SPEF",
+            ]
+            assert "vectorless power as a substitute" in decoder_inputs[
+                "decode_score_multivalue_cluster_activity_power_scope"
+            ]
+            assert "annotation coverage" in decoder_inputs[
+                "decode_score_multivalue_cluster_activity_power_promotion_gate"
+            ]
+            assert (
+                decoder_inputs["decode_score_multivalue_cluster_activity_power_out"]
+                == "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_decode_score_multivalue_cluster_activity_power__"
+                "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1.json"
+            )
+            assert any(
+                output.endswith(
+                    "decoder_attention_decode_score_multivalue_cluster_activity_power__"
+                    "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1.md"
+                )
+                for output in work_item.task_request.request_payload["task"]["expected_outputs"]
+            )
+
+
 def test_generate_l2_campaign_task_adds_decode_score_tile_frontier() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
