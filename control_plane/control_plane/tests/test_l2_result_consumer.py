@@ -6,6 +6,7 @@ import copy
 import json
 from pathlib import Path
 import tempfile
+from types import SimpleNamespace
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
@@ -17,7 +18,12 @@ from control_plane.models.enums import ExecutorType, FlowName, LayerName, RunSta
 from control_plane.models.runs import Run
 from control_plane.models.task_requests import TaskRequest
 from control_plane.models.work_items import WorkItem
-from control_plane.services.l2_result_consumer import Layer2ConsumeRequest, _decoder_evidence_summary, consume_l2_result
+from control_plane.services.l2_result_consumer import (
+    Layer2ConsumeRequest,
+    _decoder_evidence_paths,
+    _decoder_evidence_summary,
+    consume_l2_result,
+)
 
 
 def _write(path: Path, text: str) -> None:
@@ -87,6 +93,67 @@ def test_decoder_evidence_summary_recognizes_separated_two_pass_frontier() -> No
     assert outcome == "precision_aligned_separated_two_pass_frontier_ranked"
     assert "recommended_token_throughput_per_s=626.8" in summary
     assert "sram_macro_floorplan_pnr" in summary
+
+
+def test_decoder_evidence_summary_recognizes_operational_component_frontier() -> None:
+    payload = {
+        "model": "llm_decoder_attention_operational_component_frontier_v1",
+        "decision": "operational_component_area_timing_recosted_energy_retained",
+        "diagnosis": {
+            "recommended_candidate": "separated_two_pass_operational_components",
+            "recommended_latency_us": 1595.4,
+            "recommended_token_throughput_per_s": 626.8,
+            "recommended_energy_mj_per_token": 137.3,
+            "recommended_embodied_area_mm2": 325.5,
+            "energy_promotion_blocked": True,
+            "next_step": "measure activity-backed operational tile power",
+        },
+    }
+
+    outcome, summary = _decoder_evidence_summary(
+        evidence_ref="runs/datasets/demo/operational_component_frontier.json",
+        evidence_payload=payload,
+    )
+
+    assert outcome == "operational_component_area_timing_recosted_energy_retained"
+    assert "recommended_token_throughput_per_s=626.8" in summary
+    assert "recommended_embodied_area_mm2=325.5" in summary
+    assert "energy_promotion_blocked=True" in summary
+
+    payload.pop("model")
+    legacy_outcome, legacy_summary = _decoder_evidence_summary(
+        evidence_ref="runs/datasets/demo/legacy_operational_component_frontier.json",
+        evidence_payload=payload,
+    )
+
+    assert legacy_outcome == outcome
+    assert "recommended_candidate=separated_two_pass_operational_components" in legacy_summary
+
+
+def test_decoder_evidence_paths_recognizes_operational_component_frontier(tmp_path: Path) -> None:
+    evidence_rel = "runs/datasets/demo/operational_component_frontier.json"
+    report_rel = "runs/datasets/demo/operational_component_frontier.md"
+    _write(tmp_path / evidence_rel, "{}\n")
+    _write(tmp_path / report_rel, "# Operational component frontier\n")
+    work_item = SimpleNamespace(
+        input_manifest={
+            "decoder_contract": {
+                "operational_component_frontier_out": evidence_rel,
+                "operational_component_frontier_report": report_rel,
+            }
+        }
+    )
+
+    evidence_ref, source_refs = _decoder_evidence_paths(
+        repo_root=tmp_path,
+        work_item=work_item,
+    )
+
+    assert evidence_ref == evidence_rel
+    assert source_refs == {
+        "decoder_operational_component_frontier_out": evidence_rel,
+        "decoder_operational_component_frontier_report": report_rel,
+    }
 
 
 def test_decoder_evidence_summary_recognizes_rtl_component_equivalence() -> None:

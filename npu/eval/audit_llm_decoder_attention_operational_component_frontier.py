@@ -238,6 +238,7 @@ def build_report(
     )
     return {
         "version": 1,
+        "model": "llm_decoder_attention_operational_component_frontier_v1",
         "decision": "operational_component_area_timing_recosted_energy_retained",
         "inputs": {
             "frontier_json": str(frontier_json),
