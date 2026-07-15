@@ -182,6 +182,29 @@ def test_decoder_evidence_paths_recognizes_decode_score_tile_equivalence(tmp_pat
     }
 
 
+def test_decoder_evidence_paths_recognizes_decode_score_tile_frontier(tmp_path: Path) -> None:
+    evidence_rel = "runs/datasets/demo/decode_score_tile_frontier.json"
+    report_rel = "runs/datasets/demo/decode_score_tile_frontier.md"
+    _write(tmp_path / evidence_rel, "{}\n")
+    _write(tmp_path / report_rel, "# Decode score tile frontier\n")
+    work_item = SimpleNamespace(
+        input_manifest={
+            "decoder_contract": {
+                "decode_score_tile_frontier_out": evidence_rel,
+                "decode_score_tile_frontier_report": report_rel,
+            }
+        }
+    )
+
+    evidence_ref, source_refs = _decoder_evidence_paths(repo_root=tmp_path, work_item=work_item)
+
+    assert evidence_ref == evidence_rel
+    assert source_refs == {
+        "decoder_decode_score_tile_frontier_out": evidence_rel,
+        "decoder_decode_score_tile_frontier_report": report_rel,
+    }
+
+
 def test_decoder_evidence_summary_recognizes_rtl_component_equivalence() -> None:
     outcome, summary = _decoder_evidence_summary(
         evidence_ref="runs/datasets/demo/operational_tile_equivalence.json",
@@ -200,6 +223,30 @@ def test_decoder_evidence_summary_recognizes_rtl_component_equivalence() -> None
     assert outcome == "operational_dense_gemm_tile_int8_16x8_equivalence_pass"
     assert "equivalence_pass=True" in summary
     assert "python_signed_outer_product_gemm" in summary
+
+
+def test_decoder_evidence_summary_recognizes_decode_score_tile_frontier() -> None:
+    outcome, summary = _decoder_evidence_summary(
+        evidence_ref="runs/datasets/demo/decode_score_tile_frontier.json",
+        evidence_payload={
+            "model": "llm_decoder_attention_decode_score_tile_frontier_v1",
+            "decision": "decode_shaped_m1x8_schedule_and_area_recosted_energy_retained",
+            "diagnosis": {
+                "best_throughput_candidate": "packed_area_budget",
+                "best_throughput_token_per_s": 700.0,
+                "best_throughput_area_mm2": 410.0,
+                "best_area_candidate": "packed_nominal",
+                "best_area_mm2": 350.0,
+                "best_area_token_per_s": 620.0,
+                "energy_promotion_blocked": True,
+            },
+        },
+    )
+
+    assert outcome == "decode_shaped_m1x8_schedule_and_area_recosted_energy_retained"
+    assert "best_throughput_candidate=packed_area_budget" in summary
+    assert "best_area_mm2=350.0" in summary
+    assert "energy_promotion_blocked=True" in summary
 
 
 def test_decoder_evidence_summary_recognizes_two_pass_stream_equivalence() -> None:

@@ -29,4 +29,9 @@
 ## Recommendation
 - `iterate`
 - reason: RTL component/reference equivalence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_tile_equivalence__l2_decoder_attention_decode_score_tile_m1x8_equivalence_llama7b_v1.json: decision=attention_decode_score_tile_int8_1x8_equivalence_pass; component=attention_decode_score_tile_int8_1x8; semantic_profile=llama_decode_qk_score_row_m1_n8_s8_s8_acc32; reference=python_signed_m1_n8_dot_products; equivalence_pass=True; passed_test_count=1; test_target=tests/test_dense_gemm_tile_stream.py::test_packed_decode_score_tile_matches_reference_and_protocol.
-- next_action: inspect follow-on work after l2_decoder_attention_decode_score_tile_m1x8_equivalence_llama7b_v1
+- next_action: merge comparative scalar/packed M1x8 PPA, then recompute the stage-service frontier
+
+## Current Progress
+- exact packed M1x8 equivalence is merged via PR #1300
+- comparative Nangate45 scalar/packed PPA is running on the remote evaluator
+- the corrective recost must recompute QKV, QK, value, subtile, layer, and token cycles rather than scale aggregate latency

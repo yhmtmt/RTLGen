@@ -26,15 +26,24 @@
     {
       "item_id": "l1_decoder_attention_decode_score_tile_m1x8_ppa_v1",
       "task_type": "l1_sweep",
-      "status": "ready_to_queue",
+      "status": "running",
       "objective": "Compare scalar and packed M1x8 PPA under identical physical constraints.",
-      "notes": "Prerequisites are merged; item is ready to queue."
+      "notes": "Exact M1x8 equivalence is merged; comparative scalar/packed PPA is running."
     },
     {
       "item_id": "l2_decoder_attention_decode_score_tile_frontier_recost_llama7b_v1",
       "task_type": "l2_campaign",
-      "status": "ready_to_queue",
+      "status": "blocked_on_ppa",
       "objective": "Correct the Llama7B frontier with the decode-exact compute shape.",
+      "evaluation_mode": "frontier_recost",
+      "abstraction_layer": "decoder_attention_decode_score_tile_frontier",
+      "comparison_role": "decode_shape_corrective_recost",
+      "depends_on_item_ids": [
+        "l1_decoder_attention_decode_score_tile_m1x8_ppa_v1",
+        "l1_decoder_attention_score_bank_proxy_pnr_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
       "revision": {
         "reason": "wrong_compute_shape_for_autoregressive_decode",
         "invalidates_item_ids": [
@@ -46,14 +55,18 @@
           ]
         }
       },
-      "notes": "Prerequisites are merged; item is ready to queue."
+      "expected_result": {
+        "direction": "reprice_frontier_with_decode_exact_compute_shape",
+        "reason": "The active Llama7B decision path must recompute stage service instead of scaling an M16 tile as if all rows were useful during M1 decode."
+      },
+      "notes": "Exact M1x8 equivalence is merged; comparative scalar/packed PPA is running."
     },
     {
       "item_id": "l1_decoder_attention_decode_score_local_cluster_pnr_v1",
       "task_type": "l1_sweep",
-      "status": "ready_to_queue",
+      "status": "blocked_on_corrective_recost",
       "objective": "Measure the semantically valid local score producer/store/replay composition.",
-      "notes": "Prerequisites are merged; item is ready to queue."
+      "notes": "Wait for the decode-shaped PPA and corrective schedule recost before composing the cluster."
     }
   ],
   "source_commit": "500e5fd8f51f51ca7014d9fa74c00a80528fe84f"
