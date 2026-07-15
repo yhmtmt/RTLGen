@@ -208,6 +208,14 @@ Goal:
 Required output:
 - `quality_gate.md`
 
+For composed numerical datapaths, component-level equivalence is not enough.
+The quality precheck must also:
+- identify the numeric domain, scale, zero point, saturation, and rounding rule at every component boundary
+- embody required boundary conversion logic in the measured RTL rather than adapting only the performance model or testbench
+- prove end-to-end RTL/performance-model equivalence through storage, replay, backpressure, and final observable outputs
+- keep hashes and trace-only observability disabled outside explicit equivalence runs so they do not contaminate PPA
+- record any externally supplied quantization metadata or scale derivation as a remaining abstraction
+
 This is not an extra human approval gate by default.
 It is a mandatory technical gate for numerically sensitive proposals.
 

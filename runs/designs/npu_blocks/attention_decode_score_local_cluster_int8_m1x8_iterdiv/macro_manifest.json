@@ -1,0 +1,31 @@
+{
+  "version": "0.1",
+  "design_id": "attention_decode_score_local_cluster_int8_m1x8_iterdiv",
+  "module": "attention_decode_score_local_cluster_int8_m1x8_iterdiv",
+  "platform": "nangate45",
+  "flow_variant": "decode_score_local_cluster_v1",
+  "blackboxes": [
+    "fakeram45_2048x39"
+  ],
+  "additional_lefs": [
+    "/orfs/flow/platforms/nangate45/lef/fakeram45_2048x39.lef"
+  ],
+  "additional_libs": [
+    "/orfs/flow/platforms/nangate45/lib/fakeram45_2048x39.lib"
+  ],
+  "additional_gds": [],
+  "blackbox_verilog": [
+    "npu/rtl/fakeram45_2048x39_blackbox.v"
+  ],
+  "source": {
+    "mode": "generated_composed_local_cluster",
+    "generator": "npu/rtlgen/gen_attention_decode_score_local_cluster.py",
+    "config": "runs/designs/npu_blocks/attention_decode_score_local_cluster_int8_m1x8_iterdiv/config.json"
+  },
+  "manifest_params": {
+    "semantic_profile": "decode_m1x8_score_sram_two_pass_iterdiv_v1",
+    "score_bank_macro_count": 56,
+    "score_scale_lanes_per_cycle": 1,
+    "value_replay": "external_ready_valid_address_matched"
+  }
+}

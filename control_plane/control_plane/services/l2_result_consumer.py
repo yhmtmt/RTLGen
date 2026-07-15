@@ -623,6 +623,10 @@ _DECODER_EVIDENCE_OUTPUT_KEYS: tuple[tuple[str, str], ...] = (
         "decode_score_tile_equivalence_report",
     ),
     (
+        "decode_score_local_cluster_equivalence_out",
+        "decode_score_local_cluster_equivalence_report",
+    ),
+    (
         "decode_score_tile_frontier_out",
         "decode_score_tile_frontier_report",
     ),
@@ -1588,6 +1592,24 @@ def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, 
             "equivalence_pass",
             "passed_test_count",
             "test_target",
+        ):
+            if key in evidence_payload:
+                parts.append(f"{key}={evidence_payload.get(key)}")
+        summary = "; ".join(parts)
+        return outcome, summary if summary.endswith(".") else summary + "."
+
+    if model == "llm_decoder_attention_decode_score_local_cluster_equivalence_v1":
+        outcome = str(evidence_payload.get("decision") or "decode_score_local_cluster_equivalence_recorded")
+        parts = [
+            f"Decoder score local-cluster equivalence recorded from {evidence_ref}: decision={outcome}",
+        ]
+        for key in (
+            "equivalence_pass",
+            "semantic_profile",
+            "scenario_count",
+            "score_tensor_hash",
+            "final_tensor_hash",
+            "score_scale_lanes_per_cycle",
         ):
             if key in evidence_payload:
                 parts.append(f"{key}={evidence_payload.get(key)}")
