@@ -107,7 +107,7 @@
     {
       "item_id": "l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v1",
       "task_type": "l2_campaign",
-      "status": "ready_to_queue",
+      "status": "superseded",
       "objective": "Retract the bare-M1x8 frontier and recompute a no-stall Llama7B bound from measured composed-cluster area, timing, fill, replay, divider, and value-slice service.",
       "evaluation_mode": "frontier_recost",
       "abstraction_layer": "decoder_attention_decode_score_local_cluster_frontier",
@@ -127,6 +127,32 @@
       "expected_result": {
         "direction": "reprice_with_composed_cluster_lower_bound",
         "reason": "The active frontier must charge the measured 512 KiB score bank and all 16 eight-dimensional value slices per head."
+      },
+      "notes": "Superseded after review found evaluator-local result_path and synth_script_path values in the committed metric provenance."
+    },
+    {
+      "item_id": "l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2",
+      "task_type": "l2_campaign",
+      "status": "ready_to_queue",
+      "objective": "Repeat the composed-cluster corrective recost with repo-portable metric provenance.",
+      "evaluation_mode": "frontier_recost",
+      "abstraction_layer": "decoder_attention_decode_score_local_cluster_frontier",
+      "comparison_role": "decode_composed_cluster_corrective_recost",
+      "depends_on_item_ids": [
+        "l1_decoder_attention_decode_score_local_cluster_pnr_v1",
+        "l2_decoder_attention_decode_score_local_cluster_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "revision": {
+        "reason": "remove_evaluator_local_paths_from_cluster_metric_provenance",
+        "invalidates_item_ids": [
+          "l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v1"
+        ]
+      },
+      "expected_result": {
+        "direction": "reprice_with_composed_cluster_lower_bound",
+        "reason": "The corrected evidence must preserve the composed result while removing evaluator-local paths."
       }
     }
   ],

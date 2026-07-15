@@ -8,7 +8,7 @@
   "abstraction_layer": "decoder_attention_decode_score_tile_m1x8",
   "hypothesis": "A decode-shaped signed-int8 M1x8 score tile with a packed 256-bit result row will preserve exact Llama7B QK score semantics while materially reducing compute area and result-drain service relative to scaling the measured M16x8 operational GEMM tile.",
   "direct_comparison": {
-    "primary_question": "How do scalar-drain and packed-row M1x8 score tiles change measured area, delay, and the precision-aligned Llama7B token frontier relative to the semantically mismatched M16x8 recost?",
+    "primary_question": "How does the measured composed M1x8 score cluster change the precision-aligned Llama7B frontier once score storage, replay, division, and all 16 value slices per head are charged?",
     "baseline": "l2_decoder_attention_operational_component_frontier_llama7b_v1",
     "include": [
       "one signed query scalar by eight signed key scalars per accepted head-dimension beat",
@@ -170,6 +170,31 @@
       "expected_result": {
         "direction": "reprice_with_composed_cluster_lower_bound",
         "reason": "A full Llama7B head requires 16 eight-dimensional value commands at the measured cluster boundary."
+      },
+      "status": "superseded"
+    },
+    {
+      "item_id": "l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2",
+      "task_type": "l2_campaign",
+      "objective": "Recompute the Llama7B bound from the measured composed cluster with repo-portable physical provenance.",
+      "evaluation_mode": "frontier_recost",
+      "abstraction_layer": "decoder_attention_decode_score_local_cluster_frontier",
+      "comparison_role": "decode_composed_cluster_corrective_recost",
+      "depends_on_item_ids": [
+        "l1_decoder_attention_decode_score_local_cluster_pnr_v1",
+        "l2_decoder_attention_decode_score_local_cluster_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "revision": {
+        "reason": "remove_evaluator_local_paths_from_cluster_metric_provenance",
+        "invalidates_item_ids": [
+          "l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v1"
+        ]
+      },
+      "expected_result": {
+        "direction": "reprice_with_composed_cluster_lower_bound",
+        "reason": "The corrected evidence must retain the composed cycle accounting without evaluator-local artifact paths."
       },
       "status": "ready_to_queue"
     }

@@ -60,3 +60,6 @@ def test_composed_cluster_frontier_charges_value_slices_and_retracts_prior(tmp_p
     assert report["decision"].startswith("prior_decode_score_tile_frontier_retracted")
     assert report["diagnosis"]["best_no_stall_token_throughput_upper_bound_per_s"] < 1.0
     assert report["diagnosis"]["promotion_blocked"] is True
+    assert report["selected_cluster_metric"]["metrics_csv"] == str(metrics_path)
+    assert "result_path" not in report["selected_cluster_metric"]
+    assert "synth_script_path" not in report["selected_cluster_metric"]

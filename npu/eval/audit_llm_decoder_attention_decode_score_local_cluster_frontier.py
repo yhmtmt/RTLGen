@@ -34,6 +34,28 @@ def _selected_metric(path: Path) -> JsonDict:
     return min(rows, key=lambda row: (float(row["critical_path_ns"]), float(row["instance_area_um2"])))
 
 
+def _metric_provenance(row: JsonDict, *, metrics_csv: Path) -> JsonDict:
+    keys = (
+        "design",
+        "platform",
+        "config_hash",
+        "param_hash",
+        "tag",
+        "status",
+        "critical_path_ns",
+        "die_area",
+        "total_power_mw",
+        "instance_area_um2",
+        "stdcell_area_um2",
+        "stdcell_count",
+        "core_area_um2",
+        "utilization_pct",
+        "flow_elapsed_seconds",
+        "params_json",
+    )
+    return {"metrics_csv": str(metrics_csv), **{key: row[key] for key in keys if key in row}}
+
+
 def _source_schedule(frontier: JsonDict) -> JsonDict:
     schedule = frontier.get("source_schedule")
     if not isinstance(schedule, dict):
@@ -213,7 +235,7 @@ def build_report(
             "cluster_metrics_csv": str(cluster_metrics_csv),
             "equivalence_json": str(equivalence_json),
         },
-        "selected_cluster_metric": metric,
+        "selected_cluster_metric": _metric_provenance(metric, metrics_csv=cluster_metrics_csv),
         "dense_qkv_tile": {
             "source": source_tile,
             "area_um2": dense_tile_area_um2,
