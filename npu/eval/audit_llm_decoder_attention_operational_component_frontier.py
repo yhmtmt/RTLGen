@@ -14,6 +14,29 @@ from typing import Any
 JsonDict = dict[str, Any]
 
 
+_MEASUREMENT_PROVENANCE_FIELDS = (
+    "metrics_csv",
+    "design",
+    "platform",
+    "tag",
+    "status",
+    "param_hash",
+    "config_hash",
+    "params_json",
+    "critical_path_ns",
+    "instance_area_um2",
+    "stdcell_area_um2",
+    "stdcell_count",
+    "core_area_um2",
+    "die_area",
+    "utilization_pct",
+    "total_power_mw",
+    "flow_elapsed_seconds",
+    "stage_elapsed_seconds",
+    "synth_script_sha1",
+)
+
+
 def _load(path: Path) -> JsonDict:
     payload = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(payload, dict):
@@ -57,6 +80,12 @@ def _select_row(rows: list[JsonDict], *, clock_ns: float) -> JsonDict:
             _float(row.get("total_power_mw"), 1.0e99),
         ),
     )
+
+
+def _measurement_provenance(row: JsonDict | None) -> JsonDict | None:
+    if row is None:
+        return None
+    return {key: row[key] for key in _MEASUREMENT_PROVENANCE_FIELDS if key in row}
 
 
 def _dense_component(row: JsonDict) -> JsonDict:
@@ -252,9 +281,9 @@ def build_report(
             "energy": "retain activity-backed frontier energy; never substitute vectorless OpenROAD power",
             "precision": "inherit the already-passed mixed-int8 Llama7B quality gate unchanged",
         },
-        "selected_operational_tile": operational_tile,
-        "selected_old_tile": old_tile,
-        "selected_score_bank": score_bank,
+        "selected_operational_tile": _measurement_provenance(operational_tile),
+        "selected_old_tile": _measurement_provenance(old_tile),
+        "selected_score_bank": _measurement_provenance(score_bank),
         "rows": updated_rows,
         "latency_rank": latency_rank,
         "area_rank": area_rank,
