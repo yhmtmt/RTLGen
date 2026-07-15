@@ -208,6 +208,32 @@ def test_decoder_evidence_paths_recognizes_decode_score_local_cluster_equivalenc
     }
 
 
+def test_decoder_evidence_paths_recognizes_decode_score_multivalue_cluster_equivalence(tmp_path: Path) -> None:
+    evidence_rel = "runs/datasets/demo/decode_score_multivalue_cluster_equivalence.json"
+    report_rel = "runs/datasets/demo/decode_score_multivalue_cluster_equivalence.md"
+    _write(tmp_path / evidence_rel, "{}\n")
+    _write(tmp_path / report_rel, "# Decode score multivalue-cluster equivalence\n")
+    work_item = SimpleNamespace(
+        input_manifest={
+            "decoder_contract": {
+                "decode_score_multivalue_cluster_equivalence_out": evidence_rel,
+                "decode_score_multivalue_cluster_equivalence_report": report_rel,
+            }
+        }
+    )
+
+    evidence_ref, source_refs = _decoder_evidence_paths(
+        repo_root=tmp_path,
+        work_item=work_item,
+    )
+
+    assert evidence_ref == evidence_rel
+    assert source_refs == {
+        "decoder_decode_score_multivalue_cluster_equivalence_out": evidence_rel,
+        "decoder_decode_score_multivalue_cluster_equivalence_report": report_rel,
+    }
+
+
 def test_decoder_evidence_paths_recognizes_decode_score_tile_frontier(tmp_path: Path) -> None:
     evidence_rel = "runs/datasets/demo/decode_score_tile_frontier.json"
     report_rel = "runs/datasets/demo/decode_score_tile_frontier.md"
@@ -319,6 +345,32 @@ def test_decoder_evidence_summary_recognizes_decode_score_local_cluster_frontier
     assert "best_no_stall_candidate=decode_score_local_cluster_c128_vl1" in summary
     assert "best_no_stall_token_throughput_upper_bound_per_s=0.521" in summary
     assert "promotion_blocked=True" in summary
+
+
+def test_decoder_evidence_summary_recognizes_decode_score_multivalue_cluster_equivalence() -> None:
+    outcome, summary = _decoder_evidence_summary(
+        evidence_ref="runs/datasets/demo/decode_score_multivalue_cluster_equivalence.json",
+        evidence_payload={
+            "model": "llm_decoder_attention_decode_score_multivalue_cluster_equivalence_v1",
+            "decision": "decode_score_multivalue_cluster_equivalence_pass",
+            "equivalence_pass": True,
+            "scenario_count": 5,
+            "score_tensor_hash": "scorehash",
+            "final_tensor_hash": "finalhash",
+            "value_slices": 16,
+            "value_dimensions": 128,
+            "score_passes_per_command": 1,
+            "score_writes_per_block": 1,
+            "score_reads_per_block": 1,
+            "result_beats_per_command": 16,
+        },
+    )
+
+    assert outcome == "decode_score_multivalue_cluster_equivalence_pass"
+    assert "equivalence_pass=True" in summary
+    assert "value_slices=16" in summary
+    assert "score_reads_per_block=1" in summary
+    assert "result_beats_per_command=16" in summary
 
 
 def test_decoder_evidence_summary_recognizes_two_pass_stream_equivalence() -> None:
