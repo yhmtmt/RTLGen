@@ -26,13 +26,32 @@ def main() -> int:
     parser.add_argument("--reference", required=True)
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--out-md", type=Path, required=True)
+    parser.add_argument("--timeout-seconds", type=float, default=300.0)
     args = parser.parse_args()
+
+    if args.timeout_seconds <= 0.0:
+        parser.error("--timeout-seconds must be positive")
 
     repo_root = Path(__file__).resolve().parents[2]
     command = [sys.executable, "-m", "pytest", "-q", args.test_target]
-    run = subprocess.run(command, cwd=repo_root, capture_output=True, text=True)
-    combined = (run.stdout + "\n" + run.stderr).strip()
-    passed = run.returncode == 0
+    timed_out = False
+    try:
+        run = subprocess.run(
+            command,
+            cwd=repo_root,
+            capture_output=True,
+            text=True,
+            timeout=args.timeout_seconds,
+        )
+        combined = (run.stdout + "\n" + run.stderr).strip()
+        returncode = run.returncode
+    except subprocess.TimeoutExpired as exc:
+        timed_out = True
+        stdout = exc.stdout if isinstance(exc.stdout, str) else ""
+        stderr = exc.stderr if isinstance(exc.stderr, str) else ""
+        combined = (stdout + "\n" + stderr + f"\ntimed out after {args.timeout_seconds:g} seconds").strip()
+        returncode = 124
+    passed = returncode == 0
     payload = {
         "version": 1,
         "model": "rtl_component_reference_equivalence_v1",
@@ -43,7 +62,9 @@ def main() -> int:
         "reference": args.reference,
         "test_target": args.test_target,
         "command": command,
-        "returncode": run.returncode,
+        "returncode": returncode,
+        "timed_out": timed_out,
+        "timeout_seconds": args.timeout_seconds,
         "equivalence_pass": passed,
         "passed_test_count": _test_count(combined),
         "test_output_sha256": hashlib.sha256(combined.encode("utf-8")).hexdigest(),

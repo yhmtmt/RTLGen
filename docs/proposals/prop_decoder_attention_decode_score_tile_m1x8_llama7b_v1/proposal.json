@@ -1,0 +1,145 @@
+{
+  "proposal_id": "prop_decoder_attention_decode_score_tile_m1x8_llama7b_v1",
+  "created_utc": "2026-07-15T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Decode-shaped M1x8 score tile for the Llama7B attention frontier",
+  "abstraction_layer": "decoder_attention_decode_score_tile_m1x8",
+  "hypothesis": "A decode-shaped signed-int8 M1x8 score tile with a packed 256-bit result row will preserve exact Llama7B QK score semantics while materially reducing compute area and result-drain service relative to scaling the measured M16x8 operational GEMM tile.",
+  "direct_comparison": {
+    "primary_question": "How do scalar-drain and packed-row M1x8 score tiles change measured area, delay, and the precision-aligned Llama7B token frontier relative to the semantically mismatched M16x8 recost?",
+    "baseline": "l2_decoder_attention_operational_component_frontier_llama7b_v1",
+    "include": [
+      "one signed query scalar by eight signed key scalars per accepted head-dimension beat",
+      "eight independent signed 32-bit score accumulators",
+      "final accepted beat included exactly once",
+      "scalar result stream versus one-cycle packed 256-bit score row",
+      "ready/valid backpressure and command clear/reuse",
+      "identical Nangate45 floorplan and timing sweep for both result interfaces"
+    ],
+    "exclude": [
+      "do not treat M16x8 cross-row reuse as valid across decoder heads with different key matrices",
+      "do not promote vectorless OpenROAD power as token energy",
+      "score SRAM remains a FakeRAM physical proxy until signed-off SRAM views are available"
+    ],
+    "metrics": [
+      "rtl_reference_equivalence",
+      "critical_path_ns",
+      "instance_area_um2",
+      "stdcell_count",
+      "total_power_mw",
+      "result_service_cycles_per_score_row",
+      "latency_us",
+      "token_throughput_per_s",
+      "energy_mj_per_token",
+      "embodied_area_mm2"
+    ]
+  },
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_decode_score_tile_m1x8_equivalence_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Prove exact M1x8 signed-int8 QK score accumulation and packed-row stream behavior against the dot-product reference.",
+      "evaluation_mode": "equivalence_gate",
+      "abstraction_layer": "decoder_attention_decode_score_tile_equivalence",
+      "comparison_role": "decode_score_compute_semantic_gate",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_operational_dense_tile_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "prove_decode_shaped_score_equivalence",
+        "reason": "PPA and cluster composition must use the single-query score shape exercised by autoregressive Llama7B decode."
+      },
+      "status": "pending_implementation_merge"
+    },
+    {
+      "item_id": "l1_decoder_attention_decode_score_tile_m1x8_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure scalar-drain and packed-row M1x8 score tiles under identical Nangate45 clocks and floorplans.",
+      "evaluation_mode": "frontier_followup",
+      "abstraction_layer": "decoder_attention_decode_score_tile_m1x8",
+      "comparison_role": "decode_score_interface_ppa",
+      "config_paths": [
+        "runs/designs/npu_blocks/dense_gemm_tile_stream_int8_1x8/config.json",
+        "runs/designs/npu_blocks/attention_decode_score_tile_int8_1x8/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/decode_score_tile_m1x8_v1/sweeps/nangate45_decode_score_tile_m1x8.json",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_decode_score_tile_m1x8_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "select_decode_score_result_interface",
+        "reason": "The packed interface removes eight scalar drain cycles but its 256-bit physical interface must be charged."
+      },
+      "status": "blocked_on_equivalence"
+    },
+    {
+      "item_id": "l2_decoder_attention_decode_score_tile_frontier_recost_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Replace the M16x8 dense-tile scaling in the Llama7B operational component frontier with measured decode-shaped score-tile area, timing, and result service.",
+      "evaluation_mode": "frontier_recost",
+      "abstraction_layer": "decoder_attention_decode_score_tile_frontier",
+      "comparison_role": "decode_shape_corrective_recost",
+      "depends_on_item_ids": [
+        "l1_decoder_attention_decode_score_tile_m1x8_ppa_v1",
+        "l1_decoder_attention_score_bank_proxy_pnr_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "revision": {
+        "reason": "wrong_compute_shape_for_autoregressive_decode",
+        "invalidates_item_ids": [
+          "l2_decoder_attention_operational_component_frontier_llama7b_v1"
+        ],
+        "invalidates": {
+          "pr_numbers": [
+            1293
+          ],
+          "artifact_paths": [
+            "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_operational_component_frontier__l2_decoder_attention_operational_component_frontier_llama7b_v1.json"
+          ]
+        }
+      },
+      "expected_result": {
+        "direction": "reprice_frontier_with_decode_exact_compute_shape",
+        "reason": "The active Llama7B decision path must not scale an M16 tile as if all rows were useful during M1 decode."
+      },
+      "status": "blocked_on_ppa"
+    },
+    {
+      "item_id": "l1_decoder_attention_decode_score_local_cluster_pnr_v1",
+      "task_type": "l1_sweep",
+      "objective": "Compose the selected exact M1x8 score tile with the real score-bank and two-pass stream interfaces before chip-level extrapolation.",
+      "evaluation_mode": "frontier_followup",
+      "abstraction_layer": "decoder_attention_decode_score_local_cluster",
+      "comparison_role": "decode_exact_cluster_pnr",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_decode_score_tile_frontier_recost_llama7b_v1",
+        "l1_decoder_attention_two_pass_stream_iterdiv_ppa_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "measure_semantically_valid_local_cluster",
+        "reason": "Only a composed producer, score store, replay engine, and divider can close local routing and activity energy."
+      },
+      "status": "blocked_on_corrective_recost"
+    }
+  ],
+  "baseline_refs": [
+    "runs/designs/npu_blocks/dense_gemm_tile_stream_int8_16x8/metrics.csv",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_operational_component_frontier__l2_decoder_attention_operational_component_frontier_llama7b_v1.json",
+    "runs/designs/npu_blocks/attention_score_bank_proxy_16kx256/metrics.csv",
+    "runs/designs/npu_blocks/attention_two_pass_stream_iterdiv/metrics.csv"
+  ],
+  "remaining_abstractions_after_this_step": [
+    "The two-pass value replay matrix remains tiled at eight value dimensions until outer value-dimension accumulation is composed.",
+    "The installed FakeRAM views have no SRAM GDS and remain physical proxies.",
+    "Chip-level NoC, clock/reset, power delivery, and external HBM/DRAM remain later boundaries."
+  ]
+}

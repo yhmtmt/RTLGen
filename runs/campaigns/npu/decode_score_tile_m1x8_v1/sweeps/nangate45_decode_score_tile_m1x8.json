@@ -1,0 +1,32 @@
+{
+  "tag_prefix": "decode_score_tile_m1x8_v1",
+  "flow_params": {
+    "TAG": [
+      "decode_score_tile_m1x8_v1"
+    ],
+    "FLOW_VARIANT": [
+      "decode_score_tile_m1x8_v1"
+    ],
+    "CLOCK_PERIOD": [
+      5,
+      3,
+      2
+    ],
+    "DIE_AREA": [
+      "0 0 400 400"
+    ],
+    "CORE_AREA": [
+      "40 40 360 360"
+    ],
+    "PLACE_DENSITY": [
+      0.35,
+      0.5
+    ],
+    "SYNTH_HIERARCHICAL": [
+      1
+    ],
+    "SYNTH_MEMORY_MAX_BITS": [
+      65536
+    ]
+  }
+}

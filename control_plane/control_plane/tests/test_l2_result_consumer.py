@@ -156,6 +156,32 @@ def test_decoder_evidence_paths_recognizes_operational_component_frontier(tmp_pa
     }
 
 
+def test_decoder_evidence_paths_recognizes_decode_score_tile_equivalence(tmp_path: Path) -> None:
+    evidence_rel = "runs/datasets/demo/decode_score_tile_equivalence.json"
+    report_rel = "runs/datasets/demo/decode_score_tile_equivalence.md"
+    _write(tmp_path / evidence_rel, "{}\n")
+    _write(tmp_path / report_rel, "# Decode score tile equivalence\n")
+    work_item = SimpleNamespace(
+        input_manifest={
+            "decoder_contract": {
+                "decode_score_tile_equivalence_out": evidence_rel,
+                "decode_score_tile_equivalence_report": report_rel,
+            }
+        }
+    )
+
+    evidence_ref, source_refs = _decoder_evidence_paths(
+        repo_root=tmp_path,
+        work_item=work_item,
+    )
+
+    assert evidence_ref == evidence_rel
+    assert source_refs == {
+        "decoder_decode_score_tile_equivalence_out": evidence_rel,
+        "decoder_decode_score_tile_equivalence_report": report_rel,
+    }
+
+
 def test_decoder_evidence_summary_recognizes_rtl_component_equivalence() -> None:
     outcome, summary = _decoder_evidence_summary(
         evidence_ref="runs/datasets/demo/operational_tile_equivalence.json",
