@@ -1,0 +1,2 @@
+run_key,attempt,trial_index,seed,status,metrics_csv,critical_path_ns,die_area,total_power_mw,failure_category,failure_stage,failure_signature
+l1_decoder_attention_decode_score_tile_m1x8_ppa_v1_run_ceec4b1c3e107057,1,1,0,succeeded,runs/designs/npu_blocks/dense_gemm_tile_stream_int8_1x8/metrics.csv,3.3135,160000.0,0.0231,none,,

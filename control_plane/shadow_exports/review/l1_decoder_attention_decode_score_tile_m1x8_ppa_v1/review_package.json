@@ -1,0 +1,438 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-07-15T02:57:31.187486Z",
+  "control_plane_source_commit": "26d98127bae70b4660666b6a7fd284bd8ba117e2",
+  "review_metadata_source_commit": "26d98127bae70b4660666b6a7fd284bd8ba117e2",
+  "item_id": "l1_decoder_attention_decode_score_tile_m1x8_ppa_v1",
+  "run_key": "l1_decoder_attention_decode_score_tile_m1x8_ppa_v1_run_ceec4b1c3e107057",
+  "layer": "layer1",
+  "flow": "openroad",
+  "task_type": "l1_sweep",
+  "source_commit": "26d98127bae70b4660666b6a7fd284bd8ba117e2",
+  "queue_snapshot": {
+    "path": "control_plane/shadow_exports/review/l1_decoder_attention_decode_score_tile_m1x8_ppa_v1/evaluated.json",
+    "result": {
+      "branch": "eval/l1_decoder_attention_decode_score_tile_m1x8_ppa_v1/s20260715t025729z",
+      "completed_utc": "2026-07-15T02:57:25.823231Z",
+      "evaluator_id": "control_plane",
+      "executor": "@control_plane",
+      "host": "b7c2d9c80c1c",
+      "identity_block": "[role:evaluator][account:control_plane][session:s20260715t025729z][host:b7c2d9c80c1c][item:l1_decoder_attention_decode_score_tile_m1x8_ppa_v1]",
+      "metrics_rows": [
+        {
+          "tag": "decode_score_tile_m1x8_v1",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "dbb9f8ee",
+          "metrics_csv": "runs/designs/npu_blocks/dense_gemm_tile_stream_int8_1x8/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/dense_gemm_tile_stream_int8_1x8/work/dbb9f8ee/result.json"
+        },
+        {
+          "tag": "decode_score_tile_m1x8_v1",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "0a3b03de",
+          "metrics_csv": "runs/designs/npu_blocks/dense_gemm_tile_stream_int8_1x8/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/dense_gemm_tile_stream_int8_1x8/work/0a3b03de/result.json"
+        },
+        {
+          "tag": "decode_score_tile_m1x8_v1",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "c9117972",
+          "metrics_csv": "runs/designs/npu_blocks/dense_gemm_tile_stream_int8_1x8/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/dense_gemm_tile_stream_int8_1x8/work/c9117972/result.json"
+        },
+        {
+          "tag": "decode_score_tile_m1x8_v1",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "e34fdc1b",
+          "metrics_csv": "runs/designs/npu_blocks/dense_gemm_tile_stream_int8_1x8/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/dense_gemm_tile_stream_int8_1x8/work/e34fdc1b/result.json"
+        },
+        {
+          "tag": "decode_score_tile_m1x8_v1",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "63bed469",
+          "metrics_csv": "runs/designs/npu_blocks/dense_gemm_tile_stream_int8_1x8/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/dense_gemm_tile_stream_int8_1x8/work/63bed469/result.json"
+        },
+        {
+          "tag": "decode_score_tile_m1x8_v1",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "9f5bcd36",
+          "metrics_csv": "runs/designs/npu_blocks/dense_gemm_tile_stream_int8_1x8/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/dense_gemm_tile_stream_int8_1x8/work/9f5bcd36/result.json"
+        },
+        {
+          "tag": "decode_score_tile_m1x8_v1",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "dbb9f8ee",
+          "metrics_csv": "runs/designs/npu_blocks/attention_decode_score_tile_int8_1x8/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/attention_decode_score_tile_int8_1x8/work/dbb9f8ee/result.json"
+        },
+        {
+          "tag": "decode_score_tile_m1x8_v1",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "0a3b03de",
+          "metrics_csv": "runs/designs/npu_blocks/attention_decode_score_tile_int8_1x8/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/attention_decode_score_tile_int8_1x8/work/0a3b03de/result.json"
+        },
+        {
+          "tag": "decode_score_tile_m1x8_v1",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "c9117972",
+          "metrics_csv": "runs/designs/npu_blocks/attention_decode_score_tile_int8_1x8/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/attention_decode_score_tile_int8_1x8/work/c9117972/result.json"
+        },
+        {
+          "tag": "decode_score_tile_m1x8_v1",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "e34fdc1b",
+          "metrics_csv": "runs/designs/npu_blocks/attention_decode_score_tile_int8_1x8/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/attention_decode_score_tile_int8_1x8/work/e34fdc1b/result.json"
+        },
+        {
+          "tag": "decode_score_tile_m1x8_v1",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "63bed469",
+          "metrics_csv": "runs/designs/npu_blocks/attention_decode_score_tile_int8_1x8/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/attention_decode_score_tile_int8_1x8/work/63bed469/result.json"
+        },
+        {
+          "tag": "decode_score_tile_m1x8_v1",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "9f5bcd36",
+          "metrics_csv": "runs/designs/npu_blocks/attention_decode_score_tile_int8_1x8/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/attention_decode_score_tile_int8_1x8/work/9f5bcd36/result.json"
+        }
+      ],
+      "queue_item_id": "l1_decoder_attention_decode_score_tile_m1x8_ppa_v1",
+      "session_id": "s20260715t025729z",
+      "status": "ok",
+      "summary": "8/8 commands succeeded"
+    }
+  },
+  "review_artifact": {
+    "kind": "promotion_proposal",
+    "path": "control_plane/shadow_exports/l1_promotions/l1_decoder_attention_decode_score_tile_m1x8_ppa_v1.json",
+    "storage_mode": "repo",
+    "sha256": "8e8a081e177175447994d9f5dca01e715fa0dff9ac509b05f509675e5bb11e99",
+    "payload": {
+      "version": 0.1,
+      "generated_utc": "2026-07-15T02:57:28.554264Z",
+      "item_id": "l1_decoder_attention_decode_score_tile_m1x8_ppa_v1",
+      "run_key": "l1_decoder_attention_decode_score_tile_m1x8_ppa_v1_run_ceec4b1c3e107057",
+      "layer": "layer1",
+      "flow": "openroad",
+      "platform": "nangate45",
+      "task_type": "l1_sweep",
+      "source_commit": "26d98127bae70b4660666b6a7fd284bd8ba117e2",
+      "objective": "Run a Layer1 nangate45 OpenROAD sweep for 2 configs using nangate45_decode_score_tile_m1x8.json and record lightweight design metrics for comparison.",
+      "input_manifest": {
+        "sweeps": [
+          "runs/campaigns/npu/decode_score_tile_m1x8_v1/sweeps/nangate45_decode_score_tile_m1x8.json"
+        ],
+        "configs": [
+          "runs/designs/npu_blocks/dense_gemm_tile_stream_int8_1x8/config.json",
+          "runs/designs/npu_blocks/attention_decode_score_tile_int8_1x8/config.json"
+        ],
+        "out_root": "runs/designs/npu_blocks",
+        "design_dirs": [],
+        "macro_manifests": [],
+        "candidate_manifests": [],
+        "required_submodules": []
+      },
+      "proposal_count": 2,
+      "evaluation_record": {
+        "evaluation_mode": "frontier_followup",
+        "abstraction_layer": "decoder_attention_decode_score_tile_m1x8",
+        "result_kind": "physical_metrics",
+        "physical_metrics_present": true,
+        "summary": "Physical metrics recorded from a completed, timing-feasible Layer 1 row.",
+        "timing_feasible": true,
+        "clock_period_ns": 5.0,
+        "timing_slack_ns": 1.2155
+      },
+      "proposal_assessment": null,
+      "proposals": [
+        {
+          "metrics_ref": {
+            "metrics_csv": "runs/designs/npu_blocks/dense_gemm_tile_stream_int8_1x8/metrics.csv",
+            "platform": "nangate45",
+            "status": "ok",
+            "result_kind": "physical_metrics",
+            "param_hash": "dbb9f8ee",
+            "tag": "decode_score_tile_m1x8_v1",
+            "result_path": "/orfs/flow/reports/nangate45/dense_gemm_tile_stream_int8_1x8/decode_score_tile_m1x8_v1/6_finish.rpt",
+            "work_result_json": "runs/designs/npu_blocks/dense_gemm_tile_stream_int8_1x8/work/dbb9f8ee/result.json"
+          },
+          "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+          "metric_summary": {
+            "critical_path_ns": 3.7845,
+            "die_area": 160000.0,
+            "total_power_mw": 0.00844
+          }
+        },
+        {
+          "metrics_ref": {
+            "metrics_csv": "runs/designs/npu_blocks/attention_decode_score_tile_int8_1x8/metrics.csv",
+            "platform": "nangate45",
+            "status": "ok",
+            "result_kind": "physical_metrics",
+            "param_hash": "0a3b03de",
+            "tag": "decode_score_tile_m1x8_v1",
+            "result_path": "/orfs/flow/reports/nangate45/attention_decode_score_tile_int8_1x8/decode_score_tile_m1x8_v1/6_finish.rpt",
+            "work_result_json": "runs/designs/npu_blocks/attention_decode_score_tile_int8_1x8/work/0a3b03de/result.json"
+          },
+          "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+          "metric_summary": {
+            "critical_path_ns": 3.7841,
+            "die_area": 160000.0,
+            "total_power_mw": 0.017
+          }
+        }
+      ],
+      "trial_summary": {
+        "item_id": "l1_decoder_attention_decode_score_tile_m1x8_ppa_v1",
+        "completed_trials": 1,
+        "success_count": 1,
+        "failure_count": 0,
+        "success_rate": 1.0,
+        "metrics": {
+          "critical_path_ns": {
+            "best": 3.3135,
+            "mean": 3.3135,
+            "median": 3.3135,
+            "max": 3.3135,
+            "range": 0.0,
+            "stddev": 0.0
+          },
+          "die_area": {
+            "best": 160000.0,
+            "mean": 160000.0,
+            "median": 160000.0,
+            "max": 160000.0,
+            "range": 0.0,
+            "stddev": 0.0
+          },
+          "total_power_mw": {
+            "best": 0.0231,
+            "mean": 0.0231,
+            "median": 0.0231,
+            "max": 0.0231,
+            "range": 0.0,
+            "stddev": 0.0
+          }
+        }
+      },
+      "source_refs": {
+        "trial_metrics_csvs": [
+          "runs/designs/npu_blocks/dense_gemm_tile_stream_int8_1x8/metrics.csv",
+          "runs/designs/npu_blocks/attention_decode_score_tile_int8_1x8/metrics.csv"
+        ],
+        "summary_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_decode_score_tile_m1x8_ppa_v1/summary_stats.json",
+        "failure_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_decode_score_tile_m1x8_ppa_v1/failure_stats.json",
+        "trial_table_csv": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_decode_score_tile_m1x8_ppa_v1/trial_table.csv"
+      },
+      "boundary_evidence": {
+        "row_count": 8,
+        "rows": [
+          {
+            "metrics_csv": "runs/designs/npu_blocks/dense_gemm_tile_stream_int8_1x8/metrics.csv",
+            "status": "timing_infeasible",
+            "flow_status": "ok",
+            "timing_feasible": false,
+            "clock_period_ns": 3.0,
+            "timing_slack_ns": -0.3319000000000001,
+            "design": "dense_gemm_tile_stream_int8_1x8",
+            "platform": "nangate45",
+            "config_hash": "e759b8a09f2a",
+            "param_hash": "c9117972",
+            "tag": "decode_score_tile_m1x8_v1",
+            "critical_path_ns": "3.3319",
+            "die_area": "160000.0",
+            "total_power_mw": "0.023",
+            "result_path": "/orfs/flow/reports/nangate45/dense_gemm_tile_stream_int8_1x8/decode_score_tile_m1x8_v1/6_finish.rpt",
+            "work_result_json": "runs/designs/npu_blocks/dense_gemm_tile_stream_int8_1x8/work/c9117972/result.json",
+            "params_json": "{\"CLOCK_PERIOD\": 3, \"CORE_AREA\": \"40 40 360 360\", \"CORE_UTILIZATION\": \"\", \"DIE_AREA\": \"0 0 400 400\", \"FLOW_VARIANT\": \"decode_score_tile_m1x8_v1\", \"PLACE_DENSITY\": 0.35, \"SYNTH_HIERARCHICAL\": 1, \"SYNTH_MEMORY_MAX_BITS\": 65536, \"TAG\": \"decode_score_tile_m1x8_v1\", \"tag_prefix\": \"decode_score_tile_m1x8_v1\"}"
+          },
+          {
+            "metrics_csv": "runs/designs/npu_blocks/dense_gemm_tile_stream_int8_1x8/metrics.csv",
+            "status": "timing_infeasible",
+            "flow_status": "ok",
+            "timing_feasible": false,
+            "clock_period_ns": 3.0,
+            "timing_slack_ns": -0.3134999999999999,
+            "design": "dense_gemm_tile_stream_int8_1x8",
+            "platform": "nangate45",
+            "config_hash": "e759b8a09f2a",
+            "param_hash": "e34fdc1b",
+            "tag": "decode_score_tile_m1x8_v1",
+            "critical_path_ns": "3.3135",
+            "die_area": "160000.0",
+            "total_power_mw": "0.0231",
+            "result_path": "/orfs/flow/reports/nangate45/dense_gemm_tile_stream_int8_1x8/decode_score_tile_m1x8_v1/6_finish.rpt",
+            "work_result_json": "runs/designs/npu_blocks/dense_gemm_tile_stream_int8_1x8/work/e34fdc1b/result.json",
+            "params_json": "{\"CLOCK_PERIOD\": 3, \"CORE_AREA\": \"40 40 360 360\", \"CORE_UTILIZATION\": \"\", \"DIE_AREA\": \"0 0 400 400\", \"FLOW_VARIANT\": \"decode_score_tile_m1x8_v1\", \"PLACE_DENSITY\": 0.5, \"SYNTH_HIERARCHICAL\": 1, \"SYNTH_MEMORY_MAX_BITS\": 65536, \"TAG\": \"decode_score_tile_m1x8_v1\", \"tag_prefix\": \"decode_score_tile_m1x8_v1\"}"
+          },
+          {
+            "metrics_csv": "runs/designs/npu_blocks/dense_gemm_tile_stream_int8_1x8/metrics.csv",
+            "status": "timing_infeasible",
+            "flow_status": "ok",
+            "timing_feasible": false,
+            "clock_period_ns": 2.0,
+            "timing_slack_ns": -1.3214000000000001,
+            "design": "dense_gemm_tile_stream_int8_1x8",
+            "platform": "nangate45",
+            "config_hash": "e759b8a09f2a",
+            "param_hash": "63bed469",
+            "tag": "decode_score_tile_m1x8_v1",
+            "critical_path_ns": "3.3214",
+            "die_area": "160000.0",
+            "total_power_mw": "0.0359",
+            "result_path": "/orfs/flow/reports/nangate45/dense_gemm_tile_stream_int8_1x8/decode_score_tile_m1x8_v1/6_finish.rpt",
+            "work_result_json": "runs/designs/npu_blocks/dense_gemm_tile_stream_int8_1x8/work/63bed469/result.json",
+            "params_json": "{\"CLOCK_PERIOD\": 2, \"CORE_AREA\": \"40 40 360 360\", \"CORE_UTILIZATION\": \"\", \"DIE_AREA\": \"0 0 400 400\", \"FLOW_VARIANT\": \"decode_score_tile_m1x8_v1\", \"PLACE_DENSITY\": 0.35, \"SYNTH_HIERARCHICAL\": 1, \"SYNTH_MEMORY_MAX_BITS\": 65536, \"TAG\": \"decode_score_tile_m1x8_v1\", \"tag_prefix\": \"decode_score_tile_m1x8_v1\"}"
+          },
+          {
+            "metrics_csv": "runs/designs/npu_blocks/dense_gemm_tile_stream_int8_1x8/metrics.csv",
+            "status": "timing_infeasible",
+            "flow_status": "ok",
+            "timing_feasible": false,
+            "clock_period_ns": 2.0,
+            "timing_slack_ns": -1.3148,
+            "design": "dense_gemm_tile_stream_int8_1x8",
+            "platform": "nangate45",
+            "config_hash": "e759b8a09f2a",
+            "param_hash": "9f5bcd36",
+            "tag": "decode_score_tile_m1x8_v1",
+            "critical_path_ns": "3.3148",
+            "die_area": "160000.0",
+            "total_power_mw": "0.0352",
+            "result_path": "/orfs/flow/reports/nangate45/dense_gemm_tile_stream_int8_1x8/decode_score_tile_m1x8_v1/6_finish.rpt",
+            "work_result_json": "runs/designs/npu_blocks/dense_gemm_tile_stream_int8_1x8/work/9f5bcd36/result.json",
+            "params_json": "{\"CLOCK_PERIOD\": 2, \"CORE_AREA\": \"40 40 360 360\", \"CORE_UTILIZATION\": \"\", \"DIE_AREA\": \"0 0 400 400\", \"FLOW_VARIANT\": \"decode_score_tile_m1x8_v1\", \"PLACE_DENSITY\": 0.5, \"SYNTH_HIERARCHICAL\": 1, \"SYNTH_MEMORY_MAX_BITS\": 65536, \"TAG\": \"decode_score_tile_m1x8_v1\", \"tag_prefix\": \"decode_score_tile_m1x8_v1\"}"
+          },
+          {
+            "metrics_csv": "runs/designs/npu_blocks/attention_decode_score_tile_int8_1x8/metrics.csv",
+            "status": "timing_infeasible",
+            "flow_status": "ok",
+            "timing_feasible": false,
+            "clock_period_ns": 3.0,
+            "timing_slack_ns": -0.3365999999999998,
+            "design": "attention_decode_score_tile_int8_1x8",
+            "platform": "nangate45",
+            "config_hash": "df8f559a7169",
+            "param_hash": "c9117972",
+            "tag": "decode_score_tile_m1x8_v1",
+            "critical_path_ns": "3.3366",
+            "die_area": "160000.0",
+            "total_power_mw": "0.0407",
+            "result_path": "/orfs/flow/reports/nangate45/attention_decode_score_tile_int8_1x8/decode_score_tile_m1x8_v1/6_finish.rpt",
+            "work_result_json": "runs/designs/npu_blocks/attention_decode_score_tile_int8_1x8/work/c9117972/result.json",
+            "params_json": "{\"CLOCK_PERIOD\": 3, \"CORE_AREA\": \"40 40 360 360\", \"CORE_UTILIZATION\": \"\", \"DIE_AREA\": \"0 0 400 400\", \"FLOW_VARIANT\": \"decode_score_tile_m1x8_v1\", \"PLACE_DENSITY\": 0.35, \"SYNTH_HIERARCHICAL\": 1, \"SYNTH_MEMORY_MAX_BITS\": 65536, \"TAG\": \"decode_score_tile_m1x8_v1\", \"tag_prefix\": \"decode_score_tile_m1x8_v1\"}"
+          },
+          {
+            "metrics_csv": "runs/designs/npu_blocks/attention_decode_score_tile_int8_1x8/metrics.csv",
+            "status": "timing_infeasible",
+            "flow_status": "ok",
+            "timing_feasible": false,
+            "clock_period_ns": 3.0,
+            "timing_slack_ns": -0.33099999999999996,
+            "design": "attention_decode_score_tile_int8_1x8",
+            "platform": "nangate45",
+            "config_hash": "df8f559a7169",
+            "param_hash": "e34fdc1b",
+            "tag": "decode_score_tile_m1x8_v1",
+            "critical_path_ns": "3.331",
+            "die_area": "160000.0",
+            "total_power_mw": "0.0403",
+            "result_path": "/orfs/flow/reports/nangate45/attention_decode_score_tile_int8_1x8/decode_score_tile_m1x8_v1/6_finish.rpt",
+            "work_result_json": "runs/designs/npu_blocks/attention_decode_score_tile_int8_1x8/work/e34fdc1b/result.json",
+            "params_json": "{\"CLOCK_PERIOD\": 3, \"CORE_AREA\": \"40 40 360 360\", \"CORE_UTILIZATION\": \"\", \"DIE_AREA\": \"0 0 400 400\", \"FLOW_VARIANT\": \"decode_score_tile_m1x8_v1\", \"PLACE_DENSITY\": 0.5, \"SYNTH_HIERARCHICAL\": 1, \"SYNTH_MEMORY_MAX_BITS\": 65536, \"TAG\": \"decode_score_tile_m1x8_v1\", \"tag_prefix\": \"decode_score_tile_m1x8_v1\"}"
+          },
+          {
+            "metrics_csv": "runs/designs/npu_blocks/attention_decode_score_tile_int8_1x8/metrics.csv",
+            "status": "timing_infeasible",
+            "flow_status": "ok",
+            "timing_feasible": false,
+            "clock_period_ns": 2.0,
+            "timing_slack_ns": -1.3241,
+            "design": "attention_decode_score_tile_int8_1x8",
+            "platform": "nangate45",
+            "config_hash": "df8f559a7169",
+            "param_hash": "63bed469",
+            "tag": "decode_score_tile_m1x8_v1",
+            "critical_path_ns": "3.3241",
+            "die_area": "160000.0",
+            "total_power_mw": "0.0596",
+            "result_path": "/orfs/flow/reports/nangate45/attention_decode_score_tile_int8_1x8/decode_score_tile_m1x8_v1/6_finish.rpt",
+            "work_result_json": "runs/designs/npu_blocks/attention_decode_score_tile_int8_1x8/work/63bed469/result.json",
+            "params_json": "{\"CLOCK_PERIOD\": 2, \"CORE_AREA\": \"40 40 360 360\", \"CORE_UTILIZATION\": \"\", \"DIE_AREA\": \"0 0 400 400\", \"FLOW_VARIANT\": \"decode_score_tile_m1x8_v1\", \"PLACE_DENSITY\": 0.35, \"SYNTH_HIERARCHICAL\": 1, \"SYNTH_MEMORY_MAX_BITS\": 65536, \"TAG\": \"decode_score_tile_m1x8_v1\", \"tag_prefix\": \"decode_score_tile_m1x8_v1\"}"
+          },
+          {
+            "metrics_csv": "runs/designs/npu_blocks/attention_decode_score_tile_int8_1x8/metrics.csv",
+            "status": "timing_infeasible",
+            "flow_status": "ok",
+            "timing_feasible": false,
+            "clock_period_ns": 2.0,
+            "timing_slack_ns": -1.3163999999999998,
+            "design": "attention_decode_score_tile_int8_1x8",
+            "platform": "nangate45",
+            "config_hash": "df8f559a7169",
+            "param_hash": "9f5bcd36",
+            "tag": "decode_score_tile_m1x8_v1",
+            "critical_path_ns": "3.3164",
+            "die_area": "160000.0",
+            "total_power_mw": "0.0582",
+            "result_path": "/orfs/flow/reports/nangate45/attention_decode_score_tile_int8_1x8/decode_score_tile_m1x8_v1/6_finish.rpt",
+            "work_result_json": "runs/designs/npu_blocks/attention_decode_score_tile_int8_1x8/work/9f5bcd36/result.json",
+            "params_json": "{\"CLOCK_PERIOD\": 2, \"CORE_AREA\": \"40 40 360 360\", \"CORE_UTILIZATION\": \"\", \"DIE_AREA\": \"0 0 400 400\", \"FLOW_VARIANT\": \"decode_score_tile_m1x8_v1\", \"PLACE_DENSITY\": 0.5, \"SYNTH_HIERARCHICAL\": 1, \"SYNTH_MEMORY_MAX_BITS\": 65536, \"TAG\": \"decode_score_tile_m1x8_v1\", \"tag_prefix\": \"decode_score_tile_m1x8_v1\"}"
+          }
+        ]
+      }
+    }
+  },
+  "developer_loop": {
+    "evaluation": {
+      "mode": "frontier_followup",
+      "trial_policy": {
+        "seed_start": 0,
+        "trial_count": 1,
+        "stop_after_failures": 1
+      }
+    },
+    "abstraction": {
+      "layer": "decoder_attention_decode_score_tile_m1x8"
+    },
+    "proposal_id": "prop_decoder_attention_decode_score_tile_m1x8_llama7b_v1",
+    "proposal_path": "docs/proposals/prop_decoder_attention_decode_score_tile_m1x8_llama7b_v1/proposal.json"
+  },
+  "submission_history": null,
+  "pr_payload": {
+    "branch": "eval/l1_decoder_attention_decode_score_tile_m1x8_ppa_v1/s20260715t025729z",
+    "title": "eval: run layer1 sweep from nangate45_decode_score_tile_m1x8 on nangate45",
+    "body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260715t025729z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l1_decoder_attention_decode_score_tile_m1x8_ppa_v1"
+    },
+    "body_md": "## Summary\n- item_id: `l1_decoder_attention_decode_score_tile_m1x8_ppa_v1`\n- run_key: `l1_decoder_attention_decode_score_tile_m1x8_ppa_v1_run_ceec4b1c3e107057`\n- layer: `layer1`\n- task_type: `l1_sweep`\n- status: `ok`\n- summary: `8/8 commands succeeded`\n- queue_snapshot: `control_plane/shadow_exports/review/l1_decoder_attention_decode_score_tile_m1x8_ppa_v1/evaluated.json`\n- metrics_rows_count: `12`\n- review_artifact: `promotion_proposal` at `control_plane/shadow_exports/l1_promotions/l1_decoder_attention_decode_score_tile_m1x8_ppa_v1.json`\n\n## Developer Context\n- proposal_id: `prop_decoder_attention_decode_score_tile_m1x8_llama7b_v1`\n- proposal_path: `docs/proposals/prop_decoder_attention_decode_score_tile_m1x8_llama7b_v1/proposal.json`\n- reviewer_first_read: `docs/proposals/prop_decoder_attention_decode_score_tile_m1x8_llama7b_v1/proposal.json` plus `docs/developer_agent_review.md`\n- execution_source_commit: `26d98127bae70b4660666b6a7fd284bd8ba117e2`\n- review_metadata_source_commit: `26d98127bae70b4660666b6a7fd284bd8ba117e2`\n\n## Evaluation Mode\n- evaluation_mode: `frontier_followup`\n- abstraction_layer: `decoder_attention_decode_score_tile_m1x8`\n- evaluation_summary: `Physical metrics recorded from a completed, timing-feasible Layer 1 row.`\n\n## Checklist\n- [ ] Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge\n- [ ] Include metrics row references for each completed design\n- [ ] Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing\n",
+    "checklist": [
+      "Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge",
+      "Include metrics row references for each completed design",
+      "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ]
+  }
+}
