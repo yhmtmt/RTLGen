@@ -71,7 +71,7 @@
     {
       "item_id": "l2_decoder_attention_decode_score_local_cluster_equivalence_llama7b_v1",
       "task_type": "l2_campaign",
-      "status": "ready_to_queue",
+      "status": "merged",
       "objective": "Prove the composed M1x8 producer, explicit score requantizer, score SRAM, two-pass replay, value rendezvous, and iterative divider against the integer performance model.",
       "evaluation_mode": "equivalence_gate",
       "abstraction_layer": "decoder_attention_decode_score_local_cluster_equivalence",
@@ -85,18 +85,22 @@
       "expected_result": {
         "direction": "prove_composed_decode_cluster_equivalence",
         "reason": "Cluster PPA is ineligible until scaling, score storage, replay ordering, value rendezvous, division, and backpressure preserve the end-to-end integer contract."
-      }
+      },
+      "merged_pr_number": 1308,
+      "merge_commit": "b2acf37153d5d969dd20f8b1a5ff8bd5d64b85b4",
+      "merged_utc": "2026-07-15T04:05:37.632475Z",
+      "notes": "Merged via PR #1308 and merge b2acf37153d5d969dd20f8b1a5ff8bd5d64b85b4 at 2026-07-15T04:05:37.632475Z."
     },
     {
       "item_id": "l1_decoder_attention_decode_score_local_cluster_pnr_v1",
       "task_type": "l1_sweep",
-      "status": "blocked_on_cluster_equivalence",
+      "status": "ready_to_queue",
       "objective": "Measure the semantically valid local score producer/store/replay composition.",
       "depends_on_item_ids": [
         "l2_decoder_attention_decode_score_local_cluster_equivalence_llama7b_v1"
       ],
-      "notes": "The decode-shaped PPA and corrective recost are merged. Queue only after the composed local-cluster equivalence gate passes."
+      "notes": "The decode-shaped PPA and corrective recost are merged. Queue only after the composed local-cluster equivalence gate passes. Prerequisites are merged; item is ready to queue."
     }
   ],
-  "source_commit": "2613af1091ac00621b505ba27ab7e231da2cbd5e"
+  "source_commit": "8599a72f2343a9e18e74ad432728bb37526e340f"
 }
