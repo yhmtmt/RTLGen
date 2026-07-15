@@ -1,6 +1,6 @@
 {
   "version": 0.1,
-  "generated_utc": "2026-07-14T04:57:54.568492Z",
+  "generated_utc": "2026-07-15T02:03:49.230766Z",
   "item_id": "l1_decoder_attention_operational_dense_tile_ppa_v1",
   "run_key": "l1_decoder_attention_operational_dense_tile_ppa_v1_run_cb0b9acc6498034e",
   "layer": "layer1",
@@ -56,10 +56,10 @@
   ],
   "trial_summary": {
     "item_id": "l1_decoder_attention_operational_dense_tile_ppa_v1",
-    "completed_trials": 2,
+    "completed_trials": 1,
     "success_count": 1,
-    "failure_count": 1,
-    "success_rate": 0.5,
+    "failure_count": 0,
+    "success_rate": 1.0,
     "metrics": {
       "critical_path_ns": {
         "best": 4.3024,
