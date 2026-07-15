@@ -94,13 +94,16 @@
     {
       "item_id": "l1_decoder_attention_decode_score_local_cluster_pnr_v1",
       "task_type": "l1_sweep",
-      "status": "ready_to_queue",
+      "status": "merged",
       "objective": "Measure the semantically valid local score producer/store/replay composition.",
       "depends_on_item_ids": [
         "l2_decoder_attention_decode_score_local_cluster_equivalence_llama7b_v1"
       ],
-      "notes": "The decode-shaped PPA and corrective recost are merged. Queue only after the composed local-cluster equivalence gate passes. Prerequisites are merged; item is ready to queue."
+      "notes": "The decode-shaped PPA and corrective recost are merged. Queue only after the composed local-cluster equivalence gate passes. Prerequisites are merged; item is ready to queue. Merged via PR #1309 and merge c70a940375d6b8e991d08fe0842c4f7442c019e3 at 2026-07-15T06:05:21.847089Z.",
+      "merged_pr_number": 1309,
+      "merge_commit": "c70a940375d6b8e991d08fe0842c4f7442c019e3",
+      "merged_utc": "2026-07-15T06:05:21.847089Z"
     }
   ],
-  "source_commit": "8599a72f2343a9e18e74ad432728bb37526e340f"
+  "source_commit": "ac7651a62e8ee462b84714729f1f8911b747bb8f"
 }

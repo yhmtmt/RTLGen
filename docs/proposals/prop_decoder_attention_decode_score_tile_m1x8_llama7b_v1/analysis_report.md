@@ -2,31 +2,28 @@
 
 ## Candidate
 - `proposal_id`: `prop_decoder_attention_decode_score_tile_m1x8_llama7b_v1`
-- `candidate_id`: `l2_decoder_attention_decode_score_local_cluster_equivalence_llama7b_v1`
+- `candidate_id`: `l1_decoder_attention_decode_score_local_cluster_pnr_v1`
 
 ## Evaluations Consumed
-- `l2_decoder_attention_decode_score_local_cluster_equivalence_llama7b_v1`
-- `l2_decoder_attention_decode_score_local_cluster_equivalence_llama7b_v1_run_41bdfaaadc1991b8`
-- source commit: `8599a72f2343a9e18e74ad432728bb37526e340f`
-- review: PR #1308
+- `l1_decoder_attention_decode_score_local_cluster_pnr_v1`
+- `l1_decoder_attention_decode_score_local_cluster_pnr_v1_run_3d37e8dbd632f172`
+- source commit: `ac7651a62e8ee462b84714729f1f8911b747bb8f`
+- review: PR #1309
 
 ## Baseline Comparison
-- baseline_ref: `None`
-- baseline_item_id: `None`
-- outcome: `decode_score_local_cluster_equivalence_pass`
-- summary: Decoder score local-cluster equivalence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_local_cluster_equivalence__l2_decoder_attention_decode_score_local_cluster_equivalence_llama7b_v1.json: decision=decode_score_local_cluster_equivalence_pass; equivalence_pass=True; semantic_profile=decode_m1x8_score_sram_two_pass_iterdiv_v1; scenario_count=4; score_tensor_hash=7b469c9555a690c6f77efe3831df349b0ab2bbe40e6b12c5b6e5559a86fa01b7; final_tensor_hash=b7e5f766ea14f412a24fcec8ec657da6b92ae5d142e75da87501f0444709b515; score_scale_lanes_per_cycle=1.
+- not applicable
 
 ## Result
-- result: `iterate`
+- result: `promote`
 - confidence level: merged accepted evidence
-- estimated optimization room: pending follow-on comparison
-- architecture conclusion robustness: staged evidence
-- summary: Decoder score local-cluster equivalence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_local_cluster_equivalence__l2_decoder_attention_decode_score_local_cluster_equivalence_llama7b_v1.json: decision=decode_score_local_cluster_equivalence_pass; equivalence_pass=True; semantic_profile=decode_m1x8_score_sram_two_pass_iterdiv_v1; scenario_count=4; score_tensor_hash=7b469c9555a690c6f77efe3831df349b0ab2bbe40e6b12c5b6e5559a86fa01b7; final_tensor_hash=b7e5f766ea14f412a24fcec8ec657da6b92ae5d142e75da87501f0444709b515; score_scale_lanes_per_cycle=1.
+- estimated optimization room: accepted at current stage
+- architecture conclusion robustness: accepted for the current proposal scope
+- summary: Physical metrics recorded from a completed, timing-feasible Layer 1 row.
 
 ## Failures and Caveats
 - no additional caveats recorded during automatic finalization
 
 ## Recommendation
-- `iterate`
-- reason: Decoder score local-cluster equivalence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_local_cluster_equivalence__l2_decoder_attention_decode_score_local_cluster_equivalence_llama7b_v1.json: decision=decode_score_local_cluster_equivalence_pass; equivalence_pass=True; semantic_profile=decode_m1x8_score_sram_two_pass_iterdiv_v1; scenario_count=4; score_tensor_hash=7b469c9555a690c6f77efe3831df349b0ab2bbe40e6b12c5b6e5559a86fa01b7; final_tensor_hash=b7e5f766ea14f412a24fcec8ec657da6b92ae5d142e75da87501f0444709b515; score_scale_lanes_per_cycle=1.
-- next_action: inspect follow-on work after l2_decoder_attention_decode_score_local_cluster_equivalence_llama7b_v1
+- `promote`
+- reason: Accepted Layer 1 physical metrics were merged in PR #1309 for the current candidate.
+- next_action: inspect the next dependent item

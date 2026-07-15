@@ -1,16 +1,16 @@
 {
   "proposal_id": "prop_decoder_attention_decode_score_tile_m1x8_llama7b_v1",
-  "candidate_id": "l2_decoder_attention_decode_score_local_cluster_equivalence_llama7b_v1",
-  "decision": "iterate",
-  "reason": "Decoder score local-cluster equivalence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_local_cluster_equivalence__l2_decoder_attention_decode_score_local_cluster_equivalence_llama7b_v1.json: decision=decode_score_local_cluster_equivalence_pass; equivalence_pass=True; semantic_profile=decode_m1x8_score_sram_two_pass_iterdiv_v1; scenario_count=4; score_tensor_hash=7b469c9555a690c6f77efe3831df349b0ab2bbe40e6b12c5b6e5559a86fa01b7; final_tensor_hash=b7e5f766ea14f412a24fcec8ec657da6b92ae5d142e75da87501f0444709b515; score_scale_lanes_per_cycle=1.",
+  "candidate_id": "l1_decoder_attention_decode_score_local_cluster_pnr_v1",
+  "decision": "promote",
+  "reason": "Accepted Layer 1 physical metrics were merged in PR #1309 for the current candidate.",
   "evidence_refs": [
-    "item:l2_decoder_attention_decode_score_local_cluster_equivalence_llama7b_v1",
-    "run:l2_decoder_attention_decode_score_local_cluster_equivalence_llama7b_v1_run_41bdfaaadc1991b8",
-    "artifact:control_plane/shadow_exports/l2_decisions/l2_decoder_attention_decode_score_local_cluster_equivalence_llama7b_v1.json",
-    "pr:#1308",
-    "https://github.com/yhmtmt/RTLGen/pull/1308"
+    "item:l1_decoder_attention_decode_score_local_cluster_pnr_v1",
+    "run:l1_decoder_attention_decode_score_local_cluster_pnr_v1_run_3d37e8dbd632f172",
+    "artifact:control_plane/shadow_exports/l1_promotions/l1_decoder_attention_decode_score_local_cluster_pnr_v1.json",
+    "pr:#1309",
+    "https://github.com/yhmtmt/RTLGen/pull/1309"
   ],
-  "next_action": "inspect follow-on work after l2_decoder_attention_decode_score_local_cluster_equivalence_llama7b_v1",
+  "next_action": "inspect the next dependent item",
   "requires_human_approval": false,
   "revision": {
     "reason": "wrong_compute_shape_for_autoregressive_decode",
