@@ -375,3 +375,56 @@ def test_reconcile_github_link_closed_supersedes_item() -> None:
         event_types = [row.event_type for row in session.query(RunEvent).filter_by(run_id=run.id).all()]
         assert "pr_closed" in event_types
         assert "work_item_superseded" in event_types
+
+
+def test_reconcile_stale_closed_pr_preserves_newer_open_review() -> None:
+    with make_session() as session:
+        run = seed_reviewable_run(session)
+        reconcile_github_link(
+            session,
+            GitHubReconcileRequest(
+                repo="yhmtmt/RTLGen",
+                item_id="item_review",
+                branch_name="eval/item_review/s20260308t000000z",
+                pr_number=42,
+                state="pr_open",
+                run_key=run.run_key,
+            ),
+        )
+        reconcile_github_link(
+            session,
+            GitHubReconcileRequest(
+                repo="yhmtmt/RTLGen",
+                item_id="item_review",
+                branch_name="eval/item_review/s20260308t010000z",
+                pr_number=43,
+                state="pr_open",
+                run_key=run.run_key,
+            ),
+        )
+
+        result = reconcile_github_link(
+            session,
+            GitHubReconcileRequest(
+                repo="yhmtmt/RTLGen",
+                item_id="item_review",
+                branch_name="eval/item_review/s20260308t000000z",
+                pr_number=42,
+                state="pr_closed",
+                run_key=run.run_key,
+            ),
+        )
+
+        work_item = session.query(WorkItem).filter_by(item_id="item_review").one()
+        old_link = session.query(GitHubLink).filter_by(pr_number=42).one()
+        new_link = session.query(GitHubLink).filter_by(pr_number=43).one()
+        events = session.query(RunEvent).filter_by(run_id=run.id).all()
+
+        assert result.work_item_state == WorkItemState.AWAITING_REVIEW.value
+        assert work_item.state == WorkItemState.AWAITING_REVIEW
+        assert old_link.state.value == "pr_closed"
+        assert new_link.state.value == "pr_open"
+        assert "nonterminal_pr_closed" in [event.event_type for event in events]
+        assert "work_item_superseded" not in [event.event_type for event in events]
+        nonterminal = next(event for event in events if event.event_type == "nonterminal_pr_closed")
+        assert nonterminal.event_payload["other_active_pr_numbers"] == [43]
