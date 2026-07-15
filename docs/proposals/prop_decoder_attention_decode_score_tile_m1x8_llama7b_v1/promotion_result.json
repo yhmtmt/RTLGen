@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_decoder_attention_decode_score_tile_m1x8_llama7b_v1",
-  "decision": "iterate",
-  "pr_number": 1300,
-  "merge_commit": "970dd9cb4d27da41ee9bf903c8afdefa24182c1e",
-  "merged_utc": "2026-07-15T02:29:50.519606Z"
+  "decision": "promote",
+  "pr_number": 1303,
+  "merge_commit": "2ec3685397990c39b3c463a8357cd43ab2d6f273",
+  "merged_utc": "2026-07-15T03:04:19.526968Z"
 }

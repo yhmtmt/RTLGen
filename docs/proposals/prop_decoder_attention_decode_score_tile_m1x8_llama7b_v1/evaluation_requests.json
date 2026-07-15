@@ -26,9 +26,12 @@
     {
       "item_id": "l1_decoder_attention_decode_score_tile_m1x8_ppa_v1",
       "task_type": "l1_sweep",
-      "status": "running",
+      "status": "merged",
       "objective": "Compare scalar and packed M1x8 PPA under identical physical constraints.",
-      "notes": "Exact M1x8 equivalence is merged; comparative scalar/packed PPA is running."
+      "notes": "Exact M1x8 equivalence is merged; comparative scalar/packed PPA is running. Merged via PR #1303 and merge 2ec3685397990c39b3c463a8357cd43ab2d6f273 at 2026-07-15T03:04:19.526968Z.",
+      "merged_pr_number": 1303,
+      "merge_commit": "2ec3685397990c39b3c463a8357cd43ab2d6f273",
+      "merged_utc": "2026-07-15T03:04:19.526968Z"
     },
     {
       "item_id": "l2_decoder_attention_decode_score_tile_frontier_recost_llama7b_v1",
@@ -64,10 +67,10 @@
     {
       "item_id": "l1_decoder_attention_decode_score_local_cluster_pnr_v1",
       "task_type": "l1_sweep",
-      "status": "blocked_on_corrective_recost",
+      "status": "ready_to_queue",
       "objective": "Measure the semantically valid local score producer/store/replay composition.",
-      "notes": "Wait for the decode-shaped PPA and corrective schedule recost before composing the cluster."
+      "notes": "Wait for the decode-shaped PPA and corrective schedule recost before composing the cluster. Prerequisites are merged; item is ready to queue."
     }
   ],
-  "source_commit": "500e5fd8f51f51ca7014d9fa74c00a80528fe84f"
+  "source_commit": "26d98127bae70b4660666b6a7fd284bd8ba117e2"
 }
