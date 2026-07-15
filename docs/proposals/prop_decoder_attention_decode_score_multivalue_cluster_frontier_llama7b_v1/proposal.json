@@ -1,0 +1,90 @@
+{
+  "proposal_id": "prop_decoder_attention_decode_score_multivalue_cluster_frontier_llama7b_v1",
+  "created_utc": "2026-07-15T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Shared-score multivalue cluster frontier recost for Llama7B",
+  "abstraction_layer": "decoder_attention_decode_score_multivalue_cluster_frontier",
+  "hypothesis": "Once the shared-score multivalue cluster carries measured active-cluster energy and the corrected local-cluster frontier v2 remains the prior bound, the Llama7B recost can replace the repeated-score-fill architecture bound with exact full-head cycles, measured active energy, and cluster-count area/QKV tradeoffs while keeping precision unchanged from the merged equivalence proof.",
+  "direct_comparison": {
+    "primary_question": "Across 1, 2, 4, 8, 16, and 32 shared-score clusters, how does the measured multivalue architecture trade exact full-head cycles and active-cluster energy against area/QKV cost relative to the corrected local-cluster frontier v2?",
+    "baseline": "l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2",
+    "include": [
+      "exact full-head score-fill, value-replay, divider, and aggregate cycles taken from the multivalue cluster frontier audit",
+      "measured active-cluster energy derived from the shared-score activity-power evidence",
+      "area and QKV tradeoff across cluster counts 1, 2, 4, 8, 16, and 32",
+      "unchanged arithmetic and precision contract inherited from l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1",
+      "repo-portable JSON and Markdown outputs only from an evidence-only remote evaluator"
+    ],
+    "exclude": [
+      "do not claim total-token energy yet from the active-cluster measurement alone",
+      "do not treat no-stall service, value-memory composition, NoC composition, or HBM service as already closed",
+      "do not overwrite or erase the corrected local-cluster frontier v2 evidence; keep it as the prior lower-bound reference"
+    ],
+    "metrics": [
+      "full_head_score_fill_cycles",
+      "full_head_value_replay_cycles",
+      "full_head_divider_cycles",
+      "full_head_total_cycles",
+      "measured_active_cluster_energy_j",
+      "cluster_count",
+      "cluster_area_mm2",
+      "cluster_qkv_area_tradeoff_mm2",
+      "latency_us",
+      "token_throughput_per_s",
+      "precision_contract_status"
+    ]
+  },
+  "expected_benefit": [
+    "replaces the repeated-score-fill lower bound with a measured shared-score frontier recost",
+    "makes the exact cycle, energy, and area/QKV tradeoffs explicit for deployable cluster counts",
+    "preserves the already-proven precision contract without reopening a new quality claim"
+  ],
+  "risks": [
+    "measured active-cluster energy may still leave the shared-score design unattractive at some cluster counts",
+    "full-head recost remains sensitive to unclosed no-stall, value-memory, NoC, and HBM abstractions",
+    "the active-cluster measurement is insufficient for any total-token energy ranking until wider composition closes"
+  ],
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_decode_score_multivalue_cluster_frontier_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Recost the shared-score multivalue decode cluster frontier using the corrected local-cluster frontier v2, measured activity-backed cluster energy, and exact full-head cycle accounting across cluster counts 1/2/4/8/16/32.",
+      "evaluation_mode": "frontier_recost",
+      "abstraction_layer": "decoder_attention_decode_score_multivalue_cluster_frontier",
+      "comparison_role": "shared_score_multivalue_cluster_frontier_recost",
+      "paired_baseline_item_id": "l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2",
+        "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "recast_shared_score_multivalue_cluster_frontier",
+        "reason": "Frontier ranking must charge exact full-head cycles, measured active-cluster energy, and area/QKV tradeoffs together while keeping precision fixed from the merged equivalence result and withholding any total-token energy claim."
+      },
+      "status": "pending_implementation_merge"
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_local_cluster_frontier__l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2.json",
+    "control_plane/shadow_exports/l2_decisions/l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_cluster_activity_power__l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1.json",
+    "docs/proposals/prop_decoder_attention_decode_score_multivalue_cluster_llama7b_v1/proposal.json",
+    "docs/proposals/prop_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1/proposal.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/audit_attention_decode_score_multivalue_cluster_frontier.py",
+    "docs/proposals/prop_decoder_attention_decode_score_multivalue_cluster_llama7b_v1/evaluation_requests.json",
+    "docs/proposals/prop_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1/evaluation_requests.json"
+  ],
+  "remaining_abstractions_after_this_step": [
+    "No-stall service remains a model-level abstraction rather than a measured integrated scheduling result.",
+    "Value-memory composition is still external to this cluster-level recost and must be closed separately.",
+    "NoC composition remains open; this frontier does not include full transport contention or routing-energy closure.",
+    "HBM service remains open; this recost is not a full memory-system closure.",
+    "Measured active-cluster energy is not yet a total-token energy claim."
+  ]
+}
