@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_decoder_attention_operational_cluster_physical_closure_llama7b_v1",
-  "decision": "promote",
-  "pr_number": 1288,
-  "merge_commit": "1548e1a63c520da1ebe11b75b1843a3ae415de67",
-  "merged_utc": "2026-07-14T13:56:40.550591Z"
+  "decision": "iterate",
+  "pr_number": 1293,
+  "merge_commit": "bfd0aa83d0f4609937aa65a5266189c2f67fe3bd",
+  "merged_utc": "2026-07-15T01:55:42.479767Z"
 }

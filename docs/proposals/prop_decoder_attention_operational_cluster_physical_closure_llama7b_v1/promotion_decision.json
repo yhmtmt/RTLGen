@@ -1,15 +1,15 @@
 {
   "proposal_id": "prop_decoder_attention_operational_cluster_physical_closure_llama7b_v1",
-  "candidate_id": "l1_decoder_attention_score_bank_proxy_pnr_v1",
-  "decision": "promote",
-  "reason": "Accepted Layer 1 physical metrics were merged in PR #1288 for the current candidate.",
+  "candidate_id": "l2_decoder_attention_operational_component_frontier_llama7b_v1",
+  "decision": "iterate",
+  "reason": "Decoder operational-component frontier recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_operational_component_frontier__l2_decoder_attention_operational_component_frontier_llama7b_v1.json: decision=operational_component_area_timing_recosted_energy_retained; recommended_candidate=score32_separated_zero_tail_two_pass_nominal_per_head_iterdiv_operational_components; recommended_latency_us=1595.42090302109; recommended_token_throughput_per_s=626.793843622331; recommended_energy_mj_per_token=137.330868813197; recommended_embodied_area_mm2=325.5239481009; energy_promotion_blocked=True; next_step=measure activity-backed operational tile power and physically compose one local cluster.",
   "evidence_refs": [
-    "item:l1_decoder_attention_score_bank_proxy_pnr_v1",
-    "run:l1_decoder_attention_score_bank_proxy_pnr_v1_run_03f8a35ea97d7f03",
-    "artifact:control_plane/shadow_exports/l1_promotions/l1_decoder_attention_score_bank_proxy_pnr_v1.json",
-    "pr:#1288",
-    "https://github.com/yhmtmt/RTLGen/pull/1288"
+    "item:l2_decoder_attention_operational_component_frontier_llama7b_v1",
+    "run:l2_decoder_attention_operational_component_frontier_llama7b_v1_run_d062a3d2afbbc7b9",
+    "artifact:control_plane/shadow_exports/l2_decisions/l2_decoder_attention_operational_component_frontier_llama7b_v1.json",
+    "pr:#1293",
+    "https://github.com/yhmtmt/RTLGen/pull/1293"
   ],
-  "next_action": "queue l2_decoder_attention_operational_component_frontier_llama7b_v1",
+  "next_action": "inspect follow-on work after l2_decoder_attention_operational_component_frontier_llama7b_v1",
   "requires_human_approval": false
 }

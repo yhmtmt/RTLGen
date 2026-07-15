@@ -2,28 +2,31 @@
 
 ## Candidate
 - `proposal_id`: `prop_decoder_attention_operational_cluster_physical_closure_llama7b_v1`
-- `candidate_id`: `l1_decoder_attention_score_bank_proxy_pnr_v1`
+- `candidate_id`: `l2_decoder_attention_operational_component_frontier_llama7b_v1`
 
 ## Evaluations Consumed
-- `l1_decoder_attention_score_bank_proxy_pnr_v1`
-- `l1_decoder_attention_score_bank_proxy_pnr_v1_run_03f8a35ea97d7f03`
-- source commit: `cda8e38dd420e1ef41109b76a0b3710d359771ac`
-- review: PR #1288
+- `l2_decoder_attention_operational_component_frontier_llama7b_v1`
+- `l2_decoder_attention_operational_component_frontier_llama7b_v1_run_d062a3d2afbbc7b9`
+- source commit: `96c98dfaabf741cd5df7a807f3040826eced03cb`
+- review: PR #1293
 
 ## Baseline Comparison
-- not applicable
+- baseline_ref: `None`
+- baseline_item_id: `None`
+- outcome: `operational_component_area_timing_recosted_energy_retained`
+- summary: Decoder operational-component frontier recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_operational_component_frontier__l2_decoder_attention_operational_component_frontier_llama7b_v1.json: decision=operational_component_area_timing_recosted_energy_retained; recommended_candidate=score32_separated_zero_tail_two_pass_nominal_per_head_iterdiv_operational_components; recommended_latency_us=1595.42090302109; recommended_token_throughput_per_s=626.793843622331; recommended_energy_mj_per_token=137.330868813197; recommended_embodied_area_mm2=325.5239481009; energy_promotion_blocked=True; next_step=measure activity-backed operational tile power and physically compose one local cluster.
 
 ## Result
-- result: `promote`
+- result: `iterate`
 - confidence level: merged accepted evidence
-- estimated optimization room: accepted at current stage
-- architecture conclusion robustness: accepted for the current proposal scope
-- summary: Physical metrics recorded from a completed, timing-feasible Layer 1 row.
+- estimated optimization room: pending follow-on comparison
+- architecture conclusion robustness: staged evidence
+- summary: Decoder operational-component frontier recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_operational_component_frontier__l2_decoder_attention_operational_component_frontier_llama7b_v1.json: decision=operational_component_area_timing_recosted_energy_retained; recommended_candidate=score32_separated_zero_tail_two_pass_nominal_per_head_iterdiv_operational_components; recommended_latency_us=1595.42090302109; recommended_token_throughput_per_s=626.793843622331; recommended_energy_mj_per_token=137.330868813197; recommended_embodied_area_mm2=325.5239481009; energy_promotion_blocked=True; next_step=measure activity-backed operational tile power and physically compose one local cluster.
 
 ## Failures and Caveats
 - no additional caveats recorded during automatic finalization
 
 ## Recommendation
-- `promote`
-- reason: Accepted Layer 1 physical metrics were merged in PR #1288 for the current candidate.
-- next_action: queue l2_decoder_attention_operational_component_frontier_llama7b_v1
+- `iterate`
+- reason: Decoder operational-component frontier recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_operational_component_frontier__l2_decoder_attention_operational_component_frontier_llama7b_v1.json: decision=operational_component_area_timing_recosted_energy_retained; recommended_candidate=score32_separated_zero_tail_two_pass_nominal_per_head_iterdiv_operational_components; recommended_latency_us=1595.42090302109; recommended_token_throughput_per_s=626.793843622331; recommended_energy_mj_per_token=137.330868813197; recommended_embodied_area_mm2=325.5239481009; energy_promotion_blocked=True; next_step=measure activity-backed operational tile power and physically compose one local cluster.
+- next_action: inspect follow-on work after l2_decoder_attention_operational_component_frontier_llama7b_v1
