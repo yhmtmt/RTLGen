@@ -1,0 +1,67 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-07-15T04:03:39.473619Z",
+  "item_id": "l2_decoder_attention_decode_score_local_cluster_equivalence_llama7b_v1",
+  "run_key": "l2_decoder_attention_decode_score_local_cluster_equivalence_llama7b_v1_run_41bdfaaadc1991b8",
+  "layer": "layer2",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l2_campaign",
+  "source_commit": "8599a72f2343a9e18e74ad432728bb37526e340f",
+  "review_metadata_source_commit": "8599a72f2343a9e18e74ad432728bb37526e340f",
+  "objective": "Prove the composed M1x8 producer, explicit score requantizer, score SRAM, two-pass replay, value rendezvous, and iterative divider against the integer performance model.",
+  "input_manifest": {
+    "decoder_contract": {
+      "decode_score_local_cluster_equivalence_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_local_cluster_equivalence__l2_decoder_attention_decode_score_local_cluster_equivalence_llama7b_v1.json",
+      "decode_score_local_cluster_equivalence_scope": "Prove the composed M1x8 QK producer, explicit score requantizer, score SRAM, two-pass replay, value rendezvous, iterative divider, and result backpressure behavior against the integer performance-model reference.",
+      "decode_score_local_cluster_equivalence_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_local_cluster_equivalence__l2_decoder_attention_decode_score_local_cluster_equivalence_llama7b_v1.md"
+    }
+  },
+  "recommendation": {
+    "source": "decoder_evidence",
+    "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_local_cluster_equivalence__l2_decoder_attention_decode_score_local_cluster_equivalence_llama7b_v1.json",
+    "arch_id": "decoder_attention_decode_score_local_cluster_equivalence",
+    "macro_mode": "evidence_only",
+    "outcome": "decode_score_local_cluster_equivalence_pass"
+  },
+  "objective_profiles": [],
+  "evaluation_record": {
+    "proposal_id": "prop_decoder_attention_decode_score_tile_m1x8_llama7b_v1",
+    "title": "Decode-shaped M1x8 score tile for the Llama7B attention frontier",
+    "primary_question": "How do scalar-drain and packed-row M1x8 score tiles change measured area, delay, and the precision-aligned Llama7B token frontier relative to the semantically mismatched M16x8 recost?",
+    "evaluation_mode": "equivalence_gate",
+    "comparison_role": "decode_exact_cluster_semantic_gate",
+    "abstraction_layer": "decoder_attention_decode_score_local_cluster_equivalence",
+    "expected_direction": "prove_composed_decode_cluster_equivalence",
+    "expected_reason": "Cluster PPA is ineligible until scaling, score storage, replay ordering, value rendezvous, division, and backpressure preserve the end-to-end integer contract.",
+    "summary": "Decoder score local-cluster equivalence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_local_cluster_equivalence__l2_decoder_attention_decode_score_local_cluster_equivalence_llama7b_v1.json: decision=decode_score_local_cluster_equivalence_pass; equivalence_pass=True; semantic_profile=decode_m1x8_score_sram_two_pass_iterdiv_v1; scenario_count=4; score_tensor_hash=7b469c9555a690c6f77efe3831df349b0ab2bbe40e6b12c5b6e5559a86fa01b7; final_tensor_hash=b7e5f766ea14f412a24fcec8ec657da6b92ae5d142e75da87501f0444709b515; score_scale_lanes_per_cycle=1.",
+    "outcome": "decode_score_local_cluster_equivalence_pass",
+    "expectation_status": "unspecified"
+  },
+  "proposal_assessment": {
+    "proposal_id": "prop_decoder_attention_decode_score_tile_m1x8_llama7b_v1",
+    "title": "Decode-shaped M1x8 score tile for the Llama7B attention frontier",
+    "kind": "architecture",
+    "primary_question": "How do scalar-drain and packed-row M1x8 score tiles change measured area, delay, and the precision-aligned Llama7B token frontier relative to the semantically mismatched M16x8 recost?",
+    "evaluation_mode": "equivalence_gate",
+    "comparison_role": "decode_exact_cluster_semantic_gate",
+    "outcome": "decode_score_local_cluster_equivalence_pass",
+    "summary": "Decoder score local-cluster equivalence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_local_cluster_equivalence__l2_decoder_attention_decode_score_local_cluster_equivalence_llama7b_v1.json: decision=decode_score_local_cluster_equivalence_pass; equivalence_pass=True; semantic_profile=decode_m1x8_score_sram_two_pass_iterdiv_v1; scenario_count=4; score_tensor_hash=7b469c9555a690c6f77efe3831df349b0ab2bbe40e6b12c5b6e5559a86fa01b7; final_tensor_hash=b7e5f766ea14f412a24fcec8ec657da6b92ae5d142e75da87501f0444709b515; score_scale_lanes_per_cycle=1.",
+    "baseline_ref": null,
+    "baseline_item_id": null,
+    "matched_row_count": 0,
+    "matched_rows": [],
+    "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_local_cluster_equivalence__l2_decoder_attention_decode_score_local_cluster_equivalence_llama7b_v1.json",
+    "decoder_quality": {
+      "diagnosis": {}
+    }
+  },
+  "source_refs": {
+    "decoder_evidence_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_local_cluster_equivalence__l2_decoder_attention_decode_score_local_cluster_equivalence_llama7b_v1.json",
+    "decoder_decode_score_local_cluster_equivalence_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_local_cluster_equivalence__l2_decoder_attention_decode_score_local_cluster_equivalence_llama7b_v1.json",
+    "decoder_decode_score_local_cluster_equivalence_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_local_cluster_equivalence__l2_decoder_attention_decode_score_local_cluster_equivalence_llama7b_v1.md"
+  },
+  "decoder_quality": {
+    "diagnosis": {}
+  }
+}

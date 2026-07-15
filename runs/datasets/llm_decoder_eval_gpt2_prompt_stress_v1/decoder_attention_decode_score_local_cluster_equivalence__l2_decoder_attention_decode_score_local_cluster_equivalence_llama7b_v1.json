@@ -1,0 +1,328 @@
+{
+  "decision": "decode_score_local_cluster_equivalence_pass",
+  "equivalence_pass": true,
+  "final_tensor_hash": "b7e5f766ea14f412a24fcec8ec657da6b92ae5d142e75da87501f0444709b515",
+  "model": "llm_decoder_attention_decode_score_local_cluster_equivalence_v1",
+  "scenario_count": 4,
+  "scenarios": [
+    {
+      "equivalence_pass": true,
+      "expected": {
+        "command_id": 18977,
+        "exp_sum": 231263,
+        "global_max": 837812224,
+        "value": [
+          -5724335,
+          -5527730,
+          -5331125,
+          -5134520,
+          -4937915,
+          -4741310,
+          -4544705,
+          -4348100
+        ]
+      },
+      "observed": {
+        "accepted_count": 1,
+        "command_id": 18977,
+        "completed_count_at_accept": 0,
+        "exp_sum": 231263,
+        "global_max": 837812224,
+        "protocol_error": false,
+        "value": [
+          -5724335,
+          -5527730,
+          -5331125,
+          -5134520,
+          -4937915,
+          -4741310,
+          -4544705,
+          -4348100
+        ]
+      },
+      "scenario": "always_ready",
+      "score_addresses": [
+        0,
+        1,
+        2
+      ],
+      "score_rows": [
+        [
+          -585105408,
+          623902720,
+          -659554304,
+          695205888,
+          -730857472,
+          766509056,
+          -802160640,
+          837812224
+        ],
+        [
+          -4194304,
+          12582912,
+          -20971520,
+          29360128,
+          -37748736,
+          46137344,
+          -54525952,
+          62914560
+        ],
+        [
+          -24117248,
+          -17825792,
+          15728640,
+          -13631488,
+          11534336,
+          -9437184,
+          7340032,
+          -5242880
+        ]
+      ]
+    },
+    {
+      "equivalence_pass": true,
+      "expected": {
+        "command_id": 18977,
+        "exp_sum": 231263,
+        "global_max": 837812224,
+        "value": [
+          -5724335,
+          -5527730,
+          -5331125,
+          -5134520,
+          -4937915,
+          -4741310,
+          -4544705,
+          -4348100
+        ]
+      },
+      "observed": {
+        "accepted_count": 1,
+        "command_id": 18977,
+        "completed_count_at_accept": 0,
+        "exp_sum": 231263,
+        "global_max": 837812224,
+        "protocol_error": false,
+        "value": [
+          -5724335,
+          -5527730,
+          -5331125,
+          -5134520,
+          -4937915,
+          -4741310,
+          -4544705,
+          -4348100
+        ]
+      },
+      "scenario": "stalls",
+      "score_addresses": [
+        0,
+        1,
+        2
+      ],
+      "score_rows": [
+        [
+          -585105408,
+          623902720,
+          -659554304,
+          695205888,
+          -730857472,
+          766509056,
+          -802160640,
+          837812224
+        ],
+        [
+          -4194304,
+          12582912,
+          -20971520,
+          29360128,
+          -37748736,
+          46137344,
+          -54525952,
+          62914560
+        ],
+        [
+          -24117248,
+          -17825792,
+          15728640,
+          -13631488,
+          11534336,
+          -9437184,
+          7340032,
+          -5242880
+        ]
+      ]
+    },
+    {
+      "equivalence_pass": true,
+      "expected": {
+        "command_id": 18977,
+        "exp_sum": 1572840,
+        "global_max": 1199,
+        "value": [
+          -4816823,
+          -4620218,
+          -4423613,
+          -4227008,
+          -4030403,
+          -3833798,
+          -3637193,
+          -3440588
+        ]
+      },
+      "observed": {
+        "accepted_count": 1,
+        "command_id": 18977,
+        "completed_count_at_accept": 0,
+        "exp_sum": 1572840,
+        "global_max": 1199,
+        "protocol_error": false,
+        "value": [
+          -4816823,
+          -4620218,
+          -4423613,
+          -4227008,
+          -4030403,
+          -3833798,
+          -3637193,
+          -3440588
+        ]
+      },
+      "scenario": "rounded_shift",
+      "score_addresses": [
+        0,
+        1,
+        2
+      ],
+      "score_rows": [
+        [
+          -837,
+          893,
+          -944,
+          995,
+          -1046,
+          1097,
+          -1148,
+          1199
+        ],
+        [
+          -6,
+          18,
+          -30,
+          42,
+          -54,
+          66,
+          -78,
+          90
+        ],
+        [
+          -35,
+          -26,
+          23,
+          -20,
+          17,
+          -14,
+          11,
+          -8
+        ]
+      ]
+    },
+    {
+      "equivalence_pass": true,
+      "expected": {
+        "command_id": 18977,
+        "exp_sum": 720885,
+        "global_max": 2147483647,
+        "value": [
+          -4760224,
+          -4563619,
+          -4367014,
+          -4170409,
+          -3973804,
+          -3777199,
+          -3580594,
+          -3383989
+        ]
+      },
+      "observed": {
+        "accepted_count": 1,
+        "command_id": 18977,
+        "completed_count_at_accept": 0,
+        "exp_sum": 720885,
+        "global_max": 2147483647,
+        "protocol_error": false,
+        "value": [
+          -4760224,
+          -4563619,
+          -4367014,
+          -4170409,
+          -3973804,
+          -3777199,
+          -3580594,
+          -3383989
+        ]
+      },
+      "scenario": "saturation",
+      "score_addresses": [
+        0,
+        1,
+        2
+      ],
+      "score_rows": [
+        [
+          -2147483648,
+          2147483647,
+          -2147483648,
+          2147483647,
+          -2147483648,
+          2147483647,
+          -2147483648,
+          2147483647
+        ],
+        [
+          -2147483648,
+          2147483647,
+          -2147483648,
+          2147483647,
+          -2147483648,
+          2147483647,
+          -2147483648,
+          2147483647
+        ],
+        [
+          -2147483648,
+          -2147483648,
+          2147483647,
+          -2147483648,
+          2147483647,
+          -2147483648,
+          2147483647,
+          -2147483648
+        ]
+      ]
+    }
+  ],
+  "score_scale_contract": {
+    "metadata_source": "external_command_input",
+    "rounding": "symmetric_magnitude_round_to_nearest",
+    "saturation": "signed_32",
+    "tested_multiplier_shift": [
+      [
+        1048576,
+        0
+      ],
+      [
+        3,
+        1
+      ],
+      [
+        4294967295,
+        0
+      ]
+    ]
+  },
+  "score_scale_lanes_per_cycle": 1,
+  "score_tensor_hash": "7b469c9555a690c6f77efe3831df349b0ab2bbe40e6b12c5b6e5559a86fa01b7",
+  "semantic_profile": "decode_m1x8_score_sram_two_pass_iterdiv_v1",
+  "version": 1
+}

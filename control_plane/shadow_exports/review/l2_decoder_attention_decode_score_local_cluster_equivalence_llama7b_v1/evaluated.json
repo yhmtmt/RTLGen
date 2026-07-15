@@ -1,0 +1,105 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "decoder_contract": {
+        "decode_score_local_cluster_equivalence_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_local_cluster_equivalence__l2_decoder_attention_decode_score_local_cluster_equivalence_llama7b_v1.json",
+        "decode_score_local_cluster_equivalence_scope": "Prove the composed M1x8 QK producer, explicit score requantizer, score SRAM, two-pass replay, value rendezvous, iterative divider, and result backpressure behavior against the integer performance-model reference.",
+        "decode_score_local_cluster_equivalence_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_local_cluster_equivalence__l2_decoder_attention_decode_score_local_cluster_equivalence_llama7b_v1.md"
+      }
+    },
+    "commands": [
+      {
+        "run": "python3 -m npu.eval.probe_attention_decode_score_local_cluster_equivalence --config runs/designs/npu_blocks/attention_decode_score_local_cluster_int8_m1x8_iterdiv/config.json --out runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_local_cluster_equivalence__l2_decoder_attention_decode_score_local_cluster_equivalence_llama7b_v1.json --out-md runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_local_cluster_equivalence__l2_decoder_attention_decode_score_local_cluster_equivalence_llama7b_v1.md",
+        "name": "probe_decode_score_local_cluster_equivalence"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate_runs"
+      }
+    ],
+    "objective": "Prove the composed M1x8 producer, explicit score requantizer, score SRAM, two-pass replay, value rendezvous, and iterative divider against the integer performance model.",
+    "acceptance": [
+      "Write all declared decoder evidence artifacts",
+      "Keep evidence artifact paths repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "source_mode": "src_verilog",
+    "expected_outputs": [
+      "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_local_cluster_equivalence__l2_decoder_attention_decode_score_local_cluster_equivalence_llama7b_v1.json",
+      "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_local_cluster_equivalence__l2_decoder_attention_decode_score_local_cluster_equivalence_llama7b_v1.md"
+    ]
+  },
+  "layer": "layer2",
+  "state": "evaluated",
+  "title": "Decode score local-cluster end-to-end equivalence",
+  "result": {
+    "branch": "eval/l2_decoder_attention_decode_score_local_cluster_equivalence_llama7b_v1/s20260715t040339z",
+    "completed_utc": "2026-07-15T04:03:38.622932Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "b7c2d9c80c1c",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260715t040339z][host:b7c2d9c80c1c][item:l2_decoder_attention_decode_score_local_cluster_equivalence_llama7b_v1]",
+    "metrics_rows": [],
+    "metrics_exempt_reason": "evidence_only_decoder_evidence",
+    "queue_item_id": "l2_decoder_attention_decode_score_local_cluster_equivalence_llama7b_v1",
+    "session_id": "s20260715t040339z",
+    "status": "ok",
+    "summary": "2/2 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l2_decoder_attention_decode_score_local_cluster_equivalence_llama7b_v1/s20260715t040339z",
+    "pr_title": "eval: run decode score local-cluster end-to-end equivalence",
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Include metrics row references in result.metrics_rows",
+      "Keep committed result_path fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260715t040339z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l2_decoder_attention_decode_score_local_cluster_equivalence_llama7b_v1"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l2_decoder_attention_decode_score_local_cluster_equivalence_llama7b_v1",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 80,
+  "created_utc": "2026-07-15T04:03:15.960231Z",
+  "requested_by": "developer_agent",
+  "developer_loop": {
+    "comparison": {
+      "role": "decode_exact_cluster_semantic_gate",
+      "paired_baseline_item_id": ""
+    },
+    "evaluation": {
+      "mode": "equivalence_gate",
+      "expected_reason": "Cluster PPA is ineligible until scaling, score storage, replay ordering, value rendezvous, division, and backpressure preserve the end-to-end integer contract.",
+      "expected_direction": "prove_composed_decode_cluster_equivalence"
+    },
+    "abstraction": {
+      "layer": "decoder_attention_decode_score_local_cluster_equivalence"
+    },
+    "proposal_id": "prop_decoder_attention_decode_score_tile_m1x8_llama7b_v1",
+    "dependencies": {
+      "item_ids": [
+        "l2_decoder_attention_decode_score_tile_frontier_recost_llama7b_v1",
+        "l1_decoder_attention_two_pass_stream_iterdiv_ppa_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    },
+    "proposal_path": "docs/proposals/prop_decoder_attention_decode_score_tile_m1x8_llama7b_v1"
+  },
+  "source_requirement": {
+    "repo": "",
+    "reason": "evaluator runtime must contain the queued job source commit",
+    "version": 1,
+    "required_ref": "origin/master",
+    "required_sha": "8599a72f2343a9e18e74ad432728bb37526e340f",
+    "requires_daemon_restart": true
+  }
+}
