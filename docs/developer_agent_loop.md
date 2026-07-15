@@ -218,6 +218,19 @@ The quality precheck must also:
 - keep hashes and trace-only observability disabled outside explicit equivalence runs so they do not contaminate PPA
 - record any externally supplied quantization metadata or scale derivation as a remaining abstraction
 
+For energy claims, vectorless OpenROAD power is not workload energy. An
+activity-backed promotion must:
+- generate VCD/SAIF only through an explicit activity-evaluation command, never in normal PPA RTL or tests
+- use the same ready/valid transaction and numeric inputs already covered by end-to-end equivalence
+- partition traces by architectural phase when a short representative run has a different phase mix from the full workload
+- record measured phase cycles and an exact, reviewable scaling formula to the target context length
+- load the routed netlist, final SDC, and final SPEF used by the cited PPA point
+- require the trace clock period to equal the routed design clock period
+- report and gate VCD/SAIF annotation coverage; reject missing, low-coverage, or `NaN` power instead of falling back to vectorless power
+- require explicit activity on accessed SRAM proxy pins when SRAM proxy energy is included
+- keep evaluator-local VCD, ODB, and SPEF files out of Git while preserving their hashes and portable source identifiers in the result
+- state separately which memory, NoC, HBM, and SRAM-compiler energy terms remain outside the measurement
+
 This is not an extra human approval gate by default.
 It is a mandatory technical gate for numerically sensitive proposals.
 
