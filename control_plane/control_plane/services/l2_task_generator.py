@@ -6720,6 +6720,46 @@ def _decoder_attention_decode_score_tile_frontier_evidence(*, item_id: str) -> d
     }
 
 
+def _decoder_attention_decode_score_local_cluster_frontier_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    prior = (
+        f"{base}/decoder_attention_decode_score_tile_frontier__"
+        "l2_decoder_attention_decode_score_tile_frontier_recost_llama7b_v1.json"
+    )
+    metrics = "runs/designs/npu_blocks/attention_decode_score_local_cluster_int8_m1x8_iterdiv/metrics.csv"
+    equivalence = (
+        f"{base}/decoder_attention_decode_score_local_cluster_equivalence__"
+        "l2_decoder_attention_decode_score_local_cluster_equivalence_llama7b_v1.json"
+    )
+    out = f"{base}/decoder_attention_decode_score_local_cluster_frontier__{item_id}.json"
+    report = f"{base}/decoder_attention_decode_score_local_cluster_frontier__{item_id}.md"
+    return {
+        "inputs": {
+            "decode_score_local_cluster_prior_frontier": prior,
+            "decode_score_local_cluster_metrics": metrics,
+            "decode_score_local_cluster_equivalence": equivalence,
+            "decode_score_local_cluster_frontier_out": out,
+            "decode_score_local_cluster_frontier_report": report,
+            "decode_score_local_cluster_frontier_scope": (
+                "Retract the bare-tile frontier and charge measured cluster area plus complete fill, replay, "
+                "division, and 16-value-slice service for every Llama7B head. Energy remains blocked."
+            ),
+        },
+        "commands": [
+            {
+                "name": "audit_decode_score_local_cluster_frontier",
+                "run": (
+                    "python3 -m npu.eval.audit_llm_decoder_attention_decode_score_local_cluster_frontier "
+                    f"--prior-frontier-json {prior} --cluster-metrics-csv {metrics} "
+                    f"--equivalence-json {equivalence} --out {out} --out-md {report}"
+                ),
+            }
+        ],
+        "expected_outputs": [out, report],
+        "evidence_only": True,
+    }
+
+
 def _decoder_attention_score_bank_proxy_equivalence_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_score_bank_proxy_equivalence__{item_id}.json"
@@ -10258,6 +10298,7 @@ def _build_payload(
         "decoder_attention_decode_score_tile_equivalence",
         "decoder_attention_decode_score_local_cluster_equivalence",
         "decoder_attention_decode_score_tile_frontier",
+        "decoder_attention_decode_score_local_cluster_frontier",
         "decoder_attention_score_bank_proxy_equivalence",
         "decoder_attention_score32_exp_lut_hbm_dram_service_closure",
         "decoder_attention_score32_hbm_controller_replay",
@@ -10492,6 +10533,8 @@ def _build_payload(
             decoder_evidence = _decoder_attention_decode_score_local_cluster_equivalence_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_decode_score_tile_frontier":
             decoder_evidence = _decoder_attention_decode_score_tile_frontier_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_attention_decode_score_local_cluster_frontier":
+            decoder_evidence = _decoder_attention_decode_score_local_cluster_frontier_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_score_bank_proxy_equivalence":
             decoder_evidence = _decoder_attention_score_bank_proxy_equivalence_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_score32_exp_lut_hbm_dram_service_closure":

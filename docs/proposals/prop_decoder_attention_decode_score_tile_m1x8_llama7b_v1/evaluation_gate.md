@@ -5,3 +5,4 @@
 3. Timing-infeasible points remain explicit boundary evidence.
 4. The corrective recost retracts the M16x8-scaled Llama7B component frontier.
 5. Vectorless power remains diagnostic until activity-backed cluster energy is measured.
+6. A composed-cluster recost must charge all 16 eight-value-dimension commands per Llama7B head and retract any bare-tile frontier that does not.

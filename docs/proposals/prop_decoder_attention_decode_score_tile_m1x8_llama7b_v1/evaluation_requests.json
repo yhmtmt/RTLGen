@@ -103,6 +103,31 @@
       "merged_pr_number": 1309,
       "merge_commit": "c70a940375d6b8e991d08fe0842c4f7442c019e3",
       "merged_utc": "2026-07-15T06:05:21.847089Z"
+    },
+    {
+      "item_id": "l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v1",
+      "task_type": "l2_campaign",
+      "status": "ready_to_queue",
+      "objective": "Retract the bare-M1x8 frontier and recompute a no-stall Llama7B bound from measured composed-cluster area, timing, fill, replay, divider, and value-slice service.",
+      "evaluation_mode": "frontier_recost",
+      "abstraction_layer": "decoder_attention_decode_score_local_cluster_frontier",
+      "comparison_role": "decode_composed_cluster_corrective_recost",
+      "depends_on_item_ids": [
+        "l1_decoder_attention_decode_score_local_cluster_pnr_v1",
+        "l2_decoder_attention_decode_score_local_cluster_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "revision": {
+        "reason": "bare_tile_scaling_omitted_composed_service_and_value_slices",
+        "invalidates_item_ids": [
+          "l2_decoder_attention_decode_score_tile_frontier_recost_llama7b_v1"
+        ]
+      },
+      "expected_result": {
+        "direction": "reprice_with_composed_cluster_lower_bound",
+        "reason": "The active frontier must charge the measured 512 KiB score bank and all 16 eight-dimensional value slices per head."
+      }
     }
   ],
   "source_commit": "ac7651a62e8ee462b84714729f1f8911b747bb8f"
