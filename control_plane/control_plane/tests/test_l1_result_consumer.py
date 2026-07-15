@@ -467,6 +467,22 @@ def test_consume_l1_result_accepts_failed_acceptance_run_with_mixed_metrics() ->
                 },
             )
             session.add(run)
+            session.flush()
+            session.add_all(
+                [
+                    Artifact(
+                        run_id=run.id,
+                        kind="expected_output",
+                        storage_mode="repo",
+                        path=metrics_path,
+                        metadata_={
+                            "transport_policy": "inline_text_evidence",
+                            "inline_utf8": (repo_root / metrics_path).read_text(encoding="utf-8"),
+                        },
+                    )
+                    for metrics_path in (metrics_ok, metrics_failed)
+                ]
+            )
             session.commit()
 
             result = consume_l1_result(
@@ -556,10 +572,24 @@ def test_consume_l1_result_keeps_single_trial_metrics_without_trials_subdir() ->
             session.add(work_item)
             session.flush()
 
-            run = Run(
+            canceled_run = Run(
                 run_key="l1_test_single_trial_plain_metrics_run_1",
                 work_item_id=work_item.id,
                 attempt=1,
+                trial_index=1,
+                seed=0,
+                executor_type=ExecutorType.INTERNAL_WORKER,
+                status=RunStatus.CANCELED,
+                started_at=utcnow(),
+                completed_at=utcnow(),
+                checkout_commit="deadbeef",
+                result_summary="operator canceled before execution",
+                result_payload={"trial": {"trial_index": 1, "seed": 0}},
+            )
+            run = Run(
+                run_key="l1_test_single_trial_plain_metrics_run_2",
+                work_item_id=work_item.id,
+                attempt=2,
                 trial_index=1,
                 seed=0,
                 executor_type=ExecutorType.INTERNAL_WORKER,
@@ -573,7 +603,7 @@ def test_consume_l1_result_keeps_single_trial_metrics_without_trials_subdir() ->
                     "queue_result": {"status": "ok", "metrics_rows": [f"{metrics_rel}:2"]},
                 },
             )
-            session.add(run)
+            session.add_all([canceled_run, run])
             session.flush()
 
             result = consume_l1_result(
@@ -588,6 +618,14 @@ def test_consume_l1_result_keeps_single_trial_metrics_without_trials_subdir() ->
             proposal_path = repo_root / "control_plane" / "shadow_exports" / "l1_promotions" / f"{work_item.item_id}.json"
             payload = json.loads(proposal_path.read_text(encoding="utf-8"))
             assert payload["proposals"][0]["metrics_ref"]["metrics_csv"] == metrics_rel
+            assert payload["trial_summary"]["completed_trials"] == 1
+            assert payload["trial_summary"]["success_count"] == 1
+            assert payload["trial_summary"]["failure_count"] == 0
+
+            trial_table_path = (
+                repo_root / "control_plane" / "shadow_exports" / "l1_trials" / work_item.item_id / "trial_table.csv"
+            )
+            assert "l1_test_single_trial_plain_metrics_run_1" not in trial_table_path.read_text(encoding="utf-8")
 
 
 def test_consume_l1_result_filters_historical_rows_by_current_sweep_tag_prefix() -> None:
@@ -1099,15 +1137,21 @@ def test_consume_l1_result_counts_requeued_failures_in_trial_history() -> None:
                 checkout_commit="deadbeef",
                 trial_index=1,
                 seed=101,
-                result_summary="checkout failed",
+                result_summary="acceptance failed before retry",
                 result_payload={
                     "trial": {"trial_index": 1, "seed": 101},
                     "retry_decision": {"requeue": True},
-                    "failure_classification": {"category": "checkout_error", "stage": "checkout", "signature": "git fetch origin"},
+                    "queue_result": {"status": "fail", "metrics_rows": [f"{metrics_trial_1}:2"]},
+                    "failure_classification": {
+                        "category": "validation_error",
+                        "stage": "acceptance",
+                        "failed_command_name": "acceptance",
+                        "signature": "no accepted rows",
+                    },
                 },
-                failure_category="checkout_error",
-                failure_stage="checkout",
-                failure_signature="git fetch origin",
+                failure_category="validation_error",
+                failure_stage="acceptance",
+                failure_signature="no accepted rows",
             )
             run_2 = Run(
                 run_key="l1_test_requeued_failure_history_run_2",
@@ -1156,13 +1200,13 @@ def test_consume_l1_result_counts_requeued_failures_in_trial_history() -> None:
 
             failure_path = repo_root / "control_plane" / "shadow_exports" / "l1_trials" / work_item.item_id / "failure_stats.json"
             failure_stats = json.loads(failure_path.read_text(encoding="utf-8"))
-            assert failure_stats["by_category"] == {"checkout_error": 1}
-            assert failure_stats["by_stage"] == {"checkout": 1}
+            assert failure_stats["by_category"] == {"validation_error": 1}
+            assert failure_stats["by_stage"] == {"acceptance": 1}
 
             trial_table_path = repo_root / "control_plane" / "shadow_exports" / "l1_trials" / work_item.item_id / "trial_table.csv"
             trial_table = trial_table_path.read_text(encoding="utf-8")
             assert "l1_test_requeued_failure_history_run_1,1,1,101,failed" in trial_table
-            assert "checkout_error,checkout,git fetch origin" in trial_table
+            assert "validation_error,acceptance,no accepted rows" in trial_table
             assert metrics_trial_1 in trial_table
             assert metrics_trial_2 in trial_table
 

@@ -92,7 +92,14 @@ def _failed_acceptance_run_has_metrics(run: Run) -> bool:
         return False
     queue_result = dict(payload.get("queue_result") or {})
     metrics_rows = queue_result.get("metrics_rows")
-    return isinstance(metrics_rows, list) and bool(metrics_rows)
+    if not isinstance(metrics_rows, list) or not metrics_rows:
+        return False
+    metrics_csvs = {
+        str(ref).split(":", 1)[0].strip()
+        for ref in metrics_rows
+        if str(ref).split(":", 1)[0].strip().endswith("metrics.csv")
+    }
+    return any(_inline_metrics_text(run, metrics_csv) is not None for metrics_csv in metrics_csvs)
 
 
 def _run_can_contribute_l1_metrics(run: Run) -> bool:
@@ -157,10 +164,9 @@ def _objective_name(work_item: WorkItem) -> str:
     return str(work_item.task_request.description or "").strip()
 
 
-def _load_metrics_rows(path: Path) -> list[dict[str, str]]:
+def _load_metrics_rows_text(text: str) -> list[dict[str, str]]:
     # Match the tolerant parsing used by scripts/build_runs_index.py because
     # historical metrics.csv rows may carry unquoted JSON in params_json.
-    text = path.read_text(encoding="utf-8", errors="ignore")
     text = re.sub(r"result\.json(?=[A-Za-z0-9_])", "result.json\n", text)
     lines = text.splitlines()
     if not lines:
@@ -195,6 +201,10 @@ def _load_metrics_rows(path: Path) -> list[dict[str, str]]:
             continue
         rows.append(dict(zip(header, values)))
     return rows
+
+
+def _load_metrics_rows(path: Path) -> list[dict[str, str]]:
+    return _load_metrics_rows_text(path.read_text(encoding="utf-8", errors="ignore"))
 
 
 def _current_sweep_tag_prefixes(repo_root: Path, work_item: WorkItem) -> tuple[str, ...]:
@@ -498,10 +508,32 @@ def _proposal_entry(*, metrics_csv: str, best_row: dict[str, Any], evaluation_re
 def _completed_trial_runs(work_item: WorkItem) -> list[Run]:
     completed: list[Run] = []
     for run in sorted(work_item.runs, key=lambda row: (row.attempt, row.created_at or utcnow())):
-        if run.status not in {RunStatus.SUCCEEDED, RunStatus.FAILED, RunStatus.CANCELED, RunStatus.TIMED_OUT}:
+        if run.status not in {RunStatus.SUCCEEDED, RunStatus.FAILED, RunStatus.TIMED_OUT}:
             continue
         completed.append(run)
     return completed
+
+
+def _inline_metrics_text(run: Run, metrics_csv: str) -> str | None:
+    for artifact in run.artifacts:
+        if artifact.kind != "expected_output" or str(artifact.path).strip() != metrics_csv:
+            continue
+        inline_text = dict(artifact.metadata_ or {}).get("inline_utf8")
+        if isinstance(inline_text, str):
+            return inline_text
+    return None
+
+
+def _metrics_rows_for_run(repo_root: Path, run: Run, metrics_csv: str) -> list[dict[str, str]]:
+    inline_text = _inline_metrics_text(run, metrics_csv)
+    if inline_text is not None:
+        return _load_metrics_rows_text(inline_text)
+    if run.status != RunStatus.SUCCEEDED:
+        return []
+    metrics_path = _resolve_path(repo_root=repo_root, path_text=metrics_csv)
+    if not metrics_path.exists():
+        return []
+    return _load_metrics_rows(metrics_path)
 
 
 def _metrics_csvs_from_run(run: Run, *, work_item: WorkItem | None = None) -> list[str]:
@@ -554,15 +586,15 @@ def _best_trial_row(repo_root: Path, run: Run) -> tuple[str, dict[str, Any]] | N
     candidates: list[tuple[str, dict[str, Any]]] = []
     tag_prefixes = _current_sweep_tag_prefixes(repo_root, run.work_item)
     for metrics_csv in _metrics_csvs_from_run(run, work_item=run.work_item):
-        best_row = _best_metrics_row(
-            repo_root=repo_root,
-            metrics_csv=metrics_csv,
-            tag_prefixes=tag_prefixes,
-            require_timing_feasible=False,
-        )
-        if best_row is None:
+        rows = [
+            dict(row)
+            for row in _metrics_rows_for_run(repo_root, run, metrics_csv)
+            if str(row.get("status", "")).strip() == "ok"
+            and _row_in_current_sweep_scope(row, tag_prefixes=tag_prefixes)
+        ]
+        if not rows:
             continue
-        candidates.append((metrics_csv, best_row))
+        candidates.append((metrics_csv, sorted(rows, key=_row_sort_key)[0]))
     if not candidates:
         return None
     candidates.sort(key=lambda item: _row_sort_key(item[1]))
@@ -573,10 +605,7 @@ def _ok_trial_rows(repo_root: Path, run: Run) -> list[tuple[str, dict[str, Any]]
     candidates: list[tuple[str, dict[str, Any]]] = []
     tag_prefixes = _current_sweep_tag_prefixes(repo_root, run.work_item)
     for metrics_csv in _metrics_csvs_from_run(run, work_item=run.work_item):
-        metrics_path = _resolve_path(repo_root=repo_root, path_text=metrics_csv)
-        if not metrics_path.exists():
-            continue
-        for row in _load_metrics_rows(metrics_path):
+        for row in _metrics_rows_for_run(repo_root, run, metrics_csv):
             if str(row.get("status", "")).strip() != "ok":
                 continue
             if not _row_in_current_sweep_scope(row, tag_prefixes=tag_prefixes):
