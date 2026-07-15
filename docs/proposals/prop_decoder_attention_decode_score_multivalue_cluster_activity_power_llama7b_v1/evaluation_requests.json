@@ -1,0 +1,25 @@
+{
+  "proposal_id": "prop_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1",
+  "source_commit_note": "Queue this audit only after the activity-power hook merges; it depends on already-merged shared-score multivalue-cluster PNR and equivalence evidence.",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Audit shared-score multivalue-cluster activity-backed power using merged PNR, merged equivalence, evaluator-local switching artifacts, and portable JSON/MD outputs.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_decode_score_multivalue_cluster_activity_power",
+      "comparison_role": "shared_score_multivalue_cluster_activity_power_gate",
+      "depends_on_item_ids": [
+        "l1_decoder_attention_decode_score_multivalue_cluster_pnr_v1",
+        "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "record_shared_score_multivalue_cluster_activity_power_gate",
+        "reason": "Promotion requires explicit annotation, clock, macro activity, and finite power-gate evidence; vectorless power cannot substitute."
+      },
+      "status": "pending_implementation_merge"
+    }
+  ]
+}
