@@ -1,0 +1,179 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-07-15T06:26:11.836532Z",
+  "control_plane_source_commit": "eaef7adde86bab3e3d0a0d7fba256aca2e9252ab",
+  "review_metadata_source_commit": "eaef7adde86bab3e3d0a0d7fba256aca2e9252ab",
+  "item_id": "l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2",
+  "run_key": "l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2_run_cb65b821177b511e",
+  "layer": "layer2",
+  "flow": "openroad",
+  "task_type": "l2_campaign",
+  "source_commit": "eaef7adde86bab3e3d0a0d7fba256aca2e9252ab",
+  "queue_snapshot": {
+    "path": "control_plane/shadow_exports/review/l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2/evaluated.json",
+    "result": {
+      "branch": "eval/l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2/s20260715t062611z",
+      "completed_utc": "2026-07-15T06:25:45.485787Z",
+      "evaluator_id": "control_plane",
+      "executor": "openroad",
+      "host": "b7c2d9c80c1c",
+      "identity_block": "[role:evaluator][account:control_plane][session:s20260715t062611z][host:b7c2d9c80c1c][item:l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2]",
+      "metrics_rows": [],
+      "metrics_exempt_reason": "evidence_only_decoder_evidence",
+      "queue_item_id": "l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2",
+      "session_id": "s20260715t062611z",
+      "status": "ok",
+      "summary": "2/2 commands succeeded"
+    }
+  },
+  "review_artifact": {
+    "kind": "decision_proposal",
+    "path": "control_plane/shadow_exports/l2_decisions/l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2.json",
+    "storage_mode": "repo",
+    "sha256": "1b1910df8de333b976b513d8fe384a8413682aefa9d929be689f34aa72c85c57",
+    "payload": {
+      "version": 0.1,
+      "generated_utc": "2026-07-15T06:26:11.561950Z",
+      "item_id": "l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2",
+      "run_key": "l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2_run_cb65b821177b511e",
+      "layer": "layer2",
+      "flow": "openroad",
+      "platform": "nangate45",
+      "task_type": "l2_campaign",
+      "source_commit": "eaef7adde86bab3e3d0a0d7fba256aca2e9252ab",
+      "review_metadata_source_commit": "eaef7adde86bab3e3d0a0d7fba256aca2e9252ab",
+      "objective": "Repeat the composed-cluster corrective recost with repo-portable metric provenance.",
+      "input_manifest": {
+        "decoder_contract": {
+          "decode_score_local_cluster_metrics": "runs/designs/npu_blocks/attention_decode_score_local_cluster_int8_m1x8_iterdiv/metrics.csv",
+          "decode_score_local_cluster_equivalence": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_local_cluster_equivalence__l2_decoder_attention_decode_score_local_cluster_equivalence_llama7b_v1.json",
+          "decode_score_local_cluster_frontier_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_local_cluster_frontier__l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2.json",
+          "decode_score_local_cluster_frontier_scope": "Retract the bare-tile frontier and charge measured cluster area plus complete fill, replay, division, and 16-value-slice service for every Llama7B head. Energy remains blocked.",
+          "decode_score_local_cluster_prior_frontier": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_tile_frontier__l2_decoder_attention_decode_score_tile_frontier_recost_llama7b_v1.json",
+          "decode_score_local_cluster_frontier_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_local_cluster_frontier__l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2.md"
+        }
+      },
+      "recommendation": {
+        "source": "decoder_evidence",
+        "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_local_cluster_frontier__l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2.json",
+        "arch_id": "decoder_attention_decode_score_local_cluster_frontier",
+        "macro_mode": "evidence_only",
+        "outcome": "prior_decode_score_tile_frontier_retracted_composed_cluster_lower_bound_only"
+      },
+      "objective_profiles": [],
+      "evaluation_record": {
+        "proposal_id": "prop_decoder_attention_decode_score_tile_m1x8_llama7b_v1",
+        "title": "Decode-shaped M1x8 score tile for the Llama7B attention frontier",
+        "primary_question": "How does the measured composed M1x8 score cluster change the precision-aligned Llama7B frontier once score storage, replay, division, and all 16 value slices per head are charged?",
+        "evaluation_mode": "frontier_recost",
+        "comparison_role": "decode_composed_cluster_corrective_recost",
+        "abstraction_layer": "decoder_attention_decode_score_local_cluster_frontier",
+        "expected_direction": "reprice_with_composed_cluster_lower_bound",
+        "expected_reason": "The corrected evidence must preserve the composed result while removing evaluator-local paths.",
+        "summary": "Decoder composed score-cluster frontier recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_local_cluster_frontier__l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2.json: decision=prior_decode_score_tile_frontier_retracted_composed_cluster_lower_bound_only; prior_best_token_throughput_per_s_retracted=669.792507491203; best_no_stall_candidate=decode_score_local_cluster_c128_vl1; best_no_stall_token_throughput_upper_bound_per_s=0.521229054458; best_no_stall_latency_lower_bound_us=1918542.321168; best_no_stall_area_mm2=634.909914937; promotion_blocked=True; next_architecture=Split the QK producer/score bank from replicated value-slice accumulators so one score fill and replay stream serves all 16 value slices; then measure composed routing and activity.",
+        "outcome": "prior_decode_score_tile_frontier_retracted_composed_cluster_lower_bound_only",
+        "expectation_status": "unspecified"
+      },
+      "proposal_assessment": {
+        "proposal_id": "prop_decoder_attention_decode_score_tile_m1x8_llama7b_v1",
+        "title": "Decode-shaped M1x8 score tile for the Llama7B attention frontier",
+        "kind": "architecture",
+        "primary_question": "How does the measured composed M1x8 score cluster change the precision-aligned Llama7B frontier once score storage, replay, division, and all 16 value slices per head are charged?",
+        "evaluation_mode": "frontier_recost",
+        "comparison_role": "decode_composed_cluster_corrective_recost",
+        "outcome": "prior_decode_score_tile_frontier_retracted_composed_cluster_lower_bound_only",
+        "summary": "Decoder composed score-cluster frontier recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_local_cluster_frontier__l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2.json: decision=prior_decode_score_tile_frontier_retracted_composed_cluster_lower_bound_only; prior_best_token_throughput_per_s_retracted=669.792507491203; best_no_stall_candidate=decode_score_local_cluster_c128_vl1; best_no_stall_token_throughput_upper_bound_per_s=0.521229054458; best_no_stall_latency_lower_bound_us=1918542.321168; best_no_stall_area_mm2=634.909914937; promotion_blocked=True; next_architecture=Split the QK producer/score bank from replicated value-slice accumulators so one score fill and replay stream serves all 16 value slices; then measure composed routing and activity.",
+        "baseline_ref": null,
+        "baseline_item_id": null,
+        "matched_row_count": 0,
+        "matched_rows": [],
+        "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_local_cluster_frontier__l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2.json",
+        "decoder_quality": {
+          "diagnosis": {
+            "best_no_stall_area_mm2": 634.909914937,
+            "best_no_stall_candidate": "decode_score_local_cluster_c128_vl1",
+            "best_no_stall_latency_lower_bound_us": 1918542.321168,
+            "best_no_stall_token_throughput_upper_bound_per_s": 0.521229054458,
+            "next_architecture": "Split the QK producer/score bank from replicated value-slice accumulators so one score fill and replay stream serves all 16 value slices; then measure composed routing and activity.",
+            "prior_best_token_throughput_per_s_retracted": 669.792507491203,
+            "promotion_blocked": true,
+            "reason": "The prior frontier scaled bare M1x8 tiles as QKV, QK, and value compute. The composed RTL owns one 512 KiB score bank and emits only eight of 128 value dimensions, requiring 16 commands per head and explicit fill, replay, and division service."
+          },
+          "remaining_abstractions": [
+            "The latency is a no-stall lower bound; producer, key/value broadcast, NoC, and SRAM contention are not closed.",
+            "Dense QKV tile area and MAC/cycle are inherited measured values, not composed with the cluster.",
+            "Cluster power is vectorless; token energy is withheld pending VCD/SAIF switching activity.",
+            "FakeRAM LEF/LIB views remain physical proxies without SRAM GDS signoff.",
+            "External command score multiplier/shift derivation remains outside the cluster."
+          ]
+        }
+      },
+      "source_refs": {
+        "decoder_evidence_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_local_cluster_frontier__l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2.json",
+        "decoder_decode_score_local_cluster_frontier_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_local_cluster_frontier__l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2.json",
+        "decoder_decode_score_local_cluster_frontier_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_local_cluster_frontier__l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2.md"
+      },
+      "decoder_quality": {
+        "diagnosis": {
+          "best_no_stall_area_mm2": 634.909914937,
+          "best_no_stall_candidate": "decode_score_local_cluster_c128_vl1",
+          "best_no_stall_latency_lower_bound_us": 1918542.321168,
+          "best_no_stall_token_throughput_upper_bound_per_s": 0.521229054458,
+          "next_architecture": "Split the QK producer/score bank from replicated value-slice accumulators so one score fill and replay stream serves all 16 value slices; then measure composed routing and activity.",
+          "prior_best_token_throughput_per_s_retracted": 669.792507491203,
+          "promotion_blocked": true,
+          "reason": "The prior frontier scaled bare M1x8 tiles as QKV, QK, and value compute. The composed RTL owns one 512 KiB score bank and emits only eight of 128 value dimensions, requiring 16 commands per head and explicit fill, replay, and division service."
+        },
+        "remaining_abstractions": [
+          "The latency is a no-stall lower bound; producer, key/value broadcast, NoC, and SRAM contention are not closed.",
+          "Dense QKV tile area and MAC/cycle are inherited measured values, not composed with the cluster.",
+          "Cluster power is vectorless; token energy is withheld pending VCD/SAIF switching activity.",
+          "FakeRAM LEF/LIB views remain physical proxies without SRAM GDS signoff.",
+          "External command score multiplier/shift derivation remains outside the cluster."
+        ]
+      }
+    }
+  },
+  "developer_loop": {
+    "comparison": {
+      "role": "decode_composed_cluster_corrective_recost",
+      "paired_baseline_item_id": ""
+    },
+    "evaluation": {
+      "mode": "frontier_recost",
+      "expected_reason": "The corrected evidence must preserve the composed result while removing evaluator-local paths.",
+      "expected_direction": "reprice_with_composed_cluster_lower_bound"
+    },
+    "abstraction": {
+      "layer": "decoder_attention_decode_score_local_cluster_frontier"
+    },
+    "proposal_id": "prop_decoder_attention_decode_score_tile_m1x8_llama7b_v1",
+    "dependencies": {
+      "item_ids": [
+        "l1_decoder_attention_decode_score_local_cluster_pnr_v1",
+        "l2_decoder_attention_decode_score_local_cluster_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    },
+    "proposal_path": "docs/proposals/prop_decoder_attention_decode_score_tile_m1x8_llama7b_v1"
+  },
+  "submission_history": null,
+  "pr_payload": {
+    "branch": "eval/l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2/s20260715t062611z",
+    "title": "eval: run correct llama7b frontier with portable composed-cluster evidence",
+    "body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260715t062611z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2"
+    },
+    "body_md": "## Summary\n- item_id: `l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2`\n- run_key: `l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2_run_cb65b821177b511e`\n- layer: `layer2`\n- task_type: `l2_campaign`\n- status: `ok`\n- summary: `2/2 commands succeeded`\n- queue_snapshot: `control_plane/shadow_exports/review/l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2/evaluated.json`\n- metrics_rows_count: `0`\n- review_artifact: `decision_proposal` at `control_plane/shadow_exports/l2_decisions/l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2.json`\n\n## Developer Context\n- proposal_id: `prop_decoder_attention_decode_score_tile_m1x8_llama7b_v1`\n- proposal_path: `docs/proposals/prop_decoder_attention_decode_score_tile_m1x8_llama7b_v1`\n- reviewer_first_read: `docs/proposals/prop_decoder_attention_decode_score_tile_m1x8_llama7b_v1` plus `docs/developer_agent_review.md`\n- execution_source_commit: `eaef7adde86bab3e3d0a0d7fba256aca2e9252ab`\n- review_metadata_source_commit: `eaef7adde86bab3e3d0a0d7fba256aca2e9252ab`\n\n## Evaluation Mode\n- evaluation_mode: `frontier_recost`\n- abstraction_layer: `decoder_attention_decode_score_local_cluster_frontier`\n- comparison_role: `decode_composed_cluster_corrective_recost`\n- expected_direction: `reprice_with_composed_cluster_lower_bound`\n- expected_reason: `The corrected evidence must preserve the composed result while removing evaluator-local paths.`\n- expectation_status: `unspecified`\n- evaluation_summary: `Decoder composed score-cluster frontier recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_local_cluster_frontier__l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2.json: decision=prior_decode_score_tile_frontier_retracted_composed_cluster_lower_bound_only; prior_best_token_throughput_per_s_retracted=669.792507491203; best_no_stall_candidate=decode_score_local_cluster_c128_vl1; best_no_stall_token_throughput_upper_bound_per_s=0.521229054458; best_no_stall_latency_lower_bound_us=1918542.321168; best_no_stall_area_mm2=634.909914937; promotion_blocked=True; next_architecture=Split the QK producer/score bank from replicated value-slice accumulators so one score fill and replay stream serves all 16 value slices; then measure composed routing and activity.`\n\n## Focused Comparison\n- primary_question: `How does the measured composed M1x8 score cluster change the precision-aligned Llama7B frontier once score storage, replay, division, and all 16 value slices per head are charged?`\n- comparison_role: `decode_composed_cluster_corrective_recost`\n- proposal_outcome: `prior_decode_score_tile_frontier_retracted_composed_cluster_lower_bound_only`\n- comparison_summary: `Decoder composed score-cluster frontier recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_local_cluster_frontier__l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2.json: decision=prior_decode_score_tile_frontier_retracted_composed_cluster_lower_bound_only; prior_best_token_throughput_per_s_retracted=669.792507491203; best_no_stall_candidate=decode_score_local_cluster_c128_vl1; best_no_stall_token_throughput_upper_bound_per_s=0.521229054458; best_no_stall_latency_lower_bound_us=1918542.321168; best_no_stall_area_mm2=634.909914937; promotion_blocked=True; next_architecture=Split the QK producer/score bank from replicated value-slice accumulators so one score fill and replay stream serves all 16 value slices; then measure composed routing and activity.`\n- baseline_ref: `None`\n- baseline_item_id: `None`\n\n## Checklist\n- [ ] Commit lightweight campaign artifacts only\n- [ ] Include metrics row references in result.metrics_rows\n- [ ] Keep committed result_path fields repo-portable\n- [ ] Run python3 scripts/validate_runs.py --skip_eval_queue before pushing\n",
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Include metrics row references in result.metrics_rows",
+      "Keep committed result_path fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ]
+  }
+}

@@ -1,0 +1,108 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "decoder_contract": {
+        "decode_score_local_cluster_metrics": "runs/designs/npu_blocks/attention_decode_score_local_cluster_int8_m1x8_iterdiv/metrics.csv",
+        "decode_score_local_cluster_equivalence": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_local_cluster_equivalence__l2_decoder_attention_decode_score_local_cluster_equivalence_llama7b_v1.json",
+        "decode_score_local_cluster_frontier_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_local_cluster_frontier__l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2.json",
+        "decode_score_local_cluster_frontier_scope": "Retract the bare-tile frontier and charge measured cluster area plus complete fill, replay, division, and 16-value-slice service for every Llama7B head. Energy remains blocked.",
+        "decode_score_local_cluster_prior_frontier": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_tile_frontier__l2_decoder_attention_decode_score_tile_frontier_recost_llama7b_v1.json",
+        "decode_score_local_cluster_frontier_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_local_cluster_frontier__l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2.md"
+      }
+    },
+    "commands": [
+      {
+        "run": "python3 -m npu.eval.audit_llm_decoder_attention_decode_score_local_cluster_frontier --prior-frontier-json runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_tile_frontier__l2_decoder_attention_decode_score_tile_frontier_recost_llama7b_v1.json --cluster-metrics-csv runs/designs/npu_blocks/attention_decode_score_local_cluster_int8_m1x8_iterdiv/metrics.csv --equivalence-json runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_local_cluster_equivalence__l2_decoder_attention_decode_score_local_cluster_equivalence_llama7b_v1.json --out runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_local_cluster_frontier__l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2.json --out-md runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_local_cluster_frontier__l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2.md",
+        "name": "audit_decode_score_local_cluster_frontier"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate_runs"
+      }
+    ],
+    "objective": "Repeat the composed-cluster corrective recost with repo-portable metric provenance.",
+    "acceptance": [
+      "Write all declared decoder evidence artifacts",
+      "Keep evidence artifact paths repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "source_mode": "src_verilog",
+    "expected_outputs": [
+      "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_local_cluster_frontier__l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2.json",
+      "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_local_cluster_frontier__l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2.md"
+    ]
+  },
+  "layer": "layer2",
+  "state": "evaluated",
+  "title": "Correct Llama7B frontier with portable composed-cluster evidence",
+  "result": {
+    "branch": "eval/l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2/s20260715t062611z",
+    "completed_utc": "2026-07-15T06:25:45.485787Z",
+    "evaluator_id": "control_plane",
+    "executor": "openroad",
+    "host": "b7c2d9c80c1c",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260715t062611z][host:b7c2d9c80c1c][item:l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2]",
+    "metrics_rows": [],
+    "metrics_exempt_reason": "evidence_only_decoder_evidence",
+    "queue_item_id": "l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2",
+    "session_id": "s20260715t062611z",
+    "status": "ok",
+    "summary": "2/2 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2/s20260715t062611z",
+    "pr_title": "eval: run correct llama7b frontier with portable composed-cluster evidence",
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Include metrics row references in result.metrics_rows",
+      "Keep committed result_path fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260715t062611z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 80,
+  "created_utc": "2026-07-15T06:25:38.935451Z",
+  "requested_by": "developer_agent",
+  "developer_loop": {
+    "comparison": {
+      "role": "decode_composed_cluster_corrective_recost",
+      "paired_baseline_item_id": ""
+    },
+    "evaluation": {
+      "mode": "frontier_recost",
+      "expected_reason": "The corrected evidence must preserve the composed result while removing evaluator-local paths.",
+      "expected_direction": "reprice_with_composed_cluster_lower_bound"
+    },
+    "abstraction": {
+      "layer": "decoder_attention_decode_score_local_cluster_frontier"
+    },
+    "proposal_id": "prop_decoder_attention_decode_score_tile_m1x8_llama7b_v1",
+    "dependencies": {
+      "item_ids": [
+        "l1_decoder_attention_decode_score_local_cluster_pnr_v1",
+        "l2_decoder_attention_decode_score_local_cluster_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    },
+    "proposal_path": "docs/proposals/prop_decoder_attention_decode_score_tile_m1x8_llama7b_v1"
+  },
+  "source_requirement": {
+    "repo": "",
+    "reason": "evaluator runtime must contain the queued job source commit",
+    "version": 1,
+    "required_ref": "origin/master",
+    "required_sha": "eaef7adde86bab3e3d0a0d7fba256aca2e9252ab",
+    "requires_daemon_restart": true
+  }
+}
