@@ -1,3 +1,2 @@
 run_key,attempt,trial_index,seed,status,metrics_csv,critical_path_ns,die_area,total_power_mw,failure_category,failure_stage,failure_signature
-l1_decoder_attention_operational_dense_tile_ppa_v1_run_55224266af39cc58,1,1,0,canceled,,,,,command_canceled,run_block_sweep,exit_code=130
 l1_decoder_attention_operational_dense_tile_ppa_v1_run_cb0b9acc6498034e,2,2,1,succeeded,runs/designs/npu_blocks/dense_gemm_tile_stream_int8_16x8/metrics.csv,4.3024,2560000.0,0.25,none,,

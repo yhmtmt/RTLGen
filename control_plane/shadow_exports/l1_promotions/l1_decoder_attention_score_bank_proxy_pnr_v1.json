@@ -1,6 +1,6 @@
 {
   "version": 0.1,
-  "generated_utc": "2026-07-14T06:30:08.367457Z",
+  "generated_utc": "2026-07-15T02:03:49.255942Z",
   "item_id": "l1_decoder_attention_score_bank_proxy_pnr_v1",
   "run_key": "l1_decoder_attention_score_bank_proxy_pnr_v1_run_03f8a35ea97d7f03",
   "layer": "layer1",
@@ -57,9 +57,9 @@
   "trial_summary": {
     "item_id": "l1_decoder_attention_score_bank_proxy_pnr_v1",
     "completed_trials": 2,
-    "success_count": 2,
-    "failure_count": 0,
-    "success_rate": 1.0,
+    "success_count": 1,
+    "failure_count": 1,
+    "success_rate": 0.5,
     "metrics": {
       "critical_path_ns": {
         "best": 2.8162,

@@ -1062,6 +1062,7 @@ def test_consume_l1_result_writes_trial_aggregate_artifacts() -> None:
             assert summary["success_rate"] == 2 / 3
             assert failure_stats["by_category"] == {"timing_unmet": 1}
             assert failure_stats["by_stage"] == {"route": 1}
+            assert "\r" not in trial_table
             assert "trial_index,seed,status" in trial_table
             assert "l1_test_trial_aggregate_run_3" in trial_table
 

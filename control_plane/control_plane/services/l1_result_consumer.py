@@ -650,7 +650,7 @@ def _write_trial_table(path: Path, rows: list[dict[str, Any]]) -> None:
         "failure_category", "failure_stage", "failure_signature",
     ]
     with path.open("w", encoding="utf-8", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=fieldnames)
+        writer = csv.DictWriter(handle, fieldnames=fieldnames, lineterminator="\n")
         writer.writeheader()
         for row in rows:
             writer.writerow({key: row.get(key, "") for key in fieldnames})
