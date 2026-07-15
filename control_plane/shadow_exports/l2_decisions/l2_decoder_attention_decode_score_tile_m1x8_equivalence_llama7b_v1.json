@@ -1,0 +1,67 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-07-15T02:22:04.320322Z",
+  "item_id": "l2_decoder_attention_decode_score_tile_m1x8_equivalence_llama7b_v1",
+  "run_key": "l2_decoder_attention_decode_score_tile_m1x8_equivalence_llama7b_v1_run_1bca3164fbf8efd6",
+  "layer": "layer2",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l2_campaign",
+  "source_commit": "13c88a6db52d31d10ba6cb0b057c4750d2277448",
+  "review_metadata_source_commit": "13c88a6db52d31d10ba6cb0b057c4750d2277448",
+  "objective": "LLM-oriented attention-tail stress campaign for larger sequence lengths and more repeated non-terminal Softmax paths.",
+  "input_manifest": {
+    "decoder_contract": {
+      "decode_score_tile_equivalence_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_tile_equivalence__l2_decoder_attention_decode_score_tile_m1x8_equivalence_llama7b_v1.json",
+      "decode_score_tile_equivalence_scope": "Prove exact signed-int8 M=1,N=8 decoder QK accumulation, final-beat inclusion, packed score-row lane order, clear/reuse, and ready/valid backpressure behavior against the dot-product reference.",
+      "decode_score_tile_equivalence_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_tile_equivalence__l2_decoder_attention_decode_score_tile_m1x8_equivalence_llama7b_v1.md"
+    }
+  },
+  "recommendation": {
+    "source": "decoder_evidence",
+    "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_tile_equivalence__l2_decoder_attention_decode_score_tile_m1x8_equivalence_llama7b_v1.json",
+    "arch_id": "decoder_attention_decode_score_tile_equivalence",
+    "macro_mode": "evidence_only",
+    "outcome": "attention_decode_score_tile_int8_1x8_equivalence_pass"
+  },
+  "objective_profiles": [],
+  "evaluation_record": {
+    "proposal_id": "prop_decoder_attention_decode_score_tile_m1x8_llama7b_v1",
+    "title": "Decode-shaped M1x8 score tile for the Llama7B attention frontier",
+    "primary_question": "How do scalar-drain and packed-row M1x8 score tiles change measured area, delay, and the precision-aligned Llama7B token frontier relative to the semantically mismatched M16x8 recost?",
+    "evaluation_mode": "equivalence_gate",
+    "comparison_role": "decode_score_compute_semantic_gate",
+    "abstraction_layer": "decoder_attention_decode_score_tile_equivalence",
+    "expected_direction": "unknown",
+    "expected_reason": "",
+    "summary": "RTL component/reference equivalence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_tile_equivalence__l2_decoder_attention_decode_score_tile_m1x8_equivalence_llama7b_v1.json: decision=attention_decode_score_tile_int8_1x8_equivalence_pass; component=attention_decode_score_tile_int8_1x8; semantic_profile=llama_decode_qk_score_row_m1_n8_s8_s8_acc32; reference=python_signed_m1_n8_dot_products; equivalence_pass=True; passed_test_count=1; test_target=tests/test_dense_gemm_tile_stream.py::test_packed_decode_score_tile_matches_reference_and_protocol.",
+    "outcome": "attention_decode_score_tile_int8_1x8_equivalence_pass",
+    "expectation_status": "unspecified"
+  },
+  "proposal_assessment": {
+    "proposal_id": "prop_decoder_attention_decode_score_tile_m1x8_llama7b_v1",
+    "title": "Decode-shaped M1x8 score tile for the Llama7B attention frontier",
+    "kind": "architecture",
+    "primary_question": "How do scalar-drain and packed-row M1x8 score tiles change measured area, delay, and the precision-aligned Llama7B token frontier relative to the semantically mismatched M16x8 recost?",
+    "evaluation_mode": "equivalence_gate",
+    "comparison_role": "decode_score_compute_semantic_gate",
+    "outcome": "attention_decode_score_tile_int8_1x8_equivalence_pass",
+    "summary": "RTL component/reference equivalence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_tile_equivalence__l2_decoder_attention_decode_score_tile_m1x8_equivalence_llama7b_v1.json: decision=attention_decode_score_tile_int8_1x8_equivalence_pass; component=attention_decode_score_tile_int8_1x8; semantic_profile=llama_decode_qk_score_row_m1_n8_s8_s8_acc32; reference=python_signed_m1_n8_dot_products; equivalence_pass=True; passed_test_count=1; test_target=tests/test_dense_gemm_tile_stream.py::test_packed_decode_score_tile_matches_reference_and_protocol.",
+    "baseline_ref": null,
+    "baseline_item_id": null,
+    "matched_row_count": 0,
+    "matched_rows": [],
+    "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_tile_equivalence__l2_decoder_attention_decode_score_tile_m1x8_equivalence_llama7b_v1.json",
+    "decoder_quality": {
+      "diagnosis": {}
+    }
+  },
+  "source_refs": {
+    "decoder_evidence_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_tile_equivalence__l2_decoder_attention_decode_score_tile_m1x8_equivalence_llama7b_v1.json",
+    "decoder_decode_score_tile_equivalence_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_tile_equivalence__l2_decoder_attention_decode_score_tile_m1x8_equivalence_llama7b_v1.json",
+    "decoder_decode_score_tile_equivalence_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_tile_equivalence__l2_decoder_attention_decode_score_tile_m1x8_equivalence_llama7b_v1.md"
+  },
+  "decoder_quality": {
+    "diagnosis": {}
+  }
+}
