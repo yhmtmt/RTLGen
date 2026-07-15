@@ -1,0 +1,224 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "sweeps": [
+        "runs/campaigns/npu/decode_score_tile_m1x8_v1/sweeps/nangate45_decode_score_tile_m1x8.json"
+      ],
+      "configs": [
+        "runs/designs/npu_blocks/dense_gemm_tile_stream_int8_1x8/config.json",
+        "runs/designs/npu_blocks/attention_decode_score_tile_int8_1x8/config.json"
+      ],
+      "out_root": "runs/designs/npu_blocks",
+      "design_dirs": [],
+      "macro_manifests": [],
+      "candidate_manifests": [],
+      "required_submodules": []
+    },
+    "commands": [
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/rtlgen/gen_dense_gemm_tile_stream.py --config runs/designs/npu_blocks/dense_gemm_tile_stream_int8_1x8/config.json --out runs/designs/npu_blocks/dense_gemm_tile_stream_int8_1x8/verilog",
+        "name": "generate_dense_gemm_tile_stream_rtl_dense_gemm_tile_stream_int8_1x8"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/synth/run_block_sweep.py --design_dir runs/designs/npu_blocks/dense_gemm_tile_stream_int8_1x8 --platform nangate45 --top dense_gemm_tile_stream_int8_1x8 --sweep runs/campaigns/npu/decode_score_tile_m1x8_v1/sweeps/nangate45_decode_score_tile_m1x8.json --out_root runs/designs/npu_blocks --skip_existing",
+        "name": "run_block_sweep_dense_gemm_tile_stream_int8_1x8"
+      },
+      {
+        "run": "python3 npu/eval/extract_openroad_timing_summary.py --design-dir runs/designs/npu_blocks/dense_gemm_tile_stream_int8_1x8 --out runs/designs/npu_blocks/dense_gemm_tile_stream_int8_1x8/timing_debug_report.md --max-paths 8",
+        "name": "extract_dense_gemm_tile_stream_timing_paths_dense_gemm_tile_stream_int8_1x8"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/rtlgen/gen_dense_gemm_tile_stream.py --config runs/designs/npu_blocks/attention_decode_score_tile_int8_1x8/config.json --out runs/designs/npu_blocks/attention_decode_score_tile_int8_1x8/verilog",
+        "name": "generate_dense_gemm_tile_stream_rtl_attention_decode_score_tile_int8_1x8"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/synth/run_block_sweep.py --design_dir runs/designs/npu_blocks/attention_decode_score_tile_int8_1x8 --platform nangate45 --top attention_decode_score_tile_int8_1x8 --sweep runs/campaigns/npu/decode_score_tile_m1x8_v1/sweeps/nangate45_decode_score_tile_m1x8.json --out_root runs/designs/npu_blocks --skip_existing",
+        "name": "run_block_sweep_attention_decode_score_tile_int8_1x8"
+      },
+      {
+        "run": "python3 npu/eval/extract_openroad_timing_summary.py --design-dir runs/designs/npu_blocks/attention_decode_score_tile_int8_1x8 --out runs/designs/npu_blocks/attention_decode_score_tile_int8_1x8/timing_debug_report.md --max-paths 8",
+        "name": "extract_dense_gemm_tile_stream_timing_paths_attention_decode_score_tile_int8_1x8"
+      },
+      {
+        "run": "python3 scripts/build_runs_index.py",
+        "name": "build_runs_index"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate"
+      }
+    ],
+    "objective": "Run a Layer1 nangate45 OpenROAD sweep for 2 configs using nangate45_decode_score_tile_m1x8.json and record lightweight design metrics for comparison.",
+    "acceptance": [
+      "Each generated wrapper metrics.csv contains at least one status=ok row for the queued sweep",
+      "Committed outputs stay lightweight (metrics.csv only; runs/index.csv is exported centrally after merge)",
+      "python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue pass"
+    ],
+    "source_mode": "config",
+    "expected_outputs": [
+      "runs/designs/npu_blocks/dense_gemm_tile_stream_int8_1x8/metrics.csv",
+      "runs/designs/npu_blocks/dense_gemm_tile_stream_int8_1x8/timing_debug_report.md",
+      "runs/designs/npu_blocks/attention_decode_score_tile_int8_1x8/metrics.csv",
+      "runs/designs/npu_blocks/attention_decode_score_tile_int8_1x8/timing_debug_report.md"
+    ]
+  },
+  "layer": "layer1",
+  "state": "evaluated",
+  "title": "Layer1 sweep from nangate45_decode_score_tile_m1x8 on nangate45",
+  "result": {
+    "branch": "eval/l1_decoder_attention_decode_score_tile_m1x8_ppa_v1/s20260715t025729z",
+    "completed_utc": "2026-07-15T02:57:25.823231Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "b7c2d9c80c1c",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260715t025729z][host:b7c2d9c80c1c][item:l1_decoder_attention_decode_score_tile_m1x8_ppa_v1]",
+    "metrics_rows": [
+      {
+        "tag": "decode_score_tile_m1x8_v1",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "dbb9f8ee",
+        "metrics_csv": "runs/designs/npu_blocks/dense_gemm_tile_stream_int8_1x8/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/dense_gemm_tile_stream_int8_1x8/work/dbb9f8ee/result.json"
+      },
+      {
+        "tag": "decode_score_tile_m1x8_v1",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "0a3b03de",
+        "metrics_csv": "runs/designs/npu_blocks/dense_gemm_tile_stream_int8_1x8/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/dense_gemm_tile_stream_int8_1x8/work/0a3b03de/result.json"
+      },
+      {
+        "tag": "decode_score_tile_m1x8_v1",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "c9117972",
+        "metrics_csv": "runs/designs/npu_blocks/dense_gemm_tile_stream_int8_1x8/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/dense_gemm_tile_stream_int8_1x8/work/c9117972/result.json"
+      },
+      {
+        "tag": "decode_score_tile_m1x8_v1",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "e34fdc1b",
+        "metrics_csv": "runs/designs/npu_blocks/dense_gemm_tile_stream_int8_1x8/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/dense_gemm_tile_stream_int8_1x8/work/e34fdc1b/result.json"
+      },
+      {
+        "tag": "decode_score_tile_m1x8_v1",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "63bed469",
+        "metrics_csv": "runs/designs/npu_blocks/dense_gemm_tile_stream_int8_1x8/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/dense_gemm_tile_stream_int8_1x8/work/63bed469/result.json"
+      },
+      {
+        "tag": "decode_score_tile_m1x8_v1",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "9f5bcd36",
+        "metrics_csv": "runs/designs/npu_blocks/dense_gemm_tile_stream_int8_1x8/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/dense_gemm_tile_stream_int8_1x8/work/9f5bcd36/result.json"
+      },
+      {
+        "tag": "decode_score_tile_m1x8_v1",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "dbb9f8ee",
+        "metrics_csv": "runs/designs/npu_blocks/attention_decode_score_tile_int8_1x8/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_decode_score_tile_int8_1x8/work/dbb9f8ee/result.json"
+      },
+      {
+        "tag": "decode_score_tile_m1x8_v1",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "0a3b03de",
+        "metrics_csv": "runs/designs/npu_blocks/attention_decode_score_tile_int8_1x8/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_decode_score_tile_int8_1x8/work/0a3b03de/result.json"
+      },
+      {
+        "tag": "decode_score_tile_m1x8_v1",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "c9117972",
+        "metrics_csv": "runs/designs/npu_blocks/attention_decode_score_tile_int8_1x8/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_decode_score_tile_int8_1x8/work/c9117972/result.json"
+      },
+      {
+        "tag": "decode_score_tile_m1x8_v1",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "e34fdc1b",
+        "metrics_csv": "runs/designs/npu_blocks/attention_decode_score_tile_int8_1x8/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_decode_score_tile_int8_1x8/work/e34fdc1b/result.json"
+      },
+      {
+        "tag": "decode_score_tile_m1x8_v1",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "63bed469",
+        "metrics_csv": "runs/designs/npu_blocks/attention_decode_score_tile_int8_1x8/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_decode_score_tile_int8_1x8/work/63bed469/result.json"
+      },
+      {
+        "tag": "decode_score_tile_m1x8_v1",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "9f5bcd36",
+        "metrics_csv": "runs/designs/npu_blocks/attention_decode_score_tile_int8_1x8/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_decode_score_tile_int8_1x8/work/9f5bcd36/result.json"
+      }
+    ],
+    "queue_item_id": "l1_decoder_attention_decode_score_tile_m1x8_ppa_v1",
+    "session_id": "s20260715t025729z",
+    "status": "ok",
+    "summary": "8/8 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l1_decoder_attention_decode_score_tile_m1x8_ppa_v1/s20260715t025729z",
+    "pr_title": "eval: run layer1 sweep from nangate45_decode_score_tile_m1x8 on nangate45",
+    "checklist": [
+      "Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge",
+      "Include metrics row references for each completed design",
+      "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260715t025729z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l1_decoder_attention_decode_score_tile_m1x8_ppa_v1"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l1_decoder_attention_decode_score_tile_m1x8_ppa_v1",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 1,
+  "created_utc": "2026-07-15T02:31:36.341233Z",
+  "requested_by": "control_plane",
+  "developer_loop": {
+    "evaluation": {
+      "mode": "frontier_followup",
+      "trial_policy": {
+        "seed_start": 0,
+        "trial_count": 1,
+        "stop_after_failures": 1
+      }
+    },
+    "abstraction": {
+      "layer": "decoder_attention_decode_score_tile_m1x8"
+    },
+    "proposal_id": "prop_decoder_attention_decode_score_tile_m1x8_llama7b_v1",
+    "proposal_path": "docs/proposals/prop_decoder_attention_decode_score_tile_m1x8_llama7b_v1/proposal.json"
+  },
+  "source_requirement": {
+    "repo": "",
+    "reason": "evaluator runtime must contain the queued job source commit",
+    "version": 1,
+    "required_ref": "origin/master",
+    "required_sha": "26d98127bae70b4660666b6a7fd284bd8ba117e2",
+    "requires_daemon_restart": true
+  }
+}
