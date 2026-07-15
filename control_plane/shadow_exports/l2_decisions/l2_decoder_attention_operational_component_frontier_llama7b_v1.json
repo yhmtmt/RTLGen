@@ -1,0 +1,87 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-07-15T01:51:06.876253Z",
+  "item_id": "l2_decoder_attention_operational_component_frontier_llama7b_v1",
+  "run_key": "l2_decoder_attention_operational_component_frontier_llama7b_v1_run_d062a3d2afbbc7b9",
+  "layer": "layer2",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l2_campaign",
+  "source_commit": "96c98dfaabf741cd5df7a807f3040826eced03cb",
+  "review_metadata_source_commit": "96c98dfaabf741cd5df7a807f3040826eced03cb",
+  "objective": "Propagate measured operational dense-tile and score-bank area/timing into the separated Llama7B frontier while retaining activity-backed energy.",
+  "input_manifest": {
+    "decoder_contract": {
+      "score_bank_proxy_metrics": "runs/designs/npu_blocks/attention_score_bank_proxy_16kx256/metrics.csv",
+      "narrow_dense_tile_metrics": "runs/designs/npu_blocks/npu_dense_gemm_tile_int8_16x8_k1_p1/metrics.csv",
+      "operational_dense_tile_metrics": "runs/designs/npu_blocks/dense_gemm_tile_stream_int8_16x8/metrics.csv",
+      "operational_component_frontier_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_operational_component_frontier__l2_decoder_attention_operational_component_frontier_llama7b_v1.json",
+      "operational_component_frontier_scope": "Replace proxy dense-tile and analytical score-bank area/timing with measured operational component PPA. Retain activity-backed token energy until operational SAIF/VCD calibration.",
+      "operational_component_frontier_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_operational_component_frontier__l2_decoder_attention_operational_component_frontier_llama7b_v1.md",
+      "operational_component_frontier_source": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_separated_two_pass_frontier__l2_decoder_attention_separated_two_pass_frontier_llama7b_v1.json"
+    }
+  },
+  "recommendation": {
+    "source": "decoder_evidence",
+    "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_operational_component_frontier__l2_decoder_attention_operational_component_frontier_llama7b_v1.json",
+    "arch_id": "decoder_attention_operational_component_frontier",
+    "macro_mode": "evidence_only",
+    "outcome": "operational_component_area_timing_recosted_energy_retained"
+  },
+  "objective_profiles": [],
+  "evaluation_record": {
+    "proposal_id": "prop_decoder_attention_operational_cluster_physical_closure_llama7b_v1",
+    "title": "Operational dense-tile and score-SRAM cluster closure for Llama7B",
+    "primary_question": "How far do operational accumulator state, banked SRAM wiring, divider sharing, and local cluster routing move the measured Llama7B throughput, energy, and area frontier?",
+    "evaluation_mode": "frontier_recost",
+    "comparison_role": "operational_component_frontier_recost",
+    "abstraction_layer": "decoder_attention_operational_component_frontier",
+    "expected_direction": "reprice_frontier_with_operational_components",
+    "expected_reason": "Use measured component area/timing while retaining activity-backed token energy until SAIF/VCD calibration.",
+    "summary": "Decoder operational-component frontier recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_operational_component_frontier__l2_decoder_attention_operational_component_frontier_llama7b_v1.json: decision=operational_component_area_timing_recosted_energy_retained; recommended_candidate=score32_separated_zero_tail_two_pass_nominal_per_head_iterdiv_operational_components; recommended_latency_us=1595.42090302109; recommended_token_throughput_per_s=626.793843622331; recommended_energy_mj_per_token=137.330868813197; recommended_embodied_area_mm2=325.5239481009; energy_promotion_blocked=True; next_step=measure activity-backed operational tile power and physically compose one local cluster.",
+    "outcome": "operational_component_area_timing_recosted_energy_retained",
+    "expectation_status": "unspecified"
+  },
+  "proposal_assessment": {
+    "proposal_id": "prop_decoder_attention_operational_cluster_physical_closure_llama7b_v1",
+    "title": "Operational dense-tile and score-SRAM cluster closure for Llama7B",
+    "kind": "architecture",
+    "primary_question": "How far do operational accumulator state, banked SRAM wiring, divider sharing, and local cluster routing move the measured Llama7B throughput, energy, and area frontier?",
+    "evaluation_mode": "frontier_recost",
+    "comparison_role": "operational_component_frontier_recost",
+    "outcome": "operational_component_area_timing_recosted_energy_retained",
+    "summary": "Decoder operational-component frontier recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_operational_component_frontier__l2_decoder_attention_operational_component_frontier_llama7b_v1.json: decision=operational_component_area_timing_recosted_energy_retained; recommended_candidate=score32_separated_zero_tail_two_pass_nominal_per_head_iterdiv_operational_components; recommended_latency_us=1595.42090302109; recommended_token_throughput_per_s=626.793843622331; recommended_energy_mj_per_token=137.330868813197; recommended_embodied_area_mm2=325.5239481009; energy_promotion_blocked=True; next_step=measure activity-backed operational tile power and physically compose one local cluster.",
+    "baseline_ref": null,
+    "baseline_item_id": null,
+    "matched_row_count": 0,
+    "matched_rows": [],
+    "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_operational_component_frontier__l2_decoder_attention_operational_component_frontier_llama7b_v1.json",
+    "decoder_quality": {
+      "diagnosis": {
+        "energy_promotion_blocked": true,
+        "next_step": "measure activity-backed operational tile power and physically compose one local cluster",
+        "recommended_candidate": "score32_separated_zero_tail_two_pass_nominal_per_head_iterdiv_operational_components",
+        "recommended_embodied_area_mm2": 325.5239481009,
+        "recommended_energy_mj_per_token": 137.330868813197,
+        "recommended_latency_us": 1595.42090302109,
+        "recommended_token_throughput_per_s": 626.793843622331
+      }
+    }
+  },
+  "source_refs": {
+    "decoder_evidence_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_operational_component_frontier__l2_decoder_attention_operational_component_frontier_llama7b_v1.json",
+    "decoder_operational_component_frontier_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_operational_component_frontier__l2_decoder_attention_operational_component_frontier_llama7b_v1.json",
+    "decoder_operational_component_frontier_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_operational_component_frontier__l2_decoder_attention_operational_component_frontier_llama7b_v1.md"
+  },
+  "decoder_quality": {
+    "diagnosis": {
+      "energy_promotion_blocked": true,
+      "next_step": "measure activity-backed operational tile power and physically compose one local cluster",
+      "recommended_candidate": "score32_separated_zero_tail_two_pass_nominal_per_head_iterdiv_operational_components",
+      "recommended_embodied_area_mm2": 325.5239481009,
+      "recommended_energy_mj_per_token": 137.330868813197,
+      "recommended_latency_us": 1595.42090302109,
+      "recommended_token_throughput_per_s": 626.793843622331
+    }
+  }
+}
