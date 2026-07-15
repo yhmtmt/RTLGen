@@ -318,15 +318,25 @@ def _run_scenario(config: JsonDict, *, scenario: str, multiplier: int, shift: in
 
 
 def build_report(config: JsonDict) -> JsonDict:
-    multiplier = 1 << 20
-    shift = 0
     rows = [
         _run_scenario(config, scenario=scenario, multiplier=multiplier, shift=shift)
-        for scenario in ("always_ready", "stalls")
+        for scenario, multiplier, shift in (
+            ("always_ready", 1 << 20, 0),
+            ("stalls", 1 << 20, 0),
+            ("rounded_shift", 3, 1),
+            ("saturation", (1 << 32) - 1, 0),
+        )
     ]
     passed = all(row["equivalence_pass"] for row in rows)
     all_scores = [row["score_rows"] for row in rows]
-    all_finals = [row["observed"] for row in rows]
+    all_finals = [
+        {
+            "global_max": row["observed"]["global_max"],
+            "exp_sum": row["observed"]["exp_sum"],
+            "value": row["observed"]["value"],
+        }
+        for row in rows
+    ]
     lanes = int(config["attention_decode_score_local_cluster"]["score_scale_lanes_per_cycle"])
     return {
         "version": 1,
@@ -340,11 +350,10 @@ def build_report(config: JsonDict) -> JsonDict:
         "semantic_profile": "decode_m1x8_score_sram_two_pass_iterdiv_v1",
         "score_scale_lanes_per_cycle": lanes,
         "score_scale_contract": {
-            "multiplier": multiplier,
-            "shift": shift,
             "rounding": "symmetric_magnitude_round_to_nearest",
             "saturation": "signed_32",
             "metadata_source": "external_command_input",
+            "tested_multiplier_shift": [[1 << 20, 0], [3, 1], [(1 << 32) - 1, 0]],
         },
         "scenario_count": len(rows),
         "score_tensor_hash": _hash(all_scores),

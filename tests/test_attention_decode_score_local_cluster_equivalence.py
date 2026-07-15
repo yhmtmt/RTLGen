@@ -21,6 +21,6 @@ def test_attention_decode_score_local_cluster_perf_rtl_equivalence(scale_lanes: 
 
     assert report["decision"] == "decode_score_local_cluster_equivalence_pass", json.dumps(report, indent=2)
     assert report["equivalence_pass"] is True
-    assert report["scenario_count"] == 2
+    assert report["scenario_count"] == 4
     assert all(row["equivalence_pass"] for row in report["scenarios"])
     assert all(row["score_addresses"] == [0, 1, 2] for row in report["scenarios"])
