@@ -53,7 +53,7 @@
         "direction": "prove_decode_shaped_score_equivalence",
         "reason": "PPA and cluster composition must use the single-query score shape exercised by autoregressive Llama7B decode."
       },
-      "status": "pending_equivalence_rerun"
+      "status": "merged"
     },
     {
       "item_id": "l1_decoder_attention_decode_score_tile_m1x8_ppa_v1",
@@ -76,7 +76,7 @@
         "direction": "select_decode_score_result_interface",
         "reason": "The packed interface removes eight scalar drain cycles but its 256-bit physical interface must be charged."
       },
-      "status": "blocked_on_equivalence"
+      "status": "running"
     },
     {
       "item_id": "l2_decoder_attention_decode_score_tile_frontier_recost_llama7b_v1",

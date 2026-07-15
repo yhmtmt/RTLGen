@@ -6644,6 +6644,50 @@ def _decoder_attention_decode_score_tile_equivalence_evidence(*, item_id: str) -
     }
 
 
+def _decoder_attention_decode_score_tile_frontier_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    operational = (
+        f"{base}/decoder_attention_operational_component_frontier__"
+        "l2_decoder_attention_operational_component_frontier_llama7b_v1.json"
+    )
+    schedule = (
+        f"{base}/decoder_attention_kv_subtile_pipeline_schedule__"
+        "l2_decoder_attention_kv_subtile_pipeline_schedule_softmax_recip_lut_llama7b_v1.json"
+    )
+    scalar = "runs/designs/npu_blocks/dense_gemm_tile_stream_int8_1x8/metrics.csv"
+    packed = "runs/designs/npu_blocks/attention_decode_score_tile_int8_1x8/metrics.csv"
+    out = f"{base}/decoder_attention_decode_score_tile_frontier__{item_id}.json"
+    report = f"{base}/decoder_attention_decode_score_tile_frontier__{item_id}.md"
+    return {
+        "inputs": {
+            "decode_score_tile_operational_frontier_source": operational,
+            "decode_score_tile_subtile_schedule_source": schedule,
+            "decode_score_tile_scalar_metrics": scalar,
+            "decode_score_tile_packed_metrics": packed,
+            "decode_score_tile_frontier_out": out,
+            "decode_score_tile_frontier_report": report,
+            "decode_score_tile_frontier_scope": (
+                "Replace the M16x8 decode mismatch with measured M1x8 scalar and packed interfaces, then "
+                "recompute stage service, subtile scheduling, HBM-share latency, area feasibility, and Pareto rank."
+            ),
+        },
+        "commands": [
+            {
+                "name": "audit_decode_score_tile_frontier",
+                "run": (
+                    "python3 npu/eval/audit_llm_decoder_attention_decode_score_tile_frontier.py "
+                    f"--operational-frontier-json {operational} "
+                    f"--subtile-schedule-json {schedule} "
+                    f"--scalar-metrics-csv {scalar} --packed-metrics-csv {packed} "
+                    f"--out-json {out} --out-md {report}"
+                ),
+            }
+        ],
+        "expected_outputs": [out, report],
+        "evidence_only": True,
+    }
+
+
 def _decoder_attention_score_bank_proxy_equivalence_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_score_bank_proxy_equivalence__{item_id}.json"
@@ -10180,6 +10224,7 @@ def _build_payload(
         "decoder_attention_operational_component_frontier",
         "decoder_attention_operational_dense_tile_equivalence",
         "decoder_attention_decode_score_tile_equivalence",
+        "decoder_attention_decode_score_tile_frontier",
         "decoder_attention_score_bank_proxy_equivalence",
         "decoder_attention_score32_exp_lut_hbm_dram_service_closure",
         "decoder_attention_score32_hbm_controller_replay",
@@ -10410,6 +10455,8 @@ def _build_payload(
             decoder_evidence = _decoder_attention_operational_dense_tile_equivalence_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_decode_score_tile_equivalence":
             decoder_evidence = _decoder_attention_decode_score_tile_equivalence_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_attention_decode_score_tile_frontier":
+            decoder_evidence = _decoder_attention_decode_score_tile_frontier_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_score_bank_proxy_equivalence":
             decoder_evidence = _decoder_attention_score_bank_proxy_equivalence_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_score32_exp_lut_hbm_dram_service_closure":
