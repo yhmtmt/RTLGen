@@ -65,12 +65,16 @@ def test_build_report_recosts_dense_area_and_timing_but_retains_energy_and_power
                 "instance_area_um2": 880.0,
                 "critical_path_ns": 6.0,
                 "total_power_mw": 0.06,
+                "result_path": "",
+                "synth_script_path": "",
             },
             {
                 "status": "ok",
                 "instance_area_um2": 900.0,
                 "critical_path_ns": 4.0,
                 "total_power_mw": 0.07,
+                "result_path": "/orfs/flow/reports/demo/6_finish.rpt",
+                "synth_script_path": "/tmp/rtlcp-worktree-demo/synth.tcl",
             },
         ],
     )
@@ -97,6 +101,8 @@ def test_build_report_recosts_dense_area_and_timing_but_retains_energy_and_power
 
     assert report["model"] == "llm_decoder_attention_operational_component_frontier_v1"
     assert report["selected_operational_tile"]["critical_path_ns"] == "4.0"
+    assert "result_path" not in report["selected_operational_tile"]
+    assert "synth_script_path" not in report["selected_operational_tile"]
     assert report["selected_old_tile"]["instance_area_um2"] == "1000.0"
     assert dense["component"] == "operational_dense_int8_gemm_fabric"
     assert dense["area_replica_count"] == 1710
