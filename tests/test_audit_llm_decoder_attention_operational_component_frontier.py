@@ -95,6 +95,7 @@ def test_build_report_recosts_dense_area_and_timing_but_retains_energy_and_power
     row = report["rows"][0]
     dense = row["components"][0]
 
+    assert report["model"] == "llm_decoder_attention_operational_component_frontier_v1"
     assert report["selected_operational_tile"]["critical_path_ns"] == "4.0"
     assert report["selected_old_tile"]["instance_area_um2"] == "1000.0"
     assert dense["component"] == "operational_dense_int8_gemm_fabric"

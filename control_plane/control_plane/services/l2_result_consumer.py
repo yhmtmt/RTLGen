@@ -611,6 +611,10 @@ _DECODER_EVIDENCE_OUTPUT_KEYS: tuple[tuple[str, str], ...] = (
         "separated_two_pass_frontier_report",
     ),
     (
+        "operational_component_frontier_out",
+        "operational_component_frontier_report",
+    ),
+    (
         "operational_dense_tile_equivalence_out",
         "operational_dense_tile_equivalence_report",
     ),
@@ -1505,6 +1509,34 @@ def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, 
             "quality_status",
             "precision_status",
             "remaining_abstractions",
+        ):
+            if key in diagnosis_dict:
+                parts.append(f"{key}={diagnosis_dict.get(key)}")
+        summary = "; ".join(parts)
+        return outcome, summary if summary.endswith(".") else summary + "."
+
+    if (
+        model == "llm_decoder_attention_operational_component_frontier_v1"
+        or evidence_payload.get("decision")
+        == "operational_component_area_timing_recosted_energy_retained"
+    ):
+        diagnosis = evidence_payload.get("diagnosis")
+        diagnosis_dict = dict(diagnosis) if isinstance(diagnosis, dict) else {}
+        outcome = str(
+            evidence_payload.get("decision")
+            or "operational_component_frontier_recorded"
+        )
+        parts = [
+            f"Decoder operational-component frontier recorded from {evidence_ref}: decision={outcome}",
+        ]
+        for key in (
+            "recommended_candidate",
+            "recommended_latency_us",
+            "recommended_token_throughput_per_s",
+            "recommended_energy_mj_per_token",
+            "recommended_embodied_area_mm2",
+            "energy_promotion_blocked",
+            "next_step",
         ):
             if key in diagnosis_dict:
                 parts.append(f"{key}={diagnosis_dict.get(key)}")
