@@ -120,10 +120,18 @@ def _gqa_finalize_result_scaling(*, cycle_count: int) -> JsonDict:
         "divide_cycles_per_dimension": _FINALIZE_DIVIDE_CYCLES_PER_DIM,
         "result_emit_cycles_per_head": _FINALIZE_RESULT_EMIT_CYCLES,
         "single_head_reference_cycles": single_head_cycles,
+        "measured_group_cycles": cycle_count,
         "target_max_blocks": _TARGET_MAX_BLOCKS,
-        "full_context_cycles": expected_cycles,
-        "formula": "query_heads_per_kv * (value_dimensions_per_head * divide_cycles_per_dimension + result_emit_cycles_per_head)",
+        "full_context_cycles": cycle_count,
+        "formula": "measured fixed group-finalize contract; child divide and serialized result phases overlap",
     }
+
+
+def _query_lanes(q: int, beat_index: int) -> list[int]:
+    return [
+        ((q + head * 31 + beat_index * head * 3 + 127) % 255) - 127
+        for head in range(_QUERY_HEADS_PER_KV)
+    ]
 
 
 def _testbench(
@@ -141,7 +149,7 @@ def _testbench(
 ) -> str:
     flat_beats = [beat for block in beats for beat in block]
     beat_init = "\n".join(
-        f"    query_mem[{index}] = 64'h{_pack([q] * _QUERY_HEADS_PER_KV, 8):016x}; "
+        f"    query_mem[{index}] = 64'h{_pack(_query_lanes(q, index), 8):016x}; "
         f"key_mem[{index}] = 64'h{_pack(keys, 8):016x};"
         for index, (q, keys) in enumerate(flat_beats)
     )
@@ -410,6 +418,7 @@ def generate_phase_activity(
         "max_blocks": validated["max_blocks"],
         "target_max_blocks": _TARGET_MAX_BLOCKS,
         "query_heads_per_kv": _QUERY_HEADS_PER_KV,
+        "query_activity_profile": "eight_distinct_deterministic_signed_int8_query_lanes",
         "score_multiplier": score_multiplier,
         "score_shift": score_shift,
         "score_scale_lanes_per_cycle": validated["score_scale_lanes_per_cycle"],

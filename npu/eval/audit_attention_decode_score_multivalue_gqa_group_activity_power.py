@@ -58,7 +58,7 @@ def _metric_provenance(row: JsonDict, metrics_csv: Path) -> JsonDict:
         "params_json",
     )
     return {
-        "metrics_csv": metrics_csv.name,
+        "metrics_csv": str(metrics_csv),
         **{field: row[field] for field in fields if str(row.get(field, "")).strip()},
     }
 
@@ -114,7 +114,7 @@ def _finite_positive(value: object, label: str) -> float:
 
 def _cluster_baseline(path: Path, clock_period_ns: float) -> JsonDict:
     payload = _load(path)
-    if payload.get("model") not in {None, _CLUSTER_ACTIVITY_MODEL}:
+    if payload.get("model") != _CLUSTER_ACTIVITY_MODEL:
         raise ValueError("cluster activity power report model contract failed")
     if payload.get("promotion_gate_pass") is not True:
         raise ValueError("cluster activity power report is not a promoted measured baseline")
@@ -143,18 +143,60 @@ def _cluster_baseline(path: Path, clock_period_ns: float) -> JsonDict:
         activity_power.get("full_context_cycles"),
         "cluster best.activity_power.full_context_cycles",
     )
+    contract = payload.get("activity_contract")
+    if not isinstance(contract, dict) or not isinstance(contract.get("phases"), list):
+        raise ValueError("cluster activity baseline is missing its phase contract")
+    phases = contract["phases"]
+    if {str(row.get("phase")) for row in phases if isinstance(row, dict)} != {
+        "score_fill",
+        "replay_value",
+        "finalize_result",
+    }:
+        raise ValueError("cluster activity baseline phase set is incompatible")
+    phase_cycles = 0
+    target_max_blocks: int | None = None
+    for phase in phases:
+        if not isinstance(phase, dict):
+            raise ValueError("cluster activity baseline phase is malformed")
+        phase_cycles += int(_finite_positive(phase.get("full_context_cycles"), "cluster phase cycles"))
+        scaling = phase.get("scaling")
+        if not isinstance(scaling, dict) or scaling.get("target_max_blocks") is None:
+            raise ValueError("cluster activity baseline phase scaling is incomplete")
+        phase_target = int(scaling["target_max_blocks"])
+        if target_max_blocks is None:
+            target_max_blocks = phase_target
+        elif target_max_blocks != phase_target:
+            raise ValueError("cluster activity baseline phases disagree on target_max_blocks")
+    if phase_cycles != int(baseline_cycles):
+        raise ValueError("cluster activity baseline phase cycles do not sum to measured full-context cycles")
     return {
         "candidate_id": best.get("candidate_id"),
         "clock_period_ns": float(baseline_clock),
         "full_context_energy_j": baseline_energy,
         "full_context_cycles": int(baseline_cycles),
+        "target_max_blocks": target_max_blocks,
+        "phase_names": [str(row["phase"]) for row in phases],
         "activity_power_model": activity_power.get("model"),
         "report_model": payload.get("model"),
     }
 
 
 def _validate_gqa_equivalence(equivalence: JsonDict) -> JsonDict:
-    if equivalence.get("equivalence_pass") is not True:
+    wrapper = equivalence.get("wrapper_protocol")
+    expected_hash = equivalence.get("expected_group_result_sha256")
+    observed_hash = equivalence.get("observed_group_result_sha256")
+    if not (
+        equivalence.get("equivalence_pass") is True
+        and equivalence.get("decision") == "llama7b_gqa8_shared_kv_equivalence_pass"
+        and equivalence.get("distinct_query_heads_pass") is True
+        and equivalence.get("shared_inputs_pass") is True
+        and equivalence.get("arithmetic_equivalence_pass") is True
+        and isinstance(wrapper, dict)
+        and wrapper.get("sharing_and_order_pass") is True
+        and isinstance(expected_hash, str)
+        and expected_hash
+        and expected_hash == observed_hash
+    ):
         raise ValueError("GQA8 shared-KV equivalence did not pass")
     heads = equivalence.get("query_heads_per_kv")
     if heads is not None and int(heads) != _GQA_HEADS:
@@ -169,6 +211,19 @@ def _validate_gqa_equivalence(equivalence: JsonDict) -> JsonDict:
     }
 
 
+def _validate_activity_compatibility(activity_manifest: JsonDict, cluster_baseline: JsonDict) -> None:
+    phases = activity_manifest.get("phases")
+    if not isinstance(phases, list):
+        raise ValueError("group activity manifest is missing phases")
+    phase_names = [str(row.get("phase")) for row in phases if isinstance(row, dict)]
+    if set(phase_names) != set(cluster_baseline["phase_names"]):
+        raise ValueError("group and cluster activity phase sets are incompatible")
+    if int(activity_manifest.get("target_max_blocks", -1)) != int(cluster_baseline["target_max_blocks"]):
+        raise ValueError("group and cluster activity target_max_blocks contracts differ")
+    if int(activity_manifest.get("query_heads_per_kv", 0)) != _GQA_HEADS:
+        raise ValueError("group activity manifest is not GQA8")
+
+
 def _write_markdown(payload: JsonDict, path: Path) -> None:
     lines = [
         "# GQA8 shared-score multivalue group activity power",
@@ -177,14 +232,14 @@ def _write_markdown(payload: JsonDict, path: Path) -> None:
         f"- promoted candidates: `{payload['promoted_candidate_count']}`",
         f"- measured candidates: `{payload['candidate_count']}`",
         f"- energy scope: `{payload['energy_scope']}`",
-        f"- independent-cluster upper-bound factor: `{payload['independent_cluster_upper_bound_factor']}x`",
+        f"- independent-cluster reference factor: `{payload['independent_cluster_reference_factor']}x`",
         "",
-        "| variant | path ns | instance mm2 | status | group energy J | 8x cluster bound J | bound |",
+        "| variant | path ns | instance mm2 | status | group energy J | 8x cluster reference J | saves energy |",
         "|---|---:|---:|---|---:|---:|---|",
     ]
     for row in payload["candidates"]:
         metric = row["ppa_metric"]
-        comparison = row.get("independent_cluster_upper_bound", {})
+        comparison = row.get("eight_independent_clusters_reference", {})
         lines.append(
             "| {variant} | {path_ns} | {area_mm2:.6f} | {status} | {energy} | {bound} | {passed} |".format(
                 variant=row["flow_variant"],
@@ -234,7 +289,8 @@ def build_report(
     activity_manifest_path = (
         activity_dir / "attention_decode_score_multivalue_gqa_group_activity_manifest.json"
     )
-    upper_bound_energy = _GQA_HEADS * cluster_baseline["full_context_energy_j"]
+    _validate_activity_compatibility(activity_manifest, cluster_baseline)
+    reference_energy = _GQA_HEADS * cluster_baseline["full_context_energy_j"]
     rows: list[JsonDict] = []
     for metric in _feasible_metrics(group_metrics_csv, clock_period_ns):
         params = _params(metric)
@@ -262,22 +318,24 @@ def build_report(
                 direct_energy = _finite_positive(
                     direct_energy, "group activity power full_context_energy_j"
                 )
-            bound_pass = (
+            saves_energy = (
                 direct_energy is not None
                 and math.isfinite(float(direct_energy))
-                and float(direct_energy) <= upper_bound_energy
+                and float(direct_energy) <= reference_energy
             )
             candidate["activity_power"] = activity_power
             candidate["direct_group_full_context_energy_j"] = direct_energy
-            candidate["independent_cluster_upper_bound"] = {
+            candidate["eight_independent_clusters_reference"] = {
                 "factor": _GQA_HEADS,
                 "cluster_full_context_energy_j": cluster_baseline["full_context_energy_j"],
-                "energy_j": upper_bound_energy,
+                "energy_j": reference_energy,
                 "comparison": "direct_group_full_context_energy_j <= 8 * cluster_best.activity_power.full_context_energy_j",
-                "pass": bound_pass,
+                "pass": saves_energy,
+                "is_formal_upper_bound": False,
             }
-            candidate["independent_cluster_upper_bound_energy_j"] = upper_bound_energy
-            candidate["energy_upper_bound_pass"] = bound_pass
+            candidate["eight_independent_clusters_reference_energy_j"] = reference_energy
+            candidate["energy_saving_vs_eight_independent_clusters"] = saves_energy
+            candidate["energy_delta_vs_eight_independent_clusters_j"] = float(direct_energy) - reference_energy
             candidate["status"] = (
                 "activity_backed"
                 if activity_power.get("promotion_gate_pass")
@@ -313,7 +371,7 @@ def build_report(
         "best": best,
         "candidates": rows,
         "energy_scope": "one GQA8 group full-context decode attention command",
-        "independent_cluster_upper_bound_factor": _GQA_HEADS,
+        "independent_cluster_reference_factor": _GQA_HEADS,
         "cluster_baseline": cluster_baseline,
         "cluster_baseline_full_context_energy_j": cluster_baseline["full_context_energy_j"],
         "activity_contract": {
@@ -330,13 +388,14 @@ def build_report(
         },
         "equivalence": equivalence,
         "source_dependencies": [
-            "l2_decoder_attention_decode_score_multivalue_gqa_group_equivalence_llama7b_v1",
-            "l1_decoder_attention_decode_score_multivalue_gqa_group_pnr_v1",
+            "l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v1",
+            "l1_decoder_attention_decode_score_multivalue_gqa8_group_pnr_v1",
+            "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1",
             "prior_single_cluster_activity_power_best_activity_power",
         ],
         "remaining_abstractions": [
             "The direct result covers one GQA8 group command at the configured full context, not a total-token or full-model energy estimate.",
-            "The 8x independent-cluster value is an explicit comparison upper bound, not a regenerated cluster measurement or a FLOW_VARIANT pairing.",
+            "The 8x independent-cluster value is a measured comparison reference, not a formal upper bound, regenerated cluster measurement, or FLOW_VARIANT pairing.",
             "FakeRAM area and power use Nangate45 proxy LEF/Liberty views, not SRAM compiler signoff.",
             "Off-group value memory, NoC, HBM/DRAM, command distribution, and clock-tree composition are outside this result.",
         ],

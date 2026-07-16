@@ -8,6 +8,7 @@ import shutil
 import pytest
 
 from npu.eval.generate_attention_decode_score_multivalue_gqa_group_activity import (
+    _query_lanes,
     generate_phase_activity,
 )
 
@@ -43,6 +44,7 @@ def test_gqa_group_activity_smoke_uses_actual_wrapper_and_manifest(tmp_path: Pat
     assert manifest["scope"] == "tb/dut"
     assert "complete generated GQA8 group wrapper" in manifest["scope_semantics"]
     assert manifest["query_heads_per_kv"] == 8
+    assert manifest["query_activity_profile"] == "eight_distinct_deterministic_signed_int8_query_lanes"
     assert manifest["clock_period_ns"] == 10.0
     assert manifest["phase_partition_cycle_sum"] == manifest["representative_full_transaction_cycles"]
 
@@ -56,3 +58,10 @@ def test_gqa_group_activity_smoke_uses_actual_wrapper_and_manifest(tmp_path: Pat
         assert raw
         assert phase["vcd_sha256"] == hashlib.sha256(raw).hexdigest()
         assert b"$scope module tb $end" in raw
+
+
+def test_query_activity_uses_distinct_signed_int8_lanes() -> None:
+    lanes = _query_lanes(-127, 17)
+    assert len(lanes) == 8
+    assert len(set(lanes)) == 8
+    assert all(-127 <= lane <= 127 for lane in lanes)

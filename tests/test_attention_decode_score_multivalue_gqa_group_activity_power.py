@@ -92,6 +92,26 @@ def _write_baseline(path: Path, *, promoted: bool = True) -> None:
                         "full_context_energy_j": 0.002,
                     },
                 },
+                "activity_contract": {
+                    "clock_period_ns": 8.0,
+                    "phases": [
+                        {
+                            "phase": "score_fill",
+                            "full_context_cycles": 10,
+                            "scaling": {"target_max_blocks": 16384},
+                        },
+                        {
+                            "phase": "replay_value",
+                            "full_context_cycles": 20,
+                            "scaling": {"target_max_blocks": 16384},
+                        },
+                        {
+                            "phase": "finalize_result",
+                            "full_context_cycles": 7765,
+                            "scaling": {"target_max_blocks": 16384},
+                        },
+                    ],
+                },
             }
         ),
         encoding="utf-8",
@@ -127,6 +147,12 @@ def test_build_report_gates_gqa_and_does_not_pair_cluster_flow(tmp_path: Path) -
                 "equivalence_pass": True,
                 "decision": "llama7b_gqa8_shared_kv_equivalence_pass",
                 "query_heads_per_kv": 8,
+                "distinct_query_heads_pass": True,
+                "shared_inputs_pass": True,
+                "arithmetic_equivalence_pass": True,
+                "wrapper_protocol": {"sharing_and_order_pass": True},
+                "expected_group_result_sha256": "same-hash",
+                "observed_group_result_sha256": "same-hash",
             }
         ),
         encoding="utf-8",
@@ -142,10 +168,15 @@ def test_build_report_gates_gqa_and_does_not_pair_cluster_flow(tmp_path: Path) -
         "scope_semantics": "the complete generated GQA8 group wrapper",
         "clock_period_ns": 8.0,
         "query_heads_per_kv": 8,
+        "target_max_blocks": 16384,
         "block_count": 3,
         "representative_full_transaction_cycles": 58307,
         "phase_partition_cycle_sum": 58307,
-        "phases": [],
+        "phases": [
+            {"phase": "score_fill"},
+            {"phase": "replay_value"},
+            {"phase": "finalize_result"},
+        ],
     }
     with mock.patch.object(audit, "generate_phase_activity", return_value=manifest), mock.patch.object(
         audit,
@@ -164,11 +195,12 @@ def test_build_report_gates_gqa_and_does_not_pair_cluster_flow(tmp_path: Path) -
 
     assert payload["decision"] == "activity_backed_gqa_group_power_measured"
     assert payload["best_candidate_id"] == "multivalue_gqa_group_activity_group_die7200"
-    assert payload["independent_cluster_upper_bound_factor"] == 8
+    assert payload["independent_cluster_reference_factor"] == 8
     best = payload["best"]
     assert best["direct_group_full_context_energy_j"] == 0.014
-    assert best["independent_cluster_upper_bound"]["energy_j"] == pytest.approx(0.016)
-    assert best["independent_cluster_upper_bound"]["pass"] is True
+    assert best["eight_independent_clusters_reference"]["energy_j"] == pytest.approx(0.016)
+    assert best["eight_independent_clusters_reference"]["pass"] is True
+    assert best["eight_independent_clusters_reference"]["is_formal_upper_bound"] is False
     assert payload["candidates"][1]["status"] == "measurement_failed"
     assert "/orfs/" not in json.dumps(payload["candidates"][1])
     assert [call.kwargs["flow_variant"] for call in build_power.call_args_list] == [
