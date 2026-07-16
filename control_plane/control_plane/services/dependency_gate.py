@@ -15,7 +15,13 @@ from control_plane.models.enums import RunStatus, WorkItemState
 from control_plane.models.runs import Run
 from control_plane.models.work_items import WorkItem
 
-_MATERIALIZED_ARTIFACT_KINDS = {"expected_output", "decision_proposal", "review_package", "queue_snapshot"}
+_MATERIALIZED_ARTIFACT_KINDS = {
+    "expected_output",
+    "promotion_proposal",
+    "decision_proposal",
+    "review_package",
+    "queue_snapshot",
+}
 
 
 @dataclass(frozen=True)
@@ -48,6 +54,57 @@ def _latest_successful_run(work_item: WorkItem) -> Run | None:
     if not successful:
         return None
     return sorted(successful, key=lambda row: (row.attempt, row.created_at))[ -1]
+
+
+def _latest_reviewed_partial_run(
+    session: Session,
+    *,
+    repo_root: Path,
+    work_item: WorkItem,
+) -> Run | None:
+    if work_item.state != WorkItemState.MERGED:
+        return None
+    terminal_statuses = {RunStatus.FAILED, RunStatus.TIMED_OUT, RunStatus.CANCELED}
+    candidates = sorted(
+        (run for run in work_item.runs if run.status in terminal_statuses),
+        key=lambda row: (row.attempt, row.created_at),
+        reverse=True,
+    )
+    for run in candidates:
+        promotion = (
+            session.query(Artifact)
+            .filter(Artifact.run_id == run.id, Artifact.kind == "promotion_proposal")
+            .one_or_none()
+        )
+        if promotion is None:
+            continue
+        promotion_path = Path(promotion.path)
+        if not promotion_path.is_absolute():
+            promotion_path = repo_root / promotion_path
+        if not promotion_path.exists():
+            continue
+        try:
+            payload = json.loads(promotion_path.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+        assessment = payload.get("proposal_assessment")
+        partial = payload.get("partial_run_evidence")
+        if not isinstance(assessment, dict) or not isinstance(partial, dict):
+            continue
+        if str(assessment.get("outcome", "")).strip() != "partial_sweep_measured_points":
+            continue
+        if assessment.get("sweep_complete") is not False or partial.get("sweep_complete") is not False:
+            continue
+        if str(partial.get("promotion_scope", "")).strip() != "captured_metrics_rows_only":
+            continue
+        try:
+            proposal_count = int(payload.get("proposal_count") or 0)
+        except (TypeError, ValueError):
+            continue
+        if proposal_count < 1:
+            continue
+        return run
+    return None
 
 
 def _path_exists(repo_root: Path, path_text: str) -> bool:
@@ -88,9 +145,16 @@ def _refresh_released_source_requirement(work_item: WorkItem, *, repo_root: Path
 
 
 def _materialized_artifacts_exist(session: Session, *, repo_root: Path, work_item: WorkItem) -> DependencyGateResult:
-    run = _latest_successful_run(work_item)
+    run = _latest_successful_run(work_item) or _latest_reviewed_partial_run(
+        session,
+        repo_root=repo_root,
+        work_item=work_item,
+    )
     if run is None:
-        return DependencyGateResult(False, f"dependency {work_item.item_id} has no successful run")
+        return DependencyGateResult(
+            False,
+            f"dependency {work_item.item_id} has no successful or reviewed partial run",
+        )
 
     artifacts = (
         session.query(Artifact)
