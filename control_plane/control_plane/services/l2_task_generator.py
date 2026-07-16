@@ -6755,6 +6755,45 @@ def _decoder_attention_decode_score_multivalue_gqa_group_equivalence_evidence(
     }
 
 
+def _decoder_attention_decode_score_multivalue_gqa_folded_lane_equivalence_evidence(
+    *, item_id: str
+) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    design_base = "runs/designs/npu_blocks"
+    configs = [
+        f"{design_base}/attention_decode_score_multivalue_gqa_group_lanes{lanes}_int8_m1x8_iterdiv/config.json"
+        for lanes in (1, 2, 4)
+    ] + [
+        f"{design_base}/attention_decode_score_multivalue_gqa_group_int8_m1x8_iterdiv/config.json"
+    ]
+    out = f"{base}/decoder_attention_decode_score_multivalue_gqa_folded_lane_equivalence__{item_id}.json"
+    report = f"{base}/decoder_attention_decode_score_multivalue_gqa_folded_lane_equivalence__{item_id}.md"
+    config_args = " ".join(f"--config {config}" for config in configs)
+    return {
+        "inputs": {
+            "decode_score_multivalue_gqa_folded_lane_configs": configs,
+            "decode_score_multivalue_gqa_folded_lane_equivalence_out": out,
+            "decode_score_multivalue_gqa_folded_lane_equivalence_report": report,
+            "decode_score_multivalue_gqa_folded_lane_equivalence_scope": (
+                "Directly simulate 1/2/4/8 physical query-head lanes, checking intermediate score writes and "
+                "reads plus all 128 ordered outputs. Charge one complete packed Q/K replay and one shared value "
+                "pass per wave; do not assume hidden query or key buffering."
+            ),
+        },
+        "commands": [
+            {
+                "name": "audit_decode_score_multivalue_gqa_folded_lane_equivalence",
+                "run": (
+                    "python3 -m npu.eval.audit_attention_decode_score_multivalue_gqa_folded_lane_equivalence "
+                    f"{config_args} --out {out} --out-md {report}"
+                ),
+            }
+        ],
+        "expected_outputs": [out, report],
+        "evidence_only": True,
+    }
+
+
 def _decoder_attention_decode_score_multivalue_gqa_array_equivalence_evidence(
     *, item_id: str
 ) -> dict[str, Any]:
@@ -10691,6 +10730,7 @@ def _build_payload(
         "decoder_attention_decode_score_local_cluster_equivalence",
         "decoder_attention_decode_score_multivalue_cluster_equivalence",
         "decoder_attention_decode_score_multivalue_gqa_group_equivalence",
+        "decoder_attention_decode_score_multivalue_gqa_folded_lane_equivalence",
         "decoder_attention_decode_score_multivalue_gqa_array_equivalence",
         "decoder_attention_decode_score_multivalue_cluster_activity_power",
         "decoder_attention_decode_score_multivalue_gqa_group_activity_power",
@@ -10938,6 +10978,12 @@ def _build_payload(
         elif abstraction_layer_name == "decoder_attention_decode_score_multivalue_gqa_group_equivalence":
             decoder_evidence = _decoder_attention_decode_score_multivalue_gqa_group_equivalence_evidence(
                 item_id=item_id
+            )
+        elif abstraction_layer_name == "decoder_attention_decode_score_multivalue_gqa_folded_lane_equivalence":
+            decoder_evidence = (
+                _decoder_attention_decode_score_multivalue_gqa_folded_lane_equivalence_evidence(
+                    item_id=item_id
+                )
             )
         elif abstraction_layer_name == "decoder_attention_decode_score_multivalue_gqa_array_equivalence":
             decoder_evidence = _decoder_attention_decode_score_multivalue_gqa_array_equivalence_evidence(

@@ -7884,6 +7884,53 @@ def test_generate_l2_campaign_task_adds_decode_score_multivalue_gqa_group_equiva
             ]
 
 
+def test_generate_l2_campaign_task_adds_decode_score_multivalue_gqa_folded_lane_equivalence() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id=(
+                        "l2_decoder_attention_decode_score_multivalue_gqa8_folded_lane_"
+                        "equivalence_llama7b_v1"
+                    ),
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    abstraction_layer=(
+                        "decoder_attention_decode_score_multivalue_gqa_folded_lane_equivalence"
+                    ),
+                    evaluation_mode="equivalence_gate",
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            command = work_item.task_request.request_payload["task"]["commands"][0]
+            decoder_inputs = work_item.input_manifest["decoder_contract"]
+
+            assert command["name"] == "audit_decode_score_multivalue_gqa_folded_lane_equivalence"
+            assert command["run"].count("--config") == 4
+            for lanes in (1, 2, 4):
+                assert f"gqa_group_lanes{lanes}_int8_m1x8_iterdiv/config.json" in command["run"]
+            assert "gqa_group_int8_m1x8_iterdiv/config.json" in command["run"]
+            assert len(decoder_inputs["decode_score_multivalue_gqa_folded_lane_configs"]) == 4
+            assert "do not assume hidden query or key buffering" in decoder_inputs[
+                "decode_score_multivalue_gqa_folded_lane_equivalence_scope"
+            ]
+            assert decoder_inputs[
+                "decode_score_multivalue_gqa_folded_lane_equivalence_report"
+            ] in work_item.expected_outputs
+
+
 def test_generate_l2_campaign_task_adds_decode_score_multivalue_gqa_array_equivalence() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
