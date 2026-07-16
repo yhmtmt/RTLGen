@@ -158,6 +158,50 @@ def main() -> int:
         raise SystemExit("GQA-array RTL must expose the packed query bus")
     if not re.search(rf"input\s+wire\s+signed\s+\[{packed_width - 1}:0\]\s+input_key", text):
         raise SystemExit("GQA-array RTL must expose the packed key bus")
+    for group in range(group_count):
+        q_lo = group * 64
+        q_hi = q_lo + 63
+        addr_lo = group * 14
+        addr_hi = addr_lo + 13
+        slice_lo = group * 4
+        slice_hi = slice_lo + 3
+        matrix_lo = group * 512
+        matrix_hi = matrix_lo + 511
+        head_lo = group * 3
+        head_hi = head_lo + 2
+        command_lo = group * 16
+        command_hi = command_lo + 15
+        max_lo = group * 32
+        max_hi = max_lo + 31
+        sum_lo = group * 33
+        sum_hi = sum_lo + 32
+        value_lo = group * 320
+        value_hi = value_lo + 319
+        connections = (
+            f".input_query(input_query[{q_hi}:{q_lo}])",
+            f".input_key(input_key[{q_hi}:{q_lo}])",
+            f".value_read_req_valid(value_read_req_valid[{group}])",
+            f".value_read_req_ready(value_read_req_ready[{group}])",
+            f".value_read_req_address(value_read_req_address[{addr_hi}:{addr_lo}])",
+            f".value_read_req_slice(value_read_req_slice[{slice_hi}:{slice_lo}])",
+            f".value_response_valid(value_response_valid[{group}])",
+            f".value_response_ready(value_response_ready[{group}])",
+            f".value_response_address(value_response_address[{addr_hi}:{addr_lo}])",
+            f".value_response_slice(value_response_slice[{slice_hi}:{slice_lo}])",
+            f".value_response_matrix(value_response_matrix[{matrix_hi}:{matrix_lo}])",
+            f".result_valid(result_valid[{group}])",
+            f".result_ready(result_ready[{group}])",
+            f".result_head(result_head[{head_hi}:{head_lo}])",
+            f".result_command_id(result_command_id[{command_hi}:{command_lo}])",
+            f".result_global_max(result_global_max[{max_hi}:{max_lo}])",
+            f".result_exp_sum(result_exp_sum[{sum_hi}:{sum_lo}])",
+            f".result_slice(result_slice[{slice_hi}:{slice_lo}])",
+            f".result_last(result_last[{group}])",
+            f".result_value(result_value[{value_hi}:{value_lo}])",
+        )
+        for connection in connections:
+            if connection not in text:
+                raise SystemExit(f"GQA-array RTL missing exact group {group} connection: {connection}")
     for token in (
         "GROUP_COUNT =",
         "TOTAL_PARALLEL_QUERY_HEADS",

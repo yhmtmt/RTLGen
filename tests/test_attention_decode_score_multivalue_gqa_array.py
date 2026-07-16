@@ -196,6 +196,7 @@ def test_multivalue_gqa_array_generated_smoke_compiles(tmp_path: Path) -> None:
 
 def _group_stub(module_name: str) -> str:
     return f"""
+`timescale 1ns/1ps
 module {module_name} (
     input wire clk, input wire rst_n,
     input wire command_valid, output wire command_ready,
@@ -219,6 +220,10 @@ module {module_name} (
       RESPONSE = 3'd3, RESULT = 3'd4;
   reg [2:0] state_q;
   reg [15:0] command_id_q;
+  reg [31:0] input_accepted_count;
+  reg [63:0] input_query_q;
+  reg [63:0] input_key_q;
+  reg [511:0] value_response_matrix_q;
   assign command_ready = state_q == IDLE;
   assign input_ready = state_q == INPUT;
   assign value_read_req_valid = state_q == REQUEST;
@@ -232,12 +237,16 @@ module {module_name} (
   assign result_exp_sum = 33'd11;
   assign result_slice = 4'd0;
   assign result_last = 1'b1;
-  assign result_value = 320'd0;
+  assign result_value = {{312'd0, input_query_q[7:0] ^ input_key_q[7:0] ^ value_response_matrix_q[7:0]}};
   assign protocol_error = 1'b0;
   always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
       state_q <= IDLE;
       command_id_q <= 16'd0;
+      input_accepted_count <= 32'd0;
+      input_query_q <= 64'd0;
+      input_key_q <= 64'd0;
+      value_response_matrix_q <= 512'd0;
       accepted_count <= 32'd0;
       completed_count <= 32'd0;
       cycle_count <= 32'd0;
@@ -249,9 +258,17 @@ module {module_name} (
           accepted_count <= accepted_count + 1'b1;
           state_q <= INPUT;
         end
-        INPUT: if (input_valid && input_ready && input_last) state_q <= REQUEST;
+        INPUT: if (input_valid && input_ready && input_last) begin
+          input_accepted_count <= input_accepted_count + 1'b1;
+          input_query_q <= input_query;
+          input_key_q <= input_key;
+          state_q <= REQUEST;
+        end
         REQUEST: if (value_read_req_valid && value_read_req_ready) state_q <= RESPONSE;
-        RESPONSE: if (value_response_valid && value_response_ready) state_q <= RESULT;
+        RESPONSE: if (value_response_valid && value_response_ready) begin
+          value_response_matrix_q <= value_response_matrix;
+          state_q <= RESULT;
+        end
         RESULT: if (result_valid && result_ready) begin
           completed_count <= completed_count + 1'b1;
           state_q <= IDLE;
@@ -282,6 +299,31 @@ def test_multivalue_gqa_array_atomic_broadcast_and_independent_channels(tmp_path
     )
 
     bus_ones = f"{{{group_count}{{1'b1}}}}"
+    command_zero_checks = "\n".join(
+        f"      if (dut.u_group_{group}.accepted_count !== 32'd0) $fatal(1, \"command accepted by group {group} while blocked\");"
+        for group in range(group_count)
+    )
+    command_one_checks = "\n".join(
+        f"      if (dut.u_group_{group}.accepted_count !== 32'd1) $fatal(1, \"command count mismatch for group {group}\");"
+        for group in range(group_count)
+    )
+    input_zero_checks = "\n".join(
+        f"      if (dut.u_group_{group}.input_accepted_count !== 32'd0) $fatal(1, \"input accepted by group {group} while blocked\");"
+        for group in range(group_count)
+    )
+    input_one_checks = "\n".join(
+        f"      if (dut.u_group_{group}.input_accepted_count !== 32'd1) $fatal(1, \"input count mismatch for group {group}\");"
+        for group in range(group_count)
+    )
+    query_marker_assigns = "\n".join(
+        f"    input_query[{group * 64 + 63}:{group * 64}] = 64'h{0x10 + group:014x}{0x10 + group:02x};\n"
+        f"    input_key[{group * 64 + 63}:{group * 64}] = 64'h{0x20 + group:014x}{0x20 + group:02x};"
+        for group in range(group_count)
+    )
+    value_marker_assigns = "\n".join(
+        f"    value_response_matrix[{group * 512 + 511}:{group * 512}] = 512'h{0x40 + group:0126x}{0x40 + group:02x};"
+        for group in range(group_count)
+    )
     tb_text = f"""
 module tb;
   localparam integer GC = {group_count};
@@ -342,29 +384,55 @@ module tb;
 
   initial begin
     #3 rst_n = 1'b1;
+    if (GC > 1) force dut.child_command_ready[{group_count - 1}] = 1'b0;
+{query_marker_assigns}
+{value_marker_assigns}
     @(negedge clk); command_valid = 1'b1;
+    #0.1;
+    if (GC > 1 && command_ready) $fatal(1, "command_ready ignored a blocked child");
     @(posedge clk); #0.1;
-    if (!command_ready) $fatal(1, "command broadcast was not accepted atomically");
-    @(negedge clk); command_valid = 1'b0; input_valid = 1'b1; input_last = 1'b1;
-    input_query = '0; input_key = '0;
+    if (GC > 1) begin
+{command_zero_checks}
+      release dut.child_command_ready[{group_count - 1}];
+      #0.1;
+      if (!command_ready) $fatal(1, "command broadcast did not recover after release");
+      @(posedge clk); #0.1;
+    end
+{command_one_checks}
+    @(negedge clk); command_valid = 1'b0;
+    if (GC > 1) force dut.child_input_ready[{group_count - 1}] = 1'b0;
+    @(negedge clk); input_valid = 1'b1; input_last = 1'b1;
+    #0.1;
+    if (GC > 1 && input_ready) $fatal(1, "input_ready ignored a blocked child");
     @(posedge clk); #0.1;
-    if (!input_ready) $fatal(1, "input broadcast was not accepted atomically");
+    if (GC > 1) begin
+{input_zero_checks}
+      release dut.child_input_ready[{group_count - 1}];
+      #0.1;
+      if (!input_ready) $fatal(1, "input broadcast did not recover after release");
+      @(posedge clk); #0.1;
+    end
+{input_one_checks}
     @(negedge clk); input_valid = 1'b0; input_last = 1'b0; value_read_req_ready = {bus_ones};
     wait (value_read_req_valid === {bus_ones});
-    @(posedge clk); #0.1;
     if (value_read_req_valid !== {bus_ones}) $fatal(1, "value requests were not parallel");
+    @(posedge clk); #0.1;
     @(negedge clk); value_read_req_ready = '0;
     for (i = 0; i < GC; i = i + 1) begin
       wait (value_response_ready[i]);
       @(negedge clk); value_response_valid[i] = 1'b1;
-      @(posedge clk); #0.1;
+      #0.1;
       if (!value_response_ready[i]) $fatal(1, "group response lane was not independently ready");
+      @(posedge clk); #0.1;
       @(negedge clk); value_response_valid[i] = 1'b0;
     end
     for (i = 0; i < GC; i = i + 1) begin
       wait (result_valid[i]);
       if (result_command_id[i*16 +: 16] !== 16'h1234 || result_slice[i*4 +: 4] !== 4'd0 || !result_last[i])
         $fatal(1, "group result lane %0d mismatch", i);
+      if (result_value[i*320 +: 8] !== ((8'h10 + i) ^ (8'h20 + i) ^ (8'h40 + i)) ||
+          result_value[i*320 + 8 +: 312] !== 312'd0)
+        $fatal(1, "result marker mismatch for group %0d", i);
       @(negedge clk); result_ready[i] = 1'b1;
       @(posedge clk); #0.1;
       result_ready[i] = 1'b0;
