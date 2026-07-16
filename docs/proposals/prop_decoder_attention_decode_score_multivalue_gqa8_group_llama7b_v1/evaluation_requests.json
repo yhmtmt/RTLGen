@@ -55,7 +55,8 @@
       ],
       "sweep_path": "runs/campaigns/npu/decode_score_multivalue_gqa_group_v1/sweeps/nangate45_decode_score_multivalue_gqa_group.json",
       "depends_on_item_ids": [
-        "l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v1"
+        "l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v1",
+        "l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v2"
       ],
       "requires_merged_inputs": true,
       "requires_materialized_refs": true,
@@ -74,6 +75,7 @@
       "comparison_role": "gqa8_shared_kv_group_activity_power",
       "depends_on_item_ids": [
         "l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v1",
+        "l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v2",
         "l1_decoder_attention_decode_score_multivalue_gqa8_group_pnr_v1",
         "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1"
       ],
@@ -113,7 +115,8 @@
       "abstraction_layer": "decoder_attention_decode_score_multivalue_gqa_array_equivalence",
       "comparison_role": "gqa8_multigroup_array_semantic_gate",
       "depends_on_item_ids": [
-        "l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v1"
+        "l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v1",
+        "l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v2"
       ],
       "requires_merged_inputs": true,
       "requires_materialized_refs": true,
