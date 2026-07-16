@@ -81,15 +81,10 @@ def _resolve_run(session: Session, request: Layer1ConsumeRequest) -> tuple[WorkI
     return work_item, run
 
 
-def _failed_acceptance_run_has_metrics(run: Run) -> bool:
-    if run.status != RunStatus.FAILED:
+def _terminal_run_has_metrics(run: Run) -> bool:
+    if run.status not in {RunStatus.FAILED, RunStatus.TIMED_OUT, RunStatus.CANCELED}:
         return False
     payload = dict(run.result_payload or {}) if isinstance(run.result_payload, dict) else {}
-    classification = dict(payload.get("failure_classification") or {})
-    if str(classification.get("category", "")).strip() != "validation_error":
-        return False
-    if str(classification.get("failed_command_name", "")).strip() != "acceptance":
-        return False
     queue_result = dict(payload.get("queue_result") or {})
     metrics_rows = queue_result.get("metrics_rows")
     if not isinstance(metrics_rows, list) or not metrics_rows:
@@ -103,7 +98,7 @@ def _failed_acceptance_run_has_metrics(run: Run) -> bool:
 
 
 def _run_can_contribute_l1_metrics(run: Run) -> bool:
-    return run.status == RunStatus.SUCCEEDED or _failed_acceptance_run_has_metrics(run)
+    return run.status == RunStatus.SUCCEEDED or _terminal_run_has_metrics(run)
 
 
 def _safe_float(value: str | None) -> float | None:
@@ -508,7 +503,10 @@ def _proposal_entry(*, metrics_csv: str, best_row: dict[str, Any], evaluation_re
 def _completed_trial_runs(work_item: WorkItem) -> list[Run]:
     completed: list[Run] = []
     for run in sorted(work_item.runs, key=lambda row: (row.attempt, row.created_at or utcnow())):
-        if run.status not in {RunStatus.SUCCEEDED, RunStatus.FAILED, RunStatus.TIMED_OUT}:
+        if (
+            run.status not in {RunStatus.SUCCEEDED, RunStatus.FAILED, RunStatus.TIMED_OUT}
+            and not _terminal_run_has_metrics(run)
+        ):
             continue
         completed.append(run)
     return completed
@@ -793,6 +791,7 @@ def _trial_aggregate_payloads(repo_root: Path, work_item: WorkItem) -> tuple[lis
     failure_category = Counter()
     failure_stage = Counter()
     success_count = 0
+    partial_metrics_count = 0
     seed_variance_selected_rows: dict[str, tuple[str, dict[str, Any]]] = {}
     selected_group_metadata: dict[str, Any] | None = None
     if _objective_name(work_item) == "measure_seed_variance":
@@ -814,7 +813,18 @@ def _trial_aggregate_payloads(repo_root: Path, work_item: WorkItem) -> tuple[lis
         best_row = None
         if best is not None:
             metrics_csv, best_row = best
-            success_count += 1
+            is_failed_acceptance = (
+                str(failure.get("category", "")).strip() == "validation_error"
+                and str(failure.get("failed_command_name", "")).strip() == "acceptance"
+            )
+            if run.status == RunStatus.SUCCEEDED or is_failed_acceptance:
+                success_count += 1
+            else:
+                partial_metrics_count += 1
+                category = str(failure.get("category", "") or run.failure_category or "unknown").strip() or "unknown"
+                stage = str(failure.get("stage", "") or run.failure_stage or "unknown").strip() or "unknown"
+                failure_category[category] += 1
+                failure_stage[stage] += 1
             for key in success_metric_values:
                 value = _safe_float(best_row.get(key))
                 if value is not None:
@@ -847,6 +857,7 @@ def _trial_aggregate_payloads(repo_root: Path, work_item: WorkItem) -> tuple[lis
         "success_count": success_count,
         "failure_count": failure_count,
         "success_rate": (float(success_count) / float(completed_trials)) if completed_trials else 0.0,
+        "partial_metrics_count": partial_metrics_count,
         "metrics": {key: value for key, value in {metric: _metric_summary(values) for metric, values in success_metric_values.items()}.items() if value is not None},
     }
     if selected_group_metadata is not None:
@@ -917,7 +928,7 @@ def consume_l1_result(session: Session, request: Layer1ConsumeRequest) -> Layer1
     work_item, run = _resolve_run(session, request)
     if work_item.task_type != "l1_sweep":
         raise Layer1ResultConsumerError(f"work item is not l1_sweep: {work_item.item_id}")
-    if run.status != RunStatus.SUCCEEDED and not _failed_acceptance_run_has_metrics(run):
+    if run.status != RunStatus.SUCCEEDED and not _terminal_run_has_metrics(run):
         raise Layer1ResultConsumerError(f"run is not succeeded: {run.run_key} status={run.status.value}")
 
     metrics_csvs, summary_stats, failure_stats, trial_rows, selected_group_metadata = _trial_aggregate_payloads(repo_root, work_item)
@@ -983,6 +994,31 @@ def consume_l1_result(session: Session, request: Layer1ConsumeRequest) -> Layer1
         source_refs=source_refs,
     )
     payload["trial_summary"] = summary_stats
+    if run.status != RunStatus.SUCCEEDED:
+        run_payload = dict(run.result_payload or {}) if isinstance(run.result_payload, dict) else {}
+        failure = dict(run_payload.get("failure_classification") or {})
+        queue_result = dict(run_payload.get("queue_result") or {})
+        metrics_rows = queue_result.get("metrics_rows")
+        payload["partial_run_evidence"] = {
+            "run_status": run.status.value,
+            "failure_stage": str(failure.get("stage", "") or run.failure_stage or "").strip(),
+            "failure_category": str(failure.get("category", "") or run.failure_category or "").strip(),
+            "failure_signature": str(failure.get("signature", "") or run.failure_signature or "").strip(),
+            "captured_metrics_rows": list(metrics_rows) if isinstance(metrics_rows, list) else [],
+            "sweep_complete": False,
+            "promotion_scope": "captured_metrics_rows_only",
+        }
+        if proposals:
+            payload["proposal_assessment"] = {
+                "outcome": "partial_sweep_measured_points",
+                "summary": (
+                    "The run terminated after capturing status=ok physical rows. Retain only those "
+                    "rows as measured evidence; the sweep is incomplete and unmeasured points must "
+                    "not be inferred as feasible."
+                ),
+                "measured_point_count": len(proposals),
+                "sweep_complete": False,
+            }
     if boundary_rows:
         if not proposals:
             timing_infeasible_count = sum(
