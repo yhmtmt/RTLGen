@@ -77,6 +77,25 @@
       "status": "pending_control_plane_merge"
     },
     {
+      "item_id": "l2_decoder_attention_decode_score_multivalue_gqa8_folded_lane_equivalence_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Prove exact direct RTL semantics and explicit replay costs for 1/2/4/8 physical query-head lanes.",
+      "evaluation_mode": "equivalence_gate",
+      "abstraction_layer": "decoder_attention_decode_score_multivalue_gqa_folded_lane_equivalence",
+      "comparison_role": "gqa8_folded_lane_direct_rtl_semantic_gate",
+      "paired_baseline_item_id": "l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v2",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v2"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "prove_exact_gqa8_folded_lane_equivalence_and_replay_cost",
+        "reason": "The area-throughput lane frontier must be rooted in direct arithmetic and protocol evidence without hidden Q/K buffering."
+      },
+      "status": "pending_control_plane_merge"
+    },
+    {
       "item_id": "l1_decoder_attention_decode_score_multivalue_gqa8_group_pnr_v1",
       "task_type": "l1_sweep",
       "objective": "Measure the complete eight-head GQA group over the macro-derived physical envelope.",
