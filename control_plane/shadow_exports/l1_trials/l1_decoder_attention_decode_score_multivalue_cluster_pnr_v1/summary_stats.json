@@ -1,0 +1,34 @@
+{
+  "item_id": "l1_decoder_attention_decode_score_multivalue_cluster_pnr_v1",
+  "completed_trials": 2,
+  "success_count": 0,
+  "failure_count": 2,
+  "success_rate": 0.0,
+  "partial_metrics_count": 2,
+  "metrics": {
+    "critical_path_ns": {
+      "best": 7.2189,
+      "mean": 7.2189,
+      "median": 7.2189,
+      "max": 7.2189,
+      "range": 0.0,
+      "stddev": 0.0
+    },
+    "die_area": {
+      "best": 6250000.0,
+      "mean": 6250000.0,
+      "median": 6250000.0,
+      "max": 6250000.0,
+      "range": 0.0,
+      "stddev": 0.0
+    },
+    "total_power_mw": {
+      "best": 0.3,
+      "mean": 0.3,
+      "median": 0.3,
+      "max": 0.3,
+      "range": 0.0,
+      "stddev": 0.0
+    }
+  }
+}

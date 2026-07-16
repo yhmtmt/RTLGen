@@ -1,0 +1,14 @@
+{
+  "item_id": "l1_decoder_attention_decode_score_multivalue_cluster_pnr_v1",
+  "completed_trials": 2,
+  "success_count": 0,
+  "failure_count": 2,
+  "by_category": {
+    "worker_error": 1,
+    "command_canceled": 1
+  },
+  "by_stage": {
+    "worker": 1,
+    "run_block_sweep": 1
+  }
+}
