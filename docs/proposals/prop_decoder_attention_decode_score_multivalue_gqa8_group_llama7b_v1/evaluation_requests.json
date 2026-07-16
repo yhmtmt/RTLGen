@@ -25,6 +25,25 @@
       "notes": "Merged via PR #1331 and merge 55e4afbdaf8d0d00cca1ff03e70f49d6861b48f2 at 2026-07-16T11:23:26.279255Z."
     },
     {
+      "item_id": "l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v2",
+      "task_type": "l2_campaign",
+      "objective": "Replace the bounded compositional-only scope with direct flat eight-cluster RTL/perf equivalence evidence.",
+      "evaluation_mode": "equivalence_gate",
+      "abstraction_layer": "decoder_attention_decode_score_multivalue_gqa_group_equivalence",
+      "comparison_role": "gqa8_direct_flat_rtl_semantic_gate",
+      "paired_baseline_item_id": "l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "prove_gqa8_shared_kv_direct_flat_rtl_equivalence",
+        "reason": "The integrated eight-cluster datapath must match intermediate score tensors, shared value requests, and all ordered result beats instead of relying only on separate cluster and wrapper proofs."
+      },
+      "status": "pending_implementation_merge"
+    },
+    {
       "item_id": "l1_decoder_attention_decode_score_multivalue_gqa8_group_pnr_v1",
       "task_type": "l1_sweep",
       "objective": "Measure the complete GQA8 group at 7.2, 8.0, and 9.0 mm dies and 8/10 ns targets.",

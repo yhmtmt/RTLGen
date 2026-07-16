@@ -7876,7 +7876,10 @@ def test_generate_l2_campaign_task_adds_decode_score_multivalue_gqa_group_equiva
                 "l2_decoder_attention_decode_score_multivalue_gqa_group_equivalence_llama7b_v1.json"
             )
             assert decoder_inputs["decode_score_multivalue_gqa_group_equivalence_report"] in work_item.expected_outputs
-            assert "not a flat eight-cluster RTL simulation" in decoder_inputs[
+            assert "Directly simulate the generated flat eight-cluster" in decoder_inputs[
+                "decode_score_multivalue_gqa_group_equivalence_scope"
+            ]
+            assert "every intermediate score write/read" in decoder_inputs[
                 "decode_score_multivalue_gqa_group_equivalence_scope"
             ]
 

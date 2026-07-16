@@ -6723,10 +6723,10 @@ def _decoder_attention_decode_score_multivalue_gqa_group_equivalence_evidence(
             "decode_score_multivalue_gqa_group_equivalence_out": out,
             "decode_score_multivalue_gqa_group_equivalence_report": report,
             "decode_score_multivalue_gqa_group_equivalence_scope": (
-                "Prove Llama7B GQA8 shared-K/V arithmetic composition by simulating the generated single-cluster "
-                "RTL for eight distinct query heads over identical key/value tensors and composing that result "
-                "with the wrapper sharing/order protocol proof. This is a compositional proof, not a flat "
-                "eight-cluster RTL simulation."
+                "Directly simulate the generated flat eight-cluster Llama7B GQA8 RTL for eight distinct "
+                "128-element query heads over identical key/value tensors. Compare every intermediate score "
+                "write/read and all 128 ordered result beats against the perf/reference model, and retain the "
+                "separate wrapper sharing/order protocol test as a backpressure cross-check."
             ),
         },
         "commands": [
