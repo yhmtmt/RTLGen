@@ -130,6 +130,151 @@ def test_refresh_all_blocked_items_releases_satisfied_dependent() -> None:
         assert blocked.state == WorkItemState.DISPATCH_PENDING
 
 
+def test_refresh_all_blocked_items_accepts_merged_reviewed_partial_l1_evidence() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        promotion_rel = "control_plane/shadow_exports/l1_promotions/partial_l1.json"
+        review_rel = "control_plane/shadow_exports/review/partial_l1/review_package.json"
+        queue_rel = "control_plane/shadow_exports/review/partial_l1/evaluated.json"
+        metrics_rel = "runs/designs/npu_blocks/partial_l1/metrics.csv"
+        for rel, text in (
+            (
+                promotion_rel,
+                json.dumps(
+                    {
+                        "proposal_count": 1,
+                        "proposal_assessment": {
+                            "outcome": "partial_sweep_measured_points",
+                            "sweep_complete": False,
+                        },
+                        "partial_run_evidence": {
+                            "run_status": "canceled",
+                            "sweep_complete": False,
+                            "promotion_scope": "captured_metrics_rows_only",
+                        },
+                    },
+                    indent=2,
+                )
+                + "\n",
+            ),
+            (review_rel, "{}\n"),
+            (queue_rel, "{}\n"),
+            (metrics_rel, "platform,status,param_hash\nnangate45,ok,measured1\n"),
+        ):
+            path = repo_root / rel
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(text, encoding="utf-8")
+
+        with make_session() as session:
+            dep_task = TaskRequest(
+                request_key="queue:partial_l1",
+                source="test",
+                requested_by="tester",
+                title="partial l1",
+                description="partial l1",
+                layer="layer1",
+                flow="openroad",
+                priority=1,
+                request_payload={},
+            )
+            session.add(dep_task)
+            session.flush()
+            dependency = WorkItem(
+                work_item_key="queue:partial_l1",
+                task_request_id=dep_task.id,
+                item_id="partial_l1",
+                layer="layer1",
+                flow="openroad",
+                platform="nangate45",
+                task_type="l1_sweep",
+                state=WorkItemState.MERGED,
+                priority=1,
+                input_manifest={},
+                command_manifest=[],
+                expected_outputs=[metrics_rel],
+                acceptance_rules=[],
+            )
+            session.add(dependency)
+            session.flush()
+            run = Run(
+                run_key="partial_l1_run",
+                work_item_id=dependency.id,
+                attempt=1,
+                executor_type="internal_worker",
+                status=RunStatus.CANCELED,
+                started_at=utcnow(),
+                completed_at=utcnow(),
+                checkout_commit="deadbeef",
+                result_summary="canceled after measured point",
+                result_payload={},
+            )
+            session.add(run)
+            session.flush()
+            for kind, rel in (
+                ("promotion_proposal", promotion_rel),
+                ("review_package", review_rel),
+                ("queue_snapshot", queue_rel),
+                ("expected_output", metrics_rel),
+            ):
+                session.add(
+                    Artifact(
+                        run_id=run.id,
+                        kind=kind,
+                        storage_mode="repo",
+                        path=rel,
+                        sha256="x",
+                        metadata_={},
+                    )
+                )
+
+            blocked_task = TaskRequest(
+                request_key="queue:partial_dependent",
+                source="test",
+                requested_by="tester",
+                title="partial dependent",
+                description="partial dependent",
+                layer="layer2",
+                flow="openroad",
+                priority=1,
+                request_payload={
+                    "developer_loop": {
+                        "dependencies": {
+                            "item_ids": ["partial_l1"],
+                            "requires_merged_inputs": True,
+                            "requires_materialized_refs": True,
+                        }
+                    }
+                },
+            )
+            session.add(blocked_task)
+            session.flush()
+            blocked = WorkItem(
+                work_item_key="queue:partial_dependent",
+                task_request_id=blocked_task.id,
+                item_id="partial_dependent",
+                layer="layer2",
+                flow="openroad",
+                platform="nangate45",
+                task_type="l2_campaign",
+                state=WorkItemState.BLOCKED,
+                priority=1,
+                input_manifest={},
+                command_manifest=[],
+                expected_outputs=[],
+                acceptance_rules=[],
+            )
+            session.add(blocked)
+            session.commit()
+
+            released = refresh_all_blocked_items(session, repo_root=repo_root)
+            session.commit()
+            session.refresh(blocked)
+
+        assert released == ["partial_dependent"]
+        assert blocked.state == WorkItemState.DISPATCH_PENDING
+
+
 def test_refresh_all_blocked_items_releases_repo_materialized_missing_dependency() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
