@@ -78,6 +78,26 @@
         "reason": "The embodied group determines whether the 8x value-bandwidth reduction is affordable in area and timing."
       },
       "status": "pending_control_plane_merge"
+    },
+    {
+      "item_id": "l2_decoder_attention_decode_score_multivalue_gqa8_group_activity_power_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Measure activity-backed group power with explicit direct-versus-compositional provenance.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_decode_score_multivalue_gqa_group_activity_power",
+      "comparison_role": "gqa8_shared_kv_group_activity_power",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v1",
+        "l1_decoder_attention_decode_score_multivalue_gqa8_group_pnr_v1",
+        "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "measure_gqa8_shared_kv_group_activity_energy",
+        "reason": "Energy ranking is ineligible until activity provenance, phase cycles, annotation coverage, and finite routed power are recorded."
+      },
+      "status": "pending_control_plane_merge"
     }
   ],
   "baseline_refs": [

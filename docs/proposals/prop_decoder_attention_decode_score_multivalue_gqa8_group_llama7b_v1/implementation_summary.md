@@ -14,3 +14,9 @@ Results are exposed one child at a time in query-head order, with sixteen
 eight-dimensional slices per head. The wrapper counts one accepted and one
 completed GQA command, while child arithmetic and score storage remain the
 already-equivalent measured cluster implementation.
+
+The follow-on activity job consumes the merged group PPA and equivalence
+artifacts. Its report must separate directly annotated routed activity from
+any compositional scaling and keeps VCD, ODB, and SPEF evaluator-local. This
+closes group-component energy only; memory, NoC, HBM/DRAM, and total-token
+energy remain outside this measurement.
