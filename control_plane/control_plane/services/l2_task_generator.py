@@ -88,11 +88,15 @@ def _retry_base(item_id: str) -> str:
     return _RETRY_SUFFIX_RE.sub("", item_id.strip())
 
 
-def _gqa_group_equivalence_item_for_consumer(item_id: str) -> str:
+def _gqa_evidence_version_for_consumer(item_id: str) -> str:
     match = _VERSION_SUFFIX_RE.search(_retry_base(item_id))
     revision = int(match.group(1)) if match else 1
-    suffix = "v2" if revision >= 2 else "v1"
-    return f"l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_{suffix}"
+    return "v2" if revision >= 2 else "v1"
+
+
+def _gqa_group_equivalence_item_for_consumer(item_id: str) -> str:
+    version = _gqa_evidence_version_for_consumer(item_id)
+    return f"l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_{version}"
 
 
 def _proposal_dir(repo_root: Path, proposal_path: str | None) -> Path | None:
@@ -7053,13 +7057,14 @@ def _decoder_attention_decode_score_multivalue_cluster_frontier_evidence(*, item
 
 def _decoder_attention_decode_score_multivalue_gqa_group_frontier_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    evidence_version = _gqa_evidence_version_for_consumer(item_id)
     prior = (
         f"{base}/decoder_attention_decode_score_multivalue_cluster_frontier__"
         "l2_decoder_attention_decode_score_multivalue_cluster_frontier_llama7b_v1.json"
     )
     activity_power = (
         f"{base}/decoder_attention_decode_score_multivalue_gqa_group_activity_power__"
-        "l2_decoder_attention_decode_score_multivalue_gqa8_group_activity_power_llama7b_v1.json"
+        f"l2_decoder_attention_decode_score_multivalue_gqa8_group_activity_power_llama7b_{evidence_version}.json"
     )
     group_counts = "1,2,4"
     out = f"{base}/decoder_attention_decode_score_multivalue_gqa_group_frontier__{item_id}.json"
@@ -7098,13 +7103,14 @@ def _decoder_attention_decode_score_multivalue_gqa_group_frontier_evidence(*, it
 
 def _decoder_attention_decode_score_multivalue_gqa_array_frontier_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    evidence_version = _gqa_evidence_version_for_consumer(item_id)
     prior = (
         f"{base}/decoder_attention_decode_score_multivalue_gqa_group_frontier__"
-        "l2_decoder_attention_decode_score_multivalue_gqa8_group_frontier_llama7b_v1.json"
+        f"l2_decoder_attention_decode_score_multivalue_gqa8_group_frontier_llama7b_{evidence_version}.json"
     )
     equivalence = (
         f"{base}/decoder_attention_decode_score_multivalue_gqa_array_equivalence__"
-        "l2_decoder_attention_decode_score_multivalue_gqa8_array_equivalence_llama7b_v1.json"
+        f"l2_decoder_attention_decode_score_multivalue_gqa8_array_equivalence_llama7b_{evidence_version}.json"
     )
     metrics = {
         count: (

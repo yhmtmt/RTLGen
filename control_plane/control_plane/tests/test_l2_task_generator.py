@@ -8415,6 +8415,61 @@ def test_generate_l2_campaign_task_adds_decode_score_multivalue_gqa_array_fronti
             ] in work_item.expected_outputs
 
 
+def test_generate_l2_campaign_task_uses_v2_gqa_evidence_for_v2_frontiers() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            group_result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id=(
+                        "l2_decoder_attention_decode_score_multivalue_gqa8_group_frontier_"
+                        "llama7b_v2"
+                    ),
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    abstraction_layer="decoder_attention_decode_score_multivalue_gqa_group_frontier",
+                    evaluation_mode="frontier_recost",
+                    run_physical=False,
+                ),
+            )
+            group_item = session.query(WorkItem).filter_by(item_id=group_result.item_id).one()
+            group_command = group_item.task_request.request_payload["task"]["commands"][0]["run"]
+            assert "gqa8_group_activity_power_llama7b_v2.json" in group_command
+            assert "gqa8_group_activity_power_llama7b_v1.json" not in group_command
+
+            array_result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id=(
+                        "l2_decoder_attention_decode_score_multivalue_gqa8_array_frontier_"
+                        "llama7b_v2"
+                    ),
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    abstraction_layer="decoder_attention_decode_score_multivalue_gqa_array_frontier",
+                    evaluation_mode="frontier_recost",
+                    run_physical=False,
+                ),
+            )
+            array_item = session.query(WorkItem).filter_by(item_id=array_result.item_id).one()
+            array_command = array_item.task_request.request_payload["task"]["commands"][0]["run"]
+            assert "gqa8_group_frontier_llama7b_v2.json" in array_command
+            assert "gqa8_array_equivalence_llama7b_v2.json" in array_command
+            assert "gqa8_group_frontier_llama7b_v1.json" not in array_command
+            assert "gqa8_array_equivalence_llama7b_v1.json" not in array_command
+
+
 def test_generate_l2_campaign_task_adds_score_bank_proxy_equivalence() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
