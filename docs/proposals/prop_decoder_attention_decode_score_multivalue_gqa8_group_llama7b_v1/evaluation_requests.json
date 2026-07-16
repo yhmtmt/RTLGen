@@ -1,0 +1,46 @@
+{
+  "proposal_id": "prop_decoder_attention_decode_score_multivalue_gqa8_group_llama7b_v1",
+  "source_commit_note": "Queue only after the GQA8 generator, compositional audit, design target, guard, and control-plane handlers are merged.",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Run the merged GQA8 compositional equivalence audit and record JSON/Markdown evidence.",
+      "evaluation_mode": "equivalence_gate",
+      "abstraction_layer": "decoder_attention_decode_score_multivalue_gqa_group_equivalence",
+      "comparison_role": "gqa8_shared_kv_semantic_gate",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "prove_gqa8_shared_kv_compositional_equivalence",
+        "reason": "The candidate only earns physical evaluation after exact per-head arithmetic and wrapper sharing/order pass."
+      },
+      "status": "pending_implementation_merge"
+    },
+    {
+      "item_id": "l1_decoder_attention_decode_score_multivalue_gqa8_group_pnr_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure the complete GQA8 group at 7.2, 8.0, and 9.0 mm dies and 8/10 ns targets.",
+      "evaluation_mode": "frontier_followup",
+      "abstraction_layer": "decoder_attention_decode_score_multivalue_gqa_group",
+      "comparison_role": "gqa8_shared_kv_group_pnr",
+      "config_paths": [
+        "runs/designs/npu_blocks/attention_decode_score_multivalue_gqa_group_int8_m1x8_iterdiv/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/decode_score_multivalue_gqa_group_v1/sweeps/nangate45_decode_score_multivalue_gqa_group.json",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "measure_gqa8_shared_kv_group_ppa",
+        "reason": "Use an explicit macro-derived die-size boundary and retain infeasible rows."
+      },
+      "status": "pending_implementation_merge"
+    }
+  ]
+}

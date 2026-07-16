@@ -161,6 +161,71 @@ def test_multivalue_gqa_group_rejects_wrong_query_heads_per_kv(tmp_path: Path) -
         generate(_config(query_heads_per_kv=4), tmp_path)
 
 
+def test_multivalue_gqa_group_physical_guard_accepts_llama7b_design(tmp_path: Path) -> None:
+    source_design = (
+        REPO_ROOT
+        / "runs"
+        / "designs"
+        / "npu_blocks"
+        / "attention_decode_score_multivalue_gqa_group_int8_m1x8_iterdiv"
+    )
+    design_dir = tmp_path / source_design.name
+    design_dir.mkdir()
+    config = json.loads((source_design / "config.json").read_text(encoding="utf-8"))
+    shutil.copy(source_design / "config.json", design_dir / "config.json")
+    shutil.copy(source_design / "macro_manifest.json", design_dir / "macro_manifest.json")
+    generate(config, design_dir / "verilog")
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "npu/eval/check_attention_decode_score_multivalue_gqa_group_guard.py",
+            "--design-dir",
+            str(design_dir),
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    payload = json.loads(result.stdout)
+    assert payload["status"] == "ok"
+    assert payload["macro_count"] == 448
+
+
+def test_multivalue_gqa_group_physical_guard_rejects_wrong_macro_total(tmp_path: Path) -> None:
+    source_design = (
+        REPO_ROOT
+        / "runs"
+        / "designs"
+        / "npu_blocks"
+        / "attention_decode_score_multivalue_gqa_group_int8_m1x8_iterdiv"
+    )
+    design_dir = tmp_path / source_design.name
+    design_dir.mkdir()
+    config = json.loads((source_design / "config.json").read_text(encoding="utf-8"))
+    shutil.copy(source_design / "config.json", design_dir / "config.json")
+    macro_manifest = json.loads((source_design / "macro_manifest.json").read_text(encoding="utf-8"))
+    macro_manifest["manifest_params"]["macro_count"] = 56
+    (design_dir / "macro_manifest.json").write_text(
+        json.dumps(macro_manifest), encoding="utf-8"
+    )
+    generate(config, design_dir / "verilog")
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "npu/eval/check_attention_decode_score_multivalue_gqa_group_guard.py",
+            "--design-dir",
+            str(design_dir),
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode != 0
+    assert "macro manifest macro_count must be 448" in result.stderr
+
+
 def test_multivalue_gqa_group_atomic_replay_and_result_order(tmp_path: Path) -> None:
     iverilog = _iverilog()
     vvp = _vvp()

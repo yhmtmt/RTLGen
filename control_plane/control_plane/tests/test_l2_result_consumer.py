@@ -234,6 +234,29 @@ def test_decoder_evidence_paths_recognizes_decode_score_multivalue_cluster_equiv
     }
 
 
+def test_decoder_evidence_paths_recognizes_decode_score_multivalue_gqa_group_equivalence(tmp_path: Path) -> None:
+    evidence_rel = "runs/datasets/demo/decode_score_multivalue_gqa_group_equivalence.json"
+    report_rel = "runs/datasets/demo/decode_score_multivalue_gqa_group_equivalence.md"
+    _write(tmp_path / evidence_rel, "{}\n")
+    _write(tmp_path / report_rel, "# Decode score multivalue GQA group equivalence\n")
+    work_item = SimpleNamespace(
+        input_manifest={
+            "decoder_contract": {
+                "decode_score_multivalue_gqa_group_equivalence_out": evidence_rel,
+                "decode_score_multivalue_gqa_group_equivalence_report": report_rel,
+            }
+        }
+    )
+
+    evidence_ref, source_refs = _decoder_evidence_paths(repo_root=tmp_path, work_item=work_item)
+
+    assert evidence_ref == evidence_rel
+    assert source_refs == {
+        "decoder_decode_score_multivalue_gqa_group_equivalence_out": evidence_rel,
+        "decoder_decode_score_multivalue_gqa_group_equivalence_report": report_rel,
+    }
+
+
 def test_decoder_evidence_paths_recognizes_decode_score_tile_frontier(tmp_path: Path) -> None:
     evidence_rel = "runs/datasets/demo/decode_score_tile_frontier.json"
     report_rel = "runs/datasets/demo/decode_score_tile_frontier.md"
@@ -371,6 +394,45 @@ def test_decoder_evidence_summary_recognizes_decode_score_multivalue_cluster_equ
     assert "value_slices=16" in summary
     assert "score_reads_per_block=1" in summary
     assert "result_beats_per_command=16" in summary
+
+
+def test_decoder_evidence_summary_recognizes_decode_score_multivalue_gqa_group_equivalence() -> None:
+    outcome, summary = _decoder_evidence_summary(
+        evidence_ref="runs/datasets/demo/decode_score_multivalue_gqa_group_equivalence.json",
+        evidence_payload={
+            "model": "llama7b_gqa8_shared_kv_compositional_arithmetic_equivalence_v1",
+            "decision": "llama7b_gqa8_shared_kv_equivalence_pass",
+            "equivalence_pass": True,
+            "arithmetic_equivalence_pass": True,
+            "shared_inputs_pass": True,
+            "query_heads_per_kv": 8,
+            "head_dim": 128,
+            "group_result_sha256": "grouphash",
+            "semantic_profile": "decode_m1x8_shared_score_16x8d_value_iterdiv_gqa8_group_v1",
+            "wrapper_protocol": {"sharing_and_order_pass": True},
+            "compositional_proof": {
+                "method": "single_cluster_arithmetic_plus_wrapper_protocol",
+                "flat_8_cluster_rtl_simulation_run": False,
+            },
+        },
+    )
+
+    assert outcome == "llama7b_gqa8_shared_kv_equivalence_pass"
+    for field in (
+        "equivalence_pass=True",
+        "arithmetic_equivalence_pass=True",
+        "shared_inputs_pass=True",
+        "wrapper_protocol_sharing_and_order_pass=True",
+        "query_heads_per_kv=8",
+        "head_dim=128",
+        "group_result_sha256=grouphash",
+        "semantic_profile=decode_m1x8_shared_score_16x8d_value_iterdiv_gqa8_group_v1",
+        "proof=compositional",
+        "compositional_proof_method=single_cluster_arithmetic_plus_wrapper_protocol",
+        "flat_8_cluster_rtl_simulation_run=False",
+        "flat_8_cluster_simulation_proof=False",
+    ):
+        assert field in summary
 
 
 def test_decoder_evidence_summary_recognizes_two_pass_stream_equivalence() -> None:
