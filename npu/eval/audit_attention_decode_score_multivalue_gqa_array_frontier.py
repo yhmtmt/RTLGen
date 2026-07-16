@@ -165,9 +165,7 @@ def _parse_metrics_row(raw: Mapping[str, Any], *, metrics_path: Path, count: int
         critical_path = _positive(
             _first_value(raw, ("critical_path_ns", "critical_path")), "critical path"
         )
-        instance_value = _first_value(
-            raw, ("instance_area_um2", "instance_area", "die_area_um2", "die_area", "area_um2")
-        )
+        instance_value = _first_value(raw, ("instance_area_um2", "instance_area"))
         instance_area = _positive(instance_value, "instance area")
         row_group = params.get("GROUP_COUNT", params.get("group_count"))
         if row_group is not None and int(row_group) != count:

@@ -82,7 +82,7 @@ def _equivalence(tmp_path: Path) -> Path:
 def _metrics(path: Path, rows: list[dict[str, object]]) -> Path:
     fields = [
         "design", "platform", "config_hash", "param_hash", "tag", "status",
-        "critical_path_ns", "die_area", "params_json", "result_path",
+        "critical_path_ns", "die_area", "instance_area_um2", "params_json", "result_path",
     ]
     with path.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, fieldnames=fields)
@@ -95,7 +95,8 @@ def _metric_row(count: int, *, area: float = 1_000_000, cp: float = 7.0, clock: 
     return {
         "design": f"array_g{count}", "platform": "nangate45", "config_hash": f"config{count}",
         "param_hash": f"param{count}", "tag": "tag", "status": "ok", "critical_path_ns": cp,
-        "die_area": area, "params_json": json.dumps({"CLOCK_PERIOD": clock, "FLOW_VARIANT": "array_v1", "GROUP_COUNT": count, "CORE_UTILIZATION": 50}),
+        "die_area": area * 2, "instance_area_um2": area,
+        "params_json": json.dumps({"CLOCK_PERIOD": clock, "FLOW_VARIANT": "array_v1", "GROUP_COUNT": count, "CORE_UTILIZATION": 50}),
         "result_path": "result.json",
     }
 
@@ -126,11 +127,17 @@ def test_parser_preserves_failed_and_negative_rows(tmp_path: Path) -> None:
     assert failed["accepted"] is False
     assert "status is failed" in failed["reason"]
     negative = _parse_metrics_row(
-        {"status": "ok", "critical_path_ns": 7, "die_area": -1, "params_json": json.dumps({"CLOCK_PERIOD": 8})},
+        {"status": "ok", "critical_path_ns": 7, "instance_area_um2": -1, "params_json": json.dumps({"CLOCK_PERIOD": 8})},
         metrics_path=tmp_path / "m.csv", count=1, line=3,
     )
     assert negative["accepted"] is False
     assert "instance area" in negative["reason"]
+    missing = _parse_metrics_row(
+        {"status": "ok", "critical_path_ns": 7, "die_area": 1_000_000, "params_json": json.dumps({"CLOCK_PERIOD": 8})},
+        metrics_path=tmp_path / "m.csv", count=1, line=4,
+    )
+    assert missing["accepted"] is False
+    assert "instance area" in missing["reason"]
 
 
 def test_contract_rejection(tmp_path: Path) -> None:
