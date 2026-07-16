@@ -1688,16 +1688,18 @@ def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, 
         summary = "; ".join(parts)
         return outcome, summary if summary.endswith(".") else summary + "."
 
-    if model == "llama7b_gqa8_shared_kv_compositional_arithmetic_equivalence_v1":
+    if model in {
+        "llama7b_gqa8_shared_kv_compositional_arithmetic_equivalence_v1",
+        "llama7b_gqa8_shared_kv_direct_rtl_equivalence_v2",
+    }:
+        direct_flat_rtl = model == "llama7b_gqa8_shared_kv_direct_rtl_equivalence_v2"
         outcome = str(evidence_payload.get("decision") or "llama7b_gqa8_shared_kv_equivalence_recorded")
         wrapper_protocol = evidence_payload.get("wrapper_protocol")
         wrapper_protocol_dict = dict(wrapper_protocol) if isinstance(wrapper_protocol, dict) else {}
         compositional_proof = evidence_payload.get("compositional_proof")
         compositional_proof_dict = dict(compositional_proof) if isinstance(compositional_proof, dict) else {}
-        parts = [
-            f"Llama7B GQA8 shared-K/V compositional arithmetic equivalence recorded from {evidence_ref}: "
-            f"decision={outcome}",
-        ]
+        proof_label = "direct flat RTL equivalence" if direct_flat_rtl else "compositional arithmetic equivalence"
+        parts = [f"Llama7B GQA8 shared-K/V {proof_label} recorded from {evidence_ref}: decision={outcome}"]
         for key in (
             "equivalence_pass",
             "arithmetic_equivalence_pass",
@@ -1714,12 +1716,18 @@ def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, 
                 "wrapper_protocol_sharing_and_order_pass="
                 f"{wrapper_protocol_dict.get('sharing_and_order_pass')}"
             )
-        parts.append("proof=compositional")
+        parts.append("proof=direct_flat_rtl" if direct_flat_rtl else "proof=compositional")
         if "method" in compositional_proof_dict:
             parts.append(f"compositional_proof_method={compositional_proof_dict.get('method')}")
-        flat_simulation_run = compositional_proof_dict.get("flat_8_cluster_rtl_simulation_run", False)
+        flat_simulation_run = evidence_payload.get(
+            "flat_8_cluster_rtl_simulation_run",
+            compositional_proof_dict.get("flat_8_cluster_rtl_simulation_run", False),
+        )
         parts.append(f"flat_8_cluster_rtl_simulation_run={flat_simulation_run}")
-        parts.append("flat_8_cluster_simulation_proof=False")
+        flat_equivalence_pass = bool(evidence_payload.get("flat_8_cluster_equivalence_pass", False))
+        if direct_flat_rtl:
+            parts.append(f"flat_8_cluster_equivalence_pass={flat_equivalence_pass}")
+        parts.append(f"flat_8_cluster_simulation_proof={bool(flat_simulation_run and flat_equivalence_pass)}")
         summary = "; ".join(parts)
         return outcome, summary if summary.endswith(".") else summary + "."
 
