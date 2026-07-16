@@ -18,7 +18,11 @@
         "direction": "prove_gqa8_shared_kv_compositional_equivalence",
         "reason": "The candidate only earns physical evaluation after exact per-head arithmetic and wrapper sharing/order pass."
       },
-      "status": "pending_implementation_merge"
+      "status": "merged",
+      "merged_pr_number": 1331,
+      "merge_commit": "55e4afbdaf8d0d00cca1ff03e70f49d6861b48f2",
+      "merged_utc": "2026-07-16T11:23:26.279255Z",
+      "notes": "Merged via PR #1331 and merge 55e4afbdaf8d0d00cca1ff03e70f49d6861b48f2 at 2026-07-16T11:23:26.279255Z."
     },
     {
       "item_id": "l1_decoder_attention_decode_score_multivalue_gqa8_group_pnr_v1",
@@ -192,5 +196,6 @@
       },
       "status": "pending_implementation_merge"
     }
-  ]
+  ],
+  "source_commit": "6755869c417ad0659bd728d8e6c4f462e154d60d"
 }

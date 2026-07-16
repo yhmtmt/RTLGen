@@ -1,0 +1,32 @@
+# Analysis Report
+
+## Candidate
+- `proposal_id`: `prop_decoder_attention_decode_score_multivalue_gqa8_group_llama7b_v1`
+- `candidate_id`: `l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v1`
+
+## Evaluations Consumed
+- `l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v1`
+- `l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v1_run_cbecefcd438238dd`
+- source commit: `6755869c417ad0659bd728d8e6c4f462e154d60d`
+- review: PR #1331
+
+## Baseline Comparison
+- baseline_ref: `None`
+- baseline_item_id: `None`
+- outcome: `llama7b_gqa8_shared_kv_equivalence_pass`
+- summary: Llama7B GQA8 shared-K/V compositional arithmetic equivalence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_gqa_group_equivalence__l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v1.json: decision=llama7b_gqa8_shared_kv_equivalence_pass; equivalence_pass=True; arithmetic_equivalence_pass=True; shared_inputs_pass=True; query_heads_per_kv=8; head_dim=128; group_result_sha256=e2f07a3c580991601458466bfbaab4127cbcb654065b0241197f462ca4977069; semantic_profile=decode_m1x8_shared_score_16x8d_value_iterdiv_gqa8_group_v1; wrapper_protocol_sharing_and_order_pass=True; proof=compositional; compositional_proof_method=single_cluster_arithmetic_plus_wrapper_protocol; flat_8_cluster_rtl_simulation_run=False; flat_8_cluster_simulation_proof=False.
+
+## Result
+- result: `iterate`
+- confidence level: merged accepted evidence
+- estimated optimization room: pending follow-on comparison
+- architecture conclusion robustness: staged evidence
+- summary: Llama7B GQA8 shared-K/V compositional arithmetic equivalence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_gqa_group_equivalence__l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v1.json: decision=llama7b_gqa8_shared_kv_equivalence_pass; equivalence_pass=True; arithmetic_equivalence_pass=True; shared_inputs_pass=True; query_heads_per_kv=8; head_dim=128; group_result_sha256=e2f07a3c580991601458466bfbaab4127cbcb654065b0241197f462ca4977069; semantic_profile=decode_m1x8_shared_score_16x8d_value_iterdiv_gqa8_group_v1; wrapper_protocol_sharing_and_order_pass=True; proof=compositional; compositional_proof_method=single_cluster_arithmetic_plus_wrapper_protocol; flat_8_cluster_rtl_simulation_run=False; flat_8_cluster_simulation_proof=False.
+
+## Failures and Caveats
+- no additional caveats recorded during automatic finalization
+
+## Recommendation
+- `iterate`
+- reason: Llama7B GQA8 shared-K/V compositional arithmetic equivalence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_gqa_group_equivalence__l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v1.json: decision=llama7b_gqa8_shared_kv_equivalence_pass; equivalence_pass=True; arithmetic_equivalence_pass=True; shared_inputs_pass=True; query_heads_per_kv=8; head_dim=128; group_result_sha256=e2f07a3c580991601458466bfbaab4127cbcb654065b0241197f462ca4977069; semantic_profile=decode_m1x8_shared_score_16x8d_value_iterdiv_gqa8_group_v1; wrapper_protocol_sharing_and_order_pass=True; proof=compositional; compositional_proof_method=single_cluster_arithmetic_plus_wrapper_protocol; flat_8_cluster_rtl_simulation_run=False; flat_8_cluster_simulation_proof=False.
+- next_action: inspect follow-on work after l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v1
