@@ -46,12 +46,22 @@ def test_gqa8_shared_kv_real_cluster_arithmetic_equivalence(report: dict) -> Non
     assert all(row["expected_result_sha256"] == row["observed_result_sha256"] for row in report["heads"])
     assert report["expected_group_result_sha256"] == report["observed_group_result_sha256"]
     assert report["group_result_sha256"] == report["observed_group_result_sha256"]
-    assert report["expected_group_results"] == report["observed_group_results"]
-    assert len(report["observed_group_results"]) == 128
-    assert [(row["head"], row["slice"]) for row in report["observed_group_results"]] == [
-        (head, value_slice) for head in range(8) for value_slice in range(16)
-    ]
+    assert report["group_results_match"] is True
+    assert report["group_result_count"] == 128
+    assert report["group_result_order_sha256"]
     assert report["per_head_result_sha256"] == [row["observed_result_sha256"] for row in report["heads"]]
+    assert all(row["value_read_request_count"] == 48 for row in report["heads"])
+    assert all(row["value_read_requests_sha256"] for row in report["heads"])
+
+
+def test_gqa8_report_is_compact_hash_evidence(report: dict) -> None:
+    assert report["evidence_detail_policy"] == "compact_hashes_and_counts_no_full_intermediate_tensors"
+    assert "expected_group_results" not in report
+    assert "observed_group_results" not in report
+    assert all("expected_results" not in row for row in report["heads"])
+    assert all("observed_results" not in row for row in report["heads"])
+    assert all("value_read_requests" not in row for row in report["heads"])
+    assert len(json.dumps(report, sort_keys=True)) < 50_000
 
 
 def test_gqa8_report_states_compositional_scope_and_protocol_gate(report: dict) -> None:

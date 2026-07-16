@@ -235,6 +235,18 @@ def _ordered_group_results(heads: list[JsonDict], field: str) -> list[JsonDict]:
     return [{"head": row["head"], **result} for row in ordered for result in row[field]]
 
 
+def _compact_head(row: JsonDict) -> JsonDict:
+    """Retain proof-carrying hashes and counts without serializing full tensors."""
+    return {
+        key: value
+        for key, value in row.items()
+        if key not in {"expected_results", "observed_results", "value_read_requests"}
+    } | {
+        "value_read_request_count": len(row["value_read_requests"]),
+        "value_read_requests_sha256": _hash(row["value_read_requests"]),
+    }
+
+
 def _run_protocol_test(repo_root: Path, target: str) -> JsonDict:
     command = [sys.executable, "-m", "pytest", "-q", target]
     run = subprocess.run(command, cwd=repo_root, capture_output=True, text=True, timeout=120)
@@ -284,12 +296,17 @@ def build_report(config: JsonDict, *, protocol_test_target: str = DEFAULT_PROTOC
     observed_group_hash = _ordered_group_hash(heads, "observed_result_sha256")
     expected_group_results = _ordered_group_results(heads, "expected_results")
     observed_group_results = _ordered_group_results(heads, "observed_results")
+    group_results_match = expected_group_results == observed_group_results
+    result_order = [
+        {"head": row["head"], "slice": row["slice"]}
+        for row in observed_group_results
+    ]
     passed = (
         arithmetic_pass
         and distinct_queries_pass
         and shared_inputs_pass
         and expected_group_hash == observed_group_hash
-        and expected_group_results == observed_group_results
+        and group_results_match
         and protocol["sharing_and_order_pass"]
     )
     return {
@@ -309,11 +326,13 @@ def build_report(config: JsonDict, *, protocol_test_target: str = DEFAULT_PROTOC
         "expected_group_result_sha256": expected_group_hash,
         "observed_group_result_sha256": observed_group_hash,
         "group_result_sha256": observed_group_hash,
-        "expected_group_results": expected_group_results,
-        "observed_group_results": observed_group_results,
+        "group_results_match": group_results_match,
+        "group_result_count": len(observed_group_results),
+        "group_result_order_sha256": _hash(result_order),
         "arithmetic_equivalence_pass": arithmetic_pass,
         "wrapper_protocol": protocol,
-        "heads": heads,
+        "heads": [_compact_head(row) for row in heads],
+        "evidence_detail_policy": "compact_hashes_and_counts_no_full_intermediate_tensors",
         "compositional_proof": {
             "method": "single_cluster_arithmetic_plus_wrapper_protocol",
             "arithmetic_claim": (
