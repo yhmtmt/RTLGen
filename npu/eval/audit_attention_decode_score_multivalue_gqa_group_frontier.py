@@ -12,6 +12,9 @@ from typing import Any, Iterator
 
 JsonDict = dict[str, Any]
 _QUERY_HEADS_PER_KV = 8
+_GROUP_ACTIVITY_MODEL = "decoder_attention_decode_score_multivalue_gqa_group_activity_power_v1"
+_GROUP_ACTIVITY_DECISION = "activity_backed_gqa_group_power_measured"
+_SUPPORTED_GROUP_COUNTS = {1, 2, 4}
 
 
 def _load(path: Path) -> JsonDict:
@@ -102,6 +105,10 @@ def _validate_equivalence(equivalence: Any) -> JsonDict:
 
 
 def _selected_group(activity_report: JsonDict) -> tuple[JsonDict, JsonDict, float, int, float, JsonDict]:
+    if activity_report.get("model") != _GROUP_ACTIVITY_MODEL:
+        raise ValueError("group activity-power report model contract failed")
+    if activity_report.get("decision") != _GROUP_ACTIVITY_DECISION:
+        raise ValueError("group activity-power report decision contract failed")
     if activity_report.get("promotion_gate_pass") is not True:
         raise ValueError("group activity-power promotion gate did not pass")
     best = activity_report.get("best")
@@ -111,6 +118,10 @@ def _selected_group(activity_report: JsonDict) -> tuple[JsonDict, JsonDict, floa
     activity_power = best.get("activity_power")
     if not isinstance(ppa_metric, dict) or not isinstance(activity_power, dict):
         raise ValueError("group activity report lacks the promoted best PPA/activity evidence")
+    if best.get("status") != "activity_backed":
+        raise ValueError("promoted group candidate is not activity-backed")
+    if activity_report.get("best_candidate_id") != best.get("candidate_id"):
+        raise ValueError("group activity report best-candidate identity is inconsistent")
     if activity_power.get("promotion_gate_pass") is not True:
         raise ValueError("promoted group activity power is not gated")
     direct_energy = _positive(
@@ -123,9 +134,12 @@ def _selected_group(activity_report: JsonDict) -> tuple[JsonDict, JsonDict, floa
     )
     if not math.isclose(direct_energy, measured_energy, rel_tol=1.0e-9, abs_tol=1.0e-15):
         raise ValueError("direct group energy does not match activity energy")
-    full_context_cycles = int(activity_power.get("full_context_cycles"))
-    if full_context_cycles <= 0:
-        raise ValueError("group full-context cycles must be positive")
+    raw_full_context_cycles = _positive(
+        activity_power.get("full_context_cycles"), "group full-context cycles"
+    )
+    full_context_cycles = int(raw_full_context_cycles)
+    if raw_full_context_cycles != full_context_cycles:
+        raise ValueError("group full-context cycles must be an integer")
     activity_clock_ns = _positive(
         activity_power.get(
             "clock_period_ns",
@@ -136,6 +150,8 @@ def _selected_group(activity_report: JsonDict) -> tuple[JsonDict, JsonDict, floa
     contract = activity_report.get("activity_contract")
     if not isinstance(contract, dict) or int(contract.get("query_heads_per_kv", 0)) != _QUERY_HEADS_PER_KV:
         raise ValueError("group activity report is not GQA8")
+    if activity_report.get("energy_scope") != "one GQA8 group full-context decode attention command":
+        raise ValueError("group activity report energy scope is incompatible")
     equivalence = _validate_equivalence(activity_report.get("equivalence"))
     return best, ppa_metric, direct_energy, full_context_cycles, activity_clock_ns, equivalence
 
@@ -280,12 +296,21 @@ def build_report(
 ) -> JsonDict:
     prior = _load(prior_frontier_json)
     activity_report = _load(activity_power_json)
+    if not group_counts:
+        raise ValueError("at least one group count is required")
+    if len(group_counts) != len(set(group_counts)):
+        raise ValueError("group counts must be unique")
+    unsupported = set(group_counts) - _SUPPORTED_GROUP_COUNTS
+    if unsupported:
+        raise ValueError(f"unsupported group counts: {sorted(unsupported)}")
     schedule, schedule_source = _source_schedule(prior, prior_frontier_json)
     dense_tile, dense_tile_source = _prior_measurement(prior, prior_frontier_json, "dense_qkv_tile")
     if (
         int(schedule["hidden_size"]) != 4096
         or int(schedule["attention_heads"]) != 32
         or int(schedule["kv_heads"]) != 4
+        or int(schedule["attention_heads"])
+        != int(schedule["kv_heads"]) * _QUERY_HEADS_PER_KV
     ):
         raise ValueError("frontier is not the expected Llama7B 4096D/32Q-head/4KV-head schedule")
     best, group_metric, group_energy_j, group_cycles, activity_clock_ns, equivalence = _selected_group(
@@ -341,6 +366,7 @@ def build_report(
             "status": "exact",
             "equivalence_pass": equivalence["equivalence_pass"],
             "decision": equivalence["decision"],
+            "semantic_profile": equivalence["semantic_profile"],
             "query_heads_per_kv": _QUERY_HEADS_PER_KV,
             "expected_group_result_sha256": equivalence["expected_group_result_sha256"],
             "observed_group_result_sha256": equivalence["observed_group_result_sha256"],

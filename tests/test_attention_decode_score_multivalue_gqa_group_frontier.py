@@ -55,7 +55,11 @@ def _inputs(tmp_path: Path) -> tuple[Path, Path]:
     activity = _write(
         tmp_path / "group-activity.json",
         {
+            "model": "decoder_attention_decode_score_multivalue_gqa_group_activity_power_v1",
+            "decision": "activity_backed_gqa_group_power_measured",
             "promotion_gate_pass": True,
+            "best_candidate_id": "gqa-group",
+            "energy_scope": "one GQA8 group full-context decode attention command",
             "activity_contract": {"clock_period_ns": 8.0, "query_heads_per_kv": 8},
             "equivalence": {
                 "equivalence_pass": True,
@@ -66,6 +70,7 @@ def _inputs(tmp_path: Path) -> tuple[Path, Path]:
             },
             "best": {
                 "candidate_id": "gqa-group",
+                "status": "activity_backed",
                 "flow_variant": "group_die7200",
                 "ppa_metric": {"instance_area_um2": 2_000_000, "critical_path_ns": 7.5},
                 "direct_group_full_context_energy_j": 0.014,
@@ -135,6 +140,21 @@ def test_recost_requires_promoted_complete_gqa8_group(tmp_path: Path) -> None:
     activity.write_text(json.dumps(payload), encoding="utf-8")
     with pytest.raises(ValueError, match="activity power"):
         build_report(prior_frontier_json=prior, activity_power_json=activity, group_counts=[1])
+
+
+def test_recost_rejects_wrong_activity_model_and_unsupported_counts(tmp_path: Path) -> None:
+    prior, activity = _inputs(tmp_path)
+    payload = json.loads(activity.read_text(encoding="utf-8"))
+    payload["model"] = "unrelated_activity_model"
+    activity.write_text(json.dumps(payload), encoding="utf-8")
+    with pytest.raises(ValueError, match="model contract"):
+        build_report(prior_frontier_json=prior, activity_power_json=activity, group_counts=[1])
+
+    prior, activity = _inputs(tmp_path)
+    with pytest.raises(ValueError, match="unsupported group counts"):
+        build_report(prior_frontier_json=prior, activity_power_json=activity, group_counts=[3])
+    with pytest.raises(ValueError, match="unique"):
+        build_report(prior_frontier_json=prior, activity_power_json=activity, group_counts=[1, 1])
 
 
 def test_pareto_filters_infeasible_and_dominated_rows() -> None:
