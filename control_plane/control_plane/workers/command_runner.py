@@ -18,6 +18,10 @@ CommandProgressCallback = Callable[[dict[str, Any]], None]
 CancelCheck = Callable[[], bool]
 
 
+_CLOCK_TICKS_PER_SECOND = int(os.sysconf("SC_CLK_TCK"))
+_PAGE_SIZE_BYTES = int(os.sysconf("SC_PAGE_SIZE"))
+
+
 class CommandExecutionError(RuntimeError):
     pass
 
@@ -167,6 +171,48 @@ def _last_output_age_seconds(*, stdout_path: Path, stderr_path: Path) -> float:
     return max(0.0, time.time() - max(timestamps))
 
 
+def _process_group_snapshot(process_group_id: int) -> dict[str, Any]:
+    """Return bounded Linux /proc telemetry for a command process group."""
+    members: list[dict[str, Any]] = []
+    try:
+        proc_entries = Path("/proc").iterdir()
+    except OSError:
+        proc_entries = iter(())
+
+    for proc_dir in proc_entries:
+        if not proc_dir.name.isdigit():
+            continue
+        try:
+            stat_text = (proc_dir / "stat").read_text(encoding="utf-8")
+            comm_end = stat_text.rfind(")")
+            fields = stat_text[comm_end + 2 :].split()
+            if comm_end < 0 or len(fields) < 22 or int(fields[2]) != process_group_id:
+                continue
+            cpu_seconds = (int(fields[11]) + int(fields[12])) / _CLOCK_TICKS_PER_SECOND
+            rss_bytes = max(0, int(fields[21])) * _PAGE_SIZE_BYTES
+            command = (proc_dir / "comm").read_text(encoding="utf-8").strip()
+        except (FileNotFoundError, OSError, ValueError):
+            continue
+        members.append(
+            {
+                "pid": int(proc_dir.name),
+                "command": command,
+                "state": fields[0],
+                "cpu_seconds": round(cpu_seconds, 3),
+                "rss_bytes": rss_bytes,
+            }
+        )
+
+    members.sort(key=lambda member: (-float(member["cpu_seconds"]), int(member["pid"])))
+    return {
+        "process_group_id": process_group_id,
+        "process_count": len(members),
+        "cpu_seconds": round(sum(float(member["cpu_seconds"]) for member in members), 3),
+        "rss_bytes": sum(int(member["rss_bytes"]) for member in members),
+        "processes": members[:16],
+    }
+
+
 def _monitor_command(
     *,
     command_name: str,
@@ -231,6 +277,7 @@ def _monitor_command(
                         "stdout_bytes": stdout_path.stat().st_size if stdout_path.exists() else 0,
                         "stderr_bytes": stderr_path.stat().st_size if stderr_path.exists() else 0,
                         "last_output_age_seconds": last_output_age,
+                        "process_group": _process_group_snapshot(process.pid),
                     }
                 )
             except Exception:
