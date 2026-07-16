@@ -6743,6 +6743,50 @@ def _decoder_attention_decode_score_multivalue_gqa_group_equivalence_evidence(
     }
 
 
+def _decoder_attention_decode_score_multivalue_gqa_array_equivalence_evidence(
+    *, item_id: str
+) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    group_equivalence = (
+        f"{base}/decoder_attention_decode_score_multivalue_gqa_group_equivalence__"
+        "l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v1.json"
+    )
+    config_base = "runs/designs/npu_blocks"
+    configs = [
+        f"{config_base}/attention_decode_score_multivalue_gqa_array_g{count}_int8_m1x8_iterdiv/config.json"
+        for count in (1, 2, 4)
+    ]
+    out = f"{base}/decoder_attention_decode_score_multivalue_gqa_array_equivalence__{item_id}.json"
+    report = f"{base}/decoder_attention_decode_score_multivalue_gqa_array_equivalence__{item_id}.md"
+    config_args = " ".join(f"--array-config {config}" for config in configs)
+    return {
+        "inputs": {
+            "decode_score_multivalue_gqa_array_group_equivalence_json": group_equivalence,
+            "decode_score_multivalue_gqa_array_configs": configs,
+            "decode_score_multivalue_gqa_array_equivalence_out": out,
+            "decode_score_multivalue_gqa_array_equivalence_report": report,
+            "decode_score_multivalue_gqa_array_equivalence_scope": (
+                "Compose the merged complete GQA8 group arithmetic/sharing proof with direct protocol simulations "
+                "of one-, two-, and four-group generated arrays. Verify atomic command/input broadcast and "
+                "independent value-memory and result channels. This remains a compositional proof rather than a "
+                "monolithic 32-cluster arithmetic simulation."
+            ),
+        },
+        "commands": [
+            {
+                "name": "audit_decode_score_multivalue_gqa_array_equivalence",
+                "run": (
+                    "python3 -m npu.eval.audit_attention_decode_score_multivalue_gqa_array_equivalence "
+                    f"--group-equivalence-json {group_equivalence} {config_args} "
+                    f"--out {out} --out-md {report}"
+                ),
+            }
+        ],
+        "expected_outputs": [out, report],
+        "evidence_only": True,
+    }
+
+
 def _decoder_attention_decode_score_multivalue_cluster_activity_power_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     config = (
@@ -10581,6 +10625,7 @@ def _build_payload(
         "decoder_attention_decode_score_local_cluster_equivalence",
         "decoder_attention_decode_score_multivalue_cluster_equivalence",
         "decoder_attention_decode_score_multivalue_gqa_group_equivalence",
+        "decoder_attention_decode_score_multivalue_gqa_array_equivalence",
         "decoder_attention_decode_score_multivalue_cluster_activity_power",
         "decoder_attention_decode_score_multivalue_gqa_group_activity_power",
         "decoder_attention_decode_score_tile_frontier",
@@ -10825,6 +10870,10 @@ def _build_payload(
             )
         elif abstraction_layer_name == "decoder_attention_decode_score_multivalue_gqa_group_equivalence":
             decoder_evidence = _decoder_attention_decode_score_multivalue_gqa_group_equivalence_evidence(
+                item_id=item_id
+            )
+        elif abstraction_layer_name == "decoder_attention_decode_score_multivalue_gqa_array_equivalence":
+            decoder_evidence = _decoder_attention_decode_score_multivalue_gqa_array_equivalence_evidence(
                 item_id=item_id
             )
         elif abstraction_layer_name == "decoder_attention_decode_score_multivalue_cluster_activity_power":

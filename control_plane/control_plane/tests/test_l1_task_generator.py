@@ -912,6 +912,56 @@ def _write_example_attention_decode_score_multivalue_gqa_group_repo(
     return str(config_path.relative_to(repo_root)), str(sweep_path.relative_to(repo_root))
 
 
+def _write_example_attention_decode_score_multivalue_gqa_array_repo(
+    repo_root: Path,
+) -> tuple[str, str]:
+    design_dir = (
+        repo_root
+        / "runs"
+        / "designs"
+        / "npu_blocks"
+        / "attention_decode_score_multivalue_gqa_array_g2_int8_m1x8_iterdiv"
+    )
+    design_dir.mkdir(parents=True)
+    config_path = design_dir / "config.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "top_name": "attention_decode_score_multivalue_gqa_array_g2_int8_m1x8_iterdiv",
+                "attention_decode_score_multivalue_gqa_array": {
+                    "max_blocks": 16384,
+                    "array_n": 8,
+                    "value_slices": 16,
+                    "divider_impl": "iterative_restoring",
+                    "score_scale_lanes_per_cycle": 1,
+                    "query_heads_per_kv": 8,
+                    "group_count": 2,
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    (design_dir / "macro_manifest.json").write_text(
+        json.dumps({"manifest_params": {"score_bank_macro_count": 896}}),
+        encoding="utf-8",
+    )
+    sweep_path = (
+        repo_root
+        / "runs"
+        / "campaigns"
+        / "npu"
+        / "decode_score_multivalue_gqa_array_g2_v1"
+        / "sweeps"
+        / "nangate45_decode_score_multivalue_gqa_array_g2.json"
+    )
+    sweep_path.parent.mkdir(parents=True)
+    sweep_path.write_text(
+        json.dumps({"parameters": {"CLOCK_PERIOD": [10], "PLACE_DENSITY": [0.4]}}),
+        encoding="utf-8",
+    )
+    return str(config_path.relative_to(repo_root)), str(sweep_path.relative_to(repo_root))
+
+
 def _write_example_attention_hbm_replay_controller_repo(repo_root: Path) -> tuple[str, str]:
     design_dir = repo_root / "runs" / "designs" / "npu_blocks" / "attention_hbm_replay_controller_smoke"
     design_dir.mkdir(parents=True, exist_ok=True)
@@ -2551,6 +2601,66 @@ def test_generate_l1_sweep_task_supports_attention_decode_score_multivalue_gqa_g
             assert work_item.expected_outputs == [
                 "runs/designs/npu_blocks/attention_decode_score_multivalue_gqa_group_int8_m1x8_iterdiv/metrics.csv",
                 "runs/designs/npu_blocks/attention_decode_score_multivalue_gqa_group_int8_m1x8_iterdiv/"
+                "timing_debug_report.md",
+            ]
+
+
+def test_generate_l1_sweep_task_supports_attention_decode_score_multivalue_gqa_array_configs() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        config_path, sweep_path = _write_example_attention_decode_score_multivalue_gqa_array_repo(
+            repo_root
+        )
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l1_sweep_task(
+                session,
+                Layer1SweepGenerateRequest(
+                    repo_root=str(repo_root),
+                    sweep_path=sweep_path,
+                    config_paths=[config_path],
+                    platform="nangate45",
+                    out_root="runs/designs/npu_blocks",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    abstraction_layer="decoder_attention_decode_score_multivalue_gqa_array",
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            assert [command["name"] for command in work_item.command_manifest] == [
+                "generate_attention_decode_score_multivalue_gqa_array_rtl",
+                "check_attention_decode_score_multivalue_gqa_array_guard",
+                "run_block_sweep",
+                "extract_attention_decode_score_multivalue_gqa_array_timing_paths",
+                "build_runs_index",
+                "validate",
+            ]
+            assert "gen_attention_decode_score_multivalue_gqa_array.py" in work_item.command_manifest[0][
+                "run"
+            ]
+            assert "check_attention_decode_score_multivalue_gqa_array_guard.py" in work_item.command_manifest[
+                1
+            ]["run"]
+            sweep_command = work_item.command_manifest[2]["run"]
+            assert (
+                "--top attention_decode_score_multivalue_gqa_array_g2_int8_m1x8_iterdiv"
+                in sweep_command
+            )
+            assert (
+                "--macro_manifest runs/designs/npu_blocks/"
+                "attention_decode_score_multivalue_gqa_array_g2_int8_m1x8_iterdiv/macro_manifest.json"
+                in sweep_command
+            )
+            assert work_item.expected_outputs == [
+                "runs/designs/npu_blocks/"
+                "attention_decode_score_multivalue_gqa_array_g2_int8_m1x8_iterdiv/metrics.csv",
+                "runs/designs/npu_blocks/"
+                "attention_decode_score_multivalue_gqa_array_g2_int8_m1x8_iterdiv/"
                 "timing_debug_report.md",
             ]
 

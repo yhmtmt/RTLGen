@@ -25,3 +25,11 @@ The frontier follow-on deploys one, two, or four measured groups. Four logical
 GQA groups are required per layer; fewer physical groups execute them in
 waves. One-group PPA is composed linearly for larger counts and is explicitly
 not treated as array-level placement evidence.
+
+The next physical boundary instantiates one, two, or four complete groups
+under one clock and atomic command/input broadcast. Every group retains a
+separate value-memory request/response port and result stream; the wrapper
+does not hide bandwidth by arbitration or serialization. Equal-density die
+dimensions scale with the exact 448 FakeRAM macros per group, allowing direct
+array PNR to replace linear multi-group timing and area composition while
+keeping external memories and NoC explicit.

@@ -118,6 +118,93 @@
         "reason": "Use measured one-group timing, area, and activity energy while exposing linear multi-group PPA composition."
       },
       "status": "pending_control_plane_merge"
+    },
+    {
+      "item_id": "l2_decoder_attention_decode_score_multivalue_gqa8_array_equivalence_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Prove atomic broadcast and independent channels for generated one-, two-, and four-group arrays.",
+      "evaluation_mode": "equivalence_gate",
+      "abstraction_layer": "decoder_attention_decode_score_multivalue_gqa_array_equivalence",
+      "comparison_role": "gqa8_multigroup_array_semantic_gate",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "prove_gqa8_multigroup_array_compositional_equivalence",
+        "reason": "Array PPA is ineligible until group arithmetic and array-level command, memory, and result routing are proven."
+      },
+      "status": "pending_control_plane_merge"
+    },
+    {
+      "item_id": "l1_decoder_attention_decode_score_multivalue_gqa8_array_g1_pnr_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure the direct one-group array wrapper at the equal-density physical point.",
+      "evaluation_mode": "frontier_followup",
+      "abstraction_layer": "decoder_attention_decode_score_multivalue_gqa_array",
+      "comparison_role": "gqa8_array_g1_pnr",
+      "paired_baseline_item_id": "l1_decoder_attention_decode_score_multivalue_gqa8_group_pnr_v1",
+      "config_paths": [
+        "runs/designs/npu_blocks/attention_decode_score_multivalue_gqa_array_g1_int8_m1x8_iterdiv/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/decode_score_multivalue_gqa_array_g1_v1/sweeps/nangate45_decode_score_multivalue_gqa_array_g1.json",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_decode_score_multivalue_gqa8_array_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "measure_direct_gqa8_array_g1_ppa",
+        "reason": "The direct wrapper point calibrates array integration overhead against the standalone group."
+      },
+      "status": "pending_control_plane_merge"
+    },
+    {
+      "item_id": "l1_decoder_attention_decode_score_multivalue_gqa8_array_g2_pnr_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure the direct two-group array at equal macro density.",
+      "evaluation_mode": "frontier_followup",
+      "abstraction_layer": "decoder_attention_decode_score_multivalue_gqa_array",
+      "comparison_role": "gqa8_array_g2_pnr",
+      "paired_baseline_item_id": "l1_decoder_attention_decode_score_multivalue_gqa8_array_g1_pnr_v1",
+      "config_paths": [
+        "runs/designs/npu_blocks/attention_decode_score_multivalue_gqa_array_g2_int8_m1x8_iterdiv/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/decode_score_multivalue_gqa_array_g2_v1/sweeps/nangate45_decode_score_multivalue_gqa_array_g2.json",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_decode_score_multivalue_gqa8_array_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "measure_direct_gqa8_array_g2_ppa",
+        "reason": "Equal-density placement isolates array fanout, routing, and clock-tree scaling from utilization changes."
+      },
+      "status": "pending_control_plane_merge"
+    },
+    {
+      "item_id": "l1_decoder_attention_decode_score_multivalue_gqa8_array_g4_pnr_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure the complete four-group Llama7B GQA array at equal macro density.",
+      "evaluation_mode": "frontier_followup",
+      "abstraction_layer": "decoder_attention_decode_score_multivalue_gqa_array",
+      "comparison_role": "gqa8_array_g4_pnr",
+      "paired_baseline_item_id": "l1_decoder_attention_decode_score_multivalue_gqa8_array_g2_pnr_v1",
+      "config_paths": [
+        "runs/designs/npu_blocks/attention_decode_score_multivalue_gqa_array_g4_int8_m1x8_iterdiv/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/decode_score_multivalue_gqa_array_g4_v1/sweeps/nangate45_decode_score_multivalue_gqa_array_g4.json",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_decode_score_multivalue_gqa8_array_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "measure_direct_gqa8_array_g4_ppa",
+        "reason": "This directly embodies all four Llama7B KV groups and replaces linear multi-group area/timing composition."
+      },
+      "status": "pending_control_plane_merge"
     }
   ],
   "baseline_refs": [
