@@ -121,6 +121,33 @@
       "status": "pending_control_plane_merge"
     },
     {
+      "item_id": "l2_decoder_attention_decode_score_multivalue_gqa8_group_activity_power_llama7b_v2",
+      "task_type": "l2_campaign",
+      "objective": "Measure activity-backed group power against direct-flat group equivalence evidence.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_decode_score_multivalue_gqa_group_activity_power",
+      "comparison_role": "gqa8_direct_equivalence_backed_group_activity_power",
+      "paired_baseline_item_id": "l2_decoder_attention_decode_score_multivalue_gqa8_group_activity_power_llama7b_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v2",
+        "l1_decoder_attention_decode_score_multivalue_gqa8_group_pnr_v1",
+        "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "revision": {
+        "reason": "activity_consumer_must_read_direct_flat_group_equivalence",
+        "invalidates_item_ids": [
+          "l2_decoder_attention_decode_score_multivalue_gqa8_group_activity_power_llama7b_v1"
+        ]
+      },
+      "expected_result": {
+        "direction": "measure_direct_equivalence_backed_gqa8_group_activity_energy",
+        "reason": "Energy evidence is promoted only when its semantic input is the direct-flat v2 group proof."
+      },
+      "status": "pending_control_plane_merge"
+    },
+    {
       "item_id": "l2_decoder_attention_decode_score_multivalue_gqa8_group_frontier_llama7b_v1",
       "task_type": "l2_campaign",
       "objective": "Recost one, two, and four complete GQA8 group deployments against the prior cluster frontier.",
@@ -156,6 +183,31 @@
       "expected_result": {
         "direction": "prove_gqa8_multigroup_array_compositional_equivalence",
         "reason": "Array PPA is ineligible until group arithmetic and array-level command, memory, and result routing are proven."
+      },
+      "status": "pending_control_plane_merge"
+    },
+    {
+      "item_id": "l2_decoder_attention_decode_score_multivalue_gqa8_array_equivalence_llama7b_v2",
+      "task_type": "l2_campaign",
+      "objective": "Compose direct-flat group arithmetic evidence with generated one-, two-, and four-group array protocol simulation.",
+      "evaluation_mode": "equivalence_gate",
+      "abstraction_layer": "decoder_attention_decode_score_multivalue_gqa_array_equivalence",
+      "comparison_role": "gqa8_direct_group_backed_array_semantic_gate",
+      "paired_baseline_item_id": "l2_decoder_attention_decode_score_multivalue_gqa8_array_equivalence_llama7b_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v2"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "revision": {
+        "reason": "array_proof_must_compose_direct_flat_group_arithmetic_evidence",
+        "invalidates_item_ids": [
+          "l2_decoder_attention_decode_score_multivalue_gqa8_array_equivalence_llama7b_v1"
+        ]
+      },
+      "expected_result": {
+        "direction": "prove_direct_group_backed_gqa8_multigroup_array_equivalence",
+        "reason": "Array PPA eligibility must be rooted in direct group arithmetic evidence and direct wrapper protocol evidence."
       },
       "status": "pending_control_plane_merge"
     },
