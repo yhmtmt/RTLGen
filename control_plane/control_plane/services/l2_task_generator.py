@@ -6806,6 +6806,67 @@ def _decoder_attention_decode_score_multivalue_cluster_activity_power_evidence(*
     }
 
 
+def _decoder_attention_decode_score_multivalue_gqa_group_activity_power_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    design = "attention_decode_score_multivalue_gqa_group_int8_m1x8_iterdiv"
+    config = f"runs/designs/npu_blocks/{design}/config.json"
+    metrics_csv = f"runs/designs/npu_blocks/{design}/metrics.csv"
+    equivalence_json = (
+        f"{base}/decoder_attention_decode_score_multivalue_gqa_group_equivalence__"
+        "l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v1.json"
+    )
+    cluster_activity_power_json = (
+        f"{base}/decoder_attention_decode_score_multivalue_cluster_activity_power__"
+        "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1.json"
+    )
+    orfs_design_config = f"/orfs/flow/designs/nangate45/{design}/config.mk"
+    activity_dir = "/tmp/rtlgen_multivalue_gqa_group_activity"
+    out = f"{base}/decoder_attention_decode_score_multivalue_gqa_group_activity_power__{item_id}.json"
+    report = f"{base}/decoder_attention_decode_score_multivalue_gqa_group_activity_power__{item_id}.md"
+    return {
+        "inputs": {
+            "decode_score_multivalue_gqa_group_config": config,
+            "decode_score_multivalue_gqa_group_pnr_metrics_csv": metrics_csv,
+            "decode_score_multivalue_gqa_group_equivalence_json": equivalence_json,
+            "decode_score_multivalue_cluster_activity_power_json": cluster_activity_power_json,
+            "decode_score_multivalue_gqa_group_orfs_design_config": orfs_design_config,
+            "decode_score_multivalue_gqa_group_activity_dir": activity_dir,
+            "decode_score_multivalue_gqa_group_activity_power_out": out,
+            "decode_score_multivalue_gqa_group_activity_power_report": report,
+            "decode_score_multivalue_gqa_group_activity_power_scope": (
+                "Measure the GQA8 shared-K/V group activity contract after merged equivalence and PNR. "
+                "The report must distinguish directly annotated group activity from compositional scaling, "
+                "keep VCD/ODB/SPEF evaluator-local, and withhold total-token energy claims."
+            ),
+            "decode_score_multivalue_gqa_group_activity_power_promotion_gate": (
+                "Promotion requires explicit activity provenance, phase-cycle accounting, routed-power "
+                "annotation coverage for every directly measured component, finite energy, and no vectorless "
+                "or compositional estimate mislabeled as direct full-group measurement."
+            ),
+            "decode_score_multivalue_gqa_group_activity_power_local_only_artifacts": ["VCD", "ODB", "SPEF"],
+        },
+        "commands": [
+            {
+                "name": "audit_decode_score_multivalue_gqa_group_activity_power",
+                "run": (
+                    "python3 -m npu.eval.audit_attention_decode_score_multivalue_gqa_group_activity_power "
+                    f"--config {config} "
+                    f"--group-metrics-csv {metrics_csv} "
+                    f"--cluster-activity-power-json {cluster_activity_power_json} "
+                    f"--equivalence-json {equivalence_json} "
+                    f"--group-orfs-design-config {orfs_design_config} "
+                    "--clock-period-ns 8 "
+                    f"--activity-dir {activity_dir} "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            }
+        ],
+        "expected_outputs": [out, report],
+        "evidence_only": True,
+    }
+
+
 def _decoder_attention_decode_score_tile_frontier_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     operational = (
@@ -10476,6 +10537,7 @@ def _build_payload(
         "decoder_attention_decode_score_multivalue_cluster_equivalence",
         "decoder_attention_decode_score_multivalue_gqa_group_equivalence",
         "decoder_attention_decode_score_multivalue_cluster_activity_power",
+        "decoder_attention_decode_score_multivalue_gqa_group_activity_power",
         "decoder_attention_decode_score_tile_frontier",
         "decoder_attention_decode_score_local_cluster_frontier",
         "decoder_attention_decode_score_multivalue_cluster_frontier",
@@ -10721,6 +10783,10 @@ def _build_payload(
             )
         elif abstraction_layer_name == "decoder_attention_decode_score_multivalue_cluster_activity_power":
             decoder_evidence = _decoder_attention_decode_score_multivalue_cluster_activity_power_evidence(
+                item_id=item_id
+            )
+        elif abstraction_layer_name == "decoder_attention_decode_score_multivalue_gqa_group_activity_power":
+            decoder_evidence = _decoder_attention_decode_score_multivalue_gqa_group_activity_power_evidence(
                 item_id=item_id
             )
         elif abstraction_layer_name == "decoder_attention_decode_score_tile_frontier":
