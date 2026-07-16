@@ -15,11 +15,11 @@
       "eight parallel measured multivalue score/value clusters",
       "one shared external value request per block and value slice",
       "head-major and slice-major backpressured result serialization",
-      "real single-cluster RTL arithmetic for every head plus wrapper protocol composition",
+      "direct flat eight-cluster RTL arithmetic, score-tensor, shared-request, and ordered-result equivalence",
       "macro-aware Nangate45 timing, area, and power boundary points"
     ],
     "exclude": [
-      "do not claim a flat eight-cluster RTL equivalence simulation",
+      "the direct flat simulation remains bounded to three KV blocks rather than the full 16K context",
       "do not treat vectorless power as token energy",
       "do not assume the 2.5 mm to 3.0 mm single-cluster die envelope can contain 448 SRAM macros",
       "HBM and off-chip DRAM remain outside this local GQA-group boundary"
@@ -54,6 +54,25 @@
       "expected_result": {
         "direction": "prove_gqa8_shared_kv_compositional_equivalence",
         "reason": "PPA is ineligible until eight distinct Q heads, shared K/V tensors, request collapse, and output order are proven."
+      },
+      "status": "pending_control_plane_merge"
+    },
+    {
+      "item_id": "l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v2",
+      "task_type": "l2_campaign",
+      "objective": "Strengthen the semantic gate with direct flat eight-cluster RTL/perf equivalence.",
+      "evaluation_mode": "equivalence_gate",
+      "abstraction_layer": "decoder_attention_decode_score_multivalue_gqa_group_equivalence",
+      "comparison_role": "gqa8_direct_flat_rtl_semantic_gate",
+      "paired_baseline_item_id": "l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "prove_gqa8_shared_kv_direct_flat_rtl_equivalence",
+        "reason": "Compare every integrated score write/read, collapsed shared-value request, and ordered output beat against the perf/reference model."
       },
       "status": "pending_control_plane_merge"
     },
