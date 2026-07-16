@@ -39,6 +39,10 @@ def main() -> int:
     if not isinstance(body, dict):
         raise SystemExit("config must contain attention_decode_score_multivalue_gqa_group object")
 
+    parallel_lanes = int(body.get("parallel_query_head_lanes", 8))
+    if parallel_lanes not in {1, 2, 4, 8}:
+        raise SystemExit("GQA-group parallel_query_head_lanes must be one of 1,2,4,8")
+    query_head_waves = 8 // parallel_lanes
     expected_config = {
         "max_blocks": 16384,
         "array_n": 8,
@@ -52,19 +56,28 @@ def main() -> int:
             raise SystemExit(f"GQA-group config {key} must be {expected}")
 
     manifest = _load(paths["manifest"])
+    semantic_profile = (
+        "decode_m1x8_shared_score_16x8d_value_iterdiv_gqa8_group_v1"
+        if parallel_lanes == 8
+        else "decode_m1x8_shared_score_16x8d_value_iterdiv_gqa8_folded_group_v1"
+    )
     expected_manifest = {
         "top_name": str(config.get("top_name") or ""),
-        "semantic_profile": "decode_m1x8_shared_score_16x8d_value_iterdiv_gqa8_group_v1",
+        "semantic_profile": semantic_profile,
         "max_blocks": 16384,
         "score_tile_array_n": 8,
         "score_scale_lanes_per_cycle": 1,
         "value_slices": 16,
         "value_dimensions_per_head": 128,
         "query_heads_per_kv": 8,
-        "parallel_query_head_clusters": 8,
+        "parallel_query_head_clusters": parallel_lanes,
+        "parallel_query_head_lanes": parallel_lanes,
+        "query_head_waves": query_head_waves,
+        "query_input_replays_per_command": query_head_waves,
+        "key_input_replays_per_command": query_head_waves,
         "query_head_score_computations_per_command": 8,
         "score_passes_per_query_head": 1,
-        "shared_external_value_reads_per_block": 16,
+        "shared_external_value_reads_per_block": 16 * query_head_waves,
         "internal_value_reads_per_block_per_head": 16,
         "result_beats_per_command": 128,
         "result_value_bits_per_beat": 320,
@@ -86,14 +99,16 @@ def main() -> int:
         raise SystemExit("GQA group must carry one FakeRAM LEF and Liberty view")
     macro_params = macro_manifest.get("manifest_params", {})
     expected_macro_params = {
-        "macro_count": 448,
-        "score_bank_macro_count": 448,
+        "macro_count": 56 * parallel_lanes,
+        "score_bank_macro_count": 56 * parallel_lanes,
         "score_bank_macro_count_per_cluster": 56,
-        "parallel_query_head_clusters": 8,
+        "parallel_query_head_clusters": parallel_lanes,
+        "parallel_query_head_lanes": parallel_lanes,
+        "query_head_waves": query_head_waves,
         "query_heads_per_kv": 8,
         "query_head_score_computations_per_command": 8,
         "shared_kv_heads_per_group": 1,
-        "shared_external_value_reads_per_block": 16,
+        "shared_external_value_reads_per_block": 16 * query_head_waves,
         "score_scale_lanes_per_cycle": 1,
         "score_passes_per_query_head": 1,
         "value_slices": 16,
@@ -107,22 +122,34 @@ def main() -> int:
     cluster_top = f"{top_name}__cluster"
     if not re.search(rf"^module\s+{re.escape(top_name)}\b", text, re.MULTILINE):
         raise SystemExit(f"generated RTL does not define top module {top_name}")
-    if text.count(f"{cluster_top} u_head_") != 8:
-        raise SystemExit("GQA-group RTL must instantiate eight parallel query-head clusters")
+    instance_prefix = "u_head_" if parallel_lanes == 8 else "u_lane_"
+    if text.count(f"{cluster_top} {instance_prefix}") != parallel_lanes:
+        raise SystemExit(
+            f"GQA-group RTL must instantiate {parallel_lanes} physical query-head clusters"
+        )
     if text.count("fakeram45_2048x39 u_group_") != 56:
         raise SystemExit("shared cluster definition must contain exactly 56 score-bank macro instances")
-    for token in (
+    common_tokens = (
         "QUERY_HEADS_PER_KV = 8",
-        "input_query[7:0]",
-        "input_query[63:56]",
         "value_req_consistent",
         "value_req_divergent",
         "value_rsp_ready_all",
-        "result_head_q",
         "command_ready_all",
         "input_ready_all",
         "DIV_ITER",
-    ):
+    )
+    lane_tokens = (
+        ("input_query[7:0]", "input_query[63:56]", "result_head_q")
+        if parallel_lanes == 8
+        else (
+            f"PARALLEL_QUERY_HEAD_LANES = {parallel_lanes}",
+            f"QUERY_HEAD_WAVES = {query_head_waves}",
+            "launch_pending_q",
+            "result_lane_q",
+            "input_query[((wave_q * PARALLEL_QUERY_HEAD_LANES",
+        )
+    )
+    for token in common_tokens + lane_tokens:
         if token not in text:
             raise SystemExit(f"GQA-group RTL missing semantic token: {token}")
     for forbidden in ("result_hash", "equivalence_hash", "/ exp_sum_accum", "% exp_sum_accum"):
@@ -134,7 +161,9 @@ def main() -> int:
             {
                 "design": top_name,
                 "guard": "attention_decode_score_multivalue_gqa_group_v1",
-                "macro_count": 448,
+                "macro_count": 56 * parallel_lanes,
+                "parallel_query_head_lanes": parallel_lanes,
+                "query_head_waves": query_head_waves,
                 "status": "ok",
             },
             sort_keys=True,

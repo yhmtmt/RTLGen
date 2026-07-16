@@ -1,0 +1,13 @@
+{
+  "version": "0.1",
+  "top_name": "attention_decode_score_multivalue_gqa_group_lanes4_int8_m1x8_iterdiv",
+  "attention_decode_score_multivalue_gqa_group": {
+    "max_blocks": 16384,
+    "array_n": 8,
+    "value_slices": 16,
+    "divider_impl": "iterative_restoring",
+    "score_scale_lanes_per_cycle": 1,
+    "query_heads_per_kv": 8,
+    "parallel_query_head_lanes": 4
+  }
+}
