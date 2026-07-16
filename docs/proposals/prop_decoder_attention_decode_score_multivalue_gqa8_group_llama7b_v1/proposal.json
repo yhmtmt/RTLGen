@@ -1,0 +1,94 @@
+{
+  "proposal_id": "prop_decoder_attention_decode_score_multivalue_gqa8_group_llama7b_v1",
+  "created_utc": "2026-07-16T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "GQA8 shared-K/V multivalue decode group for the Llama7B frontier",
+  "abstraction_layer": "decoder_attention_decode_score_multivalue_gqa_group",
+  "hypothesis": "An eight-query-head GQA group can preserve the measured multivalue-cluster arithmetic while broadcasting the shared key stream and collapsing eight identical value-replay streams to one external stream, removing the independent-head KV-bandwidth abstraction from the Llama7B frontier.",
+  "direct_comparison": {
+    "primary_question": "How do area, timing, and KV service demand change when one complete Llama7B GQA8 group is embodied instead of pricing eight query heads as independent value consumers?",
+    "baseline": "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1",
+    "include": [
+      "eight distinct query heads sharing one key and value tensor",
+      "eight parallel measured multivalue score/value clusters",
+      "one shared external value request per block and value slice",
+      "head-major and slice-major backpressured result serialization",
+      "real single-cluster RTL arithmetic for every head plus wrapper protocol composition",
+      "macro-aware Nangate45 timing, area, and power boundary points"
+    ],
+    "exclude": [
+      "do not claim a flat eight-cluster RTL equivalence simulation",
+      "do not treat vectorless power as token energy",
+      "do not assume the 2.5 mm to 3.0 mm single-cluster die envelope can contain 448 SRAM macros",
+      "HBM and off-chip DRAM remain outside this local GQA-group boundary"
+    ],
+    "metrics": [
+      "rtl_reference_equivalence",
+      "shared_external_value_reads_per_block",
+      "critical_path_ns",
+      "instance_area_um2",
+      "stdcell_count",
+      "total_power_mw",
+      "macro_count",
+      "latency_us",
+      "token_throughput_per_s",
+      "energy_mj_per_token",
+      "embodied_area_mm2"
+    ]
+  },
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Record the compositional GQA8 arithmetic and wrapper-protocol equivalence gate.",
+      "evaluation_mode": "equivalence_gate",
+      "abstraction_layer": "decoder_attention_decode_score_multivalue_gqa_group_equivalence",
+      "comparison_role": "gqa8_shared_kv_semantic_gate",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "prove_gqa8_shared_kv_compositional_equivalence",
+        "reason": "PPA is ineligible until eight distinct Q heads, shared K/V tensors, request collapse, and output order are proven."
+      },
+      "status": "pending_control_plane_merge"
+    },
+    {
+      "item_id": "l1_decoder_attention_decode_score_multivalue_gqa8_group_pnr_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure the complete eight-head GQA group over the macro-derived physical envelope.",
+      "evaluation_mode": "frontier_followup",
+      "abstraction_layer": "decoder_attention_decode_score_multivalue_gqa_group",
+      "comparison_role": "gqa8_shared_kv_group_pnr",
+      "config_paths": [
+        "runs/designs/npu_blocks/attention_decode_score_multivalue_gqa_group_int8_m1x8_iterdiv/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/decode_score_multivalue_gqa_group_v1/sweeps/nangate45_decode_score_multivalue_gqa_group.json",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "measure_gqa8_shared_kv_group_ppa",
+        "reason": "The embodied group determines whether the 8x value-bandwidth reduction is affordable in area and timing."
+      },
+      "status": "pending_control_plane_merge"
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_cluster_equivalence__l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1.json",
+    "docs/proposals/prop_decoder_attention_decode_score_multivalue_cluster_llama7b_v1/proposal.json",
+    "control_plane/shadow_exports/l2_decisions/l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1.json"
+  ],
+  "remaining_abstractions_after_this_step": [
+    "The GQA group uses eight fully parallel query-head clusters; folded 1/2/4-head execution remains an area-throughput design space.",
+    "Activity-backed power is required before token-energy ranking.",
+    "The shared value stream still terminates at a local request/response boundary rather than an embodied SRAM/NoC service.",
+    "HBM/DRAM service and full-layer scheduling remain outside this physical block."
+  ]
+}

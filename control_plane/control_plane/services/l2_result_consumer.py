@@ -631,6 +631,10 @@ _DECODER_EVIDENCE_OUTPUT_KEYS: tuple[tuple[str, str], ...] = (
         "decode_score_multivalue_cluster_equivalence_report",
     ),
     (
+        "decode_score_multivalue_gqa_group_equivalence_out",
+        "decode_score_multivalue_gqa_group_equivalence_report",
+    ),
+    (
         "decode_score_tile_frontier_out",
         "decode_score_tile_frontier_report",
     ),
@@ -1665,6 +1669,41 @@ def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, 
         ):
             if key in evidence_payload:
                 parts.append(f"{key}={evidence_payload.get(key)}")
+        summary = "; ".join(parts)
+        return outcome, summary if summary.endswith(".") else summary + "."
+
+    if model == "llama7b_gqa8_shared_kv_compositional_arithmetic_equivalence_v1":
+        outcome = str(evidence_payload.get("decision") or "llama7b_gqa8_shared_kv_equivalence_recorded")
+        wrapper_protocol = evidence_payload.get("wrapper_protocol")
+        wrapper_protocol_dict = dict(wrapper_protocol) if isinstance(wrapper_protocol, dict) else {}
+        compositional_proof = evidence_payload.get("compositional_proof")
+        compositional_proof_dict = dict(compositional_proof) if isinstance(compositional_proof, dict) else {}
+        parts = [
+            f"Llama7B GQA8 shared-K/V compositional arithmetic equivalence recorded from {evidence_ref}: "
+            f"decision={outcome}",
+        ]
+        for key in (
+            "equivalence_pass",
+            "arithmetic_equivalence_pass",
+            "shared_inputs_pass",
+            "query_heads_per_kv",
+            "head_dim",
+            "group_result_sha256",
+            "semantic_profile",
+        ):
+            if key in evidence_payload:
+                parts.append(f"{key}={evidence_payload.get(key)}")
+        if "sharing_and_order_pass" in wrapper_protocol_dict:
+            parts.append(
+                "wrapper_protocol_sharing_and_order_pass="
+                f"{wrapper_protocol_dict.get('sharing_and_order_pass')}"
+            )
+        parts.append("proof=compositional")
+        if "method" in compositional_proof_dict:
+            parts.append(f"compositional_proof_method={compositional_proof_dict.get('method')}")
+        flat_simulation_run = compositional_proof_dict.get("flat_8_cluster_rtl_simulation_run", False)
+        parts.append(f"flat_8_cluster_rtl_simulation_run={flat_simulation_run}")
+        parts.append("flat_8_cluster_simulation_proof=False")
         summary = "; ".join(parts)
         return outcome, summary if summary.endswith(".") else summary + "."
 

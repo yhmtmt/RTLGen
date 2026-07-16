@@ -6708,6 +6708,41 @@ def _decoder_attention_decode_score_multivalue_cluster_equivalence_evidence(*, i
     }
 
 
+def _decoder_attention_decode_score_multivalue_gqa_group_equivalence_evidence(
+    *, item_id: str
+) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_attention_decode_score_multivalue_gqa_group_equivalence__{item_id}.json"
+    report = f"{base}/decoder_attention_decode_score_multivalue_gqa_group_equivalence__{item_id}.md"
+    config = (
+        "runs/designs/npu_blocks/attention_decode_score_multivalue_gqa_group_int8_m1x8_iterdiv/"
+        "config.json"
+    )
+    return {
+        "inputs": {
+            "decode_score_multivalue_gqa_group_equivalence_out": out,
+            "decode_score_multivalue_gqa_group_equivalence_report": report,
+            "decode_score_multivalue_gqa_group_equivalence_scope": (
+                "Prove Llama7B GQA8 shared-K/V arithmetic composition by simulating the generated single-cluster "
+                "RTL for eight distinct query heads over identical key/value tensors and composing that result "
+                "with the wrapper sharing/order protocol proof. This is a compositional proof, not a flat "
+                "eight-cluster RTL simulation."
+            ),
+        },
+        "commands": [
+            {
+                "name": "audit_decode_score_multivalue_gqa_group_equivalence",
+                "run": (
+                    "python3 -m npu.eval.audit_attention_decode_score_multivalue_gqa_group_equivalence "
+                    f"--config {config} --out {out} --out-md {report}"
+                ),
+            }
+        ],
+        "expected_outputs": [out, report],
+        "evidence_only": True,
+    }
+
+
 def _decoder_attention_decode_score_multivalue_cluster_activity_power_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     config = (
@@ -10439,6 +10474,7 @@ def _build_payload(
         "decoder_attention_decode_score_tile_equivalence",
         "decoder_attention_decode_score_local_cluster_equivalence",
         "decoder_attention_decode_score_multivalue_cluster_equivalence",
+        "decoder_attention_decode_score_multivalue_gqa_group_equivalence",
         "decoder_attention_decode_score_multivalue_cluster_activity_power",
         "decoder_attention_decode_score_tile_frontier",
         "decoder_attention_decode_score_local_cluster_frontier",
@@ -10677,6 +10713,10 @@ def _build_payload(
             decoder_evidence = _decoder_attention_decode_score_local_cluster_equivalence_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_decode_score_multivalue_cluster_equivalence":
             decoder_evidence = _decoder_attention_decode_score_multivalue_cluster_equivalence_evidence(
+                item_id=item_id
+            )
+        elif abstraction_layer_name == "decoder_attention_decode_score_multivalue_gqa_group_equivalence":
+            decoder_evidence = _decoder_attention_decode_score_multivalue_gqa_group_equivalence_evidence(
                 item_id=item_id
             )
         elif abstraction_layer_name == "decoder_attention_decode_score_multivalue_cluster_activity_power":
