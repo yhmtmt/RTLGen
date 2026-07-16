@@ -8,6 +8,7 @@ from pathlib import Path
 import tempfile
 from types import SimpleNamespace
 
+import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
@@ -257,6 +258,38 @@ def test_decoder_evidence_paths_recognizes_decode_score_multivalue_gqa_group_equ
     }
 
 
+@pytest.mark.parametrize(
+    "prefix",
+    [
+        "decode_score_multivalue_gqa_array_equivalence",
+        "decode_score_multivalue_gqa_group_activity_power",
+        "decode_score_multivalue_gqa_group_frontier",
+        "decode_score_multivalue_gqa_array_frontier",
+    ],
+)
+def test_decoder_evidence_paths_recognizes_remaining_gqa_outputs(tmp_path: Path, prefix: str) -> None:
+    evidence_rel = f"runs/datasets/demo/{prefix}.json"
+    report_rel = f"runs/datasets/demo/{prefix}.md"
+    _write(tmp_path / evidence_rel, "{}\n")
+    _write(tmp_path / report_rel, "# GQA evidence\n")
+    work_item = SimpleNamespace(
+        input_manifest={
+            "decoder_contract": {
+                f"{prefix}_out": evidence_rel,
+                f"{prefix}_report": report_rel,
+            }
+        }
+    )
+
+    evidence_ref, source_refs = _decoder_evidence_paths(repo_root=tmp_path, work_item=work_item)
+
+    assert evidence_ref == evidence_rel
+    assert source_refs == {
+        f"decoder_{prefix}_out": evidence_rel,
+        f"decoder_{prefix}_report": report_rel,
+    }
+
+
 def test_decoder_evidence_paths_recognizes_decode_score_tile_frontier(tmp_path: Path) -> None:
     evidence_rel = "runs/datasets/demo/decode_score_tile_frontier.json"
     report_rel = "runs/datasets/demo/decode_score_tile_frontier.md"
@@ -433,6 +466,144 @@ def test_decoder_evidence_summary_recognizes_decode_score_multivalue_gqa_group_e
         "flat_8_cluster_simulation_proof=False",
     ):
         assert field in summary
+
+
+@pytest.mark.parametrize(
+    ("model", "decision", "payload", "expected"),
+    [
+        (
+            "llama7b_gqa8_multigroup_array_compositional_equivalence_v1",
+            "llama7b_gqa8_multigroup_array_equivalence_pass",
+            {
+                "equivalence_pass": True,
+                "precision_status": "exact",
+                "measured_group_counts": [1, 2, 4],
+                "array_protocol": {"atomic_broadcast_and_independent_channels_pass": True},
+                "compositional_proof": {"method": "merged_complete_group_equivalence_plus_array_wrapper_protocol"},
+            },
+            "atomic_broadcast_and_independent_channels_pass=True",
+        ),
+        (
+            "decoder_attention_decode_score_multivalue_gqa_group_activity_power_v1",
+            "activity_backed_gqa_group_power_measured",
+            {"promotion_gate_pass": True, "best": {"direct_group_full_context_energy_j": 0.25}},
+            "best_direct_group_full_context_energy_j=0.25",
+        ),
+        (
+            "decoder_attention_decode_score_multivalue_gqa_group_frontier_llama7b_v1",
+            "measured_complete_gqa8_group_component_frontier_promoted",
+            {"best_throughput_candidate": {"token_throughput_per_s": 12.5, "group_count": 4}},
+            "best_token_throughput_per_s=12.5",
+        ),
+        (
+            "decoder_attention_decode_score_multivalue_gqa_array_frontier_llama7b_v1",
+            "direct_gqa_array_timing_area_frontier_promoted_energy_blocked",
+            {"best_throughput_candidate": {"token_throughput_per_s": 15.0, "direct_array_instance_area_mm2": 10.0}},
+            "best_direct_array_instance_area_mm2=10.0",
+        ),
+    ],
+)
+def test_decoder_evidence_summary_recognizes_gqa_followons(
+    model: str, decision: str, payload: dict, expected: str
+) -> None:
+    outcome, summary = _decoder_evidence_summary(
+        evidence_ref="runs/datasets/demo/gqa.json",
+        evidence_payload={"model": model, "decision": decision, **payload},
+    )
+
+    assert outcome == decision
+    assert expected in summary
+
+
+def test_consume_l2_result_uses_gqa_array_equivalence_evidence_without_best_point() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            proposal_rel = "docs/proposals/prop_l2_gqa_array_equivalence_v1"
+            _write(
+                repo_root / proposal_rel / "proposal.json",
+                json.dumps(
+                    {
+                        "proposal_id": "prop_l2_gqa_array_equivalence_v1",
+                        "kind": "architecture",
+                        "title": "Direct GQA array equivalence",
+                        "direct_comparison": {
+                            "primary_question": "Does the direct array preserve complete-group behavior?"
+                        },
+                    },
+                    indent=2,
+                )
+                + "\n",
+            )
+            item_id = "l2_gqa_array_equivalence_v1"
+            _seed_campaign_work_item(
+                session,
+                repo_root,
+                item_id=item_id,
+                campaign_dir_rel="runs/campaigns/npu/gqa_array_equivalence",
+                summary_rows=(
+                    "scope,arch_id,macro_mode,objective_rank\n"
+                    "aggregate,unused,unused,1\n"
+                ),
+                proposal_path=proposal_rel,
+            )
+            evidence_rel = "runs/datasets/demo/gqa_array_equivalence.json"
+            report_rel = "runs/datasets/demo/gqa_array_equivalence.md"
+            _write(
+                repo_root / evidence_rel,
+                json.dumps(
+                    {
+                        "model": "llama7b_gqa8_multigroup_array_compositional_equivalence_v1",
+                        "decision": "llama7b_gqa8_multigroup_array_equivalence_pass",
+                        "equivalence_pass": True,
+                        "precision_status": "exact",
+                        "measured_group_counts": [1, 2, 4],
+                        "array_protocol": {
+                            "atomic_broadcast_and_independent_channels_pass": True,
+                        },
+                        "compositional_proof": {
+                            "method": "merged_complete_group_equivalence_plus_array_wrapper_protocol",
+                        },
+                    },
+                    indent=2,
+                )
+                + "\n",
+            )
+            _write(repo_root / report_rel, "# Direct GQA array equivalence\n")
+
+            work_item = session.query(WorkItem).filter_by(item_id=item_id).one()
+            work_item.input_manifest = {
+                "decoder_contract": {
+                    "decode_score_multivalue_gqa_array_equivalence_out": evidence_rel,
+                    "decode_score_multivalue_gqa_array_equivalence_report": report_rel,
+                }
+            }
+            work_item.expected_outputs = [evidence_rel, report_rel]
+            request_payload = copy.deepcopy(work_item.task_request.request_payload or {})
+            request_payload["developer_loop"]["abstraction"] = {
+                "layer": "decoder_attention_decode_score_multivalue_gqa_array_equivalence",
+            }
+            work_item.task_request.request_payload = request_payload
+            session.commit()
+
+            result = consume_l2_result(
+                session,
+                Layer2ConsumeRequest(repo_root=str(repo_root), item_id=item_id),
+            )
+
+            assert result.recommended_arch_id == "decoder_attention_decode_score_multivalue_gqa_array_equivalence"
+            assert result.recommended_macro_mode == "evidence_only"
+            decision = json.loads(Path(result.target_path).read_text(encoding="utf-8"))
+            assert decision["proposal_assessment"]["outcome"] == (
+                "llama7b_gqa8_multigroup_array_equivalence_pass"
+            )
+            assert decision["source_refs"]["decoder_decode_score_multivalue_gqa_array_equivalence_out"] == (
+                evidence_rel
+            )
 
 
 def test_decoder_evidence_summary_recognizes_two_pass_stream_equivalence() -> None:
