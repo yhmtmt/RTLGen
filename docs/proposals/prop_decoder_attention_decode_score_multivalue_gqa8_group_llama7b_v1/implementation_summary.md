@@ -33,3 +33,9 @@ does not hide bandwidth by arbitration or serialization. Equal-density die
 dimensions scale with the exact 448 FakeRAM macros per group, allowing direct
 array PNR to replace linear multi-group timing and area composition while
 keeping external memories and NoC explicit.
+
+The direct-array frontier recost consumes all three routed metrics files. It
+reallocates dense QKV tiles within the same compute budget and recomputes
+waves, layer cycles, clock, throughput, and embodied area for each feasible
+row. Group-component activity energy remains inherited and visibly
+compositional until an array-level VCD/routed-power run closes that boundary.

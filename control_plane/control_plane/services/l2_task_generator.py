@@ -7086,6 +7086,56 @@ def _decoder_attention_decode_score_multivalue_gqa_group_frontier_evidence(*, it
     }
 
 
+def _decoder_attention_decode_score_multivalue_gqa_array_frontier_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    prior = (
+        f"{base}/decoder_attention_decode_score_multivalue_gqa_group_frontier__"
+        "l2_decoder_attention_decode_score_multivalue_gqa8_group_frontier_llama7b_v1.json"
+    )
+    equivalence = (
+        f"{base}/decoder_attention_decode_score_multivalue_gqa_array_equivalence__"
+        "l2_decoder_attention_decode_score_multivalue_gqa8_array_equivalence_llama7b_v1.json"
+    )
+    metrics = {
+        count: (
+            "runs/designs/npu_blocks/"
+            f"attention_decode_score_multivalue_gqa_array_g{count}_int8_m1x8_iterdiv/metrics.csv"
+        )
+        for count in (1, 2, 4)
+    }
+    out = f"{base}/decoder_attention_decode_score_multivalue_gqa_array_frontier__{item_id}.json"
+    report = f"{base}/decoder_attention_decode_score_multivalue_gqa_array_frontier__{item_id}.md"
+    metrics_args = " ".join(f"--array-metrics {count}={path}" for count, path in metrics.items())
+    return {
+        "inputs": {
+            "decode_score_multivalue_gqa_array_frontier_prior_frontier": prior,
+            "decode_score_multivalue_gqa_array_frontier_equivalence": equivalence,
+            "decode_score_multivalue_gqa_array_frontier_metrics": {
+                str(count): path for count, path in metrics.items()
+            },
+            "decode_score_multivalue_gqa_array_frontier_out": out,
+            "decode_score_multivalue_gqa_array_frontier_report": report,
+            "decode_score_multivalue_gqa_array_frontier_scope": (
+                "Replace linearly composed one-, two-, and four-group timing and area with direct equal-density "
+                "array PNR. Preserve the prior measured group-component activity energy only as compositional "
+                "evidence; direct array activity, external memory/NoC/HBM, and total-token energy remain open."
+            ),
+        },
+        "commands": [
+            {
+                "name": "audit_decode_score_multivalue_gqa_array_frontier",
+                "run": (
+                    "python3 -m npu.eval.audit_attention_decode_score_multivalue_gqa_array_frontier "
+                    f"--prior-frontier-json {prior} --array-equivalence-json {equivalence} "
+                    f"{metrics_args} --out {out} --out-md {report}"
+                ),
+            }
+        ],
+        "expected_outputs": [out, report],
+        "evidence_only": True,
+    }
+
+
 def _decoder_attention_score_bank_proxy_equivalence_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_score_bank_proxy_equivalence__{item_id}.json"
@@ -10632,6 +10682,7 @@ def _build_payload(
         "decoder_attention_decode_score_local_cluster_frontier",
         "decoder_attention_decode_score_multivalue_cluster_frontier",
         "decoder_attention_decode_score_multivalue_gqa_group_frontier",
+        "decoder_attention_decode_score_multivalue_gqa_array_frontier",
         "decoder_attention_score_bank_proxy_equivalence",
         "decoder_attention_score32_exp_lut_hbm_dram_service_closure",
         "decoder_attention_score32_hbm_controller_replay",
@@ -10894,6 +10945,10 @@ def _build_payload(
             )
         elif abstraction_layer_name == "decoder_attention_decode_score_multivalue_gqa_group_frontier":
             decoder_evidence = _decoder_attention_decode_score_multivalue_gqa_group_frontier_evidence(
+                item_id=item_id
+            )
+        elif abstraction_layer_name == "decoder_attention_decode_score_multivalue_gqa_array_frontier":
+            decoder_evidence = _decoder_attention_decode_score_multivalue_gqa_array_frontier_evidence(
                 item_id=item_id
             )
         elif abstraction_layer_name == "decoder_attention_score_bank_proxy_equivalence":

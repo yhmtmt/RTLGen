@@ -31,3 +31,7 @@
 12. Treat direct array PNR as timing, area, routing, command-fanout, and
     clock-tree evidence. It does not close external value memory, NoC, HBM,
     total-token energy, or a monolithic 32-cluster arithmetic simulation.
+13. Recompute QKV tile allocation, layer latency, throughput, and embodied
+    logic-plus-SRAM area from every timing-feasible direct array row. Preserve
+    all rejected physical rows and label inherited group-component energy as
+    compositional until direct array activity is measured.

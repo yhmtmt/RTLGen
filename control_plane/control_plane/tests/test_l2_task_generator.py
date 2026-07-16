@@ -8303,6 +8303,65 @@ def test_generate_l2_campaign_task_adds_decode_score_multivalue_gqa_group_fronti
             ] in work_item.expected_outputs
 
 
+def test_generate_l2_campaign_task_adds_decode_score_multivalue_gqa_array_frontier() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id=(
+                        "l2_decoder_attention_decode_score_multivalue_gqa8_array_frontier_"
+                        "llama7b_v1"
+                    ),
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    abstraction_layer="decoder_attention_decode_score_multivalue_gqa_array_frontier",
+                    evaluation_mode="frontier_recost",
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            commands = work_item.task_request.request_payload["task"]["commands"]
+            run = commands[0]["run"]
+            decoder_inputs = work_item.input_manifest["decoder_contract"]
+
+            assert [command["name"] for command in commands[:2]] == [
+                "audit_decode_score_multivalue_gqa_array_frontier",
+                "validate_runs",
+            ]
+            assert "-m npu.eval.audit_attention_decode_score_multivalue_gqa_array_frontier" in run
+            assert "gqa8_group_frontier_llama7b_v1.json" in run
+            assert "gqa8_array_equivalence_llama7b_v1.json" in run
+            assert run.count("--array-metrics") == 3
+            for count in (1, 2, 4):
+                assert (
+                    f"--array-metrics {count}=runs/designs/npu_blocks/"
+                    f"attention_decode_score_multivalue_gqa_array_g{count}_int8_m1x8_iterdiv/"
+                    "metrics.csv"
+                ) in run
+            assert set(decoder_inputs["decode_score_multivalue_gqa_array_frontier_metrics"]) == {
+                "1",
+                "2",
+                "4",
+            }
+            assert "direct equal-density array PNR" in decoder_inputs[
+                "decode_score_multivalue_gqa_array_frontier_scope"
+            ]
+            assert decoder_inputs[
+                "decode_score_multivalue_gqa_array_frontier_report"
+            ] in work_item.expected_outputs
+
+
 def test_generate_l2_campaign_task_adds_score_bank_proxy_equivalence() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"

@@ -168,6 +168,29 @@
         "reason": "Replace linear four-group area/timing composition with full-array PNR."
       },
       "status": "pending_implementation_merge"
+    },
+    {
+      "item_id": "l2_decoder_attention_decode_score_multivalue_gqa8_array_frontier_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Recost the Llama7B frontier with direct one-, two-, and four-group array PPA.",
+      "evaluation_mode": "frontier_recost",
+      "abstraction_layer": "decoder_attention_decode_score_multivalue_gqa_array_frontier",
+      "comparison_role": "gqa8_direct_array_frontier",
+      "paired_baseline_item_id": "l2_decoder_attention_decode_score_multivalue_gqa8_group_frontier_llama7b_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_decode_score_multivalue_gqa8_group_frontier_llama7b_v1",
+        "l2_decoder_attention_decode_score_multivalue_gqa8_array_equivalence_llama7b_v1",
+        "l1_decoder_attention_decode_score_multivalue_gqa8_array_g1_pnr_v1",
+        "l1_decoder_attention_decode_score_multivalue_gqa8_array_g2_pnr_v1",
+        "l1_decoder_attention_decode_score_multivalue_gqa8_array_g4_pnr_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "rank_direct_gqa8_array_ppa_points",
+        "reason": "Replace linear timing/area scaling with direct array measurements while withholding direct-array and total-token energy claims."
+      },
+      "status": "pending_implementation_merge"
     }
   ]
 }
