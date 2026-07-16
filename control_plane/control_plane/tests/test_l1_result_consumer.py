@@ -6,7 +6,9 @@ import csv
 import json
 from pathlib import Path
 import tempfile
+from types import SimpleNamespace
 
+import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
@@ -17,7 +19,11 @@ from control_plane.models.enums import ExecutorType, FlowName, LayerName, RunSta
 from control_plane.models.runs import Run
 from control_plane.models.task_requests import TaskRequest
 from control_plane.models.work_items import WorkItem
-from control_plane.services.l1_result_consumer import Layer1ConsumeRequest, consume_l1_result
+from control_plane.services.l1_result_consumer import (
+    Layer1ConsumeRequest,
+    _terminal_run_has_metrics,
+    consume_l1_result,
+)
 
 
 def _write_metrics(path: Path, rows: list[dict[str, str]]) -> None:
@@ -38,6 +44,16 @@ def _write_metrics(path: Path, rows: list[dict[str, str]]) -> None:
         writer.writeheader()
         for row in rows:
             writer.writerow({key: row.get(key, "") for key in headers})
+
+
+def test_terminal_run_metrics_require_captured_inline_artifact() -> None:
+    run = SimpleNamespace(
+        status=RunStatus.CANCELED,
+        result_payload={"queue_result": {"metrics_rows": ["runs/designs/demo/metrics.csv:2"]}},
+        artifacts=[],
+    )
+
+    assert _terminal_run_has_metrics(run) is False
 
 
 def _seed_succeeded_l1_sweep(session: Session, repo_root: Path) -> tuple[str, str]:
@@ -505,6 +521,141 @@ def test_consume_l1_result_accepts_failed_acceptance_run_with_mixed_metrics() ->
             assert payload["boundary_evidence"]["rows"][0]["metrics_csv"] == metrics_failed
             assert payload["boundary_evidence"]["rows"][0]["status"] == "failed"
             assert session.query(Artifact).filter_by(kind="promotion_proposal").one().metadata_["proposal_count"] == 1
+
+
+@pytest.mark.parametrize("run_status", [RunStatus.FAILED, RunStatus.CANCELED])
+def test_consume_l1_result_retains_partial_metrics_from_terminal_sweep(run_status: RunStatus) -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        metrics_rel = "runs/designs/npu_blocks/partial_cluster/metrics.csv"
+        _write_metrics(
+            repo_root / metrics_rel,
+            [
+                {
+                    "platform": "nangate45",
+                    "status": "ok",
+                    "param_hash": "measured1",
+                    "tag": "partial_cluster_proxy_die_2500",
+                    "critical_path_ns": "7.2189",
+                    "die_area": "6250000",
+                    "total_power_mw": "0.3",
+                    "result_path": "runs/designs/npu_blocks/partial_cluster/work/measured1/result.json",
+                }
+            ],
+        )
+
+        with Session(engine) as session:
+            task_request = TaskRequest(
+                request_key="l1_sweep:test_partial_failed_sweep",
+                source="test",
+                requested_by="@tester",
+                title="Partial failed sweep",
+                description="retain measured rows from a terminal physical sweep",
+                layer=LayerName.LAYER1,
+                flow=FlowName.OPENROAD,
+                priority=1,
+                request_payload={
+                    "item_id": "l1_test_partial_failed_sweep",
+                    "layer": "layer1",
+                    "flow": "openroad",
+                },
+                source_commit="deadbeef",
+            )
+            session.add(task_request)
+            session.flush()
+            work_item = WorkItem(
+                work_item_key="l1_sweep:test_partial_failed_sweep",
+                task_request_id=task_request.id,
+                item_id="l1_test_partial_failed_sweep",
+                layer=LayerName.LAYER1,
+                flow=FlowName.OPENROAD,
+                platform="nangate45",
+                task_type="l1_sweep",
+                state=WorkItemState.FAILED,
+                priority=1,
+                source_mode="config",
+                input_manifest={"configs": [], "sweeps": []},
+                command_manifest=[],
+                expected_outputs=[metrics_rel],
+                acceptance_rules=[],
+                source_commit="deadbeef",
+            )
+            session.add(work_item)
+            session.flush()
+            run = Run(
+                run_key="l1_test_partial_failed_sweep_run_1",
+                work_item_id=work_item.id,
+                attempt=1,
+                executor_type=ExecutorType.INTERNAL_WORKER,
+                status=run_status,
+                started_at=utcnow(),
+                completed_at=utcnow(),
+                checkout_commit="deadbeef",
+                failure_stage="worker",
+                failure_category="worker_error",
+                failure_signature="heartbeat connection timeout",
+                result_summary="heartbeat connection timeout",
+                result_payload={
+                    "queue_result": {
+                        "status": "fail",
+                        "metrics_rows": [f"{metrics_rel}:2"],
+                    },
+                    "failure_classification": {
+                        "stage": "worker",
+                        "category": "worker_error",
+                        "signature": "heartbeat connection timeout",
+                    },
+                },
+            )
+            session.add(run)
+            session.flush()
+            session.add(
+                Artifact(
+                    run_id=run.id,
+                    kind="expected_output",
+                    storage_mode="repo",
+                    path=metrics_rel,
+                    metadata_={
+                        "transport_policy": "inline_text_evidence",
+                        "inline_utf8": (repo_root / metrics_rel).read_text(encoding="utf-8"),
+                    },
+                )
+            )
+            session.commit()
+
+            result = consume_l1_result(
+                session,
+                Layer1ConsumeRequest(repo_root=str(repo_root), run_key=run.run_key),
+            )
+
+            assert result.proposal_count == 1
+            proposal_path = (
+                repo_root
+                / "control_plane"
+                / "shadow_exports"
+                / "l1_promotions"
+                / f"{work_item.item_id}.json"
+            )
+            payload = json.loads(proposal_path.read_text(encoding="utf-8"))
+            assert payload["proposal_assessment"]["outcome"] == "partial_sweep_measured_points"
+            assert payload["proposal_assessment"]["sweep_complete"] is False
+            assert payload["trial_summary"]["success_count"] == 0
+            assert payload["trial_summary"]["failure_count"] == 1
+            assert payload["trial_summary"]["partial_metrics_count"] == 1
+            assert payload["partial_run_evidence"] == {
+                "run_status": run_status.value,
+                "failure_stage": "worker",
+                "failure_category": "worker_error",
+                "failure_signature": "heartbeat connection timeout",
+                "captured_metrics_rows": [f"{metrics_rel}:2"],
+                "sweep_complete": False,
+                "promotion_scope": "captured_metrics_rows_only",
+            }
+            assert payload["proposals"][0]["metrics_ref"]["param_hash"] == "measured1"
 
 
 def test_consume_l1_result_keeps_single_trial_metrics_without_trials_subdir() -> None:
