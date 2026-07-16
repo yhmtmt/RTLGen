@@ -6997,6 +6997,51 @@ def _decoder_attention_decode_score_multivalue_cluster_frontier_evidence(*, item
     }
 
 
+def _decoder_attention_decode_score_multivalue_gqa_group_frontier_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    prior = (
+        f"{base}/decoder_attention_decode_score_multivalue_cluster_frontier__"
+        "l2_decoder_attention_decode_score_multivalue_cluster_frontier_llama7b_v1.json"
+    )
+    activity_power = (
+        f"{base}/decoder_attention_decode_score_multivalue_gqa_group_activity_power__"
+        "l2_decoder_attention_decode_score_multivalue_gqa8_group_activity_power_llama7b_v1.json"
+    )
+    group_counts = "1,2,4"
+    out = f"{base}/decoder_attention_decode_score_multivalue_gqa_group_frontier__{item_id}.json"
+    report = f"{base}/decoder_attention_decode_score_multivalue_gqa_group_frontier__{item_id}.md"
+    return {
+        "inputs": {
+            "decode_score_multivalue_gqa_group_frontier_prior_frontier": prior,
+            "decode_score_multivalue_gqa_group_frontier_activity_power": activity_power,
+            "decode_score_multivalue_gqa_group_frontier_group_counts": group_counts,
+            "decode_score_multivalue_gqa_group_frontier_out": out,
+            "decode_score_multivalue_gqa_group_frontier_report": report,
+            "decode_score_multivalue_gqa_group_frontier_scope": (
+                "Recost the Llama7B GQA8 proxy with one, two, and four deployed complete shared-K/V groups, "
+                "using measured group timing, area, and activity energy. Preserve exact integer precision and "
+                "compare against the prior independent-cluster frontier. Multi-group PPA is linearly composed, "
+                "not array-PNR measured; off-group memory, NoC, HBM/DRAM, clock-tree composition, and total-token "
+                "energy remain explicit abstractions."
+            ),
+        },
+        "commands": [
+            {
+                "name": "audit_decode_score_multivalue_gqa_group_frontier",
+                "run": (
+                    "python3 -m npu.eval.audit_attention_decode_score_multivalue_gqa_group_frontier "
+                    f"--prior-frontier-json {prior} "
+                    f"--group-activity-power-json {activity_power} "
+                    f"--group-counts {group_counts} "
+                    f"--out {out} --out-md {report}"
+                ),
+            }
+        ],
+        "expected_outputs": [out, report],
+        "evidence_only": True,
+    }
+
+
 def _decoder_attention_score_bank_proxy_equivalence_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_score_bank_proxy_equivalence__{item_id}.json"
@@ -10541,6 +10586,7 @@ def _build_payload(
         "decoder_attention_decode_score_tile_frontier",
         "decoder_attention_decode_score_local_cluster_frontier",
         "decoder_attention_decode_score_multivalue_cluster_frontier",
+        "decoder_attention_decode_score_multivalue_gqa_group_frontier",
         "decoder_attention_score_bank_proxy_equivalence",
         "decoder_attention_score32_exp_lut_hbm_dram_service_closure",
         "decoder_attention_score32_hbm_controller_replay",
@@ -10795,6 +10841,10 @@ def _build_payload(
             decoder_evidence = _decoder_attention_decode_score_local_cluster_frontier_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_decode_score_multivalue_cluster_frontier":
             decoder_evidence = _decoder_attention_decode_score_multivalue_cluster_frontier_evidence(
+                item_id=item_id
+            )
+        elif abstraction_layer_name == "decoder_attention_decode_score_multivalue_gqa_group_frontier":
+            decoder_evidence = _decoder_attention_decode_score_multivalue_gqa_group_frontier_evidence(
                 item_id=item_id
             )
         elif abstraction_layer_name == "decoder_attention_score_bank_proxy_equivalence":
