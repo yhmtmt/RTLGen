@@ -13,8 +13,13 @@ if str(REPO_ROOT) not in sys.path:
 from npu.rtlgen.gen_attention_decode_score_multivalue_gqa_group import generate
 
 
-def _config(*, scale_lanes: int = 1, query_heads_per_kv: int = 8) -> dict:
-    return {
+def _config(
+    *,
+    scale_lanes: int = 1,
+    query_heads_per_kv: int = 8,
+    parallel_query_head_lanes: int | None = None,
+) -> dict:
+    config = {
         "top_name": f"attention_decode_score_multivalue_gqa_group_s{scale_lanes}",
         "attention_decode_score_multivalue_gqa_group": {
             "max_blocks": 16,
@@ -25,6 +30,12 @@ def _config(*, scale_lanes: int = 1, query_heads_per_kv: int = 8) -> dict:
             "query_heads_per_kv": query_heads_per_kv,
         },
     }
+    if parallel_query_head_lanes is not None:
+        config["attention_decode_score_multivalue_gqa_group"][
+            "parallel_query_head_lanes"
+        ] = parallel_query_head_lanes
+        config["top_name"] += f"_l{parallel_query_head_lanes}"
+    return config
 
 
 def _iverilog() -> str | None:
@@ -161,6 +172,37 @@ def test_multivalue_gqa_group_rejects_wrong_query_heads_per_kv(tmp_path: Path) -
         generate(_config(query_heads_per_kv=4), tmp_path)
 
 
+@pytest.mark.parametrize("parallel_lanes", [1, 2, 4])
+def test_multivalue_gqa_group_folded_lane_structure(
+    tmp_path: Path, parallel_lanes: int
+) -> None:
+    config = _config(parallel_query_head_lanes=parallel_lanes)
+    generate(config, tmp_path)
+    top_name = config["top_name"]
+    manifest = json.loads(
+        (tmp_path / "attention_decode_score_multivalue_gqa_group_manifest.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    text = (tmp_path / "top.v").read_text(encoding="utf-8")
+    waves = 8 // parallel_lanes
+
+    assert manifest["semantic_profile"].endswith("gqa8_folded_group_v1")
+    assert manifest["parallel_query_head_clusters"] == parallel_lanes
+    assert manifest["parallel_query_head_lanes"] == parallel_lanes
+    assert manifest["query_head_waves"] == waves
+    assert manifest["query_input_replays_per_command"] == waves
+    assert manifest["key_input_replays_per_command"] == waves
+    assert manifest["shared_external_value_reads_per_block"] == 16 * waves
+    assert manifest["result_beats_per_command"] == 128
+
+    assert text.count(f"{top_name}__cluster u_lane_") == parallel_lanes
+    assert f"PARALLEL_QUERY_HEAD_LANES = {parallel_lanes}" in text
+    assert f"QUERY_HEAD_WAVES = {waves}" in text
+    assert "launch_pending_q" in text
+    assert "input_query[((wave_q * PARALLEL_QUERY_HEAD_LANES" in text
+
+
 def test_multivalue_gqa_group_physical_guard_accepts_llama7b_design(tmp_path: Path) -> None:
     source_design = (
         REPO_ROOT
@@ -190,6 +232,40 @@ def test_multivalue_gqa_group_physical_guard_accepts_llama7b_design(tmp_path: Pa
     payload = json.loads(result.stdout)
     assert payload["status"] == "ok"
     assert payload["macro_count"] == 448
+
+
+@pytest.mark.parametrize("parallel_lanes", [1, 2, 4])
+def test_multivalue_gqa_group_physical_guard_accepts_folded_designs(
+    tmp_path: Path, parallel_lanes: int
+) -> None:
+    design_name = (
+        "attention_decode_score_multivalue_gqa_group_"
+        f"lanes{parallel_lanes}_int8_m1x8_iterdiv"
+    )
+    source_design = REPO_ROOT / "runs" / "designs" / "npu_blocks" / design_name
+    design_dir = tmp_path / design_name
+    design_dir.mkdir()
+    config = json.loads((source_design / "config.json").read_text(encoding="utf-8"))
+    shutil.copy(source_design / "config.json", design_dir / "config.json")
+    shutil.copy(source_design / "macro_manifest.json", design_dir / "macro_manifest.json")
+    generate(config, design_dir / "verilog")
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "npu/eval/check_attention_decode_score_multivalue_gqa_group_guard.py",
+            "--design-dir",
+            str(design_dir),
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    payload = json.loads(result.stdout)
+    assert payload["status"] == "ok"
+    assert payload["parallel_query_head_lanes"] == parallel_lanes
+    assert payload["query_head_waves"] == 8 // parallel_lanes
+    assert payload["macro_count"] == 56 * parallel_lanes
 
 
 def test_multivalue_gqa_group_physical_guard_rejects_wrong_macro_total(tmp_path: Path) -> None:
@@ -226,7 +302,10 @@ def test_multivalue_gqa_group_physical_guard_rejects_wrong_macro_total(tmp_path:
     assert "macro manifest macro_count must be 448" in result.stderr
 
 
-def test_multivalue_gqa_group_atomic_replay_and_result_order(tmp_path: Path) -> None:
+@pytest.mark.parametrize("parallel_lanes", [8, 2])
+def test_multivalue_gqa_group_atomic_replay_and_result_order(
+    tmp_path: Path, parallel_lanes: int
+) -> None:
     iverilog = _iverilog()
     vvp = _vvp()
     if iverilog is None or vvp is None:
@@ -234,7 +313,9 @@ def test_multivalue_gqa_group_atomic_replay_and_result_order(tmp_path: Path) -> 
 
     design_dir = tmp_path / "design"
     design_dir.mkdir()
-    config = _config()
+    config = _config(
+        parallel_query_head_lanes=None if parallel_lanes == 8 else parallel_lanes
+    )
     generate(config, design_dir)
     top_name = config["top_name"]
     generated = (design_dir / "top.v").read_text(encoding="utf-8")
@@ -244,6 +325,14 @@ def test_multivalue_gqa_group_atomic_replay_and_result_order(tmp_path: Path) -> 
         _cluster_stub(f"{top_name}__cluster") + generated[generated.index(wrapper_marker) :],
         encoding="utf-8",
     )
+    waves = 8 // parallel_lanes
+    expected_request_count = 16 * waves
+    input_replays = "\n".join(
+        "    send_input_beat(64'h08_07_06_05_04_03_02_01, "
+        "64'h01_01_01_01_01_01_01_01);"
+        for _ in range(waves)
+    )
+    divergent_instance = "u_head_7" if parallel_lanes == 8 else f"u_lane_{parallel_lanes - 1}"
 
     tb_text = f"""
 module tb;
@@ -369,15 +458,15 @@ module tb;
     if (rst_n) begin
       watchdog <= watchdog + 1;
       if (watchdog > 1000) begin
-        $display("FAIL timeout active=%0d head=%0d child0_state=%0d reqs=%0d results=%0d",
-            dut.command_active_q, dut.result_head_q, dut.u_head_0.state_q, request_count, result_count);
+        $display("FAIL timeout active=%0d reqs=%0d results=%0d",
+            dut.command_active_q, request_count, result_count);
         $finish(1);
       end
     end
     value_response_valid <= 1'b0;
     if (value_read_req_valid && value_read_req_ready) begin
       if (!first_command_done) begin
-        if (request_count >= 16) begin
+        if (request_count >= {expected_request_count}) begin
           $display("FAIL expected one shared external request per slice");
           $finish(1);
         end
@@ -455,12 +544,12 @@ module tb;
     rst_n = 1'b1;
 
     send_command(16'h1234);
-    send_input_beat(64'h08_07_06_05_04_03_02_01, 64'h01_01_01_01_01_01_01_01);
+{input_replays}
 
     wait (first_command_done);
     @(posedge clk);
-    if (request_count != 16) begin
-      $display("FAIL expected 16 shared requests, saw %0d", request_count);
+    if (request_count != {expected_request_count}) begin
+      $display("FAIL expected {expected_request_count} shared requests, saw %0d", request_count);
       $finish(1);
     end
     if (result_count != 128) begin
@@ -477,12 +566,12 @@ module tb;
     end
 
     send_command(16'h5678);
-    force dut.u_head_7.value_read_req_slice = 4'd15;
+    force dut.{divergent_instance}.value_read_req_slice = 4'd15;
     send_input_beat(64'h08_07_06_05_04_03_02_01, 64'h01_01_01_01_01_01_01_01);
-    wait (dut.u_head_7.value_read_req_valid);
+    wait (dut.{divergent_instance}.value_read_req_valid);
     @(posedge clk);
     @(negedge clk);
-    release dut.u_head_7.value_read_req_slice;
+    release dut.{divergent_instance}.value_read_req_slice;
     repeat (3) @(posedge clk);
     if (!protocol_error) begin
       $display("FAIL protocol_error did not assert on divergent request");

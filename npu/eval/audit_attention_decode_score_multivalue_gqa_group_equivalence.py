@@ -39,7 +39,7 @@ HEAD_DIM = 128
 COMMAND_ID = 0x4A21
 DEFAULT_PROTOCOL_TEST = (
     "tests/test_attention_decode_score_multivalue_gqa_group.py::"
-    "test_multivalue_gqa_group_atomic_replay_and_result_order"
+    "test_multivalue_gqa_group_atomic_replay_and_result_order[8]"
 )
 
 
@@ -164,9 +164,12 @@ def _flat_testbench(
     values: list[list[list[list[int]]]],
     multiplier: int,
     shift: int,
+    parallel_lanes: int,
 ) -> str:
     block_count = len(keys)
     total_beats = block_count * HEAD_DIM
+    waves = HEAD_COUNT // parallel_lanes
+    total_input_beats = total_beats * waves
     beat_init = "\n".join(
         "    q_mem[{index}] = 64'h{query:016x}; k_mem[{index}] = 64'h{key:016x};".format(
             index=block * HEAD_DIM + dim,
@@ -176,10 +179,6 @@ def _flat_testbench(
         for block in range(block_count)
         for dim in range(HEAD_DIM)
     )
-    last_cases = "\n".join(
-        f"      {((block + 1) * HEAD_DIM) - 1}: input_last = 1'b1;"
-        for block in range(block_count)
-    )
     value_init = "\n".join(
         "    value_mem[{index}] = 512'h{value:0128x};".format(
             index=block * VALUE_SLICES + value_slice,
@@ -188,18 +187,29 @@ def _flat_testbench(
         for block in range(block_count)
         for value_slice in range(VALUE_SLICES)
     )
-    child_monitors = "\n".join(
-        f"""      if (dut.u_head_{head}.score_write_valid && dut.u_head_{head}.score_write_ready)
+    if parallel_lanes == HEAD_COUNT:
+        child_monitors = "\n".join(
+            f"""      if (dut.u_head_{head}.score_write_valid && dut.u_head_{head}.score_write_ready)
         $display("FWRITE head={head} addr=%0d row=%064x", dut.u_head_{head}.score_write_addr, dut.u_head_{head}.score_write_data);
       if (dut.u_head_{head}.score_read_fire)
         $display("FSREQ head={head} addr=%0d", dut.u_head_{head}.score_read_req_addr);"""
-        for head in range(HEAD_COUNT)
-    )
+            for head in range(HEAD_COUNT)
+        )
+    else:
+        child_monitors = "\n".join(
+            f"""      if (dut.u_lane_{lane}.score_write_valid && dut.u_lane_{lane}.score_write_ready)
+        $display("FWRITE head=%0d addr=%0d row=%064x", dut.wave_q * {parallel_lanes} + {lane}, dut.u_lane_{lane}.score_write_addr, dut.u_lane_{lane}.score_write_data);
+      if (dut.u_lane_{lane}.score_read_fire)
+        $display("FSREQ head=%0d addr=%0d", dut.wave_q * {parallel_lanes} + {lane}, dut.u_lane_{lane}.score_read_req_addr);"""
+            for lane in range(parallel_lanes)
+        )
     return f"""`timescale 1ns/1ps
 {_FAKERAM_MODEL}
 module tb;
   localparam integer BLOCK_COUNT = {block_count};
   localparam integer TOTAL_BEATS = {total_beats};
+  localparam integer QUERY_HEAD_WAVES = {waves};
+  localparam integer TOTAL_INPUT_BEATS = {total_input_beats};
   reg clk = 0, rst_n = 0;
   reg command_valid, input_valid, input_last;
   wire command_ready, input_ready;
@@ -251,14 +261,10 @@ module tb;
 
   always @* begin
     command_valid = rst_n && accepted_count == 0;
-    input_valid = rst_n && input_index < TOTAL_BEATS;
-    input_query = input_index < TOTAL_BEATS ? q_mem[input_index] : 0;
-    input_key = input_index < TOTAL_BEATS ? k_mem[input_index] : 0;
-    input_last = 0;
-    case (input_index)
-{last_cases}
-      default: input_last = 0;
-    endcase
+    input_valid = rst_n && input_index < TOTAL_INPUT_BEATS;
+    input_query = input_index < TOTAL_INPUT_BEATS ? q_mem[input_index % TOTAL_BEATS] : 0;
+    input_key = input_index < TOTAL_INPUT_BEATS ? k_mem[input_index % TOTAL_BEATS] : 0;
+    input_last = input_index < TOTAL_INPUT_BEATS && (input_index % {HEAD_DIM}) == {HEAD_DIM - 1};
     value_read_req_ready = 1'b1;
     result_ready = 1'b1;
   end
@@ -299,7 +305,7 @@ module tb;
           #1 $finish;
         end
       end
-      if (cycle > 130000) $fatal(1, "timeout");
+      if (cycle > 800000) $fatal(1, "timeout");
     end
   end
 
@@ -327,6 +333,8 @@ def _run_flat_group(
         tmp = Path(tmp_text)
         rtl_dir = tmp / "rtl"
         direct_config = json.loads(json.dumps(config))
+        body = direct_config.get("attention_decode_score_multivalue_gqa_group", {})
+        parallel_lanes = int(body.get("parallel_query_head_lanes", HEAD_COUNT))
         generate_group(direct_config, rtl_dir)
         tb_path = tmp / "tb.sv"
         tb_path.write_text(
@@ -337,6 +345,7 @@ def _run_flat_group(
                 values=values,
                 multiplier=multiplier,
                 shift=shift,
+                parallel_lanes=parallel_lanes,
             ),
             encoding="utf-8",
         )
@@ -395,9 +404,10 @@ def _run_flat_group(
         [{key: value for key, value in row.items() if key != "protocol_error"} for row in head_rows]
         for head_rows in results
     ]
-    expected_value_requests = [
+    expected_value_requests_per_wave = [
         (block, value_slice) for block in range(len(keys)) for value_slice in range(VALUE_SLICES)
     ]
+    expected_value_requests = expected_value_requests_per_wave * (HEAD_COUNT // parallel_lanes)
     passed = (
         all([address for address, _ in writes[head]] == list(range(len(keys))) for head in range(HEAD_COUNT))
         and all([row for _, row in writes[head]] == expected_scores[head] for head in range(HEAD_COUNT))
@@ -426,6 +436,10 @@ def _run_flat_group(
         "block_count": len(keys),
         "head_dim": HEAD_DIM,
         "value_slices": VALUE_SLICES,
+        "parallel_query_head_lanes": parallel_lanes,
+        "query_head_waves": HEAD_COUNT // parallel_lanes,
+        "query_input_replays_per_command": HEAD_COUNT // parallel_lanes,
+        "key_input_replays_per_command": HEAD_COUNT // parallel_lanes,
         "completion_cycles": completion_cycles,
         "shared_value_read_request_count": len(value_requests),
         "shared_value_read_requests_sha256": _hash([list(request) for request in value_requests]),

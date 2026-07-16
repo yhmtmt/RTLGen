@@ -1,0 +1,23 @@
+{
+  "tag_prefix": "decode_score_multivalue_gqa_lanes4_v1",
+  "flow_params": {
+    "TAG": ["decode_score_multivalue_gqa_lanes4_v1"],
+    "FLOW_VARIANT": ["decode_score_multivalue_gqa_group_lanes_v1"],
+    "CLOCK_PERIOD": [10, 8],
+    "PLACE_DENSITY": [0.4],
+    "SYNTH_HIERARCHICAL": [1],
+    "SYNTH_MEMORY_MAX_BITS": [65536]
+  },
+  "mode_compare": {
+    "modes": [
+      {
+        "name": "matched_density_die_5050",
+        "use_macro": true,
+        "param_overrides": {
+          "DIE_AREA": "0 0 5050 5050",
+          "CORE_AREA": "50 50 5000 5000"
+        }
+      }
+    ]
+  }
+}

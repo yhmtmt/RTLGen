@@ -7,6 +7,8 @@ import pytest
 from npu.eval.audit_attention_decode_score_multivalue_gqa_group_equivalence import (
     _ordered_group_hash,
     _render_markdown,
+    _run_flat_group,
+    _shared_vectors,
     build_report,
 )
 
@@ -103,3 +105,34 @@ def test_ordered_group_hash_is_deterministic_and_head_order_sensitive() -> None:
     assert _ordered_group_hash(heads, "observed_result_sha256") != _ordered_group_hash(
         changed, "observed_result_sha256"
     )
+
+
+@pytest.mark.parametrize("parallel_lanes", [1, 2, 4])
+def test_folded_gqa8_direct_rtl_equivalence(parallel_lanes: int) -> None:
+    config = _config()
+    config["top_name"] += f"_lanes{parallel_lanes}"
+    config["attention_decode_score_multivalue_gqa_group"][
+        "parallel_query_head_lanes"
+    ] = parallel_lanes
+    queries, keys, values = _shared_vectors()
+
+    direct = _run_flat_group(
+        config=config,
+        queries=queries,
+        keys=keys,
+        values=values,
+        multiplier=1,
+        shift=0,
+    )
+
+    waves = 8 // parallel_lanes
+    assert direct["equivalence_pass"] is True
+    assert direct["parallel_query_head_lanes"] == parallel_lanes
+    assert direct["query_head_waves"] == waves
+    assert direct["query_input_replays_per_command"] == waves
+    assert direct["key_input_replays_per_command"] == waves
+    assert direct["shared_value_read_request_count"] == 48 * waves
+    assert direct["expected_group_result_sha256"] == direct["observed_group_result_sha256"]
+    assert all(row["score_write_count"] == 3 for row in direct["heads"])
+    assert all(row["score_read_count"] == 3 for row in direct["heads"])
+    assert all(row["result_count"] == 16 for row in direct["heads"])

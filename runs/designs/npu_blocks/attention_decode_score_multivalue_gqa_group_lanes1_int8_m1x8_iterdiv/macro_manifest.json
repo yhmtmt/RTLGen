@@ -1,0 +1,34 @@
+{
+  "version": "0.1",
+  "design_id": "attention_decode_score_multivalue_gqa_group_lanes1_int8_m1x8_iterdiv",
+  "module": "attention_decode_score_multivalue_gqa_group_lanes1_int8_m1x8_iterdiv",
+  "platform": "nangate45",
+  "flow_variant": "decode_score_multivalue_gqa_group_lanes_v1",
+  "blackboxes": ["fakeram45_2048x39"],
+  "additional_lefs": ["/orfs/flow/platforms/nangate45/lef/fakeram45_2048x39.lef"],
+  "additional_libs": ["/orfs/flow/platforms/nangate45/lib/fakeram45_2048x39.lib"],
+  "additional_gds": [],
+  "blackbox_verilog": ["npu/rtl/fakeram45_2048x39_blackbox.v"],
+  "source": {
+    "mode": "generated_folded_multivalue_gqa_group",
+    "generator": "npu/rtlgen/gen_attention_decode_score_multivalue_gqa_group.py",
+    "config": "runs/designs/npu_blocks/attention_decode_score_multivalue_gqa_group_lanes1_int8_m1x8_iterdiv/config.json"
+  },
+  "manifest_params": {
+    "semantic_profile": "decode_m1x8_shared_score_16x8d_value_iterdiv_gqa8_folded_group_v1",
+    "macro_count": 56,
+    "score_bank_macro_count": 56,
+    "score_bank_macro_count_per_cluster": 56,
+    "parallel_query_head_clusters": 1,
+    "parallel_query_head_lanes": 1,
+    "query_head_waves": 8,
+    "query_heads_per_kv": 8,
+    "query_head_score_computations_per_command": 8,
+    "shared_kv_heads_per_group": 1,
+    "shared_external_value_reads_per_block": 128,
+    "score_scale_lanes_per_cycle": 1,
+    "score_passes_per_query_head": 1,
+    "value_slices": 16,
+    "result_interface": "ready_valid_head_ordered_8x8d_slice_stream"
+  }
+}
