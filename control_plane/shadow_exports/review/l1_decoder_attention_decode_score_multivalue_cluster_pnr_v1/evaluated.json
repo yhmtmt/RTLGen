@@ -1,0 +1,125 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "sweeps": [
+        "runs/campaigns/npu/decode_score_multivalue_cluster_v1/sweeps/nangate45_decode_score_multivalue_cluster.json"
+      ],
+      "configs": [
+        "runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/config.json"
+      ],
+      "out_root": "runs/designs/npu_blocks",
+      "design_dirs": [],
+      "macro_manifests": [],
+      "candidate_manifests": [],
+      "required_submodules": []
+    },
+    "commands": [
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/rtlgen/gen_attention_decode_score_multivalue_cluster.py --config runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/config.json --out runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/verilog",
+        "name": "generate_attention_decode_score_multivalue_cluster_rtl"
+      },
+      {
+        "run": "python3 npu/eval/check_attention_decode_score_multivalue_cluster_guard.py --design-dir runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv",
+        "name": "check_attention_decode_score_multivalue_cluster_guard"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/synth/run_block_sweep.py --design_dir runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv --platform nangate45 --top attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv --sweep runs/campaigns/npu/decode_score_multivalue_cluster_v1/sweeps/nangate45_decode_score_multivalue_cluster.json --out_root runs/designs/npu_blocks --macro_manifest runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/macro_manifest.json --skip_existing",
+        "name": "run_block_sweep"
+      },
+      {
+        "run": "python3 npu/eval/extract_openroad_timing_summary.py --design-dir runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv --out runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/timing_debug_report.md --max-paths 8",
+        "name": "extract_attention_decode_score_multivalue_cluster_timing_paths"
+      },
+      {
+        "run": "python3 scripts/build_runs_index.py",
+        "name": "build_runs_index"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate"
+      }
+    ],
+    "objective": "Measure timing, area, and vectorless power for one full-head shared-score, 16-slice value cluster after merged equivalence.",
+    "acceptance": [
+      "Each generated wrapper metrics.csv contains at least one status=ok row for the queued sweep",
+      "Committed outputs stay lightweight (metrics.csv only; runs/index.csv is exported centrally after merge)",
+      "python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue pass"
+    ],
+    "source_mode": "config",
+    "expected_outputs": [
+      "runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/metrics.csv",
+      "runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/timing_debug_report.md"
+    ]
+  },
+  "layer": "layer1",
+  "state": "evaluated",
+  "title": "Measure shared-score multivalue cluster PPA",
+  "result": {
+    "branch": "eval/l1_decoder_attention_decode_score_multivalue_cluster_pnr_v1/s20260716t120813z",
+    "completed_utc": "2026-07-16T11:17:17.201478Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "501d2c8ffdc6",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260716t120813z][host:501d2c8ffdc6][item:l1_decoder_attention_decode_score_multivalue_cluster_pnr_v1]",
+    "metrics_rows": [
+      {
+        "tag": "decode_score_multivalue_cluster_v1_proxy_die_2500",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "4b9fd318",
+        "metrics_csv": "runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/work/4b9fd318/result.json"
+      }
+    ],
+    "queue_item_id": "l1_decoder_attention_decode_score_multivalue_cluster_pnr_v1",
+    "session_id": "s20260716t120813z",
+    "status": "fail",
+    "summary": "command run_block_sweep failed (canceled)"
+  },
+  "handoff": {
+    "branch": "eval/l1_decoder_attention_decode_score_multivalue_cluster_pnr_v1/s20260716t120813z",
+    "pr_title": "eval: run measure shared-score multivalue cluster ppa",
+    "checklist": [
+      "Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge",
+      "Include metrics row references for each completed design",
+      "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "501d2c8ffdc6",
+      "session_id": "s20260716t120813z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l1_decoder_attention_decode_score_multivalue_cluster_pnr_v1"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l1_decoder_attention_decode_score_multivalue_cluster_pnr_v1",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 80,
+  "created_utc": "2026-07-15T06:52:35.020959Z",
+  "requested_by": "developer_agent",
+  "developer_loop": {
+    "evaluation": {
+      "mode": "frontier_followup",
+      "trial_policy": {
+        "seed_start": 1,
+        "trial_count": 1,
+        "stop_after_failures": 1
+      }
+    },
+    "abstraction": {
+      "layer": "decoder_attention_decode_score_multivalue_cluster"
+    },
+    "proposal_id": "prop_decoder_attention_decode_score_multivalue_cluster_llama7b_v1",
+    "proposal_path": "docs/proposals/prop_decoder_attention_decode_score_multivalue_cluster_llama7b_v1"
+  },
+  "source_requirement": {
+    "repo": "",
+    "reason": "evaluator runtime must contain the queued job source commit",
+    "version": 1,
+    "required_ref": "origin/master",
+    "required_sha": "40fd671e19b79660e28ecf99ab07f38043e0e937",
+    "requires_daemon_restart": true
+  }
+}

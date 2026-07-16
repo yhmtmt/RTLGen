@@ -1,0 +1,4 @@
+run_key,attempt,trial_index,seed,status,metrics_csv,critical_path_ns,die_area,total_power_mw,failure_category,failure_stage,failure_signature
+l1_decoder_attention_decode_score_multivalue_cluster_pnr_v1_run_e2d01ce4917d709a,1,1,1,failed,runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/metrics.csv,7.2189,6250000.0,0.3,worker_error,worker,"heartbeat_error=(psycopg.errors.ConnectionTimeout) connection timeout expired
+(Background on this error at: https://sqlalche.me/e/20/e3q8)"
+l1_decoder_attention_decode_score_multivalue_cluster_pnr_v1_run_6999bb7c1b6aba41,2,1,1,canceled,runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/metrics.csv,7.2189,6250000.0,0.3,command_canceled,run_block_sweep,exit_code=130

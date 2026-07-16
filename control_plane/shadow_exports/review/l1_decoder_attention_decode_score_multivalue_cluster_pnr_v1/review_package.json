@@ -1,0 +1,190 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-07-16T12:08:13.153481Z",
+  "control_plane_source_commit": "1a6f5c814d9212c312248cf2e4efe96490e58e4b",
+  "review_metadata_source_commit": "1a6f5c814d9212c312248cf2e4efe96490e58e4b",
+  "item_id": "l1_decoder_attention_decode_score_multivalue_cluster_pnr_v1",
+  "run_key": "l1_decoder_attention_decode_score_multivalue_cluster_pnr_v1_run_6999bb7c1b6aba41",
+  "layer": "layer1",
+  "flow": "openroad",
+  "task_type": "l1_sweep",
+  "source_commit": "40fd671e19b79660e28ecf99ab07f38043e0e937",
+  "queue_snapshot": {
+    "path": "control_plane/shadow_exports/review/l1_decoder_attention_decode_score_multivalue_cluster_pnr_v1/evaluated.json",
+    "result": {
+      "branch": "eval/l1_decoder_attention_decode_score_multivalue_cluster_pnr_v1/s20260716t120813z",
+      "completed_utc": "2026-07-16T11:17:17.201478Z",
+      "evaluator_id": "control_plane",
+      "executor": "@control_plane",
+      "host": "501d2c8ffdc6",
+      "identity_block": "[role:evaluator][account:control_plane][session:s20260716t120813z][host:501d2c8ffdc6][item:l1_decoder_attention_decode_score_multivalue_cluster_pnr_v1]",
+      "metrics_rows": [
+        {
+          "tag": "decode_score_multivalue_cluster_v1_proxy_die_2500",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "4b9fd318",
+          "metrics_csv": "runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/work/4b9fd318/result.json"
+        }
+      ],
+      "queue_item_id": "l1_decoder_attention_decode_score_multivalue_cluster_pnr_v1",
+      "session_id": "s20260716t120813z",
+      "status": "fail",
+      "summary": "command run_block_sweep failed (canceled)"
+    }
+  },
+  "review_artifact": {
+    "kind": "promotion_proposal",
+    "path": "control_plane/shadow_exports/l1_promotions/l1_decoder_attention_decode_score_multivalue_cluster_pnr_v1.json",
+    "storage_mode": "repo",
+    "sha256": "508c255a365d65bf875f32bfc71c37b2da284e70665918e0f4e08ff7f1904c9f",
+    "payload": {
+      "version": 0.1,
+      "generated_utc": "2026-07-16T12:08:13.053047Z",
+      "item_id": "l1_decoder_attention_decode_score_multivalue_cluster_pnr_v1",
+      "run_key": "l1_decoder_attention_decode_score_multivalue_cluster_pnr_v1_run_6999bb7c1b6aba41",
+      "layer": "layer1",
+      "flow": "openroad",
+      "platform": "nangate45",
+      "task_type": "l1_sweep",
+      "source_commit": "40fd671e19b79660e28ecf99ab07f38043e0e937",
+      "objective": "Measure timing, area, and vectorless power for one full-head shared-score, 16-slice value cluster after merged equivalence.",
+      "input_manifest": {
+        "sweeps": [
+          "runs/campaigns/npu/decode_score_multivalue_cluster_v1/sweeps/nangate45_decode_score_multivalue_cluster.json"
+        ],
+        "configs": [
+          "runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/config.json"
+        ],
+        "out_root": "runs/designs/npu_blocks",
+        "design_dirs": [],
+        "macro_manifests": [],
+        "candidate_manifests": [],
+        "required_submodules": []
+      },
+      "proposal_count": 1,
+      "evaluation_record": {
+        "evaluation_mode": "frontier_followup",
+        "abstraction_layer": "decoder_attention_decode_score_multivalue_cluster",
+        "result_kind": "physical_metrics",
+        "physical_metrics_present": true,
+        "summary": "Physical metrics recorded from a completed, timing-feasible Layer 1 row.",
+        "timing_feasible": true,
+        "clock_period_ns": 10.0,
+        "timing_slack_ns": 2.7811000000000003
+      },
+      "proposal_assessment": {
+        "outcome": "partial_sweep_measured_points",
+        "summary": "The run terminated after capturing status=ok physical rows. Retain only those rows as measured evidence; the sweep is incomplete and unmeasured points must not be inferred as feasible.",
+        "measured_point_count": 1,
+        "sweep_complete": false
+      },
+      "proposals": [
+        {
+          "metrics_ref": {
+            "metrics_csv": "runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/metrics.csv",
+            "platform": "nangate45",
+            "status": "ok",
+            "result_kind": "physical_metrics",
+            "param_hash": "4b9fd318",
+            "tag": "decode_score_multivalue_cluster_v1_proxy_die_2500",
+            "result_path": "/orfs/flow/reports/nangate45/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/decode_score_multivalue_cluster_v1_proxy_die_2500/6_finish.rpt",
+            "work_result_json": "runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/work/4b9fd318/result.json"
+          },
+          "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+          "metric_summary": {
+            "critical_path_ns": 7.2189,
+            "die_area": 6250000.0,
+            "total_power_mw": 0.3
+          }
+        }
+      ],
+      "trial_summary": {
+        "item_id": "l1_decoder_attention_decode_score_multivalue_cluster_pnr_v1",
+        "completed_trials": 2,
+        "success_count": 0,
+        "failure_count": 2,
+        "success_rate": 0.0,
+        "partial_metrics_count": 2,
+        "metrics": {
+          "critical_path_ns": {
+            "best": 7.2189,
+            "mean": 7.2189,
+            "median": 7.2189,
+            "max": 7.2189,
+            "range": 0.0,
+            "stddev": 0.0
+          },
+          "die_area": {
+            "best": 6250000.0,
+            "mean": 6250000.0,
+            "median": 6250000.0,
+            "max": 6250000.0,
+            "range": 0.0,
+            "stddev": 0.0
+          },
+          "total_power_mw": {
+            "best": 0.3,
+            "mean": 0.3,
+            "median": 0.3,
+            "max": 0.3,
+            "range": 0.0,
+            "stddev": 0.0
+          }
+        }
+      },
+      "source_refs": {
+        "trial_metrics_csvs": [
+          "runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/metrics.csv"
+        ],
+        "summary_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_decode_score_multivalue_cluster_pnr_v1/summary_stats.json",
+        "failure_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_decode_score_multivalue_cluster_pnr_v1/failure_stats.json",
+        "trial_table_csv": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_decode_score_multivalue_cluster_pnr_v1/trial_table.csv"
+      },
+      "partial_run_evidence": {
+        "run_status": "canceled",
+        "failure_stage": "run_block_sweep",
+        "failure_category": "command_canceled",
+        "failure_signature": "exit_code=130",
+        "captured_metrics_rows": [
+          "runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/metrics.csv:2"
+        ],
+        "sweep_complete": false,
+        "promotion_scope": "captured_metrics_rows_only"
+      }
+    }
+  },
+  "developer_loop": {
+    "evaluation": {
+      "mode": "frontier_followup",
+      "trial_policy": {
+        "seed_start": 1,
+        "trial_count": 1,
+        "stop_after_failures": 1
+      }
+    },
+    "abstraction": {
+      "layer": "decoder_attention_decode_score_multivalue_cluster"
+    },
+    "proposal_id": "prop_decoder_attention_decode_score_multivalue_cluster_llama7b_v1",
+    "proposal_path": "docs/proposals/prop_decoder_attention_decode_score_multivalue_cluster_llama7b_v1"
+  },
+  "submission_history": null,
+  "pr_payload": {
+    "branch": "eval/l1_decoder_attention_decode_score_multivalue_cluster_pnr_v1/s20260716t120813z",
+    "title": "eval: run measure shared-score multivalue cluster ppa",
+    "body_fields": {
+      "host": "501d2c8ffdc6",
+      "session_id": "s20260716t120813z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l1_decoder_attention_decode_score_multivalue_cluster_pnr_v1"
+    },
+    "body_md": "## Summary\n- item_id: `l1_decoder_attention_decode_score_multivalue_cluster_pnr_v1`\n- run_key: `l1_decoder_attention_decode_score_multivalue_cluster_pnr_v1_run_6999bb7c1b6aba41`\n- layer: `layer1`\n- task_type: `l1_sweep`\n- status: `fail`\n- summary: `command run_block_sweep failed (canceled)`\n- queue_snapshot: `control_plane/shadow_exports/review/l1_decoder_attention_decode_score_multivalue_cluster_pnr_v1/evaluated.json`\n- metrics_rows_count: `1`\n- review_artifact: `promotion_proposal` at `control_plane/shadow_exports/l1_promotions/l1_decoder_attention_decode_score_multivalue_cluster_pnr_v1.json`\n\n## Developer Context\n- proposal_id: `prop_decoder_attention_decode_score_multivalue_cluster_llama7b_v1`\n- proposal_path: `docs/proposals/prop_decoder_attention_decode_score_multivalue_cluster_llama7b_v1`\n- reviewer_first_read: `docs/proposals/prop_decoder_attention_decode_score_multivalue_cluster_llama7b_v1` plus `docs/developer_agent_review.md`\n- execution_source_commit: `40fd671e19b79660e28ecf99ab07f38043e0e937`\n- review_metadata_source_commit: `1a6f5c814d9212c312248cf2e4efe96490e58e4b`\n\n## Evaluation Mode\n- evaluation_mode: `frontier_followup`\n- abstraction_layer: `decoder_attention_decode_score_multivalue_cluster`\n- evaluation_summary: `Physical metrics recorded from a completed, timing-feasible Layer 1 row.`\n\n## Focused Comparison\n- proposal_outcome: `partial_sweep_measured_points`\n- comparison_summary: `The run terminated after capturing status=ok physical rows. Retain only those rows as measured evidence; the sweep is incomplete and unmeasured points must not be inferred as feasible.`\n\n## Checklist\n- [ ] Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge\n- [ ] Include metrics row references for each completed design\n- [ ] Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing\n",
+    "checklist": [
+      "Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge",
+      "Include metrics row references for each completed design",
+      "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ]
+  }
+}
