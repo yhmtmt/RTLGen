@@ -55,8 +55,12 @@
         "direction": "measure_shared_score_multivalue_cluster_ppa",
         "reason": "Collect timing, area, and vectorless power for the shared-score replacement, while continuing to withhold token-energy claims."
       },
-      "status": "pending_implementation_merge"
+      "status": "merged",
+      "merged_pr_number": 1334,
+      "merge_commit": "872b177c6be5cec2da0d565609cf69677553f63e",
+      "merged_utc": "2026-07-16T12:09:43.974242Z",
+      "notes": "Merged via PR #1334 and merge 872b177c6be5cec2da0d565609cf69677553f63e at 2026-07-16T12:09:43.974242Z."
     }
   ],
-  "source_commit": "2fddedef260a26ff99e2c51a5ffa65ff8b1f4939"
+  "source_commit": "40fd671e19b79660e28ecf99ab07f38043e0e937"
 }

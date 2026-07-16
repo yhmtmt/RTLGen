@@ -2,31 +2,29 @@
 
 ## Candidate
 - `proposal_id`: `prop_decoder_attention_decode_score_multivalue_cluster_llama7b_v1`
-- `candidate_id`: `l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1`
+- `candidate_id`: `l1_decoder_attention_decode_score_multivalue_cluster_pnr_v1`
 
 ## Evaluations Consumed
-- `l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1`
-- `l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1_run_437953cdf5316d7f`
-- source commit: `2fddedef260a26ff99e2c51a5ffa65ff8b1f4939`
-- review: PR #1316
+- `l1_decoder_attention_decode_score_multivalue_cluster_pnr_v1`
+- `l1_decoder_attention_decode_score_multivalue_cluster_pnr_v1_run_6999bb7c1b6aba41`
+- source commit: `40fd671e19b79660e28ecf99ab07f38043e0e937`
+- review: PR #1334
 
 ## Baseline Comparison
-- baseline_ref: `None`
-- baseline_item_id: `None`
-- outcome: `decode_score_multivalue_cluster_equivalence_pass`
-- summary: Decoder score multivalue-cluster equivalence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_cluster_equivalence__l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1.json: decision=decode_score_multivalue_cluster_equivalence_pass; equivalence_pass=True; semantic_profile=decode_m1x8_shared_score_16x8d_value_iterdiv_v1; scenario_count=5; score_tensor_hash=dcdf04e9e1981a3447a532037c35bc10afc81c339014d09fc9bc039578c34387; final_tensor_hash=fbbbe51bfe1d4ebf5f9910fdfdbf7e5eb322fe7633c9d523ac5a3587545cd457; value_slices=16; value_dimensions=128; score_passes_per_command=1; score_writes_per_block=1; score_reads_per_block=1; result_beats_per_command=16.
+- outcome: `partial_sweep_measured_points`
+- summary: The run terminated after capturing status=ok physical rows. Retain only those rows as measured evidence; the sweep is incomplete and unmeasured points must not be inferred as feasible.
 
 ## Result
-- result: `iterate`
+- result: `promote`
 - confidence level: merged accepted evidence
-- estimated optimization room: pending follow-on comparison
-- architecture conclusion robustness: staged evidence
-- summary: Decoder score multivalue-cluster equivalence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_cluster_equivalence__l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1.json: decision=decode_score_multivalue_cluster_equivalence_pass; equivalence_pass=True; semantic_profile=decode_m1x8_shared_score_16x8d_value_iterdiv_v1; scenario_count=5; score_tensor_hash=dcdf04e9e1981a3447a532037c35bc10afc81c339014d09fc9bc039578c34387; final_tensor_hash=fbbbe51bfe1d4ebf5f9910fdfdbf7e5eb322fe7633c9d523ac5a3587545cd457; value_slices=16; value_dimensions=128; score_passes_per_command=1; score_writes_per_block=1; score_reads_per_block=1; result_beats_per_command=16.
+- estimated optimization room: accepted at current stage
+- architecture conclusion robustness: accepted for the current proposal scope
+- summary: Physical metrics recorded from a completed, timing-feasible Layer 1 row.
 
 ## Failures and Caveats
 - no additional caveats recorded during automatic finalization
 
 ## Recommendation
-- `iterate`
-- reason: Decoder score multivalue-cluster equivalence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_cluster_equivalence__l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1.json: decision=decode_score_multivalue_cluster_equivalence_pass; equivalence_pass=True; semantic_profile=decode_m1x8_shared_score_16x8d_value_iterdiv_v1; scenario_count=5; score_tensor_hash=dcdf04e9e1981a3447a532037c35bc10afc81c339014d09fc9bc039578c34387; final_tensor_hash=fbbbe51bfe1d4ebf5f9910fdfdbf7e5eb322fe7633c9d523ac5a3587545cd457; value_slices=16; value_dimensions=128; score_passes_per_command=1; score_writes_per_block=1; score_reads_per_block=1; result_beats_per_command=16.
-- next_action: inspect follow-on work after l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1
+- `promote`
+- reason: Accepted Layer 1 physical metrics were merged in PR #1334 for the current candidate.
+- next_action: inspect the next dependent item
