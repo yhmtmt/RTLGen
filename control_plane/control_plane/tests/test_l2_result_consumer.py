@@ -468,6 +468,41 @@ def test_decoder_evidence_summary_recognizes_decode_score_multivalue_gqa_group_e
         assert field in summary
 
 
+def test_decoder_evidence_summary_recognizes_direct_flat_gqa_group_equivalence() -> None:
+    outcome, summary = _decoder_evidence_summary(
+        evidence_ref="runs/datasets/demo/decode_score_multivalue_gqa_group_equivalence.json",
+        evidence_payload={
+            "model": "llama7b_gqa8_shared_kv_direct_rtl_equivalence_v2",
+            "decision": "llama7b_gqa8_shared_kv_equivalence_pass",
+            "equivalence_pass": True,
+            "arithmetic_equivalence_pass": True,
+            "shared_inputs_pass": True,
+            "query_heads_per_kv": 8,
+            "head_dim": 128,
+            "group_result_sha256": "directhash",
+            "semantic_profile": "decode_m1x8_shared_score_16x8d_value_iterdiv_gqa8_group_v1",
+            "wrapper_protocol": {"sharing_and_order_pass": True},
+            "flat_8_cluster_rtl_simulation_run": True,
+            "flat_8_cluster_equivalence_pass": True,
+            "compositional_proof": {
+                "method": "flat_8_cluster_rtl_plus_per_head_reference_and_protocol",
+                "flat_8_cluster_rtl_simulation_run": True,
+            },
+        },
+    )
+
+    assert outcome == "llama7b_gqa8_shared_kv_equivalence_pass"
+    for field in (
+        "shared-K/V direct flat RTL equivalence",
+        "proof=direct_flat_rtl",
+        "compositional_proof_method=flat_8_cluster_rtl_plus_per_head_reference_and_protocol",
+        "flat_8_cluster_rtl_simulation_run=True",
+        "flat_8_cluster_equivalence_pass=True",
+        "flat_8_cluster_simulation_proof=True",
+    ):
+        assert field in summary
+
+
 @pytest.mark.parametrize(
     ("model", "decision", "payload", "expected"),
     [

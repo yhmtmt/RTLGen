@@ -68,12 +68,26 @@ def test_gqa8_report_states_compositional_scope_and_protocol_gate(report: dict) 
     assert report["wrapper_protocol"]["sharing_and_order_pass"] is True
     assert report["wrapper_protocol"]["passed_test_count"] == 1
     proof = report["compositional_proof"]
-    assert proof["method"] == "single_cluster_arithmetic_plus_wrapper_protocol"
-    assert proof["flat_8_cluster_rtl_simulation_run"] is False
+    assert proof["method"] == "flat_8_cluster_rtl_plus_per_head_reference_and_protocol"
+    assert proof["flat_8_cluster_rtl_simulation_run"] is True
+    assert report["flat_8_cluster_rtl_simulation_run"] is True
+    assert report["flat_8_cluster_equivalence_pass"] is True
+    direct = report["flat_8_cluster_rtl"]
+    assert direct["equivalence_pass"] is True
+    assert direct["head_dim"] == 128
+    assert direct["block_count"] == 3
+    assert direct["shared_value_read_request_count"] == 48
+    assert direct["completion_cycles"] > 0
+    assert direct["expected_group_result_sha256"] == report["expected_group_result_sha256"]
+    assert direct["observed_group_result_sha256"] == report["observed_group_result_sha256"]
+    assert all(row["score_write_count"] == 3 for row in direct["heads"])
+    assert all(row["score_read_count"] == 3 for row in direct["heads"])
+    assert all(row["result_count"] == 16 for row in direct["heads"])
     markdown = _render_markdown(report)
     assert "real single-cluster arithmetic pass: `True`" in markdown
     assert "wrapper sharing/order protocol pass: `True`" in markdown
-    assert "does not claim that a flat eight-cluster RTL simulation was run" in markdown
+    assert "direct flat eight-cluster RTL pass: `True`" in markdown
+    assert "bounded to three KV blocks" in markdown
 
 
 def test_ordered_group_hash_is_deterministic_and_head_order_sensitive() -> None:
