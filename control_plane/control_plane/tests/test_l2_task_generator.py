@@ -8192,6 +8192,64 @@ def test_generate_l2_campaign_task_adds_decode_score_multivalue_cluster_frontier
             )
 
 
+def test_generate_l2_campaign_task_adds_decode_score_multivalue_gqa_group_frontier() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id="l2_decoder_attention_decode_score_multivalue_gqa8_group_frontier_llama7b_v1",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    abstraction_layer="decoder_attention_decode_score_multivalue_gqa_group_frontier",
+                    evaluation_mode="frontier_recost",
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            commands = work_item.task_request.request_payload["task"]["commands"]
+            run = commands[0]["run"]
+            decoder_inputs = work_item.input_manifest["decoder_contract"]
+
+            assert [command["name"] for command in commands[:2]] == [
+                "audit_decode_score_multivalue_gqa_group_frontier",
+                "validate_runs",
+            ]
+            assert "-m npu.eval.audit_attention_decode_score_multivalue_gqa_group_frontier" in run
+            assert (
+                "--prior-frontier-json runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_decode_score_multivalue_cluster_frontier__"
+                "l2_decoder_attention_decode_score_multivalue_cluster_frontier_llama7b_v1.json"
+            ) in run
+            assert (
+                "--group-activity-power-json runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_decode_score_multivalue_gqa_group_activity_power__"
+                "l2_decoder_attention_decode_score_multivalue_gqa8_group_activity_power_llama7b_v1.json"
+            ) in run
+            assert "--group-counts 1,2,4" in run
+            assert decoder_inputs["decode_score_multivalue_gqa_group_frontier_group_counts"] == "1,2,4"
+            assert "linearly composed, not array-PNR measured" in decoder_inputs[
+                "decode_score_multivalue_gqa_group_frontier_scope"
+            ]
+            assert decoder_inputs["decode_score_multivalue_gqa_group_frontier_out"].endswith(
+                "decoder_attention_decode_score_multivalue_gqa_group_frontier__"
+                "l2_decoder_attention_decode_score_multivalue_gqa8_group_frontier_llama7b_v1.json"
+            )
+            assert decoder_inputs[
+                "decode_score_multivalue_gqa_group_frontier_report"
+            ] in work_item.expected_outputs
+
+
 def test_generate_l2_campaign_task_adds_score_bank_proxy_equivalence() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"

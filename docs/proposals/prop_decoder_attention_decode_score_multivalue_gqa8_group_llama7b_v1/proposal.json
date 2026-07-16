@@ -98,6 +98,26 @@
         "reason": "Energy ranking is ineligible until activity provenance, phase cycles, annotation coverage, and finite routed power are recorded."
       },
       "status": "pending_control_plane_merge"
+    },
+    {
+      "item_id": "l2_decoder_attention_decode_score_multivalue_gqa8_group_frontier_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Recost one, two, and four complete GQA8 group deployments against the prior cluster frontier.",
+      "evaluation_mode": "frontier_recost",
+      "abstraction_layer": "decoder_attention_decode_score_multivalue_gqa_group_frontier",
+      "comparison_role": "gqa8_shared_kv_group_frontier",
+      "paired_baseline_item_id": "l2_decoder_attention_decode_score_multivalue_cluster_frontier_llama7b_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_decode_score_multivalue_cluster_frontier_llama7b_v1",
+        "l2_decoder_attention_decode_score_multivalue_gqa8_group_activity_power_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "rank_measured_gqa8_group_deployments",
+        "reason": "Use measured one-group timing, area, and activity energy while exposing linear multi-group PPA composition."
+      },
+      "status": "pending_control_plane_merge"
     }
   ],
   "baseline_refs": [

@@ -17,3 +17,7 @@
    accounting, routed annotation coverage for directly measured components,
    and direct-versus-compositional provenance. Do not promote compositional
    scaling as a direct full-group power measurement or as total token energy.
+9. Recost only group counts 1, 2, and 4 for the four Llama7B GQA groups per
+   layer. Use measured one-group timing, area, and activity energy, identify
+   multi-group area/power as linear composition rather than array PNR, and
+   retain off-group memory/NoC/HBM and total-token energy as open boundaries.

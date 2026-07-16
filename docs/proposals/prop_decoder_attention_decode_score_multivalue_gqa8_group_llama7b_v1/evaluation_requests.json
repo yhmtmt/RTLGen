@@ -61,6 +61,26 @@
         "reason": "Token-energy ranking requires phase-accounted activity evidence and must distinguish direct routed measurement from compositional scaling."
       },
       "status": "pending_implementation_merge"
+    },
+    {
+      "item_id": "l2_decoder_attention_decode_score_multivalue_gqa8_group_frontier_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Recost the Llama7B proxy with one, two, and four measured GQA8 groups.",
+      "evaluation_mode": "frontier_recost",
+      "abstraction_layer": "decoder_attention_decode_score_multivalue_gqa_group_frontier",
+      "comparison_role": "gqa8_shared_kv_group_frontier",
+      "paired_baseline_item_id": "l2_decoder_attention_decode_score_multivalue_cluster_frontier_llama7b_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_decode_score_multivalue_cluster_frontier_llama7b_v1",
+        "l2_decoder_attention_decode_score_multivalue_gqa8_group_activity_power_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "rank_measured_gqa8_group_deployments",
+        "reason": "Convert measured group PPA and component energy into Llama7B latency, throughput, and area points while retaining composition limits."
+      },
+      "status": "pending_implementation_merge"
     }
   ]
 }
