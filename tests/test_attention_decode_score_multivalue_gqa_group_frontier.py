@@ -1,0 +1,157 @@
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+import pytest
+
+from npu.eval.audit_attention_decode_score_multivalue_gqa_group_frontier import (
+    _pareto,
+    build_report,
+)
+
+
+def _write(path: Path, payload: dict) -> Path:
+    path.write_text(json.dumps(payload), encoding="utf-8")
+    return path
+
+
+def _inputs(tmp_path: Path) -> tuple[Path, Path]:
+    source = _write(
+        tmp_path / "source.json",
+        {
+            "source_schedule": {
+                "hidden_size": 4096,
+                "attention_heads": 32,
+                "kv_heads": 4,
+                "sequence_length": 131072,
+                "clock_ns": 6.0,
+                "layers": 32,
+                "compute_budget_um2": 400_000_000,
+                "logic_area_used_um2": 399_000_000,
+                "compute_area_um2": 396_000_000,
+                "measured_shared_sram_used_area_um2": 240_000_000,
+                "measured_tile_local_sram_area_um2": 40_000_000,
+                "command_dispatch_cycles": 2,
+                "kv_write_cycles": 10,
+            }
+        },
+    )
+    middle = _write(
+        tmp_path / "middle.json",
+        {"inputs": {"prior_frontier_json": source.name}},
+    )
+    prior = _write(
+        tmp_path / "prior.json",
+        {
+            "inputs": {"prior_frontier_json": middle.name},
+            "dense_qkv_tile": {"area_um2": 10_000, "effective_macs_per_cycle": 8.0},
+            "best_throughput_candidate": {
+                "candidate_id": "prior_best",
+                "token_throughput_per_s": 100.0,
+            },
+        },
+    )
+    activity = _write(
+        tmp_path / "group-activity.json",
+        {
+            "promotion_gate_pass": True,
+            "activity_contract": {"clock_period_ns": 8.0, "query_heads_per_kv": 8},
+            "equivalence": {
+                "equivalence_pass": True,
+                "decision": "llama7b_gqa8_shared_kv_equivalence_pass",
+                "query_heads_per_kv": 8,
+                "expected_group_result_sha256": "same-hash",
+                "observed_group_result_sha256": "same-hash",
+            },
+            "best": {
+                "candidate_id": "gqa-group",
+                "flow_variant": "group_die7200",
+                "ppa_metric": {"instance_area_um2": 2_000_000, "critical_path_ns": 7.5},
+                "direct_group_full_context_energy_j": 0.014,
+                "activity_power": {
+                    "promotion_gate_pass": True,
+                    "clock_period_ns": 8.0,
+                    "full_context_cycles": 300,
+                    "full_context_energy_j": 0.014,
+                },
+            },
+        },
+    )
+    return prior, activity
+
+
+def test_recost_uses_four_logical_groups_and_recursive_measured_evidence(tmp_path: Path) -> None:
+    prior, activity = _inputs(tmp_path)
+    report = build_report(
+        prior_frontier_json=prior,
+        activity_power_json=activity,
+        group_counts=[1, 2, 4],
+    )
+
+    rows = {row["group_count"]: row for row in report["rows"]}
+    assert report["inputs"]["source_schedule_json"].endswith("source.json")
+    assert report["schedule_contract"]["query_heads_per_kv"] == 8
+    assert report["schedule_contract"]["logical_groups_per_layer"] == 4
+    assert rows[1]["group_waves_per_layer"] == 4
+    assert rows[2]["group_waves_per_layer"] == 2
+    assert rows[4]["group_waves_per_layer"] == 1
+    assert rows[1]["attention_cycles"] == 1200
+    assert rows[4]["attention_cycles"] == 300
+    assert rows[1]["dense_qkv_tile_count"] == 640
+    assert rows[1]["qkv_cycles"] == 4096
+    assert rows[1]["clock_ns"] == 8.0
+    assert rows[1]["group_area_mm2"] == pytest.approx(2.0)
+    assert rows[4]["group_area_mm2"] == pytest.approx(8.0)
+    assert rows[1]["gqa_group_component_energy_j_per_token"] == pytest.approx(1.792)
+    assert rows[1]["gqa_group_component_energy_j_per_token"] == pytest.approx(
+        rows[4]["gqa_group_component_energy_j_per_token"]
+    )
+    assert report["precision"]["status"] == "exact"
+    assert report["precision"]["quality_change"] == "none_exact_integer_semantics_preserved"
+    assert report["comparison_to_prior_best"]["available"] is True
+    assert report["comparison_to_prior_best"]["prior_candidate_id"] == "prior_best"
+    assert {row["group_count"] for row in report["pareto_rows"]} == {1, 2, 4}
+
+
+def test_recost_requires_promoted_complete_gqa8_group(tmp_path: Path) -> None:
+    prior, activity = _inputs(tmp_path)
+    payload = json.loads(activity.read_text(encoding="utf-8"))
+    payload["promotion_gate_pass"] = False
+    activity.write_text(json.dumps(payload), encoding="utf-8")
+    with pytest.raises(ValueError, match="promotion gate"):
+        build_report(prior_frontier_json=prior, activity_power_json=activity, group_counts=[1])
+
+    prior, activity = _inputs(tmp_path)
+    payload = json.loads(activity.read_text(encoding="utf-8"))
+    payload["equivalence"]["query_heads_per_kv"] = 4
+    activity.write_text(json.dumps(payload), encoding="utf-8")
+    with pytest.raises(ValueError, match="equivalence"):
+        build_report(prior_frontier_json=prior, activity_power_json=activity, group_counts=[1])
+
+    prior, activity = _inputs(tmp_path)
+    payload = json.loads(activity.read_text(encoding="utf-8"))
+    payload["best"]["activity_power"]["promotion_gate_pass"] = False
+    activity.write_text(json.dumps(payload), encoding="utf-8")
+    with pytest.raises(ValueError, match="activity power"):
+        build_report(prior_frontier_json=prior, activity_power_json=activity, group_counts=[1])
+
+
+def test_pareto_filters_infeasible_and_dominated_rows() -> None:
+    def row(candidate: str, latency: float, area: float, energy: float, *, fit: bool = True) -> dict:
+        return {
+            "candidate_id": candidate,
+            "latency_us": latency,
+            "embodied_logic_plus_shared_sram_area_mm2": area,
+            "gqa_group_component_energy_mj_per_token": energy,
+            "compute_budget_area_fit": fit,
+            "timing_feasible": True,
+        }
+
+    rows = [
+        row("fast", 1.0, 3.0, 2.0),
+        row("small", 2.0, 1.0, 2.0),
+        row("dominated", 2.0, 2.0, 2.0),
+        row("infeasible", 0.5, 0.5, 0.5, fit=False),
+    ]
+    assert [candidate["candidate_id"] for candidate in _pareto(rows)] == ["fast", "small"]
