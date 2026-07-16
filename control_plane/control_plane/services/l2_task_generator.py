@@ -29,6 +29,7 @@ class Layer2TaskGenerationError(RuntimeError):
 
 
 _RETRY_SUFFIX_RE = re.compile(r"_r\d+$")
+_VERSION_SUFFIX_RE = re.compile(r"_v(\d+)$")
 
 
 @dataclass(frozen=True)
@@ -85,6 +86,13 @@ def _load_json(path: Path) -> dict[str, Any]:
 
 def _retry_base(item_id: str) -> str:
     return _RETRY_SUFFIX_RE.sub("", item_id.strip())
+
+
+def _gqa_group_equivalence_item_for_consumer(item_id: str) -> str:
+    match = _VERSION_SUFFIX_RE.search(_retry_base(item_id))
+    revision = int(match.group(1)) if match else 1
+    suffix = "v2" if revision >= 2 else "v1"
+    return f"l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_{suffix}"
 
 
 def _proposal_dir(repo_root: Path, proposal_path: str | None) -> Path | None:
@@ -6747,9 +6755,10 @@ def _decoder_attention_decode_score_multivalue_gqa_array_equivalence_evidence(
     *, item_id: str
 ) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    group_equivalence_item = _gqa_group_equivalence_item_for_consumer(item_id)
     group_equivalence = (
         f"{base}/decoder_attention_decode_score_multivalue_gqa_group_equivalence__"
-        "l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v1.json"
+        f"{group_equivalence_item}.json"
     )
     config_base = "runs/designs/npu_blocks"
     configs = [
@@ -6855,9 +6864,10 @@ def _decoder_attention_decode_score_multivalue_gqa_group_activity_power_evidence
     design = "attention_decode_score_multivalue_gqa_group_int8_m1x8_iterdiv"
     config = f"runs/designs/npu_blocks/{design}/config.json"
     metrics_csv = f"runs/designs/npu_blocks/{design}/metrics.csv"
+    group_equivalence_item = _gqa_group_equivalence_item_for_consumer(item_id)
     equivalence_json = (
         f"{base}/decoder_attention_decode_score_multivalue_gqa_group_equivalence__"
-        "l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v1.json"
+        f"{group_equivalence_item}.json"
     )
     cluster_activity_power_json = (
         f"{base}/decoder_attention_decode_score_multivalue_cluster_activity_power__"

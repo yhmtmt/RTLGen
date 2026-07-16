@@ -7937,6 +7937,56 @@ def test_generate_l2_campaign_task_adds_decode_score_multivalue_gqa_array_equiva
             ] in work_item.expected_outputs
 
 
+def test_generate_l2_campaign_task_uses_direct_gqa_group_equivalence_for_v2_consumers() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        cases = (
+            (
+                "l2_decoder_attention_decode_score_multivalue_gqa8_array_equivalence_llama7b_v2",
+                "decoder_attention_decode_score_multivalue_gqa_array_equivalence",
+                "decode_score_multivalue_gqa_array_group_equivalence_json",
+            ),
+            (
+                "l2_decoder_attention_decode_score_multivalue_gqa8_group_activity_power_llama7b_v2",
+                "decoder_attention_decode_score_multivalue_gqa_group_activity_power",
+                "decode_score_multivalue_gqa_group_equivalence_json",
+            ),
+        )
+        expected = (
+            "decoder_attention_decode_score_multivalue_gqa_group_equivalence__"
+            "l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v2.json"
+        )
+
+        with Session(engine) as session:
+            for item_id, abstraction_layer, input_key in cases:
+                result = generate_l2_campaign_task(
+                    session,
+                    Layer2CampaignGenerateRequest(
+                        repo_root=str(repo_root),
+                        campaign_path=campaign_path,
+                        item_id=item_id,
+                        requested_by="@tester",
+                        source_commit=source_commit,
+                        abstraction_layer=abstraction_layer,
+                        evaluation_mode="equivalence_gate",
+                        run_physical=False,
+                    ),
+                )
+
+                work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+                command = work_item.task_request.request_payload["task"]["commands"][0]["run"]
+                equivalence_path = work_item.input_manifest["decoder_contract"][input_key]
+
+                assert equivalence_path.endswith(expected)
+                assert expected in command
+
+
 def test_generate_l2_campaign_task_adds_decode_score_multivalue_cluster_activity_power() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
