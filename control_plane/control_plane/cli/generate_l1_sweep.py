@@ -31,6 +31,13 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--make-target")
     parser.add_argument("--evaluation-mode")
     parser.add_argument("--abstraction-layer")
+    parser.add_argument("--expected-direction")
+    parser.add_argument("--expected-reason")
+    parser.add_argument("--comparison-role")
+    parser.add_argument("--paired-baseline-item-id")
+    parser.add_argument("--depends-on-item-id", action="append")
+    parser.add_argument("--requires-merged-inputs", action="store_true")
+    parser.add_argument("--requires-materialized-refs", action="store_true")
     parser.add_argument("--trial-count", type=int, default=1)
     parser.add_argument("--seed-start", type=int, default=0)
     parser.add_argument("--stop-after-failures", type=int)
@@ -65,6 +72,13 @@ def main(argv: list[str] | None = None) -> int:
                 make_target=args.make_target,
                 evaluation_mode=args.evaluation_mode,
                 abstraction_layer=args.abstraction_layer,
+                expected_direction=args.expected_direction,
+                expected_reason=args.expected_reason,
+                comparison_role=args.comparison_role,
+                paired_baseline_item_id=args.paired_baseline_item_id,
+                depends_on_item_ids=args.depends_on_item_id,
+                requires_merged_inputs=args.requires_merged_inputs,
+                requires_materialized_refs=args.requires_materialized_refs,
                 trial_count=args.trial_count,
                 seed_start=args.seed_start,
                 stop_after_failures=args.stop_after_failures,

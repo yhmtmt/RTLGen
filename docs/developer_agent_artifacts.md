@@ -223,6 +223,13 @@ consume prior developer-loop evidence rather than only historical baselines:
 - set `requires_materialized_refs` when the dependent item's exporter resolves
   baseline evidence by repo path, not only by DB metadata
 
+Task generators must load the matching `evaluation_requests.json` entry before
+building the work-item payload. This applies to both Layer 1 and Layer 2 items:
+copy comparison, expected-result, and dependency fields into `developer_loop`,
+evaluate the dependency gate before selecting the initial state, and keep an
+unsatisfied item `BLOCKED`. Do not rely on the proposal file alone to enforce
+dispatch order.
+
 ## 2. implementation_summary.md
 
 ### Purpose

@@ -1503,6 +1503,11 @@ def test_generate_l1_sweep_task_records_requested_item_in_proposal_evaluation_re
                 ),
                 "evaluation_mode": "measurement_only",
                 "abstraction_layer": "circuit_block",
+                "comparison_role": "",
+                "paired_baseline_item_id": "",
+                "depends_on_item_ids": [],
+                "requires_merged_inputs": False,
+                "requires_materialized_refs": False,
                 "acceptance_notes": "Accept flow_failed rows as explicit boundary evidence.",
                 "status": "pending",
             }
@@ -1575,6 +1580,92 @@ def test_generate_l1_sweep_task_can_refresh_db_without_updating_proposal_files()
         assert evaluation_requests_path.read_text(encoding="utf-8") == before
 
 
+def test_generate_l1_sweep_task_inherits_proposal_dependencies_and_starts_blocked() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        config_path, sweep_path = _write_example_repo(repo_root)
+        item_id = "l1_demo_dependent_pnr_v1"
+        dependency_item_id = "l2_demo_equivalence_v1"
+        proposal_dir = repo_root / "docs" / "proposals" / "prop_l1_dependent_v1"
+        proposal_dir.mkdir(parents=True, exist_ok=True)
+        (proposal_dir / "proposal.json").write_text(
+            json.dumps(
+                {"proposal_id": "prop_l1_dependent_v1", "abstraction_layer": "circuit_block"},
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (proposal_dir / "evaluation_requests.json").write_text(
+            json.dumps(
+                {
+                    "proposal_id": "prop_l1_dependent_v1",
+                    "requested_items": [
+                        {
+                            "item_id": item_id,
+                            "task_type": "l1_sweep",
+                            "evaluation_mode": "frontier_followup",
+                            "abstraction_layer": "circuit_block",
+                            "comparison_role": "candidate_pnr",
+                            "paired_baseline_item_id": "l1_demo_baseline_pnr_v1",
+                            "depends_on_item_ids": [dependency_item_id],
+                            "requires_merged_inputs": True,
+                            "requires_materialized_refs": True,
+                            "expected_result": {
+                                "direction": "measure_candidate_ppa",
+                                "reason": "Run PPA only after equivalence evidence is merged.",
+                            },
+                        }
+                    ],
+                },
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l1_sweep_task(
+                session,
+                Layer1SweepGenerateRequest(
+                    repo_root=str(repo_root),
+                    sweep_path=sweep_path,
+                    config_paths=[config_path],
+                    platform="nangate45",
+                    out_root="runs/designs/activations",
+                    item_id=item_id,
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    proposal_id="prop_l1_dependent_v1",
+                    proposal_path="docs/proposals/prop_l1_dependent_v1",
+                    update_proposal_files=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            payload = work_item.task_request.request_payload
+            assert work_item.state == WorkItemState.BLOCKED
+            assert payload["developer_loop"]["evaluation"] == {
+                "mode": "frontier_followup",
+                "expected_direction": "measure_candidate_ppa",
+                "expected_reason": "Run PPA only after equivalence evidence is merged.",
+                "trial_policy": {"trial_count": 1, "seed_start": 0, "stop_after_failures": 1},
+            }
+            assert payload["developer_loop"]["comparison"] == {
+                "role": "candidate_pnr",
+                "paired_baseline_item_id": "l1_demo_baseline_pnr_v1",
+            }
+            assert payload["developer_loop"]["dependencies"] == {
+                "item_ids": [dependency_item_id],
+                "requires_merged_inputs": True,
+                "requires_materialized_refs": True,
+            }
+
+
 def test_generate_l1_sweep_task_strips_placeholder_requested_items_from_template() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
@@ -1635,6 +1726,11 @@ def test_generate_l1_sweep_task_strips_placeholder_requested_items_from_template
                 ),
                 "evaluation_mode": "measurement_only",
                 "abstraction_layer": "circuit_block",
+                "comparison_role": "",
+                "paired_baseline_item_id": "",
+                "depends_on_item_ids": [],
+                "requires_merged_inputs": False,
+                "requires_materialized_refs": False,
                 "status": "pending",
             }
         ]
