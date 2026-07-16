@@ -88,6 +88,33 @@
       "status": "pending_implementation_merge"
     },
     {
+      "item_id": "l2_decoder_attention_decode_score_multivalue_gqa8_group_activity_power_llama7b_v2",
+      "task_type": "l2_campaign",
+      "objective": "Measure activity-backed GQA8 group power while consuming the direct-flat v2 equivalence artifact.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_decode_score_multivalue_gqa_group_activity_power",
+      "comparison_role": "gqa8_direct_equivalence_backed_group_activity_power",
+      "paired_baseline_item_id": "l2_decoder_attention_decode_score_multivalue_gqa8_group_activity_power_llama7b_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v2",
+        "l1_decoder_attention_decode_score_multivalue_gqa8_group_pnr_v1",
+        "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "revision": {
+        "reason": "activity_consumer_must_read_direct_flat_group_equivalence",
+        "invalidates_item_ids": [
+          "l2_decoder_attention_decode_score_multivalue_gqa8_group_activity_power_llama7b_v1"
+        ]
+      },
+      "expected_result": {
+        "direction": "measure_direct_equivalence_backed_gqa8_group_activity_energy",
+        "reason": "The activity result must consume the direct-flat group proof rather than only wait for it while reading compositional v1 evidence."
+      },
+      "status": "pending_implementation_merge"
+    },
+    {
       "item_id": "l2_decoder_attention_decode_score_multivalue_gqa8_group_frontier_llama7b_v1",
       "task_type": "l2_campaign",
       "objective": "Recost the Llama7B proxy with one, two, and four measured GQA8 groups.",
@@ -123,6 +150,31 @@
       "expected_result": {
         "direction": "prove_gqa8_multigroup_array_compositional_equivalence",
         "reason": "Direct array PPA requires proven atomic broadcast and independent value/result channels."
+      },
+      "status": "pending_implementation_merge"
+    },
+    {
+      "item_id": "l2_decoder_attention_decode_score_multivalue_gqa8_array_equivalence_llama7b_v2",
+      "task_type": "l2_campaign",
+      "objective": "Compose direct-flat GQA8 group arithmetic evidence with one-, two-, and four-group array protocol simulation.",
+      "evaluation_mode": "equivalence_gate",
+      "abstraction_layer": "decoder_attention_decode_score_multivalue_gqa_array_equivalence",
+      "comparison_role": "gqa8_direct_group_backed_array_semantic_gate",
+      "paired_baseline_item_id": "l2_decoder_attention_decode_score_multivalue_gqa8_array_equivalence_llama7b_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v2"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "revision": {
+        "reason": "array_proof_must_compose_direct_flat_group_arithmetic_evidence",
+        "invalidates_item_ids": [
+          "l2_decoder_attention_decode_score_multivalue_gqa8_array_equivalence_llama7b_v1"
+        ]
+      },
+      "expected_result": {
+        "direction": "prove_direct_group_backed_gqa8_multigroup_array_equivalence",
+        "reason": "Array protocol evidence must compose with the direct-flat group arithmetic proof, not the compositional-only v1 artifact."
       },
       "status": "pending_implementation_merge"
     },
