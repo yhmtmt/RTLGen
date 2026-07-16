@@ -18,6 +18,7 @@ from control_plane.clock import utcnow
 from control_plane.models.enums import FlowName, LayerName, WorkItemState
 from control_plane.models.task_requests import TaskRequest
 from control_plane.models.work_items import WorkItem
+from control_plane.services.dependency_gate import evaluate_work_item_dependencies
 from control_plane.services.docs_paths import canonicalize_proposal_path, resolve_proposal_dir, resolve_proposal_file
 from control_plane.services.proposal_scaffold import ensure_proposal_scaffold
 from control_plane.services.source_requirement import build_source_requirement
@@ -47,6 +48,13 @@ class Layer1SweepGenerateRequest:
     make_target: str | None = None
     evaluation_mode: str | None = None
     abstraction_layer: str | None = None
+    expected_direction: str | None = None
+    expected_reason: str | None = None
+    comparison_role: str | None = None
+    paired_baseline_item_id: str | None = None
+    depends_on_item_ids: list[str] | None = None
+    requires_merged_inputs: bool = False
+    requires_materialized_refs: bool = False
     trial_count: int = 1
     seed_start: int = 0
     stop_after_failures: int | None = None
@@ -108,6 +116,101 @@ def _resolve_proposal_abstraction_layer(repo_root: Path, proposal_path: str | No
     return resolved or None
 
 
+def _proposal_dir(repo_root: Path, proposal_path: str | None) -> Path | None:
+    proposal_path_text = str(proposal_path or "").strip()
+    if not proposal_path_text:
+        return None
+    return resolve_proposal_dir(repo_root, proposal_path=proposal_path_text)
+
+
+def _load_requested_item_entry(repo_root: Path, proposal_path: str | None, item_id: str) -> dict[str, Any] | None:
+    proposal_dir = _proposal_dir(repo_root, proposal_path)
+    if proposal_dir is None:
+        return None
+    evaluation_requests_path = proposal_dir / "evaluation_requests.json"
+    if not evaluation_requests_path.exists():
+        return None
+    try:
+        payload = _load_json(evaluation_requests_path)
+    except Exception:
+        return None
+    requested_items = payload.get("requested_items")
+    if not isinstance(requested_items, list):
+        return None
+    for entry in requested_items:
+        if isinstance(entry, dict) and str(entry.get("item_id", "")).strip() == item_id:
+            return entry
+    retry_base = _retry_base(item_id)
+    retry_matches = [
+        entry
+        for entry in requested_items
+        if isinstance(entry, dict) and _retry_base(str(entry.get("item_id", "")).strip()) == retry_base
+    ]
+    return retry_matches[0] if len(retry_matches) == 1 else None
+
+
+def _resolve_requested_entry_text(
+    entry: dict[str, Any] | None,
+    *,
+    key: str,
+    explicit: str | None,
+) -> str | None:
+    resolved = str(explicit or "").strip()
+    if resolved:
+        return resolved
+    if not isinstance(entry, dict):
+        return None
+    candidate = str(entry.get(key, "")).strip()
+    return candidate or None
+
+
+def _resolve_requested_entry_expected_result_text(
+    entry: dict[str, Any] | None,
+    *,
+    key: str,
+    explicit: str | None,
+) -> str | None:
+    resolved = str(explicit or "").strip()
+    if resolved:
+        return resolved
+    if not isinstance(entry, dict):
+        return None
+    expected_result = entry.get("expected_result")
+    if not isinstance(expected_result, dict):
+        return None
+    candidate = str(expected_result.get(key, "")).strip()
+    return candidate or None
+
+
+def _resolve_requested_entry_list(
+    entry: dict[str, Any] | None,
+    *,
+    key: str,
+    explicit: list[str] | None,
+) -> list[str] | None:
+    if explicit is not None:
+        return [str(value).strip() for value in explicit if str(value).strip()]
+    if not isinstance(entry, dict):
+        return None
+    values = entry.get(key)
+    if not isinstance(values, list):
+        return None
+    return [str(value).strip() for value in values if str(value).strip()]
+
+
+def _resolve_requested_entry_bool(
+    entry: dict[str, Any] | None,
+    *,
+    key: str,
+    explicit: bool,
+) -> bool:
+    if explicit:
+        return True
+    if not isinstance(entry, dict):
+        return False
+    return bool(entry.get(key))
+
+
 def _retry_base(item_id: str) -> str:
     return item_id.rsplit("_r", 1)[0] if "_r" in item_id else item_id
 
@@ -122,6 +225,13 @@ def _upsert_evaluation_request_entry(
     objective: str,
     evaluation_mode: str,
     abstraction_layer: str | None,
+    expected_direction: str | None,
+    expected_reason: str | None,
+    comparison_role: str | None,
+    paired_baseline_item_id: str | None,
+    depends_on_item_ids: list[str] | None,
+    requires_merged_inputs: bool,
+    requires_materialized_refs: bool,
     acceptance_notes: str | None,
     source_commit: str,
 ) -> None:
@@ -178,6 +288,16 @@ def _upsert_evaluation_request_entry(
     entry["objective"] = objective
     entry["evaluation_mode"] = evaluation_mode
     entry["abstraction_layer"] = str(abstraction_layer or "").strip()
+    entry["comparison_role"] = str(comparison_role or "").strip()
+    entry["paired_baseline_item_id"] = str(paired_baseline_item_id or "").strip()
+    entry["depends_on_item_ids"] = [str(value).strip() for value in (depends_on_item_ids or []) if str(value).strip()]
+    entry["requires_merged_inputs"] = bool(requires_merged_inputs)
+    entry["requires_materialized_refs"] = bool(requires_materialized_refs)
+    if str(expected_direction or "").strip() or str(expected_reason or "").strip():
+        entry["expected_result"] = {
+            "direction": str(expected_direction or "").strip(),
+            "reason": str(expected_reason or "").strip(),
+        }
     acceptance_notes_text = str(acceptance_notes or "").strip()
     if acceptance_notes_text:
         entry["acceptance_notes"] = acceptance_notes_text
@@ -1265,6 +1385,13 @@ def _build_payload(
     proposal_path: str | None,
     evaluation_mode: str,
     abstraction_layer: str | None,
+    expected_direction: str | None,
+    expected_reason: str | None,
+    comparison_role: str | None,
+    paired_baseline_item_id: str | None,
+    depends_on_item_ids: list[str] | None,
+    requires_merged_inputs: bool,
+    requires_materialized_refs: bool,
     trial_policy: dict[str, int],
     acceptance_notes: str | None,
 ) -> dict[str, Any]:
@@ -1347,12 +1474,26 @@ def _build_payload(
             "proposal_path": proposal_path or "",
             "evaluation": {
                 "mode": evaluation_mode,
+                "expected_direction": expected_direction or "",
+                "expected_reason": expected_reason or "",
                 "trial_policy": trial_policy,
             },
         }
         if abstraction_layer:
             payload["developer_loop"]["abstraction"] = {
                 "layer": abstraction_layer,
+            }
+        if comparison_role or paired_baseline_item_id:
+            payload["developer_loop"]["comparison"] = {
+                "role": comparison_role or "",
+                "paired_baseline_item_id": paired_baseline_item_id or "",
+            }
+        dependency_ids = [str(item).strip() for item in (depends_on_item_ids or []) if str(item).strip()]
+        if dependency_ids or requires_merged_inputs or requires_materialized_refs:
+            payload["developer_loop"]["dependencies"] = {
+                "item_ids": dependency_ids,
+                "requires_merged_inputs": requires_merged_inputs,
+                "requires_materialized_refs": requires_materialized_refs,
             }
     if not acceptance_notes_text:
         payload["task"].pop("metadata", None)
@@ -1367,9 +1508,65 @@ def generate_l1_sweep_task(session: Session, request: Layer1SweepGenerateRequest
     sweep_path = _repo_rel(request.sweep_path, repo_root)
     config_paths = [_repo_rel(path, repo_root) for path in request.config_paths]
     out_root = _repo_rel(request.out_root, repo_root)
+    item_id = request.item_id or _default_item_id(
+        sweep_path=sweep_path,
+        platform=request.platform,
+        config_paths=config_paths,
+    )
     proposal_path = _repo_rel(request.proposal_path, repo_root) if request.proposal_path else None
     proposal_path = canonicalize_proposal_path(repo_root, proposal_path=proposal_path, proposal_id=request.proposal_id)
-    effective_abstraction_layer = _resolve_proposal_abstraction_layer(repo_root, proposal_path, request.abstraction_layer)
+    effective_proposal_id = str(request.proposal_id or "").strip()
+    if not effective_proposal_id and proposal_path:
+        proposal_path_obj = Path(proposal_path)
+        effective_proposal_id = (
+            proposal_path_obj.parent.name if proposal_path_obj.name == "proposal.json" else proposal_path_obj.name
+        )
+    requested_entry = _load_requested_item_entry(repo_root, proposal_path, item_id)
+    effective_evaluation_mode = _resolve_requested_entry_text(
+        requested_entry,
+        key="evaluation_mode",
+        explicit=request.evaluation_mode,
+    )
+    effective_abstraction_layer = _resolve_requested_entry_text(
+        requested_entry,
+        key="abstraction_layer",
+        explicit=request.abstraction_layer,
+    ) or _resolve_proposal_abstraction_layer(repo_root, proposal_path, request.abstraction_layer)
+    effective_expected_direction = _resolve_requested_entry_expected_result_text(
+        requested_entry,
+        key="direction",
+        explicit=request.expected_direction,
+    )
+    effective_expected_reason = _resolve_requested_entry_expected_result_text(
+        requested_entry,
+        key="reason",
+        explicit=request.expected_reason,
+    )
+    effective_comparison_role = _resolve_requested_entry_text(
+        requested_entry,
+        key="comparison_role",
+        explicit=request.comparison_role,
+    )
+    effective_paired_baseline_item_id = _resolve_requested_entry_text(
+        requested_entry,
+        key="paired_baseline_item_id",
+        explicit=request.paired_baseline_item_id,
+    )
+    effective_depends_on_item_ids = _resolve_requested_entry_list(
+        requested_entry,
+        key="depends_on_item_ids",
+        explicit=request.depends_on_item_ids,
+    )
+    effective_requires_merged_inputs = _resolve_requested_entry_bool(
+        requested_entry,
+        key="requires_merged_inputs",
+        explicit=request.requires_merged_inputs,
+    )
+    effective_requires_materialized_refs = _resolve_requested_entry_bool(
+        requested_entry,
+        key="requires_materialized_refs",
+        explicit=request.requires_materialized_refs,
+    )
     _validate_architecture_block_sweep_policy(
         sweep_path=(repo_root / sweep_path).resolve(),
         abstraction_layer=effective_abstraction_layer,
@@ -1406,11 +1603,6 @@ def generate_l1_sweep_task(session: Session, request: Layer1SweepGenerateRequest
         expected_outputs.append(target.expected_metrics_path)
         expected_outputs.extend(target.expected_report_paths)
 
-    item_id = request.item_id or _default_item_id(
-        sweep_path=sweep_path,
-        platform=request.platform,
-        config_paths=config_paths,
-    )
     title = request.title or _default_title(sweep_path=sweep_path, platform=request.platform)
     objective = request.objective or _default_objective(
         platform=request.platform,
@@ -1438,13 +1630,20 @@ def generate_l1_sweep_task(session: Session, request: Layer1SweepGenerateRequest
         out_root=out_root,
         expected_outputs=expected_outputs,
         command_manifest=command_manifest,
-        proposal_id=request.proposal_id,
+        proposal_id=effective_proposal_id,
         proposal_path=proposal_path,
         evaluation_mode=_effective_evaluation_mode(
-            evaluation_mode=request.evaluation_mode,
+            evaluation_mode=effective_evaluation_mode,
             make_target=request.make_target,
         ),
         abstraction_layer=effective_abstraction_layer,
+        expected_direction=effective_expected_direction,
+        expected_reason=effective_expected_reason,
+        comparison_role=effective_comparison_role,
+        paired_baseline_item_id=effective_paired_baseline_item_id,
+        depends_on_item_ids=effective_depends_on_item_ids,
+        requires_merged_inputs=effective_requires_merged_inputs,
+        requires_materialized_refs=effective_requires_materialized_refs,
         trial_policy=trial_policy,
         acceptance_notes=request.acceptance_notes,
     )
@@ -1455,16 +1654,53 @@ def generate_l1_sweep_task(session: Session, request: Layer1SweepGenerateRequest
     if request.update_proposal_files:
         _upsert_evaluation_request_entry(
             repo_root=repo_root,
-            proposal_id=request.proposal_id,
+            proposal_id=effective_proposal_id,
             proposal_path=proposal_path,
             item_id=item_id,
             task_type="l1_sweep",
             objective=objective,
             evaluation_mode=((payload.get("developer_loop") or {}).get("evaluation") or {}).get("mode") or "",
             abstraction_layer=effective_abstraction_layer,
+            expected_direction=effective_expected_direction,
+            expected_reason=effective_expected_reason,
+            comparison_role=effective_comparison_role,
+            paired_baseline_item_id=effective_paired_baseline_item_id,
+            depends_on_item_ids=effective_depends_on_item_ids,
+            requires_merged_inputs=effective_requires_merged_inputs,
+            requires_materialized_refs=effective_requires_materialized_refs,
             acceptance_notes=request.acceptance_notes,
             source_commit=source_commit,
         )
+
+    initial_state = WorkItemState.DISPATCH_PENDING
+    transient_work_item = WorkItem(
+        work_item_key=f"l1_sweep:{item_id}",
+        task_request_id="",
+        item_id=item_id,
+        layer=LayerName.LAYER1,
+        flow=FlowName.OPENROAD,
+        platform=request.platform,
+        task_type="l1_sweep",
+        state=WorkItemState.DRAFT,
+        priority=request.priority,
+        source_mode="config",
+    )
+    transient_task_request = TaskRequest(
+        request_key=f"l1_sweep:{item_id}",
+        source="l1_task_generator",
+        requested_by=request.requested_by,
+        title=title,
+        description=objective,
+        layer=LayerName.LAYER1,
+        flow=FlowName.OPENROAD,
+        priority=request.priority,
+        request_payload=payload,
+        source_commit=source_commit,
+    )
+    transient_work_item.task_request = transient_task_request
+    gate = evaluate_work_item_dependencies(session, repo_root=repo_root, work_item=transient_work_item)
+    if not gate.satisfied:
+        initial_state = WorkItemState.BLOCKED
 
     existing = session.query(WorkItem).filter(WorkItem.item_id == item_id).one_or_none()
     if existing is None:
@@ -1491,7 +1727,7 @@ def generate_l1_sweep_task(session: Session, request: Layer1SweepGenerateRequest
             flow=FlowName.OPENROAD,
             platform=request.platform,
             task_type="l1_sweep",
-            state=WorkItemState.DISPATCH_PENDING,
+            state=initial_state,
             priority=request.priority,
             source_mode="config",
             input_manifest=payload["task"]["inputs"],
@@ -1532,8 +1768,13 @@ def generate_l1_sweep_task(session: Session, request: Layer1SweepGenerateRequest
     existing.acceptance_rules = payload["task"]["acceptance"]
     existing.source_commit = source_commit
     existing.trial_policy_json = ((payload.get("developer_loop") or {}).get("evaluation") or {}).get("trial_policy") or {}
-    if existing.state == WorkItemState.FAILED:
-        existing.state = WorkItemState.DISPATCH_PENDING
+    if existing.state in {
+        WorkItemState.DRAFT,
+        WorkItemState.BLOCKED,
+        WorkItemState.DISPATCH_PENDING,
+        WorkItemState.FAILED,
+    }:
+        existing.state = initial_state
         existing.assigned_machine_key = None
         existing.queue_snapshot_path = None
     session.commit()

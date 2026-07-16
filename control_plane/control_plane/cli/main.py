@@ -83,6 +83,13 @@ def main(argv: list[str] | None = None) -> int:
     generate_l1_parser.add_argument("--make-target")
     generate_l1_parser.add_argument("--evaluation-mode")
     generate_l1_parser.add_argument("--abstraction-layer")
+    generate_l1_parser.add_argument("--expected-direction")
+    generate_l1_parser.add_argument("--expected-reason")
+    generate_l1_parser.add_argument("--comparison-role")
+    generate_l1_parser.add_argument("--paired-baseline-item-id")
+    generate_l1_parser.add_argument("--depends-on-item-id", action="append")
+    generate_l1_parser.add_argument("--requires-merged-inputs", action="store_true")
+    generate_l1_parser.add_argument("--requires-materialized-refs", action="store_true")
     generate_l1_parser.add_argument("--trial-count", type=int, default=1)
     generate_l1_parser.add_argument("--seed-start", type=int, default=0)
     generate_l1_parser.add_argument("--stop-after-failures", type=int)
@@ -541,6 +548,10 @@ def main(argv: list[str] | None = None) -> int:
             ("--make-target", args.make_target),
             ("--evaluation-mode", args.evaluation_mode),
             ("--abstraction-layer", args.abstraction_layer),
+            ("--expected-direction", args.expected_direction),
+            ("--expected-reason", args.expected_reason),
+            ("--comparison-role", args.comparison_role),
+            ("--paired-baseline-item-id", args.paired_baseline_item_id),
             ("--stop-after-failures", args.stop_after_failures),
             ("--dispatch-machine-key", args.dispatch_machine_key),
         ]:
@@ -548,6 +559,12 @@ def main(argv: list[str] | None = None) -> int:
                 argv2.extend([key, str(value)])
         if args.no_auto_dispatch:
             argv2.append("--no-auto-dispatch")
+        for item_id in args.depends_on_item_id or []:
+            argv2.extend(["--depends-on-item-id", str(item_id)])
+        if args.requires_merged_inputs:
+            argv2.append("--requires-merged-inputs")
+        if args.requires_materialized_refs:
+            argv2.append("--requires-materialized-refs")
         if args.no_update_proposal_files:
             argv2.append("--no-update-proposal-files")
         if args.dispatch_freshness_seconds is not None:
