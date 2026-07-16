@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_decoder_attention_decode_score_multivalue_gqa8_group_llama7b_v1",
-  "source_commit_note": "Queue only after the GQA8 generator, compositional audit, design target, guard, and control-plane handlers are merged.",
+  "source_commit_note": "Queue group jobs only after the GQA8 group generator, audit, design target, guard, and handlers are merged. Queue array jobs only after the direct array generator, exact 1/2/4 design targets, wrapper equivalence audit, equal-density sweeps, and direct-frontier handler are merged.",
   "requested_items": [
     {
       "item_id": "l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v1",

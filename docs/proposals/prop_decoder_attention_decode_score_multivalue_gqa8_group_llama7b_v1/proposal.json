@@ -237,7 +237,7 @@
   ],
   "remaining_abstractions_after_this_step": [
     "The GQA group uses eight fully parallel query-head clusters; folded 1/2/4-head execution remains an area-throughput design space.",
-    "Activity-backed power is required before token-energy ranking.",
+    "Direct array activity-backed power is required before replacing compositional component energy.",
     "The shared value stream still terminates at a local request/response boundary rather than an embodied SRAM/NoC service.",
     "HBM/DRAM service and full-layer scheduling remain outside this physical block."
   ]
