@@ -21,3 +21,17 @@
    layer. Use measured one-group timing, area, and activity energy, identify
    multi-group area/power as linear composition rather than array PNR, and
    retain off-group memory/NoC/HBM and total-token energy as open boundaries.
+10. Before direct array PPA, compose the merged complete-group equivalence
+    result with protocol simulations of generated one-, two-, and four-group
+    wrappers. Require atomic command/input acceptance and independent external
+    value-memory and result channels.
+11. Compare array PPA only at matched macro density: 7.2 mm for one group,
+    10.2 mm for two groups, and 14.4 mm for four groups. Keep the 8 ns and
+    10 ns targets and retain infeasible points.
+12. Treat direct array PNR as timing, area, routing, command-fanout, and
+    clock-tree evidence. It does not close external value memory, NoC, HBM,
+    total-token energy, or a monolithic 32-cluster arithmetic simulation.
+13. Recompute QKV tile allocation, layer latency, throughput, and embodied
+    logic-plus-SRAM area from every timing-feasible direct array row. Preserve
+    all rejected physical rows and label inherited group-component energy as
+    compositional until direct array activity is measured.
