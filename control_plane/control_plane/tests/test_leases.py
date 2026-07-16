@@ -287,6 +287,8 @@ def test_expire_stale_leases_requeues_assigned_nonterminal_work_as_ready() -> No
         assert "last_progress" not in lease.machine.capabilities
         assert run.completed_at is not None
         assert run.failure_category == "lease_expired"
+        assert run.result_payload["stale_lease_cleanup"] is True
+        assert any(event.event_type == "run_abandoned" for event in run.events)
 
         reacquired = acquire_next_lease(
             session,

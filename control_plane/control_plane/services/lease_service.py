@@ -285,6 +285,7 @@ def expire_stale_leases(session: Session) -> LeaseExpiryResult:
     )
     expired_count = 0
     requeued_count = 0
+    cleaned_run_count = 0
     for lease in leases:
         lease.status = LeaseStatus.EXPIRED
         clear_worker_progress_for_item(lease.machine, item_id=lease.work_item.item_id)
@@ -303,7 +304,15 @@ def expire_stale_leases(session: Session) -> LeaseExpiryResult:
             work_item.state = WorkItemState.READY if work_item.assigned_machine_key else WorkItemState.DISPATCH_PENDING
             requeued_count += 1
 
-    cleaned_run_count = 0
+        # Close attached runs in the same transaction as the lease expiry.
+        # Querying them only after changing the lease leaves a race window in
+        # which the item is requeued while its previous run still reads RUNNING.
+        for run in lease.runs:
+            if run.status in {RunStatus.STARTING, RunStatus.RUNNING}:
+                _mark_run_abandoned(session, run=run, now=now)
+                cleaned_run_count += 1
+
+    session.flush()
     dangling_runs = (
         session.query(__import__('control_plane.models.runs', fromlist=['Run']).Run)
         .join(WorkerLease, __import__('control_plane.models.runs', fromlist=['Run']).Run.lease_id == WorkerLease.id)
