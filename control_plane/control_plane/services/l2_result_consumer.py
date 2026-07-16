@@ -635,6 +635,22 @@ _DECODER_EVIDENCE_OUTPUT_KEYS: tuple[tuple[str, str], ...] = (
         "decode_score_multivalue_gqa_group_equivalence_report",
     ),
     (
+        "decode_score_multivalue_gqa_array_equivalence_out",
+        "decode_score_multivalue_gqa_array_equivalence_report",
+    ),
+    (
+        "decode_score_multivalue_gqa_group_activity_power_out",
+        "decode_score_multivalue_gqa_group_activity_power_report",
+    ),
+    (
+        "decode_score_multivalue_gqa_group_frontier_out",
+        "decode_score_multivalue_gqa_group_frontier_report",
+    ),
+    (
+        "decode_score_multivalue_gqa_array_frontier_out",
+        "decode_score_multivalue_gqa_array_frontier_report",
+    ),
+    (
         "decode_score_tile_frontier_out",
         "decode_score_tile_frontier_report",
     ),
@@ -1704,6 +1720,67 @@ def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, 
         flat_simulation_run = compositional_proof_dict.get("flat_8_cluster_rtl_simulation_run", False)
         parts.append(f"flat_8_cluster_rtl_simulation_run={flat_simulation_run}")
         parts.append("flat_8_cluster_simulation_proof=False")
+        summary = "; ".join(parts)
+        return outcome, summary if summary.endswith(".") else summary + "."
+
+    if model == "llama7b_gqa8_multigroup_array_compositional_equivalence_v1":
+        outcome = str(evidence_payload.get("decision") or "llama7b_gqa8_multigroup_array_equivalence_recorded")
+        protocol = evidence_payload.get("array_protocol")
+        protocol_dict = dict(protocol) if isinstance(protocol, dict) else {}
+        proof = evidence_payload.get("compositional_proof")
+        proof_dict = dict(proof) if isinstance(proof, dict) else {}
+        parts = [f"Llama7B GQA8 direct-array equivalence recorded from {evidence_ref}: decision={outcome}"]
+        for key in ("equivalence_pass", "precision_status", "semantic_profile", "query_heads_per_kv", "measured_group_counts"):
+            if key in evidence_payload:
+                parts.append(f"{key}={evidence_payload.get(key)}")
+        if "atomic_broadcast_and_independent_channels_pass" in protocol_dict:
+            parts.append(
+                "atomic_broadcast_and_independent_channels_pass="
+                f"{protocol_dict.get('atomic_broadcast_and_independent_channels_pass')}"
+            )
+        if "method" in proof_dict:
+            parts.append(f"compositional_proof_method={proof_dict.get('method')}")
+        parts.append(f"flat_32_cluster_arithmetic_simulation_run={proof_dict.get('flat_32_cluster_arithmetic_simulation_run', False)}")
+        summary = "; ".join(parts)
+        return outcome, summary if summary.endswith(".") else summary + "."
+
+    if model == "decoder_attention_decode_score_multivalue_gqa_group_activity_power_v1":
+        outcome = str(evidence_payload.get("decision") or "gqa8_group_activity_power_recorded")
+        best = evidence_payload.get("best")
+        best_dict = dict(best) if isinstance(best, dict) else {}
+        parts = [f"GQA8 group activity-power evidence recorded from {evidence_ref}: decision={outcome}"]
+        for key in ("promotion_gate_pass", "candidate_count", "promoted_candidate_count", "best_candidate_id", "energy_scope"):
+            if key in evidence_payload:
+                parts.append(f"{key}={evidence_payload.get(key)}")
+        for key in ("direct_group_full_context_energy_j", "status", "flow_variant"):
+            if key in best_dict:
+                parts.append(f"best_{key}={best_dict.get(key)}")
+        summary = "; ".join(parts)
+        return outcome, summary if summary.endswith(".") else summary + "."
+
+    if model == "decoder_attention_decode_score_multivalue_gqa_group_frontier_llama7b_v1":
+        outcome = str(evidence_payload.get("decision") or "gqa8_group_frontier_recorded")
+        best = evidence_payload.get("best_throughput_candidate")
+        best_dict = dict(best) if isinstance(best, dict) else {}
+        parts = [f"Llama7B measured GQA8 group frontier recorded from {evidence_ref}: decision={outcome}"]
+        for key in ("candidate_id", "group_count", "token_throughput_per_s", "latency_us", "embodied_logic_plus_shared_sram_area_mm2", "gqa_group_component_energy_mj_per_token"):
+            if key in best_dict:
+                parts.append(f"best_{key}={best_dict.get(key)}")
+        if "promotion_status" in evidence_payload:
+            parts.append(f"promotion_status={evidence_payload.get('promotion_status')}")
+        summary = "; ".join(parts)
+        return outcome, summary if summary.endswith(".") else summary + "."
+
+    if model == "decoder_attention_decode_score_multivalue_gqa_array_frontier_llama7b_v1":
+        outcome = str(evidence_payload.get("decision") or "gqa8_direct_array_frontier_recorded")
+        best = evidence_payload.get("best_throughput_candidate")
+        best_dict = dict(best) if isinstance(best, dict) else {}
+        parts = [f"Llama7B direct GQA8 array frontier recorded from {evidence_ref}: decision={outcome}"]
+        for key in ("candidate_id", "group_count", "token_throughput_per_s", "latency_us", "direct_array_instance_area_mm2", "embodied_logic_plus_shared_sram_area_mm2", "energy_status"):
+            if key in best_dict:
+                parts.append(f"best_{key}={best_dict.get(key)}")
+        if "promotion_status" in evidence_payload:
+            parts.append(f"promotion_status={evidence_payload.get('promotion_status')}")
         summary = "; ".join(parts)
         return outcome, summary if summary.endswith(".") else summary + "."
 
