@@ -1,0 +1,104 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "decoder_contract": {
+        "decode_score_multivalue_gqa_group_equivalence_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_gqa_group_equivalence__l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v2.json",
+        "decode_score_multivalue_gqa_group_equivalence_scope": "Directly simulate the generated flat eight-cluster Llama7B GQA8 RTL for eight distinct 128-element query heads over identical key/value tensors. Compare every intermediate score write/read and all 128 ordered result beats against the perf/reference model, and retain the separate wrapper sharing/order protocol test as a backpressure cross-check.",
+        "decode_score_multivalue_gqa_group_equivalence_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_gqa_group_equivalence__l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v2.md"
+      }
+    },
+    "commands": [
+      {
+        "run": "python3 -m npu.eval.audit_attention_decode_score_multivalue_gqa_group_equivalence --config runs/designs/npu_blocks/attention_decode_score_multivalue_gqa_group_int8_m1x8_iterdiv/config.json --out runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_gqa_group_equivalence__l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v2.json --out-md runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_gqa_group_equivalence__l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v2.md",
+        "name": "audit_decode_score_multivalue_gqa_group_equivalence"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate_runs"
+      }
+    ],
+    "objective": "Record direct flat eight-cluster GQA8 RTL/perf equivalence with intermediate score hashes, shared value requests, ordered outputs, and completion cycles.",
+    "acceptance": [
+      "Write all declared decoder evidence artifacts",
+      "Keep evidence artifact paths repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "source_mode": "src_verilog",
+    "expected_outputs": [
+      "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_gqa_group_equivalence__l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v2.json",
+      "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_gqa_group_equivalence__l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v2.md"
+    ]
+  },
+  "layer": "layer2",
+  "state": "evaluated",
+  "title": "Prove direct flat GQA8 group RTL equivalence",
+  "result": {
+    "branch": "eval/l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v2/s20260717t124340z",
+    "completed_utc": "2026-07-17T12:43:37.909076Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "b7c2d9c80c1c",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260717t124340z][host:b7c2d9c80c1c][item:l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v2]",
+    "metrics_rows": [],
+    "metrics_exempt_reason": "evidence_only_decoder_evidence",
+    "queue_item_id": "l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v2",
+    "session_id": "s20260717t124340z",
+    "status": "ok",
+    "summary": "2/2 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v2/s20260717t124340z",
+    "pr_title": "eval: run prove direct flat gqa8 group rtl equivalence",
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Include metrics row references in result.metrics_rows",
+      "Keep committed result_path fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260717t124340z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v2"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v2",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 86,
+  "created_utc": "2026-07-16T12:59:57.770151Z",
+  "requested_by": "developer_agent",
+  "developer_loop": {
+    "comparison": {
+      "role": "gqa8_direct_flat_rtl_semantic_gate",
+      "paired_baseline_item_id": "l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v1"
+    },
+    "evaluation": {
+      "mode": "equivalence_gate",
+      "expected_reason": "Integrated eight-cluster score tensors, shared value requests, and ordered result beats must match the perf/reference model.",
+      "expected_direction": "prove_gqa8_shared_kv_direct_flat_rtl_equivalence"
+    },
+    "abstraction": {
+      "layer": "decoder_attention_decode_score_multivalue_gqa_group_equivalence"
+    },
+    "proposal_id": "prop_decoder_attention_decode_score_multivalue_gqa8_group_llama7b_v1",
+    "dependencies": {
+      "item_ids": [
+        "l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    },
+    "proposal_path": "docs/proposals/prop_decoder_attention_decode_score_multivalue_gqa8_group_llama7b_v1"
+  },
+  "source_requirement": {
+    "repo": "",
+    "reason": "evaluator runtime must contain the queued job source commit",
+    "version": 1,
+    "required_ref": "origin/master",
+    "required_sha": "793c8f68e8b46d5bedbe391a887622f2fe371382",
+    "requires_daemon_restart": true
+  }
+}
