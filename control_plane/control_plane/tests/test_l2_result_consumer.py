@@ -261,6 +261,7 @@ def test_decoder_evidence_paths_recognizes_decode_score_multivalue_gqa_group_equ
 @pytest.mark.parametrize(
     "prefix",
     [
+        "decode_score_multivalue_gqa_folded_lane_equivalence",
         "decode_score_multivalue_gqa_array_equivalence",
         "decode_score_multivalue_gqa_group_activity_power",
         "decode_score_multivalue_gqa_group_frontier",
@@ -501,6 +502,35 @@ def test_decoder_evidence_summary_recognizes_direct_flat_gqa_group_equivalence()
         "flat_8_cluster_simulation_proof=True",
     ):
         assert field in summary
+
+
+def test_decoder_evidence_summary_recognizes_folded_gqa_lane_equivalence() -> None:
+    outcome, summary = _decoder_evidence_summary(
+        evidence_ref="runs/datasets/demo/decode_score_multivalue_gqa_folded_lane_equivalence.json",
+        evidence_payload={
+            "model": "llama7b_gqa8_folded_query_head_lane_direct_rtl_equivalence_v1",
+            "decision": "llama7b_gqa8_folded_lane_equivalence_pass",
+            "equivalence_pass": True,
+            "precision_contract": "exact_signed_int8_qkv_s32_score_lut_softmax_integer_output",
+            "query_heads_per_kv": 8,
+            "tested_parallel_query_head_lanes": [1, 2, 4, 8],
+            "shared_result_sha256": "sharedhash",
+            "all_lane_result_hashes_match": True,
+            "latency_best_parallel_query_head_lanes": 8,
+            "latency_best_completion_cycles": 58845,
+            "rows": [
+                {"parallel_query_head_lanes": 1, "completion_cycles": 66671},
+                {"parallel_query_head_lanes": 2, "completion_cycles": 62199},
+                {"parallel_query_head_lanes": 4, "completion_cycles": 59963},
+                {"parallel_query_head_lanes": 8, "completion_cycles": 58845},
+            ],
+        },
+    )
+
+    assert outcome == "llama7b_gqa8_folded_lane_equivalence_pass"
+    assert "all_lane_result_hashes_match=True" in summary
+    assert "lane_point_count=4" in summary
+    assert "lane_cycles=1:66671,2:62199,4:59963,8:58845" in summary
 
 
 @pytest.mark.parametrize(
