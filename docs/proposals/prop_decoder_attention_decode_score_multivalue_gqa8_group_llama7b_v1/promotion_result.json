@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_decoder_attention_decode_score_multivalue_gqa8_group_llama7b_v1",
   "decision": "iterate",
-  "pr_number": 1331,
-  "merge_commit": "55e4afbdaf8d0d00cca1ff03e70f49d6861b48f2",
-  "merged_utc": "2026-07-16T11:23:26.279255Z"
+  "pr_number": 1350,
+  "merge_commit": "385205f1f7dced3c2ee317a5e291c8f2e7a765fc",
+  "merged_utc": "2026-07-17T12:46:26.817572Z"
 }

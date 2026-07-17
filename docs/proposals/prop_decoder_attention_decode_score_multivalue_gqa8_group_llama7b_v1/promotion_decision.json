@@ -1,15 +1,15 @@
 {
   "proposal_id": "prop_decoder_attention_decode_score_multivalue_gqa8_group_llama7b_v1",
-  "candidate_id": "l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v1",
+  "candidate_id": "l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v2",
   "decision": "iterate",
-  "reason": "Llama7B GQA8 shared-K/V compositional arithmetic equivalence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_gqa_group_equivalence__l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v1.json: decision=llama7b_gqa8_shared_kv_equivalence_pass; equivalence_pass=True; arithmetic_equivalence_pass=True; shared_inputs_pass=True; query_heads_per_kv=8; head_dim=128; group_result_sha256=e2f07a3c580991601458466bfbaab4127cbcb654065b0241197f462ca4977069; semantic_profile=decode_m1x8_shared_score_16x8d_value_iterdiv_gqa8_group_v1; wrapper_protocol_sharing_and_order_pass=True; proof=compositional; compositional_proof_method=single_cluster_arithmetic_plus_wrapper_protocol; flat_8_cluster_rtl_simulation_run=False; flat_8_cluster_simulation_proof=False.",
+  "reason": "Llama7B GQA8 shared-K/V direct flat RTL equivalence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_gqa_group_equivalence__l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v2.json: decision=llama7b_gqa8_shared_kv_equivalence_pass; equivalence_pass=True; arithmetic_equivalence_pass=True; shared_inputs_pass=True; query_heads_per_kv=8; head_dim=128; group_result_sha256=e2f07a3c580991601458466bfbaab4127cbcb654065b0241197f462ca4977069; semantic_profile=decode_m1x8_shared_score_16x8d_value_iterdiv_gqa8_group_v1; wrapper_protocol_sharing_and_order_pass=True; proof=direct_flat_rtl; compositional_proof_method=flat_8_cluster_rtl_plus_per_head_reference_and_protocol; flat_8_cluster_rtl_simulation_run=True; flat_8_cluster_equivalence_pass=True; flat_8_cluster_simulation_proof=True.",
   "evidence_refs": [
-    "item:l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v1",
-    "run:l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v1_run_cbecefcd438238dd",
-    "artifact:control_plane/shadow_exports/l2_decisions/l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v1.json",
-    "pr:#1331",
-    "https://github.com/yhmtmt/RTLGen/pull/1331"
+    "item:l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v2",
+    "run:l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v2_run_9219c8503bd5ab67",
+    "artifact:control_plane/shadow_exports/l2_decisions/l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v2.json",
+    "pr:#1350",
+    "https://github.com/yhmtmt/RTLGen/pull/1350"
   ],
-  "next_action": "inspect follow-on work after l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v1",
+  "next_action": "inspect follow-on work after l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v2",
   "requires_human_approval": false
 }
