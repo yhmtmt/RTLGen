@@ -635,6 +635,10 @@ _DECODER_EVIDENCE_OUTPUT_KEYS: tuple[tuple[str, str], ...] = (
         "decode_score_multivalue_gqa_group_equivalence_report",
     ),
     (
+        "decode_score_multivalue_gqa_folded_lane_equivalence_out",
+        "decode_score_multivalue_gqa_folded_lane_equivalence_report",
+    ),
+    (
         "decode_score_multivalue_gqa_array_equivalence_out",
         "decode_score_multivalue_gqa_array_equivalence_report",
     ),
@@ -1728,6 +1732,35 @@ def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, 
         if direct_flat_rtl:
             parts.append(f"flat_8_cluster_equivalence_pass={flat_equivalence_pass}")
         parts.append(f"flat_8_cluster_simulation_proof={bool(flat_simulation_run and flat_equivalence_pass)}")
+        summary = "; ".join(parts)
+        return outcome, summary if summary.endswith(".") else summary + "."
+
+    if model == "llama7b_gqa8_folded_query_head_lane_direct_rtl_equivalence_v1":
+        outcome = str(evidence_payload.get("decision") or "llama7b_gqa8_folded_lane_equivalence_recorded")
+        rows = evidence_payload.get("rows")
+        row_list = [dict(row) for row in rows if isinstance(row, dict)] if isinstance(rows, list) else []
+        parts = [f"Llama7B GQA8 folded query-head lane direct RTL equivalence recorded from {evidence_ref}: decision={outcome}"]
+        for key in (
+            "equivalence_pass",
+            "precision_contract",
+            "query_heads_per_kv",
+            "tested_parallel_query_head_lanes",
+            "shared_result_sha256",
+            "all_lane_result_hashes_match",
+            "latency_best_parallel_query_head_lanes",
+            "latency_best_completion_cycles",
+        ):
+            if key in evidence_payload:
+                parts.append(f"{key}={evidence_payload.get(key)}")
+        if row_list:
+            parts.append(f"lane_point_count={len(row_list)}")
+            parts.append(
+                "lane_cycles="
+                + ",".join(
+                    f"{row.get('parallel_query_head_lanes')}:{row.get('completion_cycles')}"
+                    for row in row_list
+                )
+            )
         summary = "; ".join(parts)
         return outcome, summary if summary.endswith(".") else summary + "."
 
