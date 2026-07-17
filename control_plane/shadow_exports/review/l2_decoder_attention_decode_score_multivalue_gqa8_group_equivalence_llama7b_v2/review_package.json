@@ -1,0 +1,143 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-07-17T12:43:41.791251Z",
+  "control_plane_source_commit": "dfad904e398770035cf5bd449e3641879c53f03f",
+  "review_metadata_source_commit": "dfad904e398770035cf5bd449e3641879c53f03f",
+  "item_id": "l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v2",
+  "run_key": "l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v2_run_9219c8503bd5ab67",
+  "layer": "layer2",
+  "flow": "openroad",
+  "task_type": "l2_campaign",
+  "source_commit": "793c8f68e8b46d5bedbe391a887622f2fe371382",
+  "queue_snapshot": {
+    "path": "control_plane/shadow_exports/review/l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v2/evaluated.json",
+    "result": {
+      "branch": "eval/l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v2/s20260717t124340z",
+      "completed_utc": "2026-07-17T12:43:37.909076Z",
+      "evaluator_id": "control_plane",
+      "executor": "@control_plane",
+      "host": "b7c2d9c80c1c",
+      "identity_block": "[role:evaluator][account:control_plane][session:s20260717t124340z][host:b7c2d9c80c1c][item:l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v2]",
+      "metrics_rows": [],
+      "metrics_exempt_reason": "evidence_only_decoder_evidence",
+      "queue_item_id": "l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v2",
+      "session_id": "s20260717t124340z",
+      "status": "ok",
+      "summary": "2/2 commands succeeded"
+    }
+  },
+  "review_artifact": {
+    "kind": "decision_proposal",
+    "path": "control_plane/shadow_exports/l2_decisions/l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v2.json",
+    "storage_mode": "repo",
+    "sha256": "228c7746e4708d70d5df02b104c9023e97b32745fdb10f84170286030a02db6d",
+    "payload": {
+      "version": 0.1,
+      "generated_utc": "2026-07-17T12:43:39.049036Z",
+      "item_id": "l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v2",
+      "run_key": "l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v2_run_9219c8503bd5ab67",
+      "layer": "layer2",
+      "flow": "openroad",
+      "platform": "nangate45",
+      "task_type": "l2_campaign",
+      "source_commit": "793c8f68e8b46d5bedbe391a887622f2fe371382",
+      "review_metadata_source_commit": "dfad904e398770035cf5bd449e3641879c53f03f",
+      "objective": "Record direct flat eight-cluster GQA8 RTL/perf equivalence with intermediate score hashes, shared value requests, ordered outputs, and completion cycles.",
+      "input_manifest": {
+        "decoder_contract": {
+          "decode_score_multivalue_gqa_group_equivalence_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_gqa_group_equivalence__l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v2.json",
+          "decode_score_multivalue_gqa_group_equivalence_scope": "Directly simulate the generated flat eight-cluster Llama7B GQA8 RTL for eight distinct 128-element query heads over identical key/value tensors. Compare every intermediate score write/read and all 128 ordered result beats against the perf/reference model, and retain the separate wrapper sharing/order protocol test as a backpressure cross-check.",
+          "decode_score_multivalue_gqa_group_equivalence_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_gqa_group_equivalence__l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v2.md"
+        }
+      },
+      "recommendation": {
+        "source": "decoder_evidence",
+        "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_gqa_group_equivalence__l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v2.json",
+        "arch_id": "decoder_attention_decode_score_multivalue_gqa_group_equivalence",
+        "macro_mode": "evidence_only",
+        "outcome": "llama7b_gqa8_shared_kv_equivalence_pass"
+      },
+      "objective_profiles": [],
+      "evaluation_record": {
+        "proposal_id": "prop_decoder_attention_decode_score_multivalue_gqa8_group_llama7b_v1",
+        "title": "GQA8 shared-K/V multivalue decode group for the Llama7B frontier",
+        "primary_question": "How do area, timing, and KV service demand change when one complete Llama7B GQA8 group is embodied instead of pricing eight query heads as independent value consumers?",
+        "evaluation_mode": "equivalence_gate",
+        "comparison_role": "gqa8_direct_flat_rtl_semantic_gate",
+        "abstraction_layer": "decoder_attention_decode_score_multivalue_gqa_group_equivalence",
+        "expected_direction": "prove_gqa8_shared_kv_direct_flat_rtl_equivalence",
+        "expected_reason": "Integrated eight-cluster score tensors, shared value requests, and ordered result beats must match the perf/reference model.",
+        "summary": "Llama7B GQA8 shared-K/V direct flat RTL equivalence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_gqa_group_equivalence__l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v2.json: decision=llama7b_gqa8_shared_kv_equivalence_pass; equivalence_pass=True; arithmetic_equivalence_pass=True; shared_inputs_pass=True; query_heads_per_kv=8; head_dim=128; group_result_sha256=e2f07a3c580991601458466bfbaab4127cbcb654065b0241197f462ca4977069; semantic_profile=decode_m1x8_shared_score_16x8d_value_iterdiv_gqa8_group_v1; wrapper_protocol_sharing_and_order_pass=True; proof=direct_flat_rtl; compositional_proof_method=flat_8_cluster_rtl_plus_per_head_reference_and_protocol; flat_8_cluster_rtl_simulation_run=True; flat_8_cluster_equivalence_pass=True; flat_8_cluster_simulation_proof=True.",
+        "outcome": "llama7b_gqa8_shared_kv_equivalence_pass",
+        "expectation_status": "unspecified"
+      },
+      "proposal_assessment": {
+        "proposal_id": "prop_decoder_attention_decode_score_multivalue_gqa8_group_llama7b_v1",
+        "title": "GQA8 shared-K/V multivalue decode group for the Llama7B frontier",
+        "kind": "architecture",
+        "primary_question": "How do area, timing, and KV service demand change when one complete Llama7B GQA8 group is embodied instead of pricing eight query heads as independent value consumers?",
+        "evaluation_mode": "equivalence_gate",
+        "comparison_role": "gqa8_direct_flat_rtl_semantic_gate",
+        "outcome": "llama7b_gqa8_shared_kv_equivalence_pass",
+        "summary": "Llama7B GQA8 shared-K/V direct flat RTL equivalence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_gqa_group_equivalence__l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v2.json: decision=llama7b_gqa8_shared_kv_equivalence_pass; equivalence_pass=True; arithmetic_equivalence_pass=True; shared_inputs_pass=True; query_heads_per_kv=8; head_dim=128; group_result_sha256=e2f07a3c580991601458466bfbaab4127cbcb654065b0241197f462ca4977069; semantic_profile=decode_m1x8_shared_score_16x8d_value_iterdiv_gqa8_group_v1; wrapper_protocol_sharing_and_order_pass=True; proof=direct_flat_rtl; compositional_proof_method=flat_8_cluster_rtl_plus_per_head_reference_and_protocol; flat_8_cluster_rtl_simulation_run=True; flat_8_cluster_equivalence_pass=True; flat_8_cluster_simulation_proof=True.",
+        "baseline_ref": null,
+        "baseline_item_id": null,
+        "matched_row_count": 0,
+        "matched_rows": [],
+        "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_gqa_group_equivalence__l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v2.json",
+        "decoder_quality": {
+          "diagnosis": {}
+        }
+      },
+      "source_refs": {
+        "decoder_evidence_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_gqa_group_equivalence__l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v2.json",
+        "decoder_decode_score_multivalue_gqa_group_equivalence_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_gqa_group_equivalence__l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v2.json",
+        "decoder_decode_score_multivalue_gqa_group_equivalence_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_gqa_group_equivalence__l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v2.md"
+      },
+      "decoder_quality": {
+        "diagnosis": {}
+      }
+    }
+  },
+  "developer_loop": {
+    "comparison": {
+      "role": "gqa8_direct_flat_rtl_semantic_gate",
+      "paired_baseline_item_id": "l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v1"
+    },
+    "evaluation": {
+      "mode": "equivalence_gate",
+      "expected_reason": "Integrated eight-cluster score tensors, shared value requests, and ordered result beats must match the perf/reference model.",
+      "expected_direction": "prove_gqa8_shared_kv_direct_flat_rtl_equivalence"
+    },
+    "abstraction": {
+      "layer": "decoder_attention_decode_score_multivalue_gqa_group_equivalence"
+    },
+    "proposal_id": "prop_decoder_attention_decode_score_multivalue_gqa8_group_llama7b_v1",
+    "dependencies": {
+      "item_ids": [
+        "l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    },
+    "proposal_path": "docs/proposals/prop_decoder_attention_decode_score_multivalue_gqa8_group_llama7b_v1"
+  },
+  "submission_history": null,
+  "pr_payload": {
+    "branch": "eval/l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v2/s20260717t124340z",
+    "title": "eval: run prove direct flat gqa8 group rtl equivalence",
+    "body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260717t124340z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v2"
+    },
+    "body_md": "## Summary\n- item_id: `l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v2`\n- run_key: `l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v2_run_9219c8503bd5ab67`\n- layer: `layer2`\n- task_type: `l2_campaign`\n- status: `ok`\n- summary: `2/2 commands succeeded`\n- queue_snapshot: `control_plane/shadow_exports/review/l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v2/evaluated.json`\n- metrics_rows_count: `0`\n- review_artifact: `decision_proposal` at `control_plane/shadow_exports/l2_decisions/l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v2.json`\n\n## Developer Context\n- proposal_id: `prop_decoder_attention_decode_score_multivalue_gqa8_group_llama7b_v1`\n- proposal_path: `docs/proposals/prop_decoder_attention_decode_score_multivalue_gqa8_group_llama7b_v1`\n- reviewer_first_read: `docs/proposals/prop_decoder_attention_decode_score_multivalue_gqa8_group_llama7b_v1` plus `docs/developer_agent_review.md`\n- execution_source_commit: `793c8f68e8b46d5bedbe391a887622f2fe371382`\n- review_metadata_source_commit: `dfad904e398770035cf5bd449e3641879c53f03f`\n\n## Evaluation Mode\n- evaluation_mode: `equivalence_gate`\n- abstraction_layer: `decoder_attention_decode_score_multivalue_gqa_group_equivalence`\n- comparison_role: `gqa8_direct_flat_rtl_semantic_gate`\n- expected_direction: `prove_gqa8_shared_kv_direct_flat_rtl_equivalence`\n- expected_reason: `Integrated eight-cluster score tensors, shared value requests, and ordered result beats must match the perf/reference model.`\n- expectation_status: `unspecified`\n- evaluation_summary: `Llama7B GQA8 shared-K/V direct flat RTL equivalence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_gqa_group_equivalence__l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v2.json: decision=llama7b_gqa8_shared_kv_equivalence_pass; equivalence_pass=True; arithmetic_equivalence_pass=True; shared_inputs_pass=True; query_heads_per_kv=8; head_dim=128; group_result_sha256=e2f07a3c580991601458466bfbaab4127cbcb654065b0241197f462ca4977069; semantic_profile=decode_m1x8_shared_score_16x8d_value_iterdiv_gqa8_group_v1; wrapper_protocol_sharing_and_order_pass=True; proof=direct_flat_rtl; compositional_proof_method=flat_8_cluster_rtl_plus_per_head_reference_and_protocol; flat_8_cluster_rtl_simulation_run=True; flat_8_cluster_equivalence_pass=True; flat_8_cluster_simulation_proof=True.`\n\n## Focused Comparison\n- primary_question: `How do area, timing, and KV service demand change when one complete Llama7B GQA8 group is embodied instead of pricing eight query heads as independent value consumers?`\n- comparison_role: `gqa8_direct_flat_rtl_semantic_gate`\n- proposal_outcome: `llama7b_gqa8_shared_kv_equivalence_pass`\n- comparison_summary: `Llama7B GQA8 shared-K/V direct flat RTL equivalence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_gqa_group_equivalence__l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v2.json: decision=llama7b_gqa8_shared_kv_equivalence_pass; equivalence_pass=True; arithmetic_equivalence_pass=True; shared_inputs_pass=True; query_heads_per_kv=8; head_dim=128; group_result_sha256=e2f07a3c580991601458466bfbaab4127cbcb654065b0241197f462ca4977069; semantic_profile=decode_m1x8_shared_score_16x8d_value_iterdiv_gqa8_group_v1; wrapper_protocol_sharing_and_order_pass=True; proof=direct_flat_rtl; compositional_proof_method=flat_8_cluster_rtl_plus_per_head_reference_and_protocol; flat_8_cluster_rtl_simulation_run=True; flat_8_cluster_equivalence_pass=True; flat_8_cluster_simulation_proof=True.`\n- baseline_ref: `None`\n- baseline_item_id: `None`\n\n## Checklist\n- [ ] Commit lightweight campaign artifacts only\n- [ ] Include metrics row references in result.metrics_rows\n- [ ] Keep committed result_path fields repo-portable\n- [ ] Run python3 scripts/validate_runs.py --skip_eval_queue before pushing\n",
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Include metrics row references in result.metrics_rows",
+      "Keep committed result_path fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ]
+  }
+}
