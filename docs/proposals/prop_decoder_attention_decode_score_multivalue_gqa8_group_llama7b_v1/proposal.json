@@ -98,7 +98,7 @@
     {
       "item_id": "l1_decoder_attention_decode_score_multivalue_gqa8_folded_lanes1_pnr_v1",
       "task_type": "l1_sweep",
-      "objective": "Measure the one-lane folded group at matched macro density.",
+      "objective": "Measure the one-lane folded group at matched macro density and retain failed rows as explicit boundary evidence.",
       "evaluation_mode": "frontier_followup",
       "abstraction_layer": "decoder_attention_decode_score_multivalue_gqa_folded_lane",
       "comparison_role": "gqa8_folded_lanes1_matched_density_pnr",
@@ -121,7 +121,7 @@
     {
       "item_id": "l1_decoder_attention_decode_score_multivalue_gqa8_folded_lanes2_pnr_v1",
       "task_type": "l1_sweep",
-      "objective": "Measure the two-lane folded group at matched macro density.",
+      "objective": "Measure the two-lane folded group at matched macro density and retain failed rows as explicit boundary evidence.",
       "evaluation_mode": "frontier_followup",
       "abstraction_layer": "decoder_attention_decode_score_multivalue_gqa_folded_lane",
       "comparison_role": "gqa8_folded_lanes2_matched_density_pnr",
@@ -144,7 +144,7 @@
     {
       "item_id": "l1_decoder_attention_decode_score_multivalue_gqa8_folded_lanes4_pnr_v1",
       "task_type": "l1_sweep",
-      "objective": "Measure the four-lane folded group at matched macro density.",
+      "objective": "Measure the four-lane folded group at matched macro density and retain failed rows as explicit boundary evidence.",
       "evaluation_mode": "frontier_followup",
       "abstraction_layer": "decoder_attention_decode_score_multivalue_gqa_folded_lane",
       "comparison_role": "gqa8_folded_lanes4_matched_density_pnr",
@@ -167,7 +167,7 @@
     {
       "item_id": "l1_decoder_attention_decode_score_multivalue_gqa8_group_pnr_v1",
       "task_type": "l1_sweep",
-      "objective": "Measure the complete eight-head GQA group over the macro-derived physical envelope.",
+      "objective": "Measure the complete eight-head GQA group over the macro-derived physical envelope and retain failed rows as explicit boundary evidence.",
       "evaluation_mode": "frontier_followup",
       "abstraction_layer": "decoder_attention_decode_score_multivalue_gqa_group",
       "comparison_role": "gqa8_shared_kv_group_pnr",
@@ -302,7 +302,7 @@
     {
       "item_id": "l1_decoder_attention_decode_score_multivalue_gqa8_array_g1_pnr_v1",
       "task_type": "l1_sweep",
-      "objective": "Measure the direct one-group array wrapper at the equal-density physical point.",
+      "objective": "Measure the direct one-group array wrapper at the equal-density physical point and retain failed rows as explicit boundary evidence.",
       "evaluation_mode": "frontier_followup",
       "abstraction_layer": "decoder_attention_decode_score_multivalue_gqa_array",
       "comparison_role": "gqa8_array_g1_pnr",
@@ -325,7 +325,7 @@
     {
       "item_id": "l1_decoder_attention_decode_score_multivalue_gqa8_array_g2_pnr_v1",
       "task_type": "l1_sweep",
-      "objective": "Measure the direct two-group array at equal macro density.",
+      "objective": "Measure the direct two-group array at equal macro density and retain failed rows as explicit boundary evidence.",
       "evaluation_mode": "frontier_followup",
       "abstraction_layer": "decoder_attention_decode_score_multivalue_gqa_array",
       "comparison_role": "gqa8_array_g2_pnr",
@@ -348,7 +348,7 @@
     {
       "item_id": "l1_decoder_attention_decode_score_multivalue_gqa8_array_g4_pnr_v1",
       "task_type": "l1_sweep",
-      "objective": "Measure the complete four-group Llama7B GQA array at equal macro density.",
+      "objective": "Measure the complete four-group Llama7B GQA array at equal macro density and retain failed rows as explicit boundary evidence.",
       "evaluation_mode": "frontier_followup",
       "abstraction_layer": "decoder_attention_decode_score_multivalue_gqa_array",
       "comparison_role": "gqa8_array_g4_pnr",
