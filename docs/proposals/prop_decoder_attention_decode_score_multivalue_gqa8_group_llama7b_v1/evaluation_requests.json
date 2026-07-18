@@ -64,7 +64,11 @@
         "direction": "prove_exact_gqa8_folded_lane_equivalence_and_replay_cost",
         "reason": "Folded PPA is ineligible until all lane counts preserve intermediate scores and ordered outputs while charging explicit Q/K and value replay."
       },
-      "status": "pending_implementation_merge"
+      "status": "merged",
+      "merged_pr_number": 1352,
+      "merge_commit": "9dbe351dfca39ed967de9b4a2524ae51f64c9e3c",
+      "merged_utc": "2026-07-18T13:28:37.014823Z",
+      "notes": "Merged via PR #1352 and merge 9dbe351dfca39ed967de9b4a2524ae51f64c9e3c at 2026-07-18T13:28:37.014823Z."
     },
     {
       "item_id": "l1_decoder_attention_decode_score_multivalue_gqa8_folded_lanes1_pnr_v1",
@@ -363,5 +367,5 @@
       "status": "pending_implementation_merge"
     }
   ],
-  "source_commit": "793c8f68e8b46d5bedbe391a887622f2fe371382"
+  "source_commit": "8e12a8102aadb2ee332422e172d7805528b31374"
 }
