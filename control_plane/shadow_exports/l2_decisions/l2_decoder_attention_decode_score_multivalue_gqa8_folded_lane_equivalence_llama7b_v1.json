@@ -1,0 +1,73 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-07-18T11:10:05.807183Z",
+  "item_id": "l2_decoder_attention_decode_score_multivalue_gqa8_folded_lane_equivalence_llama7b_v1",
+  "run_key": "l2_decoder_attention_decode_score_multivalue_gqa8_folded_lane_equivalence_llama7b_v1_run_3b78069569b1754a",
+  "layer": "layer2",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l2_campaign",
+  "source_commit": "8e12a8102aadb2ee332422e172d7805528b31374",
+  "review_metadata_source_commit": "f63fd55c1360dcc9b072e672c8ccc0ff2234ac6b",
+  "objective": "Prove direct RTL equivalence for 1/2/4/8 query-head lanes and record explicit replay and cycle costs.",
+  "input_manifest": {
+    "decoder_contract": {
+      "decode_score_multivalue_gqa_folded_lane_configs": [
+        "runs/designs/npu_blocks/attention_decode_score_multivalue_gqa_group_lanes1_int8_m1x8_iterdiv/config.json",
+        "runs/designs/npu_blocks/attention_decode_score_multivalue_gqa_group_lanes2_int8_m1x8_iterdiv/config.json",
+        "runs/designs/npu_blocks/attention_decode_score_multivalue_gqa_group_lanes4_int8_m1x8_iterdiv/config.json",
+        "runs/designs/npu_blocks/attention_decode_score_multivalue_gqa_group_int8_m1x8_iterdiv/config.json"
+      ],
+      "decode_score_multivalue_gqa_folded_lane_equivalence_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_gqa_folded_lane_equivalence__l2_decoder_attention_decode_score_multivalue_gqa8_folded_lane_equivalence_llama7b_v1.json",
+      "decode_score_multivalue_gqa_folded_lane_equivalence_scope": "Directly simulate 1/2/4/8 physical query-head lanes, checking intermediate score writes and reads plus all 128 ordered outputs. Charge one complete packed Q/K replay and one shared value pass per wave; do not assume hidden query or key buffering.",
+      "decode_score_multivalue_gqa_folded_lane_equivalence_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_gqa_folded_lane_equivalence__l2_decoder_attention_decode_score_multivalue_gqa8_folded_lane_equivalence_llama7b_v1.md"
+    }
+  },
+  "recommendation": {
+    "source": "decoder_evidence",
+    "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_gqa_folded_lane_equivalence__l2_decoder_attention_decode_score_multivalue_gqa8_folded_lane_equivalence_llama7b_v1.json",
+    "arch_id": "decoder_attention_decode_score_multivalue_gqa_folded_lane_equivalence",
+    "macro_mode": "evidence_only",
+    "outcome": "llama7b_gqa8_folded_lane_equivalence_pass"
+  },
+  "objective_profiles": [],
+  "evaluation_record": {
+    "proposal_id": "prop_decoder_attention_decode_score_multivalue_gqa8_group_llama7b_v1",
+    "title": "GQA8 shared-K/V multivalue decode group for the Llama7B frontier",
+    "primary_question": "How do area, timing, and KV service demand change when one complete Llama7B GQA8 group is embodied instead of pricing eight query heads as independent value consumers?",
+    "evaluation_mode": "equivalence_gate",
+    "comparison_role": "gqa8_folded_lane_direct_rtl_semantic_gate",
+    "abstraction_layer": "decoder_attention_decode_score_multivalue_gqa_folded_lane_equivalence",
+    "expected_direction": "prove_exact_gqa8_folded_lane_equivalence_and_replay_cost",
+    "expected_reason": "Folded PPA requires direct score/output equivalence with explicit Q/K and value replay.",
+    "summary": "Llama7B GQA8 folded query-head lane direct RTL equivalence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_gqa_folded_lane_equivalence__l2_decoder_attention_decode_score_multivalue_gqa8_folded_lane_equivalence_llama7b_v1.json: decision=llama7b_gqa8_folded_lane_equivalence_pass; equivalence_pass=True; precision_contract=exact_signed_int8_qkv_s32_score_lut_softmax_integer_output; query_heads_per_kv=8; tested_parallel_query_head_lanes=[1, 2, 4, 8]; shared_result_sha256=e2f07a3c580991601458466bfbaab4127cbcb654065b0241197f462ca4977069; all_lane_result_hashes_match=True; latency_best_parallel_query_head_lanes=8; latency_best_completion_cycles=58845; lane_point_count=4; lane_cycles=1:66671,2:62199,4:59963,8:58845.",
+    "outcome": "llama7b_gqa8_folded_lane_equivalence_pass",
+    "expectation_status": "unspecified"
+  },
+  "proposal_assessment": {
+    "proposal_id": "prop_decoder_attention_decode_score_multivalue_gqa8_group_llama7b_v1",
+    "title": "GQA8 shared-K/V multivalue decode group for the Llama7B frontier",
+    "kind": "architecture",
+    "primary_question": "How do area, timing, and KV service demand change when one complete Llama7B GQA8 group is embodied instead of pricing eight query heads as independent value consumers?",
+    "evaluation_mode": "equivalence_gate",
+    "comparison_role": "gqa8_folded_lane_direct_rtl_semantic_gate",
+    "outcome": "llama7b_gqa8_folded_lane_equivalence_pass",
+    "summary": "Llama7B GQA8 folded query-head lane direct RTL equivalence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_gqa_folded_lane_equivalence__l2_decoder_attention_decode_score_multivalue_gqa8_folded_lane_equivalence_llama7b_v1.json: decision=llama7b_gqa8_folded_lane_equivalence_pass; equivalence_pass=True; precision_contract=exact_signed_int8_qkv_s32_score_lut_softmax_integer_output; query_heads_per_kv=8; tested_parallel_query_head_lanes=[1, 2, 4, 8]; shared_result_sha256=e2f07a3c580991601458466bfbaab4127cbcb654065b0241197f462ca4977069; all_lane_result_hashes_match=True; latency_best_parallel_query_head_lanes=8; latency_best_completion_cycles=58845; lane_point_count=4; lane_cycles=1:66671,2:62199,4:59963,8:58845.",
+    "baseline_ref": null,
+    "baseline_item_id": null,
+    "matched_row_count": 0,
+    "matched_rows": [],
+    "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_gqa_folded_lane_equivalence__l2_decoder_attention_decode_score_multivalue_gqa8_folded_lane_equivalence_llama7b_v1.json",
+    "decoder_quality": {
+      "diagnosis": {}
+    }
+  },
+  "source_refs": {
+    "decoder_evidence_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_gqa_folded_lane_equivalence__l2_decoder_attention_decode_score_multivalue_gqa8_folded_lane_equivalence_llama7b_v1.json",
+    "decoder_decode_score_multivalue_gqa_folded_lane_equivalence_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_gqa_folded_lane_equivalence__l2_decoder_attention_decode_score_multivalue_gqa8_folded_lane_equivalence_llama7b_v1.json",
+    "decoder_decode_score_multivalue_gqa_folded_lane_equivalence_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_gqa_folded_lane_equivalence__l2_decoder_attention_decode_score_multivalue_gqa8_folded_lane_equivalence_llama7b_v1.md"
+  },
+  "decoder_quality": {
+    "diagnosis": {}
+  }
+}
