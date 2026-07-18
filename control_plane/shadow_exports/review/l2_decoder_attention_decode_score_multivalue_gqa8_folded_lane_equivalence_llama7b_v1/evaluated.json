@@ -1,0 +1,110 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "decoder_contract": {
+        "decode_score_multivalue_gqa_folded_lane_configs": [
+          "runs/designs/npu_blocks/attention_decode_score_multivalue_gqa_group_lanes1_int8_m1x8_iterdiv/config.json",
+          "runs/designs/npu_blocks/attention_decode_score_multivalue_gqa_group_lanes2_int8_m1x8_iterdiv/config.json",
+          "runs/designs/npu_blocks/attention_decode_score_multivalue_gqa_group_lanes4_int8_m1x8_iterdiv/config.json",
+          "runs/designs/npu_blocks/attention_decode_score_multivalue_gqa_group_int8_m1x8_iterdiv/config.json"
+        ],
+        "decode_score_multivalue_gqa_folded_lane_equivalence_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_gqa_folded_lane_equivalence__l2_decoder_attention_decode_score_multivalue_gqa8_folded_lane_equivalence_llama7b_v1.json",
+        "decode_score_multivalue_gqa_folded_lane_equivalence_scope": "Directly simulate 1/2/4/8 physical query-head lanes, checking intermediate score writes and reads plus all 128 ordered outputs. Charge one complete packed Q/K replay and one shared value pass per wave; do not assume hidden query or key buffering.",
+        "decode_score_multivalue_gqa_folded_lane_equivalence_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_gqa_folded_lane_equivalence__l2_decoder_attention_decode_score_multivalue_gqa8_folded_lane_equivalence_llama7b_v1.md"
+      }
+    },
+    "commands": [
+      {
+        "run": "python3 -m npu.eval.audit_attention_decode_score_multivalue_gqa_folded_lane_equivalence --config runs/designs/npu_blocks/attention_decode_score_multivalue_gqa_group_lanes1_int8_m1x8_iterdiv/config.json --config runs/designs/npu_blocks/attention_decode_score_multivalue_gqa_group_lanes2_int8_m1x8_iterdiv/config.json --config runs/designs/npu_blocks/attention_decode_score_multivalue_gqa_group_lanes4_int8_m1x8_iterdiv/config.json --config runs/designs/npu_blocks/attention_decode_score_multivalue_gqa_group_int8_m1x8_iterdiv/config.json --out runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_gqa_folded_lane_equivalence__l2_decoder_attention_decode_score_multivalue_gqa8_folded_lane_equivalence_llama7b_v1.json --out-md runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_gqa_folded_lane_equivalence__l2_decoder_attention_decode_score_multivalue_gqa8_folded_lane_equivalence_llama7b_v1.md",
+        "name": "audit_decode_score_multivalue_gqa_folded_lane_equivalence"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate_runs"
+      }
+    ],
+    "objective": "Prove direct RTL equivalence for 1/2/4/8 query-head lanes and record explicit replay and cycle costs.",
+    "acceptance": [
+      "Write all declared decoder evidence artifacts",
+      "Keep evidence artifact paths repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "source_mode": "src_verilog",
+    "expected_outputs": [
+      "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_gqa_folded_lane_equivalence__l2_decoder_attention_decode_score_multivalue_gqa8_folded_lane_equivalence_llama7b_v1.json",
+      "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_gqa_folded_lane_equivalence__l2_decoder_attention_decode_score_multivalue_gqa8_folded_lane_equivalence_llama7b_v1.md"
+    ]
+  },
+  "layer": "layer2",
+  "state": "evaluated",
+  "title": "Prove folded GQA8 lane RTL equivalence",
+  "result": {
+    "branch": "eval/l2_decoder_attention_decode_score_multivalue_gqa8_folded_lane_equivalence_llama7b_v1/s20260718t111006z",
+    "completed_utc": "2026-07-17T12:47:15.098205Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "b7c2d9c80c1c",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260718t111006z][host:b7c2d9c80c1c][item:l2_decoder_attention_decode_score_multivalue_gqa8_folded_lane_equivalence_llama7b_v1]",
+    "metrics_rows": [],
+    "metrics_exempt_reason": "evidence_only_decoder_evidence",
+    "queue_item_id": "l2_decoder_attention_decode_score_multivalue_gqa8_folded_lane_equivalence_llama7b_v1",
+    "session_id": "s20260718t111006z",
+    "status": "ok",
+    "summary": "2/2 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l2_decoder_attention_decode_score_multivalue_gqa8_folded_lane_equivalence_llama7b_v1/s20260718t111006z",
+    "pr_title": "eval: run prove folded gqa8 lane rtl equivalence",
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Include metrics row references in result.metrics_rows",
+      "Keep committed result_path fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260718t111006z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l2_decoder_attention_decode_score_multivalue_gqa8_folded_lane_equivalence_llama7b_v1"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l2_decoder_attention_decode_score_multivalue_gqa8_folded_lane_equivalence_llama7b_v1",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 84,
+  "created_utc": "2026-07-16T13:40:26.953283Z",
+  "requested_by": "developer_agent",
+  "developer_loop": {
+    "comparison": {
+      "role": "gqa8_folded_lane_direct_rtl_semantic_gate",
+      "paired_baseline_item_id": "l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v2"
+    },
+    "evaluation": {
+      "mode": "equivalence_gate",
+      "expected_reason": "Folded PPA requires direct score/output equivalence with explicit Q/K and value replay.",
+      "expected_direction": "prove_exact_gqa8_folded_lane_equivalence_and_replay_cost"
+    },
+    "abstraction": {
+      "layer": "decoder_attention_decode_score_multivalue_gqa_folded_lane_equivalence"
+    },
+    "proposal_id": "prop_decoder_attention_decode_score_multivalue_gqa8_group_llama7b_v1",
+    "dependencies": {
+      "item_ids": [
+        "l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v2"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    },
+    "proposal_path": "docs/proposals/prop_decoder_attention_decode_score_multivalue_gqa8_group_llama7b_v1"
+  },
+  "source_requirement": {
+    "repo": "",
+    "reason": "evaluator runtime must contain the queued job source commit",
+    "version": 1,
+    "required_ref": "origin/master",
+    "required_sha": "8e12a8102aadb2ee332422e172d7805528b31374",
+    "requires_daemon_restart": true
+  }
+}
