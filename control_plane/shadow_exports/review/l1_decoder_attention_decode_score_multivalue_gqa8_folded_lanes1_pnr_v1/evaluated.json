@@ -1,0 +1,146 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "sweeps": [
+        "runs/campaigns/npu/decode_score_multivalue_gqa_folded_lanes_v1/sweeps/nangate45_decode_score_multivalue_gqa_lanes1.json"
+      ],
+      "configs": [
+        "runs/designs/npu_blocks/attention_decode_score_multivalue_gqa_group_lanes1_int8_m1x8_iterdiv/config.json"
+      ],
+      "out_root": "runs/designs/npu_blocks",
+      "design_dirs": [],
+      "macro_manifests": [],
+      "candidate_manifests": [],
+      "required_submodules": []
+    },
+    "commands": [
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/rtlgen/gen_attention_decode_score_multivalue_gqa_group.py --config runs/designs/npu_blocks/attention_decode_score_multivalue_gqa_group_lanes1_int8_m1x8_iterdiv/config.json --out runs/designs/npu_blocks/attention_decode_score_multivalue_gqa_group_lanes1_int8_m1x8_iterdiv/verilog",
+        "name": "generate_attention_decode_score_multivalue_gqa_group_rtl"
+      },
+      {
+        "run": "python3 npu/eval/check_attention_decode_score_multivalue_gqa_group_guard.py --design-dir runs/designs/npu_blocks/attention_decode_score_multivalue_gqa_group_lanes1_int8_m1x8_iterdiv",
+        "name": "check_attention_decode_score_multivalue_gqa_group_guard"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/synth/run_block_sweep.py --design_dir runs/designs/npu_blocks/attention_decode_score_multivalue_gqa_group_lanes1_int8_m1x8_iterdiv --platform nangate45 --top attention_decode_score_multivalue_gqa_group_lanes1_int8_m1x8_iterdiv --sweep runs/campaigns/npu/decode_score_multivalue_gqa_folded_lanes_v1/sweeps/nangate45_decode_score_multivalue_gqa_lanes1.json --out_root runs/designs/npu_blocks --macro_manifest runs/designs/npu_blocks/attention_decode_score_multivalue_gqa_group_lanes1_int8_m1x8_iterdiv/macro_manifest.json --skip_existing",
+        "name": "run_block_sweep"
+      },
+      {
+        "run": "python3 npu/eval/extract_openroad_timing_summary.py --design-dir runs/designs/npu_blocks/attention_decode_score_multivalue_gqa_group_lanes1_int8_m1x8_iterdiv --out runs/designs/npu_blocks/attention_decode_score_multivalue_gqa_group_lanes1_int8_m1x8_iterdiv/timing_debug_report.md --max-paths 8",
+        "name": "extract_attention_decode_score_multivalue_gqa_group_timing_paths"
+      },
+      {
+        "run": "python3 scripts/build_runs_index.py",
+        "name": "build_runs_index"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate"
+      }
+    ],
+    "objective": "Measure the 1-lane folded GQA8 group at the matched-density 2.50 mm die and 8/10 ns targets, retaining failed rows as explicit boundary evidence.",
+    "acceptance": [
+      "Each generated wrapper metrics.csv contains recorded rows with a status column; allow non-ok metrics such as flow_failed when the row is boundary evidence",
+      "Committed outputs stay lightweight (metrics.csv only; runs/index.csv is exported centrally after merge)",
+      "python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue pass"
+    ],
+    "source_mode": "config",
+    "expected_outputs": [
+      "runs/designs/npu_blocks/attention_decode_score_multivalue_gqa_group_lanes1_int8_m1x8_iterdiv/metrics.csv",
+      "runs/designs/npu_blocks/attention_decode_score_multivalue_gqa_group_lanes1_int8_m1x8_iterdiv/timing_debug_report.md"
+    ]
+  },
+  "layer": "layer1",
+  "state": "evaluated",
+  "title": "Measure folded GQA8 1-lane PPA",
+  "result": {
+    "branch": "eval/l1_decoder_attention_decode_score_multivalue_gqa8_folded_lanes1_pnr_v1/s20260718t143912z",
+    "completed_utc": "2026-07-18T14:39:09.636878Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "b7c2d9c80c1c",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260718t143912z][host:b7c2d9c80c1c][item:l1_decoder_attention_decode_score_multivalue_gqa8_folded_lanes1_pnr_v1]",
+    "metrics_rows": [
+      {
+        "tag": "decode_score_multivalue_gqa_lanes1_v1_matched_density_die_2500",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "9bd9ae39",
+        "metrics_csv": "runs/designs/npu_blocks/attention_decode_score_multivalue_gqa_group_lanes1_int8_m1x8_iterdiv/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_decode_score_multivalue_gqa_group_lanes1_int8_m1x8_iterdiv/work/9bd9ae39/result.json"
+      },
+      {
+        "tag": "decode_score_multivalue_gqa_lanes1_v1_matched_density_die_2500",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "9210cadf",
+        "metrics_csv": "runs/designs/npu_blocks/attention_decode_score_multivalue_gqa_group_lanes1_int8_m1x8_iterdiv/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_decode_score_multivalue_gqa_group_lanes1_int8_m1x8_iterdiv/work/9210cadf/result.json"
+      }
+    ],
+    "queue_item_id": "l1_decoder_attention_decode_score_multivalue_gqa8_folded_lanes1_pnr_v1",
+    "session_id": "s20260718t143912z",
+    "status": "ok",
+    "summary": "6/6 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l1_decoder_attention_decode_score_multivalue_gqa8_folded_lanes1_pnr_v1/s20260718t143912z",
+    "pr_title": "eval: run measure folded gqa8 1-lane ppa",
+    "checklist": [
+      "Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge",
+      "Include metrics row references for each completed design",
+      "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260718t143912z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l1_decoder_attention_decode_score_multivalue_gqa8_folded_lanes1_pnr_v1"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l1_decoder_attention_decode_score_multivalue_gqa8_folded_lanes1_pnr_v1",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 79,
+  "created_utc": "2026-07-17T12:19:02.251278Z",
+  "requested_by": "developer-agent",
+  "developer_loop": {
+    "comparison": {
+      "role": "gqa8_folded_lanes1_matched_density_pnr",
+      "paired_baseline_item_id": "l1_decoder_attention_decode_score_multivalue_gqa8_group_pnr_v1"
+    },
+    "evaluation": {
+      "mode": "frontier_followup",
+      "trial_policy": {
+        "seed_start": 0,
+        "trial_count": 1,
+        "stop_after_failures": 1
+      },
+      "expected_reason": "Establish the minimum-area full-GQA8 point while preserving explicit eight-wave replay costs.",
+      "expected_direction": "measure_gqa8_folded_lanes1_matched_density_ppa"
+    },
+    "abstraction": {
+      "layer": "decoder_attention_decode_score_multivalue_gqa_folded_lane"
+    },
+    "proposal_id": "prop_decoder_attention_decode_score_multivalue_gqa8_group_llama7b_v1",
+    "dependencies": {
+      "item_ids": [
+        "l2_decoder_attention_decode_score_multivalue_gqa8_folded_lane_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    },
+    "proposal_path": "docs/proposals/prop_decoder_attention_decode_score_multivalue_gqa8_group_llama7b_v1/proposal.json"
+  },
+  "source_requirement": {
+    "repo": "",
+    "reason": "evaluator runtime must contain the queued job source commit",
+    "version": 1,
+    "required_ref": "origin/master",
+    "required_sha": "f63fd55c1360dcc9b072e672c8ccc0ff2234ac6b",
+    "requires_daemon_restart": true
+  }
+}
