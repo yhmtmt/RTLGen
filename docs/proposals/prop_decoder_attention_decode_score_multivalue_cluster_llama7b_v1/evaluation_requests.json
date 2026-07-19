@@ -81,8 +81,12 @@
         "direction": "measure_shared_score_multivalue_cluster_ppa",
         "reason": "Collect the missing 8 ns Nangate45 evidence in 2.5 mm envelope while keeping current vectorless metrics as bounded frontier evidence."
       },
-      "status": "pending_implementation"
+      "status": "merged",
+      "merged_pr_number": 1364,
+      "merge_commit": "7b01c7e452af6f658c566900fef0513f6ba2490b",
+      "merged_utc": "2026-07-19T09:36:12.486715Z",
+      "notes": "Merged via PR #1364 and merge 7b01c7e452af6f658c566900fef0513f6ba2490b at 2026-07-19T09:36:12.486715Z."
     }
   ],
-  "source_commit": "40fd671e19b79660e28ecf99ab07f38043e0e937"
+  "source_commit": "9a857c5cb5deb84ae5487d1b0c37500833bd7e1a"
 }

@@ -1,14 +1,14 @@
 {
   "proposal_id": "prop_decoder_attention_decode_score_multivalue_cluster_llama7b_v1",
-  "candidate_id": "l1_decoder_attention_decode_score_multivalue_cluster_pnr_v1",
+  "candidate_id": "l1_decoder_attention_decode_score_multivalue_cluster_pnr_8ns_v2",
   "decision": "promote",
-  "reason": "Accepted Layer 1 physical metrics were merged in PR #1334 for the current candidate.",
+  "reason": "Accepted Layer 1 physical metrics were merged in PR #1364 for the current candidate.",
   "evidence_refs": [
-    "item:l1_decoder_attention_decode_score_multivalue_cluster_pnr_v1",
-    "run:l1_decoder_attention_decode_score_multivalue_cluster_pnr_v1_run_6999bb7c1b6aba41",
-    "artifact:control_plane/shadow_exports/l1_promotions/l1_decoder_attention_decode_score_multivalue_cluster_pnr_v1.json",
-    "pr:#1334",
-    "https://github.com/yhmtmt/RTLGen/pull/1334"
+    "item:l1_decoder_attention_decode_score_multivalue_cluster_pnr_8ns_v2",
+    "run:l1_decoder_attention_decode_score_multivalue_cluster_pnr_8ns_v2_run_78eb87f44c4c61c8",
+    "artifact:control_plane/shadow_exports/l1_promotions/l1_decoder_attention_decode_score_multivalue_cluster_pnr_8ns_v2.json",
+    "pr:#1364",
+    "https://github.com/yhmtmt/RTLGen/pull/1364"
   ],
   "next_action": "inspect the next dependent item",
   "requires_human_approval": false

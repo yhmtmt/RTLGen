@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_decoder_attention_decode_score_multivalue_cluster_llama7b_v1",
   "decision": "promote",
-  "pr_number": 1334,
-  "merge_commit": "872b177c6be5cec2da0d565609cf69677553f63e",
-  "merged_utc": "2026-07-16T12:09:43.974242Z"
+  "pr_number": 1364,
+  "merge_commit": "7b01c7e452af6f658c566900fef0513f6ba2490b",
+  "merged_utc": "2026-07-19T09:36:12.486715Z"
 }

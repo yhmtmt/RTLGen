@@ -2,17 +2,16 @@
 
 ## Candidate
 - `proposal_id`: `prop_decoder_attention_decode_score_multivalue_cluster_llama7b_v1`
-- `candidate_id`: `l1_decoder_attention_decode_score_multivalue_cluster_pnr_v1`
+- `candidate_id`: `l1_decoder_attention_decode_score_multivalue_cluster_pnr_8ns_v2`
 
 ## Evaluations Consumed
-- `l1_decoder_attention_decode_score_multivalue_cluster_pnr_v1`
-- `l1_decoder_attention_decode_score_multivalue_cluster_pnr_v1_run_6999bb7c1b6aba41`
-- source commit: `40fd671e19b79660e28ecf99ab07f38043e0e937`
-- review: PR #1334
+- `l1_decoder_attention_decode_score_multivalue_cluster_pnr_8ns_v2`
+- `l1_decoder_attention_decode_score_multivalue_cluster_pnr_8ns_v2_run_78eb87f44c4c61c8`
+- source commit: `9a857c5cb5deb84ae5487d1b0c37500833bd7e1a`
+- review: PR #1364
 
 ## Baseline Comparison
-- outcome: `partial_sweep_measured_points`
-- summary: The run terminated after capturing status=ok physical rows. Retain only those rows as measured evidence; the sweep is incomplete and unmeasured points must not be inferred as feasible.
+- not applicable
 
 ## Result
 - result: `promote`
@@ -26,5 +25,5 @@
 
 ## Recommendation
 - `promote`
-- reason: Accepted Layer 1 physical metrics were merged in PR #1334 for the current candidate.
+- reason: Accepted Layer 1 physical metrics were merged in PR #1364 for the current candidate.
 - next_action: inspect the next dependent item
