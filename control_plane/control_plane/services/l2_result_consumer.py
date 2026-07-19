@@ -631,6 +631,10 @@ _DECODER_EVIDENCE_OUTPUT_KEYS: tuple[tuple[str, str], ...] = (
         "decode_score_multivalue_cluster_equivalence_report",
     ),
     (
+        "decode_score_multivalue_cluster_activity_power_out",
+        "decode_score_multivalue_cluster_activity_power_report",
+    ),
+    (
         "decode_score_multivalue_gqa_group_equivalence_out",
         "decode_score_multivalue_gqa_group_equivalence_report",
     ),
@@ -1802,6 +1806,52 @@ def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, 
         ):
             if key in best_dict:
                 parts.append(f"best_{key}={best_dict.get(key)}")
+        summary = "; ".join(parts)
+        return outcome, summary if summary.endswith(".") else summary + "."
+
+    if model == "decoder_attention_decode_score_multivalue_cluster_activity_power_v1":
+        outcome = str(evidence_payload.get("decision") or "cluster_activity_power_recorded")
+        best = evidence_payload.get("best")
+        best_dict = dict(best) if isinstance(best, dict) else {}
+        candidates = evidence_payload.get("candidates")
+        first_candidate = candidates[0] if isinstance(candidates, list) and candidates else None
+        representative_dict = dict(first_candidate) if isinstance(first_candidate, dict) else {}
+        selected = best_dict or representative_dict
+        selected_label = "best" if best_dict else "representative"
+        activity = selected.get("activity_power")
+        activity_dict = dict(activity) if isinstance(activity, dict) else {}
+        ppa = selected.get("ppa_metric")
+        ppa_dict = dict(ppa) if isinstance(ppa, dict) else {}
+        parts = [
+            f"Decoder multivalue-cluster activity-power evidence recorded from {evidence_ref}: decision={outcome}",
+        ]
+        for key in ("promotion_gate_pass", "candidate_count", "promoted_candidate_count", "best_candidate_id"):
+            if key in evidence_payload:
+                parts.append(f"{key}={evidence_payload.get(key)}")
+        if "candidate_id" in selected:
+            parts.append(f"{selected_label}_candidate_id={selected.get('candidate_id')}")
+        if "flow_variant" in selected:
+            parts.append(f"{selected_label}_flow_variant={selected.get('flow_variant')}")
+        if "status" in selected:
+            parts.append(f"{selected_label}_status={selected.get('status')}")
+        if "status" in activity_dict:
+            parts.append(f"{selected_label}_activity_status={activity_dict.get('status')}")
+        if "promotion_gate_pass" in activity_dict:
+            parts.append(
+                f"{selected_label}_activity_promotion_gate_pass="
+                f"{activity_dict.get('promotion_gate_pass')}"
+            )
+        for key in (
+            "full_context_energy_j",
+            "full_context_latency_s",
+            "full_context_cycles",
+            "total_power_mw",
+        ):
+            if activity_dict.get(key) is not None:
+                parts.append(f"{selected_label}_{key}={activity_dict.get(key)}")
+        for key in ("critical_path_ns", "instance_area_um2", "total_power_mw"):
+            if ppa_dict.get(key) is not None:
+                parts.append(f"{selected_label}_ppa_{key}={ppa_dict.get(key)}")
         summary = "; ".join(parts)
         return outcome, summary if summary.endswith(".") else summary + "."
 

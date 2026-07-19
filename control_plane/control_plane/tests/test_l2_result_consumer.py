@@ -258,6 +258,29 @@ def test_decoder_evidence_paths_recognizes_decode_score_multivalue_gqa_group_equ
     }
 
 
+def test_decoder_evidence_paths_recognizes_decode_score_multivalue_cluster_activity_power(tmp_path: Path) -> None:
+    evidence_rel = "runs/datasets/demo/decode_score_multivalue_cluster_activity_power.json"
+    report_rel = "runs/datasets/demo/decode_score_multivalue_cluster_activity_power.md"
+    _write(tmp_path / evidence_rel, "{}\n")
+    _write(tmp_path / report_rel, "# Decode score multivalue cluster activity power\n")
+    work_item = SimpleNamespace(
+        input_manifest={
+            "decoder_contract": {
+                "decode_score_multivalue_cluster_activity_power_out": evidence_rel,
+                "decode_score_multivalue_cluster_activity_power_report": report_rel,
+            }
+        }
+    )
+
+    evidence_ref, source_refs = _decoder_evidence_paths(repo_root=tmp_path, work_item=work_item)
+
+    assert evidence_ref == evidence_rel
+    assert source_refs == {
+        "decoder_decode_score_multivalue_cluster_activity_power_out": evidence_rel,
+        "decoder_decode_score_multivalue_cluster_activity_power_report": report_rel,
+    }
+
+
 @pytest.mark.parametrize(
     "prefix",
     [
@@ -580,6 +603,107 @@ def test_decoder_evidence_summary_recognizes_gqa_followons(
     assert expected in summary
 
 
+def test_decoder_evidence_summary_recognizes_multivalue_cluster_activity_power() -> None:
+    outcome, summary = _decoder_evidence_summary(
+        evidence_ref="runs/datasets/demo/cluster-activity-power.json",
+        evidence_payload={
+            "model": "decoder_attention_decode_score_multivalue_cluster_activity_power_v1",
+            "decision": "activity_backed_cluster_power_measured",
+            "promotion_gate_pass": True,
+            "candidate_count": 4,
+            "promoted_candidate_count": 1,
+            "best_candidate_id": "multivalue_cluster_activity_flow_cluster_die7200",
+            "best": {
+                "candidate_id": "multivalue_cluster_activity_flow_cluster_die7200",
+                "flow_variant": "cluster_die7200",
+                "status": "activity_backed",
+                "activity_power": {
+                    "status": "activity_backed",
+                    "promotion_gate_pass": True,
+                    "full_context_cycles": 58207,
+                    "full_context_latency_s": 0.000465656,
+                    "full_context_energy_j": 0.000234,
+                    "total_power_mw": 22.1,
+                },
+                "ppa_metric": {
+                    "critical_path_ns": 7.4,
+                    "instance_area_um2": 3141592.0,
+                    "total_power_mw": 22.3,
+                },
+            },
+        },
+    )
+
+    assert outcome == "activity_backed_cluster_power_measured"
+    assert "promotion_gate_pass=True" in summary
+    assert "candidate_count=4" in summary
+    assert "promoted_candidate_count=1" in summary
+    assert "best_candidate_id=multivalue_cluster_activity_flow_cluster_die7200" in summary
+    assert "best_flow_variant=cluster_die7200" in summary
+    assert "best_status=activity_backed" in summary
+    assert "best_activity_status=activity_backed" in summary
+    assert "best_activity_promotion_gate_pass=True" in summary
+    assert "best_full_context_cycles=58207" in summary
+    assert "best_full_context_energy_j=0.000234" in summary
+    assert "best_full_context_latency_s=0.000465656" in summary
+    assert "best_total_power_mw=22.1" in summary
+    assert "best_ppa_critical_path_ns=7.4" in summary
+    assert "best_ppa_instance_area_um2=3141592.0" in summary
+    assert "best_ppa_total_power_mw=22.3" in summary
+
+
+def test_decoder_evidence_summary_uses_representative_rejected_cluster_activity_candidate() -> None:
+    outcome, summary = _decoder_evidence_summary(
+        evidence_ref="runs/datasets/demo/cluster-activity-power-rejected.json",
+        evidence_payload={
+            "model": "decoder_attention_decode_score_multivalue_cluster_activity_power_v1",
+            "decision": "activity_power_rejected_no_gated_candidate",
+            "promotion_gate_pass": False,
+            "candidate_count": 1,
+            "promoted_candidate_count": 0,
+            "best_candidate_id": None,
+            "best": None,
+            "candidates": [
+                {
+                    "candidate_id": "multivalue_cluster_activity_cluster_die7200",
+                    "flow_variant": "cluster_die7200",
+                    "status": "rejected_gate",
+                    "activity_power": {
+                        "status": "rejected_annotation_gate",
+                        "promotion_gate_pass": False,
+                        "full_context_cycles": 58207,
+                        "full_context_latency_s": 0.000465656,
+                        "full_context_energy_j": None,
+                    },
+                    "ppa_metric": {
+                        "critical_path_ns": "7.41",
+                        "instance_area_um2": "3141592.0",
+                        "total_power_mw": "22.3",
+                    },
+                }
+            ],
+        },
+    )
+
+    assert outcome == "activity_power_rejected_no_gated_candidate"
+    assert "promotion_gate_pass=False" in summary
+    assert "candidate_count=1" in summary
+    assert "promoted_candidate_count=0" in summary
+    assert "best_candidate_id=None" in summary
+    assert "representative_candidate_id=multivalue_cluster_activity_cluster_die7200" in summary
+    assert "representative_flow_variant=cluster_die7200" in summary
+    assert "representative_status=rejected_gate" in summary
+    assert "representative_activity_status=rejected_annotation_gate" in summary
+    assert "representative_activity_promotion_gate_pass=False" in summary
+    assert "representative_full_context_cycles=58207" in summary
+    assert "representative_full_context_latency_s=0.000465656" in summary
+    assert "representative_full_context_energy_j" not in summary
+    assert "representative_ppa_critical_path_ns=7.41" in summary
+    assert "representative_ppa_instance_area_um2=3141592.0" in summary
+    assert "representative_ppa_total_power_mw=22.3" in summary
+    assert "best_flow_variant" not in summary
+
+
 def test_decoder_evidence_summary_includes_folded_lane_identity() -> None:
     _, activity_summary = _decoder_evidence_summary(
         evidence_ref="runs/datasets/demo/folded-activity.json",
@@ -696,6 +820,127 @@ def test_consume_l2_result_uses_gqa_array_equivalence_evidence_without_best_poin
             assert decision["source_refs"]["decoder_decode_score_multivalue_gqa_array_equivalence_out"] == (
                 evidence_rel
             )
+
+
+def test_consume_l2_result_uses_cluster_activity_evidence_without_best_point() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            proposal_rel = "docs/proposals/prop_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1"
+            _write(
+                repo_root / proposal_rel / "proposal.json",
+                json.dumps(
+                    {
+                        "proposal_id": "prop_l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1",
+                        "kind": "architecture",
+                        "title": "Decode score multivalue cluster activity power",
+                        "direct_comparison": {
+                            "primary_question": "What is the best activity-backed cluster design?"
+                        },
+                    },
+                    indent=2,
+                )
+                + "\n",
+            )
+            item_id = "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1"
+            _seed_campaign_work_item(
+                session,
+                repo_root,
+                item_id=item_id,
+                campaign_dir_rel="runs/campaigns/npu/decode_score_multivalue_cluster_activity_power_v1",
+                summary_rows=(
+                    "scope,arch_id,macro_mode,objective_rank\n"
+                    "aggregate,unused,unused,1\n"
+                ),
+                proposal_path=proposal_rel,
+            )
+            evidence_rel = (
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_decode_score_multivalue_cluster_activity_power__"
+                f"{item_id}.json"
+            )
+            report_rel = (
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_decode_score_multivalue_cluster_activity_power__"
+                f"{item_id}.md"
+            )
+            _write(
+                repo_root / evidence_rel,
+                json.dumps(
+                    {
+                        "model": "decoder_attention_decode_score_multivalue_cluster_activity_power_v1",
+                        "decision": "activity_backed_cluster_power_measured",
+                        "promotion_gate_pass": True,
+                        "candidate_count": 4,
+                        "promoted_candidate_count": 1,
+                        "best_candidate_id": "multivalue_cluster_activity_flow_cluster_die7200",
+                        "best": {
+                            "candidate_id": "multivalue_cluster_activity_flow_cluster_die7200",
+                            "flow_variant": "cluster_die7200",
+                            "status": "activity_backed",
+                            "activity_power": {
+                                "full_context_cycles": 58207,
+                                "full_context_latency_s": 0.000465656,
+                                "full_context_energy_j": 0.000234,
+                                "total_power_mw": 22.1,
+                            },
+                            "ppa_metric": {
+                                "total_power_mw": 22.3,
+                            },
+                        },
+                    },
+                    indent=2,
+                )
+                + "\n",
+            )
+            _write(repo_root / report_rel, "# Decode score multivalue cluster activity power\n")
+
+            work_item = session.query(WorkItem).filter_by(item_id=item_id).one()
+            work_item.input_manifest = {
+                "decoder_contract": {
+                    "decode_score_multivalue_cluster_activity_power_out": evidence_rel,
+                    "decode_score_multivalue_cluster_activity_power_report": report_rel,
+                }
+            }
+            work_item.expected_outputs = [evidence_rel, report_rel]
+            request_payload = copy.deepcopy(work_item.task_request.request_payload or {})
+            request_payload["developer_loop"]["abstraction"] = {
+                "layer": "decoder_attention_decode_score_multivalue_cluster_activity_power",
+            }
+            work_item.task_request.request_payload = request_payload
+            session.commit()
+
+            result = consume_l2_result(
+                session,
+                Layer2ConsumeRequest(repo_root=str(repo_root), item_id=item_id),
+            )
+
+            assert result.recommended_arch_id == "decoder_attention_decode_score_multivalue_cluster_activity_power"
+            assert result.recommended_macro_mode == "evidence_only"
+            decision = json.loads(Path(result.target_path).read_text(encoding="utf-8"))
+            assessment = decision["proposal_assessment"]
+            assert assessment["outcome"] == "activity_backed_cluster_power_measured"
+            assert (
+                "best_full_context_energy_j=0.000234" in decision["evaluation_record"]["summary"]
+            )
+            assert assessment["decoder_evidence_ref"] == evidence_rel
+            assert (
+                decision["source_refs"][
+                    "decoder_decode_score_multivalue_cluster_activity_power_out"
+                ]
+                == evidence_rel
+            )
+            assert (
+                decision["source_refs"][
+                    "decoder_decode_score_multivalue_cluster_activity_power_report"
+                ]
+                == report_rel
+            )
+            assert "best_point_json" not in decision["source_refs"]
 
 
 def test_decoder_evidence_summary_recognizes_two_pass_stream_equivalence() -> None:
