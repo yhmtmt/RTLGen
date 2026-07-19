@@ -171,7 +171,7 @@
     {
       "item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v6",
       "task_type": "l2_campaign",
-      "objective": "Rerun shared-score multivalue-cluster activity-backed power after merged PR #1389 / commit 718326d3301024e28a752d432648b5a94b7f04f6; v5 had zero transfer candidates and all per-instance queries failed because global instance_power plus a corner collection were wrong. v6 uses sta::cmd_corner, sta::design_power/sta::instance_power with one Corner, sta::set_power_pin_activity, and bounded transfer-stage diagnostics with no gate relaxation and no heuristic activity.",
+      "objective": "Rerun shared-score multivalue-cluster activity-backed power after PR #1389 / commit 718326d3301024e28a752d432648b5a94b7f04f6; v5 had zero transfer candidates and all per-instance queries failed because global instance_power plus a corner collection was wrong. v6 uses sta::cmd_corner, sta::design_power/sta::instance_power with one Corner, sta::set_power_pin_activity, and bounded transfer-stage diagnostics with no gate relaxation and no heuristic activity.",
       "evaluation_mode": "frontier_detail",
       "abstraction_layer": "decoder_attention_decode_score_multivalue_cluster_activity_power",
       "comparison_role": "shared_score_multivalue_cluster_activity_power_gate",
@@ -190,6 +190,31 @@
       "expected_result": {
         "direction": "record_shared_score_multivalue_cluster_activity_power_gate",
         "reason": "Rerun after PR #1389, using one-corner sta::cmd_corner, sta::design_power/sta::instance_power, and sta::set_power_pin_activity while keeping existing gates, no gate relaxation, and no heuristic activity."
+      },
+      "status": "ready_to_queue"
+    },
+    {
+      "item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v7",
+      "task_type": "l2_campaign",
+      "objective": "Rerun shared-score multivalue-cluster activity-backed power after PR #1392 / commit 59c1038ece3e89aa875d16880426b1449f72f21f. v6 had 5,152 connected macro inputs with driver origins 4,824 other / 272 constant / 56 clock / 0 vcd or propagated, and 724,570 per-instance scan candidates with 0 checked and 724,571 query errors. v7 uses sta::network_leaf_instances for instance_power and trace-backed same-net peer fallback when the designated driver has no usable activity. It retains one Corner, sta::set_power_pin_activity, and avoids heuristic activity and gate relaxation.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_decode_score_multivalue_cluster_activity_power",
+      "comparison_role": "shared_score_multivalue_cluster_activity_power_gate",
+      "depends_on_item_ids": [
+        "l1_decoder_attention_decode_score_multivalue_cluster_pnr_8ns_v2",
+        "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "revision": {
+        "reason": "postroute_sta_leaf_handle_and_same_net_peer_activity_unresolved",
+        "invalidates_item_ids": [
+          "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v6"
+        ]
+      },
+      "expected_result": {
+        "direction": "record_shared_score_multivalue_cluster_activity_power_gate",
+        "reason": "Rerun after PR #1392 using sta::network_leaf_instances-backed instance_power and trace-backed same-net peer fallback while keeping one-Corner flow, sta::set_power_pin_activity, no heuristic activity, and no gate relaxation."
       },
       "status": "ready_to_queue"
     }
