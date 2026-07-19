@@ -27,7 +27,16 @@ class PostrouteVcdPowerTests(unittest.TestCase):
         self, root: Path, result: Path, *, macro_transfer: bool = False
     ) -> str:
         if macro_transfer:
-            get_pins_body = "  return {pin_input_u_group_0 pin_nonfinite_u_group}\n"
+            all_pins = "{pin_other_0 pin_input_u_group_0 pin_nonfinite_u_group}"
+            get_pins_body = (
+                "  if {[lindex $args 0] eq \"-hierarchical\"} {\n"
+                "    set pattern [lindex $args end]\n"
+                "    if {$pattern eq \"*u_group_*\"} {\n"
+                "      return {}\n"
+                "    }\n"
+                "  }\n"
+                f"  return {all_pins}\n"
+            )
             pin_property_body = (
                 "  if {$obj eq {pin_input_u_group_0}} {\n"
                 "    if {$property eq \"is_hierarchical\"} { return 0 }\n"
@@ -107,6 +116,12 @@ class PostrouteVcdPowerTests(unittest.TestCase):
             + "proc get_cells {args} {\n"
             "  return {leaf_group[7]/instance_a leaf_group_b/leaf_b}\n"
             "}\n"
+            "proc instance_power {leaf args} {\n"
+            "  if {$leaf eq {leaf_group[7]/instance_a}} {\n"
+            "    return {0.0 nan inf nan}\n"
+            "  }\n"
+            "  return {1.0 2.0 3.0 4.0}\n"
+            "}\n"
             "namespace eval sta {\n"
             "  proc corners {} {\n"
             "    return {corner0}\n"
@@ -114,12 +129,6 @@ class PostrouteVcdPowerTests(unittest.TestCase):
             "  proc design_power {args} {\n"
             "    # First quartet has non-finite total, triggering sample capture.\n"
             "    return {1.0 2.0 3.0 nan 4.0 5.0 6.0 7.0}\n"
-            "  }\n"
-            "  proc instance_power {leaf args} {\n"
-            "    if {$leaf eq {leaf_group[7]/instance_a}} {\n"
-            "      return {0.0 nan inf nan}\n"
-            "    }\n"
-            "    return {1.0 2.0 3.0 4.0}\n"
             "  }\n"
             + net_driver_body
             + "}\n"
@@ -172,9 +181,14 @@ class PostrouteVcdPowerTests(unittest.TestCase):
             self.assertEqual(diagnostics.get("non_leaf_skip_count"), 0)
             self.assertEqual(diagnostics["candidate_cell_count"], 2)
             self.assertEqual(diagnostics["checked_instance_power_count"], 2)
+            self.assertGreater(diagnostics["checked_instance_power_count"], 0)
             self.assertEqual(diagnostics["finite_row_count"], 1)
             self.assertEqual(diagnostics["bad_shape_row_count"], 0)
             self.assertEqual(diagnostics["query_error_count"], 0)
+            self.assertLess(
+                diagnostics["query_error_count"],
+                diagnostics["candidate_cell_count"],
+            )
             self.assertEqual(
                 diagnostics["checked_instance_power_count"],
                 diagnostics["finite_row_count"] + diagnostics["instance_count"],
@@ -250,7 +264,10 @@ class PostrouteVcdPowerTests(unittest.TestCase):
         self.assertIn("macro_trace_backed_zero_toggle_count", script)
         self.assertIn("leaf_activity_origin_counts", script)
         self.assertIn("macro_activity_origin_counts", script)
-        self.assertIn("sta::instance_power $leaf $corner", script)
+        self.assertIn("set all_design_pins {}", script)
+        self.assertIn("foreach pin $all_design_pins", script)
+        self.assertIn("if {![string match \"*u_group_*\" $macro_pin_full_name]}", script)
+        self.assertIn("instance_power $leaf $corner", script)
         self.assertIn("non_finite_leaf_instance_power", script)
         self.assertIn(
             "if {$origin_bucket == \"vcd\" || $origin_bucket == \"propagated\"}",
