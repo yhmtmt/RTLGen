@@ -1,22 +1,22 @@
 {
   "proposal_id": "prop_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1",
-  "candidate_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v7",
+  "candidate_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v8",
   "decision": "iterate",
-  "reason": "Decoder multivalue-cluster activity-power evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_cluster_activity_power__l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v7.json: decision=activity_power_rejected_no_gated_candidate; promotion_gate_pass=False; candidate_count=1; promoted_candidate_count=0; best_candidate_id=None; representative_candidate_id=multivalue_cluster_activity_decode_score_multivalue_cluster_v1_8ns_bridge_proxy_die_2500; representative_flow_variant=decode_score_multivalue_cluster_v1_8ns_bridge_proxy_die_2500; representative_status=rejected_gate; representative_activity_status=rejected_annotation_gate; representative_activity_promotion_gate_pass=False; representative_full_context_latency_s=0.027193608; representative_full_context_cycles=3399201; representative_ppa_critical_path_ns=7.1765; representative_ppa_instance_area_um2=2785000.0; representative_ppa_total_power_mw=0.348.",
+  "reason": "Decoder multivalue-cluster activity-power evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_cluster_activity_power__l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v8.json: decision=activity_power_rejected_no_gated_candidate; promotion_gate_pass=False; candidate_count=1; promoted_candidate_count=0; best_candidate_id=None; representative_candidate_id=multivalue_cluster_activity_decode_score_multivalue_cluster_v1_8ns_bridge_proxy_die_2500; representative_flow_variant=decode_score_multivalue_cluster_v1_8ns_bridge_proxy_die_2500; representative_status=rejected_gate; representative_activity_status=rejected_annotation_gate; representative_activity_promotion_gate_pass=False; representative_full_context_latency_s=0.027193608; representative_full_context_cycles=3399201; representative_ppa_critical_path_ns=7.1765; representative_ppa_instance_area_um2=2785000.0; representative_ppa_total_power_mw=0.348.",
   "evidence_refs": [
-    "item:l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v7",
-    "run:l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v7_run_53ff4a64097072de",
-    "artifact:control_plane/shadow_exports/l2_decisions/l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v7.json",
-    "pr:#1394",
-    "https://github.com/yhmtmt/RTLGen/pull/1394"
+    "item:l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v8",
+    "run:l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v8_run_8b40ca185e53761e",
+    "artifact:control_plane/shadow_exports/l2_decisions/l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v8.json",
+    "pr:#1397",
+    "https://github.com/yhmtmt/RTLGen/pull/1397"
   ],
-  "next_action": "inspect follow-on work after l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v7",
+  "next_action": "inspect follow-on work after l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v8",
   "requires_human_approval": false,
   "revision": {
-    "reason": "postroute_sta_leaf_handle_and_same_net_peer_activity_unresolved",
+    "reason": "postroute_scalar_macro_vcd_alias_and_reducer_ref_diagnosis",
     "invalidated_item_ids": [
-      "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v6"
+      "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v7"
     ],
-    "replacement_item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v7"
+    "replacement_item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v8"
   }
 }

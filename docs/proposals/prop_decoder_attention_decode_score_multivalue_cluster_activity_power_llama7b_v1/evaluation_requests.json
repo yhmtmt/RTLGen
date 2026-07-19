@@ -222,12 +222,16 @@
         "direction": "record_shared_score_multivalue_cluster_activity_power_gate",
         "reason": "Rerun after PR #1392 using sta::network_leaf_instances-backed instance_power and same-net trace-backed peer fallback while keeping one-Corner flow, sta::set_power_pin_activity, no heuristic activity, and no gate relaxation."
       },
-      "status": "merged",
+      "status": "retracted",
       "merged_pr_number": 1394,
       "merge_commit": "8e0b4711d7e02413b9f126948bad2addc0163e26",
       "merged_utc": "2026-07-19T13:08:30.450433Z",
       "notes": "Merged via PR #1394 and merge 8e0b4711d7e02413b9f126948bad2addc0163e26 at 2026-07-19T13:08:30.450433Z.",
-      "revision_of_decision": "iterate"
+      "revision_of_decision": "iterate",
+      "retracted_utc": "2026-07-19T13:40:45.514084Z",
+      "retracted_by_item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v8",
+      "retraction_reason": "postroute_scalar_macro_vcd_alias_and_reducer_ref_diagnosis",
+      "replacement_artifact": "control_plane/shadow_exports/l2_decisions/l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v8.json"
     },
     {
       "item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v8",
@@ -252,8 +256,13 @@
         "direction": "record_shared_score_multivalue_cluster_activity_power_gate",
         "reason": "v8 uses escaped per-bit scalar aliases for FakeRAM macro inputs and bounded reducer buckets to map exact pin-level power input paths while preserving one-corner sta::set_power_pin_activity, no heuristic activity, no gate relaxation, and no fabricated power."
       },
-      "status": "ready_to_queue"
+      "status": "merged",
+      "merged_pr_number": 1397,
+      "merge_commit": "e3c75eeec753306dd92d050e2275cc703b4062a6",
+      "merged_utc": "2026-07-19T13:40:45.514046Z",
+      "notes": "Merged via PR #1397 and merge e3c75eeec753306dd92d050e2275cc703b4062a6 at 2026-07-19T13:40:45.514046Z.",
+      "revision_of_decision": "iterate"
     }
   ],
-  "source_commit": "b0888f66689f1e5d7e06add3690319001ff53e90"
+  "source_commit": "0d9065b19e98b0d1d40d334469c485c985ae5b7a"
 }
