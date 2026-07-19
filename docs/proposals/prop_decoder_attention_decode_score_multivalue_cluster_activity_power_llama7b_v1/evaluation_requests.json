@@ -154,12 +154,16 @@
         "direction": "record_shared_score_multivalue_cluster_activity_power_gate",
         "reason": "Rerun after PR #1386, using full-name hierarchical pin filtering and global OpenSTA instance_power while keeping no heuristic activity and no gate relaxation."
       },
-      "status": "merged",
+      "status": "retracted",
       "merged_pr_number": 1388,
       "merge_commit": "aee7d64c119ed6fe5af322ce4687ef279072ccc5",
       "merged_utc": "2026-07-19T12:23:51.832192Z",
       "notes": "Merged via PR #1388 and merge aee7d64c119ed6fe5af322ce4687ef279072ccc5 at 2026-07-19T12:23:51.832192Z.",
-      "revision_of_decision": "iterate"
+      "revision_of_decision": "iterate",
+      "retracted_utc": "2026-07-19T12:49:20.184366Z",
+      "retracted_by_item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v6",
+      "retraction_reason": "postroute_corner_object_and_macro_transfer_stage_unresolved",
+      "replacement_artifact": "control_plane/shadow_exports/l2_decisions/l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v6.json"
     },
     {
       "item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v6",
@@ -184,8 +188,13 @@
         "direction": "record_shared_score_multivalue_cluster_activity_power_gate",
         "reason": "Rerun after PR #1389, using one-corner sta::cmd_corner, sta::design_power/sta::instance_power, and sta::set_power_pin_activity while preserving existing gates, no gate relaxation, and no heuristic activity."
       },
-      "status": "ready_to_queue"
+      "status": "merged",
+      "merged_pr_number": 1391,
+      "merge_commit": "98179c8e3802dc432bb5181163415c096bd50ceb",
+      "merged_utc": "2026-07-19T12:49:20.184301Z",
+      "notes": "Merged via PR #1391 and merge 98179c8e3802dc432bb5181163415c096bd50ceb at 2026-07-19T12:49:20.184301Z.",
+      "revision_of_decision": "iterate"
     }
   ],
-  "source_commit": "718326d3301024e28a752d432648b5a94b7f04f6"
+  "source_commit": "e30cf47277ecd1567bd2a4fc27b3da52a339e186"
 }
