@@ -296,9 +296,40 @@
         "direction": "record_shared_score_multivalue_cluster_activity_power_gate",
         "reason": "v10 preserves the same gate set as v9 (including hashes/counts and full quality/equivalence/annotation/macro/numeric/artifact/promotion gates) and preserves score_fill/replay and final non-finite reducer diagnostics while excluding internal compact rows from committed reports."
       },
+      "status": "retracted",
+      "merged_pr_number": 1403,
+      "merge_commit": "23240199baa2207afcc1b713a2e25b7f86a0d821",
+      "revision_of_decision": "iterate",
+      "notes": "V10 used 5,096 structural sidecar assignments for all three phases with zero structural errors, passed score_fill (0.229656845331 W) and replay_value (0.216561496258 W), produced 56,575-byte compact evidence, and retained finalize diagnostics that showed 4,521 non-finite reducer cells and absurd finite-instance sums (roughly 2.025e29 W leakage, negative internal/switching).",
+      "retracted_by_item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v11",
+      "retraction_reason": "diagnose_finalize_nonfinite_pin_activity"
+    },
+    {
+      "item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v11",
+      "task_type": "l2_campaign",
+      "objective": "Rerun shared-score multivalue-cluster activity-backed power after PR #1404 / commit 658232d3ae22a8360457130e174e6156a088157a. v10 preserved gates and score_fill/replay but finalize diagnostics still showed non-finite reducer behavior; v11 adds bounded global and non-finite-cell diagnostics for pin toggle, pin duty, and pin origin while preserving all gates and no relaxations.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_decode_score_multivalue_cluster_activity_power",
+      "comparison_role": "shared_score_multivalue_cluster_activity_power_gate",
+      "depends_on_item_ids": [
+        "l1_decoder_attention_decode_score_multivalue_cluster_pnr_8ns_v2",
+        "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "revision": {
+        "reason": "diagnose_finalize_nonfinite_pin_activity",
+        "invalidates_item_ids": [
+          "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v10"
+        ]
+      },
+      "expected_result": {
+        "direction": "record_shared_score_multivalue_cluster_activity_power_gate",
+        "reason": "v11 preserves all existing quality/equivalence/annotation/macro/numeric/artifact/promotion gates and score_fill/replay checks, keeps per-phase structural counts and compact artifacts unchanged, and records bounded global and non-finite-cell pin toggle/duty/origin diagnostics to diagnose finalize non-finite behavior without substituting or relaxing any gate."
+      },
       "status": "merged",
-      "merged_pr_number": 1401,
-      "merge_commit": "263984cf6945b53283a4d538b2b88399223bfda4"
+      "merged_pr_number": 1404,
+      "merge_commit": "658232d3ae22a8360457130e174e6156a088157a"
     }
   ],
   "baseline_refs": [
