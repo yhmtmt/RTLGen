@@ -1754,6 +1754,105 @@ def test_generate_l1_sweep_task_inherits_proposal_dependencies_and_starts_blocke
             }
 
 
+def test_generate_l1_sweep_task_auto_discovers_proposal_for_existing_item() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        config_path, _ = _write_example_attention_decode_score_multivalue_cluster_repo(repo_root)
+        sweep_path = _write_attention_decode_score_multivalue_cluster_8ns_bridge_sweep(repo_root)
+        proposal_dir = repo_root / "docs" / "proposals" / "prop_decoder_attention_decode_score_multivalue_cluster_llama7b_v1"
+        proposal_dir.mkdir(parents=True)
+        item_id = "l1_decoder_attention_decode_score_multivalue_cluster_pnr_8ns_v2"
+        required_entry = {
+            "item_id": item_id,
+            "task_type": "l1_sweep",
+            "objective": "Re-run the shared-score multivalue cluster at 8 ns for the 2.5 mm die / 2.4 mm square core bridge evidence.",
+            "evaluation_mode": "frontier_followup",
+            "abstraction_layer": "decoder_attention_decode_score_multivalue_cluster",
+            "comparison_role": "shared_score_multivalue_cluster_pnr",
+            "depends_on_item_ids": ["l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1"],
+            "requires_merged_inputs": True,
+            "requires_materialized_refs": True,
+            "expected_result": {
+                "direction": "measure_shared_score_multivalue_cluster_ppa",
+                "reason": "Collect the missing 8 ns Nangate45 evidence in 2.5 mm envelope while keeping current vectorless metrics as bounded frontier evidence.",
+            },
+            "config_paths": [
+                "runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/config.json"
+            ],
+            "sweep_path": "runs/campaigns/npu/decode_score_multivalue_cluster_v1/sweeps/"
+            "nangate45_decode_score_multivalue_cluster_8ns_proxy_die_2500.json",
+            "status": "pending_implementation_merge",
+        }
+        (proposal_dir / "proposal.json").write_text(
+            json.dumps(
+                {
+                    "proposal_id": "prop_decoder_attention_decode_score_multivalue_cluster_llama7b_v1",
+                    "required_evaluations": [required_entry],
+                },
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (proposal_dir / "evaluation_requests.json").write_text(
+            json.dumps(
+                {
+                    "proposal_id": "prop_decoder_attention_decode_score_multivalue_cluster_llama7b_v1",
+                    "source_commit": "",
+                    "requested_items": [required_entry],
+                },
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l1_sweep_task(
+                session,
+                Layer1SweepGenerateRequest(
+                    repo_root=str(repo_root),
+                    sweep_path=sweep_path,
+                    config_paths=[config_path],
+                    platform="nangate45",
+                    out_root="runs/designs/activations",
+                    item_id=item_id,
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    # No proposal fields provided; auto-discovery should infer proposal linkage.
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=item_id).one()
+            payload = work_item.task_request.request_payload["developer_loop"]
+            assert work_item.state == WorkItemState.BLOCKED
+            assert payload["proposal_id"] == "prop_decoder_attention_decode_score_multivalue_cluster_llama7b_v1"
+            assert (
+                payload["proposal_path"]
+                == "docs/proposals/prop_decoder_attention_decode_score_multivalue_cluster_llama7b_v1"
+            )
+            assert payload["dependencies"] == {
+                "item_ids": ["l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1"],
+                "requires_merged_inputs": True,
+                "requires_materialized_refs": True,
+            }
+            assert payload["evaluation"] == {
+                "mode": "frontier_followup",
+                "expected_direction": "measure_shared_score_multivalue_cluster_ppa",
+                "expected_reason": (
+                    "Collect the missing 8 ns Nangate45 evidence in 2.5 mm envelope while keeping "
+                    "current vectorless metrics as bounded frontier evidence."
+                ),
+                "trial_policy": {"trial_count": 1, "seed_start": 0, "stop_after_failures": 1},
+            }
+
+        assert result.status == "applied"
+
+
 def test_generate_l1_sweep_task_strips_placeholder_requested_items_from_template() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
