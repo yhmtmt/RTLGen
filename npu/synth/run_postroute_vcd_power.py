@@ -388,7 +388,7 @@ if {$has_nonfinite_design_total} {
   puts $fp ","
   puts $fp "  \"non_finite_leaf_instance_power\": {"
   puts $fp "    \"instance_count\": $non_finite_leaf_instance_power_count,"
-  puts $fp "    \"samples\": ["
+  puts $fp "    \"samples\": \["
   set sample_count [llength $non_finite_leaf_instance_samples]
   set sample_index 0
   foreach sample $non_finite_leaf_instance_samples {
@@ -411,7 +411,7 @@ if {$has_nonfinite_design_total} {
       puts $fp "$sample_line"
     }
   }
-  puts $fp "    ]"
+  puts $fp "    \]"
   puts $fp "  }"
 }
 puts $fp "}"
