@@ -317,6 +317,33 @@ proc rtlgen_activity_origin_bucket {origin} {
   return "other"
 }
 
+proc rtlgen_append_activity_value_sample {samples_var limit_var full_name toggle duty origin reason} {
+  upvar 1 $samples_var samples
+  upvar 1 $limit_var sample_limit
+  if {[llength $samples] >= $sample_limit} {
+    return
+  }
+  lappend samples [list $full_name $toggle $duty $origin $reason]
+}
+
+proc rtlgen_append_activity_value_valid_sample {samples_var limit_var full_name toggle duty origin reason} {
+  upvar 1 $samples_var samples
+  upvar 1 $limit_var sample_limit
+  if {[llength $samples] >= $sample_limit} {
+    return
+  }
+  lappend samples [list $full_name $toggle $duty $origin $reason]
+}
+
+proc rtlgen_append_leaf_instance_pin_sample {samples_var limit_var instance_full_name ref_name pin_full_name pin_direction activity reason} {
+  upvar 1 $samples_var samples
+  upvar 1 $limit_var sample_limit
+  if {[llength $samples] >= $sample_limit} {
+    return
+  }
+  lappend samples [list $instance_full_name $ref_name $pin_full_name $pin_direction $activity $reason]
+}
+
 proc rtlgen_sorted_list {values} {
   if {[catch {lsort -dictionary $values} sorted]} {
     if {[catch {lsort $values} sorted]} {
@@ -792,7 +819,52 @@ set non_finite_leaf_instance_power_leakage_sum 0.0
 set non_finite_leaf_instance_power_total_sum 0.0
 set non_finite_leaf_instance_samples {}
 set non_finite_leaf_instance_power_sample_limit 16
+set non_finite_leaf_instance_power_pin_inspected_count 0
+set non_finite_leaf_instance_power_pin_malformed_activity_tuple_count 0
+set non_finite_leaf_instance_power_pin_query_error_count 0
+set non_finite_leaf_instance_power_pin_non_finite_toggle_count 0
+set non_finite_leaf_instance_power_pin_negative_toggle_count 0
+set non_finite_leaf_instance_power_pin_non_finite_duty_count 0
+set non_finite_leaf_instance_power_pin_duty_less_than_zero_count 0
+set non_finite_leaf_instance_power_pin_duty_greater_than_one_count 0
+set non_finite_leaf_instance_power_pin_valid_pin_count 0
+set non_finite_leaf_instance_power_pin_origin_vcd_count 0
+set non_finite_leaf_instance_power_pin_origin_propagated_count 0
+set non_finite_leaf_instance_power_pin_origin_clock_count 0
+set non_finite_leaf_instance_power_pin_origin_constant_count 0
+set non_finite_leaf_instance_power_pin_origin_other_count 0
+set non_finite_leaf_instance_power_pin_min_toggle ""
+set non_finite_leaf_instance_power_pin_max_toggle ""
+set non_finite_leaf_instance_power_pin_min_duty ""
+set non_finite_leaf_instance_power_pin_max_duty ""
+set non_finite_leaf_instance_power_pin_samples {}
+set non_finite_leaf_instance_power_pin_sample_limit 16
+set non_finite_leaf_instance_power_pin_valid_samples {}
+set non_finite_leaf_instance_power_pin_valid_sample_limit 4
+set non_finite_leaf_instance_power_pin_seen {}
 set non_finite_leaf_instance_power_ref_name_bucket_limit 32
+set activity_value_diagnostic_query_pin_count 0
+set activity_value_diagnostic_malformed_activity_tuple_count 0
+set activity_value_diagnostic_query_error_count 0
+set activity_value_diagnostic_non_finite_toggle_count 0
+set activity_value_diagnostic_negative_toggle_count 0
+set activity_value_diagnostic_non_finite_duty_count 0
+set activity_value_diagnostic_duty_less_than_zero_count 0
+set activity_value_diagnostic_duty_greater_than_one_count 0
+set activity_value_diagnostic_valid_pin_count 0
+set activity_value_diagnostic_origin_vcd_count 0
+set activity_value_diagnostic_origin_propagated_count 0
+set activity_value_diagnostic_origin_clock_count 0
+set activity_value_diagnostic_origin_constant_count 0
+set activity_value_diagnostic_origin_other_count 0
+set activity_value_diagnostic_min_toggle ""
+set activity_value_diagnostic_max_toggle ""
+set activity_value_diagnostic_min_duty ""
+set activity_value_diagnostic_max_duty ""
+set activity_value_diagnostic_sample_limit 16
+set activity_value_diagnostic_valid_sample_limit 4
+set activity_value_diagnostic_samples {}
+set activity_value_diagnostic_valid_samples {}
 foreach pin $all_design_pins {
   if {[get_property $pin is_hierarchical]} {
     continue
@@ -861,6 +933,118 @@ foreach pin $all_design_pins {
   }
 }
 
+foreach macro_pin $all_design_pins {
+  if {[catch {set macro_pin_full_name [get_property $macro_pin full_name]}]} {
+    set macro_pin_full_name $macro_pin
+  }
+  incr activity_value_diagnostic_query_pin_count
+  if {[catch {set activity [get_property $macro_pin activity]}]} {
+    incr activity_value_diagnostic_query_error_count
+    rtlgen_append_activity_value_sample \
+      activity_value_diagnostic_samples \
+      activity_value_diagnostic_sample_limit \
+      $macro_pin_full_name {} {} other query_error
+    incr activity_value_diagnostic_origin_other_count
+    continue
+  }
+  if {[llength $activity] < 3} {
+    incr activity_value_diagnostic_malformed_activity_tuple_count
+    set activity_toggle ""
+    set activity_duty ""
+    set activity_origin other
+    if {[llength $activity] > 0} {
+      set activity_origin [rtlgen_activity_origin_bucket [lindex $activity end]]
+    }
+    if {$activity_origin == "vcd"} {
+      incr activity_value_diagnostic_origin_vcd_count
+    } elseif {$activity_origin == "propagated"} {
+      incr activity_value_diagnostic_origin_propagated_count
+    } elseif {$activity_origin == "clock"} {
+      incr activity_value_diagnostic_origin_clock_count
+    } elseif {$activity_origin == "constant"} {
+      incr activity_value_diagnostic_origin_constant_count
+    } else {
+      incr activity_value_diagnostic_origin_other_count
+    }
+    rtlgen_append_activity_value_sample \
+      activity_value_diagnostic_samples \
+      activity_value_diagnostic_sample_limit \
+      $macro_pin_full_name {} {} $activity_origin malformed_activity_tuple
+    continue
+  }
+  set activity_toggle [lindex $activity 0]
+  set activity_duty [lindex $activity 1]
+  set activity_origin [rtlgen_activity_origin_bucket [lindex $activity end]]
+  if {$activity_origin == "vcd"} {
+    incr activity_value_diagnostic_origin_vcd_count
+  } elseif {$activity_origin == "propagated"} {
+    incr activity_value_diagnostic_origin_propagated_count
+  } elseif {$activity_origin == "clock"} {
+    incr activity_value_diagnostic_origin_clock_count
+  } elseif {$activity_origin == "constant"} {
+    incr activity_value_diagnostic_origin_constant_count
+  } else {
+    incr activity_value_diagnostic_origin_other_count
+  }
+  if {![rtlgen_is_finite_power_value $activity_toggle]} {
+    incr activity_value_diagnostic_non_finite_toggle_count
+    rtlgen_append_activity_value_sample \
+      activity_value_diagnostic_samples \
+      activity_value_diagnostic_sample_limit \
+      $macro_pin_full_name $activity_toggle $activity_duty $activity_origin non_finite_toggle
+    continue
+  }
+  if {$activity_toggle < 0.0} {
+    incr activity_value_diagnostic_negative_toggle_count
+    rtlgen_append_activity_value_sample \
+      activity_value_diagnostic_samples \
+      activity_value_diagnostic_sample_limit \
+      $macro_pin_full_name $activity_toggle $activity_duty $activity_origin negative_toggle
+    continue
+  }
+  if {![rtlgen_is_finite_power_value $activity_duty]} {
+    incr activity_value_diagnostic_non_finite_duty_count
+    rtlgen_append_activity_value_sample \
+      activity_value_diagnostic_samples \
+      activity_value_diagnostic_sample_limit \
+      $macro_pin_full_name $activity_toggle $activity_duty $activity_origin non_finite_duty
+    continue
+  }
+  if {$activity_duty < 0.0} {
+    incr activity_value_diagnostic_duty_less_than_zero_count
+    rtlgen_append_activity_value_sample \
+      activity_value_diagnostic_samples \
+      activity_value_diagnostic_sample_limit \
+      $macro_pin_full_name $activity_toggle $activity_duty $activity_origin duty_lt_zero
+    continue
+  }
+  if {$activity_duty > 1.0} {
+    incr activity_value_diagnostic_duty_greater_than_one_count
+    rtlgen_append_activity_value_sample \
+      activity_value_diagnostic_samples \
+      activity_value_diagnostic_sample_limit \
+      $macro_pin_full_name $activity_toggle $activity_duty $activity_origin duty_gt_one
+    continue
+  }
+  incr activity_value_diagnostic_valid_pin_count
+  if {$activity_value_diagnostic_min_toggle eq "" || $activity_toggle < $activity_value_diagnostic_min_toggle} {
+    set activity_value_diagnostic_min_toggle $activity_toggle
+  }
+  if {$activity_value_diagnostic_max_toggle eq "" || $activity_toggle > $activity_value_diagnostic_max_toggle} {
+    set activity_value_diagnostic_max_toggle $activity_toggle
+  }
+  if {$activity_value_diagnostic_min_duty eq "" || $activity_duty < $activity_value_diagnostic_min_duty} {
+    set activity_value_diagnostic_min_duty $activity_duty
+  }
+  if {$activity_value_diagnostic_max_duty eq "" || $activity_duty > $activity_value_diagnostic_max_duty} {
+    set activity_value_diagnostic_max_duty $activity_duty
+  }
+  rtlgen_append_activity_value_valid_sample \
+    activity_value_diagnostic_valid_samples \
+    activity_value_diagnostic_valid_sample_limit \
+    $macro_pin_full_name $activity_toggle $activity_duty $activity_origin valid
+}
+
 if {$has_nonfinite_design_total} {
   set leaf_cells {}
   if {[catch {set leaf_cells [sta::network_leaf_instances]}]} {
@@ -895,6 +1079,11 @@ if {$has_nonfinite_design_total} {
         ![rtlgen_is_finite_power_value $leakage_power_value] ||
         ![rtlgen_is_finite_power_value $total_power_value]} {
       incr non_finite_leaf_instance_power_count
+      if {[catch {set leaf_name [lindex [get_full_name $leaf] 0]}]} {
+        if {[catch {set leaf_name [lindex [get_property $leaf name] 0]}]} {
+          set leaf_name $leaf
+        }
+      }
       if {[catch {set leaf_ref_name [get_property $leaf ref_name]}]} {
         incr non_finite_leaf_instance_power_ref_name_query_error_count
         set leaf_ref_name unknown
@@ -903,12 +1092,169 @@ if {$has_nonfinite_design_total} {
         set leaf_ref_name unknown
       }
       dict incr non_finite_leaf_instance_power_ref_name_counts $leaf_ref_name
-      if {[llength $non_finite_leaf_instance_samples] < $non_finite_leaf_instance_power_sample_limit} {
-        if {[catch {set leaf_name [lindex [get_full_name $leaf] 0]}]} {
-          if {[catch {set leaf_name [lindex [get_property $leaf name] 0]}]} {
-            set leaf_name $leaf
+      if {![catch {set leaf_pins [get_pins -of_objects $leaf]}]} {
+        set leaf_pins_sorted [rtlgen_sorted_list $leaf_pins]
+        foreach leaf_pin $leaf_pins_sorted {
+          if {[dict exists $non_finite_leaf_instance_power_pin_seen $leaf_pin]} {
+            continue
           }
+          dict set non_finite_leaf_instance_power_pin_seen $leaf_pin 1
+          incr non_finite_leaf_instance_power_pin_inspected_count
+          if {[catch {set leaf_pin_full_name [get_property $leaf_pin full_name]}]} {
+            set leaf_pin_full_name $leaf_pin
+          }
+          if {[catch {set leaf_pin_direction [get_property $leaf_pin direction]}]} {
+            set leaf_pin_direction unknown
+          }
+          if {[catch {set leaf_pin_activity [get_property $leaf_pin activity]}]} {
+            incr non_finite_leaf_instance_power_pin_query_error_count
+            rtlgen_append_leaf_instance_pin_sample \
+              non_finite_leaf_instance_power_pin_samples \
+              non_finite_leaf_instance_power_pin_sample_limit \
+              $leaf_name \
+              $leaf_ref_name \
+              $leaf_pin_full_name \
+              $leaf_pin_direction \
+              {} \
+              query_error
+            continue
+          }
+          if {[llength $leaf_pin_activity] < 3} {
+            incr non_finite_leaf_instance_power_pin_malformed_activity_tuple_count
+            set leaf_pin_toggle ""
+            set leaf_pin_duty ""
+            set leaf_pin_origin other
+            if {[llength $leaf_pin_activity] > 0} {
+              set leaf_pin_origin [rtlgen_activity_origin_bucket [lindex $leaf_pin_activity end]]
+            }
+            if {$leaf_pin_origin == "vcd"} {
+              incr non_finite_leaf_instance_power_pin_origin_vcd_count
+            } elseif {$leaf_pin_origin == "propagated"} {
+              incr non_finite_leaf_instance_power_pin_origin_propagated_count
+            } elseif {$leaf_pin_origin == "clock"} {
+              incr non_finite_leaf_instance_power_pin_origin_clock_count
+            } elseif {$leaf_pin_origin == "constant"} {
+              incr non_finite_leaf_instance_power_pin_origin_constant_count
+            } else {
+              incr non_finite_leaf_instance_power_pin_origin_other_count
+            }
+            rtlgen_append_leaf_instance_pin_sample \
+              non_finite_leaf_instance_power_pin_samples \
+              non_finite_leaf_instance_power_pin_sample_limit \
+              $leaf_name \
+              $leaf_ref_name \
+              $leaf_pin_full_name \
+              $leaf_pin_direction \
+              $leaf_pin_activity \
+              malformed_activity_tuple
+            continue
+          }
+          set leaf_pin_toggle [lindex $leaf_pin_activity 0]
+          set leaf_pin_duty [lindex $leaf_pin_activity 1]
+          set leaf_pin_origin [rtlgen_activity_origin_bucket [lindex $leaf_pin_activity end]]
+          if {$leaf_pin_origin == "vcd"} {
+            incr non_finite_leaf_instance_power_pin_origin_vcd_count
+          } elseif {$leaf_pin_origin == "propagated"} {
+            incr non_finite_leaf_instance_power_pin_origin_propagated_count
+          } elseif {$leaf_pin_origin == "clock"} {
+            incr non_finite_leaf_instance_power_pin_origin_clock_count
+          } elseif {$leaf_pin_origin == "constant"} {
+            incr non_finite_leaf_instance_power_pin_origin_constant_count
+          } else {
+            incr non_finite_leaf_instance_power_pin_origin_other_count
+          }
+          if {![rtlgen_is_finite_power_value $leaf_pin_toggle]} {
+            incr non_finite_leaf_instance_power_pin_non_finite_toggle_count
+            rtlgen_append_leaf_instance_pin_sample \
+              non_finite_leaf_instance_power_pin_samples \
+              non_finite_leaf_instance_power_pin_sample_limit \
+              $leaf_name \
+              $leaf_ref_name \
+              $leaf_pin_full_name \
+              $leaf_pin_direction \
+              $leaf_pin_activity \
+              non_finite_toggle
+            continue
+          }
+          if {$leaf_pin_toggle < 0.0} {
+            incr non_finite_leaf_instance_power_pin_negative_toggle_count
+            rtlgen_append_leaf_instance_pin_sample \
+              non_finite_leaf_instance_power_pin_samples \
+              non_finite_leaf_instance_power_pin_sample_limit \
+              $leaf_name \
+              $leaf_ref_name \
+              $leaf_pin_full_name \
+              $leaf_pin_direction \
+              $leaf_pin_activity \
+              negative_toggle
+            continue
+          }
+          if {![rtlgen_is_finite_power_value $leaf_pin_duty]} {
+            incr non_finite_leaf_instance_power_pin_non_finite_duty_count
+            rtlgen_append_leaf_instance_pin_sample \
+              non_finite_leaf_instance_power_pin_samples \
+              non_finite_leaf_instance_power_pin_sample_limit \
+              $leaf_name \
+              $leaf_ref_name \
+              $leaf_pin_full_name \
+              $leaf_pin_direction \
+              $leaf_pin_activity \
+              non_finite_duty
+            continue
+          }
+          if {$leaf_pin_duty < 0.0} {
+            incr non_finite_leaf_instance_power_pin_duty_less_than_zero_count
+            rtlgen_append_leaf_instance_pin_sample \
+              non_finite_leaf_instance_power_pin_samples \
+              non_finite_leaf_instance_power_pin_sample_limit \
+              $leaf_name \
+              $leaf_ref_name \
+              $leaf_pin_full_name \
+              $leaf_pin_direction \
+              $leaf_pin_activity \
+              duty_lt_zero
+            continue
+          }
+          if {$leaf_pin_duty > 1.0} {
+            incr non_finite_leaf_instance_power_pin_duty_greater_than_one_count
+            rtlgen_append_leaf_instance_pin_sample \
+              non_finite_leaf_instance_power_pin_samples \
+              non_finite_leaf_instance_power_pin_sample_limit \
+              $leaf_name \
+              $leaf_ref_name \
+              $leaf_pin_full_name \
+              $leaf_pin_direction \
+              $leaf_pin_activity \
+              duty_gt_one
+            continue
+          }
+          incr non_finite_leaf_instance_power_pin_valid_pin_count
+          if {$non_finite_leaf_instance_power_pin_min_toggle eq "" || $leaf_pin_toggle < $non_finite_leaf_instance_power_pin_min_toggle} {
+            set non_finite_leaf_instance_power_pin_min_toggle $leaf_pin_toggle
+          }
+          if {$non_finite_leaf_instance_power_pin_max_toggle eq "" || $leaf_pin_toggle > $non_finite_leaf_instance_power_pin_max_toggle} {
+            set non_finite_leaf_instance_power_pin_max_toggle $leaf_pin_toggle
+          }
+          if {$non_finite_leaf_instance_power_pin_min_duty eq "" || $leaf_pin_duty < $non_finite_leaf_instance_power_pin_min_duty} {
+            set non_finite_leaf_instance_power_pin_min_duty $leaf_pin_duty
+          }
+          if {$non_finite_leaf_instance_power_pin_max_duty eq "" || $leaf_pin_duty > $non_finite_leaf_instance_power_pin_max_duty} {
+            set non_finite_leaf_instance_power_pin_max_duty $leaf_pin_duty
+          }
+          rtlgen_append_leaf_instance_pin_sample \
+            non_finite_leaf_instance_power_pin_valid_samples \
+            non_finite_leaf_instance_power_pin_valid_sample_limit \
+            $leaf_name \
+            $leaf_ref_name \
+            $leaf_pin_full_name \
+            $leaf_pin_direction \
+            $leaf_pin_activity \
+            valid
         }
+      } else {
+        incr non_finite_leaf_instance_power_pin_query_error_count
+      }
+      if {[llength $non_finite_leaf_instance_samples] < $non_finite_leaf_instance_power_sample_limit} {
         lappend non_finite_leaf_instance_samples \
           [list \
             $leaf_name \
@@ -1019,6 +1365,80 @@ puts $fp "  \"macro_trace_backed_pin_count\": $macro_trace_backed_count,"
 puts $fp "  \"macro_trace_active_pin_count\": $macro_trace_active_count,"
 puts $fp "  \"macro_trace_backed_zero_toggle_pin_count\": $macro_trace_backed_zero_toggle_count"
 puts $fp ","
+puts $fp "  \"activity_value_diagnostics\": {"
+puts $fp "    \"queried_pin_count\": $activity_value_diagnostic_query_pin_count,"
+puts $fp "    \"malformed_activity_tuple_count\": $activity_value_diagnostic_malformed_activity_tuple_count,"
+puts $fp "    \"query_error_count\": $activity_value_diagnostic_query_error_count,"
+puts $fp "    \"non_finite_toggle_count\": $activity_value_diagnostic_non_finite_toggle_count,"
+puts $fp "    \"negative_toggle_count\": $activity_value_diagnostic_negative_toggle_count,"
+puts $fp "    \"non_finite_duty_count\": $activity_value_diagnostic_non_finite_duty_count,"
+puts $fp "    \"duty_less_than_zero_count\": $activity_value_diagnostic_duty_less_than_zero_count,"
+puts $fp "    \"duty_greater_than_one_count\": $activity_value_diagnostic_duty_greater_than_one_count,"
+puts $fp "    \"valid_pin_count\": $activity_value_diagnostic_valid_pin_count,"
+puts $fp "    \"finite_extrema\": {"
+puts $fp "      \"min_toggle\": [rtlgen_json_number $activity_value_diagnostic_min_toggle],"
+puts $fp "      \"max_toggle\": [rtlgen_json_number $activity_value_diagnostic_max_toggle],"
+puts $fp "      \"min_duty\": [rtlgen_json_number $activity_value_diagnostic_min_duty],"
+puts $fp "      \"max_duty\": [rtlgen_json_number $activity_value_diagnostic_max_duty]"
+puts $fp "    },"
+puts $fp "    \"origin_counts\": {"
+puts $fp "      \"vcd\": $activity_value_diagnostic_origin_vcd_count,"
+puts $fp "      \"propagated\": $activity_value_diagnostic_origin_propagated_count,"
+puts $fp "      \"clock\": $activity_value_diagnostic_origin_clock_count,"
+puts $fp "      \"constant\": $activity_value_diagnostic_origin_constant_count,"
+puts $fp "      \"other\": $activity_value_diagnostic_origin_other_count"
+puts $fp "    },"
+puts $fp "    \"samples\": \["
+set activity_value_diagnostic_sample_count [llength $activity_value_diagnostic_samples]
+set activity_value_diagnostic_sample_index 0
+foreach activity_value_diagnostic_sample $activity_value_diagnostic_samples {
+  lassign \
+    $activity_value_diagnostic_sample \
+    activity_value_diagnostic_sample_full_name \
+    activity_value_diagnostic_sample_toggle \
+    activity_value_diagnostic_sample_duty \
+    activity_value_diagnostic_sample_origin \
+    activity_value_diagnostic_sample_reason
+  set escaped_full_name [rtlgen_json_escape_array_literal_chars [rtlgen_json_escape $activity_value_diagnostic_sample_full_name]]
+  set escaped_reason [rtlgen_json_escape $activity_value_diagnostic_sample_reason]
+  set sample_toggle_json [rtlgen_json_number $activity_value_diagnostic_sample_toggle]
+  set sample_duty_json [rtlgen_json_number $activity_value_diagnostic_sample_duty]
+  incr activity_value_diagnostic_sample_index
+  set activity_value_diagnostic_sample_line "      {\"full_name\": \"$escaped_full_name\", \"toggle\": $sample_toggle_json, \"duty\": $sample_duty_json, \"origin\": \"$activity_value_diagnostic_sample_origin\", \"reason\": \"$escaped_reason\"}"
+  if {$activity_value_diagnostic_sample_index < $activity_value_diagnostic_sample_count} {
+    puts $fp "$activity_value_diagnostic_sample_line,"
+  } else {
+    puts $fp "$activity_value_diagnostic_sample_line"
+  }
+}
+puts $fp "    \],"
+puts $fp "    \"valid_samples\": \["
+set activity_value_diagnostic_valid_sample_count [llength $activity_value_diagnostic_valid_samples]
+set activity_value_diagnostic_valid_sample_index 0
+foreach activity_value_diagnostic_valid_sample $activity_value_diagnostic_valid_samples {
+  lassign \
+    $activity_value_diagnostic_valid_sample \
+    activity_value_diagnostic_valid_sample_full_name \
+    activity_value_diagnostic_valid_sample_toggle \
+    activity_value_diagnostic_valid_sample_duty \
+    activity_value_diagnostic_valid_sample_origin \
+    activity_value_diagnostic_valid_sample_reason
+  set escaped_full_name \
+    [rtlgen_json_escape_array_literal_chars [rtlgen_json_escape $activity_value_diagnostic_valid_sample_full_name]]
+  set escaped_reason [rtlgen_json_escape $activity_value_diagnostic_valid_sample_reason]
+  set valid_sample_toggle_json [rtlgen_json_number $activity_value_diagnostic_valid_sample_toggle]
+  set valid_sample_duty_json [rtlgen_json_number $activity_value_diagnostic_valid_sample_duty]
+  incr activity_value_diagnostic_valid_sample_index
+  set activity_value_diagnostic_valid_sample_line "      {\"full_name\": \"$escaped_full_name\", \"toggle\": $valid_sample_toggle_json, \"duty\": $valid_sample_duty_json, \"origin\": \"$activity_value_diagnostic_valid_sample_origin\", \"reason\": \"$escaped_reason\"}"
+  if {$activity_value_diagnostic_valid_sample_index < $activity_value_diagnostic_valid_sample_count} {
+    puts $fp "$activity_value_diagnostic_valid_sample_line,"
+  } else {
+    puts $fp "$activity_value_diagnostic_valid_sample_line"
+  }
+}
+puts $fp "    \]"
+puts $fp "  }"
+puts $fp ","
 puts $fp "  \"macro_pin_transfer\": {"
 puts $fp "    \"structural_assignment_count\": $macro_pin_transfer_structural_assignment_count,"
 puts $fp "    \"structural_matched_count\": $macro_pin_transfer_structural_matched_count,"
@@ -1108,6 +1528,82 @@ if {$has_nonfinite_design_total} {
   puts $fp "      \"switching_w\": [rtlgen_json_number $non_finite_leaf_instance_power_switching_sum],"
   puts $fp "      \"leakage_w\": [rtlgen_json_number $non_finite_leaf_instance_power_leakage_sum],"
   puts $fp "      \"total_w\": [rtlgen_json_number $non_finite_leaf_instance_power_total_sum]"
+  puts $fp "    },"
+  puts $fp "    \"pin_activity\": {"
+  puts $fp "      \"inspected_pin_count\": $non_finite_leaf_instance_power_pin_inspected_count,"
+  puts $fp "      \"malformed_activity_tuple_count\": $non_finite_leaf_instance_power_pin_malformed_activity_tuple_count,"
+  puts $fp "      \"query_error_count\": $non_finite_leaf_instance_power_pin_query_error_count,"
+  puts $fp "      \"non_finite_toggle_count\": $non_finite_leaf_instance_power_pin_non_finite_toggle_count,"
+  puts $fp "      \"negative_toggle_count\": $non_finite_leaf_instance_power_pin_negative_toggle_count,"
+  puts $fp "      \"non_finite_duty_count\": $non_finite_leaf_instance_power_pin_non_finite_duty_count,"
+  puts $fp "      \"duty_less_than_zero_count\": $non_finite_leaf_instance_power_pin_duty_less_than_zero_count,"
+  puts $fp "      \"duty_greater_than_one_count\": $non_finite_leaf_instance_power_pin_duty_greater_than_one_count,"
+  puts $fp "      \"valid_pin_count\": $non_finite_leaf_instance_power_pin_valid_pin_count,"
+  puts $fp "      \"finite_extrema\": {"
+  puts $fp "        \"min_toggle\": [rtlgen_json_number $non_finite_leaf_instance_power_pin_min_toggle],"
+  puts $fp "        \"max_toggle\": [rtlgen_json_number $non_finite_leaf_instance_power_pin_max_toggle],"
+  puts $fp "        \"min_duty\": [rtlgen_json_number $non_finite_leaf_instance_power_pin_min_duty],"
+  puts $fp "        \"max_duty\": [rtlgen_json_number $non_finite_leaf_instance_power_pin_max_duty]"
+  puts $fp "      },"
+  puts $fp "      \"origin_counts\": {"
+  puts $fp "        \"vcd\": $non_finite_leaf_instance_power_pin_origin_vcd_count,"
+  puts $fp "        \"propagated\": $non_finite_leaf_instance_power_pin_origin_propagated_count,"
+  puts $fp "        \"clock\": $non_finite_leaf_instance_power_pin_origin_clock_count,"
+  puts $fp "        \"constant\": $non_finite_leaf_instance_power_pin_origin_constant_count,"
+  puts $fp "        \"other\": $non_finite_leaf_instance_power_pin_origin_other_count"
+  puts $fp "      },"
+  puts $fp "      \"samples\": \["
+  set leaf_instance_pin_sample_count [llength $non_finite_leaf_instance_power_pin_samples]
+  set leaf_instance_pin_sample_index 0
+  foreach leaf_instance_pin_sample $non_finite_leaf_instance_power_pin_samples {
+    lassign \
+      $leaf_instance_pin_sample \
+      leaf_instance_pin_sample_name \
+      leaf_instance_pin_sample_ref_name \
+      leaf_instance_pin_sample_pin_name \
+      leaf_instance_pin_sample_pin_direction \
+      leaf_instance_pin_sample_activity \
+      leaf_instance_pin_sample_reason
+    set leaf_instance_pin_sample_name_escaped [rtlgen_json_escape_array_literal_chars [rtlgen_json_escape $leaf_instance_pin_sample_name]]
+    set leaf_instance_pin_sample_ref_name_escaped [rtlgen_json_escape_array_literal_chars [rtlgen_json_escape $leaf_instance_pin_sample_ref_name]]
+    set leaf_instance_pin_sample_pin_name_escaped [rtlgen_json_escape_array_literal_chars [rtlgen_json_escape $leaf_instance_pin_sample_pin_name]]
+    set leaf_instance_pin_sample_reason_escaped [rtlgen_json_escape $leaf_instance_pin_sample_reason]
+    set leaf_instance_pin_sample_activity_json "[rtlgen_json_escape_array_literal_chars [rtlgen_json_escape $leaf_instance_pin_sample_activity]]"
+    set leaf_instance_pin_sample_line "      {\"instance\": \"$leaf_instance_pin_sample_name_escaped\", \"ref\": \"$leaf_instance_pin_sample_ref_name_escaped\", \"pin\": \"$leaf_instance_pin_sample_pin_name_escaped\", \"direction\": \"$leaf_instance_pin_sample_pin_direction\", \"activity\": \"$leaf_instance_pin_sample_activity_json\", \"reason\": \"$leaf_instance_pin_sample_reason_escaped\"}"
+    incr leaf_instance_pin_sample_index
+    if {$leaf_instance_pin_sample_index < $leaf_instance_pin_sample_count} {
+      puts $fp "$leaf_instance_pin_sample_line,"
+    } else {
+      puts $fp "$leaf_instance_pin_sample_line"
+    }
+  }
+  puts $fp "      \],"
+  puts $fp "    \"valid_samples\": \["
+  set leaf_instance_pin_valid_sample_count [llength $non_finite_leaf_instance_power_pin_valid_samples]
+  set leaf_instance_pin_valid_sample_index 0
+  foreach leaf_instance_pin_sample $non_finite_leaf_instance_power_pin_valid_samples {
+    lassign \
+      $leaf_instance_pin_sample \
+      leaf_instance_pin_sample_name \
+      leaf_instance_pin_sample_ref_name \
+      leaf_instance_pin_sample_pin_name \
+      leaf_instance_pin_sample_pin_direction \
+      leaf_instance_pin_sample_activity \
+      leaf_instance_pin_sample_reason
+    set leaf_instance_pin_sample_name_escaped [rtlgen_json_escape_array_literal_chars [rtlgen_json_escape $leaf_instance_pin_sample_name]]
+    set leaf_instance_pin_sample_ref_name_escaped [rtlgen_json_escape_array_literal_chars [rtlgen_json_escape $leaf_instance_pin_sample_ref_name]]
+    set leaf_instance_pin_sample_pin_name_escaped [rtlgen_json_escape_array_literal_chars [rtlgen_json_escape $leaf_instance_pin_sample_pin_name]]
+    set leaf_instance_pin_sample_reason_escaped [rtlgen_json_escape $leaf_instance_pin_sample_reason]
+    set leaf_instance_pin_sample_activity_json "[rtlgen_json_escape_array_literal_chars [rtlgen_json_escape $leaf_instance_pin_sample_activity]]"
+    set leaf_instance_pin_sample_line "      {\"instance\": \"$leaf_instance_pin_sample_name_escaped\", \"ref\": \"$leaf_instance_pin_sample_ref_name_escaped\", \"pin\": \"$leaf_instance_pin_sample_pin_name_escaped\", \"direction\": \"$leaf_instance_pin_sample_pin_direction\", \"activity\": \"$leaf_instance_pin_sample_activity_json\", \"reason\": \"$leaf_instance_pin_sample_reason_escaped\"}"
+    incr leaf_instance_pin_valid_sample_index
+    if {$leaf_instance_pin_valid_sample_index < $leaf_instance_pin_valid_sample_count} {
+      puts $fp "$leaf_instance_pin_sample_line,"
+    } else {
+      puts $fp "$leaf_instance_pin_sample_line"
+    }
+  }
+  puts $fp "      \]"
   puts $fp "    },"
   puts $fp "    \"ref_name_buckets\": \["
   set ref_name_bucket_count [llength $non_finite_leaf_instance_power_ref_name_buckets]
