@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1",
-  "source_commit_note": "Queue v10 after PR #1401 / commit 263984cf6945b53283a4d538b2b88399223bfda4. This compact-report rerun keeps all quality/equivalence/annotation/macro/numeric/artifact/promotion gates unchanged and replaces v9's oversized internal-pin payload.",
+  "source_commit_note": "Queue v11 diagnostic rerun after PR #1404 / commit 658232d3ae22a8360457130e174e6156a088157a. This rerun keeps all quality/equivalence/annotation/macro/numeric/artifact/promotion gates unchanged and replaces v10 with bounded final-diagnostics for non-finite reducer behavior.",
   "requested_items": [
     {
       "item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1",
@@ -325,13 +325,46 @@
         "direction": "record_shared_score_multivalue_cluster_activity_power_gate",
         "reason": "v10 reruns identical quality/equivalence/annotation/macro/numeric/artifact/promotion gates and score_fill/replay checks; it keeps per-phase structural hashes/counts, drops internal rows from committed compact artifacts, and retains finalize diagnostics for any non-finite reducer leaf power rows (expected 4,521 in this rerun family)."
       },
-      "status": "merged",
+      "status": "retracted",
       "merged_pr_number": 1403,
       "merge_commit": "23240199baa2207afcc1b713a2e25b7f86a0d821",
       "revision_of_decision": "iterate",
-      "merged_utc": "2026-07-19T14:35:52.110773Z",
-      "notes": "Merged via PR #1403 and merge 23240199baa2207afcc1b713a2e25b7f86a0d821 at 2026-07-19T14:35:52.110773Z."
+      "notes": "V10 used 5,096 structural assignments per phase with zero structural errors, passed score_fill (0.229656845331 W) and replay_value (0.216561496258 W), produced 56,575-byte compact evidence, and retained finalize diagnostics with 4,521 non-finite reducer cells and absurd finite-instance sums (~2.025e29 W leakage, negative internal/switching).",
+      "retracted_by_item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v11",
+      "retraction_reason": "diagnose_finalize_nonfinite_pin_activity"
+    },
+    {
+      "item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v11",
+      "task_type": "l2_campaign",
+      "objective": "Rerun shared-score multivalue-cluster activity-backed power after PR #1404 / commit 658232d3ae22a8360457130e174e6156a088157a. v10 preserved every gate and score_fill/replay structure but still reported non-finite reducer behavior in finalize; v11 adds bounded global and non-finite-cell diagnostics for pin toggle/duty/origin without changing gates.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_decode_score_multivalue_cluster_activity_power",
+      "comparison_role": "shared_score_multivalue_cluster_activity_power_gate",
+      "depends_on_item_ids": [
+        "l1_decoder_attention_decode_score_multivalue_cluster_pnr_8ns_v2",
+        "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "prior_item_ids": [
+        "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v9",
+        "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v10"
+      ],
+      "revision": {
+        "reason": "diagnose_finalize_nonfinite_pin_activity",
+        "invalidates_item_ids": [
+          "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v10"
+        ]
+      },
+      "expected_result": {
+        "direction": "record_shared_score_multivalue_cluster_activity_power_gate",
+        "reason": "v11 keeps structural assignment counts and scores unchanged, preserves score_fill/replay and existing gate set, and adds bounded global plus non-finite-cell pin toggle/duty/origin diagnostics to make finalize failure root-cause explicit without introducing substitutes or relaxed thresholds."
+      },
+      "status": "merged",
+      "merged_pr_number": 1404,
+      "merge_commit": "658232d3ae22a8360457130e174e6156a088157a",
+      "revision_of_decision": "iterate"
     }
   ],
-  "source_commit": "263984cf6945b53283a4d538b2b88399223bfda4"
+  "source_commit": "658232d3ae22a8360457130e174e6156a088157a"
 }
