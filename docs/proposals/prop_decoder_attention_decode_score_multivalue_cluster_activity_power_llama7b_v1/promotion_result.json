@@ -1,15 +1,15 @@
 {
   "proposal_id": "prop_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1",
   "decision": "iterate",
-  "pr_number": 1385,
-  "merge_commit": "72b7cf54096ad497ad00a59294907c050c05b23c",
-  "merged_utc": "2026-07-19T12:04:53.707712Z",
+  "pr_number": 1388,
+  "merge_commit": "aee7d64c119ed6fe5af322ce4687ef279072ccc5",
+  "merged_utc": "2026-07-19T12:23:51.832192Z",
   "revision": {
-    "reason": "postroute_macro_boundary_activity_unattributed",
+    "reason": "postroute_macro_pin_query_and_instance_power_api_mismatch",
     "invalidated_item_ids": [
-      "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v3"
+      "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v4"
     ],
-    "replacement_item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v4",
+    "replacement_item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v5",
     "previous_decision": "iterate"
   }
 }
