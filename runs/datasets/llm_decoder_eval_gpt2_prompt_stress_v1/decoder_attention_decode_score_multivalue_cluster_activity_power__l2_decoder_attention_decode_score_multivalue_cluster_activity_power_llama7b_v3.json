@@ -1,0 +1,134 @@
+{
+  "activity_contract": {
+    "clock_period_ns": 8.0,
+    "phase_partition_cycle_sum": 8334,
+    "phases": [
+      {
+        "full_context_cycles": 2277377,
+        "measured_cycles": 418,
+        "phase": "score_fill",
+        "requires_macro_activity": true,
+        "scaling": {
+          "command_setup_cycles": 1,
+          "cycles_per_block": 139,
+          "formula": "command_setup_cycles + cycles_per_block * target_max_blocks",
+          "full_context_cycles": 2277377,
+          "kind": "fixed_setup_plus_linear_by_block_count",
+          "representative_block_count": 3,
+          "target_max_blocks": 16384
+        },
+        "vcd": "score_fill.vcd",
+        "vcd_sha256": "94f97a382b961a412ac8e102c88fffb172df57f66d35c77572d5cbec075ec5e6"
+      },
+      {
+        "full_context_cycles": 1114128,
+        "measured_cycles": 220,
+        "phase": "replay_value",
+        "requires_macro_activity": true,
+        "scaling": {
+          "clear_cycles": 16,
+          "formula": "clear_cycles + replay_cycles_per_block * target_max_blocks",
+          "full_context_cycles": 1114128,
+          "kind": "fixed_clear_plus_linear_by_block_count",
+          "replay_cycles_per_block": 68,
+          "representative_block_count": 3,
+          "target_max_blocks": 16384
+        },
+        "vcd": "replay_value.vcd",
+        "vcd_sha256": "6cbb59f79db2e663f2de5c0b3f2dc1c483838f6a243fed5f99b5594d516bcd5b"
+      },
+      {
+        "full_context_cycles": 7696,
+        "measured_cycles": 7696,
+        "phase": "finalize_result",
+        "requires_macro_activity": false,
+        "scaling": {
+          "divide_cycles_per_dimension": 60,
+          "formula": "value_dimensions * divide_cycles_per_dimension + result_emit_cycles",
+          "full_context_cycles": 7696,
+          "kind": "fixed_per_command",
+          "result_emit_cycles": 16,
+          "target_max_blocks": 16384,
+          "value_dimensions": 128
+        },
+        "vcd": "finalize_result.vcd",
+        "vcd_sha256": "82072f0e9b0a8ddde20d5269270083e94aea43427358ff6211897a17ca97fbc1"
+      }
+    ],
+    "representative_block_count": 3,
+    "representative_full_transaction_cycles": 8334
+  },
+  "best": null,
+  "best_candidate_id": null,
+  "candidate_count": 1,
+  "candidates": [
+    {
+      "candidate_id": "multivalue_cluster_activity_decode_score_multivalue_cluster_v1_8ns_bridge_proxy_die_2500",
+      "failure": {
+        "detail": [
+          "post-route VCD power failed:",
+          "command: make --no-print-directory DESIGN_CONFIG=designs<evaluator-local-path> FLOW_VARIANT=decode_score_multivalue_cluster_v1_8ns_bridge_proxy_die_2500 ...",
+          "stdout:",
+          "OpenROAD v2.0-25126-g320b89c852",
+          "Features included (+) or not (-): +GPU +GUI +Python",
+          "This program is licensed under the BSD-3 license. See the LICENSE file for details.",
+          "Components of this program may be licensed under more restrictive licenses which must be honored.",
+          "[INFO ORD-0030] Using 16 thread(s).",
+          "read_liberty <evaluator-local-path>",
+          "read_liberty <evaluator-local-path>",
+          "read_db .<evaluator-local-path>",
+          "read_vcd -scope tb<evaluator-local-path> <evaluator-local-path>",
+          "Annotated 8543 pin activities.",
+          "Error: activity_power.tcl, 312 extra characters after close-brace",
+          "stderr:",
+          "make: *** [<builtin>: rtlgen_activity_power] Error 1"
+        ],
+        "error_summary": "post-route VCD power failed:",
+        "error_type": "RuntimeError"
+      },
+      "flow_variant": "decode_score_multivalue_cluster_v1_8ns_bridge_proxy_die_2500",
+      "ppa_metric": {
+        "config_hash": "d037eabb6abd",
+        "core_area_um2": "5760000.0",
+        "critical_path_ns": "7.1765",
+        "design": "attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv",
+        "die_area": "6250000.0",
+        "flow_elapsed_seconds": "2089.11",
+        "instance_area_um2": "2785000.0",
+        "metrics_csv": "runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/metrics.csv",
+        "param_hash": "939c71c3",
+        "params_json": "{\"CLOCK_PERIOD\": 8, \"CORE_AREA\": \"50 50 2450 2450\", \"DIE_AREA\": \"0 0 2500 2500\", \"FLOW_VARIANT\": \"decode_score_multivalue_cluster_v1_8ns_bridge_proxy_die_2500\", \"PLACE_DENSITY\": 0.4, \"SYNTH_HIERARCHICAL\": 1, \"SYNTH_MEMORY_MAX_BITS\": 65536, \"TAG\": \"decode_score_multivalue_cluster_v1_8ns_bridge_proxy_die_2500\", \"tag_prefix\": \"decode_score_multivalue_cluster_v1_8ns_bridge\"}",
+        "platform": "nangate45",
+        "status": "ok",
+        "stdcell_area_um2": "238187.0",
+        "stdcell_count": "180833.0",
+        "tag": "decode_score_multivalue_cluster_v1_8ns_bridge_proxy_die_2500",
+        "total_power_mw": "0.348",
+        "utilization_pct": "48.35069444444444"
+      },
+      "status": "measurement_failed"
+    }
+  ],
+  "decision": "activity_power_rejected_no_gated_candidate",
+  "equivalence": {
+    "decision": "decode_score_multivalue_cluster_equivalence_pass",
+    "equivalence_pass": true,
+    "final_tensor_hash": "fbbbe51bfe1d4ebf5f9910fdfdbf7e5eb322fe7633c9d523ac5a3587545cd457",
+    "score_tensor_hash": "dcdf04e9e1981a3447a532037c35bc10afc81c339014d09fc9bc039578c34387"
+  },
+  "model": "decoder_attention_decode_score_multivalue_cluster_activity_power_v1",
+  "precision_status": "unchanged_integer_contract_from_merged_multivalue_equivalence",
+  "promoted_candidate_count": 0,
+  "promotion_gate_pass": false,
+  "remaining_abstractions": [
+    "FakeRAM area and power use Nangate45 proxy LEF/Liberty views, not SRAM compiler signoff.",
+    "Value-memory, NoC, HBM/DRAM, command-distribution, and clock-tree composition outside the cluster are not included.",
+    "RTL VCD is mapped to the routed netlist; each candidate records and gates direct annotation coverage.",
+    "Score multiplier and shift derivation remain external to the cluster boundary."
+  ],
+  "source_dependencies": [
+    "l1_decoder_attention_decode_score_multivalue_cluster_pnr_8ns_v2",
+    "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1"
+  ],
+  "version": 1
+}
