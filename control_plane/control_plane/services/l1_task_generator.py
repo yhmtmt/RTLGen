@@ -1394,6 +1394,13 @@ def _command_manifest_for_targets(targets: list[Layer1ConfigTarget]) -> list[dic
     return commands
 
 
+def _is_multivalue_cluster_8ns_bridge_sweep(*, item_id: str, sweep_path: str) -> bool:
+    return (
+        item_id == "l1_decoder_attention_decode_score_multivalue_cluster_pnr_8ns_v2"
+        and Path(sweep_path).name == "nangate45_decode_score_multivalue_cluster_8ns_proxy_die_2500.json"
+    )
+
+
 def _expand_expected_outputs_for_trials(*, expected_outputs: list[str], trial_policy: dict[str, int]) -> list[str]:
     trial_count = max(int((trial_policy or {}).get("trial_count") or 1), 1)
     if trial_count <= 1:
@@ -1650,6 +1657,21 @@ def generate_l1_sweep_task(session: Session, request: Layer1SweepGenerateRequest
             sweep_path=sweep_path,
             config_paths=config_args,
         )
+
+    if _is_multivalue_cluster_8ns_bridge_sweep(item_id=item_id, sweep_path=sweep_path) and targets:
+        checker_command = {
+            "name": "check_attention_decode_score_multivalue_cluster_8ns_bridge",
+            "run": f"python3 npu/eval/check_attention_decode_score_multivalue_cluster_8ns_bridge.py "
+            f"--metrics-path {targets[0].expected_metrics_path}",
+        }
+        inserted = False
+        for idx, command in enumerate(command_manifest):
+            if command.get("name") == "run_block_sweep":
+                command_manifest.insert(idx + 1, checker_command)
+                inserted = True
+                break
+        if not inserted:
+            command_manifest.append(checker_command)
     expected_outputs = []
     for target in targets:
         expected_outputs.append(target.expected_metrics_path)
