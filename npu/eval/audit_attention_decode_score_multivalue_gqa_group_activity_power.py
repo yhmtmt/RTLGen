@@ -17,6 +17,7 @@ from npu.synth.run_postroute_vcd_power import build_report as build_power_report
 
 JsonDict = dict[str, Any]
 _GQA_HEADS = 8
+_PARALLEL_QUERY_HEAD_LANES = {1, 2, 4, 8}
 _CLUSTER_ACTIVITY_MODEL = "decoder_attention_decode_score_multivalue_cluster_activity_power_v1"
 
 
@@ -112,6 +113,20 @@ def _finite_positive(value: object, label: str) -> float:
     return number
 
 
+def _parallel_query_head_lanes(config: JsonDict) -> int:
+    body = config.get("attention_decode_score_multivalue_gqa_group")
+    if not isinstance(body, dict):
+        raise ValueError("equivalence gating requires attention_decode_score_multivalue_gqa_group in config")
+    if int(body.get("query_heads_per_kv", _GQA_HEADS)) != _GQA_HEADS:
+        raise ValueError("equivalence gating requires GQA8")
+    lanes = int(body.get("parallel_query_head_lanes", _GQA_HEADS))
+    if lanes not in _PARALLEL_QUERY_HEAD_LANES:
+        raise ValueError("equivalence gating requires parallel_query_head_lanes in {1,2,4,8}")
+    if _GQA_HEADS % lanes != 0:
+        raise ValueError("equivalence gating requires parallel_query_head_lanes to divide 8")
+    return lanes
+
+
 def _cluster_baseline(path: Path, clock_period_ns: float) -> JsonDict:
     payload = _load(path)
     if payload.get("model") != _CLUSTER_ACTIVITY_MODEL:
@@ -181,7 +196,51 @@ def _cluster_baseline(path: Path, clock_period_ns: float) -> JsonDict:
     }
 
 
-def _validate_gqa_equivalence(equivalence: JsonDict) -> JsonDict:
+def _validate_gqa_equivalence(equivalence: JsonDict, *, parallel_query_head_lanes: int) -> JsonDict:
+    heads = int(equivalence.get("query_heads_per_kv", _GQA_HEADS))
+    if heads != _GQA_HEADS:
+        raise ValueError("equivalence report is not for GQA8")
+    rows = equivalence.get("rows")
+    if isinstance(rows, list):
+        selected_rows = [
+            row
+            for row in rows
+            if isinstance(row, dict) and int(row.get("parallel_query_head_lanes", -1)) == parallel_query_head_lanes
+        ]
+        if not selected_rows:
+            raise ValueError(
+                "folded-lane GQA8 equivalence report is missing the configured parallel_query_head_lanes row"
+            )
+        row = selected_rows[0]
+        expected_hash = row.get("expected_group_result_sha256")
+        observed_hash = row.get("observed_group_result_sha256")
+        if not (
+            row.get("equivalence_pass") is True
+            and isinstance(expected_hash, str)
+            and expected_hash
+            and expected_hash == observed_hash
+        ):
+            raise ValueError("folded-lane equivalence row did not pass for configured lane count")
+        completion_cycles = int(row.get("completion_cycles", 0))
+        if completion_cycles <= 0:
+            raise ValueError("folded-lane equivalence row lacks positive completion_cycles")
+        shared_hash = equivalence.get("shared_result_sha256")
+        if isinstance(shared_hash, str) and shared_hash and shared_hash != expected_hash:
+            raise ValueError(
+                "folded-lane equivalence report shared_result_sha256 does not match the selected lane row"
+            )
+        return {
+            "equivalence_pass": True,
+            "decision": equivalence.get("decision"),
+            "semantic_profile": equivalence.get("model"),
+            "query_heads_per_kv": heads,
+            "parallel_query_head_lanes": parallel_query_head_lanes,
+            "query_head_waves": _GQA_HEADS // parallel_query_head_lanes,
+            "completion_cycles": completion_cycles,
+            "expected_group_result_sha256": expected_hash,
+            "observed_group_result_sha256": observed_hash,
+        }
+
     wrapper = equivalence.get("wrapper_protocol")
     expected_hash = equivalence.get("expected_group_result_sha256")
     observed_hash = equivalence.get("observed_group_result_sha256")
@@ -198,20 +257,21 @@ def _validate_gqa_equivalence(equivalence: JsonDict) -> JsonDict:
         and expected_hash == observed_hash
     ):
         raise ValueError("GQA8 shared-KV equivalence did not pass")
-    heads = equivalence.get("query_heads_per_kv")
-    if heads is not None and int(heads) != _GQA_HEADS:
-        raise ValueError("equivalence report is not for GQA8")
     return {
         "equivalence_pass": True,
         "decision": equivalence.get("decision"),
         "semantic_profile": equivalence.get("semantic_profile"),
-        "query_heads_per_kv": int(heads) if heads is not None else _GQA_HEADS,
-        "expected_group_result_sha256": equivalence.get("expected_group_result_sha256"),
-        "observed_group_result_sha256": equivalence.get("observed_group_result_sha256"),
+        "query_heads_per_kv": heads,
+        "parallel_query_head_lanes": parallel_query_head_lanes,
+        "query_head_waves": _GQA_HEADS // parallel_query_head_lanes,
+        "expected_group_result_sha256": expected_hash,
+        "observed_group_result_sha256": observed_hash,
     }
 
 
-def _validate_activity_compatibility(activity_manifest: JsonDict, cluster_baseline: JsonDict) -> None:
+def _validate_activity_compatibility(
+    activity_manifest: JsonDict, cluster_baseline: JsonDict, equivalence: JsonDict
+) -> None:
     phases = activity_manifest.get("phases")
     if not isinstance(phases, list):
         raise ValueError("group activity manifest is missing phases")
@@ -222,6 +282,24 @@ def _validate_activity_compatibility(activity_manifest: JsonDict, cluster_baseli
         raise ValueError("group and cluster activity target_max_blocks contracts differ")
     if int(activity_manifest.get("query_heads_per_kv", 0)) != _GQA_HEADS:
         raise ValueError("group activity manifest is not GQA8")
+    if int(activity_manifest.get("parallel_query_head_lanes", _GQA_HEADS)) != int(
+        equivalence["parallel_query_head_lanes"]
+    ):
+        raise ValueError("group activity and equivalence lane counts differ")
+    if int(
+        activity_manifest.get(
+            "query_head_waves",
+            _GQA_HEADS // int(equivalence["parallel_query_head_lanes"]),
+        )
+    ) != int(equivalence["query_head_waves"]):
+        raise ValueError("group activity and equivalence wave counts differ")
+    completion_cycles = equivalence.get("completion_cycles")
+    if completion_cycles is not None and int(
+        activity_manifest.get("representative_full_transaction_cycles", 0)
+    ) != int(completion_cycles) + 1:
+        raise ValueError(
+            "group activity service cycles must equal equivalence completion cycles plus the observation cycle"
+        )
 
 
 def _write_markdown(payload: JsonDict, path: Path) -> None:
@@ -267,7 +345,12 @@ def build_report(
     clock_period_ns: float,
     activity_dir: Path,
 ) -> JsonDict:
-    equivalence = _validate_gqa_equivalence(_load(equivalence_json))
+    config_payload = _load(config)
+    parallel_query_head_lanes = _parallel_query_head_lanes(config_payload)
+    equivalence = _validate_gqa_equivalence(
+        _load(equivalence_json),
+        parallel_query_head_lanes=parallel_query_head_lanes,
+    )
     cluster_baseline = _cluster_baseline(cluster_activity_power_json, clock_period_ns)
     activity_dir.mkdir(parents=True, exist_ok=True)
     for name in (
@@ -280,7 +363,7 @@ def build_report(
         if path.is_file():
             path.unlink()
     activity_manifest = generate_phase_activity(
-        _load(config),
+        config_payload,
         activity_dir,
         block_count=3,
         head_dim=128,
@@ -289,7 +372,7 @@ def build_report(
     activity_manifest_path = (
         activity_dir / "attention_decode_score_multivalue_gqa_group_activity_manifest.json"
     )
-    _validate_activity_compatibility(activity_manifest, cluster_baseline)
+    _validate_activity_compatibility(activity_manifest, cluster_baseline, equivalence)
     reference_energy = _GQA_HEADS * cluster_baseline["full_context_energy_j"]
     rows: list[JsonDict] = []
     for metric in _feasible_metrics(group_metrics_csv, clock_period_ns):
@@ -298,6 +381,8 @@ def build_report(
         candidate: JsonDict = {
             "candidate_id": f"multivalue_gqa_group_activity_{flow_variant}",
             "flow_variant": flow_variant,
+            "parallel_query_head_lanes": parallel_query_head_lanes,
+            "query_head_waves": _GQA_HEADS // parallel_query_head_lanes,
             "ppa_metric": _metric_provenance(metric, group_metrics_csv),
         }
         try:
@@ -388,8 +473,16 @@ def build_report(
         },
         "equivalence": equivalence,
         "source_dependencies": [
-            "l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v1",
-            "l1_decoder_attention_decode_score_multivalue_gqa8_group_pnr_v1",
+            (
+                "l2_decoder_attention_decode_score_multivalue_gqa8_folded_lane_equivalence_llama7b_v1"
+                if parallel_query_head_lanes != _GQA_HEADS
+                else "l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v1"
+            ),
+            (
+                f"l1_decoder_attention_decode_score_multivalue_gqa8_folded_lanes{parallel_query_head_lanes}_pnr_v1"
+                if parallel_query_head_lanes != _GQA_HEADS
+                else "l1_decoder_attention_decode_score_multivalue_gqa8_group_pnr_v1"
+            ),
             "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1",
             "prior_single_cluster_activity_power_best_activity_power",
         ],

@@ -10,6 +10,26 @@ import pytest
 from npu.eval import audit_attention_decode_score_multivalue_gqa_group_activity_power as audit
 
 
+def _config(path: Path, parallel_query_head_lanes: int | None = None) -> None:
+    path.write_text(
+        json.dumps(
+            {
+                "top_name": "attention_decode_score_multivalue_gqa_group_activity_power",
+                "attention_decode_score_multivalue_gqa_group": {
+                    "max_blocks": 16384,
+                    "array_n": 8,
+                    "value_slices": 16,
+                    "divider_impl": "iterative_restoring",
+                    "score_scale_lanes_per_cycle": 1,
+                    "query_heads_per_kv": 8,
+                    **({"parallel_query_head_lanes": parallel_query_head_lanes} if parallel_query_head_lanes else {}),
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+
 def _write_metrics(path: Path) -> None:
     fields = [
         "design",
@@ -162,7 +182,7 @@ def test_build_report_gates_gqa_and_does_not_pair_cluster_flow(tmp_path: Path) -
     metrics = tmp_path / "metrics.csv"
     _write_metrics(metrics)
     config = tmp_path / "config.json"
-    config.write_text("{}", encoding="utf-8")
+    _config(config, parallel_query_head_lanes=8)
     manifest = {
         "scope": "tb/dut",
         "scope_semantics": "the complete generated GQA8 group wrapper",
@@ -209,11 +229,142 @@ def test_build_report_gates_gqa_and_does_not_pair_cluster_flow(tmp_path: Path) -
     ]
 
 
+@pytest.mark.parametrize("parallel_query_head_lanes", [1, 2, 4, 8])
+def test_build_report_accepts_folded_lane_equivalence_rows_for_configured_lanes(
+    tmp_path: Path, parallel_query_head_lanes: int
+) -> None:
+    equivalence = tmp_path / "equivalence.json"
+    shared_hash = "e2f07a3c580991601458466bfbaab4127cbcb654065b0241197f462ca4977069"
+    rows = []
+    completion_cycles = {1: 66671, 2: 62199, 4: 59963, 8: 58845}
+    for lanes in [1, 2, 4, 8]:
+        rows.append(
+            {
+                "equivalence_pass": True,
+                "parallel_query_head_lanes": lanes,
+                "query_head_waves": 8 // lanes,
+                "completion_cycles": completion_cycles[lanes],
+                "expected_group_result_sha256": shared_hash,
+                "observed_group_result_sha256": shared_hash,
+            }
+        )
+    equivalence.write_text(
+        json.dumps(
+            {
+                "version": 1,
+                "decision": "llama7b_gqa8_folded_lane_equivalence_pass",
+                "query_heads_per_kv": 8,
+                "rows": rows,
+                "shared_result_sha256": shared_hash,
+            }
+        ),
+        encoding="utf-8",
+    )
+    baseline = tmp_path / "cluster-power.json"
+    _write_baseline(baseline)
+    metrics = tmp_path / "metrics.csv"
+    _write_metrics(metrics)
+    config = tmp_path / "config.json"
+    _config(config, parallel_query_head_lanes=parallel_query_head_lanes)
+    manifest = {
+        "query_head_waves": 8 // parallel_query_head_lanes,
+        "query_heads_per_kv": 8,
+        "parallel_query_head_lanes": parallel_query_head_lanes,
+        "scope": "tb/dut",
+        "scope_semantics": "the complete generated GQA8 group wrapper",
+        "clock_period_ns": 8.0,
+        "target_max_blocks": 16384,
+        "block_count": 3,
+        "representative_full_transaction_cycles": completion_cycles[parallel_query_head_lanes] + 1,
+        "phase_partition_cycle_sum": completion_cycles[parallel_query_head_lanes] + 1,
+        "phases": [
+            {"phase": "score_fill"},
+            {"phase": "replay_value"},
+            {"phase": "finalize_result"},
+        ],
+    }
+    with mock.patch.object(audit, "generate_phase_activity", return_value=manifest), mock.patch.object(
+        audit,
+        "build_power_report",
+        return_value=_power(0.014),
+    ) as build_power:
+        payload = audit.build_report(
+            config=config,
+            group_metrics_csv=metrics,
+            cluster_activity_power_json=baseline,
+            equivalence_json=equivalence,
+            group_orfs_design_config=tmp_path / "group.mk",
+            clock_period_ns=8.0,
+            activity_dir=tmp_path / "activity",
+        )
+
+        assert build_power.call_count == 2
+        if parallel_query_head_lanes == 8:
+            assert (
+                payload["source_dependencies"]
+                == [
+                    "l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v1",
+                    "l1_decoder_attention_decode_score_multivalue_gqa8_group_pnr_v1",
+                    "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1",
+                    "prior_single_cluster_activity_power_best_activity_power",
+                ]
+            )
+        else:
+            assert (
+                payload["source_dependencies"]
+                == [
+                    "l2_decoder_attention_decode_score_multivalue_gqa8_folded_lane_equivalence_llama7b_v1",
+                    f"l1_decoder_attention_decode_score_multivalue_gqa8_folded_lanes{parallel_query_head_lanes}_pnr_v1",
+                    "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1",
+                    "prior_single_cluster_activity_power_best_activity_power",
+                ]
+            )
+        assert payload["equivalence"]["equivalence_pass"] is True
+        assert payload["equivalence"]["parallel_query_head_lanes"] == parallel_query_head_lanes
+        assert payload["equivalence"]["query_head_waves"] == 8 // parallel_query_head_lanes
+        assert payload["equivalence"]["expected_group_result_sha256"] == shared_hash
+
+
+def test_build_report_rejects_folded_lane_equivalence_hash_mismatch(tmp_path: Path) -> None:
+    equivalence = tmp_path / "equivalence.json"
+    equivalence.write_text(
+        json.dumps(
+            {
+                "decision": "llama7b_gqa8_folded_lane_equivalence_pass",
+                "query_heads_per_kv": 8,
+                "shared_result_sha256": "shared-hash",
+                "rows": [
+                    {
+                        "equivalence_pass": True,
+                        "parallel_query_head_lanes": 1,
+                        "expected_group_result_sha256": "row-hash",
+                        "observed_group_result_sha256": "other-hash",
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    config = tmp_path / "config.json"
+    _config(config, parallel_query_head_lanes=1)
+    with pytest.raises(ValueError, match="did not pass for configured lane count"):
+        audit.build_report(
+            config=config,
+            group_metrics_csv=tmp_path / "metrics.csv",
+            cluster_activity_power_json=tmp_path / "cluster.json",
+            equivalence_json=equivalence,
+            group_orfs_design_config=tmp_path / "group.mk",
+            clock_period_ns=8.0,
+            activity_dir=tmp_path / "activity",
+        )
+
+
 def test_build_report_rejects_unproven_gqa_equivalence(tmp_path: Path) -> None:
     equivalence = tmp_path / "equivalence.json"
     equivalence.write_text('{"equivalence_pass": false}', encoding="utf-8")
     with mock.patch.object(audit, "generate_phase_activity") as generate:
         with pytest.raises(ValueError, match="GQA8 shared-KV equivalence did not pass"):
+            _config(tmp_path / "config.json", parallel_query_head_lanes=8)
             audit.build_report(
                 config=tmp_path / "config.json",
                 group_metrics_csv=tmp_path / "metrics.csv",

@@ -580,6 +580,33 @@ def test_decoder_evidence_summary_recognizes_gqa_followons(
     assert expected in summary
 
 
+def test_decoder_evidence_summary_includes_folded_lane_identity() -> None:
+    _, activity_summary = _decoder_evidence_summary(
+        evidence_ref="runs/datasets/demo/folded-activity.json",
+        evidence_payload={
+            "model": "decoder_attention_decode_score_multivalue_gqa_group_activity_power_v1",
+            "decision": "activity_backed_gqa_group_power_measured",
+            "best": {"parallel_query_head_lanes": 2, "query_head_waves": 4},
+        },
+    )
+    _, frontier_summary = _decoder_evidence_summary(
+        evidence_ref="runs/datasets/demo/folded-frontier.json",
+        evidence_payload={
+            "model": "decoder_attention_decode_score_multivalue_gqa_group_frontier_llama7b_v1",
+            "decision": "measured_complete_gqa8_group_component_frontier_promoted",
+            "best_throughput_candidate": {
+                "parallel_query_head_lanes": 4,
+                "query_head_waves": 2,
+            },
+        },
+    )
+
+    assert "best_parallel_query_head_lanes=2" in activity_summary
+    assert "best_query_head_waves=4" in activity_summary
+    assert "best_parallel_query_head_lanes=4" in frontier_summary
+    assert "best_query_head_waves=2" in frontier_summary
+
+
 def test_consume_l2_result_uses_gqa_array_equivalence_evidence_without_best_point() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"

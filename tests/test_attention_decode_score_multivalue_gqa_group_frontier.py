@@ -65,6 +65,8 @@ def _inputs(tmp_path: Path) -> tuple[Path, Path]:
                 "equivalence_pass": True,
                 "decision": "llama7b_gqa8_shared_kv_equivalence_pass",
                 "query_heads_per_kv": 8,
+                "parallel_query_head_lanes": 8,
+                "query_head_waves": 1,
                 "expected_group_result_sha256": "same-hash",
                 "observed_group_result_sha256": "same-hash",
             },
@@ -86,6 +88,44 @@ def _inputs(tmp_path: Path) -> tuple[Path, Path]:
     return prior, activity
 
 
+def _lane_activity(
+    tmp_path: Path, lanes: int, *, cycles: int, direct_energy: float
+) -> Path:
+    return _write(
+        tmp_path / f"group-activity-l{lanes}.json",
+        {
+            "model": "decoder_attention_decode_score_multivalue_gqa_group_activity_power_v1",
+            "decision": "activity_backed_gqa_group_power_measured",
+            "promotion_gate_pass": True,
+            "best_candidate_id": f"gqa-group-l{lanes}",
+            "energy_scope": "one GQA8 group full-context decode attention command",
+            "activity_contract": {"clock_period_ns": 8.0, "query_heads_per_kv": 8},
+            "equivalence": {
+                "equivalence_pass": True,
+                "decision": "llama7b_gqa8_shared_kv_equivalence_pass",
+                "query_heads_per_kv": 8,
+                "parallel_query_head_lanes": lanes,
+                "query_head_waves": 8 // lanes,
+                "expected_group_result_sha256": "same-hash",
+                "observed_group_result_sha256": "same-hash",
+            },
+            "best": {
+                "candidate_id": f"gqa-group-l{lanes}",
+                "status": "activity_backed",
+                "flow_variant": f"group_die7200_l{lanes}",
+                "ppa_metric": {"instance_area_um2": 2_000_000, "critical_path_ns": 7.5},
+                "direct_group_full_context_energy_j": direct_energy,
+                "activity_power": {
+                    "promotion_gate_pass": True,
+                    "clock_period_ns": 8.0,
+                    "full_context_cycles": cycles,
+                    "full_context_energy_j": direct_energy,
+                },
+            },
+        },
+    )
+
+
 def test_recost_uses_four_logical_groups_and_recursive_measured_evidence(tmp_path: Path) -> None:
     prior, activity = _inputs(tmp_path)
     report = build_report(
@@ -96,6 +136,10 @@ def test_recost_uses_four_logical_groups_and_recursive_measured_evidence(tmp_pat
 
     rows = {row["group_count"]: row for row in report["rows"]}
     assert report["inputs"]["source_schedule_json"].endswith("source.json")
+    assert report["inputs"]["group_activity_power_json"] == str(activity)
+    assert report["schedule_contract"]["group_full_context_cycles_by_lanes"] == {"8": 300}
+    assert rows[1]["parallel_query_head_lanes"] == 8
+    assert rows[1]["query_head_waves"] == 1
     assert report["schedule_contract"]["query_heads_per_kv"] == 8
     assert report["schedule_contract"]["logical_groups_per_layer"] == 4
     assert rows[1]["group_waves_per_layer"] == 4
@@ -117,6 +161,52 @@ def test_recost_uses_four_logical_groups_and_recursive_measured_evidence(tmp_pat
     assert report["comparison_to_prior_best"]["available"] is True
     assert report["comparison_to_prior_best"]["prior_candidate_id"] == "prior_best"
     assert {row["group_count"] for row in report["pareto_rows"]} == {1, 2, 4}
+
+
+def test_recost_cartesian_lane_activity_reports_generate_wave_and_cycle_formulas(tmp_path: Path) -> None:
+    prior, _ = _inputs(tmp_path)
+    lane_activity = {
+        lanes: _lane_activity(tmp_path, lanes, cycles=cycles, direct_energy=0.010 * (8 / lanes))
+        for lanes, cycles in {1: 320, 2: 160, 4: 120}.items()
+    }
+    report = build_report(
+        prior_frontier_json=prior,
+        lane_activity=lane_activity,
+        group_counts=[1, 2, 4],
+    )
+    rows_by_key = {(row["parallel_query_head_lanes"], row["group_count"]): row for row in report["rows"]}
+    assert len(rows_by_key) == 9
+    assert report["schedule_contract"]["group_full_context_cycles_by_lanes"] == {
+        "1": 320,
+        "2": 160,
+        "4": 120,
+    }
+
+    kv_heads = 4
+    layers = 32
+    for lanes in (1, 2, 4):
+        for group_count in (1, 2, 4):
+            row = rows_by_key[(lanes, group_count)]
+            row_cycles = {
+                1: 320,
+                2: 160,
+                4: 120,
+            }[lanes]
+            row_energy = {
+                1: 0.08,
+                2: 0.04,
+                4: 0.02,
+            }[lanes]
+            expected_waves = kv_heads // group_count
+            expected_attention = expected_waves * row_cycles
+            assert row["group_waves_per_layer"] == expected_waves
+            assert row["attention_cycles"] == expected_attention
+            assert row["query_head_waves"] == 8 // lanes
+            expected_id = f"decode_score_multivalue_gqa_group_l{lanes}_g{group_count}"
+            assert row["candidate_id"] == expected_id
+            expected_energy = 4 * 32 * row_energy
+            assert row["gqa_group_component_energy_j_per_token"] == pytest.approx(expected_energy)
+            assert row["parallel_query_head_lanes"] == lanes
 
 
 def test_recost_requires_promoted_complete_gqa8_group(tmp_path: Path) -> None:

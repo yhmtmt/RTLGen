@@ -30,6 +30,7 @@ class Layer2TaskGenerationError(RuntimeError):
 
 _RETRY_SUFFIX_RE = re.compile(r"_r\d+$")
 _VERSION_SUFFIX_RE = re.compile(r"_v(\d+)$")
+_GQA_FOLDED_ACTIVITY_LANES_RE = re.compile(r"_gqa8_folded_lanes(1|2|4|8)_activity_power_")
 
 
 @dataclass(frozen=True)
@@ -97,6 +98,11 @@ def _gqa_evidence_version_for_consumer(item_id: str) -> str:
 def _gqa_group_equivalence_item_for_consumer(item_id: str) -> str:
     version = _gqa_evidence_version_for_consumer(item_id)
     return f"l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_{version}"
+
+
+def _gqa_folded_activity_lanes(item_id: str) -> int | None:
+    match = _GQA_FOLDED_ACTIVITY_LANES_RE.search(_retry_base(item_id))
+    return int(match.group(1)) if match else None
 
 
 def _proposal_dir(repo_root: Path, proposal_path: str | None) -> Path | None:
@@ -6904,20 +6910,36 @@ def _decoder_attention_decode_score_multivalue_cluster_activity_power_evidence(*
 
 def _decoder_attention_decode_score_multivalue_gqa_group_activity_power_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
-    design = "attention_decode_score_multivalue_gqa_group_int8_m1x8_iterdiv"
+    folded_lanes = _gqa_folded_activity_lanes(item_id)
+    design = (
+        f"attention_decode_score_multivalue_gqa_group_lanes{folded_lanes}_int8_m1x8_iterdiv"
+        if folded_lanes is not None and folded_lanes != 8
+        else "attention_decode_score_multivalue_gqa_group_int8_m1x8_iterdiv"
+    )
     config = f"runs/designs/npu_blocks/{design}/config.json"
     metrics_csv = f"runs/designs/npu_blocks/{design}/metrics.csv"
-    group_equivalence_item = _gqa_group_equivalence_item_for_consumer(item_id)
-    equivalence_json = (
-        f"{base}/decoder_attention_decode_score_multivalue_gqa_group_equivalence__"
-        f"{group_equivalence_item}.json"
-    )
+    if folded_lanes is not None:
+        equivalence_json = (
+            f"{base}/decoder_attention_decode_score_multivalue_gqa_folded_lane_equivalence__"
+            "l2_decoder_attention_decode_score_multivalue_gqa8_folded_lane_equivalence_"
+            "llama7b_v1.json"
+        )
+    else:
+        group_equivalence_item = _gqa_group_equivalence_item_for_consumer(item_id)
+        equivalence_json = (
+            f"{base}/decoder_attention_decode_score_multivalue_gqa_group_equivalence__"
+            f"{group_equivalence_item}.json"
+        )
     cluster_activity_power_json = (
         f"{base}/decoder_attention_decode_score_multivalue_cluster_activity_power__"
         "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1.json"
     )
     orfs_design_config = f"/orfs/flow/designs/nangate45/{design}/config.mk"
-    activity_dir = "/tmp/rtlgen_multivalue_gqa_group_activity"
+    activity_dir = (
+        f"/tmp/rtlgen_multivalue_gqa_folded_lanes{folded_lanes}_activity"
+        if folded_lanes is not None
+        else "/tmp/rtlgen_multivalue_gqa_group_activity"
+    )
     out = f"{base}/decoder_attention_decode_score_multivalue_gqa_group_activity_power__{item_id}.json"
     report = f"{base}/decoder_attention_decode_score_multivalue_gqa_group_activity_power__{item_id}.md"
     return {
@@ -6932,8 +6954,13 @@ def _decoder_attention_decode_score_multivalue_gqa_group_activity_power_evidence
             "decode_score_multivalue_gqa_group_activity_power_report": report,
             "decode_score_multivalue_gqa_group_activity_power_scope": (
                 "Measure the GQA8 shared-K/V group activity contract after merged equivalence and PNR. "
-                "The report must distinguish directly annotated group activity from compositional scaling, "
-                "keep VCD/ODB/SPEF evaluator-local, and withhold total-token energy claims."
+                + (
+                    f"This candidate has {folded_lanes} physical query-head lane(s) and charges all explicit waves and replays. "
+                    if folded_lanes is not None
+                    else ""
+                )
+                + "The report must distinguish directly annotated group activity from compositional scaling, "
+                + "keep VCD/ODB/SPEF evaluator-local, and withhold total-token energy claims."
             ),
             "decode_score_multivalue_gqa_group_activity_power_promotion_gate": (
                 "Promotion requires explicit activity provenance, phase-cycle accounting, routed-power "
@@ -7101,35 +7128,55 @@ def _decoder_attention_decode_score_multivalue_gqa_group_frontier_evidence(*, it
         f"{base}/decoder_attention_decode_score_multivalue_cluster_frontier__"
         "l2_decoder_attention_decode_score_multivalue_cluster_frontier_llama7b_v1.json"
     )
+    folded = "gqa8_folded_frontier" in _retry_base(item_id)
     activity_power = (
         f"{base}/decoder_attention_decode_score_multivalue_gqa_group_activity_power__"
         f"l2_decoder_attention_decode_score_multivalue_gqa8_group_activity_power_llama7b_{evidence_version}.json"
     )
+    folded_activity = {
+        lanes: (
+            f"{base}/decoder_attention_decode_score_multivalue_gqa_group_activity_power__"
+            f"l2_decoder_attention_decode_score_multivalue_gqa8_folded_lanes{lanes}_activity_power_"
+            "llama7b_v1.json"
+        )
+        for lanes in (1, 2, 4)
+    }
     group_counts = "1,2,4"
     out = f"{base}/decoder_attention_decode_score_multivalue_gqa_group_frontier__{item_id}.json"
     report = f"{base}/decoder_attention_decode_score_multivalue_gqa_group_frontier__{item_id}.md"
-    return {
-        "inputs": {
+    inputs = {
             "decode_score_multivalue_gqa_group_frontier_prior_frontier": prior,
-            "decode_score_multivalue_gqa_group_frontier_activity_power": activity_power,
             "decode_score_multivalue_gqa_group_frontier_group_counts": group_counts,
             "decode_score_multivalue_gqa_group_frontier_out": out,
             "decode_score_multivalue_gqa_group_frontier_report": report,
             "decode_score_multivalue_gqa_group_frontier_scope": (
                 "Recost the Llama7B GQA8 proxy with one, two, and four deployed complete shared-K/V groups, "
-                "using measured group timing, area, and activity energy. Preserve exact integer precision and "
+                "using measured group timing, area, and activity energy across explicit folded-lane points. "
+                "Preserve exact integer precision and "
                 "compare against the prior independent-cluster frontier. Multi-group PPA is linearly composed, "
                 "not array-PNR measured; off-group memory, NoC, HBM/DRAM, clock-tree composition, and total-token "
                 "energy remain explicit abstractions."
             ),
-        },
+    }
+    if folded:
+        inputs["decode_score_multivalue_gqa_group_frontier_folded_lane_activity_power"] = {
+            str(lanes): path for lanes, path in folded_activity.items()
+        }
+        activity_args = " ".join(
+            f"--lane-activity {lanes}={path}" for lanes, path in folded_activity.items()
+        )
+    else:
+        inputs["decode_score_multivalue_gqa_group_frontier_activity_power"] = activity_power
+        activity_args = f"--group-activity-power-json {activity_power}"
+    return {
+        "inputs": inputs,
         "commands": [
             {
                 "name": "audit_decode_score_multivalue_gqa_group_frontier",
                 "run": (
                     "python3 -m npu.eval.audit_attention_decode_score_multivalue_gqa_group_frontier "
                     f"--prior-frontier-json {prior} "
-                    f"--group-activity-power-json {activity_power} "
+                    f"{activity_args} "
                     f"--group-counts {group_counts} "
                     f"--out {out} --out-md {report}"
                 ),

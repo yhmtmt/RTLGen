@@ -8189,6 +8189,57 @@ def test_generate_l2_campaign_task_adds_decode_score_multivalue_gqa_group_activi
             ] in work_item.expected_outputs
 
 
+def test_generate_l2_campaign_task_adds_folded_gqa_lane_activity_power() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            for lanes in (1, 2, 4):
+                item_id = (
+                    "l2_decoder_attention_decode_score_multivalue_gqa8_folded_"
+                    f"lanes{lanes}_activity_power_llama7b_v1"
+                )
+                result = generate_l2_campaign_task(
+                    session,
+                    Layer2CampaignGenerateRequest(
+                        repo_root=str(repo_root),
+                        campaign_path=campaign_path,
+                        item_id=item_id,
+                        requested_by="@tester",
+                        source_commit=source_commit,
+                        abstraction_layer=(
+                            "decoder_attention_decode_score_multivalue_gqa_group_activity_power"
+                        ),
+                        evaluation_mode="frontier_detail",
+                        run_physical=False,
+                    ),
+                )
+
+                work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+                run = work_item.command_manifest[0]["run"]
+                decoder_inputs = work_item.input_manifest["decoder_contract"]
+                design = (
+                    "attention_decode_score_multivalue_gqa_group_"
+                    f"lanes{lanes}_int8_m1x8_iterdiv"
+                )
+                assert f"--config runs/designs/npu_blocks/{design}/config.json" in run
+                assert f"--group-metrics-csv runs/designs/npu_blocks/{design}/metrics.csv" in run
+                assert (
+                    "decoder_attention_decode_score_multivalue_gqa_folded_lane_equivalence__"
+                    "l2_decoder_attention_decode_score_multivalue_gqa8_folded_lane_"
+                    "equivalence_llama7b_v1.json"
+                ) in run
+                assert f"--activity-dir /tmp/rtlgen_multivalue_gqa_folded_lanes{lanes}_activity" in run
+                assert f"{lanes} physical query-head lane(s)" in decoder_inputs[
+                    "decode_score_multivalue_gqa_group_activity_power_scope"
+                ]
+
+
 def test_generate_l2_campaign_task_adds_decode_score_tile_frontier() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
@@ -8401,6 +8452,55 @@ def test_generate_l2_campaign_task_adds_decode_score_multivalue_gqa_group_fronti
             assert decoder_inputs[
                 "decode_score_multivalue_gqa_group_frontier_report"
             ] in work_item.expected_outputs
+
+
+def test_generate_l2_campaign_task_adds_folded_gqa_frontier() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id=(
+                        "l2_decoder_attention_decode_score_multivalue_gqa8_folded_"
+                        "frontier_llama7b_v1"
+                    ),
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    abstraction_layer=(
+                        "decoder_attention_decode_score_multivalue_gqa_group_frontier"
+                    ),
+                    evaluation_mode="frontier_recost",
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            run = work_item.command_manifest[0]["run"]
+            decoder_inputs = work_item.input_manifest["decoder_contract"]
+            assert run.count("--lane-activity") == 3
+            for lanes in (1, 2, 4):
+                expected = (
+                    f"--lane-activity {lanes}=runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                    "decoder_attention_decode_score_multivalue_gqa_group_activity_power__"
+                    "l2_decoder_attention_decode_score_multivalue_gqa8_folded_"
+                    f"lanes{lanes}_activity_power_llama7b_v1.json"
+                )
+                assert expected in run
+            assert "--group-activity-power-json" not in run
+            assert set(
+                decoder_inputs[
+                    "decode_score_multivalue_gqa_group_frontier_folded_lane_activity_power"
+                ]
+            ) == {"1", "2", "4"}
 
 
 def test_generate_l2_campaign_task_adds_decode_score_multivalue_gqa_array_frontier() -> None:

@@ -164,6 +164,95 @@
         "direction": "measure_gqa8_shared_kv_group_ppa",
         "reason": "Use an explicit macro-derived die-size boundary and retain infeasible rows."
       },
+      "status": "boundary_evidence_merged_no_feasible_row",
+      "merged_pr_number": 1349
+    },
+    {
+      "item_id": "l2_decoder_attention_decode_score_multivalue_gqa8_folded_lanes1_activity_power_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Measure activity-backed power for the timing-feasible one-lane folded GQA8 group.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_decode_score_multivalue_gqa_group_activity_power",
+      "comparison_role": "gqa8_folded_lanes1_activity_power",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_decode_score_multivalue_gqa8_folded_lane_equivalence_llama7b_v1",
+        "l1_decoder_attention_decode_score_multivalue_gqa8_folded_lanes1_pnr_v1",
+        "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "measure_folded_lanes1_direct_activity_energy",
+        "reason": "The minimum-area point needs routed, phase-accounted energy with all eight waves charged."
+      },
+      "status": "pending_implementation_merge"
+    },
+    {
+      "item_id": "l2_decoder_attention_decode_score_multivalue_gqa8_folded_lanes2_activity_power_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Measure activity-backed power for the two-lane folded GQA8 group.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_decode_score_multivalue_gqa_group_activity_power",
+      "comparison_role": "gqa8_folded_lanes2_activity_power",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_decode_score_multivalue_gqa8_folded_lane_equivalence_llama7b_v1",
+        "l1_decoder_attention_decode_score_multivalue_gqa8_folded_lanes2_pnr_v1",
+        "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "measure_folded_lanes2_direct_activity_energy",
+        "reason": "The first lane-parallel midpoint needs routed energy rather than linear scaling from one lane."
+      },
+      "status": "pending_implementation_merge"
+    },
+    {
+      "item_id": "l2_decoder_attention_decode_score_multivalue_gqa8_folded_lanes4_activity_power_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Measure activity-backed power for the four-lane folded GQA8 group.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_decode_score_multivalue_gqa_group_activity_power",
+      "comparison_role": "gqa8_folded_lanes4_activity_power",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_decode_score_multivalue_gqa8_folded_lane_equivalence_llama7b_v1",
+        "l1_decoder_attention_decode_score_multivalue_gqa8_folded_lanes4_pnr_v1",
+        "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "measure_folded_lanes4_direct_activity_energy",
+        "reason": "The near-parallel point needs routed energy before it can trade area for latency."
+      },
+      "status": "pending_implementation_merge"
+    },
+    {
+      "item_id": "l2_decoder_attention_decode_score_multivalue_gqa8_folded_frontier_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Recost Llama7B over folded lane counts 1/2/4 and deployed physical GQA-group counts 1/2/4.",
+      "evaluation_mode": "frontier_recost",
+      "abstraction_layer": "decoder_attention_decode_score_multivalue_gqa_group_frontier",
+      "comparison_role": "gqa8_folded_lane_and_group_count_frontier",
+      "paired_baseline_item_id": "l2_decoder_attention_decode_score_multivalue_cluster_frontier_llama7b_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_decode_score_multivalue_cluster_frontier_llama7b_v1",
+        "l2_decoder_attention_decode_score_multivalue_gqa8_folded_lanes1_activity_power_llama7b_v1",
+        "l2_decoder_attention_decode_score_multivalue_gqa8_folded_lanes2_activity_power_llama7b_v1",
+        "l2_decoder_attention_decode_score_multivalue_gqa8_folded_lanes4_activity_power_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "revision": {
+        "reason": "full_eight_lane_group_is_physically_infeasible_and_must_be_replaced_by_measured_folded_points",
+        "invalidates_item_ids": [
+          "l2_decoder_attention_decode_score_multivalue_gqa8_group_frontier_llama7b_v1"
+        ]
+      },
+      "expected_result": {
+        "direction": "rank_measured_folded_lane_and_group_count_points",
+        "reason": "The Llama7B frontier must use measured cycles, PPA, and energy for each folded lane count rather than the failed eight-lane point or linear lane scaling."
+      },
       "status": "pending_implementation_merge"
     },
     {
@@ -185,7 +274,7 @@
         "direction": "measure_gqa8_shared_kv_group_activity_energy",
         "reason": "Token-energy ranking requires phase-accounted activity evidence and must distinguish direct routed measurement from compositional scaling."
       },
-      "status": "pending_implementation_merge"
+      "status": "superseded_by_folded_lane_activity"
     },
     {
       "item_id": "l2_decoder_attention_decode_score_multivalue_gqa8_group_activity_power_llama7b_v2",
@@ -212,7 +301,7 @@
         "direction": "measure_direct_equivalence_backed_gqa8_group_activity_energy",
         "reason": "The activity result must consume the direct-flat group proof rather than only wait for it while reading compositional v1 evidence."
       },
-      "status": "pending_implementation_merge"
+      "status": "superseded_by_folded_lane_activity"
     },
     {
       "item_id": "l2_decoder_attention_decode_score_multivalue_gqa8_group_frontier_llama7b_v1",
@@ -232,7 +321,7 @@
         "direction": "rank_measured_gqa8_group_deployments",
         "reason": "Convert measured group PPA and component energy into Llama7B latency, throughput, and area points while retaining composition limits."
       },
-      "status": "pending_implementation_merge"
+      "status": "superseded_by_folded_frontier"
     },
     {
       "item_id": "l2_decoder_attention_decode_score_multivalue_gqa8_array_equivalence_llama7b_v1",

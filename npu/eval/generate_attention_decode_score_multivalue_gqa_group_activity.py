@@ -17,6 +17,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from npu.eval.generate_attention_decode_score_multivalue_cluster_activity import (
+    _COMMAND_SETUP_CYCLES,
     _DEFAULT_CLOCK_PERIOD_NS,
     _DEFAULT_HEAD_DIM,
     _DEFAULT_SCORE_MULTIPLIER,
@@ -31,8 +32,6 @@ from npu.eval.generate_attention_decode_score_multivalue_cluster_activity import
     _VALUE_SLICES,
     _pack,
     _parse_phase_cycles,
-    _replay_value_scaling,
-    _score_fill_scaling,
     _sha256_file,
     _tool,
     _vectors,
@@ -44,6 +43,7 @@ from npu.rtlgen.gen_attention_decode_score_multivalue_gqa_group import (
 JsonDict = dict[str, Any]
 _PHASE_DONE_PREFIX = "PHASE_DONE"
 _QUERY_HEADS_PER_KV = 8
+_PARALLEL_QUERY_HEAD_LANE_OPTIONS = {1, 2, 4, 8}
 _GQA_FINALIZE_RESULT_CYCLES = 58208
 
 
@@ -64,6 +64,11 @@ def _validate_request(*, config: JsonDict, block_count: int, head_dim: int) -> J
         raise ValueError(f"activity generation requires max_blocks={_TARGET_MAX_BLOCKS}")
     if int(body.get("query_heads_per_kv", 8)) != _QUERY_HEADS_PER_KV:
         raise ValueError("activity generation requires query_heads_per_kv=8")
+    parallel_query_head_lanes = int(body.get("parallel_query_head_lanes", _QUERY_HEADS_PER_KV))
+    if parallel_query_head_lanes not in _PARALLEL_QUERY_HEAD_LANE_OPTIONS:
+        raise ValueError("parallel_query_head_lanes must be one of 1,2,4,8")
+    if _QUERY_HEADS_PER_KV % parallel_query_head_lanes != 0:
+        raise ValueError("parallel_query_head_lanes must divide query_heads_per_kv=8")
     if block_count < 1:
         raise ValueError("block_count must be >= 1")
     if head_dim not in {3, 128}:
@@ -75,47 +80,59 @@ def _validate_request(*, config: JsonDict, block_count: int, head_dim: int) -> J
         "top_name": top_name,
         "max_blocks": max_blocks,
         "score_scale_lanes_per_cycle": int(body.get("score_scale_lanes_per_cycle", 1)),
+        "parallel_query_head_lanes": parallel_query_head_lanes,
         "beats": beats[:block_count],
         "values": values[:block_count],
     }
 
 
-def _phase_expr(phase: str) -> str:
+def _phase_expr(phase: str, *, parallel_query_head_lanes: int) -> str:
+    if parallel_query_head_lanes == _QUERY_HEADS_PER_KV:
+        instance_prefix = "u_head_"
+        instance_count = _QUERY_HEADS_PER_KV
+    else:
+        instance_prefix = "u_lane_"
+        instance_count = parallel_query_head_lanes
     if phase == "score_fill":
         states = " || ".join(
-            f"dut.u_head_{head}.state_q == 3'd{state}"
-            for head in range(_QUERY_HEADS_PER_KV)
+            f"dut.{instance_prefix}{head}.state_q == 3'd{state}"
+            for head in range(instance_count)
             for state in range(1, 6)
         )
-        return f"(command_valid && command_ready) || ({states})"
+        wave_transition = (
+            " || dut.launch_pending_q"
+            if parallel_query_head_lanes != _QUERY_HEADS_PER_KV
+            else ""
+        )
+        return f"(command_valid && command_ready) || ({states}){wave_transition}"
     if phase == "replay_value":
         states = " || ".join(
-            f"dut.u_head_{head}.reducer.state == 4'd{state}"
-            for head in range(_QUERY_HEADS_PER_KV)
+            f"dut.{instance_prefix}{head}.reducer.state == 4'd{state}"
+            for head in range(instance_count)
             for state in range(2, 7)
         )
         return f"({states})"
     if phase == "finalize_result":
         states = " || ".join(
-            f"dut.u_head_{head}.reducer.state == 4'd{state}"
-            for head in range(_QUERY_HEADS_PER_KV)
+            f"dut.{instance_prefix}{head}.reducer.state == 4'd{state}"
+            for head in range(instance_count)
             for state in range(7, 11)
         )
         return f"({states})"
     raise ValueError(f"unknown phase: {phase}")
 
 
-def _gqa_finalize_result_scaling(*, cycle_count: int) -> JsonDict:
+def _gqa_finalize_result_scaling(*, cycle_count: int, query_head_waves: int) -> JsonDict:
     single_head_cycles = _VALUE_DIMS * _FINALIZE_DIVIDE_CYCLES_PER_DIM + _FINALIZE_RESULT_EMIT_CYCLES
-    expected_cycles = _GQA_FINALIZE_RESULT_CYCLES
-    if cycle_count != expected_cycles:
+    if query_head_waves == 1 and cycle_count != _GQA_FINALIZE_RESULT_CYCLES:
         raise RuntimeError(
             "GQA finalize_result cycles diverged from the serialized eight-head result contract: "
-            f"measured={cycle_count} expected={expected_cycles}"
+            f"measured={cycle_count} expected={_GQA_FINALIZE_RESULT_CYCLES}"
         )
     return {
         "kind": "fixed_per_command_serialized_query_heads",
         "query_heads_per_kv": _QUERY_HEADS_PER_KV,
+        "query_head_waves": query_head_waves,
         "value_dimensions_per_head": _VALUE_DIMS,
         "divide_cycles_per_dimension": _FINALIZE_DIVIDE_CYCLES_PER_DIM,
         "result_emit_cycles_per_head": _FINALIZE_RESULT_EMIT_CYCLES,
@@ -124,6 +141,56 @@ def _gqa_finalize_result_scaling(*, cycle_count: int) -> JsonDict:
         "target_max_blocks": _TARGET_MAX_BLOCKS,
         "full_context_cycles": cycle_count,
         "formula": "measured fixed group-finalize contract; child divide and serialized result phases overlap",
+    }
+
+
+def _gqa_score_fill_scaling(
+    *, cycle_count: int, block_count: int, query_head_waves: int
+) -> JsonDict:
+    wave_transition_cycles = query_head_waves - 1
+    fixed_cycles = _COMMAND_SETUP_CYCLES + wave_transition_cycles
+    variable_cycles = cycle_count - fixed_cycles
+    divisor = block_count * query_head_waves
+    if variable_cycles < 0 or variable_cycles % divisor != 0:
+        raise RuntimeError(
+            "GQA score_fill cycles do not match per-wave setup plus linear block contract"
+        )
+    cycles_per_block_per_wave = variable_cycles // divisor
+    return {
+        "kind": "per_wave_setup_plus_linear_by_block_count",
+        "query_head_waves": query_head_waves,
+        "command_setup_cycles": _COMMAND_SETUP_CYCLES,
+        "wave_transition_cycles": wave_transition_cycles,
+        "representative_block_count": block_count,
+        "cycles_per_block_per_wave": cycles_per_block_per_wave,
+        "target_max_blocks": _TARGET_MAX_BLOCKS,
+        "full_context_cycles": fixed_cycles
+        + query_head_waves * cycles_per_block_per_wave * _TARGET_MAX_BLOCKS,
+        "formula": "command_setup_cycles + wave_transition_cycles + query_head_waves * cycles_per_block_per_wave * target_max_blocks",
+    }
+
+
+def _gqa_replay_value_scaling(
+    *, cycle_count: int, block_count: int, query_head_waves: int
+) -> JsonDict:
+    clear_cycles = _REPLAY_CLEAR_CYCLES * query_head_waves
+    variable_cycles = cycle_count - clear_cycles
+    divisor = block_count * query_head_waves
+    if variable_cycles < 0 or variable_cycles % divisor != 0:
+        raise RuntimeError(
+            "GQA replay_value cycles do not match per-wave clear plus linear replay contract"
+        )
+    cycles_per_block_per_wave = variable_cycles // divisor
+    return {
+        "kind": "per_wave_clear_plus_linear_by_block_count",
+        "query_head_waves": query_head_waves,
+        "clear_cycles_per_wave": _REPLAY_CLEAR_CYCLES,
+        "representative_block_count": block_count,
+        "replay_cycles_per_block_per_wave": cycles_per_block_per_wave,
+        "target_max_blocks": _TARGET_MAX_BLOCKS,
+        "full_context_cycles": query_head_waves
+        * (_REPLAY_CLEAR_CYCLES + cycles_per_block_per_wave * _TARGET_MAX_BLOCKS),
+        "formula": "query_head_waves * (clear_cycles_per_wave + replay_cycles_per_block_per_wave * target_max_blocks)",
     }
 
 
@@ -138,6 +205,7 @@ def _testbench(
     *,
     top_name: str,
     beats: list[list[tuple[int, list[int]]]],
+    parallel_query_head_lanes: int,
     values: list[list[list[list[int]]]],
     block_count: int,
     head_dim: int,
@@ -148,30 +216,30 @@ def _testbench(
     clock_period_ns: float,
 ) -> str:
     flat_beats = [beat for block in beats for beat in block]
+    waves = _QUERY_HEADS_PER_KV // parallel_query_head_lanes
+    replayed_beats = flat_beats * waves
+    beat_total = len(flat_beats) * waves
     beat_init = "\n".join(
-        f"    query_mem[{index}] = 64'h{_pack(_query_lanes(q, index), 8):016x}; "
+        f"    query_mem[{index}] = 64'h{_pack(_query_lanes(q, index % len(flat_beats)), 8):016x}; "
         f"key_mem[{index}] = 64'h{_pack(keys, 8):016x};"
-        for index, (q, keys) in enumerate(flat_beats)
+        for index, (q, keys) in enumerate(replayed_beats)
     )
-    last_indices = {
-        sum(len(block) for block in beats[: index + 1]) - 1
-        for index in range(len(beats))
-    }
-    last_cases = "\n".join(f"      {index}: input_last = 1'b1;" for index in sorted(last_indices))
     value_init = "\n".join(
         f"    value_mem[{block * _VALUE_SLICES + value_slice}] = 512'h"
         f"{_pack([lane for row in values[block][value_slice] for lane in row], 8):0128x};"
         for block in range(block_count)
         for value_slice in range(_VALUE_SLICES)
     )
-    phase_active = _phase_expr(phase)
+    phase_active = _phase_expr(phase, parallel_query_head_lanes=parallel_query_head_lanes)
     clock_half_period = clock_period_ns / 2.0
     return f"""`timescale 1ns/1ps
 {_FAKERAM_MODEL}
 module tb;
   localparam integer BLOCK_COUNT = {block_count};
+  localparam integer QUERY_HEAD_WAVES = {waves};
   localparam integer HEAD_DIM = {head_dim};
   localparam integer TOTAL_BEATS = {len(flat_beats)};
+  localparam integer TOTAL_INPUT_BEATS = {beat_total};
   reg clk = 0, rst_n = 0;
   reg command_valid, input_valid, input_last;
   wire command_ready, input_ready;
@@ -194,8 +262,8 @@ module tb;
   wire [319:0] result_value;
   wire [31:0] accepted_count, completed_count, cycle_count;
   wire protocol_error;
-  reg [63:0] query_mem [0:TOTAL_BEATS-1];
-  reg [63:0] key_mem [0:TOTAL_BEATS-1];
+  reg [63:0] query_mem [0:TOTAL_INPUT_BEATS-1];
+  reg [63:0] key_mem [0:TOTAL_INPUT_BEATS-1];
   reg [511:0] value_mem [0:BLOCK_COUNT*{_VALUE_SLICES}-1];
   integer input_index = 0;
   integer phase_cycles = 0;
@@ -203,7 +271,8 @@ module tb;
   reg [13:0] pending_addr = 0;
   reg [3:0] pending_slice = 0;
   integer pending_delay = 0;
-  reg phase_started = 0;
+  reg phase_seen = 0;
+  reg phase_dumping = 0;
 
   always #{clock_half_period:g} clk = ~clk;
 
@@ -226,14 +295,10 @@ module tb;
 
   always @* begin
     command_valid = rst_n && accepted_count == 0;
-    input_valid = rst_n && input_index < TOTAL_BEATS;
-    input_query = input_index < TOTAL_BEATS ? query_mem[input_index] : 0;
-    input_key = input_index < TOTAL_BEATS ? key_mem[input_index] : 0;
-    input_last = 0;
-    case (input_index)
-{last_cases}
-      default: input_last = 0;
-    endcase
+    input_valid = rst_n && input_index < TOTAL_INPUT_BEATS;
+    input_query = input_index < TOTAL_INPUT_BEATS ? query_mem[input_index] : 0;
+    input_key = input_index < TOTAL_INPUT_BEATS ? key_mem[input_index] : 0;
+    input_last = (input_index < TOTAL_INPUT_BEATS && (input_index % HEAD_DIM) == (HEAD_DIM - 1));
     value_read_req_ready = 1'b1;
     result_ready = 1'b1;
   end
@@ -248,7 +313,8 @@ module tb;
       value_response_address <= 0;
       value_response_slice <= 0;
       value_response_matrix <= 0;
-      phase_started <= 0;
+      phase_seen <= 0;
+      phase_dumping <= 0;
     end else begin
       if (input_valid && input_ready) input_index <= input_index + 1;
       if (value_read_req_valid && value_read_req_ready) begin
@@ -268,16 +334,22 @@ module tb;
         end else pending_delay <= pending_delay - 1;
       end
       if (value_response_valid && value_response_ready) value_response_valid <= 0;
-      if (!phase_started && ({phase_active})) begin
-        phase_started <= 1;
-        phase_cycles <= 1;
-        $dumpon;
-      end else if (phase_started && ({phase_active})) begin
+      if ({phase_active}) begin
         phase_cycles <= phase_cycles + 1;
-      end else if (phase_started && !({phase_active})) begin
+        phase_seen <= 1;
+        if (!phase_dumping) begin
+          phase_dumping <= 1;
+          $dumpon;
+        end
+      end else if (phase_dumping) begin
+        phase_dumping <= 0;
+        $dumpoff;
+      end
+      if (completed_count != 0) begin
+        if (!phase_seen) $fatal(1, "phase {phase} was never observed");
         if (protocol_error) $fatal(1, "protocol_error raised during {phase}");
         $display("{_PHASE_DONE_PREFIX} phase={phase} cycles=%0d service_cycles=%0d accepted=%0d completed=%0d", phase_cycles, cycle_count, accepted_count, completed_count);
-        $dumpoff;
+        if (phase_dumping) $dumpoff;
         #1 $finish;
       end
       if (cycle_count > 100000) $fatal(1, "timeout");
@@ -321,6 +393,7 @@ def _run_phase(
             _testbench(
                 top_name=str(validated["top_name"]),
                 beats=validated["beats"],
+                parallel_query_head_lanes=validated["parallel_query_head_lanes"],
                 values=validated["values"],
                 block_count=block_count,
                 head_dim=head_dim,
@@ -366,6 +439,7 @@ def generate_phase_activity(
     out_dir.mkdir(parents=True, exist_ok=True)
     phases: list[JsonDict] = []
     full_service_cycles = 0
+    query_head_waves = _QUERY_HEADS_PER_KV // validated["parallel_query_head_lanes"]
     for phase in _PHASES:
         cycle_count, service_cycles, vcd_path = _run_phase(
             config=config,
@@ -378,11 +452,21 @@ def generate_phase_activity(
             score_shift=score_shift,
         )
         if phase == "score_fill":
-            scaling = _score_fill_scaling(cycle_count=cycle_count, block_count=block_count)
+            scaling = _gqa_score_fill_scaling(
+                cycle_count=cycle_count,
+                block_count=block_count,
+                query_head_waves=query_head_waves,
+            )
         elif phase == "replay_value":
-            scaling = _replay_value_scaling(cycle_count=cycle_count, block_count=block_count)
+            scaling = _gqa_replay_value_scaling(
+                cycle_count=cycle_count,
+                block_count=block_count,
+                query_head_waves=query_head_waves,
+            )
         else:
-            scaling = _gqa_finalize_result_scaling(cycle_count=cycle_count)
+            scaling = _gqa_finalize_result_scaling(
+                cycle_count=cycle_count, query_head_waves=query_head_waves
+            )
             full_service_cycles = service_cycles
         phases.append(
             {
@@ -407,10 +491,18 @@ def generate_phase_activity(
         "model": "decode_score_multivalue_gqa_group_phase_activity_v1",
         "generator": "npu/eval/generate_attention_decode_score_multivalue_gqa_group_activity.py",
         "top_name": validated["top_name"],
-        "semantic_profile": "decode_m1x8_shared_score_16x8d_value_iterdiv_gqa8_group_activity_v1",
+        "semantic_profile": (
+            "decode_m1x8_shared_score_16x8d_value_iterdiv_gqa8_group_activity_v1"
+            if validated["parallel_query_head_lanes"] == _QUERY_HEADS_PER_KV
+            else "decode_m1x8_shared_score_16x8d_value_iterdiv_gqa8_folded_group_activity_v1"
+        ),
         "activity_generation": "explicit_script_only",
         "scope": "tb/dut",
-        "scope_semantics": "the complete generated GQA8 group wrapper, including all eight query-head clusters",
+        "scope_semantics": (
+            "the complete generated GQA8 group wrapper, including all eight query-head clusters"
+            if validated["parallel_query_head_lanes"] == _QUERY_HEADS_PER_KV
+            else "the complete generated folded GQA8 group wrapper command stream"
+        ),
         "clock_period_ns": clock_period_ns,
         "block_count": block_count,
         "head_dim": head_dim,
@@ -418,6 +510,8 @@ def generate_phase_activity(
         "max_blocks": validated["max_blocks"],
         "target_max_blocks": _TARGET_MAX_BLOCKS,
         "query_heads_per_kv": _QUERY_HEADS_PER_KV,
+        "parallel_query_head_lanes": validated["parallel_query_head_lanes"],
+        "query_head_waves": query_head_waves,
         "query_activity_profile": "eight_distinct_deterministic_signed_int8_query_lanes",
         "score_multiplier": score_multiplier,
         "score_shift": score_shift,

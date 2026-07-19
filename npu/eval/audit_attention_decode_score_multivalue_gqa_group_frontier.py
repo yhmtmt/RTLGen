@@ -15,6 +15,7 @@ _QUERY_HEADS_PER_KV = 8
 _GROUP_ACTIVITY_MODEL = "decoder_attention_decode_score_multivalue_gqa_group_activity_power_v1"
 _GROUP_ACTIVITY_DECISION = "activity_backed_gqa_group_power_measured"
 _SUPPORTED_GROUP_COUNTS = {1, 2, 4}
+_SUPPORTED_QUERY_HEAD_LANES = {1, 2, 4, 8}
 
 
 def _load(path: Path) -> JsonDict:
@@ -99,6 +100,10 @@ def _validate_equivalence(equivalence: Any) -> JsonDict:
         "decision": equivalence["decision"],
         "semantic_profile": equivalence.get("semantic_profile"),
         "query_heads_per_kv": _QUERY_HEADS_PER_KV,
+        "parallel_query_head_lanes": int(
+            equivalence.get("parallel_query_head_lanes", _QUERY_HEADS_PER_KV)
+        ),
+        "query_head_waves": int(equivalence.get("query_head_waves", 1)),
         "expected_group_result_sha256": expected_hash,
         "observed_group_result_sha256": observed_hash,
     }
@@ -158,6 +163,7 @@ def _selected_group(activity_report: JsonDict) -> tuple[JsonDict, JsonDict, floa
 
 def _row(
     *,
+    query_head_lanes: int,
     group_count: int,
     schedule: JsonDict,
     group_metric: JsonDict,
@@ -204,14 +210,25 @@ def _row(
         schedule.get("measured_tile_local_sram_area_um2", 0.0)
     )
     component_energy_j = logical_groups * layers * group_energy_j
+    query_head_waves = _QUERY_HEADS_PER_KV // query_head_lanes
+    if _QUERY_HEADS_PER_KV % query_head_lanes != 0:
+        raise ValueError("query head lanes must divide query_heads_per_kv")
+    candidate_id = (
+        f"decode_score_multivalue_gqa_group_g{group_count}"
+        if query_head_lanes == _QUERY_HEADS_PER_KV
+        else f"decode_score_multivalue_gqa_group_l{query_head_lanes}_g{group_count}"
+    )
     return {
-        "candidate_id": f"decode_score_multivalue_gqa_group_g{group_count}",
+        "candidate_id": candidate_id,
+        "parallel_query_head_lanes": query_head_lanes,
+        "query_head_waves": query_head_waves,
         "group_count": group_count,
         "logical_groups_per_layer": logical_groups,
         "group_waves_per_layer": waves,
         "dense_qkv_tile_count": dense_count,
         "dense_qkv_useful_parallelism_limit": qkv_useful_limit,
         "qkv_cycles": qkv_cycles,
+        "group_full_context_cycles": group_cycles,
         "attention_cycles": attention_cycles,
         "fixed_cycles": fixed_cycles,
         "layer_cycles": layer_cycles,
@@ -272,6 +289,35 @@ def _pareto(rows: list[JsonDict]) -> list[JsonDict]:
     return result
 
 
+def _parse_lane_activities(
+    *, legacy_activity_json: Path | None, lane_activity: dict[int, Path] | None
+) -> dict[int, Path]:
+    lane_activity = dict(lane_activity or {})
+    if legacy_activity_json is not None:
+        if 8 in lane_activity:
+            raise ValueError("lane activity for 8 lanes duplicates group-activity-power-json")
+        lane_activity[8] = legacy_activity_json
+    if not lane_activity:
+        raise ValueError("at least one group activity report is required")
+    unsupported = set(lane_activity) - _SUPPORTED_QUERY_HEAD_LANES
+    if unsupported:
+        raise ValueError(f"unsupported query-head lane counts: {sorted(unsupported)}")
+    return lane_activity
+
+
+def _parse_lane_activity_spec(spec: str) -> tuple[int, Path]:
+    if "=" not in spec:
+        raise ValueError("--lane-activity must be LANES=PATH")
+    lane_text, path_text = spec.split("=", 1)
+    try:
+        lanes = int(lane_text)
+    except ValueError as exc:
+        raise ValueError(f"invalid lane count: {lane_text}") from exc
+    if lanes <= 0:
+        raise ValueError(f"invalid lane count: {lane_text}")
+    return lanes, Path(path_text)
+
+
 def _prior_comparison(prior: JsonDict, best: JsonDict) -> JsonDict:
     prior_best = prior.get("best_throughput_candidate")
     if not isinstance(prior_best, dict):
@@ -292,10 +338,51 @@ def _prior_comparison(prior: JsonDict, best: JsonDict) -> JsonDict:
 
 
 def build_report(
-    *, prior_frontier_json: Path, activity_power_json: Path, group_counts: list[int]
+    *,
+    prior_frontier_json: Path,
+    group_counts: list[int],
+    activity_power_json: Path | None = None,
+    lane_activity: dict[int, Path] | None = None,
 ) -> JsonDict:
     prior = _load(prior_frontier_json)
-    activity_report = _load(activity_power_json)
+    lane_activity = _parse_lane_activities(
+        legacy_activity_json=activity_power_json, lane_activity=lane_activity
+    )
+    selected_by_lanes: list[
+        tuple[int, JsonDict, JsonDict, float, int, float, JsonDict]
+    ] = []
+    for lanes in sorted(lane_activity):
+        best, group_metric, group_energy_j, group_cycles, activity_clock_ns, equivalence = _selected_group(
+            _load(lane_activity[lanes])
+        )
+        reported_lanes = int(equivalence.get("parallel_query_head_lanes", _QUERY_HEADS_PER_KV))
+        if reported_lanes != lanes:
+            raise ValueError(
+                f"lane activity key {lanes} does not match report equivalence lanes {reported_lanes}"
+            )
+        selected_by_lanes.append(
+            (lanes, best, group_metric, group_energy_j, group_cycles, activity_clock_ns, equivalence)
+        )
+
+    canonical_selected = selected_by_lanes[0] if selected_by_lanes else None
+    if canonical_selected is None:
+        raise ValueError("no validated group activity report available")
+    canonical_equivalence = canonical_selected[6]
+    equivalence_identity_keys = (
+        "equivalence_pass",
+        "decision",
+        "semantic_profile",
+        "query_heads_per_kv",
+        "expected_group_result_sha256",
+        "observed_group_result_sha256",
+    )
+    canonical_identity = {
+        key: canonical_equivalence.get(key) for key in equivalence_identity_keys
+    }
+    for _, _, _, _, _, _, lane_equivalence in selected_by_lanes:
+        lane_identity = {key: lane_equivalence.get(key) for key in equivalence_identity_keys}
+        if lane_identity != canonical_identity:
+            raise ValueError("lane activity reports do not share identical arithmetic equivalence")
     if not group_counts:
         raise ValueError("at least one group count is required")
     if len(group_counts) != len(set(group_counts)):
@@ -313,11 +400,10 @@ def build_report(
         != int(schedule["kv_heads"]) * _QUERY_HEADS_PER_KV
     ):
         raise ValueError("frontier is not the expected Llama7B 4096D/32Q-head/4KV-head schedule")
-    best, group_metric, group_energy_j, group_cycles, activity_clock_ns, equivalence = _selected_group(
-        activity_report
-    )
+
     rows = [
         _row(
+            query_head_lanes=lanes,
             group_count=count,
             schedule=schedule,
             group_metric=group_metric,
@@ -326,19 +412,30 @@ def build_report(
             group_energy_j=group_energy_j,
             dense_tile=dense_tile,
         )
+        for lanes, _, group_metric, group_energy_j, group_cycles, activity_clock_ns, _ in selected_by_lanes
         for count in group_counts
     ]
     pareto_rows = _pareto(rows)
     if not pareto_rows:
         raise ValueError("no feasible GQA8 group frontier row")
     best_throughput = max(pareto_rows, key=lambda row: float(row["token_throughput_per_s"]))
+    (
+        _,
+        canonical_best,
+        canonical_metric,
+        canonical_energy_j,
+        canonical_cycles,
+        _,
+        canonical_equivalence,
+    ) = canonical_selected
     return {
         "version": 1,
         "model": "decoder_attention_decode_score_multivalue_gqa_group_frontier_llama7b_v1",
         "decision": "measured_complete_gqa8_group_component_frontier_promoted",
         "inputs": {
             "prior_frontier_json": str(prior_frontier_json),
-            "group_activity_power_json": str(activity_power_json),
+            "group_activity_power_json": str(activity_power_json) if activity_power_json else None,
+            "lane_activity": {str(lanes): str(path) for lanes, path in sorted(lane_activity.items())},
             "source_schedule_json": schedule_source,
             "dense_qkv_tile_source_json": dense_tile_source,
         },
@@ -351,25 +448,29 @@ def build_report(
             "sequence_length": int(schedule["sequence_length"]),
             "layers": int(schedule["layers"]),
             "logical_groups_per_layer": int(schedule["kv_heads"]),
-            "group_full_context_cycles": group_cycles,
+            "group_full_context_cycles": canonical_cycles,
+            "group_full_context_cycles_by_lanes": {
+                str(lanes): group_cycles
+                for lanes, _, _, _, group_cycles, _, _ in selected_by_lanes
+            },
             "sequence_sharding_supported": False,
         },
         "selected_group": {
-            "candidate_id": best.get("candidate_id"),
-            "flow_variant": best.get("flow_variant"),
-            "ppa_metric": group_metric,
-            "direct_group_full_context_energy_j": group_energy_j,
-            "activity_power": best["activity_power"],
+            "candidate_id": canonical_best.get("candidate_id"),
+            "flow_variant": canonical_best.get("flow_variant"),
+            "ppa_metric": canonical_metric,
+            "direct_group_full_context_energy_j": canonical_energy_j,
+            "activity_power": canonical_best["activity_power"],
         },
         "dense_qkv_tile": dense_tile,
         "precision": {
             "status": "exact",
-            "equivalence_pass": equivalence["equivalence_pass"],
-            "decision": equivalence["decision"],
-            "semantic_profile": equivalence["semantic_profile"],
+            "equivalence_pass": canonical_equivalence["equivalence_pass"],
+            "decision": canonical_equivalence["decision"],
+            "semantic_profile": canonical_equivalence["semantic_profile"],
             "query_heads_per_kv": _QUERY_HEADS_PER_KV,
-            "expected_group_result_sha256": equivalence["expected_group_result_sha256"],
-            "observed_group_result_sha256": equivalence["observed_group_result_sha256"],
+            "expected_group_result_sha256": canonical_equivalence["expected_group_result_sha256"],
+            "observed_group_result_sha256": canonical_equivalence["observed_group_result_sha256"],
             "quality_change": "none_exact_integer_semantics_preserved",
         },
         "rows": rows,
@@ -428,16 +529,31 @@ def _write_markdown(payload: JsonDict, path: Path) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--prior-frontier-json", type=Path, required=True)
-    parser.add_argument("--group-activity-power-json", type=Path, required=True)
+    parser.add_argument("--group-activity-power-json", type=Path)
+    parser.add_argument("--lane-activity", action="append")
     parser.add_argument("--group-counts", default="1,2,4")
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--out-md", type=Path, required=True)
     args = parser.parse_args()
+    if args.group_activity_power_json is None and not args.lane_activity:
+        parser.error("provide --group-activity-power-json or at least one --lane-activity")
+
+    lane_activity: dict[int, Path] = {}
+    for raw in args.lane_activity or []:
+        lanes, path = _parse_lane_activity_spec(raw)
+        if lanes in lane_activity:
+            parser.error(f"duplicate --lane-activity for lanes={lanes}")
+        unsupported = {lanes} - _SUPPORTED_QUERY_HEAD_LANES
+        if unsupported:
+            parser.error(f"unsupported query-head lane count: {lanes}")
+        lane_activity[lanes] = path
+
     group_counts = [int(value.strip()) for value in args.group_counts.split(",") if value.strip()]
     payload = build_report(
         prior_frontier_json=args.prior_frontier_json,
         activity_power_json=args.group_activity_power_json,
         group_counts=group_counts,
+        lane_activity=lane_activity,
     )
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")

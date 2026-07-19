@@ -1793,7 +1793,13 @@ def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, 
         for key in ("promotion_gate_pass", "candidate_count", "promoted_candidate_count", "best_candidate_id", "energy_scope"):
             if key in evidence_payload:
                 parts.append(f"{key}={evidence_payload.get(key)}")
-        for key in ("direct_group_full_context_energy_j", "status", "flow_variant"):
+        for key in (
+            "direct_group_full_context_energy_j",
+            "status",
+            "flow_variant",
+            "parallel_query_head_lanes",
+            "query_head_waves",
+        ):
             if key in best_dict:
                 parts.append(f"best_{key}={best_dict.get(key)}")
         summary = "; ".join(parts)
@@ -1804,7 +1810,16 @@ def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, 
         best = evidence_payload.get("best_throughput_candidate")
         best_dict = dict(best) if isinstance(best, dict) else {}
         parts = [f"Llama7B measured GQA8 group frontier recorded from {evidence_ref}: decision={outcome}"]
-        for key in ("candidate_id", "group_count", "token_throughput_per_s", "latency_us", "embodied_logic_plus_shared_sram_area_mm2", "gqa_group_component_energy_mj_per_token"):
+        for key in (
+            "candidate_id",
+            "parallel_query_head_lanes",
+            "query_head_waves",
+            "group_count",
+            "token_throughput_per_s",
+            "latency_us",
+            "embodied_logic_plus_shared_sram_area_mm2",
+            "gqa_group_component_energy_mj_per_token",
+        ):
             if key in best_dict:
                 parts.append(f"best_{key}={best_dict.get(key)}")
         if "promotion_status" in evidence_payload:
