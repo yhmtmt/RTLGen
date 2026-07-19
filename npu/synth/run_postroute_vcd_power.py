@@ -22,6 +22,8 @@ from typing import Any
 
 JsonDict = dict[str, Any]
 ORFS_FLOW = Path(os.environ.get("ORFS_FLOW", "/orfs/flow"))
+_FAKERAM_ACTIVITY_MODEL = "fakeram_macro_pin_vcd_activity_v1"
+_SAFE_PIN_NAME = re.compile(r"^[A-Za-z0-9_./:+\-\[\]]+$")
 
 
 def _load_json(path: Path) -> JsonDict:
@@ -48,6 +50,128 @@ def _activity_annotation_counts(stdout: str) -> dict[str, int]:
     return counts
 
 
+def _must_be_positive_finite(name: str, value: Any) -> float:
+    if not isinstance(value, (int, float)) or isinstance(value, bool):
+        raise ValueError(f"invalid {name}: expected a number")
+    numeric = float(value)
+    if not math.isfinite(numeric) or numeric < 0.0:
+        raise ValueError(f"invalid {name}: expected finite, nonnegative")
+    return numeric
+
+
+def _must_be_duty_cycle(value: Any) -> float:
+    duty = _must_be_positive_finite("duty_cycle", value)
+    if duty > 1.0:
+        raise ValueError("duty_cycle must be within [0, 1]")
+    return duty
+
+
+def _must_be_int(name: str, value: Any) -> int:
+    if not isinstance(value, int) or isinstance(value, bool):
+        raise ValueError(f"invalid {name}: expected an integer")
+    return int(value)
+
+
+def _must_be_safe_pin_name(name: Any) -> str:
+    full_name = str(name).strip()
+    if not full_name:
+        raise ValueError("full_name must be nonempty")
+    if not _SAFE_PIN_NAME.fullmatch(full_name):
+        raise ValueError(f"unsafe full_name '{full_name}'")
+    return full_name
+
+
+def _load_macro_activity(
+    path: Path,
+    *,
+    vcd_sha256: str,
+    phase_vcd_basename: str,
+) -> list[JsonDict]:
+    raw = _load_json(path)
+    version = raw.get("version")
+    if not isinstance(version, int) or isinstance(version, bool) or version != 1:
+        raise ValueError(
+            f"macro activity version mismatch for {path}: expected 1, got {version!r}"
+        )
+    model = str(raw.get("model", "")).strip()
+    if not isinstance(raw.get("model"), str) or not model:
+        raise ValueError(f"macro activity model missing for {path}")
+    source = str(raw.get("source_vcd_sha256", "")).strip().lower()
+    source_vcd_value = raw.get("source_vcd")
+    if not isinstance(source_vcd_value, str):
+        source_vcd = ""
+    else:
+        source_vcd = source_vcd_value.strip()
+    if not source_vcd:
+        raise ValueError(f"macro activity missing source_vcd for {path}")
+    if source_vcd != phase_vcd_basename:
+        raise ValueError(
+            f"macro activity source_vcd mismatch for {path}: expected {phase_vcd_basename}, got {source_vcd}"
+        )
+    if model != _FAKERAM_ACTIVITY_MODEL:
+        raise ValueError(
+            f"macro activity model mismatch for {path}: expected {_FAKERAM_ACTIVITY_MODEL}, got {model or 'missing'}"
+        )
+    if source != vcd_sha256:
+        raise ValueError(
+            f"macro activity hash mismatch for {path}: expected {vcd_sha256}, got {source or 'missing'}"
+        )
+    scope_value = raw.get("scope")
+    if not isinstance(scope_value, str):
+        scope = ""
+    else:
+        scope = scope_value.strip()
+    if not scope:
+        raise ValueError(f"macro activity missing scope for {path}")
+    timescale_seconds = _must_be_positive_finite("timescale_seconds", raw.get("timescale_seconds"))
+    active_start_tick = _must_be_int("active_start_tick", raw.get("active_start_tick"))
+    active_end_tick = _must_be_int("active_end_tick", raw.get("active_end_tick"))
+    if active_end_tick <= active_start_tick:
+        raise ValueError(
+            f"macro activity active range invalid for {path}: active_end_tick must be > active_start_tick"
+        )
+    pins = raw.get("pins")
+    if not isinstance(pins, list) or not pins:
+        raise ValueError(f"macro activity sidecar must contain non-empty pins[]: {path}")
+    seen: set[str] = set()
+    rows: list[JsonDict] = []
+    for index, pin in enumerate(pins):
+        if not isinstance(pin, dict):
+            raise ValueError(f"{path}: macro activity pin row[{index}] must be an object")
+        full_name = _must_be_safe_pin_name(pin.get("full_name"))
+        if full_name in seen:
+            raise ValueError(f"duplicate macro_activity full_name '{full_name}' in {path}")
+        seen.add(full_name)
+        source_value = str(pin.get("source", "")).strip()
+        if source_value != "vcd":
+            raise ValueError(f"unsupported macro activity source '{source_value or 'missing'}' in {path}")
+        rows.append(
+            {
+                "full_name": full_name,
+                "density_hz": _must_be_positive_finite("density_hz", pin.get("density_hz")),
+                "duty_cycle": _must_be_duty_cycle(pin.get("duty_cycle")),
+                "transition_count": _must_be_positive_finite("transition_count", pin.get("transition_count")),
+                "source": source_value,
+            }
+        )
+    return rows
+
+
+def _write_macro_activity_tcl_assignments(*, path: Path, rows: list[JsonDict]) -> None:
+    lines = ["set rtlgen_macro_activity_assignments {"]
+    for row in sorted(rows, key=lambda item: item["full_name"]):
+        lines.append(
+            "  {{{full_name} {density} {duty} {transition}}}".format(
+                full_name=row["full_name"],
+                density=f"{row['density_hz']:.17g}",
+                duty=f"{row['duty_cycle']:.17g}",
+                transition=f"{row['transition_count']:.17g}",
+            )
+        )
+    lines.append("}")
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
 def _phase_rows(manifest: JsonDict, manifest_path: Path) -> list[JsonDict]:
     raw_phases = manifest.get("phases")
     if not isinstance(raw_phases, list) or not raw_phases:
@@ -70,16 +194,49 @@ def _phase_rows(manifest: JsonDict, manifest_path: Path) -> list[JsonDict]:
         if not vcd.is_file():
             raise FileNotFoundError(f"phase VCD does not exist: {vcd}")
         expected_hash = str(raw.get("vcd_sha256", "")).strip().lower()
+        if not expected_hash:
+            raise ValueError(f"phase {phase} requires vcd_sha256")
         actual_hash = _sha256(vcd)
-        if expected_hash and expected_hash != actual_hash:
+        if expected_hash != actual_hash:
             raise ValueError(
                 f"phase {phase} VCD hash mismatch: expected {expected_hash}, got {actual_hash}"
             )
-        measured_cycles = int(raw.get("measured_cycles", raw.get("trace_cycles", 0)))
-        scaling = raw.get("scaling") if isinstance(raw.get("scaling"), dict) else {}
-        full_context_cycles = int(
-            raw.get("full_context_cycles", scaling.get("full_context_cycles", 0))
+        vcd_basename = vcd.name
+        macro_activity_value = str(
+            raw.get("macro_activity", raw.get("macro_activity_path", ""))
+        ).strip()
+        if not macro_activity_value:
+            raise ValueError(f"phase {phase} is missing macro_activity")
+        macro_activity = Path(macro_activity_value)
+        if not macro_activity.is_absolute():
+            macro_activity = (manifest_path.parent / macro_activity).resolve()
+        if not macro_activity.is_file():
+            raise FileNotFoundError(f"phase macro activity sidecar does not exist: {macro_activity}")
+        expected_macro_activity_hash = str(raw.get("macro_activity_sha256", "")).strip().lower()
+        if not expected_macro_activity_hash:
+            raise ValueError(f"phase {phase} requires macro_activity_sha256")
+        macro_activity_hash = _sha256(macro_activity)
+        if expected_macro_activity_hash != macro_activity_hash:
+            raise ValueError(
+                f"phase {phase} macro activity hash mismatch: "
+                f"expected {expected_macro_activity_hash}, got {macro_activity_hash}"
+            )
+        macro_activity_rows = _load_macro_activity(
+            macro_activity,
+            vcd_sha256=actual_hash,
+            phase_vcd_basename=vcd_basename,
         )
+        measured_cycles_raw = raw.get("measured_cycles")
+        if measured_cycles_raw is None:
+            raise ValueError(f"phase {phase} is missing measured_cycles")
+        measured_cycles = int(measured_cycles_raw)
+        scaling = raw.get("scaling") if isinstance(raw.get("scaling"), dict) else {}
+        full_context_raw = raw.get("full_context_cycles")
+        if full_context_raw is None:
+            full_context_raw = scaling.get("full_context_cycles")
+            if full_context_raw is None:
+                raise ValueError(f"phase {phase} is missing full_context_cycles")
+        full_context_cycles = int(full_context_raw)
         if measured_cycles <= 0 or full_context_cycles <= 0:
             raise ValueError(
                 f"phase {phase} requires positive measured_cycles and full_context_cycles"
@@ -91,6 +248,11 @@ def _phase_rows(manifest: JsonDict, manifest_path: Path) -> list[JsonDict]:
                 "vcd": vcd_value,
                 "_resolved_vcd": str(vcd),
                 "vcd_sha256": actual_hash,
+                "macro_activity": macro_activity_value,
+                "_resolved_macro_activity": str(macro_activity),
+                "macro_activity_sha256": macro_activity_hash,
+                "macro_activity_rows": macro_activity_rows,
+                "macro_activity_assignment_count": len(macro_activity_rows),
                 "measured_cycles": measured_cycles,
                 "full_context_cycles": full_context_cycles,
                 "requires_macro_activity": bool(
@@ -203,6 +365,38 @@ set design_power_category_count [expr {[llength $totals] / 4}]
 set design_power_totals [lrange $totals 0 3]
 set all_design_pins_unsorted {}
 set macro_pin_transfer_query_error_count 0
+set macro_pin_transfer_structural_query_error_count 0
+set macro_pin_transfer_structural_assignment_count 0
+set macro_pin_transfer_structural_matched_count 0
+set macro_pin_transfer_structural_applied_count 0
+set macro_pin_transfer_structural_unmatched_count 0
+set macro_pin_transfer_structural_apply_error_count 0
+set macro_pin_transfer_structural_assignments {}
+set macro_pin_transfer_structural_assignment_rows_by_full_name {}
+set macro_pin_transfer_structural_unmatched_rows_by_full_name {}
+set macro_pin_transfer_structural_unmatched_full_names {}
+if {[info exists ::env(RTLGEN_MACRO_ACTIVITY_TCL)] && $::env(RTLGEN_MACRO_ACTIVITY_TCL) ne ""} {
+  if {[catch {source $::env(RTLGEN_MACRO_ACTIVITY_TCL)} structural_source_error]} {
+    incr macro_pin_transfer_structural_query_error_count
+  } else {
+    if {[info exists rtlgen_macro_activity_assignments]} {
+      set macro_pin_transfer_structural_assignments $rtlgen_macro_activity_assignments
+    } else {
+      incr macro_pin_transfer_structural_query_error_count
+    }
+  }
+}
+set macro_pin_transfer_structural_assignment_count [llength $macro_pin_transfer_structural_assignments]
+foreach macro_pin_transfer_structural_row $macro_pin_transfer_structural_assignments {
+  if {[llength $macro_pin_transfer_structural_row] != 4} {
+    incr macro_pin_transfer_structural_query_error_count
+    continue
+  }
+  lassign $macro_pin_transfer_structural_row macro_pin_transfer_structural_full_name macro_pin_transfer_structural_density macro_pin_transfer_structural_duty macro_pin_transfer_structural_transition_count
+  dict set macro_pin_transfer_structural_assignment_rows_by_full_name $macro_pin_transfer_structural_full_name [list $macro_pin_transfer_structural_density $macro_pin_transfer_structural_duty $macro_pin_transfer_structural_transition_count]
+  dict set macro_pin_transfer_structural_unmatched_rows_by_full_name $macro_pin_transfer_structural_full_name 1
+}
+set macro_pin_transfer_structural_candidate_count $macro_pin_transfer_structural_assignment_count
 if {[catch {set all_design_pins_unsorted [get_pins -hierarchical *]}]} {
   incr macro_pin_transfer_query_error_count
   set all_design_pins_unsorted {}
@@ -248,15 +442,35 @@ set macro_pin_transfer_toggle_by_full_name {}
 set macro_pin_transfer_source_kind_by_full_name {}
 set macro_pin_transfer_apply_results {}
 foreach macro_pin $all_design_pins {
+  if {[catch {set macro_pin_full_name [get_property $macro_pin full_name]}]} {
+    incr macro_pin_transfer_query_error_count
+    if {[llength $macro_pin_transfer_structural_assignments] > 0} {
+      incr macro_pin_transfer_structural_query_error_count
+    }
+    continue
+  }
+  if {[dict exists $macro_pin_transfer_structural_assignment_rows_by_full_name $macro_pin_full_name]} {
+    set macro_pin_transfer_structural_row \
+      [dict get $macro_pin_transfer_structural_assignment_rows_by_full_name $macro_pin_full_name]
+    dict unset macro_pin_transfer_structural_unmatched_rows_by_full_name $macro_pin_full_name
+    incr macro_pin_transfer_structural_matched_count
+    lassign $macro_pin_transfer_structural_row macro_pin_structural_density macro_pin_structural_duty macro_pin_structural_transition_count
+    lappend macro_pin_transfer_updates \
+      [list $macro_pin_full_name $macro_pin $macro_pin_structural_density $macro_pin_structural_duty]
+    dict set macro_pin_transfer_candidate_source_by_full_name $macro_pin_full_name vcd
+    dict set macro_pin_transfer_candidate_source_kind_by_full_name $macro_pin_full_name structural_vcd_sidecar
+    dict set macro_pin_transfer_candidate_toggle_by_full_name $macro_pin_full_name $macro_pin_structural_transition_count
+    if {[llength $macro_pin_transfer_scan_samples] < $macro_pin_transfer_scan_sample_limit} {
+    lappend macro_pin_transfer_scan_samples \
+      [list $macro_pin_full_name structural_vcd_sidecar structural_vcd_sidecar]
+    }
+    continue
+  }
   if {[catch {set is_hierarchical [get_property $macro_pin is_hierarchical]}]} {
     incr macro_pin_transfer_query_error_count
     continue
   }
   if {$is_hierarchical} {
-    continue
-  }
-  if {[catch {set macro_pin_full_name [get_property $macro_pin full_name]}]} {
-    incr macro_pin_transfer_query_error_count
     continue
   }
   if {![string match "*u_group_*" $macro_pin_full_name]} {
@@ -439,6 +653,13 @@ foreach macro_pin $all_design_pins {
     dict set macro_pin_transfer_candidate_toggle_by_full_name $macro_pin_full_name $selected_driver_toggle
   }
 }
+set macro_pin_transfer_structural_unmatched_count [dict size $macro_pin_transfer_structural_unmatched_rows_by_full_name]
+if {$macro_pin_transfer_structural_unmatched_count > 0} {
+  dict for {macro_pin_transfer_structural_unmatched_full_name _} \
+    $macro_pin_transfer_structural_unmatched_rows_by_full_name {
+    lappend macro_pin_transfer_structural_unmatched_full_names $macro_pin_transfer_structural_unmatched_full_name
+  }
+}
 
 if {[llength $macro_pin_transfer_updates] > 0} {
   set macro_pin_transfer_apply_results [rtlgen_apply_macro_pin_activities $macro_pin_transfer_updates]
@@ -451,6 +672,10 @@ if {[llength $macro_pin_transfer_updates] > 0} {
         continue
       }
       incr macro_pin_transfer_applied_count
+      if {[dict exists $macro_pin_transfer_candidate_source_kind_by_full_name $pin_full_name] &&
+          [dict get $macro_pin_transfer_candidate_source_kind_by_full_name $pin_full_name] eq "structural_vcd_sidecar"} {
+        incr macro_pin_transfer_structural_applied_count
+      }
       lappend macro_pin_transfer_record_full_names $pin_full_name
       set pin_source [dict get $macro_pin_transfer_candidate_source_by_full_name $pin_full_name]
       if {[dict exists $macro_pin_transfer_candidate_source_kind_by_full_name $pin_full_name]} {
@@ -474,6 +699,10 @@ if {[llength $macro_pin_transfer_updates] > 0} {
       }
     } else {
       incr macro_pin_transfer_apply_error_count
+      if {[dict exists $macro_pin_transfer_candidate_source_kind_by_full_name $pin_full_name] &&
+          [dict get $macro_pin_transfer_candidate_source_kind_by_full_name $pin_full_name] eq "structural_vcd_sidecar"} {
+        incr macro_pin_transfer_structural_apply_error_count
+      }
     }
   }
   if {[llength $macro_pin_transfer_record_full_names] > 0} {
@@ -604,7 +833,9 @@ foreach pin $all_design_pins {
     set macro_pin_toggle_for_macro_activity \
       [dict get $macro_pin_transfer_toggle_by_full_name $full_name]
   }
-  if {[string match "*u_group_*" $full_name]} {
+  set is_macro_pin_for_activity \
+    [expr {[dict exists $macro_pin_transfer_source_by_full_name $full_name] || [string match "*u_group_*" $full_name]}]
+  if {$is_macro_pin_for_activity} {
     incr macro_annotatable
     if {$macro_pin_origin_bucket == "vcd"} {
       incr macro_vcd_origin_count
@@ -789,6 +1020,12 @@ puts $fp "  \"macro_trace_active_pin_count\": $macro_trace_active_count,"
 puts $fp "  \"macro_trace_backed_zero_toggle_pin_count\": $macro_trace_backed_zero_toggle_count"
 puts $fp ","
 puts $fp "  \"macro_pin_transfer\": {"
+puts $fp "    \"structural_assignment_count\": $macro_pin_transfer_structural_assignment_count,"
+puts $fp "    \"structural_matched_count\": $macro_pin_transfer_structural_matched_count,"
+puts $fp "    \"structural_applied_count\": $macro_pin_transfer_structural_applied_count,"
+puts $fp "    \"structural_unmatched_count\": $macro_pin_transfer_structural_unmatched_count,"
+puts $fp "    \"structural_query_error_count\": $macro_pin_transfer_structural_query_error_count,"
+puts $fp "    \"structural_apply_error_count\": $macro_pin_transfer_structural_apply_error_count,"
 puts $fp "    \"candidate_count\": $macro_pin_transfer_candidate_count,"
 puts $fp "    \"applied_count\": $macro_pin_transfer_applied_count,"
 puts $fp "    \"query_error_count\": $macro_pin_transfer_query_error_count,"
@@ -929,6 +1166,7 @@ def _run_openroad_phase(
     flow_variant: str,
     vcd: Path,
     scope: str,
+    macro_activity_tcl: Path | None = None,
     tcl: Path,
     result: Path,
     timeout_seconds: int,
@@ -946,6 +1184,8 @@ def _run_openroad_phase(
         ".PHONY: rtlgen_activity_power\n"
         "rtlgen_activity_power:\n"
         f"\t@RTLGEN_ACTIVITY_VCD='{vcd}' "
+        +(f"RTLGEN_MACRO_ACTIVITY_TCL='{macro_activity_tcl}' " if macro_activity_tcl else "")
+        +
         f"RTLGEN_ACTIVITY_SCOPE='{scope}' "
         f"RTLGEN_ACTIVITY_RESULT='{result}' "
         f"$(OPENROAD_CMD) '{tcl}'\n"
@@ -1033,12 +1273,21 @@ def build_report(
         tcl = temp / "activity_power.tcl"
         tcl.write_text(_tcl_script(), encoding="utf-8")
         for phase in phases:
+            phase_macro_activity_tcl: Path | None = None
+            phase_macro_activity_rows = phase.get("macro_activity_rows")
+            if phase_macro_activity_rows:
+                phase_macro_activity_tcl = temp / f"{phase['phase']}.macro_activity.tcl"
+                _write_macro_activity_tcl_assignments(
+                    path=phase_macro_activity_tcl,
+                    rows=phase_macro_activity_rows,  # type: ignore[arg-type]
+                )
             result = temp / f"{phase['phase']}.json"
             power = _run_openroad_phase(
                 design_config=design_config,
                 flow_variant=flow_variant,
                 vcd=Path(str(phase["_resolved_vcd"])),
                 scope=scope,
+                macro_activity_tcl=phase_macro_activity_tcl,
                 tcl=tcl,
                 result=result,
                 timeout_seconds=timeout_seconds,
@@ -1067,6 +1316,28 @@ def build_report(
                     power.get("leaf_direct_vcd_pin_count", 0),
                 )
             )
+            macro_activity_assignment_count = int(phase.get("macro_activity_assignment_count", 0))
+            macro_pin_transfer = power.get("macro_pin_transfer", {})
+            if not isinstance(macro_pin_transfer, dict):
+                macro_pin_transfer = {}
+            macro_pin_transfer_structural_assignment_count = int(
+                macro_pin_transfer.get("structural_assignment_count", 0)
+            )
+            macro_pin_transfer_structural_matched_count = int(
+                macro_pin_transfer.get("structural_matched_count", 0)
+            )
+            macro_pin_transfer_structural_applied_count = int(
+                macro_pin_transfer.get("structural_applied_count", 0)
+            )
+            macro_pin_transfer_structural_unmatched_count = int(
+                macro_pin_transfer.get("structural_unmatched_count", 0)
+            )
+            macro_pin_transfer_structural_query_error_count = int(
+                macro_pin_transfer.get("structural_query_error_count", 0)
+            )
+            macro_pin_transfer_structural_apply_error_count = int(
+                macro_pin_transfer.get("structural_apply_error_count", 0)
+            )
             trace_coverage = (
                 trace_backed / leaf_annotatable
                 if leaf_annotatable
@@ -1091,6 +1362,17 @@ def build_report(
                 macro_active >= min_macro_active_pins
                 and macro_coverage >= min_macro_active_coverage
             )
+            structural_macro_gate = (
+                macro_pin_transfer_structural_assignment_count
+                == macro_pin_transfer_structural_matched_count
+                == macro_pin_transfer_structural_applied_count
+                == macro_activity_assignment_count
+                and macro_pin_transfer_structural_unmatched_count == 0
+                and macro_pin_transfer_structural_query_error_count == 0
+                and macro_pin_transfer_structural_apply_error_count == 0
+            )
+            if phase["requires_macro_activity"]:
+                macro_pass = macro_pass and macro_activity_assignment_count > 0
             sdc_period_value = power.get("sdc_clock_period_ns")
             sdc_period_ns = (
                 float(sdc_period_value) if sdc_period_value is not None else 0.0
@@ -1119,10 +1401,12 @@ def build_report(
                     "annotation_gate_pass": annotation_gate_pass,
                     "macro_activity_gate_pass": macro_pass,
                     "macro_trace_active_coverage": macro_coverage,
+                    "structural_macro_activity_gate_pass": structural_macro_gate,
                     "clock_period_gate_pass": clock_period_pass,
                     "power_numeric_gate_pass": power_numeric_pass,
                     "phase_gate_pass": annotation_gate_pass
                     and macro_pass
+                    and structural_macro_gate
                     and clock_period_pass
                     and power_numeric_pass,
                     "full_context_energy_j": energy_j,

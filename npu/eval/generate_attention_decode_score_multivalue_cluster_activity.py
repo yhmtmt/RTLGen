@@ -23,6 +23,7 @@ from npu.eval.probe_attention_decode_score_multivalue_cluster_equivalence import
     _tool,
     _vectors,
 )
+from npu.eval.extract_fakeram_vcd_activity import extract_fakeram_vcd_activity
 from npu.rtlgen.gen_attention_decode_score_multivalue_cluster import generate  # noqa: E402
 
 JsonDict = dict[str, Any]
@@ -279,7 +280,7 @@ def _run_phase(
     clock_period_ns: float,
     score_multiplier: int,
     score_shift: int,
-) -> tuple[int, int, Path]:
+) -> tuple[int, int, Path, Path]:
     validated = _validate_request(config=config, block_count=block_count, head_dim=head_dim)
     with tempfile.TemporaryDirectory(prefix=f"decode-score-multivalue-{phase}-") as tmp_text:
         tmp = Path(tmp_text)
@@ -317,7 +318,14 @@ def _run_phase(
         cycle_count, service_cycles = _parse_phase_cycles(run.stdout, phase)
         phase_out = out_dir / f"{phase}.vcd"
         phase_out.write_bytes(vcd_path.read_bytes())
-        return cycle_count, service_cycles, phase_out
+        sidecar_path = out_dir / f"{phase}_fakeram_macro_pin_vcd_activity_v1.json"
+        sidecar = extract_fakeram_vcd_activity(
+            phase_out,
+            source_vcd_sha256=_sha256_file(phase_out),
+            scope="tb/dut",
+        )
+        sidecar_path.write_text(json.dumps(sidecar, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        return cycle_count, service_cycles, phase_out, sidecar_path
 
 
 def _score_fill_scaling(*, cycle_count: int, block_count: int) -> JsonDict:
@@ -384,7 +392,7 @@ def generate_phase_activity(
     phases: list[JsonDict] = []
     full_service_cycles = 0
     for phase in _PHASES:
-        cycle_count, service_cycles, vcd_path = _run_phase(
+        cycle_count, service_cycles, vcd_path, macro_activity_path = _run_phase(
             config=config,
             phase=phase,
             out_dir=out_dir,
@@ -407,6 +415,8 @@ def generate_phase_activity(
             "full_context_cycles": scaling["full_context_cycles"],
             "vcd": vcd_path.name,
             "vcd_sha256": _sha256_file(vcd_path),
+            "macro_activity": macro_activity_path.name,
+            "macro_activity_sha256": _sha256_file(macro_activity_path),
             "requires_macro_activity": phase in {"score_fill", "replay_value"},
             "scaling": scaling,
         })

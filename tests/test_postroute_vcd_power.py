@@ -23,12 +23,53 @@ SPEC.loader.exec_module(MODULE)
 
 
 class PostrouteVcdPowerTests(unittest.TestCase):
+    def _macro_activity(
+        self,
+        *,
+        phase_name: str,
+        vcd: Path,
+        overrides: dict[str, object] | None = None,
+    ) -> dict[str, object]:
+        sidecar: dict[str, object] = {
+            "version": 1,
+            "model": MODULE._FAKERAM_ACTIVITY_MODEL,
+            "source_vcd_sha256": MODULE._sha256(vcd),
+            "source_vcd": vcd.name,
+            "scope": "tb/dut",
+            "timescale_seconds": 1e-9,
+            "active_start_tick": 0,
+            "active_end_tick": 1000,
+            "pins": [
+                {
+                    "full_name": f"{phase_name}_macro_u_group/u_pin_1",
+                    "density_hz": 1_000_000.0,
+                    "duty_cycle": 0.5,
+                    "transition_count": 10.0,
+                    "source": "vcd",
+                }
+            ],
+        }
+        if overrides is not None:
+            sidecar.update(overrides)
+        return sidecar
+
+    def _write_macro_activity(self, root: Path, *, phase_name: str, vcd: Path) -> Path:
+        sidecar = self._macro_activity(
+            phase_name=phase_name,
+            vcd=vcd,
+        )
+        path = root / f"{phase_name}.macro_activity.json"
+        path.write_text(json.dumps(sidecar), encoding="utf-8")
+        return path
+
     def _write_tcl_runtime_stub(
         self,
         root: Path,
         result: Path,
         *,
         macro_transfer: bool = False,
+        macro_activity_tcl: Path | None = None,
+        macro_transfer_pin_names: tuple[str, str, str] | None = None,
         leaf_specs: tuple[tuple[str, str, str], ...] | None = None,
     ) -> str:
         if leaf_specs is None:
@@ -56,16 +97,17 @@ class PostrouteVcdPowerTests(unittest.TestCase):
                 ]
             )
         if macro_transfer:
-            all_pins = [
-                "pin_other_0",
-                "pin_input_u_group_0",
-                "pin_nonfinite_u_group",
-            ]
-            net_pins = [
-                "driver_pin_u_group_0",
-                "peer_pin_u_group_0",
-                "pin_input_u_group_0",
-            ]
+            if macro_transfer_pin_names is None:
+                macro_transfer_pin_names = (
+                    "pin_other_0",
+                    "pin_input_u_group_0",
+                    "pin_nonfinite_u_group",
+                )
+            input_pin = macro_transfer_pin_names[1]
+            driver_pin = f"driver_{input_pin}"
+            peer_pin = f"peer_{input_pin}"
+            all_pins = list(macro_transfer_pin_names)
+            net_pins = [driver_pin, peer_pin, input_pin]
             get_pins_body = [
                 "  if {[lindex $args 0] eq \"-hierarchical\"} {",
                 "    set pattern [lindex $args end]",
@@ -78,32 +120,33 @@ class PostrouteVcdPowerTests(unittest.TestCase):
                 "    if {$net eq {net_u_group_0}} {",
                 f"      return {{{' '.join(net_pins)}}}",
                 "    }",
+                "    return {}",
                 "  }",
                 f"  return {{{' '.join(all_pins)}}}",
             ]
             pin_property_body = [
-                "  if {$obj eq {pin_input_u_group_0}} {",
+                f"  if {{$obj eq {{{input_pin}}}}} {{",
                 "    if {$property eq \"is_hierarchical\"} { return 0 }",
                 "    if {$property eq \"direction\"} { return \"input\" }",
                 "    if {$property eq \"activity\"} { return {0.0 0.0 constant} }",
                 "    if {$property eq \"full_name\"} { return $obj }",
                 "  }",
-                "  if {$obj eq {driver_pin_u_group_0}} {",
+                f"  if {{$obj eq {{{driver_pin}}}}} {{",
                 "    if {$property eq \"activity\"} { return {0.4 0.9 other} }",
                 "  }",
-                "  if {$obj eq {peer_pin_u_group_0}} {",
+                f"  if {{$obj eq {{{peer_pin}}}}} {{",
                 "    if {$property eq \"activity\"} { return {0.9 0.8 propagated} }",
                 "  }",
             ]
             net_driver_body = [
                 "  proc net_driver_pins {net} {",
-                "    if {$net eq {net_u_group_0}} { return {driver_pin_u_group_0} }",
+                f"    if {{$net eq {{net_u_group_0}}}} {{ return {{{driver_pin}}} }}",
                 "    return {}",
                 "  }",
             ]
             net_and_activity_body = [
                 "proc get_nets {args} {",
-                "  if {[lindex $args 0] eq \"-of_objects\" && [lindex $args 1] eq {pin_input_u_group_0}} {",
+                f"  if {{[lindex $args 0] eq \"-of_objects\" && [lindex $args 1] eq {{{input_pin}}}}} {{",
                 "    return {net_u_group_0}",
                 "  }",
                 "  return {}",
@@ -217,6 +260,11 @@ class PostrouteVcdPowerTests(unittest.TestCase):
             f"set ::env(RTLGEN_ACTIVITY_VCD) \"{root / 'trace.vcd'}\"",
             f"set ::env(RTLGEN_ACTIVITY_SCOPE) \"tb/dut\"",
             f"set ::env(RTLGEN_ACTIVITY_RESULT) \"{result}\"",
+            (
+                f"set ::env(RTLGEN_MACRO_ACTIVITY_TCL) \"{macro_activity_tcl}\""
+                if macro_activity_tcl is not None
+                else "set ::env(RTLGEN_MACRO_ACTIVITY_TCL) \"\""
+            ),
             MODULE._tcl_script(),
             "if {$::ref_name_query_count == 0} {",
             "  error \"assertion failed: expected at least one instance ref_name query\"",
@@ -389,9 +437,24 @@ class PostrouteVcdPowerTests(unittest.TestCase):
             (scripts / "load.tcl").write_text("", encoding="utf-8")
 
             result = root / "activity_power.json"
+            macro_activity_tcl = root / "macro_activity.tcl"
+            macro_activity_tcl.write_text(
+                "set rtlgen_macro_activity_assignments {\n"
+                "  {pin_input_u_group[7]/dq[3] 1.234 0.5 8.9}\n"
+                "}\n",
+                encoding="utf-8",
+            )
             tcl_script_path = root / "activity_power.tcl"
             tcl_script = self._write_tcl_runtime_stub(
-                root=root, result=result, macro_transfer=True
+                root=root,
+                result=result,
+                macro_transfer=True,
+                macro_activity_tcl=macro_activity_tcl,
+                macro_transfer_pin_names=(
+                    "pin_other_0",
+                    "pin_input_u_group[7]/dq[3]",
+                    "pin_nonfinite_u_group",
+                ),
             )
             tcl_script_path.write_text(tcl_script, encoding="utf-8")
             tcl = shutil.which("tclsh")
@@ -411,46 +474,58 @@ class PostrouteVcdPowerTests(unittest.TestCase):
 
             payload = json.loads(result.read_text(encoding="utf-8"))
             transfer = payload["macro_pin_transfer"]
-            self.assertEqual(transfer["candidate_count"], 1)
+            self.assertEqual(transfer["candidate_count"], 0)
             self.assertEqual(transfer["applied_count"], 1)
             self.assertEqual(transfer["query_error_count"], 0)
             self.assertEqual(transfer["apply_error_count"], 0)
-            self.assertEqual(transfer["source_vcd_count"], 0)
-            self.assertEqual(transfer["source_propagated_count"], 1)
+            self.assertEqual(transfer["structural_assignment_count"], 1)
+            self.assertEqual(transfer["structural_matched_count"], 1)
+            self.assertEqual(transfer["structural_applied_count"], 1)
+            self.assertEqual(transfer["structural_unmatched_count"], 0)
+            self.assertEqual(transfer["structural_query_error_count"], 0)
+            self.assertEqual(transfer["structural_apply_error_count"], 0)
+            self.assertEqual(transfer["source_vcd_count"], 1)
+            self.assertEqual(transfer["source_propagated_count"], 0)
             self.assertEqual(transfer["active_count"], 1)
             self.assertEqual(transfer["zero_count"], 0)
             self.assertEqual(transfer["scanned_pin_count"], 3)
-            self.assertEqual(transfer["name_match_pin_count"], 1)
-            self.assertEqual(transfer["input_pin_count"], 1)
-            self.assertEqual(transfer["connected_pin_count"], 1)
+            self.assertEqual(transfer["name_match_pin_count"], 0)
+            self.assertEqual(transfer["input_pin_count"], 0)
+            self.assertEqual(transfer["connected_pin_count"], 0)
             self.assertEqual(transfer["no_net_pin_count"], 0)
-            self.assertEqual(transfer["driver_pin_count"], 1)
+            self.assertEqual(transfer["driver_pin_count"], 0)
             self.assertEqual(transfer["no_driver_pin_count"], 0)
             self.assertEqual(transfer["driver_origin_counts"]["vcd"], 0)
             self.assertEqual(transfer["driver_origin_counts"]["propagated"], 0)
             self.assertEqual(transfer["driver_origin_counts"]["clock"], 0)
             self.assertEqual(transfer["driver_origin_counts"]["constant"], 0)
-            self.assertEqual(transfer["driver_origin_counts"]["other"], 1)
+            self.assertEqual(transfer["driver_origin_counts"]["other"], 0)
             self.assertEqual(transfer["peer_origin_counts"]["vcd"], 0)
-            self.assertEqual(transfer["peer_origin_counts"]["propagated"], 1)
+            self.assertEqual(transfer["peer_origin_counts"]["propagated"], 0)
             self.assertEqual(transfer["peer_origin_counts"]["clock"], 0)
             self.assertEqual(transfer["peer_origin_counts"]["constant"], 0)
-            self.assertEqual(transfer["peer_origin_counts"]["other"], 1)
-            self.assertEqual(transfer["peer_pin_examined_count"], 2)
-            self.assertEqual(transfer["peer_eligible_count"], 1)
+            self.assertEqual(transfer["peer_origin_counts"]["other"], 0)
+            self.assertEqual(transfer["peer_pin_examined_count"], 0)
+            self.assertEqual(transfer["peer_eligible_count"], 0)
             self.assertEqual(len(transfer["transferred"]), 1)
             self.assertEqual(
-                transfer["transferred"][0]["full_name"], "pin_input_u_group_0"
+                transfer["transferred"][0]["full_name"], "pin_input_u_group[7]/dq[3]"
             )
-            self.assertEqual(transfer["transferred"][0]["source"], "propagated")
-            self.assertEqual(transfer["transferred"][0]["source_kind"], "net_peer")
+            self.assertEqual(transfer["transferred"][0]["source"], "vcd")
+            self.assertEqual(
+                transfer["transferred"][0]["source_kind"], "structural_vcd_sidecar"
+            )
             self.assertEqual(len(transfer["scan_samples"]), 1)
             self.assertEqual(
                 transfer["scan_samples"][0]["full_name"],
-                "pin_input_u_group_0",
+                "pin_input_u_group[7]/dq[3]",
             )
-            self.assertEqual(transfer["scan_samples"][0]["driver_origin"], "propagated")
-            self.assertEqual(transfer["scan_samples"][0]["source_kind"], "net_peer")
+            self.assertEqual(
+                transfer["scan_samples"][0]["driver_origin"], "structural_vcd_sidecar"
+            )
+            self.assertEqual(
+                transfer["scan_samples"][0]["source_kind"], "structural_vcd_sidecar"
+            )
             self.assertEqual(payload["macro_activity_origin_counts"]["transferred"], 1)
             self.assertEqual(payload["macro_trace_backed_pin_count"], 1)
             self.assertEqual(payload["macro_trace_active_pin_count"], 1)
@@ -655,11 +730,18 @@ class PostrouteVcdPowerTests(unittest.TestCase):
         ):
             vcd = root / f"{name}.vcd"
             vcd.write_text(f"$comment {name} $end\n", encoding="utf-8")
+            macro_activity = self._write_macro_activity(
+                root=root,
+                phase_name=name,
+                vcd=vcd,
+            )
             phases.append(
                 {
                     "phase": name,
                     "vcd": vcd.name,
                     "vcd_sha256": MODULE._sha256(vcd),
+                    "macro_activity": macro_activity.name,
+                    "macro_activity_sha256": MODULE._sha256(macro_activity),
                     "measured_cycles": measured,
                     "full_context_cycles": full,
                 }
@@ -669,6 +751,22 @@ class PostrouteVcdPowerTests(unittest.TestCase):
         path.write_text(json.dumps(manifest), encoding="utf-8")
         return manifest, path
 
+    def _with_structural_macro_transfer(
+        self,
+        power: dict[str, object],
+        assignment_count: int,
+    ) -> dict[str, object]:
+        payload = dict(power)
+        payload["macro_pin_transfer"] = {
+            "structural_assignment_count": assignment_count,
+            "structural_matched_count": assignment_count,
+            "structural_applied_count": assignment_count,
+            "structural_unmatched_count": 0,
+            "structural_query_error_count": 0,
+            "structural_apply_error_count": 0,
+        }
+        return payload
+
     def test_phase_manifest_rejects_hash_mismatch(self) -> None:
         with tempfile.TemporaryDirectory() as temp_text:
             root = Path(temp_text)
@@ -676,6 +774,343 @@ class PostrouteVcdPowerTests(unittest.TestCase):
             manifest["phases"][0]["vcd_sha256"] = "0" * 64
             with self.assertRaisesRegex(ValueError, "hash mismatch"):
                 MODULE._phase_rows(manifest, path)
+
+    def test_phase_manifest_rejects_macro_activity_hash_mismatch(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_text:
+            root = Path(temp_text)
+            manifest, path = self._fixture(root)
+            manifest["phases"][0]["macro_activity_sha256"] = "f" * 64
+            with self.assertRaisesRegex(ValueError, "macro activity hash mismatch"):
+                MODULE._phase_rows(manifest, path)
+
+    def test_phase_manifest_rejects_missing_macro_activity_fields(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_text:
+            root = Path(temp_text)
+            manifest, path = self._fixture(root)
+            manifest["phases"][0].pop("macro_activity")
+            with self.assertRaisesRegex(ValueError, "macro_activity"):
+                MODULE._phase_rows(manifest, path)
+
+    def test_phase_rows_rejects_invalid_macro_activity_schema(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_text:
+            root = Path(temp_text)
+            vcd = root / "trace.vcd"
+            vcd.write_text("$enddefinitions $end\n", encoding="utf-8")
+            invalid_sidecar = root / "bad_macro_activity.json"
+            invalid_sidecar.write_text(
+                json.dumps(
+                    self._macro_activity(
+                        phase_name="score_fill",
+                        vcd=vcd,
+                        overrides={
+                            "pins": [
+                                {
+                                    "full_name": "",
+                                    "density_hz": -1.0,
+                                    "duty_cycle": 1.2,
+                                    "transition_count": float("nan"),
+                                    "source": "vcd",
+                                }
+                            ],
+                        },
+                    )
+                ),
+                encoding="utf-8",
+            )
+            manifest = {
+                "clock_period_ns": 8.0,
+                "phases": [
+                    {
+                        "phase": "score_fill",
+                        "vcd": "trace.vcd",
+                        "vcd_sha256": MODULE._sha256(vcd),
+                        "macro_activity": str(invalid_sidecar),
+                        "macro_activity_sha256": MODULE._sha256(invalid_sidecar),
+                        "measured_cycles": 20,
+                        "full_context_cycles": 20,
+                    }
+                ],
+            }
+            manifest_path = root / "manifest.json"
+            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "full_name"):
+                MODULE._phase_rows(manifest, manifest_path)
+
+    def test_phase_rows_rejects_macro_activity_version_mismatch(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_text:
+            root = Path(temp_text)
+            vcd = root / "trace.vcd"
+            vcd.write_text("$enddefinitions $end\n", encoding="utf-8")
+            invalid_sidecar = root / "bad_macro_activity.json"
+            invalid_sidecar.write_text(
+                json.dumps(
+                    self._macro_activity(
+                        phase_name="score_fill",
+                        vcd=vcd,
+                        overrides={"version": 2},
+                    )
+                ),
+                encoding="utf-8",
+            )
+            manifest = {
+                "clock_period_ns": 8.0,
+                "phases": [
+                    {
+                        "phase": "score_fill",
+                        "vcd": "trace.vcd",
+                        "vcd_sha256": MODULE._sha256(vcd),
+                        "macro_activity": str(invalid_sidecar),
+                        "macro_activity_sha256": MODULE._sha256(invalid_sidecar),
+                        "measured_cycles": 20,
+                        "full_context_cycles": 20,
+                    }
+                ],
+            }
+            manifest_path = root / "manifest.json"
+            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "version"):
+                MODULE._phase_rows(manifest, manifest_path)
+
+    def test_phase_rows_rejects_macro_activity_source_vcd_mismatch(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_text:
+            root = Path(temp_text)
+            vcd = root / "trace.vcd"
+            vcd.write_text("$enddefinitions $end\n", encoding="utf-8")
+            invalid_sidecar = root / "bad_macro_activity.json"
+            invalid_sidecar.write_text(
+                json.dumps(
+                    self._macro_activity(
+                        phase_name="score_fill",
+                        vcd=vcd,
+                        overrides={"source_vcd": "other_trace.vcd"},
+                    )
+                ),
+                encoding="utf-8",
+            )
+            manifest = {
+                "clock_period_ns": 8.0,
+                "phases": [
+                    {
+                        "phase": "score_fill",
+                        "vcd": "trace.vcd",
+                        "vcd_sha256": MODULE._sha256(vcd),
+                        "macro_activity": str(invalid_sidecar),
+                        "macro_activity_sha256": MODULE._sha256(invalid_sidecar),
+                        "measured_cycles": 20,
+                        "full_context_cycles": 20,
+                    }
+                ],
+            }
+            manifest_path = root / "manifest.json"
+            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "source_vcd"):
+                MODULE._phase_rows(manifest, manifest_path)
+
+    def test_phase_rows_rejects_macro_activity_scope_missing(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_text:
+            root = Path(temp_text)
+            vcd = root / "trace.vcd"
+            vcd.write_text("$enddefinitions $end\n", encoding="utf-8")
+            invalid_sidecar = root / "bad_macro_activity.json"
+            invalid_sidecar.write_text(
+                json.dumps(
+                    self._macro_activity(
+                        phase_name="score_fill",
+                        vcd=vcd,
+                        overrides={"scope": ""},
+                    )
+                ),
+                encoding="utf-8",
+            )
+            manifest = {
+                "clock_period_ns": 8.0,
+                "phases": [
+                    {
+                        "phase": "score_fill",
+                        "vcd": "trace.vcd",
+                        "vcd_sha256": MODULE._sha256(vcd),
+                        "macro_activity": str(invalid_sidecar),
+                        "macro_activity_sha256": MODULE._sha256(invalid_sidecar),
+                        "measured_cycles": 20,
+                        "full_context_cycles": 20,
+                    }
+                ],
+            }
+            manifest_path = root / "manifest.json"
+            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "scope"):
+                MODULE._phase_rows(manifest, manifest_path)
+
+    def test_phase_rows_rejects_macro_activity_timescale_invalid(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_text:
+            root = Path(temp_text)
+            vcd = root / "trace.vcd"
+            vcd.write_text("$enddefinitions $end\n", encoding="utf-8")
+            invalid_sidecar = root / "bad_macro_activity.json"
+            invalid_sidecar.write_text(
+                json.dumps(
+                    self._macro_activity(
+                        phase_name="score_fill",
+                        vcd=vcd,
+                        overrides={"timescale_seconds": -1.0},
+                    )
+                ),
+                encoding="utf-8",
+            )
+            manifest = {
+                "clock_period_ns": 8.0,
+                "phases": [
+                    {
+                        "phase": "score_fill",
+                        "vcd": "trace.vcd",
+                        "vcd_sha256": MODULE._sha256(vcd),
+                        "macro_activity": str(invalid_sidecar),
+                        "macro_activity_sha256": MODULE._sha256(invalid_sidecar),
+                        "measured_cycles": 20,
+                        "full_context_cycles": 20,
+                    }
+                ],
+            }
+            manifest_path = root / "manifest.json"
+            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "timescale_seconds"):
+                MODULE._phase_rows(manifest, manifest_path)
+
+    def test_phase_rows_rejects_macro_activity_active_tick_order(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_text:
+            root = Path(temp_text)
+            vcd = root / "trace.vcd"
+            vcd.write_text("$enddefinitions $end\n", encoding="utf-8")
+            invalid_sidecar = root / "bad_macro_activity.json"
+            invalid_sidecar.write_text(
+                json.dumps(
+                    self._macro_activity(
+                        phase_name="score_fill",
+                        vcd=vcd,
+                        overrides={"active_end_tick": 10, "active_start_tick": 10},
+                    )
+                ),
+                encoding="utf-8",
+            )
+            manifest = {
+                "clock_period_ns": 8.0,
+                "phases": [
+                    {
+                        "phase": "score_fill",
+                        "vcd": "trace.vcd",
+                        "vcd_sha256": MODULE._sha256(vcd),
+                        "macro_activity": str(invalid_sidecar),
+                        "macro_activity_sha256": MODULE._sha256(invalid_sidecar),
+                        "measured_cycles": 20,
+                        "full_context_cycles": 20,
+                    }
+                ],
+            }
+            manifest_path = root / "manifest.json"
+            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "active range"):
+                MODULE._phase_rows(manifest, manifest_path)
+
+    def test_phase_rows_rejects_macro_activity_active_ticks_non_integer(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_text:
+            root = Path(temp_text)
+            vcd = root / "trace.vcd"
+            vcd.write_text("$enddefinitions $end\n", encoding="utf-8")
+            invalid_sidecar = root / "bad_macro_activity.json"
+            invalid_sidecar.write_text(
+                json.dumps(
+                    self._macro_activity(
+                        phase_name="score_fill",
+                        vcd=vcd,
+                        overrides={"active_end_tick": 10.5},
+                    )
+                ),
+                encoding="utf-8",
+            )
+            manifest = {
+                "clock_period_ns": 8.0,
+                "phases": [
+                    {
+                        "phase": "score_fill",
+                        "vcd": "trace.vcd",
+                        "vcd_sha256": MODULE._sha256(vcd),
+                        "macro_activity": str(invalid_sidecar),
+                        "macro_activity_sha256": MODULE._sha256(invalid_sidecar),
+                        "measured_cycles": 20,
+                        "full_context_cycles": 20,
+                    }
+                ],
+            }
+            manifest_path = root / "manifest.json"
+            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "active_start_tick|active_end_tick|integer"):
+                MODULE._phase_rows(manifest, manifest_path)
+
+    def test_build_report_fails_if_structural_macro_activity_incomplete(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_text:
+            root = Path(temp_text)
+            vcd = root / "trace.vcd"
+            vcd.write_text("$comment score_fill $end\n", encoding="utf-8")
+            macro_activity = self._write_macro_activity(
+                root=root,
+                phase_name="score_fill",
+                vcd=vcd,
+            )
+            manifest = {
+                "clock_period_ns": 8.0,
+                "phases": [
+                    {
+                        "phase": "score_fill",
+                        "vcd": vcd.name,
+                        "vcd_sha256": MODULE._sha256(vcd),
+                        "macro_activity": macro_activity.name,
+                        "macro_activity_sha256": MODULE._sha256(macro_activity),
+                        "measured_cycles": 20,
+                        "full_context_cycles": 20,
+                    }
+                ],
+            }
+            manifest_path = root / "manifest.json"
+            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+            design_config = root / "config.mk"
+            design_config.write_text("", encoding="utf-8")
+            power = self._with_structural_macro_transfer(
+                {
+                    "total_w": 1.0,
+                    "internal_w": 0.5,
+                    "switching_w": 0.5,
+                    "leakage_w": 0.0,
+                    "sdc_clock_period_ns": 8.0,
+                    "annotatable_pin_count": 1000,
+                    "leaf_annotatable_pin_count": 1000,
+                    "leaf_trace_backed_pin_count": 1000,
+                    "vcd_annotated_pin_count": 1000,
+                    "macro_trace_active_pin_count": 100,
+                    "macro_annotatable_pin_count": 100,
+                    "direct_annotatable_pin_count": 1000,
+                    "direct_vcd_pin_count": 1000,
+                },
+                assignment_count=1,
+            )
+            assert isinstance(power.get("macro_pin_transfer"), dict)
+            power["macro_pin_transfer"]["structural_applied_count"] = 0
+            with mock.patch.object(MODULE, "_run_openroad_phase", return_value=power):
+                report = MODULE.build_report(
+                    manifest=manifest,
+                    manifest_path=manifest_path,
+                    design_config=design_config,
+                    flow_variant="activity_test",
+                    scope="tb/dut",
+                    min_vcd_coverage=0.5,
+                    min_vcd_pins=1,
+                    min_macro_active_coverage=0.5,
+                    min_macro_active_pins=1,
+                    timeout_seconds=10,
+                )
+            phase = report["phases"][0]
+            self.assertFalse(phase["structural_macro_activity_gate_pass"])
+            self.assertFalse(phase["phase_gate_pass"])
+            self.assertFalse(report["promotion_gate_pass"])
 
     def test_build_report_accounts_phase_energy_and_gates_coverage(self) -> None:
         with tempfile.TemporaryDirectory() as temp_text:
@@ -685,51 +1120,60 @@ class PostrouteVcdPowerTests(unittest.TestCase):
             design_config.write_text("", encoding="utf-8")
             power_rows = iter(
                 [
-                    {
-                        "total_w": 2.0,
-                        "internal_w": 1.0,
-                        "switching_w": 0.8,
-                        "leakage_w": 0.2,
-                        "sdc_clock_period_ns": 8.0,
-                        "annotatable_pin_count": 1000,
-                        "leaf_annotatable_pin_count": 1000,
-                        "leaf_trace_backed_pin_count": 500,
-                        "vcd_annotated_pin_count": 500,
-                        "macro_trace_active_pin_count": 10,
-                        "macro_annotatable_pin_count": 100,
-                        "direct_annotatable_pin_count": 1000,
-                        "direct_vcd_pin_count": 200,
-                    },
-                    {
-                        "total_w": 3.0,
-                        "internal_w": 1.5,
-                        "switching_w": 1.2,
-                        "leakage_w": 0.3,
-                        "sdc_clock_period_ns": 8.0,
-                        "annotatable_pin_count": 1000,
-                        "leaf_annotatable_pin_count": 1000,
-                        "leaf_trace_backed_pin_count": 400,
-                        "vcd_annotated_pin_count": 400,
-                        "macro_trace_active_pin_count": 8,
-                        "macro_annotatable_pin_count": 100,
-                        "direct_annotatable_pin_count": 1000,
-                        "direct_vcd_pin_count": 160,
-                    },
-                    {
-                        "total_w": 1.0,
-                        "internal_w": 0.5,
-                        "switching_w": 0.4,
-                        "leakage_w": 0.1,
-                        "sdc_clock_period_ns": 8.0,
-                        "annotatable_pin_count": 1000,
-                        "leaf_annotatable_pin_count": 1000,
-                        "leaf_trace_backed_pin_count": 300,
-                        "vcd_annotated_pin_count": 300,
-                        "macro_trace_active_pin_count": 0,
-                        "macro_annotatable_pin_count": 100,
-                        "direct_annotatable_pin_count": 1000,
-                        "direct_vcd_pin_count": 80,
-                    },
+                    self._with_structural_macro_transfer(
+                        {
+                            "total_w": 2.0,
+                            "internal_w": 1.0,
+                            "switching_w": 0.8,
+                            "leakage_w": 0.2,
+                            "sdc_clock_period_ns": 8.0,
+                            "annotatable_pin_count": 1000,
+                            "leaf_annotatable_pin_count": 1000,
+                            "leaf_trace_backed_pin_count": 500,
+                            "vcd_annotated_pin_count": 500,
+                            "macro_trace_active_pin_count": 10,
+                            "macro_annotatable_pin_count": 100,
+                            "direct_annotatable_pin_count": 1000,
+                            "direct_vcd_pin_count": 200,
+                        },
+                        assignment_count=1,
+                    ),
+                    self._with_structural_macro_transfer(
+                        {
+                            "total_w": 3.0,
+                            "internal_w": 1.5,
+                            "switching_w": 1.2,
+                            "leakage_w": 0.3,
+                            "sdc_clock_period_ns": 8.0,
+                            "annotatable_pin_count": 1000,
+                            "leaf_annotatable_pin_count": 1000,
+                            "leaf_trace_backed_pin_count": 400,
+                            "vcd_annotated_pin_count": 400,
+                            "macro_trace_active_pin_count": 8,
+                            "macro_annotatable_pin_count": 100,
+                            "direct_annotatable_pin_count": 1000,
+                            "direct_vcd_pin_count": 160,
+                        },
+                        assignment_count=1,
+                    ),
+                    self._with_structural_macro_transfer(
+                        {
+                            "total_w": 1.0,
+                            "internal_w": 0.5,
+                            "switching_w": 0.4,
+                            "leakage_w": 0.1,
+                            "sdc_clock_period_ns": 8.0,
+                            "annotatable_pin_count": 1000,
+                            "leaf_annotatable_pin_count": 1000,
+                            "leaf_trace_backed_pin_count": 300,
+                            "vcd_annotated_pin_count": 300,
+                            "macro_trace_active_pin_count": 0,
+                            "macro_annotatable_pin_count": 100,
+                            "direct_annotatable_pin_count": 1000,
+                            "direct_vcd_pin_count": 80,
+                        },
+                        assignment_count=1,
+                    ),
                 ]
             )
             with mock.patch.object(MODULE, "_run_openroad_phase", side_effect=lambda **_: next(power_rows)):
@@ -897,39 +1341,42 @@ class PostrouteVcdPowerTests(unittest.TestCase):
             manifest, manifest_path = self._fixture(root)
             design_config = root / "config.mk"
             design_config.write_text("", encoding="utf-8")
-            power = {
-                "total_w": 1.0,
-                "internal_w": 0.5,
-                "switching_w": 0.4,
-                "leakage_w": 0.1,
-                "sdc_clock_period_ns": 8.0,
-                "annotatable_pin_count": 1000,
-                "leaf_annotatable_pin_count": 1000,
-                "leaf_trace_backed_pin_count": 500,
-                "vcd_annotated_pin_count": 500,
-                "macro_trace_active_pin_count": 10,
-                "macro_annotatable_pin_count": 100,
-                "design_power_quartets": {
-                    "total": {
-                        "internal_w": 0.5,
-                        "switching_w": 0.4,
-                        "leakage_w": 0.1,
-                        "total_w": 1.0,
+            power = self._with_structural_macro_transfer(
+                {
+                    "total_w": 1.0,
+                    "internal_w": 0.5,
+                    "switching_w": 0.4,
+                    "leakage_w": 0.1,
+                    "sdc_clock_period_ns": 8.0,
+                    "annotatable_pin_count": 1000,
+                    "leaf_annotatable_pin_count": 1000,
+                    "leaf_trace_backed_pin_count": 500,
+                    "vcd_annotated_pin_count": 500,
+                    "macro_trace_active_pin_count": 10,
+                    "macro_annotatable_pin_count": 100,
+                    "design_power_quartets": {
+                        "total": {
+                            "internal_w": 0.5,
+                            "switching_w": 0.4,
+                            "leakage_w": 0.1,
+                            "total_w": 1.0,
+                        },
+                    },
+                    "non_finite_leaf_instance_power": {
+                        "instance_count": 1,
+                        "samples": [
+                            {
+                                "full_name": "u_group_a/u1",
+                                "internal_w": "null",
+                                "switching_w": "null",
+                                "leakage_w": "null",
+                                "total_w": "null",
+                            },
+                        ],
                     },
                 },
-                "non_finite_leaf_instance_power": {
-                    "instance_count": 1,
-                    "samples": [
-                        {
-                            "full_name": "u_group_a/u1",
-                            "internal_w": "null",
-                            "switching_w": "null",
-                            "leakage_w": "null",
-                            "total_w": "null",
-                        },
-                    ],
-                },
-            }
+                assignment_count=1,
+            )
             with mock.patch.object(MODULE, "_run_openroad_phase", return_value=power):
                 report = MODULE.build_report(
                     manifest=manifest,
@@ -1005,16 +1452,19 @@ class PostrouteVcdPowerTests(unittest.TestCase):
             manifest, manifest_path = self._fixture(root)
             design_config = root / "config.mk"
             design_config.write_text("", encoding="utf-8")
-            power = {
-                "total_w": 1.0,
-                "sdc_clock_period_ns": 8.0,
-                "annotatable_pin_count": 100,
-                "vcd_annotated_pin_count": 80,
-                "macro_trace_active_pin_count": 1,
-                "macro_annotatable_pin_count": 100,
-                "direct_annotatable_pin_count": 100,
-                "direct_vcd_pin_count": 80,
-            }
+            power = self._with_structural_macro_transfer(
+                {
+                    "total_w": 1.0,
+                    "sdc_clock_period_ns": 8.0,
+                    "annotatable_pin_count": 100,
+                    "vcd_annotated_pin_count": 80,
+                    "macro_trace_active_pin_count": 1,
+                    "macro_annotatable_pin_count": 100,
+                    "direct_annotatable_pin_count": 100,
+                    "direct_vcd_pin_count": 80,
+                },
+                assignment_count=1,
+            )
             with mock.patch.object(MODULE, "_run_openroad_phase", return_value=power):
                 report = MODULE.build_report(
                     manifest=manifest,
@@ -1038,19 +1488,22 @@ class PostrouteVcdPowerTests(unittest.TestCase):
             manifest, manifest_path = self._fixture(root)
             design_config = root / "config.mk"
             design_config.write_text("", encoding="utf-8")
-            power = {
-                "total_w": 1.0,
-                "internal_w": None,
-                "switching_w": 0.8,
-                "leakage_w": 0.2,
-                "sdc_clock_period_ns": 8.0,
-                "annotatable_pin_count": 100,
-                "vcd_annotated_pin_count": 80,
-                "macro_trace_active_pin_count": 10,
-                "macro_annotatable_pin_count": 100,
-                "direct_annotatable_pin_count": 100,
-                "direct_vcd_pin_count": 80,
-            }
+            power = self._with_structural_macro_transfer(
+                {
+                    "total_w": 1.0,
+                    "internal_w": None,
+                    "switching_w": 0.8,
+                    "leakage_w": 0.2,
+                    "sdc_clock_period_ns": 8.0,
+                    "annotatable_pin_count": 100,
+                    "vcd_annotated_pin_count": 80,
+                    "macro_trace_active_pin_count": 10,
+                    "macro_annotatable_pin_count": 100,
+                    "direct_annotatable_pin_count": 100,
+                    "direct_vcd_pin_count": 80,
+                },
+                assignment_count=1,
+            )
             with mock.patch.object(MODULE, "_run_openroad_phase", return_value=power):
                 report = MODULE.build_report(
                     manifest=manifest,
