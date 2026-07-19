@@ -246,7 +246,7 @@
     {
       "item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v9",
       "task_type": "l2_campaign",
-      "objective": "Rerun shared-score multivalue-cluster activity-backed power after PR #1398 / commit 3056b89f6deb39c7e96b87bce087d3062f99bd98. v8 had 5,152 connected macro inputs with 0 direct/propagated macro activity and 4,521 non-finite reducer leaf powers; v9 applies an exact 5,096-row per-phase/per-row/per-structural sidecar assignment for macro activity and should diagnose remaining reducer non-finite power if the macro gate still passes.",
+      "objective": "Rerun shared-score multivalue-cluster activity-backed power after PR #1398 / commit 3056b89f6deb39c7e96b87bce087d3062f99bd98. v8 had 5,152 connected macro inputs with 0 direct/propagated macro activity and 4,521 non-finite reducer leaf powers; v9 applied an exact 5,096/5,096/5,096 per-phase/per-row/per-structural sidecar assignment and passed score_fill/replay with zero structural errors, but closed its compact-report path as PR #1400.",
       "evaluation_mode": "frontier_detail",
       "abstraction_layer": "decoder_attention_decode_score_multivalue_cluster_activity_power",
       "comparison_role": "shared_score_multivalue_cluster_activity_power_gate",
@@ -264,9 +264,41 @@
       },
       "expected_result": {
         "direction": "record_shared_score_multivalue_cluster_activity_power_gate",
-        "reason": "v9 uses exact hashed structural sidecar rows to attach reduced macro activity to per-phase reference points and should keep the existing quality, annotation, equivalence, macro activity, and power promotion gates unchanged while making remaining reducer non-finite behavior explicit."
+        "reason": "v9 used 5,096/5,096/5,096 hashed structural sidecar rows and preserved score_fill/replay while reporting 4,521 non-finite reducer leaf powers when finalized; it kept existing quality, annotation, equivalence, macro activity, and power promotion gates."
       },
-      "status": "merged"
+      "status": "retracted",
+      "merged_pr_number": 1398,
+      "merge_commit": "3056b89f6deb39c7e96b87bce087d3062f99bd98",
+      "retracted_by_item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v10",
+      "retraction_reason": "compact-report_internal_pin_rows_bloat_from_pr_1400",
+      "replacement_artifact": "control_plane/shadow_exports/l2_decisions/l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v10.json"
+    },
+    {
+      "item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v10",
+      "task_type": "l2_campaign",
+      "objective": "Rerun shared-score multivalue-cluster activity-backed power after PR #1401 / commit 263984cf6945b53283a4d538b2b88399223bfda4. v10 reruns identical gates to v9 and keeps all quality/equivalence/annotation/macro/numeric/artifact/promotion constraints while excluding internal rows from compact-report artifacts.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_decode_score_multivalue_cluster_activity_power",
+      "comparison_role": "shared_score_multivalue_cluster_activity_power_gate",
+      "depends_on_item_ids": [
+        "l1_decoder_attention_decode_score_multivalue_cluster_pnr_8ns_v2",
+        "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "revision": {
+        "reason": "keep_structural_activity_rows_evaluator_local",
+        "invalidates_item_ids": [
+          "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v9"
+        ]
+      },
+      "expected_result": {
+        "direction": "record_shared_score_multivalue_cluster_activity_power_gate",
+        "reason": "v10 preserves the same gate set as v9 (including hashes/counts and full quality/equivalence/annotation/macro/numeric/artifact/promotion gates) and preserves score_fill/replay and final non-finite reducer diagnostics while excluding internal compact rows from committed reports."
+      },
+      "status": "merged",
+      "merged_pr_number": 1401,
+      "merge_commit": "263984cf6945b53283a4d538b2b88399223bfda4"
     }
   ],
   "baseline_refs": [

@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_decoder_attention_decode_score_multivalue_gqa8_group_llama7b_v1",
-  "source_commit_note": "Queue group jobs only after the GQA8 group generator, audit, design target, guard, and handlers are merged; folded-lane activity tasks should consume the shared-score activity-power v9 rerun from PR #1398 (commit 3056b89f6deb39c7e96b87bce087d3062f99bd98).",
+  "source_commit_note": "Queue group jobs only after the GQA8 group generator, audit, design target, guard, and handlers are merged; folded-lane activity tasks should consume the shared-score activity-power v10 rerun from PR #1401 (commit 263984cf6945b53283a4d538b2b88399223bfda4).",
   "requested_items": [
     {
       "item_id": "l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v1",
@@ -200,7 +200,7 @@
       "depends_on_item_ids": [
         "l2_decoder_attention_decode_score_multivalue_gqa8_folded_lane_equivalence_llama7b_v1",
         "l1_decoder_attention_decode_score_multivalue_gqa8_folded_lanes1_pnr_v1",
-        "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v9"
+        "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v10"
       ],
       "requires_merged_inputs": true,
       "requires_materialized_refs": true,
@@ -220,7 +220,7 @@
       "depends_on_item_ids": [
         "l2_decoder_attention_decode_score_multivalue_gqa8_folded_lane_equivalence_llama7b_v1",
         "l1_decoder_attention_decode_score_multivalue_gqa8_folded_lanes2_pnr_v1",
-        "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v9"
+        "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v10"
       ],
       "requires_merged_inputs": true,
       "requires_materialized_refs": true,
@@ -240,7 +240,7 @@
       "depends_on_item_ids": [
         "l2_decoder_attention_decode_score_multivalue_gqa8_folded_lane_equivalence_llama7b_v1",
         "l1_decoder_attention_decode_score_multivalue_gqa8_folded_lanes4_pnr_v1",
-        "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v9"
+        "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v10"
       ],
       "requires_merged_inputs": true,
       "requires_materialized_refs": true,
