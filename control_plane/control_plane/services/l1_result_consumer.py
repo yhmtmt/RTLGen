@@ -512,6 +512,57 @@ def _completed_trial_runs(work_item: WorkItem) -> list[Run]:
     return completed
 
 
+_MAX_AGGREGATION_EXCLUDED_ATTEMPT_RUN_KEYS = 100
+
+
+def _filtered_trial_runs_for_current_checkout(
+    work_item: WorkItem,
+    current_run: Run,
+) -> tuple[list[Run], dict[str, Any]]:
+    terminal_runs = _completed_trial_runs(work_item)
+    current_checkout_commit = str(current_run.checkout_commit or "").strip()
+    if not current_checkout_commit:
+        return terminal_runs, {
+            "aggregation_scope": "legacy_missing_checkout",
+            "aggregation_source_commit": "",
+            "aggregation_included_attempts": len(terminal_runs),
+            "aggregation_excluded_attempts": 0,
+            "aggregation_excluded_source_commits": {},
+            "aggregation_excluded_attempt_run_keys": [],
+            "aggregation_excluded_attempt_run_keys_truncated": False,
+        }
+
+    included: list[Run] = []
+    excluded: list[Run] = []
+    for run in terminal_runs:
+        if str(run.checkout_commit or "").strip() == current_checkout_commit:
+            included.append(run)
+        else:
+            excluded.append(run)
+
+    excluded_commits = Counter(str(run.checkout_commit or "") for run in excluded)
+    excluded_run_keys = sorted(run.run_key for run in excluded)
+    truncated_excluded_run_keys = excluded_run_keys[
+        :_MAX_AGGREGATION_EXCLUDED_ATTEMPT_RUN_KEYS
+    ]
+    return included, {
+        "aggregation_scope": "current_run_checkout_commit",
+        "aggregation_source_commit": current_checkout_commit,
+        "aggregation_included_attempts": len(included),
+        "aggregation_excluded_attempts": len(excluded),
+        "aggregation_excluded_source_commits": {
+            commit: count
+            for commit, count in sorted(excluded_commits.items())
+            if commit != current_checkout_commit
+        },
+        "aggregation_excluded_attempt_run_keys": truncated_excluded_run_keys,
+        "aggregation_excluded_attempt_run_keys_truncated": (
+            len(excluded_run_keys)
+            > _MAX_AGGREGATION_EXCLUDED_ATTEMPT_RUN_KEYS
+        ),
+    }
+
+
 def _inline_metrics_text(run: Run, metrics_csv: str) -> str | None:
     for artifact in run.artifacts:
         if artifact.kind != "expected_output" or str(artifact.path).strip() != metrics_csv:
@@ -783,8 +834,21 @@ def _select_seed_variance_rows(
     return matched, metadata
 
 
-def _trial_aggregate_payloads(repo_root: Path, work_item: WorkItem) -> tuple[list[str], dict[str, Any], dict[str, Any], list[dict[str, Any]], dict[str, Any] | None]:
-    completed = _completed_trial_runs(work_item)
+def _trial_aggregate_payloads(
+    repo_root: Path,
+    work_item: WorkItem,
+    current_run: Run,
+) -> tuple[
+    list[str],
+    dict[str, Any],
+    dict[str, Any],
+    list[dict[str, Any]],
+    dict[str, Any] | None,
+]:
+    completed, aggregation_source_metadata = _filtered_trial_runs_for_current_checkout(
+        work_item,
+        current_run,
+    )
     metrics_csvs: list[str] = []
     trial_rows: list[dict[str, Any]] = []
     success_metric_values = {"critical_path_ns": [], "die_area": [], "total_power_mw": []}
@@ -795,7 +859,9 @@ def _trial_aggregate_payloads(repo_root: Path, work_item: WorkItem) -> tuple[lis
     seed_variance_selected_rows: dict[str, tuple[str, dict[str, Any]]] = {}
     selected_group_metadata: dict[str, Any] | None = None
     if _objective_name(work_item) == "measure_seed_variance":
-        seed_variance_selected_rows, selected_group_metadata = _select_seed_variance_rows(repo_root, work_item, completed)
+        seed_variance_selected_rows, selected_group_metadata = (
+            _select_seed_variance_rows(repo_root, work_item, completed)
+        )
     for run in completed:
         payload = dict(run.result_payload or {}) if isinstance(run.result_payload, dict) else {}
         trial = dict(payload.get("trial") or {})
@@ -874,6 +940,8 @@ def _trial_aggregate_payloads(repo_root: Path, work_item: WorkItem) -> tuple[lis
     }
     if selected_group_metadata is not None:
         failure_stats["comparison_mode"] = selected_group_metadata["comparison_mode"]
+    summary_stats.update(aggregation_source_metadata)
+    failure_stats.update(aggregation_source_metadata)
     return metrics_csvs, summary_stats, failure_stats, trial_rows, selected_group_metadata
 
 
@@ -931,7 +999,13 @@ def consume_l1_result(session: Session, request: Layer1ConsumeRequest) -> Layer1
     if run.status != RunStatus.SUCCEEDED and not _terminal_run_has_metrics(run):
         raise Layer1ResultConsumerError(f"run is not succeeded: {run.run_key} status={run.status.value}")
 
-    metrics_csvs, summary_stats, failure_stats, trial_rows, selected_group_metadata = _trial_aggregate_payloads(repo_root, work_item)
+    (
+        metrics_csvs,
+        summary_stats,
+        failure_stats,
+        trial_rows,
+        selected_group_metadata,
+    ) = _trial_aggregate_payloads(repo_root, work_item=work_item, current_run=run)
     proposals: list[dict[str, Any]] = []
     evaluation_record: dict[str, Any] | None = None
     if selected_group_metadata and selected_group_metadata.get("representative_row"):

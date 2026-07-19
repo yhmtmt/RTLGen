@@ -56,6 +56,19 @@ python3 scripts/build_runs_index.py
 - `metrics.csv` remains append-only
 - large temporary logs and work dirs stay out of committed artifacts
 
+For trial-based sweeps, stability aggregation is scoped to the consumed run's
+checkout revision:
+
+- only terminal attempts with the same non-empty `checkout_commit` are compared
+  in `trial_summary` and `failure_stats`.
+- if a consumed run lacks `checkout_commit` (legacy data), aggregation falls
+  back to historical behavior and includes all terminal attempts.
+- excluded attempts are explicitly recorded in the trial summary/failure metadata
+  as `aggregation_*` fields (`aggregation_scope`, `aggregation_source_commit`,
+  excluded counts/keys), so mixed-source attempts are visible and auditable.
+  Attempt keys are sorted and capped for audit-only output to avoid unbounded
+  payload growth.
+
 ## Remote execution
 
 Default path:
