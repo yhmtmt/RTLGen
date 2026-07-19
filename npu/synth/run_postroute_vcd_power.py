@@ -175,7 +175,7 @@ proc rtlgen_apply_macro_pin_activities {assignments} {
       continue
     }
     lassign $assignment pin_full_name pin density duty
-    if {[catch {set_power_pin_activity $pin $density $duty}]} {
+    if {[catch {sta::set_power_pin_activity $pin $density $duty}]} {
       lappend results [list $pin_full_name 0]
       continue
     }
@@ -184,16 +184,32 @@ proc rtlgen_apply_macro_pin_activities {assignments} {
   return $results
 }
 
-set totals [sta::design_power [sta::corners]]
+set power_corner [sta::cmd_corner]
+set totals [sta::design_power $power_corner]
 set design_power_category_names {total sequential combinational clock macro pad}
 set design_power_category_count [expr {[llength $totals] / 4}]
 set design_power_totals [lrange $totals 0 3]
-set all_design_pins {}
+set all_design_pins_unsorted {}
 set macro_pin_transfer_query_error_count 0
-if {[catch {set all_design_pins [get_pins -hierarchical *]}]} {
+if {[catch {set all_design_pins_unsorted [get_pins -hierarchical *]}]} {
   incr macro_pin_transfer_query_error_count
-  set all_design_pins {}
+  set all_design_pins_unsorted {}
 }
+set all_design_pins [rtlgen_sorted_list $all_design_pins_unsorted]
+set macro_pin_transfer_scanned_pin_count [llength $all_design_pins]
+set macro_pin_transfer_name_match_count 0
+set macro_pin_transfer_input_pin_count 0
+set macro_pin_transfer_connected_pin_count 0
+set macro_pin_transfer_no_net_count 0
+set macro_pin_transfer_driver_pin_count 0
+set macro_pin_transfer_no_driver_count 0
+set macro_pin_transfer_driver_origin_vcd_count 0
+set macro_pin_transfer_driver_origin_propagated_count 0
+set macro_pin_transfer_driver_origin_clock_count 0
+set macro_pin_transfer_driver_origin_constant_count 0
+set macro_pin_transfer_driver_origin_other_count 0
+set macro_pin_transfer_scan_sample_limit 16
+set macro_pin_transfer_scan_samples {}
 
 set macro_pin_transfer_candidate_count 0
 set macro_pin_transfer_applied_count 0
@@ -224,6 +240,7 @@ foreach macro_pin $all_design_pins {
   if {![string match "*u_group_*" $macro_pin_full_name]} {
     continue
   }
+  incr macro_pin_transfer_name_match_count
   if {[catch {set direction [get_property $macro_pin direction]}]} {
     incr macro_pin_transfer_query_error_count
     continue
@@ -231,10 +248,24 @@ foreach macro_pin $all_design_pins {
   if {$direction ne "input"} {
     continue
   }
+  incr macro_pin_transfer_input_pin_count
   if {[catch {set macro_nets [get_nets -of_objects $macro_pin]}]} {
     incr macro_pin_transfer_query_error_count
+    if {[llength $macro_pin_transfer_scan_samples] < $macro_pin_transfer_scan_sample_limit} {
+      lappend macro_pin_transfer_scan_samples [list $macro_pin_full_name none]
+    }
     continue
   }
+  if {[llength $macro_nets] == 0} {
+    incr macro_pin_transfer_no_net_count
+    if {[llength $macro_pin_transfer_scan_samples] < $macro_pin_transfer_scan_sample_limit} {
+      lappend macro_pin_transfer_scan_samples [list $macro_pin_full_name none]
+    }
+    continue
+  }
+  incr macro_pin_transfer_connected_pin_count
+  set macro_pin_has_driver 0
+  set selected_driver_origin_observed none
   set selected_driver_origin ""
   set selected_driver_toggle 0.0
   set selected_driver_duty 0.0
@@ -247,6 +278,7 @@ foreach macro_pin $all_design_pins {
     if {[llength $driver_pins] == 0} {
       continue
     }
+    set macro_pin_has_driver 1
     set driver_pins_sorted [rtlgen_sorted_list $driver_pins]
     foreach driver_pin $driver_pins_sorted {
       if {[catch {set driver_activity [get_property $driver_pin activity]}]} {
@@ -261,6 +293,9 @@ foreach macro_pin $all_design_pins {
       set driver_duty [lindex $driver_activity 1]
       set driver_origin [lindex $driver_activity [expr {[llength $driver_activity] - 1}]]
       set driver_origin_bucket [rtlgen_activity_origin_bucket $driver_origin]
+      if {$selected_driver_origin_observed eq "none"} {
+        set selected_driver_origin_observed $driver_origin_bucket
+      }
       if {![rtlgen_is_finite_power_value $driver_toggle] ||
           ![rtlgen_is_finite_power_value $driver_duty]} {
         incr macro_pin_transfer_query_error_count
@@ -275,14 +310,42 @@ foreach macro_pin $all_design_pins {
         continue
       }
       if {$driver_origin_bucket == "vcd" || $driver_origin_bucket == "propagated"} {
+        if {$driver_origin_bucket == "vcd"} {
+          incr macro_pin_transfer_driver_origin_vcd_count
+        } else {
+          incr macro_pin_transfer_driver_origin_propagated_count
+        }
         set selected_driver_origin $driver_origin_bucket
         set selected_driver_toggle $driver_toggle
         set selected_driver_duty $driver_duty
         break
       }
+      if {$driver_origin_bucket == "clock"} {
+        incr macro_pin_transfer_driver_origin_clock_count
+      } elseif {$driver_origin_bucket == "constant"} {
+        incr macro_pin_transfer_driver_origin_constant_count
+      } else {
+        incr macro_pin_transfer_driver_origin_other_count
+      }
     }
     if {$selected_driver_origin ne ""} {
       break
+    }
+  }
+  if {$macro_pin_has_driver} {
+    incr macro_pin_transfer_driver_pin_count
+  } else {
+    incr macro_pin_transfer_no_driver_count
+  }
+  if {[llength $macro_pin_transfer_scan_samples] < $macro_pin_transfer_scan_sample_limit} {
+    if {$selected_driver_origin ne ""} {
+      lappend macro_pin_transfer_scan_samples \
+        [list $macro_pin_full_name $selected_driver_origin]
+    } elseif {$selected_driver_origin_observed ne "none"} {
+      lappend macro_pin_transfer_scan_samples \
+        [list $macro_pin_full_name $selected_driver_origin_observed]
+    } else {
+      lappend macro_pin_transfer_scan_samples [list $macro_pin_full_name none]
     }
   }
   if {$selected_driver_origin ne ""} {
@@ -341,7 +404,7 @@ if {[llength $macro_pin_transfer_updates] > 0} {
   }
 }
 
-set totals [sta::design_power [sta::corners]]
+set totals [sta::design_power $power_corner]
 set design_power_category_count [expr {[llength $totals] / 4}]
 set design_power_totals [lrange $totals 0 3]
 set has_nonfinite_design_total 0
@@ -493,12 +556,6 @@ if {$has_nonfinite_design_total} {
     }
   }
   set non_finite_leaf_instance_power_candidate_cell_count [llength $leaf_cells]
-  set corners [sta::corners]
-  if {[llength $corners] > 0} {
-    set corner [lindex $corners 0]
-  } else {
-    set corner ""
-  }
   foreach leaf $leaf_cells {
     if {[catch {set is_leaf [get_property $leaf is_leaf]}]} {
       incr non_finite_leaf_instance_power_query_error_count
@@ -508,11 +565,7 @@ if {$has_nonfinite_design_total} {
       incr non_finite_leaf_instance_power_non_leaf_skip_count
       continue
     }
-    if {$corner ne ""} {
-      set instance_power_error [catch {instance_power $leaf $corner} instance_power]
-    } else {
-      set instance_power_error [catch {instance_power $leaf} instance_power]
-    }
+    set instance_power_error [catch {sta::instance_power "$leaf" $power_corner} instance_power]
     if {$instance_power_error} {
       incr non_finite_leaf_instance_power_query_error_count
       continue
@@ -624,6 +677,36 @@ puts $fp "    \"source_vcd_count\": $macro_pin_transfer_source_vcd_count,"
 puts $fp "    \"source_propagated_count\": $macro_pin_transfer_source_propagated_count,"
 puts $fp "    \"active_count\": $macro_pin_transfer_active_count,"
 puts $fp "    \"zero_count\": $macro_pin_transfer_zero_count,"
+puts $fp "    \"scanned_pin_count\": $macro_pin_transfer_scanned_pin_count,"
+puts $fp "    \"name_match_pin_count\": $macro_pin_transfer_name_match_count,"
+puts $fp "    \"input_pin_count\": $macro_pin_transfer_input_pin_count,"
+puts $fp "    \"connected_pin_count\": $macro_pin_transfer_connected_pin_count,"
+puts $fp "    \"no_net_pin_count\": $macro_pin_transfer_no_net_count,"
+puts $fp "    \"driver_pin_count\": $macro_pin_transfer_driver_pin_count,"
+puts $fp "    \"no_driver_pin_count\": $macro_pin_transfer_no_driver_count,"
+puts $fp "    \"driver_origin_counts\": {"
+puts $fp "      \"vcd\": $macro_pin_transfer_driver_origin_vcd_count,"
+puts $fp "      \"propagated\": $macro_pin_transfer_driver_origin_propagated_count,"
+puts $fp "      \"clock\": $macro_pin_transfer_driver_origin_clock_count,"
+puts $fp "      \"constant\": $macro_pin_transfer_driver_origin_constant_count,"
+puts $fp "      \"other\": $macro_pin_transfer_driver_origin_other_count"
+puts $fp "    },"
+puts $fp "    \"scan_samples\": \["
+set macro_pin_transfer_scan_sample_count [llength $macro_pin_transfer_scan_samples]
+set macro_pin_transfer_scan_sample_index 0
+foreach macro_pin_transfer_scan_sample $macro_pin_transfer_scan_samples {
+  set macro_pin_transfer_scan_sample_full_name [lindex $macro_pin_transfer_scan_sample 0]
+  set macro_pin_transfer_scan_sample_origin [lindex $macro_pin_transfer_scan_sample 1]
+  set escaped_full_name [rtlgen_json_escape_array_literal_chars [rtlgen_json_escape $macro_pin_transfer_scan_sample_full_name]]
+  set macro_pin_transfer_scan_sample_line "      {\"full_name\": \"$escaped_full_name\", \"driver_origin\": \"$macro_pin_transfer_scan_sample_origin\"}"
+  incr macro_pin_transfer_scan_sample_index
+  if {$macro_pin_transfer_scan_sample_index < $macro_pin_transfer_scan_sample_count} {
+    puts $fp "$macro_pin_transfer_scan_sample_line,"
+  } else {
+    puts $fp "$macro_pin_transfer_scan_sample_line"
+  }
+}
+puts $fp "    \],"
 puts $fp "    \"transferred\": \["
 set macro_pin_transfer_records_count [llength $macro_pin_transfer_records]
 set macro_pin_transfer_record_index 0

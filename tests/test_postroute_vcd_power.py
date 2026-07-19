@@ -55,15 +55,11 @@ class PostrouteVcdPowerTests(unittest.TestCase):
                 "  }\n"
             )
             net_and_activity_body = (
-                "set ::power_pin_activity_calls {}\n"
                 "proc get_nets {args} {\n"
                 "  if {[lindex $args 0] eq \"-of_objects\" && [lindex $args 1] eq {pin_input_u_group_0}} {\n"
                 "    return {net_u_group_0}\n"
                 "  }\n"
                 "  return {}\n"
-                "}\n"
-                "proc set_power_pin_activity {pin density duty} {\n"
-                "  lappend ::power_pin_activity_calls [list $pin $density $duty]\n"
                 "}\n"
             )
         else:
@@ -116,20 +112,45 @@ class PostrouteVcdPowerTests(unittest.TestCase):
             + "proc get_cells {args} {\n"
             "  return {leaf_group[7]/instance_a leaf_group_b/leaf_b}\n"
             "}\n"
-            "proc instance_power {leaf args} {\n"
-            "  if {$leaf eq {leaf_group[7]/instance_a}} {\n"
-            "    return {0.0 nan inf nan}\n"
-            "  }\n"
-            "  return {1.0 2.0 3.0 4.0}\n"
+            "proc instance_power {args} {\n"
+            "  error \"use sta::instance_power <leaf> <corner>\"\n"
+            "}\n"
+            "proc set_power_pin_activity {args} {\n"
+            "  error \"use sta::set_power_pin_activity <pin> <density> <duty>\"\n"
+            "}\n"
+            "proc design_power {args} {\n"
+            "  error \"use sta::design_power <corner>\"\n"
+            "}\n"
+            "proc corners {} {\n"
+            "  error \"do not call sta::corners\"\n"
             "}\n"
             "namespace eval sta {\n"
-            "  proc corners {} {\n"
-            "    return {corner0}\n"
+            "  proc cmd_corner {} {\n"
+            "    return corner0\n"
             "  }\n"
-            "  proc design_power {args} {\n"
+            "  proc design_power {corner} {\n"
+            "    if {$corner ne \"corner0\"} {\n"
+            "      error \"design_power corner mismatch: $corner\"\n"
+            "    }\n"
             "    # First quartet has non-finite total, triggering sample capture.\n"
             "    return {1.0 2.0 3.0 nan 4.0 5.0 6.0 7.0}\n"
             "  }\n"
+            "  proc instance_power {leaf corner} {\n"
+            "    if {$corner ne \"corner0\"} {\n"
+            "      error \"instance_power corner mismatch: $corner\"\n"
+            "    }\n"
+            "    if {$leaf eq {leaf_group[7]/instance_a}} {\n"
+            "      return {0.0 nan inf nan}\n"
+            "    }\n"
+            "    return {1.0 2.0 3.0 4.0}\n"
+            "  }\n"
+            "  proc set_power_pin_activity {pin density duty} {\n"
+            "    lappend ::sta::power_pin_activity_calls [list $pin $density $duty]\n"
+            "  }\n"
+            "  proc corners {} {\n"
+            "    return {corner0}\n"
+            "  }\n"
+            "  variable power_pin_activity_calls {}\n"
             + net_driver_body
             + "}\n"
             f"set ::env(SCRIPTS_DIR) \"{root / 'scripts'}\"\n"
@@ -240,11 +261,29 @@ class PostrouteVcdPowerTests(unittest.TestCase):
             self.assertEqual(transfer["source_propagated_count"], 0)
             self.assertEqual(transfer["active_count"], 1)
             self.assertEqual(transfer["zero_count"], 0)
+            self.assertEqual(transfer["scanned_pin_count"], 3)
+            self.assertEqual(transfer["name_match_pin_count"], 1)
+            self.assertEqual(transfer["input_pin_count"], 1)
+            self.assertEqual(transfer["connected_pin_count"], 1)
+            self.assertEqual(transfer["no_net_pin_count"], 0)
+            self.assertEqual(transfer["driver_pin_count"], 1)
+            self.assertEqual(transfer["no_driver_pin_count"], 0)
+            self.assertEqual(transfer["driver_origin_counts"]["vcd"], 1)
+            self.assertEqual(transfer["driver_origin_counts"]["propagated"], 0)
+            self.assertEqual(transfer["driver_origin_counts"]["clock"], 0)
+            self.assertEqual(transfer["driver_origin_counts"]["constant"], 0)
+            self.assertEqual(transfer["driver_origin_counts"]["other"], 0)
             self.assertEqual(len(transfer["transferred"]), 1)
             self.assertEqual(
                 transfer["transferred"][0]["full_name"], "pin_input_u_group_0"
             )
             self.assertEqual(transfer["transferred"][0]["source"], "vcd")
+            self.assertEqual(len(transfer["scan_samples"]), 1)
+            self.assertEqual(
+                transfer["scan_samples"][0]["full_name"],
+                "pin_input_u_group_0",
+            )
+            self.assertEqual(transfer["scan_samples"][0]["driver_origin"], "vcd")
             self.assertEqual(payload["macro_activity_origin_counts"]["transferred"], 1)
             self.assertEqual(payload["macro_trace_backed_pin_count"], 1)
             self.assertEqual(payload["macro_trace_active_pin_count"], 1)
@@ -261,14 +300,20 @@ class PostrouteVcdPowerTests(unittest.TestCase):
             script,
         )
         self.assertIn("design_power_quartets", script)
+        self.assertIn("set power_corner [sta::cmd_corner]", script)
+        self.assertIn("set totals [sta::design_power $power_corner]", script)
         self.assertIn("macro_trace_backed_zero_toggle_count", script)
         self.assertIn("leaf_activity_origin_counts", script)
         self.assertIn("macro_activity_origin_counts", script)
-        self.assertIn("set all_design_pins {}", script)
+        self.assertIn("set all_design_pins_unsorted {}", script)
+        self.assertIn("sta::instance_power", script)
+        self.assertIn("sta::set_power_pin_activity", script)
+        self.assertIn("sta::cmd_corner", script)
         self.assertIn("foreach pin $all_design_pins", script)
         self.assertIn("if {![string match \"*u_group_*\" $macro_pin_full_name]}", script)
-        self.assertIn("instance_power $leaf $corner", script)
+        self.assertIn("sta::instance_power \"$leaf\" $power_corner", script)
         self.assertIn("non_finite_leaf_instance_power", script)
+        self.assertIn("scan_samples", script)
         self.assertIn(
             "if {$origin_bucket == \"vcd\" || $origin_bucket == \"propagated\"}",
             script,
