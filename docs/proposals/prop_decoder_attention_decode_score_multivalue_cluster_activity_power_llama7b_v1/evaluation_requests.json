@@ -86,12 +86,16 @@
         "direction": "record_shared_score_multivalue_cluster_activity_power_gate",
         "reason": "v3 is queued as evidence-only diagnostics for FakeRAM macro activity, zero-toggle filtering, and OpenSTA non-finite power classification."
       },
-      "status": "merged",
+      "status": "retracted",
       "merged_pr_number": 1381,
       "merge_commit": "b3afaa874f7f80117f3142974bd78b6b579f39de",
       "merged_utc": "2026-07-19T11:27:33.102853Z",
       "notes": "Merged via PR #1381 and merge b3afaa874f7f80117f3142974bd78b6b579f39de at 2026-07-19T11:27:13.858339Z. Merged via PR #1381 and merge b3afaa874f7f80117f3142974bd78b6b579f39de at 2026-07-19T11:27:33.102853Z.",
-      "revision_of_decision": "iterate"
+      "revision_of_decision": "iterate",
+      "retracted_utc": "2026-07-19T12:04:53.707798Z",
+      "retracted_by_item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v4",
+      "retraction_reason": "postroute_macro_boundary_activity_unattributed",
+      "replacement_artifact": "control_plane/shadow_exports/l2_decisions/l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v4.json"
     },
     {
       "item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v4",
@@ -116,8 +120,13 @@
         "direction": "record_shared_score_multivalue_cluster_activity_power_gate",
         "reason": "Promotion still requires direct VCD roots, post-propagation coverage, transferred macro active coverage, exact clock, and finite positive power."
       },
-      "status": "ready_to_queue"
+      "status": "merged",
+      "merged_pr_number": 1385,
+      "merge_commit": "72b7cf54096ad497ad00a59294907c050c05b23c",
+      "merged_utc": "2026-07-19T12:04:53.707712Z",
+      "notes": "Merged via PR #1385 and merge 72b7cf54096ad497ad00a59294907c050c05b23c at 2026-07-19T12:04:53.707712Z.",
+      "revision_of_decision": "iterate"
     }
   ],
-  "source_commit": "b0cc5abb01265029ede35d1076263b229e5ba622"
+  "source_commit": "78131c3dc05171c600c8198eaec53ce06d8fda11"
 }
