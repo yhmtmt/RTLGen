@@ -7,6 +7,7 @@ import argparse
 import csv
 import json
 import math
+import re
 from pathlib import Path
 from typing import Any
 
@@ -17,6 +18,39 @@ from npu.synth.run_postroute_vcd_power import build_report as build_power_report
 
 
 JsonDict = dict[str, Any]
+_MAX_FAILURE_DETAIL_LINES = 16
+_MAX_FAILURE_DETAIL_LINE_CHARS = 400
+_MAX_FAILURE_DETAIL_BYTES = 4096
+_ABSOLUTE_PATH_RE = re.compile(r"/[^\s\"'`<>|&(){}\[\]]+")
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+_EVALUATOR_LOCAL_PATH_PLACEHOLDER = "<evaluator-local-path>"
+
+
+def _redact_path(path: str) -> str:
+    normalized = path.rstrip(".,;:!?)]}")
+    token = Path(normalized)
+    if token.is_absolute():
+        try:
+            return str(token.relative_to(_REPO_ROOT))
+        except ValueError:
+            return _EVALUATOR_LOCAL_PATH_PLACEHOLDER
+    return normalized
+
+
+def _sanitize_failure_line(line: str) -> str:
+    return _ABSOLUTE_PATH_RE.sub(
+        lambda match: _redact_path(match.group(0)),
+        line,
+    )
+
+
+def _collect_failure_detail(lines: list[str]) -> list[str]:
+    detail = [line.strip() for line in lines if line.strip()]
+    detail = [line for line in detail if line]
+    detail = [line[:_MAX_FAILURE_DETAIL_LINE_CHARS] for line in detail[-_MAX_FAILURE_DETAIL_LINES:]]
+    while detail and sum(len(line) for line in detail) > _MAX_FAILURE_DETAIL_BYTES:
+        detail = detail[1:]
+    return detail
 
 
 def _load(path: Path) -> JsonDict:
@@ -97,10 +131,20 @@ def _feasible_metrics(metrics_csv: Path, clock_period_ns: float) -> list[JsonDic
 
 
 def _sanitized_failure(exc: Exception) -> JsonDict:
-    message = str(exc).splitlines()[0].strip()
-    if "/" in message:
-        message = f"evaluator-local path failure during {type(exc).__name__}"
-    return {"error_type": type(exc).__name__, "error_summary": message[:240]}
+    lines = [_sanitize_failure_line(line).strip() for line in str(exc).splitlines()]
+    lines = [line for line in lines if line]
+    if lines:
+        summary = lines[0][:240]
+    else:
+        summary = f"{type(exc).__name__} failure"
+    sanitized_lines = _collect_failure_detail(lines)
+    if not sanitized_lines:
+        sanitized_lines = lines[-_MAX_FAILURE_DETAIL_LINES:]
+    return {
+        "error_type": type(exc).__name__,
+        "error_summary": summary,
+        "detail": sanitized_lines,
+    }
 
 
 def _write_markdown(payload: JsonDict, path: Path) -> None:
