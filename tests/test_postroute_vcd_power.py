@@ -28,11 +28,18 @@ class PostrouteVcdPowerTests(unittest.TestCase):
     ) -> str:
         if macro_transfer:
             all_pins = "{pin_other_0 pin_input_u_group_0 pin_nonfinite_u_group}"
+            net_pins = "{driver_pin_u_group_0 peer_pin_u_group_0 pin_input_u_group_0}"
             get_pins_body = (
                 "  if {[lindex $args 0] eq \"-hierarchical\"} {\n"
                 "    set pattern [lindex $args end]\n"
                 "    if {$pattern eq \"*u_group_*\"} {\n"
                 "      return {}\n"
+                "    }\n"
+                "  }\n"
+                "  if {[lindex $args 0] eq \"-of_objects\"} {\n"
+                "    set net [lindex $args end]\n"
+                "    if {$net eq {net_u_group_0}} {\n"
+                f"      return {net_pins}\n"
                 "    }\n"
                 "  }\n"
                 f"  return {all_pins}\n"
@@ -45,7 +52,10 @@ class PostrouteVcdPowerTests(unittest.TestCase):
                 "    if {$property eq \"full_name\"} { return $obj }\n"
                 "  }\n"
                 "  if {$obj eq {driver_pin_u_group_0}} {\n"
-                "    if {$property eq \"activity\"} { return {0.4 0.9 vcd} }\n"
+                "    if {$property eq \"activity\"} { return {0.4 0.9 other} }\n"
+                "  }\n"
+                "  if {$obj eq {peer_pin_u_group_0}} {\n"
+                "    if {$property eq \"activity\"} { return {0.9 0.8 propagated} }\n"
                 "  }\n"
             )
             net_driver_body = (
@@ -110,7 +120,7 @@ class PostrouteVcdPowerTests(unittest.TestCase):
             "}\n"
             + net_and_activity_body
             + "proc get_cells {args} {\n"
-            "  return {leaf_group[7]/instance_a leaf_group_b/leaf_b}\n"
+            "  error \"get_cells should not be used for nonfinite leaf scan\"\n"
             "}\n"
             "proc instance_power {args} {\n"
             "  error \"use sta::instance_power <leaf> <corner>\"\n"
@@ -149,6 +159,9 @@ class PostrouteVcdPowerTests(unittest.TestCase):
             "  }\n"
             "  proc corners {} {\n"
             "    return {corner0}\n"
+            "  }\n"
+            "  proc network_leaf_instances {} {\n"
+            "    return {leaf_group[7]/instance_a leaf_group_b/leaf_b}\n"
             "  }\n"
             "  variable power_pin_activity_calls {}\n"
             + net_driver_body
@@ -257,8 +270,8 @@ class PostrouteVcdPowerTests(unittest.TestCase):
             self.assertEqual(transfer["applied_count"], 1)
             self.assertEqual(transfer["query_error_count"], 0)
             self.assertEqual(transfer["apply_error_count"], 0)
-            self.assertEqual(transfer["source_vcd_count"], 1)
-            self.assertEqual(transfer["source_propagated_count"], 0)
+            self.assertEqual(transfer["source_vcd_count"], 0)
+            self.assertEqual(transfer["source_propagated_count"], 1)
             self.assertEqual(transfer["active_count"], 1)
             self.assertEqual(transfer["zero_count"], 0)
             self.assertEqual(transfer["scanned_pin_count"], 3)
@@ -268,22 +281,31 @@ class PostrouteVcdPowerTests(unittest.TestCase):
             self.assertEqual(transfer["no_net_pin_count"], 0)
             self.assertEqual(transfer["driver_pin_count"], 1)
             self.assertEqual(transfer["no_driver_pin_count"], 0)
-            self.assertEqual(transfer["driver_origin_counts"]["vcd"], 1)
+            self.assertEqual(transfer["driver_origin_counts"]["vcd"], 0)
             self.assertEqual(transfer["driver_origin_counts"]["propagated"], 0)
             self.assertEqual(transfer["driver_origin_counts"]["clock"], 0)
             self.assertEqual(transfer["driver_origin_counts"]["constant"], 0)
-            self.assertEqual(transfer["driver_origin_counts"]["other"], 0)
+            self.assertEqual(transfer["driver_origin_counts"]["other"], 1)
+            self.assertEqual(transfer["peer_origin_counts"]["vcd"], 0)
+            self.assertEqual(transfer["peer_origin_counts"]["propagated"], 1)
+            self.assertEqual(transfer["peer_origin_counts"]["clock"], 0)
+            self.assertEqual(transfer["peer_origin_counts"]["constant"], 0)
+            self.assertEqual(transfer["peer_origin_counts"]["other"], 1)
+            self.assertEqual(transfer["peer_pin_examined_count"], 2)
+            self.assertEqual(transfer["peer_eligible_count"], 1)
             self.assertEqual(len(transfer["transferred"]), 1)
             self.assertEqual(
                 transfer["transferred"][0]["full_name"], "pin_input_u_group_0"
             )
-            self.assertEqual(transfer["transferred"][0]["source"], "vcd")
+            self.assertEqual(transfer["transferred"][0]["source"], "propagated")
+            self.assertEqual(transfer["transferred"][0]["source_kind"], "net_peer")
             self.assertEqual(len(transfer["scan_samples"]), 1)
             self.assertEqual(
                 transfer["scan_samples"][0]["full_name"],
                 "pin_input_u_group_0",
             )
-            self.assertEqual(transfer["scan_samples"][0]["driver_origin"], "vcd")
+            self.assertEqual(transfer["scan_samples"][0]["driver_origin"], "propagated")
+            self.assertEqual(transfer["scan_samples"][0]["source_kind"], "net_peer")
             self.assertEqual(payload["macro_activity_origin_counts"]["transferred"], 1)
             self.assertEqual(payload["macro_trace_backed_pin_count"], 1)
             self.assertEqual(payload["macro_trace_active_pin_count"], 1)
@@ -313,6 +335,7 @@ class PostrouteVcdPowerTests(unittest.TestCase):
         self.assertIn("if {![string match \"*u_group_*\" $macro_pin_full_name]}", script)
         self.assertIn("sta::instance_power \"$leaf\" $power_corner", script)
         self.assertIn("non_finite_leaf_instance_power", script)
+        self.assertIn("sta::network_leaf_instances", script)
         self.assertIn("scan_samples", script)
         self.assertIn(
             "if {$origin_bucket == \"vcd\" || $origin_bucket == \"propagated\"}",
@@ -323,26 +346,25 @@ class PostrouteVcdPowerTests(unittest.TestCase):
         script = MODULE._tcl_script()
         init_idx = script.find("set leaf_cells {}")
         primary_catch_idx = script.find(
-            'if {[catch {set leaf_cells [get_cells -hierarchical -filter "is_leaf"]}]}'
-        )
-        empty_check_idx = script.find("if {[llength $leaf_cells] == 0}")
-        fallback_catch_idx = script.find(
-            'if {[catch {set leaf_cells [get_cells -hierarchical *]}]}'
+            'if {[catch {set leaf_cells [sta::network_leaf_instances]}]}'
         )
         self.assertGreater(init_idx, -1)
         self.assertGreater(primary_catch_idx, -1)
-        self.assertGreater(empty_check_idx, primary_catch_idx)
-        self.assertGreater(fallback_catch_idx, empty_check_idx)
         self.assertLess(init_idx, primary_catch_idx)
         self.assertNotIn(
             "if {[catch {set leaf_cells [get_cells -hierarchical -filter \"is_leaf\"]}] ||",
             script,
         )
+        self.assertNotIn("get_cells -hierarchical -filter \"is_leaf\"", script)
+        self.assertNotIn("get_cells -hierarchical *", script)
 
     def test_tcl_nonfinite_leaf_instance_fallback_keeps_diagnostics_nonfatal(self) -> None:
         script = MODULE._tcl_script()
         self.assertIn('set leaf_cells {}', script)
-        self.assertIn('if {[catch {set leaf_cells [get_cells -hierarchical *]}]} {', script)
+        self.assertIn(
+            'if {[catch {set leaf_cells [sta::network_leaf_instances]}]} {',
+            script,
+        )
         self.assertIn("set leaf_cells {}", script, msg="Fallback catch should recover to empty diagnostics")
         self.assertIn(
             "set leaf_cells_unsorted $leaf_cells",
@@ -365,6 +387,8 @@ class PostrouteVcdPowerTests(unittest.TestCase):
             script,
             "Ungarded fallback sort would still be fatal",
         )
+        self.assertNotIn("get_cells -hierarchical -filter \"is_leaf\"", script)
+        self.assertNotIn("get_cells -hierarchical *", script)
 
     def test_activity_annotation_provenance_is_preserved(self) -> None:
         with tempfile.TemporaryDirectory() as temp_text:
