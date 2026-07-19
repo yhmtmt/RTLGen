@@ -188,6 +188,12 @@ set totals [sta::design_power [sta::corners]]
 set design_power_category_names {total sequential combinational clock macro pad}
 set design_power_category_count [expr {[llength $totals] / 4}]
 set design_power_totals [lrange $totals 0 3]
+set all_design_pins {}
+set macro_pin_transfer_query_error_count 0
+if {[catch {set all_design_pins [get_pins -hierarchical *]}]} {
+  incr macro_pin_transfer_query_error_count
+  set all_design_pins {}
+}
 
 set macro_pin_transfer_candidate_count 0
 set macro_pin_transfer_applied_count 0
@@ -195,20 +201,15 @@ set macro_pin_transfer_source_vcd_count 0
 set macro_pin_transfer_source_propagated_count 0
 set macro_pin_transfer_active_count 0
 set macro_pin_transfer_zero_count 0
-set macro_pin_transfer_query_error_count 0
 set macro_pin_transfer_apply_error_count 0
 set macro_pin_transfer_records {}
 set macro_pin_transfer_updates {}
-if {[catch {get_pins -hierarchical "*u_group_*"} macro_input_pins]} {
-  incr macro_pin_transfer_query_error_count
-  set macro_input_pins {}
-}
 set macro_pin_transfer_candidate_source_by_full_name {}
 set macro_pin_transfer_candidate_toggle_by_full_name {}
 set macro_pin_transfer_source_by_full_name {}
 set macro_pin_transfer_toggle_by_full_name {}
 set macro_pin_transfer_apply_results {}
-foreach macro_pin $macro_input_pins {
+foreach macro_pin $all_design_pins {
   if {[catch {set is_hierarchical [get_property $macro_pin is_hierarchical]}]} {
     incr macro_pin_transfer_query_error_count
     continue
@@ -216,15 +217,18 @@ foreach macro_pin $macro_input_pins {
   if {$is_hierarchical} {
     continue
   }
+  if {[catch {set macro_pin_full_name [get_property $macro_pin full_name]}]} {
+    incr macro_pin_transfer_query_error_count
+    continue
+  }
+  if {![string match "*u_group_*" $macro_pin_full_name]} {
+    continue
+  }
   if {[catch {set direction [get_property $macro_pin direction]}]} {
     incr macro_pin_transfer_query_error_count
     continue
   }
   if {$direction ne "input"} {
-    continue
-  }
-  if {[catch {set macro_pin_full_name [get_property $macro_pin full_name]}]} {
-    incr macro_pin_transfer_query_error_count
     continue
   }
   if {[catch {set macro_nets [get_nets -of_objects $macro_pin]}]} {
@@ -403,7 +407,7 @@ set non_finite_leaf_instance_power_switching_sum 0.0
 set non_finite_leaf_instance_power_leakage_sum 0.0
 set non_finite_leaf_instance_power_total_sum 0.0
 set non_finite_leaf_instance_samples {}
-foreach pin [get_pins -hierarchical *] {
+foreach pin $all_design_pins {
   if {[get_property $pin is_hierarchical]} {
     continue
   }
@@ -505,9 +509,9 @@ if {$has_nonfinite_design_total} {
       continue
     }
     if {$corner ne ""} {
-      set instance_power_error [catch {sta::instance_power $leaf $corner} instance_power]
+      set instance_power_error [catch {instance_power $leaf $corner} instance_power]
     } else {
-      set instance_power_error [catch {sta::instance_power $leaf} instance_power]
+      set instance_power_error [catch {instance_power $leaf} instance_power]
     }
     if {$instance_power_error} {
       incr non_finite_leaf_instance_power_query_error_count
