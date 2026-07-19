@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1",
-  "source_commit_note": "Queue this rerun after PR #1392 / commit 59c1038ece3e89aa875d16880426b1449f72f21f, which uses same-net trace-backed peer fallback and sta::network_leaf_instances while preserving one-Corner sta::set_power_pin_activity and no gate relaxation.",
+  "source_commit_note": "Queue this rerun after PR #1398 / commit 3056b89f6deb39c7e96b87bce087d3062f99bd98, which adds exact 5,096-row structural per-phase, per-row, per-structural sidecar assignment for FakeRAM macro activity while preserving strict no-heuristic activity and one-Corner sta::set_power_pin_activity gating.",
   "requested_items": [
     {
       "item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1",
@@ -256,13 +256,44 @@
         "direction": "record_shared_score_multivalue_cluster_activity_power_gate",
         "reason": "v8 uses escaped per-bit scalar aliases for FakeRAM macro inputs and bounded reducer buckets to map exact pin-level power input paths while preserving one-corner sta::set_power_pin_activity, no heuristic activity, no gate relaxation, and no fabricated power."
       },
-      "status": "merged",
+      "status": "retracted",
       "merged_pr_number": 1397,
       "merge_commit": "e3c75eeec753306dd92d050e2275cc703b4062a6",
       "merged_utc": "2026-07-19T13:40:45.514046Z",
       "notes": "Merged via PR #1397 and merge e3c75eeec753306dd92d050e2275cc703b4062a6 at 2026-07-19T13:40:45.514046Z.",
-      "revision_of_decision": "iterate"
+      "revision_of_decision": "iterate",
+      "retracted_by_item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v9",
+      "retraction_reason": "postroute_structural_vcd_macro_activity_sidecar",
+      "replacement_artifact": "control_plane/shadow_exports/l2_decisions/l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v9.json"
+    },
+    {
+      "item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v9",
+      "task_type": "l2_campaign",
+      "objective": "Rerun shared-score multivalue-cluster activity-backed power after PR #1398 / commit 3056b89f6deb39c7e96b87bce087d3062f99bd98. v8 had 5,152 connected macro inputs with 0 direct/propagated macro activity and 4,521 non-finite reducer leaf powers; v9 applies exact 5,096-row hashed per-phase, per-row, per-structural sidecar assignment for FakeRAM macro activity and preserves the macro activity gate so remaining reducer non-finite power can be diagnosed if the gate passes.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_decode_score_multivalue_cluster_activity_power",
+      "comparison_role": "shared_score_multivalue_cluster_activity_power_gate",
+      "depends_on_item_ids": [
+        "l1_decoder_attention_decode_score_multivalue_cluster_pnr_8ns_v2",
+        "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "revision": {
+        "reason": "postroute_structural_vcd_macro_activity_sidecar",
+        "invalidates_item_ids": [
+          "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v8"
+        ]
+      },
+      "expected_result": {
+        "direction": "record_shared_score_multivalue_cluster_activity_power_gate",
+        "reason": "v9 keeps one-Corner sta::set_power_pin_activity, no heuristic activity, no gate relaxation, and explicit FakeRAM macro gate attribution while assigning exact per-phase structural sidecar coverage and reporting remaining reducer non-finite rows if they persist when macro inputs pass activity coverage."
+      },
+      "status": "merged",
+      "merged_pr_number": 1398,
+      "merge_commit": "3056b89f6deb39c7e96b87bce087d3062f99bd98",
+      "revision_of_decision": "promote"
     }
   ],
-  "source_commit": "0d9065b19e98b0d1d40d334469c485c985ae5b7a"
+  "source_commit": "3056b89f6deb39c7e96b87bce087d3062f99bd98"
 }

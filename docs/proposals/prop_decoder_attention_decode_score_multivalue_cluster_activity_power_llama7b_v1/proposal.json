@@ -241,7 +241,32 @@
         "direction": "record_shared_score_multivalue_cluster_activity_power_gate",
         "reason": "v8 introduces simulation-only escaped scalar VCD aliases for each addr_in, wd_in, and w_mask_in FakeRAM input bit so OpenSTA maps exact macro pin paths, records bounded reducer ref-name buckets, and still enforces no heuristic activity, no gate relaxation, and no fabricated power."
       },
-      "status": "ready_to_queue"
+      "status": "superseded"
+    },
+    {
+      "item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v9",
+      "task_type": "l2_campaign",
+      "objective": "Rerun shared-score multivalue-cluster activity-backed power after PR #1398 / commit 3056b89f6deb39c7e96b87bce087d3062f99bd98. v8 had 5,152 connected macro inputs with 0 direct/propagated macro activity and 4,521 non-finite reducer leaf powers; v9 applies an exact 5,096-row per-phase/per-row/per-structural sidecar assignment for macro activity and should diagnose remaining reducer non-finite power if the macro gate still passes.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_decode_score_multivalue_cluster_activity_power",
+      "comparison_role": "shared_score_multivalue_cluster_activity_power_gate",
+      "depends_on_item_ids": [
+        "l1_decoder_attention_decode_score_multivalue_cluster_pnr_8ns_v2",
+        "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "revision": {
+        "reason": "postroute_structural_vcd_macro_activity_sidecar",
+        "invalidates_item_ids": [
+          "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v8"
+        ]
+      },
+      "expected_result": {
+        "direction": "record_shared_score_multivalue_cluster_activity_power_gate",
+        "reason": "v9 uses exact hashed structural sidecar rows to attach reduced macro activity to per-phase reference points and should keep the existing quality, annotation, equivalence, macro activity, and power promotion gates unchanged while making remaining reducer non-finite behavior explicit."
+      },
+      "status": "merged"
     }
   ],
   "baseline_refs": [
