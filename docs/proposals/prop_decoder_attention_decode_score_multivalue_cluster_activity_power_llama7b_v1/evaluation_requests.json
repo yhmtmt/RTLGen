@@ -52,12 +52,16 @@
         "direction": "record_shared_score_multivalue_cluster_activity_power_gate",
         "reason": "V1 counted activity before propagation; v2 now separates direct VCD roots, uses post-propagation trace-backed coverage, and measures macros after propagation while still requiring explicit annotation coverage, declared clocks, and finite power-gate accounting for promotion."
       },
-      "status": "merged",
+      "status": "retracted",
       "merged_pr_number": 1371,
       "merge_commit": "cc2340e92ec66e800533b7e82769f40f72c9c1a8",
       "merged_utc": "2026-07-19T10:36:32.965495Z",
       "notes": "Merged via PR #1371 and merge cc2340e92ec66e800533b7e82769f40f72c9c1a8 at 2026-07-19T10:36:32.965495Z.",
-      "revision_of_decision": "iterate"
+      "revision_of_decision": "iterate",
+      "retracted_utc": "2026-07-19T11:27:13.858415Z",
+      "retracted_by_item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v3",
+      "retraction_reason": "postroute_macro_activity_and_nonfinite_power_unresolved",
+      "replacement_artifact": "control_plane/shadow_exports/l2_decisions/l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v3.json"
     },
     {
       "item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v3",
@@ -82,8 +86,13 @@
         "direction": "record_shared_score_multivalue_cluster_activity_power_gate",
         "reason": "v3 is queued as evidence-only diagnostics for FakeRAM macro activity, zero-toggle filtering, and OpenSTA non-finite power classification."
       },
-      "status": "ready_to_queue"
+      "status": "merged",
+      "merged_pr_number": 1381,
+      "merge_commit": "b3afaa874f7f80117f3142974bd78b6b579f39de",
+      "merged_utc": "2026-07-19T11:27:13.858339Z",
+      "notes": "Merged via PR #1381 and merge b3afaa874f7f80117f3142974bd78b6b579f39de at 2026-07-19T11:27:13.858339Z.",
+      "revision_of_decision": "iterate"
     }
   ],
-  "source_commit": "bfa23e4eb1ae54125f6e853fb694c533d78bcb14"
+  "source_commit": "70b2490ac17bf06c8f550e1a47a21a12cfea0a78"
 }
