@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1",
-  "source_commit_note": "Queue this diagnostics-first rerun after PR #1372 diagnostics merge and the 8 ns shared-score multivalue-cluster PNR bridge and equivalence evidence are available.",
+  "source_commit_note": "Queue this rerun after PR #1383 / commit b0cc5abb01265029ede35d1076263b229e5ba622, which transfers only same-net VCD or propagated driver activity to FakeRAM macros in one batch and adds finite/non-finite instance-scan accounting.",
   "requested_items": [
     {
       "item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1",
@@ -92,7 +92,32 @@
       "merged_utc": "2026-07-19T11:27:33.102853Z",
       "notes": "Merged via PR #1381 and merge b3afaa874f7f80117f3142974bd78b6b579f39de at 2026-07-19T11:27:13.858339Z. Merged via PR #1381 and merge b3afaa874f7f80117f3142974bd78b6b579f39de at 2026-07-19T11:27:33.102853Z.",
       "revision_of_decision": "iterate"
+    },
+    {
+      "item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v4",
+      "task_type": "l2_campaign",
+      "objective": "Rerun shared-score multivalue-cluster activity-backed power after merged PR #1383 / commit b0cc5abb01265029ede35d1076263b229e5ba622, transferring only same-net VCD or propagated driver activity to FakeRAM macro inputs in one batch and adding finite/non-finite instance scan accounting; no global heuristic activity and no gate relaxation.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_decode_score_multivalue_cluster_activity_power",
+      "comparison_role": "shared_score_multivalue_cluster_activity_power_gate",
+      "depends_on_item_ids": [
+        "l1_decoder_attention_decode_score_multivalue_cluster_pnr_8ns_v2",
+        "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "revision": {
+        "reason": "postroute_macro_boundary_activity_unattributed",
+        "invalidates_item_ids": [
+          "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v3"
+        ]
+      },
+      "expected_result": {
+        "direction": "record_shared_score_multivalue_cluster_activity_power_gate",
+        "reason": "Promotion still requires direct VCD roots, post-propagation coverage, transferred macro active coverage, exact clock, and finite positive power."
+      },
+      "status": "ready_to_queue"
     }
   ],
-  "source_commit": "70b2490ac17bf06c8f550e1a47a21a12cfea0a78"
+  "source_commit": "b0cc5abb01265029ede35d1076263b229e5ba622"
 }

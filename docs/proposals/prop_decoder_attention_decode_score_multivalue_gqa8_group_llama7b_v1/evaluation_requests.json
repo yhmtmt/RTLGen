@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_decoder_attention_decode_score_multivalue_gqa8_group_llama7b_v1",
-  "source_commit_note": "Queue group jobs only after the GQA8 group generator, audit, design target, guard, and handlers are merged. Queue array jobs only after the direct array generator, exact 1/2/4 design targets, wrapper equivalence audit, equal-density sweeps, and direct-frontier handler are merged.",
+  "source_commit_note": "Queue group jobs only after the GQA8 group generator, audit, design target, guard, and handlers are merged; folded-lane activity tasks should consume the shared-score activity-power v4 rerun from PR #1383 (commit b0cc5abb01265029ede35d1076263b229e5ba622).",
   "requested_items": [
     {
       "item_id": "l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v1",
@@ -200,7 +200,7 @@
       "depends_on_item_ids": [
         "l2_decoder_attention_decode_score_multivalue_gqa8_folded_lane_equivalence_llama7b_v1",
         "l1_decoder_attention_decode_score_multivalue_gqa8_folded_lanes1_pnr_v1",
-        "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v3"
+        "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v4"
       ],
       "requires_merged_inputs": true,
       "requires_materialized_refs": true,
@@ -220,7 +220,7 @@
       "depends_on_item_ids": [
         "l2_decoder_attention_decode_score_multivalue_gqa8_folded_lane_equivalence_llama7b_v1",
         "l1_decoder_attention_decode_score_multivalue_gqa8_folded_lanes2_pnr_v1",
-        "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v3"
+        "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v4"
       ],
       "requires_merged_inputs": true,
       "requires_materialized_refs": true,
@@ -240,7 +240,7 @@
       "depends_on_item_ids": [
         "l2_decoder_attention_decode_score_multivalue_gqa8_folded_lane_equivalence_llama7b_v1",
         "l1_decoder_attention_decode_score_multivalue_gqa8_folded_lanes4_pnr_v1",
-        "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v3"
+        "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v4"
       ],
       "requires_merged_inputs": true,
       "requires_materialized_refs": true,
@@ -483,5 +483,5 @@
       "status": "pending_implementation_merge"
     }
   ],
-  "source_commit": "f63fd55c1360dcc9b072e672c8ccc0ff2234ac6b"
+  "source_commit": "b0cc5abb01265029ede35d1076263b229e5ba622"
 }
