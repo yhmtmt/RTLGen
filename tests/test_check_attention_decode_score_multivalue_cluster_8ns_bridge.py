@@ -9,6 +9,19 @@ import tempfile
 from pathlib import Path
 
 
+SAMPLE_DIE_AREA = "0 0 2500 2500"
+SAMPLE_CORE_AREA = "50 50 2450 2450"
+SAMPLE_VARIANT_PREFIX = "decode_score_multivalue_cluster_v1_8ns_bridge"
+SAMPLE_VARIANT_PROXY_DIE_2500 = "decode_score_multivalue_cluster_v1_8ns_bridge_proxy_die_2500"
+
+
+def _flow_params(flow_variant: str, clock_period: float | int) -> str:
+    return (
+        f'{{"FLOW_VARIANT":"{flow_variant}","CLOCK_PERIOD":{clock_period},'
+        f'"DIE_AREA":"{SAMPLE_DIE_AREA}","CORE_AREA":"{SAMPLE_CORE_AREA}"}}'
+    )
+
+
 def _repo_root() -> Path:
     return Path(__file__).resolve().parents[1]
 
@@ -74,12 +87,31 @@ def test_check_attention_decode_score_multivalue_cluster_8ns_bridge_passes_with_
                 _write_row(
                     status="ok",
                     critical_path_ns=7.5,
-                    params_json='{"FLOW_VARIANT":"decode_score_multivalue_cluster_v1_8ns_bridge","CLOCK_PERIOD":8.0,"DIE_AREA":"0 0 2500 2500","CORE_AREA":"50 50 2450 2450"}',
+                    params_json=_flow_params(SAMPLE_VARIANT_PROXY_DIE_2500, 8.0),
                     result_path="runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/result.json",
                 ),
             ],
         )
         assert _run_checker(metrics).returncode == 0
+
+
+def test_check_attention_decode_score_multivalue_cluster_8ns_bridge_rejects_unsuffixed_8ns_row() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        metrics = _metrics_path(Path(td))
+        _write_metrics(
+            metrics,
+            [
+                _write_row(
+                    status="ok",
+                    critical_path_ns=7.5,
+                    params_json=_flow_params(SAMPLE_VARIANT_PREFIX, 8),
+                    result_path="runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/result.json",
+                ),
+            ],
+        )
+        proc = _run_checker(metrics)
+        assert proc.returncode != 0
+        assert "missing required 8ns" in proc.stderr
 
 
 def test_check_attention_decode_score_multivalue_cluster_8ns_bridge_rejects_existing_10ns_ok_row() -> None:
@@ -110,7 +142,7 @@ def test_check_attention_decode_score_multivalue_cluster_8ns_bridge_rejects_non_
                 _write_row(
                     status="flow_failed",
                     critical_path_ns=7.5,
-                    params_json='{"FLOW_VARIANT":"decode_score_multivalue_cluster_v1_8ns_bridge","CLOCK_PERIOD":8,"DIE_AREA":"0 0 2500 2500","CORE_AREA":"50 50 2450 2450"}',
+                    params_json=_flow_params(SAMPLE_VARIANT_PROXY_DIE_2500, 8),
                     result_path="runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/result.json",
                 ),
             ],
@@ -129,7 +161,7 @@ def test_check_attention_decode_score_multivalue_cluster_8ns_bridge_rejects_cloc
                 _write_row(
                     status="ok",
                     critical_path_ns=7.5,
-                    params_json='{"FLOW_VARIANT":"decode_score_multivalue_cluster_v1_8ns_bridge","CLOCK_PERIOD":8.5,"DIE_AREA":"0 0 2500 2500","CORE_AREA":"50 50 2450 2450"}',
+                    params_json=_flow_params(SAMPLE_VARIANT_PROXY_DIE_2500, 8.5),
                     result_path="runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/result.json",
                 ),
             ],
@@ -153,13 +185,13 @@ def test_check_attention_decode_score_multivalue_cluster_8ns_bridge_rejects_wron
                 _write_row(
                     status="ok",
                     critical_path_ns=7.5,
-                    params_json='{"FLOW_VARIANT":"decode_score_multivalue_cluster_v1_8ns_bridge","CLOCK_PERIOD":8,"DIE_AREA":"0 0 3000 3000","CORE_AREA":"50 50 2950 2950"}',
+                    params_json='{"FLOW_VARIANT":"decode_score_multivalue_cluster_v1_8ns_bridge_proxy_die_2500","CLOCK_PERIOD":8,"DIE_AREA":"0 0 3000 3000","CORE_AREA":"50 50 2950 2950"}',
                     result_path="runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/result.json",
                 ),
                 _write_row(
                     status="ok",
                     critical_path_ns=7.5,
-                    params_json='{"FLOW_VARIANT":"decode_score_multivalue_cluster_v1_8ns_bridge","CLOCK_PERIOD":8,"DIE_AREA":"0 0 2500 2500","CORE_AREA":"50 50 2450 2450"}',
+                    params_json=_flow_params(SAMPLE_VARIANT_PROXY_DIE_2500, 8),
                     result_path="/tmp/other/design/metrics.json",
                 ),
             ],
@@ -184,9 +216,28 @@ def test_check_attention_decode_score_multivalue_cluster_8ns_bridge_skips_malfor
                 _write_row(
                     status="ok",
                     critical_path_ns=7.5,
-                    params_json='{"FLOW_VARIANT":"decode_score_multivalue_cluster_v1_8ns_bridge","CLOCK_PERIOD":8,"DIE_AREA":"0 0 2500 2500","CORE_AREA":"50 50 2450 2450"}',
+                    params_json=_flow_params(SAMPLE_VARIANT_PROXY_DIE_2500, 8),
                     result_path="runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/result.json",
                 ),
             ],
         )
         assert _run_checker(metrics).returncode == 0
+
+
+def test_check_attention_decode_score_multivalue_cluster_8ns_bridge_rejects_wrong_mode_suffix() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        metrics = _metrics_path(Path(td))
+        _write_metrics(
+            metrics,
+            [
+                _write_row(
+                    status="ok",
+                    critical_path_ns=7.5,
+                    params_json='{"FLOW_VARIANT":"decode_score_multivalue_cluster_v1_8ns_bridge_proxy_die_9999","CLOCK_PERIOD":8,"DIE_AREA":"0 0 2500 2500","CORE_AREA":"50 50 2450 2450"}',
+                    result_path="runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/result.json",
+                ),
+            ],
+        )
+        proc = _run_checker(metrics)
+        assert proc.returncode != 0
+        assert "missing required 8ns" in proc.stderr
