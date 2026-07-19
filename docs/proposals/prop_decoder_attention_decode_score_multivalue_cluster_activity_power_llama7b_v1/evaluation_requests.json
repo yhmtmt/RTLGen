@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1",
-  "source_commit_note": "Queue this rerun after PR #1398 / commit 3056b89f6deb39c7e96b87bce087d3062f99bd98, which adds exact 5,096-row structural per-phase, per-row, per-structural sidecar assignment for FakeRAM macro activity while preserving strict no-heuristic activity and one-Corner sta::set_power_pin_activity gating.",
+  "source_commit_note": "Queue v10 after PR #1401 / commit 263984cf6945b53283a4d538b2b88399223bfda4. This compact-report rerun keeps all quality/equivalence/annotation/macro/numeric/artifact/promotion gates unchanged and replaces v9's oversized internal-pin payload.",
   "requested_items": [
     {
       "item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1",
@@ -289,11 +289,46 @@
         "direction": "record_shared_score_multivalue_cluster_activity_power_gate",
         "reason": "v9 keeps one-Corner sta::set_power_pin_activity, no heuristic activity, no gate relaxation, and explicit FakeRAM macro gate attribution while assigning exact per-phase structural sidecar coverage and reporting remaining reducer non-finite rows if they persist when macro inputs pass activity coverage."
       },
-      "status": "merged",
+      "status": "retracted",
       "merged_pr_number": 1398,
       "merge_commit": "3056b89f6deb39c7e96b87bce087d3062f99bd98",
+      "revision_of_decision": "iterate",
+      "notes": "V9 reported 5,096/5,096/5,096 structural assignments per phase, zero structural errors, and score_fill/replay passed. Finalize still observed 4,521 non-finite reducer leaf powers. PR #1400 was closed (not merged) because 15,288 internal pin rows inflated compact JSON to 3.94 MB; evidence is superseded by the compact-report v10 rerun.",
+      "retracted_by_item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v10",
+      "retraction_reason": "compact-report_unmerged_internal_pin_rows_bloated_committed_json",
+      "replacement_artifact": "control_plane/shadow_exports/l2_decisions/l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v10.json"
+    },
+    {
+      "item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v10",
+      "task_type": "l2_campaign",
+      "objective": "Rerun shared-score multivalue-cluster activity-backed power after PR #1401 / commit 263984cf6945b53283a4d538b2b88399223bfda4. v10 is identical to v9 on gate set and diagnostics but excludes internal pin rows from committed JSON so the compact report stays within practical artifact size while preserving structural hashes and counts.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_decode_score_multivalue_cluster_activity_power",
+      "comparison_role": "shared_score_multivalue_cluster_activity_power_gate",
+      "depends_on_item_ids": [
+        "l1_decoder_attention_decode_score_multivalue_cluster_pnr_8ns_v2",
+        "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "prior_item_ids": [
+        "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v9"
+      ],
+      "revision": {
+        "reason": "keep_structural_activity_rows_evaluator_local",
+        "invalidates_item_ids": [
+          "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v9"
+        ]
+      },
+      "expected_result": {
+        "direction": "record_shared_score_multivalue_cluster_activity_power_gate",
+        "reason": "v10 reruns identical quality/equivalence/annotation/macro/numeric/artifact/promotion gates and score_fill/replay checks; it keeps per-phase structural hashes/counts, drops internal rows from committed compact artifacts, and retains finalize diagnostics for any non-finite reducer leaf power rows (expected 4,521 in this rerun family)."
+      },
+      "status": "merged",
+      "merged_pr_number": 1401,
+      "merge_commit": "263984cf6945b53283a4d538b2b88399223bfda4",
       "revision_of_decision": "promote"
     }
   ],
-  "source_commit": "3056b89f6deb39c7e96b87bce087d3062f99bd98"
+  "source_commit": "263984cf6945b53283a4d538b2b88399223bfda4"
 }
