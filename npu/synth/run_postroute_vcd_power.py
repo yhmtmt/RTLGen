@@ -266,13 +266,21 @@ foreach pin [get_pins -hierarchical *] {
 }
 
 if {$has_nonfinite_design_total} {
-  if {[catch {set leaf_cells [get_cells -hierarchical -filter "is_leaf"]}] ||
-      [llength $leaf_cells] == 0} {
-    set leaf_cells [get_cells -hierarchical]
+  set leaf_cells {}
+  if {[catch {set leaf_cells [get_cells -hierarchical -filter "is_leaf"]}]} {
+    set leaf_cells {}
   }
-  if {[catch {set leaf_cells [lsort -dictionary $leaf_cells]}]} {
-    # Keep order stable as best effort if sorting is unsupported for this object type.
-    set leaf_cells [lsort $leaf_cells]
+  if {[llength $leaf_cells] == 0} {
+    if {[catch {set leaf_cells [get_cells -hierarchical *]}]} {
+      set leaf_cells {}
+    }
+  }
+  set leaf_cells_unsorted $leaf_cells
+  if {[catch {set leaf_cells [lsort -dictionary $leaf_cells_unsorted]}]} {
+    if {[catch {set leaf_cells [lsort $leaf_cells_unsorted]}]} {
+      # Keep original order as best effort if sorting is unsupported for this object type.
+      set leaf_cells $leaf_cells_unsorted
+    }
   }
   set corners [sta::corners]
   if {[llength $corners] > 0} {

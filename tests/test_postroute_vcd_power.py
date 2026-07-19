@@ -44,6 +44,53 @@ class PostrouteVcdPowerTests(unittest.TestCase):
             script,
         )
 
+    def test_tcl_has_initialised_leaf_cells_for_nonfinite_diagnostics(self) -> None:
+        script = MODULE._tcl_script()
+        init_idx = script.find("set leaf_cells {}")
+        primary_catch_idx = script.find(
+            'if {[catch {set leaf_cells [get_cells -hierarchical -filter "is_leaf"]}]}'
+        )
+        empty_check_idx = script.find("if {[llength $leaf_cells] == 0}")
+        fallback_catch_idx = script.find(
+            'if {[catch {set leaf_cells [get_cells -hierarchical *]}]}'
+        )
+        self.assertGreater(init_idx, -1)
+        self.assertGreater(primary_catch_idx, -1)
+        self.assertGreater(empty_check_idx, primary_catch_idx)
+        self.assertGreater(fallback_catch_idx, empty_check_idx)
+        self.assertLess(init_idx, primary_catch_idx)
+        self.assertNotIn(
+            "if {[catch {set leaf_cells [get_cells -hierarchical -filter \"is_leaf\"]}] ||",
+            script,
+        )
+
+    def test_tcl_nonfinite_leaf_instance_fallback_keeps_diagnostics_nonfatal(self) -> None:
+        script = MODULE._tcl_script()
+        self.assertIn('set leaf_cells {}', script)
+        self.assertIn('if {[catch {set leaf_cells [get_cells -hierarchical *]}]} {', script)
+        self.assertIn("set leaf_cells {}", script, msg="Fallback catch should recover to empty diagnostics")
+        self.assertIn(
+            "set leaf_cells_unsorted $leaf_cells",
+            script,
+            "Sort fallback should preserve original list order",
+        )
+        self.assertIn(
+            "if {[catch {set leaf_cells [lsort -dictionary $leaf_cells_unsorted]}]",
+            script,
+            "Dictionary sort is now guarded in diagnostics path",
+        )
+        self.assertIn(
+            "if {[catch {set leaf_cells [lsort $leaf_cells_unsorted]}]",
+            script,
+            "Fallback sort is now guarded to avoid diagnostics abort",
+        )
+        self.assertIn("set leaf_cells $leaf_cells_unsorted", script)
+        self.assertNotIn(
+            "set leaf_cells [lsort $leaf_cells]",
+            script,
+            "Ungarded fallback sort would still be fatal",
+        )
+
     def test_activity_annotation_provenance_is_preserved(self) -> None:
         with tempfile.TemporaryDirectory() as temp_text:
             root = Path(temp_text)
