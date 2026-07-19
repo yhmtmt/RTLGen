@@ -1,0 +1,752 @@
+{
+  "activity_contract": {
+    "clock_period_ns": 8.0,
+    "phase_partition_cycle_sum": 8334,
+    "phases": [
+      {
+        "full_context_cycles": 2277377,
+        "measured_cycles": 418,
+        "phase": "score_fill",
+        "requires_macro_activity": true,
+        "scaling": {
+          "command_setup_cycles": 1,
+          "cycles_per_block": 139,
+          "formula": "command_setup_cycles + cycles_per_block * target_max_blocks",
+          "full_context_cycles": 2277377,
+          "kind": "fixed_setup_plus_linear_by_block_count",
+          "representative_block_count": 3,
+          "target_max_blocks": 16384
+        },
+        "vcd": "score_fill.vcd",
+        "vcd_sha256": "d816b2c33d41a350af10c0bfb0812e9db8b84d811468ff5fb786f2d5f75c18df"
+      },
+      {
+        "full_context_cycles": 1114128,
+        "measured_cycles": 220,
+        "phase": "replay_value",
+        "requires_macro_activity": true,
+        "scaling": {
+          "clear_cycles": 16,
+          "formula": "clear_cycles + replay_cycles_per_block * target_max_blocks",
+          "full_context_cycles": 1114128,
+          "kind": "fixed_clear_plus_linear_by_block_count",
+          "replay_cycles_per_block": 68,
+          "representative_block_count": 3,
+          "target_max_blocks": 16384
+        },
+        "vcd": "replay_value.vcd",
+        "vcd_sha256": "e276f6eb5251184d99234af1502cc6cbf1981f1cc0d40080e2902ec2b83b1c81"
+      },
+      {
+        "full_context_cycles": 7696,
+        "measured_cycles": 7696,
+        "phase": "finalize_result",
+        "requires_macro_activity": false,
+        "scaling": {
+          "divide_cycles_per_dimension": 60,
+          "formula": "value_dimensions * divide_cycles_per_dimension + result_emit_cycles",
+          "full_context_cycles": 7696,
+          "kind": "fixed_per_command",
+          "result_emit_cycles": 16,
+          "target_max_blocks": 16384,
+          "value_dimensions": 128
+        },
+        "vcd": "finalize_result.vcd",
+        "vcd_sha256": "dc17ccfff2cc6efe9a87f18e53afbd3707007aefb91d6cdbedd7f775700e423e"
+      }
+    ],
+    "representative_block_count": 3,
+    "representative_full_transaction_cycles": 8334
+  },
+  "best": null,
+  "best_candidate_id": null,
+  "candidate_count": 1,
+  "candidates": [
+    {
+      "activity_power": {
+        "clock_period_ns": 8.0,
+        "flow_variant": "decode_score_multivalue_cluster_v1_8ns_bridge_proxy_die_2500",
+        "full_context_cycles": 3399201,
+        "full_context_energy_j": null,
+        "full_context_latency_s": 0.027193608,
+        "min_macro_trace_active_coverage": 0.01,
+        "min_macro_trace_active_pins": 16,
+        "min_vcd_annotated_pins": 32,
+        "min_vcd_annotation_coverage": 0.05,
+        "model": "postroute_phase_vcd_power_v1",
+        "orfs_design_config": "designs/nangate45/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/config.mk",
+        "orfs_design_config_sha256": "b7a1f177828302987eb9d2af032d232c675149044db964d8217ce3ef2f293b7b",
+        "phases": [
+          {
+            "annotation_gate_pass": true,
+            "clock_period_gate_pass": true,
+            "direct_vcd_annotation_coverage": 0.016086543078530878,
+            "direct_vcd_annotation_pin_gate_pass": true,
+            "full_context_cycles": 2277377,
+            "full_context_energy_j": 0.004184121739595014,
+            "macro_activity_gate_pass": false,
+            "macro_trace_active_coverage": 0.0,
+            "measured_cycles": 418,
+            "phase": "score_fill",
+            "phase_gate_pass": false,
+            "power": {
+              "activity_annotation_counts": {
+                "unannotated": 522522,
+                "vcd": 8543
+              },
+              "annotatable_pin_count": 529858,
+              "design_power_quartets": {
+                "clock": {
+                  "internal_w": 0.00316751585342,
+                  "leakage_w": 8.44854512252e-05,
+                  "switching_w": 0.00402905419469,
+                  "total_w": 0.0072810552083
+                },
+                "combinational": {
+                  "internal_w": 0.00741981528699,
+                  "leakage_w": 0.00387729192153,
+                  "switching_w": 0.00939501076937,
+                  "total_w": 0.0206921175122
+                },
+                "macro": {
+                  "internal_w": 0.0959726572037,
+                  "leakage_w": 0.105089597404,
+                  "switching_w": 0,
+                  "total_w": 0.201062262058
+                },
+                "pad": {
+                  "internal_w": 0,
+                  "leakage_w": 0,
+                  "switching_w": 0,
+                  "total_w": 0
+                },
+                "sequential": {
+                  "internal_w": 0,
+                  "leakage_w": 0.000623499276116,
+                  "switching_w": 0,
+                  "total_w": 0.000623499276116
+                },
+                "total": {
+                  "internal_w": 0.106559813023,
+                  "leakage_w": 0.109672941267,
+                  "switching_w": 0.0134240929037,
+                  "total_w": 0.229656845331
+                }
+              },
+              "direct_annotatable_pin_count": 531065,
+              "direct_unannotated_pin_count": 522522,
+              "direct_vcd_pin_count": 8543,
+              "internal_w": 0.106559813023,
+              "leaf_activity_origin_counts": {
+                "clock": 13447,
+                "constant": 549,
+                "other": 226727,
+                "propagated": 289135,
+                "vcd": 0
+              },
+              "leaf_annotatable_pin_count": 529858,
+              "leaf_direct_annotatable_pin_count": 531065,
+              "leaf_direct_vcd_pin_count": 8543,
+              "leaf_trace_backed_pin_count": 289135,
+              "leaf_vcd_annotated_pin_count": 8543,
+              "leakage_w": 0.109672941267,
+              "macro_activity_origin_counts": {
+                "clock": 56,
+                "constant": 544,
+                "other": 7008,
+                "propagated": 0,
+                "transferred": 0,
+                "vcd": 0
+              },
+              "macro_annotatable_pin_count": 7608,
+              "macro_pin_transfer": {
+                "active_count": 0,
+                "applied_count": 0,
+                "apply_error_count": 0,
+                "candidate_count": 0,
+                "connected_pin_count": 5152,
+                "driver_origin_counts": {
+                  "clock": 56,
+                  "constant": 272,
+                  "other": 4824,
+                  "propagated": 0,
+                  "vcd": 0
+                },
+                "driver_pin_count": 5152,
+                "input_pin_count": 5152,
+                "name_match_pin_count": 7608,
+                "no_driver_pin_count": 0,
+                "no_net_pin_count": 0,
+                "query_error_count": 0,
+                "scan_samples": [
+                  {
+                    "driver_origin": "other",
+                    "full_name": "score_bank/u_group_0_slice_3/wd_in[32]"
+                  },
+                  {
+                    "driver_origin": "other",
+                    "full_name": "score_bank/u_group_0_slice_4/w_mask_in[9]"
+                  },
+                  {
+                    "driver_origin": "other",
+                    "full_name": "score_bank/u_group_4_slice_3/w_mask_in[26]"
+                  },
+                  {
+                    "driver_origin": "constant",
+                    "full_name": "score_bank/u_group_7_slice_6/w_mask_in[22]"
+                  },
+                  {
+                    "driver_origin": "constant",
+                    "full_name": "score_bank/u_group_3_slice_6/wd_in[36]"
+                  },
+                  {
+                    "driver_origin": "other",
+                    "full_name": "score_bank/u_group_3_slice_0/w_mask_in[16]"
+                  },
+                  {
+                    "driver_origin": "other",
+                    "full_name": "score_bank/u_group_6_slice_3/w_mask_in[12]"
+                  },
+                  {
+                    "driver_origin": "other",
+                    "full_name": "score_bank/u_group_2_slice_3/wd_in[26]"
+                  },
+                  {
+                    "driver_origin": "constant",
+                    "full_name": "score_bank/u_group_5_slice_6/wd_in[22]"
+                  },
+                  {
+                    "driver_origin": "other",
+                    "full_name": "score_bank/u_group_4_slice_0/w_mask_in[13]"
+                  },
+                  {
+                    "driver_origin": "other",
+                    "full_name": "score_bank/u_group_1_slice_0/wd_in[16]"
+                  },
+                  {
+                    "driver_origin": "other",
+                    "full_name": "score_bank/u_group_4_slice_3/wd_in[12]"
+                  },
+                  {
+                    "driver_origin": "other",
+                    "full_name": "score_bank/u_group_2_slice_4/w_mask_in[3]"
+                  },
+                  {
+                    "driver_origin": "other",
+                    "full_name": "score_bank/u_group_7_slice_6/wd_in[8]"
+                  },
+                  {
+                    "driver_origin": "other",
+                    "full_name": "score_bank/u_group_3_slice_0/wd_in[2]"
+                  },
+                  {
+                    "driver_origin": "other",
+                    "full_name": "score_bank/u_group_1_slice_0/addr_in[9]"
+                  }
+                ],
+                "scanned_pin_count": 529858,
+                "source_propagated_count": 0,
+                "source_vcd_count": 0,
+                "transferred": [],
+                "zero_count": 0
+              },
+              "macro_trace_active_pin_count": 0,
+              "macro_trace_backed_pin_count": 0,
+              "macro_trace_backed_zero_toggle_pin_count": 0,
+              "sdc_clock_period_ns": 8,
+              "switching_w": 0.0134240929037,
+              "total_w": 0.229656845331,
+              "trace_backed_pin_count": 289135,
+              "vcd_annotated_pin_count": 289135
+            },
+            "power_numeric_gate_pass": true,
+            "requires_macro_activity": true,
+            "scaling": {
+              "command_setup_cycles": 1,
+              "cycles_per_block": 139,
+              "formula": "command_setup_cycles + cycles_per_block * target_max_blocks",
+              "full_context_cycles": 2277377,
+              "kind": "fixed_setup_plus_linear_by_block_count",
+              "representative_block_count": 3,
+              "target_max_blocks": 16384
+            },
+            "trace_backed_vcd_annotation_coverage": 0.5456839379607367,
+            "trace_coverage_gate_pass": true,
+            "vcd": "score_fill.vcd",
+            "vcd_annotation_coverage": 0.5456839379607367,
+            "vcd_sha256": "d816b2c33d41a350af10c0bfb0812e9db8b84d811468ff5fb786f2d5f75c18df"
+          },
+          {
+            "annotation_gate_pass": true,
+            "clock_period_gate_pass": true,
+            "direct_vcd_annotation_coverage": 0.016086543078530878,
+            "direct_vcd_annotation_pin_gate_pass": true,
+            "full_context_cycles": 1114128,
+            "full_context_energy_j": 0.0019302178136234643,
+            "macro_activity_gate_pass": false,
+            "macro_trace_active_coverage": 0.0,
+            "measured_cycles": 220,
+            "phase": "replay_value",
+            "phase_gate_pass": false,
+            "power": {
+              "activity_annotation_counts": {
+                "unannotated": 522522,
+                "vcd": 8543
+              },
+              "annotatable_pin_count": 529858,
+              "design_power_quartets": {
+                "clock": {
+                  "internal_w": 0.00316751585342,
+                  "leakage_w": 8.44854512252e-05,
+                  "switching_w": 0.00402905419469,
+                  "total_w": 0.0072810552083
+                },
+                "combinational": {
+                  "internal_w": 0.00143941945862,
+                  "leakage_w": 0.0040071066469,
+                  "switching_w": 0.00215618126094,
+                  "total_w": 0.00760270748287
+                },
+                "macro": {
+                  "internal_w": 0.0959726572037,
+                  "leakage_w": 0.105089597404,
+                  "switching_w": 0,
+                  "total_w": 0.201062262058
+                },
+                "pad": {
+                  "internal_w": 0,
+                  "leakage_w": 0,
+                  "switching_w": 0,
+                  "total_w": 0
+                },
+                "sequential": {
+                  "internal_w": 0,
+                  "leakage_w": 0.000623499276116,
+                  "switching_w": 0,
+                  "total_w": 0.000623499276116
+                },
+                "total": {
+                  "internal_w": 0.100577741861,
+                  "leakage_w": 0.109798520803,
+                  "switching_w": 0.00618522893637,
+                  "total_w": 0.216561496258
+                }
+              },
+              "direct_annotatable_pin_count": 531065,
+              "direct_unannotated_pin_count": 522522,
+              "direct_vcd_pin_count": 8543,
+              "internal_w": 0.100577741861,
+              "leaf_activity_origin_counts": {
+                "clock": 13447,
+                "constant": 549,
+                "other": 226727,
+                "propagated": 289135,
+                "vcd": 0
+              },
+              "leaf_annotatable_pin_count": 529858,
+              "leaf_direct_annotatable_pin_count": 531065,
+              "leaf_direct_vcd_pin_count": 8543,
+              "leaf_trace_backed_pin_count": 289135,
+              "leaf_vcd_annotated_pin_count": 8543,
+              "leakage_w": 0.109798520803,
+              "macro_activity_origin_counts": {
+                "clock": 56,
+                "constant": 544,
+                "other": 7008,
+                "propagated": 0,
+                "transferred": 0,
+                "vcd": 0
+              },
+              "macro_annotatable_pin_count": 7608,
+              "macro_pin_transfer": {
+                "active_count": 0,
+                "applied_count": 0,
+                "apply_error_count": 0,
+                "candidate_count": 0,
+                "connected_pin_count": 5152,
+                "driver_origin_counts": {
+                  "clock": 56,
+                  "constant": 272,
+                  "other": 4824,
+                  "propagated": 0,
+                  "vcd": 0
+                },
+                "driver_pin_count": 5152,
+                "input_pin_count": 5152,
+                "name_match_pin_count": 7608,
+                "no_driver_pin_count": 0,
+                "no_net_pin_count": 0,
+                "query_error_count": 0,
+                "scan_samples": [
+                  {
+                    "driver_origin": "other",
+                    "full_name": "score_bank/u_group_5_slice_3/w_mask_in[15]"
+                  },
+                  {
+                    "driver_origin": "constant",
+                    "full_name": "score_bank/u_group_4_slice_6/wd_in[25]"
+                  },
+                  {
+                    "driver_origin": "other",
+                    "full_name": "score_bank/u_group_1_slice_3/wd_in[29]"
+                  },
+                  {
+                    "driver_origin": "other",
+                    "full_name": "score_bank/u_group_0_slice_0/wd_in[11]"
+                  },
+                  {
+                    "driver_origin": "other",
+                    "full_name": "score_bank/u_group_7_slice_3/w_mask_in[1]"
+                  },
+                  {
+                    "driver_origin": "other",
+                    "full_name": "score_bank/u_group_3_slice_3/wd_in[15]"
+                  },
+                  {
+                    "driver_origin": "other",
+                    "full_name": "score_bank/u_group_1_slice_4/w_mask_in[6]"
+                  },
+                  {
+                    "driver_origin": "other",
+                    "full_name": "score_bank/u_group_6_slice_6/wd_in[11]"
+                  },
+                  {
+                    "driver_origin": "other",
+                    "full_name": "score_bank/u_group_5_slice_0/w_mask_in[2]"
+                  },
+                  {
+                    "driver_origin": "other",
+                    "full_name": "score_bank/u_group_5_slice_3/wd_in[1]"
+                  },
+                  {
+                    "driver_origin": "other",
+                    "full_name": "score_bank/u_group_3_slice_3/addr_in[8]"
+                  },
+                  {
+                    "driver_origin": "other",
+                    "full_name": "score_bank/u_group_5_slice_0/w_mask_in[34]"
+                  },
+                  {
+                    "driver_origin": "other",
+                    "full_name": "score_bank/u_group_0_slice_0/addr_in[4]"
+                  },
+                  {
+                    "driver_origin": "other",
+                    "full_name": "score_bank/u_group_2_slice_0/wd_in[5]"
+                  },
+                  {
+                    "driver_origin": "other",
+                    "full_name": "score_bank/u_group_7_slice_3/w_mask_in[33]"
+                  },
+                  {
+                    "driver_origin": "other",
+                    "full_name": "score_bank/u_group_1_slice_4/w_mask_in[38]"
+                  }
+                ],
+                "scanned_pin_count": 529858,
+                "source_propagated_count": 0,
+                "source_vcd_count": 0,
+                "transferred": [],
+                "zero_count": 0
+              },
+              "macro_trace_active_pin_count": 0,
+              "macro_trace_backed_pin_count": 0,
+              "macro_trace_backed_zero_toggle_pin_count": 0,
+              "sdc_clock_period_ns": 8,
+              "switching_w": 0.00618522893637,
+              "total_w": 0.216561496258,
+              "trace_backed_pin_count": 289135,
+              "vcd_annotated_pin_count": 289135
+            },
+            "power_numeric_gate_pass": true,
+            "requires_macro_activity": true,
+            "scaling": {
+              "clear_cycles": 16,
+              "formula": "clear_cycles + replay_cycles_per_block * target_max_blocks",
+              "full_context_cycles": 1114128,
+              "kind": "fixed_clear_plus_linear_by_block_count",
+              "replay_cycles_per_block": 68,
+              "representative_block_count": 3,
+              "target_max_blocks": 16384
+            },
+            "trace_backed_vcd_annotation_coverage": 0.5456839379607367,
+            "trace_coverage_gate_pass": true,
+            "vcd": "replay_value.vcd",
+            "vcd_annotation_coverage": 0.5456839379607367,
+            "vcd_sha256": "e276f6eb5251184d99234af1502cc6cbf1981f1cc0d40080e2902ec2b83b1c81"
+          },
+          {
+            "annotation_gate_pass": true,
+            "clock_period_gate_pass": true,
+            "direct_vcd_annotation_coverage": 0.016086543078530878,
+            "direct_vcd_annotation_pin_gate_pass": true,
+            "full_context_cycles": 7696,
+            "full_context_energy_j": 0.0,
+            "macro_activity_gate_pass": true,
+            "macro_trace_active_coverage": 0.0,
+            "measured_cycles": 7696,
+            "phase": "finalize_result",
+            "phase_gate_pass": false,
+            "power": {
+              "activity_annotation_counts": {
+                "unannotated": 522522,
+                "vcd": 8543
+              },
+              "annotatable_pin_count": 529858,
+              "design_power_quartets": {
+                "clock": {
+                  "internal_w": 0.00316751585342,
+                  "leakage_w": 8.44854512252e-05,
+                  "switching_w": 0.00402905419469,
+                  "total_w": 0.0072810552083
+                },
+                "combinational": {
+                  "internal_w": null,
+                  "leakage_w": null,
+                  "switching_w": null,
+                  "total_w": null
+                },
+                "macro": {
+                  "internal_w": 0.0959726572037,
+                  "leakage_w": 0.105089597404,
+                  "switching_w": 0,
+                  "total_w": 0.201062262058
+                },
+                "pad": {
+                  "internal_w": 0,
+                  "leakage_w": 0,
+                  "switching_w": 0,
+                  "total_w": 0
+                },
+                "sequential": {
+                  "internal_w": null,
+                  "leakage_w": null,
+                  "switching_w": 0,
+                  "total_w": null
+                },
+                "total": {
+                  "internal_w": null,
+                  "leakage_w": null,
+                  "switching_w": null,
+                  "total_w": null
+                }
+              },
+              "direct_annotatable_pin_count": 531065,
+              "direct_unannotated_pin_count": 522522,
+              "direct_vcd_pin_count": 8543,
+              "internal_w": null,
+              "leaf_activity_origin_counts": {
+                "clock": 13447,
+                "constant": 549,
+                "other": 226727,
+                "propagated": 289135,
+                "vcd": 0
+              },
+              "leaf_annotatable_pin_count": 529858,
+              "leaf_direct_annotatable_pin_count": 531065,
+              "leaf_direct_vcd_pin_count": 8543,
+              "leaf_trace_backed_pin_count": 289135,
+              "leaf_vcd_annotated_pin_count": 8543,
+              "leakage_w": null,
+              "macro_activity_origin_counts": {
+                "clock": 56,
+                "constant": 544,
+                "other": 7008,
+                "propagated": 0,
+                "transferred": 0,
+                "vcd": 0
+              },
+              "macro_annotatable_pin_count": 7608,
+              "macro_pin_transfer": {
+                "active_count": 0,
+                "applied_count": 0,
+                "apply_error_count": 0,
+                "candidate_count": 0,
+                "connected_pin_count": 5152,
+                "driver_origin_counts": {
+                  "clock": 56,
+                  "constant": 272,
+                  "other": 4824,
+                  "propagated": 0,
+                  "vcd": 0
+                },
+                "driver_pin_count": 5152,
+                "input_pin_count": 5152,
+                "name_match_pin_count": 7608,
+                "no_driver_pin_count": 0,
+                "no_net_pin_count": 0,
+                "query_error_count": 0,
+                "scan_samples": [
+                  {
+                    "driver_origin": "other",
+                    "full_name": "score_bank/u_group_0_slice_3/w_mask_in[10]"
+                  },
+                  {
+                    "driver_origin": "other",
+                    "full_name": "score_bank/u_group_2_slice_2/wd_in[27]"
+                  },
+                  {
+                    "driver_origin": "other",
+                    "full_name": "score_bank/u_group_5_slice_5/wd_in[23]"
+                  },
+                  {
+                    "driver_origin": "other",
+                    "full_name": "score_bank/u_group_3_slice_6/w_mask_in[14]"
+                  },
+                  {
+                    "driver_origin": "other",
+                    "full_name": "score_bank/u_group_0_slice_6/wd_in[17]"
+                  },
+                  {
+                    "driver_origin": "other",
+                    "full_name": "score_bank/u_group_6_slice_2/w_mask_in[13]"
+                  },
+                  {
+                    "driver_origin": "other",
+                    "full_name": "score_bank/u_group_7_slice_2/w_mask_in[10]"
+                  },
+                  {
+                    "driver_origin": "other",
+                    "full_name": "score_bank/u_group_4_slice_2/wd_in[13]"
+                  },
+                  {
+                    "driver_origin": "other",
+                    "full_name": "score_bank/u_group_7_slice_5/wd_in[9]"
+                  },
+                  {
+                    "driver_origin": "other",
+                    "full_name": "score_bank/u_group_2_slice_3/w_mask_in[4]"
+                  },
+                  {
+                    "driver_origin": "other",
+                    "full_name": "score_bank/u_group_5_slice_6/w_mask_in[0]"
+                  },
+                  {
+                    "driver_origin": "other",
+                    "full_name": "score_bank/u_group_0_slice_6/addr_in[10]"
+                  },
+                  {
+                    "driver_origin": "other",
+                    "full_name": "score_bank/u_group_4_slice_2/addr_in[6]"
+                  },
+                  {
+                    "driver_origin": "other",
+                    "full_name": "score_bank/u_group_2_slice_3/w_mask_in[36]"
+                  },
+                  {
+                    "driver_origin": "constant",
+                    "full_name": "score_bank/u_group_5_slice_6/w_mask_in[32]"
+                  },
+                  {
+                    "driver_origin": "other",
+                    "full_name": "score_bank/u_group_3_slice_6/wd_in[0]"
+                  }
+                ],
+                "scanned_pin_count": 529858,
+                "source_propagated_count": 0,
+                "source_vcd_count": 0,
+                "transferred": [],
+                "zero_count": 0
+              },
+              "macro_trace_active_pin_count": 0,
+              "macro_trace_backed_pin_count": 0,
+              "macro_trace_backed_zero_toggle_pin_count": 0,
+              "non_finite_leaf_instance_power": {
+                "bad_shape_row_count": 0,
+                "candidate_cell_count": 724570,
+                "checked_instance_power_count": 0,
+                "finite_component_sums": {
+                  "internal_w": 0,
+                  "leakage_w": 0,
+                  "switching_w": 0,
+                  "total_w": 0
+                },
+                "finite_row_count": 0,
+                "instance_count": 0,
+                "non_leaf_skip_count": 0,
+                "query_error_count": 724571,
+                "samples": []
+              },
+              "sdc_clock_period_ns": 8,
+              "switching_w": null,
+              "total_w": null,
+              "trace_backed_pin_count": 289135,
+              "vcd_annotated_pin_count": 289135
+            },
+            "power_numeric_gate_pass": false,
+            "requires_macro_activity": false,
+            "scaling": {
+              "divide_cycles_per_dimension": 60,
+              "formula": "value_dimensions * divide_cycles_per_dimension + result_emit_cycles",
+              "full_context_cycles": 7696,
+              "kind": "fixed_per_command",
+              "result_emit_cycles": 16,
+              "target_max_blocks": 16384,
+              "value_dimensions": 128
+            },
+            "trace_backed_vcd_annotation_coverage": 0.5456839379607367,
+            "trace_coverage_gate_pass": true,
+            "vcd": "finalize_result.vcd",
+            "vcd_annotation_coverage": 0.5456839379607367,
+            "vcd_sha256": "dc17ccfff2cc6efe9a87f18e53afbd3707007aefb91d6cdbedd7f775700e423e"
+          }
+        ],
+        "promotion_gate_pass": false,
+        "remaining_abstractions": [
+          "FakeRAM power uses the Nangate45 proxy Liberty model, not SRAM compiler signoff.",
+          "RTL-generated VCD is mapped onto the post-route netlist; annotation coverage is explicit and gated.",
+          "Off-cluster value-memory, NoC, and HBM energy are outside this cluster power result."
+        ],
+        "scope": "tb/dut",
+        "source_activity_manifest": "attention_decode_score_multivalue_cluster_activity_manifest.json",
+        "source_activity_manifest_sha256": "eb3b74b4e415b5876558588322c1caae0bfb81a18be989959d88debbf7dd41fb",
+        "status": "rejected_annotation_gate",
+        "version": 1
+      },
+      "candidate_id": "multivalue_cluster_activity_decode_score_multivalue_cluster_v1_8ns_bridge_proxy_die_2500",
+      "flow_variant": "decode_score_multivalue_cluster_v1_8ns_bridge_proxy_die_2500",
+      "ppa_metric": {
+        "config_hash": "d037eabb6abd",
+        "core_area_um2": "5760000.0",
+        "critical_path_ns": "7.1765",
+        "design": "attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv",
+        "die_area": "6250000.0",
+        "flow_elapsed_seconds": "2089.11",
+        "instance_area_um2": "2785000.0",
+        "metrics_csv": "runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/metrics.csv",
+        "param_hash": "939c71c3",
+        "params_json": "{\"CLOCK_PERIOD\": 8, \"CORE_AREA\": \"50 50 2450 2450\", \"DIE_AREA\": \"0 0 2500 2500\", \"FLOW_VARIANT\": \"decode_score_multivalue_cluster_v1_8ns_bridge_proxy_die_2500\", \"PLACE_DENSITY\": 0.4, \"SYNTH_HIERARCHICAL\": 1, \"SYNTH_MEMORY_MAX_BITS\": 65536, \"TAG\": \"decode_score_multivalue_cluster_v1_8ns_bridge_proxy_die_2500\", \"tag_prefix\": \"decode_score_multivalue_cluster_v1_8ns_bridge\"}",
+        "platform": "nangate45",
+        "status": "ok",
+        "stdcell_area_um2": "238187.0",
+        "stdcell_count": "180833.0",
+        "tag": "decode_score_multivalue_cluster_v1_8ns_bridge_proxy_die_2500",
+        "total_power_mw": "0.348",
+        "utilization_pct": "48.35069444444444"
+      },
+      "status": "rejected_gate"
+    }
+  ],
+  "decision": "activity_power_rejected_no_gated_candidate",
+  "equivalence": {
+    "decision": "decode_score_multivalue_cluster_equivalence_pass",
+    "equivalence_pass": true,
+    "final_tensor_hash": "fbbbe51bfe1d4ebf5f9910fdfdbf7e5eb322fe7633c9d523ac5a3587545cd457",
+    "score_tensor_hash": "dcdf04e9e1981a3447a532037c35bc10afc81c339014d09fc9bc039578c34387"
+  },
+  "model": "decoder_attention_decode_score_multivalue_cluster_activity_power_v1",
+  "precision_status": "unchanged_integer_contract_from_merged_multivalue_equivalence",
+  "promoted_candidate_count": 0,
+  "promotion_gate_pass": false,
+  "remaining_abstractions": [
+    "FakeRAM area and power use Nangate45 proxy LEF/Liberty views, not SRAM compiler signoff.",
+    "Value-memory, NoC, HBM/DRAM, command-distribution, and clock-tree composition outside the cluster are not included.",
+    "RTL VCD is mapped to the routed netlist; each candidate records and gates direct annotation coverage.",
+    "Score multiplier and shift derivation remain external to the cluster boundary."
+  ],
+  "source_dependencies": [
+    "l1_decoder_attention_decode_score_multivalue_cluster_pnr_8ns_v2",
+    "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1"
+  ],
+  "version": 1
+}
