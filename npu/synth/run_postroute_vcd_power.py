@@ -122,6 +122,10 @@ proc rtlgen_json_escape {value} {
   return [string map {"\\" "\\\\" "\"" "\\\"" "\n" "\\n" "\r" "\\r" "\t" "\\t"} $value]
 }
 
+proc rtlgen_json_escape_array_literal_chars {value} {
+  return [string map {"[" "\\u005B" "]" "\\u005D"} $value]
+}
+
 proc rtlgen_is_finite_power_value {value} {
   if {[catch {set numeric_value [expr {double($value)}]}]} {
     return 0
@@ -151,10 +155,190 @@ proc rtlgen_activity_origin_bucket {origin} {
   return "other"
 }
 
+proc rtlgen_sorted_list {values} {
+  if {[catch {lsort -dictionary $values} sorted]} {
+    if {[catch {lsort $values} sorted]} {
+      set sorted $values
+    }
+  }
+  return $sorted
+}
+
+proc rtlgen_apply_macro_pin_activities {assignments} {
+  set results {}
+  if {[llength $assignments] == 0} {
+    return $results
+  }
+  foreach assignment $assignments {
+    if {[llength $assignment] < 4} {
+      lappend results [list {} 0]
+      continue
+    }
+    lassign $assignment pin_full_name pin density duty
+    if {[catch {set_power_pin_activity $pin $density $duty}]} {
+      lappend results [list $pin_full_name 0]
+      continue
+    }
+    lappend results [list $pin_full_name 1]
+  }
+  return $results
+}
+
 set totals [sta::design_power [sta::corners]]
 set design_power_category_names {total sequential combinational clock macro pad}
 set design_power_category_count [expr {[llength $totals] / 4}]
-set design_power_entries {}
+set design_power_totals [lrange $totals 0 3]
+
+set macro_pin_transfer_candidate_count 0
+set macro_pin_transfer_applied_count 0
+set macro_pin_transfer_source_vcd_count 0
+set macro_pin_transfer_source_propagated_count 0
+set macro_pin_transfer_active_count 0
+set macro_pin_transfer_zero_count 0
+set macro_pin_transfer_query_error_count 0
+set macro_pin_transfer_apply_error_count 0
+set macro_pin_transfer_records {}
+set macro_pin_transfer_updates {}
+if {[catch {get_pins -hierarchical "*u_group_*"} macro_input_pins]} {
+  incr macro_pin_transfer_query_error_count
+  set macro_input_pins {}
+}
+set macro_pin_transfer_candidate_source_by_full_name {}
+set macro_pin_transfer_candidate_toggle_by_full_name {}
+set macro_pin_transfer_source_by_full_name {}
+set macro_pin_transfer_toggle_by_full_name {}
+set macro_pin_transfer_apply_results {}
+foreach macro_pin $macro_input_pins {
+  if {[catch {set is_hierarchical [get_property $macro_pin is_hierarchical]}]} {
+    incr macro_pin_transfer_query_error_count
+    continue
+  }
+  if {$is_hierarchical} {
+    continue
+  }
+  if {[catch {set direction [get_property $macro_pin direction]}]} {
+    incr macro_pin_transfer_query_error_count
+    continue
+  }
+  if {$direction ne "input"} {
+    continue
+  }
+  if {[catch {set macro_pin_full_name [get_property $macro_pin full_name]}]} {
+    incr macro_pin_transfer_query_error_count
+    continue
+  }
+  if {[catch {set macro_nets [get_nets -of_objects $macro_pin]}]} {
+    incr macro_pin_transfer_query_error_count
+    continue
+  }
+  set selected_driver_origin ""
+  set selected_driver_toggle 0.0
+  set selected_driver_duty 0.0
+  set macro_nets_sorted [rtlgen_sorted_list $macro_nets]
+  foreach macro_net $macro_nets_sorted {
+    if {[catch {set driver_pins [sta::net_driver_pins $macro_net]}]} {
+      incr macro_pin_transfer_query_error_count
+      continue
+    }
+    if {[llength $driver_pins] == 0} {
+      continue
+    }
+    set driver_pins_sorted [rtlgen_sorted_list $driver_pins]
+    foreach driver_pin $driver_pins_sorted {
+      if {[catch {set driver_activity [get_property $driver_pin activity]}]} {
+        incr macro_pin_transfer_query_error_count
+        continue
+      }
+      if {[llength $driver_activity] < 3} {
+        incr macro_pin_transfer_query_error_count
+        continue
+      }
+      set driver_toggle [lindex $driver_activity 0]
+      set driver_duty [lindex $driver_activity 1]
+      set driver_origin [lindex $driver_activity [expr {[llength $driver_activity] - 1}]]
+      set driver_origin_bucket [rtlgen_activity_origin_bucket $driver_origin]
+      if {![rtlgen_is_finite_power_value $driver_toggle] ||
+          ![rtlgen_is_finite_power_value $driver_duty]} {
+        incr macro_pin_transfer_query_error_count
+        continue
+      }
+      if {$driver_toggle < 0.0} {
+        incr macro_pin_transfer_query_error_count
+        continue
+      }
+      if {$driver_duty < 0.0 || $driver_duty > 1.0} {
+        incr macro_pin_transfer_query_error_count
+        continue
+      }
+      if {$driver_origin_bucket == "vcd" || $driver_origin_bucket == "propagated"} {
+        set selected_driver_origin $driver_origin_bucket
+        set selected_driver_toggle $driver_toggle
+        set selected_driver_duty $driver_duty
+        break
+      }
+    }
+    if {$selected_driver_origin ne ""} {
+      break
+    }
+  }
+  if {$selected_driver_origin ne ""} {
+    incr macro_pin_transfer_candidate_count
+    lappend macro_pin_transfer_updates \
+      [list $macro_pin_full_name $macro_pin $selected_driver_toggle $selected_driver_duty]
+    dict set macro_pin_transfer_candidate_source_by_full_name $macro_pin_full_name $selected_driver_origin
+    dict set macro_pin_transfer_candidate_toggle_by_full_name $macro_pin_full_name $selected_driver_toggle
+  }
+}
+
+if {[llength $macro_pin_transfer_updates] > 0} {
+  set macro_pin_transfer_apply_results [rtlgen_apply_macro_pin_activities $macro_pin_transfer_updates]
+  set macro_pin_transfer_record_full_names {}
+  foreach macro_pin_transfer_apply_result $macro_pin_transfer_apply_results {
+    lassign $macro_pin_transfer_apply_result pin_full_name applied
+    if {$applied} {
+      if {![dict exists $macro_pin_transfer_candidate_source_by_full_name $pin_full_name]} {
+        incr macro_pin_transfer_apply_error_count
+        continue
+      }
+      incr macro_pin_transfer_applied_count
+      lappend macro_pin_transfer_record_full_names $pin_full_name
+      set pin_source [dict get $macro_pin_transfer_candidate_source_by_full_name $pin_full_name]
+      set pin_toggle [dict get $macro_pin_transfer_candidate_toggle_by_full_name $pin_full_name]
+      dict set macro_pin_transfer_source_by_full_name $pin_full_name $pin_source
+      dict set macro_pin_transfer_toggle_by_full_name $pin_full_name $pin_toggle
+      if {$pin_source == "vcd"} {
+        incr macro_pin_transfer_source_vcd_count
+      } else {
+        incr macro_pin_transfer_source_propagated_count
+      }
+      if {$pin_toggle > 0.0} {
+        incr macro_pin_transfer_active_count
+      } else {
+        incr macro_pin_transfer_zero_count
+      }
+    } else {
+      incr macro_pin_transfer_apply_error_count
+    }
+  }
+  if {[llength $macro_pin_transfer_record_full_names] > 0} {
+    set macro_pin_transfer_record_full_names [rtlgen_sorted_list $macro_pin_transfer_record_full_names]
+    if {[llength $macro_pin_transfer_record_full_names] > 16} {
+      set macro_pin_transfer_record_full_names [lrange $macro_pin_transfer_record_full_names 0 15]
+    }
+    foreach macro_pin_transfer_full_name $macro_pin_transfer_record_full_names {
+      if {[dict exists $macro_pin_transfer_source_by_full_name $macro_pin_transfer_full_name]} {
+        lappend macro_pin_transfer_records \
+          [list \
+            $macro_pin_transfer_full_name \
+            [dict get $macro_pin_transfer_source_by_full_name $macro_pin_transfer_full_name] \
+          ]
+      }
+    }
+  }
+}
+
+set totals [sta::design_power [sta::corners]]
+set design_power_category_count [expr {[llength $totals] / 4}]
 set design_power_totals [lrange $totals 0 3]
 set has_nonfinite_design_total 0
 foreach value $design_power_totals {
@@ -163,6 +347,7 @@ foreach value $design_power_totals {
     break
   }
 }
+set design_power_entries {}
 set design_power_index 0
 foreach design_power_name $design_power_category_names {
   if {$design_power_index < $design_power_category_count} {
@@ -195,6 +380,7 @@ set macro_annotatable 0
 set macro_trace_active_count 0
 set macro_trace_backed_count 0
 set macro_trace_backed_zero_toggle_count 0
+set macro_transferred_origin_count 0
 set leaf_vcd_origin_count 0
 set leaf_propagated_origin_count 0
 set leaf_clock_origin_count 0
@@ -206,6 +392,16 @@ set macro_clock_origin_count 0
 set macro_constant_origin_count 0
 set macro_other_origin_count 0
 set non_finite_leaf_instance_power_count 0
+set non_finite_leaf_instance_power_candidate_cell_count 0
+set non_finite_leaf_instance_power_checked_count 0
+set non_finite_leaf_instance_power_query_error_count 0
+set non_finite_leaf_instance_power_non_leaf_skip_count 0
+set non_finite_leaf_instance_power_bad_shape_row_count 0
+set non_finite_leaf_instance_power_finite_row_count 0
+set non_finite_leaf_instance_power_internal_sum 0.0
+set non_finite_leaf_instance_power_switching_sum 0.0
+set non_finite_leaf_instance_power_leakage_sum 0.0
+set non_finite_leaf_instance_power_total_sum 0.0
 set non_finite_leaf_instance_samples {}
 foreach pin [get_pins -hierarchical *] {
   if {[get_property $pin is_hierarchical]} {
@@ -236,17 +432,25 @@ foreach pin [get_pins -hierarchical *] {
   }
   if {$origin_bucket == "vcd" || $origin_bucket == "propagated"} {
     incr trace_backed_count
-    set is_trace_backed_pin 1
-  } else {
-    set is_trace_backed_pin 0
   }
-  set full_name [get_property $pin full_name]
+  if {[catch {set full_name [get_property $pin full_name]}]} {
+    set full_name $pin
+  }
+  set macro_pin_origin_bucket $origin_bucket
+  set macro_pin_toggle_for_macro_activity $toggle_rate
+  if {[dict exists $macro_pin_transfer_source_by_full_name $full_name]} {
+    set macro_pin_origin_bucket "transferred"
+    set macro_pin_toggle_for_macro_activity \
+      [dict get $macro_pin_transfer_toggle_by_full_name $full_name]
+  }
   if {[string match "*u_group_*" $full_name]} {
     incr macro_annotatable
-    if {$origin_bucket == "vcd"} {
+    if {$macro_pin_origin_bucket == "vcd"} {
       incr macro_vcd_origin_count
-    } elseif {$origin_bucket == "propagated"} {
+    } elseif {$macro_pin_origin_bucket == "propagated"} {
       incr macro_propagated_origin_count
+    } elseif {$macro_pin_origin_bucket == "transferred"} {
+      incr macro_transferred_origin_count
     } elseif {$origin_bucket == "clock"} {
       incr macro_clock_origin_count
     } elseif {$origin_bucket == "constant"} {
@@ -254,9 +458,9 @@ foreach pin [get_pins -hierarchical *] {
     } else {
       incr macro_other_origin_count
     }
-    if {$is_trace_backed_pin} {
+    if {$macro_pin_origin_bucket == "vcd" || $macro_pin_origin_bucket == "propagated" || $macro_pin_origin_bucket == "transferred"} {
       incr macro_trace_backed_count
-      if {$toggle_rate > 0.0} {
+      if {$macro_pin_toggle_for_macro_activity > 0.0} {
         incr macro_trace_active_count
       } else {
         incr macro_trace_backed_zero_toggle_count
@@ -268,10 +472,12 @@ foreach pin [get_pins -hierarchical *] {
 if {$has_nonfinite_design_total} {
   set leaf_cells {}
   if {[catch {set leaf_cells [get_cells -hierarchical -filter "is_leaf"]}]} {
+    incr non_finite_leaf_instance_power_query_error_count
     set leaf_cells {}
   }
   if {[llength $leaf_cells] == 0} {
     if {[catch {set leaf_cells [get_cells -hierarchical *]}]} {
+      incr non_finite_leaf_instance_power_query_error_count
       set leaf_cells {}
     }
   }
@@ -282,6 +488,7 @@ if {$has_nonfinite_design_total} {
       set leaf_cells $leaf_cells_unsorted
     }
   }
+  set non_finite_leaf_instance_power_candidate_cell_count [llength $leaf_cells]
   set corners [sta::corners]
   if {[llength $corners] > 0} {
     set corner [lindex $corners 0]
@@ -289,7 +496,12 @@ if {$has_nonfinite_design_total} {
     set corner ""
   }
   foreach leaf $leaf_cells {
-    if {[catch {set is_leaf [get_property $leaf is_leaf]}] || !$is_leaf} {
+    if {[catch {set is_leaf [get_property $leaf is_leaf]}]} {
+      incr non_finite_leaf_instance_power_query_error_count
+      continue
+    }
+    if {!$is_leaf} {
+      incr non_finite_leaf_instance_power_non_leaf_skip_count
       continue
     }
     if {$corner ne ""} {
@@ -298,11 +510,14 @@ if {$has_nonfinite_design_total} {
       set instance_power_error [catch {sta::instance_power $leaf} instance_power]
     }
     if {$instance_power_error} {
+      incr non_finite_leaf_instance_power_query_error_count
       continue
     }
     if {[llength $instance_power] != 4} {
+      incr non_finite_leaf_instance_power_bad_shape_row_count
       continue
     }
+    incr non_finite_leaf_instance_power_checked_count
     set internal_power_value [lindex $instance_power 0]
     set switching_power_value [lindex $instance_power 1]
     set leakage_power_value [lindex $instance_power 2]
@@ -327,6 +542,16 @@ if {$has_nonfinite_design_total} {
             $total_power_value \
           ]
       }
+    } else {
+      incr non_finite_leaf_instance_power_finite_row_count
+      set non_finite_leaf_instance_power_internal_sum \
+        [expr {$non_finite_leaf_instance_power_internal_sum + $internal_power_value}]
+      set non_finite_leaf_instance_power_switching_sum \
+        [expr {$non_finite_leaf_instance_power_switching_sum + $switching_power_value}]
+      set non_finite_leaf_instance_power_leakage_sum \
+        [expr {$non_finite_leaf_instance_power_leakage_sum + $leakage_power_value}]
+      set non_finite_leaf_instance_power_total_sum \
+        [expr {$non_finite_leaf_instance_power_total_sum + $total_power_value}]
     }
   }
 }
@@ -377,6 +602,7 @@ puts $fp "  \"macro_annotatable_pin_count\": $macro_annotatable,"
 puts $fp "  \"macro_activity_origin_counts\": {"
 puts $fp "    \"vcd\": $macro_vcd_origin_count,"
 puts $fp "    \"propagated\": $macro_propagated_origin_count,"
+puts $fp "    \"transferred\": $macro_transferred_origin_count,"
 puts $fp "    \"clock\": $macro_clock_origin_count,"
 puts $fp "    \"constant\": $macro_constant_origin_count,"
 puts $fp "    \"other\": $macro_other_origin_count"
@@ -384,10 +610,49 @@ puts $fp "  },"
 puts $fp "  \"macro_trace_backed_pin_count\": $macro_trace_backed_count,"
 puts $fp "  \"macro_trace_active_pin_count\": $macro_trace_active_count,"
 puts $fp "  \"macro_trace_backed_zero_toggle_pin_count\": $macro_trace_backed_zero_toggle_count"
+puts $fp ","
+puts $fp "  \"macro_pin_transfer\": {"
+puts $fp "    \"candidate_count\": $macro_pin_transfer_candidate_count,"
+puts $fp "    \"applied_count\": $macro_pin_transfer_applied_count,"
+puts $fp "    \"query_error_count\": $macro_pin_transfer_query_error_count,"
+puts $fp "    \"apply_error_count\": $macro_pin_transfer_apply_error_count,"
+puts $fp "    \"source_vcd_count\": $macro_pin_transfer_source_vcd_count,"
+puts $fp "    \"source_propagated_count\": $macro_pin_transfer_source_propagated_count,"
+puts $fp "    \"active_count\": $macro_pin_transfer_active_count,"
+puts $fp "    \"zero_count\": $macro_pin_transfer_zero_count,"
+puts $fp "    \"transferred\": \["
+set macro_pin_transfer_records_count [llength $macro_pin_transfer_records]
+set macro_pin_transfer_record_index 0
+foreach macro_pin_transfer_record $macro_pin_transfer_records {
+  set macro_pin_transfer_full_name [lindex $macro_pin_transfer_record 0]
+  set macro_pin_transfer_source [lindex $macro_pin_transfer_record 1]
+  set escaped_full_name [rtlgen_json_escape_array_literal_chars [rtlgen_json_escape $macro_pin_transfer_full_name]]
+  set macro_pin_transfer_record_line "      {\"full_name\": \"$escaped_full_name\", \"source\": \"$macro_pin_transfer_source\"}"
+  incr macro_pin_transfer_record_index
+  if {$macro_pin_transfer_record_index < $macro_pin_transfer_records_count} {
+    puts $fp "$macro_pin_transfer_record_line,"
+  } else {
+    puts $fp "$macro_pin_transfer_record_line"
+  }
+}
+  puts $fp "    \]"
+puts $fp "  }"
 if {$has_nonfinite_design_total} {
   puts $fp ","
   puts $fp "  \"non_finite_leaf_instance_power\": {"
   puts $fp "    \"instance_count\": $non_finite_leaf_instance_power_count,"
+  puts $fp "    \"candidate_cell_count\": $non_finite_leaf_instance_power_candidate_cell_count,"
+  puts $fp "    \"checked_instance_power_count\": $non_finite_leaf_instance_power_checked_count,"
+  puts $fp "    \"query_error_count\": $non_finite_leaf_instance_power_query_error_count,"
+  puts $fp "    \"non_leaf_skip_count\": $non_finite_leaf_instance_power_non_leaf_skip_count,"
+  puts $fp "    \"bad_shape_row_count\": $non_finite_leaf_instance_power_bad_shape_row_count,"
+  puts $fp "    \"finite_row_count\": $non_finite_leaf_instance_power_finite_row_count,"
+  puts $fp "    \"finite_component_sums\": {"
+  puts $fp "      \"internal_w\": [rtlgen_json_number $non_finite_leaf_instance_power_internal_sum],"
+  puts $fp "      \"switching_w\": [rtlgen_json_number $non_finite_leaf_instance_power_switching_sum],"
+  puts $fp "      \"leakage_w\": [rtlgen_json_number $non_finite_leaf_instance_power_leakage_sum],"
+  puts $fp "      \"total_w\": [rtlgen_json_number $non_finite_leaf_instance_power_total_sum]"
+  puts $fp "    },"
   puts $fp "    \"samples\": \["
   set sample_count [llength $non_finite_leaf_instance_samples]
   set sample_index 0
