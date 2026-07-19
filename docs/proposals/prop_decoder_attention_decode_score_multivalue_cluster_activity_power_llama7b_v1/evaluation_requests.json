@@ -58,7 +58,7 @@
       "merged_utc": "2026-07-19T10:36:32.965495Z",
       "notes": "Merged via PR #1371 and merge cc2340e92ec66e800533b7e82769f40f72c9c1a8 at 2026-07-19T10:36:32.965495Z.",
       "revision_of_decision": "iterate",
-      "retracted_utc": "2026-07-19T11:27:13.858415Z",
+      "retracted_utc": "2026-07-19T11:27:33.102916Z",
       "retracted_by_item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v3",
       "retraction_reason": "postroute_macro_activity_and_nonfinite_power_unresolved",
       "replacement_artifact": "control_plane/shadow_exports/l2_decisions/l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v3.json"
@@ -89,8 +89,8 @@
       "status": "merged",
       "merged_pr_number": 1381,
       "merge_commit": "b3afaa874f7f80117f3142974bd78b6b579f39de",
-      "merged_utc": "2026-07-19T11:27:13.858339Z",
-      "notes": "Merged via PR #1381 and merge b3afaa874f7f80117f3142974bd78b6b579f39de at 2026-07-19T11:27:13.858339Z.",
+      "merged_utc": "2026-07-19T11:27:33.102853Z",
+      "notes": "Merged via PR #1381 and merge b3afaa874f7f80117f3142974bd78b6b579f39de at 2026-07-19T11:27:13.858339Z. Merged via PR #1381 and merge b3afaa874f7f80117f3142974bd78b6b579f39de at 2026-07-19T11:27:33.102853Z.",
       "revision_of_decision": "iterate"
     }
   ],

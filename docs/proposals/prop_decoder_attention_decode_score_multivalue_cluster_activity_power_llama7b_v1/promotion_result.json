@@ -3,7 +3,7 @@
   "decision": "iterate",
   "pr_number": 1381,
   "merge_commit": "b3afaa874f7f80117f3142974bd78b6b579f39de",
-  "merged_utc": "2026-07-19T11:27:13.858339Z",
+  "merged_utc": "2026-07-19T11:27:33.102853Z",
   "revision": {
     "reason": "postroute_macro_activity_and_nonfinite_power_unresolved",
     "invalidated_item_ids": [
