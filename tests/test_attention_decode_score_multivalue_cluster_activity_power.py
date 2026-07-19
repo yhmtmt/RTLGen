@@ -157,3 +157,50 @@ def test_build_report_records_promoted_and_failed_variants(tmp_path: Path) -> No
     assert payload["equivalence"]["final_tensor_hash"] == "final-hash"
     assert payload["candidates"][1]["status"] == "measurement_failed"
     assert "/orfs/" not in json.dumps(payload)
+
+
+def test_sanitized_failure_preserves_openroad_detail_without_local_paths() -> None:
+    message = (
+        "post-route VCD power failed:\n"
+        "command: make --no-print-directory DESIGN_CONFIG=/tmp/workspaces/runner/config.mk ...\n"
+        "stdout:\n"
+        "   File /tmp/workspaces/runner/activities/runner.tcl\n"
+        "   Tcl line 42: ERROR: undefined variable\n"
+        "stderr:\n"
+        '   openroad command "/orfs/tools/openroad/bin/openroad" -gui /home/user/project/design/openroad.tcl\n'
+    )
+    failure = audit._sanitized_failure(RuntimeError(message))
+    detail = failure["detail"]
+    assert failure["error_type"] == "RuntimeError"
+    assert failure["error_summary"].startswith("post-route VCD power failed:")
+    assert len(detail) <= 16
+    assert all(len(line) <= 400 for line in detail)
+    assert sum(len(line) for line in detail) <= 4096
+    assert all(
+        basename not in line for line in detail for basename in ("runner.tcl", "config.mk", "openroad.tcl")
+    )
+    assert any("<evaluator-local-path>" in line for line in detail)
+    assert all("/tmp/" not in line for line in detail)
+    assert all(" /home/" not in line and " /orfs/" not in line for line in detail)
+    assert any("openroad command" in line for line in detail)
+    assert any("Tcl line 42" in line for line in detail)
+
+
+def test_sanitized_failure_bounds_to_tail_lines() -> None:
+    message = "\n".join(
+        [
+            f"line {index}: this is a long diagnostic line with extra padding."
+            + "x" * 600
+            + f" /tmp/job/{index}/artifact.log"
+            for index in range(30)
+        ]
+    )
+    failure = audit._sanitized_failure(RuntimeError(message))
+    detail = failure["detail"]
+    assert len(detail) <= 16
+    assert len(detail[0]) <= 400
+    assert len(detail[-1]) <= 400
+    assert detail[0].startswith("line 20")
+    assert detail[-1].startswith("line 29")
+    assert all("/tmp/" not in line for line in detail)
+    assert all("artifact.log" not in line for line in detail)
