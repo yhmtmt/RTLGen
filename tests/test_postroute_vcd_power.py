@@ -29,9 +29,18 @@ class PostrouteVcdPowerTests(unittest.TestCase):
         self.assertGreater(totals_index, -1)
         self.assertGreater(loop_index, -1)
         self.assertLess(totals_index, loop_index)
-        self.assertIn('if {$origin == "vcd" || $origin == "propagated"}', script)
         self.assertIn(
-            'if {($origin == "vcd" || $origin == "propagated") && $toggle_rate > 0.0}',
+            "set design_power_category_names {total sequential combinational clock macro pad}",
+            script,
+        )
+        self.assertIn("design_power_quartets", script)
+        self.assertIn("macro_trace_backed_zero_toggle_count", script)
+        self.assertIn("leaf_activity_origin_counts", script)
+        self.assertIn("macro_activity_origin_counts", script)
+        self.assertIn("sta::instance_power $leaf $corner", script)
+        self.assertIn("non_finite_leaf_instance_power", script)
+        self.assertIn(
+            "if {$origin_bucket == \"vcd\" || $origin_bucket == \"propagated\"}",
             script,
         )
 
@@ -390,6 +399,114 @@ class PostrouteVcdPowerTests(unittest.TestCase):
             self.assertTrue(phase["trace_coverage_gate_pass"])
             self.assertFalse(phase["direct_vcd_annotation_pin_gate_pass"])
             self.assertFalse(phase["annotation_gate_pass"])
+
+    def test_build_report_preserves_non_finite_power_diagnostics(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_text:
+            root = Path(temp_text)
+            manifest, manifest_path = self._fixture(root)
+            design_config = root / "config.mk"
+            design_config.write_text("", encoding="utf-8")
+            power = {
+                "total_w": 1.0,
+                "internal_w": 0.5,
+                "switching_w": 0.4,
+                "leakage_w": 0.1,
+                "sdc_clock_period_ns": 8.0,
+                "annotatable_pin_count": 1000,
+                "leaf_annotatable_pin_count": 1000,
+                "leaf_trace_backed_pin_count": 500,
+                "vcd_annotated_pin_count": 500,
+                "macro_trace_active_pin_count": 10,
+                "macro_annotatable_pin_count": 100,
+                "design_power_quartets": {
+                    "total": {
+                        "internal_w": 0.5,
+                        "switching_w": 0.4,
+                        "leakage_w": 0.1,
+                        "total_w": 1.0,
+                    },
+                },
+                "non_finite_leaf_instance_power": {
+                    "instance_count": 1,
+                    "samples": [
+                        {
+                            "full_name": "u_group_a/u1",
+                            "internal_w": "null",
+                            "switching_w": "null",
+                            "leakage_w": "null",
+                            "total_w": "null",
+                        },
+                    ],
+                },
+            }
+            with mock.patch.object(MODULE, "_run_openroad_phase", return_value=power):
+                report = MODULE.build_report(
+                    manifest=manifest,
+                    manifest_path=manifest_path,
+                    design_config=design_config,
+                    flow_variant="activity_test",
+                    scope="tb/dut",
+                    min_vcd_coverage=0.25,
+                    min_vcd_pins=32,
+                    min_macro_active_coverage=0.05,
+                    min_macro_active_pins=8,
+                    timeout_seconds=10,
+                )
+            phase_power = report["phases"][0]["power"]
+            self.assertIn("non_finite_leaf_instance_power", phase_power)
+            self.assertEqual(
+                phase_power["non_finite_leaf_instance_power"]["instance_count"], 1
+            )
+            self.assertEqual(
+                phase_power["design_power_quartets"]["total"]["total_w"], 1.0
+            )
+            self.assertIn("design_power_quartets", report["phases"][1]["power"])
+
+    def test_write_markdown_includes_power_diagnostics(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_text:
+            payload = {
+                "status": "rejected_annotation_gate",
+                "promotion_gate_pass": False,
+                "clock_period_ns": 8.0,
+                "full_context_cycles": 10,
+                "full_context_latency_s": 0.001,
+                "full_context_energy_j": 0.0,
+                "phases": [
+                    {
+                        "phase": "finalize_result",
+                        "measured_cycles": 10,
+                        "full_context_cycles": 10,
+                        "full_context_energy_j": 0.0,
+                        "phase_gate_pass": False,
+                        "trace_backed_vcd_annotation_coverage": 0.0,
+                        "direct_vcd_annotation_coverage": 0.0,
+                        "macro_trace_active_pin_count": 10,
+                        "power": {
+                            "total_w": 1.0,
+                            "macro_trace_active_pin_count": 10,
+                            "non_finite_leaf_instance_power": {
+                                "instance_count": 2,
+                                "samples": [
+                                    {
+                                        "full_name": "u_group_a/u1",
+                                        "internal_w": 1.0,
+                                        "switching_w": 1.0,
+                                        "leakage_w": 1.0,
+                                        "total_w": 1.0,
+                                    }
+                                ],
+                            },
+                        },
+                    }
+                ],
+                "remaining_abstractions": [],
+            }
+            out_md = Path(temp_text) / "report.md"
+            MODULE.write_markdown(payload, out_md)
+            text = out_md.read_text(encoding="utf-8")
+            self.assertIn("## Power Diagnostics", text)
+            self.assertIn("`finalize_result` non-finite leaf-instance power samples", text)
+            self.assertIn("u_group_a/u1", text)
 
     def test_required_macro_phase_cannot_promote_without_macro_activity(self) -> None:
         with tempfile.TemporaryDirectory() as temp_text:

@@ -117,11 +117,96 @@ proc rtlgen_json_number {value} {
   }
   return $formatted
 }
+
+proc rtlgen_json_escape {value} {
+  return [string map {"\\" "\\\\" "\"" "\\\"" "\n" "\\n" "\r" "\\r" "\t" "\\t"} $value]
+}
+
+proc rtlgen_is_finite_power_value {value} {
+  if {[catch {set numeric_value [expr {double($value)}]}]} {
+    return 0
+  }
+  if {$numeric_value != $numeric_value} {
+    return 0
+  }
+  if {$numeric_value == Inf || $numeric_value == -Inf} {
+    return 0
+  }
+  return 1
+}
+
+proc rtlgen_activity_origin_bucket {origin} {
+  if {$origin == "vcd"} {
+    return "vcd"
+  }
+  if {$origin == "propagated"} {
+    return "propagated"
+  }
+  if {$origin == "clock"} {
+    return "clock"
+  }
+  if {$origin == "constant"} {
+    return "constant"
+  }
+  return "other"
+}
+
 set totals [sta::design_power [sta::corners]]
+set design_power_category_names {total sequential combinational clock macro pad}
+set design_power_category_count [expr {[llength $totals] / 4}]
+set design_power_entries {}
+set design_power_totals [lrange $totals 0 3]
+set has_nonfinite_design_total 0
+foreach value $design_power_totals {
+  if {![rtlgen_is_finite_power_value $value]} {
+    set has_nonfinite_design_total 1
+    break
+  }
+}
+set design_power_index 0
+foreach design_power_name $design_power_category_names {
+  if {$design_power_index < $design_power_category_count} {
+    set offset [expr {$design_power_index * 4}]
+    set design_power_row [lrange $totals $offset [expr {$offset + 3}]]
+  } else {
+    set design_power_row {}
+  }
+  lassign $design_power_row design_power_internal design_power_switching design_power_leakage design_power_total
+  lappend design_power_entries \
+    [list \
+      $design_power_name \
+      [rtlgen_json_number $design_power_internal] \
+      [rtlgen_json_number $design_power_switching] \
+      [rtlgen_json_number $design_power_leakage] \
+      [rtlgen_json_number $design_power_total] \
+    ]
+  incr design_power_index
+}
+
+set design_power_lines {}
+foreach design_power_entry $design_power_entries {
+  lassign $design_power_entry design_name design_internal_w design_switching_w design_leakage_w design_total_w
+  lappend design_power_lines "    \"$design_name\": {\"internal_w\": $design_internal_w, \"switching_w\": $design_switching_w, \"leakage_w\": $design_leakage_w, \"total_w\": $design_total_w}"
+}
+
 set annotatable 0
 set trace_backed_count 0
 set macro_annotatable 0
 set macro_trace_active_count 0
+set macro_trace_backed_count 0
+set macro_trace_backed_zero_toggle_count 0
+set leaf_vcd_origin_count 0
+set leaf_propagated_origin_count 0
+set leaf_clock_origin_count 0
+set leaf_constant_origin_count 0
+set leaf_other_origin_count 0
+set macro_vcd_origin_count 0
+set macro_propagated_origin_count 0
+set macro_clock_origin_count 0
+set macro_constant_origin_count 0
+set macro_other_origin_count 0
+set non_finite_leaf_instance_power_count 0
+set non_finite_leaf_instance_samples {}
 foreach pin [get_pins -hierarchical *] {
   if {[get_property $pin is_hierarchical]} {
     continue
@@ -134,40 +219,193 @@ foreach pin [get_pins -hierarchical *] {
   set activity [get_property $pin activity]
   set origin [lindex $activity 2]
   set toggle_rate [lindex $activity 0]
-  if {$origin == "vcd" || $origin == "propagated"} {
+  if {![string is double -strict $toggle_rate]} {
+    set toggle_rate 0.0
+  }
+  set origin_bucket [rtlgen_activity_origin_bucket $origin]
+  if {$origin_bucket == "vcd"} {
+    incr leaf_vcd_origin_count
+  } elseif {$origin_bucket == "propagated"} {
+    incr leaf_propagated_origin_count
+  } elseif {$origin_bucket == "clock"} {
+    incr leaf_clock_origin_count
+  } elseif {$origin_bucket == "constant"} {
+    incr leaf_constant_origin_count
+  } else {
+    incr leaf_other_origin_count
+  }
+  if {$origin_bucket == "vcd" || $origin_bucket == "propagated"} {
     incr trace_backed_count
+    set is_trace_backed_pin 1
+  } else {
+    set is_trace_backed_pin 0
   }
   set full_name [get_property $pin full_name]
   if {[string match "*u_group_*" $full_name]} {
     incr macro_annotatable
-    if {($origin == "vcd" || $origin == "propagated") && $toggle_rate > 0.0} {
-      incr macro_trace_active_count
+    if {$origin_bucket == "vcd"} {
+      incr macro_vcd_origin_count
+    } elseif {$origin_bucket == "propagated"} {
+      incr macro_propagated_origin_count
+    } elseif {$origin_bucket == "clock"} {
+      incr macro_clock_origin_count
+    } elseif {$origin_bucket == "constant"} {
+      incr macro_constant_origin_count
+    } else {
+      incr macro_other_origin_count
+    }
+    if {$is_trace_backed_pin} {
+      incr macro_trace_backed_count
+      if {$toggle_rate > 0.0} {
+        incr macro_trace_active_count
+      } else {
+        incr macro_trace_backed_zero_toggle_count
+      }
     }
   }
 }
-set clocks [get_clocks *]
+
+if {$has_nonfinite_design_total} {
+  if {[catch {set leaf_cells [get_cells -hierarchical -filter "is_leaf"]}] ||
+      [llength $leaf_cells] == 0} {
+    set leaf_cells [get_cells -hierarchical]
+  }
+  if {[catch {set leaf_cells [lsort -dictionary $leaf_cells]}]} {
+    # Keep order stable as best effort if sorting is unsupported for this object type.
+    set leaf_cells [lsort $leaf_cells]
+  }
+  set corners [sta::corners]
+  if {[llength $corners] > 0} {
+    set corner [lindex $corners 0]
+  } else {
+    set corner ""
+  }
+  foreach leaf $leaf_cells {
+    if {[catch {set is_leaf [get_property $leaf is_leaf]}] || !$is_leaf} {
+      continue
+    }
+    if {$corner ne ""} {
+      set instance_power_error [catch {sta::instance_power $leaf $corner} instance_power]
+    } else {
+      set instance_power_error [catch {sta::instance_power $leaf} instance_power]
+    }
+    if {$instance_power_error} {
+      continue
+    }
+    if {[llength $instance_power] != 4} {
+      continue
+    }
+    set internal_power_value [lindex $instance_power 0]
+    set switching_power_value [lindex $instance_power 1]
+    set leakage_power_value [lindex $instance_power 2]
+    set total_power_value [lindex $instance_power 3]
+    if {![rtlgen_is_finite_power_value $internal_power_value] ||
+        ![rtlgen_is_finite_power_value $switching_power_value] ||
+        ![rtlgen_is_finite_power_value $leakage_power_value] ||
+        ![rtlgen_is_finite_power_value $total_power_value]} {
+      incr non_finite_leaf_instance_power_count
+      if {[llength $non_finite_leaf_instance_samples] < 16} {
+        if {[catch {set leaf_name [get_full_name $leaf]}]} {
+          if {[catch {set leaf_name [get_property $leaf name]}]} {
+            set leaf_name $leaf
+          }
+        }
+        lappend non_finite_leaf_instance_samples \
+          [list \
+            $leaf_name \
+            $internal_power_value \
+            $switching_power_value \
+            $leakage_power_value \
+            $total_power_value \
+          ]
+      }
+    }
+  }
+}
+
 set sdc_clock_period_ns "null"
+set clocks [get_clocks *]
 if {[llength $clocks] > 0} {
   set sdc_clock_period_ns [rtlgen_json_number [get_property [lindex $clocks 0] period]]
 }
-set internal_w [rtlgen_json_number [lindex $totals 0]]
-set switching_w [rtlgen_json_number [lindex $totals 1]]
-set leakage_w [rtlgen_json_number [lindex $totals 2]]
-set total_w [rtlgen_json_number [lindex $totals 3]]
+lassign $design_power_totals design_power_internal_w design_power_switching_w design_power_leakage_w design_power_total_w
+set internal_w [rtlgen_json_number $design_power_internal_w]
+set switching_w [rtlgen_json_number $design_power_switching_w]
+set leakage_w [rtlgen_json_number $design_power_leakage_w]
+set total_w [rtlgen_json_number $design_power_total_w]
+
 set fp [open $::env(RTLGEN_ACTIVITY_RESULT) w]
 puts $fp "{"
 puts $fp "  \"internal_w\": $internal_w,"
 puts $fp "  \"switching_w\": $switching_w,"
 puts $fp "  \"leakage_w\": $leakage_w,"
 puts $fp "  \"total_w\": $total_w,"
+puts $fp "  \"design_power_quartets\": {"
+set design_power_lines_count [llength $design_power_lines]
+set design_power_index 0
+foreach design_power_line $design_power_lines {
+  incr design_power_index
+  if {$design_power_index < $design_power_lines_count} {
+    puts $fp "$design_power_line,"
+  } else {
+    puts $fp "$design_power_line"
+  }
+}
+puts $fp "  },"
 puts $fp "  \"sdc_clock_period_ns\": $sdc_clock_period_ns,"
 puts $fp "  \"annotatable_pin_count\": $annotatable,"
 puts $fp "  \"leaf_annotatable_pin_count\": $annotatable,"
 puts $fp "  \"leaf_trace_backed_pin_count\": $trace_backed_count,"
 puts $fp "  \"vcd_annotated_pin_count\": $trace_backed_count,"
 puts $fp "  \"trace_backed_pin_count\": $trace_backed_count,"
+puts $fp "  \"leaf_activity_origin_counts\": {"
+puts $fp "    \"vcd\": $leaf_vcd_origin_count,"
+puts $fp "    \"propagated\": $leaf_propagated_origin_count,"
+puts $fp "    \"clock\": $leaf_clock_origin_count,"
+puts $fp "    \"constant\": $leaf_constant_origin_count,"
+puts $fp "    \"other\": $leaf_other_origin_count"
+puts $fp "  },"
 puts $fp "  \"macro_annotatable_pin_count\": $macro_annotatable,"
-puts $fp "  \"macro_trace_active_pin_count\": $macro_trace_active_count"
+puts $fp "  \"macro_activity_origin_counts\": {"
+puts $fp "    \"vcd\": $macro_vcd_origin_count,"
+puts $fp "    \"propagated\": $macro_propagated_origin_count,"
+puts $fp "    \"clock\": $macro_clock_origin_count,"
+puts $fp "    \"constant\": $macro_constant_origin_count,"
+puts $fp "    \"other\": $macro_other_origin_count"
+puts $fp "  },"
+puts $fp "  \"macro_trace_backed_pin_count\": $macro_trace_backed_count,"
+puts $fp "  \"macro_trace_active_pin_count\": $macro_trace_active_count,"
+puts $fp "  \"macro_trace_backed_zero_toggle_pin_count\": $macro_trace_backed_zero_toggle_count"
+if {$has_nonfinite_design_total} {
+  puts $fp ","
+  puts $fp "  \"non_finite_leaf_instance_power\": {"
+  puts $fp "    \"instance_count\": $non_finite_leaf_instance_power_count,"
+  puts $fp "    \"samples\": ["
+  set sample_count [llength $non_finite_leaf_instance_samples]
+  set sample_index 0
+  foreach sample $non_finite_leaf_instance_samples {
+    lassign $sample \
+      leaf_name \
+      leaf_internal_power \
+      leaf_switching_power \
+      leaf_leakage_power \
+      leaf_total_power
+    set leaf_internal_power_json [rtlgen_json_number $leaf_internal_power]
+    set leaf_switching_power_json [rtlgen_json_number $leaf_switching_power]
+    set leaf_leakage_power_json [rtlgen_json_number $leaf_leakage_power]
+    set leaf_total_power_json [rtlgen_json_number $leaf_total_power]
+    incr sample_index
+    set escaped_leaf_name [rtlgen_json_escape $leaf_name]
+    set sample_line "      {\"full_name\": \"$escaped_leaf_name\", \"internal_w\": $leaf_internal_power_json, \"switching_w\": $leaf_switching_power_json, \"leakage_w\": $leaf_leakage_power_json, \"total_w\": $leaf_total_power_json}"
+    if {$sample_index < $sample_count} {
+      puts $fp "$sample_line,"
+    } else {
+      puts $fp "$sample_line"
+    }
+  }
+  puts $fp "    ]"
+  puts $fp "  }"
+}
 puts $fp "}"
 close $fp
 
@@ -442,6 +680,35 @@ def write_markdown(payload: JsonDict, path: Path) -> None:
                 gate=row["phase_gate_pass"],
             )
         )
+    diagnostics = []
+    for row in payload["phases"]:
+        power = row["power"]
+        diag = power.get("non_finite_leaf_instance_power")
+        if not isinstance(diag, dict):
+            continue
+        sample_names = [
+            sample.get("full_name")
+            for sample in diag.get("samples", [])
+            if isinstance(sample, dict) and sample.get("full_name")
+        ]
+        diagnostics.append(
+            (
+                row["phase"],
+                int(diag.get("instance_count", 0)),
+                sample_names,
+            )
+        )
+    if diagnostics:
+        lines.extend(["", "## Power Diagnostics", ""])
+        for phase, instance_count, sample_names in diagnostics:
+            lines.append(
+                f"- `{phase}` non-finite leaf-instance power samples: `{instance_count}` instances"
+            )
+            if sample_names:
+                lines.append(
+                    "  - sample instances: "
+                    + ", ".join(f"`{name}`" for name in sample_names)
+                )
     lines.extend(["", "## Remaining Abstractions", ""])
     lines.extend(f"- {item}" for item in payload["remaining_abstractions"])
     path.parent.mkdir(parents=True, exist_ok=True)
