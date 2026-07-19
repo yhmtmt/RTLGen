@@ -92,6 +92,31 @@
         "reason": "V1 counted activity before propagation; v2 now separates direct VCD roots, uses post-propagation trace-backed coverage, and measures macros after propagation while still requiring explicit annotation coverage, declared clocks, and finite power-gate accounting for promotion."
       },
       "status": "ready_to_queue"
+    },
+    {
+      "item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v3",
+      "task_type": "l2_campaign",
+      "objective": "Rerun shared-score multivalue-cluster activity-backed power with post-route diagnostics that classify FakeRAM macro activity origins, detect zero-toggle macro evidence, and isolate OpenSTA non-finite design/leaf power behavior without relaxing any promotion gate.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_decode_score_multivalue_cluster_activity_power",
+      "comparison_role": "shared_score_multivalue_cluster_activity_power_gate",
+      "depends_on_item_ids": [
+        "l1_decoder_attention_decode_score_multivalue_cluster_pnr_8ns_v2",
+        "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "revision": {
+        "reason": "postroute_macro_activity_and_nonfinite_power_unresolved",
+        "invalidates_item_ids": [
+          "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v2"
+        ]
+      },
+      "expected_result": {
+        "direction": "record_shared_score_multivalue_cluster_activity_power_gate",
+        "reason": "Post-route diagnostics must classify FakeRAM macro activity provenance, separate zero-toggled macro paths, and capture non-finite OpenSTA design/leaf power while preserving an evidence-only stance and existing gate criteria."
+      },
+      "status": "ready_to_queue"
     }
   ],
   "baseline_refs": [
