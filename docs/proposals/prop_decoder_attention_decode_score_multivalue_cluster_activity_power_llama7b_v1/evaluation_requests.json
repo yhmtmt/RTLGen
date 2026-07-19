@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1",
-  "source_commit_note": "Queue this rerun after PR #1386 / commit 18cb2dcb7cc4bf26046711a57c7113df840ad1ac, which filters complete hierarchical pin collections by full_name and calls global OpenSTA instance_power.",
+  "source_commit_note": "Queue this rerun after PR #1389 / commit 718326d3301024e28a752d432648b5a94b7f04f6, which uses one-corner sta::cmd_corner with sta::design_power/sta::instance_power, sta::set_power_pin_activity, and bounded transfer-stage diagnostics while preserving existing gates and no-gate-relaxation constraints.",
   "requested_items": [
     {
       "item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1",
@@ -160,7 +160,32 @@
       "merged_utc": "2026-07-19T12:23:51.832192Z",
       "notes": "Merged via PR #1388 and merge aee7d64c119ed6fe5af322ce4687ef279072ccc5 at 2026-07-19T12:23:51.832192Z.",
       "revision_of_decision": "iterate"
+    },
+    {
+      "item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v6",
+      "task_type": "l2_campaign",
+      "objective": "Rerun shared-score multivalue-cluster activity-backed power after PR #1389 / commit 718326d3301024e28a752d432648b5a94b7f04f6; v5 had zero transfer candidates and all per-instance queries failed because global instance_power plus a corner collection were wrong. v6 uses sta::cmd_corner, sta::design_power/sta::instance_power with one Corner, sta::set_power_pin_activity, and bounded transfer-stage diagnostics with no heuristic activity or gate relaxation.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_decode_score_multivalue_cluster_activity_power",
+      "comparison_role": "shared_score_multivalue_cluster_activity_power_gate",
+      "depends_on_item_ids": [
+        "l1_decoder_attention_decode_score_multivalue_cluster_pnr_8ns_v2",
+        "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "revision": {
+        "reason": "postroute_corner_object_and_macro_transfer_stage_unresolved",
+        "invalidates_item_ids": [
+          "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v5"
+        ]
+      },
+      "expected_result": {
+        "direction": "record_shared_score_multivalue_cluster_activity_power_gate",
+        "reason": "Rerun after PR #1389, using one-corner sta::cmd_corner, sta::design_power/sta::instance_power, and sta::set_power_pin_activity while preserving existing gates, no gate relaxation, and no heuristic activity."
+      },
+      "status": "ready_to_queue"
     }
   ],
-  "source_commit": "ec5cc3d3237d16b41d739baa98cde42e36506786"
+  "source_commit": "718326d3301024e28a752d432648b5a94b7f04f6"
 }
