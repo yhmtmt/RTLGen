@@ -1,0 +1,271 @@
+{
+  "activity_contract": {
+    "clock_period_ns": 8.0,
+    "phase_partition_cycle_sum": 8334,
+    "phases": [
+      {
+        "full_context_cycles": 2277377,
+        "measured_cycles": 418,
+        "phase": "score_fill",
+        "requires_macro_activity": true,
+        "scaling": {
+          "command_setup_cycles": 1,
+          "cycles_per_block": 139,
+          "formula": "command_setup_cycles + cycles_per_block * target_max_blocks",
+          "full_context_cycles": 2277377,
+          "kind": "fixed_setup_plus_linear_by_block_count",
+          "representative_block_count": 3,
+          "target_max_blocks": 16384
+        },
+        "vcd": "score_fill.vcd",
+        "vcd_sha256": "dd17ba002ab7194eb188b6bd3ab9e70218e06ee1be378de9b2e3fa47b4c903d0"
+      },
+      {
+        "full_context_cycles": 1114128,
+        "measured_cycles": 220,
+        "phase": "replay_value",
+        "requires_macro_activity": true,
+        "scaling": {
+          "clear_cycles": 16,
+          "formula": "clear_cycles + replay_cycles_per_block * target_max_blocks",
+          "full_context_cycles": 1114128,
+          "kind": "fixed_clear_plus_linear_by_block_count",
+          "replay_cycles_per_block": 68,
+          "representative_block_count": 3,
+          "target_max_blocks": 16384
+        },
+        "vcd": "replay_value.vcd",
+        "vcd_sha256": "b3cf8534bb3a77a544954e62da328669089a99c59a5e636ac99835cbc2c3ace8"
+      },
+      {
+        "full_context_cycles": 7696,
+        "measured_cycles": 7696,
+        "phase": "finalize_result",
+        "requires_macro_activity": false,
+        "scaling": {
+          "divide_cycles_per_dimension": 60,
+          "formula": "value_dimensions * divide_cycles_per_dimension + result_emit_cycles",
+          "full_context_cycles": 7696,
+          "kind": "fixed_per_command",
+          "result_emit_cycles": 16,
+          "target_max_blocks": 16384,
+          "value_dimensions": 128
+        },
+        "vcd": "finalize_result.vcd",
+        "vcd_sha256": "8fde7c27a4d0ecf5f6e251d56f12386362b2a9eaaa7a8ec7beae2240409cca18"
+      }
+    ],
+    "representative_block_count": 3,
+    "representative_full_transaction_cycles": 8334
+  },
+  "best": null,
+  "best_candidate_id": null,
+  "candidate_count": 1,
+  "candidates": [
+    {
+      "activity_power": {
+        "clock_period_ns": 8.0,
+        "flow_variant": "decode_score_multivalue_cluster_v1_8ns_bridge_proxy_die_2500",
+        "full_context_cycles": 3399201,
+        "full_context_energy_j": null,
+        "full_context_latency_s": 0.027193608,
+        "min_macro_trace_active_coverage": 0.01,
+        "min_macro_trace_active_pins": 16,
+        "min_vcd_annotated_pins": 32,
+        "min_vcd_annotation_coverage": 0.05,
+        "model": "postroute_phase_vcd_power_v1",
+        "orfs_design_config": "designs/nangate45/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/config.mk",
+        "orfs_design_config_sha256": "b7a1f177828302987eb9d2af032d232c675149044db964d8217ce3ef2f293b7b",
+        "phases": [
+          {
+            "annotation_gate_pass": false,
+            "clock_period_gate_pass": true,
+            "full_context_cycles": 2277377,
+            "full_context_energy_j": 0.004184121739595014,
+            "macro_activity_gate_pass": false,
+            "macro_trace_active_coverage": 0.0,
+            "measured_cycles": 418,
+            "phase": "score_fill",
+            "phase_gate_pass": false,
+            "power": {
+              "activity_annotation_counts": {
+                "unannotated": 522522,
+                "vcd": 8543
+              },
+              "annotatable_pin_count": 531065,
+              "clock_pin_count": 13447,
+              "constant_pin_count": 549,
+              "internal_w": 0.106559813023,
+              "leaf_annotatable_pin_count": 529858,
+              "leaf_vcd_annotated_pin_count": 0,
+              "leakage_w": 0.109672941267,
+              "macro_annotatable_pin_count": 7608,
+              "macro_trace_active_pin_count": 0,
+              "sdc_clock_period_ns": 8,
+              "switching_w": 0.0134240929037,
+              "total_w": 0.229656845331,
+              "vcd_annotated_pin_count": 8543
+            },
+            "power_numeric_gate_pass": true,
+            "requires_macro_activity": true,
+            "scaling": {
+              "command_setup_cycles": 1,
+              "cycles_per_block": 139,
+              "formula": "command_setup_cycles + cycles_per_block * target_max_blocks",
+              "full_context_cycles": 2277377,
+              "kind": "fixed_setup_plus_linear_by_block_count",
+              "representative_block_count": 3,
+              "target_max_blocks": 16384
+            },
+            "vcd": "score_fill.vcd",
+            "vcd_annotation_coverage": 0.016086543078530878,
+            "vcd_sha256": "dd17ba002ab7194eb188b6bd3ab9e70218e06ee1be378de9b2e3fa47b4c903d0"
+          },
+          {
+            "annotation_gate_pass": false,
+            "clock_period_gate_pass": true,
+            "full_context_cycles": 1114128,
+            "full_context_energy_j": 0.0019302178136234643,
+            "macro_activity_gate_pass": false,
+            "macro_trace_active_coverage": 0.0,
+            "measured_cycles": 220,
+            "phase": "replay_value",
+            "phase_gate_pass": false,
+            "power": {
+              "activity_annotation_counts": {
+                "unannotated": 522522,
+                "vcd": 8543
+              },
+              "annotatable_pin_count": 531065,
+              "clock_pin_count": 13447,
+              "constant_pin_count": 549,
+              "internal_w": 0.100577741861,
+              "leaf_annotatable_pin_count": 529858,
+              "leaf_vcd_annotated_pin_count": 0,
+              "leakage_w": 0.109798520803,
+              "macro_annotatable_pin_count": 7608,
+              "macro_trace_active_pin_count": 0,
+              "sdc_clock_period_ns": 8,
+              "switching_w": 0.00618522893637,
+              "total_w": 0.216561496258,
+              "vcd_annotated_pin_count": 8543
+            },
+            "power_numeric_gate_pass": true,
+            "requires_macro_activity": true,
+            "scaling": {
+              "clear_cycles": 16,
+              "formula": "clear_cycles + replay_cycles_per_block * target_max_blocks",
+              "full_context_cycles": 1114128,
+              "kind": "fixed_clear_plus_linear_by_block_count",
+              "replay_cycles_per_block": 68,
+              "representative_block_count": 3,
+              "target_max_blocks": 16384
+            },
+            "vcd": "replay_value.vcd",
+            "vcd_annotation_coverage": 0.016086543078530878,
+            "vcd_sha256": "b3cf8534bb3a77a544954e62da328669089a99c59a5e636ac99835cbc2c3ace8"
+          },
+          {
+            "annotation_gate_pass": false,
+            "clock_period_gate_pass": true,
+            "full_context_cycles": 7696,
+            "full_context_energy_j": 0.0,
+            "macro_activity_gate_pass": true,
+            "macro_trace_active_coverage": 0.0,
+            "measured_cycles": 7696,
+            "phase": "finalize_result",
+            "phase_gate_pass": false,
+            "power": {
+              "activity_annotation_counts": {
+                "unannotated": 522522,
+                "vcd": 8543
+              },
+              "annotatable_pin_count": 531065,
+              "clock_pin_count": 13447,
+              "constant_pin_count": 549,
+              "internal_w": null,
+              "leaf_annotatable_pin_count": 529858,
+              "leaf_vcd_annotated_pin_count": 0,
+              "leakage_w": null,
+              "macro_annotatable_pin_count": 7608,
+              "macro_trace_active_pin_count": 0,
+              "sdc_clock_period_ns": 8,
+              "switching_w": null,
+              "total_w": null,
+              "vcd_annotated_pin_count": 8543
+            },
+            "power_numeric_gate_pass": false,
+            "requires_macro_activity": false,
+            "scaling": {
+              "divide_cycles_per_dimension": 60,
+              "formula": "value_dimensions * divide_cycles_per_dimension + result_emit_cycles",
+              "full_context_cycles": 7696,
+              "kind": "fixed_per_command",
+              "result_emit_cycles": 16,
+              "target_max_blocks": 16384,
+              "value_dimensions": 128
+            },
+            "vcd": "finalize_result.vcd",
+            "vcd_annotation_coverage": 0.016086543078530878,
+            "vcd_sha256": "8fde7c27a4d0ecf5f6e251d56f12386362b2a9eaaa7a8ec7beae2240409cca18"
+          }
+        ],
+        "promotion_gate_pass": false,
+        "remaining_abstractions": [
+          "FakeRAM power uses the Nangate45 proxy Liberty model, not SRAM compiler signoff.",
+          "RTL-generated VCD is mapped onto the post-route netlist; annotation coverage is explicit and gated.",
+          "Off-cluster value-memory, NoC, and HBM energy are outside this cluster power result."
+        ],
+        "scope": "tb/dut",
+        "source_activity_manifest": "attention_decode_score_multivalue_cluster_activity_manifest.json",
+        "source_activity_manifest_sha256": "ee7b1146f7d9a7bebfd58c6b044efa102626da3722f91efe7af8492af46123f2",
+        "status": "rejected_annotation_gate",
+        "version": 1
+      },
+      "candidate_id": "multivalue_cluster_activity_decode_score_multivalue_cluster_v1_8ns_bridge_proxy_die_2500",
+      "flow_variant": "decode_score_multivalue_cluster_v1_8ns_bridge_proxy_die_2500",
+      "ppa_metric": {
+        "config_hash": "d037eabb6abd",
+        "core_area_um2": "5760000.0",
+        "critical_path_ns": "7.1765",
+        "design": "attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv",
+        "die_area": "6250000.0",
+        "flow_elapsed_seconds": "2089.11",
+        "instance_area_um2": "2785000.0",
+        "metrics_csv": "runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/metrics.csv",
+        "param_hash": "939c71c3",
+        "params_json": "{\"CLOCK_PERIOD\": 8, \"CORE_AREA\": \"50 50 2450 2450\", \"DIE_AREA\": \"0 0 2500 2500\", \"FLOW_VARIANT\": \"decode_score_multivalue_cluster_v1_8ns_bridge_proxy_die_2500\", \"PLACE_DENSITY\": 0.4, \"SYNTH_HIERARCHICAL\": 1, \"SYNTH_MEMORY_MAX_BITS\": 65536, \"TAG\": \"decode_score_multivalue_cluster_v1_8ns_bridge_proxy_die_2500\", \"tag_prefix\": \"decode_score_multivalue_cluster_v1_8ns_bridge\"}",
+        "platform": "nangate45",
+        "status": "ok",
+        "stdcell_area_um2": "238187.0",
+        "stdcell_count": "180833.0",
+        "tag": "decode_score_multivalue_cluster_v1_8ns_bridge_proxy_die_2500",
+        "total_power_mw": "0.348",
+        "utilization_pct": "48.35069444444444"
+      },
+      "status": "rejected_gate"
+    }
+  ],
+  "decision": "activity_power_rejected_no_gated_candidate",
+  "equivalence": {
+    "decision": "decode_score_multivalue_cluster_equivalence_pass",
+    "equivalence_pass": true,
+    "final_tensor_hash": "fbbbe51bfe1d4ebf5f9910fdfdbf7e5eb322fe7633c9d523ac5a3587545cd457",
+    "score_tensor_hash": "dcdf04e9e1981a3447a532037c35bc10afc81c339014d09fc9bc039578c34387"
+  },
+  "model": "decoder_attention_decode_score_multivalue_cluster_activity_power_v1",
+  "precision_status": "unchanged_integer_contract_from_merged_multivalue_equivalence",
+  "promoted_candidate_count": 0,
+  "promotion_gate_pass": false,
+  "remaining_abstractions": [
+    "FakeRAM area and power use Nangate45 proxy LEF/Liberty views, not SRAM compiler signoff.",
+    "Value-memory, NoC, HBM/DRAM, command-distribution, and clock-tree composition outside the cluster are not included.",
+    "RTL VCD is mapped to the routed netlist; each candidate records and gates direct annotation coverage.",
+    "Score multiplier and shift derivation remain external to the cluster boundary."
+  ],
+  "source_dependencies": [
+    "l1_decoder_attention_decode_score_multivalue_cluster_pnr_8ns_v2",
+    "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1"
+  ],
+  "version": 1
+}
