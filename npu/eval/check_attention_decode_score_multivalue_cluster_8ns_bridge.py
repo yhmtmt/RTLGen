@@ -9,7 +9,7 @@ import json
 from pathlib import Path
 
 EXPECTED_CLOCK_PERIOD = 8
-EXPECTED_FLOW_VARIANT = "decode_score_multivalue_cluster_v1_8ns_bridge"
+EXPECTED_FLOW_VARIANT = "decode_score_multivalue_cluster_v1_8ns_bridge_proxy_die_2500"
 EXPECTED_DIE_AREA = "0 0 2500 2500"
 EXPECTED_CORE_AREA = "50 50 2450 2450"
 EXPECTED_RESULT_PATH_TOKEN = "attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv"
@@ -90,7 +90,12 @@ def validate_bridge_metrics(*, metrics_path: Path) -> int:
         if _row_matches_bridge(row):
             return 0
 
-    raise ValueError("missing required 8ns decode-score multivalue-cluster bridge row (status=ok, CLOCK_PERIOD=8, FLOW_VARIANT=decode_score_multivalue_cluster_v1_8ns_bridge, DIE_AREA=0 0 2500 2500, CORE_AREA=50 50 2450 2450, critical_path_ns<=8)")
+    raise ValueError(
+        "missing required 8ns decode-score multivalue-cluster bridge row "
+        "(status=ok, CLOCK_PERIOD=8, FLOW_VARIANT="
+        "decode_score_multivalue_cluster_v1_8ns_bridge_proxy_die_2500, "
+        "DIE_AREA=0 0 2500 2500, CORE_AREA=50 50 2450 2450, critical_path_ns<=8)"
+    )
 
 
 def main() -> int:
