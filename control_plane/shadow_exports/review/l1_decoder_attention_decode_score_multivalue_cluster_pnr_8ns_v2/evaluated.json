@@ -1,0 +1,142 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "sweeps": [
+        "runs/campaigns/npu/decode_score_multivalue_cluster_v1/sweeps/nangate45_decode_score_multivalue_cluster_8ns_proxy_die_2500.json"
+      ],
+      "configs": [
+        "runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/config.json"
+      ],
+      "out_root": "runs/designs/npu_blocks",
+      "design_dirs": [],
+      "macro_manifests": [],
+      "candidate_manifests": [],
+      "required_submodules": []
+    },
+    "commands": [
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/rtlgen/gen_attention_decode_score_multivalue_cluster.py --config runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/config.json --out runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/verilog",
+        "name": "generate_attention_decode_score_multivalue_cluster_rtl"
+      },
+      {
+        "run": "python3 npu/eval/check_attention_decode_score_multivalue_cluster_guard.py --design-dir runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv",
+        "name": "check_attention_decode_score_multivalue_cluster_guard"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/synth/run_block_sweep.py --design_dir runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv --platform nangate45 --top attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv --sweep runs/campaigns/npu/decode_score_multivalue_cluster_v1/sweeps/nangate45_decode_score_multivalue_cluster_8ns_proxy_die_2500.json --out_root runs/designs/npu_blocks --macro_manifest runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/macro_manifest.json --skip_existing",
+        "name": "run_block_sweep"
+      },
+      {
+        "run": "python3 npu/eval/check_attention_decode_score_multivalue_cluster_8ns_bridge.py --metrics-path runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/metrics.csv",
+        "name": "check_attention_decode_score_multivalue_cluster_8ns_bridge"
+      },
+      {
+        "run": "python3 npu/eval/extract_openroad_timing_summary.py --design-dir runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv --out runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/timing_debug_report.md --max-paths 8",
+        "name": "extract_attention_decode_score_multivalue_cluster_timing_paths"
+      },
+      {
+        "run": "python3 scripts/build_runs_index.py",
+        "name": "build_runs_index"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate"
+      }
+    ],
+    "objective": "Run a Layer1 nangate45 OpenROAD sweep for 1 configs using nangate45_decode_score_multivalue_cluster_8ns_proxy_die_2500.json and record lightweight design metrics for comparison.",
+    "acceptance": [
+      "Each generated wrapper metrics.csv contains at least one status=ok row for the queued sweep",
+      "Committed outputs stay lightweight (metrics.csv only; runs/index.csv is exported centrally after merge)",
+      "python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue pass"
+    ],
+    "source_mode": "config",
+    "expected_outputs": [
+      "runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/metrics.csv",
+      "runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/timing_debug_report.md"
+    ]
+  },
+  "layer": "layer1",
+  "state": "evaluated",
+  "title": "Layer1 sweep from nangate45_decode_score_multivalue_cluster_8ns_proxy_die_2500 on nangate45",
+  "result": {
+    "branch": "eval/l1_decoder_attention_decode_score_multivalue_cluster_pnr_8ns_v2/s20260719t090844z",
+    "completed_utc": "2026-07-19T09:08:42.418374Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "remote-evaluator",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260719t090844z][host:remote-evaluator][item:l1_decoder_attention_decode_score_multivalue_cluster_pnr_8ns_v2]",
+    "metrics_rows": [
+      {
+        "tag": "decode_score_multivalue_cluster_v1_8ns_bridge_proxy_die_2500",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "939c71c3",
+        "metrics_csv": "runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/work/939c71c3/result.json"
+      }
+    ],
+    "queue_item_id": "l1_decoder_attention_decode_score_multivalue_cluster_pnr_8ns_v2",
+    "session_id": "s20260719t090844z",
+    "status": "ok",
+    "summary": "7/7 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l1_decoder_attention_decode_score_multivalue_cluster_pnr_8ns_v2/s20260719t090844z",
+    "pr_title": "eval: run layer1 sweep from nangate45_decode_score_multivalue_cluster_8ns_proxy_die_2500 on nangate45",
+    "checklist": [
+      "Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge",
+      "Include metrics row references for each completed design",
+      "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "remote-evaluator",
+      "session_id": "s20260719t090844z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l1_decoder_attention_decode_score_multivalue_cluster_pnr_8ns_v2"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l1_decoder_attention_decode_score_multivalue_cluster_pnr_8ns_v2",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 96,
+  "created_utc": "2026-07-19T08:32:46.883722Z",
+  "requested_by": "@codex",
+  "developer_loop": {
+    "comparison": {
+      "role": "shared_score_multivalue_cluster_pnr",
+      "paired_baseline_item_id": ""
+    },
+    "evaluation": {
+      "mode": "frontier_followup",
+      "trial_policy": {
+        "seed_start": 0,
+        "trial_count": 1,
+        "stop_after_failures": 1
+      },
+      "expected_reason": "Collect the missing 8 ns Nangate45 evidence in 2.5 mm envelope while keeping current vectorless metrics as bounded frontier evidence.",
+      "expected_direction": "measure_shared_score_multivalue_cluster_ppa"
+    },
+    "abstraction": {
+      "layer": "decoder_attention_decode_score_multivalue_cluster"
+    },
+    "proposal_id": "prop_decoder_attention_decode_score_multivalue_cluster_llama7b_v1",
+    "dependencies": {
+      "item_ids": [
+        "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    },
+    "proposal_path": "docs/proposals/prop_decoder_attention_decode_score_multivalue_cluster_llama7b_v1"
+  },
+  "source_requirement": {
+    "repo": "",
+    "reason": "evaluator runtime must contain the queued job source commit",
+    "version": 1,
+    "required_ref": "origin/master",
+    "required_sha": "9a857c5cb5deb84ae5487d1b0c37500833bd7e1a",
+    "requires_daemon_restart": true
+  }
+}
