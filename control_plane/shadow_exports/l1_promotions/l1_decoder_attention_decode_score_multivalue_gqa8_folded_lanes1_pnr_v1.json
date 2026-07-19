@@ -1,0 +1,99 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-07-18T14:39:10.808396Z",
+  "item_id": "l1_decoder_attention_decode_score_multivalue_gqa8_folded_lanes1_pnr_v1",
+  "run_key": "l1_decoder_attention_decode_score_multivalue_gqa8_folded_lanes1_pnr_v1_run_8857771f82730cc7",
+  "layer": "layer1",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l1_sweep",
+  "source_commit": "f63fd55c1360dcc9b072e672c8ccc0ff2234ac6b",
+  "objective": "Measure the 1-lane folded GQA8 group at the matched-density 2.50 mm die and 8/10 ns targets, retaining failed rows as explicit boundary evidence.",
+  "input_manifest": {
+    "sweeps": [
+      "runs/campaigns/npu/decode_score_multivalue_gqa_folded_lanes_v1/sweeps/nangate45_decode_score_multivalue_gqa_lanes1.json"
+    ],
+    "configs": [
+      "runs/designs/npu_blocks/attention_decode_score_multivalue_gqa_group_lanes1_int8_m1x8_iterdiv/config.json"
+    ],
+    "out_root": "runs/designs/npu_blocks",
+    "design_dirs": [],
+    "macro_manifests": [],
+    "candidate_manifests": [],
+    "required_submodules": []
+  },
+  "proposal_count": 1,
+  "evaluation_record": {
+    "evaluation_mode": "frontier_followup",
+    "abstraction_layer": "decoder_attention_decode_score_multivalue_gqa_folded_lane",
+    "result_kind": "physical_metrics",
+    "physical_metrics_present": true,
+    "summary": "Physical metrics recorded from a completed, timing-feasible Layer 1 row.",
+    "timing_feasible": true,
+    "clock_period_ns": 8.0,
+    "timing_slack_ns": 1.2493999999999996
+  },
+  "proposal_assessment": null,
+  "proposals": [
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/npu_blocks/attention_decode_score_multivalue_gqa_group_lanes1_int8_m1x8_iterdiv/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "9210cadf",
+        "tag": "decode_score_multivalue_gqa_lanes1_v1_matched_density_die_2500",
+        "result_path": "/orfs/flow/reports/nangate45/attention_decode_score_multivalue_gqa_group_lanes1_int8_m1x8_iterdiv/decode_score_multivalue_gqa_group_lanes_v1_matched_density_die_2500/6_finish.rpt",
+        "work_result_json": "runs/designs/npu_blocks/attention_decode_score_multivalue_gqa_group_lanes1_int8_m1x8_iterdiv/work/9210cadf/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 6.7506,
+        "die_area": 6250000.0,
+        "total_power_mw": 0.364
+      }
+    }
+  ],
+  "trial_summary": {
+    "item_id": "l1_decoder_attention_decode_score_multivalue_gqa8_folded_lanes1_pnr_v1",
+    "completed_trials": 1,
+    "success_count": 1,
+    "failure_count": 0,
+    "success_rate": 1.0,
+    "partial_metrics_count": 0,
+    "metrics": {
+      "critical_path_ns": {
+        "best": 6.7506,
+        "mean": 6.7506,
+        "median": 6.7506,
+        "max": 6.7506,
+        "range": 0.0,
+        "stddev": 0.0
+      },
+      "die_area": {
+        "best": 6250000.0,
+        "mean": 6250000.0,
+        "median": 6250000.0,
+        "max": 6250000.0,
+        "range": 0.0,
+        "stddev": 0.0
+      },
+      "total_power_mw": {
+        "best": 0.364,
+        "mean": 0.364,
+        "median": 0.364,
+        "max": 0.364,
+        "range": 0.0,
+        "stddev": 0.0
+      }
+    }
+  },
+  "source_refs": {
+    "trial_metrics_csvs": [
+      "runs/designs/npu_blocks/attention_decode_score_multivalue_gqa_group_lanes1_int8_m1x8_iterdiv/metrics.csv"
+    ],
+    "summary_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_decode_score_multivalue_gqa8_folded_lanes1_pnr_v1/summary_stats.json",
+    "failure_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_decode_score_multivalue_gqa8_folded_lanes1_pnr_v1/failure_stats.json",
+    "trial_table_csv": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_decode_score_multivalue_gqa8_folded_lanes1_pnr_v1/trial_table.csv"
+  }
+}
