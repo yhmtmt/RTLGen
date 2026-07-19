@@ -1,0 +1,19 @@
+{
+  "item_id": "l1_decoder_attention_decode_score_multivalue_cluster_pnr_8ns_v2",
+  "completed_trials": 1,
+  "success_count": 1,
+  "failure_count": 0,
+  "by_category": {},
+  "by_stage": {},
+  "aggregation_scope": "current_run_checkout_commit",
+  "aggregation_source_commit": "9a857c5cb5deb84ae5487d1b0c37500833bd7e1a",
+  "aggregation_included_attempts": 1,
+  "aggregation_excluded_attempts": 1,
+  "aggregation_excluded_source_commits": {
+    "90efabb679c818785ec1c10cb3e6fad4f18610aa": 1
+  },
+  "aggregation_excluded_attempt_run_keys": [
+    "l1_decoder_attention_decode_score_multivalue_cluster_pnr_8ns_v2_run_c17d87ea9346e6ab"
+  ],
+  "aggregation_excluded_attempt_run_keys_truncated": false
+}
