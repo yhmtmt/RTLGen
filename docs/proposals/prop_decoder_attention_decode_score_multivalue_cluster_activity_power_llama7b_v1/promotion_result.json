@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1",
+  "decision": "iterate",
+  "pr_number": 1368,
+  "merge_commit": "c53909910f6506c7a01877ecddbc06ff0afe7cb9",
+  "merged_utc": "2026-07-19T09:57:29.336801Z"
+}
