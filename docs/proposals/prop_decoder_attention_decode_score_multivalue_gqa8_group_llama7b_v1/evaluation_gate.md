@@ -11,16 +11,20 @@
 5. Preserve the explicit scope statement that no flat eight-cluster RTL
    equivalence simulation was run.
 6. Keep timing- or placement-infeasible sweep rows as boundary evidence.
-7. Treat vectorless power as structural evidence only; activity-backed energy
-   remains a follow-on gate.
-8. Gate activity power on merged equivalence and PPA, explicit phase-cycle
-   accounting, routed annotation coverage for directly measured components,
-   and direct-versus-compositional provenance. Do not promote compositional
-   scaling as a direct full-group power measurement or as total token energy.
-9. Recost only group counts 1, 2, and 4 for the four Llama7B GQA groups per
-   layer. Use measured one-group timing, area, and activity energy, identify
-   multi-group area/power as linear composition rather than array PNR, and
-   retain off-group memory/NoC/HBM and total-token energy as open boundaries.
+7. Treat vectorless power as structural evidence only. Measure activity-backed
+   energy separately for every timing-feasible folded lane count; never infer a
+   missing lane point by linear scaling.
+8. Gate folded activity power on the matching 1/2/4/8-lane equivalence row and
+   PPA artifact, explicit accounting for every query-head wave and replay,
+   routed annotation coverage, and direct-versus-compositional provenance. The
+   activity transaction may include one observation cycle after the equivalence
+   completion cycle, but no command-service cycle may be omitted.
+9. Recost the Cartesian product of measured folded lane counts and physical
+   group counts 1, 2, and 4 for the four Llama7B GQA groups per layer. Use each
+   lane point's measured timing, area, cycles, and activity energy. Identify
+   multi-group area/power as linear composition until direct array PNR/activity
+   exists, and retain off-group memory/NoC/HBM and total-token energy as open
+   boundaries.
 10. Before direct array PPA, compose the merged complete-group equivalence
     result with protocol simulations of generated one-, two-, and four-group
     wrappers. Require atomic command/input acceptance and independent external
