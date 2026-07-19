@@ -315,11 +315,103 @@ class ModeCompareRegressionTest(unittest.TestCase):
 
             self.assertEqual("flow_failed", row["status"])
             self.assertEqual(17, row["failure_returncode"])
+            self.assertEqual("flow", row["failure_stage"])
+            self.assertIn("exit_code=17", row["failure_signature"])
+            self.assertEqual("", row["failure_log_path"])
             metrics_text = (tmp / "out" / "demo_design" / "metrics.csv").read_text(
                 encoding="utf-8"
             )
             self.assertIn("flow_failed", metrics_text)
+            self.assertIn("failure_signature", metrics_text)
             self.assertTrue((tmp / "out" / "demo_design" / "work").is_dir())
+            payload = json.loads(Path(row["work_result_json"]).read_text(encoding="utf-8"))
+            self.assertEqual("flow_failed", payload["status"])
+            self.assertEqual("flow", payload["failure_stage"])
+            self.assertEqual(17, payload["failure_returncode"])
+
+    def test_run_single_failure_infers_stage_and_signature_from_logs(self):
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            design_dir = tmp / "demo_design"
+            verilog_dir = design_dir / "verilog"
+            verilog_dir.mkdir(parents=True, exist_ok=True)
+            (verilog_dir / "top.v").write_text(
+                "module npu_top(input clk, output done);\\n"
+                "  assign done = clk;\\n"
+                "endmodule\\n",
+                encoding="utf-8",
+            )
+
+            old_dest = self.run_block_sweep.DEST_BASE
+            old_src = self.run_block_sweep.SRC_BASE
+            old_report = self.run_block_sweep.REPORT_BASE
+            old_result = self.run_block_sweep.RESULT_BASE
+            old_log = self.run_block_sweep.LOG_BASE
+            old_run = self.run_block_sweep.subprocess.run
+
+            def fake_run(cmd, *, cwd, check, env):
+                log_dir = (
+                    self.run_block_sweep.LOG_BASE
+                    / "nangate45"
+                    / "demo_design"
+                    / "demo_fail"
+                )
+                log_dir.mkdir(parents=True, exist_ok=True)
+                log_path = log_dir / "3_3_place_gp.log"
+                long_error = "error: " + ("E" * 400)
+                log_path.write_text(
+                    "\\n".join(
+                        [
+                            "running place_gp...",
+                            long_error,
+                        ]
+                    ),
+                    encoding="utf-8",
+                )
+                raise subprocess.CalledProcessError(returncode=19, cmd=cmd)
+
+            self.run_block_sweep.DEST_BASE = tmp / "orfs" / "designs"
+            self.run_block_sweep.SRC_BASE = self.run_block_sweep.DEST_BASE / "src"
+            self.run_block_sweep.REPORT_BASE = tmp / "orfs" / "reports"
+            self.run_block_sweep.RESULT_BASE = tmp / "orfs" / "results"
+            self.run_block_sweep.LOG_BASE = tmp / "orfs" / "logs"
+            self.run_block_sweep.subprocess.run = fake_run
+            try:
+                row = self.run_block_sweep.run_single(
+                    design_dir=design_dir,
+                    design_name="demo_design",
+                    platform="nangate45",
+                    top="npu_top",
+                    verilog_dir=verilog_dir,
+                    sdc_template=None,
+                    sweep_params={
+                        "TAG": "demo_fail",
+                        "FLOW_VARIANT": "demo_fail",
+                        "CLOCK_PERIOD": 10.0,
+                        "CORE_AREA": "0 0 100 100",
+                    },
+                    out_root=tmp / "out",
+                    skip_existing=False,
+                    dry_run=False,
+                    force_copy=True,
+                    make_target="3_3_place_gp",
+                    macro_manifest=None,
+                )
+            finally:
+                self.run_block_sweep.DEST_BASE = old_dest
+                self.run_block_sweep.SRC_BASE = old_src
+                self.run_block_sweep.REPORT_BASE = old_report
+                self.run_block_sweep.RESULT_BASE = old_result
+                self.run_block_sweep.LOG_BASE = old_log
+                self.run_block_sweep.subprocess.run = old_run
+
+            self.assertEqual("flow_failed", row["status"])
+            self.assertEqual("globalplace", row["failure_stage"])
+            expected_log = tmp / "orfs" / "logs" / "nangate45" / "demo_design" / "demo_fail" / "3_3_place_gp.log"
+            self.assertEqual(str(expected_log), row["failure_log_path"])
+            self.assertLessEqual(len(row["failure_signature"]), 255)
+            self.assertIn("failure_signature", row)
+            self.assertIn("error:", row["failure_signature"])
 
     def test_synth_keep_modules_must_exist_in_generated_rtl(self):
         with tempfile.TemporaryDirectory() as td:
