@@ -295,8 +295,9 @@
       "revision_of_decision": "iterate",
       "notes": "V9 reported 5,096/5,096/5,096 structural assignments per phase, zero structural errors, and score_fill/replay passed. Finalize still observed 4,521 non-finite reducer leaf powers. PR #1400 was closed (not merged) because 15,288 internal pin rows inflated compact JSON to 3.94 MB; evidence is superseded by the compact-report v10 rerun.",
       "retracted_by_item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v10",
-      "retraction_reason": "compact-report_unmerged_internal_pin_rows_bloated_committed_json",
-      "replacement_artifact": "control_plane/shadow_exports/l2_decisions/l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v10.json"
+      "retraction_reason": "keep_structural_activity_rows_evaluator_local",
+      "replacement_artifact": "control_plane/shadow_exports/l2_decisions/l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v10.json",
+      "retracted_utc": "2026-07-19T14:35:52.110808Z"
     },
     {
       "item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v10",
@@ -325,9 +326,11 @@
         "reason": "v10 reruns identical quality/equivalence/annotation/macro/numeric/artifact/promotion gates and score_fill/replay checks; it keeps per-phase structural hashes/counts, drops internal rows from committed compact artifacts, and retains finalize diagnostics for any non-finite reducer leaf power rows (expected 4,521 in this rerun family)."
       },
       "status": "merged",
-      "merged_pr_number": 1401,
-      "merge_commit": "263984cf6945b53283a4d538b2b88399223bfda4",
-      "revision_of_decision": "promote"
+      "merged_pr_number": 1403,
+      "merge_commit": "23240199baa2207afcc1b713a2e25b7f86a0d821",
+      "revision_of_decision": "iterate",
+      "merged_utc": "2026-07-19T14:35:52.110773Z",
+      "notes": "Merged via PR #1403 and merge 23240199baa2207afcc1b713a2e25b7f86a0d821 at 2026-07-19T14:35:52.110773Z."
     }
   ],
   "source_commit": "263984cf6945b53283a4d538b2b88399223bfda4"
