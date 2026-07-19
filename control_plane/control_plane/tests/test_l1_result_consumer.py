@@ -1221,6 +1221,495 @@ def test_consume_l1_result_writes_trial_aggregate_artifacts() -> None:
             assert {"promotion_proposal", "summary_stats", "failure_stats", "trial_table"} <= artifact_kinds
 
 
+def test_trial_aggregate_filters_other_checkout_attempts() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        success_metrics = "runs/designs/activations/filter_checkout_diff/source_checkout_success/metrics.csv"
+        failed_metrics = "runs/designs/activations/filter_checkout_diff/source_checkout_failed/metrics.csv"
+        _write_metrics(
+            repo_root / success_metrics,
+            [{
+                "platform": "nangate45",
+                "status": "ok",
+                "param_hash": "ok-source",
+                "tag": "source-checkout",
+                "critical_path_ns": "11.0",
+                "die_area": "60000",
+                "total_power_mw": "0.18",
+                "result_path": "runs/designs/activations/filter_checkout_diff/source_checkout_success/work/ok/result.json",
+            }],
+        )
+        _write_metrics(
+            repo_root / failed_metrics,
+            [{
+                "platform": "nangate45",
+                "status": "failed",
+                "param_hash": "fail-source",
+                "tag": "other-checkout",
+                "result_path": "runs/designs/activations/filter_checkout_diff/source_checkout_failed/work/fail/result.json",
+            }],
+        )
+
+        with Session(engine) as session:
+            task_request = TaskRequest(
+                request_key="l1_sweep:test_trial_source_checkout_filter",
+                source="test",
+                requested_by="@tester",
+                title="source checkout filter test",
+                description="l1 checkout-aware trial aggregation",
+                layer=LayerName.LAYER1,
+                flow=FlowName.OPENROAD,
+                priority=1,
+                request_payload={
+                    "item_id": "l1_test_trial_source_checkout_filter",
+                    "layer": "layer1",
+                    "flow": "openroad",
+                },
+                source_commit="deadbeef",
+            )
+            session.add(task_request)
+            session.flush()
+
+            work_item = WorkItem(
+                work_item_key="l1_sweep:l1_test_trial_source_checkout_filter",
+                task_request_id=task_request.id,
+                item_id="l1_test_trial_source_checkout_filter",
+                layer=LayerName.LAYER1,
+                flow=FlowName.OPENROAD,
+                platform="nangate45",
+                task_type="l1_sweep",
+                state=WorkItemState.ARTIFACT_SYNC,
+                priority=1,
+                source_mode="config",
+                input_manifest={"configs": [], "sweeps": []},
+                command_manifest=[],
+                expected_outputs=[success_metrics, failed_metrics],
+                acceptance_rules=[],
+                source_commit="deadbeef",
+            )
+            session.add(work_item)
+            session.flush()
+
+            success_run = Run(
+                run_key="l1_test_trial_source_checkout_filter_run_1",
+                work_item_id=work_item.id,
+                attempt=1,
+                executor_type=ExecutorType.INTERNAL_WORKER,
+                status=RunStatus.SUCCEEDED,
+                started_at=utcnow(),
+                completed_at=utcnow(),
+                checkout_commit="deadbeef",
+                trial_index=1,
+                seed=1,
+                result_summary="source checkout success",
+                result_payload={
+                    "trial": {"trial_index": 1, "seed": 1},
+                    "queue_result": {"status": "ok", "metrics_rows": [f"{success_metrics}:2"]},
+                },
+            )
+            failed_run = Run(
+                run_key="l1_test_trial_source_checkout_filter_run_2",
+                work_item_id=work_item.id,
+                attempt=2,
+                executor_type=ExecutorType.INTERNAL_WORKER,
+                status=RunStatus.FAILED,
+                started_at=utcnow(),
+                completed_at=utcnow(),
+                checkout_commit="feedface",
+                trial_index=2,
+                seed=2,
+                result_summary="source checkout failed",
+                failure_category="timing_unmet",
+                failure_stage="route",
+                failure_signature="timing violation",
+                result_payload={
+                    "trial": {"trial_index": 2, "seed": 2},
+                    "queue_result": {"status": "fail", "metrics_rows": [f"{failed_metrics}:2"]},
+                    "failure_classification": {
+                        "category": "timing_unmet",
+                        "stage": "route",
+                        "signature": "timing violation",
+                    },
+                },
+            )
+            session.add_all([success_run, failed_run])
+            session.flush()
+            session.add(
+                Artifact(
+                    run_id=failed_run.id,
+                    kind="expected_output",
+                    storage_mode="repo",
+                    path=failed_metrics,
+                    metadata_={
+                        "transport_policy": "inline_text_evidence",
+                        "inline_utf8": (repo_root / failed_metrics).read_text(encoding="utf-8"),
+                    },
+                )
+            )
+            session.commit()
+
+            result = consume_l1_result(
+                session,
+                Layer1ConsumeRequest(
+                    repo_root=str(repo_root),
+                    run_key=success_run.run_key,
+                ),
+            )
+
+            assert result.item_id == work_item.item_id
+            proposal_path = repo_root / "control_plane" / "shadow_exports" / "l1_promotions" / f"{work_item.item_id}.json"
+            payload = json.loads(proposal_path.read_text(encoding="utf-8"))
+            assert payload["proposal_count"] == 1
+            assert payload["trial_summary"]["completed_trials"] == 1
+            assert payload["trial_summary"]["success_count"] == 1
+            assert payload["trial_summary"]["failure_count"] == 0
+            assert payload["trial_summary"]["aggregation_scope"] == "current_run_checkout_commit"
+            assert payload["trial_summary"]["aggregation_source_commit"] == "deadbeef"
+            assert payload["trial_summary"]["aggregation_included_attempts"] == 1
+            assert payload["trial_summary"]["aggregation_excluded_attempts"] == 1
+            assert payload["trial_summary"]["aggregation_excluded_source_commits"] == {"feedface": 1}
+            assert payload["trial_summary"]["aggregation_excluded_attempt_run_keys"] == [failed_run.run_key]
+            assert payload["trial_summary"]["aggregation_excluded_attempt_run_keys_truncated"] is False
+
+            failure_payload = json.loads(
+                (repo_root / "control_plane" / "shadow_exports" / "l1_trials" / work_item.item_id / "failure_stats.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            assert failure_payload["aggregation_scope"] == "current_run_checkout_commit"
+            assert failure_payload["aggregation_excluded_attempts"] == 1
+            assert "timing_unmet" not in failure_payload["by_category"]
+            trial_table = (repo_root / "control_plane" / "shadow_exports" / "l1_trials" / work_item.item_id / "trial_table.csv").read_text(
+                encoding="utf-8"
+            )
+            assert success_run.run_key in trial_table
+            assert failed_run.run_key not in trial_table
+
+
+def test_trial_aggregation_counts_same_checkout_failure() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        success_metrics = "runs/designs/activations/filter_checkout_same/source_checkout_success/metrics.csv"
+        failed_metrics = "runs/designs/activations/filter_checkout_same/source_checkout_failed/metrics.csv"
+        _write_metrics(
+            repo_root / success_metrics,
+            [{
+                "platform": "nangate45",
+                "status": "ok",
+                "param_hash": "ok-source",
+                "tag": "same-checkout",
+                "critical_path_ns": "11.2",
+                "die_area": "61000",
+                "total_power_mw": "0.19",
+                "result_path": "runs/designs/activations/filter_checkout_same/source_checkout_success/work/ok/result.json",
+            }],
+        )
+        _write_metrics(
+            repo_root / failed_metrics,
+            [{
+                "platform": "nangate45",
+                "status": "failed",
+                "param_hash": "fail-source",
+                "tag": "same-checkout",
+                "result_path": "runs/designs/activations/filter_checkout_same/source_checkout_failed/work/fail/result.json",
+            }],
+        )
+
+        with Session(engine) as session:
+            task_request = TaskRequest(
+                request_key="l1_sweep:test_trial_source_checkout_same_filter",
+                source="test",
+                requested_by="@tester",
+                title="source checkout same filter test",
+                description="l1 checkout-aware trial aggregation same commit",
+                layer=LayerName.LAYER1,
+                flow=FlowName.OPENROAD,
+                priority=1,
+                request_payload={
+                    "item_id": "l1_test_trial_source_checkout_same_filter",
+                    "layer": "layer1",
+                    "flow": "openroad",
+                },
+                source_commit="deadbeef",
+            )
+            session.add(task_request)
+            session.flush()
+
+            work_item = WorkItem(
+                work_item_key="l1_sweep:l1_test_trial_source_checkout_same_filter",
+                task_request_id=task_request.id,
+                item_id="l1_test_trial_source_checkout_same_filter",
+                layer=LayerName.LAYER1,
+                flow=FlowName.OPENROAD,
+                platform="nangate45",
+                task_type="l1_sweep",
+                state=WorkItemState.ARTIFACT_SYNC,
+                priority=1,
+                source_mode="config",
+                input_manifest={"configs": [], "sweeps": []},
+                command_manifest=[],
+                expected_outputs=[success_metrics, failed_metrics],
+                acceptance_rules=[],
+                source_commit="deadbeef",
+            )
+            session.add(work_item)
+            session.flush()
+
+            success_run = Run(
+                run_key="l1_test_trial_source_checkout_same_filter_run_1",
+                work_item_id=work_item.id,
+                attempt=1,
+                executor_type=ExecutorType.INTERNAL_WORKER,
+                status=RunStatus.SUCCEEDED,
+                started_at=utcnow(),
+                completed_at=utcnow(),
+                checkout_commit="deadbeef",
+                trial_index=1,
+                seed=1,
+                result_summary="source checkout success",
+                result_payload={
+                    "trial": {"trial_index": 1, "seed": 1},
+                    "queue_result": {"status": "ok", "metrics_rows": [f"{success_metrics}:2"]},
+                },
+            )
+            failed_run = Run(
+                run_key="l1_test_trial_source_checkout_same_filter_run_2",
+                work_item_id=work_item.id,
+                attempt=2,
+                executor_type=ExecutorType.INTERNAL_WORKER,
+                status=RunStatus.FAILED,
+                started_at=utcnow(),
+                completed_at=utcnow(),
+                checkout_commit="deadbeef",
+                trial_index=2,
+                seed=2,
+                result_summary="source checkout failed",
+                failure_category="timing_unmet",
+                failure_stage="route",
+                failure_signature="timing violation",
+                result_payload={
+                    "trial": {"trial_index": 2, "seed": 2},
+                    "queue_result": {"status": "fail", "metrics_rows": [f"{failed_metrics}:2"]},
+                    "failure_classification": {
+                        "category": "timing_unmet",
+                        "stage": "route",
+                        "signature": "timing violation",
+                    },
+                },
+            )
+            session.add_all([success_run, failed_run])
+            session.flush()
+            session.add(
+                Artifact(
+                    run_id=failed_run.id,
+                    kind="expected_output",
+                    storage_mode="repo",
+                    path=failed_metrics,
+                    metadata_={
+                        "transport_policy": "inline_text_evidence",
+                        "inline_utf8": (repo_root / failed_metrics).read_text(encoding="utf-8"),
+                    },
+                )
+            )
+            session.commit()
+
+            result = consume_l1_result(
+                session,
+                Layer1ConsumeRequest(
+                    repo_root=str(repo_root),
+                    run_key=success_run.run_key,
+                ),
+            )
+
+            assert result.item_id == work_item.item_id
+            proposal_path = repo_root / "control_plane" / "shadow_exports" / "l1_promotions" / f"{work_item.item_id}.json"
+            payload = json.loads(proposal_path.read_text(encoding="utf-8"))
+            assert payload["trial_summary"]["completed_trials"] == 2
+            assert payload["trial_summary"]["success_count"] == 1
+            assert payload["trial_summary"]["failure_count"] == 1
+            assert payload["trial_summary"]["aggregation_scope"] == "current_run_checkout_commit"
+            assert payload["trial_summary"]["aggregation_excluded_attempts"] == 0
+            assert payload["trial_summary"]["aggregation_excluded_source_commits"] == {}
+            assert payload["trial_summary"]["aggregation_excluded_attempt_run_keys"] == []
+            assert payload["trial_summary"]["aggregation_excluded_attempt_run_keys_truncated"] is False
+
+            failure_payload = json.loads(
+                (repo_root / "control_plane" / "shadow_exports" / "l1_trials" / work_item.item_id / "failure_stats.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            assert failure_payload["by_category"] == {"timing_unmet": 1}
+            assert failure_payload["aggregation_excluded_attempts"] == 0
+
+
+def test_trial_aggregation_legacy_checkout_falls_back_to_all_attempts() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        success_metrics = "runs/designs/activations/filter_checkout_legacy/source_checkout_success/metrics.csv"
+        failed_metrics = "runs/designs/activations/filter_checkout_legacy/source_checkout_failed/metrics.csv"
+        _write_metrics(
+            repo_root / success_metrics,
+            [{
+                "platform": "nangate45",
+                "status": "ok",
+                "param_hash": "ok-source",
+                "tag": "legacy-checkout",
+                "critical_path_ns": "11.4",
+                "die_area": "62000",
+                "total_power_mw": "0.20",
+                "result_path": "runs/designs/activations/filter_checkout_legacy/source_checkout_success/work/ok/result.json",
+            }],
+        )
+        _write_metrics(
+            repo_root / failed_metrics,
+            [{
+                "platform": "nangate45",
+                "status": "failed",
+                "param_hash": "fail-source",
+                "tag": "legacy-checkout",
+                "result_path": "runs/designs/activations/filter_checkout_legacy/source_checkout_failed/work/fail/result.json",
+            }],
+        )
+
+        with Session(engine) as session:
+            task_request = TaskRequest(
+                request_key="l1_sweep:test_trial_source_checkout_legacy",
+                source="test",
+                requested_by="@tester",
+                title="source checkout legacy fallback test",
+                description="l1 checkout-aware trial aggregation legacy fallback",
+                layer=LayerName.LAYER1,
+                flow=FlowName.OPENROAD,
+                priority=1,
+                request_payload={
+                    "item_id": "l1_test_trial_source_checkout_legacy",
+                    "layer": "layer1",
+                    "flow": "openroad",
+                },
+                source_commit="deadbeef",
+            )
+            session.add(task_request)
+            session.flush()
+
+            work_item = WorkItem(
+                work_item_key="l1_sweep:l1_test_trial_source_checkout_legacy",
+                task_request_id=task_request.id,
+                item_id="l1_test_trial_source_checkout_legacy",
+                layer=LayerName.LAYER1,
+                flow=FlowName.OPENROAD,
+                platform="nangate45",
+                task_type="l1_sweep",
+                state=WorkItemState.ARTIFACT_SYNC,
+                priority=1,
+                source_mode="config",
+                input_manifest={"configs": [], "sweeps": []},
+                command_manifest=[],
+                expected_outputs=[success_metrics, failed_metrics],
+                acceptance_rules=[],
+                source_commit="deadbeef",
+            )
+            session.add(work_item)
+            session.flush()
+
+            legacy_run = Run(
+                run_key="l1_test_trial_source_checkout_legacy_run_1",
+                work_item_id=work_item.id,
+                attempt=1,
+                executor_type=ExecutorType.INTERNAL_WORKER,
+                status=RunStatus.FAILED,
+                started_at=utcnow(),
+                completed_at=utcnow(),
+                checkout_commit="",
+                trial_index=1,
+                seed=1,
+                result_summary="legacy checkout failed",
+                failure_category="worker",
+                failure_stage="lease",
+                failure_signature="legacy lease expired",
+                result_payload={
+                    "trial": {"trial_index": 1, "seed": 1},
+                    "queue_result": {"status": "fail", "metrics_rows": [f"{failed_metrics}:2"]},
+                    "failure_classification": {
+                        "category": "worker",
+                        "stage": "lease",
+                        "signature": "legacy lease expired",
+                    },
+                },
+            )
+            success_run = Run(
+                run_key="l1_test_trial_source_checkout_legacy_run_2",
+                work_item_id=work_item.id,
+                attempt=2,
+                executor_type=ExecutorType.INTERNAL_WORKER,
+                status=RunStatus.SUCCEEDED,
+                started_at=utcnow(),
+                completed_at=utcnow(),
+                checkout_commit="deadbeef",
+                trial_index=2,
+                seed=2,
+                result_summary="legacy checkout success",
+                result_payload={
+                    "trial": {"trial_index": 2, "seed": 2},
+                    "queue_result": {"status": "ok", "metrics_rows": [f"{success_metrics}:2"]},
+                },
+            )
+            session.add_all([legacy_run, success_run])
+            session.flush()
+            session.add(
+                Artifact(
+                    run_id=legacy_run.id,
+                    kind="expected_output",
+                    storage_mode="repo",
+                    path=failed_metrics,
+                    metadata_={
+                        "transport_policy": "inline_text_evidence",
+                        "inline_utf8": (repo_root / failed_metrics).read_text(encoding="utf-8"),
+                    },
+                )
+            )
+            session.commit()
+
+            result = consume_l1_result(
+                session,
+                Layer1ConsumeRequest(
+                    repo_root=str(repo_root),
+                    run_key=legacy_run.run_key,
+                ),
+            )
+
+            assert result.item_id == work_item.item_id
+            proposal_path = repo_root / "control_plane" / "shadow_exports" / "l1_promotions" / f"{work_item.item_id}.json"
+            payload = json.loads(proposal_path.read_text(encoding="utf-8"))
+            assert payload["trial_summary"]["completed_trials"] == 2
+            assert payload["trial_summary"]["success_count"] == 1
+            assert payload["trial_summary"]["failure_count"] == 1
+            assert payload["trial_summary"]["aggregation_scope"] == "legacy_missing_checkout"
+            assert payload["trial_summary"]["aggregation_included_attempts"] == 2
+            assert payload["trial_summary"]["aggregation_excluded_attempts"] == 0
+            assert payload["trial_summary"]["aggregation_excluded_source_commits"] == {}
+            assert payload["trial_summary"]["aggregation_excluded_attempt_run_keys"] == []
+
+            failure_payload = json.loads(
+                (repo_root / "control_plane" / "shadow_exports" / "l1_trials" / work_item.item_id / "failure_stats.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            assert failure_payload["aggregation_scope"] == "legacy_missing_checkout"
+            assert failure_payload.get("aggregation_excluded_attempt_run_keys_truncated", False) is False
+
+
 def test_consume_l1_result_counts_requeued_failures_in_trial_history() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
