@@ -228,7 +228,32 @@
       "merged_utc": "2026-07-19T13:08:30.450433Z",
       "notes": "Merged via PR #1394 and merge 8e0b4711d7e02413b9f126948bad2addc0163e26 at 2026-07-19T13:08:30.450433Z.",
       "revision_of_decision": "iterate"
+    },
+    {
+      "item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v8",
+      "task_type": "l2_campaign",
+      "objective": "Rerun shared-score multivalue-cluster activity-backed power after PR #1395 / commit b0888f66689f1e5d7e06add3690319001ff53e90; v7 had 52,769 same-net peers with 0 vcd or propagated origins, a STA leaf scan of 724,570 instances, and 4,521 non-finite rows clustered by reducer path. v8 keeps functional RAM behavior and physical RTL unchanged while emitting simulation-only escaped scalar aliases for every addr_in, wd_in, and w_mask_in FakeRAM input bit, maps exact macro pin paths by OpenSTA alias matching, and records bounded reducer reference-name buckets.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_decode_score_multivalue_cluster_activity_power",
+      "comparison_role": "shared_score_multivalue_cluster_activity_power_gate",
+      "depends_on_item_ids": [
+        "l1_decoder_attention_decode_score_multivalue_cluster_pnr_8ns_v2",
+        "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "revision": {
+        "reason": "postroute_scalar_macro_vcd_alias_and_reducer_ref_diagnosis",
+        "invalidates_item_ids": [
+          "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v7"
+        ]
+      },
+      "expected_result": {
+        "direction": "record_shared_score_multivalue_cluster_activity_power_gate",
+        "reason": "v8 uses escaped per-bit scalar aliases for FakeRAM macro inputs and bounded reducer buckets to map exact pin-level power input paths while preserving one-corner sta::set_power_pin_activity, no heuristic activity, no gate relaxation, and no fabricated power."
+      },
+      "status": "ready_to_queue"
     }
   ],
-  "source_commit": "17e3039d4b26a3b78e6170dede227012f2bb91d9"
+  "source_commit": "b0888f66689f1e5d7e06add3690319001ff53e90"
 }

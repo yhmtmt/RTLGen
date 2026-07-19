@@ -217,6 +217,31 @@
         "reason": "Rerun after PR #1392 using sta::network_leaf_instances-backed instance_power and trace-backed same-net peer fallback while keeping one-Corner flow, sta::set_power_pin_activity, no heuristic activity, and no gate relaxation."
       },
       "status": "ready_to_queue"
+    },
+    {
+      "item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v8",
+      "task_type": "l2_campaign",
+      "objective": "Rerun shared-score multivalue-cluster activity-backed power after PR #1395 / commit b0888f66689f1e5d7e06add3690319001ff53e90. v7 had 52,769 same-net peers with 0 vcd or propagated origins, and a STA leaf scan of 724,570 instances that found 4,521 non-finite rows concentrated by reducer reference. v8 keeps functional RAM behavior and physical RTL unchanged.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_decode_score_multivalue_cluster_activity_power",
+      "comparison_role": "shared_score_multivalue_cluster_activity_power_gate",
+      "depends_on_item_ids": [
+        "l1_decoder_attention_decode_score_multivalue_cluster_pnr_8ns_v2",
+        "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "revision": {
+        "reason": "postroute_scalar_macro_vcd_alias_and_reducer_ref_diagnosis",
+        "invalidates_item_ids": [
+          "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v7"
+        ]
+      },
+      "expected_result": {
+        "direction": "record_shared_score_multivalue_cluster_activity_power_gate",
+        "reason": "v8 introduces simulation-only escaped scalar VCD aliases for each addr_in, wd_in, and w_mask_in FakeRAM input bit so OpenSTA maps exact macro pin paths, records bounded reducer ref-name buckets, and still enforces no heuristic activity, no gate relaxation, and no fabricated power."
+      },
+      "status": "ready_to_queue"
     }
   ],
   "baseline_refs": [
