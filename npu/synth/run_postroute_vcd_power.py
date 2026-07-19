@@ -107,10 +107,19 @@ load_design 6_final.odb 6_final.sdc
 read_spef $::env(RESULTS_DIR)/6_final.spef
 log_cmd read_vcd -scope $::env(RTLGEN_ACTIVITY_SCOPE) $::env(RTLGEN_ACTIVITY_VCD)
 
+proc rtlgen_json_number {value} {
+  if {[string match -nocase "*nan*" "$value"] ||
+      [string match -nocase "*inf*" "$value"]} {
+    return "null"
+  }
+  if {[catch {format "%.12g" $value} formatted]} {
+    return "null"
+  }
+  return $formatted
+}
+set totals [sta::design_power [sta::corners]]
 set annotatable 0
-set vcd_count 0
-set constant_count 0
-set clock_count 0
+set trace_backed_count 0
 set macro_annotatable 0
 set macro_trace_active_count 0
 foreach pin [get_pins -hierarchical *] {
@@ -124,34 +133,18 @@ foreach pin [get_pins -hierarchical *] {
   incr annotatable
   set activity [get_property $pin activity]
   set origin [lindex $activity 2]
-  if {$origin == "vcd"} {
-    incr vcd_count
-  } elseif {$origin == "constant"} {
-    incr constant_count
-  } elseif {$origin == "clock"} {
-    incr clock_count
+  set toggle_rate [lindex $activity 0]
+  if {$origin == "vcd" || $origin == "propagated"} {
+    incr trace_backed_count
   }
   set full_name [get_property $pin full_name]
   if {[string match "*u_group_*" $full_name]} {
     incr macro_annotatable
-    set toggle_rate [lindex $activity 0]
     if {($origin == "vcd" || $origin == "propagated") && $toggle_rate > 0.0} {
       incr macro_trace_active_count
     }
   }
 }
-
-proc rtlgen_json_number {value} {
-  if {[string match -nocase "*nan*" "$value"] ||
-      [string match -nocase "*inf*" "$value"]} {
-    return "null"
-  }
-  if {[catch {format "%.12g" $value} formatted]} {
-    return "null"
-  }
-  return $formatted
-}
-set totals [sta::design_power [sta::corners]]
 set clocks [get_clocks *]
 set sdc_clock_period_ns "null"
 if {[llength $clocks] > 0} {
@@ -169,9 +162,10 @@ puts $fp "  \"leakage_w\": $leakage_w,"
 puts $fp "  \"total_w\": $total_w,"
 puts $fp "  \"sdc_clock_period_ns\": $sdc_clock_period_ns,"
 puts $fp "  \"annotatable_pin_count\": $annotatable,"
-puts $fp "  \"vcd_annotated_pin_count\": $vcd_count,"
-puts $fp "  \"constant_pin_count\": $constant_count,"
-puts $fp "  \"clock_pin_count\": $clock_count,"
+puts $fp "  \"leaf_annotatable_pin_count\": $annotatable,"
+puts $fp "  \"leaf_trace_backed_pin_count\": $trace_backed_count,"
+puts $fp "  \"vcd_annotated_pin_count\": $trace_backed_count,"
+puts $fp "  \"trace_backed_pin_count\": $trace_backed_count,"
 puts $fp "  \"macro_annotatable_pin_count\": $macro_annotatable,"
 puts $fp "  \"macro_trace_active_pin_count\": $macro_trace_active_count"
 puts $fp "}"
@@ -236,12 +230,18 @@ def _run_openroad_phase(
         raise RuntimeError("OpenROAD completed without writing the activity power result")
     payload = _load_json(result)
     annotation_counts = _activity_annotation_counts(completed.stdout)
-    if "vcd" in annotation_counts and "unannotated" in annotation_counts:
-        payload["leaf_vcd_annotated_pin_count"] = payload.get("vcd_annotated_pin_count", 0)
-        payload["leaf_annotatable_pin_count"] = payload.get("annotatable_pin_count", 0)
-        payload["vcd_annotated_pin_count"] = annotation_counts["vcd"]
-        payload["annotatable_pin_count"] = sum(annotation_counts.values())
+    if annotation_counts:
         payload["activity_annotation_counts"] = annotation_counts
+        direct_annotatable = sum(annotation_counts.values())
+        direct_vcd = annotation_counts.get("vcd", 0)
+        payload["direct_annotatable_pin_count"] = direct_annotatable
+        payload["direct_vcd_pin_count"] = direct_vcd
+        # Optional backward-compatible aliases.
+        payload["leaf_direct_annotatable_pin_count"] = direct_annotatable
+        payload["leaf_direct_vcd_pin_count"] = direct_vcd
+        payload["leaf_vcd_annotated_pin_count"] = annotation_counts.get("vcd", 0)
+        for category, count in annotation_counts.items():
+            payload[f"direct_{category}_pin_count"] = count
     return payload
 
 
@@ -296,19 +296,58 @@ def build_report(
                 result=result,
                 timeout_seconds=timeout_seconds,
             )
-            annotatable = int(power.get("annotatable_pin_count", 0))
-            annotated = int(power.get("vcd_annotated_pin_count", 0))
-            coverage = annotated / annotatable if annotatable else 0.0
+            leaf_annotatable = int(
+                power.get(
+                    "leaf_annotatable_pin_count",
+                    power.get("annotatable_pin_count", 0),
+                )
+            )
+            trace_backed = int(
+                power.get(
+                    "leaf_trace_backed_pin_count",
+                    power.get("vcd_annotated_pin_count", 0),
+                )
+            )
+            direct_annotatable = int(
+                power.get(
+                    "direct_annotatable_pin_count",
+                    power.get("leaf_direct_annotatable_pin_count", 0),
+                )
+            )
+            direct_vcd = int(
+                power.get(
+                    "direct_vcd_pin_count",
+                    power.get("leaf_direct_vcd_pin_count", 0),
+                )
+            )
+            trace_coverage = (
+                trace_backed / leaf_annotatable
+                if leaf_annotatable
+                else 0.0
+            )
+            direct_coverage = (
+                direct_vcd / direct_annotatable
+                if direct_annotatable
+                else 0.0
+            )
             macro_active = int(power.get("macro_trace_active_pin_count", 0))
             macro_annotatable = int(power.get("macro_annotatable_pin_count", 0))
-            macro_coverage = macro_active / macro_annotatable if macro_annotatable else 0.0
-            coverage_pass = annotated >= min_vcd_pins and coverage >= min_vcd_coverage
+            macro_coverage = (
+                macro_active / macro_annotatable if macro_annotatable else 0.0
+            )
+            direct_pin_gate_pass = direct_vcd >= min_vcd_pins
+            trace_coverage_gate_pass = trace_coverage >= min_vcd_coverage
+            annotation_gate_pass = (
+                direct_pin_gate_pass and trace_coverage_gate_pass
+            )
             macro_pass = not phase["requires_macro_activity"] or (
                 macro_active >= min_macro_active_pins
                 and macro_coverage >= min_macro_active_coverage
             )
             sdc_period_value = power.get("sdc_clock_period_ns")
-            sdc_period_ns = float(sdc_period_value) if sdc_period_value is not None else 0.0
+            sdc_period_ns = (
+                float(sdc_period_value) if sdc_period_value is not None else 0.0
+            )
             clock_period_pass = abs(sdc_period_ns - clock_period_ns) <= 1e-6
             component_names = ("internal_w", "switching_w", "leakage_w", "total_w")
             component_values = [power.get(name) for name in component_names]
@@ -325,13 +364,20 @@ def build_report(
                 {
                     **{key: value for key, value in phase.items() if not key.startswith("_")},
                     "power": power,
-                    "vcd_annotation_coverage": coverage,
-                    "annotation_gate_pass": coverage_pass,
+                    "direct_vcd_annotation_coverage": direct_coverage,
+                    "trace_backed_vcd_annotation_coverage": trace_coverage,
+                    "vcd_annotation_coverage": trace_coverage,
+                    "direct_vcd_annotation_pin_gate_pass": direct_pin_gate_pass,
+                    "trace_coverage_gate_pass": trace_coverage_gate_pass,
+                    "annotation_gate_pass": annotation_gate_pass,
                     "macro_activity_gate_pass": macro_pass,
                     "macro_trace_active_coverage": macro_coverage,
                     "clock_period_gate_pass": clock_period_pass,
                     "power_numeric_gate_pass": power_numeric_pass,
-                    "phase_gate_pass": coverage_pass and macro_pass and clock_period_pass and power_numeric_pass,
+                    "phase_gate_pass": annotation_gate_pass
+                    and macro_pass
+                    and clock_period_pass
+                    and power_numeric_pass,
                     "full_context_energy_j": energy_j,
                 }
             )
@@ -377,19 +423,20 @@ def write_markdown(payload: JsonDict, path: Path) -> None:
         f"- full_context_latency_s: `{payload['full_context_latency_s']}`",
         f"- full_context_energy_j: `{payload['full_context_energy_j']}`",
         "",
-        "| phase | measured cycles | full cycles | total W | VCD coverage | macro active pins | energy J | gate |",
-        "|---|---:|---:|---:|---:|---:|---:|---|",
+        "| phase | measured cycles | full cycles | total W | direct/trace-backed VCD coverage | macro active pins | energy J | gate |",
+        "|---|---:|---:|---:|---|---:|---:|---|",
     ]
     for row in payload["phases"]:
         power = row["power"]
         lines.append(
             "| {phase} | {measured_cycles} | {full_context_cycles} | {total_w} | "
-            "{coverage:.6f} | {macro_pins} | {energy} | {gate} |".format(
+            "{direct_coverage:.6f} / {coverage:.6f} | {macro_pins} | {energy} | {gate} |".format(
                 phase=row["phase"],
                 measured_cycles=row["measured_cycles"],
                 full_context_cycles=row["full_context_cycles"],
                 total_w=power.get("total_w"),
-                coverage=row["vcd_annotation_coverage"],
+                coverage=row["trace_backed_vcd_annotation_coverage"],
+                direct_coverage=row["direct_vcd_annotation_coverage"],
                 macro_pins=power.get("macro_trace_active_pin_count", 0),
                 energy=row["full_context_energy_j"],
                 gate=row["phase_gate_pass"],

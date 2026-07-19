@@ -22,6 +22,78 @@ SPEC.loader.exec_module(MODULE)
 
 
 class PostrouteVcdPowerTests(unittest.TestCase):
+    def test_tcl_counts_after_design_power(self) -> None:
+        script = MODULE._tcl_script()
+        totals_index = script.find("set totals [sta::design_power")
+        loop_index = script.find("foreach pin")
+        self.assertGreater(totals_index, -1)
+        self.assertGreater(loop_index, -1)
+        self.assertLess(totals_index, loop_index)
+        self.assertIn('if {$origin == "vcd" || $origin == "propagated"}', script)
+        self.assertIn(
+            'if {($origin == "vcd" || $origin == "propagated") && $toggle_rate > 0.0}',
+            script,
+        )
+
+    def test_activity_annotation_provenance_is_preserved(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_text:
+            root = Path(temp_text)
+            orfs = root / "orfs"
+            orfs.mkdir()
+            config = root / "external" / "config.mk"
+            config.parent.mkdir()
+            config.write_text("", encoding="utf-8")
+            vcd = root / "trace.vcd"
+            vcd.write_text("$enddefinitions $end\n", encoding="utf-8")
+            tcl = root / "power.tcl"
+            tcl.write_text("", encoding="utf-8")
+            result = root / "result.json"
+            result.write_text(
+                json.dumps(
+                    {
+                        "total_w": 1.0,
+                        "internal_w": 0.5,
+                        "switching_w": 0.4,
+                        "leakage_w": 0.1,
+                        "annotatable_pin_count": 1000,
+                        "leaf_annotatable_pin_count": 1000,
+                        "leaf_trace_backed_pin_count": 12,
+                        "vcd_annotated_pin_count": 12,
+                    }
+                ),
+                encoding="utf-8",
+            )
+            completed = SimpleNamespace(
+                returncode=0,
+                stdout=(
+                    "vcd 4\n"
+                    "saif 1\n"
+                    "input 2\n"
+                    "unannotated 993\n"
+                ),
+                stderr="",
+            )
+            with mock.patch.object(MODULE, "ORFS_FLOW", orfs), mock.patch.object(
+                MODULE.subprocess, "run", return_value=completed
+            ) as run:
+                payload = MODULE._run_openroad_phase(
+                    design_config=config,
+                    flow_variant="test",
+                    vcd=vcd,
+                    scope="tb/dut",
+                    tcl=tcl,
+                    result=result,
+                    timeout_seconds=10,
+            )
+            self.assertEqual(run.call_args.args[0][0], "make")
+            self.assertEqual(payload.get("vcd_annotated_pin_count"), 12)
+            self.assertEqual(payload.get("direct_vcd_pin_count"), 4)
+            self.assertEqual(payload.get("direct_annotatable_pin_count"), 1000)
+            self.assertEqual(payload.get("leaf_direct_vcd_pin_count"), 4)
+            self.assertEqual(payload.get("leaf_direct_annotatable_pin_count"), 1000)
+            self.assertEqual(payload["direct_vcd_pin_count"], 4)
+            self.assertEqual(payload["activity_annotation_counts"]["vcd"], 4)
+
     def test_activity_annotation_counts_parse_openroad_report(self) -> None:
         counts = MODULE._activity_annotation_counts(
             "vcd            35\nsaif 2\ninput 3\nunannotated 664519\n"
@@ -120,9 +192,13 @@ class PostrouteVcdPowerTests(unittest.TestCase):
                         "leakage_w": 0.2,
                         "sdc_clock_period_ns": 8.0,
                         "annotatable_pin_count": 1000,
+                        "leaf_annotatable_pin_count": 1000,
+                        "leaf_trace_backed_pin_count": 500,
                         "vcd_annotated_pin_count": 500,
                         "macro_trace_active_pin_count": 10,
                         "macro_annotatable_pin_count": 100,
+                        "direct_annotatable_pin_count": 1000,
+                        "direct_vcd_pin_count": 200,
                     },
                     {
                         "total_w": 3.0,
@@ -131,9 +207,13 @@ class PostrouteVcdPowerTests(unittest.TestCase):
                         "leakage_w": 0.3,
                         "sdc_clock_period_ns": 8.0,
                         "annotatable_pin_count": 1000,
+                        "leaf_annotatable_pin_count": 1000,
+                        "leaf_trace_backed_pin_count": 400,
                         "vcd_annotated_pin_count": 400,
                         "macro_trace_active_pin_count": 8,
                         "macro_annotatable_pin_count": 100,
+                        "direct_annotatable_pin_count": 1000,
+                        "direct_vcd_pin_count": 160,
                     },
                     {
                         "total_w": 1.0,
@@ -142,9 +222,13 @@ class PostrouteVcdPowerTests(unittest.TestCase):
                         "leakage_w": 0.1,
                         "sdc_clock_period_ns": 8.0,
                         "annotatable_pin_count": 1000,
+                        "leaf_annotatable_pin_count": 1000,
+                        "leaf_trace_backed_pin_count": 300,
                         "vcd_annotated_pin_count": 300,
                         "macro_trace_active_pin_count": 0,
                         "macro_annotatable_pin_count": 100,
+                        "direct_annotatable_pin_count": 1000,
+                        "direct_vcd_pin_count": 80,
                     },
                 ]
             )
@@ -165,6 +249,147 @@ class PostrouteVcdPowerTests(unittest.TestCase):
             self.assertEqual(report["full_context_cycles"], 540)
             expected = (2.0 * 200 + 3.0 * 300 + 1.0 * 40) * 8.0e-9
             self.assertAlmostEqual(report["full_context_energy_j"], expected)
+            self.assertEqual(report["phases"][0]["vcd_annotation_coverage"], 0.5)
+            self.assertAlmostEqual(
+                report["phases"][0]["direct_vcd_annotation_coverage"],
+                0.2,
+            )
+            self.assertTrue(report["phases"][0]["direct_vcd_annotation_pin_gate_pass"])
+            self.assertTrue(report["phases"][0]["trace_coverage_gate_pass"])
+
+    def test_build_report_gates_on_trace_backed_coverage(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_text:
+            root = Path(temp_text)
+            manifest = {
+                "clock_period_ns": 8.0,
+                "phases": [
+                    {
+                        "phase": "score_fill",
+                        "vcd": "trace.vcd",
+                        "vcd_sha256": "0",
+                        "measured_cycles": 20,
+                        "full_context_cycles": 20,
+                        "requires_macro_activity": False,
+                    }
+                ],
+            }
+            manifest_path = root / "manifest.json"
+            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+            vcd = root / "trace.vcd"
+            vcd.write_text("$comment test $end\n", encoding="utf-8")
+            design_config = root / "config.mk"
+            design_config.write_text("", encoding="utf-8")
+            power = {
+                "total_w": 1.0,
+                "internal_w": 0.5,
+                "switching_w": 0.4,
+                "leakage_w": 0.1,
+                "sdc_clock_period_ns": 8.0,
+                "annotatable_pin_count": 1000,
+                "leaf_annotatable_pin_count": 1000,
+                "leaf_trace_backed_pin_count": 300,
+                "vcd_annotated_pin_count": 300,
+                "direct_annotatable_pin_count": 1000,
+                "direct_vcd_pin_count": 300,
+                "macro_trace_active_pin_count": 10,
+                "macro_annotatable_pin_count": 1000,
+            }
+            with mock.patch.object(MODULE, "_phase_rows", return_value=[{
+                "phase": "score_fill",
+                "vcd": "trace.vcd",
+                "vcd_sha256": "0000",
+                "measured_cycles": 20,
+                "full_context_cycles": 20,
+                "requires_macro_activity": False,
+                "_resolved_vcd": str(vcd),
+            }]):
+                with mock.patch.object(MODULE, "_run_openroad_phase", return_value=power):
+                    report = MODULE.build_report(
+                        manifest=manifest,
+                        manifest_path=manifest_path,
+                        design_config=design_config,
+                        flow_variant="activity_test",
+                        scope="tb/dut",
+                        min_vcd_coverage=0.20,
+                        min_vcd_pins=250,
+                        min_macro_active_coverage=0.01,
+                        min_macro_active_pins=2,
+                        timeout_seconds=10,
+            )
+            self.assertTrue(report["promotion_gate_pass"])
+            self.assertAlmostEqual(report["phases"][0]["vcd_annotation_coverage"], 0.3)
+            self.assertEqual(report["phases"][0]["direct_vcd_annotation_coverage"], 0.3)
+
+    def test_build_report_requires_direct_vcd_pin_threshold(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_text:
+            root = Path(temp_text)
+            manifest = {
+                "clock_period_ns": 8.0,
+                "phases": [
+                    {
+                        "phase": "score_fill",
+                        "vcd": "trace.vcd",
+                        "vcd_sha256": "0",
+                        "measured_cycles": 20,
+                        "full_context_cycles": 20,
+                        "requires_macro_activity": False,
+                    }
+                ],
+            }
+            manifest_path = root / "manifest.json"
+            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+            vcd = root / "trace.vcd"
+            vcd.write_text("$comment test $end\n", encoding="utf-8")
+            design_config = root / "config.mk"
+            design_config.write_text("", encoding="utf-8")
+            power = {
+                "total_w": 1.0,
+                "internal_w": 0.5,
+                "switching_w": 0.4,
+                "leakage_w": 0.1,
+                "sdc_clock_period_ns": 8.0,
+                "annotatable_pin_count": 1000,
+                "leaf_annotatable_pin_count": 1000,
+                "leaf_trace_backed_pin_count": 900,
+                "vcd_annotated_pin_count": 900,
+                "direct_annotatable_pin_count": 1000,
+                "direct_vcd_pin_count": 2,
+                "macro_trace_active_pin_count": 10,
+                "macro_annotatable_pin_count": 1000,
+            }
+            with mock.patch.object(
+                MODULE,
+                "_phase_rows",
+                return_value=[
+                    {
+                        "phase": "score_fill",
+                        "vcd": "trace.vcd",
+                        "vcd_sha256": "0000",
+                        "measured_cycles": 20,
+                        "full_context_cycles": 20,
+                        "requires_macro_activity": False,
+                        "_resolved_vcd": str(vcd),
+                    }
+                ],
+            ):
+                with mock.patch.object(MODULE, "_run_openroad_phase", return_value=power):
+                    report = MODULE.build_report(
+                        manifest=manifest,
+                        manifest_path=manifest_path,
+                        design_config=design_config,
+                        flow_variant="activity_test",
+                        scope="tb/dut",
+                        min_vcd_coverage=0.05,
+                        min_vcd_pins=3,
+                        min_macro_active_coverage=0.01,
+                        min_macro_active_pins=2,
+                        timeout_seconds=10,
+                    )
+            self.assertFalse(report["promotion_gate_pass"])
+            phase = report["phases"][0]
+            self.assertTrue(phase["trace_coverage_gate_pass"])
+            self.assertFalse(phase["direct_vcd_annotation_pin_gate_pass"])
+            self.assertFalse(phase["annotation_gate_pass"])
 
     def test_required_macro_phase_cannot_promote_without_macro_activity(self) -> None:
         with tempfile.TemporaryDirectory() as temp_text:
@@ -179,6 +404,8 @@ class PostrouteVcdPowerTests(unittest.TestCase):
                 "vcd_annotated_pin_count": 80,
                 "macro_trace_active_pin_count": 1,
                 "macro_annotatable_pin_count": 100,
+                "direct_annotatable_pin_count": 100,
+                "direct_vcd_pin_count": 80,
             }
             with mock.patch.object(MODULE, "_run_openroad_phase", return_value=power):
                 report = MODULE.build_report(
@@ -213,6 +440,8 @@ class PostrouteVcdPowerTests(unittest.TestCase):
                 "vcd_annotated_pin_count": 80,
                 "macro_trace_active_pin_count": 10,
                 "macro_annotatable_pin_count": 100,
+                "direct_annotatable_pin_count": 100,
+                "direct_vcd_pin_count": 80,
             }
             with mock.patch.object(MODULE, "_run_openroad_phase", return_value=power):
                 report = MODULE.build_report(
