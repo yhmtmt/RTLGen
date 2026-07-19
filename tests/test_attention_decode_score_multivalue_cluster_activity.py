@@ -1,11 +1,39 @@
 import hashlib
 import json
-from pathlib import Path
+import re
 import shutil
+from pathlib import Path
 
 import pytest
 
 from npu.eval.generate_attention_decode_score_multivalue_cluster_activity import generate_phase_activity
+
+
+_SCOPE_VCD_VAR_RE = re.compile(r"^\s*\$var\s+\w+\s+1\s+\S+\s+(?P<name>\\\S+)\s+\$end$")
+
+
+def _score_bank_scalar_vcd_aliases(vcd_path: Path, *, scope: str = "score_bank") -> set[str]:
+    inside_score_bank = False
+    scope_depth = 0
+    names: set[str] = set()
+    for line in vcd_path.read_text(encoding="utf-8", errors="ignore").splitlines():
+        stripped = line.strip()
+        if not inside_score_bank:
+            if stripped == f"$scope module {scope} $end":
+                inside_score_bank = True
+                scope_depth = 1
+            continue
+
+        if stripped.startswith("$scope "):
+            scope_depth += 1
+        elif stripped.startswith("$upscope"):
+            scope_depth -= 1
+            if scope_depth == 0:
+                break
+        elif scope_depth >= 1 and stripped.startswith("$var "):
+            if match := _SCOPE_VCD_VAR_RE.match(stripped):
+                names.add(match.group("name"))
+    return names
 
 
 def _tool_available(name: str) -> bool:
@@ -107,3 +135,16 @@ def test_phase_scaling_is_invariant_across_representative_block_counts(
     assert phases["replay_value"]["full_context_cycles"] == 16 + 68 * 16384
     assert phases["finalize_result"]["full_context_cycles"] == 7696
     assert manifest["phase_partition_cycle_sum"] == manifest["representative_full_transaction_cycles"]
+
+
+def test_score_fill_vcd_contains_fakeram_scalar_aliases_for_vector_ports(tmp_path: Path) -> None:
+    if not _tool_available("iverilog") or not _tool_available("vvp"):
+        pytest.skip("iverilog/vvp unavailable")
+
+    manifest = generate_phase_activity(_config(), tmp_path, block_count=1, head_dim=3, clock_period_ns=10.0)
+    phases = {row["phase"]: row for row in manifest["phases"]}
+    score_fill_vcd = tmp_path / phases["score_fill"]["vcd"]
+    aliases = _score_bank_scalar_vcd_aliases(score_fill_vcd)
+
+    for alias in ["\\addr_in[0]", "\\wd_in[0]", "\\wd_in[38]", "\\w_mask_in[0]", "\\w_mask_in[38]"]:
+        assert alias in aliases, f"missing escaped scalar alias {alias} in score_bank scope"

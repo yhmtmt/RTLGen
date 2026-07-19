@@ -24,157 +24,205 @@ SPEC.loader.exec_module(MODULE)
 
 class PostrouteVcdPowerTests(unittest.TestCase):
     def _write_tcl_runtime_stub(
-        self, root: Path, result: Path, *, macro_transfer: bool = False
+        self,
+        root: Path,
+        result: Path,
+        *,
+        macro_transfer: bool = False,
+        leaf_specs: tuple[tuple[str, str, str], ...] | None = None,
     ) -> str:
+        if leaf_specs is None:
+            leaf_specs = (
+                ("leaf_group[7]/instance_a", "reducer", "0.0 nan inf nan"),
+                ("leaf_group_b/leaf_b", "other", "1.0 2.0 3.0 4.0"),
+            )
+        leaf_names = " ".join(f"{{{name}}}" for name, _ref, _value in leaf_specs)
+        leaf_ref_name_cases = []
+        leaf_instance_power_cases = []
+        for leaf_name, ref_name, instance_power in leaf_specs:
+            leaf_ref_name_cases.extend(
+                [
+                    f"    if {{$obj eq {{{leaf_name}}}}} {{",
+                    f"      assert_non_empty_string {{{ref_name}}}",
+                    f"      return {{{ref_name}}}",
+                    "    }",
+                ]
+            )
+            leaf_instance_power_cases.extend(
+                [
+                    f"    if {{$leaf eq {{{leaf_name}}}}} {{",
+                    f"      return {{{instance_power}}}",
+                    "    }",
+                ]
+            )
         if macro_transfer:
-            all_pins = "{pin_other_0 pin_input_u_group_0 pin_nonfinite_u_group}"
-            net_pins = "{driver_pin_u_group_0 peer_pin_u_group_0 pin_input_u_group_0}"
-            get_pins_body = (
-                "  if {[lindex $args 0] eq \"-hierarchical\"} {\n"
-                "    set pattern [lindex $args end]\n"
-                "    if {$pattern eq \"*u_group_*\"} {\n"
-                "      return {}\n"
-                "    }\n"
-                "  }\n"
-                "  if {[lindex $args 0] eq \"-of_objects\"} {\n"
-                "    set net [lindex $args end]\n"
-                "    if {$net eq {net_u_group_0}} {\n"
-                f"      return {net_pins}\n"
-                "    }\n"
-                "  }\n"
-                f"  return {all_pins}\n"
-            )
-            pin_property_body = (
-                "  if {$obj eq {pin_input_u_group_0}} {\n"
-                "    if {$property eq \"is_hierarchical\"} { return 0 }\n"
-                "    if {$property eq \"direction\"} { return \"input\" }\n"
-                "    if {$property eq \"activity\"} { return {0.0 0.0 constant} }\n"
-                "    if {$property eq \"full_name\"} { return $obj }\n"
-                "  }\n"
-                "  if {$obj eq {driver_pin_u_group_0}} {\n"
-                "    if {$property eq \"activity\"} { return {0.4 0.9 other} }\n"
-                "  }\n"
-                "  if {$obj eq {peer_pin_u_group_0}} {\n"
-                "    if {$property eq \"activity\"} { return {0.9 0.8 propagated} }\n"
-                "  }\n"
-            )
-            net_driver_body = (
-                "  proc net_driver_pins {net} {\n"
-                "    if {$net eq {net_u_group_0}} { return {driver_pin_u_group_0} }\n"
-                "    return {}\n"
-                "  }\n"
-            )
-            net_and_activity_body = (
-                "proc get_nets {args} {\n"
-                "  if {[lindex $args 0] eq \"-of_objects\" && [lindex $args 1] eq {pin_input_u_group_0}} {\n"
-                "    return {net_u_group_0}\n"
-                "  }\n"
-                "  return {}\n"
-                "}\n"
-            )
+            all_pins = [
+                "pin_other_0",
+                "pin_input_u_group_0",
+                "pin_nonfinite_u_group",
+            ]
+            net_pins = [
+                "driver_pin_u_group_0",
+                "peer_pin_u_group_0",
+                "pin_input_u_group_0",
+            ]
+            get_pins_body = [
+                "  if {[lindex $args 0] eq \"-hierarchical\"} {",
+                "    set pattern [lindex $args end]",
+                "    if {$pattern eq \"*u_group_*\"} {",
+                "      return {}",
+                "    }",
+                "  }",
+                "  if {[lindex $args 0] eq \"-of_objects\"} {",
+                "    set net [lindex $args end]",
+                "    if {$net eq {net_u_group_0}} {",
+                f"      return {{{' '.join(net_pins)}}}",
+                "    }",
+                "  }",
+                f"  return {{{' '.join(all_pins)}}}",
+            ]
+            pin_property_body = [
+                "  if {$obj eq {pin_input_u_group_0}} {",
+                "    if {$property eq \"is_hierarchical\"} { return 0 }",
+                "    if {$property eq \"direction\"} { return \"input\" }",
+                "    if {$property eq \"activity\"} { return {0.0 0.0 constant} }",
+                "    if {$property eq \"full_name\"} { return $obj }",
+                "  }",
+                "  if {$obj eq {driver_pin_u_group_0}} {",
+                "    if {$property eq \"activity\"} { return {0.4 0.9 other} }",
+                "  }",
+                "  if {$obj eq {peer_pin_u_group_0}} {",
+                "    if {$property eq \"activity\"} { return {0.9 0.8 propagated} }",
+                "  }",
+            ]
+            net_driver_body = [
+                "  proc net_driver_pins {net} {",
+                "    if {$net eq {net_u_group_0}} { return {driver_pin_u_group_0} }",
+                "    return {}",
+                "  }",
+            ]
+            net_and_activity_body = [
+                "proc get_nets {args} {",
+                "  if {[lindex $args 0] eq \"-of_objects\" && [lindex $args 1] eq {pin_input_u_group_0}} {",
+                "    return {net_u_group_0}",
+                "  }",
+                "  return {}",
+                "}",
+            ]
         else:
-            get_pins_body = "  return {pin_nonfinite_u_group}\n"
-            pin_property_body = ""
-            net_driver_body = ""
-            net_and_activity_body = ""
-        script = (
-            "\n"
-            "proc load_design {args} {}\n"
-            "proc read_spef {args} {}\n"
-            "proc log_cmd {args} {}\n"
-            "proc report_activity_annotation {} {}\n"
-            "proc report_power {} {}\n"
-            "proc get_clocks {args} {\n"
-            "  return {clk}\n"
-            "}\n"
-            "proc get_full_name {leaf} {\n"
-            "  return $leaf\n"
-            "}\n"
-            "proc get_pins {args} {\n"
-            + get_pins_body
-            + "}\n"
-            "proc get_property {obj property} {\n"
-            + pin_property_body
-            + "  if {[string match \"pin_*\" $obj]} {\n"
-            "    if {$property eq \"is_hierarchical\"} {\n"
-            "      return 0\n"
-            "    }\n"
-            "    if {$property eq \"direction\"} {\n"
-            "      return \"output\"\n"
-            "    }\n"
-            "    if {$property eq \"activity\"} {\n"
-            "      return {0.25 0.5 vcd}\n"
-            "    }\n"
-            "    if {$property eq \"full_name\"} {\n"
-            "      return $obj\n"
-            "    }\n"
-            "    return {}\n"
-            "  }\n"
-            "  if {$property eq \"is_leaf\"} {\n"
-            "    return 1\n"
-            "  }\n"
-            "  if {$property eq \"name\"} {\n"
-            "    return $obj\n"
-            "  }\n"
-            "  return {}\n"
-            "}\n"
-            + net_and_activity_body
-            + "proc get_cells {args} {\n"
-            "  error \"get_cells should not be used for nonfinite leaf scan\"\n"
-            "}\n"
-            "proc instance_power {args} {\n"
-            "  error \"use sta::instance_power <leaf> <corner>\"\n"
-            "}\n"
-            "proc set_power_pin_activity {args} {\n"
-            "  error \"use sta::set_power_pin_activity <pin> <density> <duty>\"\n"
-            "}\n"
-            "proc design_power {args} {\n"
-            "  error \"use sta::design_power <corner>\"\n"
-            "}\n"
-            "proc corners {} {\n"
-            "  error \"do not call sta::corners\"\n"
-            "}\n"
-            "namespace eval sta {\n"
-            "  proc cmd_corner {} {\n"
-            "    return corner0\n"
-            "  }\n"
-            "  proc design_power {corner} {\n"
-            "    if {$corner ne \"corner0\"} {\n"
-            "      error \"design_power corner mismatch: $corner\"\n"
-            "    }\n"
-            "    # First quartet has non-finite total, triggering sample capture.\n"
-            "    return {1.0 2.0 3.0 nan 4.0 5.0 6.0 7.0}\n"
-            "  }\n"
-            "  proc instance_power {leaf corner} {\n"
-            "    if {$corner ne \"corner0\"} {\n"
-            "      error \"instance_power corner mismatch: $corner\"\n"
-            "    }\n"
-            "    if {$leaf eq {leaf_group[7]/instance_a}} {\n"
-            "      return {0.0 nan inf nan}\n"
-            "    }\n"
-            "    return {1.0 2.0 3.0 4.0}\n"
-            "  }\n"
-            "  proc set_power_pin_activity {pin density duty} {\n"
-            "    lappend ::sta::power_pin_activity_calls [list $pin $density $duty]\n"
-            "  }\n"
-            "  proc corners {} {\n"
-            "    return {corner0}\n"
-            "  }\n"
-            "  proc network_leaf_instances {} {\n"
-            "    return {leaf_group[7]/instance_a leaf_group_b/leaf_b}\n"
-            "  }\n"
-            "  variable power_pin_activity_calls {}\n"
-            + net_driver_body
-            + "}\n"
-            f"set ::env(SCRIPTS_DIR) \"{root / 'scripts'}\"\n"
-            f"set ::env(RESULTS_DIR) \"{root}\"\n"
-            f"set ::env(RTLGEN_ACTIVITY_VCD) \"{root / 'trace.vcd'}\"\n"
-            f"set ::env(RTLGEN_ACTIVITY_SCOPE) \"tb/dut\"\n"
-            f"set ::env(RTLGEN_ACTIVITY_RESULT) \"{result}\"\n"
-            "\n"
-            + MODULE._tcl_script()
-        )
-        return script
+            get_pins_body = ["  return {pin_nonfinite_u_group}"]
+            pin_property_body = []
+            net_driver_body = []
+            net_and_activity_body = []
+        lines = [
+            "",
+            "proc load_design {args} {}",
+            "proc read_spef {args} {}",
+            "proc log_cmd {args} {}",
+            "proc report_activity_annotation {} {}",
+            "proc report_power {} {}",
+            "proc get_clocks {args} {",
+            "  return {clk}",
+            "}",
+            "proc get_full_name {leaf} {",
+            "  return $leaf",
+            "}",
+            "proc assert_non_empty_string {value} {",
+            "  if {$value eq \"\"} {",
+            "    error \"assertion failed: expected non-empty string\"",
+            "  }",
+            "}",
+            "set ::ref_name_query_count 0",
+            "proc get_pins {args} {",
+            *get_pins_body,
+            "}",
+            "proc get_property {obj property} {",
+            *pin_property_body,
+            "  if {[string match \"pin_*\" $obj]} {",
+            "    if {$property eq \"is_hierarchical\"} {",
+            "      return 0",
+            "    }",
+            "    if {$property eq \"direction\"} {",
+            "      return \"output\"",
+            "    }",
+            "    if {$property eq \"activity\"} {",
+            "      return {0.25 0.5 vcd}",
+            "    }",
+            "    if {$property eq \"full_name\"} {",
+            "      return $obj",
+            "    }",
+            "    return {}",
+            "  }",
+            "  if {$property eq \"ref_name\"} {",
+            "    incr ::ref_name_query_count",
+            *leaf_ref_name_cases,
+            "    return \"\"",
+            "  }",
+            "  if {$property eq \"is_leaf\"} {",
+            "    return 1",
+            "  }",
+            "  if {$property eq \"name\"} {",
+            "    return $obj",
+            "  }",
+            "  return {}",
+            "}",
+            *net_and_activity_body,
+            "proc get_cells {args} {",
+            "  error \"get_cells should not be used for nonfinite leaf scan\"",
+            "}",
+            "proc instance_power {args} {",
+            "  error \"use sta::instance_power <leaf> <corner>\"",
+            "}",
+            "proc set_power_pin_activity {args} {",
+            "  error \"use sta::set_power_pin_activity <pin> <density> <duty>\"",
+            "}",
+            "proc design_power {args} {",
+            "  error \"use sta::design_power <corner>\"",
+            "}",
+            "proc corners {} {",
+            "  error \"do not call sta::corners\"",
+            "}",
+            "namespace eval sta {",
+            "  proc cmd_corner {} {",
+            "    return corner0",
+            "  }",
+            "  proc design_power {corner} {",
+            "    if {$corner ne \"corner0\"} {",
+            "      error \"design_power corner mismatch: $corner\"",
+            "    }",
+            "    # First quartet has non-finite total, triggering sample capture.",
+            "    return {1.0 2.0 3.0 nan 4.0 5.0 6.0 7.0}",
+            "  }",
+            "  proc instance_power {leaf corner} {",
+            "    if {$corner ne \"corner0\"} {",
+            "      error \"instance_power corner mismatch: $corner\"",
+            "    }",
+            *leaf_instance_power_cases,
+            "    return {1.0 2.0 3.0 4.0}",
+            "  }",
+            "  proc set_power_pin_activity {pin density duty} {",
+            "    lappend ::sta::power_pin_activity_calls [list $pin $density $duty]",
+            "  }",
+            "  proc corners {} {",
+            "    return {corner0}",
+            "  }",
+            "  proc network_leaf_instances {} {",
+            f"    return {{{leaf_names}}}",
+            "  }",
+            "  variable power_pin_activity_calls {}",
+            *net_driver_body,
+            "}",
+            f"set ::env(SCRIPTS_DIR) \"{root / 'scripts'}\"",
+            f"set ::env(RESULTS_DIR) \"{root}\"",
+            f"set ::env(RTLGEN_ACTIVITY_VCD) \"{root / 'trace.vcd'}\"",
+            f"set ::env(RTLGEN_ACTIVITY_SCOPE) \"tb/dut\"",
+            f"set ::env(RTLGEN_ACTIVITY_RESULT) \"{result}\"",
+            MODULE._tcl_script(),
+            "if {$::ref_name_query_count == 0} {",
+            "  error \"assertion failed: expected at least one instance ref_name query\"",
+            "}",
+        ]
+        return "\n".join(lines)
 
     def test_tcl_script_non_finite_samples_have_escaped_json_array_literals(self) -> None:
         if shutil.which("tclsh") is None:
@@ -211,6 +259,7 @@ class PostrouteVcdPowerTests(unittest.TestCase):
             self.assertEqual(len(diagnostics["samples"]), 1)
             sample = diagnostics["samples"][0]
             self.assertEqual(sample["full_name"], "leaf_group[7]/instance_a")
+            self.assertEqual(sample["ref_name"], "reducer")
             self.assertIsNone(sample["switching_w"])
             self.assertEqual(diagnostics.get("non_leaf_skip_count"), 0)
             self.assertEqual(diagnostics["candidate_cell_count"], 2)
@@ -219,6 +268,10 @@ class PostrouteVcdPowerTests(unittest.TestCase):
             self.assertEqual(diagnostics["finite_row_count"], 1)
             self.assertEqual(diagnostics["bad_shape_row_count"], 0)
             self.assertEqual(diagnostics["query_error_count"], 0)
+            self.assertEqual(diagnostics["ref_name_query_error_count"], 0)
+            self.assertEqual(len(diagnostics["ref_name_buckets"]), 1)
+            self.assertEqual(diagnostics["ref_name_buckets"][0]["ref_name"], "reducer")
+            self.assertEqual(diagnostics["ref_name_buckets"][0]["count"], 1)
             self.assertLess(
                 diagnostics["query_error_count"],
                 diagnostics["candidate_cell_count"],
@@ -232,6 +285,98 @@ class PostrouteVcdPowerTests(unittest.TestCase):
             self.assertEqual(finite_sums["switching_w"], 2.0)
             self.assertEqual(finite_sums["leakage_w"], 3.0)
             self.assertEqual(finite_sums["total_w"], 4.0)
+
+    def test_tcl_script_ref_name_buckets_are_sorted_and_bounded(self) -> None:
+        if shutil.which("tclsh") is None:
+            self.skipTest("tclsh is required for Tcl runtime regression")
+
+        with tempfile.TemporaryDirectory() as temp_text:
+            root = Path(temp_text)
+            scripts = root / "scripts"
+            scripts.mkdir()
+            (scripts / "load.tcl").write_text("", encoding="utf-8")
+
+            result = root / "activity_power.json"
+            ref_names = [
+                "10",
+                "2",
+                "1",
+                "11",
+                "20",
+                "3",
+                "30",
+                "4",
+                "5",
+                "6",
+                "7",
+                "8",
+                "9",
+                "001",
+                "002",
+                "003",
+                "004",
+                "005",
+                "006",
+                "007",
+                "008",
+                "009",
+                "010",
+                "011",
+                "012",
+                "013",
+                "014",
+                "015",
+                "016",
+                "017",
+                "018",
+                "019",
+                "020",
+                "021",
+                "022",
+            ]
+            leaf_specs = tuple(
+                (
+                    f"leaf_group[7]/instance_{index:03d}",
+                    ref_name,
+                    "nan nan nan nan",
+                )
+                for index, ref_name in enumerate(ref_names)
+            )
+            tcl_script_path = root / "activity_power.tcl"
+            tcl_script = self._write_tcl_runtime_stub(
+                root=root, result=result, leaf_specs=leaf_specs
+            )
+            tcl_script_path.write_text(tcl_script, encoding="utf-8")
+            tcl = shutil.which("tclsh")
+            assert tcl is not None
+            completed = MODULE.subprocess.run(
+                [tcl, str(tcl_script_path)],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertEqual(
+                completed.returncode,
+                0,
+                msg=f"tcl failed: stdout={completed.stdout} stderr={completed.stderr}",
+            )
+            self.assertFalse(completed.stderr.strip())
+
+            payload = json.loads(result.read_text(encoding="utf-8"))
+            diagnostics = payload["non_finite_leaf_instance_power"]
+            self.assertEqual(diagnostics["instance_count"], 35)
+            self.assertEqual(diagnostics["checked_instance_power_count"], 35)
+            self.assertEqual(diagnostics["ref_name_query_error_count"], 0)
+            buckets = diagnostics["ref_name_buckets"]
+            self.assertEqual(len(buckets), 32)
+            bucket_names = [bucket["ref_name"] for bucket in buckets]
+            self.assertEqual(bucket_names[-1], "other")
+            self.assertEqual(buckets[-1]["count"], 4)
+            sorted_ref_names = sorted(ref_names)
+            self.assertEqual(sorted_ref_names[30], "5")
+            self.assertEqual([bucket["ref_name"] for bucket in buckets[:-1]], sorted_ref_names[:31])
+            self.assertEqual(len(diagnostics["samples"]), 16)
+            self.assertEqual(diagnostics["samples"][0]["ref_name"], ref_names[0])
 
     def test_tcl_script_transfers_macro_input_activity(self) -> None:
         if shutil.which("tclsh") is None:

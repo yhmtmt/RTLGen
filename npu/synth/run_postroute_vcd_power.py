@@ -164,6 +164,18 @@ proc rtlgen_sorted_list {values} {
   return $sorted
 }
 
+proc rtlgen_compare_ref_name_bucket {left right} {
+  lassign $left left_count left_name
+  lassign $right right_count right_name
+  if {$left_count > $right_count} {
+    return -1
+  }
+  if {$left_count < $right_count} {
+    return 1
+  }
+  return [string compare $left_name $right_name]
+}
+
 proc rtlgen_apply_macro_pin_activities {assignments} {
   set results {}
   if {[llength $assignments] == 0} {
@@ -542,12 +554,16 @@ set non_finite_leaf_instance_power_checked_count 0
 set non_finite_leaf_instance_power_query_error_count 0
 set non_finite_leaf_instance_power_non_leaf_skip_count 0
 set non_finite_leaf_instance_power_bad_shape_row_count 0
+set non_finite_leaf_instance_power_ref_name_query_error_count 0
+set non_finite_leaf_instance_power_ref_name_counts {}
 set non_finite_leaf_instance_power_finite_row_count 0
 set non_finite_leaf_instance_power_internal_sum 0.0
 set non_finite_leaf_instance_power_switching_sum 0.0
 set non_finite_leaf_instance_power_leakage_sum 0.0
 set non_finite_leaf_instance_power_total_sum 0.0
 set non_finite_leaf_instance_samples {}
+set non_finite_leaf_instance_power_sample_limit 16
+set non_finite_leaf_instance_power_ref_name_bucket_limit 32
 foreach pin $all_design_pins {
   if {[get_property $pin is_hierarchical]} {
     continue
@@ -648,9 +664,17 @@ if {$has_nonfinite_design_total} {
         ![rtlgen_is_finite_power_value $leakage_power_value] ||
         ![rtlgen_is_finite_power_value $total_power_value]} {
       incr non_finite_leaf_instance_power_count
-      if {[llength $non_finite_leaf_instance_samples] < 16} {
-        if {[catch {set leaf_name [get_full_name $leaf]}]} {
-          if {[catch {set leaf_name [get_property $leaf name]}]} {
+      if {[catch {set leaf_ref_name [get_property $leaf ref_name]}]} {
+        incr non_finite_leaf_instance_power_ref_name_query_error_count
+        set leaf_ref_name unknown
+      }
+      if {$leaf_ref_name eq ""} {
+        set leaf_ref_name unknown
+      }
+      dict incr non_finite_leaf_instance_power_ref_name_counts $leaf_ref_name
+      if {[llength $non_finite_leaf_instance_samples] < $non_finite_leaf_instance_power_sample_limit} {
+        if {[catch {set leaf_name [lindex [get_full_name $leaf] 0]}]} {
+          if {[catch {set leaf_name [lindex [get_property $leaf name] 0]}]} {
             set leaf_name $leaf
           }
         }
@@ -661,6 +685,7 @@ if {$has_nonfinite_design_total} {
             $switching_power_value \
             $leakage_power_value \
             $total_power_value \
+            $leaf_ref_name \
           ]
       }
     } else {
@@ -674,6 +699,37 @@ if {$has_nonfinite_design_total} {
       set non_finite_leaf_instance_power_total_sum \
         [expr {$non_finite_leaf_instance_power_total_sum + $total_power_value}]
     }
+  }
+}
+
+set non_finite_leaf_instance_power_ref_name_buckets {}
+set non_finite_leaf_instance_power_ref_name_bucket_other_count 0
+if {[dict size $non_finite_leaf_instance_power_ref_name_counts] > 0} {
+  set non_finite_leaf_instance_power_ref_name_bucket_pairs {}
+  dict for {leaf_ref_name leaf_ref_name_count} $non_finite_leaf_instance_power_ref_name_counts {
+    lappend non_finite_leaf_instance_power_ref_name_bucket_pairs [list $leaf_ref_name_count $leaf_ref_name]
+  }
+  set non_finite_leaf_instance_power_ref_name_bucket_pairs \
+    [lsort -command rtlgen_compare_ref_name_bucket $non_finite_leaf_instance_power_ref_name_bucket_pairs]
+  set non_finite_leaf_instance_power_ref_name_bucket_total [llength $non_finite_leaf_instance_power_ref_name_bucket_pairs]
+  set non_finite_leaf_instance_power_ref_name_bucket_display_limit $non_finite_leaf_instance_power_ref_name_bucket_limit
+  if {$non_finite_leaf_instance_power_ref_name_bucket_total > $non_finite_leaf_instance_power_ref_name_bucket_limit} {
+    set non_finite_leaf_instance_power_ref_name_bucket_display_limit \
+      [expr {$non_finite_leaf_instance_power_ref_name_bucket_limit - 1}]
+  }
+  set non_finite_leaf_instance_power_ref_name_bucket_index 0
+  foreach ref_name_bucket_pair $non_finite_leaf_instance_power_ref_name_bucket_pairs {
+    if {$non_finite_leaf_instance_power_ref_name_bucket_index < $non_finite_leaf_instance_power_ref_name_bucket_display_limit} {
+      lappend non_finite_leaf_instance_power_ref_name_buckets $ref_name_bucket_pair
+    } else {
+      lassign $ref_name_bucket_pair leaf_ref_name_count leaf_ref_name
+      incr non_finite_leaf_instance_power_ref_name_bucket_other_count $leaf_ref_name_count
+    }
+    incr non_finite_leaf_instance_power_ref_name_bucket_index
+  }
+  if {$non_finite_leaf_instance_power_ref_name_bucket_other_count > 0} {
+    lappend non_finite_leaf_instance_power_ref_name_buckets \
+      [list $non_finite_leaf_instance_power_ref_name_bucket_other_count "other"]
   }
 }
 
@@ -806,6 +862,7 @@ if {$has_nonfinite_design_total} {
   puts $fp "    \"candidate_cell_count\": $non_finite_leaf_instance_power_candidate_cell_count,"
   puts $fp "    \"checked_instance_power_count\": $non_finite_leaf_instance_power_checked_count,"
   puts $fp "    \"query_error_count\": $non_finite_leaf_instance_power_query_error_count,"
+  puts $fp "    \"ref_name_query_error_count\": $non_finite_leaf_instance_power_ref_name_query_error_count,"
   puts $fp "    \"non_leaf_skip_count\": $non_finite_leaf_instance_power_non_leaf_skip_count,"
   puts $fp "    \"bad_shape_row_count\": $non_finite_leaf_instance_power_bad_shape_row_count,"
   puts $fp "    \"finite_row_count\": $non_finite_leaf_instance_power_finite_row_count,"
@@ -815,6 +872,21 @@ if {$has_nonfinite_design_total} {
   puts $fp "      \"leakage_w\": [rtlgen_json_number $non_finite_leaf_instance_power_leakage_sum],"
   puts $fp "      \"total_w\": [rtlgen_json_number $non_finite_leaf_instance_power_total_sum]"
   puts $fp "    },"
+  puts $fp "    \"ref_name_buckets\": \["
+  set ref_name_bucket_count [llength $non_finite_leaf_instance_power_ref_name_buckets]
+  set ref_name_bucket_index 0
+  foreach ref_name_bucket $non_finite_leaf_instance_power_ref_name_buckets {
+    lassign $ref_name_bucket ref_name_count ref_name
+    incr ref_name_bucket_index
+    set escaped_ref_name [rtlgen_json_escape $ref_name]
+    set ref_name_bucket_line "      {\"ref_name\": \"$escaped_ref_name\", \"count\": $ref_name_count}"
+    if {$ref_name_bucket_index < $ref_name_bucket_count} {
+      puts $fp "$ref_name_bucket_line,"
+    } else {
+      puts $fp "$ref_name_bucket_line"
+    }
+  }
+  puts $fp "    \],"
   puts $fp "    \"samples\": \["
   set sample_count [llength $non_finite_leaf_instance_samples]
   set sample_index 0
@@ -824,14 +896,16 @@ if {$has_nonfinite_design_total} {
       leaf_internal_power \
       leaf_switching_power \
       leaf_leakage_power \
-      leaf_total_power
+      leaf_total_power \
+      leaf_ref_name
     set leaf_internal_power_json [rtlgen_json_number $leaf_internal_power]
     set leaf_switching_power_json [rtlgen_json_number $leaf_switching_power]
     set leaf_leakage_power_json [rtlgen_json_number $leaf_leakage_power]
     set leaf_total_power_json [rtlgen_json_number $leaf_total_power]
     incr sample_index
     set escaped_leaf_name [rtlgen_json_escape $leaf_name]
-    set sample_line "      {\"full_name\": \"$escaped_leaf_name\", \"internal_w\": $leaf_internal_power_json, \"switching_w\": $leaf_switching_power_json, \"leakage_w\": $leaf_leakage_power_json, \"total_w\": $leaf_total_power_json}"
+    set escaped_ref_name [rtlgen_json_escape $leaf_ref_name]
+    set sample_line "      {\"full_name\": \"$escaped_leaf_name\", \"ref_name\": \"$escaped_ref_name\", \"internal_w\": $leaf_internal_power_json, \"switching_w\": $leaf_switching_power_json, \"leakage_w\": $leaf_leakage_power_json, \"total_w\": $leaf_total_power_json}"
     if {$sample_index < $sample_count} {
       puts $fp "$sample_line,"
     } else {
