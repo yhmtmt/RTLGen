@@ -121,6 +121,29 @@
       "status": "pending_implementation_merge"
     },
     {
+      "item_id": "l1_decoder_attention_decode_score_multivalue_gqa8_folded_lanes2_macro_placement_v1",
+      "task_type": "l1_sweep",
+      "objective": "Diagnose folded GQA8 lane2 physical placement failure at the 3.55 mm die with macro-preserving hierarchy comparison, retaining failed rows as explicit boundary evidence.",
+      "evaluation_mode": "frontier_followup",
+      "abstraction_layer": "decoder_attention_decode_score_multivalue_gqa_folded_lane",
+      "comparison_role": "gqa8_folded_lanes2_macro_placement",
+      "paired_baseline_item_id": "l1_decoder_attention_decode_score_multivalue_gqa8_folded_lanes2_pnr_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_decode_score_multivalue_gqa8_folded_lane_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "diagnose_gqa8_folded_lanes2_macro_hierarchy_placement",
+        "reason": "Disentangle flattening policy effects from synthesis feasibility while keeping macros and physical params fixed."
+      },
+      "config_paths": [
+        "runs/designs/npu_blocks/attention_decode_score_multivalue_gqa_group_lanes2_int8_m1x8_iterdiv/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/decode_score_multivalue_gqa_folded_lanes_v1/sweeps/nangate45_decode_score_multivalue_gqa_lanes2_macro_hier_placement_compare_3550.json",
+      "status": "pending_implementation_merge"
+    },
+    {
       "item_id": "l1_decoder_attention_decode_score_multivalue_gqa8_folded_lanes4_pnr_v1",
       "task_type": "l1_sweep",
       "objective": "Measure the four-lane folded GQA8 group at the matched-density 5.05 mm die and 8/10 ns targets, retaining failed rows as explicit boundary evidence.",

@@ -11,8 +11,12 @@ from unittest.mock import patch
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
+from control_plane.clock import utcnow
 from control_plane.db import create_all
-from control_plane.models.enums import WorkItemState
+from control_plane.models.artifacts import Artifact
+from control_plane.models.enums import RunStatus, WorkItemState
+from control_plane.models.runs import Run
+from control_plane.models.task_requests import TaskRequest
 from control_plane.models.work_items import WorkItem
 from control_plane.services.l1_task_generator import (
     Layer1SweepGenerateRequest,
@@ -998,6 +1002,99 @@ def _write_example_attention_decode_score_multivalue_gqa_array_repo(
         encoding="utf-8",
     )
     return str(config_path.relative_to(repo_root)), str(sweep_path.relative_to(repo_root))
+
+
+def _write_example_attention_decode_score_multivalue_gqa_group_lanes2_repo(
+    repo_root: Path,
+) -> str:
+    design_dir = (
+        repo_root
+        / "runs"
+        / "designs"
+        / "npu_blocks"
+        / "attention_decode_score_multivalue_gqa_group_lanes2_int8_m1x8_iterdiv"
+    )
+    design_dir.mkdir(parents=True)
+    config_path = design_dir / "config.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "version": "0.1",
+                "top_name": "attention_decode_score_multivalue_gqa_group_lanes2_int8_m1x8_iterdiv",
+                "attention_decode_score_multivalue_gqa_group": {
+                    "max_blocks": 16384,
+                    "array_n": 8,
+                    "value_slices": 16,
+                    "divider_impl": "iterative_restoring",
+                    "score_scale_lanes_per_cycle": 1,
+                    "query_heads_per_kv": 8,
+                    "parallel_query_head_lanes": 2,
+                },
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    (design_dir / "macro_manifest.json").write_text(
+        json.dumps({"manifest_params": {"score_bank_macro_count": 112}}, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    return str(config_path.relative_to(repo_root))
+
+
+def _write_attention_decode_score_multivalue_gqa_lanes2_macro_hier_placement_sweep(repo_root: Path) -> str:
+    sweep_path = (
+        repo_root
+        / "runs"
+        / "campaigns"
+        / "npu"
+        / "decode_score_multivalue_gqa_folded_lanes_v1"
+        / "sweeps"
+        / "nangate45_decode_score_multivalue_gqa_lanes2_macro_hier_placement_compare_3550.json"
+    )
+    sweep_path.parent.mkdir(parents=True, exist_ok=True)
+    sweep_path.write_text(
+        json.dumps(
+            {
+                "tag_prefix": "decode_score_multivalue_gqa_lanes2_macro_hier_placement_compare_3550_v1",
+                "flow_params": {
+                    "TAG": ["decode_score_multivalue_gqa_lanes2_macro_hier_placement_compare_3550_v1"],
+                    "FLOW_VARIANT": ["decode_score_multivalue_gqa_lanes2_macro_hier_placement_compare_3550_v1"],
+                    "CLOCK_PERIOD": [10],
+                    "PLACE_DENSITY": [0.4],
+                    "SYNTH_HIERARCHICAL": [1],
+                    "SYNTH_MEMORY_MAX_BITS": [65536],
+                },
+                "mode_compare": {
+                    "modes": [
+                        {
+                            "name": "flattened_wrapper",
+                            "use_macro": True,
+                            "param_overrides": {
+                                "SYNTH_HIERARCHICAL": 0,
+                                "DIE_AREA": "0 0 3550 3550",
+                                "CORE_AREA": "50 50 3500 3500",
+                            },
+                        },
+                        {
+                            "name": "hierarchical_macro",
+                            "use_macro": True,
+                            "param_overrides": {
+                                "SYNTH_HIERARCHICAL": 1,
+                                "DIE_AREA": "0 0 3550 3550",
+                                "CORE_AREA": "50 50 3500 3500",
+                            },
+                        },
+                    ]
+                },
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    return str(sweep_path.relative_to(repo_root))
 
 
 def _write_example_attention_hbm_replay_controller_repo(repo_root: Path) -> tuple[str, str]:
@@ -2716,6 +2813,216 @@ def test_generate_l1_sweep_task_adds_bridge_checker_for_exact_8ns_multivalue_clu
                 "--metrics-path runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/metrics.csv"
                 in [command["run"] for command in work_item.command_manifest]
             )
+
+
+def test_generate_l1_sweep_task_adds_lanes2_macro_hier_placement_checker() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        config_path = _write_example_attention_decode_score_multivalue_gqa_group_lanes2_repo(repo_root)
+        sweep_path = _write_attention_decode_score_multivalue_gqa_lanes2_macro_hier_placement_sweep(repo_root)
+        proposal_dir = repo_root / "docs" / "proposals" / "prop_decoder_attention_decode_score_multivalue_gqa8_group_llama7b_v1"
+        proposal_dir.mkdir(parents=True)
+        item_id = "l1_decoder_attention_decode_score_multivalue_gqa8_folded_lanes2_macro_placement_v1"
+        baseline_item_id = "l1_decoder_attention_decode_score_multivalue_gqa8_folded_lanes2_pnr_v1"
+        equivalence_item_id = "l2_decoder_attention_decode_score_multivalue_gqa8_folded_lane_equivalence_llama7b_v1"
+        required_entry = {
+            "item_id": item_id,
+            "task_type": "l1_sweep",
+            "objective": "Diagnose folded GQA8 lane2 physical placement failure at the 3.55 mm die with macro-preserving hierarchy comparison, retaining failed rows as explicit boundary evidence.",
+            "evaluation_mode": "frontier_followup",
+            "abstraction_layer": "decoder_attention_decode_score_multivalue_gqa_folded_lane",
+            "comparison_role": "gqa8_folded_lanes2_macro_placement",
+            "paired_baseline_item_id": baseline_item_id,
+            "depends_on_item_ids": [equivalence_item_id],
+            "requires_merged_inputs": True,
+            "requires_materialized_refs": True,
+            "expected_result": {
+                "direction": "diagnose_gqa8_folded_lanes2_macro_hierarchy_placement",
+                "reason": "Disentangle placement feasibility from flattening policy while keeping macros explicit.",
+            },
+            "config_paths": [
+                "runs/designs/npu_blocks/attention_decode_score_multivalue_gqa_group_lanes2_int8_m1x8_iterdiv/config.json"
+            ],
+            "sweep_path": "runs/campaigns/npu/decode_score_multivalue_gqa_folded_lanes_v1/sweeps/"
+            "nangate45_decode_score_multivalue_gqa_lanes2_macro_hier_placement_compare_3550.json",
+            "status": "pending_implementation_merge",
+        }
+        (proposal_dir / "proposal.json").write_text(
+            json.dumps(
+                {
+                    "proposal_id": "prop_decoder_attention_decode_score_multivalue_gqa8_group_llama7b_v1",
+                    "required_evaluations": [required_entry],
+                },
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (proposal_dir / "evaluation_requests.json").write_text(
+            json.dumps(
+                {
+                    "proposal_id": "prop_decoder_attention_decode_score_multivalue_gqa8_group_llama7b_v1",
+                    "source_commit": "",
+                    "requested_items": [required_entry],
+                },
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        equivalence_artifact_path = (
+            repo_root / "control_plane" / "shadow_exports" / "l2_decisions" / f"{equivalence_item_id}.json"
+        )
+        equivalence_artifact_path.parent.mkdir(parents=True)
+        equivalence_artifact_path.write_text("{}\n", encoding="utf-8")
+
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            equivalence_request = TaskRequest(
+                request_key=f"test:{equivalence_item_id}",
+                source="test",
+                requested_by="@tester",
+                title="Merged folded-lane equivalence",
+                description="",
+                layer="layer2",
+                flow="openroad",
+                priority=1,
+                request_payload={},
+            )
+            baseline_request = TaskRequest(
+                request_key=f"test:{baseline_item_id}",
+                source="test",
+                requested_by="@tester",
+                title="Unmerged lane2 physical baseline",
+                description="",
+                layer="layer1",
+                flow="openroad",
+                priority=1,
+                request_payload={},
+            )
+            session.add_all([equivalence_request, baseline_request])
+            session.flush()
+            equivalence_item = WorkItem(
+                work_item_key=f"test:{equivalence_item_id}",
+                task_request_id=equivalence_request.id,
+                item_id=equivalence_item_id,
+                layer="layer2",
+                flow="openroad",
+                platform="nangate45",
+                task_type="l2_campaign",
+                state=WorkItemState.MERGED,
+                priority=1,
+                input_manifest={},
+                command_manifest=[],
+                expected_outputs=[],
+                acceptance_rules=[],
+            )
+            baseline_item = WorkItem(
+                work_item_key=f"test:{baseline_item_id}",
+                task_request_id=baseline_request.id,
+                item_id=baseline_item_id,
+                layer="layer1",
+                flow="openroad",
+                platform="nangate45",
+                task_type="l1_sweep",
+                state=WorkItemState.AWAITING_REVIEW,
+                priority=1,
+                input_manifest={},
+                command_manifest=[],
+                expected_outputs=[],
+                acceptance_rules=[],
+            )
+            session.add_all([equivalence_item, baseline_item])
+            session.flush()
+            equivalence_run = Run(
+                run_key=f"test:{equivalence_item_id}:run",
+                work_item_id=equivalence_item.id,
+                attempt=1,
+                executor_type="internal_worker",
+                status=RunStatus.SUCCEEDED,
+                started_at=utcnow(),
+                completed_at=utcnow(),
+                checkout_commit=source_commit,
+                result_summary="equivalence merged",
+                result_payload={},
+            )
+            session.add(equivalence_run)
+            session.flush()
+            session.add(
+                Artifact(
+                    run_id=equivalence_run.id,
+                    kind="decision_proposal",
+                    storage_mode="repo",
+                    path=str(equivalence_artifact_path.relative_to(repo_root)),
+                    sha256="test",
+                    metadata_={},
+                )
+            )
+            session.flush()
+
+            result = generate_l1_sweep_task(
+                session,
+                Layer1SweepGenerateRequest(
+                    repo_root=str(repo_root),
+                    sweep_path=sweep_path,
+                    config_paths=[config_path],
+                    platform="nangate45",
+                    out_root="runs/designs/npu_blocks",
+                    item_id=item_id,
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    # Proposal linkage should be auto-discovered from local required_evaluations.
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            assert baseline_item.state == WorkItemState.AWAITING_REVIEW
+            assert work_item.state == WorkItemState.DISPATCH_PENDING
+            command_names = [command["name"] for command in work_item.command_manifest]
+            assert "check_attention_decode_score_multivalue_gqa_lanes2_macro_hier_placement" in command_names
+            assert (
+                "python3 npu/eval/check_attention_decode_score_multivalue_gqa_lanes2_macro_hier_placement.py "
+                "--metrics-path runs/designs/npu_blocks/"
+                "attention_decode_score_multivalue_gqa_group_lanes2_int8_m1x8_iterdiv/metrics.csv "
+                "--out runs/designs/npu_blocks/"
+                "attention_decode_score_multivalue_gqa_group_lanes2_int8_m1x8_iterdiv/"
+                "mode_compare_lanes2_placement_diag.json"
+                in [command["run"] for command in work_item.command_manifest]
+            )
+            sweep_command = work_item.command_manifest[2]["run"]
+            assert "--make_target 3_5_place_dp" in sweep_command
+            assert (
+                "runs/designs/npu_blocks/"
+                "attention_decode_score_multivalue_gqa_group_lanes2_int8_m1x8_iterdiv/"
+                "mode_compare_lanes2_placement_diag.json"
+                in work_item.expected_outputs
+            )
+
+            dev_loop = work_item.task_request.request_payload["developer_loop"]
+            assert dev_loop["proposal_path"] == "docs/proposals/prop_decoder_attention_decode_score_multivalue_gqa8_group_llama7b_v1"
+            assert dev_loop["proposal_id"] == "prop_decoder_attention_decode_score_multivalue_gqa8_group_llama7b_v1"
+            assert dev_loop["comparison"]["role"] == "gqa8_folded_lanes2_macro_placement"
+            assert (
+                dev_loop["comparison"]["paired_baseline_item_id"]
+                == "l1_decoder_attention_decode_score_multivalue_gqa8_folded_lanes2_pnr_v1"
+            )
+            assert dev_loop["dependencies"]["item_ids"] == [
+                equivalence_item_id,
+            ]
+            assert dev_loop["evaluation"]["expected_direction"] == (
+                "diagnose_gqa8_folded_lanes2_macro_hierarchy_placement"
+            )
+            assert (
+                dev_loop["evaluation"]["expected_reason"]
+                == "Disentangle placement feasibility from flattening policy while keeping macros explicit."
+            )
+
+        assert result.status == "applied"
 
 
 def test_generate_l1_sweep_task_supports_attention_decode_score_multivalue_gqa_group_configs() -> None:
