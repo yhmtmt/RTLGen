@@ -331,7 +331,9 @@
       "revision_of_decision": "iterate",
       "notes": "V10 used 5,096 structural assignments per phase with zero structural errors, passed score_fill (0.229656845331 W) and replay_value (0.216561496258 W), produced 56,575-byte compact evidence, and retained finalize diagnostics with 4,521 non-finite reducer cells and absurd finite-instance sums (~2.025e29 W leakage, negative internal/switching).",
       "retracted_by_item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v11",
-      "retraction_reason": "diagnose_finalize_nonfinite_pin_activity"
+      "retraction_reason": "diagnose_finalize_nonfinite_pin_activity",
+      "retracted_utc": "2026-07-19T15:05:12.782085Z",
+      "replacement_artifact": "control_plane/shadow_exports/l2_decisions/l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v11.json"
     },
     {
       "item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v11",
@@ -361,9 +363,11 @@
         "reason": "v11 keeps structural assignment counts and scores unchanged, preserves score_fill/replay and existing gate set, and adds bounded global plus non-finite-cell pin toggle/duty/origin diagnostics to make finalize failure root-cause explicit without introducing substitutes or relaxed thresholds."
       },
       "status": "merged",
-      "merged_pr_number": 1404,
-      "merge_commit": "658232d3ae22a8360457130e174e6156a088157a",
-      "revision_of_decision": "iterate"
+      "merged_pr_number": 1406,
+      "merge_commit": "faea0cd81042da796696025befcc6d12b29a043b",
+      "revision_of_decision": "iterate",
+      "merged_utc": "2026-07-19T15:05:12.782027Z",
+      "notes": "Merged via PR #1406 and merge faea0cd81042da796696025befcc6d12b29a043b at 2026-07-19T15:05:12.782027Z."
     }
   ],
   "source_commit": "658232d3ae22a8360457130e174e6156a088157a"
