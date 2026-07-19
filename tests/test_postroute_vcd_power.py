@@ -70,6 +70,9 @@ class PostrouteVcdPowerTests(unittest.TestCase):
         macro_transfer: bool = False,
         macro_activity_tcl: Path | None = None,
         macro_transfer_pin_names: tuple[str, str, str] | None = None,
+        all_pin_names: tuple[str, ...] | None = None,
+        pin_properties: dict[str, dict[str, object]] | None = None,
+        leaf_pin_map: dict[str, tuple[str, ...]] | None = None,
         leaf_specs: tuple[tuple[str, str, str], ...] | None = None,
     ) -> str:
         if leaf_specs is None:
@@ -78,6 +81,51 @@ class PostrouteVcdPowerTests(unittest.TestCase):
                 ("leaf_group_b/leaf_b", "other", "1.0 2.0 3.0 4.0"),
             )
         leaf_names = " ".join(f"{{{name}}}" for name, _ref, _value in leaf_specs)
+        if pin_properties is None:
+            pin_properties = {}
+        if leaf_pin_map is None:
+            leaf_pin_map = {}
+        pin_property_overrides: list[str] = []
+        for pin_name in sorted(pin_properties):
+            config = pin_properties[pin_name]
+            is_hierarchical = int(config.get("is_hierarchical", False))
+            direction = str(config.get("direction", "output"))
+            full_name = str(config.get("full_name", pin_name))
+            activity = config.get("activity")
+            if activity is None:
+                pin_property_overrides.extend(
+                    [
+                        f"  if {{$obj eq {{{pin_name}}}}} {{",
+                        f"    if {{$property eq \"is_hierarchical\"}} {{ return {is_hierarchical} }}",
+                        f"    if {{$property eq \"direction\"}} {{ return \"{direction}\" }}",
+                        f"    if {{$property eq \"full_name\"}} {{ return {{{full_name}}} }}",
+                        "    if {$property eq \"activity\"} {",
+                        f"      error \"forced_activity_query_error {pin_name}\"",
+                        "    }",
+                        "    return {}",
+                        "  }",
+                    ]
+                )
+            else:
+                pin_property_overrides.extend(
+                    [
+                        f"  if {{$obj eq {{{pin_name}}}}} {{",
+                        f"    if {{$property eq \"is_hierarchical\"}} {{ return {is_hierarchical} }}",
+                        f"    if {{$property eq \"direction\"}} {{ return \"{direction}\" }}",
+                        f"    if {{$property eq \"full_name\"}} {{ return {{{full_name}}} }}",
+                        f"    if {{$property eq \"activity\"}} {{ return {{{activity}}} }}",
+                        "    return {}",
+                        "  }",
+                    ]
+                )
+        leaf_pin_map_init_lines = ["set leaf_pin_map_dict {}"]
+        for leaf, pins in sorted(leaf_pin_map.items()):
+            leaf_pin_map_init_lines.append(
+                "dict set leaf_pin_map_dict {{{}}} {{{}}}".format(
+                    leaf,
+                    " ".join("{" + pin + "}" for pin in pins),
+                )
+            )
         leaf_ref_name_cases = []
         leaf_instance_power_cases = []
         for leaf_name, ref_name, instance_power in leaf_specs:
@@ -116,7 +164,11 @@ class PostrouteVcdPowerTests(unittest.TestCase):
                 "    }",
                 "  }",
                 "  if {[lindex $args 0] eq \"-of_objects\"} {",
-                "    set net [lindex $args end]",
+                "    set object [lindex $args end]",
+                "    if {[dict exists $leaf_pin_map_dict $object]} {",
+                "      return [dict get $leaf_pin_map_dict $object]",
+                "    }",
+                "    set net $object",
                 "    if {$net eq {net_u_group_0}} {",
                 f"      return {{{' '.join(net_pins)}}}",
                 "    }",
@@ -153,7 +205,20 @@ class PostrouteVcdPowerTests(unittest.TestCase):
                 "}",
             ]
         else:
-            get_pins_body = ["  return {pin_nonfinite_u_group}"]
+            if all_pin_names is None:
+                all_pins = ["pin_nonfinite_u_group"]
+            else:
+                all_pins = list(all_pin_names)
+            get_pins_body = [
+                "  if {[lindex $args 0] eq \"-of_objects\"} {",
+                "    set object [lindex $args end]",
+                "    if {[dict exists $leaf_pin_map_dict $object]} {",
+                "      return [dict get $leaf_pin_map_dict $object]",
+                "    }",
+                "    return {}",
+                "  }",
+                f"  return {{{' '.join(all_pins)}}}",
+            ]
             pin_property_body = []
             net_driver_body = []
             net_and_activity_body = []
@@ -176,11 +241,15 @@ class PostrouteVcdPowerTests(unittest.TestCase):
             "  }",
             "}",
             "set ::ref_name_query_count 0",
+            *leaf_pin_map_init_lines,
+            "set ::leaf_pin_map_dict $leaf_pin_map_dict",
             "proc get_pins {args} {",
+            "  global leaf_pin_map_dict",
             *get_pins_body,
             "}",
             "proc get_property {obj property} {",
             *pin_property_body,
+            *pin_property_overrides,
             "  if {[string match \"pin_*\" $obj]} {",
             "    if {$property eq \"is_hierarchical\"} {",
             "      return 0",
@@ -333,6 +402,277 @@ class PostrouteVcdPowerTests(unittest.TestCase):
             self.assertEqual(finite_sums["switching_w"], 2.0)
             self.assertEqual(finite_sums["leakage_w"], 3.0)
             self.assertEqual(finite_sums["total_w"], 4.0)
+
+    def test_tcl_script_activity_value_diagnostics_invalid_classification(self) -> None:
+        if shutil.which("tclsh") is None:
+            self.skipTest("tclsh is required for Tcl runtime regression")
+
+        with tempfile.TemporaryDirectory() as temp_text:
+            root = Path(temp_text)
+            scripts = root / "scripts"
+            scripts.mkdir()
+            (scripts / "load.tcl").write_text("", encoding="utf-8")
+
+            result = root / "activity_power.json"
+            pin_names = (
+                "pin_query_error",
+                "pin_malformed",
+                "pin_nonfinite_toggle",
+                "pin_negative_toggle",
+                "pin_nonfinite_duty",
+                "pin_duty_lt_zero",
+                "pin_duty_gt_one",
+                "pin_valid",
+            )
+            tcl_script = self._write_tcl_runtime_stub(
+                root=root,
+                result=result,
+                all_pin_names=pin_names,
+                pin_properties={
+                    "pin_query_error": {"activity": None, "direction": "internal"},
+                    "pin_malformed": {"activity": "0.5"},
+                    "pin_nonfinite_toggle": {"activity": "nan 0.5 vcd"},
+                    "pin_negative_toggle": {"activity": "-0.2 0.5 vcd"},
+                    "pin_nonfinite_duty": {"activity": "0.2 nan vcd"},
+                    "pin_duty_lt_zero": {"activity": "0.2 -0.1 vcd"},
+                    "pin_duty_gt_one": {"activity": "0.2 1.2 vcd"},
+                    "pin_valid": {"activity": "0.8 0.4 vcd"},
+                },
+            )
+            tcl_script_path = root / "activity_power.tcl"
+            tcl_script_path.write_text(tcl_script, encoding="utf-8")
+            tcl = shutil.which("tclsh")
+            assert tcl is not None
+            completed = MODULE.subprocess.run(
+                [tcl, str(tcl_script_path)],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertEqual(
+                completed.returncode,
+                0,
+                msg=f"tcl failed: stdout={completed.stdout} stderr={completed.stderr}",
+            )
+            self.assertFalse(completed.stderr.strip())
+
+            payload = json.loads(result.read_text(encoding="utf-8"))
+            diag = payload["activity_value_diagnostics"]
+            self.assertEqual(diag["queried_pin_count"], 8)
+            self.assertEqual(diag["malformed_activity_tuple_count"], 1)
+            self.assertEqual(diag["query_error_count"], 1)
+            self.assertEqual(diag["non_finite_toggle_count"], 1)
+            self.assertEqual(diag["negative_toggle_count"], 1)
+            self.assertEqual(diag["non_finite_duty_count"], 1)
+            self.assertEqual(diag["duty_less_than_zero_count"], 1)
+            self.assertEqual(diag["duty_greater_than_one_count"], 1)
+            self.assertEqual(diag["valid_pin_count"], 1)
+            self.assertEqual(diag["finite_extrema"]["min_toggle"], 0.8)
+            self.assertEqual(diag["finite_extrema"]["max_toggle"], 0.8)
+            self.assertEqual(diag["finite_extrema"]["min_duty"], 0.4)
+            self.assertEqual(diag["finite_extrema"]["max_duty"], 0.4)
+            self.assertEqual(len(diag["samples"]), 7)
+            reasons = {sample["reason"] for sample in diag["samples"]}
+            self.assertEqual(
+                reasons,
+                {
+                    "query_error",
+                    "malformed_activity_tuple",
+                    "non_finite_toggle",
+                    "negative_toggle",
+                    "non_finite_duty",
+                    "duty_lt_zero",
+                    "duty_gt_one",
+                },
+            )
+            self.assertEqual(len(diag["valid_samples"]), 1)
+            sample_fields = diag["samples"][0]
+            self.assertEqual(
+                set(sample_fields),
+                {"full_name", "toggle", "duty", "origin", "reason"},
+            )
+            valid_sample = diag["valid_samples"][0]
+            self.assertEqual(
+                set(valid_sample),
+                {"full_name", "toggle", "duty", "origin", "reason"},
+            )
+
+    def test_tcl_script_activity_value_diagnostics_samples_are_bounded_and_deterministic(self) -> None:
+        if shutil.which("tclsh") is None:
+            self.skipTest("tclsh is required for Tcl runtime regression")
+
+        with tempfile.TemporaryDirectory() as temp_text:
+            root = Path(temp_text)
+            scripts = root / "scripts"
+            scripts.mkdir()
+            (scripts / "load.tcl").write_text("", encoding="utf-8")
+
+            result = root / "activity_power.json"
+            valid_pin_names = tuple(f"pin[{i:03d}]" for i in range(20))
+            invalid_pin_name = "pin[999]"
+            pin_names = valid_pin_names + (invalid_pin_name,)
+            pin_properties = {
+                pin_name: {"activity": f"{i / 100:.3f} 0.2 vcd"}
+                for i, pin_name in enumerate(valid_pin_names)
+            }
+            pin_properties[invalid_pin_name] = {"activity": "nan 0.2 vcd"}
+            tcl_script = self._write_tcl_runtime_stub(
+                root=root,
+                result=result,
+                all_pin_names=pin_names,
+                pin_properties=pin_properties,
+            )
+            tcl_script_path = root / "activity_power.tcl"
+            tcl_script_path.write_text(tcl_script, encoding="utf-8")
+            tcl = shutil.which("tclsh")
+            assert tcl is not None
+            completed = MODULE.subprocess.run(
+                [tcl, str(tcl_script_path)],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertEqual(
+                completed.returncode,
+                0,
+                msg=f"tcl failed: stdout={completed.stdout} stderr={completed.stderr}",
+            )
+            self.assertFalse(completed.stderr.strip())
+
+            payload = json.loads(result.read_text(encoding="utf-8"))
+            diag = payload["activity_value_diagnostics"]
+            self.assertEqual(diag["queried_pin_count"], 21)
+            self.assertEqual(diag["valid_pin_count"], 20)
+            self.assertEqual(len(diag["samples"]), 1)
+            self.assertEqual(diag["samples"][0]["reason"], "non_finite_toggle")
+            self.assertEqual(diag["samples"][0]["full_name"], invalid_pin_name)
+            self.assertEqual(len(diag["valid_samples"]), 4)
+            self.assertEqual(diag["valid_samples"][0]["full_name"], "pin[000]")
+            self.assertEqual(diag["valid_samples"][3]["full_name"], "pin[003]")
+            self.assertEqual(diag["finite_extrema"]["min_toggle"], 0.0)
+            self.assertEqual(diag["finite_extrema"]["max_toggle"], 0.19)
+
+    def test_tcl_script_pin_activity_nested_diagnostics_for_nonfinite_leaf(self) -> None:
+        if shutil.which("tclsh") is None:
+            self.skipTest("tclsh is required for Tcl runtime regression")
+
+        with tempfile.TemporaryDirectory() as temp_text:
+            root = Path(temp_text)
+            scripts = root / "scripts"
+            scripts.mkdir()
+            (scripts / "load.tcl").write_text("", encoding="utf-8")
+
+            result = root / "activity_power.json"
+            leaf_specs = (
+                ("leaf_group_7/instance_a", "reducer", "nan nan nan nan"),
+                ("leaf_group_b/leaf_b", "other", "1.0 2.0 3.0 4.0"),
+                ("leaf_group_c/leaf_c", "other", "1.0 2.0 3.0 4.0"),
+            )
+            tcl_script = self._write_tcl_runtime_stub(
+                root=root,
+                result=result,
+                leaf_specs=leaf_specs,
+                leaf_pin_map={
+                    "leaf_group_7/instance_a": (
+                        "pin_query_error",
+                        "pin_malformed",
+                        "pin_nonfinite_toggle",
+                        "pin_negative_toggle",
+                        "pin_nonfinite_duty",
+                        "pin_duty_lt_zero",
+                        "pin_duty_gt_one",
+                        "pin_valid",
+                    )
+                },
+                pin_properties={
+                    "pin_query_error": {"activity": None, "direction": "internal"},
+                    "pin_malformed": {"activity": "0.5", "direction": "output"},
+                    "pin_nonfinite_toggle": {
+                        "activity": "nan 0.4 vcd",
+                        "direction": "output",
+                    },
+                    "pin_negative_toggle": {
+                        "activity": "-0.2 0.5 vcd",
+                        "direction": "output",
+                    },
+                    "pin_nonfinite_duty": {
+                        "activity": "0.2 nan vcd",
+                        "direction": "output",
+                    },
+                    "pin_duty_lt_zero": {
+                        "activity": "0.2 -0.1 vcd",
+                        "direction": "output",
+                    },
+                    "pin_duty_gt_one": {
+                        "activity": "0.2 1.2 vcd",
+                        "direction": "output",
+                    },
+                    "pin_valid": {
+                        "activity": "0.2 0.5 vcd",
+                        "direction": "output",
+                    },
+                },
+            )
+            tcl_script_path = root / "activity_power.tcl"
+            tcl_script_path.write_text(tcl_script, encoding="utf-8")
+            tcl = shutil.which("tclsh")
+            assert tcl is not None
+            completed = MODULE.subprocess.run(
+                [tcl, str(tcl_script_path)],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertEqual(
+                completed.returncode,
+                0,
+                msg=f"tcl failed: stdout={completed.stdout} stderr={completed.stderr}",
+            )
+            self.assertFalse(completed.stderr.strip())
+
+            payload = json.loads(result.read_text(encoding="utf-8"))
+            diag = payload["non_finite_leaf_instance_power"]
+            self.assertEqual(diag["instance_count"], 1)
+            pin_diag = diag["pin_activity"]
+            self.assertEqual(pin_diag["inspected_pin_count"], 8)
+            self.assertEqual(pin_diag["malformed_activity_tuple_count"], 1)
+            self.assertEqual(pin_diag["query_error_count"], 1)
+            self.assertEqual(pin_diag["non_finite_toggle_count"], 1)
+            self.assertEqual(pin_diag["negative_toggle_count"], 1)
+            self.assertEqual(pin_diag["non_finite_duty_count"], 1)
+            self.assertEqual(pin_diag["duty_less_than_zero_count"], 1)
+            self.assertEqual(pin_diag["duty_greater_than_one_count"], 1)
+            self.assertEqual(pin_diag["valid_pin_count"], 1)
+            self.assertEqual(pin_diag["finite_extrema"]["min_toggle"], 0.2)
+            self.assertEqual(pin_diag["finite_extrema"]["max_toggle"], 0.2)
+            self.assertEqual(pin_diag["finite_extrema"]["min_duty"], 0.5)
+            self.assertEqual(pin_diag["finite_extrema"]["max_duty"], 0.5)
+            self.assertEqual(len(pin_diag["samples"]), 7)
+            self.assertEqual(len(pin_diag["valid_samples"]), 1)
+            sample_reasons = {sample["reason"] for sample in pin_diag["samples"]}
+            self.assertEqual(
+                sample_reasons,
+                {
+                    "query_error",
+                    "malformed_activity_tuple",
+                    "non_finite_toggle",
+                    "negative_toggle",
+                    "non_finite_duty",
+                    "duty_lt_zero",
+                    "duty_gt_one",
+                },
+            )
+            sample = pin_diag["samples"][0]
+            self.assertIn("instance", sample)
+            self.assertIn("ref", sample)
+            self.assertIn("pin", sample)
+            self.assertIn("direction", sample)
+            self.assertIn("activity", sample)
+            valid_sample = pin_diag["valid_samples"][0]
+            self.assertEqual(
+                set(valid_sample),
+                {"instance", "ref", "pin", "direction", "activity", "reason"},
+            )
 
     def test_tcl_script_ref_name_buckets_are_sorted_and_bounded(self) -> None:
         if shutil.which("tclsh") is None:
@@ -1395,6 +1735,85 @@ class PostrouteVcdPowerTests(unittest.TestCase):
             self.assertTrue(phase["trace_coverage_gate_pass"])
             self.assertFalse(phase["direct_vcd_annotation_pin_gate_pass"])
             self.assertFalse(phase["annotation_gate_pass"])
+
+    def test_build_report_gates_unchanged_when_activity_value_diagnostics_present(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_text:
+            root = Path(temp_text)
+            manifest, manifest_path = self._fixture(root)
+            design_config = root / "config.mk"
+            design_config.write_text("", encoding="utf-8")
+            power = self._with_structural_macro_transfer(
+                {
+                    "total_w": 1.5,
+                    "internal_w": 0.7,
+                    "switching_w": 0.5,
+                    "leakage_w": 0.3,
+                    "sdc_clock_period_ns": 8.0,
+                    "annotatable_pin_count": 1000,
+                    "leaf_annotatable_pin_count": 1000,
+                    "leaf_trace_backed_pin_count": 400,
+                    "vcd_annotated_pin_count": 400,
+                    "direct_annotatable_pin_count": 1000,
+                    "direct_vcd_pin_count": 400,
+                    "macro_trace_active_pin_count": 64,
+                    "macro_annotatable_pin_count": 1000,
+                    "activity_value_diagnostics": {
+                        "queried_pin_count": 2,
+                        "malformed_activity_tuple_count": 1,
+                        "query_error_count": 1,
+                        "samples": [
+                            {
+                                "full_name": "pin_a",
+                                "toggle": 0.1,
+                                "duty": 0.2,
+                                "origin": "vcd",
+                                "reason": "query_error",
+                            }
+                        ],
+                    },
+                },
+                assignment_count=1,
+            )
+            power_with_diag = dict(power)
+            power_with_diag["activity_value_diagnostics"] = dict(power_with_diag["activity_value_diagnostics"])
+            with mock.patch.object(MODULE, "_run_openroad_phase", return_value=power):
+                report_without_diag = MODULE.build_report(
+                    manifest=manifest,
+                    manifest_path=manifest_path,
+                    design_config=design_config,
+                    flow_variant="activity_test",
+                    scope="tb/dut",
+                    min_vcd_coverage=0.25,
+                    min_vcd_pins=400,
+                    min_macro_active_coverage=0.05,
+                    min_macro_active_pins=8,
+                    timeout_seconds=10,
+                )
+            with mock.patch.object(MODULE, "_run_openroad_phase", return_value=power_with_diag):
+                report_with_diag = MODULE.build_report(
+                    manifest=manifest,
+                    manifest_path=manifest_path,
+                    design_config=design_config,
+                    flow_variant="activity_test",
+                    scope="tb/dut",
+                    min_vcd_coverage=0.25,
+                    min_vcd_pins=400,
+                    min_macro_active_coverage=0.05,
+                    min_macro_active_pins=8,
+                    timeout_seconds=10,
+                )
+            self.assertEqual(report_without_diag["promotion_gate_pass"], report_with_diag["promotion_gate_pass"])
+            self.assertTrue(report_with_diag["promotion_gate_pass"])
+            for index, phase_without_diag in enumerate(report_without_diag["phases"]):
+                phase_with_diag = report_with_diag["phases"][index]
+                self.assertEqual(
+                    phase_without_diag["phase_gate_pass"],
+                    phase_with_diag["phase_gate_pass"],
+                )
+                self.assertEqual(
+                    phase_without_diag["structural_macro_activity_gate_pass"],
+                    phase_with_diag["structural_macro_activity_gate_pass"],
+                )
 
     def test_build_report_preserves_non_finite_power_diagnostics(self) -> None:
         with tempfile.TemporaryDirectory() as temp_text:
