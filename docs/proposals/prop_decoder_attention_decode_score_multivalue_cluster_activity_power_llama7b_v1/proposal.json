@@ -142,6 +142,31 @@
         "reason": "Promotion still requires direct VCD roots, post-propagation coverage, transferred macro active coverage, exact clock, and finite positive power evidence."
       },
       "status": "ready_to_queue"
+    },
+    {
+      "item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v5",
+      "task_type": "l2_campaign",
+      "objective": "Rerun shared-score multivalue-cluster activity-backed power after PR #1386 / commit 18cb2dcb7cc4bf26046711a57c7113df840ad1ac; v4 showed zero-pattern macro-specific pin matching and namespaced instance_power failing for all cells. v5 filters the complete hierarchical pin collection by full_name and calls global OpenSTA instance_power; no gate relaxation or heuristic activity.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_decode_score_multivalue_cluster_activity_power",
+      "comparison_role": "shared_score_multivalue_cluster_activity_power_gate",
+      "depends_on_item_ids": [
+        "l1_decoder_attention_decode_score_multivalue_cluster_pnr_8ns_v2",
+        "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "revision": {
+        "reason": "postroute_macro_pin_query_and_instance_power_api_mismatch",
+        "invalidates_item_ids": [
+          "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v4"
+        ]
+      },
+      "expected_result": {
+        "direction": "record_shared_score_multivalue_cluster_activity_power_gate",
+        "reason": "Rerun after PR #1386, using full-name hierarchical pin filtering and global OpenSTA instance_power, while keeping existing activity gates and no gate relaxation."
+      },
+      "status": "ready_to_queue"
     }
   ],
   "baseline_refs": [
