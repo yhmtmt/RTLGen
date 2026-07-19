@@ -6,6 +6,7 @@ from __future__ import annotations
 import importlib.util
 import json
 from pathlib import Path
+import shutil
 import tempfile
 from types import SimpleNamespace
 import unittest
@@ -22,6 +23,112 @@ SPEC.loader.exec_module(MODULE)
 
 
 class PostrouteVcdPowerTests(unittest.TestCase):
+    def _write_tcl_runtime_stub(self, root: Path, result: Path) -> str:
+        script = (
+            "\n"
+            "proc load_design {args} {}\n"
+            "proc read_spef {args} {}\n"
+            "proc log_cmd {args} {}\n"
+            "proc report_activity_annotation {} {}\n"
+            "proc report_power {} {}\n"
+            "proc get_clocks {args} {\n"
+            "  return {clk}\n"
+            "}\n"
+            "proc get_full_name {leaf} {\n"
+            "  return $leaf\n"
+            "}\n"
+            "proc get_pins {args} {\n"
+            "  return {pin_nonfinite_u_group}\n"
+            "}\n"
+            "proc get_property {obj property} {\n"
+            "  if {[string match \"pin_*\" $obj]} {\n"
+            "    if {$property eq \"is_hierarchical\"} {\n"
+            "      return 0\n"
+            "    }\n"
+            "    if {$property eq \"direction\"} {\n"
+            "      return \"output\"\n"
+            "    }\n"
+            "    if {$property eq \"activity\"} {\n"
+            "      return {0.25 0.5 vcd}\n"
+            "    }\n"
+            "    if {$property eq \"full_name\"} {\n"
+            "      return $obj\n"
+            "    }\n"
+            "    return {}\n"
+            "  }\n"
+            "  if {$property eq \"is_leaf\"} {\n"
+            "    return 1\n"
+            "  }\n"
+            "  if {$property eq \"name\"} {\n"
+            "    return $obj\n"
+            "  }\n"
+            "  return {}\n"
+            "}\n"
+            "proc get_cells {args} {\n"
+            "  return {leaf_group[7]/instance_a leaf_group_b/leaf_b}\n"
+            "}\n"
+            "namespace eval sta {\n"
+            "  proc corners {} {\n"
+            "    return {corner0}\n"
+            "  }\n"
+            "  proc design_power {args} {\n"
+            "    # First quartet has non-finite total, triggering sample capture.\n"
+            "    return {1.0 2.0 3.0 nan 4.0 5.0 6.0 7.0}\n"
+            "  }\n"
+            "  proc instance_power {leaf args} {\n"
+            "    if {$leaf eq {leaf_group[7]/instance_a}} {\n"
+            "      return {0.0 nan inf nan}\n"
+            "    }\n"
+            "    return {1.0 2.0 3.0 4.0}\n"
+            "  }\n"
+            "}\n"
+            f"set ::env(SCRIPTS_DIR) \"{root / 'scripts'}\"\n"
+            f"set ::env(RESULTS_DIR) \"{root}\"\n"
+            f"set ::env(RTLGEN_ACTIVITY_VCD) \"{root / 'trace.vcd'}\"\n"
+            f"set ::env(RTLGEN_ACTIVITY_SCOPE) \"tb/dut\"\n"
+            f"set ::env(RTLGEN_ACTIVITY_RESULT) \"{result}\"\n"
+            "\n"
+            + MODULE._tcl_script()
+        )
+        return script
+
+    def test_tcl_script_non_finite_samples_have_escaped_json_array_literals(self) -> None:
+        if shutil.which("tclsh") is None:
+            self.skipTest("tclsh is required for Tcl runtime regression")
+
+        with tempfile.TemporaryDirectory() as temp_text:
+            root = Path(temp_text)
+            scripts = root / "scripts"
+            scripts.mkdir()
+            (scripts / "load.tcl").write_text("", encoding="utf-8")
+
+            result = root / "activity_power.json"
+            tcl_script_path = root / "activity_power.tcl"
+            tcl_script = self._write_tcl_runtime_stub(root=root, result=result)
+            tcl_script_path.write_text(tcl_script, encoding="utf-8")
+            tcl = shutil.which("tclsh")
+            assert tcl is not None
+            completed = MODULE.subprocess.run(
+                [tcl, str(tcl_script_path)],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertEqual(
+                completed.returncode,
+                0,
+                msg=f"tcl failed: stdout={completed.stdout} stderr={completed.stderr}",
+            )
+            self.assertFalse(completed.stderr.strip())
+
+            payload = json.loads(result.read_text(encoding="utf-8"))
+            diagnostics = payload["non_finite_leaf_instance_power"]
+            self.assertEqual(diagnostics["instance_count"], 1)
+            self.assertEqual(len(diagnostics["samples"]), 1)
+            sample = diagnostics["samples"][0]
+            self.assertEqual(sample["full_name"], "leaf_group[7]/instance_a")
+            self.assertIsNone(sample["switching_w"])
+
     def test_tcl_counts_after_design_power(self) -> None:
         script = MODULE._tcl_script()
         totals_index = script.find("set totals [sta::design_power")
