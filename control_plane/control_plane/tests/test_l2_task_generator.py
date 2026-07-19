@@ -15,7 +15,12 @@ from control_plane.db import create_all
 from control_plane.models.enums import WorkItemState
 from control_plane.models.task_requests import TaskRequest
 from control_plane.models.work_items import WorkItem
-from control_plane.services.l2_task_generator import Layer2CampaignGenerateRequest, Layer2TaskGenerationError, generate_l2_campaign_task
+from control_plane.services.l2_task_generator import (
+    Layer2CampaignGenerateRequest,
+    Layer2TaskGenerationError,
+    _cluster_activity_power_item_for_consumer,
+    generate_l2_campaign_task,
+)
 
 
 def _write_campaign(repo_root: Path) -> str:
@@ -5095,6 +5100,85 @@ def test_generate_l2_campaign_task_recovers_metadata_from_evaluation_requests() 
             }
 
 
+def test_generate_l2_campaign_task_preserves_revision_metadata_on_materialization() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        proposal_dir = repo_root / "docs" / "developer_loop" / "prop_l2_demo_v1"
+        proposal_dir.mkdir(parents=True, exist_ok=True)
+        requested_item_id = "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v2"
+        (proposal_dir / "evaluation_requests.json").write_text(
+            json.dumps(
+                {
+                    "proposal_id": "prop_l2_demo_v1",
+                    "requested_items": [
+                        {
+                            "item_id": requested_item_id,
+                            "task_type": "l2_campaign",
+                            "evaluation_mode": "frontier_detail",
+                            "abstraction_layer": "decoder_attention_decode_score_multivalue_cluster_activity_power",
+                            "comparison_role": "shared_score_multivalue_cluster_activity_power_gate",
+                            "depends_on_item_ids": [
+                                "l1_decoder_attention_decode_score_multivalue_cluster_pnr_8ns_v2",
+                                "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1",
+                            ],
+                            "requires_merged_inputs": True,
+                            "requires_materialized_refs": True,
+                            "revision": {
+                                "reason": "pre_propagation_activity_counting_in_cluster_power_audit_is_incorrect_and_replaced",
+                                "invalidates_item_ids": [
+                                    "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1",
+                                ],
+                            },
+                        }
+                    ],
+                },
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id=requested_item_id,
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    proposal_id="prop_l2_demo_v1",
+                    proposal_path="docs/developer_loop/prop_l2_demo_v1",
+                    run_physical=False,
+                ),
+            )
+
+            updated_requests = json.loads(
+                (proposal_dir / "evaluation_requests.json").read_text(encoding="utf-8")
+            )
+            updated_entry = json.loads(
+                (proposal_dir / "evaluation_requests.json").read_text(encoding="utf-8")
+            )["requested_items"][0]
+            assert updated_entry["item_id"] == requested_item_id
+            assert updated_entry["revision"] == {
+                "reason": "pre_propagation_activity_counting_in_cluster_power_audit_is_incorrect_and_replaced",
+                "invalidates_item_ids": [
+                    "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1",
+                ],
+            }
+            assert result.status == "applied"
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            assert work_item.task_request.requested_by == "@tester"
+            assert work_item.task_request.request_payload["developer_loop"]["abstraction"]["layer"] == (
+                "decoder_attention_decode_score_multivalue_cluster_activity_power"
+            )
+
+
 def test_generate_l2_campaign_task_can_refresh_db_without_updating_proposal_files() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
@@ -8114,6 +8198,79 @@ def test_generate_l2_campaign_task_adds_decode_score_multivalue_cluster_activity
             )
 
 
+def test_generate_l2_campaign_task_adds_decode_score_multivalue_cluster_activity_power_v2() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id="l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v2",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    abstraction_layer="decoder_attention_decode_score_multivalue_cluster_activity_power",
+                    evaluation_mode="frontier_detail",
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            run = work_item.task_request.request_payload["task"]["commands"][0]["run"]
+            decoder_inputs = work_item.input_manifest["decoder_contract"]
+
+            assert (
+                "decoder_attention_decode_score_multivalue_cluster_activity_power__"
+                "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v2.json" in run
+            )
+            assert decoder_inputs["decode_score_multivalue_cluster_activity_power_out"] == (
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_decode_score_multivalue_cluster_activity_power__"
+                "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v2.json"
+            )
+            assert any(
+                output.endswith(
+                    "decoder_attention_decode_score_multivalue_cluster_activity_power__"
+                    "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v2.md"
+                )
+                for output in work_item.task_request.request_payload["task"]["expected_outputs"]
+            )
+
+
+def test_cluster_activity_power_item_for_consumer_prefers_requested_version_for_unknown_depends_on() -> None:
+    assert (
+        _cluster_activity_power_item_for_consumer(
+            item_id="l2_decoder_attention_decode_score_multivalue_gqa8_group_activity_power_llama7b_v1",
+            depends_on_item_ids=None,
+        )
+        == "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1"
+    )
+    assert (
+        _cluster_activity_power_item_for_consumer(
+            item_id="l2_decoder_attention_decode_score_multivalue_gqa8_group_activity_power_llama7b_v2",
+            depends_on_item_ids=None,
+        )
+        == "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v2"
+    )
+    assert (
+        _cluster_activity_power_item_for_consumer(
+            item_id="l2_decoder_attention_decode_score_multivalue_gqa8_group_activity_power_llama7b_v1",
+            depends_on_item_ids=[
+                "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v2",
+                "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1",
+            ],
+        )
+        == "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v2"
+    )
+
+
 def test_generate_l2_campaign_task_adds_decode_score_multivalue_gqa_group_activity_power() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
@@ -8134,6 +8291,9 @@ def test_generate_l2_campaign_task_adds_decode_score_multivalue_gqa_group_activi
                     source_commit=source_commit,
                     abstraction_layer="decoder_attention_decode_score_multivalue_gqa_group_activity_power",
                     evaluation_mode="frontier_detail",
+                    depends_on_item_ids=[
+                        "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1",
+                    ],
                     run_physical=False,
                 ),
             )
@@ -8147,30 +8307,42 @@ def test_generate_l2_campaign_task_adds_decode_score_multivalue_gqa_group_activi
                 "audit_decode_score_multivalue_gqa_group_activity_power",
                 "validate_runs",
             ]
-            assert "-m npu.eval.audit_attention_decode_score_multivalue_gqa_group_activity_power" in run
+            assert (
+                "-m npu.eval.audit_attention_decode_score_multivalue_gqa_group_activity_power" in run
+            )
             assert (
                 "--config runs/designs/npu_blocks/"
                 "attention_decode_score_multivalue_gqa_group_int8_m1x8_iterdiv/config.json"
-            ) in run
+                in run
+            )
             assert (
                 "--group-metrics-csv runs/designs/npu_blocks/"
                 "attention_decode_score_multivalue_gqa_group_int8_m1x8_iterdiv/metrics.csv"
-            ) in run
+                in run
+            )
             assert (
                 "--equivalence-json runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
                 "decoder_attention_decode_score_multivalue_gqa_group_equivalence__"
                 "l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v1.json"
-            ) in run
+                in run
+            )
             assert (
                 "--cluster-activity-power-json runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
                 "decoder_attention_decode_score_multivalue_cluster_activity_power__"
                 "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1.json"
-            ) in run
+                in run
+            )
             assert (
                 "--group-orfs-design-config /orfs/flow/designs/nangate45/"
                 "attention_decode_score_multivalue_gqa_group_int8_m1x8_iterdiv/config.mk"
-            ) in run
+                in run
+            )
             assert "--activity-dir /tmp/rtlgen_multivalue_gqa_group_activity" in run
+            assert decoder_inputs["decode_score_multivalue_gqa_group_activity_power_out"] == (
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_decode_score_multivalue_gqa_group_activity_power__"
+                "l2_decoder_attention_decode_score_multivalue_gqa8_group_activity_power_llama7b_v1.json"
+            )
             assert decoder_inputs[
                 "decode_score_multivalue_gqa_group_activity_power_local_only_artifacts"
             ] == ["VCD", "ODB", "SPEF"]
@@ -8180,13 +8352,69 @@ def test_generate_l2_campaign_task_adds_decode_score_multivalue_gqa_group_activi
             assert "mislabeled as direct full-group measurement" in decoder_inputs[
                 "decode_score_multivalue_gqa_group_activity_power_promotion_gate"
             ]
-            assert decoder_inputs["decode_score_multivalue_gqa_group_activity_power_out"].endswith(
+            assert any(
+                output.endswith(
+                    "decoder_attention_decode_score_multivalue_gqa_group_activity_power__"
+                    "l2_decoder_attention_decode_score_multivalue_gqa8_group_activity_power_llama7b_v1.md"
+                )
+                for output in work_item.task_request.request_payload["task"]["expected_outputs"]
+            )
+
+
+def test_generate_l2_campaign_task_adds_decode_score_multivalue_gqa_group_activity_power_v2_cluster_activity_dependency() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id="l2_decoder_attention_decode_score_multivalue_gqa8_group_activity_power_llama7b_v1",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    abstraction_layer="decoder_attention_decode_score_multivalue_gqa_group_activity_power",
+                    evaluation_mode="frontier_detail",
+                    depends_on_item_ids=[
+                        "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v2",
+                    ],
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            commands = work_item.task_request.request_payload["task"]["commands"]
+            run = commands[0]["run"]
+            decoder_inputs = work_item.input_manifest["decoder_contract"]
+
+            assert [command["name"] for command in commands[:2]] == [
+                "audit_decode_score_multivalue_gqa_group_activity_power",
+                "validate_runs",
+            ]
+            assert (
+                "--cluster-activity-power-json runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_decode_score_multivalue_cluster_activity_power__"
+                "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v2.json"
+                in run
+            )
+            assert decoder_inputs["decode_score_multivalue_gqa_group_activity_power_out"] == (
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
                 "decoder_attention_decode_score_multivalue_gqa_group_activity_power__"
                 "l2_decoder_attention_decode_score_multivalue_gqa8_group_activity_power_llama7b_v1.json"
             )
-            assert decoder_inputs[
-                "decode_score_multivalue_gqa_group_activity_power_report"
-            ] in work_item.expected_outputs
+            assert any(
+                output.endswith(
+                    "decoder_attention_decode_score_multivalue_gqa_group_activity_power__"
+                    "l2_decoder_attention_decode_score_multivalue_gqa8_group_activity_power_llama7b_v1.md"
+                )
+                for output in work_item.task_request.request_payload["task"]["expected_outputs"]
+            )
 
 
 def test_generate_l2_campaign_task_adds_folded_gqa_lane_activity_power() -> None:
@@ -8234,10 +8462,119 @@ def test_generate_l2_campaign_task_adds_folded_gqa_lane_activity_power() -> None
                     "l2_decoder_attention_decode_score_multivalue_gqa8_folded_lane_"
                     "equivalence_llama7b_v1.json"
                 ) in run
+                assert (
+                    "--cluster-activity-power-json runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                    "decoder_attention_decode_score_multivalue_cluster_activity_power__"
+                    "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1.json"
+                    in run
+                )
+                assert decoder_inputs[
+                    "decode_score_multivalue_cluster_activity_power_json"
+                ].endswith(
+                    "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1.json"
+                )
                 assert f"--activity-dir /tmp/rtlgen_multivalue_gqa_folded_lanes{lanes}_activity" in run
                 assert f"{lanes} physical query-head lane(s)" in decoder_inputs[
                     "decode_score_multivalue_gqa_group_activity_power_scope"
                 ]
+
+
+def test_generate_l2_campaign_task_folded_lane_activity_reads_revisioned_cluster_activity() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        lanes = 1
+        item_id = (
+            "l2_decoder_attention_decode_score_multivalue_gqa8_folded_"
+            f"lanes{lanes}_activity_power_llama7b_v1"
+        )
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id=item_id,
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    abstraction_layer=(
+                        "decoder_attention_decode_score_multivalue_gqa_group_activity_power"
+                    ),
+                    evaluation_mode="frontier_detail",
+                    depends_on_item_ids=[
+                        "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v2",
+                        "l2_decoder_attention_decode_score_multivalue_gqa8_folded_lane_equivalence_llama7b_v1",
+                    ],
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            run = work_item.command_manifest[0]["run"]
+            assert (
+                "--cluster-activity-power-json runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_decode_score_multivalue_cluster_activity_power__"
+                "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v2.json"
+                in run
+            )
+            assert (
+                f"l2_decoder_attention_decode_score_multivalue_gqa8_folded_lanes{lanes}_activity_power_"
+                "llama7b_v1.json"
+                in run
+            )
+
+
+def test_generate_l2_campaign_task_cluster_frontier_uses_cluster_activity_v2_dependency() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id="l2_decoder_attention_decode_score_multivalue_cluster_frontier_llama7b_v1",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    abstraction_layer="decoder_attention_decode_score_multivalue_cluster_frontier",
+                    evaluation_mode="frontier_recost",
+                    depends_on_item_ids=[
+                        "l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2",
+                        "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v2",
+                    ],
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            run = work_item.task_request.request_payload["task"]["commands"][0]["run"]
+            decoder_inputs = work_item.input_manifest["decoder_contract"]
+            assert (
+                "--activity-power-json runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_decode_score_multivalue_cluster_activity_power__"
+                "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v2.json"
+                in run
+            )
+            assert (
+                decoder_inputs["decode_score_multivalue_cluster_frontier_activity_power"].endswith(
+                    "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v2.json"
+                )
+            )
+            assert (
+                "l2_decoder_attention_decode_score_multivalue_cluster_frontier_llama7b_v1.json"
+                in run
+            )
 
 
 def test_generate_l2_campaign_task_adds_decode_score_tile_frontier() -> None:
@@ -8359,7 +8696,8 @@ def test_generate_l2_campaign_task_adds_decode_score_multivalue_cluster_frontier
                 "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
                 "decoder_attention_decode_score_multivalue_cluster_activity_power__"
                 "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1.json"
-            ) in run
+                in run
+            )
             assert "--cluster-counts 1,2,4,8,16,32" in run
             assert (
                 decoder_inputs["decode_score_multivalue_cluster_frontier_prior_frontier"].endswith(
@@ -8393,6 +8731,45 @@ def test_generate_l2_campaign_task_adds_decode_score_multivalue_cluster_frontier
                     "l2_decoder_attention_decode_score_multivalue_cluster_frontier_llama7b_v1.md"
                 )
                 for output in work_item.task_request.request_payload["task"]["expected_outputs"]
+            )
+
+
+def test_generate_l2_campaign_task_cluster_frontier_uses_cluster_activity_v1_dependency() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id="l2_decoder_attention_decode_score_multivalue_cluster_frontier_llama7b_v1",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    abstraction_layer="decoder_attention_decode_score_multivalue_cluster_frontier",
+                    evaluation_mode="frontier_recost",
+                    depends_on_item_ids=[
+                        "l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2",
+                        "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1",
+                    ],
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            run = work_item.task_request.request_payload["task"]["commands"][0]["run"]
+            assert (
+                "--activity-power-json "
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_decode_score_multivalue_cluster_activity_power__"
+                "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1.json"
+                in run
             )
 
 

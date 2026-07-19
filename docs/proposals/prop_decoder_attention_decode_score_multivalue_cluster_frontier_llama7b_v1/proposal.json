@@ -57,7 +57,7 @@
       "paired_baseline_item_id": "l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2",
       "depends_on_item_ids": [
         "l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2",
-        "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1"
+        "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v2"
       ],
       "requires_merged_inputs": true,
       "requires_materialized_refs": true,
@@ -71,7 +71,7 @@
   "baseline_refs": [
     "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_local_cluster_frontier__l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2.json",
     "control_plane/shadow_exports/l2_decisions/l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2.json",
-    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_cluster_activity_power__l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_cluster_activity_power__l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v2.json",
     "docs/proposals/prop_decoder_attention_decode_score_multivalue_cluster_llama7b_v1/proposal.json",
     "docs/proposals/prop_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1/proposal.json"
   ],
