@@ -100,6 +100,27 @@ def _gqa_group_equivalence_item_for_consumer(item_id: str) -> str:
     return f"l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_{version}"
 
 
+def _cluster_activity_power_item_for_consumer(
+    *,
+    item_id: str,
+    depends_on_item_ids: list[str] | None,
+) -> str:
+    cluster_activity_prefix = "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_"
+    candidate_item_ids = [
+        str(dep).strip()
+        for dep in (depends_on_item_ids or [])
+        if str(dep).strip().startswith(cluster_activity_prefix)
+    ]
+    if candidate_item_ids:
+        return max(
+            candidate_item_ids,
+            key=lambda candidate: int(_VERSION_SUFFIX_RE.search(_retry_base(candidate)).group(1))
+            if _VERSION_SUFFIX_RE.search(_retry_base(candidate))
+            else 1,
+        )
+    return f"{cluster_activity_prefix}{_gqa_evidence_version_for_consumer(item_id)}"
+
+
 def _gqa_folded_activity_lanes(item_id: str) -> int | None:
     match = _GQA_FOLDED_ACTIVITY_LANES_RE.search(_retry_base(item_id))
     return int(match.group(1)) if match else None
@@ -6908,7 +6929,9 @@ def _decoder_attention_decode_score_multivalue_cluster_activity_power_evidence(*
     }
 
 
-def _decoder_attention_decode_score_multivalue_gqa_group_activity_power_evidence(*, item_id: str) -> dict[str, Any]:
+def _decoder_attention_decode_score_multivalue_gqa_group_activity_power_evidence(
+    *, item_id: str, depends_on_item_ids: list[str] | None = None
+) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     folded_lanes = _gqa_folded_activity_lanes(item_id)
     design = (
@@ -6930,9 +6953,13 @@ def _decoder_attention_decode_score_multivalue_gqa_group_activity_power_evidence
             f"{base}/decoder_attention_decode_score_multivalue_gqa_group_equivalence__"
             f"{group_equivalence_item}.json"
         )
+    cluster_activity_power_item = _cluster_activity_power_item_for_consumer(
+        item_id=item_id,
+        depends_on_item_ids=depends_on_item_ids,
+    )
     cluster_activity_power_json = (
         f"{base}/decoder_attention_decode_score_multivalue_cluster_activity_power__"
-        "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1.json"
+        f"{cluster_activity_power_item}.json"
     )
     orfs_design_config = f"/orfs/flow/designs/nangate45/{design}/config.mk"
     activity_dir = (
@@ -7075,15 +7102,21 @@ def _decoder_attention_decode_score_local_cluster_frontier_evidence(*, item_id: 
     }
 
 
-def _decoder_attention_decode_score_multivalue_cluster_frontier_evidence(*, item_id: str) -> dict[str, Any]:
+def _decoder_attention_decode_score_multivalue_cluster_frontier_evidence(
+    *, item_id: str, depends_on_item_ids: list[str] | None = None
+) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     prior = (
         f"{base}/decoder_attention_decode_score_local_cluster_frontier__"
         "l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2.json"
     )
+    cluster_activity_power_item = _cluster_activity_power_item_for_consumer(
+        item_id=item_id,
+        depends_on_item_ids=depends_on_item_ids,
+    )
     activity_power = (
         f"{base}/decoder_attention_decode_score_multivalue_cluster_activity_power__"
-        "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1.json"
+        f"{cluster_activity_power_item}.json"
     )
     cluster_counts = "1,2,4,8,16,32"
     out = f"{base}/decoder_attention_decode_score_multivalue_cluster_frontier__{item_id}.json"
@@ -11042,7 +11075,8 @@ def _build_payload(
             )
         elif abstraction_layer_name == "decoder_attention_decode_score_multivalue_gqa_group_activity_power":
             decoder_evidence = _decoder_attention_decode_score_multivalue_gqa_group_activity_power_evidence(
-                item_id=item_id
+                item_id=item_id,
+                depends_on_item_ids=depends_on_item_ids,
             )
         elif abstraction_layer_name == "decoder_attention_decode_score_tile_frontier":
             decoder_evidence = _decoder_attention_decode_score_tile_frontier_evidence(item_id=item_id)
@@ -11050,7 +11084,8 @@ def _build_payload(
             decoder_evidence = _decoder_attention_decode_score_local_cluster_frontier_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_decode_score_multivalue_cluster_frontier":
             decoder_evidence = _decoder_attention_decode_score_multivalue_cluster_frontier_evidence(
-                item_id=item_id
+                item_id=item_id,
+                depends_on_item_ids=depends_on_item_ids,
             )
         elif abstraction_layer_name == "decoder_attention_decode_score_multivalue_gqa_group_frontier":
             decoder_evidence = _decoder_attention_decode_score_multivalue_gqa_group_frontier_evidence(

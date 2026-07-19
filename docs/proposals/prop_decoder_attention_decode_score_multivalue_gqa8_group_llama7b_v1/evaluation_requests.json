@@ -200,7 +200,7 @@
       "depends_on_item_ids": [
         "l2_decoder_attention_decode_score_multivalue_gqa8_folded_lane_equivalence_llama7b_v1",
         "l1_decoder_attention_decode_score_multivalue_gqa8_folded_lanes1_pnr_v1",
-        "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1"
+        "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v2"
       ],
       "requires_merged_inputs": true,
       "requires_materialized_refs": true,
@@ -220,7 +220,7 @@
       "depends_on_item_ids": [
         "l2_decoder_attention_decode_score_multivalue_gqa8_folded_lane_equivalence_llama7b_v1",
         "l1_decoder_attention_decode_score_multivalue_gqa8_folded_lanes2_pnr_v1",
-        "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1"
+        "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v2"
       ],
       "requires_merged_inputs": true,
       "requires_materialized_refs": true,
@@ -240,7 +240,7 @@
       "depends_on_item_ids": [
         "l2_decoder_attention_decode_score_multivalue_gqa8_folded_lane_equivalence_llama7b_v1",
         "l1_decoder_attention_decode_score_multivalue_gqa8_folded_lanes4_pnr_v1",
-        "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1"
+        "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v2"
       ],
       "requires_merged_inputs": true,
       "requires_materialized_refs": true,
