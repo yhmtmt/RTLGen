@@ -767,6 +767,14 @@ class PostrouteVcdPowerTests(unittest.TestCase):
         }
         return payload
 
+    def _assert_no_full_pin_arrays_in_phase_payload(self, phase: dict[str, object]) -> None:
+        self.assertNotIn("macro_activity_rows", phase)
+        for key, value in phase.items():
+            if not isinstance(value, list):
+                continue
+            if any(isinstance(item, dict) and "full_name" in item for item in value):
+                self.fail(f"phase payload leaked full pin array '{key}'")
+
     def test_phase_manifest_rejects_hash_mismatch(self) -> None:
         with tempfile.TemporaryDirectory() as temp_text:
             root = Path(temp_text)
@@ -1046,6 +1054,19 @@ class PostrouteVcdPowerTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "active_start_tick|active_end_tick|integer"):
                 MODULE._phase_rows(manifest, manifest_path)
 
+    def test_phase_rows_stores_macro_activity_rows_privately(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_text:
+            root = Path(temp_text)
+            manifest, path = self._fixture(root)
+            rows = MODULE._phase_rows(manifest, path)
+            self.assertEqual(len(rows), 3)
+            phase = rows[0]
+            self.assertIn("_macro_activity_rows", phase)
+            self.assertNotIn("macro_activity_rows", phase)
+            self.assertEqual(
+                phase["macro_activity_assignment_count"], len(phase["_macro_activity_rows"])
+            )
+
     def test_build_report_fails_if_structural_macro_activity_incomplete(self) -> None:
         with tempfile.TemporaryDirectory() as temp_text:
             root = Path(temp_text)
@@ -1111,6 +1132,46 @@ class PostrouteVcdPowerTests(unittest.TestCase):
             self.assertFalse(phase["structural_macro_activity_gate_pass"])
             self.assertFalse(phase["phase_gate_pass"])
             self.assertFalse(report["promotion_gate_pass"])
+
+    def test_build_report_omits_pin_arrays_from_phase_output(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_text:
+            root = Path(temp_text)
+            manifest, manifest_path = self._fixture(root)
+            design_config = root / "config.mk"
+            design_config.write_text("", encoding="utf-8")
+            with mock.patch.object(MODULE, "_run_openroad_phase", return_value=self._with_structural_macro_transfer(
+                {
+                    "total_w": 2.0,
+                    "internal_w": 1.0,
+                    "switching_w": 0.8,
+                    "leakage_w": 0.2,
+                    "sdc_clock_period_ns": 8.0,
+                    "annotatable_pin_count": 1000,
+                    "leaf_annotatable_pin_count": 1000,
+                    "leaf_trace_backed_pin_count": 500,
+                    "vcd_annotated_pin_count": 500,
+                    "macro_trace_active_pin_count": 10,
+                    "macro_annotatable_pin_count": 100,
+                    "direct_annotatable_pin_count": 1000,
+                    "direct_vcd_pin_count": 200,
+                },
+                assignment_count=1,
+            )):
+                report = MODULE.build_report(
+                    manifest=manifest,
+                    manifest_path=manifest_path,
+                    design_config=design_config,
+                    flow_variant="activity_test",
+                    scope="tb/dut",
+                    min_vcd_coverage=0.25,
+                    min_vcd_pins=32,
+                    min_macro_active_coverage=0.05,
+                    min_macro_active_pins=8,
+                    timeout_seconds=10,
+                )
+            for phase in report["phases"]:
+                self._assert_no_full_pin_arrays_in_phase_payload(phase)
+                self.assertTrue(phase["structural_macro_activity_gate_pass"])
 
     def test_build_report_accounts_phase_energy_and_gates_coverage(self) -> None:
         with tempfile.TemporaryDirectory() as temp_text:

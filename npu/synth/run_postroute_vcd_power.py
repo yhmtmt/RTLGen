@@ -251,7 +251,7 @@ def _phase_rows(manifest: JsonDict, manifest_path: Path) -> list[JsonDict]:
                 "macro_activity": macro_activity_value,
                 "_resolved_macro_activity": str(macro_activity),
                 "macro_activity_sha256": macro_activity_hash,
-                "macro_activity_rows": macro_activity_rows,
+                "_macro_activity_rows": macro_activity_rows,
                 "macro_activity_assignment_count": len(macro_activity_rows),
                 "measured_cycles": measured_cycles,
                 "full_context_cycles": full_context_cycles,
@@ -1274,7 +1274,7 @@ def build_report(
         tcl.write_text(_tcl_script(), encoding="utf-8")
         for phase in phases:
             phase_macro_activity_tcl: Path | None = None
-            phase_macro_activity_rows = phase.get("macro_activity_rows")
+            phase_macro_activity_rows = phase.get("_macro_activity_rows")
             if phase_macro_activity_rows:
                 phase_macro_activity_tcl = temp / f"{phase['phase']}.macro_activity.tcl"
                 _write_macro_activity_tcl_assignments(
