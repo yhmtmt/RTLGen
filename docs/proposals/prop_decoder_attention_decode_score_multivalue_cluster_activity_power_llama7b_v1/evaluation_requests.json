@@ -19,11 +19,15 @@
         "direction": "record_shared_score_multivalue_cluster_activity_power_gate",
         "reason": "Promotion requires explicit annotation, clock, macro activity, and finite power-gate evidence; vectorless power cannot substitute."
       },
-      "status": "merged",
+      "status": "retracted",
       "merged_pr_number": 1368,
       "merge_commit": "c53909910f6506c7a01877ecddbc06ff0afe7cb9",
       "merged_utc": "2026-07-19T09:57:29.336801Z",
-      "notes": "Merged via PR #1368 and merge c53909910f6506c7a01877ecddbc06ff0afe7cb9 at 2026-07-19T09:57:29.336801Z."
+      "notes": "Merged via PR #1368 and merge c53909910f6506c7a01877ecddbc06ff0afe7cb9 at 2026-07-19T09:57:29.336801Z.",
+      "retracted_utc": "2026-07-19T10:36:32.965572Z",
+      "retracted_by_item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v2",
+      "retraction_reason": "postroute_activity_counted_before_propagation",
+      "replacement_artifact": "control_plane/shadow_exports/l2_decisions/l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v2.json"
     },
     {
       "item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v2",
@@ -48,8 +52,13 @@
         "direction": "record_shared_score_multivalue_cluster_activity_power_gate",
         "reason": "V1 counted activity before propagation; v2 now separates direct VCD roots, uses post-propagation trace-backed coverage, and measures macros after propagation while still requiring explicit annotation coverage, declared clocks, and finite power-gate accounting for promotion."
       },
-      "status": "ready_to_queue"
+      "status": "merged",
+      "merged_pr_number": 1371,
+      "merge_commit": "cc2340e92ec66e800533b7e82769f40f72c9c1a8",
+      "merged_utc": "2026-07-19T10:36:32.965495Z",
+      "notes": "Merged via PR #1371 and merge cc2340e92ec66e800533b7e82769f40f72c9c1a8 at 2026-07-19T10:36:32.965495Z.",
+      "revision_of_decision": "iterate"
     }
   ],
-  "source_commit": "7b01c7e452af6f658c566900fef0513f6ba2490b"
+  "source_commit": "6afdd43402310540fa077bd88b75245afdcb8718"
 }
