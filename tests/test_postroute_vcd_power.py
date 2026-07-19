@@ -23,7 +23,45 @@ SPEC.loader.exec_module(MODULE)
 
 
 class PostrouteVcdPowerTests(unittest.TestCase):
-    def _write_tcl_runtime_stub(self, root: Path, result: Path) -> str:
+    def _write_tcl_runtime_stub(
+        self, root: Path, result: Path, *, macro_transfer: bool = False
+    ) -> str:
+        if macro_transfer:
+            get_pins_body = "  return {pin_input_u_group_0 pin_nonfinite_u_group}\n"
+            pin_property_body = (
+                "  if {$obj eq {pin_input_u_group_0}} {\n"
+                "    if {$property eq \"is_hierarchical\"} { return 0 }\n"
+                "    if {$property eq \"direction\"} { return \"input\" }\n"
+                "    if {$property eq \"activity\"} { return {0.0 0.0 constant} }\n"
+                "    if {$property eq \"full_name\"} { return $obj }\n"
+                "  }\n"
+                "  if {$obj eq {driver_pin_u_group_0}} {\n"
+                "    if {$property eq \"activity\"} { return {0.4 0.9 vcd} }\n"
+                "  }\n"
+            )
+            net_driver_body = (
+                "  proc net_driver_pins {net} {\n"
+                "    if {$net eq {net_u_group_0}} { return {driver_pin_u_group_0} }\n"
+                "    return {}\n"
+                "  }\n"
+            )
+            net_and_activity_body = (
+                "set ::power_pin_activity_calls {}\n"
+                "proc get_nets {args} {\n"
+                "  if {[lindex $args 0] eq \"-of_objects\" && [lindex $args 1] eq {pin_input_u_group_0}} {\n"
+                "    return {net_u_group_0}\n"
+                "  }\n"
+                "  return {}\n"
+                "}\n"
+                "proc set_power_pin_activity {pin density duty} {\n"
+                "  lappend ::power_pin_activity_calls [list $pin $density $duty]\n"
+                "}\n"
+            )
+        else:
+            get_pins_body = "  return {pin_nonfinite_u_group}\n"
+            pin_property_body = ""
+            net_driver_body = ""
+            net_and_activity_body = ""
         script = (
             "\n"
             "proc load_design {args} {}\n"
@@ -38,10 +76,11 @@ class PostrouteVcdPowerTests(unittest.TestCase):
             "  return $leaf\n"
             "}\n"
             "proc get_pins {args} {\n"
-            "  return {pin_nonfinite_u_group}\n"
-            "}\n"
+            + get_pins_body
+            + "}\n"
             "proc get_property {obj property} {\n"
-            "  if {[string match \"pin_*\" $obj]} {\n"
+            + pin_property_body
+            + "  if {[string match \"pin_*\" $obj]} {\n"
             "    if {$property eq \"is_hierarchical\"} {\n"
             "      return 0\n"
             "    }\n"
@@ -64,7 +103,8 @@ class PostrouteVcdPowerTests(unittest.TestCase):
             "  }\n"
             "  return {}\n"
             "}\n"
-            "proc get_cells {args} {\n"
+            + net_and_activity_body
+            + "proc get_cells {args} {\n"
             "  return {leaf_group[7]/instance_a leaf_group_b/leaf_b}\n"
             "}\n"
             "namespace eval sta {\n"
@@ -81,7 +121,8 @@ class PostrouteVcdPowerTests(unittest.TestCase):
             "    }\n"
             "    return {1.0 2.0 3.0 4.0}\n"
             "  }\n"
-            "}\n"
+            + net_driver_body
+            + "}\n"
             f"set ::env(SCRIPTS_DIR) \"{root / 'scripts'}\"\n"
             f"set ::env(RESULTS_DIR) \"{root}\"\n"
             f"set ::env(RTLGEN_ACTIVITY_VCD) \"{root / 'trace.vcd'}\"\n"
@@ -128,6 +169,71 @@ class PostrouteVcdPowerTests(unittest.TestCase):
             sample = diagnostics["samples"][0]
             self.assertEqual(sample["full_name"], "leaf_group[7]/instance_a")
             self.assertIsNone(sample["switching_w"])
+            self.assertEqual(diagnostics.get("non_leaf_skip_count"), 0)
+            self.assertEqual(diagnostics["candidate_cell_count"], 2)
+            self.assertEqual(diagnostics["checked_instance_power_count"], 2)
+            self.assertEqual(diagnostics["finite_row_count"], 1)
+            self.assertEqual(diagnostics["bad_shape_row_count"], 0)
+            self.assertEqual(diagnostics["query_error_count"], 0)
+            self.assertEqual(
+                diagnostics["checked_instance_power_count"],
+                diagnostics["finite_row_count"] + diagnostics["instance_count"],
+            )
+            finite_sums = diagnostics["finite_component_sums"]
+            self.assertEqual(finite_sums["internal_w"], 1.0)
+            self.assertEqual(finite_sums["switching_w"], 2.0)
+            self.assertEqual(finite_sums["leakage_w"], 3.0)
+            self.assertEqual(finite_sums["total_w"], 4.0)
+
+    def test_tcl_script_transfers_macro_input_activity(self) -> None:
+        if shutil.which("tclsh") is None:
+            self.skipTest("tclsh is required for Tcl runtime regression")
+
+        with tempfile.TemporaryDirectory() as temp_text:
+            root = Path(temp_text)
+            scripts = root / "scripts"
+            scripts.mkdir()
+            (scripts / "load.tcl").write_text("", encoding="utf-8")
+
+            result = root / "activity_power.json"
+            tcl_script_path = root / "activity_power.tcl"
+            tcl_script = self._write_tcl_runtime_stub(
+                root=root, result=result, macro_transfer=True
+            )
+            tcl_script_path.write_text(tcl_script, encoding="utf-8")
+            tcl = shutil.which("tclsh")
+            assert tcl is not None
+            completed = MODULE.subprocess.run(
+                [tcl, str(tcl_script_path)],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertEqual(
+                completed.returncode,
+                0,
+                msg=f"tcl failed: stdout={completed.stdout} stderr={completed.stderr}",
+            )
+            self.assertFalse(completed.stderr.strip())
+
+            payload = json.loads(result.read_text(encoding="utf-8"))
+            transfer = payload["macro_pin_transfer"]
+            self.assertEqual(transfer["candidate_count"], 1)
+            self.assertEqual(transfer["applied_count"], 1)
+            self.assertEqual(transfer["query_error_count"], 0)
+            self.assertEqual(transfer["apply_error_count"], 0)
+            self.assertEqual(transfer["source_vcd_count"], 1)
+            self.assertEqual(transfer["source_propagated_count"], 0)
+            self.assertEqual(transfer["active_count"], 1)
+            self.assertEqual(transfer["zero_count"], 0)
+            self.assertEqual(len(transfer["transferred"]), 1)
+            self.assertEqual(
+                transfer["transferred"][0]["full_name"], "pin_input_u_group_0"
+            )
+            self.assertEqual(transfer["transferred"][0]["source"], "vcd")
+            self.assertEqual(payload["macro_activity_origin_counts"]["transferred"], 1)
+            self.assertEqual(payload["macro_trace_backed_pin_count"], 1)
+            self.assertEqual(payload["macro_trace_active_pin_count"], 1)
 
     def test_tcl_counts_after_design_power(self) -> None:
         script = MODULE._tcl_script()
