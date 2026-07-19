@@ -1,0 +1,169 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-07-19T10:53:19.778611Z",
+  "control_plane_source_commit": "48e6b91d0af1d97a8fd7bc6863ce6fcf75707f23",
+  "review_metadata_source_commit": "48e6b91d0af1d97a8fd7bc6863ce6fcf75707f23",
+  "item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v3",
+  "run_key": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v3_run_b3cb98cb1451250d",
+  "layer": "layer2",
+  "flow": "openroad",
+  "task_type": "l2_campaign",
+  "source_commit": "48e6b91d0af1d97a8fd7bc6863ce6fcf75707f23",
+  "queue_snapshot": {
+    "path": "control_plane/shadow_exports/review/l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v3/evaluated.json",
+    "result": {
+      "branch": "eval/l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v3/s20260719t105317z",
+      "completed_utc": "2026-07-19T10:53:15.336217Z",
+      "evaluator_id": "control_plane",
+      "executor": "@control_plane",
+      "host": "b7c2d9c80c1c",
+      "identity_block": "[role:evaluator][account:control_plane][session:s20260719t105317z][host:b7c2d9c80c1c][item:l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v3]",
+      "metrics_rows": [],
+      "metrics_exempt_reason": "evidence_only_decoder_evidence",
+      "queue_item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v3",
+      "session_id": "s20260719t105317z",
+      "status": "ok",
+      "summary": "2/2 commands succeeded"
+    }
+  },
+  "review_artifact": {
+    "kind": "decision_proposal",
+    "path": "control_plane/shadow_exports/l2_decisions/l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v3.json",
+    "storage_mode": "repo",
+    "sha256": "b290cc077fc2bcbb69c57ba25fd94d963011fdfce4099df553657fc5f902a4c8",
+    "payload": {
+      "version": 0.1,
+      "generated_utc": "2026-07-19T10:53:16.626257Z",
+      "item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v3",
+      "run_key": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v3_run_b3cb98cb1451250d",
+      "layer": "layer2",
+      "flow": "openroad",
+      "platform": "nangate45",
+      "task_type": "l2_campaign",
+      "source_commit": "48e6b91d0af1d97a8fd7bc6863ce6fcf75707f23",
+      "review_metadata_source_commit": "48e6b91d0af1d97a8fd7bc6863ce6fcf75707f23",
+      "objective": "Rerun shared-score multivalue-cluster activity-backed power with post-route diagnostics that classify FakeRAM macro activity origins, zero-toggle behavior, and OpenSTA non-finite design and leaf power without relaxing promotion gates.",
+      "input_manifest": {
+        "decoder_contract": {
+          "decode_score_multivalue_cluster_config": "runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/config.json",
+          "decode_score_multivalue_cluster_activity_dir": "/tmp/rtlgen_multivalue_cluster_activity",
+          "decode_score_multivalue_cluster_pnr_metrics_csv": "runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/metrics.csv",
+          "decode_score_multivalue_cluster_equivalence_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_cluster_equivalence__l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1.json",
+          "decode_score_multivalue_cluster_activity_power_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_cluster_activity_power__l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v3.json",
+          "decode_score_multivalue_cluster_orfs_design_config": "/orfs/flow/designs/nangate45/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/config.mk",
+          "decode_score_multivalue_cluster_activity_power_scope": "Audit the shared-score multivalue cluster with activity-backed power evidence after merged equivalence and PNR. Keep VCD/ODB/SPEF evaluator-local, commit only repo-portable JSON/MD artifacts, preserve the FakeRAM proxy qualification, and reject vectorless power as a substitute for annotated power or token-energy claims.",
+          "decode_score_multivalue_cluster_activity_power_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_cluster_activity_power__l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v3.md",
+          "decode_score_multivalue_cluster_activity_power_promotion_gate": "Promotion requires explicit annotation coverage, declared clock assumptions, macro activity attribution, and finite power-gate accounting.",
+          "decode_score_multivalue_cluster_activity_power_local_only_artifacts": [
+            "VCD",
+            "ODB",
+            "SPEF"
+          ]
+        }
+      },
+      "recommendation": {
+        "source": "decoder_evidence",
+        "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_cluster_activity_power__l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v3.json",
+        "arch_id": "decoder_attention_decode_score_multivalue_cluster_activity_power",
+        "macro_mode": "evidence_only",
+        "outcome": "activity_power_rejected_no_gated_candidate"
+      },
+      "objective_profiles": [],
+      "evaluation_record": {
+        "proposal_id": "prop_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1",
+        "title": "Activity-backed power gate for the shared-score multivalue decode cluster",
+        "primary_question": "Does the shared-score multivalue cluster remain physically interesting once evaluator-local activity evidence replaces the current vectorless-power placeholder?",
+        "evaluation_mode": "frontier_detail",
+        "comparison_role": "shared_score_multivalue_cluster_activity_power_gate",
+        "abstraction_layer": "decoder_attention_decode_score_multivalue_cluster_activity_power",
+        "expected_direction": "record_shared_score_multivalue_cluster_activity_power_gate",
+        "expected_reason": "v3 records diagnostic evidence for macro activity provenance, zero-toggle filtering, and non-finite OpenSTA power while retaining all existing gates.",
+        "summary": "Decoder multivalue-cluster activity-power evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_cluster_activity_power__l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v3.json: decision=activity_power_rejected_no_gated_candidate; promotion_gate_pass=False; candidate_count=1; promoted_candidate_count=0; best_candidate_id=None; representative_candidate_id=multivalue_cluster_activity_decode_score_multivalue_cluster_v1_8ns_bridge_proxy_die_2500; representative_flow_variant=decode_score_multivalue_cluster_v1_8ns_bridge_proxy_die_2500; representative_status=measurement_failed; representative_ppa_critical_path_ns=7.1765; representative_ppa_instance_area_um2=2785000.0; representative_ppa_total_power_mw=0.348.",
+        "outcome": "activity_power_rejected_no_gated_candidate",
+        "expectation_status": "unspecified"
+      },
+      "proposal_assessment": {
+        "proposal_id": "prop_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1",
+        "title": "Activity-backed power gate for the shared-score multivalue decode cluster",
+        "kind": "architecture",
+        "primary_question": "Does the shared-score multivalue cluster remain physically interesting once evaluator-local activity evidence replaces the current vectorless-power placeholder?",
+        "evaluation_mode": "frontier_detail",
+        "comparison_role": "shared_score_multivalue_cluster_activity_power_gate",
+        "outcome": "activity_power_rejected_no_gated_candidate",
+        "summary": "Decoder multivalue-cluster activity-power evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_cluster_activity_power__l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v3.json: decision=activity_power_rejected_no_gated_candidate; promotion_gate_pass=False; candidate_count=1; promoted_candidate_count=0; best_candidate_id=None; representative_candidate_id=multivalue_cluster_activity_decode_score_multivalue_cluster_v1_8ns_bridge_proxy_die_2500; representative_flow_variant=decode_score_multivalue_cluster_v1_8ns_bridge_proxy_die_2500; representative_status=measurement_failed; representative_ppa_critical_path_ns=7.1765; representative_ppa_instance_area_um2=2785000.0; representative_ppa_total_power_mw=0.348.",
+        "baseline_ref": null,
+        "baseline_item_id": null,
+        "matched_row_count": 0,
+        "matched_rows": [],
+        "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_cluster_activity_power__l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v3.json",
+        "decoder_quality": {
+          "diagnosis": {},
+          "remaining_abstractions": [
+            "FakeRAM area and power use Nangate45 proxy LEF/Liberty views, not SRAM compiler signoff.",
+            "Value-memory, NoC, HBM/DRAM, command-distribution, and clock-tree composition outside the cluster are not included.",
+            "RTL VCD is mapped to the routed netlist; each candidate records and gates direct annotation coverage.",
+            "Score multiplier and shift derivation remain external to the cluster boundary."
+          ],
+          "best": null
+        }
+      },
+      "source_refs": {
+        "decoder_evidence_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_cluster_activity_power__l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v3.json",
+        "decoder_decode_score_multivalue_cluster_activity_power_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_cluster_activity_power__l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v3.json",
+        "decoder_decode_score_multivalue_cluster_activity_power_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_cluster_activity_power__l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v3.md"
+      },
+      "decoder_quality": {
+        "diagnosis": {},
+        "remaining_abstractions": [
+          "FakeRAM area and power use Nangate45 proxy LEF/Liberty views, not SRAM compiler signoff.",
+          "Value-memory, NoC, HBM/DRAM, command-distribution, and clock-tree composition outside the cluster are not included.",
+          "RTL VCD is mapped to the routed netlist; each candidate records and gates direct annotation coverage.",
+          "Score multiplier and shift derivation remain external to the cluster boundary."
+        ],
+        "best": null
+      }
+    }
+  },
+  "developer_loop": {
+    "comparison": {
+      "role": "shared_score_multivalue_cluster_activity_power_gate",
+      "paired_baseline_item_id": ""
+    },
+    "evaluation": {
+      "mode": "frontier_detail",
+      "expected_reason": "v3 records diagnostic evidence for macro activity provenance, zero-toggle filtering, and non-finite OpenSTA power while retaining all existing gates.",
+      "expected_direction": "record_shared_score_multivalue_cluster_activity_power_gate"
+    },
+    "abstraction": {
+      "layer": "decoder_attention_decode_score_multivalue_cluster_activity_power"
+    },
+    "proposal_id": "prop_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1",
+    "dependencies": {
+      "item_ids": [
+        "l1_decoder_attention_decode_score_multivalue_cluster_pnr_8ns_v2",
+        "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    },
+    "proposal_path": "docs/proposals/prop_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1"
+  },
+  "submission_history": null,
+  "pr_payload": {
+    "branch": "eval/l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v3/s20260719t105317z",
+    "title": "eval: run diagnose shared-score multivalue cluster activity power v3",
+    "body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260719t105317z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v3"
+    },
+    "body_md": "## Summary\n- item_id: `l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v3`\n- run_key: `l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v3_run_b3cb98cb1451250d`\n- layer: `layer2`\n- task_type: `l2_campaign`\n- status: `ok`\n- summary: `2/2 commands succeeded`\n- queue_snapshot: `control_plane/shadow_exports/review/l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v3/evaluated.json`\n- metrics_rows_count: `0`\n- review_artifact: `decision_proposal` at `control_plane/shadow_exports/l2_decisions/l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v3.json`\n\n## Developer Context\n- proposal_id: `prop_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1`\n- proposal_path: `docs/proposals/prop_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1`\n- reviewer_first_read: `docs/proposals/prop_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1` plus `docs/developer_agent_review.md`\n- execution_source_commit: `48e6b91d0af1d97a8fd7bc6863ce6fcf75707f23`\n- review_metadata_source_commit: `48e6b91d0af1d97a8fd7bc6863ce6fcf75707f23`\n\n## Evaluation Mode\n- evaluation_mode: `frontier_detail`\n- abstraction_layer: `decoder_attention_decode_score_multivalue_cluster_activity_power`\n- comparison_role: `shared_score_multivalue_cluster_activity_power_gate`\n- expected_direction: `record_shared_score_multivalue_cluster_activity_power_gate`\n- expected_reason: `v3 records diagnostic evidence for macro activity provenance, zero-toggle filtering, and non-finite OpenSTA power while retaining all existing gates.`\n- expectation_status: `unspecified`\n- evaluation_summary: `Decoder multivalue-cluster activity-power evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_cluster_activity_power__l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v3.json: decision=activity_power_rejected_no_gated_candidate; promotion_gate_pass=False; candidate_count=1; promoted_candidate_count=0; best_candidate_id=None; representative_candidate_id=multivalue_cluster_activity_decode_score_multivalue_cluster_v1_8ns_bridge_proxy_die_2500; representative_flow_variant=decode_score_multivalue_cluster_v1_8ns_bridge_proxy_die_2500; representative_status=measurement_failed; representative_ppa_critical_path_ns=7.1765; representative_ppa_instance_area_um2=2785000.0; representative_ppa_total_power_mw=0.348.`\n\n## Focused Comparison\n- primary_question: `Does the shared-score multivalue cluster remain physically interesting once evaluator-local activity evidence replaces the current vectorless-power placeholder?`\n- comparison_role: `shared_score_multivalue_cluster_activity_power_gate`\n- proposal_outcome: `activity_power_rejected_no_gated_candidate`\n- comparison_summary: `Decoder multivalue-cluster activity-power evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_cluster_activity_power__l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v3.json: decision=activity_power_rejected_no_gated_candidate; promotion_gate_pass=False; candidate_count=1; promoted_candidate_count=0; best_candidate_id=None; representative_candidate_id=multivalue_cluster_activity_decode_score_multivalue_cluster_v1_8ns_bridge_proxy_die_2500; representative_flow_variant=decode_score_multivalue_cluster_v1_8ns_bridge_proxy_die_2500; representative_status=measurement_failed; representative_ppa_critical_path_ns=7.1765; representative_ppa_instance_area_um2=2785000.0; representative_ppa_total_power_mw=0.348.`\n- baseline_ref: `None`\n- baseline_item_id: `None`\n\n## Checklist\n- [ ] Commit lightweight campaign artifacts only\n- [ ] Include metrics row references in result.metrics_rows\n- [ ] Keep committed result_path fields repo-portable\n- [ ] Run python3 scripts/validate_runs.py --skip_eval_queue before pushing\n",
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Include metrics row references in result.metrics_rows",
+      "Keep committed result_path fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ]
+  }
+}
