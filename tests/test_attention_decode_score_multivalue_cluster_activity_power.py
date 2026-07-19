@@ -148,6 +148,10 @@ def test_build_report_records_promoted_and_failed_variants(tmp_path: Path) -> No
             activity_dir=tmp_path / "activity",
         )
     assert payload["decision"] == "activity_backed_cluster_power_measured"
+    assert payload["source_dependencies"] == [
+        "l1_decoder_attention_decode_score_multivalue_cluster_pnr_8ns_v2",
+        "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1",
+    ]
     assert payload["promoted_candidate_count"] == 1
     assert payload["best_candidate_id"] == "multivalue_cluster_activity_cluster_die2500"
     assert payload["equivalence"]["final_tensor_hash"] == "final-hash"
