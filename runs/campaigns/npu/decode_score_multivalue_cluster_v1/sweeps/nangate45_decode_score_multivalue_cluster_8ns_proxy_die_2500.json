@@ -1,0 +1,35 @@
+{
+  "tag_prefix": "decode_score_multivalue_cluster_v1_8ns_bridge",
+  "flow_params": {
+    "TAG": [
+      "decode_score_multivalue_cluster_v1_8ns_bridge"
+    ],
+    "FLOW_VARIANT": [
+      "decode_score_multivalue_cluster_v1_8ns_bridge"
+    ],
+    "CLOCK_PERIOD": [
+      8
+    ],
+    "PLACE_DENSITY": [
+      0.4
+    ],
+    "SYNTH_HIERARCHICAL": [
+      1
+    ],
+    "SYNTH_MEMORY_MAX_BITS": [
+      65536
+    ]
+  },
+  "mode_compare": {
+    "modes": [
+      {
+        "name": "proxy_die_2500",
+        "use_macro": true,
+        "param_overrides": {
+          "DIE_AREA": "0 0 2500 2500",
+          "CORE_AREA": "50 50 2450 2450"
+        }
+      }
+    ]
+  }
+}

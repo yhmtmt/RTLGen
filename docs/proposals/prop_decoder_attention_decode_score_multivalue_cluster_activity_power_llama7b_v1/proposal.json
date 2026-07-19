@@ -9,10 +9,11 @@
   "hypothesis": "The shared-score multivalue decode cluster can only become promotable if activity-annotated power remains coherent after the merged equivalence proof and merged Nangate45 PNR row are combined with evaluator-local switching evidence; vectorless power alone is insufficient.",
   "direct_comparison": {
     "primary_question": "Does the shared-score multivalue cluster remain physically interesting once evaluator-local activity evidence replaces the current vectorless-power placeholder?",
-    "baseline": "l1_decoder_attention_decode_score_multivalue_cluster_pnr_v1",
+    "baseline": "l1_decoder_attention_decode_score_multivalue_cluster_pnr_v1 and the forthcoming l1_decoder_attention_decode_score_multivalue_cluster_pnr_8ns_v2 bridge row (2.5 mm die / 2.4 mm square core).",
     "include": [
       "merged shared-score multivalue-cluster equivalence evidence",
-      "merged Nangate45 PNR metrics at the committed 8 ns point",
+      "merged Nangate45 PNR 10 ns row for the 2.5 mm die / 2.4 mm square core",
+      "forthcoming 8 ns bridge row for the same 2.5 mm die / 2.4 mm square core using refreshed evaluator-local routed artifacts",
       "evaluator-local VCD, ODB, and SPEF used only to derive portable JSON/MD outputs",
       "annotation, clock, macro activity, and finite power-gate assumptions called out explicitly",
       "repo-portable evidence outputs under runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
@@ -56,7 +57,7 @@
       "abstraction_layer": "decoder_attention_decode_score_multivalue_cluster_activity_power",
       "comparison_role": "shared_score_multivalue_cluster_activity_power_gate",
       "depends_on_item_ids": [
-        "l1_decoder_attention_decode_score_multivalue_cluster_pnr_v1",
+        "l1_decoder_attention_decode_score_multivalue_cluster_pnr_8ns_v2",
         "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1"
       ],
       "requires_merged_inputs": true,

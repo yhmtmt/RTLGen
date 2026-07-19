@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1",
-  "source_commit_note": "Queue this audit only after the activity-power hook merges; it depends on already-merged shared-score multivalue-cluster PNR and equivalence evidence.",
+  "source_commit_note": "Queue this audit only after the activity-power hook merges; it depends on the 8 ns shared-score multivalue-cluster PNR bridge and equivalence evidence.",
   "requested_items": [
     {
       "item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1",
@@ -10,7 +10,7 @@
       "abstraction_layer": "decoder_attention_decode_score_multivalue_cluster_activity_power",
       "comparison_role": "shared_score_multivalue_cluster_activity_power_gate",
       "depends_on_item_ids": [
-        "l1_decoder_attention_decode_score_multivalue_cluster_pnr_v1",
+        "l1_decoder_attention_decode_score_multivalue_cluster_pnr_8ns_v2",
         "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1"
       ],
       "requires_merged_inputs": true,
