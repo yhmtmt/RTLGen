@@ -1456,6 +1456,13 @@ def _is_multivalue_cluster_8ns_bridge_sweep(*, item_id: str, sweep_path: str) ->
     )
 
 
+def _is_gqa_lanes2_macro_hier_placement_sweep(*, item_id: str, sweep_path: str) -> bool:
+    return (
+        item_id == "l1_decoder_attention_decode_score_multivalue_gqa8_folded_lanes2_macro_placement_v1"
+        and Path(sweep_path).name == "nangate45_decode_score_multivalue_gqa_lanes2_macro_hier_placement_compare_3550.json"
+    )
+
+
 def _expand_expected_outputs_for_trials(*, expected_outputs: list[str], trial_policy: dict[str, int]) -> list[str]:
     trial_count = max(int((trial_policy or {}).get("trial_count") or 1), 1)
     if trial_count <= 1:
@@ -1690,13 +1697,20 @@ def generate_l1_sweep_task(session: Session, request: Layer1SweepGenerateRequest
     )
     source_commit = _resolve_source_commit(repo_root, request.source_commit)
 
+    effective_make_target = request.make_target
+    if not effective_make_target and _is_gqa_lanes2_macro_hier_placement_sweep(
+        item_id=item_id,
+        sweep_path=sweep_path,
+    ):
+        effective_make_target = "3_5_place_dp"
+
     targets = [
         _read_config_target(
             (repo_root / config_path).resolve(),
             repo_root=repo_root,
             config_rel=config_path,
             out_root=out_root,
-            make_target=request.make_target,
+            make_target=effective_make_target,
         )
         for config_path in config_paths
     ]
@@ -1730,10 +1744,35 @@ def generate_l1_sweep_task(session: Session, request: Layer1SweepGenerateRequest
                 break
         if not inserted:
             command_manifest.append(checker_command)
+
+    if _is_gqa_lanes2_macro_hier_placement_sweep(item_id=item_id, sweep_path=sweep_path) and targets:
+        checker_command = {
+            "name": "check_attention_decode_score_multivalue_gqa_lanes2_macro_hier_placement",
+            "run": (
+                "python3 npu/eval/check_attention_decode_score_multivalue_gqa_lanes2_macro_hier_placement.py "
+                f"--metrics-path {targets[0].expected_metrics_path} --out "
+                f"{str(Path(targets[0].expected_metrics_path).parent / 'mode_compare_lanes2_placement_diag.json')}"
+            ),
+        }
+        inserted = False
+        for idx, command in enumerate(command_manifest):
+            if command.get("name") == "run_block_sweep":
+                command_manifest.insert(idx + 1, checker_command)
+                inserted = True
+                break
+        if not inserted:
+            command_manifest.append(checker_command)
+
     expected_outputs = []
     for target in targets:
         expected_outputs.append(target.expected_metrics_path)
         expected_outputs.extend(target.expected_report_paths)
+
+    if _is_gqa_lanes2_macro_hier_placement_sweep(item_id=item_id, sweep_path=sweep_path):
+        for target in targets:
+            expected_outputs.append(
+                f"{Path(target.expected_metrics_path).parent}/mode_compare_lanes2_placement_diag.json"
+            )
 
     title = request.title or _default_title(sweep_path=sweep_path, platform=request.platform)
     objective = request.objective or _default_objective(

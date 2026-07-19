@@ -105,6 +105,43 @@ class ModeCompareRegressionTest(unittest.TestCase):
         self.assertFalse(cfg["modes"][0]["use_macro"])
         self.assertTrue(cfg["modes"][1]["use_macro"])
 
+    def test_parse_mode_compare_macro_placement_modes(self):
+        raw = {
+            "mode_compare": {
+                "modes": [
+                    {
+                        "name": "Flattened_wrapper",
+                        "use_macro": True,
+                        "param_overrides": {
+                            "SYNTH_HIERARCHICAL": 0,
+                            "DIE_AREA": "0 0 3550 3550",
+                            "CORE_AREA": "50 50 3500 3500",
+                        },
+                    },
+                    {
+                        "name": "Hierarchical_macro",
+                        "use_macro": "true",
+                        "param_overrides": {
+                            "SYNTH_HIERARCHICAL": 1,
+                            "DIE_AREA": "0 0 3550 3550",
+                            "CORE_AREA": "50 50 3500 3500",
+                        },
+                    },
+                ]
+            }
+        }
+        cfg = self.run_block_sweep.parse_mode_compare_config(raw)
+        self.assertIsNotNone(cfg)
+        assert cfg is not None
+        modes = cfg["modes"]
+        self.assertEqual("flattened_wrapper", modes[0]["slug"])
+        self.assertEqual("hierarchical_macro", modes[1]["slug"])
+        self.assertTrue(modes[0]["use_macro"])
+        self.assertTrue(modes[1]["use_macro"])
+        self.assertEqual(0, modes[0]["param_overrides"]["SYNTH_HIERARCHICAL"])
+        self.assertEqual(1, modes[1]["param_overrides"]["SYNTH_HIERARCHICAL"])
+
+
     def test_apply_mode_to_params(self):
         base = {
             "TAG": "run_tag",

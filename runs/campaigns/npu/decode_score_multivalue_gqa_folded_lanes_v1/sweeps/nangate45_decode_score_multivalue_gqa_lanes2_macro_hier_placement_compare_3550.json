@@ -1,0 +1,33 @@
+{
+  "tag_prefix": "decode_score_multivalue_gqa_lanes2_macro_hier_placement_compare_3550_v1",
+  "flow_params": {
+    "TAG": ["decode_score_multivalue_gqa_lanes2_macro_hier_placement_compare_3550_v1"],
+    "FLOW_VARIANT": ["decode_score_multivalue_gqa_lanes2_macro_hier_placement_compare_3550_v1"],
+    "CLOCK_PERIOD": [10],
+    "PLACE_DENSITY": [0.4],
+    "SYNTH_HIERARCHICAL": [1],
+    "SYNTH_MEMORY_MAX_BITS": [65536]
+  },
+  "mode_compare": {
+    "modes": [
+      {
+        "name": "flattened_wrapper",
+        "use_macro": true,
+        "param_overrides": {
+          "SYNTH_HIERARCHICAL": 0,
+          "DIE_AREA": "0 0 3550 3550",
+          "CORE_AREA": "50 50 3500 3500"
+        }
+      },
+      {
+        "name": "hierarchical_macro",
+        "use_macro": true,
+        "param_overrides": {
+          "SYNTH_HIERARCHICAL": 1,
+          "DIE_AREA": "0 0 3550 3550",
+          "CORE_AREA": "50 50 3500 3500"
+        }
+      }
+    ]
+  }
+}

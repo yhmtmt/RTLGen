@@ -264,6 +264,11 @@ Required metadata per work item:
   - `depends_on_item_ids`
   - `requires_merged_inputs`
   - `requires_materialized_refs`
+- for macro-placement diagnostics, explicitly define both macro-preserving `mode_compare`
+  entries in the sweep (`use_macro: true` for each), rather than relying on the
+  default `flat_nomacro` baseline; keep the make target explicit (for example
+  `3_5_place_dp`) and keep `SYNTH_KEEP_MODULES` unset unless flow context
+  requires it
 
 `proposal_path` must resolve to the proposal's `proposal.json`, normally
 `docs/proposals/<proposal_id>/proposal.json`. Keep the proposal workspace
