@@ -243,7 +243,7 @@ def build_report(
             "final_tensor_hash": equivalence.get("final_tensor_hash"),
         },
         "source_dependencies": [
-            "l1_decoder_attention_decode_score_multivalue_cluster_pnr_v1",
+            "l1_decoder_attention_decode_score_multivalue_cluster_pnr_8ns_v2",
             "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1",
         ],
         "remaining_abstractions": [
