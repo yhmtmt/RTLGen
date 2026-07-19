@@ -15,6 +15,7 @@ import csv
 import hashlib
 import itertools
 import json
+from collections import deque
 import os
 import re
 import shutil
@@ -30,6 +31,7 @@ REPORT_BASE = Path("/orfs/flow/reports")
 RESULT_BASE = Path("/orfs/flow/results")
 LOG_BASE = Path("/orfs/flow/logs")
 SRC_BASE = DEST_BASE / "src"
+DEFAULT_FAILURE_SIGNATURE_MAX_LEN = 255
 
 
 def sha1_file(path: Path) -> str:
@@ -810,6 +812,109 @@ def parse_rect_param(value: object) -> Optional[tuple[float, float, float, float
     return x1, y1, x2, y2
 
 
+def _bounded_text(value: object, max_len: int = DEFAULT_FAILURE_SIGNATURE_MAX_LEN) -> str:
+    text = str(value or "").strip()
+    if not text:
+        return ""
+    if len(text) <= max_len:
+        return text
+    digest = hashlib.sha1(text.encode("utf-8")).hexdigest()[:12]
+    suffix = f"... [sha1:{digest}]"
+    keep = max_len - len(suffix)
+    if keep <= 0:
+        return suffix[:max_len]
+    return text[:keep] + suffix
+
+
+def _normalize_failure_stage(raw_stage: str) -> str:
+    text = str(raw_stage or "").lower().replace("-", "_")
+    if "synth" in text or "yosys" in text:
+        return "synth"
+    if "place_gp" in text or "globalplace" in text or "global_place" in text:
+        return "globalplace"
+    if "place_resized" in text or "placeopt" in text:
+        return "placeopt"
+    if "place_dp" in text or "detailedplace" in text or "detailed_place" in text:
+        return "detailedplace"
+    if "cts" in text:
+        return "cts"
+    if "route" in text:
+        return "route"
+    if "finish" in text:
+        return "finish"
+    return "flow"
+
+
+def _infer_failure_log_path(log_dir: Path, make_target: Optional[str]) -> Optional[Path]:
+    if make_target:
+        explicit_log = log_dir / f"{make_target}.log"
+        if explicit_log.exists():
+            return explicit_log
+    candidates: list[tuple[float, Path]] = []
+    try:
+        for path in log_dir.glob("*.log"):
+            try:
+                candidates.append((path.stat().st_mtime, path))
+            except OSError:
+                continue
+    except OSError:
+        return None
+    if not candidates:
+        return None
+    candidates.sort(reverse=True)
+    return candidates[0][1]
+
+
+def _normalize_failure_line(line: str) -> str:
+    sanitized = line.replace("\x1b", "")
+    sanitized = re.sub(r"\[[0-9;]*m", "", sanitized)
+    sanitized = re.sub(r"/\S+", "<path>", sanitized)
+    sanitized = re.sub(r"\b0x[0-9a-fA-F]+\b", "0x<hex>", sanitized)
+    return " ".join(sanitized.strip().split())
+
+
+def _extract_failure_signature(
+    log_path: Optional[Path],
+    command: List[object],
+    returncode: int,
+) -> str:
+    fallback = _bounded_text(
+        f"exit_code={returncode} command={command_to_text(command)}",
+        max_len=DEFAULT_FAILURE_SIGNATURE_MAX_LEN,
+    )
+    if log_path is None or not log_path.exists():
+        return fallback
+
+    fail_patterns = (
+        re.compile(r"(?i)\bfatal\b"),
+        re.compile(r"(?i)\berror\b"),
+        re.compile(r"(?i)\bfailed\b"),
+        re.compile(r"(?i)\bno rule to make target\b"),
+        re.compile(r"(?i)\btraceback\b"),
+        re.compile(r"(?i)\bsegmentation fault\b"),
+        re.compile(r"(?i)\baborted\b"),
+    )
+    try:
+        with log_path.open("r", encoding="utf-8", errors="ignore") as handle:
+            tail = list(deque(handle, maxlen=240))
+    except OSError:
+        return fallback
+
+    for line in reversed(tail):
+        if any(pattern.search(line) for pattern in fail_patterns):
+            return _bounded_text(
+                _normalize_failure_line(line),
+                max_len=DEFAULT_FAILURE_SIGNATURE_MAX_LEN,
+            )
+
+    for line in reversed(tail):
+        line = line.strip()
+        if line:
+            return _bounded_text(_normalize_failure_line(line), max_len=DEFAULT_FAILURE_SIGNATURE_MAX_LEN)
+
+    return fallback
+
+
 def parse_macro_size_from_lef(lef_path: Path) -> Optional[tuple[float, float]]:
     try:
         text = lef_path.read_text(encoding="utf-8", errors="ignore")
@@ -1308,6 +1413,10 @@ def append_metrics(metrics_path: Path, row: Dict[str, object]):
         "params_json",
         "result_path",
         "work_result_json",
+        "failure_stage",
+        "failure_returncode",
+        "failure_signature",
+        "failure_log_path",
         "synth_script_path",
         "synth_script_sha1",
     ]
@@ -1389,6 +1498,20 @@ def write_flow_failure_result(
     compare_group: str,
 ) -> Dict[str, object]:
     log_dir = resolve_flow_log_dir(platform, design_name, str(tag), flow_variant)
+    failure_log_path = _infer_failure_log_path(
+        log_dir=log_dir,
+        make_target=resolve_make_target(failing_stage),
+    )
+    normalized_failure_stage = _normalize_failure_stage(failing_stage)
+    if failure_log_path is not None:
+        normalized_failure_stage = _normalize_failure_stage(
+            failure_log_path.stem
+        )
+    failure_signature = _extract_failure_signature(
+        log_path=failure_log_path,
+        command=failing_command,
+        returncode=returncode,
+    )
     flow_elapsed_seconds = sum_elapsed_seconds_in_log_dir(log_dir)
     payload = {
         "design": design_name,
@@ -1409,9 +1532,11 @@ def write_flow_failure_result(
         "stage_elapsed_seconds": None,
         "params_json": json.dumps(sweep_params, sort_keys=True),
         "result_path": str(log_dir),
-        "failure_stage": failing_stage,
+        "failure_stage": normalized_failure_stage,
         "failure_returncode": returncode,
         "failure_command": command_to_text(failing_command),
+        "failure_signature": failure_signature,
+        "failure_log_path": str(failure_log_path) if failure_log_path is not None else "",
         "blackbox_instance_counts": {},
         "missing_blackboxes": [],
         "macro_manifest_path": (
@@ -1433,7 +1558,7 @@ def write_flow_failure_result(
     append_metrics(circuit_root / "metrics.csv", payload)
     print(
         "[WARN] OpenROAD sweep point failed; recorded flow_failed metrics row "
-        f"stage={failing_stage} returncode={returncode} tag={tag}"
+        f"stage={normalized_failure_stage} returncode={returncode} tag={tag}"
     )
     return payload
 
