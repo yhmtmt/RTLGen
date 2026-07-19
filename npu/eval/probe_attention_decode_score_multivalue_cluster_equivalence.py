@@ -20,6 +20,11 @@ from npu.sim.perf.attention_separated import unpack_signed
 JsonDict = dict[str, Any]
 
 
+def _scalar_aliases(*, vector: str, width: int) -> str:
+    """Return escaped scalar aliases for every bit of a vector port."""
+    return "\n".join(f"  wire \\{vector}[{index}] = {vector}[{index}];" for index in range(width))
+
+
 def _tool(name: str) -> str:
     path = shutil.which(name)
     if path:
@@ -93,7 +98,7 @@ def _raw_scores(block: list[tuple[int, list[int]]]) -> list[int]:
     return [sum(query * keys[lane] for query, keys in block) for lane in range(8)]
 
 
-_FAKERAM_MODEL = r"""
+_FAKERAM_MODEL = f"""
 module fakeram45_2048x39 (
     output wire [38:0] rd_out, input wire [10:0] addr_in,
     input wire we_in, input wire [38:0] wd_in, input wire [38:0] w_mask_in,
@@ -113,6 +118,10 @@ module fakeram45_2048x39 (
     end
   end
   assign rd_out = rd_out_q;
+
+{_scalar_aliases(vector="addr_in", width=11)}
+{_scalar_aliases(vector="wd_in", width=39)}
+{_scalar_aliases(vector="w_mask_in", width=39)}
 endmodule
 """
 
