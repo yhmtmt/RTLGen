@@ -91,7 +91,11 @@
         "direction": "measure_gqa8_folded_lanes1_matched_density_ppa",
         "reason": "Establish the minimum-area full-GQA8 point while preserving explicit eight-wave replay costs."
       },
-      "status": "pending_implementation_merge"
+      "status": "merged",
+      "merged_pr_number": 1353,
+      "merge_commit": "8db56befb48a11f4f0419ff6c2c8c7de5d781bb0",
+      "merged_utc": "2026-07-19T06:28:37.057924Z",
+      "notes": "Merged via PR #1353 and merge 8db56befb48a11f4f0419ff6c2c8c7de5d781bb0 at 2026-07-19T06:28:37.057924Z."
     },
     {
       "item_id": "l1_decoder_attention_decode_score_multivalue_gqa8_folded_lanes2_pnr_v1",
@@ -367,5 +371,5 @@
       "status": "pending_implementation_merge"
     }
   ],
-  "source_commit": "8e12a8102aadb2ee332422e172d7805528b31374"
+  "source_commit": "f63fd55c1360dcc9b072e672c8ccc0ff2234ac6b"
 }
