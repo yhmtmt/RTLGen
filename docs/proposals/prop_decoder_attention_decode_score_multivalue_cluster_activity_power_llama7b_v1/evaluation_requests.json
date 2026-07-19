@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1",
-  "source_commit_note": "Queue this audit only after the activity-power hook merges; it depends on the 8 ns shared-score multivalue-cluster PNR bridge and equivalence evidence.",
+  "source_commit_note": "Queue this diagnostics-first rerun after PR #1372 diagnostics merge and the 8 ns shared-score multivalue-cluster PNR bridge and equivalence evidence are available.",
   "requested_items": [
     {
       "item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1",
@@ -58,7 +58,32 @@
       "merged_utc": "2026-07-19T10:36:32.965495Z",
       "notes": "Merged via PR #1371 and merge cc2340e92ec66e800533b7e82769f40f72c9c1a8 at 2026-07-19T10:36:32.965495Z.",
       "revision_of_decision": "iterate"
+    },
+    {
+      "item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v3",
+      "task_type": "l2_campaign",
+      "objective": "Rerun shared-score multivalue-cluster activity-backed power with post-route diagnostics that classify FakeRAM macro activity origins, detect zero-toggle macro behavior, and isolate OpenSTA non-finite design/leaf power while keeping diagnostics evidence-only.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_decode_score_multivalue_cluster_activity_power",
+      "comparison_role": "shared_score_multivalue_cluster_activity_power_gate",
+      "depends_on_item_ids": [
+        "l1_decoder_attention_decode_score_multivalue_cluster_pnr_8ns_v2",
+        "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "revision": {
+        "reason": "postroute_macro_activity_and_nonfinite_power_unresolved",
+        "invalidates_item_ids": [
+          "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v2"
+        ]
+      },
+      "expected_result": {
+        "direction": "record_shared_score_multivalue_cluster_activity_power_gate",
+        "reason": "v3 is queued as evidence-only diagnostics for FakeRAM macro activity, zero-toggle filtering, and OpenSTA non-finite power classification."
+      },
+      "status": "ready_to_queue"
     }
   ],
-  "source_commit": "6afdd43402310540fa077bd88b75245afdcb8718"
+  "source_commit": "bfa23e4eb1ae54125f6e853fb694c533d78bcb14"
 }
