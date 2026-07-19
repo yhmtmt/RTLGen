@@ -116,6 +116,61 @@ def _resolve_proposal_abstraction_layer(repo_root: Path, proposal_path: str | No
     return resolved or None
 
 
+def _proposal_mentions_item(payload: dict[str, Any], item_id: str) -> bool:
+    item_retry_base = _retry_base(item_id)
+    for key in ("required_evaluations", "requested_items"):
+        values = payload.get(key)
+        if not isinstance(values, list):
+            continue
+        for entry in values:
+            if not isinstance(entry, dict):
+                continue
+            candidate_item_id = str(entry.get("item_id", "")).strip()
+            if candidate_item_id == item_id or _retry_base(candidate_item_id) == item_retry_base:
+                return True
+    return False
+
+
+def _discover_proposal_for_item(repo_root: Path, item_id: str) -> tuple[str | None, str | None]:
+    proposal_root = repo_root / "docs" / "proposals"
+    if not proposal_root.exists():
+        return None, None
+
+    matches: list[tuple[str, str]] = []
+    for proposal_dir in sorted(path for path in proposal_root.iterdir() if path.is_dir()):
+        proposal_file = proposal_dir / "proposal.json"
+        proposal_id = proposal_dir.name
+        if proposal_file.exists():
+            try:
+                proposal_payload = _load_json(proposal_file)
+            except Exception:
+                proposal_payload = {}
+            if isinstance(proposal_payload, dict):
+                proposal_id = str(proposal_payload.get("proposal_id", "")).strip() or proposal_id
+            else:
+                proposal_payload = {}
+            if _proposal_mentions_item(proposal_payload, item_id):
+                matches.append((proposal_id, str(proposal_dir.relative_to(repo_root))))
+                continue
+
+        evaluation_requests_path = proposal_dir / "evaluation_requests.json"
+        if not evaluation_requests_path.exists():
+            continue
+        try:
+            evaluation_payload = _load_json(evaluation_requests_path)
+        except Exception:
+            continue
+        if not isinstance(evaluation_payload, dict):
+            continue
+        if _proposal_mentions_item(evaluation_payload, item_id):
+            request_proposal_id = str(evaluation_payload.get("proposal_id", "")).strip()
+            matches.append((request_proposal_id or proposal_id, str(proposal_dir.relative_to(repo_root))))
+
+    if len(matches) == 1:
+        return matches[0]
+    return None, None
+
+
 def _proposal_dir(repo_root: Path, proposal_path: str | None) -> Path | None:
     proposal_path_text = str(proposal_path or "").strip()
     if not proposal_path_text:
@@ -1574,6 +1629,9 @@ def generate_l1_sweep_task(session: Session, request: Layer1SweepGenerateRequest
     )
     proposal_path = _repo_rel(request.proposal_path, repo_root) if request.proposal_path else None
     proposal_path = canonicalize_proposal_path(repo_root, proposal_path=proposal_path, proposal_id=request.proposal_id)
+    if not proposal_path:
+        proposal_id, proposal_path = _discover_proposal_for_item(repo_root, item_id)
+        proposal_path = canonicalize_proposal_path(repo_root, proposal_path=proposal_path, proposal_id=proposal_id)
     effective_proposal_id = str(request.proposal_id or "").strip()
     if not effective_proposal_id and proposal_path:
         proposal_path_obj = Path(proposal_path)
