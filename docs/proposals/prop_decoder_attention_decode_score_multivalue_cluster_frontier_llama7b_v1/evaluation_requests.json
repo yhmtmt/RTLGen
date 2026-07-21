@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_decoder_attention_decode_score_multivalue_cluster_frontier_llama7b_v1",
-  "source_commit_note": "Queue this evidence-only remote frontier recost only after the corrected local-cluster frontier v2 and the shared-score multivalue activity-power v11 rerun (PR #1404, commit 658232d3ae22a8360457130e174e6156a088157a).",
+  "source_commit_note": "Queue this evidence-only remote frontier recost only after the corrected local-cluster frontier v2 and the shared-score multivalue activity-power v12 rerun (PR #1407, commit fcaf03969708eee85a3e53fbbafad8c3a5d6ec47).",
   "requested_items": [
     {
       "item_id": "l2_decoder_attention_decode_score_multivalue_cluster_frontier_llama7b_v1",
@@ -12,7 +12,7 @@
       "paired_baseline_item_id": "l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2",
       "depends_on_item_ids": [
         "l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2",
-        "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v11"
+        "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v12"
       ],
       "requires_merged_inputs": true,
       "requires_materialized_refs": true,
