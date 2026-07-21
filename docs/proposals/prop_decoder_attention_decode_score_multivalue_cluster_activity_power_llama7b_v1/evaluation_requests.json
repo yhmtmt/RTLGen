@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1",
-  "source_commit_note": "Queue v13 sequential-activity rerun after PR #1410 / commit db2f9ae94fc10860c5d9a5b0384d5dbd6f6b71bd. PR #1409 was closed because activity_power.tcl line 325 failed before phase power (`key ...$_DFFE_PP_/Q not known in dictionary`) from opaque pin-handle/full_name key mismatch. v13 preserves existing v12 gates, thresholds, sidecar format, and does not change activity, RTL, or physical design.",
+  "source_commit_note": "Queue v14 exact-binary-fsm postroute re-run after PR #1413 merge f281d6f7 (all block_weight VCD + complete FSM provenance) and PR #1414 merge 66a2b3a1 (matched binary-FSM PNR v3 with SYNTH_ARGS=-nofsm).",
   "requested_items": [
     {
       "item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1",
@@ -432,11 +432,41 @@
         "direction": "record_shared_score_multivalue_cluster_activity_power_gate",
         "reason": "v13 preserves all existing quality/equivalence/direct-VCD/macro/clock/numeric/artifact gates, requires >=0.95 DFF-output coverage, applied==matched, and zero query/apply errors, keeps sidecar rows evaluator-local, and forbids clamping, substitution, heuristic activity, and gate relaxation while making no activity threshold, functional RTL, or physical-design changes."
       },
-      "status": "merged",
+      "status": "retracted",
       "merged_pr_number": 1410,
       "merge_commit": "db2f9ae94fc10860c5d9a5b0384d5dbd6f6b71bd",
-      "revision_of_decision": "iterate"
+      "revision_of_decision": "iterate",
+      "notes": "v13 was executed from commit 57633e77 and showed strong sequential coverage (14,922/15,194 Q/QN, 98.2098%, with zero query/apply errors; score_fill 0.249088972807 W and replay_value 0.226863563061 W were finite), but finalize reported 17,761 non-finite toggles, 26 non-finite duties, 7,502 affected leaf instances, and total_w=null. Of 272 unmatched outputs, 256 Q/QN outputs came from 128 block_weight registers omitted from VCD and the remaining 16 came from recoded FSM state, so the activity evidence is invalid.",
+      "retracted_by_item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v14",
+      "retraction_reason": "exact_binary_fsm_postroute_activity_mapping",
+      "retracted_utc": "2026-07-21T02:53:45Z"
+    },
+    {
+      "item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v14",
+      "task_type": "l2_campaign",
+      "objective": "Rerun shared-score multivalue-cluster activity-backed power using only the binary-FSM matched 8ns PNR flow (decode_score_multivalue_cluster_v1_8ns_binary_fsm_v3_proxy_die_2500 with SYNTH_ARGS=-nofsm) plus merged equivalence; preserve every prior gate and strengthen routed sequential-output coverage from 95% to 100% so no recoded or omitted state can pass.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_decode_score_multivalue_cluster_activity_power",
+      "comparison_role": "shared_score_multivalue_cluster_activity_power_gate",
+      "depends_on_item_ids": [
+        "l1_decoder_attention_decode_score_multivalue_cluster_pnr_binary_fsm_8ns_v3",
+        "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "revision": {
+        "reason": "exact_binary_fsm_postroute_activity_mapping",
+        "invalidates_item_ids": [
+          "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v13"
+        ]
+      },
+      "expected_result": {
+        "direction": "record_shared_score_multivalue_cluster_activity_power_gate",
+        "reason": "Rerun preserves all existing direct-VCD, macro, clock, numeric, artifact, applied==matched, and zero query/apply-error gates; strengthens DFF-output coverage to 1.0; and forbids clamping, substitution, heuristic activity, or other gate relaxation. It selects only decode_score_multivalue_cluster_v1_8ns_binary_fsm_v3_proxy_die_2500 with SYNTH_ARGS=-nofsm."
+      },
+      "status": "pending_implementation_merge",
+      "paired_baseline_item_id": "l1_decoder_attention_decode_score_multivalue_cluster_pnr_binary_fsm_8ns_v3"
     }
   ],
-  "source_commit": "db2f9ae94fc10860c5d9a5b0384d5dbd6f6b71bd"
+  "source_commit": "66a2b3a10a64cb721880ff97282bf349a7b7d514"
 }

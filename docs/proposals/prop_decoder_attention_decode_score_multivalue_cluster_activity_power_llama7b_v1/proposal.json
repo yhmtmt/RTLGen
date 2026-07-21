@@ -386,9 +386,36 @@
         "direction": "record_shared_score_multivalue_cluster_activity_power_gate",
         "reason": "v13 preserves all existing quality, equivalence, direct-VCD, macro, clock, numeric, and artifact gates, keeps the same DFF coverage and gate requirements from v12 including >=0.95 DFF-output coverage, applied==matched, and zero query/apply errors, keeps sidecar rows evaluator-local, and forbids clamping, substitution, heuristic activity, and gate relaxation; no activity thresholds, functional RTL, or physical design changes were made."
       },
-      "status": "merged",
+      "status": "retracted",
       "merged_pr_number": 1410,
-      "merge_commit": "db2f9ae94fc10860c5d9a5b0384d5dbd6f6b71bd"
+      "merge_commit": "db2f9ae94fc10860c5d9a5b0384d5dbd6f6b71bd",
+      "retracted_by_item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v14",
+      "retraction_reason": "exact_binary_fsm_postroute_activity_mapping"
+    },
+    {
+      "item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v14",
+      "task_type": "l2_campaign",
+      "objective": "Rerun shared-score multivalue-cluster activity-backed power using only the binary-FSM matched 8ns PNR flow (decode_score_multivalue_cluster_v1_8ns_binary_fsm_v3_proxy_die_2500 with SYNTH_ARGS=-nofsm) plus merged equivalence; preserve every previous evidence gate and strengthen routed sequential-output coverage from 95% to 100%.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_decode_score_multivalue_cluster_activity_power",
+      "comparison_role": "shared_score_multivalue_cluster_activity_power_gate",
+      "depends_on_item_ids": [
+        "l1_decoder_attention_decode_score_multivalue_cluster_pnr_binary_fsm_8ns_v3",
+        "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "revision": {
+        "reason": "exact_binary_fsm_postroute_activity_mapping",
+        "invalidates_item_ids": [
+          "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v13"
+        ]
+      },
+      "expected_result": {
+        "direction": "record_shared_score_multivalue_cluster_activity_power_gate",
+        "reason": "v14 preserves all existing quality/equivalence/direct-VCD/macro/clock/numeric/artifact gates, strengthens DFF-output coverage to 1.0, requires applied==matched and zero query/apply errors, and keeps all sidecar rows evaluator-local while forbidding clamping, substitution, heuristic activity, and other gate relaxation."
+      },
+      "status": "pending_implementation_merge"
     }
   ],
   "baseline_refs": [

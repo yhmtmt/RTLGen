@@ -1,7 +1,7 @@
 # Evaluation Gate
 
-1. Queue only after merged
-   `l1_decoder_attention_decode_score_multivalue_cluster_pnr_8ns_v2` and
+1. Queue v14 only after merged
+   `l1_decoder_attention_decode_score_multivalue_cluster_pnr_binary_fsm_8ns_v3` and
    `l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1`
    evidence is available.
 2. Run the activity-power audit on the remote evaluator with evaluator-local
@@ -12,8 +12,11 @@
    silicon-current claim is allowed from LEF/LIB proxy views.
 5. Treat vectorless OpenROAD power as structural diagnostics only. It cannot
    substitute for activity-backed power or token-energy claims.
-
-6. Preserve the merged 10 ns Nangate45 row as prior evidence and append the new
-   8 ns proxy-die_2500 (2.5 mm die / 2.4 mm square core) bridge row from the
-   refreshed routed evaluator-local artifacts as the next data point for the same
-   design.
+6. Select only
+   `decode_score_multivalue_cluster_v1_8ns_binary_fsm_v3_proxy_die_2500` with
+   `SYNTH_ARGS=-nofsm`; the one-hot v2 row remains a PPA baseline but is invalid
+   for bit-exact RTL-to-routed FSM activity transfer.
+7. Require 100% routed sequential Q/QN coverage, applied assignments equal to
+   matched assignments, zero query/apply errors, and finite positive power for
+   every phase. Preserve the merged 10 ns and one-hot 8 ns rows as prior PPA
+   evidence rather than reusing them for v14 power.
