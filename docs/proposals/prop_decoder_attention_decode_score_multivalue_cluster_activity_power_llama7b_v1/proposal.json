@@ -356,9 +356,39 @@
         "direction": "record_shared_score_multivalue_cluster_activity_power_gate",
         "reason": "v12 preserves all existing quality, equivalence, direct-VCD, macro, clock, numeric, and artifact gates, and now requires >=0.95 DFF-output coverage, applied==matched, and zero query/apply errors; it keeps sidecar rows evaluator-local and forbids clamping, substitution, heuristic activity, and gate relaxation."
       },
-      "status": "merged",
+      "status": "retracted",
       "merged_pr_number": 1407,
-      "merge_commit": "fcaf03969708eee85a3e53fbbafad8c3a5d6ec47"
+      "merge_commit": "fcaf03969708eee85a3e53fbbafad8c3a5d6ec47",
+      "retracted_by_item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v13",
+      "retraction_reason": "postroute_sequential_activity_pin_handle_key_mismatch",
+      "notes": "PR #1409 was closed and evidence invalid; activity_power.tcl failed before phase power at line 325 (`key ...$_DFFE_PP_/Q not known in dictionary`) because metadata dictionaries were keyed by opaque pin handles but read by stable full_name."
+    },
+    {
+      "item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v13",
+      "task_type": "l2_campaign",
+      "objective": "Rerun shared-score multivalue-cluster activity-backed power after PR #1410 / commit db2f9ae94fc10860c5d9a5b0384d5dbd6f6b71bd. v12 was invalid because PR #1409 evidence failed at activity_power.tcl line 325 (`key ...$_DFFE_PP_/Q not known in dictionary`) while keyed by opaque pin handles; v13 fixes handle/full_name keying and strengthens tests for opaque handle and stable full_name behavior.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_decode_score_multivalue_cluster_activity_power",
+      "comparison_role": "shared_score_multivalue_cluster_activity_power_gate",
+      "depends_on_item_ids": [
+        "l1_decoder_attention_decode_score_multivalue_cluster_pnr_8ns_v2",
+        "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "revision": {
+        "reason": "postroute_sequential_activity_pin_handle_key_mismatch",
+        "invalidates_item_ids": [
+          "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v12"
+        ]
+      },
+      "expected_result": {
+        "direction": "record_shared_score_multivalue_cluster_activity_power_gate",
+        "reason": "v13 preserves all existing quality, equivalence, direct-VCD, macro, clock, numeric, and artifact gates, keeps the same DFF coverage and gate requirements from v12 including >=0.95 DFF-output coverage, applied==matched, and zero query/apply errors, keeps sidecar rows evaluator-local, and forbids clamping, substitution, heuristic activity, and gate relaxation; no activity thresholds, functional RTL, or physical design changes were made."
+      },
+      "status": "merged",
+      "merged_pr_number": 1410,
+      "merge_commit": "db2f9ae94fc10860c5d9a5b0384d5dbd6f6b71bd"
     }
   ],
   "baseline_refs": [
