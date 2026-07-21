@@ -32,6 +32,28 @@ RESULT_BASE = Path("/orfs/flow/results")
 LOG_BASE = Path("/orfs/flow/logs")
 SRC_BASE = DEST_BASE / "src"
 DEFAULT_FAILURE_SIGNATURE_MAX_LEN = 255
+FSM_ENCFILE_PARAM = "SYNTH_FSM_ENCFILE"
+FSM_ENCFILE_REQUIRED_PARAM = "SYNTH_FSM_ENCFILE_REQUIRED"
+FSM_ENCFILE_PATH_PARAM = "SYNTH_FSM_ENCFILE_PATH"
+FSM_ENCFILE_BASE_PARAM = "SYNTH_FSM_ENCFILE_BASE"
+DEFAULT_FSM_ENCFILE_NAME = "fsm_encoding.enc"
+
+
+def _empty_fsm_capture_payload() -> Dict[str, object]:
+    return {
+        "fsm_encfile_path": "",
+        "fsm_encfile_sha1": "",
+        "fsm_encfile_sha256": "",
+        "fsm_encoding_json": "",
+    }
+
+
+def sha256_file(path: Path) -> str:
+    h = hashlib.sha256()
+    with path.open("rb") as f:
+        for chunk in iter(lambda: f.read(8192), b""):
+            h.update(chunk)
+    return h.hexdigest()
 
 
 def sha1_file(path: Path) -> str:
@@ -40,6 +62,230 @@ def sha1_file(path: Path) -> str:
         for chunk in iter(lambda: f.read(8192), b""):
             h.update(chunk)
     return h.hexdigest()
+
+
+def _relative_path_text(path_value: object) -> str:
+    txt = str(path_value or "").strip()
+    if not txt:
+        return ""
+    p = Path(txt)
+    if p.is_absolute():
+        try:
+            return str(p.relative_to(REPO_ROOT))
+        except ValueError:
+            return txt
+    return txt
+
+
+def normalize_fsm_encfile_path(raw_path: object, default_dir: Path) -> Path:
+    raw_txt = str(raw_path or "").strip()
+    if raw_txt:
+        user_path = Path(raw_txt)
+        return user_path if user_path.is_absolute() else (default_dir / user_path)
+    return default_dir / DEFAULT_FSM_ENCFILE_NAME
+
+
+def _invocation_encfile_path(
+    base_path: Path,
+    invocation_index: int,
+    invocation_total: int,
+) -> Path:
+    if invocation_total <= 1:
+        return base_path
+    if not base_path.suffix:
+        return base_path.with_name(f"{base_path.name}_{invocation_index + 1:02d}")
+    return base_path.with_name(
+        f"{base_path.stem}_{invocation_index + 1:02d}{base_path.suffix}"
+    )
+
+
+def _cleanup_fsm_capture_part_files(invocation_base: Path) -> None:
+    for stale in sorted(invocation_base.parent.glob(f"{invocation_base.name}.[0-9][0-9]")):
+        if stale.is_file():
+            stale.unlink()
+
+
+def _collect_fsm_capture_part_files(invocation_base: Path) -> List[Path]:
+    return sorted(
+        p
+        for p in invocation_base.parent.glob(f"{invocation_base.name}.[0-9][0-9]")
+        if re.fullmatch(rf"\A{re.escape(invocation_base.name)}\.\d{{2}}\Z", p.name)
+    )
+
+
+def parse_fsm_encoding_map(encfile: Path) -> List[Dict[str, object]]:
+    parsed: List[Dict[str, object]] = []
+    if not encfile.exists():
+        return parsed
+
+    current = None
+    try:
+        for raw_line in encfile.read_text(encoding="utf-8").splitlines():
+            line = raw_line.strip()
+            if not line or line.startswith("#"):
+                continue
+            if line.startswith(".fsm"):
+                parts = line.split()
+                if len(parts) >= 3:
+                    current = {
+                        "module": parts[1],
+                        "state": parts[2],
+                        "maps": [],
+                    }
+                    parsed.append(current)
+                else:
+                    current = None
+                continue
+            if line.startswith(".map") and current is not None:
+                parts = line.split()
+                if len(parts) >= 3:
+                    current.setdefault("maps", []).append([parts[1], parts[2]])
+    except UnicodeDecodeError:
+        return []
+
+    normalized: List[Dict[str, object]] = []
+    for item in parsed:
+        maps = sorted({tuple(x) for x in item.get("maps", []) if len(x) >= 2})
+        normalized.append(
+            {
+                "module": str(item.get("module", "")).strip(),
+                "state": str(item.get("state", "")).strip(),
+                "maps": [[str(x[0]), str(x[1])] for x in maps],
+            }
+        )
+    normalized.sort(key=lambda item: (item["module"], item["state"]))
+    return normalized
+
+
+def merge_fsm_encoding_payloads(encfiles: List[Path]) -> List[Dict[str, object]]:
+    merged: Dict[tuple[str, str], Dict[str, str]] = {}
+    for encfile in encfiles:
+        for entry in parse_fsm_encoding_map(encfile):
+            module = str(entry.get("module", "")).strip()
+            state = str(entry.get("state", "")).strip()
+            key = (module, state)
+            state_maps = merged.setdefault(key, {})
+            maps = sorted(
+                tuple(str(value) for value in mapping)
+                for mapping in entry.get("maps", [])  # type: ignore[union-attr]
+                if len(mapping) == 2
+            )
+            for old_code, new_code in maps:
+                previous_new_code = state_maps.get(old_code)
+                if previous_new_code is not None and previous_new_code != new_code:
+                    raise ValueError(
+                        "Conflicting FSM encoding for "
+                        f"module={module!r} state={state!r} old_code={old_code!r}: "
+                        f"new_code={previous_new_code!r} versus {new_code!r}"
+                    )
+                state_maps[old_code] = new_code
+
+    payload: List[Dict[str, object]] = []
+    for (module, state), maps in sorted(merged.items(), key=lambda item: item[0]):
+        payload.append(
+            {
+                "module": module,
+                "state": state,
+                "maps": [[lhs, rhs] for lhs, rhs in sorted(maps.items())],
+            }
+        )
+    return payload
+
+
+def encode_fsm_encoding_map(encfile: Path) -> str:
+    payload = parse_fsm_encoding_map(encfile)
+    if not payload:
+        return ""
+    return json.dumps(
+        {
+            "version": 1,
+            "fsm_encodings": payload,
+        },
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+
+
+def write_fsm_encoding_map(entries: List[Dict[str, object]], destination: Path) -> None:
+    lines: List[str] = []
+    for entry in entries:
+        module = str(entry.get("module", "")).strip()
+        state = str(entry.get("state", "")).strip()
+        if not module and not state:
+            continue
+        lines.append(f".fsm {module} {state}")
+        for lhs, rhs in entry.get("maps", []):  # type: ignore[union-attr]
+            lhs_text = str(lhs).strip()
+            rhs_text = str(rhs).strip()
+            if lhs_text and rhs_text:
+                lines.append(f".map {lhs_text} {rhs_text}")
+    destination.write_text("\n".join(lines), encoding="utf-8")
+
+
+def fsm_capture_required(sweep_params: Dict[str, object], run_dir: Path) -> Dict[str, object]:
+    enabled = parse_boolish(sweep_params.get(FSM_ENCFILE_PARAM), default=False)
+    required = parse_boolish(sweep_params.get(FSM_ENCFILE_REQUIRED_PARAM), default=False)
+    if required:
+        enabled = True
+    return {
+        "enabled": bool(enabled),
+        "required": bool(required),
+        "path": normalize_fsm_encfile_path(
+            sweep_params.get(FSM_ENCFILE_PATH_PARAM),
+            run_dir,
+        ),
+    }
+
+
+def fsm_capture_payload(encfile: Path) -> Dict[str, object]:
+    if not encfile.exists():
+        return _empty_fsm_capture_payload()
+    return {
+        "fsm_encfile_path": _relative_path_text(encfile),
+        "fsm_encfile_sha1": sha1_file(encfile),
+        "fsm_encfile_sha256": sha256_file(encfile),
+        "fsm_encoding_json": encode_fsm_encoding_map(encfile),
+    }
+
+
+def fsm_capture_cache_matches(
+    cached_payload: Dict[str, object],
+    capture_cfg: Dict[str, object],
+    run_dir: Path,
+) -> bool:
+    if not bool(capture_cfg.get("required", False)):
+        return True
+    expected_path = Path(capture_cfg.get("path"))
+    cached_path_txt = str(cached_payload.get("fsm_encfile_path", "")).strip()
+    if not cached_path_txt:
+        return False
+    cached_path = Path(cached_path_txt)
+    if not cached_path.is_absolute():
+        cached_path = (REPO_ROOT / cached_path).resolve()
+    else:
+        try:
+            cached_path = cached_path.resolve()
+        except FileNotFoundError:
+            cached_path = cached_path
+
+    try:
+        expected_resolved = expected_path.resolve()
+    except FileNotFoundError:
+        expected_resolved = expected_path
+
+    if str(cached_path) != str(expected_resolved):
+        return False
+
+    if not cached_path.exists():
+        return False
+
+    if str(cached_payload.get("fsm_encfile_sha1", "")).strip() != sha1_file(cached_path):
+        return False
+    if str(cached_payload.get("fsm_encfile_sha256", "")).strip() != sha256_file(cached_path):
+        return False
+    if str(cached_payload.get("fsm_encoding_json", "")).strip() != encode_fsm_encoding_map(cached_path):
+        return False
+    return True
 
 
 def sha1_verilog_dir(verilog_dir: Path) -> str:
@@ -1173,8 +1419,79 @@ def copy_or_sanitize_macro_lef(src: Path, dst: Path) -> None:
     shutil.copy(src, dst)
 
 
-def write_preserve_blackbox_synth_script(script_path: Path):
-    base_synth = Path("/orfs/flow/scripts/synth.tcl")
+def _inject_fsm_capture_into_synth_script(text: str) -> str:
+    proc_block = """
+proc yosys_synth_with_fsm_capture {args} {
+  if {![env_var_exists_and_non_empty SYNTH_FSM_ENCFILE_BASE]} {
+    return [eval synth $args]
+  }
+
+  if {![info exists ::fsm_capture_index]} {
+    set ::fsm_capture_index 0
+  }
+  incr ::fsm_capture_index
+
+  set args_without_encfile {}
+  set skip_next 0
+  foreach arg $args {
+    if {$skip_next} {
+      set skip_next 0
+      continue
+    }
+    if {$arg eq "-encfile"} {
+      set skip_next 1
+      continue
+    }
+    if {[string match "-encfile=*" $arg]} {
+      continue
+    }
+    lappend args_without_encfile $arg
+  }
+
+  set encfile "$::env(SYNTH_FSM_ENCFILE_BASE).[format %02d $::fsm_capture_index]"
+  lappend args_without_encfile -encfile $encfile
+  return [eval synth {*}$args_without_encfile]
+}
+
+""".lstrip()
+
+    if "yosys_synth_with_fsm_capture" in text:
+        return text
+
+    lines = text.splitlines(keepends=True)
+    synth_re = re.compile(r"^\s*synth\b")
+    insert_index = len(lines)
+    for idx, line in enumerate(lines):
+        if synth_re.match(line):
+            insert_index = idx
+            break
+
+    if insert_index == len(lines):
+        raise RuntimeError("Failed to locate any synth invocation in synth.tcl")
+
+    lines.insert(insert_index, proc_block)
+    text = "".join(lines)
+
+    # Replace all textual `synth` invocations in the flow script, including
+    # forms that already rely on pre-expanded arguments or custom top settings.
+
+    pattern = re.compile(r"(?m)^(\s*)synth(\b.*)$")
+
+    def _replace_call(match: re.Match[str]) -> str:
+        return f"{match.group(1)}yosys_synth_with_fsm_capture{match.group(2)}"
+
+    replaced = pattern.sub(_replace_call, text)
+    if "yosys_synth_with_fsm_capture" not in replaced:
+        raise RuntimeError("Failed to instrument synth calls in synth.tcl")
+    return replaced
+
+
+def write_preserve_blackbox_synth_script(
+    script_path: Path,
+    synth_tcl: Optional[Path] = None,
+    instrument_fsm_capture: bool = False,
+):
+    base_synth = synth_tcl or Path("/orfs/flow/scripts/synth.tcl")
     if not base_synth.exists():
         raise FileNotFoundError(base_synth)
     text = base_synth.read_text(encoding="utf-8")
@@ -1202,6 +1519,9 @@ def write_preserve_blackbox_synth_script(script_path: Path):
         "}"
     )
     text = text.replace(setundef_marker, setundef_block, 1)
+
+    if instrument_fsm_capture:
+        text = _inject_fsm_capture_into_synth_script(text)
 
     script_path.write_text(text, encoding="utf-8")
 
@@ -1419,6 +1739,10 @@ def append_metrics(metrics_path: Path, row: Dict[str, object]):
         "failure_log_path",
         "synth_script_path",
         "synth_script_sha1",
+        "fsm_encfile_path",
+        "fsm_encfile_sha1",
+        "fsm_encfile_sha256",
+        "fsm_encoding_json",
     ]
 
     existing_rows: List[Dict[str, object]] = []
@@ -1496,6 +1820,8 @@ def write_flow_failure_result(
     mode_name: Optional[str],
     mode_use_macro: Optional[bool],
     compare_group: str,
+    failure_signature_override: Optional[str] = None,
+    fsm_capture_fields: Optional[Dict[str, object]] = None,
 ) -> Dict[str, object]:
     log_dir = resolve_flow_log_dir(platform, design_name, str(tag), flow_variant)
     failure_log_path = _infer_failure_log_path(
@@ -1512,6 +1838,8 @@ def write_flow_failure_result(
         command=failing_command,
         returncode=returncode,
     )
+    if failure_signature_override:
+        failure_signature = failure_signature_override
     flow_elapsed_seconds = sum_elapsed_seconds_in_log_dir(log_dir)
     payload = {
         "design": design_name,
@@ -1550,10 +1878,16 @@ def write_flow_failure_result(
             str(synth_script_override.resolve()) if synth_script_override is not None else ""
         ),
         "synth_script_sha1": synth_script_sha1,
+        "fsm_encfile_path": "",
+        "fsm_encfile_sha1": "",
+        "fsm_encfile_sha256": "",
+        "fsm_encoding_json": "",
         "mode_name": mode_name or "",
         "mode_use_macro": bool(mode_use_macro),
         "compare_group": compare_group,
     }
+    if fsm_capture_fields is not None:
+        payload.update(fsm_capture_fields)
     result_path.write_text(json.dumps(payload, indent=2))
     append_metrics(circuit_root / "metrics.csv", payload)
     print(
@@ -1603,19 +1937,6 @@ def _stdev_or_none(values: List[float]) -> Optional[float]:
     if len(values) < 2:
         return 0.0 if values else None
     return statistics.stdev(values)
-
-
-def _relative_path_text(path_value: object) -> str:
-    txt = str(path_value or "").strip()
-    if not txt:
-        return ""
-    p = Path(txt)
-    if p.is_absolute():
-        try:
-            return str(p.relative_to(REPO_ROOT))
-        except ValueError:
-            return txt
-    return txt
 
 
 def write_mode_compare_report(
@@ -1786,39 +2107,10 @@ def run_single(design_dir: Path, design_name: str, platform: str, top: str, veri
     work_root = circuit_root / "work"
     run_dir = work_root / run_id
     run_dir.mkdir(parents=True, exist_ok=True)
+    capture_cfg = fsm_capture_required(sweep_params, run_dir)
+    fsm_capture = _empty_fsm_capture_payload()
 
     result_path = run_dir / "result.json"
-    if skip_existing and result_path.exists():
-        print(f"[INFO] Skipping existing run: {run_dir}")
-        try:
-            cached_payload = json.loads(result_path.read_text(encoding="utf-8"))
-            if not isinstance(cached_payload, dict):
-                raise ValueError("result.json payload is not an object")
-            if not str(cached_payload.get("design", "")).strip():
-                cached_payload["design"] = design_name
-            if not str(cached_payload.get("platform", "")).strip():
-                cached_payload["platform"] = platform
-            if not str(cached_payload.get("config_hash", "")).strip():
-                cached_payload["config_hash"] = config_hash
-            if not str(cached_payload.get("param_hash", "")).strip():
-                cached_payload["param_hash"] = run_id
-            if not str(cached_payload.get("tag", "")).strip():
-                cached_payload["tag"] = tag
-            if not str(cached_payload.get("work_result_json", "")).strip():
-                cached_payload["work_result_json"] = str(result_path)
-
-            append_metrics(circuit_root / "metrics.csv", cached_payload)
-            return cached_payload
-        except (json.JSONDecodeError, ValueError):
-            return {
-                "design": design_name,
-                "platform": platform,
-                "param_hash": run_id,
-                "tag": tag,
-                "status": "unknown",
-                "work_result_json": str(result_path),
-            }
-
     if dry_run:
         print(f"[DRY] {design_name} {platform} tag={tag} params={sweep_params}")
         return {
@@ -1841,7 +2133,49 @@ def run_single(design_dir: Path, design_name: str, platform: str, top: str, veri
             "mode_name": mode_name or "",
             "mode_use_macro": bool(mode_use_macro),
             "compare_group": compare_group,
+            **fsm_capture,
         }
+
+    if skip_existing and result_path.exists():
+        print(f"[INFO] Skipping existing run: {run_dir}")
+        try:
+            cached_payload = json.loads(result_path.read_text(encoding="utf-8"))
+            if not isinstance(cached_payload, dict):
+                raise ValueError("result.json payload is not an object")
+            if not str(cached_payload.get("design", "")).strip():
+                cached_payload["design"] = design_name
+            if not str(cached_payload.get("platform", "")).strip():
+                cached_payload["platform"] = platform
+            if not str(cached_payload.get("config_hash", "")).strip():
+                cached_payload["config_hash"] = config_hash
+            if not str(cached_payload.get("param_hash", "")).strip():
+                cached_payload["param_hash"] = run_id
+            if not str(cached_payload.get("tag", "")).strip():
+                cached_payload["tag"] = tag
+            if not str(cached_payload.get("work_result_json", "")).strip():
+                cached_payload["work_result_json"] = str(result_path)
+
+            if capture_cfg.get("required", False) and not fsm_capture_cache_matches(
+                cached_payload,
+                capture_cfg,
+                run_dir,
+            ):
+                print(
+                    "[INFO] Existing result has missing or mismatched required FSM "
+                    "encoding capture; rerunning"
+                )
+            else:
+                append_metrics(circuit_root / "metrics.csv", cached_payload)
+                return cached_payload
+        except (json.JSONDecodeError, ValueError):
+            return {
+                "design": design_name,
+                "platform": platform,
+                "param_hash": run_id,
+                "tag": tag,
+                "status": "unknown",
+                "work_result_json": str(result_path),
+            }
 
     validate_synth_keep_modules(
         verilog_dir=verilog_dir,
@@ -1892,7 +2226,18 @@ def run_single(design_dir: Path, design_name: str, platform: str, top: str, veri
         blackboxes = [str(x).strip() for x in macro_manifest.get("blackboxes", []) if str(x).strip()]
     if blackboxes:
         synth_script_override = run_dir / "synth_preserve_blackbox.tcl"
-        write_preserve_blackbox_synth_script(synth_script_override)
+        write_preserve_blackbox_synth_script(
+            script_path=synth_script_override,
+            instrument_fsm_capture=bool(capture_cfg["enabled"]),
+        )
+        synth_script_sha1 = sha1_file(synth_script_override)
+        make_cmd.append(f"SYNTH_SCRIPT={synth_script_override.resolve()}")
+    elif capture_cfg.get("enabled"):
+        synth_script_override = run_dir / "synth_preserve_blackbox.tcl"
+        write_preserve_blackbox_synth_script(
+            script_path=synth_script_override,
+            instrument_fsm_capture=True,
+        )
         synth_script_sha1 = sha1_file(synth_script_override)
         make_cmd.append(f"SYNTH_SCRIPT={synth_script_override.resolve()}")
 
@@ -1903,14 +2248,48 @@ def run_single(design_dir: Path, design_name: str, platform: str, top: str, veri
         and bool(macro_manifest.get("additional_libs"))
         and not is_synth_target(make_target)
     )
+    actual_make_target = resolve_make_target(make_target)
+    synth_invocation_total = 1 + (1 if use_macro_synth_workaround else 0)
+    capture_synth_files: List[Path] = []
+
+    def run_synth_invocation(
+        base_command: List[str],
+        invocation_target: Optional[str],
+        invocation_index: int,
+    ) -> List[str]:
+        invocation_cmd = list(base_command)
+        invocation_encfile: Optional[Path] = None
+        invocation_env = env.copy()
+        if capture_cfg.get("enabled", False):
+            invocation_encfile = _invocation_encfile_path(
+                Path(capture_cfg["path"]),
+                invocation_index,
+                synth_invocation_total,
+            )
+            _cleanup_fsm_capture_part_files(invocation_encfile)
+            invocation_env[FSM_ENCFILE_BASE_PARAM] = str(invocation_encfile)
+        if invocation_target is not None:
+            invocation_cmd.append(invocation_target)
+        print(f"[INFO] Running OpenROAD flow: {' '.join(invocation_cmd)}")
+        subprocess.run(invocation_cmd, cwd="/orfs/flow", check=True, env=invocation_env)
+        if invocation_encfile is not None:
+            capture_synth_files.extend(_collect_fsm_capture_part_files(invocation_encfile))
+        return invocation_cmd
+
     if use_macro_synth_workaround:
-        synth_cmd = list(make_cmd)
-        synth_cmd.extend(macro_synth_make_overrides(sweep_params))
-        synth_cmd.append("synth")
-        print(f"[INFO] Running OpenROAD flow: {' '.join(synth_cmd)}")
+        synth_cmd: List[str] = []
         try:
-            subprocess.run(synth_cmd, cwd="/orfs/flow", check=True, env=env)
+            pre_synth_cmd = list(make_cmd)
+            pre_synth_cmd.extend(macro_synth_make_overrides(sweep_params))
+            synth_cmd = run_synth_invocation(pre_synth_cmd, "synth", 0)
         except subprocess.CalledProcessError as exc:
+            failing_cmd = (
+                list(synth_cmd)
+                if synth_cmd
+                else list(exc.cmd)
+                if isinstance(exc.cmd, list)
+                else [str(exc.cmd)]
+            )
             return write_flow_failure_result(
                 circuit_root=circuit_root,
                 result_path=result_path,
@@ -1922,7 +2301,7 @@ def run_single(design_dir: Path, design_name: str, platform: str, top: str, veri
                 sweep_params=sweep_params,
                 flow_variant=flow_variant,
                 failing_stage="synth",
-                failing_command=synth_cmd,
+                failing_command=failing_cmd,
                 returncode=int(exc.returncode),
                 macro_manifest=macro_manifest,
                 macro_selection=macro_selection,
@@ -1940,13 +2319,18 @@ def run_single(design_dir: Path, design_name: str, platform: str, top: str, veri
             raise FileNotFoundError(f"Missing synthesized netlist: {synth_netlist}")
         make_cmd.append(f"SYNTH_NETLIST_FILES={synth_netlist}")
 
-    actual_make_target = resolve_make_target(make_target)
-    if actual_make_target:
-        make_cmd.append(actual_make_target)
-    print(f"[INFO] Running OpenROAD flow: {' '.join(make_cmd)}")
     try:
-        subprocess.run(make_cmd, cwd="/orfs/flow", check=True, env=env)
+        flow_cmd: List[str] = []
+        if actual_make_target:
+            flow_cmd = run_synth_invocation(
+                make_cmd,
+                actual_make_target,
+                1 if use_macro_synth_workaround else 0,
+            )
+        else:
+            flow_cmd = run_synth_invocation(make_cmd, None, 1 if use_macro_synth_workaround else 0)
     except subprocess.CalledProcessError as exc:
+        failing_cmd = list(flow_cmd) if flow_cmd else list(exc.cmd) if isinstance(exc.cmd, list) else [str(exc.cmd)]
         return write_flow_failure_result(
             circuit_root=circuit_root,
             result_path=result_path,
@@ -1958,7 +2342,7 @@ def run_single(design_dir: Path, design_name: str, platform: str, top: str, veri
             sweep_params=sweep_params,
             flow_variant=flow_variant,
             failing_stage=str(actual_make_target or "flow"),
-            failing_command=make_cmd,
+            failing_command=failing_cmd,
             returncode=int(exc.returncode),
             macro_manifest=macro_manifest,
             macro_selection=macro_selection,
@@ -1968,10 +2352,63 @@ def run_single(design_dir: Path, design_name: str, platform: str, top: str, veri
             mode_use_macro=mode_use_macro,
             compare_group=compare_group,
         )
+
+    if capture_cfg.get("enabled", False):
+        try:
+            merged_fsm_entries = merge_fsm_encoding_payloads(capture_synth_files)
+        except ValueError as exc:
+            return write_flow_failure_result(
+                circuit_root=circuit_root,
+                result_path=result_path,
+                design_name=design_name,
+                platform=platform,
+                config_hash=config_hash,
+                run_id=run_id,
+                tag=tag,
+                sweep_params=sweep_params,
+                flow_variant=flow_variant,
+                failing_stage="synth_fsm_encoding",
+                failing_command=["merge_fsm_encoding_payloads", str(exc)],
+                returncode=1,
+                macro_manifest=macro_manifest,
+                macro_selection=macro_selection,
+                synth_script_override=synth_script_override,
+                synth_script_sha1=synth_script_sha1,
+                mode_name=mode_name,
+                mode_use_macro=mode_use_macro,
+                compare_group=compare_group,
+                failure_signature_override="conflicting_fsm_encoding_capture",
+            )
+        merged_fsm_path = Path(capture_cfg["path"])
+        if merged_fsm_entries:
+            write_fsm_encoding_map(merged_fsm_entries, merged_fsm_path)
+            fsm_capture = fsm_capture_payload(merged_fsm_path)
+        elif capture_cfg.get("required", False):
+            return write_flow_failure_result(
+                circuit_root=circuit_root,
+                result_path=result_path,
+                design_name=design_name,
+                platform=platform,
+                config_hash=config_hash,
+                run_id=run_id,
+                tag=tag,
+                sweep_params=sweep_params,
+                flow_variant=flow_variant,
+                failing_stage="synth_fsm_encoding",
+                failing_command=["synth_fsm_encoding_missing"],
+                returncode=1,
+                macro_manifest=macro_manifest,
+                macro_selection=macro_selection,
+                synth_script_override=synth_script_override,
+                synth_script_sha1=synth_script_sha1,
+                mode_name=mode_name,
+                mode_use_macro=mode_use_macro,
+                compare_group=compare_group,
+                failure_signature_override="missing_required_fsm_encoding_capture",
+            )
+
     if should_generate_openroad_metadata(actual_make_target):
         metadata_cmd = list(make_cmd)
-        if actual_make_target:
-            metadata_cmd = metadata_cmd[:-1]
         metadata_cmd.append("metadata-generate")
         print(f"[INFO] Running OpenROAD metadata extraction: {' '.join(metadata_cmd)}")
         try:
@@ -2101,6 +2538,7 @@ def run_single(design_dir: Path, design_name: str, platform: str, top: str, veri
             str(synth_script_override.resolve()) if synth_script_override is not None else ""
         ),
         "synth_script_sha1": synth_script_sha1,
+        **fsm_capture,
         "mode_name": mode_name or "",
         "mode_use_macro": bool(mode_use_macro),
         "compare_group": compare_group,
