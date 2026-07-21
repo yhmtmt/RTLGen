@@ -31,6 +31,7 @@ REPORT_BASE = Path("/orfs/flow/reports")
 RESULT_BASE = Path("/orfs/flow/results")
 LOG_BASE = Path("/orfs/flow/logs")
 SRC_BASE = DEST_BASE / "src"
+DEFAULT_SYNTH_SCRIPT = Path("/orfs/flow/scripts/synth.tcl")
 DEFAULT_FAILURE_SIGNATURE_MAX_LEN = 255
 FSM_ENCFILE_PARAM = "SYNTH_FSM_ENCFILE"
 FSM_ENCFILE_REQUIRED_PARAM = "SYNTH_FSM_ENCFILE_REQUIRED"
@@ -1491,7 +1492,7 @@ def write_preserve_blackbox_synth_script(
     synth_tcl: Optional[Path] = None,
     instrument_fsm_capture: bool = False,
 ):
-    base_synth = synth_tcl or Path("/orfs/flow/scripts/synth.tcl")
+    base_synth = synth_tcl if synth_tcl is not None else DEFAULT_SYNTH_SCRIPT
     if not base_synth.exists():
         raise FileNotFoundError(base_synth)
     text = base_synth.read_text(encoding="utf-8")

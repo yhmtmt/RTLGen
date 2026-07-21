@@ -31,6 +31,23 @@ class ModeCompareRegressionTest(unittest.TestCase):
         cls.run_block_sweep = load_script_module(
             "run_block_sweep", "npu/synth/run_block_sweep.py"
         )
+        cls.synth_fixture_dir = tempfile.TemporaryDirectory()
+        cls.synth_fixture_path = Path(cls.synth_fixture_dir.name) / "synth.tcl"
+        cls.synth_fixture_path.write_text(
+            "hierarchy -check -top $::env(DESIGN_NAME)\n"
+            "synth -run :fine\n"
+            "synth -flatten -run coarse:fine\n"
+            "synth -top $::env(DESIGN_NAME) -run fine:\n"
+            "setundef -zero\n",
+            encoding="utf-8",
+        )
+        cls.default_synth_script = cls.run_block_sweep.DEFAULT_SYNTH_SCRIPT
+        cls.run_block_sweep.DEFAULT_SYNTH_SCRIPT = cls.synth_fixture_path
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.run_block_sweep.DEFAULT_SYNTH_SCRIPT = cls.default_synth_script
+        cls.synth_fixture_dir.cleanup()
 
     @staticmethod
     def _collect_encfile_arg(cmd: list) -> str | None:
@@ -1187,7 +1204,6 @@ class ModeCompareRegressionTest(unittest.TestCase):
             script_path = tmp / "synth_capture.tcl"
             self.run_block_sweep.write_preserve_blackbox_synth_script(
                 script_path=script_path,
-                synth_tcl=Path("/orfs/flow/scripts/synth.tcl"),
                 instrument_fsm_capture=True,
             )
 
