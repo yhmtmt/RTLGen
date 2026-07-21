@@ -31,6 +31,15 @@ class Layer2TaskGenerationError(RuntimeError):
 _RETRY_SUFFIX_RE = re.compile(r"_r\d+$")
 _VERSION_SUFFIX_RE = re.compile(r"_v(\d+)$")
 _GQA_FOLDED_ACTIVITY_LANES_RE = re.compile(r"_gqa8_folded_lanes(1|2|4|8)_activity_power_")
+_CLUSTER_ACTIVITY_POWER_STRICT_REVISION = 14
+_CLUSTER_ACTIVITY_POWER_V14_FLOW_VARIANT = (
+    "decode_score_multivalue_cluster_v1_8ns_binary_fsm_v3_proxy_die_2500"
+)
+_CLUSTER_ACTIVITY_POWER_V14_SYNTH_ARGS = "-nofsm"
+_CLUSTER_ACTIVITY_POWER_V14_PNR_ITEM = (
+    "l1_decoder_attention_decode_score_multivalue_cluster_pnr_binary_fsm_8ns_v3"
+)
+_CLUSTER_ACTIVITY_POWER_V14_MIN_SEQUENTIAL_REGISTER_ACTIVITY_COVERAGE = 1.0
 
 
 @dataclass(frozen=True)
@@ -95,9 +104,18 @@ def _gqa_evidence_version_for_consumer(item_id: str) -> str:
     return "v2" if revision >= 2 else "v1"
 
 
+def _cluster_activity_power_revision(item_id: str) -> int:
+    match = _VERSION_SUFFIX_RE.search(_retry_base(item_id))
+    return int(match.group(1)) if match else 1
+
+
 def _gqa_group_equivalence_item_for_consumer(item_id: str) -> str:
     version = _gqa_evidence_version_for_consumer(item_id)
     return f"l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_{version}"
+
+
+def _cluster_activity_power_requires_strict_selection(item_id: str) -> bool:
+    return _cluster_activity_power_revision(item_id) >= _CLUSTER_ACTIVITY_POWER_STRICT_REVISION
 
 
 def _cluster_activity_power_item_for_consumer(
@@ -6868,6 +6886,7 @@ def _decoder_attention_decode_score_multivalue_gqa_array_equivalence_evidence(
 
 def _decoder_attention_decode_score_multivalue_cluster_activity_power_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    require_exact_row = _cluster_activity_power_requires_strict_selection(item_id)
     config = (
         "runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/"
         "config.json"
@@ -6887,27 +6906,60 @@ def _decoder_attention_decode_score_multivalue_cluster_activity_power_evidence(*
     activity_dir = "/tmp/rtlgen_multivalue_cluster_activity"
     out = f"{base}/decoder_attention_decode_score_multivalue_cluster_activity_power__{item_id}.json"
     report = f"{base}/decoder_attention_decode_score_multivalue_cluster_activity_power__{item_id}.md"
+    required_flow_variant = (
+        _CLUSTER_ACTIVITY_POWER_V14_FLOW_VARIANT if require_exact_row else None
+    )
+    required_synth_args = _CLUSTER_ACTIVITY_POWER_V14_SYNTH_ARGS if require_exact_row else None
+    source_pnr_item_id = _CLUSTER_ACTIVITY_POWER_V14_PNR_ITEM if require_exact_row else None
+    min_seq_register_activity_coverage = (
+        _CLUSTER_ACTIVITY_POWER_V14_MIN_SEQUENTIAL_REGISTER_ACTIVITY_COVERAGE
+        if require_exact_row
+        else None
+    )
+    command_args: list[str] = []
+    if required_flow_variant is not None:
+        command_args.append(f"--required-flow-variant {required_flow_variant}")
+    if required_synth_args is not None:
+        command_args.append(f"--required-synth-args={required_synth_args}")
+    if source_pnr_item_id is not None:
+        command_args.append(f"--source-pnr-item-id {source_pnr_item_id}")
+    if min_seq_register_activity_coverage is not None:
+        command_args.append(
+            f"--min-sequential-register-activity-coverage {min_seq_register_activity_coverage}"
+        )
+    command_args_text = (" ".join(command_args) + " ") if command_args else ""
+    inputs = {
+        "decode_score_multivalue_cluster_config": config,
+        "decode_score_multivalue_cluster_pnr_metrics_csv": cluster_metrics_csv,
+        "decode_score_multivalue_cluster_equivalence_json": equivalence_json,
+        "decode_score_multivalue_cluster_orfs_design_config": orfs_design_config,
+        "decode_score_multivalue_cluster_activity_dir": activity_dir,
+        "decode_score_multivalue_cluster_activity_power_out": out,
+        "decode_score_multivalue_cluster_activity_power_report": report,
+        "decode_score_multivalue_cluster_activity_power_scope": (
+            "Audit the shared-score multivalue cluster with activity-backed power evidence after merged "
+            "equivalence and PNR. Keep VCD/ODB/SPEF evaluator-local, commit only repo-portable JSON/MD "
+            "artifacts, preserve the FakeRAM proxy qualification, and reject vectorless power as a "
+            "substitute for annotated power or token-energy claims."
+        ),
+        "decode_score_multivalue_cluster_activity_power_promotion_gate": (
+            "Promotion requires explicit annotation coverage, declared clock assumptions, macro activity "
+            "attribution, and finite power-gate accounting."
+        ),
+        "decode_score_multivalue_cluster_activity_power_local_only_artifacts": ["VCD", "ODB", "SPEF"],
+    }
+    if required_flow_variant is not None:
+        inputs["decode_score_multivalue_cluster_required_flow_variant"] = required_flow_variant
+    if required_synth_args is not None:
+        inputs["decode_score_multivalue_cluster_required_synth_args"] = required_synth_args
+    if source_pnr_item_id is not None:
+        inputs["decode_score_multivalue_cluster_source_pnr_item_id"] = source_pnr_item_id
+    if min_seq_register_activity_coverage is not None:
+        inputs["decode_score_multivalue_cluster_min_sequential_register_activity_coverage"] = (
+            min_seq_register_activity_coverage
+        )
     return {
-        "inputs": {
-            "decode_score_multivalue_cluster_config": config,
-            "decode_score_multivalue_cluster_pnr_metrics_csv": cluster_metrics_csv,
-            "decode_score_multivalue_cluster_equivalence_json": equivalence_json,
-            "decode_score_multivalue_cluster_orfs_design_config": orfs_design_config,
-            "decode_score_multivalue_cluster_activity_dir": activity_dir,
-            "decode_score_multivalue_cluster_activity_power_out": out,
-            "decode_score_multivalue_cluster_activity_power_report": report,
-            "decode_score_multivalue_cluster_activity_power_scope": (
-                "Audit the shared-score multivalue cluster with activity-backed power evidence after merged "
-                "equivalence and PNR. Keep VCD/ODB/SPEF evaluator-local, commit only repo-portable JSON/MD "
-                "artifacts, preserve the FakeRAM proxy qualification, and reject vectorless power as a "
-                "substitute for annotated power or token-energy claims."
-            ),
-            "decode_score_multivalue_cluster_activity_power_promotion_gate": (
-                "Promotion requires explicit annotation coverage, declared clock assumptions, macro activity "
-                "attribution, and finite power-gate accounting."
-            ),
-            "decode_score_multivalue_cluster_activity_power_local_only_artifacts": ["VCD", "ODB", "SPEF"],
-        },
+        "inputs": inputs,
         "commands": [
             {
                 "name": "audit_decode_score_multivalue_cluster_activity_power",
@@ -6919,6 +6971,7 @@ def _decoder_attention_decode_score_multivalue_cluster_activity_power_evidence(*
                     f"--orfs-design-config {orfs_design_config} "
                     "--clock-period-ns 8 "
                     f"--activity-dir {activity_dir} "
+                    f"{command_args_text}"
                     f"--out {out} "
                     f"--out-md {report}"
                 ),

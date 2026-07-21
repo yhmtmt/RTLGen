@@ -8244,6 +8244,64 @@ def test_generate_l2_campaign_task_adds_decode_score_multivalue_cluster_activity
             )
 
 
+def test_generate_l2_campaign_task_adds_decode_score_multivalue_cluster_activity_power_v14() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id="l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v14",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    abstraction_layer="decoder_attention_decode_score_multivalue_cluster_activity_power",
+                    evaluation_mode="frontier_detail",
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            run = work_item.task_request.request_payload["task"]["commands"][0]["run"]
+            decoder_inputs = work_item.input_manifest["decoder_contract"]
+
+            assert (
+                "--required-flow-variant "
+                "decode_score_multivalue_cluster_v1_8ns_binary_fsm_v3_proxy_die_2500" in run
+            )
+            assert "--required-synth-args=-nofsm" in run
+            assert (
+                "--min-sequential-register-activity-coverage 1.0" in run
+            )
+            assert (
+                "--source-pnr-item-id "
+                "l1_decoder_attention_decode_score_multivalue_cluster_pnr_binary_fsm_8ns_v3"
+                in run
+            )
+            assert (
+                decoder_inputs["decode_score_multivalue_cluster_required_flow_variant"]
+                == "decode_score_multivalue_cluster_v1_8ns_binary_fsm_v3_proxy_die_2500"
+            )
+            assert (
+                decoder_inputs["decode_score_multivalue_cluster_required_synth_args"] == "-nofsm"
+            )
+            assert (
+                decoder_inputs["decode_score_multivalue_cluster_source_pnr_item_id"]
+                == "l1_decoder_attention_decode_score_multivalue_cluster_pnr_binary_fsm_8ns_v3"
+            )
+            assert (
+                decoder_inputs["decode_score_multivalue_cluster_min_sequential_register_activity_coverage"]
+                == 1.0
+            )
+
+
 def test_cluster_activity_power_item_for_consumer_prefers_requested_version_for_unknown_depends_on() -> None:
     assert (
         _cluster_activity_power_item_for_consumer(
