@@ -70,11 +70,339 @@ def _write_metrics(path: Path) -> None:
         writer.writerows(rows)
 
 
+def _write_metrics_rows(path: Path, rows: list[dict[str, str]]) -> None:
+    fields = [
+        "design",
+        "platform",
+        "param_hash",
+        "tag",
+        "status",
+        "critical_path_ns",
+        "die_area",
+        "instance_area_um2",
+        "params_json",
+    ]
+    with path.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fields)
+        writer.writeheader()
+        writer.writerows(rows)
+
+
 def test_feasible_metrics_selects_exact_clock_and_timing(tmp_path: Path) -> None:
     metrics = tmp_path / "metrics.csv"
     _write_metrics(metrics)
     rows = audit._feasible_metrics(metrics, 8.0)
     assert [audit._params(row)["FLOW_VARIANT"] for row in rows] == ["cluster_die2500"]
+
+
+def test_feasible_metrics_excludes_non_matching_onehot_rows(tmp_path: Path) -> None:
+    metrics = tmp_path / "metrics.csv"
+    _write_metrics_rows(
+        metrics,
+        [
+            {
+                "design": "cluster",
+                "platform": "nangate45",
+                "param_hash": "p1",
+                "tag": "onehot",
+                "status": "ok",
+                "critical_path_ns": "7.2",
+                "die_area": "6100000",
+                "instance_area_um2": "3000000",
+                "params_json": json.dumps(
+                    {
+                        "CLOCK_PERIOD": 8,
+                        "FLOW_VARIANT": "decode_score_multivalue_cluster_v1_8ns_onehot_fsm_v3_proxy_die_2500",
+                        "SYNTH_ARGS": "-nofsm",
+                    }
+                ),
+            },
+            {
+                "design": "cluster",
+                "platform": "nangate45",
+                "param_hash": "p2",
+                "tag": "binary",
+                "status": "ok",
+                "critical_path_ns": "7.4",
+                "die_area": "6000000",
+                "instance_area_um2": "3020000",
+                "params_json": json.dumps(
+                    {
+                        "CLOCK_PERIOD": 8,
+                        "FLOW_VARIANT": "decode_score_multivalue_cluster_v1_8ns_binary_fsm_v2_proxy_die_2500",
+                        "SYNTH_ARGS": "-nofsm",
+                    }
+                ),
+            },
+        ],
+    )
+    try:
+        audit._feasible_metrics(
+            metrics,
+            8.0,
+            required_flow_variant=(
+                "decode_score_multivalue_cluster_v1_8ns_binary_fsm_v3_proxy_die_2500"
+            ),
+            required_synth_args="-nofsm",
+        )
+    except ValueError as exc:
+        assert "FLOW_VARIANT=decode_score_multivalue_cluster_v1_8ns_binary_fsm_v3_proxy_die_2500" in str(
+            exc
+        )
+    else:
+        raise AssertionError("one-hot row mismatch was not rejected")
+
+
+def test_feasible_metrics_rejects_wrong_synth_args(tmp_path: Path) -> None:
+    metrics = tmp_path / "metrics.csv"
+    _write_metrics_rows(
+        metrics,
+        [
+            {
+                "design": "cluster",
+                "platform": "nangate45",
+                "param_hash": "p1",
+                "tag": "binary",
+                "status": "ok",
+                "critical_path_ns": "7.1",
+                "die_area": "6000000",
+                "instance_area_um2": "3000000",
+                "params_json": json.dumps(
+                    {
+                        "CLOCK_PERIOD": 8,
+                        "FLOW_VARIANT": "decode_score_multivalue_cluster_v1_8ns_binary_fsm_v3_proxy_die_2500",
+                        "SYNTH_ARGS": "-fsm",
+                    }
+                ),
+            },
+        ],
+    )
+    try:
+        audit._feasible_metrics(
+            metrics,
+            8.0,
+            required_flow_variant=(
+                "decode_score_multivalue_cluster_v1_8ns_binary_fsm_v3_proxy_die_2500"
+            ),
+            required_synth_args="-nofsm",
+        )
+    except ValueError as exc:
+        assert "SYNTH_ARGS=-nofsm" in str(exc)
+    else:
+        raise AssertionError("wrong synth args was not rejected")
+
+
+def test_feasible_metrics_accepts_exact_binary_row_with_strict_contract(tmp_path: Path) -> None:
+    metrics = tmp_path / "metrics.csv"
+    _write_metrics_rows(
+        metrics,
+        [
+            {
+                "design": "cluster",
+                "platform": "nangate45",
+                "param_hash": "p1",
+                "tag": "binary",
+                "status": "ok",
+                "critical_path_ns": "7.1",
+                "die_area": "6000000",
+                "instance_area_um2": "3050000",
+                "params_json": json.dumps(
+                    {
+                        "CLOCK_PERIOD": 8,
+                        "FLOW_VARIANT": "decode_score_multivalue_cluster_v1_8ns_binary_fsm_v3_proxy_die_2500",
+                        "SYNTH_ARGS": "-nofsm",
+                    }
+                ),
+            },
+            {
+                "design": "cluster",
+                "platform": "nangate45",
+                "param_hash": "p2",
+                "tag": "other",
+                "status": "ok",
+                "critical_path_ns": "7.2",
+                "die_area": "6100000",
+                "instance_area_um2": "3060000",
+                "params_json": json.dumps(
+                    {
+                        "CLOCK_PERIOD": 8,
+                        "FLOW_VARIANT": "decode_score_multivalue_cluster_v1_8ns_binary_fsm_v2_proxy_die_2500",
+                        "SYNTH_ARGS": "-nofsm",
+                    }
+                ),
+            },
+        ],
+    )
+    rows = audit._feasible_metrics(
+        metrics,
+        8.0,
+        required_flow_variant="decode_score_multivalue_cluster_v1_8ns_binary_fsm_v3_proxy_die_2500",
+        required_synth_args="-nofsm",
+    )
+    assert [audit._params(row)["FLOW_VARIANT"] for row in rows] == [
+        "decode_score_multivalue_cluster_v1_8ns_binary_fsm_v3_proxy_die_2500",
+    ]
+
+
+def test_build_report_records_strict_selection_contract_and_pnr_dependency(tmp_path: Path) -> None:
+    config = tmp_path / "config.json"
+    config.write_text("{}", encoding="utf-8")
+    metrics = tmp_path / "metrics.csv"
+    _write_metrics_rows(
+        metrics,
+        [
+            {
+                "design": "cluster",
+                "platform": "nangate45",
+                "param_hash": "p1",
+                "tag": "binary",
+                "status": "ok",
+                "critical_path_ns": "7.1",
+                "die_area": "6000000",
+                "instance_area_um2": "3000000",
+                "params_json": json.dumps(
+                    {
+                        "CLOCK_PERIOD": 8,
+                        "FLOW_VARIANT": "decode_score_multivalue_cluster_v1_8ns_binary_fsm_v3_proxy_die_2500",
+                        "SYNTH_ARGS": "-nofsm",
+                    }
+                ),
+            },
+        ],
+    )
+    manifest = {
+        "clock_period_ns": 8.0,
+        "block_count": 3,
+        "representative_full_transaction_cycles": 8334,
+        "phase_partition_cycle_sum": 8334,
+        "phases": [],
+    }
+    equivalence = tmp_path / "equivalence.json"
+    equivalence.write_text(
+        json.dumps(
+            {
+                "equivalence_pass": True,
+                "decision": "shared_score_multivalue_cluster_equivalent",
+            }
+        ),
+        encoding="utf-8",
+    )
+    with mock.patch.object(audit, "generate_phase_activity", return_value=manifest), mock.patch.object(
+        audit, "build_power_report",
+        return_value={"promotion_gate_pass": True, "full_context_energy_j": 1.0},
+    ):
+        payload = audit.build_report(
+            config=config,
+            cluster_metrics_csv=metrics,
+            equivalence_json=equivalence,
+            orfs_design_config=tmp_path / "config.mk",
+            clock_period_ns=8.0,
+            activity_dir=tmp_path / "activity",
+            required_flow_variant="decode_score_multivalue_cluster_v1_8ns_binary_fsm_v3_proxy_die_2500",
+            required_synth_args="-nofsm",
+            source_pnr_item_id="l1_decoder_attention_decode_score_multivalue_cluster_pnr_binary_fsm_8ns_v3",
+        )
+    assert payload["selection_contract"] == {
+        "required_flow_variant": "decode_score_multivalue_cluster_v1_8ns_binary_fsm_v3_proxy_die_2500",
+        "required_synth_args": "-nofsm",
+        "min_sequential_register_activity_coverage": 0.95,
+    }
+    assert payload["source_dependencies"] == [
+        "l1_decoder_attention_decode_score_multivalue_cluster_pnr_binary_fsm_8ns_v3",
+        "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1",
+    ]
+
+
+def test_build_report_keeps_legacy_source_dependencies_without_v14_source_pnr_id(tmp_path: Path) -> None:
+    config = tmp_path / "config.json"
+    config.write_text("{}", encoding="utf-8")
+    metrics = tmp_path / "metrics.csv"
+    _write_metrics(metrics)
+    manifest = {
+        "clock_period_ns": 8.0,
+        "block_count": 3,
+        "representative_full_transaction_cycles": 8334,
+        "phase_partition_cycle_sum": 8334,
+        "phases": [],
+    }
+    equivalence = tmp_path / "equivalence.json"
+    equivalence.write_text(
+        json.dumps(
+            {
+                "equivalence_pass": True,
+                "decision": "shared_score_multivalue_cluster_equivalent",
+            }
+        ),
+        encoding="utf-8",
+    )
+    with mock.patch.object(audit, "generate_phase_activity", return_value=manifest), mock.patch.object(
+        audit, "build_power_report",
+        return_value={"promotion_gate_pass": True, "full_context_energy_j": 1.0},
+    ):
+        payload = audit.build_report(
+            config=config,
+            cluster_metrics_csv=metrics,
+            equivalence_json=equivalence,
+            orfs_design_config=tmp_path / "config.mk",
+            clock_period_ns=8.0,
+            activity_dir=tmp_path / "activity",
+        )
+    assert payload["source_dependencies"] == [
+        "l1_decoder_attention_decode_score_multivalue_cluster_pnr_8ns_v2",
+        "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1",
+    ]
+    assert payload["selection_contract"] == {
+        "required_flow_variant": None,
+        "required_synth_args": None,
+        "min_sequential_register_activity_coverage": 0.95,
+    }
+
+
+def test_build_report_rejects_invalid_min_sequential_register_activity_coverage(tmp_path: Path) -> None:
+    config = tmp_path / "config.json"
+    config.write_text("{}", encoding="utf-8")
+    metrics = tmp_path / "metrics.csv"
+    _write_metrics_rows(
+        metrics,
+        [
+            {
+                "design": "cluster",
+                "platform": "nangate45",
+                "param_hash": "p1",
+                "tag": "binary",
+                "status": "ok",
+                "critical_path_ns": "7.1",
+                "die_area": "6000000",
+                "instance_area_um2": "3000000",
+                "params_json": json.dumps(
+                    {
+                        "CLOCK_PERIOD": 8,
+                        "FLOW_VARIANT": "decode_score_multivalue_cluster_v1_8ns_binary_fsm_v3_proxy_die_2500",
+                        "SYNTH_ARGS": "-nofsm",
+                    }
+                ),
+            },
+        ],
+    )
+    equivalence = tmp_path / "equivalence.json"
+    equivalence.write_text(json.dumps({"equivalence_pass": True}), encoding="utf-8")
+    for coverage in (0.0, 1.1):
+        try:
+            audit.build_report(
+                config=config,
+                cluster_metrics_csv=metrics,
+                equivalence_json=equivalence,
+                orfs_design_config=tmp_path / "config.mk",
+                clock_period_ns=8.0,
+                activity_dir=tmp_path / "activity",
+                min_sequential_register_activity_coverage=coverage,
+            )
+        except ValueError as exc:
+            assert "min_sequential_register_activity_coverage must be in (0, 1]" in str(exc)
+        else:
+            raise AssertionError(
+                f"invalid min sequential register activity coverage {coverage} was accepted"
+            )
 
 
 def test_build_report_rejects_unproven_equivalence(tmp_path: Path) -> None:
