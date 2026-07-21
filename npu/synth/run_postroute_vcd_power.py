@@ -687,9 +687,9 @@ foreach sequential_register_activity_pin $all_design_pins {
       $sequential_register_activity_pin \
       $sequential_register_activity_density \
       $sequential_register_activity_effective_duty]
-  dict set sequential_register_activity_pin_register_by_pin $sequential_register_activity_pin $sequential_register_activity_register_full_name
-  dict set sequential_register_activity_pin_type_by_pin $sequential_register_activity_pin $sequential_register_activity_pin_type
-  dict set sequential_register_activity_pin_duty_by_pin $sequential_register_activity_pin $sequential_register_activity_effective_duty
+  dict set sequential_register_activity_pin_register_by_pin $sequential_register_activity_pin_full_name $sequential_register_activity_register_full_name
+  dict set sequential_register_activity_pin_type_by_pin $sequential_register_activity_pin_full_name $sequential_register_activity_pin_type
+  dict set sequential_register_activity_pin_duty_by_pin $sequential_register_activity_pin_full_name $sequential_register_activity_effective_duty
   dict incr sequential_register_activity_assignment_rows_seen $sequential_register_activity_register_full_name
   incr sequential_register_activity_matched_count
 }
