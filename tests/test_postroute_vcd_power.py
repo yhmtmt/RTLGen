@@ -6,6 +6,7 @@ from __future__ import annotations
 import importlib.util
 import json
 from pathlib import Path
+import re
 import shutil
 import tempfile
 from types import SimpleNamespace
@@ -126,6 +127,24 @@ class PostrouteVcdPowerTests(unittest.TestCase):
             pin_properties = {}
         if leaf_pin_map is None:
             leaf_pin_map = {}
+        if all_pin_names is None:
+            all_pin_names = ("pin_nonfinite_u_group",)
+        pin_handle_by_full_name: dict[str, str] = {}
+        for index, pin_full_name in enumerate(all_pin_names):
+            pin_handle_by_full_name[pin_full_name] = f"__rtlgen_pin_{index}"
+        pin_handles = [pin_handle_by_full_name[pin_name] for pin_name in all_pin_names]
+        pin_full_name_by_handle_lines = ["set pin_full_name_by_handle_dict {}"]
+        for pin_handle, pin_full_name in zip(pin_handles, all_pin_names):
+            pin_full_name_by_handle_lines.append(
+                "dict set pin_full_name_by_handle_dict {{{}}} {{{}}}".format(
+                    pin_handle,
+                    pin_full_name,
+                )
+            )
+
+        def _pin_handle(name: str) -> str:
+            return pin_handle_by_full_name.get(name, name)
+
         pin_property_overrides: list[str] = []
         for pin_name in sorted(pin_properties):
             config = pin_properties[pin_name]
@@ -134,10 +153,11 @@ class PostrouteVcdPowerTests(unittest.TestCase):
             full_name = str(config.get("full_name", pin_name))
             has_activity = "activity" in config
             activity = config.get("activity")
+            pin_handle = _pin_handle(pin_name)
             if has_activity and activity is None:
                 pin_property_overrides.extend(
                     [
-                        f"  if {{$obj eq {{{pin_name}}}}} {{",
+                        f"  if {{$obj eq {{{pin_handle}}}}} {{",
                         f"    if {{$property eq \"is_hierarchical\"}} {{ return {is_hierarchical} }}",
                         f"    if {{$property eq \"direction\"}} {{ return \"{direction}\" }}",
                         f"    if {{$property eq \"full_name\"}} {{ return {{{full_name}}} }}",
@@ -151,7 +171,7 @@ class PostrouteVcdPowerTests(unittest.TestCase):
             elif has_activity:
                 pin_property_overrides.extend(
                     [
-                        f"  if {{$obj eq {{{pin_name}}}}} {{",
+                        f"  if {{$obj eq {{{pin_handle}}}}} {{",
                         f"    if {{$property eq \"is_hierarchical\"}} {{ return {is_hierarchical} }}",
                         f"    if {{$property eq \"direction\"}} {{ return \"{direction}\" }}",
                         f"    if {{$property eq \"full_name\"}} {{ return {{{full_name}}} }}",
@@ -193,10 +213,45 @@ class PostrouteVcdPowerTests(unittest.TestCase):
                     "pin_input_u_group_0",
                     "pin_nonfinite_u_group",
                 )
-            input_pin = macro_transfer_pin_names[1]
-            driver_pin = f"driver_{input_pin}"
-            peer_pin = f"peer_{input_pin}"
-            all_pins = list(macro_transfer_pin_names)
+            input_pin_full_name = macro_transfer_pin_names[1]
+            for transfer_pin_name in macro_transfer_pin_names:
+                if transfer_pin_name not in pin_handle_by_full_name:
+                    transfer_pin_handle = f"__rtlgen_pin_{len(pin_handle_by_full_name)}"
+                    pin_handle_by_full_name[transfer_pin_name] = transfer_pin_handle
+                    pin_full_name_by_handle_lines.append(
+                        "dict set pin_full_name_by_handle_dict {{{}}} {{{}}}".format(
+                            transfer_pin_handle,
+                            transfer_pin_name,
+                        )
+                    )
+                    pin_handles.append(transfer_pin_handle)
+            all_pins = [_pin_handle(name) for name in macro_transfer_pin_names]
+            if input_pin_full_name in pin_handle_by_full_name:
+                input_pin = _pin_handle(input_pin_full_name)
+            else:
+                input_pin = "__rtlgen_pin_input"
+                pin_full_name_by_handle_lines.append(
+                    "dict set pin_full_name_by_handle_dict {{{}}} {{{}}}".format(
+                        input_pin,
+                        input_pin_full_name,
+                    )
+                )
+                pin_handle_by_full_name[input_pin_full_name] = input_pin
+                pin_handles.append(input_pin)
+            driver_pin = "__rtlgen_driver_pin"
+            peer_pin = "__rtlgen_peer_pin"
+            pin_full_name_by_handle_lines.append(
+                "dict set pin_full_name_by_handle_dict {{{}}} {{{}}}".format(
+                    driver_pin,
+                    f"driver_{input_pin_full_name}",
+                )
+            )
+            pin_full_name_by_handle_lines.append(
+                "dict set pin_full_name_by_handle_dict {{{}}} {{{}}}".format(
+                    peer_pin,
+                    f"peer_{input_pin_full_name}",
+                )
+            )
             net_pins = [driver_pin, peer_pin, input_pin]
             get_pins_body = [
                 "  if {[lindex $args 0] eq \"-hierarchical\"} {",
@@ -223,7 +278,7 @@ class PostrouteVcdPowerTests(unittest.TestCase):
                 "    if {$property eq \"is_hierarchical\"} { return 0 }",
                 "    if {$property eq \"direction\"} { return \"input\" }",
                 "    if {$property eq \"activity\"} { return {0.0 0.0 constant} }",
-                "    if {$property eq \"full_name\"} { return $obj }",
+                f"    if {{$property eq \"full_name\"}} {{ return {{{input_pin_full_name}}} }}",
                 "  }",
                 f"  if {{$obj eq {{{driver_pin}}}}} {{",
                 "    if {$property eq \"activity\"} { return {0.4 0.9 other} }",
@@ -247,10 +302,7 @@ class PostrouteVcdPowerTests(unittest.TestCase):
                 "}",
             ]
         else:
-            if all_pin_names is None:
-                all_pins = ["pin_nonfinite_u_group"]
-            else:
-                all_pins = list(all_pin_names)
+            all_pins = list(pin_handles)
             get_pins_body = [
                 "  if {[lindex $args 0] eq \"-of_objects\"} {",
                 "    set object [lindex $args end]",
@@ -283,6 +335,7 @@ class PostrouteVcdPowerTests(unittest.TestCase):
             "  }",
             "}",
             "set ::ref_name_query_count 0",
+            *pin_full_name_by_handle_lines,
             *leaf_pin_map_init_lines,
             "set ::leaf_pin_map_dict $leaf_pin_map_dict",
             "proc get_pins {args} {",
@@ -290,6 +343,7 @@ class PostrouteVcdPowerTests(unittest.TestCase):
             *get_pins_body,
             "}",
             "proc get_property {obj property} {",
+            "  global pin_full_name_by_handle_dict",
             *pin_property_body,
             *pin_property_overrides,
             "  if {$property eq \"is_hierarchical\"} {",
@@ -302,7 +356,10 @@ class PostrouteVcdPowerTests(unittest.TestCase):
             "    return {0.25 0.5 vcd}",
             "  }",
             "  if {$property eq \"full_name\"} {",
-            "    return $obj",
+            "    if {[catch {set pin_full_name [dict get $pin_full_name_by_handle_dict $obj]}]} {",
+            "      return $obj",
+            "    }",
+            "    return $pin_full_name",
             "  }",
             "  if {[string match \"pin_*\" $obj]} {",
             "    return {}",
@@ -410,6 +467,16 @@ class PostrouteVcdPowerTests(unittest.TestCase):
                 pin = pin[1:-1]
             calls.append((pin, float(density), float(duty)))
         return calls
+
+    def _pin_full_name_by_handle_from_tcl_script(self, tcl_script: str) -> dict[str, str]:
+        mapping: dict[str, str] = {}
+        pattern = re.compile(
+            r"dict set pin_full_name_by_handle_dict\s+\{([^}]+)\}\s+\{([^}]+)\}"
+        )
+        for match in pattern.finditer(tcl_script):
+            handle, full_name = match.group(1), match.group(2)
+            mapping[handle] = full_name
+        return mapping
 
     def test_tcl_script_non_finite_samples_have_escaped_json_array_literals(self) -> None:
         if shutil.which("tclsh") is None:
@@ -995,23 +1062,38 @@ class PostrouteVcdPowerTests(unittest.TestCase):
                 0,
                 msg=f"tcl failed: stdout={completed.stdout} stderr={completed.stderr}",
             )
+            self.assertNotIn(
+                "not known in dictionary",
+                completed.stderr,
+                msg="sequential register activity should not hit opaque-handle key errors",
+            )
             payload = json.loads(result.read_text(encoding="utf-8"))
+            compact_payload = json.dumps(payload, separators=(",", ":"))
+            self.assertEqual(json.loads(compact_payload), payload)
+            matched_pin_by_handle = self._pin_full_name_by_handle_from_tcl_script(
+                tcl_script
+            )
             power_pin_activity_calls = self._parse_power_pin_activity_calls(
                 completed.stdout
             )
             self.assertEqual(len(power_pin_activity_calls), 3)
-            calls_by_pin = {
-                pin: (density, duty)
+            calls_by_full_name = {
+                matched_pin_by_handle[pin]: (density, duty)
                 for pin, density, duty in power_pin_activity_calls
             }
-            self.assertEqual(calls_by_pin[q_pin][0], 300.0)
-            self.assertEqual(calls_by_pin[q_pin][1], 0.60)
-            self.assertEqual(calls_by_pin[second_pin][0], 500.0)
-            self.assertEqual(calls_by_pin[second_pin][1], 0.25)
-            self.assertEqual(calls_by_pin[qn_pin][0], 300.0)
-            self.assertEqual(calls_by_pin[qn_pin][1], 0.4)
-            self.assertEqual(calls_by_pin[qn_pin][0], calls_by_pin[q_pin][0])
+            self.assertEqual(
+                calls_by_full_name,
+                {
+                    q_pin: (300.0, 0.60),
+                    qn_pin: (300.0, 0.4),
+                    second_pin: (500.0, 0.25),
+                },
+            )
             sequential = payload["sequential_register_activity"]
+            self.assertEqual(
+                calls_by_full_name[qn_pin][0],
+                calls_by_full_name[q_pin][0],
+            )
             self.assertEqual(sequential["q_candidate_count"], 2)
             self.assertEqual(sequential["qn_candidate_count"], 1)
             self.assertEqual(sequential["matched_count"], 3)
@@ -1021,7 +1103,7 @@ class PostrouteVcdPowerTests(unittest.TestCase):
             qn_samples = [
                 sample
                 for sample in sequential["scan_samples"]
-                if sample["pin"] == qn_pin
+                if sample["full_name"] == qn_pin
             ]
             self.assertEqual(len(qn_samples), 1)
             self.assertEqual(qn_samples[0]["pin_type"], "QN")
@@ -1087,9 +1169,12 @@ class PostrouteVcdPowerTests(unittest.TestCase):
             self.assertFalse(completed.stderr.strip())
 
             payload = json.loads(result.read_text(encoding="utf-8"))
+            matched_pin_by_handle = self._pin_full_name_by_handle_from_tcl_script(
+                tcl_script
+            )
             calls = self._parse_power_pin_activity_calls(completed.stdout)
             self.assertEqual(len(calls), 1)
-            self.assertEqual(calls[0][0], ok_q)
+            self.assertEqual(matched_pin_by_handle[calls[0][0]], ok_q)
             self.assertEqual(calls[0][1], 400.0)
             self.assertEqual(calls[0][2], 0.20)
 
