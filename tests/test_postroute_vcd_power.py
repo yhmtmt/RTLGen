@@ -53,6 +53,45 @@ class PostrouteVcdPowerTests(unittest.TestCase):
             sidecar.update(overrides)
         return sidecar
 
+    def _sequential_activity(
+        self,
+        *,
+        vcd: Path,
+        full_name: str = "reducer/result_value[0]",
+        duty_cycle: float = 0.5,
+        density_hz: float = 100.0,
+        transition_count: float = 10.0,
+        overrides: dict[str, object] | None = None,
+    ) -> dict[str, object]:
+        sidecar: dict[str, object] = {
+            "version": 1,
+            "model": MODULE._SEQUENTIAL_REGISTER_ACTIVITY_MODEL,
+            "source_vcd_sha256": MODULE._sha256(vcd),
+            "source_vcd": vcd.name,
+            "scope": "tb/dut",
+            "timescale_seconds": 1e-9,
+            "active_start_tick": 0,
+            "active_end_tick": 1000,
+            "register_bits": [
+                {
+                    "full_name": full_name,
+                    "density_hz": density_hz,
+                    "duty_cycle": duty_cycle,
+                    "transition_count": transition_count,
+                    "source": "vcd",
+                }
+            ],
+        }
+        if overrides is not None:
+            sidecar.update(overrides)
+        return sidecar
+
+    def _write_sequential_activity(self, root: Path, *, vcd: Path, full_name: str = "reducer/result_value[0]") -> Path:
+        sidecar = self._sequential_activity(vcd=vcd, full_name=full_name)
+        path = root / f"{full_name.replace('/', '_').replace('[','_').replace(']','_').replace(':','_')}.sequential_register_activity.json"
+        path.write_text(json.dumps(sidecar), encoding="utf-8")
+        return path
+
     def _write_macro_activity(self, root: Path, *, phase_name: str, vcd: Path) -> Path:
         sidecar = self._macro_activity(
             phase_name=phase_name,
@@ -74,6 +113,8 @@ class PostrouteVcdPowerTests(unittest.TestCase):
         pin_properties: dict[str, dict[str, object]] | None = None,
         leaf_pin_map: dict[str, tuple[str, ...]] | None = None,
         leaf_specs: tuple[tuple[str, str, str], ...] | None = None,
+        sequential_register_activity_tcl: Path | None = None,
+        emit_power_pin_activity_calls: bool = False,
     ) -> str:
         if leaf_specs is None:
             leaf_specs = (
@@ -91,8 +132,9 @@ class PostrouteVcdPowerTests(unittest.TestCase):
             is_hierarchical = int(config.get("is_hierarchical", False))
             direction = str(config.get("direction", "output"))
             full_name = str(config.get("full_name", pin_name))
+            has_activity = "activity" in config
             activity = config.get("activity")
-            if activity is None:
+            if has_activity and activity is None:
                 pin_property_overrides.extend(
                     [
                         f"  if {{$obj eq {{{pin_name}}}}} {{",
@@ -100,13 +142,13 @@ class PostrouteVcdPowerTests(unittest.TestCase):
                         f"    if {{$property eq \"direction\"}} {{ return \"{direction}\" }}",
                         f"    if {{$property eq \"full_name\"}} {{ return {{{full_name}}} }}",
                         "    if {$property eq \"activity\"} {",
-                        f"      error \"forced_activity_query_error {pin_name}\"",
+                        "      error \"simulated get_property activity query error\"",
                         "    }",
                         "    return {}",
                         "  }",
                     ]
                 )
-            else:
+            elif has_activity:
                 pin_property_overrides.extend(
                     [
                         f"  if {{$obj eq {{{pin_name}}}}} {{",
@@ -250,19 +292,19 @@ class PostrouteVcdPowerTests(unittest.TestCase):
             "proc get_property {obj property} {",
             *pin_property_body,
             *pin_property_overrides,
+            "  if {$property eq \"is_hierarchical\"} {",
+            "    return 0",
+            "  }",
+            "  if {$property eq \"direction\"} {",
+            "    return \"output\"",
+            "  }",
+            "  if {$property eq \"activity\"} {",
+            "    return {0.25 0.5 vcd}",
+            "  }",
+            "  if {$property eq \"full_name\"} {",
+            "    return $obj",
+            "  }",
             "  if {[string match \"pin_*\" $obj]} {",
-            "    if {$property eq \"is_hierarchical\"} {",
-            "      return 0",
-            "    }",
-            "    if {$property eq \"direction\"} {",
-            "      return \"output\"",
-            "    }",
-            "    if {$property eq \"activity\"} {",
-            "      return {0.25 0.5 vcd}",
-            "    }",
-            "    if {$property eq \"full_name\"} {",
-            "      return $obj",
-            "    }",
             "    return {}",
             "  }",
             "  if {$property eq \"ref_name\"} {",
@@ -334,12 +376,40 @@ class PostrouteVcdPowerTests(unittest.TestCase):
                 if macro_activity_tcl is not None
                 else "set ::env(RTLGEN_MACRO_ACTIVITY_TCL) \"\""
             ),
+            (
+            f"set ::env(RTLGEN_SEQUENTIAL_REGISTER_ACTIVITY_TCL) \"{sequential_register_activity_tcl}\""
+                if sequential_register_activity_tcl is not None
+                else "set ::env(RTLGEN_SEQUENTIAL_REGISTER_ACTIVITY_TCL) \"\""
+            ),
             MODULE._tcl_script(),
+            *(
+                [
+                    "set ::power_pin_activity_call_count [llength $::sta::power_pin_activity_calls]",
+                    "puts \"POWER_PIN_ACTIVITY_CALL_COUNT=$::power_pin_activity_call_count\"",
+                    "foreach call $::sta::power_pin_activity_calls {",
+                    "  lassign $call call_pin call_density call_duty",
+                    "  puts \"POWER_PIN_ACTIVITY_CALL|$call_pin|$call_density|$call_duty\"",
+                    "}",
+                ]
+                if emit_power_pin_activity_calls
+                else []
+            ),
             "if {$::ref_name_query_count == 0} {",
             "  error \"assertion failed: expected at least one instance ref_name query\"",
             "}",
         ]
         return "\n".join(lines)
+
+    def _parse_power_pin_activity_calls(self, stdout: str) -> list[tuple[str, float, float]]:
+        calls: list[tuple[str, float, float]] = []
+        for line in stdout.splitlines():
+            if not line.startswith("POWER_PIN_ACTIVITY_CALL|"):
+                continue
+            _, pin, density, duty = line.split("|", 3)
+            if pin.startswith("{") and pin.endswith("}"):
+                pin = pin[1:-1]
+            calls.append((pin, float(density), float(duty)))
+        return calls
 
     def test_tcl_script_non_finite_samples_have_escaped_json_array_literals(self) -> None:
         if shutil.which("tclsh") is None:
@@ -870,6 +940,226 @@ class PostrouteVcdPowerTests(unittest.TestCase):
             self.assertEqual(payload["macro_trace_backed_pin_count"], 1)
             self.assertEqual(payload["macro_trace_active_pin_count"], 1)
 
+    def test_tcl_script_maps_generic_dff_outputs_and_qn_inversion(self) -> None:
+        if shutil.which("tclsh") is None:
+            self.skipTest("tclsh is required for Tcl runtime regression")
+
+        with tempfile.TemporaryDirectory() as temp_text:
+            root = Path(temp_text)
+            scripts = root / "scripts"
+            scripts.mkdir()
+            (scripts / "load.tcl").write_text("", encoding="utf-8")
+            result = root / "activity_power.json"
+            sequential_activity_tcl = self._write_sequential_activity_tcl(
+                root=root,
+                assignments=(
+                    ("reducer/result_value[116]", 500.0, 0.25, 5.0),
+                    ("reducer/numerator_accum[56][24]", 300.0, 0.60, 3.0),
+                ),
+            )
+            q_pin = "reducer/numerator_accum[56][24]$_DFFE_PP_/Q"
+            qn_pin = "reducer/numerator_accum[56][24]$_DFFSR_X1_/QN"
+            second_pin = "reducer/result_value[116]$_DFFX1_/Q"
+            pin_properties = {
+                pin: {
+                    "full_name": pin,
+                    "direction": "output",
+                    "is_hierarchical": False,
+                }
+                for pin in (q_pin, qn_pin, second_pin)
+            }
+            tcl_script = self._write_tcl_runtime_stub(
+                root=root,
+                result=result,
+                all_pin_names=(q_pin, qn_pin, second_pin),
+                pin_properties=pin_properties,
+                sequential_register_activity_tcl=sequential_activity_tcl,
+                emit_power_pin_activity_calls=True,
+            )
+            self.assertIn(
+                "regexp {^(.+)\\$_DFF[^/]+/(Q|QN)$} $sequential_register_activity_pin_full_name",
+                tcl_script,
+            )
+            tcl_script_path = root / "activity_power.tcl"
+            tcl_script_path.write_text(tcl_script, encoding="utf-8")
+            tcl = shutil.which("tclsh")
+            assert tcl is not None
+            completed = MODULE.subprocess.run(
+                [tcl, str(tcl_script_path)],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertEqual(
+                completed.returncode,
+                0,
+                msg=f"tcl failed: stdout={completed.stdout} stderr={completed.stderr}",
+            )
+            payload = json.loads(result.read_text(encoding="utf-8"))
+            power_pin_activity_calls = self._parse_power_pin_activity_calls(
+                completed.stdout
+            )
+            self.assertEqual(len(power_pin_activity_calls), 3)
+            calls_by_pin = {
+                pin: (density, duty)
+                for pin, density, duty in power_pin_activity_calls
+            }
+            self.assertEqual(calls_by_pin[q_pin][0], 300.0)
+            self.assertEqual(calls_by_pin[q_pin][1], 0.60)
+            self.assertEqual(calls_by_pin[second_pin][0], 500.0)
+            self.assertEqual(calls_by_pin[second_pin][1], 0.25)
+            self.assertEqual(calls_by_pin[qn_pin][0], 300.0)
+            self.assertEqual(calls_by_pin[qn_pin][1], 0.4)
+            self.assertEqual(calls_by_pin[qn_pin][0], calls_by_pin[q_pin][0])
+            sequential = payload["sequential_register_activity"]
+            self.assertEqual(sequential["q_candidate_count"], 2)
+            self.assertEqual(sequential["qn_candidate_count"], 1)
+            self.assertEqual(sequential["matched_count"], 3)
+            self.assertEqual(sequential["applied_count"], 3)
+            self.assertEqual(sequential["unmatched_output_count"], 0)
+            self.assertEqual(sequential["unused_sidecar_row_count"], 0)
+            qn_samples = [
+                sample
+                for sample in sequential["scan_samples"]
+                if sample["pin"] == qn_pin
+            ]
+            self.assertEqual(len(qn_samples), 1)
+            self.assertEqual(qn_samples[0]["pin_type"], "QN")
+            self.assertEqual(
+                qn_samples[0]["pin_duty"],
+                1.0 - 0.60,
+            )
+
+    def test_tcl_script_rejects_malformed_sequential_register_activity_updates(self) -> None:
+        if shutil.which("tclsh") is None:
+            self.skipTest("tclsh is required for Tcl runtime regression")
+
+        with tempfile.TemporaryDirectory() as temp_text:
+            root = Path(temp_text)
+            scripts = root / "scripts"
+            scripts.mkdir()
+            (scripts / "load.tcl").write_text("", encoding="utf-8")
+
+            result = root / "activity_power.json"
+            sequential_activity_tcl = root / "sequential_register_activity.tcl"
+            sequential_activity_tcl.write_text(
+                "set rtlgen_sequential_register_activity_assignments {\n"
+                "  {reducer/result_value[0] 400 0.20 1.0}\n"
+                "  {reducer/result_value[1] 300 0.30 2.0 3.0}\n"
+                "  {reducer/result_value[2] 200 0.40}\n"
+                "}\n",
+                encoding="utf-8",
+            )
+            ok_q = "reducer/result_value[0]$_DFFX1_/Q"
+            bad3_q = "reducer/result_value[1]$_DFFX1_/Q"
+            bad5_q = "reducer/result_value[2]$_DFFX1_/Q"
+            pin_properties = {
+                pin: {
+                    "full_name": pin,
+                    "direction": "output",
+                    "is_hierarchical": False,
+                }
+                for pin in (ok_q, bad3_q, bad5_q)
+            }
+            tcl_script = self._write_tcl_runtime_stub(
+                root=root,
+                result=result,
+                all_pin_names=(ok_q, bad3_q, bad5_q),
+                pin_properties=pin_properties,
+                sequential_register_activity_tcl=sequential_activity_tcl,
+                emit_power_pin_activity_calls=True,
+            )
+            tcl_script_path = root / "activity_power.tcl"
+            tcl_script_path.write_text(tcl_script, encoding="utf-8")
+            tcl = shutil.which("tclsh")
+            assert tcl is not None
+            completed = MODULE.subprocess.run(
+                [tcl, str(tcl_script_path)],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertEqual(
+                completed.returncode,
+                0,
+                msg=f"tcl failed: stdout={completed.stdout} stderr={completed.stderr}",
+            )
+            self.assertFalse(completed.stderr.strip())
+
+            payload = json.loads(result.read_text(encoding="utf-8"))
+            calls = self._parse_power_pin_activity_calls(completed.stdout)
+            self.assertEqual(len(calls), 1)
+            self.assertEqual(calls[0][0], ok_q)
+            self.assertEqual(calls[0][1], 400.0)
+            self.assertEqual(calls[0][2], 0.20)
+
+            sequential = payload["sequential_register_activity"]
+            self.assertEqual(sequential["assignment_count"], 3)
+            self.assertEqual(sequential["query_error_count"], 2)
+            self.assertEqual(sequential["candidate_count"], 3)
+            self.assertEqual(sequential["matched_count"], 1)
+            self.assertEqual(sequential["applied_count"], 1)
+            self.assertEqual(sequential["unmatched_output_count"], 2)
+
+    def test_tcl_script_sequential_register_activity_scan_samples_are_bounded(self) -> None:
+        if shutil.which("tclsh") is None:
+            self.skipTest("tclsh is required for Tcl runtime regression")
+
+        with tempfile.TemporaryDirectory() as temp_text:
+            root = Path(temp_text)
+            scripts = root / "scripts"
+            scripts.mkdir()
+            (scripts / "load.tcl").write_text("", encoding="utf-8")
+            result = root / "activity_power.json"
+            assignments = tuple(
+                (f"reducer/result[{index}][0]", 100.0 + index, 0.4, 1.0)
+                for index in range(20)
+            )
+            sequential_activity_tcl = self._write_sequential_activity_tcl(
+                root=root,
+                assignments=assignments,
+            )
+            all_pins = [
+                f"reducer/result[{index}][0]$_DFFH{i % 3}_/Q"
+                for i, index in enumerate(range(20))
+            ]
+            pin_properties = {
+                pin: {
+                    "full_name": pin,
+                    "direction": "output",
+                    "is_hierarchical": False,
+                }
+                for pin in all_pins
+            }
+            tcl_script = self._write_tcl_runtime_stub(
+                root=root,
+                result=result,
+                all_pin_names=tuple(all_pins),
+                pin_properties=pin_properties,
+                sequential_register_activity_tcl=sequential_activity_tcl,
+            )
+            tcl_script_path = root / "activity_power.tcl"
+            tcl_script_path.write_text(tcl_script, encoding="utf-8")
+            tcl = shutil.which("tclsh")
+            assert tcl is not None
+            completed = MODULE.subprocess.run(
+                [tcl, str(tcl_script_path)],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertEqual(
+                completed.returncode,
+                0,
+                msg=f"tcl failed: stdout={completed.stdout} stderr={completed.stderr}",
+            )
+            payload = json.loads(result.read_text(encoding="utf-8"))
+            sequential = payload["sequential_register_activity"]
+            self.assertEqual(sequential["candidate_count"], 20)
+            self.assertEqual(sequential["matched_count"], 20)
+            self.assertEqual(sequential["applied_count"], 20)
+            self.assertEqual(len(sequential["scan_samples"]), 16)
+
     def test_tcl_counts_after_design_power(self) -> None:
         script = MODULE._tcl_script()
         totals_index = script.find("set totals [sta::design_power")
@@ -1075,6 +1365,7 @@ class PostrouteVcdPowerTests(unittest.TestCase):
                 phase_name=name,
                 vcd=vcd,
             )
+            sequential_activity = self._write_sequential_activity(root=root, vcd=vcd, full_name=f"{name}/reducer/result_value[{measured}]")
             phases.append(
                 {
                     "phase": name,
@@ -1082,6 +1373,8 @@ class PostrouteVcdPowerTests(unittest.TestCase):
                     "vcd_sha256": MODULE._sha256(vcd),
                     "macro_activity": macro_activity.name,
                     "macro_activity_sha256": MODULE._sha256(macro_activity),
+                    "sequential_register_activity": sequential_activity.name,
+                    "sequential_register_activity_sha256": MODULE._sha256(sequential_activity),
                     "measured_cycles": measured,
                     "full_context_cycles": full,
                 }
@@ -1105,7 +1398,37 @@ class PostrouteVcdPowerTests(unittest.TestCase):
             "structural_query_error_count": 0,
             "structural_apply_error_count": 0,
         }
+        payload["sequential_register_activity"] = {
+            "assignment_count": assignment_count,
+            "scanned_pin_count": 0,
+            "candidate_count": assignment_count,
+            "q_candidate_count": assignment_count,
+            "qn_candidate_count": 0,
+            "matched_count": assignment_count,
+            "applied_count": assignment_count,
+            "query_error_count": 0,
+            "apply_error_count": 0,
+            "unmatched_output_count": 0,
+            "unused_sidecar_row_count": 0,
+            "coverage": 1.0,
+            "scan_samples": [],
+        }
         return payload
+
+    def _write_sequential_activity_tcl(
+        self,
+        root: Path,
+        assignments: tuple[tuple[str, float, float, float], ...],
+    ) -> Path:
+        path = root / "sequential_register_activity.tcl"
+        lines = ["set rtlgen_sequential_register_activity_assignments {"]
+        for full_name, density, duty_cycle, transition_count in assignments:
+            lines.append(
+                f"  {{{full_name} {density} {duty_cycle} {transition_count}}}"
+            )
+        lines.append("}")
+        path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+        return path
 
     def _assert_no_full_pin_arrays_in_phase_payload(self, phase: dict[str, object]) -> None:
         self.assertNotIn("macro_activity_rows", phase)
@@ -1407,14 +1730,18 @@ class PostrouteVcdPowerTests(unittest.TestCase):
                 phase["macro_activity_assignment_count"], len(phase["_macro_activity_rows"])
             )
 
-    def test_build_report_fails_if_structural_macro_activity_incomplete(self) -> None:
+    def test_phase_rows_rejects_sequential_activity_hash_mismatch(self) -> None:
         with tempfile.TemporaryDirectory() as temp_text:
             root = Path(temp_text)
             vcd = root / "trace.vcd"
-            vcd.write_text("$comment score_fill $end\n", encoding="utf-8")
+            vcd.write_text("$enddefinitions $end\n", encoding="utf-8")
             macro_activity = self._write_macro_activity(
                 root=root,
                 phase_name="score_fill",
+                vcd=vcd,
+            )
+            sequential_activity = self._write_sequential_activity(
+                root=root,
                 vcd=vcd,
             )
             manifest = {
@@ -1426,6 +1753,68 @@ class PostrouteVcdPowerTests(unittest.TestCase):
                         "vcd_sha256": MODULE._sha256(vcd),
                         "macro_activity": macro_activity.name,
                         "macro_activity_sha256": MODULE._sha256(macro_activity),
+                        "sequential_register_activity": sequential_activity.name,
+                        "sequential_register_activity_sha256": "0" * 64,
+                        "measured_cycles": 20,
+                        "full_context_cycles": 20,
+                    }
+                ],
+            }
+            manifest_path = root / "manifest.json"
+            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+            with self.assertRaisesRegex(
+                ValueError,
+                "sequential register activity hash mismatch",
+            ):
+                MODULE._phase_rows(manifest, manifest_path)
+
+    def test_load_sequential_register_activity_rejects_scope_prefix_in_full_name(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_text:
+            root = Path(temp_text)
+            vcd = root / "trace.vcd"
+            vcd.write_text("$enddefinitions $end\n", encoding="utf-8")
+            sidecar = self._sequential_activity(
+                vcd=vcd,
+                full_name="tb/dut/reducer/result_value[0]",
+            )
+            path = root / "sequential_activity.json"
+            path.write_text(json.dumps(sidecar), encoding="utf-8")
+            with self.assertRaisesRegex(
+                ValueError,
+                "omit scope prefix",
+            ):
+                MODULE._load_sequential_register_activity(
+                    path,
+                    vcd_sha256=MODULE._sha256(vcd),
+                    phase_vcd_basename=vcd.name,
+                )
+
+    def test_build_report_fails_if_structural_macro_activity_incomplete(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_text:
+            root = Path(temp_text)
+            vcd = root / "trace.vcd"
+            vcd.write_text("$comment score_fill $end\n", encoding="utf-8")
+            macro_activity = self._write_macro_activity(
+                root=root,
+                phase_name="score_fill",
+                vcd=vcd,
+            )
+            sequential_activity = self._write_sequential_activity(
+                root=root,
+                vcd=vcd,
+                full_name="score_fill/reducer/result_value[0]",
+            )
+            manifest = {
+                "clock_period_ns": 8.0,
+                "phases": [
+                    {
+                        "phase": "score_fill",
+                        "vcd": vcd.name,
+                        "vcd_sha256": MODULE._sha256(vcd),
+                        "macro_activity": macro_activity.name,
+                        "macro_activity_sha256": MODULE._sha256(macro_activity),
+                        "sequential_register_activity": sequential_activity.name,
+                        "sequential_register_activity_sha256": MODULE._sha256(sequential_activity),
                         "measured_cycles": 20,
                         "full_context_cycles": 20,
                     }
@@ -1472,6 +1861,212 @@ class PostrouteVcdPowerTests(unittest.TestCase):
             self.assertFalse(phase["structural_macro_activity_gate_pass"])
             self.assertFalse(phase["phase_gate_pass"])
             self.assertFalse(report["promotion_gate_pass"])
+
+    def test_build_report_fails_when_sequential_register_activity_coverage_below_threshold(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_text:
+            root = Path(temp_text)
+            manifest, manifest_path = self._fixture(root)
+            design_config = root / "config.mk"
+            design_config.write_text("", encoding="utf-8")
+            power = self._with_structural_macro_transfer(
+                {
+                    "total_w": 1.0,
+                    "internal_w": 0.5,
+                    "switching_w": 0.5,
+                    "leakage_w": 0.0,
+                    "sdc_clock_period_ns": 8.0,
+                    "annotatable_pin_count": 1000,
+                    "leaf_annotatable_pin_count": 1000,
+                    "leaf_trace_backed_pin_count": 1000,
+                    "vcd_annotated_pin_count": 1000,
+                    "macro_trace_active_pin_count": 64,
+                    "macro_annotatable_pin_count": 1000,
+                    "direct_annotatable_pin_count": 1000,
+                    "direct_vcd_pin_count": 1000,
+                },
+                assignment_count=1,
+            )
+            power["sequential_register_activity"]["candidate_count"] = 2
+            power["sequential_register_activity"]["matched_count"] = 1
+            power["sequential_register_activity"]["applied_count"] = 1
+            with mock.patch.object(MODULE, "_run_openroad_phase", return_value=power):
+                report = MODULE.build_report(
+                    manifest=manifest,
+                    manifest_path=manifest_path,
+                    design_config=design_config,
+                    flow_variant="activity_test",
+                    scope="tb/dut",
+                    min_vcd_coverage=0.25,
+                    min_vcd_pins=32,
+                    min_macro_active_coverage=0.05,
+                    min_macro_active_pins=8,
+                    timeout_seconds=10,
+                )
+            self.assertFalse(report["promotion_gate_pass"])
+            for phase in report["phases"]:
+                self.assertFalse(phase["sequential_register_activity_gate_pass"])
+                self.assertLess(phase["sequential_register_activity_coverage"], 1.0)
+
+    def test_build_report_fails_when_sequential_register_activity_apply_count_mismatches_matched_count(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_text:
+            root = Path(temp_text)
+            manifest, manifest_path = self._fixture(root)
+            design_config = root / "config.mk"
+            design_config.write_text("", encoding="utf-8")
+            power = self._with_structural_macro_transfer(
+                {
+                    "total_w": 1.0,
+                    "internal_w": 0.5,
+                    "switching_w": 0.5,
+                    "leakage_w": 0.0,
+                    "sdc_clock_period_ns": 8.0,
+                    "annotatable_pin_count": 1000,
+                    "leaf_annotatable_pin_count": 1000,
+                    "leaf_trace_backed_pin_count": 1000,
+                    "vcd_annotated_pin_count": 1000,
+                    "macro_trace_active_pin_count": 64,
+                    "macro_annotatable_pin_count": 1000,
+                    "direct_annotatable_pin_count": 1000,
+                    "direct_vcd_pin_count": 1000,
+                },
+                assignment_count=1,
+            )
+            power["sequential_register_activity"]["candidate_count"] = 1
+            power["sequential_register_activity"]["matched_count"] = 1
+            power["sequential_register_activity"]["applied_count"] = 0
+            with mock.patch.object(MODULE, "_run_openroad_phase", return_value=power):
+                report = MODULE.build_report(
+                    manifest=manifest,
+                    manifest_path=manifest_path,
+                    design_config=design_config,
+                    flow_variant="activity_test",
+                    scope="tb/dut",
+                    min_vcd_coverage=0.25,
+                    min_vcd_pins=32,
+                    min_macro_active_coverage=0.05,
+                    min_macro_active_pins=8,
+                    timeout_seconds=10,
+                )
+            self.assertFalse(report["promotion_gate_pass"])
+            for phase in report["phases"]:
+                self.assertFalse(phase["sequential_register_activity_gate_pass"])
+                self.assertEqual(phase["sequential_register_activity_matched_count"], 1)
+                self.assertEqual(phase["sequential_register_activity_applied_count"], 0)
+
+    def test_build_report_fails_when_sequential_register_activity_query_or_apply_errors(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_text:
+            root = Path(temp_text)
+            manifest, manifest_path = self._fixture(root)
+            design_config = root / "config.mk"
+            design_config.write_text("", encoding="utf-8")
+            power = self._with_structural_macro_transfer(
+                {
+                    "total_w": 1.0,
+                    "internal_w": 0.5,
+                    "switching_w": 0.5,
+                    "leakage_w": 0.0,
+                    "sdc_clock_period_ns": 8.0,
+                    "annotatable_pin_count": 1000,
+                    "leaf_annotatable_pin_count": 1000,
+                    "leaf_trace_backed_pin_count": 1000,
+                    "vcd_annotated_pin_count": 1000,
+                    "macro_trace_active_pin_count": 64,
+                    "macro_annotatable_pin_count": 1000,
+                    "direct_annotatable_pin_count": 1000,
+                    "direct_vcd_pin_count": 1000,
+                },
+                assignment_count=1,
+            )
+            power["sequential_register_activity"]["query_error_count"] = 2
+            power["sequential_register_activity"]["apply_error_count"] = 1
+            power["sequential_register_activity"]["candidate_count"] = 1
+            power["sequential_register_activity"]["matched_count"] = 1
+            power["sequential_register_activity"]["applied_count"] = 1
+            with mock.patch.object(MODULE, "_run_openroad_phase", return_value=power):
+                report = MODULE.build_report(
+                    manifest=manifest,
+                    manifest_path=manifest_path,
+                    design_config=design_config,
+                    flow_variant="activity_test",
+                    scope="tb/dut",
+                    min_vcd_coverage=0.25,
+                    min_vcd_pins=32,
+                    min_macro_active_coverage=0.05,
+                    min_macro_active_pins=8,
+                    timeout_seconds=10,
+                )
+            self.assertFalse(report["promotion_gate_pass"])
+            for phase in report["phases"]:
+                self.assertFalse(phase["sequential_register_activity_gate_pass"])
+                self.assertGreater(phase["sequential_register_activity_coverage"], 0.9)
+
+    def test_build_report_allows_unused_sequential_sidecar_rows_when_impact_is_diagnostic_only(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_text:
+            root = Path(temp_text)
+            manifest, manifest_path = self._fixture(root)
+            design_config = root / "config.mk"
+            design_config.write_text("", encoding="utf-8")
+            power = self._with_structural_macro_transfer(
+                {
+                    "total_w": 1.0,
+                    "internal_w": 0.5,
+                    "switching_w": 0.5,
+                    "leakage_w": 0.0,
+                    "sdc_clock_period_ns": 8.0,
+                    "annotatable_pin_count": 1000,
+                    "leaf_annotatable_pin_count": 1000,
+                    "leaf_trace_backed_pin_count": 1000,
+                    "vcd_annotated_pin_count": 1000,
+                    "macro_trace_active_pin_count": 64,
+                    "macro_annotatable_pin_count": 1000,
+                    "direct_annotatable_pin_count": 1000,
+                    "direct_vcd_pin_count": 1000,
+                },
+                assignment_count=1,
+            )
+            power["sequential_register_activity"]["candidate_count"] = 1
+            power["sequential_register_activity"]["matched_count"] = 1
+            power["sequential_register_activity"]["applied_count"] = 1
+            power["sequential_register_activity"]["unused_sidecar_row_count"] = 3
+            power["sequential_register_activity"]["scan_samples"] = [
+                {
+                    "full_name": "",
+                    "register_full_name": f"unused_row_{index}",
+                    "pin": "",
+                    "pin_duty": 0.0,
+                    "pin_type": "Q",
+                    "kind": "unused_sidecar_row",
+                    "reason": "unused_sidecar_row",
+                }
+                for index in range(2)
+            ]
+            with mock.patch.object(MODULE, "_run_openroad_phase", return_value=power):
+                report = MODULE.build_report(
+                    manifest=manifest,
+                    manifest_path=manifest_path,
+                    design_config=design_config,
+                    flow_variant="activity_test",
+                    scope="tb/dut",
+                    min_vcd_coverage=0.25,
+                    min_vcd_pins=32,
+                    min_macro_active_coverage=0.05,
+                    min_macro_active_pins=8,
+                    timeout_seconds=10,
+                )
+            self.assertTrue(report["promotion_gate_pass"])
+            for phase in report["phases"]:
+                self._assert_no_full_pin_arrays_in_phase_payload(phase)
+                self.assertEqual(phase["sequential_register_activity_gate_pass"], True)
+                self.assertEqual(phase["power"]["sequential_register_activity"]["unused_sidecar_row_count"], 3)
+                self.assertLessEqual(
+                    len(phase["power"]["sequential_register_activity"]["scan_samples"]),
+                    16,
+                )
+                sample_reasons = {
+                    sample["reason"]
+                    for sample in phase["power"]["sequential_register_activity"]["scan_samples"]
+                }
+                self.assertEqual(sample_reasons, {"unused_sidecar_row"})
 
     def test_build_report_omits_pin_arrays_from_phase_output(self) -> None:
         with tempfile.TemporaryDirectory() as temp_text:
@@ -1639,6 +2234,13 @@ class PostrouteVcdPowerTests(unittest.TestCase):
                 "macro_trace_active_pin_count": 10,
                 "macro_annotatable_pin_count": 1000,
             }
+            power = self._with_structural_macro_transfer(power, assignment_count=1)
+            power["macro_pin_transfer"]["structural_assignment_count"] = 0
+            power["macro_pin_transfer"]["structural_matched_count"] = 0
+            power["macro_pin_transfer"]["structural_applied_count"] = 0
+            power["macro_pin_transfer"]["structural_unmatched_count"] = 0
+            power["macro_pin_transfer"]["structural_query_error_count"] = 0
+            power["macro_pin_transfer"]["structural_apply_error_count"] = 0
             with mock.patch.object(MODULE, "_phase_rows", return_value=[{
                 "phase": "score_fill",
                 "vcd": "trace.vcd",
@@ -1647,6 +2249,7 @@ class PostrouteVcdPowerTests(unittest.TestCase):
                 "full_context_cycles": 20,
                 "requires_macro_activity": False,
                 "_resolved_vcd": str(vcd),
+                "macro_activity_assignment_count": 0,
             }]):
                 with mock.patch.object(MODULE, "_run_openroad_phase", return_value=power):
                     report = MODULE.build_report(
