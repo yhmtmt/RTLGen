@@ -114,6 +114,29 @@
         "reason": "Collect the missing 8 ns Nangate45 evidence in 2.5 mm envelope while keeping current vectorless metrics as bounded frontier evidence."
       },
       "status": "pending_implementation_merge"
+    },
+    {
+      "item_id": "l1_decoder_attention_decode_score_multivalue_cluster_pnr_binary_fsm_8ns_v3",
+      "task_type": "l1_sweep",
+      "objective": "Measure the exact-state activity calibration path with the unique binary-FSM 8 ns sweep, matched to the v2 physical architecture and configuration.",
+      "evaluation_mode": "frontier_followup",
+      "abstraction_layer": "decoder_attention_decode_score_multivalue_cluster",
+      "comparison_role": "shared_score_multivalue_cluster_binary_fsm_pnr",
+      "config_paths": [
+        "runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/decode_score_multivalue_cluster_v1/sweeps/nangate45_decode_score_multivalue_cluster_8ns_binary_fsm_v3.json",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "paired_baseline_item_id": "l1_decoder_attention_decode_score_multivalue_cluster_pnr_8ns_v2",
+      "expected_result": {
+        "direction": "measure_shared_score_multivalue_cluster_binary_fsm_ppa",
+        "reason": "The v2 result remains the valid one-hot PPA baseline and is not invalidated. V3 is a matched physical architecture point with SYNTH_ARGS=-nofsm so routed FSM bits correspond to RTL state activity. PR #1413 / merge f281d6f7 enables complete block_weight capture, compact diagnostics, and FSM provenance; the forthcoming v3 sweep implementation is not yet merged."
+      },
+      "status": "pending_implementation_merge"
     }
   ],
   "baseline_refs": [
