@@ -1245,6 +1245,87 @@ class PostrouteVcdPowerTests(unittest.TestCase):
             self.assertEqual(sequential["applied_count"], 20)
             self.assertEqual(len(sequential["scan_samples"]), 16)
 
+    def test_tcl_script_sequential_register_activity_bucketed_diagnostics(self) -> None:
+        if shutil.which("tclsh") is None:
+            self.skipTest("tclsh is required for Tcl runtime regression")
+
+        with tempfile.TemporaryDirectory() as temp_text:
+            root = Path(temp_text)
+            scripts = root / "scripts"
+            scripts.mkdir()
+            (scripts / "load.tcl").write_text("", encoding="utf-8")
+            result = root / "activity_power.json"
+            assignments = (
+                ("reducer/block_weight[0][0]", 100.0, 0.10, 1.0),
+                ("reducer/block_weight[2][0]", 100.0, 0.20, 1.0),
+                ("reducer/other_unused[0]", 100.0, 0.30, 1.0),
+                ("reducer/other_unused[1]", 100.0, 0.40, 1.0),
+            )
+            sequential_activity_tcl = self._write_sequential_activity_tcl(
+                root=root,
+                assignments=assignments,
+            )
+            all_pins = (
+                "reducer/block_weight[0][0]$_DFFX1_/Q",
+                "reducer/block_weight[0][1]$_DFFX1_/Q",
+                "reducer/block_weight[1][0]$_DFFX1_/Q",
+                "reducer/block_weight[1][1]$_DFFX1_/Q",
+                "reducer/state_feedback[0]$_DFFX1_/Q",
+            )
+            pin_properties = {
+                pin: {
+                    "full_name": pin,
+                    "direction": "output",
+                    "is_hierarchical": False,
+                }
+                for pin in all_pins
+            }
+            tcl_script = self._write_tcl_runtime_stub(
+                root=root,
+                result=result,
+                all_pin_names=all_pins,
+                pin_properties=pin_properties,
+                sequential_register_activity_tcl=sequential_activity_tcl,
+            )
+            tcl_script_path = root / "activity_power.tcl"
+            tcl_script_path.write_text(tcl_script, encoding="utf-8")
+            tcl = shutil.which("tclsh")
+            assert tcl is not None
+            completed = MODULE.subprocess.run(
+                [tcl, str(tcl_script_path)],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertEqual(
+                completed.returncode,
+                0,
+                msg=f"tcl failed: stdout={completed.stdout} stderr={completed.stderr}",
+            )
+            payload = json.loads(result.read_text(encoding="utf-8"))
+            sequential = payload["sequential_register_activity"]
+            self.assertEqual(sequential["unmatched_output_count"], 4)
+            self.assertEqual(sequential["unused_sidecar_row_count"], 3)
+            self.assertEqual(
+                sequential["unmatched_output_rows_by_prefix"],
+                [
+                    {"register_prefix": "reducer/block_weight[1]", "count": 2},
+                    {"register_prefix": "reducer/block_weight[0]", "count": 1},
+                    {"register_prefix": "reducer/state_feedback", "count": 1},
+                ],
+            )
+            self.assertEqual(
+                sequential["unused_sidecar_rows_by_prefix"],
+                [
+                    {"register_prefix": "reducer/other_unused", "count": 2},
+                    {"register_prefix": "reducer/block_weight[2]", "count": 1},
+                ],
+            )
+            self.assertLessEqual(len(sequential["scan_samples"]), 16)
+            sample_reasons = {sample["reason"] for sample in sequential["scan_samples"]}
+            self.assertIn("no_sequential_row", sample_reasons)
+            self.assertIn("no_unmatched_sidecar_row", sample_reasons)
+
     def test_tcl_counts_after_design_power(self) -> None:
         script = MODULE._tcl_script()
         totals_index = script.find("set totals [sta::design_power")

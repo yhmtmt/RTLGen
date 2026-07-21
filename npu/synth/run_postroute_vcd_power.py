@@ -514,6 +514,13 @@ proc rtlgen_compare_ref_name_bucket {left right} {
   return [string compare $left_name $right_name]
 }
 
+proc rtlgen_strip_array_index_suffix {full_name} {
+  if {[regexp {^(.*)\[[^\]]+\]$} $full_name -> base]} {
+    return $base
+  }
+  return $full_name
+}
+
 proc rtlgen_apply_macro_pin_activities {assignments} {
   set results {}
   if {[llength $assignments] == 0} {
@@ -564,11 +571,13 @@ set sequential_register_activity_assignments {}
 set sequential_register_activity_updates {}
 set sequential_register_activity_assignment_rows_by_full_name {}
 set sequential_register_activity_unmatched_rows_by_full_name {}
+set sequential_register_activity_unmatched_rows_by_prefix {}
 set sequential_register_activity_assignment_rows_seen {}
 set sequential_register_activity_updates_by_pin {}
 set sequential_register_activity_pin_type_by_pin {}
 set sequential_register_activity_pin_register_by_pin {}
 set sequential_register_activity_pin_duty_by_pin {}
+set sequential_register_activity_unused_rows_by_prefix {}
 if {[info exists ::env(RTLGEN_MACRO_ACTIVITY_TCL)] && $::env(RTLGEN_MACRO_ACTIVITY_TCL) ne ""} {
   if {[catch {source $::env(RTLGEN_MACRO_ACTIVITY_TCL)} structural_source_error]} {
     incr macro_pin_transfer_structural_query_error_count
@@ -659,6 +668,10 @@ foreach sequential_register_activity_pin $all_design_pins {
   }
   if {![dict exists $sequential_register_activity_assignment_rows_by_full_name $sequential_register_activity_register_full_name]} {
     incr sequential_register_activity_unmatched_output_count
+    set sequential_register_activity_unmatched_prefix \
+      [rtlgen_strip_array_index_suffix $sequential_register_activity_register_full_name]
+    dict incr sequential_register_activity_unmatched_rows_by_prefix \
+      $sequential_register_activity_unmatched_prefix
     rtlgen_append_sequential_register_activity_sample \
       sequential_register_activity_scan_samples \
       sequential_register_activity_scan_sample_limit \
@@ -737,6 +750,10 @@ if {[dict size $sequential_register_activity_assignment_rows_by_full_name] > 0} 
     }
     lappend sequential_register_activity_unused_sidecar_rows $sequential_register_activity_unused_row
     incr sequential_register_activity_unused_sidecar_row_count
+    set sequential_register_activity_unused_row_prefix \
+      [rtlgen_strip_array_index_suffix $sequential_register_activity_unused_row]
+    dict incr sequential_register_activity_unused_rows_by_prefix \
+      $sequential_register_activity_unused_row_prefix
     if {[llength $sequential_register_activity_scan_samples] < $sequential_register_activity_scan_sample_limit} {
       lappend sequential_register_activity_scan_samples \
         [list \
@@ -750,6 +767,26 @@ if {[dict size $sequential_register_activity_assignment_rows_by_full_name] > 0} 
         ]
     }
   }
+}
+set sequential_register_activity_unmatched_output_bucket_pairs {}
+if {[dict size $sequential_register_activity_unmatched_rows_by_prefix] > 0} {
+  dict for {sequential_register_activity_unmatched_prefix sequential_register_activity_unmatched_count} \
+    $sequential_register_activity_unmatched_rows_by_prefix {
+    lappend sequential_register_activity_unmatched_output_bucket_pairs \
+      [list $sequential_register_activity_unmatched_count $sequential_register_activity_unmatched_prefix]
+  }
+  set sequential_register_activity_unmatched_output_bucket_pairs \
+    [lsort -command rtlgen_compare_ref_name_bucket $sequential_register_activity_unmatched_output_bucket_pairs]
+}
+set sequential_register_activity_unused_sidecar_row_bucket_pairs {}
+if {[dict size $sequential_register_activity_unused_rows_by_prefix] > 0} {
+  dict for {sequential_register_activity_unused_row_prefix sequential_register_activity_unused_row_bucket_count} \
+    $sequential_register_activity_unused_rows_by_prefix {
+    lappend sequential_register_activity_unused_sidecar_row_bucket_pairs \
+      [list $sequential_register_activity_unused_row_bucket_count $sequential_register_activity_unused_row_prefix]
+  }
+  set sequential_register_activity_unused_sidecar_row_bucket_pairs \
+    [lsort -command rtlgen_compare_ref_name_bucket $sequential_register_activity_unused_sidecar_row_bucket_pairs]
 }
 if {![info exists sequential_register_activity_scan_samples]} {
   set sequential_register_activity_scan_samples {}
@@ -1864,6 +1901,49 @@ puts $fp "    \"query_error_count\": $sequential_register_activity_query_error_c
 puts $fp "    \"apply_error_count\": $sequential_register_activity_apply_error_count,"
 puts $fp "    \"unmatched_output_count\": $sequential_register_activity_unmatched_output_count,"
 puts $fp "    \"unused_sidecar_row_count\": $sequential_register_activity_unused_sidecar_row_count,"
+puts $fp "    \"unmatched_output_rows_by_prefix\": \["
+set sequential_register_activity_unmatched_output_bucket_count \
+  [llength $sequential_register_activity_unmatched_output_bucket_pairs]
+set sequential_register_activity_unmatched_output_bucket_index 0
+foreach sequential_register_activity_unmatched_output_bucket \
+  $sequential_register_activity_unmatched_output_bucket_pairs {
+  lassign $sequential_register_activity_unmatched_output_bucket sequential_register_activity_unmatched_output_count sequential_register_activity_unmatched_output_prefix
+  set escaped_unmatched_prefix \
+    [rtlgen_json_escape_array_literal_chars [rtlgen_json_escape $sequential_register_activity_unmatched_output_prefix]]
+  incr sequential_register_activity_unmatched_output_bucket_index
+  set sequential_register_activity_unmatched_output_bucket_line \
+    "      {\"register_prefix\": \"$escaped_unmatched_prefix\", \"count\": $sequential_register_activity_unmatched_output_count}"
+  if {$sequential_register_activity_unmatched_output_bucket_index < \
+      $sequential_register_activity_unmatched_output_bucket_count} {
+    puts $fp "$sequential_register_activity_unmatched_output_bucket_line,"
+  } else {
+    puts $fp "$sequential_register_activity_unmatched_output_bucket_line"
+  }
+}
+puts $fp "    \],"
+puts $fp "    \"unused_sidecar_rows_by_prefix\": \["
+set sequential_register_activity_unused_sidecar_row_bucket_count \
+  [llength $sequential_register_activity_unused_sidecar_row_bucket_pairs]
+set sequential_register_activity_unused_sidecar_row_bucket_index 0
+foreach sequential_register_activity_unused_sidecar_row_bucket \
+  $sequential_register_activity_unused_sidecar_row_bucket_pairs {
+  lassign \
+    $sequential_register_activity_unused_sidecar_row_bucket \
+    sequential_register_activity_unused_row_bucket_count \
+    sequential_register_activity_unused_sidecar_row_prefix
+  set escaped_unused_prefix \
+    [rtlgen_json_escape_array_literal_chars [rtlgen_json_escape $sequential_register_activity_unused_sidecar_row_prefix]]
+  incr sequential_register_activity_unused_sidecar_row_bucket_index
+  set sequential_register_activity_unused_sidecar_row_bucket_line \
+    "      {\"register_prefix\": \"$escaped_unused_prefix\", \"count\": $sequential_register_activity_unused_row_bucket_count}"
+  if {$sequential_register_activity_unused_sidecar_row_bucket_index < \
+      $sequential_register_activity_unused_sidecar_row_bucket_count} {
+    puts $fp "$sequential_register_activity_unused_sidecar_row_bucket_line,"
+  } else {
+    puts $fp "$sequential_register_activity_unused_sidecar_row_bucket_line"
+  }
+}
+puts $fp "    \],"
 puts $fp "    \"coverage\": [rtlgen_json_number $sequential_register_activity_coverage],"
 puts $fp "    \"scan_samples\": \["
 set sequential_register_activity_sample_count [llength $sequential_register_activity_scan_samples]

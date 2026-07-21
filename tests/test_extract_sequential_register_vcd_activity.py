@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import hashlib
+import math
 from pathlib import Path
 
 import pytest
@@ -55,6 +56,46 @@ def _mini_vcd() -> str:
     )
 
 
+def _block_weight_vcd() -> str:
+    lines: list[str] = [
+        "$date",
+        " Sequential register VCD for unpacked array",
+        "$end",
+        "$version",
+        "  test",
+        "$end",
+        "$timescale",
+        " 1ns/1ps",
+        "$end",
+        "$scope module tb $end",
+        "$scope module dut $end",
+        "$scope module reducer $end",
+    ]
+    lines.extend(
+        f"$var reg 16 {chr(97 + index)} \\block_weight[{index}] [15:0] $end"
+        for index in range(8)
+    )
+    lines.extend(
+        [
+            "$upscope $end",
+            "$upscope $end",
+            "$enddefinitions",
+            "#0",
+            *(f"b{'0' * 16} {chr(97 + index)}" for index in range(8)),
+            "#10",
+            "$dumpon",
+            "#20",
+            *(
+                f"b{format(index, '016b')} {chr(97 + index)}"
+                for index in range(8)
+            ),
+            "#35",
+            "$dumpoff",
+        ]
+    )
+    return "\n".join(lines)
+
+
 def test_extract_sequential_register_activity_mini_vcd_semantics(tmp_path: Path) -> None:
     vcd_path = tmp_path / "mini.vcd"
     _write_vcd(vcd_path, _mini_vcd())
@@ -81,6 +122,27 @@ def test_extract_sequential_register_activity_mini_vcd_semantics(tmp_path: Path)
     assert rows["score_tile/accum[3][1]"]["duty_cycle"] == pytest.approx(0.4)
     assert rows["score_tile/accum[3][0]"]["transition_count"] == 1.0
     assert rows["score_tile/accum[3][0]"]["duty_cycle"] == pytest.approx(0.2)
+
+
+def test_extract_sequential_register_activity_includes_unpacked_array_bits(tmp_path: Path) -> None:
+    vcd_path = tmp_path / "unpacked.vcd"
+    _write_vcd(vcd_path, _block_weight_vcd())
+    payload = extract_sequential_register_vcd_activity(
+        vcd_path,
+        source_vcd_sha256=hashlib.sha256(vcd_path.read_bytes()).hexdigest(),
+        scope="tb/dut",
+    )
+
+    rows = {row["full_name"]: row for row in payload["register_bits"]}
+    for index in range(8):
+        expected = {f"reducer/block_weight[{index}][{bit}]" for bit in range(16)}
+        assert set(expected).issubset(rows)
+        for bit in (0, 15):
+            assert rows[f"reducer/block_weight[{index}][{bit}]"]["source"] == "vcd"
+            assert math.isfinite(rows[f"reducer/block_weight[{index}][{bit}]"]["transition_count"])
+    assert len(payload["register_bits"]) == 128
+    assert payload["active_start_tick"] == 10
+    assert payload["active_end_tick"] == 35
 
 
 def test_extract_sequential_register_activity_rejects_bad_hash(tmp_path: Path) -> None:
