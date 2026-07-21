@@ -4,6 +4,7 @@
 import csv
 import importlib.util
 import json
+import shlex
 import subprocess
 import sys
 import tempfile
@@ -30,6 +31,42 @@ class ModeCompareRegressionTest(unittest.TestCase):
         cls.run_block_sweep = load_script_module(
             "run_block_sweep", "npu/synth/run_block_sweep.py"
         )
+        cls.synth_fixture_dir = tempfile.TemporaryDirectory()
+        cls.synth_fixture_path = Path(cls.synth_fixture_dir.name) / "synth.tcl"
+        cls.synth_fixture_path.write_text(
+            "hierarchy -check -top $::env(DESIGN_NAME)\n"
+            "synth -run :fine\n"
+            "synth -flatten -run coarse:fine\n"
+            "synth -top $::env(DESIGN_NAME) -run fine:\n"
+            "setundef -zero\n",
+            encoding="utf-8",
+        )
+        cls.default_synth_script = cls.run_block_sweep.DEFAULT_SYNTH_SCRIPT
+        cls.run_block_sweep.DEFAULT_SYNTH_SCRIPT = cls.synth_fixture_path
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.run_block_sweep.DEFAULT_SYNTH_SCRIPT = cls.default_synth_script
+        cls.synth_fixture_dir.cleanup()
+
+    @staticmethod
+    def _collect_encfile_arg(cmd: list) -> str | None:
+        for token in cmd:
+            if not token.startswith("SYNTH_ARGS="):
+                continue
+            arg_text = token[len("SYNTH_ARGS=") :]
+            args = shlex.split(arg_text)
+            for i, arg in enumerate(args):
+                if arg == "-encfile" and i + 1 < len(args):
+                    return args[i + 1]
+            for i, arg in enumerate(args):
+                if arg.startswith("-encfile="):
+                    return arg.split("=", 1)[1]
+        return None
+
+    @staticmethod
+    def _collect_fsm_capture_base(env: dict[str, str]) -> str | None:
+        return env.get("SYNTH_FSM_ENCFILE_BASE")
 
     def test_parse_mode_compare_default(self):
         cfg = self.run_block_sweep.parse_mode_compare_config({"mode_compare": True})
@@ -366,6 +403,70 @@ class ModeCompareRegressionTest(unittest.TestCase):
             self.assertEqual("flow", payload["failure_stage"])
             self.assertEqual(17, payload["failure_returncode"])
 
+    def test_macro_pre_synth_failure_uses_exception_command(self):
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            design_dir = tmp / "demo_design"
+            verilog_dir = design_dir / "verilog"
+            verilog_dir.mkdir(parents=True, exist_ok=True)
+            (verilog_dir / "top.v").write_text(
+                "module npu_top(input clk, output done); assign done = clk; endmodule\n",
+                encoding="utf-8",
+            )
+            lib_path = tmp / "dummy.lib"
+            lib_path.write_text("library(dummy);\n", encoding="utf-8")
+            macro_manifest = {"additional_libs": [lib_path]}
+
+            old_dest = self.run_block_sweep.DEST_BASE
+            old_src = self.run_block_sweep.SRC_BASE
+            old_report = self.run_block_sweep.REPORT_BASE
+            old_result = self.run_block_sweep.RESULT_BASE
+            old_log = self.run_block_sweep.LOG_BASE
+            old_run = self.run_block_sweep.subprocess.run
+
+            def fake_run(cmd, *, cwd, check, env):
+                raise subprocess.CalledProcessError(returncode=23, cmd=cmd)
+
+            self.run_block_sweep.DEST_BASE = tmp / "orfs" / "designs"
+            self.run_block_sweep.SRC_BASE = self.run_block_sweep.DEST_BASE / "src"
+            self.run_block_sweep.REPORT_BASE = tmp / "orfs" / "reports"
+            self.run_block_sweep.RESULT_BASE = tmp / "orfs" / "results"
+            self.run_block_sweep.LOG_BASE = tmp / "orfs" / "logs"
+            self.run_block_sweep.subprocess.run = fake_run
+            try:
+                row = self.run_block_sweep.run_single(
+                    design_dir=design_dir,
+                    design_name="demo_design",
+                    platform="nangate45",
+                    top="npu_top",
+                    verilog_dir=verilog_dir,
+                    sdc_template=None,
+                    sweep_params={
+                        "TAG": "demo_pre_synth_fail",
+                        "FLOW_VARIANT": "demo_pre_synth_fail",
+                        "CLOCK_PERIOD": 10.0,
+                        "CORE_AREA": "0 0 100 100",
+                    },
+                    out_root=tmp / "out",
+                    skip_existing=False,
+                    dry_run=False,
+                    force_copy=True,
+                    make_target=None,
+                    macro_manifest=macro_manifest,
+                )
+            finally:
+                self.run_block_sweep.DEST_BASE = old_dest
+                self.run_block_sweep.SRC_BASE = old_src
+                self.run_block_sweep.REPORT_BASE = old_report
+                self.run_block_sweep.RESULT_BASE = old_result
+                self.run_block_sweep.LOG_BASE = old_log
+                self.run_block_sweep.subprocess.run = old_run
+
+            self.assertEqual("flow_failed", row["status"])
+            self.assertEqual("synth", row["failure_stage"])
+            self.assertEqual(23, row["failure_returncode"])
+            self.assertIn("synth", row["failure_command"])
+
     def test_run_single_failure_infers_stage_and_signature_from_logs(self):
         with tempfile.TemporaryDirectory() as td:
             tmp = Path(td)
@@ -563,6 +664,564 @@ class ModeCompareRegressionTest(unittest.TestCase):
             self.assertEqual("new_cfg", rows[0]["config_hash"])
             self.assertEqual("flow_failed", rows[0]["status"])
             self.assertEqual("/orfs/flow/logs/new", rows[0]["result_path"])
+
+    def test_run_single_assigns_distinct_fsm_capture_base_per_synth_invocation(self):
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            design_dir = tmp / "demo_design"
+            verilog_dir = design_dir / "verilog"
+            verilog_dir.mkdir(parents=True, exist_ok=True)
+            (verilog_dir / "top.v").write_text(
+                "module npu_top(input clk, output done); assign done = clk; endmodule\n",
+                encoding="utf-8",
+            )
+            lib_path = tmp / "dummy.lib"
+            lib_path.write_text("library(dummy);\n", encoding="utf-8")
+            macro_manifest = {
+                "additional_libs": [lib_path],
+            }
+
+            calls = []
+
+            def fake_run(cmd, *, cwd, check, env):
+                calls.append((list(cmd), dict(env)))
+                flow_variant = str(env.get("FLOW_VARIANT", "base")).strip() or "base"
+                for variant in (flow_variant, "base"):
+                    synth_out = tmp / "orfs" / "results" / "nangate45" / "demo_design" / variant / "1_synth.v"
+                    synth_out.parent.mkdir(parents=True, exist_ok=True)
+                    synth_out.write_text("// synthesized\n", encoding="utf-8")
+                capture_base = self._collect_fsm_capture_base(env)
+                if capture_base:
+                    Path(f"{capture_base}.01").write_text(
+                        ".fsm npu_top top\n.map 0 1\n",
+                        encoding="utf-8",
+                    )
+                return subprocess.CompletedProcess(cmd, 0)
+
+            old_dest = self.run_block_sweep.DEST_BASE
+            old_src = self.run_block_sweep.SRC_BASE
+            old_report = self.run_block_sweep.REPORT_BASE
+            old_result = self.run_block_sweep.RESULT_BASE
+            old_log = self.run_block_sweep.LOG_BASE
+            old_run = self.run_block_sweep.subprocess.run
+            self.run_block_sweep.DEST_BASE = tmp / "orfs" / "designs"
+            self.run_block_sweep.SRC_BASE = self.run_block_sweep.DEST_BASE / "src"
+            self.run_block_sweep.REPORT_BASE = tmp / "orfs" / "reports"
+            self.run_block_sweep.RESULT_BASE = tmp / "orfs" / "results"
+            self.run_block_sweep.LOG_BASE = tmp / "orfs" / "logs"
+            self.run_block_sweep.subprocess.run = fake_run
+            try:
+                row = self.run_block_sweep.run_single(
+                    design_dir=design_dir,
+                    design_name="demo_design",
+                    platform="nangate45",
+                    top="npu_top",
+                    verilog_dir=verilog_dir,
+                    sdc_template=None,
+                    sweep_params={
+                        "TAG": "demo_invocable",
+                        "FLOW_VARIANT": "demo_invocable",
+                        "CLOCK_PERIOD": 10.0,
+                        "CORE_AREA": "0 0 100 100",
+                        "SYNTH_FSM_ENCFILE": True,
+                        "SYNTH_FSM_ENCFILE_PATH": "fsm_encoding.enc",
+                    },
+                    out_root=tmp / "out",
+                    skip_existing=False,
+                    dry_run=False,
+                    force_copy=True,
+                    make_target=None,
+                    macro_manifest=macro_manifest,
+                )
+            finally:
+                self.run_block_sweep.DEST_BASE = old_dest
+                self.run_block_sweep.SRC_BASE = old_src
+                self.run_block_sweep.REPORT_BASE = old_report
+                self.run_block_sweep.RESULT_BASE = old_result
+                self.run_block_sweep.LOG_BASE = old_log
+                self.run_block_sweep.subprocess.run = old_run
+
+            capture_bases = [
+                Path(self._collect_fsm_capture_base(call_env))
+                for _, call_env in calls
+                if self._collect_fsm_capture_base(call_env) is not None
+            ]
+            self.assertEqual(2, len(capture_bases))
+            self.assertEqual(
+                {"fsm_encoding_01.enc", "fsm_encoding_02.enc"},
+                {p.name for p in capture_bases},
+            )
+            self.assertNotEqual(capture_bases[0], capture_bases[1])
+            self.assertIsNotNone(row["fsm_encfile_path"])
+            self.assertTrue(row["fsm_encfile_path"] != "")
+
+    def test_run_single_records_fsm_encoding_provenance(self):
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            design_dir = tmp / "demo_design"
+            verilog_dir = design_dir / "verilog"
+            verilog_dir.mkdir(parents=True, exist_ok=True)
+            (verilog_dir / "top.v").write_text(
+                "module npu_top(input clk, output done); assign done = clk; endmodule\n",
+                encoding="utf-8",
+            )
+
+            def fake_run(cmd, *, cwd, check, env):
+                capture_base = self._collect_fsm_capture_base(env)
+                if capture_base:
+                    Path(f"{capture_base}.01").write_text(
+                        ".fsm npu_top top_state\\n.map 0 1\\n",
+                        encoding="utf-8",
+                    )
+                return subprocess.CompletedProcess(cmd, 0)
+
+            old_dest = self.run_block_sweep.DEST_BASE
+            old_src = self.run_block_sweep.SRC_BASE
+            old_report = self.run_block_sweep.REPORT_BASE
+            old_result = self.run_block_sweep.RESULT_BASE
+            old_log = self.run_block_sweep.LOG_BASE
+            old_run = self.run_block_sweep.subprocess.run
+            self.run_block_sweep.DEST_BASE = tmp / "orfs" / "designs"
+            self.run_block_sweep.SRC_BASE = self.run_block_sweep.DEST_BASE / "src"
+            self.run_block_sweep.REPORT_BASE = tmp / "orfs" / "reports"
+            self.run_block_sweep.RESULT_BASE = tmp / "orfs" / "results"
+            self.run_block_sweep.LOG_BASE = tmp / "orfs" / "logs"
+            self.run_block_sweep.subprocess.run = fake_run
+            try:
+                row = self.run_block_sweep.run_single(
+                    design_dir=design_dir,
+                    design_name="demo_design",
+                    platform="nangate45",
+                    top="npu_top",
+                    verilog_dir=verilog_dir,
+                    sdc_template=None,
+                    sweep_params={
+                        "TAG": "demo_capture",
+                        "FLOW_VARIANT": "demo_capture",
+                        "CLOCK_PERIOD": 10.0,
+                        "CORE_AREA": "0 0 100 100",
+                        "SYNTH_FSM_ENCFILE": True,
+                        "SYNTH_FSM_ENCFILE_PATH": "fsm_encoding.enc",
+                        "SYNTH_FSM_ENCFILE_REQUIRED": False,
+                    },
+                    out_root=tmp / "out",
+                    skip_existing=False,
+                    dry_run=False,
+                    force_copy=True,
+                    make_target="1_synth.v",
+                    macro_manifest=None,
+                )
+                payload = json.loads(Path(row["work_result_json"]).read_text(encoding="utf-8"))
+                metrics_rows = list(
+                    csv.DictReader(
+                        (tmp / "out" / "demo_design" / "metrics.csv").open(encoding="utf-8")
+                    )
+                )
+            finally:
+                self.run_block_sweep.DEST_BASE = old_dest
+                self.run_block_sweep.SRC_BASE = old_src
+                self.run_block_sweep.REPORT_BASE = old_report
+                self.run_block_sweep.RESULT_BASE = old_result
+                self.run_block_sweep.LOG_BASE = old_log
+                self.run_block_sweep.subprocess.run = old_run
+
+            self.assertIn("fsm_encoding_json", row)
+            self.assertTrue(row["fsm_encfile_path"])
+            self.assertTrue(row["fsm_encfile_sha1"])
+            self.assertTrue(row["fsm_encfile_sha256"])
+            self.assertTrue(row["fsm_encoding_json"])
+            self.assertEqual(payload["fsm_encfile_path"], row["fsm_encfile_path"])
+            encoded = json.loads(row["fsm_encoding_json"])
+            self.assertEqual(1, encoded["version"])
+            self.assertEqual("npu_top", encoded["fsm_encodings"][0]["module"])
+            self.assertIn("result_path", row)
+            self.assertEqual(row["fsm_encfile_sha1"], payload["fsm_encfile_sha1"])
+            self.assertEqual(row["fsm_encoding_json"], metrics_rows[0]["fsm_encoding_json"])
+
+    def test_run_single_fails_clearly_when_fsm_capture_required_but_missing(self):
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            design_dir = tmp / "demo_design"
+            verilog_dir = design_dir / "verilog"
+            verilog_dir.mkdir(parents=True, exist_ok=True)
+            (verilog_dir / "top.v").write_text(
+                "module npu_top(input clk, output done); assign done = clk; endmodule\n",
+                encoding="utf-8",
+            )
+
+            def fake_run(cmd, *, cwd, check, env):
+                return subprocess.CompletedProcess(cmd, 0)
+
+            old_dest = self.run_block_sweep.DEST_BASE
+            old_src = self.run_block_sweep.SRC_BASE
+            old_report = self.run_block_sweep.REPORT_BASE
+            old_result = self.run_block_sweep.RESULT_BASE
+            old_log = self.run_block_sweep.LOG_BASE
+            old_run = self.run_block_sweep.subprocess.run
+            self.run_block_sweep.DEST_BASE = tmp / "orfs" / "designs"
+            self.run_block_sweep.SRC_BASE = self.run_block_sweep.DEST_BASE / "src"
+            self.run_block_sweep.REPORT_BASE = tmp / "orfs" / "reports"
+            self.run_block_sweep.RESULT_BASE = tmp / "orfs" / "results"
+            self.run_block_sweep.LOG_BASE = tmp / "orfs" / "logs"
+            self.run_block_sweep.subprocess.run = fake_run
+            try:
+                row = self.run_block_sweep.run_single(
+                    design_dir=design_dir,
+                    design_name="demo_design",
+                    platform="nangate45",
+                    top="npu_top",
+                    verilog_dir=verilog_dir,
+                    sdc_template=None,
+                    sweep_params={
+                        "TAG": "demo_req_missing",
+                        "FLOW_VARIANT": "demo_req_missing",
+                        "CLOCK_PERIOD": 10.0,
+                        "CORE_AREA": "0 0 100 100",
+                        "SYNTH_FSM_ENCFILE_REQUIRED": True,
+                    },
+                    out_root=tmp / "out",
+                    skip_existing=False,
+                    dry_run=False,
+                    force_copy=True,
+                    make_target="1_synth.v",
+                    macro_manifest=None,
+                )
+            finally:
+                self.run_block_sweep.DEST_BASE = old_dest
+                self.run_block_sweep.SRC_BASE = old_src
+                self.run_block_sweep.REPORT_BASE = old_report
+                self.run_block_sweep.RESULT_BASE = old_result
+                self.run_block_sweep.LOG_BASE = old_log
+                self.run_block_sweep.subprocess.run = old_run
+
+            self.assertEqual("flow_failed", row["status"])
+            self.assertEqual("synth", row["failure_stage"])
+            self.assertEqual("missing_required_fsm_encoding_capture", row["failure_signature"])
+
+    def test_skip_existing_rejects_missing_required_capture_map(self):
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            design_dir = tmp / "demo_design"
+            verilog_dir = design_dir / "verilog"
+            verilog_dir.mkdir(parents=True, exist_ok=True)
+            (verilog_dir / "top.v").write_text(
+                "module npu_top(input clk, output done); assign done = clk; endmodule\n",
+                encoding="utf-8",
+            )
+
+            sweep_params = {
+                "TAG": "demo_skip",
+                "FLOW_VARIANT": "demo_skip",
+                "CLOCK_PERIOD": 10.0,
+                "CORE_AREA": "0 0 100 100",
+                "SYNTH_FSM_ENCFILE_REQUIRED": True,
+            }
+            run_id = self.run_block_sweep.make_run_id(sweep_params)
+            old_payload = {
+                "design": "demo_design",
+                "platform": "nangate45",
+                "config_hash": "cfg",
+                "param_hash": run_id,
+                "tag": "demo_skip",
+                "status": "ok",
+                "work_result_json": str(tmp / "out" / "demo_design" / "work" / run_id / "result.json"),
+            }
+            result_dir = tmp / "out" / "demo_design" / "work" / run_id
+            result_dir.mkdir(parents=True, exist_ok=True)
+            (result_dir / "result.json").write_text(
+                json.dumps(old_payload),
+                encoding="utf-8",
+            )
+
+            calls = []
+
+            def fake_run(cmd, *, cwd, check, env):
+                calls.append(list(cmd))
+                return subprocess.CompletedProcess(cmd, 0)
+
+            old_dest = self.run_block_sweep.DEST_BASE
+            old_src = self.run_block_sweep.SRC_BASE
+            old_report = self.run_block_sweep.REPORT_BASE
+            old_result = self.run_block_sweep.RESULT_BASE
+            old_log = self.run_block_sweep.LOG_BASE
+            old_run = self.run_block_sweep.subprocess.run
+            self.run_block_sweep.DEST_BASE = tmp / "orfs" / "designs"
+            self.run_block_sweep.SRC_BASE = self.run_block_sweep.DEST_BASE / "src"
+            self.run_block_sweep.REPORT_BASE = tmp / "orfs" / "reports"
+            self.run_block_sweep.RESULT_BASE = tmp / "orfs" / "results"
+            self.run_block_sweep.LOG_BASE = tmp / "orfs" / "logs"
+            self.run_block_sweep.subprocess.run = fake_run
+            try:
+                row = self.run_block_sweep.run_single(
+                    design_dir=design_dir,
+                    design_name="demo_design",
+                    platform="nangate45",
+                    top="npu_top",
+                    verilog_dir=verilog_dir,
+                    sdc_template=None,
+                    sweep_params=sweep_params,
+                    out_root=tmp / "out",
+                    skip_existing=True,
+                    dry_run=False,
+                    force_copy=True,
+                    make_target="1_synth.v",
+                    macro_manifest=None,
+                )
+            finally:
+                self.run_block_sweep.DEST_BASE = old_dest
+                self.run_block_sweep.SRC_BASE = old_src
+                self.run_block_sweep.REPORT_BASE = old_report
+                self.run_block_sweep.RESULT_BASE = old_result
+                self.run_block_sweep.LOG_BASE = old_log
+                self.run_block_sweep.subprocess.run = old_run
+
+            self.assertEqual(1, len(calls))
+            self.assertNotEqual("ok", row["status"])
+
+    def test_run_single_merges_fsm_encodings_from_multiple_synth_invocations(self):
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            design_dir = tmp / "demo_design"
+            verilog_dir = design_dir / "verilog"
+            verilog_dir.mkdir(parents=True, exist_ok=True)
+            (verilog_dir / "top.v").write_text(
+                "module npu_top(input clk, output done); assign done = clk; endmodule\n",
+                encoding="utf-8",
+            )
+            lib_path = tmp / "dummy.lib"
+            lib_path.write_text("library(dummy);\n", encoding="utf-8")
+            macro_manifest = {
+                "additional_libs": [lib_path],
+            }
+
+            calls = []
+
+            def fake_run(cmd, *, cwd, check, env):
+                calls.append((list(cmd), dict(env)))
+                capture_base = self._collect_fsm_capture_base(env)
+                flow_variant = str(env.get("FLOW_VARIANT", "base")).strip() or "base"
+                for variant in (flow_variant, "base"):
+                    synth_out = tmp / "orfs" / "results" / "nangate45" / "demo_design" / variant / "1_synth.v"
+                    synth_out.parent.mkdir(parents=True, exist_ok=True)
+                    synth_out.write_text("// synthesized\n", encoding="utf-8")
+                if capture_base:
+                    if "_01" in str(capture_base):
+                        Path(f"{capture_base}.01").write_text(
+                            ".fsm npu_top reducer\n.map 1 2\n",
+                            encoding="utf-8",
+                        )
+                    else:
+                        Path(f"{capture_base}.01").write_text(
+                            ".fsm npu_top score_tile\n.map S T\n",
+                            encoding="utf-8",
+                        )
+                return subprocess.CompletedProcess(cmd, 0)
+
+            old_dest = self.run_block_sweep.DEST_BASE
+            old_src = self.run_block_sweep.SRC_BASE
+            old_report = self.run_block_sweep.REPORT_BASE
+            old_result = self.run_block_sweep.RESULT_BASE
+            old_log = self.run_block_sweep.LOG_BASE
+            old_run = self.run_block_sweep.subprocess.run
+            self.run_block_sweep.DEST_BASE = tmp / "orfs" / "designs"
+            self.run_block_sweep.SRC_BASE = self.run_block_sweep.DEST_BASE / "src"
+            self.run_block_sweep.REPORT_BASE = tmp / "orfs" / "reports"
+            self.run_block_sweep.RESULT_BASE = tmp / "orfs" / "results"
+            self.run_block_sweep.LOG_BASE = tmp / "orfs" / "logs"
+            self.run_block_sweep.subprocess.run = fake_run
+            try:
+                row = self.run_block_sweep.run_single(
+                    design_dir=design_dir,
+                    design_name="demo_design",
+                    platform="nangate45",
+                    top="npu_top",
+                    verilog_dir=verilog_dir,
+                    sdc_template=None,
+                    sweep_params={
+                        "TAG": "demo_multi",
+                        "FLOW_VARIANT": "demo_multi",
+                        "CLOCK_PERIOD": 10.0,
+                        "CORE_AREA": "0 0 100 100",
+                        "SYNTH_FSM_ENCFILE": True,
+                        "SYNTH_FSM_ENCFILE_PATH": "fsm_encoding.enc",
+                    },
+                    out_root=tmp / "out",
+                    skip_existing=False,
+                    dry_run=False,
+                    force_copy=True,
+                    make_target=None,
+                    macro_manifest=macro_manifest,
+                )
+            finally:
+                self.run_block_sweep.DEST_BASE = old_dest
+                self.run_block_sweep.SRC_BASE = old_src
+                self.run_block_sweep.REPORT_BASE = old_report
+                self.run_block_sweep.RESULT_BASE = old_result
+                self.run_block_sweep.LOG_BASE = old_log
+                self.run_block_sweep.subprocess.run = old_run
+
+            synth_calls = [
+                call
+                for call in calls
+                if self._collect_fsm_capture_base(call[1]) is not None
+            ]
+            self.assertEqual(2, len(synth_calls))
+            encoded = json.loads(row["fsm_encoding_json"])
+            module_states = {
+                (entry.get("module"), entry.get("state"))
+                for entry in encoded.get("fsm_encodings", [])
+            }
+            self.assertIn(("npu_top", "reducer"), module_states)
+            self.assertIn(("npu_top", "score_tile"), module_states)
+
+    def test_merge_fsm_encodings_accepts_identical_duplicates(self):
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            first = tmp / "first.enc"
+            second = tmp / "second.enc"
+            content = ".fsm npu_top score_tile\n.map 00 01\n"
+            first.write_text(content, encoding="utf-8")
+            second.write_text(content, encoding="utf-8")
+
+            merged = self.run_block_sweep.merge_fsm_encoding_payloads([first, second])
+
+            self.assertEqual(
+                [{"module": "npu_top", "state": "score_tile", "maps": [["00", "01"]]}],
+                merged,
+            )
+
+    def test_merge_fsm_encodings_rejects_conflicting_recodes(self):
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            first = tmp / "first.enc"
+            second = tmp / "second.enc"
+            first.write_text(
+                ".fsm npu_top score_tile\n.map 00 01\n",
+                encoding="utf-8",
+            )
+            second.write_text(
+                ".fsm npu_top score_tile\n.map 00 10\n",
+                encoding="utf-8",
+            )
+
+            with self.assertRaisesRegex(ValueError, "Conflicting FSM encoding"):
+                self.run_block_sweep.merge_fsm_encoding_payloads([first, second])
+
+    def test_run_single_records_conflicting_fsm_encodings_as_flow_failure(self):
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            design_dir = tmp / "demo_design"
+            verilog_dir = design_dir / "verilog"
+            verilog_dir.mkdir(parents=True, exist_ok=True)
+            (verilog_dir / "top.v").write_text(
+                "module npu_top(input clk, output done); assign done = clk; endmodule\n",
+                encoding="utf-8",
+            )
+
+            def fake_run(cmd, *, cwd, check, env):
+                capture_base = self._collect_fsm_capture_base(env)
+                if capture_base:
+                    Path(f"{capture_base}.01").write_text(
+                        ".fsm npu_top score_tile\n.map 00 01\n",
+                        encoding="utf-8",
+                    )
+                    Path(f"{capture_base}.02").write_text(
+                        ".fsm npu_top score_tile\n.map 00 10\n",
+                        encoding="utf-8",
+                    )
+                return subprocess.CompletedProcess(cmd, 0)
+
+            old_dest = self.run_block_sweep.DEST_BASE
+            old_src = self.run_block_sweep.SRC_BASE
+            old_report = self.run_block_sweep.REPORT_BASE
+            old_result = self.run_block_sweep.RESULT_BASE
+            old_log = self.run_block_sweep.LOG_BASE
+            old_run = self.run_block_sweep.subprocess.run
+            self.run_block_sweep.DEST_BASE = tmp / "orfs" / "designs"
+            self.run_block_sweep.SRC_BASE = self.run_block_sweep.DEST_BASE / "src"
+            self.run_block_sweep.REPORT_BASE = tmp / "orfs" / "reports"
+            self.run_block_sweep.RESULT_BASE = tmp / "orfs" / "results"
+            self.run_block_sweep.LOG_BASE = tmp / "orfs" / "logs"
+            self.run_block_sweep.subprocess.run = fake_run
+            try:
+                row = self.run_block_sweep.run_single(
+                    design_dir=design_dir,
+                    design_name="demo_design",
+                    platform="nangate45",
+                    top="npu_top",
+                    verilog_dir=verilog_dir,
+                    sdc_template=None,
+                    sweep_params={
+                        "TAG": "demo_conflict",
+                        "FLOW_VARIANT": "demo_conflict",
+                        "CLOCK_PERIOD": 10.0,
+                        "CORE_AREA": "0 0 100 100",
+                        "SYNTH_FSM_ENCFILE": True,
+                    },
+                    out_root=tmp / "out",
+                    skip_existing=False,
+                    dry_run=False,
+                    force_copy=True,
+                    make_target="1_synth.v",
+                    macro_manifest=None,
+                )
+            finally:
+                self.run_block_sweep.DEST_BASE = old_dest
+                self.run_block_sweep.SRC_BASE = old_src
+                self.run_block_sweep.REPORT_BASE = old_report
+                self.run_block_sweep.RESULT_BASE = old_result
+                self.run_block_sweep.LOG_BASE = old_log
+                self.run_block_sweep.subprocess.run = old_run
+
+            self.assertEqual("flow_failed", row["status"])
+            self.assertEqual("synth", row["failure_stage"])
+            self.assertEqual(
+                "conflicting_fsm_encoding_capture",
+                row["failure_signature"],
+            )
+            self.assertIn("module='npu_top'", row["failure_command"])
+            result_payload = json.loads(
+                Path(row["work_result_json"]).read_text(encoding="utf-8")
+            )
+            self.assertEqual("flow_failed", result_payload["status"])
+            metrics_rows = list(
+                csv.DictReader(
+                    (tmp / "out" / "demo_design" / "metrics.csv").open(
+                        encoding="utf-8"
+                    )
+                )
+            )
+            self.assertEqual(1, len(metrics_rows))
+            self.assertEqual("flow_failed", metrics_rows[0]["status"])
+            self.assertEqual(
+                "conflicting_fsm_encoding_capture",
+                metrics_rows[0]["failure_signature"],
+            )
+
+    def test_synth_script_instruments_all_internal_synth_calls(self):
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            script_path = tmp / "synth_capture.tcl"
+            self.run_block_sweep.write_preserve_blackbox_synth_script(
+                script_path=script_path,
+                instrument_fsm_capture=True,
+            )
+
+            text = script_path.read_text(encoding="utf-8")
+
+            self.assertIn("proc yosys_synth_with_fsm_capture", text)
+            self.assertIn(
+                "yosys_synth_with_fsm_capture -run :fine", text,
+            )
+            self.assertIn(
+                "yosys_synth_with_fsm_capture -flatten -run coarse:fine", text,
+            )
+            self.assertIn(
+                "yosys_synth_with_fsm_capture -top $::env(DESIGN_NAME) -run fine:", text,
+            )
+            self.assertNotIn("synth -run :fine", text)
+            self.assertNotIn("synth -flatten -run coarse:fine", text)
+            self.assertNotIn("synth -top $::env(DESIGN_NAME) -run fine:", text)
 
 class SynthTargetMappingRegressionTest(unittest.TestCase):
     @classmethod

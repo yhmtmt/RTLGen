@@ -46,6 +46,7 @@ _REPLAY_CLEAR_CYCLES = _VALUE_SLICES
 _FINALIZE_DIVIDE_CYCLES_PER_DIM = 60
 _FINALIZE_RESULT_EMIT_CYCLES = _VALUE_SLICES
 _REDUCER_NUMERATOR_ACCUM_WORDS = 128
+_REDUCER_BLOCK_WEIGHT_WORDS = 8
 _SCORE_TILE_ACCUM_WORDS = 8
 
 
@@ -131,9 +132,15 @@ def _testbench(
     )
     phase_active = _phase_expr(phase)
     clock_half_period = clock_period_ns / 2.0
+    # Explicitly dump only bit-accurate feedback and accumulation vectors.
+    # Do not add raw RTL FSM state vectors here; post-compile state encodings differ from RTL.
     reducer_dumpvars = "\n".join(
         f"    $dumpvars(0, dut.reducer.numerator_accum[{index}]);"
         for index in range(_REDUCER_NUMERATOR_ACCUM_WORDS)
+    )
+    block_weight_dumpvars = "\n".join(
+        f"    $dumpvars(0, dut.reducer.block_weight[{index}]);"
+        for index in range(_REDUCER_BLOCK_WEIGHT_WORDS)
     )
     score_tile_dumpvars = "\n".join(
         f"    $dumpvars(0, dut.score_tile.accum[{index}]);"
@@ -260,6 +267,7 @@ module tb;
     $dumpfile("{vcd_path.as_posix()}");
     $dumpvars(0, dut);
 {reducer_dumpvars}
+{block_weight_dumpvars}
 {score_tile_dumpvars}
     $dumpoff;
 {beat_init}

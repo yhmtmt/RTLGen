@@ -98,6 +98,7 @@ def test_multivalue_cluster_activity_generates_phase_vcds_and_manifest(tmp_path:
             name for name in names if name.startswith("reducer/numerator_accum[")
         }
         score_accum_names = {name for name in names if name.startswith("score_tile/accum[")}
+        block_weight_names = {name for name in names if name.startswith("reducer/block_weight[")}
         expected_numerator_accum_names = {
             f"reducer/numerator_accum[{word}][{bit}]"
             for word in range(128)
@@ -106,10 +107,17 @@ def test_multivalue_cluster_activity_generates_phase_vcds_and_manifest(tmp_path:
         expected_score_accum_names = {
             f"score_tile/accum[{word}][{bit}]" for word in range(8) for bit in range(32)
         }
+        expected_block_weight_names = {
+            f"reducer/block_weight[{word}][{bit}]"
+            for word in range(8)
+            for bit in range(16)
+        }
         assert len(numerator_accum_names) == 5_248
         assert numerator_accum_names == expected_numerator_accum_names
         assert len(score_accum_names) == 256
         assert score_accum_names == expected_score_accum_names
+        assert len(block_weight_names) == 128
+        assert block_weight_names == expected_block_weight_names
         assert {
             "reducer/numerator_accum[0][0]",
             "reducer/numerator_accum[0][40]",
@@ -119,6 +127,8 @@ def test_multivalue_cluster_activity_generates_phase_vcds_and_manifest(tmp_path:
             "score_tile/accum[0][31]",
             "score_tile/accum[7][0]",
             "score_tile/accum[7][31]",
+            "reducer/block_weight[0][0]",
+            "reducer/block_weight[0][15]",
         } <= names
         for row in register_bits:
             assert not row["full_name"].startswith("tb/dut/")
