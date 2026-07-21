@@ -1456,6 +1456,13 @@ def _is_multivalue_cluster_8ns_bridge_sweep(*, item_id: str, sweep_path: str) ->
     )
 
 
+def _is_multivalue_cluster_8ns_binary_fsm_sweep(*, item_id: str, sweep_path: str) -> bool:
+    return (
+        item_id == "l1_decoder_attention_decode_score_multivalue_cluster_pnr_binary_fsm_8ns_v3"
+        and Path(sweep_path).name == "nangate45_decode_score_multivalue_cluster_8ns_binary_fsm_v3.json"
+    )
+
+
 def _is_gqa_lanes2_macro_hier_placement_sweep(*, item_id: str, sweep_path: str) -> bool:
     return (
         item_id == "l1_decoder_attention_decode_score_multivalue_gqa8_folded_lanes2_macro_placement_v1"
@@ -1735,6 +1742,23 @@ def generate_l1_sweep_task(session: Session, request: Layer1SweepGenerateRequest
             "name": "check_attention_decode_score_multivalue_cluster_8ns_bridge",
             "run": f"python3 npu/eval/check_attention_decode_score_multivalue_cluster_8ns_bridge.py "
             f"--metrics-path {targets[0].expected_metrics_path}",
+        }
+        inserted = False
+        for idx, command in enumerate(command_manifest):
+            if command.get("name") == "run_block_sweep":
+                command_manifest.insert(idx + 1, checker_command)
+                inserted = True
+                break
+        if not inserted:
+            command_manifest.append(checker_command)
+
+    if _is_multivalue_cluster_8ns_binary_fsm_sweep(item_id=item_id, sweep_path=sweep_path) and targets:
+        checker_command = {
+            "name": "check_attention_decode_score_multivalue_cluster_binary_fsm",
+            "run": (
+                "python3 npu/eval/check_attention_decode_score_multivalue_cluster_binary_fsm.py "
+                f"--metrics-path {targets[0].expected_metrics_path}"
+            ),
         }
         inserted = False
         for idx, command in enumerate(command_manifest):
