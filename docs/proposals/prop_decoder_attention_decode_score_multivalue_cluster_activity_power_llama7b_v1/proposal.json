@@ -327,9 +327,38 @@
         "direction": "record_shared_score_multivalue_cluster_activity_power_gate",
         "reason": "v11 preserves all existing quality/equivalence/annotation/macro/numeric/artifact/promotion gates and score_fill/replay checks, keeps per-phase structural counts and compact artifacts unchanged, and records bounded global and non-finite-cell pin toggle/duty/origin diagnostics to diagnose finalize non-finite behavior without substituting or relaxing any gate."
       },
-      "status": "merged",
+      "status": "retracted",
       "merged_pr_number": 1404,
-      "merge_commit": "658232d3ae22a8360457130e174e6156a088157a"
+      "merge_commit": "658232d3ae22a8360457130e174e6156a088157a",
+      "retracted_by_item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v12",
+      "retraction_reason": "postroute_vectorless_sequential_activity_divergence"
+    },
+    {
+      "item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v12",
+      "task_type": "l2_campaign",
+      "objective": "Rerun shared-score multivalue-cluster activity-backed power after PR #1407 / commit fcaf03969708eee85a3e53fbbafad8c3a5d6ec47. v11 diagnosed OpenSTA vectorless sequential fixed-point divergence: finalize had 4,521 non-finite reducer cells, and a global audit reported 13,199 non-finite toggles plus out-of-range/negative values while score_fill/replay and 5,096 macro assignments passed. v12 maps exact sequential RTL bit activity to post-route Yosys DFF/DFFE/reset Q/QN outputs before first design_power, generates hashed sequential_register_vcd_activity_v1 sidecars, and explicitly includes 128x41 reducer numerator and 8x32 score-tile accumulator states.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_decode_score_multivalue_cluster_activity_power",
+      "comparison_role": "shared_score_multivalue_cluster_activity_power_gate",
+      "depends_on_item_ids": [
+        "l1_decoder_attention_decode_score_multivalue_cluster_pnr_8ns_v2",
+        "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "revision": {
+        "reason": "postroute_vectorless_sequential_activity_divergence",
+        "invalidates_item_ids": [
+          "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v11"
+        ]
+      },
+      "expected_result": {
+        "direction": "record_shared_score_multivalue_cluster_activity_power_gate",
+        "reason": "v12 preserves all existing quality, equivalence, direct-VCD, macro, clock, numeric, and artifact gates, and now requires >=0.95 DFF-output coverage, applied==matched, and zero query/apply errors; it keeps sidecar rows evaluator-local and forbids clamping, substitution, heuristic activity, and gate relaxation."
+      },
+      "status": "merged",
+      "merged_pr_number": 1407,
+      "merge_commit": "fcaf03969708eee85a3e53fbbafad8c3a5d6ec47"
     }
   ],
   "baseline_refs": [
