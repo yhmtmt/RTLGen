@@ -23,6 +23,7 @@ from typing import Any
 JsonDict = dict[str, Any]
 ORFS_FLOW = Path(os.environ.get("ORFS_FLOW", "/orfs/flow"))
 _FAKERAM_ACTIVITY_MODEL = "fakeram_macro_pin_vcd_activity_v1"
+_SEQUENTIAL_REGISTER_ACTIVITY_MODEL = "sequential_register_vcd_activity_v1"
 _SAFE_PIN_NAME = re.compile(r"^[A-Za-z0-9_./:+\-\[\]]+$")
 
 
@@ -172,6 +173,112 @@ def _write_macro_activity_tcl_assignments(*, path: Path, rows: list[JsonDict]) -
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
+def _load_sequential_register_activity(
+    path: Path,
+    *,
+    vcd_sha256: str,
+    phase_vcd_basename: str,
+) -> list[JsonDict]:
+    raw = _load_json(path)
+    version = raw.get("version")
+    if not isinstance(version, int) or isinstance(version, bool) or version != 1:
+        raise ValueError(
+            f"sequential register activity version mismatch for {path}: expected 1, got {version!r}"
+        )
+    model = str(raw.get("model", "")).strip()
+    if not isinstance(raw.get("model"), str) or not model:
+        raise ValueError(f"sequential register activity missing model for {path}")
+    source = str(raw.get("source_vcd_sha256", "")).strip().lower()
+    source_vcd_value = raw.get("source_vcd")
+    if not isinstance(source_vcd_value, str):
+        source_vcd = ""
+    else:
+        source_vcd = source_vcd_value.strip()
+    if model != _SEQUENTIAL_REGISTER_ACTIVITY_MODEL:
+        raise ValueError(
+            f"sequential register activity model mismatch for {path}: "
+            f"expected {_SEQUENTIAL_REGISTER_ACTIVITY_MODEL}, got {model or 'missing'}"
+        )
+    if source != vcd_sha256:
+        raise ValueError(
+            f"sequential register activity hash mismatch for {path}: expected {vcd_sha256}, got {source or 'missing'}"
+        )
+    if not source_vcd:
+        raise ValueError(f"sequential register activity missing source_vcd for {path}")
+    if source_vcd != phase_vcd_basename:
+        raise ValueError(
+            f"sequential register activity source_vcd mismatch for {path}: expected {phase_vcd_basename}, got {source_vcd}"
+        )
+    scope_value = raw.get("scope")
+    if not isinstance(scope_value, str):
+        scope = ""
+    else:
+        scope = scope_value.strip()
+    if scope != "tb/dut":
+        raise ValueError(f"sequential register activity scope mismatch for {path}: got {scope or 'missing'}")
+    timescale_seconds = _must_be_positive_finite("timescale_seconds", raw.get("timescale_seconds"))
+    active_start_tick = _must_be_int("active_start_tick", raw.get("active_start_tick"))
+    active_end_tick = _must_be_int("active_end_tick", raw.get("active_end_tick"))
+    if active_end_tick <= active_start_tick:
+        raise ValueError(
+            f"sequential register activity active range invalid for {path}: active_end_tick must be > active_start_tick"
+        )
+    rows_raw = raw.get("register_bits")
+    if not isinstance(rows_raw, list) or not rows_raw:
+        raise ValueError(f"sequential register activity must contain non-empty register_bits[]: {path}")
+    seen: set[str] = set()
+    rows: list[JsonDict] = []
+    for index, row in enumerate(rows_raw):
+        if not isinstance(row, dict):
+            raise ValueError(f"{path}: sequential register activity row[{index}] must be an object")
+        full_name = _must_be_safe_pin_name(row.get("full_name"))
+        if full_name in seen:
+            raise ValueError(f"duplicate sequential register full_name '{full_name}' in {path}")
+        if full_name.startswith("tb/dut/"):
+            raise ValueError(
+                f"sequential register activity full_name '{full_name}' must omit scope prefix in {path}"
+            )
+        if full_name == "tb" or full_name == "dut":
+            raise ValueError(f"invalid sequential register full_name '{full_name}' in {path}")
+        seen.add(full_name)
+        source_value = str(row.get("source", "")).strip()
+        if source_value != "vcd":
+            raise ValueError(
+                f"unsupported sequential register activity source '{source_value or 'missing'}' in {path}"
+            )
+        rows.append(
+            {
+                "full_name": full_name,
+                "density_hz": _must_be_positive_finite("density_hz", row.get("density_hz")),
+                "duty_cycle": _must_be_duty_cycle(row.get("duty_cycle")),
+                "transition_count": _must_be_positive_finite(
+                    "transition_count", row.get("transition_count")
+                ),
+                "source": source_value,
+            }
+        )
+    return rows
+
+
+def _write_sequential_register_activity_tcl_assignments(
+    *,
+    path: Path,
+    rows: list[JsonDict],
+) -> None:
+    lines = ["set rtlgen_sequential_register_activity_assignments {"]
+    for row in sorted(rows, key=lambda item: item["full_name"]):
+        lines.append(
+            "  {{{full_name} {density} {duty} {transition}}}".format(
+                full_name=row["full_name"],
+                density=f"{row['density_hz']:.17g}",
+                duty=f"{row['duty_cycle']:.17g}",
+                transition=f"{row['transition_count']:.17g}",
+            )
+        )
+    lines.append("}")
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
 def _phase_rows(manifest: JsonDict, manifest_path: Path) -> list[JsonDict]:
     raw_phases = manifest.get("phases")
     if not isinstance(raw_phases, list) or not raw_phases:
@@ -226,6 +333,34 @@ def _phase_rows(manifest: JsonDict, manifest_path: Path) -> list[JsonDict]:
             vcd_sha256=actual_hash,
             phase_vcd_basename=vcd_basename,
         )
+        sequential_activity_value = str(
+            raw.get("sequential_register_activity", raw.get("sequential_register_activity_path", ""))
+        ).strip()
+        if not sequential_activity_value:
+            raise ValueError(f"phase {phase} is missing sequential_register_activity")
+        sequential_activity = Path(sequential_activity_value)
+        if not sequential_activity.is_absolute():
+            sequential_activity = (manifest_path.parent / sequential_activity).resolve()
+        if not sequential_activity.is_file():
+            raise FileNotFoundError(
+                f"phase sequential_register_activity sidecar does not exist: {sequential_activity}"
+            )
+        expected_sequential_activity_hash = str(
+            raw.get("sequential_register_activity_sha256", "")
+        ).strip().lower()
+        if not expected_sequential_activity_hash:
+            raise ValueError(f"phase {phase} requires sequential_register_activity_sha256")
+        sequential_activity_hash = _sha256(sequential_activity)
+        if expected_sequential_activity_hash != sequential_activity_hash:
+            raise ValueError(
+                f"phase {phase} sequential register activity hash mismatch: "
+                f"expected {expected_sequential_activity_hash}, got {sequential_activity_hash}"
+            )
+        sequential_activity_rows = _load_sequential_register_activity(
+            sequential_activity,
+            vcd_sha256=actual_hash,
+            phase_vcd_basename=vcd_basename,
+        )
         measured_cycles_raw = raw.get("measured_cycles")
         if measured_cycles_raw is None:
             raise ValueError(f"phase {phase} is missing measured_cycles")
@@ -253,6 +388,11 @@ def _phase_rows(manifest: JsonDict, manifest_path: Path) -> list[JsonDict]:
                 "macro_activity_sha256": macro_activity_hash,
                 "_macro_activity_rows": macro_activity_rows,
                 "macro_activity_assignment_count": len(macro_activity_rows),
+                "sequential_register_activity": sequential_activity_value,
+                "_resolved_sequential_register_activity": str(sequential_activity),
+                "sequential_register_activity_sha256": sequential_activity_hash,
+                "_sequential_register_activity_rows": sequential_activity_rows,
+                "sequential_register_activity_assignment_count": len(sequential_activity_rows),
                 "measured_cycles": measured_cycles,
                 "full_context_cycles": full_context_cycles,
                 "requires_macro_activity": bool(
@@ -344,6 +484,15 @@ proc rtlgen_append_leaf_instance_pin_sample {samples_var limit_var instance_full
   lappend samples [list $instance_full_name $ref_name $pin_full_name $pin_direction $activity $reason]
 }
 
+proc rtlgen_append_sequential_register_activity_sample {samples_var limit_var full_name register_full_name pin pin_duty pin_type kind reason} {
+  upvar 1 $samples_var samples
+  upvar 1 $limit_var sample_limit
+  if {[llength $samples] >= $sample_limit} {
+    return
+  }
+  lappend samples [list $full_name $register_full_name $pin $pin_duty $pin_type $kind $reason]
+}
+
 proc rtlgen_sorted_list {values} {
   if {[catch {lsort -dictionary $values} sorted]} {
     if {[catch {lsort $values} sorted]} {
@@ -371,7 +520,7 @@ proc rtlgen_apply_macro_pin_activities {assignments} {
     return $results
   }
   foreach assignment $assignments {
-    if {[llength $assignment] < 4} {
+    if {[llength $assignment] != 4} {
       lappend results [list {} 0]
       continue
     }
@@ -386,10 +535,6 @@ proc rtlgen_apply_macro_pin_activities {assignments} {
 }
 
 set power_corner [sta::cmd_corner]
-set totals [sta::design_power $power_corner]
-set design_power_category_names {total sequential combinational clock macro pad}
-set design_power_category_count [expr {[llength $totals] / 4}]
-set design_power_totals [lrange $totals 0 3]
 set all_design_pins_unsorted {}
 set macro_pin_transfer_query_error_count 0
 set macro_pin_transfer_structural_query_error_count 0
@@ -402,6 +547,28 @@ set macro_pin_transfer_structural_assignments {}
 set macro_pin_transfer_structural_assignment_rows_by_full_name {}
 set macro_pin_transfer_structural_unmatched_rows_by_full_name {}
 set macro_pin_transfer_structural_unmatched_full_names {}
+set sequential_register_activity_query_error_count 0
+set sequential_register_activity_apply_error_count 0
+set sequential_register_activity_assignment_count 0
+set sequential_register_activity_scanned_pin_count 0
+set sequential_register_activity_candidate_q_count 0
+set sequential_register_activity_candidate_qn_count 0
+set sequential_register_activity_matched_count 0
+set sequential_register_activity_applied_count 0
+set sequential_register_activity_unmatched_output_count 0
+set sequential_register_activity_unused_sidecar_rows {}
+set sequential_register_activity_unused_sidecar_row_count 0
+set sequential_register_activity_scan_sample_limit 16
+set sequential_register_activity_scan_samples {}
+set sequential_register_activity_assignments {}
+set sequential_register_activity_updates {}
+set sequential_register_activity_assignment_rows_by_full_name {}
+set sequential_register_activity_unmatched_rows_by_full_name {}
+set sequential_register_activity_assignment_rows_seen {}
+set sequential_register_activity_updates_by_pin {}
+set sequential_register_activity_pin_type_by_pin {}
+set sequential_register_activity_pin_register_by_pin {}
+set sequential_register_activity_pin_duty_by_pin {}
 if {[info exists ::env(RTLGEN_MACRO_ACTIVITY_TCL)] && $::env(RTLGEN_MACRO_ACTIVITY_TCL) ne ""} {
   if {[catch {source $::env(RTLGEN_MACRO_ACTIVITY_TCL)} structural_source_error]} {
     incr macro_pin_transfer_structural_query_error_count
@@ -410,6 +577,17 @@ if {[info exists ::env(RTLGEN_MACRO_ACTIVITY_TCL)] && $::env(RTLGEN_MACRO_ACTIVI
       set macro_pin_transfer_structural_assignments $rtlgen_macro_activity_assignments
     } else {
       incr macro_pin_transfer_structural_query_error_count
+    }
+  }
+}
+if {[info exists ::env(RTLGEN_SEQUENTIAL_REGISTER_ACTIVITY_TCL)] && $::env(RTLGEN_SEQUENTIAL_REGISTER_ACTIVITY_TCL) ne ""} {
+  if {[catch {source $::env(RTLGEN_SEQUENTIAL_REGISTER_ACTIVITY_TCL)} sequential_source_error]} {
+    incr sequential_register_activity_query_error_count
+  } else {
+    if {[info exists rtlgen_sequential_register_activity_assignments]} {
+      set sequential_register_activity_assignments $rtlgen_sequential_register_activity_assignments
+    } else {
+      incr sequential_register_activity_query_error_count
     }
   }
 }
@@ -423,12 +601,170 @@ foreach macro_pin_transfer_structural_row $macro_pin_transfer_structural_assignm
   dict set macro_pin_transfer_structural_assignment_rows_by_full_name $macro_pin_transfer_structural_full_name [list $macro_pin_transfer_structural_density $macro_pin_transfer_structural_duty $macro_pin_transfer_structural_transition_count]
   dict set macro_pin_transfer_structural_unmatched_rows_by_full_name $macro_pin_transfer_structural_full_name 1
 }
+set sequential_register_activity_assignment_count [llength $sequential_register_activity_assignments]
+foreach sequential_register_activity_row $sequential_register_activity_assignments {
+  if {[llength $sequential_register_activity_row] != 4} {
+    incr sequential_register_activity_query_error_count
+    continue
+  }
+  lassign \
+    $sequential_register_activity_row \
+    sequential_register_activity_full_name \
+    sequential_register_activity_density \
+    sequential_register_activity_duty \
+    sequential_register_activity_transition_count
+  dict set sequential_register_activity_assignment_rows_by_full_name \
+    $sequential_register_activity_full_name \
+    [list \
+      $sequential_register_activity_density \
+      $sequential_register_activity_duty \
+      $sequential_register_activity_transition_count]
+  dict set sequential_register_activity_unmatched_rows_by_full_name \
+    $sequential_register_activity_full_name 1
+}
 set macro_pin_transfer_structural_candidate_count $macro_pin_transfer_structural_assignment_count
 if {[catch {set all_design_pins_unsorted [get_pins -hierarchical *]}]} {
   incr macro_pin_transfer_query_error_count
   set all_design_pins_unsorted {}
 }
 set all_design_pins [rtlgen_sorted_list $all_design_pins_unsorted]
+set sequential_register_activity_scanned_pin_count [llength $all_design_pins]
+foreach sequential_register_activity_pin $all_design_pins {
+  if {[catch {set sequential_register_activity_pin_full_name [get_property $sequential_register_activity_pin full_name]}]} {
+    incr sequential_register_activity_query_error_count
+    continue
+  }
+  if {[catch {set sequential_register_activity_pin_is_hierarchical [get_property $sequential_register_activity_pin is_hierarchical]}]} {
+    incr sequential_register_activity_query_error_count
+    continue
+  }
+  if {$sequential_register_activity_pin_is_hierarchical} {
+    continue
+  }
+  if {[catch {set sequential_register_activity_pin_direction [get_property $sequential_register_activity_pin direction]}]} {
+    incr sequential_register_activity_query_error_count
+    continue
+  }
+  if {$sequential_register_activity_pin_direction ne "output"} {
+    continue
+  }
+  if {![regexp {^(.+)\$_DFF[^/]+/(Q|QN)$} $sequential_register_activity_pin_full_name \
+          -> sequential_register_activity_register_full_name sequential_register_activity_pin_type]} {
+    continue
+  }
+  if {$sequential_register_activity_pin_type eq "Q"} {
+    incr sequential_register_activity_candidate_q_count
+  } else {
+    incr sequential_register_activity_candidate_qn_count
+  }
+  if {![dict exists $sequential_register_activity_assignment_rows_by_full_name $sequential_register_activity_register_full_name]} {
+    incr sequential_register_activity_unmatched_output_count
+    rtlgen_append_sequential_register_activity_sample \
+      sequential_register_activity_scan_samples \
+      sequential_register_activity_scan_sample_limit \
+      $sequential_register_activity_pin_full_name \
+      $sequential_register_activity_register_full_name \
+      $sequential_register_activity_pin \
+      0.0 \
+      $sequential_register_activity_pin_type \
+      unmatched_output \
+      no_sequential_row
+    continue
+  }
+  lassign \
+    [dict get $sequential_register_activity_assignment_rows_by_full_name $sequential_register_activity_register_full_name] \
+    sequential_register_activity_density \
+    sequential_register_activity_duty \
+    sequential_register_activity_transition_count
+  if {$sequential_register_activity_pin_type eq "QN"} {
+    set sequential_register_activity_effective_duty [expr {1.0 - $sequential_register_activity_duty}]
+  } else {
+    set sequential_register_activity_effective_duty $sequential_register_activity_duty
+  }
+  lappend sequential_register_activity_updates \
+    [list \
+      $sequential_register_activity_pin_full_name \
+      $sequential_register_activity_pin \
+      $sequential_register_activity_density \
+      $sequential_register_activity_effective_duty]
+  dict set sequential_register_activity_pin_register_by_pin $sequential_register_activity_pin $sequential_register_activity_register_full_name
+  dict set sequential_register_activity_pin_type_by_pin $sequential_register_activity_pin $sequential_register_activity_pin_type
+  dict set sequential_register_activity_pin_duty_by_pin $sequential_register_activity_pin $sequential_register_activity_effective_duty
+  dict incr sequential_register_activity_assignment_rows_seen $sequential_register_activity_register_full_name
+  incr sequential_register_activity_matched_count
+}
+if {[llength $sequential_register_activity_updates] > 0} {
+  set sequential_register_activity_apply_results [rtlgen_apply_macro_pin_activities $sequential_register_activity_updates]
+  foreach sequential_register_activity_apply_result $sequential_register_activity_apply_results {
+    lassign $sequential_register_activity_apply_result \
+      sequential_register_activity_pin_full_name \
+      sequential_register_activity_pin_applied
+    if {$sequential_register_activity_pin_full_name eq ""} {
+      continue
+    }
+    if {$sequential_register_activity_pin_applied} {
+      incr sequential_register_activity_applied_count
+      rtlgen_append_sequential_register_activity_sample \
+        sequential_register_activity_scan_samples \
+        sequential_register_activity_scan_sample_limit \
+        $sequential_register_activity_pin_full_name \
+        [dict get $sequential_register_activity_pin_register_by_pin $sequential_register_activity_pin_full_name] \
+        $sequential_register_activity_pin_full_name \
+        [dict get $sequential_register_activity_pin_duty_by_pin $sequential_register_activity_pin_full_name] \
+        [dict get $sequential_register_activity_pin_type_by_pin $sequential_register_activity_pin_full_name] \
+        matched \
+        applied
+    } else {
+      incr sequential_register_activity_apply_error_count
+      rtlgen_append_sequential_register_activity_sample \
+        sequential_register_activity_scan_samples \
+        sequential_register_activity_scan_sample_limit \
+        $sequential_register_activity_pin_full_name \
+        [dict get $sequential_register_activity_pin_register_by_pin $sequential_register_activity_pin_full_name] \
+        $sequential_register_activity_pin_full_name \
+        [dict get $sequential_register_activity_pin_duty_by_pin $sequential_register_activity_pin_full_name] \
+        [dict get $sequential_register_activity_pin_type_by_pin $sequential_register_activity_pin_full_name] \
+        matched \
+        apply_error
+    }
+  }
+}
+if {[dict size $sequential_register_activity_assignment_rows_by_full_name] > 0} {
+  dict for {sequential_register_activity_unused_row _} \
+    $sequential_register_activity_assignment_rows_by_full_name {
+    if {[dict exists $sequential_register_activity_assignment_rows_seen $sequential_register_activity_unused_row]} {
+      continue
+    }
+    lappend sequential_register_activity_unused_sidecar_rows $sequential_register_activity_unused_row
+    incr sequential_register_activity_unused_sidecar_row_count
+    if {[llength $sequential_register_activity_scan_samples] < $sequential_register_activity_scan_sample_limit} {
+      lappend sequential_register_activity_scan_samples \
+        [list \
+          "" \
+          $sequential_register_activity_unused_row \
+          "" \
+          "" \
+          "" \
+          unused_sidecar_row \
+          no_unmatched_sidecar_row
+        ]
+    }
+  }
+}
+if {![info exists sequential_register_activity_scan_samples]} {
+  set sequential_register_activity_scan_samples {}
+}
+set sequential_register_activity_candidate_count \
+  [expr {$sequential_register_activity_candidate_q_count + $sequential_register_activity_candidate_qn_count}]
+set sequential_register_activity_coverage 0.0
+if {$sequential_register_activity_candidate_count > 0} {
+  set sequential_register_activity_coverage \
+    [expr {double($sequential_register_activity_matched_count) / double($sequential_register_activity_candidate_count)}]
+}
+set totals [sta::design_power $power_corner]
+set design_power_category_names {total sequential combinational clock macro pad}
+set design_power_category_count [expr {[llength $totals] / 4}]
+set design_power_totals [lrange $totals 0 3]
 set macro_pin_transfer_scanned_pin_count [llength $all_design_pins]
 set macro_pin_transfer_name_match_count 0
 set macro_pin_transfer_input_pin_count 0
@@ -693,6 +1029,9 @@ if {[llength $macro_pin_transfer_updates] > 0} {
   set macro_pin_transfer_record_full_names {}
   foreach macro_pin_transfer_apply_result $macro_pin_transfer_apply_results {
     lassign $macro_pin_transfer_apply_result pin_full_name applied
+    if {$pin_full_name eq ""} {
+      continue
+    }
     if {$applied} {
       if {![dict exists $macro_pin_transfer_candidate_source_by_full_name $pin_full_name]} {
         incr macro_pin_transfer_apply_error_count
@@ -1435,7 +1774,7 @@ foreach activity_value_diagnostic_valid_sample $activity_value_diagnostic_valid_
   } else {
     puts $fp "$activity_value_diagnostic_valid_sample_line"
   }
-}
+  }
 puts $fp "    \]"
 puts $fp "  }"
 puts $fp ","
@@ -1510,7 +1849,54 @@ foreach macro_pin_transfer_record $macro_pin_transfer_records {
     puts $fp "$macro_pin_transfer_record_line"
   }
 }
-  puts $fp "    \]"
+puts $fp "    \]"
+puts $fp "  }"
+puts $fp ","
+puts $fp "  \"sequential_register_activity\": {"
+puts $fp "    \"assignment_count\": $sequential_register_activity_assignment_count,"
+puts $fp "    \"scanned_pin_count\": $sequential_register_activity_scanned_pin_count,"
+puts $fp "    \"candidate_count\": $sequential_register_activity_candidate_count,"
+puts $fp "    \"q_candidate_count\": $sequential_register_activity_candidate_q_count,"
+puts $fp "    \"qn_candidate_count\": $sequential_register_activity_candidate_qn_count,"
+puts $fp "    \"matched_count\": $sequential_register_activity_matched_count,"
+puts $fp "    \"applied_count\": $sequential_register_activity_applied_count,"
+puts $fp "    \"query_error_count\": $sequential_register_activity_query_error_count,"
+puts $fp "    \"apply_error_count\": $sequential_register_activity_apply_error_count,"
+puts $fp "    \"unmatched_output_count\": $sequential_register_activity_unmatched_output_count,"
+puts $fp "    \"unused_sidecar_row_count\": $sequential_register_activity_unused_sidecar_row_count,"
+puts $fp "    \"coverage\": [rtlgen_json_number $sequential_register_activity_coverage],"
+puts $fp "    \"scan_samples\": \["
+set sequential_register_activity_sample_count [llength $sequential_register_activity_scan_samples]
+set sequential_register_activity_sample_index 0
+foreach sequential_register_activity_sample $sequential_register_activity_scan_samples {
+  lassign \
+    $sequential_register_activity_sample \
+    sequential_register_activity_sample_full_name \
+    sequential_register_activity_sample_register_full_name \
+    sequential_register_activity_sample_pin \
+    sequential_register_activity_sample_pin_duty \
+    sequential_register_activity_sample_pin_type \
+    sequential_register_activity_sample_kind \
+    sequential_register_activity_sample_reason
+  set escaped_sample_full_name \
+    [rtlgen_json_escape_array_literal_chars [rtlgen_json_escape $sequential_register_activity_sample_full_name]]
+  set escaped_sample_register_full_name \
+    [rtlgen_json_escape_array_literal_chars [rtlgen_json_escape $sequential_register_activity_sample_register_full_name]]
+  set escaped_sample_pin \
+    [rtlgen_json_escape_array_literal_chars [rtlgen_json_escape $sequential_register_activity_sample_pin]]
+  set escaped_sample_pin_type [rtlgen_json_escape $sequential_register_activity_sample_pin_type]
+  set escaped_sample_kind [rtlgen_json_escape $sequential_register_activity_sample_kind]
+  set escaped_sample_reason [rtlgen_json_escape $sequential_register_activity_sample_reason]
+  set sample_pin_duty_json [rtlgen_json_number $sequential_register_activity_sample_pin_duty]
+  incr sequential_register_activity_sample_index
+  set sequential_register_activity_sample_line "      {\"full_name\": \"$escaped_sample_full_name\", \"register_full_name\": \"$escaped_sample_register_full_name\", \"pin\": \"$escaped_sample_pin\", \"pin_duty\": $sample_pin_duty_json, \"pin_type\": \"$escaped_sample_pin_type\", \"kind\": \"$escaped_sample_kind\", \"reason\": \"$escaped_sample_reason\"}"
+  if {$sequential_register_activity_sample_index < $sequential_register_activity_sample_count} {
+    puts $fp "$sequential_register_activity_sample_line,"
+  } else {
+    puts $fp "$sequential_register_activity_sample_line"
+  }
+}
+puts $fp "    \]"
 puts $fp "  }"
 if {$has_nonfinite_design_total} {
   puts $fp ","
@@ -1663,6 +2049,7 @@ def _run_openroad_phase(
     vcd: Path,
     scope: str,
     macro_activity_tcl: Path | None = None,
+    sequential_register_activity_tcl: Path | None = None,
     tcl: Path,
     result: Path,
     timeout_seconds: int,
@@ -1681,6 +2068,11 @@ def _run_openroad_phase(
         "rtlgen_activity_power:\n"
         f"\t@RTLGEN_ACTIVITY_VCD='{vcd}' "
         +(f"RTLGEN_MACRO_ACTIVITY_TCL='{macro_activity_tcl}' " if macro_activity_tcl else "")
+        +(
+            f"RTLGEN_SEQUENTIAL_REGISTER_ACTIVITY_TCL='{sequential_register_activity_tcl}' "
+            if sequential_register_activity_tcl
+            else ""
+        )
         +
         f"RTLGEN_ACTIVITY_SCOPE='{scope}' "
         f"RTLGEN_ACTIVITY_RESULT='{result}' "
@@ -1753,6 +2145,7 @@ def build_report(
     design_config: Path,
     flow_variant: str,
     scope: str,
+    min_sequential_register_activity_coverage: float = 0.95,
     min_vcd_coverage: float,
     min_vcd_pins: int,
     min_macro_active_coverage: float,
@@ -1777,6 +2170,16 @@ def build_report(
                     path=phase_macro_activity_tcl,
                     rows=phase_macro_activity_rows,  # type: ignore[arg-type]
                 )
+            phase_sequential_activity_tcl: Path | None = None
+            phase_sequential_activity_rows = phase.get("_sequential_register_activity_rows")
+            if phase_sequential_activity_rows:
+                phase_sequential_activity_tcl = temp / (
+                    f"{phase['phase']}.sequential_register_activity.tcl"
+                )
+                _write_sequential_register_activity_tcl_assignments(
+                    path=phase_sequential_activity_tcl,
+                    rows=phase_sequential_activity_rows,  # type: ignore[arg-type]
+                )
             result = temp / f"{phase['phase']}.json"
             power = _run_openroad_phase(
                 design_config=design_config,
@@ -1784,6 +2187,7 @@ def build_report(
                 vcd=Path(str(phase["_resolved_vcd"])),
                 scope=scope,
                 macro_activity_tcl=phase_macro_activity_tcl,
+                sequential_register_activity_tcl=phase_sequential_activity_tcl,
                 tcl=tcl,
                 result=result,
                 timeout_seconds=timeout_seconds,
@@ -1834,6 +2238,44 @@ def build_report(
             macro_pin_transfer_structural_apply_error_count = int(
                 macro_pin_transfer.get("structural_apply_error_count", 0)
             )
+            sequential_register_activity = power.get("sequential_register_activity", {})
+            if not isinstance(sequential_register_activity, dict):
+                sequential_register_activity = {}
+            sequential_register_activity_assignment_count = int(
+                phase.get(
+                    "sequential_register_activity_assignment_count",
+                    sequential_register_activity.get("assignment_count", 0),
+                )
+            )
+            sequential_register_activity_candidate_count = int(
+                sequential_register_activity.get("candidate_count", 0)
+            )
+            if sequential_register_activity_candidate_count == 0:
+                sequential_register_activity_candidate_count = int(
+                    sequential_register_activity.get("q_candidate_count", 0)
+                    + sequential_register_activity.get("qn_candidate_count", 0)
+                )
+            sequential_register_activity_matched_count = int(
+                sequential_register_activity.get("matched_count", 0)
+            )
+            sequential_register_activity_applied_count = int(
+                sequential_register_activity.get("applied_count", 0)
+            )
+            sequential_register_activity_unused_sidecar_rows = int(
+                sequential_register_activity.get("unused_sidecar_row_count", 0)
+            )
+            sequential_register_activity_apply_error_count = int(
+                sequential_register_activity.get("apply_error_count", 0)
+            )
+            sequential_register_activity_query_error_count = int(
+                sequential_register_activity.get("query_error_count", 0)
+            )
+            sequential_register_activity_coverage = 0.0
+            if sequential_register_activity_candidate_count > 0:
+                sequential_register_activity_coverage = (
+                    sequential_register_activity_matched_count
+                    / sequential_register_activity_candidate_count
+                )
             trace_coverage = (
                 trace_backed / leaf_annotatable
                 if leaf_annotatable
@@ -1869,6 +2311,15 @@ def build_report(
             )
             if phase["requires_macro_activity"]:
                 macro_pass = macro_pass and macro_activity_assignment_count > 0
+            sequential_register_activity_gate_pass = (
+                sequential_register_activity_assignment_count > 0
+                and sequential_register_activity_applied_count
+                == sequential_register_activity_matched_count
+                and sequential_register_activity_apply_error_count == 0
+                and sequential_register_activity_query_error_count == 0
+                and sequential_register_activity_coverage
+                >= min_sequential_register_activity_coverage
+            )
             sdc_period_value = power.get("sdc_clock_period_ns")
             sdc_period_ns = (
                 float(sdc_period_value) if sdc_period_value is not None else 0.0
@@ -1898,10 +2349,16 @@ def build_report(
                     "macro_activity_gate_pass": macro_pass,
                     "macro_trace_active_coverage": macro_coverage,
                     "structural_macro_activity_gate_pass": structural_macro_gate,
+                    "sequential_register_activity_assignment_count": sequential_register_activity_assignment_count,
+                    "sequential_register_activity_coverage": sequential_register_activity_coverage,
+                    "sequential_register_activity_matched_count": sequential_register_activity_matched_count,
+                    "sequential_register_activity_applied_count": sequential_register_activity_applied_count,
+                    "sequential_register_activity_gate_pass": sequential_register_activity_gate_pass,
                     "clock_period_gate_pass": clock_period_pass,
                     "power_numeric_gate_pass": power_numeric_pass,
                     "phase_gate_pass": annotation_gate_pass
                     and macro_pass
+                    and sequential_register_activity_gate_pass
                     and structural_macro_gate
                     and clock_period_pass
                     and power_numeric_pass,
@@ -1921,6 +2378,7 @@ def build_report(
         "flow_variant": flow_variant,
         "orfs_design_config": _orfs_relative_path(design_config),
         "min_vcd_annotation_coverage": min_vcd_coverage,
+        "min_sequential_register_activity_coverage": min_sequential_register_activity_coverage,
         "min_vcd_annotated_pins": min_vcd_pins,
         "min_macro_trace_active_coverage": min_macro_active_coverage,
         "min_macro_trace_active_pins": min_macro_active_pins,
@@ -2010,6 +2468,11 @@ def main() -> int:
     parser.add_argument("--design-config", type=Path, required=True)
     parser.add_argument("--flow-variant", required=True)
     parser.add_argument("--scope", default="tb/dut")
+    parser.add_argument(
+        "--min-sequential-register-activity-coverage",
+        type=float,
+        default=0.95,
+    )
     parser.add_argument("--min-vcd-coverage", type=float, default=0.05)
     parser.add_argument("--min-vcd-pins", type=int, default=32)
     parser.add_argument("--min-macro-active-coverage", type=float, default=0.01)
@@ -2020,6 +2483,10 @@ def main() -> int:
     args = parser.parse_args()
     if not 0.0 < args.min_vcd_coverage <= 1.0:
         parser.error("--min-vcd-coverage must be in (0, 1]")
+    if not 0.0 < args.min_sequential_register_activity_coverage <= 1.0:
+        parser.error(
+            "--min-sequential-register-activity-coverage must be in (0, 1]"
+        )
     if args.min_vcd_pins <= 0:
         parser.error("--min-vcd-pins must be positive")
     if not 0.0 < args.min_macro_active_coverage <= 1.0:
@@ -2033,6 +2500,9 @@ def main() -> int:
         design_config=args.design_config,
         flow_variant=args.flow_variant,
         scope=args.scope,
+        min_sequential_register_activity_coverage=(
+            args.min_sequential_register_activity_coverage
+        ),
         min_vcd_coverage=args.min_vcd_coverage,
         min_vcd_pins=args.min_vcd_pins,
         min_macro_active_coverage=args.min_macro_active_coverage,

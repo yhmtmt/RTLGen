@@ -24,6 +24,9 @@ from npu.eval.probe_attention_decode_score_multivalue_cluster_equivalence import
     _vectors,
 )
 from npu.eval.extract_fakeram_vcd_activity import extract_fakeram_vcd_activity
+from npu.eval.extract_sequential_register_vcd_activity import (
+    extract_sequential_register_vcd_activity,
+)
 from npu.rtlgen.gen_attention_decode_score_multivalue_cluster import generate  # noqa: E402
 
 JsonDict = dict[str, Any]
@@ -42,6 +45,8 @@ _COMMAND_SETUP_CYCLES = 1
 _REPLAY_CLEAR_CYCLES = _VALUE_SLICES
 _FINALIZE_DIVIDE_CYCLES_PER_DIM = 60
 _FINALIZE_RESULT_EMIT_CYCLES = _VALUE_SLICES
+_REDUCER_NUMERATOR_ACCUM_WORDS = 128
+_SCORE_TILE_ACCUM_WORDS = 8
 
 
 def _load(path: Path) -> JsonDict:
@@ -126,6 +131,14 @@ def _testbench(
     )
     phase_active = _phase_expr(phase)
     clock_half_period = clock_period_ns / 2.0
+    reducer_dumpvars = "\n".join(
+        f"    $dumpvars(0, dut.reducer.numerator_accum[{index}]);"
+        for index in range(_REDUCER_NUMERATOR_ACCUM_WORDS)
+    )
+    score_tile_dumpvars = "\n".join(
+        f"    $dumpvars(0, dut.score_tile.accum[{index}]);"
+        for index in range(_SCORE_TILE_ACCUM_WORDS)
+    )
     return f"""`timescale 1ns/1ps
 {_FAKERAM_MODEL}
 module tb;
@@ -246,6 +259,8 @@ module tb;
   initial begin
     $dumpfile("{vcd_path.as_posix()}");
     $dumpvars(0, dut);
+{reducer_dumpvars}
+{score_tile_dumpvars}
     $dumpoff;
 {beat_init}
 {value_init}
@@ -280,7 +295,7 @@ def _run_phase(
     clock_period_ns: float,
     score_multiplier: int,
     score_shift: int,
-) -> tuple[int, int, Path, Path]:
+) -> tuple[int, int, Path, Path, Path]:
     validated = _validate_request(config=config, block_count=block_count, head_dim=head_dim)
     with tempfile.TemporaryDirectory(prefix=f"decode-score-multivalue-{phase}-") as tmp_text:
         tmp = Path(tmp_text)
@@ -325,7 +340,22 @@ def _run_phase(
             scope="tb/dut",
         )
         sidecar_path.write_text(json.dumps(sidecar, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-        return cycle_count, service_cycles, phase_out, sidecar_path
+        sequential_sidecar_path = out_dir / f"{phase}_sequential_register_vcd_activity_v1.json"
+        sequential_sidecar = extract_sequential_register_vcd_activity(
+            phase_out,
+            source_vcd_sha256=_sha256_file(phase_out),
+            scope="tb/dut",
+        )
+        sequential_sidecar_path.write_text(
+            json.dumps(sequential_sidecar, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+        )
+        return (
+            cycle_count,
+            service_cycles,
+            phase_out,
+            sidecar_path,
+            sequential_sidecar_path,
+        )
 
 
 def _score_fill_scaling(*, cycle_count: int, block_count: int) -> JsonDict:
@@ -392,7 +422,13 @@ def generate_phase_activity(
     phases: list[JsonDict] = []
     full_service_cycles = 0
     for phase in _PHASES:
-        cycle_count, service_cycles, vcd_path, macro_activity_path = _run_phase(
+        (
+            cycle_count,
+            service_cycles,
+            vcd_path,
+            macro_activity_path,
+            sequential_register_activity_path,
+        ) = _run_phase(
             config=config,
             phase=phase,
             out_dir=out_dir,
@@ -417,6 +453,8 @@ def generate_phase_activity(
             "vcd_sha256": _sha256_file(vcd_path),
             "macro_activity": macro_activity_path.name,
             "macro_activity_sha256": _sha256_file(macro_activity_path),
+            "sequential_register_activity": sequential_register_activity_path.name,
+            "sequential_register_activity_sha256": _sha256_file(sequential_register_activity_path),
             "requires_macro_activity": phase in {"score_fill", "replay_value"},
             "scaling": scaling,
         })

@@ -1,5 +1,6 @@
 import hashlib
 import json
+import math
 import shutil
 from pathlib import Path
 
@@ -58,6 +59,8 @@ def test_multivalue_cluster_activity_generates_phase_vcds_and_manifest(tmp_path:
         assert phase["measured_cycles"] > 0
         assert "macro_activity" in phase
         assert "macro_activity_sha256" in phase
+        assert "sequential_register_activity" in phase
+        assert "sequential_register_activity_sha256" in phase
         macro_activity_path = tmp_path / phase["macro_activity"]
         assert macro_activity_path.exists()
         sidecar_raw = macro_activity_path.read_bytes()
@@ -72,6 +75,60 @@ def test_multivalue_cluster_activity_generates_phase_vcds_and_manifest(tmp_path:
         assert macro["timescale_seconds"] > 0
         assert len(macro["pins"]) == 5096
         assert macro["pins"] == sorted(macro["pins"], key=lambda row: row["full_name"])
+
+        sequential_activity_path = tmp_path / phase["sequential_register_activity"]
+        assert sequential_activity_path.exists()
+        sequential_raw = sequential_activity_path.read_bytes()
+        assert phase["sequential_register_activity_sha256"] == hashlib.sha256(sequential_raw).hexdigest()
+        sequential = json.loads(sequential_raw)
+        assert sequential["version"] == 1
+        assert sequential["model"] == "sequential_register_vcd_activity_v1"
+        assert sequential["scope"] == "tb/dut"
+        assert sequential["source_vcd"] == phase["vcd"]
+        assert sequential["source_vcd_sha256"] == phase["vcd_sha256"]
+        assert sequential["active_start_tick"] < sequential["active_end_tick"]
+        assert sequential["timescale_seconds"] > 0
+        assert sequential["register_bits"]
+        assert sequential["register_bits"] == sorted(
+            sequential["register_bits"], key=lambda row: row["full_name"]
+        )
+        register_bits = sequential["register_bits"]
+        names = {row["full_name"] for row in register_bits}
+        numerator_accum_names = {
+            name for name in names if name.startswith("reducer/numerator_accum[")
+        }
+        score_accum_names = {name for name in names if name.startswith("score_tile/accum[")}
+        expected_numerator_accum_names = {
+            f"reducer/numerator_accum[{word}][{bit}]"
+            for word in range(128)
+            for bit in range(41)
+        }
+        expected_score_accum_names = {
+            f"score_tile/accum[{word}][{bit}]" for word in range(8) for bit in range(32)
+        }
+        assert len(numerator_accum_names) == 5_248
+        assert numerator_accum_names == expected_numerator_accum_names
+        assert len(score_accum_names) == 256
+        assert score_accum_names == expected_score_accum_names
+        assert {
+            "reducer/numerator_accum[0][0]",
+            "reducer/numerator_accum[0][40]",
+            "reducer/numerator_accum[127][0]",
+            "reducer/numerator_accum[127][40]",
+            "score_tile/accum[0][0]",
+            "score_tile/accum[0][31]",
+            "score_tile/accum[7][0]",
+            "score_tile/accum[7][31]",
+        } <= names
+        for row in register_bits:
+            assert not row["full_name"].startswith("tb/dut/")
+            assert row["source"] == "vcd"
+            assert math.isfinite(row["density_hz"])
+            assert row["density_hz"] >= 0.0
+            assert math.isfinite(row["duty_cycle"])
+            assert 0.0 <= row["duty_cycle"] <= 1.0
+            assert math.isfinite(row["transition_count"])
+            assert row["transition_count"] >= 0.0
 
     score_fill = phases["score_fill"]
     assert (score_fill["measured_cycles"] - 1) % manifest["block_count"] == 0
