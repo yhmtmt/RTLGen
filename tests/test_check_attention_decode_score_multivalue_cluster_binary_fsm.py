@@ -123,6 +123,9 @@ def _write_metrics(metrics_path: Path, rows: list[tuple]) -> None:
         "total_power_mw",
         "params_json",
         "result_path",
+        "failure_stage",
+        "failure_returncode",
+        "failure_signature",
     ]
     metrics_path.parent.mkdir(parents=True, exist_ok=True)
     with metrics_path.open("w", encoding="utf-8", newline="") as stream:
@@ -134,7 +137,7 @@ def _write_metrics(metrics_path: Path, rows: list[tuple]) -> None:
 def _write_row(
     *,
     status: str,
-    critical_path_ns: float,
+    critical_path_ns: float | None,
     result_path: str,
     tag: str = EXPECTED_TAG,
     flow_variant: str = EXPECTED_VARIANT,
@@ -145,6 +148,9 @@ def _write_row(
     place_density: object | None = 0.4,
     synth_hierarchical: object | None = 1,
     synth_memory_max_bits: object | None = 65536,
+    failure_stage: str = "",
+    failure_returncode: int | str = "",
+    failure_signature: str = "",
 ) -> tuple[str, ...]:
     params = {
         "FLOW_VARIANT": flow_variant,
@@ -167,11 +173,14 @@ def _write_row(
         "param8",
         tag,
         status,
-        f"{critical_path_ns}",
+        "" if critical_path_ns is None else f"{critical_path_ns}",
         "0.2",
         "0.5",
         json.dumps(params),
         result_path,
+        failure_stage,
+        str(failure_returncode),
+        failure_signature,
     )
 
 
@@ -179,9 +188,18 @@ def _run_checker(
     metrics_path: Path,
     *,
     synth_results_dir: Path | None = None,
+    diagnostic_out: Path | None = None,
 ) -> subprocess.CompletedProcess[str]:
     script = _repo_root() / "npu" / "eval" / "check_attention_decode_score_multivalue_cluster_binary_fsm.py"
-    command = [sys.executable, str(script), "--metrics-path", str(metrics_path)]
+    diagnostic_out = diagnostic_out or metrics_path.parent / "binary_fsm_diagnostic.json"
+    command = [
+        sys.executable,
+        str(script),
+        "--metrics-path",
+        str(metrics_path),
+        "--diagnostic-out",
+        str(diagnostic_out),
+    ]
     if synth_results_dir is not None:
         command.extend(["--synth-results-dir", str(synth_results_dir)])
     return subprocess.run(
@@ -206,7 +224,116 @@ def test_check_attention_decode_score_multivalue_cluster_binary_fsm_passes_with_
                 )
             ],
         )
-        assert _run_checker(metrics, synth_results_dir=_synth_results_dir(Path(td))).returncode == 0
+        diagnostic_out = metrics.parent / "binary_fsm_diagnostic.json"
+        assert (
+            _run_checker(
+                metrics,
+                synth_results_dir=_synth_results_dir(Path(td)),
+                diagnostic_out=diagnostic_out,
+            ).returncode
+            == 0
+        )
+        diagnostic = json.loads(diagnostic_out.read_text(encoding="utf-8"))
+        assert diagnostic["promotion_valid"] is True
+        assert diagnostic["width_valid"] is True
+        assert diagnostic["promotion_reasons"] == []
+        assert diagnostic["selected_exact_row"]["status"] == "ok"
+
+
+def test_check_attention_decode_score_multivalue_cluster_binary_fsm_records_valid_widths_for_flow_failure() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        root = Path(td)
+        metrics = _metrics_path(root)
+        _write_netlist(root)
+        _write_metrics(
+            metrics,
+            [
+                _write_row(
+                    status="flow_failed",
+                    critical_path_ns=None,
+                    result_path=(
+                        "/orfs/flow/logs/nangate45/"
+                        "attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/result.log"
+                    ),
+                    failure_stage="global_route",
+                    failure_returncode=2,
+                    failure_signature="error in /tmp/evaluator/work/5_2_route.log",
+                )
+            ],
+        )
+        diagnostic_out = metrics.parent / "binary_fsm_diagnostic.json"
+
+        proc = _run_checker(
+            metrics,
+            synth_results_dir=_synth_results_dir(root),
+            diagnostic_out=diagnostic_out,
+        )
+
+        assert proc.returncode != 0
+        diagnostic_text = diagnostic_out.read_text(encoding="utf-8")
+        diagnostic = json.loads(diagnostic_text)
+        assert diagnostic["selected_exact_row"]["status"] == "flow_failed"
+        assert diagnostic["selected_exact_row"]["failure_stage"] == "global_route"
+        assert diagnostic["selected_exact_row"]["failure_returncode"] == 2
+        assert diagnostic["selected_exact_row"]["failure_signature"] == (
+            "error in <absolute-path>"
+        )
+        assert diagnostic["expected_logical_netlist_path"] == (
+            "results/nangate45/"
+            "attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/"
+            f"{EXPECTED_VARIANT}/1_synth.v"
+        )
+        assert diagnostic["netlist_exists"] is True
+        assert diagnostic["signals"]["state_q"]["observed_packed_ranges"] == [
+            {"msb": 2, "lsb": 0}
+        ]
+        assert diagnostic["signals"]["reducer.state"]["observed_packed_ranges"] == [
+            {"msb": 3, "lsb": 0}
+        ]
+        assert diagnostic["width_valid"] is True
+        assert diagnostic["promotion_valid"] is False
+        assert "status is flow_failed, not ok" in diagnostic["promotion_reasons"]
+        assert "critical path is missing or invalid" in diagnostic["promotion_reasons"]
+        assert str(root) not in diagnostic_text
+
+
+def test_check_attention_decode_score_multivalue_cluster_binary_fsm_records_one_hot_width_failure() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        root = Path(td)
+        metrics = _metrics_path(root)
+        _write_netlist(root, body=INVALID_REDUCER_STATE)
+        _write_metrics(
+            metrics,
+            [
+                _write_row(
+                    status="ok",
+                    critical_path_ns=7.5,
+                    result_path=(
+                        "runs/designs/npu_blocks/"
+                        "attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/result.json"
+                    ),
+                )
+            ],
+        )
+        diagnostic_out = metrics.parent / "binary_fsm_diagnostic.json"
+
+        proc = _run_checker(
+            metrics,
+            synth_results_dir=_synth_results_dir(root),
+            diagnostic_out=diagnostic_out,
+        )
+
+        assert proc.returncode != 0
+        diagnostic = json.loads(diagnostic_out.read_text(encoding="utf-8"))
+        assert diagnostic["signals"]["reducer.state"]["observed_packed_ranges"] == [
+            {"msb": 6, "lsb": 0}
+        ]
+        assert diagnostic["width_valid"] is False
+        assert diagnostic["promotion_valid"] is False
+        assert any(
+            "invalid width for reducer.state" in reason
+            for reason in diagnostic["promotion_reasons"]
+        )
 
 
 def test_check_attention_decode_score_multivalue_cluster_binary_fsm_passes_with_mode_suffixed_tag() -> None:
@@ -269,6 +396,11 @@ def test_check_attention_decode_score_multivalue_cluster_binary_fsm_rejects_stal
         assert proc.returncode != 0
         assert "missing exact netlist" in proc.stderr
         assert EXPECTED_VARIANT in proc.stderr
+        diagnostic = json.loads(
+            (metrics.parent / "binary_fsm_diagnostic.json").read_text(encoding="utf-8")
+        )
+        assert EXPECTED_VARIANT in diagnostic["expected_logical_netlist_path"]
+        assert STALE_VARIANT not in json.dumps(diagnostic)
 
 
 def test_check_attention_decode_score_multivalue_cluster_binary_fsm_rejects_missing_synth_args() -> None:

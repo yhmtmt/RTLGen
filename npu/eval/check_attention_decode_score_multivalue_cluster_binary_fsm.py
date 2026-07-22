@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import math
 import re
 from pathlib import Path
 from typing import cast
@@ -19,7 +20,9 @@ EXPECTED_PLACE_DENSITY = "0.4"
 EXPECTED_SYNTH_HIERARCHICAL = "1"
 EXPECTED_SYNTH_MEMORY_MAX_BITS = "65536"
 EXPECTED_SYNTH_ARGS = "-nofsm"
-EXPECTED_RESULT_PATH_TOKEN = "attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv"
+EXPECTED_PLATFORM = "nangate45"
+EXPECTED_DESIGN = "attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv"
+EXPECTED_RESULT_PATH_TOKEN = EXPECTED_DESIGN
 DEFAULT_SYNTH_RESULTS_DIR = Path("/orfs/flow/results")
 
 EXPECTED_SIGNAL_INDICES = {
@@ -39,6 +42,7 @@ _DECL_ITEM_RE = re.compile(
     """,
     re.VERBOSE,
 )
+_ABSOLUTE_PATH_RE = re.compile(r"(?<![A-Za-z0-9_.-])/(?:[^\s:]+/?)+")
 
 _SignalEvidence = dict[str, dict[str, set[int] | set[tuple[int, int]]]]
 
@@ -151,27 +155,67 @@ def _load_signal_indices_or_widths(
     return set(bits)
 
 
-def _netlist_has_required_signal_widths(path: Path) -> None:
-    evidence = _load_netlist_signal_evidence(path)
+def _portable_text(value: object) -> str | None:
+    text = _to_str(value)
+    if not text:
+        return None
+    return _ABSOLUTE_PATH_RE.sub("<absolute-path>", text)
+
+
+def _optional_int(value: object) -> int | str | None:
+    text = _to_str(value)
+    if not text:
+        return None
+    try:
+        return int(text)
+    except ValueError:
+        return _portable_text(text)
+
+
+def _serialize_signal_evidence(evidence: _SignalEvidence) -> dict[str, object]:
+    serialized: dict[str, object] = {}
+    for signal, signal_data in evidence.items():
+        packed = cast(set[tuple[int, int]], signal_data["packed"])
+        bits = cast(set[int], signal_data["bits"])
+        serialized[signal] = {
+            "expected_bit_indices": sorted(EXPECTED_SIGNAL_INDICES[signal]),
+            "observed_packed_ranges": [
+                {"msb": msb, "lsb": lsb} for msb, lsb in sorted(packed)
+            ],
+            "observed_bit_indices": sorted(bits),
+        }
+    return serialized
+
+
+def _inspect_netlist_widths(path: Path) -> tuple[dict[str, object], bool, list[str]]:
+    empty = {
+        signal: {"packed": set(), "bits": set()}
+        for signal in EXPECTED_SIGNAL_INDICES
+    }
+    try:
+        evidence = _load_netlist_signal_evidence(path)
+    except (OSError, UnicodeError) as exc:
+        return _serialize_signal_evidence(empty), False, [
+            f"netlist_read_failed:{type(exc).__name__}"
+        ]
+
+    reasons: list[str] = []
     for signal in EXPECTED_SIGNAL_INDICES:
-        expected_indices = EXPECTED_SIGNAL_INDICES[signal]
         try:
             observed = _load_signal_indices_or_widths(signal, evidence[signal])
         except ValueError as exc:
-            raise ValueError(f"{exc} in {path}") from exc
+            reasons.append(str(exc))
+            continue
         if not observed:
-            raise ValueError(f"missing declaration for {signal} in {path}")
-        if observed != expected_indices:
-            missing = sorted(expected_indices - observed)
+            reasons.append(f"missing declaration for {signal}")
+        elif observed != EXPECTED_SIGNAL_INDICES[signal]:
+            missing = sorted(EXPECTED_SIGNAL_INDICES[signal] - observed)
+            extra = sorted(observed - EXPECTED_SIGNAL_INDICES[signal])
             if missing:
-                raise ValueError(
-                    f"missing declaration for {signal} in {path}: missing indices {missing}"
-                )
-            extra = sorted(observed - expected_indices)
+                reasons.append(f"missing declaration for {signal}: missing indices {missing}")
             if extra:
-                raise ValueError(
-                    f"invalid width for {signal} in {path}: out-of-range indices {extra}"
-                )
+                reasons.append(f"invalid width for {signal}: out-of-range indices {extra}")
+    return _serialize_signal_evidence(evidence), not reasons, reasons
 
 
 def _derive_synth_netlist_path(
@@ -185,8 +229,14 @@ def _derive_synth_netlist_path(
     return platform_dir / flow_variant / "1_synth.v"
 
 
+def _logical_synth_netlist_path(*, platform: str, design: str, flow_variant: str) -> str:
+    return (Path("results") / platform / design / flow_variant / "1_synth.v").as_posix()
+
+
 def _parse_critical_path(row: dict[str, str]) -> float:
     value = float(row.get("critical_path_ns", "inf"))
+    if not math.isfinite(value):
+        raise ValueError("critical path is not finite")
     return float(value)
 
 
@@ -198,107 +248,207 @@ def _iter_metrics_rows(metrics_path: Path):
                 yield row
 
 
-def _candidate_binary_fsm_row(
-    row: dict[str, str],
-    *,
-    synth_results_dir: Path,
-) -> tuple[bool, str | None]:
+def _exact_binary_fsm_identity(row: dict[str, str]) -> dict[str, object] | None:
     try:
         params = _parse_params_json(_to_str(row.get("params_json", "")))
     except Exception:
-        return False, None
+        return None
 
-    if _to_str(row.get("status")).lower() != "ok":
-        return False, None
     if not _to_str(row.get("tag")).startswith(EXPECTED_TAG_PREFIX):
-        return False, None
+        return None
     if _to_str(params.get("FLOW_VARIANT")) != EXPECTED_FLOW_VARIANT:
-        return False, None
+        return None
     if _to_str(params.get("PLACE_DENSITY")) != EXPECTED_PLACE_DENSITY:
-        return False, None
+        return None
     if _to_str(params.get("SYNTH_HIERARCHICAL")) != EXPECTED_SYNTH_HIERARCHICAL:
-        return False, None
+        return None
     if _to_str(params.get("SYNTH_MEMORY_MAX_BITS")) != EXPECTED_SYNTH_MEMORY_MAX_BITS:
-        return False, None
+        return None
     if _to_str(params.get("SYNTH_ARGS")) != EXPECTED_SYNTH_ARGS:
-        return False, None
+        return None
     if _to_str(params.get("DIE_AREA")) != EXPECTED_DIE_AREA:
-        return False, None
+        return None
     if _to_str(params.get("CORE_AREA")) != EXPECTED_CORE_AREA:
-        return False, None
+        return None
     if _to_str(row.get("result_path")).find(EXPECTED_RESULT_PATH_TOKEN) == -1:
-        return False, None
+        return None
+    if _to_str(row.get("platform")) != EXPECTED_PLATFORM:
+        return None
+    if _to_str(row.get("design")) != EXPECTED_DESIGN:
+        return None
 
     try:
         if float(_to_str(params.get("CLOCK_PERIOD", ""))) != float(EXPECTED_CLOCK_PERIOD):
-            return False, None
-        if _parse_critical_path(row) > 8:
-            return False, None
+            return None
     except Exception:
-        return False, None
+        return None
 
+    return params
+
+
+def _row_diagnostic(
+    row: dict[str, str],
+    *,
+    params: dict[str, object],
+    synth_results_dir: Path,
+) -> dict[str, object]:
+    platform = _to_str(row.get("platform"))
+    design = _to_str(row.get("design"))
     flow_variant = _to_str(params.get("FLOW_VARIANT"))
-    if not flow_variant:
-        return False, None
-
     netlist_path = _derive_synth_netlist_path(
-        platform=_to_str(row.get("platform")),
-        design=_to_str(row.get("design")),
+        platform=platform,
+        design=design,
         flow_variant=flow_variant,
         synth_results_dir=synth_results_dir,
     )
-    if not netlist_path.exists():
-        return False, f"missing exact netlist: {netlist_path}"
+    logical_netlist_path = _logical_synth_netlist_path(
+        platform=platform,
+        design=design,
+        flow_variant=flow_variant,
+    )
+    netlist_exists = netlist_path.is_file()
+    signal_evidence: dict[str, object] = {
+        signal: {
+            "expected_bit_indices": sorted(indices),
+            "observed_packed_ranges": [],
+            "observed_bit_indices": [],
+        }
+        for signal, indices in EXPECTED_SIGNAL_INDICES.items()
+    }
+    width_valid = False
+    promotion_reasons: list[str] = []
+    if netlist_exists:
+        signal_evidence, width_valid, width_reasons = _inspect_netlist_widths(netlist_path)
+        promotion_reasons.extend(width_reasons)
+    else:
+        promotion_reasons.append("missing exact netlist")
 
+    status = _to_str(row.get("status")).lower()
+    if status != "ok":
+        promotion_reasons.append(f"status is {status or 'missing'}, not ok")
+
+    critical_path_ns: float | None = None
     try:
-        _netlist_has_required_signal_widths(netlist_path)
-    except ValueError as exc:
-        return False, str(exc)
-    return True, None
+        critical_path_ns = _parse_critical_path(row)
+        if critical_path_ns > EXPECTED_CLOCK_PERIOD:
+            promotion_reasons.append(
+                f"critical path {critical_path_ns:g}ns exceeds {EXPECTED_CLOCK_PERIOD}ns"
+            )
+    except (TypeError, ValueError):
+        promotion_reasons.append("critical path is missing or invalid")
+
+    promotion_valid = (
+        status == "ok"
+        and critical_path_ns is not None
+        and critical_path_ns <= EXPECTED_CLOCK_PERIOD
+        and netlist_exists
+        and width_valid
+    )
+    return {
+        "selected_exact_row": {
+            "design": design,
+            "platform": platform,
+            "config_hash": _to_str(row.get("config_hash")) or None,
+            "param_hash": _to_str(row.get("param_hash")) or None,
+            "tag": _to_str(row.get("tag")),
+            "status": status or None,
+            "flow_variant": flow_variant,
+            "clock_period_ns": float(EXPECTED_CLOCK_PERIOD),
+            "critical_path_ns": critical_path_ns,
+            "die_area": _to_str(params.get("DIE_AREA")),
+            "core_area": _to_str(params.get("CORE_AREA")),
+            "place_density": _to_str(params.get("PLACE_DENSITY")),
+            "synth_hierarchical": _to_str(params.get("SYNTH_HIERARCHICAL")),
+            "synth_memory_max_bits": _to_str(params.get("SYNTH_MEMORY_MAX_BITS")),
+            "synth_args": _to_str(params.get("SYNTH_ARGS")),
+            "failure_stage": _portable_text(row.get("failure_stage")),
+            "failure_returncode": _optional_int(row.get("failure_returncode")),
+            "failure_signature": _portable_text(row.get("failure_signature")),
+        },
+        "expected_logical_netlist_path": logical_netlist_path,
+        "netlist_exists": netlist_exists,
+        "signals": signal_evidence,
+        "width_valid": width_valid,
+        "promotion_valid": promotion_valid,
+        "promotion_reasons": promotion_reasons,
+    }
+
+
+def _write_diagnostic(path: Path, payload: dict[str, object]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
 def validate_binary_fsm_metrics(
     *,
     metrics_path: Path,
+    diagnostic_out: Path,
     synth_results_dir: Path = DEFAULT_SYNTH_RESULTS_DIR,
 ) -> int:
+    diagnostic: dict[str, object] = {
+        "version": 1,
+        "checker": "attention_decode_score_multivalue_cluster_binary_fsm_v4",
+        "expected_flow_variant": EXPECTED_FLOW_VARIANT,
+        "selected_exact_row": None,
+        "expected_logical_netlist_path": None,
+        "netlist_exists": False,
+        "signals": {
+            signal: {
+                "expected_bit_indices": sorted(indices),
+                "observed_packed_ranges": [],
+                "observed_bit_indices": [],
+            }
+            for signal, indices in EXPECTED_SIGNAL_INDICES.items()
+        },
+        "width_valid": False,
+        "promotion_valid": False,
+        "promotion_reasons": [],
+    }
     if not metrics_path.exists():
+        diagnostic["promotion_reasons"] = ["missing metrics.csv"]
+        _write_diagnostic(diagnostic_out, diagnostic)
         raise ValueError(f"missing metrics.csv: {metrics_path}")
 
-    last_candidate_error: str | None = None
+    exact_rows: list[tuple[dict[str, str], dict[str, object]]] = []
     for row in _iter_metrics_rows(metrics_path):
-        matches, candidate_error = _candidate_binary_fsm_row(
-            row,
-            synth_results_dir=synth_results_dir,
-        )
-        if candidate_error is not None:
-            last_candidate_error = candidate_error
-        if matches:
-            return 0
+        params = _exact_binary_fsm_identity(row)
+        if params is not None:
+            exact_rows.append((row, params))
 
-    if last_candidate_error is not None:
-        raise ValueError(
-            "missing required 8ns exact-state binary-FSM decode-score multivalue-cluster row "
-            "(status=ok, TAG=decode_score_multivalue_cluster_v1_8ns_binary_fsm*, "
-            f"FLOW_VARIANT={EXPECTED_FLOW_VARIANT}, "
-            "DIE_AREA=0 0 2500 2500, CORE_AREA=50 50 2450 2450, SYNTH_ARGS=-nofsm, "
-            "PLACE_DENSITY=0.4, SYNTH_HIERARCHICAL=1, SYNTH_MEMORY_MAX_BITS=65536, "
-            "critical_path_ns<=8); details: " + last_candidate_error
-        )
+    row_diagnostics = [
+        _row_diagnostic(row, params=params, synth_results_dir=synth_results_dir)
+        for row, params in exact_rows
+    ]
+    promoted = [item for item in row_diagnostics if item["promotion_valid"]]
+    if promoted:
+        diagnostic.update(promoted[-1])
+        _write_diagnostic(diagnostic_out, diagnostic)
+        return 0
 
+    if row_diagnostics:
+        diagnostic.update(row_diagnostics[-1])
+    else:
+        diagnostic["promotion_reasons"] = ["no exact v4 identity row"]
+    _write_diagnostic(diagnostic_out, diagnostic)
+
+    reasons = cast(list[str], diagnostic["promotion_reasons"])
+    detail = "; ".join(reasons)
+    if detail:
+        detail = "; details: " + detail
     raise ValueError(
         "missing required 8ns exact-state binary-FSM decode-score multivalue-cluster row "
         "(status=ok, TAG=decode_score_multivalue_cluster_v1_8ns_binary_fsm*, "
         f"FLOW_VARIANT={EXPECTED_FLOW_VARIANT}, "
         "DIE_AREA=0 0 2500 2500, CORE_AREA=50 50 2450 2450, SYNTH_ARGS=-nofsm, "
         "PLACE_DENSITY=0.4, SYNTH_HIERARCHICAL=1, SYNTH_MEMORY_MAX_BITS=65536, "
-        "critical_path_ns<=8)"
+        "critical_path_ns<=8, exact 3/4-bit state widths)" + detail
     )
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--metrics-path", type=Path, required=True)
+    parser.add_argument("--diagnostic-out", type=Path, required=True)
     parser.add_argument(
         "--synth-results-dir",
         type=Path,
@@ -308,6 +458,7 @@ def main() -> int:
     args = parser.parse_args()
     validate_binary_fsm_metrics(
         metrics_path=args.metrics_path,
+        diagnostic_out=args.diagnostic_out,
         synth_results_dir=args.synth_results_dir,
     )
     return 0

@@ -1756,12 +1756,17 @@ def generate_l1_sweep_task(session: Session, request: Layer1SweepGenerateRequest
         if not inserted:
             command_manifest.append(checker_command)
 
+    binary_fsm_diagnostic_path: str | None = None
     if _is_multivalue_cluster_8ns_binary_fsm_sweep(item_id=item_id, sweep_path=sweep_path) and targets:
+        binary_fsm_diagnostic_path = str(
+            Path(targets[0].expected_metrics_path).parent / "binary_fsm_diagnostic.json"
+        )
         checker_command = {
             "name": "check_attention_decode_score_multivalue_cluster_binary_fsm",
             "run": (
                 "python3 npu/eval/check_attention_decode_score_multivalue_cluster_binary_fsm.py "
-                f"--metrics-path {targets[0].expected_metrics_path}"
+                f"--metrics-path {targets[0].expected_metrics_path} "
+                f"--diagnostic-out {binary_fsm_diagnostic_path}"
             ),
         }
         inserted = False
@@ -1795,6 +1800,9 @@ def generate_l1_sweep_task(session: Session, request: Layer1SweepGenerateRequest
     for target in targets:
         expected_outputs.append(target.expected_metrics_path)
         expected_outputs.extend(target.expected_report_paths)
+
+    if binary_fsm_diagnostic_path is not None:
+        expected_outputs.append(binary_fsm_diagnostic_path)
 
     if _is_gqa_lanes2_macro_hier_placement_sweep(item_id=item_id, sweep_path=sweep_path):
         for target in targets:
