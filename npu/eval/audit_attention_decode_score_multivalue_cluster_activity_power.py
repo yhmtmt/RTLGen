@@ -24,6 +24,19 @@ _MAX_FAILURE_DETAIL_BYTES = 4096
 _ABSOLUTE_PATH_RE = re.compile(r"/[^\s\"'`<>|&(){}\[\]]+")
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _EVALUATOR_LOCAL_PATH_PLACEHOLDER = "<evaluator-local-path>"
+_TARGETED_BINARY_FSM_PROFILE = "targeted_binary"
+_TARGETED_BINARY_FSM_CHECKER = "attention_decode_score_multivalue_cluster_targeted_binary_fsm_v1"
+_TARGETED_BINARY_FSM_FLOW_VARIANT = (
+    "decode_score_multivalue_cluster_v1_8ns_targeted_binary_fsm_v1_proxy_die_2500"
+)
+_TARGETED_BINARY_FSM_CONFIG = (
+    "runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/"
+    "config_targeted_binary_fsm.json"
+)
+_TARGETED_BINARY_FSM_PNR_ITEM = (
+    "l1_decoder_attention_decode_score_multivalue_cluster_pnr_targeted_binary_fsm_8ns_v1"
+)
+_POWER_COMPONENTS = ("internal_w", "switching_w", "leakage_w", "total_w")
 
 
 def _redact_path(path: str) -> str:
@@ -91,7 +104,7 @@ def _metric_provenance(row: JsonDict, metrics_csv: Path) -> JsonDict:
         "params_json",
     )
     return {
-        "metrics_csv": str(metrics_csv),
+        "metrics_csv": _redact_path(str(metrics_csv)),
         **{field: row[field] for field in fields if str(row.get(field, "")).strip()},
     }
 
@@ -104,7 +117,9 @@ def _feasible_metrics(
     required_synth_args: str | None = None,
 ) -> list[JsonDict]:
     normalized_required_flow_variant = str(required_flow_variant or "").strip() or None
-    normalized_required_synth_args = str(required_synth_args or "").strip() or None
+    normalized_required_synth_args = (
+        None if required_synth_args is None else str(required_synth_args).strip()
+    )
 
     with metrics_csv.open(newline="", encoding="utf-8") as handle:
         raw_rows = [dict(row) for row in csv.DictReader(handle)]
@@ -142,7 +157,7 @@ def _feasible_metrics(
             if normalized_required_flow_variant is not None:
                 details.append(f"FLOW_VARIANT={normalized_required_flow_variant}")
             if normalized_required_synth_args is not None:
-                details.append(f"SYNTH_ARGS={normalized_required_synth_args}")
+                details.append(f"SYNTH_ARGS={normalized_required_synth_args or '<empty/default>'}")
             raise ValueError(
                 f"no status=ok timing-feasible rows in {metrics_csv} matching "
                 f"{', '.join(details)} at {clock_period_ns:g} ns"
@@ -158,6 +173,147 @@ def _feasible_metrics(
             float(row.get("critical_path_ns") or math.inf),
         ),
     )
+
+
+def _validate_targeted_binary_fsm_diagnostic(
+    path: Path,
+    *,
+    required_profile: str,
+    required_flow_variant: str | None,
+    required_synth_args: str | None,
+) -> JsonDict:
+    if required_profile != _TARGETED_BINARY_FSM_PROFILE:
+        raise ValueError(f"unsupported binary-FSM diagnostic profile: {required_profile}")
+    if required_flow_variant != _TARGETED_BINARY_FSM_FLOW_VARIANT:
+        raise ValueError("targeted binary-FSM diagnostic requires the exact targeted FLOW_VARIANT")
+    if required_synth_args != "":
+        raise ValueError("targeted binary-FSM diagnostic requires empty/default SYNTH_ARGS")
+
+    diagnostic = _load(path)
+    selected = diagnostic.get("selected_exact_row")
+    if not isinstance(selected, dict):
+        raise ValueError("binary-FSM diagnostic has no selected exact row")
+    checks = {
+        "profile": diagnostic.get("profile") == _TARGETED_BINARY_FSM_PROFILE,
+        "checker": diagnostic.get("checker") == _TARGETED_BINARY_FSM_CHECKER,
+        "expected_flow_variant": (
+            diagnostic.get("expected_flow_variant") == _TARGETED_BINARY_FSM_FLOW_VARIANT
+        ),
+        "promotion_valid": diagnostic.get("promotion_valid") is True,
+        "width_valid": diagnostic.get("width_valid") is True,
+        "selected_status": selected.get("status") == "ok",
+        "selected_flow_variant": (
+            selected.get("flow_variant") == _TARGETED_BINARY_FSM_FLOW_VARIANT
+        ),
+        "selected_synth_args": str(selected.get("synth_args") or "").strip() == "",
+        "selected_param_hash": bool(str(selected.get("param_hash") or "").strip()),
+        "selected_config_hash": bool(str(selected.get("config_hash") or "").strip()),
+    }
+    failed = [name for name, passed in checks.items() if not passed]
+    if failed:
+        raise ValueError(
+            "targeted binary-FSM diagnostic failed strict validation: " + ", ".join(failed)
+        )
+    logical_netlist = str(diagnostic.get("expected_logical_netlist_path") or "").strip()
+    if not logical_netlist or Path(logical_netlist).is_absolute():
+        raise ValueError("binary-FSM diagnostic netlist path must be nonempty and repo-portable")
+    return diagnostic
+
+
+def _validate_binary_fsm_metric_identity(diagnostic: JsonDict, metric: JsonDict) -> None:
+    selected = diagnostic.get("selected_exact_row")
+    if not isinstance(selected, dict):
+        raise TypeError("validated binary-FSM diagnostic selected row is not an object")
+    if str(metric.get("param_hash") or "").strip() != str(
+        selected.get("param_hash") or ""
+    ).strip() or str(metric.get("config_hash") or "").strip() != str(
+        selected.get("config_hash") or ""
+    ).strip():
+        raise ValueError("binary-FSM diagnostic does not match the selected PPA metrics row")
+
+
+def _validate_targeted_config(path: Path, payload: JsonDict) -> None:
+    normalized = path.as_posix()
+    if normalized != _TARGETED_BINARY_FSM_CONFIG and not normalized.endswith(
+        "/" + _TARGETED_BINARY_FSM_CONFIG
+    ):
+        raise ValueError("targeted activity power requires exact config_targeted_binary_fsm.json")
+    cluster = payload.get("attention_decode_score_multivalue_cluster")
+    if not isinstance(cluster, dict) or cluster.get("fsm_encoding") != "binary":
+        raise ValueError("targeted activity config must require binary FSM encoding")
+
+
+def _validate_strict_activity_power(
+    activity_power: JsonDict,
+    *,
+    activity_manifest: JsonDict,
+    flow_variant: str,
+    clock_period_ns: float,
+) -> None:
+    expected_phases = {
+        str(phase.get("phase", phase.get("name", ""))).strip()
+        for phase in activity_manifest.get("phases", [])
+        if isinstance(phase, dict)
+    }
+    phases = activity_power.get("phases")
+    if not expected_phases or not isinstance(phases, list):
+        raise ValueError("strict activity power requires every declared phase")
+    observed_phases = {
+        str(phase.get("phase", phase.get("name", ""))).strip()
+        for phase in phases
+        if isinstance(phase, dict)
+    }
+    if observed_phases != expected_phases or len(phases) != len(expected_phases):
+        raise ValueError("strict activity power phase set does not match the activity manifest")
+    if activity_power.get("model") != "postroute_phase_vcd_power_v1":
+        raise ValueError("strict activity power requires direct routed VCD power")
+    if activity_power.get("status") != "activity_backed":
+        raise ValueError("strict activity power status is not activity_backed")
+    if activity_power.get("promotion_gate_pass") is not True:
+        raise ValueError("strict activity power promotion gate did not pass")
+    if activity_power.get("flow_variant") != flow_variant:
+        raise ValueError("strict activity power FLOW_VARIANT does not match the selected PPA row")
+    if float(activity_power.get("clock_period_ns") or 0.0) != clock_period_ns:
+        raise ValueError("strict activity power clock does not match the selected PPA row")
+    if float(activity_power.get("min_sequential_register_activity_coverage") or 0.0) != 1.0:
+        raise ValueError("strict activity power did not require 100% sequential coverage")
+
+    for phase in phases:
+        if not isinstance(phase, dict):
+            raise ValueError("strict activity power phase is not an object")
+        phase_name = str(phase.get("phase", phase.get("name", ""))).strip()
+        if not all(
+            phase.get(gate) is True
+            for gate in (
+                "direct_vcd_annotation_pin_gate_pass",
+                "trace_coverage_gate_pass",
+                "annotation_gate_pass",
+                "sequential_register_activity_gate_pass",
+                "clock_period_gate_pass",
+                "power_numeric_gate_pass",
+                "phase_gate_pass",
+            )
+        ):
+            raise ValueError(f"strict activity gates failed for phase {phase_name}")
+        if float(phase.get("sequential_register_activity_coverage") or 0.0) != 1.0:
+            raise ValueError(f"sequential coverage is below 100% for phase {phase_name}")
+        assignments = int(phase.get("sequential_register_activity_assignment_count") or 0)
+        matched = int(phase.get("sequential_register_activity_matched_count") or 0)
+        applied = int(phase.get("sequential_register_activity_applied_count") or 0)
+        if assignments <= 0 or assignments != matched or matched != applied:
+            raise ValueError(f"sequential activity mapping is incomplete for phase {phase_name}")
+        power = phase.get("power")
+        if not isinstance(power, dict):
+            raise ValueError(f"missing routed power for phase {phase_name}")
+        for component in _POWER_COMPONENTS:
+            value = power.get(component)
+            if value is None or not math.isfinite(float(value)) or float(value) < 0.0:
+                raise ValueError(f"non-finite {component} for phase {phase_name}")
+        if float(power["total_w"]) <= 0.0:
+            raise ValueError(f"non-positive total_w for phase {phase_name}")
+    energy = activity_power.get("full_context_energy_j")
+    if energy is None or not math.isfinite(float(energy)) or float(energy) <= 0.0:
+        raise ValueError("strict activity power requires finite positive full-context energy")
 
 
 def _sanitized_failure(exc: Exception) -> JsonDict:
@@ -225,12 +381,34 @@ def build_report(
     required_flow_variant: str | None = None,
     required_synth_args: str | None = None,
     source_pnr_item_id: str | None = None,
+    binary_fsm_diagnostic: Path | None = None,
+    required_binary_fsm_profile: str | None = None,
 ) -> JsonDict:
     if not (0.0 < min_sequential_register_activity_coverage <= 1.0):
         raise ValueError("min_sequential_register_activity_coverage must be in (0, 1]")
     equivalence = _load(equivalence_json)
     if not equivalence.get("equivalence_pass"):
         raise ValueError("multivalue-cluster end-to-end equivalence did not pass")
+    if (binary_fsm_diagnostic is None) != (required_binary_fsm_profile is None):
+        raise ValueError(
+            "binary_fsm_diagnostic and required_binary_fsm_profile must be provided together"
+        )
+    binary_diagnostic = None
+    if binary_fsm_diagnostic is not None and required_binary_fsm_profile is not None:
+        if min_sequential_register_activity_coverage != 1.0:
+            raise ValueError("targeted activity power requires 100% sequential coverage")
+        if source_pnr_item_id != _TARGETED_BINARY_FSM_PNR_ITEM:
+            raise ValueError("targeted activity power requires the exact targeted-binary PNR item")
+        config_payload = _load(config)
+        _validate_targeted_config(config, config_payload)
+        binary_diagnostic = _validate_targeted_binary_fsm_diagnostic(
+            binary_fsm_diagnostic,
+            required_profile=required_binary_fsm_profile,
+            required_flow_variant=required_flow_variant,
+            required_synth_args=required_synth_args,
+        )
+    else:
+        config_payload = _load(config)
     activity_dir.mkdir(parents=True, exist_ok=True)
     for name in (
         "score_fill.vcd",
@@ -242,7 +420,7 @@ def build_report(
         if path.is_file():
             path.unlink()
     activity_manifest = generate_phase_activity(
-        _load(config),
+        config_payload,
         activity_dir,
         block_count=3,
         head_dim=128,
@@ -260,6 +438,8 @@ def build_report(
     ):
         params = _params(metric)
         flow_variant = str(params["FLOW_VARIANT"])
+        if binary_diagnostic is not None:
+            _validate_binary_fsm_metric_identity(binary_diagnostic, metric)
         candidate: JsonDict = {
             "candidate_id": f"multivalue_cluster_activity_{flow_variant}",
             "flow_variant": flow_variant,
@@ -279,6 +459,13 @@ def build_report(
                 min_macro_active_pins=16,
                 timeout_seconds=1800,
             )
+            if required_binary_fsm_profile is not None:
+                _validate_strict_activity_power(
+                    activity_power,
+                    activity_manifest=activity_manifest,
+                    flow_variant=flow_variant,
+                    clock_period_ns=clock_period_ns,
+                )
             candidate["activity_power"] = activity_power
             candidate["status"] = (
                 "activity_backed" if activity_power.get("promotion_gate_pass") else "rejected_gate"
@@ -297,6 +484,20 @@ def build_report(
                 float(row["ppa_metric"]["instance_area_um2"]),
                 float(row["ppa_metric"]["critical_path_ns"]),
             ),
+        )
+    selection_contract: JsonDict = {
+        "required_flow_variant": str(required_flow_variant or "").strip() or None,
+        "required_synth_args": (
+            None if required_synth_args is None else str(required_synth_args).strip()
+        ),
+        "min_sequential_register_activity_coverage": min_sequential_register_activity_coverage,
+    }
+    if required_binary_fsm_profile is not None and binary_fsm_diagnostic is not None:
+        selection_contract.update(
+            {
+                "required_binary_fsm_profile": required_binary_fsm_profile,
+                "binary_fsm_diagnostic": _redact_path(str(binary_fsm_diagnostic)),
+            }
         )
     return {
         "version": 1,
@@ -339,11 +540,7 @@ def build_report(
                 "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1",
             ]
         ),
-        "selection_contract": {
-            "required_flow_variant": str(required_flow_variant or "").strip() or None,
-            "required_synth_args": str(required_synth_args or "").strip() or None,
-            "min_sequential_register_activity_coverage": min_sequential_register_activity_coverage,
-        },
+        "selection_contract": selection_contract,
         "remaining_abstractions": [
             "FakeRAM area and power use Nangate45 proxy LEF/Liberty views, not SRAM compiler signoff.",
             "Value-memory, NoC, HBM/DRAM, command-distribution, and clock-tree composition outside the cluster are not included.",
@@ -375,6 +572,8 @@ def main() -> int:
         default=None,
         help="Optional source PNR work-item ID for source_dependencies tracking",
     )
+    parser.add_argument("--binary-fsm-diagnostic", type=Path, default=None)
+    parser.add_argument("--required-binary-fsm-profile", default=None)
     parser.add_argument(
         "--min-sequential-register-activity-coverage",
         type=float,
@@ -394,6 +593,8 @@ def main() -> int:
         required_flow_variant=args.required_flow_variant,
         required_synth_args=args.required_synth_args,
         source_pnr_item_id=args.source_pnr_item_id,
+        binary_fsm_diagnostic=args.binary_fsm_diagnostic,
+        required_binary_fsm_profile=args.required_binary_fsm_profile,
         min_sequential_register_activity_coverage=args.min_sequential_register_activity_coverage,
     )
     args.out.parent.mkdir(parents=True, exist_ok=True)

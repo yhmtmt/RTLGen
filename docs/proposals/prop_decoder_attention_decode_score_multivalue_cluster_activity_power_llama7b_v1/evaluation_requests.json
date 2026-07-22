@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1",
-  "source_commit_note": "PR #1413 merged complete block_weight VCD/FSM provenance, PR #1414 merged the binary-FSM PNR point, and PR #1415 merged strict v14 row selection and 100% routed-state coverage. v3_r2 was superseded because it reused the same sweep hash. V14 now depends on `l1_decoder_attention_decode_score_multivalue_cluster_pnr_binary_fsm_8ns_v3_r3`; neither this retry implementation nor its result is claimed merged here.",
+  "source_commit_note": "Merge 5e9a1024 adds the targeted-binary L1 candidate and strict diagnostic profile, but no targeted PPA result is claimed here. v14 was never launched and is superseded before dispatch. Keep v15 pending until `l1_decoder_attention_decode_score_multivalue_cluster_pnr_targeted_binary_fsm_8ns_v1` passes and is merged/materialized; this proposal change does not generate or dispatch a control-plane item.",
   "requested_items": [
     {
       "item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1",
@@ -464,8 +464,37 @@
         "direction": "record_shared_score_multivalue_cluster_activity_power_gate",
         "reason": "Rerun preserves all existing direct-VCD, macro, clock, numeric, artifact, applied==matched, and zero query/apply-error gates; strengthens DFF-output coverage to 1.0; and forbids clamping, substitution, heuristic activity, or other gate relaxation. It selects only decode_score_multivalue_cluster_v1_8ns_binary_fsm_v4_proxy_die_2500 with SYNTH_ARGS=-nofsm."
       },
-      "status": "pending_implementation_merge",
-      "paired_baseline_item_id": "l1_decoder_attention_decode_score_multivalue_cluster_pnr_binary_fsm_8ns_v3_r3"
+      "status": "superseded_before_dispatch",
+      "paired_baseline_item_id": "l1_decoder_attention_decode_score_multivalue_cluster_pnr_binary_fsm_8ns_v3_r3",
+      "retracted_by_item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v15",
+      "retraction_reason": "replace_global_nofsm_candidate_with_targeted_binary_fsm_candidate",
+      "notes": "v14 was never generated or dispatched and must not be reused for the targeted-binary consumer."
+    },
+    {
+      "item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v15",
+      "task_type": "l2_campaign",
+      "objective": "Measure shared-score multivalue-cluster activity-backed power only after the targeted-binary 8ns PNR item passes, using config_targeted_binary_fsm.json, decode_score_multivalue_cluster_v1_8ns_targeted_binary_fsm_v1_proxy_die_2500, normal empty SYNTH_ARGS, and the promotion-valid targeted_binary diagnostic. Preserve exact merged equivalence linkage, direct routed sequential activity, 100% sequential coverage, and finite power for every required phase.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_decode_score_multivalue_cluster_activity_power",
+      "comparison_role": "shared_score_multivalue_cluster_activity_power_gate",
+      "depends_on_item_ids": [
+        "l1_decoder_attention_decode_score_multivalue_cluster_pnr_targeted_binary_fsm_8ns_v1",
+        "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "revision": {
+        "reason": "targeted_binary_fsm_postroute_activity_mapping",
+        "invalidates_item_ids": [
+          "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v14"
+        ]
+      },
+      "expected_result": {
+        "direction": "record_shared_score_multivalue_cluster_activity_power_gate",
+        "reason": "v15 accepts only the exact targeted config and flow, empty/default SYNTH_ARGS, a promotion-valid targeted_binary checker diagnostic bound to the selected metrics hashes, direct routed phase VCD power, 100% sequential coverage with complete applied/matched assignments, and finite positive required-phase power. Vectorless, v14, stale-row, baseline, and fallback evidence remain non-promotable."
+      },
+      "status": "pending_targeted_ppa_merge",
+      "paired_baseline_item_id": "l1_decoder_attention_decode_score_multivalue_cluster_pnr_targeted_binary_fsm_8ns_v1"
     }
   ],
   "source_commit": "b968b50997ff980dd0a367ff0fe7c98d4f89b7fb"

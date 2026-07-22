@@ -15,6 +15,7 @@ def _write_metrics(path: Path) -> None:
     fields = [
         "design",
         "platform",
+        "config_hash",
         "param_hash",
         "tag",
         "status",
@@ -74,6 +75,7 @@ def _write_metrics_rows(path: Path, rows: list[dict[str, str]]) -> None:
     fields = [
         "design",
         "platform",
+        "config_hash",
         "param_hash",
         "tag",
         "status",
@@ -242,6 +244,268 @@ def test_feasible_metrics_accepts_exact_binary_row_with_strict_contract(tmp_path
     assert [audit._params(row)["FLOW_VARIANT"] for row in rows] == [
         "decode_score_multivalue_cluster_v1_8ns_binary_fsm_v3_proxy_die_2500",
     ]
+
+
+def test_feasible_metrics_rejects_v14_nofsm_and_base_fallback_for_targeted_contract(
+    tmp_path: Path,
+) -> None:
+    metrics = tmp_path / "metrics.csv"
+    targeted = "decode_score_multivalue_cluster_v1_8ns_targeted_binary_fsm_v1_proxy_die_2500"
+    rows = []
+    for param_hash, flow_variant, synth_args in (
+        ("targeted-nofsm", targeted, "-nofsm"),
+        (
+            "v14",
+            "decode_score_multivalue_cluster_v1_8ns_binary_fsm_v4_proxy_die_2500",
+            "",
+        ),
+        ("base", "decode_score_multivalue_cluster_v1_8ns_proxy_die_2500", ""),
+    ):
+        rows.append(
+            {
+                "design": "cluster",
+                "platform": "nangate45",
+                "config_hash": "config-targeted",
+                "param_hash": param_hash,
+                "tag": param_hash,
+                "status": "ok",
+                "critical_path_ns": "7.1",
+                "die_area": "6250000",
+                "instance_area_um2": "3000000",
+                "params_json": json.dumps(
+                    {
+                        "CLOCK_PERIOD": 8,
+                        "FLOW_VARIANT": flow_variant,
+                        "SYNTH_ARGS": synth_args,
+                    }
+                ),
+            }
+        )
+    _write_metrics_rows(metrics, rows)
+
+    try:
+        audit._feasible_metrics(
+            metrics,
+            8.0,
+            required_flow_variant=targeted,
+            required_synth_args="",
+        )
+    except ValueError as exc:
+        assert "SYNTH_ARGS=<empty/default>" in str(exc)
+    else:
+        raise AssertionError("v14, -nofsm, or base fallback row was accepted")
+
+
+def _targeted_diagnostic(*, param_hash: str = "targeted-param") -> dict[str, object]:
+    flow_variant = (
+        "decode_score_multivalue_cluster_v1_8ns_targeted_binary_fsm_v1_proxy_die_2500"
+    )
+    return {
+        "version": 1,
+        "checker": "attention_decode_score_multivalue_cluster_targeted_binary_fsm_v1",
+        "profile": "targeted_binary",
+        "expected_flow_variant": flow_variant,
+        "selected_exact_row": {
+            "status": "ok",
+            "flow_variant": flow_variant,
+            "synth_args": "",
+            "config_hash": "targeted-config",
+            "param_hash": param_hash,
+        },
+        "expected_logical_netlist_path": f"results/nangate45/cluster/{flow_variant}/1_synth.v",
+        "width_valid": True,
+        "promotion_valid": True,
+    }
+
+
+def _strict_activity_power(manifest: dict[str, object]) -> dict[str, object]:
+    flow_variant = (
+        "decode_score_multivalue_cluster_v1_8ns_targeted_binary_fsm_v1_proxy_die_2500"
+    )
+    phases = []
+    for phase in manifest["phases"]:
+        phase_name = phase["phase"]
+        phases.append(
+            {
+                "phase": phase_name,
+                "direct_vcd_annotation_pin_gate_pass": True,
+                "trace_coverage_gate_pass": True,
+                "annotation_gate_pass": True,
+                "sequential_register_activity_gate_pass": True,
+                "clock_period_gate_pass": True,
+                "power_numeric_gate_pass": True,
+                "phase_gate_pass": True,
+                "sequential_register_activity_coverage": 1.0,
+                "sequential_register_activity_assignment_count": 16,
+                "sequential_register_activity_matched_count": 16,
+                "sequential_register_activity_applied_count": 16,
+                "power": {
+                    "internal_w": 0.1,
+                    "switching_w": 0.1,
+                    "leakage_w": 0.01,
+                    "total_w": 0.21,
+                },
+            }
+        )
+    return {
+        "model": "postroute_phase_vcd_power_v1",
+        "status": "activity_backed",
+        "promotion_gate_pass": True,
+        "flow_variant": flow_variant,
+        "clock_period_ns": 8.0,
+        "min_sequential_register_activity_coverage": 1.0,
+        "full_context_energy_j": 0.001,
+        "phases": phases,
+    }
+
+
+def test_build_report_accepts_only_matching_targeted_diagnostic_and_strict_power(
+    tmp_path: Path,
+) -> None:
+    flow_variant = (
+        "decode_score_multivalue_cluster_v1_8ns_targeted_binary_fsm_v1_proxy_die_2500"
+    )
+    config = (
+        tmp_path
+        / "runs/designs/npu_blocks/"
+        "attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/"
+        "config_targeted_binary_fsm.json"
+    )
+    config.parent.mkdir(parents=True)
+    config.write_text(
+        json.dumps(
+            {
+                "attention_decode_score_multivalue_cluster": {
+                    "fsm_encoding": "binary",
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+    metrics = tmp_path / "metrics.csv"
+    _write_metrics_rows(
+        metrics,
+        [
+            {
+                "design": "cluster",
+                "platform": "nangate45",
+                "config_hash": "targeted-config",
+                "param_hash": "targeted-param",
+                "tag": "targeted",
+                "status": "ok",
+                "critical_path_ns": "7.1",
+                "die_area": "6250000",
+                "instance_area_um2": "3000000",
+                "params_json": json.dumps(
+                    {
+                        "CLOCK_PERIOD": 8,
+                        "FLOW_VARIANT": flow_variant,
+                        "SYNTH_ARGS": "",
+                    }
+                ),
+            }
+        ],
+    )
+    equivalence = tmp_path / "equivalence.json"
+    equivalence.write_text(json.dumps({"equivalence_pass": True}), encoding="utf-8")
+    diagnostic = tmp_path / "targeted_binary_fsm_diagnostic.json"
+    diagnostic.write_text(json.dumps(_targeted_diagnostic()), encoding="utf-8")
+    manifest = {
+        "clock_period_ns": 8.0,
+        "block_count": 3,
+        "representative_full_transaction_cycles": 8334,
+        "phase_partition_cycle_sum": 8334,
+        "phases": [
+            {"phase": "score_fill"},
+            {"phase": "replay_value"},
+            {"phase": "finalize_result"},
+        ],
+    }
+    power = _strict_activity_power(manifest)
+
+    with mock.patch.object(audit, "generate_phase_activity", return_value=manifest), mock.patch.object(
+        audit, "build_power_report", return_value=power
+    ):
+        payload = audit.build_report(
+            config=config,
+            cluster_metrics_csv=metrics,
+            equivalence_json=equivalence,
+            orfs_design_config=tmp_path / "config.mk",
+            clock_period_ns=8.0,
+            activity_dir=tmp_path / "activity",
+            min_sequential_register_activity_coverage=1.0,
+            required_flow_variant=flow_variant,
+            required_synth_args="",
+            source_pnr_item_id=(
+                "l1_decoder_attention_decode_score_multivalue_cluster_pnr_"
+                "targeted_binary_fsm_8ns_v1"
+            ),
+            binary_fsm_diagnostic=diagnostic,
+            required_binary_fsm_profile="targeted_binary",
+        )
+
+    assert payload["promotion_gate_pass"] is True
+    assert payload["selection_contract"]["required_synth_args"] == ""
+    assert payload["selection_contract"]["required_binary_fsm_profile"] == "targeted_binary"
+    assert payload["source_dependencies"][0].endswith("targeted_binary_fsm_8ns_v1")
+    assert str(tmp_path) not in json.dumps(payload)
+
+
+def test_strict_activity_power_rejects_nonfinite_required_phase() -> None:
+    manifest = {"phases": [{"phase": "score_fill"}]}
+    power = _strict_activity_power(manifest)
+    power["phases"][0]["power"]["total_w"] = float("nan")
+    try:
+        audit._validate_strict_activity_power(
+            power,
+            activity_manifest=manifest,
+            flow_variant=power["flow_variant"],
+            clock_period_ns=8.0,
+        )
+    except ValueError as exc:
+        assert "non-finite total_w" in str(exc)
+    else:
+        raise AssertionError("non-finite required phase power was accepted")
+
+
+def test_targeted_diagnostic_rejects_v14_profile_and_stale_row(tmp_path: Path) -> None:
+    diagnostic_path = tmp_path / "targeted_binary_fsm_diagnostic.json"
+    diagnostic = _targeted_diagnostic()
+    diagnostic["profile"] = "v4_nofsm"
+    diagnostic_path.write_text(json.dumps(diagnostic), encoding="utf-8")
+    try:
+        audit._validate_targeted_binary_fsm_diagnostic(
+            diagnostic_path,
+            required_profile="targeted_binary",
+            required_flow_variant=(
+                "decode_score_multivalue_cluster_v1_8ns_targeted_binary_fsm_v1_proxy_die_2500"
+            ),
+            required_synth_args="",
+        )
+    except ValueError as exc:
+        assert "profile" in str(exc)
+    else:
+        raise AssertionError("v14 checker profile was accepted")
+
+    diagnostic = _targeted_diagnostic(param_hash="stale-param")
+    diagnostic_path.write_text(json.dumps(diagnostic), encoding="utf-8")
+    validated = audit._validate_targeted_binary_fsm_diagnostic(
+        diagnostic_path,
+        required_profile="targeted_binary",
+        required_flow_variant=(
+            "decode_score_multivalue_cluster_v1_8ns_targeted_binary_fsm_v1_proxy_die_2500"
+        ),
+        required_synth_args="",
+    )
+    try:
+        audit._validate_binary_fsm_metric_identity(
+            validated,
+            {"config_hash": "targeted-config", "param_hash": "current-param"},
+        )
+    except ValueError as exc:
+        assert "does not match the selected PPA metrics row" in str(exc)
+    else:
+        raise AssertionError("stale diagnostic row was accepted")
 
 
 def test_build_report_records_strict_selection_contract_and_pnr_dependency(tmp_path: Path) -> None:

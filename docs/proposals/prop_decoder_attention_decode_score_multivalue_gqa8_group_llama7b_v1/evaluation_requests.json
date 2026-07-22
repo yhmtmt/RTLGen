@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_decoder_attention_decode_score_multivalue_gqa8_group_llama7b_v1",
   "source_commit": "db2f9ae94fc10860c5d9a5b0384d5dbd6f6b71bd",
-  "source_commit_note": "Keep folded-lane activity tasks pending until strict shared-score activity-power v14 is merged and its evidence is materialized. Activity-power v13 is invalid and must not be consumed; this request does not claim that v14 evidence exists.",
+  "source_commit_note": "Keep folded-lane activity tasks pending until targeted-binary strict shared-score activity-power v15 is merged and its evidence is materialized. Activity-power v13 is invalid and v14 was superseded before dispatch; this request does not claim that v15 evidence exists.",
   "requested_items": [
     {
       "item_id": "l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_v1",
@@ -201,13 +201,13 @@
       "depends_on_item_ids": [
         "l2_decoder_attention_decode_score_multivalue_gqa8_folded_lane_equivalence_llama7b_v1",
         "l1_decoder_attention_decode_score_multivalue_gqa8_folded_lanes1_pnr_v1",
-        "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v14"
+        "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v15"
       ],
       "requires_merged_inputs": true,
       "requires_materialized_refs": true,
       "expected_result": {
         "direction": "measure_folded_lanes1_direct_activity_energy",
-        "reason": "Keep this activity item pending until strict cluster activity-power v14 is merged and materialized; the minimum-area point then needs routed, phase-accounted energy with all eight waves charged."
+        "reason": "Keep this activity item pending until targeted-binary strict cluster activity-power v15 is merged and materialized; the minimum-area point then needs routed, phase-accounted energy with all eight waves charged."
       },
       "status": "pending_implementation_merge"
     },
@@ -221,13 +221,13 @@
       "depends_on_item_ids": [
         "l2_decoder_attention_decode_score_multivalue_gqa8_folded_lane_equivalence_llama7b_v1",
         "l1_decoder_attention_decode_score_multivalue_gqa8_folded_lanes2_pnr_v1",
-        "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v14"
+        "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v15"
       ],
       "requires_merged_inputs": true,
       "requires_materialized_refs": true,
       "expected_result": {
         "direction": "measure_folded_lanes2_direct_activity_energy",
-        "reason": "Keep this activity item pending until strict cluster activity-power v14 is merged and materialized; the first lane-parallel midpoint then needs routed energy rather than linear scaling from one lane."
+        "reason": "Keep this activity item pending until targeted-binary strict cluster activity-power v15 is merged and materialized; the first lane-parallel midpoint then needs routed energy rather than linear scaling from one lane."
       },
       "status": "pending_implementation_merge"
     },
@@ -241,13 +241,13 @@
       "depends_on_item_ids": [
         "l2_decoder_attention_decode_score_multivalue_gqa8_folded_lane_equivalence_llama7b_v1",
         "l1_decoder_attention_decode_score_multivalue_gqa8_folded_lanes4_pnr_v1",
-        "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v14"
+        "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v15"
       ],
       "requires_merged_inputs": true,
       "requires_materialized_refs": true,
       "expected_result": {
         "direction": "measure_folded_lanes4_direct_activity_energy",
-        "reason": "Keep this activity item pending until strict cluster activity-power v14 is merged and materialized; the near-parallel point then needs routed energy before it can trade area for latency."
+        "reason": "Keep this activity item pending until targeted-binary strict cluster activity-power v15 is merged and materialized; the near-parallel point then needs routed energy before it can trade area for latency."
       },
       "status": "pending_implementation_merge"
     },

@@ -8302,6 +8302,77 @@ def test_generate_l2_campaign_task_adds_decode_score_multivalue_cluster_activity
             )
 
 
+def test_generate_l2_campaign_task_adds_targeted_cluster_activity_power_v15_for_retries() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            for item_id in (
+                "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v15",
+                "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v15_r1",
+            ):
+                result = generate_l2_campaign_task(
+                    session,
+                    Layer2CampaignGenerateRequest(
+                        repo_root=str(repo_root),
+                        campaign_path=campaign_path,
+                        item_id=item_id,
+                        requested_by="@tester",
+                        source_commit=source_commit,
+                        abstraction_layer="decoder_attention_decode_score_multivalue_cluster_activity_power",
+                        evaluation_mode="frontier_detail",
+                        run_physical=False,
+                    ),
+                )
+
+                work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+                run = work_item.task_request.request_payload["task"]["commands"][0]["run"]
+                decoder_inputs = work_item.input_manifest["decoder_contract"]
+
+                assert (
+                    "--config runs/designs/npu_blocks/"
+                    "attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/"
+                    "config_targeted_binary_fsm.json"
+                    in run
+                )
+                assert (
+                    "--required-flow-variant "
+                    "decode_score_multivalue_cluster_v1_8ns_targeted_binary_fsm_v1_proxy_die_2500"
+                    in run
+                )
+                assert "--required-synth-args=" in run
+                assert "--required-synth-args=-nofsm" not in run
+                assert "--required-binary-fsm-profile targeted_binary" in run
+                assert (
+                    "--binary-fsm-diagnostic runs/designs/npu_blocks/"
+                    "attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/"
+                    "targeted_binary_fsm_diagnostic.json"
+                    in run
+                )
+                assert "--min-sequential-register-activity-coverage 1.0" in run
+                assert (
+                    "--source-pnr-item-id "
+                    "l1_decoder_attention_decode_score_multivalue_cluster_pnr_"
+                    "targeted_binary_fsm_8ns_v1"
+                    in run
+                )
+                assert decoder_inputs["decode_score_multivalue_cluster_required_synth_args"] == ""
+                assert (
+                    decoder_inputs["decode_score_multivalue_cluster_required_binary_fsm_profile"]
+                    == "targeted_binary"
+                )
+                assert (
+                    decoder_inputs["decode_score_multivalue_cluster_source_pnr_item_id"]
+                    == "l1_decoder_attention_decode_score_multivalue_cluster_pnr_"
+                    "targeted_binary_fsm_8ns_v1"
+                )
+
+
 def test_cluster_activity_power_item_for_consumer_prefers_requested_version_for_unknown_depends_on() -> None:
     assert (
         _cluster_activity_power_item_for_consumer(
@@ -8329,20 +8400,45 @@ def test_cluster_activity_power_item_for_consumer_prefers_requested_version_for_
     )
 
 
-def test_cluster_activity_power_item_for_consumer_selects_v14_for_cluster_frontier() -> None:
+def test_cluster_activity_power_item_for_consumer_selects_v15_for_cluster_frontier() -> None:
     assert (
         _cluster_activity_power_item_for_consumer(
             item_id="l2_decoder_attention_decode_score_multivalue_cluster_frontier_llama7b_v1",
             depends_on_item_ids=[
                 "l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2",
-                "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v14",
+                "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v15",
             ],
         )
-        == "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v14"
+        == "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v15"
     )
 
 
-def test_gqa_folded_activity_request_manifests_require_cluster_activity_power_v14() -> None:
+def test_cluster_frontier_request_manifests_require_cluster_activity_power_v15() -> None:
+    repo_root = Path(__file__).resolve().parents[3]
+    proposal_dir = (
+        repo_root
+        / "docs/proposals/prop_decoder_attention_decode_score_multivalue_cluster_frontier_llama7b_v1"
+    )
+    required_dependency = (
+        "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v15"
+    )
+
+    for manifest_name, items_key in (
+        ("proposal.json", "required_evaluations"),
+        ("evaluation_requests.json", "requested_items"),
+    ):
+        manifest = json.loads((proposal_dir / manifest_name).read_text(encoding="utf-8"))
+        frontier = next(
+            item
+            for item in manifest[items_key]
+            if item["item_id"]
+            == "l2_decoder_attention_decode_score_multivalue_cluster_frontier_llama7b_v1"
+        )
+        assert required_dependency in frontier["depends_on_item_ids"]
+        assert all("llama7b_v14" not in item for item in frontier["depends_on_item_ids"])
+
+
+def test_gqa_folded_activity_request_manifests_require_cluster_activity_power_v15() -> None:
     repo_root = Path(__file__).resolve().parents[3]
     proposal_dir = (
         repo_root
@@ -8353,7 +8449,7 @@ def test_gqa_folded_activity_request_manifests_require_cluster_activity_power_v1
         for lanes in (1, 2, 4)
     }
     required_dependency = (
-        "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v14"
+        "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v15"
     )
 
     for manifest_name, items_key in (
@@ -8373,6 +8469,11 @@ def test_gqa_folded_activity_request_manifests_require_cluster_activity_power_v1
         )
         assert all(
             "llama7b_v13" not in dependency
+            for item in activity_items.values()
+            for dependency in item["depends_on_item_ids"]
+        )
+        assert all(
+            "llama7b_v14" not in dependency
             for item in activity_items.values()
             for dependency in item["depends_on_item_ids"]
         )

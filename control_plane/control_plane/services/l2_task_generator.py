@@ -31,15 +31,59 @@ class Layer2TaskGenerationError(RuntimeError):
 _RETRY_SUFFIX_RE = re.compile(r"_r\d+$")
 _VERSION_SUFFIX_RE = re.compile(r"_v(\d+)$")
 _GQA_FOLDED_ACTIVITY_LANES_RE = re.compile(r"_gqa8_folded_lanes(1|2|4|8)_activity_power_")
-_CLUSTER_ACTIVITY_POWER_STRICT_REVISION = 14
-_CLUSTER_ACTIVITY_POWER_V14_FLOW_VARIANT = (
-    "decode_score_multivalue_cluster_v1_8ns_binary_fsm_v4_proxy_die_2500"
-)
-_CLUSTER_ACTIVITY_POWER_V14_SYNTH_ARGS = "-nofsm"
-_CLUSTER_ACTIVITY_POWER_V14_PNR_ITEM = (
-    "l1_decoder_attention_decode_score_multivalue_cluster_pnr_binary_fsm_8ns_v3_r3"
-)
-_CLUSTER_ACTIVITY_POWER_V14_MIN_SEQUENTIAL_REGISTER_ACTIVITY_COVERAGE = 1.0
+
+
+@dataclass(frozen=True)
+class _ClusterActivityPowerStrictProfile:
+    config_path: str
+    flow_variant: str
+    synth_args: str
+    source_pnr_item_id: str
+    min_sequential_register_activity_coverage: float
+    binary_fsm_diagnostic_path: str | None = None
+    binary_fsm_profile: str | None = None
+
+
+_CLUSTER_ACTIVITY_POWER_STRICT_PROFILES = {
+    "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v14": (
+        _ClusterActivityPowerStrictProfile(
+            config_path=(
+                "runs/designs/npu_blocks/"
+                "attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/config.json"
+            ),
+            flow_variant="decode_score_multivalue_cluster_v1_8ns_binary_fsm_v4_proxy_die_2500",
+            synth_args="-nofsm",
+            source_pnr_item_id=(
+                "l1_decoder_attention_decode_score_multivalue_cluster_pnr_binary_fsm_8ns_v3_r3"
+            ),
+            min_sequential_register_activity_coverage=1.0,
+        )
+    ),
+    "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v15": (
+        _ClusterActivityPowerStrictProfile(
+            config_path=(
+                "runs/designs/npu_blocks/"
+                "attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/"
+                "config_targeted_binary_fsm.json"
+            ),
+            flow_variant=(
+                "decode_score_multivalue_cluster_v1_8ns_targeted_binary_fsm_v1_proxy_die_2500"
+            ),
+            synth_args="",
+            source_pnr_item_id=(
+                "l1_decoder_attention_decode_score_multivalue_cluster_pnr_"
+                "targeted_binary_fsm_8ns_v1"
+            ),
+            min_sequential_register_activity_coverage=1.0,
+            binary_fsm_diagnostic_path=(
+                "runs/designs/npu_blocks/"
+                "attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/"
+                "targeted_binary_fsm_diagnostic.json"
+            ),
+            binary_fsm_profile="targeted_binary",
+        )
+    ),
+}
 
 
 @dataclass(frozen=True)
@@ -104,18 +148,15 @@ def _gqa_evidence_version_for_consumer(item_id: str) -> str:
     return "v2" if revision >= 2 else "v1"
 
 
-def _cluster_activity_power_revision(item_id: str) -> int:
-    match = _VERSION_SUFFIX_RE.search(_retry_base(item_id))
-    return int(match.group(1)) if match else 1
-
-
 def _gqa_group_equivalence_item_for_consumer(item_id: str) -> str:
     version = _gqa_evidence_version_for_consumer(item_id)
     return f"l2_decoder_attention_decode_score_multivalue_gqa8_group_equivalence_llama7b_{version}"
 
 
-def _cluster_activity_power_requires_strict_selection(item_id: str) -> bool:
-    return _cluster_activity_power_revision(item_id) >= _CLUSTER_ACTIVITY_POWER_STRICT_REVISION
+def _cluster_activity_power_strict_profile(
+    item_id: str,
+) -> _ClusterActivityPowerStrictProfile | None:
+    return _CLUSTER_ACTIVITY_POWER_STRICT_PROFILES.get(_retry_base(item_id))
 
 
 def _cluster_activity_power_item_for_consumer(
@@ -6886,8 +6927,8 @@ def _decoder_attention_decode_score_multivalue_gqa_array_equivalence_evidence(
 
 def _decoder_attention_decode_score_multivalue_cluster_activity_power_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
-    require_exact_row = _cluster_activity_power_requires_strict_selection(item_id)
-    config = (
+    strict_profile = _cluster_activity_power_strict_profile(item_id)
+    config = strict_profile.config_path if strict_profile is not None else (
         "runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/"
         "config.json"
     )
@@ -6906,16 +6947,18 @@ def _decoder_attention_decode_score_multivalue_cluster_activity_power_evidence(*
     activity_dir = "/tmp/rtlgen_multivalue_cluster_activity"
     out = f"{base}/decoder_attention_decode_score_multivalue_cluster_activity_power__{item_id}.json"
     report = f"{base}/decoder_attention_decode_score_multivalue_cluster_activity_power__{item_id}.md"
-    required_flow_variant = (
-        _CLUSTER_ACTIVITY_POWER_V14_FLOW_VARIANT if require_exact_row else None
-    )
-    required_synth_args = _CLUSTER_ACTIVITY_POWER_V14_SYNTH_ARGS if require_exact_row else None
-    source_pnr_item_id = _CLUSTER_ACTIVITY_POWER_V14_PNR_ITEM if require_exact_row else None
+    required_flow_variant = strict_profile.flow_variant if strict_profile is not None else None
+    required_synth_args = strict_profile.synth_args if strict_profile is not None else None
+    source_pnr_item_id = strict_profile.source_pnr_item_id if strict_profile is not None else None
     min_seq_register_activity_coverage = (
-        _CLUSTER_ACTIVITY_POWER_V14_MIN_SEQUENTIAL_REGISTER_ACTIVITY_COVERAGE
-        if require_exact_row
+        strict_profile.min_sequential_register_activity_coverage
+        if strict_profile is not None
         else None
     )
+    binary_fsm_diagnostic_path = (
+        strict_profile.binary_fsm_diagnostic_path if strict_profile is not None else None
+    )
+    binary_fsm_profile = strict_profile.binary_fsm_profile if strict_profile is not None else None
     command_args: list[str] = []
     if required_flow_variant is not None:
         command_args.append(f"--required-flow-variant {required_flow_variant}")
@@ -6927,6 +6970,10 @@ def _decoder_attention_decode_score_multivalue_cluster_activity_power_evidence(*
         command_args.append(
             f"--min-sequential-register-activity-coverage {min_seq_register_activity_coverage}"
         )
+    if binary_fsm_diagnostic_path is not None:
+        command_args.append(f"--binary-fsm-diagnostic {binary_fsm_diagnostic_path}")
+    if binary_fsm_profile is not None:
+        command_args.append(f"--required-binary-fsm-profile {binary_fsm_profile}")
     command_args_text = (" ".join(command_args) + " ") if command_args else ""
     inputs = {
         "decode_score_multivalue_cluster_config": config,
@@ -6958,6 +7005,12 @@ def _decoder_attention_decode_score_multivalue_cluster_activity_power_evidence(*
         inputs["decode_score_multivalue_cluster_min_sequential_register_activity_coverage"] = (
             min_seq_register_activity_coverage
         )
+    if binary_fsm_diagnostic_path is not None:
+        inputs["decode_score_multivalue_cluster_binary_fsm_diagnostic"] = (
+            binary_fsm_diagnostic_path
+        )
+    if binary_fsm_profile is not None:
+        inputs["decode_score_multivalue_cluster_required_binary_fsm_profile"] = binary_fsm_profile
     return {
         "inputs": inputs,
         "commands": [
