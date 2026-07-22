@@ -1420,6 +1420,36 @@ def copy_or_sanitize_macro_lef(src: Path, dst: Path) -> None:
     shutil.copy(src, dst)
 
 
+def _assert_synth_full_args_in_call_lines(text: str) -> None:
+    executable_call_re = re.compile(r"^\s*(?:synth|yosys_synth_with_fsm_capture)\b")
+    missing_args = []
+    for line_no, line in enumerate(text.splitlines(), start=1):
+        if executable_call_re.match(line) and "{*}$synth_full_args" not in line:
+            missing_args.append(f"line {line_no}: {line.strip()}")
+    if missing_args:
+        raise RuntimeError(
+            "Generated synth/wrapper calls missing {*}$synth_full_args: "
+            + "; ".join(missing_args)
+        )
+
+
+def _append_synth_full_args_to_base_synth_calls(text: str) -> str:
+    pattern = re.compile(r"(?m)^(\s*)synth(\b.*)$")
+
+    def _replace_call(match: re.Match[str]) -> str:
+        leading_ws = match.group(1)
+        args = match.group(2)
+        if "{*}$synth_full_args" in args:
+            return f"{leading_ws}synth{args}"
+        if args.strip():
+            return f"{leading_ws}synth{args} {{*}}$synth_full_args"
+        return f"{leading_ws}synth {{*}}$synth_full_args"
+
+    replaced = pattern.sub(_replace_call, text)
+    _assert_synth_full_args_in_call_lines(replaced)
+    return replaced
+
+
 def _inject_fsm_capture_into_synth_script(text: str) -> str:
     proc_block = """
 proc yosys_synth_with_fsm_capture {args} {
@@ -1456,22 +1486,20 @@ proc yosys_synth_with_fsm_capture {args} {
 
 """.lstrip()
 
-    if "yosys_synth_with_fsm_capture" in text:
-        return text
+    if "yosys_synth_with_fsm_capture" not in text:
+        lines = text.splitlines(keepends=True)
+        synth_re = re.compile(r"^\s*synth\b")
+        insert_index = len(lines)
+        for idx, line in enumerate(lines):
+            if synth_re.match(line):
+                insert_index = idx
+                break
 
-    lines = text.splitlines(keepends=True)
-    synth_re = re.compile(r"^\s*synth\b")
-    insert_index = len(lines)
-    for idx, line in enumerate(lines):
-        if synth_re.match(line):
-            insert_index = idx
-            break
+        if insert_index == len(lines):
+            raise RuntimeError("Failed to locate any synth invocation in synth.tcl")
 
-    if insert_index == len(lines):
-        raise RuntimeError("Failed to locate any synth invocation in synth.tcl")
-
-    lines.insert(insert_index, proc_block)
-    text = "".join(lines)
+        lines.insert(insert_index, proc_block)
+        text = "".join(lines)
 
     # Replace all textual `synth` invocations in the flow script, including
     # forms that already rely on pre-expanded arguments or custom top settings.
@@ -1479,11 +1507,18 @@ proc yosys_synth_with_fsm_capture {args} {
     pattern = re.compile(r"(?m)^(\s*)synth(\b.*)$")
 
     def _replace_call(match: re.Match[str]) -> str:
-        return f"{match.group(1)}yosys_synth_with_fsm_capture{match.group(2)}"
+        leading_ws = match.group(1)
+        args = match.group(2)
+        if "{*}$synth_full_args" in args:
+            return f"{leading_ws}yosys_synth_with_fsm_capture{args}"
+        if args.strip():
+            return f"{leading_ws}yosys_synth_with_fsm_capture{args} {{*}}$synth_full_args"
+        return f"{leading_ws}yosys_synth_with_fsm_capture {{*}}$synth_full_args"
 
     replaced = pattern.sub(_replace_call, text)
     if "yosys_synth_with_fsm_capture" not in replaced:
         raise RuntimeError("Failed to instrument synth calls in synth.tcl")
+    _assert_synth_full_args_in_call_lines(replaced)
     return replaced
 
 
@@ -1520,6 +1555,7 @@ def write_preserve_blackbox_synth_script(
         "}"
     )
     text = text.replace(setundef_marker, setundef_block, 1)
+    text = _append_synth_full_args_to_base_synth_calls(text)
 
     if instrument_fsm_capture:
         text = _inject_fsm_capture_into_synth_script(text)
@@ -2225,19 +2261,12 @@ def run_single(design_dir: Path, design_name: str, platform: str, top: str, veri
     synth_script_sha1 = ""
     if macro_manifest is not None:
         blackboxes = [str(x).strip() for x in macro_manifest.get("blackboxes", []) if str(x).strip()]
-    if blackboxes:
+    synth_args = str(sweep_params.get("SYNTH_ARGS", "")).strip()
+    if blackboxes or capture_cfg.get("enabled") or synth_args:
         synth_script_override = run_dir / "synth_preserve_blackbox.tcl"
         write_preserve_blackbox_synth_script(
             script_path=synth_script_override,
             instrument_fsm_capture=bool(capture_cfg["enabled"]),
-        )
-        synth_script_sha1 = sha1_file(synth_script_override)
-        make_cmd.append(f"SYNTH_SCRIPT={synth_script_override.resolve()}")
-    elif capture_cfg.get("enabled"):
-        synth_script_override = run_dir / "synth_preserve_blackbox.tcl"
-        write_preserve_blackbox_synth_script(
-            script_path=synth_script_override,
-            instrument_fsm_capture=True,
         )
         synth_script_sha1 = sha1_file(synth_script_override)
         make_cmd.append(f"SYNTH_SCRIPT={synth_script_override.resolve()}")

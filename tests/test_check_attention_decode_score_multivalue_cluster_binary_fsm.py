@@ -16,6 +16,88 @@ EXPECTED_TAG = "decode_score_multivalue_cluster_v1_8ns_binary_fsm"
 EXPECTED_VARIANT = "decode_score_multivalue_cluster_v1_8ns_binary_fsm_v3_proxy_die_2500"
 EXPECTED_SYNTH_ARGS = "-nofsm"
 
+VALID_PACKED_NETLIST_DECLARATIONS = """\
+module top;
+  wire [2:0] \\state_q ;
+  wire [3:0] \\reducer.state ;
+endmodule
+"""
+
+VALID_BITBLASTED_NETLIST_DECLARATIONS = """\
+module top;
+  wire \\state_q[0] ;
+  wire \\state_q[1] ;
+  wire \\state_q[2] ;
+  wire \\reducer.state[0] ;
+  wire \\reducer.state[1] ;
+  wire \\reducer.state[2] ;
+  wire \\reducer.state[3] ;
+endmodule
+"""
+
+INVALID_REDUCER_STATE = """\
+module top;
+  wire [2:0] \\state_q ;
+  wire [6:0] \\reducer.state ;
+endmodule
+"""
+
+INVALID_STATE_Q = """\
+module top;
+  wire [3:0] \\state_q ;
+  wire [3:0] \\reducer.state ;
+endmodule
+"""
+
+INVALID_REDUCER_STATE_BIT = """\
+module top;
+  wire \\state_q[0] ;
+  wire \\state_q[1] ;
+  wire \\state_q[2] ;
+  wire \\reducer.state[0] ;
+  wire \\reducer.state[1] ;
+  wire \\reducer.state[2] ;
+  wire \\reducer.state[3] ;
+  wire \\reducer.state[6] ;
+endmodule
+"""
+
+INVALID_STATE_Q_BIT = """\
+module top;
+  wire \\state_q[0] ;
+  wire \\state_q[1] ;
+  wire \\state_q[2] ;
+  wire \\state_q[3] ;
+  wire \\reducer.state[0] ;
+  wire \\reducer.state[1] ;
+  wire \\reducer.state[2] ;
+  wire \\reducer.state[3] ;
+endmodule
+"""
+
+
+def _synth_results_dir(root: Path) -> Path:
+    return root / "orfs" / "flow" / "results"
+
+
+def _write_netlist(
+    root: Path,
+    *,
+    platform: str = "nangate45",
+    design: str = "attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv",
+    flow_variant: str = EXPECTED_VARIANT,
+    body: str = VALID_PACKED_NETLIST_DECLARATIONS,
+) -> Path:
+    netlist = (
+        _synth_results_dir(root)
+        / platform
+        / design
+        / flow_variant
+        / "1_synth.v"
+    )
+    netlist.parent.mkdir(parents=True, exist_ok=True)
+    netlist.write_text(body, encoding="utf-8")
+    return netlist
 
 
 def _repo_root() -> Path:
@@ -92,10 +174,17 @@ def _write_row(
     )
 
 
-def _run_checker(metrics_path: Path) -> subprocess.CompletedProcess[str]:
+def _run_checker(
+    metrics_path: Path,
+    *,
+    synth_results_dir: Path | None = None,
+) -> subprocess.CompletedProcess[str]:
     script = _repo_root() / "npu" / "eval" / "check_attention_decode_score_multivalue_cluster_binary_fsm.py"
+    command = [sys.executable, str(script), "--metrics-path", str(metrics_path)]
+    if synth_results_dir is not None:
+        command.extend(["--synth-results-dir", str(synth_results_dir)])
     return subprocess.run(
-        [sys.executable, str(script), "--metrics-path", str(metrics_path)],
+        command,
         check=False,
         capture_output=True,
         text=True,
@@ -105,6 +194,7 @@ def _run_checker(metrics_path: Path) -> subprocess.CompletedProcess[str]:
 def test_check_attention_decode_score_multivalue_cluster_binary_fsm_passes_with_exact_8ns_row() -> None:
     with tempfile.TemporaryDirectory() as td:
         metrics = _metrics_path(Path(td))
+        _write_netlist(Path(td))
         _write_metrics(
             metrics,
             [
@@ -115,12 +205,13 @@ def test_check_attention_decode_score_multivalue_cluster_binary_fsm_passes_with_
                 )
             ],
         )
-        assert _run_checker(metrics).returncode == 0
+        assert _run_checker(metrics, synth_results_dir=_synth_results_dir(Path(td))).returncode == 0
 
 
 def test_check_attention_decode_score_multivalue_cluster_binary_fsm_passes_with_mode_suffixed_tag() -> None:
     with tempfile.TemporaryDirectory() as td:
         metrics = _metrics_path(Path(td))
+        _write_netlist(Path(td))
         _write_metrics(
             metrics,
             [
@@ -132,12 +223,13 @@ def test_check_attention_decode_score_multivalue_cluster_binary_fsm_passes_with_
                 )
             ],
         )
-        assert _run_checker(metrics).returncode == 0
+        assert _run_checker(metrics, synth_results_dir=_synth_results_dir(Path(td))).returncode == 0
 
 
 def test_check_attention_decode_score_multivalue_cluster_binary_fsm_rejects_old_bridge_flow() -> None:
     with tempfile.TemporaryDirectory() as td:
         metrics = _metrics_path(Path(td))
+        _write_netlist(Path(td))
         _write_metrics(
             metrics,
             [
@@ -149,7 +241,7 @@ def test_check_attention_decode_score_multivalue_cluster_binary_fsm_rejects_old_
                 )
             ],
         )
-        proc = _run_checker(metrics)
+        proc = _run_checker(metrics, synth_results_dir=_synth_results_dir(Path(td)))
         assert proc.returncode != 0
         assert "missing required 8ns" in proc.stderr
 
@@ -157,6 +249,7 @@ def test_check_attention_decode_score_multivalue_cluster_binary_fsm_rejects_old_
 def test_check_attention_decode_score_multivalue_cluster_binary_fsm_rejects_missing_synth_args() -> None:
     with tempfile.TemporaryDirectory() as td:
         metrics = _metrics_path(Path(td))
+        _write_netlist(Path(td))
         _write_metrics(
             metrics,
             [
@@ -168,7 +261,7 @@ def test_check_attention_decode_score_multivalue_cluster_binary_fsm_rejects_miss
                 )
             ],
         )
-        proc = _run_checker(metrics)
+        proc = _run_checker(metrics, synth_results_dir=_synth_results_dir(Path(td)))
         assert proc.returncode != 0
         assert "missing required 8ns" in proc.stderr
 
@@ -176,6 +269,7 @@ def test_check_attention_decode_score_multivalue_cluster_binary_fsm_rejects_miss
 def test_check_attention_decode_score_multivalue_cluster_binary_fsm_rejects_wrong_synth_args() -> None:
     with tempfile.TemporaryDirectory() as td:
         metrics = _metrics_path(Path(td))
+        _write_netlist(Path(td))
         _write_metrics(
             metrics,
             [
@@ -187,7 +281,7 @@ def test_check_attention_decode_score_multivalue_cluster_binary_fsm_rejects_wron
                 )
             ],
         )
-        proc = _run_checker(metrics)
+        proc = _run_checker(metrics, synth_results_dir=_synth_results_dir(Path(td)))
         assert proc.returncode != 0
         assert "missing required 8ns" in proc.stderr
 
@@ -208,6 +302,7 @@ def test_check_attention_decode_score_multivalue_cluster_binary_fsm_rejects_miss
 ) -> None:
     with tempfile.TemporaryDirectory() as td:
         metrics = _metrics_path(Path(td))
+        _write_netlist(Path(td))
         _write_metrics(
             metrics,
             [
@@ -219,7 +314,7 @@ def test_check_attention_decode_score_multivalue_cluster_binary_fsm_rejects_miss
                 )
             ],
         )
-        proc = _run_checker(metrics)
+        proc = _run_checker(metrics, synth_results_dir=_synth_results_dir(Path(td)))
         assert proc.returncode != 0
         assert "missing required 8ns" in proc.stderr
 
@@ -227,6 +322,7 @@ def test_check_attention_decode_score_multivalue_cluster_binary_fsm_rejects_miss
 def test_check_attention_decode_score_multivalue_cluster_binary_fsm_rejects_bad_status_or_timing() -> None:
     with tempfile.TemporaryDirectory() as td:
         metrics = _metrics_path(Path(td))
+        _write_netlist(Path(td))
         _write_metrics(
             metrics,
             [
@@ -242,6 +338,104 @@ def test_check_attention_decode_score_multivalue_cluster_binary_fsm_rejects_bad_
                 ),
             ],
         )
-        proc = _run_checker(metrics)
+        proc = _run_checker(metrics, synth_results_dir=_synth_results_dir(Path(td)))
         assert proc.returncode != 0
         assert "missing required 8ns" in proc.stderr
+
+
+@pytest.mark.parametrize(
+    "declaration",
+    [VALID_PACKED_NETLIST_DECLARATIONS, VALID_BITBLASTED_NETLIST_DECLARATIONS],
+)
+def test_check_attention_decode_score_multivalue_cluster_binary_fsm_accepts_valid_signal_declarations(
+    declaration: str,
+) -> None:
+    with tempfile.TemporaryDirectory() as td:
+        root = Path(td)
+        metrics = _metrics_path(root)
+        _write_netlist(root, body=declaration)
+        _write_metrics(
+            metrics,
+            [
+                _write_row(
+                    status="ok",
+                    critical_path_ns=7.5,
+                    result_path="runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/result.json",
+                )
+            ],
+        )
+        assert _run_checker(metrics, synth_results_dir=_synth_results_dir(root)).returncode == 0
+
+
+@pytest.mark.parametrize(
+    "declaration",
+    [INVALID_REDUCER_STATE, INVALID_REDUCER_STATE_BIT],
+    ids=["reducer_state_packed", "reducer_state_bit"],
+)
+def test_check_attention_decode_score_multivalue_cluster_binary_fsm_rejects_reducer_state_oob(
+    declaration: str,
+) -> None:
+    with tempfile.TemporaryDirectory() as td:
+        root = Path(td)
+        metrics = _metrics_path(root)
+        _write_netlist(root, body=declaration)
+        _write_metrics(
+            metrics,
+            [
+                _write_row(
+                    status="ok",
+                    critical_path_ns=7.5,
+                    result_path="runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/result.json",
+                )
+            ],
+        )
+        proc = _run_checker(metrics, synth_results_dir=_synth_results_dir(root))
+        assert proc.returncode != 0
+        assert "invalid width for reducer.state" in proc.stderr
+        assert "details" in proc.stderr
+
+
+@pytest.mark.parametrize(
+    "declaration",
+    [INVALID_STATE_Q, INVALID_STATE_Q_BIT],
+    ids=["state_q_packed", "state_q_bit"],
+)
+def test_check_attention_decode_score_multivalue_cluster_binary_fsm_rejects_state_q_oob(
+    declaration: str,
+) -> None:
+    with tempfile.TemporaryDirectory() as td:
+        root = Path(td)
+        metrics = _metrics_path(root)
+        _write_netlist(root, body=declaration)
+        _write_metrics(
+            metrics,
+            [
+                _write_row(
+                    status="ok",
+                    critical_path_ns=7.5,
+                    result_path="runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/result.json",
+                )
+            ],
+        )
+        proc = _run_checker(metrics, synth_results_dir=_synth_results_dir(root))
+        assert proc.returncode != 0
+        assert "invalid width for state_q" in proc.stderr
+        assert "details" in proc.stderr
+
+
+def test_check_attention_decode_score_multivalue_cluster_binary_fsm_rejects_when_synth_netlist_is_missing() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        metrics = _metrics_path(Path(td))
+        _write_metrics(
+            metrics,
+            [
+                _write_row(
+                    status="ok",
+                    critical_path_ns=7.5,
+                    result_path="runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/result.json",
+                )
+            ],
+        )
+        proc = _run_checker(metrics, synth_results_dir=_synth_results_dir(Path(td)))
+        assert proc.returncode != 0
+        assert "missing exact netlist" in proc.stderr
