@@ -190,7 +190,34 @@
       ],
       "expected_result": {
         "direction": "measure_shared_score_multivalue_cluster_binary_fsm_ppa",
-        "reason": "V3_r2 was a retry but did not change the `FLOW_VARIANT` hash, so `--skip_existing` could reuse one-hot results. R3 uses a fresh v4 sweep path (`..._v4`), so the required exact-flow variant is `decode_score_multivalue_cluster_v1_8ns_binary_fsm_v4_proxy_die_2500` and routed-state width validation is enforced against fresh `1_synth.v` netlists."
+        "reason": "R3 used the fresh v4 flow identity and reached physical implementation, but failed in global placement with RSZ-1008. It is non-promotable and supplies no successful PNR evidence; retained 3/4-bit synthesized-state widths are not claimed until issue #1416 supplies the diagnostic artifact."
+      },
+      "status": "failed_non_promotable",
+      "status_reason": "Global placement failed with RSZ-1008; no successful PNR row or retained-state-width evidence is claimed."
+    },
+    {
+      "item_id": "l1_decoder_attention_decode_score_multivalue_cluster_pnr_targeted_binary_fsm_8ns_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure an 8 ns targeted-binary-FSM candidate that preserves normal Yosys FSM optimization while applying explicit binary encoding attributes only to the top and reducer state machines.",
+      "evaluation_mode": "frontier_followup",
+      "abstraction_layer": "decoder_attention_decode_score_multivalue_cluster",
+      "comparison_role": "shared_score_multivalue_cluster_targeted_binary_fsm_pnr",
+      "config_paths": [
+        "runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/config_targeted_binary_fsm.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/decode_score_multivalue_cluster_v1/sweeps/nangate45_decode_score_multivalue_cluster_8ns_targeted_binary_fsm_v1.json",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "paired_baseline_item_id": "l1_decoder_attention_decode_score_multivalue_cluster_pnr_8ns_v2",
+      "prior_item_ids": [
+        "l1_decoder_attention_decode_score_multivalue_cluster_pnr_binary_fsm_8ns_v3_r3"
+      ],
+      "expected_result": {
+        "direction": "measure_shared_score_multivalue_cluster_targeted_binary_fsm_ppa",
+        "reason": "Use a fresh config and flow parameter hash with explicit binary FSM attributes and normal Yosys FSM optimization. Promotion still requires an exact successful 8 ns row and post-synthesis 3/4-bit state-width evidence; no retained widths are claimed before issue #1416 materializes that diagnostic."
       },
       "status": "pending_implementation_merge"
     }

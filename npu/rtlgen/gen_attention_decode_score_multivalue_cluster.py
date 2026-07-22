@@ -38,6 +38,7 @@ def _validate(config: dict[str, Any]) -> dict[str, int | str]:
     value_slices = int(body.get("value_slices", 16))
     scale_lanes = int(body.get("score_scale_lanes_per_cycle", 1))
     divider_impl = str(body.get("divider_impl", "iterative_restoring"))
+    fsm_encoding = str(body.get("fsm_encoding", "default")).strip().lower()
     if max_blocks < 8 or max_blocks > 16384 or max_blocks & (max_blocks - 1):
         raise SystemExit("max_blocks must be a power of two in [8, 16384]")
     if array_n != 8 or value_slices != 16:
@@ -46,6 +47,8 @@ def _validate(config: dict[str, Any]) -> dict[str, int | str]:
         raise SystemExit("score_scale_lanes_per_cycle must be one of 1,2,4,8")
     if divider_impl != "iterative_restoring":
         raise SystemExit("divider_impl must be iterative_restoring")
+    if fsm_encoding not in {"default", "binary"}:
+        raise SystemExit("fsm_encoding must be default or binary")
     body.update(
         {
             "max_blocks": max_blocks,
@@ -62,6 +65,7 @@ def _validate(config: dict[str, Any]) -> dict[str, int | str]:
         "value_slices": value_slices,
         "score_scale_lanes_per_cycle": scale_lanes,
         "divider_impl": divider_impl,
+        "fsm_encoding": fsm_encoding,
     }
 
 
@@ -76,6 +80,7 @@ def _wrapper(*, top_name: str, params: dict[str, int | str], tile_top: str, bank
     count_bits = _clog2(max_blocks + 1)
     addr_bits = _clog2(max_blocks)
     scale_lanes = int(params["score_scale_lanes_per_cycle"])
+    fsm_attribute = '(* fsm_encoding = "binary" *) ' if params["fsm_encoding"] == "binary" else ""
     command_count = "command_block_count" if count_bits == 15 else f"command_block_count[{count_bits - 1}:0]"
     read_addr = _widen("score_read_req_addr", addr_bits, 14)
     write_addr = _widen("score_write_addr", addr_bits, 14)
@@ -131,7 +136,7 @@ module {top_name} (
   localparam [2:0] IDLE = 3'd0, TILE_CMD = 3'd1, TILE_INPUT = 3'd2,
       TILE_RESULT = 3'd3, SCALE = 3'd4, FILL = 3'd5, WAIT_RESULT = 3'd6;
 
-  reg [2:0] state_q;
+  {fsm_attribute}reg [2:0] state_q;
   reg [COUNT_W-1:0] block_index_q;
   reg [COUNT_W-1:0] active_block_count_q;
   reg [31:0] active_multiplier_q;
@@ -336,6 +341,7 @@ def generate(config: dict[str, Any], out_dir: Path) -> None:
                     "max_blocks": int(params["max_blocks"]),
                     "value_slices": int(params["value_slices"]),
                     "divider_impl": "iterative_restoring",
+                    "fsm_encoding": params["fsm_encoding"],
                 },
             },
             reduce_dir,
@@ -361,6 +367,7 @@ def generate(config: dict[str, Any], out_dir: Path) -> None:
         "max_blocks": params["max_blocks"],
         "score_tile_array_n": 8,
         "score_scale_lanes_per_cycle": params["score_scale_lanes_per_cycle"],
+        "fsm_encoding": params["fsm_encoding"],
         "value_slices": params["value_slices"],
         "value_dimensions": int(params["value_slices"]) * 8,
         "score_passes_per_command": 1,

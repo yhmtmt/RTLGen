@@ -293,6 +293,56 @@ class ModeCompareRegressionTest(unittest.TestCase):
         )
         self.assertNotEqual(v3_applied["FLOW_VARIANT"], v4_applied["FLOW_VARIANT"])
 
+    def test_targeted_binary_fsm_sweep_has_fresh_identity_without_nofsm(self) -> None:
+        sweep_dir = (
+            REPO_ROOT
+            / "runs"
+            / "campaigns"
+            / "npu"
+            / "decode_score_multivalue_cluster_v1"
+            / "sweeps"
+        )
+        v4_sweep = json.loads(
+            (sweep_dir / "nangate45_decode_score_multivalue_cluster_8ns_binary_fsm_v4.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        targeted_sweep = json.loads(
+            (
+                sweep_dir
+                / "nangate45_decode_score_multivalue_cluster_8ns_targeted_binary_fsm_v1.json"
+            ).read_text(encoding="utf-8")
+        )
+
+        def applied_params(sweep: dict) -> dict:
+            mode_cfg = self.run_block_sweep.parse_mode_compare_config(sweep)
+            assert mode_cfg is not None
+            mode = next(
+                entry
+                for entry in mode_cfg["modes"]
+                if str(entry.get("slug", "")).strip() == "proxy_die_2500"
+            )
+            base = {
+                key: values[0] for key, values in sweep["flow_params"].items()
+            }
+            return self.run_block_sweep.apply_mode_to_params(
+                base,
+                mode,
+                str(sweep["tag_prefix"]),
+            )
+
+        v4_applied = applied_params(v4_sweep)
+        targeted_applied = applied_params(targeted_sweep)
+        self.assertEqual(
+            "decode_score_multivalue_cluster_v1_8ns_targeted_binary_fsm_v1_proxy_die_2500",
+            targeted_applied["FLOW_VARIANT"],
+        )
+        self.assertNotIn("SYNTH_ARGS", targeted_applied)
+        self.assertNotEqual(
+            self.run_block_sweep.make_run_id(v4_applied),
+            self.run_block_sweep.make_run_id(targeted_applied),
+        )
+
     def test_apply_repeat_to_params_sets_flow_random_seed(self):
         out = self.run_block_sweep.apply_repeat_to_params(
             {"TAG": "tag_flat", "FLOW_VARIANT": "var_flat"},

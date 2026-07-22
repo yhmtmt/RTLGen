@@ -8,22 +8,53 @@ import csv
 import json
 import math
 import re
+from dataclasses import dataclass
 from pathlib import Path
 from typing import cast
 
 EXPECTED_CLOCK_PERIOD = 8
-EXPECTED_TAG_PREFIX = "decode_score_multivalue_cluster_v1_8ns_binary_fsm"
-EXPECTED_FLOW_VARIANT = "decode_score_multivalue_cluster_v1_8ns_binary_fsm_v4_proxy_die_2500"
 EXPECTED_DIE_AREA = "0 0 2500 2500"
 EXPECTED_CORE_AREA = "50 50 2450 2450"
 EXPECTED_PLACE_DENSITY = "0.4"
 EXPECTED_SYNTH_HIERARCHICAL = "1"
 EXPECTED_SYNTH_MEMORY_MAX_BITS = "65536"
-EXPECTED_SYNTH_ARGS = "-nofsm"
 EXPECTED_PLATFORM = "nangate45"
 EXPECTED_DESIGN = "attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv"
 EXPECTED_RESULT_PATH_TOKEN = EXPECTED_DESIGN
 DEFAULT_SYNTH_RESULTS_DIR = Path("/orfs/flow/results")
+
+
+@dataclass(frozen=True)
+class BinaryFsmProfile:
+    name: str
+    tag_prefix: str
+    flow_variant: str
+    synth_args: str
+    checker_id: str
+
+
+PROFILES = {
+    "v4_nofsm": BinaryFsmProfile(
+        name="v4_nofsm",
+        tag_prefix="decode_score_multivalue_cluster_v1_8ns_binary_fsm",
+        flow_variant="decode_score_multivalue_cluster_v1_8ns_binary_fsm_v4_proxy_die_2500",
+        synth_args="-nofsm",
+        checker_id="attention_decode_score_multivalue_cluster_binary_fsm_v4",
+    ),
+    "targeted_binary": BinaryFsmProfile(
+        name="targeted_binary",
+        tag_prefix="decode_score_multivalue_cluster_v1_8ns_targeted_binary_fsm",
+        flow_variant=(
+            "decode_score_multivalue_cluster_v1_8ns_targeted_binary_fsm_v1_proxy_die_2500"
+        ),
+        synth_args="",
+        checker_id="attention_decode_score_multivalue_cluster_targeted_binary_fsm_v1",
+    ),
+}
+DEFAULT_PROFILE = "v4_nofsm"
+EXPECTED_TAG_PREFIX = PROFILES[DEFAULT_PROFILE].tag_prefix
+EXPECTED_FLOW_VARIANT = PROFILES[DEFAULT_PROFILE].flow_variant
+EXPECTED_SYNTH_ARGS = PROFILES[DEFAULT_PROFILE].synth_args
 
 EXPECTED_SIGNAL_INDICES = {
     "state_q": {0, 1, 2},
@@ -248,15 +279,17 @@ def _iter_metrics_rows(metrics_path: Path):
                 yield row
 
 
-def _exact_binary_fsm_identity(row: dict[str, str]) -> dict[str, object] | None:
+def _exact_binary_fsm_identity(
+    row: dict[str, str], profile: BinaryFsmProfile
+) -> dict[str, object] | None:
     try:
         params = _parse_params_json(_to_str(row.get("params_json", "")))
     except Exception:
         return None
 
-    if not _to_str(row.get("tag")).startswith(EXPECTED_TAG_PREFIX):
+    if not _to_str(row.get("tag")).startswith(profile.tag_prefix):
         return None
-    if _to_str(params.get("FLOW_VARIANT")) != EXPECTED_FLOW_VARIANT:
+    if _to_str(params.get("FLOW_VARIANT")) != profile.flow_variant:
         return None
     if _to_str(params.get("PLACE_DENSITY")) != EXPECTED_PLACE_DENSITY:
         return None
@@ -264,7 +297,7 @@ def _exact_binary_fsm_identity(row: dict[str, str]) -> dict[str, object] | None:
         return None
     if _to_str(params.get("SYNTH_MEMORY_MAX_BITS")) != EXPECTED_SYNTH_MEMORY_MAX_BITS:
         return None
-    if _to_str(params.get("SYNTH_ARGS")) != EXPECTED_SYNTH_ARGS:
+    if _to_str(params.get("SYNTH_ARGS")) != profile.synth_args:
         return None
     if _to_str(params.get("DIE_AREA")) != EXPECTED_DIE_AREA:
         return None
@@ -383,12 +416,18 @@ def validate_binary_fsm_metrics(
     *,
     metrics_path: Path,
     diagnostic_out: Path,
+    profile_name: str = DEFAULT_PROFILE,
     synth_results_dir: Path = DEFAULT_SYNTH_RESULTS_DIR,
 ) -> int:
+    try:
+        profile = PROFILES[profile_name]
+    except KeyError as exc:
+        raise ValueError(f"unknown binary-FSM checker profile: {profile_name}") from exc
     diagnostic: dict[str, object] = {
         "version": 1,
-        "checker": "attention_decode_score_multivalue_cluster_binary_fsm_v4",
-        "expected_flow_variant": EXPECTED_FLOW_VARIANT,
+        "checker": profile.checker_id,
+        "profile": profile.name,
+        "expected_flow_variant": profile.flow_variant,
         "selected_exact_row": None,
         "expected_logical_netlist_path": None,
         "netlist_exists": False,
@@ -411,12 +450,16 @@ def validate_binary_fsm_metrics(
 
     exact_rows: list[tuple[dict[str, str], dict[str, object]]] = []
     for row in _iter_metrics_rows(metrics_path):
-        params = _exact_binary_fsm_identity(row)
+        params = _exact_binary_fsm_identity(row, profile)
         if params is not None:
             exact_rows.append((row, params))
 
     row_diagnostics = [
-        _row_diagnostic(row, params=params, synth_results_dir=synth_results_dir)
+        _row_diagnostic(
+            row,
+            params=params,
+            synth_results_dir=synth_results_dir,
+        )
         for row, params in exact_rows
     ]
     promoted = [item for item in row_diagnostics if item["promotion_valid"]]
@@ -428,7 +471,7 @@ def validate_binary_fsm_metrics(
     if row_diagnostics:
         diagnostic.update(row_diagnostics[-1])
     else:
-        diagnostic["promotion_reasons"] = ["no exact v4 identity row"]
+        diagnostic["promotion_reasons"] = [f"no exact {profile.name} identity row"]
     _write_diagnostic(diagnostic_out, diagnostic)
 
     reasons = cast(list[str], diagnostic["promotion_reasons"])
@@ -437,9 +480,10 @@ def validate_binary_fsm_metrics(
         detail = "; details: " + detail
     raise ValueError(
         "missing required 8ns exact-state binary-FSM decode-score multivalue-cluster row "
-        "(status=ok, TAG=decode_score_multivalue_cluster_v1_8ns_binary_fsm*, "
-        f"FLOW_VARIANT={EXPECTED_FLOW_VARIANT}, "
-        "DIE_AREA=0 0 2500 2500, CORE_AREA=50 50 2450 2450, SYNTH_ARGS=-nofsm, "
+        f"(profile={profile.name}, status=ok, TAG={profile.tag_prefix}*, "
+        f"FLOW_VARIANT={profile.flow_variant}, "
+        "DIE_AREA=0 0 2500 2500, CORE_AREA=50 50 2450 2450, "
+        f"SYNTH_ARGS={profile.synth_args or '<empty/default>'}, "
         "PLACE_DENSITY=0.4, SYNTH_HIERARCHICAL=1, SYNTH_MEMORY_MAX_BITS=65536, "
         "critical_path_ns<=8, exact 3/4-bit state widths)" + detail
     )
@@ -449,6 +493,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--metrics-path", type=Path, required=True)
     parser.add_argument("--diagnostic-out", type=Path, required=True)
+    parser.add_argument("--profile", choices=sorted(PROFILES), default=DEFAULT_PROFILE)
     parser.add_argument(
         "--synth-results-dir",
         type=Path,
@@ -459,6 +504,7 @@ def main() -> int:
     validate_binary_fsm_metrics(
         metrics_path=args.metrics_path,
         diagnostic_out=args.diagnostic_out,
+        profile_name=args.profile,
         synth_results_dir=args.synth_results_dir,
     )
     return 0

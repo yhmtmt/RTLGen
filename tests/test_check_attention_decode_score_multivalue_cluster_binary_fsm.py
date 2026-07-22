@@ -16,6 +16,10 @@ EXPECTED_TAG = "decode_score_multivalue_cluster_v1_8ns_binary_fsm"
 EXPECTED_VARIANT = "decode_score_multivalue_cluster_v1_8ns_binary_fsm_v4_proxy_die_2500"
 EXPECTED_SYNTH_ARGS = "-nofsm"
 STALE_VARIANT = "decode_score_multivalue_cluster_v1_8ns_binary_fsm_v3_proxy_die_2500"
+TARGETED_TAG = "decode_score_multivalue_cluster_v1_8ns_targeted_binary_fsm"
+TARGETED_VARIANT = (
+    "decode_score_multivalue_cluster_v1_8ns_targeted_binary_fsm_v1_proxy_die_2500"
+)
 
 VALID_PACKED_NETLIST_DECLARATIONS = """\
 module top;
@@ -189,6 +193,7 @@ def _run_checker(
     *,
     synth_results_dir: Path | None = None,
     diagnostic_out: Path | None = None,
+    profile: str = "v4_nofsm",
 ) -> subprocess.CompletedProcess[str]:
     script = _repo_root() / "npu" / "eval" / "check_attention_decode_score_multivalue_cluster_binary_fsm.py"
     diagnostic_out = diagnostic_out or metrics_path.parent / "binary_fsm_diagnostic.json"
@@ -199,6 +204,8 @@ def _run_checker(
         str(metrics_path),
         "--diagnostic-out",
         str(diagnostic_out),
+        "--profile",
+        profile,
     ]
     if synth_results_dir is not None:
         command.extend(["--synth-results-dir", str(synth_results_dir)])
@@ -334,6 +341,81 @@ def test_check_attention_decode_score_multivalue_cluster_binary_fsm_records_one_
             "invalid width for reducer.state" in reason
             for reason in diagnostic["promotion_reasons"]
         )
+
+
+def test_check_attention_decode_score_multivalue_cluster_binary_fsm_accepts_targeted_profile_without_nofsm() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        root = Path(td)
+        metrics = _metrics_path(root)
+        _write_netlist(root, flow_variant=TARGETED_VARIANT)
+        _write_metrics(
+            metrics,
+            [
+                _write_row(
+                    status="ok",
+                    critical_path_ns=7.5,
+                    result_path=(
+                        "runs/designs/npu_blocks/"
+                        "attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/result.json"
+                    ),
+                    tag=TARGETED_TAG,
+                    flow_variant=TARGETED_VARIANT,
+                    synth_args=None,
+                )
+            ],
+        )
+        diagnostic_out = metrics.parent / "targeted_binary_fsm_diagnostic.json"
+
+        proc = _run_checker(
+            metrics,
+            synth_results_dir=_synth_results_dir(root),
+            diagnostic_out=diagnostic_out,
+            profile="targeted_binary",
+        )
+
+        assert proc.returncode == 0, proc.stderr
+        diagnostic = json.loads(diagnostic_out.read_text(encoding="utf-8"))
+        assert diagnostic["profile"] == "targeted_binary"
+        assert diagnostic["selected_exact_row"]["synth_args"] == ""
+        assert diagnostic["width_valid"] is True
+        assert diagnostic["promotion_valid"] is True
+
+
+def test_check_attention_decode_score_multivalue_cluster_binary_fsm_targeted_profile_relies_on_post_synth_widths() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        root = Path(td)
+        metrics = _metrics_path(root)
+        _write_netlist(
+            root,
+            flow_variant=TARGETED_VARIANT,
+            body=INVALID_REDUCER_STATE,
+        )
+        _write_metrics(
+            metrics,
+            [
+                _write_row(
+                    status="ok",
+                    critical_path_ns=7.5,
+                    result_path=(
+                        "runs/designs/npu_blocks/"
+                        "attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/result.json"
+                    ),
+                    tag=TARGETED_TAG,
+                    flow_variant=TARGETED_VARIANT,
+                    synth_args=None,
+                )
+            ],
+        )
+
+        proc = _run_checker(
+            metrics,
+            synth_results_dir=_synth_results_dir(root),
+            profile="targeted_binary",
+        )
+
+        assert proc.returncode != 0
+        assert "invalid width for reducer.state" in proc.stderr
+        assert "SYNTH_ARGS" not in proc.stderr.split("details:", 1)[-1]
 
 
 def test_check_attention_decode_score_multivalue_cluster_binary_fsm_passes_with_mode_suffixed_tag() -> None:
