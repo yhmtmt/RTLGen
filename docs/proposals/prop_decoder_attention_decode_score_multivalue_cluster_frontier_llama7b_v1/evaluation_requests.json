@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_decoder_attention_decode_score_multivalue_cluster_frontier_llama7b_v1",
   "source_commit": "db2f9ae94fc10860c5d9a5b0384d5dbd6f6b71bd",
-  "source_commit_note": "Queue this evidence-only remote frontier recost only after the corrected local-cluster frontier v2 and the shared-score multivalue activity-power v13 rerun (PR #1410, commit db2f9ae94fc10860c5d9a5b0384d5dbd6f6b71bd).",
+  "source_commit_note": "Keep this evidence-only frontier recost pending until strict shared-score multivalue activity-power v14 is merged and its evidence is materialized. Activity-power v13 is invalid and must not be consumed; this request does not claim that v14 evidence exists.",
   "requested_items": [
     {
       "item_id": "l2_decoder_attention_decode_score_multivalue_cluster_frontier_llama7b_v1",
@@ -13,13 +13,13 @@
       "paired_baseline_item_id": "l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2",
       "depends_on_item_ids": [
         "l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2",
-        "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v13"
+        "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v14"
       ],
       "requires_merged_inputs": true,
       "requires_materialized_refs": true,
       "expected_result": {
         "direction": "recast_shared_score_multivalue_cluster_frontier",
-        "reason": "Frontier ranking must charge exact full-head cycles, measured active-cluster energy, and area/QKV tradeoffs together while keeping precision fixed from the merged equivalence result and withholding any total-token energy claim."
+        "reason": "Keep this frontier pending until strict activity-power v14 is merged and materialized; only then may ranking charge exact full-head cycles, valid measured active-cluster energy, and area/QKV tradeoffs together while keeping precision fixed from the merged equivalence result and withholding any total-token energy claim."
       },
       "status": "pending_implementation_merge"
     }

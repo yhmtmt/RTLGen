@@ -57,13 +57,13 @@
       "paired_baseline_item_id": "l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2",
       "depends_on_item_ids": [
         "l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2",
-        "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v13"
+        "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v14"
       ],
       "requires_merged_inputs": true,
       "requires_materialized_refs": true,
       "expected_result": {
         "direction": "recast_shared_score_multivalue_cluster_frontier",
-        "reason": "Frontier ranking must charge exact full-head cycles, measured active-cluster energy, and area/QKV tradeoffs together while keeping precision fixed from the merged equivalence result and withholding any total-token energy claim."
+        "reason": "Keep this frontier pending until strict activity-power v14 is merged and materialized; only then may ranking charge exact full-head cycles, valid measured active-cluster energy, and area/QKV tradeoffs together while keeping precision fixed from the merged equivalence result and withholding any total-token energy claim."
       },
       "status": "pending_implementation_merge"
     }

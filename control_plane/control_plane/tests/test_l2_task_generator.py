@@ -8329,6 +8329,55 @@ def test_cluster_activity_power_item_for_consumer_prefers_requested_version_for_
     )
 
 
+def test_cluster_activity_power_item_for_consumer_selects_v14_for_cluster_frontier() -> None:
+    assert (
+        _cluster_activity_power_item_for_consumer(
+            item_id="l2_decoder_attention_decode_score_multivalue_cluster_frontier_llama7b_v1",
+            depends_on_item_ids=[
+                "l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2",
+                "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v14",
+            ],
+        )
+        == "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v14"
+    )
+
+
+def test_gqa_folded_activity_request_manifests_require_cluster_activity_power_v14() -> None:
+    repo_root = Path(__file__).resolve().parents[3]
+    proposal_dir = (
+        repo_root
+        / "docs/proposals/prop_decoder_attention_decode_score_multivalue_gqa8_group_llama7b_v1"
+    )
+    activity_item_ids = {
+        f"l2_decoder_attention_decode_score_multivalue_gqa8_folded_lanes{lanes}_activity_power_llama7b_v1"
+        for lanes in (1, 2, 4)
+    }
+    required_dependency = (
+        "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v14"
+    )
+
+    for manifest_name, items_key in (
+        ("proposal.json", "required_evaluations"),
+        ("evaluation_requests.json", "requested_items"),
+    ):
+        manifest = json.loads((proposal_dir / manifest_name).read_text(encoding="utf-8"))
+        activity_items = {
+            item["item_id"]: item
+            for item in manifest[items_key]
+            if item["item_id"] in activity_item_ids
+        }
+        assert set(activity_items) == activity_item_ids
+        assert all(
+            required_dependency in item["depends_on_item_ids"]
+            for item in activity_items.values()
+        )
+        assert all(
+            "llama7b_v13" not in dependency
+            for item in activity_items.values()
+            for dependency in item["depends_on_item_ids"]
+        )
+
+
 def test_generate_l2_campaign_task_adds_decode_score_multivalue_gqa_group_activity_power() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
