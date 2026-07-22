@@ -13,8 +13,9 @@ import pytest
 
 
 EXPECTED_TAG = "decode_score_multivalue_cluster_v1_8ns_binary_fsm"
-EXPECTED_VARIANT = "decode_score_multivalue_cluster_v1_8ns_binary_fsm_v3_proxy_die_2500"
+EXPECTED_VARIANT = "decode_score_multivalue_cluster_v1_8ns_binary_fsm_v4_proxy_die_2500"
 EXPECTED_SYNTH_ARGS = "-nofsm"
+STALE_VARIANT = "decode_score_multivalue_cluster_v1_8ns_binary_fsm_v3_proxy_die_2500"
 
 VALID_PACKED_NETLIST_DECLARATIONS = """\
 module top;
@@ -244,6 +245,30 @@ def test_check_attention_decode_score_multivalue_cluster_binary_fsm_rejects_old_
         proc = _run_checker(metrics, synth_results_dir=_synth_results_dir(Path(td)))
         assert proc.returncode != 0
         assert "missing required 8ns" in proc.stderr
+
+
+def test_check_attention_decode_score_multivalue_cluster_binary_fsm_rejects_stale_v3_exact_netlist_for_v4_checker() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        root = Path(td)
+        metrics = _metrics_path(root)
+        _write_netlist(root, flow_variant=STALE_VARIANT)
+        _write_metrics(
+            metrics,
+            [
+                _write_row(
+                    status="ok",
+                    critical_path_ns=7.5,
+                    result_path="runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/result.json",
+                    flow_variant=EXPECTED_VARIANT,
+                    tag=f"{EXPECTED_TAG}_proxy_die_2500",
+                    synth_args=EXPECTED_SYNTH_ARGS,
+                )
+            ],
+        )
+        proc = _run_checker(metrics, synth_results_dir=_synth_results_dir(root))
+        assert proc.returncode != 0
+        assert "missing exact netlist" in proc.stderr
+        assert EXPECTED_VARIANT in proc.stderr
 
 
 def test_check_attention_decode_score_multivalue_cluster_binary_fsm_rejects_missing_synth_args() -> None:

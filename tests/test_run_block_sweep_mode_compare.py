@@ -230,6 +230,69 @@ class ModeCompareRegressionTest(unittest.TestCase):
             out["FLOW_VARIANT"],
         )
 
+    def test_apply_mode_to_params_distinguishes_v3_and_v4_binary_fsm_sweeps(self) -> None:
+        v3_sweep_path = (
+            REPO_ROOT
+            / "runs"
+            / "campaigns"
+            / "npu"
+            / "decode_score_multivalue_cluster_v1"
+            / "sweeps"
+            / "nangate45_decode_score_multivalue_cluster_8ns_binary_fsm_v3.json"
+        )
+        v4_sweep_path = (
+            REPO_ROOT
+            / "runs"
+            / "campaigns"
+            / "npu"
+            / "decode_score_multivalue_cluster_v1"
+            / "sweeps"
+            / "nangate45_decode_score_multivalue_cluster_8ns_binary_fsm_v4.json"
+        )
+        v3_sweep = json.loads(v3_sweep_path.read_text(encoding="utf-8"))
+        v4_sweep = json.loads(v4_sweep_path.read_text(encoding="utf-8"))
+        v3_cfg = self.run_block_sweep.parse_mode_compare_config(v3_sweep)
+        v4_cfg = self.run_block_sweep.parse_mode_compare_config(v4_sweep)
+        assert v3_cfg is not None
+        assert v4_cfg is not None
+        v3_mode = next(
+            m for m in v3_cfg["modes"] if str(m.get("slug", "")).strip() == "proxy_die_2500"
+        )
+        v4_mode = next(
+            m for m in v4_cfg["modes"] if str(m.get("slug", "")).strip() == "proxy_die_2500"
+        )
+        v3_applied = self.run_block_sweep.apply_mode_to_params(
+            {
+                "TAG": v3_sweep["flow_params"]["TAG"][0],
+                "FLOW_VARIANT": v3_sweep["flow_params"]["FLOW_VARIANT"][0],
+            },
+            v3_mode,
+            str(v3_sweep["tag_prefix"]),
+        )
+        v4_applied = self.run_block_sweep.apply_mode_to_params(
+            {
+                "TAG": v4_sweep["flow_params"]["TAG"][0],
+                "FLOW_VARIANT": v4_sweep["flow_params"]["FLOW_VARIANT"][0],
+            },
+            v4_mode,
+            str(v4_sweep["tag_prefix"]),
+        )
+
+        self.assertEqual(
+            "decode_score_multivalue_cluster_v1_8ns_binary_fsm_v3_proxy_die_2500",
+            v3_applied["FLOW_VARIANT"],
+        )
+        self.assertEqual(
+            "decode_score_multivalue_cluster_v1_8ns_binary_fsm_v4_proxy_die_2500",
+            v4_applied["FLOW_VARIANT"],
+        )
+        self.assertEqual(1, v4_applied["FLOW_VARIANT"].count("_proxy_die_2500"))
+        self.assertNotEqual(
+            self.run_block_sweep.make_run_id(v3_applied),
+            self.run_block_sweep.make_run_id(v4_applied),
+        )
+        self.assertNotEqual(v3_applied["FLOW_VARIANT"], v4_applied["FLOW_VARIANT"])
+
     def test_apply_repeat_to_params_sets_flow_random_seed(self):
         out = self.run_block_sweep.apply_repeat_to_params(
             {"TAG": "tag_flat", "FLOW_VARIANT": "var_flat"},

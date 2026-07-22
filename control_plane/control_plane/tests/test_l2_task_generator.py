@@ -8274,7 +8274,7 @@ def test_generate_l2_campaign_task_adds_decode_score_multivalue_cluster_activity
 
             assert (
                 "--required-flow-variant "
-                "decode_score_multivalue_cluster_v1_8ns_binary_fsm_v3_proxy_die_2500" in run
+                "decode_score_multivalue_cluster_v1_8ns_binary_fsm_v4_proxy_die_2500" in run
             )
             assert "--required-synth-args=-nofsm" in run
             assert (
@@ -8282,19 +8282,19 @@ def test_generate_l2_campaign_task_adds_decode_score_multivalue_cluster_activity
             )
             assert (
                 "--source-pnr-item-id "
-                "l1_decoder_attention_decode_score_multivalue_cluster_pnr_binary_fsm_8ns_v3_r2"
+                "l1_decoder_attention_decode_score_multivalue_cluster_pnr_binary_fsm_8ns_v3_r3"
                 in run
             )
             assert (
                 decoder_inputs["decode_score_multivalue_cluster_required_flow_variant"]
-                == "decode_score_multivalue_cluster_v1_8ns_binary_fsm_v3_proxy_die_2500"
+                == "decode_score_multivalue_cluster_v1_8ns_binary_fsm_v4_proxy_die_2500"
             )
             assert (
                 decoder_inputs["decode_score_multivalue_cluster_required_synth_args"] == "-nofsm"
             )
             assert (
                 decoder_inputs["decode_score_multivalue_cluster_source_pnr_item_id"]
-                == "l1_decoder_attention_decode_score_multivalue_cluster_pnr_binary_fsm_8ns_v3_r2"
+                == "l1_decoder_attention_decode_score_multivalue_cluster_pnr_binary_fsm_8ns_v3_r3"
             )
             assert (
                 decoder_inputs["decode_score_multivalue_cluster_min_sequential_register_activity_coverage"]

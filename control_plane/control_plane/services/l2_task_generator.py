@@ -33,11 +33,11 @@ _VERSION_SUFFIX_RE = re.compile(r"_v(\d+)$")
 _GQA_FOLDED_ACTIVITY_LANES_RE = re.compile(r"_gqa8_folded_lanes(1|2|4|8)_activity_power_")
 _CLUSTER_ACTIVITY_POWER_STRICT_REVISION = 14
 _CLUSTER_ACTIVITY_POWER_V14_FLOW_VARIANT = (
-    "decode_score_multivalue_cluster_v1_8ns_binary_fsm_v3_proxy_die_2500"
+    "decode_score_multivalue_cluster_v1_8ns_binary_fsm_v4_proxy_die_2500"
 )
 _CLUSTER_ACTIVITY_POWER_V14_SYNTH_ARGS = "-nofsm"
 _CLUSTER_ACTIVITY_POWER_V14_PNR_ITEM = (
-    "l1_decoder_attention_decode_score_multivalue_cluster_pnr_binary_fsm_8ns_v3_r2"
+    "l1_decoder_attention_decode_score_multivalue_cluster_pnr_binary_fsm_8ns_v3_r3"
 )
 _CLUSTER_ACTIVITY_POWER_V14_MIN_SEQUENTIAL_REGISTER_ACTIVITY_COVERAGE = 1.0
 

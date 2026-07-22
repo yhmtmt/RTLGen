@@ -12,7 +12,7 @@ from typing import cast
 
 EXPECTED_CLOCK_PERIOD = 8
 EXPECTED_TAG_PREFIX = "decode_score_multivalue_cluster_v1_8ns_binary_fsm"
-EXPECTED_FLOW_VARIANT = "decode_score_multivalue_cluster_v1_8ns_binary_fsm_v3_proxy_die_2500"
+EXPECTED_FLOW_VARIANT = "decode_score_multivalue_cluster_v1_8ns_binary_fsm_v4_proxy_die_2500"
 EXPECTED_DIE_AREA = "0 0 2500 2500"
 EXPECTED_CORE_AREA = "50 50 2450 2450"
 EXPECTED_PLACE_DENSITY = "0.4"
@@ -280,7 +280,7 @@ def validate_binary_fsm_metrics(
         raise ValueError(
             "missing required 8ns exact-state binary-FSM decode-score multivalue-cluster row "
             "(status=ok, TAG=decode_score_multivalue_cluster_v1_8ns_binary_fsm*, "
-            "FLOW_VARIANT=decode_score_multivalue_cluster_v1_8ns_binary_fsm_v3_proxy_die_2500, "
+            f"FLOW_VARIANT={EXPECTED_FLOW_VARIANT}, "
             "DIE_AREA=0 0 2500 2500, CORE_AREA=50 50 2450 2450, SYNTH_ARGS=-nofsm, "
             "PLACE_DENSITY=0.4, SYNTH_HIERARCHICAL=1, SYNTH_MEMORY_MAX_BITS=65536, "
             "critical_path_ns<=8); details: " + last_candidate_error
@@ -289,7 +289,7 @@ def validate_binary_fsm_metrics(
     raise ValueError(
         "missing required 8ns exact-state binary-FSM decode-score multivalue-cluster row "
         "(status=ok, TAG=decode_score_multivalue_cluster_v1_8ns_binary_fsm*, "
-        "FLOW_VARIANT=decode_score_multivalue_cluster_v1_8ns_binary_fsm_v3_proxy_die_2500, "
+        f"FLOW_VARIANT={EXPECTED_FLOW_VARIANT}, "
         "DIE_AREA=0 0 2500 2500, CORE_AREA=50 50 2450 2450, SYNTH_ARGS=-nofsm, "
         "PLACE_DENSITY=0.4, SYNTH_HIERARCHICAL=1, SYNTH_MEMORY_MAX_BITS=65536, "
         "critical_path_ns<=8)"
