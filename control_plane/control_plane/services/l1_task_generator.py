@@ -1458,7 +1458,7 @@ def _is_multivalue_cluster_8ns_bridge_sweep(*, item_id: str, sweep_path: str) ->
 
 def _is_multivalue_cluster_8ns_binary_fsm_sweep(*, item_id: str, sweep_path: str) -> bool:
     return (
-        item_id == "l1_decoder_attention_decode_score_multivalue_cluster_pnr_binary_fsm_8ns_v3"
+        _retry_base(item_id) == "l1_decoder_attention_decode_score_multivalue_cluster_pnr_binary_fsm_8ns_v3"
         and Path(sweep_path).name == "nangate45_decode_score_multivalue_cluster_8ns_binary_fsm_v3.json"
     )
 

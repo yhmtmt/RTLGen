@@ -5,7 +5,7 @@
       "decode_score_multivalue_cluster_v1_8ns_binary_fsm"
     ],
     "FLOW_VARIANT": [
-      "decode_score_multivalue_cluster_v1_8ns_binary_fsm_v3_proxy_die_2500"
+      "decode_score_multivalue_cluster_v1_8ns_binary_fsm_v3"
     ],
     "CLOCK_PERIOD": [
       8

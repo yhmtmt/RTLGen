@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1",
-  "source_commit_note": "Queue v14 exact-binary-fsm postroute re-run after PR #1413 merge f281d6f7 (all block_weight VCD + complete FSM provenance) and PR #1414 merge 66a2b3a1 (matched binary-FSM PNR v3 with SYNTH_ARGS=-nofsm).",
+  "source_commit_note": "PR #1413 merged complete block_weight VCD/FSM provenance, PR #1414 merged the binary-FSM PNR point, and PR #1415 merged strict v14 row selection and 100% routed-state coverage. V14 now requires the v3_r1 retry row; neither this retry implementation nor its result is claimed merged here.",
   "requested_items": [
     {
       "item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1",
@@ -449,7 +449,7 @@
       "abstraction_layer": "decoder_attention_decode_score_multivalue_cluster_activity_power",
       "comparison_role": "shared_score_multivalue_cluster_activity_power_gate",
       "depends_on_item_ids": [
-        "l1_decoder_attention_decode_score_multivalue_cluster_pnr_binary_fsm_8ns_v3",
+        "l1_decoder_attention_decode_score_multivalue_cluster_pnr_binary_fsm_8ns_v3_r1",
         "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1"
       ],
       "requires_merged_inputs": true,
@@ -465,8 +465,8 @@
         "reason": "Rerun preserves all existing direct-VCD, macro, clock, numeric, artifact, applied==matched, and zero query/apply-error gates; strengthens DFF-output coverage to 1.0; and forbids clamping, substitution, heuristic activity, or other gate relaxation. It selects only decode_score_multivalue_cluster_v1_8ns_binary_fsm_v3_proxy_die_2500 with SYNTH_ARGS=-nofsm."
       },
       "status": "pending_implementation_merge",
-      "paired_baseline_item_id": "l1_decoder_attention_decode_score_multivalue_cluster_pnr_binary_fsm_8ns_v3"
+      "paired_baseline_item_id": "l1_decoder_attention_decode_score_multivalue_cluster_pnr_binary_fsm_8ns_v3_r1"
     }
   ],
-  "source_commit": "66a2b3a10a64cb721880ff97282bf349a7b7d514"
+  "source_commit": "b968b50997ff980dd0a367ff0fe7c98d4f89b7fb"
 }
