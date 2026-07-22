@@ -1,31 +1,48 @@
 `timescale 1ns/1ps
 
-// Banked read-only value-memory service with per-bank request queues,
-// configurable read latency, and sliced 512-bit responses over a narrower
-// packet transport.
+// Banked value-memory service. Requests are keyed by address and semantic
+// value_slice. Responses preserve the request metadata and return a segmented
+// 512-bit matrix with fragment index/last sideband.
 module banked_value_memory_service #(
   parameter integer PACKET_W = 128,
+  parameter integer VALUE_W = 512,
+  parameter integer FRAG_IDX_W = ((VALUE_W / PACKET_W) <= 1) ? 1 : $clog2(VALUE_W / PACKET_W),
   parameter integer SOURCE_W = 2,
   parameter integer TAG_W = 8,
   parameter integer ADDR_W = 12,
-  parameter integer SLICE_W = 3,
-  parameter integer VALUE_W = 512,
+  parameter integer VALUE_SLICE_W = 4,
+  parameter integer STORE_DEPTH = 16,
   parameter integer BANKS = 4,
   parameter integer BANK_QUEUE_DEPTH = 2,
-  parameter integer RESP_QUEUE_DEPTH = 2,
   parameter integer READ_LATENCY = 2,
-  parameter integer COUNTER_W = 32
+  parameter integer COUNTER_W = 32,
+  parameter integer INIT_FROM_GENERATOR = 0
 ) (
   input wire clk,
   input wire rst_n,
 
+  input wire preload_valid,
+  output wire preload_ready,
+  input wire [ADDR_W-1:0] preload_addr,
+  input wire [VALUE_SLICE_W-1:0] preload_value_slice,
+  input wire [VALUE_W-1:0] preload_matrix,
+
   input wire req_valid,
   output wire req_ready,
-  input wire [PACKET_W-1:0] req_packet,
+  input wire [SOURCE_W-1:0] req_source,
+  input wire [TAG_W-1:0] req_tag,
+  input wire [ADDR_W-1:0] req_addr,
+  input wire [VALUE_SLICE_W-1:0] req_value_slice,
 
   output wire resp_valid,
   input wire resp_ready,
-  output wire [PACKET_W-1:0] resp_packet,
+  output wire [SOURCE_W-1:0] resp_source,
+  output wire [TAG_W-1:0] resp_tag,
+  output wire [ADDR_W-1:0] resp_addr,
+  output wire [VALUE_SLICE_W-1:0] resp_value_slice,
+  output wire [FRAG_IDX_W-1:0] resp_fragment_idx,
+  output wire resp_last,
+  output wire [PACKET_W-1:0] resp_data,
 
   output reg [COUNTER_W-1:0] accepted_req_count,
   output reg [COUNTER_W-1:0] emitted_resp_count,
@@ -36,229 +53,259 @@ module banked_value_memory_service #(
   output wire [COUNTER_W-1:0] resp_current_occupancy,
   output reg [COUNTER_W-1:0] resp_max_occupancy
 );
+  localparam integer FRAGMENTS = VALUE_W / PACKET_W;
+  localparam integer VALUE_SLICE_COUNT = (1 << VALUE_SLICE_W);
+  localparam integer STORE_ENTRY_COUNT = STORE_DEPTH * VALUE_SLICE_COUNT;
   localparam integer BANK_SEL_W = (BANKS <= 1) ? 1 : $clog2(BANKS);
   localparam integer BANK_PTR_W = (BANKS <= 1) ? 1 : $clog2(BANKS);
   localparam integer BANK_COUNT_W = (BANK_QUEUE_DEPTH <= 1) ? 1 : $clog2(BANK_QUEUE_DEPTH + 1);
-  localparam integer RESP_COUNT_W = (RESP_QUEUE_DEPTH <= 1) ? 1 : $clog2(RESP_QUEUE_DEPTH + 1);
-  localparam integer LAT_W = (READ_LATENCY <= 1) ? 1 : $clog2(READ_LATENCY);
-  localparam integer SRC_LSB = 0;
-  localparam integer TAG_LSB = SRC_LSB + SOURCE_W;
-  localparam integer ADDR_LSB = TAG_LSB + TAG_W;
-  localparam integer SLICE_LSB = ADDR_LSB + ADDR_W;
-  localparam integer PAYLOAD_LSB = SLICE_LSB + SLICE_W;
-  localparam integer PAYLOAD_W = PACKET_W - PAYLOAD_LSB;
+  localparam integer LAT_W = (READ_LATENCY <= 1) ? 1 : $clog2(READ_LATENCY + 1);
+  localparam integer REQ_META_W = SOURCE_W + TAG_W + ADDR_W + VALUE_SLICE_W;
   localparam integer REQ_OCC_W = $clog2((BANKS * (BANK_QUEUE_DEPTH + 1)) + BANKS + 1);
+  localparam integer RESP_OCC_W = $clog2(BANKS + 1);
+  localparam integer REQ_SRC_LSB = 0;
+  localparam integer REQ_TAG_LSB = REQ_SRC_LSB + SOURCE_W;
+  localparam integer REQ_ADDR_LSB = REQ_TAG_LSB + TAG_W;
+  localparam integer REQ_SLICE_LSB = REQ_ADDR_LSB + ADDR_W;
 
-  wire [BANKS-1:0] bank_fifo_in_ready;
   wire [BANKS-1:0] bank_fifo_in_valid;
+  wire [BANKS-1:0] bank_fifo_in_ready;
   wire [BANKS-1:0] bank_fifo_out_valid;
   wire [BANKS-1:0] bank_fifo_out_ready;
-  wire [PACKET_W-1:0] bank_fifo_out_packet [0:BANKS-1];
-  wire [BANK_COUNT_W-1:0] bank_fifo_occupancy [0:BANKS-1];
-  wire [PACKET_W-1:0] resp_fifo_out_packet;
-  wire [RESP_COUNT_W-1:0] resp_fifo_occupancy;
-  wire resp_fifo_in_ready;
-  wire resp_fifo_out_valid;
+  wire [BANKS-1:0] bank_launch_fire;
+  wire [BANKS*REQ_META_W-1:0] bank_fifo_out_bus;
+  wire [BANKS*BANK_COUNT_W-1:0] bank_fifo_occupancy_bus;
 
-  reg [PACKET_W-1:0] active_packet [0:BANKS-1];
-  reg [BANKS-1:0] bank_active;
-  reg [LAT_W-1:0] bank_latency_left [0:BANKS-1];
-  reg [BANKS-1:0] bank_launch;
-  reg [BANKS-1:0] bank_resp_ready_mask;
-  reg resp_fifo_in_valid;
-  reg [PACKET_W-1:0] resp_fifo_in_packet;
+  reg [BANKS-1:0] bank_busy;
+  reg [SOURCE_W-1:0] active_source [0:BANKS-1];
+  reg [TAG_W-1:0] active_tag [0:BANKS-1];
+  reg [ADDR_W-1:0] active_addr [0:BANKS-1];
+  reg [VALUE_SLICE_W-1:0] active_slice [0:BANKS-1];
+  reg [VALUE_W-1:0] active_matrix [0:BANKS-1];
+  reg [FRAG_IDX_W-1:0] active_fragment [0:BANKS-1];
+  reg [LAT_W-1:0] bank_latency [0:BANKS-1];
+  reg [BANKS-1:0] bank_ready_fragment_r;
   reg [BANK_PTR_W-1:0] resp_rr_cursor;
-  reg [BANK_PTR_W-1:0] resp_grant_bank;
-  reg any_ready_response;
-  reg [BANK_SEL_W-1:0] target_bank;
-  reg bank_conflicted;
-  reg [REQ_OCC_W-1:0] req_occupancy_sum;
+  reg [BANK_PTR_W-1:0] resp_grant_bank_r;
+  reg any_ready_response_r;
+  reg [REQ_OCC_W-1:0] req_occupancy_sum_r;
+  reg [RESP_OCC_W-1:0] resp_occupancy_sum_r;
 
-  integer bank_i;
+  reg [VALUE_W-1:0] value_mem [0:STORE_ENTRY_COUNT-1];
+
+  integer occ_bank_i;
+  integer seq_bank_i;
   integer scan_i;
   integer scan_bank_int;
+  integer init_addr;
+  integer init_slice;
   reg [BANK_PTR_W-1:0] scan_bank;
 
-  function [SOURCE_W-1:0] packet_source;
-    input [PACKET_W-1:0] packet;
+  function [REQ_META_W-1:0] pack_req;
+    input [SOURCE_W-1:0] source;
+    input [TAG_W-1:0] tag;
+    input [ADDR_W-1:0] addr;
+    input [VALUE_SLICE_W-1:0] value_slice;
     begin
-      packet_source = packet[SRC_LSB +: SOURCE_W];
+      pack_req = {REQ_META_W{1'b0}};
+      pack_req[REQ_SRC_LSB +: SOURCE_W] = source;
+      pack_req[REQ_TAG_LSB +: TAG_W] = tag;
+      pack_req[REQ_ADDR_LSB +: ADDR_W] = addr;
+      pack_req[REQ_SLICE_LSB +: VALUE_SLICE_W] = value_slice;
     end
   endfunction
 
-  function [TAG_W-1:0] packet_tag;
-    input [PACKET_W-1:0] packet;
+  function [SOURCE_W-1:0] meta_source;
+    input [REQ_META_W-1:0] meta;
     begin
-      packet_tag = packet[TAG_LSB +: TAG_W];
+      meta_source = meta[REQ_SRC_LSB +: SOURCE_W];
     end
   endfunction
 
-  function [ADDR_W-1:0] packet_addr;
-    input [PACKET_W-1:0] packet;
+  function [TAG_W-1:0] meta_tag;
+    input [REQ_META_W-1:0] meta;
     begin
-      packet_addr = packet[ADDR_LSB +: ADDR_W];
+      meta_tag = meta[REQ_TAG_LSB +: TAG_W];
     end
   endfunction
 
-  function [SLICE_W-1:0] packet_slice;
-    input [PACKET_W-1:0] packet;
+  function [ADDR_W-1:0] meta_addr;
+    input [REQ_META_W-1:0] meta;
     begin
-      packet_slice = packet[SLICE_LSB +: SLICE_W];
+      meta_addr = meta[REQ_ADDR_LSB +: ADDR_W];
     end
   endfunction
 
-  function [BANK_SEL_W-1:0] packet_bank;
-    input [PACKET_W-1:0] packet;
+  function [VALUE_SLICE_W-1:0] meta_slice;
+    input [REQ_META_W-1:0] meta;
+    begin
+      meta_slice = meta[REQ_SLICE_LSB +: VALUE_SLICE_W];
+    end
+  endfunction
+
+  function [BANK_SEL_W-1:0] bank_from_addr;
+    input [ADDR_W-1:0] addr;
     integer bank_int;
     begin
-      bank_int = packet_addr(packet) % BANKS;
-      packet_bank = bank_int[BANK_SEL_W-1:0];
+      bank_int = addr % BANKS;
+      bank_from_addr = bank_int[BANK_SEL_W-1:0];
     end
   endfunction
 
-  function [VALUE_W-1:0] make_value_line;
+  function integer store_index;
     input [ADDR_W-1:0] addr;
+    input [VALUE_SLICE_W-1:0] value_slice;
+    begin
+      store_index = (addr * VALUE_SLICE_COUNT) + value_slice;
+    end
+  endfunction
+
+  function [VALUE_W-1:0] generated_matrix;
+    input integer addr;
+    input integer value_slice;
     integer word_i;
     reg [63:0] word_value;
     begin
-      make_value_line = {VALUE_W{1'b0}};
+      generated_matrix = {VALUE_W{1'b0}};
       for (word_i = 0; word_i < (VALUE_W / 64); word_i = word_i + 1) begin
-        word_value = {16'hd000 + word_i[15:0], 16'h4100 + addr[15:0], 16'h2200 + word_i[15:0], addr[15:0] ^ (word_i * 16'h0011)};
-        make_value_line[(word_i * 64) +: 64] = word_value;
+        word_value = {8'hd0 + value_slice[7:0], 8'h40 + word_i[7:0],
+                      addr[15:0], value_slice[15:0], word_i[15:0]};
+        generated_matrix[(word_i * 64) +: 64] = word_value;
       end
     end
   endfunction
 
-  function [PAYLOAD_W-1:0] extract_slice;
-    input [VALUE_W-1:0] line;
-    input [SLICE_W-1:0] slice;
-    integer bit_i;
-    integer line_bit;
-    begin
-      extract_slice = {PAYLOAD_W{1'b0}};
-      for (bit_i = 0; bit_i < PAYLOAD_W; bit_i = bit_i + 1) begin
-        line_bit = (slice * PAYLOAD_W) + bit_i;
-        if (line_bit < VALUE_W) begin
-          extract_slice[bit_i] = line[line_bit];
-        end
-      end
-    end
-  endfunction
+  wire preload_fire = preload_valid && preload_ready;
+  wire req_fire = req_valid && req_ready;
+  wire resp_fire = resp_valid && resp_ready;
 
-  function [PACKET_W-1:0] build_response_packet;
-    input [PACKET_W-1:0] request_packet;
-    reg [VALUE_W-1:0] line;
-    reg [PAYLOAD_W-1:0] payload;
-    begin
-      line = make_value_line(packet_addr(request_packet));
-      payload = extract_slice(line, packet_slice(request_packet));
-      build_response_packet = request_packet;
-      build_response_packet[PAYLOAD_LSB +: PAYLOAD_W] = payload;
-    end
-  endfunction
+  assign preload_ready = 1'b1;
+  assign req_ready = bank_fifo_in_ready[bank_from_addr(req_addr)];
+  assign resp_valid = any_ready_response_r;
+  assign resp_source = active_source[resp_grant_bank_r];
+  assign resp_tag = active_tag[resp_grant_bank_r];
+  assign resp_addr = active_addr[resp_grant_bank_r];
+  assign resp_value_slice = active_slice[resp_grant_bank_r];
+  assign resp_fragment_idx = active_fragment[resp_grant_bank_r];
+  assign resp_last = any_ready_response_r &&
+                     (active_fragment[resp_grant_bank_r] == (FRAGMENTS - 1));
+  assign resp_data = any_ready_response_r ?
+    active_matrix[resp_grant_bank_r][(active_fragment[resp_grant_bank_r] * PACKET_W) +: PACKET_W] :
+    {PACKET_W{1'b0}};
+  assign req_current_occupancy = {{(COUNTER_W-REQ_OCC_W){1'b0}}, req_occupancy_sum_r};
+  assign resp_current_occupancy = {{(COUNTER_W-RESP_OCC_W){1'b0}}, resp_occupancy_sum_r};
 
   genvar bank_gi;
   generate
     for (bank_gi = 0; bank_gi < BANKS; bank_gi = bank_gi + 1) begin : gen_bank_fifo
       noc_ready_valid_fifo #(
-        .WIDTH(PACKET_W),
+        .WIDTH(REQ_META_W),
         .DEPTH(BANK_QUEUE_DEPTH)
       ) u_bank_fifo (
         .clk(clk),
         .rst_n(rst_n),
         .in_valid(bank_fifo_in_valid[bank_gi]),
         .in_ready(bank_fifo_in_ready[bank_gi]),
-        .in_data(req_packet),
+        .in_data(pack_req(req_source, req_tag, req_addr, req_value_slice)),
         .out_valid(bank_fifo_out_valid[bank_gi]),
-        .out_ready(bank_launch[bank_gi]),
-        .out_data(bank_fifo_out_packet[bank_gi]),
-        .occupancy(bank_fifo_occupancy[bank_gi]),
+        .out_ready(bank_fifo_out_ready[bank_gi]),
+        .out_data(bank_fifo_out_bus[(bank_gi * REQ_META_W) +: REQ_META_W]),
+        .occupancy(bank_fifo_occupancy_bus[(bank_gi * BANK_COUNT_W) +: BANK_COUNT_W]),
         .max_occupancy()
       );
-      assign bank_fifo_out_ready[bank_gi] = bank_launch[bank_gi];
-    end
-  endgenerate
 
-  noc_ready_valid_fifo #(
-    .WIDTH(PACKET_W),
-    .DEPTH(RESP_QUEUE_DEPTH)
-  ) u_resp_fifo (
-    .clk(clk),
-    .rst_n(rst_n),
-    .in_valid(resp_fifo_in_valid),
-    .in_ready(resp_fifo_in_ready),
-    .in_data(resp_fifo_in_packet),
-    .out_valid(resp_fifo_out_valid),
-    .out_ready(resp_ready),
-    .out_data(resp_fifo_out_packet),
-    .occupancy(resp_fifo_occupancy),
-    .max_occupancy()
-  );
-
-  assign resp_valid = resp_fifo_out_valid;
-  assign resp_packet = resp_fifo_out_packet;
-  assign resp_current_occupancy = {{(COUNTER_W-RESP_COUNT_W){1'b0}}, resp_fifo_occupancy};
-
-  always @(*) begin
-    target_bank = packet_bank(req_packet);
-  end
-
-  assign req_ready = bank_fifo_in_ready[target_bank];
-
-  generate
-    for (bank_gi = 0; bank_gi < BANKS; bank_gi = bank_gi + 1) begin : gen_bank_inputs
-      assign bank_fifo_in_valid[bank_gi] = req_valid && (target_bank == bank_gi[BANK_SEL_W-1:0]);
+      assign bank_fifo_in_valid[bank_gi] =
+        req_valid && (bank_from_addr(req_addr) == bank_gi[BANK_SEL_W-1:0]);
+      assign bank_fifo_out_ready[bank_gi] = !bank_busy[bank_gi] && bank_fifo_out_valid[bank_gi];
+      assign bank_launch_fire[bank_gi] = bank_fifo_out_valid[bank_gi] && bank_fifo_out_ready[bank_gi];
     end
   endgenerate
 
   always @(*) begin
-    bank_conflicted = 1'b0;
-    if (req_valid && req_ready) begin
-      if (bank_active[target_bank] || (bank_fifo_occupancy[target_bank] != {BANK_COUNT_W{1'b0}})) begin
-        bank_conflicted = 1'b1;
+    req_occupancy_sum_r = {REQ_OCC_W{1'b0}};
+    resp_occupancy_sum_r = {RESP_OCC_W{1'b0}};
+    for (occ_bank_i = 0; occ_bank_i < BANKS; occ_bank_i = occ_bank_i + 1) begin
+      req_occupancy_sum_r = req_occupancy_sum_r +
+        bank_fifo_occupancy_bus[(occ_bank_i * BANK_COUNT_W) +: BANK_COUNT_W];
+      if (bank_busy[occ_bank_i]) begin
+        req_occupancy_sum_r = req_occupancy_sum_r + {{(REQ_OCC_W-1){1'b0}}, 1'b1};
+      end
+      bank_ready_fragment_r[occ_bank_i] =
+        bank_busy[occ_bank_i] && (bank_latency[occ_bank_i] == {LAT_W{1'b0}});
+      if (bank_ready_fragment_r[occ_bank_i]) begin
+        resp_occupancy_sum_r = resp_occupancy_sum_r + {{(RESP_OCC_W-1){1'b0}}, 1'b1};
       end
     end
-  end
 
-  always @(*) begin
-    req_occupancy_sum = {REQ_OCC_W{1'b0}};
-    for (bank_i = 0; bank_i < BANKS; bank_i = bank_i + 1) begin
-      req_occupancy_sum = req_occupancy_sum + bank_fifo_occupancy[bank_i];
-      if (bank_active[bank_i]) begin
-        req_occupancy_sum = req_occupancy_sum + {{(REQ_OCC_W-1){1'b0}}, 1'b1};
-      end
-    end
-  end
-
-  assign req_current_occupancy = {{(COUNTER_W-REQ_OCC_W){1'b0}}, req_occupancy_sum};
-
-  always @(*) begin
-    for (bank_i = 0; bank_i < BANKS; bank_i = bank_i + 1) begin
-      bank_launch[bank_i] = !bank_active[bank_i] && bank_fifo_out_valid[bank_i];
-      bank_resp_ready_mask[bank_i] = bank_active[bank_i] && (bank_latency_left[bank_i] == {LAT_W{1'b0}});
-    end
-
-    any_ready_response = 1'b0;
-    resp_grant_bank = resp_rr_cursor;
+    any_ready_response_r = 1'b0;
+    resp_grant_bank_r = resp_rr_cursor;
     for (scan_i = 0; scan_i < BANKS; scan_i = scan_i + 1) begin
       scan_bank_int = resp_rr_cursor + scan_i;
       if (scan_bank_int >= BANKS) begin
         scan_bank_int = scan_bank_int - BANKS;
       end
       scan_bank = scan_bank_int[BANK_PTR_W-1:0];
-      if (!any_ready_response && bank_resp_ready_mask[scan_bank]) begin
-        any_ready_response = 1'b1;
-        resp_grant_bank = scan_bank;
+      if (!any_ready_response_r && bank_ready_fragment_r[scan_bank]) begin
+        any_ready_response_r = 1'b1;
+        resp_grant_bank_r = scan_bank;
       end
     end
-
-    resp_fifo_in_valid = any_ready_response && resp_fifo_in_ready;
-    resp_fifo_in_packet = any_ready_response ? build_response_packet(active_packet[resp_grant_bank]) : {PACKET_W{1'b0}};
   end
 
+  integer init_i;
+  initial begin
+    if ((PACKET_W != 128) && (PACKET_W != 256)) begin
+      $error("banked_value_memory_service PACKET_W must be 128 or 256, got %0d", PACKET_W);
+      $finish(1);
+    end
+    if (VALUE_W != 512) begin
+      $error("banked_value_memory_service VALUE_W must be 512, got %0d", VALUE_W);
+      $finish(1);
+    end
+    if ((VALUE_W % PACKET_W) != 0) begin
+      $error("banked_value_memory_service VALUE_W must be an integer multiple of PACKET_W");
+      $finish(1);
+    end
+    if (VALUE_SLICE_W != 4) begin
+      $error("banked_value_memory_service VALUE_SLICE_W must be 4, got %0d", VALUE_SLICE_W);
+      $finish(1);
+    end
+    if ((1 << FRAG_IDX_W) < FRAGMENTS) begin
+      $error("banked_value_memory_service FRAG_IDX_W is too small for %0d fragments", FRAGMENTS);
+      $finish(1);
+    end
+    if ((STORE_DEPTH <= 0) || (BANKS <= 0)) begin
+      $error("banked_value_memory_service STORE_DEPTH and BANKS must be positive");
+      $finish(1);
+    end
+    if (STORE_DEPTH > (1 << ADDR_W)) begin
+      $error("banked_value_memory_service STORE_DEPTH exceeds ADDR_W encoding");
+      $finish(1);
+    end
+    for (init_i = 0; init_i < STORE_ENTRY_COUNT; init_i = init_i + 1) begin
+      if (INIT_FROM_GENERATOR != 0) begin
+        init_addr = init_i / VALUE_SLICE_COUNT;
+        init_slice = init_i % VALUE_SLICE_COUNT;
+        value_mem[init_i] = generated_matrix(init_addr, init_slice);
+      end else begin
+        value_mem[init_i] = {VALUE_W{1'b0}};
+      end
+    end
+  end
+
+  integer preload_idx;
   always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
-      bank_active <= {BANKS{1'b0}};
+      bank_busy <= {BANKS{1'b0}};
+      for (seq_bank_i = 0; seq_bank_i < BANKS; seq_bank_i = seq_bank_i + 1) begin
+        active_source[seq_bank_i] <= {SOURCE_W{1'b0}};
+        active_tag[seq_bank_i] <= {TAG_W{1'b0}};
+        active_addr[seq_bank_i] <= {ADDR_W{1'b0}};
+        active_slice[seq_bank_i] <= {VALUE_SLICE_W{1'b0}};
+        active_matrix[seq_bank_i] <= {VALUE_W{1'b0}};
+        active_fragment[seq_bank_i] <= {FRAG_IDX_W{1'b0}};
+        bank_latency[seq_bank_i] <= {LAT_W{1'b0}};
+      end
       resp_rr_cursor <= {BANK_PTR_W{1'b0}};
       accepted_req_count <= {COUNTER_W{1'b0}};
       emitted_resp_count <= {COUNTER_W{1'b0}};
@@ -266,46 +313,69 @@ module banked_value_memory_service #(
       response_block_cycles <= {COUNTER_W{1'b0}};
       req_max_occupancy <= {COUNTER_W{1'b0}};
       resp_max_occupancy <= {COUNTER_W{1'b0}};
-      for (bank_i = 0; bank_i < BANKS; bank_i = bank_i + 1) begin
-        active_packet[bank_i] <= {PACKET_W{1'b0}};
-        bank_latency_left[bank_i] <= {LAT_W{1'b0}};
-      end
     end else begin
-      if (req_valid && req_ready) begin
+      if (preload_fire && (preload_addr < STORE_DEPTH[ADDR_W-1:0])) begin
+        preload_idx = store_index(preload_addr, preload_value_slice);
+        value_mem[preload_idx] <= preload_matrix;
+      end
+
+      if (req_fire) begin
         accepted_req_count <= accepted_req_count + {{(COUNTER_W-1){1'b0}}, 1'b1};
-        if (bank_conflicted) begin
+        if (bank_busy[bank_from_addr(req_addr)] ||
+            (bank_fifo_occupancy_bus[(bank_from_addr(req_addr) * BANK_COUNT_W) +: BANK_COUNT_W] != {BANK_COUNT_W{1'b0}})) begin
           bank_conflict_count <= bank_conflict_count + {{(COUNTER_W-1){1'b0}}, 1'b1};
         end
       end
 
-      for (bank_i = 0; bank_i < BANKS; bank_i = bank_i + 1) begin
-        if (bank_launch[bank_i]) begin
-          bank_active[bank_i] <= 1'b1;
-          active_packet[bank_i] <= bank_fifo_out_packet[bank_i];
-          if (READ_LATENCY <= 1) begin
-            bank_latency_left[bank_i] <= {LAT_W{1'b0}};
+      for (seq_bank_i = 0; seq_bank_i < BANKS; seq_bank_i = seq_bank_i + 1) begin
+        if (bank_launch_fire[seq_bank_i]) begin
+          bank_busy[seq_bank_i] <= 1'b1;
+          active_source[seq_bank_i] <=
+            meta_source(bank_fifo_out_bus[(seq_bank_i * REQ_META_W) +: REQ_META_W]);
+          active_tag[seq_bank_i] <=
+            meta_tag(bank_fifo_out_bus[(seq_bank_i * REQ_META_W) +: REQ_META_W]);
+          active_addr[seq_bank_i] <=
+            meta_addr(bank_fifo_out_bus[(seq_bank_i * REQ_META_W) +: REQ_META_W]);
+          active_slice[seq_bank_i] <=
+            meta_slice(bank_fifo_out_bus[(seq_bank_i * REQ_META_W) +: REQ_META_W]);
+          active_fragment[seq_bank_i] <= {FRAG_IDX_W{1'b0}};
+          if (READ_LATENCY == 0) begin
+            bank_latency[seq_bank_i] <= {LAT_W{1'b0}};
           end else begin
-            bank_latency_left[bank_i] <= READ_LATENCY - 1;
+            bank_latency[seq_bank_i] <= READ_LATENCY[LAT_W-1:0];
           end
-        end else if (bank_active[bank_i] && (bank_latency_left[bank_i] != {LAT_W{1'b0}})) begin
-          bank_latency_left[bank_i] <= bank_latency_left[bank_i] - {{(LAT_W-1){1'b0}}, 1'b1};
+          if (meta_addr(bank_fifo_out_bus[(seq_bank_i * REQ_META_W) +: REQ_META_W]) <
+              STORE_DEPTH[ADDR_W-1:0]) begin
+            active_matrix[seq_bank_i] <=
+              value_mem[store_index(
+                meta_addr(bank_fifo_out_bus[(seq_bank_i * REQ_META_W) +: REQ_META_W]),
+                meta_slice(bank_fifo_out_bus[(seq_bank_i * REQ_META_W) +: REQ_META_W]))];
+          end else begin
+            active_matrix[seq_bank_i] <= {VALUE_W{1'b0}};
+          end
+        end else if (bank_busy[seq_bank_i] && (bank_latency[seq_bank_i] != {LAT_W{1'b0}})) begin
+          bank_latency[seq_bank_i] <=
+            bank_latency[seq_bank_i] - {{(LAT_W-1){1'b0}}, 1'b1};
         end
       end
 
-      if (any_ready_response && !resp_fifo_in_ready) begin
+      if (resp_valid && !resp_ready) begin
         response_block_cycles <= response_block_cycles + {{(COUNTER_W-1){1'b0}}, 1'b1};
       end
-      if (resp_fifo_in_valid) begin
-        bank_active[resp_grant_bank] <= 1'b0;
-        if (resp_grant_bank == (BANKS - 1)) begin
+      if (resp_fire) begin
+        if (resp_last) begin
+          bank_busy[resp_grant_bank_r] <= 1'b0;
+          active_fragment[resp_grant_bank_r] <= {FRAG_IDX_W{1'b0}};
+          emitted_resp_count <= emitted_resp_count + {{(COUNTER_W-1){1'b0}}, 1'b1};
+        end else begin
+          active_fragment[resp_grant_bank_r] <=
+            active_fragment[resp_grant_bank_r] + {{(FRAG_IDX_W-1){1'b0}}, 1'b1};
+        end
+        if (resp_grant_bank_r == (BANKS - 1)) begin
           resp_rr_cursor <= {BANK_PTR_W{1'b0}};
         end else begin
-          resp_rr_cursor <= resp_grant_bank + {{(BANK_PTR_W-1){1'b0}}, 1'b1};
+          resp_rr_cursor <= resp_grant_bank_r + {{(BANK_PTR_W-1){1'b0}}, 1'b1};
         end
-      end
-
-      if (resp_valid && resp_ready) begin
-        emitted_resp_count <= emitted_resp_count + {{(COUNTER_W-1){1'b0}}, 1'b1};
       end
 
       if (req_current_occupancy > req_max_occupancy) begin

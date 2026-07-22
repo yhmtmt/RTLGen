@@ -22,6 +22,7 @@ TB_AXI=npu/sim/rtl/tb_axi_lite_mmio.sv
 TB_AXI_MULTI=npu/sim/rtl/tb_axi_lite_multi.sv
 NOC_FIFO=npu/sim/rtl/noc_ready_valid_fifo.sv
 NOC_ROUTER=npu/sim/rtl/noc_ready_valid_router.sv
+NOC_REASSEMBLER=npu/sim/rtl/noc_value_matrix_reassembler.sv
 VALUE_SERVICE=npu/sim/rtl/banked_value_memory_service.sv
 TB_NOC_ROUTER=npu/sim/rtl/tb_noc_ready_valid_router.sv
 TB_VALUE_SERVICE=npu/sim/rtl/tb_banked_value_memory_service.sv
@@ -100,11 +101,11 @@ run-noc-router-local-256:
 	$(VVP) $(OUT_NOC_ROUTER)
 
 run-value-service-128:
-	$(IVERILOG) $(IVERILOGFLAGS) -P tb_banked_value_memory_service.PACKET_W=128 -s tb_banked_value_memory_service -o $(OUT_VALUE_SERVICE) $(NOC_FIFO) $(NOC_ROUTER) $(VALUE_SERVICE) $(TB_VALUE_SERVICE)
+	$(IVERILOG) $(IVERILOGFLAGS) -P tb_banked_value_memory_service.PACKET_W=128 -s tb_banked_value_memory_service -o $(OUT_VALUE_SERVICE) $(NOC_FIFO) $(NOC_ROUTER) $(NOC_REASSEMBLER) $(VALUE_SERVICE) $(TB_VALUE_SERVICE)
 	$(VVP) $(OUT_VALUE_SERVICE)
 
 run-value-service-256:
-	$(IVERILOG) $(IVERILOGFLAGS) -P tb_banked_value_memory_service.PACKET_W=256 -s tb_banked_value_memory_service -o $(OUT_VALUE_SERVICE) $(NOC_FIFO) $(NOC_ROUTER) $(VALUE_SERVICE) $(TB_VALUE_SERVICE)
+	$(IVERILOG) $(IVERILOGFLAGS) -P tb_banked_value_memory_service.PACKET_W=256 -s tb_banked_value_memory_service -o $(OUT_VALUE_SERVICE) $(NOC_FIFO) $(NOC_ROUTER) $(NOC_REASSEMBLER) $(VALUE_SERVICE) $(TB_VALUE_SERVICE)
 	$(VVP) $(OUT_VALUE_SERVICE)
 
 status:
