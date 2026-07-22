@@ -37,7 +37,7 @@ _CLUSTER_ACTIVITY_POWER_V14_FLOW_VARIANT = (
 )
 _CLUSTER_ACTIVITY_POWER_V14_SYNTH_ARGS = "-nofsm"
 _CLUSTER_ACTIVITY_POWER_V14_PNR_ITEM = (
-    "l1_decoder_attention_decode_score_multivalue_cluster_pnr_binary_fsm_8ns_v3_r1"
+    "l1_decoder_attention_decode_score_multivalue_cluster_pnr_binary_fsm_8ns_v3_r2"
 )
 _CLUSTER_ACTIVITY_POWER_V14_MIN_SEQUENTIAL_REGISTER_ACTIVITY_COVERAGE = 1.0
 

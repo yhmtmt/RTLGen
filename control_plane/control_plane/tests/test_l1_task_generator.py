@@ -2894,7 +2894,7 @@ def test_generate_l1_sweep_task_adds_binary_fsm_checker_for_exact_8ns_multivalue
             )
 
 
-def test_generate_l1_sweep_task_adds_binary_fsm_checker_for_retry_8ns_multivalue_cluster_item() -> None:
+def test_generate_l1_sweep_task_adds_binary_fsm_checker_for_retry_8ns_multivalue_cluster_item_r2() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
         repo_root.mkdir()
@@ -2913,7 +2913,7 @@ def test_generate_l1_sweep_task_adds_binary_fsm_checker_for_retry_8ns_multivalue
                     config_paths=[config_path],
                     platform="nangate45",
                     out_root="runs/designs/npu_blocks",
-                    item_id="l1_decoder_attention_decode_score_multivalue_cluster_pnr_binary_fsm_8ns_v3_r1",
+                    item_id="l1_decoder_attention_decode_score_multivalue_cluster_pnr_binary_fsm_8ns_v3_r2",
                     requested_by="@tester",
                     source_commit=source_commit,
                     abstraction_layer="decoder_attention_decode_score_multivalue_cluster",

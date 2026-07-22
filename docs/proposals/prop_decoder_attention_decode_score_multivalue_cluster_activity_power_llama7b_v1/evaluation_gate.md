@@ -1,7 +1,7 @@
 # Evaluation Gate
 
 1. Queue v14 only after merged
-   `l1_decoder_attention_decode_score_multivalue_cluster_pnr_binary_fsm_8ns_v3_r1` and
+   `l1_decoder_attention_decode_score_multivalue_cluster_pnr_binary_fsm_8ns_v3_r2` and
    `l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1`
    evidence is available.
 2. Run the activity-power audit on the remote evaluator with evaluator-local
