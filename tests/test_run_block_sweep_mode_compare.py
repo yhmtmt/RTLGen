@@ -201,6 +201,35 @@ class ModeCompareRegressionTest(unittest.TestCase):
         self.assertEqual("seed_flat_nomacro", out2["tag_prefix"])
         self.assertEqual("flat_nomacro", out2["FLOW_VARIANT"])
 
+    def test_apply_mode_to_params_does_not_duplicate_binary_fsm_proxy_mode(self) -> None:
+        sweep_path = (
+            REPO_ROOT
+            / "runs"
+            / "campaigns"
+            / "npu"
+            / "decode_score_multivalue_cluster_v1"
+            / "sweeps"
+            / "nangate45_decode_score_multivalue_cluster_8ns_binary_fsm_v3.json"
+        )
+        sweep = json.loads(sweep_path.read_text(encoding="utf-8"))
+        mode_cfg = self.run_block_sweep.parse_mode_compare_config(sweep)
+        assert mode_cfg is not None
+        proxy_mode = next(
+            mode for mode in mode_cfg["modes"] if str(mode.get("slug", "")).strip() == "proxy_die_2500"
+        )
+        out = self.run_block_sweep.apply_mode_to_params(
+            {
+                "TAG": sweep["flow_params"]["TAG"][0],
+                "FLOW_VARIANT": sweep["flow_params"]["FLOW_VARIANT"][0],
+            },
+            proxy_mode,
+            str(sweep["tag_prefix"]),
+        )
+        self.assertEqual(
+            "decode_score_multivalue_cluster_v1_8ns_binary_fsm_v3_proxy_die_2500",
+            out["FLOW_VARIANT"],
+        )
+
     def test_apply_repeat_to_params_sets_flow_random_seed(self):
         out = self.run_block_sweep.apply_repeat_to_params(
             {"TAG": "tag_flat", "FLOW_VARIANT": "var_flat"},

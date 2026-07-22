@@ -921,7 +921,7 @@ def _write_attention_decode_score_multivalue_cluster_binary_fsm_8ns_v3_sweep(rep
             {
                 "flow_params": {
                     "TAG": ["decode_score_multivalue_cluster_v1_8ns_binary_fsm"],
-                    "FLOW_VARIANT": ["decode_score_multivalue_cluster_v1_8ns_binary_fsm_v3_proxy_die_2500"],
+                    "FLOW_VARIANT": ["decode_score_multivalue_cluster_v1_8ns_binary_fsm_v3"],
                     "CLOCK_PERIOD": [8],
                     "SYNTH_HIERARCHICAL": [1],
                     "SYNTH_MEMORY_MAX_BITS": [65536],
@@ -2887,6 +2887,42 @@ def test_generate_l1_sweep_task_adds_binary_fsm_checker_for_exact_8ns_multivalue
             assert "check_attention_decode_score_multivalue_cluster_binary_fsm" in [
                 command["name"] for command in work_item.command_manifest
             ]
+            assert (
+                "python3 npu/eval/check_attention_decode_score_multivalue_cluster_binary_fsm.py "
+                "--metrics-path runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/metrics.csv"
+                in [command["run"] for command in work_item.command_manifest]
+            )
+
+
+def test_generate_l1_sweep_task_adds_binary_fsm_checker_for_retry_8ns_multivalue_cluster_item() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        config_path, _ = _write_example_attention_decode_score_multivalue_cluster_repo(repo_root)
+        sweep_path = _write_attention_decode_score_multivalue_cluster_binary_fsm_8ns_v3_sweep(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l1_sweep_task(
+                session,
+                Layer1SweepGenerateRequest(
+                    repo_root=str(repo_root),
+                    sweep_path=sweep_path,
+                    config_paths=[config_path],
+                    platform="nangate45",
+                    out_root="runs/designs/npu_blocks",
+                    item_id="l1_decoder_attention_decode_score_multivalue_cluster_pnr_binary_fsm_8ns_v3_r1",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    abstraction_layer="decoder_attention_decode_score_multivalue_cluster",
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            checker_command_names = [command["name"] for command in work_item.command_manifest]
+            assert checker_command_names.count("check_attention_decode_score_multivalue_cluster_binary_fsm") == 1
             assert (
                 "python3 npu/eval/check_attention_decode_score_multivalue_cluster_binary_fsm.py "
                 "--metrics-path runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/metrics.csv"

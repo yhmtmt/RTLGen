@@ -8282,7 +8282,7 @@ def test_generate_l2_campaign_task_adds_decode_score_multivalue_cluster_activity
             )
             assert (
                 "--source-pnr-item-id "
-                "l1_decoder_attention_decode_score_multivalue_cluster_pnr_binary_fsm_8ns_v3"
+                "l1_decoder_attention_decode_score_multivalue_cluster_pnr_binary_fsm_8ns_v3_r1"
                 in run
             )
             assert (
@@ -8294,7 +8294,7 @@ def test_generate_l2_campaign_task_adds_decode_score_multivalue_cluster_activity
             )
             assert (
                 decoder_inputs["decode_score_multivalue_cluster_source_pnr_item_id"]
-                == "l1_decoder_attention_decode_score_multivalue_cluster_pnr_binary_fsm_8ns_v3"
+                == "l1_decoder_attention_decode_score_multivalue_cluster_pnr_binary_fsm_8ns_v3_r1"
             )
             assert (
                 decoder_inputs["decode_score_multivalue_cluster_min_sequential_register_activity_coverage"]
