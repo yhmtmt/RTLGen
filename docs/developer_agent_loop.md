@@ -290,6 +290,15 @@ Ordering rule:
 - do not treat "baseline run finished" as sufficient when the comparison
   exporter reads baseline evidence from repo paths
 
+Retry identity rule:
+- a retry item suffix does not by itself force a new physical run
+- when correcting synthesis or flow semantics, use a fresh immutable sweep
+  parameter identity and prove its expanded `FLOW_VARIANT`/run ID differs from
+  the invalid attempt before dispatch
+- checkers must bind to the exact new physical artifact path and must not fall
+  back to an older or `base` result
+- supersede an unrun retry if `--skip_existing` could reuse invalid evidence
+
 ### Stage 7. Remote Evaluation
 
 Evaluator daemon:

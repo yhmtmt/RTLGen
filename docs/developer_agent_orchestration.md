@@ -243,6 +243,30 @@ After proposal metadata is committed, always rerun generation with
 Before assigning or submitting queue items, verify `command_manifest` contains the
 expected generated commands for the committed proposal state.
 
+### Retry Freshness Rule
+
+A new work-item suffix such as `_r2` changes control-plane identity, but does
+not change `run_block_sweep` parameter identity. When a retry must exercise a
+code or synthesis-semantics fix, do not reuse sweep parameters with
+`--skip_existing`: the evaluator may accept the prior `metrics.csv` row and
+physical output without rerunning synthesis.
+
+Before dispatching such a retry:
+
+- preserve the old sweep and result as history
+- create a new immutable sweep/`FLOW_VARIANT` (or another intentional physical
+  parameter change) so `make_run_id` and the parameter hash differ
+- add a regression proving the new mode-expanded variant and run ID differ from
+  the invalid attempt
+- make the result checker require the exact new variant's physical artifacts,
+  with no fallback to `base` or an older variant
+- generate with `--no-auto-dispatch`, then inspect the required source SHA,
+  sweep path, and command manifest before assigning the remote evaluator
+
+If reuse risk is discovered after queue generation but before assignment,
+supersede the unrun item and create a fresh immutable retry. Do not patch the
+queued manifest or overwrite the historical result.
+
 Recommended file:
 ```text
 docs/proposals/<proposal_id>/evaluation_requests.json
