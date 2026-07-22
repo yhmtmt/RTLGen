@@ -306,15 +306,46 @@ def _targeted_diagnostic(*, param_hash: str = "targeted-param") -> dict[str, obj
         "profile": "targeted_binary",
         "expected_flow_variant": flow_variant,
         "selected_exact_row": {
+            "design": "attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv",
+            "platform": "nangate45",
+            "tag": "decode_score_multivalue_cluster_v1_8ns_targeted_binary_fsm_targeted",
             "status": "ok",
             "flow_variant": flow_variant,
+            "clock_period_ns": 8.0,
+            "critical_path_ns": 7.1,
+            "die_area": "0 0 2500 2500",
+            "core_area": "50 50 2450 2450",
+            "place_density": "0.4",
+            "synth_hierarchical": "1",
+            "synth_memory_max_bits": "65536",
             "synth_args": "",
+            "failure_stage": None,
+            "failure_returncode": None,
+            "failure_signature": None,
             "config_hash": "targeted-config",
             "param_hash": param_hash,
         },
-        "expected_logical_netlist_path": f"results/nangate45/cluster/{flow_variant}/1_synth.v",
+        "expected_logical_netlist_path": (
+            "results/nangate45/"
+            "attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/"
+            f"{flow_variant}/1_synth.v"
+        ),
+        "netlist_exists": True,
+        "signals": {
+            "state_q": {
+                "expected_bit_indices": [0, 1, 2],
+                "observed_packed_ranges": [{"msb": 2, "lsb": 0}],
+                "observed_bit_indices": [],
+            },
+            "reducer.state": {
+                "expected_bit_indices": [0, 1, 2, 3],
+                "observed_packed_ranges": [],
+                "observed_bit_indices": [0, 1, 2, 3],
+            },
+        },
         "width_valid": True,
         "promotion_valid": True,
+        "promotion_reasons": [],
     }
 
 
@@ -387,7 +418,7 @@ def test_build_report_accepts_only_matching_targeted_diagnostic_and_strict_power
         metrics,
         [
             {
-                "design": "cluster",
+                "design": "attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv",
                 "platform": "nangate45",
                 "config_hash": "targeted-config",
                 "param_hash": "targeted-param",
@@ -500,12 +531,154 @@ def test_targeted_diagnostic_rejects_v14_profile_and_stale_row(tmp_path: Path) -
     try:
         audit._validate_binary_fsm_metric_identity(
             validated,
-            {"config_hash": "targeted-config", "param_hash": "current-param"},
+            {
+                "design": "attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv",
+                "platform": "nangate45",
+                "config_hash": "targeted-config",
+                "param_hash": "current-param",
+                "critical_path_ns": "7.1",
+            },
         )
     except ValueError as exc:
         assert "does not match the selected PPA metrics row" in str(exc)
     else:
         raise AssertionError("stale diagnostic row was accepted")
+
+
+def test_targeted_diagnostic_rejects_wrong_netlist_and_signal_evidence(tmp_path: Path) -> None:
+    diagnostic_path = tmp_path / "targeted_binary_fsm_diagnostic.json"
+    mutations = (
+        ("version", lambda payload: payload.__setitem__("version", 2)),
+        ("netlist existence", lambda payload: payload.__setitem__("netlist_exists", False)),
+        (
+            "netlist path",
+            lambda payload: payload.__setitem__(
+                "expected_logical_netlist_path", "results/nangate45/wrong/1_synth.v"
+            ),
+        ),
+        (
+            "state expected indices",
+            lambda payload: payload["signals"]["state_q"].__setitem__(
+                "expected_bit_indices", [0, 1, 3]
+            ),
+        ),
+        (
+            "state packed range",
+            lambda payload: payload["signals"]["state_q"].__setitem__(
+                "observed_packed_ranges", [{"msb": 3, "lsb": 0}]
+            ),
+        ),
+        (
+            "reducer bit indices",
+            lambda payload: payload["signals"]["reducer.state"].__setitem__(
+                "observed_bit_indices", [0, 1, 2, 4]
+            ),
+        ),
+        (
+            "inconsistent representations",
+            lambda payload: payload["signals"]["state_q"].__setitem__(
+                "observed_bit_indices", [0, 1, 2]
+            ),
+        ),
+        (
+            "missing signal",
+            lambda payload: payload["signals"].pop("reducer.state"),
+        ),
+        (
+            "extra signal",
+            lambda payload: payload["signals"].__setitem__(
+                "other.state", payload["signals"]["state_q"]
+            ),
+        ),
+    )
+
+    for label, mutate in mutations:
+        diagnostic = json.loads(json.dumps(_targeted_diagnostic()))
+        mutate(diagnostic)
+        assert diagnostic["width_valid"] is True
+        assert diagnostic["promotion_valid"] is True
+        diagnostic_path.write_text(json.dumps(diagnostic), encoding="utf-8")
+        try:
+            audit._validate_targeted_binary_fsm_diagnostic(
+                diagnostic_path,
+                required_profile="targeted_binary",
+                required_flow_variant=(
+                    "decode_score_multivalue_cluster_v1_8ns_targeted_binary_fsm_v1_proxy_die_2500"
+                ),
+                required_synth_args="",
+            )
+        except ValueError:
+            pass
+        else:
+            raise AssertionError(f"invalid targeted diagnostic {label} was accepted")
+
+
+def test_targeted_diagnostic_rejects_wrong_physical_identity(tmp_path: Path) -> None:
+    diagnostic_path = tmp_path / "targeted_binary_fsm_diagnostic.json"
+    mutations = (
+        ("design", "design", "wrong_design"),
+        ("platform", "platform", "sky130hd"),
+        ("tag", "tag", "wrong_tag"),
+        ("clock", "clock_period_ns", 10.0),
+        ("critical path limit", "critical_path_ns", 8.000001),
+        ("critical path finiteness", "critical_path_ns", "nan"),
+        ("die area", "die_area", "0 0 2600 2600"),
+        ("core area", "core_area", "50 50 2550 2550"),
+        ("place density", "place_density", "0.45"),
+        ("hierarchy", "synth_hierarchical", "0"),
+        ("memory limit", "synth_memory_max_bits", "32768"),
+        ("synth args", "synth_args", "-nofsm"),
+        ("failure stage", "failure_stage", "globalplace"),
+        ("failure return code", "failure_returncode", 1),
+        ("failure signature", "failure_signature", "RSZ-1008"),
+    )
+
+    for label, field, value in mutations:
+        diagnostic = json.loads(json.dumps(_targeted_diagnostic()))
+        diagnostic["selected_exact_row"][field] = value
+        assert diagnostic["width_valid"] is True
+        assert diagnostic["promotion_valid"] is True
+        diagnostic_path.write_text(json.dumps(diagnostic), encoding="utf-8")
+        try:
+            audit._validate_targeted_binary_fsm_diagnostic(
+                diagnostic_path,
+                required_profile="targeted_binary",
+                required_flow_variant=(
+                    "decode_score_multivalue_cluster_v1_8ns_targeted_binary_fsm_v1_proxy_die_2500"
+                ),
+                required_synth_args="",
+            )
+        except ValueError:
+            pass
+        else:
+            raise AssertionError(f"invalid selected-row {label} was accepted")
+
+
+def test_metric_identity_rejects_same_hashes_with_wrong_design_platform_or_timing() -> None:
+    diagnostic = _targeted_diagnostic()
+    metric = {
+        "design": "attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv",
+        "platform": "nangate45",
+        "config_hash": "targeted-config",
+        "param_hash": "targeted-param",
+        "critical_path_ns": "7.1",
+    }
+    audit._validate_binary_fsm_metric_identity(diagnostic, metric)
+
+    for field, value in (
+        ("design", "wrong_design"),
+        ("platform", "sky130hd"),
+        ("critical_path_ns", "7.1000000001"),
+        ("critical_path_ns", "nan"),
+    ):
+        mismatched = dict(metric)
+        mismatched[field] = value
+        try:
+            audit._validate_binary_fsm_metric_identity(diagnostic, mismatched)
+        except ValueError as exc:
+            assert "does not match the selected PPA metrics row" in str(exc)
+        else:
+            raise AssertionError(f"same-hash metric with wrong {field} was accepted")
 
 
 def test_build_report_records_strict_selection_contract_and_pnr_dependency(tmp_path: Path) -> None:

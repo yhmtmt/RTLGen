@@ -36,6 +36,17 @@ _TARGETED_BINARY_FSM_CONFIG = (
 _TARGETED_BINARY_FSM_PNR_ITEM = (
     "l1_decoder_attention_decode_score_multivalue_cluster_pnr_targeted_binary_fsm_8ns_v1"
 )
+_TARGETED_BINARY_FSM_DESIGN = "attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv"
+_TARGETED_BINARY_FSM_PLATFORM = "nangate45"
+_TARGETED_BINARY_FSM_TAG_PREFIX = "decode_score_multivalue_cluster_v1_8ns_targeted_binary_fsm"
+_TARGETED_BINARY_FSM_NETLIST = (
+    "results/nangate45/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/"
+    "decode_score_multivalue_cluster_v1_8ns_targeted_binary_fsm_v1_proxy_die_2500/1_synth.v"
+)
+_TARGETED_BINARY_FSM_SIGNAL_INDICES = {
+    "state_q": [0, 1, 2],
+    "reducer.state": [0, 1, 2, 3],
+}
 _POWER_COMPONENTS = ("internal_w", "switching_w", "leakage_w", "total_w")
 
 
@@ -194,41 +205,136 @@ def _validate_targeted_binary_fsm_diagnostic(
     if not isinstance(selected, dict):
         raise ValueError("binary-FSM diagnostic has no selected exact row")
     checks = {
+        "version": type(diagnostic.get("version")) is int and diagnostic.get("version") == 1,
         "profile": diagnostic.get("profile") == _TARGETED_BINARY_FSM_PROFILE,
         "checker": diagnostic.get("checker") == _TARGETED_BINARY_FSM_CHECKER,
         "expected_flow_variant": (
             diagnostic.get("expected_flow_variant") == _TARGETED_BINARY_FSM_FLOW_VARIANT
         ),
+        "netlist_exists": diagnostic.get("netlist_exists") is True,
+        "expected_logical_netlist_path": (
+            diagnostic.get("expected_logical_netlist_path") == _TARGETED_BINARY_FSM_NETLIST
+        ),
         "promotion_valid": diagnostic.get("promotion_valid") is True,
         "width_valid": diagnostic.get("width_valid") is True,
+        "selected_design": selected.get("design") == _TARGETED_BINARY_FSM_DESIGN,
+        "selected_platform": selected.get("platform") == _TARGETED_BINARY_FSM_PLATFORM,
+        "selected_tag": str(selected.get("tag") or "").startswith(
+            _TARGETED_BINARY_FSM_TAG_PREFIX
+        ),
         "selected_status": selected.get("status") == "ok",
         "selected_flow_variant": (
             selected.get("flow_variant") == _TARGETED_BINARY_FSM_FLOW_VARIANT
         ),
         "selected_synth_args": str(selected.get("synth_args") or "").strip() == "",
+        "selected_die_area": selected.get("die_area") == "0 0 2500 2500",
+        "selected_core_area": selected.get("core_area") == "50 50 2450 2450",
+        "selected_place_density": str(selected.get("place_density") or "").strip() == "0.4",
+        "selected_synth_hierarchical": (
+            str(selected.get("synth_hierarchical") or "").strip() == "1"
+        ),
+        "selected_synth_memory_max_bits": (
+            str(selected.get("synth_memory_max_bits") or "").strip() == "65536"
+        ),
+        "selected_failure_stage": not str(selected.get("failure_stage") or "").strip(),
+        "selected_failure_returncode": selected.get("failure_returncode") in (None, ""),
+        "selected_failure_signature": not str(
+            selected.get("failure_signature") or ""
+        ).strip(),
         "selected_param_hash": bool(str(selected.get("param_hash") or "").strip()),
         "selected_config_hash": bool(str(selected.get("config_hash") or "").strip()),
     }
+    try:
+        clock_period_ns = float(selected.get("clock_period_ns"))
+        critical_path_ns = float(selected.get("critical_path_ns"))
+    except (TypeError, ValueError):
+        clock_period_ns = math.nan
+        critical_path_ns = math.nan
+    checks["selected_clock_period_ns"] = (
+        math.isfinite(clock_period_ns) and clock_period_ns == 8.0
+    )
+    checks["selected_critical_path_ns"] = (
+        math.isfinite(critical_path_ns) and critical_path_ns <= 8.0
+    )
     failed = [name for name, passed in checks.items() if not passed]
     if failed:
         raise ValueError(
             "targeted binary-FSM diagnostic failed strict validation: " + ", ".join(failed)
         )
-    logical_netlist = str(diagnostic.get("expected_logical_netlist_path") or "").strip()
-    if not logical_netlist or Path(logical_netlist).is_absolute():
-        raise ValueError("binary-FSM diagnostic netlist path must be nonempty and repo-portable")
+    _validate_targeted_binary_fsm_signals(diagnostic.get("signals"))
     return diagnostic
+
+
+def _validate_targeted_binary_fsm_signals(value: object) -> None:
+    if not isinstance(value, dict) or set(value) != set(_TARGETED_BINARY_FSM_SIGNAL_INDICES):
+        raise ValueError("targeted binary-FSM diagnostic has an invalid signals object")
+    for signal, expected_indices in _TARGETED_BINARY_FSM_SIGNAL_INDICES.items():
+        evidence = value.get(signal)
+        if not isinstance(evidence, dict):
+            raise ValueError(f"targeted binary-FSM diagnostic has no evidence for {signal}")
+        if evidence.get("expected_bit_indices") != expected_indices:
+            raise ValueError(f"targeted binary-FSM diagnostic has wrong expected indices for {signal}")
+        packed = evidence.get("observed_packed_ranges")
+        bits = evidence.get("observed_bit_indices")
+        if not isinstance(packed, list) or not isinstance(bits, list):
+            raise ValueError(f"targeted binary-FSM diagnostic has malformed evidence for {signal}")
+        if bool(packed) == bool(bits):
+            raise ValueError(
+                f"targeted binary-FSM diagnostic must use exactly one observed representation for {signal}"
+            )
+        if packed:
+            if len(packed) != 1 or not isinstance(packed[0], dict):
+                raise ValueError(f"targeted binary-FSM diagnostic has invalid packed range for {signal}")
+            msb = packed[0].get("msb")
+            lsb = packed[0].get("lsb")
+            if (
+                not isinstance(msb, int)
+                or isinstance(msb, bool)
+                or not isinstance(lsb, int)
+                or isinstance(lsb, bool)
+            ):
+                raise ValueError(f"targeted binary-FSM diagnostic has invalid packed range for {signal}")
+            observed_indices = list(range(min(msb, lsb), max(msb, lsb) + 1))
+        else:
+            if any(not isinstance(bit, int) or isinstance(bit, bool) for bit in bits):
+                raise ValueError(f"targeted binary-FSM diagnostic has invalid bit indices for {signal}")
+            observed_indices = sorted(bits)
+        if observed_indices != expected_indices or len(observed_indices) != len(expected_indices):
+            raise ValueError(f"targeted binary-FSM diagnostic has wrong observed indices for {signal}")
 
 
 def _validate_binary_fsm_metric_identity(diagnostic: JsonDict, metric: JsonDict) -> None:
     selected = diagnostic.get("selected_exact_row")
     if not isinstance(selected, dict):
         raise TypeError("validated binary-FSM diagnostic selected row is not an object")
-    if str(metric.get("param_hash") or "").strip() != str(
-        selected.get("param_hash") or ""
-    ).strip() or str(metric.get("config_hash") or "").strip() != str(
-        selected.get("config_hash") or ""
-    ).strip():
+    identity_matches = (
+        str(metric.get("param_hash") or "").strip()
+        == str(selected.get("param_hash") or "").strip()
+        and str(metric.get("config_hash") or "").strip()
+        == str(selected.get("config_hash") or "").strip()
+        and str(metric.get("design") or "").strip()
+        == str(selected.get("design") or "").strip()
+        and str(metric.get("platform") or "").strip()
+        == str(selected.get("platform") or "").strip()
+    )
+    try:
+        metric_critical_path = float(metric.get("critical_path_ns"))
+        selected_critical_path = float(selected.get("critical_path_ns"))
+    except (TypeError, ValueError):
+        identity_matches = False
+        metric_critical_path = math.nan
+        selected_critical_path = math.nan
+    critical_path_matches = (
+        math.isfinite(metric_critical_path)
+        and math.isfinite(selected_critical_path)
+        and math.isclose(
+            metric_critical_path,
+            selected_critical_path,
+            rel_tol=0.0,
+            abs_tol=1e-12,
+        )
+    )
+    if not identity_matches or not critical_path_matches:
         raise ValueError("binary-FSM diagnostic does not match the selected PPA metrics row")
 
 
