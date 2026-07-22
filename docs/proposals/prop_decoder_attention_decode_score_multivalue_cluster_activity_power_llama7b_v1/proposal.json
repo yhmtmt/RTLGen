@@ -400,11 +400,12 @@
       "abstraction_layer": "decoder_attention_decode_score_multivalue_cluster_activity_power",
       "comparison_role": "shared_score_multivalue_cluster_activity_power_gate",
       "depends_on_item_ids": [
-        "l1_decoder_attention_decode_score_multivalue_cluster_pnr_binary_fsm_8ns_v3_r1",
+        "l1_decoder_attention_decode_score_multivalue_cluster_pnr_binary_fsm_8ns_v3_r2",
         "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1"
       ],
       "requires_merged_inputs": true,
       "requires_materialized_refs": true,
+      "paired_baseline_item_id": "l1_decoder_attention_decode_score_multivalue_cluster_pnr_binary_fsm_8ns_v3_r2",
       "revision": {
         "reason": "exact_binary_fsm_postroute_activity_mapping",
         "invalidates_item_ids": [
