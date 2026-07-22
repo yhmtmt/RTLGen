@@ -1227,6 +1227,87 @@ class ModeCompareRegressionTest(unittest.TestCase):
                 metrics_rows[0]["failure_signature"],
             )
 
+    def test_run_single_applies_synth_args_through_generated_script_without_capture(self):
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            design_dir = tmp / "demo_design"
+            verilog_dir = design_dir / "verilog"
+            verilog_dir.mkdir(parents=True, exist_ok=True)
+            (verilog_dir / "top.v").write_text(
+                "module npu_top(input clk, output done); assign done = clk; endmodule\n",
+                encoding="utf-8",
+            )
+
+            calls = []
+
+            def fake_run(cmd, *, cwd, check, env):
+                calls.append((list(cmd), dict(env)))
+                flow_variant = str(env.get("FLOW_VARIANT", "base")).strip() or "base"
+                out_dir = (
+                    tmp / "orfs" / "results" / "nangate45" / "demo_design" / flow_variant
+                )
+                out_dir.mkdir(parents=True, exist_ok=True)
+                (out_dir / "1_synth.v").write_text("// synth result\n", encoding="utf-8")
+                return subprocess.CompletedProcess(cmd, 0)
+
+            old_dest = self.run_block_sweep.DEST_BASE
+            old_src = self.run_block_sweep.SRC_BASE
+            old_report = self.run_block_sweep.REPORT_BASE
+            old_result = self.run_block_sweep.RESULT_BASE
+            old_log = self.run_block_sweep.LOG_BASE
+            old_run = self.run_block_sweep.subprocess.run
+            self.run_block_sweep.DEST_BASE = tmp / "orfs" / "designs"
+            self.run_block_sweep.SRC_BASE = self.run_block_sweep.DEST_BASE / "src"
+            self.run_block_sweep.REPORT_BASE = tmp / "orfs" / "reports"
+            self.run_block_sweep.RESULT_BASE = tmp / "orfs" / "results"
+            self.run_block_sweep.LOG_BASE = tmp / "orfs" / "logs"
+            self.run_block_sweep.subprocess.run = fake_run
+            try:
+                row = self.run_block_sweep.run_single(
+                    design_dir=design_dir,
+                    design_name="demo_design",
+                    platform="nangate45",
+                    top="npu_top",
+                    verilog_dir=verilog_dir,
+                    sdc_template=None,
+                    sweep_params={
+                        "TAG": "demo_synth_args",
+                        "FLOW_VARIANT": "demo_synth_args",
+                        "CLOCK_PERIOD": 10.0,
+                        "CORE_AREA": "0 0 100 100",
+                        "SYNTH_ARGS": "-nofsm",
+                    },
+                    out_root=tmp / "out",
+                    skip_existing=False,
+                    dry_run=False,
+                    force_copy=True,
+                    make_target="1_synth.v",
+                    macro_manifest=None,
+                )
+            finally:
+                self.run_block_sweep.DEST_BASE = old_dest
+                self.run_block_sweep.SRC_BASE = old_src
+                self.run_block_sweep.REPORT_BASE = old_report
+                self.run_block_sweep.RESULT_BASE = old_result
+                self.run_block_sweep.LOG_BASE = old_log
+                self.run_block_sweep.subprocess.run = old_run
+
+            self.assertEqual("ok", row["status"])
+            synth_cmds = [
+                cmd
+                for cmd, _ in calls
+                if any(token.startswith("SYNTH_SCRIPT=") for token in cmd)
+            ]
+            self.assertEqual(1, len(synth_cmds))
+            make_cmd = synth_cmds[0]
+            synth_script_token = next(
+                token for token in make_cmd if token.startswith("SYNTH_SCRIPT=")
+            )
+            synth_script_path = Path(synth_script_token.split("=", 1)[1])
+            synth_text = synth_script_path.read_text(encoding="utf-8")
+            self.assertIn("synth -run :fine {*}$synth_full_args", synth_text)
+            self.assertNotIn("proc yosys_synth_with_fsm_capture", synth_text)
+
     def test_synth_script_instruments_all_internal_synth_calls(self):
         with tempfile.TemporaryDirectory() as td:
             tmp = Path(td)
@@ -1240,17 +1321,36 @@ class ModeCompareRegressionTest(unittest.TestCase):
 
             self.assertIn("proc yosys_synth_with_fsm_capture", text)
             self.assertIn(
-                "yosys_synth_with_fsm_capture -run :fine", text,
+                "yosys_synth_with_fsm_capture -run :fine {*}$synth_full_args", text,
             )
             self.assertIn(
-                "yosys_synth_with_fsm_capture -flatten -run coarse:fine", text,
+                "yosys_synth_with_fsm_capture -flatten -run coarse:fine {*}$synth_full_args",
+                text,
             )
             self.assertIn(
-                "yosys_synth_with_fsm_capture -top $::env(DESIGN_NAME) -run fine:", text,
+                "yosys_synth_with_fsm_capture -top $::env(DESIGN_NAME) -run fine: {*}$synth_full_args",
+                text,
             )
             self.assertNotIn("synth -run :fine", text)
             self.assertNotIn("synth -flatten -run coarse:fine", text)
             self.assertNotIn("synth -top $::env(DESIGN_NAME) -run fine:", text)
+            for line in text.splitlines():
+                stripped = line.strip()
+                if stripped.startswith("synth ") or stripped.startswith(
+                    "yosys_synth_with_fsm_capture "
+                ):
+                    self.assertIn("{*}$synth_full_args", line)
+
+    def test_synth_script_fails_when_generated_call_lacks_synth_full_args(self):
+        malformed = (
+            "synth -run :fine\n"
+            "yosys_synth_with_fsm_capture -run :fine\n"
+        )
+        with self.assertRaisesRegex(
+            RuntimeError,
+            "Generated synth/wrapper calls missing",
+        ):
+            self.run_block_sweep._inject_fsm_capture_into_synth_script(malformed)
 
 class SynthTargetMappingRegressionTest(unittest.TestCase):
     @classmethod
