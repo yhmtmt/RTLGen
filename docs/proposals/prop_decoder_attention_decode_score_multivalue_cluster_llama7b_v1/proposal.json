@@ -116,7 +116,7 @@
       "status": "pending_implementation_merge"
     },
     {
-      "item_id": "l1_decoder_attention_decode_score_multivalue_cluster_pnr_binary_fsm_8ns_v3",
+      "item_id": "l1_decoder_attention_decode_score_multivalue_cluster_pnr_binary_fsm_8ns_v3_r1",
       "task_type": "l1_sweep",
       "objective": "Measure the exact-state activity calibration path with the unique binary-FSM 8 ns sweep, matched to the v2 physical architecture and configuration.",
       "evaluation_mode": "frontier_followup",
@@ -132,9 +132,12 @@
       "requires_merged_inputs": true,
       "requires_materialized_refs": true,
       "paired_baseline_item_id": "l1_decoder_attention_decode_score_multivalue_cluster_pnr_8ns_v2",
+      "prior_item_ids": [
+        "l1_decoder_attention_decode_score_multivalue_cluster_pnr_binary_fsm_8ns_v3"
+      ],
       "expected_result": {
         "direction": "measure_shared_score_multivalue_cluster_binary_fsm_ppa",
-        "reason": "The v2 result remains the valid one-hot PPA baseline and is not invalidated. V3 is a matched physical architecture point with SYNTH_ARGS=-nofsm so routed FSM bits correspond to RTL state activity. PR #1413 / merge f281d6f7 enables complete block_weight capture, compact diagnostics, and FSM provenance; the forthcoming v3 sweep implementation is not yet merged."
+        "reason": "V2 remains the valid one-hot PPA baseline and is not invalidated. The base v3 physical flow completed, but its row is non-promotable because mode expansion duplicated the proxy suffix and the strict checker rejected it. v3_r1 corrects base FLOW_VARIANT handling and keeps SYNTH_ARGS=-nofsm so routed FSM bits correspond to RTL state activity. PR #1413 / merge f281d6f7 enables complete block_weight capture, compact diagnostics, and FSM provenance; the r1 implementation is not yet merged."
       },
       "status": "pending_implementation_merge"
     }
