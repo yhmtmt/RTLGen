@@ -2931,8 +2931,15 @@ def test_generate_l1_sweep_task_adds_binary_fsm_checker_for_exact_8ns_multivalue
             ]
             assert (
                 "python3 npu/eval/check_attention_decode_score_multivalue_cluster_binary_fsm.py "
-                "--metrics-path runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/metrics.csv"
+                "--metrics-path runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/metrics.csv "
+                "--diagnostic-out runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/binary_fsm_diagnostic.json"
                 in [command["run"] for command in work_item.command_manifest]
+            )
+            assert (
+                "runs/designs/npu_blocks/"
+                "attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/"
+                "binary_fsm_diagnostic.json"
+                in work_item.expected_outputs
             )
 
 
@@ -2967,8 +2974,15 @@ def test_generate_l1_sweep_task_adds_binary_fsm_checker_for_retry_8ns_multivalue
             assert checker_command_names.count("check_attention_decode_score_multivalue_cluster_binary_fsm") == 1
             assert (
                 "python3 npu/eval/check_attention_decode_score_multivalue_cluster_binary_fsm.py "
-                "--metrics-path runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/metrics.csv"
+                "--metrics-path runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/metrics.csv "
+                "--diagnostic-out runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/binary_fsm_diagnostic.json"
                 in [command["run"] for command in work_item.command_manifest]
+            )
+            assert (
+                "runs/designs/npu_blocks/"
+                "attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/"
+                "binary_fsm_diagnostic.json"
+                in work_item.expected_outputs
             )
 
 
