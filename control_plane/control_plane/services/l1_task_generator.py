@@ -1456,15 +1456,65 @@ def _is_multivalue_cluster_8ns_bridge_sweep(*, item_id: str, sweep_path: str) ->
     )
 
 
-def _is_multivalue_cluster_8ns_binary_fsm_sweep(*, item_id: str, sweep_path: str) -> bool:
-    return (
-        _retry_base(item_id) == "l1_decoder_attention_decode_score_multivalue_cluster_pnr_binary_fsm_8ns_v3"
-        and Path(sweep_path).name
-        in {
-            "nangate45_decode_score_multivalue_cluster_8ns_binary_fsm_v3.json",
-            "nangate45_decode_score_multivalue_cluster_8ns_binary_fsm_v4.json",
-        }
-    )
+@dataclass(frozen=True)
+class _BinaryFsmCheckerProfile:
+    name: str
+    retry_base_item_id: str
+    config_path: str
+    sweep_path: str
+    diagnostic_filename: str
+
+
+_BINARY_FSM_CHECKER_PROFILES = (
+    _BinaryFsmCheckerProfile(
+        name="v4_nofsm",
+        retry_base_item_id=(
+            "l1_decoder_attention_decode_score_multivalue_cluster_pnr_"
+            "binary_fsm_8ns_v3"
+        ),
+        config_path=(
+            "runs/designs/npu_blocks/"
+            "attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/config.json"
+        ),
+        sweep_path=(
+            "runs/campaigns/npu/decode_score_multivalue_cluster_v1/sweeps/"
+            "nangate45_decode_score_multivalue_cluster_8ns_binary_fsm_v4.json"
+        ),
+        diagnostic_filename="binary_fsm_diagnostic.json",
+    ),
+    _BinaryFsmCheckerProfile(
+        name="targeted_binary",
+        retry_base_item_id=(
+            "l1_decoder_attention_decode_score_multivalue_cluster_pnr_"
+            "targeted_binary_fsm_8ns_v1"
+        ),
+        config_path=(
+            "runs/designs/npu_blocks/"
+            "attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/"
+            "config_targeted_binary_fsm.json"
+        ),
+        sweep_path=(
+            "runs/campaigns/npu/decode_score_multivalue_cluster_v1/sweeps/"
+            "nangate45_decode_score_multivalue_cluster_8ns_targeted_binary_fsm_v1.json"
+        ),
+        diagnostic_filename="targeted_binary_fsm_diagnostic.json",
+    ),
+)
+
+
+def _multivalue_cluster_binary_fsm_profile(
+    *, item_id: str, sweep_path: str, config_paths: list[str]
+) -> _BinaryFsmCheckerProfile | None:
+    normalized_sweep = Path(sweep_path).as_posix()
+    normalized_configs = [Path(path).as_posix() for path in config_paths]
+    for profile in _BINARY_FSM_CHECKER_PROFILES:
+        if (
+            _retry_base(item_id) == profile.retry_base_item_id
+            and normalized_sweep == profile.sweep_path
+            and normalized_configs == [profile.config_path]
+        ):
+            return profile
+    return None
 
 
 def _is_gqa_lanes2_macro_hier_placement_sweep(*, item_id: str, sweep_path: str) -> bool:
@@ -1757,16 +1807,23 @@ def generate_l1_sweep_task(session: Session, request: Layer1SweepGenerateRequest
             command_manifest.append(checker_command)
 
     binary_fsm_diagnostic_path: str | None = None
-    if _is_multivalue_cluster_8ns_binary_fsm_sweep(item_id=item_id, sweep_path=sweep_path) and targets:
+    binary_fsm_profile = _multivalue_cluster_binary_fsm_profile(
+        item_id=item_id,
+        sweep_path=sweep_path,
+        config_paths=config_paths,
+    )
+    if binary_fsm_profile is not None and targets:
         binary_fsm_diagnostic_path = str(
-            Path(targets[0].expected_metrics_path).parent / "binary_fsm_diagnostic.json"
+            Path(targets[0].expected_metrics_path).parent
+            / binary_fsm_profile.diagnostic_filename
         )
         checker_command = {
             "name": "check_attention_decode_score_multivalue_cluster_binary_fsm",
             "run": (
                 "python3 npu/eval/check_attention_decode_score_multivalue_cluster_binary_fsm.py "
                 f"--metrics-path {targets[0].expected_metrics_path} "
-                f"--diagnostic-out {binary_fsm_diagnostic_path}"
+                f"--diagnostic-out {binary_fsm_diagnostic_path} "
+                f"--profile {binary_fsm_profile.name}"
             ),
         }
         inserted = False

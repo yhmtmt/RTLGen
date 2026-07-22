@@ -21,6 +21,7 @@ from control_plane.models.work_items import WorkItem
 from control_plane.services.l1_task_generator import (
     Layer1SweepGenerateRequest,
     Layer1TaskGenerationError,
+    _multivalue_cluster_binary_fsm_profile,
     generate_l1_sweep_task,
 )
 
@@ -867,6 +868,37 @@ def _write_example_attention_decode_score_multivalue_cluster_repo(repo_root: Pat
     return str(config_path.relative_to(repo_root)), str(sweep_path.relative_to(repo_root))
 
 
+def _write_attention_decode_score_multivalue_cluster_targeted_binary_config(
+    repo_root: Path,
+) -> str:
+    design_dir = (
+        repo_root
+        / "runs"
+        / "designs"
+        / "npu_blocks"
+        / "attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv"
+    )
+    design_dir.mkdir(parents=True, exist_ok=True)
+    config_path = design_dir / "config_targeted_binary_fsm.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "top_name": "attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv",
+                "attention_decode_score_multivalue_cluster": {
+                    "max_blocks": 16384,
+                    "array_n": 8,
+                    "value_slices": 16,
+                    "divider_impl": "iterative_restoring",
+                    "score_scale_lanes_per_cycle": 1,
+                    "fsm_encoding": "binary",
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    return str(config_path.relative_to(repo_root))
+
+
 def _write_attention_decode_score_multivalue_cluster_8ns_bridge_sweep(repo_root: Path) -> str:
     sweep_path = (
         repo_root
@@ -969,6 +1001,52 @@ def _write_attention_decode_score_multivalue_cluster_binary_fsm_8ns_v4_sweep(rep
                     "SYNTH_MEMORY_MAX_BITS": [65536],
                     "PLACE_DENSITY": [0.4],
                     "SYNTH_ARGS": ["-nofsm"],
+                },
+                "mode_compare": {
+                    "modes": [
+                        {
+                            "name": "proxy_die_2500",
+                            "use_macro": True,
+                            "param_overrides": {
+                                "DIE_AREA": "0 0 2500 2500",
+                                "CORE_AREA": "50 50 2450 2450",
+                            },
+                        }
+                    ]
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    return str(sweep_path.relative_to(repo_root))
+
+
+def _write_attention_decode_score_multivalue_cluster_targeted_binary_fsm_8ns_sweep(
+    repo_root: Path,
+) -> str:
+    sweep_path = (
+        repo_root
+        / "runs"
+        / "campaigns"
+        / "npu"
+        / "decode_score_multivalue_cluster_v1"
+        / "sweeps"
+        / "nangate45_decode_score_multivalue_cluster_8ns_targeted_binary_fsm_v1.json"
+    )
+    sweep_path.parent.mkdir(parents=True, exist_ok=True)
+    sweep_path.write_text(
+        json.dumps(
+            {
+                "tag_prefix": "decode_score_multivalue_cluster_v1_8ns_targeted_binary_fsm",
+                "flow_params": {
+                    "TAG": ["decode_score_multivalue_cluster_v1_8ns_targeted_binary_fsm"],
+                    "FLOW_VARIANT": [
+                        "decode_score_multivalue_cluster_v1_8ns_targeted_binary_fsm_v1"
+                    ],
+                    "CLOCK_PERIOD": [8],
+                    "SYNTH_HIERARCHICAL": [1],
+                    "SYNTH_MEMORY_MAX_BITS": [65536],
+                    "PLACE_DENSITY": [0.4],
                 },
                 "mode_compare": {
                     "modes": [
@@ -2899,7 +2977,7 @@ def test_generate_l1_sweep_task_adds_bridge_checker_for_exact_8ns_multivalue_clu
             )
 
 
-def test_generate_l1_sweep_task_adds_binary_fsm_checker_for_exact_8ns_multivalue_cluster_item() -> None:
+def test_generate_l1_sweep_task_does_not_apply_v4_checker_to_legacy_v3_identity() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
         repo_root.mkdir()
@@ -2926,24 +3004,12 @@ def test_generate_l1_sweep_task_adds_binary_fsm_checker_for_exact_8ns_multivalue
             )
 
             work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
-            assert "check_attention_decode_score_multivalue_cluster_binary_fsm" in [
+            assert "check_attention_decode_score_multivalue_cluster_binary_fsm" not in [
                 command["name"] for command in work_item.command_manifest
             ]
-            assert (
-                "python3 npu/eval/check_attention_decode_score_multivalue_cluster_binary_fsm.py "
-                "--metrics-path runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/metrics.csv "
-                "--diagnostic-out runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/binary_fsm_diagnostic.json"
-                in [command["run"] for command in work_item.command_manifest]
-            )
-            assert (
-                "runs/designs/npu_blocks/"
-                "attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/"
-                "binary_fsm_diagnostic.json"
-                in work_item.expected_outputs
-            )
 
 
-def test_generate_l1_sweep_task_adds_binary_fsm_checker_for_retry_8ns_multivalue_cluster_item_r3() -> None:
+def test_generate_l1_sweep_task_adds_binary_fsm_checker_for_retry_8ns_multivalue_cluster_item_r4() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
         repo_root.mkdir()
@@ -2962,7 +3028,7 @@ def test_generate_l1_sweep_task_adds_binary_fsm_checker_for_retry_8ns_multivalue
                     config_paths=[config_path],
                     platform="nangate45",
                     out_root="runs/designs/npu_blocks",
-                    item_id="l1_decoder_attention_decode_score_multivalue_cluster_pnr_binary_fsm_8ns_v3_r3",
+                    item_id="l1_decoder_attention_decode_score_multivalue_cluster_pnr_binary_fsm_8ns_v3_r4",
                     requested_by="@tester",
                     source_commit=source_commit,
                     abstraction_layer="decoder_attention_decode_score_multivalue_cluster",
@@ -2975,7 +3041,8 @@ def test_generate_l1_sweep_task_adds_binary_fsm_checker_for_retry_8ns_multivalue
             assert (
                 "python3 npu/eval/check_attention_decode_score_multivalue_cluster_binary_fsm.py "
                 "--metrics-path runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/metrics.csv "
-                "--diagnostic-out runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/binary_fsm_diagnostic.json"
+                "--diagnostic-out runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/binary_fsm_diagnostic.json "
+                "--profile v4_nofsm"
                 in [command["run"] for command in work_item.command_manifest]
             )
             assert (
@@ -2984,6 +3051,108 @@ def test_generate_l1_sweep_task_adds_binary_fsm_checker_for_retry_8ns_multivalue
                 "binary_fsm_diagnostic.json"
                 in work_item.expected_outputs
             )
+
+
+def test_generate_l1_sweep_task_adds_targeted_binary_fsm_retry_profile_and_diagnostic() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        config_path = _write_attention_decode_score_multivalue_cluster_targeted_binary_config(
+            repo_root
+        )
+        sweep_path = (
+            _write_attention_decode_score_multivalue_cluster_targeted_binary_fsm_8ns_sweep(
+                repo_root
+            )
+        )
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l1_sweep_task(
+                session,
+                Layer1SweepGenerateRequest(
+                    repo_root=str(repo_root),
+                    sweep_path=sweep_path,
+                    config_paths=[config_path],
+                    platform="nangate45",
+                    out_root="runs/designs/npu_blocks",
+                    item_id=(
+                        "l1_decoder_attention_decode_score_multivalue_cluster_pnr_"
+                        "targeted_binary_fsm_8ns_v1_r1"
+                    ),
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    abstraction_layer="decoder_attention_decode_score_multivalue_cluster",
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            checker_commands = [
+                command
+                for command in work_item.command_manifest
+                if command["name"] == "check_attention_decode_score_multivalue_cluster_binary_fsm"
+            ]
+            assert len(checker_commands) == 1
+            assert checker_commands[0]["run"].endswith(
+                "--diagnostic-out runs/designs/npu_blocks/"
+                "attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/"
+                "targeted_binary_fsm_diagnostic.json --profile targeted_binary"
+            )
+            assert (
+                "runs/designs/npu_blocks/"
+                "attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/"
+                "targeted_binary_fsm_diagnostic.json"
+                in work_item.expected_outputs
+            )
+
+
+def test_binary_fsm_retry_profile_requires_exact_config_and_sweep() -> None:
+    targeted_item_id = (
+        "l1_decoder_attention_decode_score_multivalue_cluster_pnr_"
+        "targeted_binary_fsm_8ns_v1_r1"
+    )
+    targeted_config = (
+        "runs/designs/npu_blocks/"
+        "attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/"
+        "config_targeted_binary_fsm.json"
+    )
+    targeted_sweep = (
+        "runs/campaigns/npu/decode_score_multivalue_cluster_v1/sweeps/"
+        "nangate45_decode_score_multivalue_cluster_8ns_targeted_binary_fsm_v1.json"
+    )
+
+    assert (
+        _multivalue_cluster_binary_fsm_profile(
+            item_id=targeted_item_id,
+            sweep_path=targeted_sweep,
+            config_paths=[targeted_config],
+        ).name
+        == "targeted_binary"
+    )
+    assert (
+        _multivalue_cluster_binary_fsm_profile(
+            item_id=targeted_item_id,
+            sweep_path=targeted_sweep,
+            config_paths=[
+                "runs/designs/npu_blocks/"
+                "attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/config.json"
+            ],
+        )
+        is None
+    )
+    assert (
+        _multivalue_cluster_binary_fsm_profile(
+            item_id=targeted_item_id,
+            sweep_path=(
+                "runs/campaigns/npu/decode_score_multivalue_cluster_v1/sweeps/"
+                "nangate45_decode_score_multivalue_cluster_8ns_binary_fsm_v4.json"
+            ),
+            config_paths=[targeted_config],
+        )
+        is None
+    )
 
 
 def test_generate_l1_sweep_task_adds_lanes2_macro_hier_placement_checker() -> None:
