@@ -1,0 +1,106 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-07-22T01:31:53.017581Z",
+  "item_id": "l1_decoder_attention_decode_score_multivalue_cluster_pnr_binary_fsm_8ns_v3_r1",
+  "run_key": "l1_decoder_attention_decode_score_multivalue_cluster_pnr_binary_fsm_8ns_v3_r1_run_809db01f928e6545",
+  "layer": "layer1",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l1_sweep",
+  "source_commit": "57c6dd86b35cb227a001c0cc7e6327d2ca8c91c2",
+  "objective": "Measure the exact-state binary-FSM 8 ns cluster PNR point after correcting duplicated mode-suffix expansion.",
+  "input_manifest": {
+    "sweeps": [
+      "runs/campaigns/npu/decode_score_multivalue_cluster_v1/sweeps/nangate45_decode_score_multivalue_cluster_8ns_binary_fsm_v3.json"
+    ],
+    "configs": [
+      "runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/config.json"
+    ],
+    "out_root": "runs/designs/npu_blocks",
+    "design_dirs": [],
+    "macro_manifests": [],
+    "candidate_manifests": [],
+    "required_submodules": []
+  },
+  "proposal_count": 1,
+  "evaluation_record": {
+    "evaluation_mode": "frontier_followup",
+    "abstraction_layer": "decoder_attention_decode_score_multivalue_cluster",
+    "result_kind": "physical_metrics",
+    "physical_metrics_present": true,
+    "summary": "Physical metrics recorded from a completed, timing-feasible Layer 1 row.",
+    "timing_feasible": true,
+    "clock_period_ns": 8.0,
+    "timing_slack_ns": 0.8235000000000001
+  },
+  "proposal_assessment": null,
+  "proposals": [
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "c5d23ef9",
+        "tag": "decode_score_multivalue_cluster_v1_8ns_binary_fsm_proxy_die_2500",
+        "result_path": "/orfs/flow/reports/nangate45/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/decode_score_multivalue_cluster_v1_8ns_binary_fsm_v3_proxy_die_2500/6_finish.rpt",
+        "work_result_json": "runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/work/c5d23ef9/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 7.1765,
+        "die_area": 6250000.0,
+        "total_power_mw": 0.348
+      }
+    }
+  ],
+  "trial_summary": {
+    "item_id": "l1_decoder_attention_decode_score_multivalue_cluster_pnr_binary_fsm_8ns_v3_r1",
+    "completed_trials": 1,
+    "success_count": 1,
+    "failure_count": 0,
+    "success_rate": 1.0,
+    "partial_metrics_count": 0,
+    "metrics": {
+      "critical_path_ns": {
+        "best": 7.1765,
+        "mean": 7.1765,
+        "median": 7.1765,
+        "max": 7.1765,
+        "range": 0.0,
+        "stddev": 0.0
+      },
+      "die_area": {
+        "best": 6250000.0,
+        "mean": 6250000.0,
+        "median": 6250000.0,
+        "max": 6250000.0,
+        "range": 0.0,
+        "stddev": 0.0
+      },
+      "total_power_mw": {
+        "best": 0.348,
+        "mean": 0.348,
+        "median": 0.348,
+        "max": 0.348,
+        "range": 0.0,
+        "stddev": 0.0
+      }
+    },
+    "aggregation_scope": "current_run_checkout_commit",
+    "aggregation_source_commit": "57c6dd86b35cb227a001c0cc7e6327d2ca8c91c2",
+    "aggregation_included_attempts": 1,
+    "aggregation_excluded_attempts": 0,
+    "aggregation_excluded_source_commits": {},
+    "aggregation_excluded_attempt_run_keys": [],
+    "aggregation_excluded_attempt_run_keys_truncated": false
+  },
+  "source_refs": {
+    "trial_metrics_csvs": [
+      "runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/metrics.csv"
+    ],
+    "summary_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_decode_score_multivalue_cluster_pnr_binary_fsm_8ns_v3_r1/summary_stats.json",
+    "failure_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_decode_score_multivalue_cluster_pnr_binary_fsm_8ns_v3_r1/failure_stats.json",
+    "trial_table_csv": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_decode_score_multivalue_cluster_pnr_binary_fsm_8ns_v3_r1/trial_table.csv"
+  }
+}

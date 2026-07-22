@@ -1,0 +1,15 @@
+{
+  "item_id": "l1_decoder_attention_decode_score_multivalue_cluster_pnr_binary_fsm_8ns_v3_r1",
+  "completed_trials": 1,
+  "success_count": 1,
+  "failure_count": 0,
+  "by_category": {},
+  "by_stage": {},
+  "aggregation_scope": "current_run_checkout_commit",
+  "aggregation_source_commit": "57c6dd86b35cb227a001c0cc7e6327d2ca8c91c2",
+  "aggregation_included_attempts": 1,
+  "aggregation_excluded_attempts": 0,
+  "aggregation_excluded_source_commits": {},
+  "aggregation_excluded_attempt_run_keys": [],
+  "aggregation_excluded_attempt_run_keys_truncated": false
+}
