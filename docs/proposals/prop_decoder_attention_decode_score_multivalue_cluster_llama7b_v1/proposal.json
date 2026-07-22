@@ -163,7 +163,34 @@
       ],
       "expected_result": {
         "direction": "measure_shared_score_multivalue_cluster_binary_fsm_ppa",
-        "reason": "V2 remains the valid one-hot PPA baseline and is not invalidated. R2 validates the same mode expansion fix as r1 while enforcing PR #1419 / merge 0d5317a1 behavior: `SYNTH_ARGS` is propagated to every `synth` call and exact `decode_score_multivalue_cluster_v1_8ns_binary_fsm_v3_proxy_die_2500` `1_synth.v` state widths are validated against RTL widths."
+        "reason": "R2 was superseded before dispatch: it retained r1's v3 sweep parameter hash, so `--skip_existing` could reuse the old one-hot output instead of exercising PR #1419. No r2 physical result is claimed."
+      },
+      "status": "superseded",
+      "status_reason": "R2 reused r1's sweep parameter hash, so `--skip_existing` could not distinguish the intended corrected binary-FSM mapping from the old one-hot output."
+    },
+    {
+      "item_id": "l1_decoder_attention_decode_score_multivalue_cluster_pnr_binary_fsm_8ns_v3_r3",
+      "task_type": "l1_sweep",
+      "objective": "Measure the exact-state activity calibration path with the unique binary-FSM 8 ns sweep, matched to the v2 physical architecture and configuration.",
+      "evaluation_mode": "frontier_followup",
+      "abstraction_layer": "decoder_attention_decode_score_multivalue_cluster",
+      "comparison_role": "shared_score_multivalue_cluster_binary_fsm_pnr",
+      "config_paths": [
+        "runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/decode_score_multivalue_cluster_v1/sweeps/nangate45_decode_score_multivalue_cluster_8ns_binary_fsm_v4.json",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "paired_baseline_item_id": "l1_decoder_attention_decode_score_multivalue_cluster_pnr_8ns_v2",
+      "prior_item_ids": [
+        "l1_decoder_attention_decode_score_multivalue_cluster_pnr_binary_fsm_8ns_v3_r2"
+      ],
+      "expected_result": {
+        "direction": "measure_shared_score_multivalue_cluster_binary_fsm_ppa",
+        "reason": "V3_r2 was a retry but did not change the `FLOW_VARIANT` hash, so `--skip_existing` could reuse one-hot results. R3 uses a fresh v4 sweep path (`..._v4`), so the required exact-flow variant is `decode_score_multivalue_cluster_v1_8ns_binary_fsm_v4_proxy_die_2500` and routed-state width validation is enforced against fresh `1_synth.v` netlists."
       },
       "status": "pending_implementation_merge"
     }

@@ -395,17 +395,17 @@
     {
       "item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v14",
       "task_type": "l2_campaign",
-      "objective": "Rerun shared-score multivalue-cluster activity-backed power using only the binary-FSM matched 8ns PNR flow (decode_score_multivalue_cluster_v1_8ns_binary_fsm_v3_proxy_die_2500 with SYNTH_ARGS=-nofsm) plus merged equivalence; preserve every previous evidence gate and strengthen routed sequential-output coverage from 95% to 100%.",
+      "objective": "Rerun shared-score multivalue-cluster activity-backed power using only the binary-FSM matched 8ns PNR flow (decode_score_multivalue_cluster_v1_8ns_binary_fsm_v4_proxy_die_2500 with SYNTH_ARGS=-nofsm) plus merged equivalence; preserve every previous evidence gate and strengthen routed sequential-output coverage from 95% to 100%.",
       "evaluation_mode": "frontier_detail",
       "abstraction_layer": "decoder_attention_decode_score_multivalue_cluster_activity_power",
       "comparison_role": "shared_score_multivalue_cluster_activity_power_gate",
       "depends_on_item_ids": [
-        "l1_decoder_attention_decode_score_multivalue_cluster_pnr_binary_fsm_8ns_v3_r2",
+        "l1_decoder_attention_decode_score_multivalue_cluster_pnr_binary_fsm_8ns_v3_r3",
         "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1"
       ],
       "requires_merged_inputs": true,
       "requires_materialized_refs": true,
-      "paired_baseline_item_id": "l1_decoder_attention_decode_score_multivalue_cluster_pnr_binary_fsm_8ns_v3_r2",
+      "paired_baseline_item_id": "l1_decoder_attention_decode_score_multivalue_cluster_pnr_binary_fsm_8ns_v3_r3",
       "revision": {
         "reason": "exact_binary_fsm_postroute_activity_mapping",
         "invalidates_item_ids": [
@@ -414,7 +414,7 @@
       },
       "expected_result": {
         "direction": "record_shared_score_multivalue_cluster_activity_power_gate",
-        "reason": "v14 preserves all existing quality/equivalence/direct-VCD/macro/clock/numeric/artifact gates, strengthens DFF-output coverage to 1.0, requires applied==matched and zero query/apply errors, and keeps all sidecar rows evaluator-local while forbidding clamping, substitution, heuristic activity, and other gate relaxation."
+        "reason": "v14 preserves all existing quality/equivalence/direct-VCD/macro/clock/numeric/artifact gates, strengthens DFF-output coverage to 1.0, requires applied==matched and zero query/apply errors, and keeps all sidecar rows evaluator-local while forbidding clamping, substitution, heuristic activity, and other gate relaxation. It selects only decode_score_multivalue_cluster_v1_8ns_binary_fsm_v4_proxy_die_2500 with SYNTH_ARGS=-nofsm."
       },
       "status": "pending_implementation_merge"
     }
