@@ -1,0 +1,11 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1",
+  "candidate_id": "l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1",
+  "decision": "iterate",
+  "reason": "Await the first merged remote evaluator run for the bounded integrated-service probe before making a promotion decision.",
+  "evidence_refs": [
+    "item:l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1"
+  ],
+  "next_action": "Dispatch the merged integrated-service probe and review the compact JSON/Markdown evidence.",
+  "requires_human_approval": true
+}

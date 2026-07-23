@@ -7225,6 +7225,56 @@ def _decoder_attention_decode_score_multivalue_cluster_frontier_evidence(
     }
 
 
+def _decoder_attention_decode_score_multivalue_integrated_service_evidence(
+    *,
+    item_id: str,
+    proposal_id: str | None = None,
+    proposal_path: str | None = None,
+) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_attention_decode_score_multivalue_integrated_service__{item_id}.json"
+    report = f"{base}/decoder_attention_decode_score_multivalue_integrated_service__{item_id}.md"
+    equivalence = (
+        f"{base}/decoder_attention_decode_score_multivalue_cluster_equivalence__"
+        "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1.json"
+    )
+    proposal_args: list[str] = []
+    proposal_id_text = str(proposal_id or "").strip()
+    proposal_path_text = str(proposal_path or "").strip()
+    if proposal_id_text:
+        proposal_args.extend(["--proposal-id", proposal_id_text])
+    if proposal_path_text:
+        proposal_args.extend(["--proposal-path", proposal_path_text])
+    proposal_arg_text = " ".join(shlex.quote(arg) for arg in proposal_args)
+    return {
+        "inputs": {
+            "decode_score_multivalue_integrated_service_equivalence": equivalence,
+            "decode_score_multivalue_integrated_service_out": out,
+            "decode_score_multivalue_integrated_service_report": report,
+            "decode_score_multivalue_integrated_service_scope": (
+                "Run the integrated shared-score value-service RTL probe across a bounded 14-case matrix through "
+                "cluster_count 32. Retain exact Python/baseline/integrated hash, protocol, and count gates while "
+                "reporting completion cycles, service penalty cycles, shared-result blocking/arbitration, "
+                "router/service contention and occupancy, and explicit exclusions for physical PPA, SRAM macro "
+                "timing, HBM, and token energy."
+            ),
+        },
+        "commands": [
+            {
+                "name": "probe_decode_score_multivalue_integrated_service",
+                "run": (
+                    "python3 npu/eval/probe_attention_decode_score_multivalue_integrated_service.py "
+                    f"--out {out} --out-md {report} "
+                    "--depends-on-item-id l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1 "
+                    f"{proposal_arg_text}".strip()
+                ),
+            }
+        ],
+        "expected_outputs": [out, report],
+        "evidence_only": True,
+    }
+
+
 def _decoder_attention_decode_score_multivalue_gqa_group_frontier_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     evidence_version = _gqa_evidence_version_for_consumer(item_id)
@@ -10884,6 +10934,7 @@ def _build_payload(
         "decoder_attention_decode_score_multivalue_gqa_folded_lane_equivalence",
         "decoder_attention_decode_score_multivalue_gqa_array_equivalence",
         "decoder_attention_decode_score_multivalue_cluster_activity_power",
+        "decoder_attention_decode_score_multivalue_integrated_service",
         "decoder_attention_decode_score_multivalue_gqa_group_activity_power",
         "decoder_attention_decode_score_tile_frontier",
         "decoder_attention_decode_score_local_cluster_frontier",
@@ -11143,6 +11194,12 @@ def _build_payload(
         elif abstraction_layer_name == "decoder_attention_decode_score_multivalue_cluster_activity_power":
             decoder_evidence = _decoder_attention_decode_score_multivalue_cluster_activity_power_evidence(
                 item_id=item_id
+            )
+        elif abstraction_layer_name == "decoder_attention_decode_score_multivalue_integrated_service":
+            decoder_evidence = _decoder_attention_decode_score_multivalue_integrated_service_evidence(
+                item_id=item_id,
+                proposal_id=proposal_id,
+                proposal_path=proposal_path,
             )
         elif abstraction_layer_name == "decoder_attention_decode_score_multivalue_gqa_group_activity_power":
             decoder_evidence = _decoder_attention_decode_score_multivalue_gqa_group_activity_power_evidence(

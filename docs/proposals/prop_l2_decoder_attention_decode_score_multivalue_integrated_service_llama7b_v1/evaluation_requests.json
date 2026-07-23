@@ -1,0 +1,27 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1",
+  "source_commit": "7691291314ff3739164633f6e5f17a1b3eb15c84",
+  "source_commit_note": "Replace with the merge commit that contains this proposal and the integrated-service generator hook before dispatch. Do not dispatch from an unmerged local branch.",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Run the integrated shared-score multivalue decode-service RTL probe across the bounded scale/resource matrix through cluster_count 32 and record compact service evidence only.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_decode_score_multivalue_integrated_service",
+      "comparison_role": "frontier_validation",
+      "paired_baseline_item_id": "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "record_decode_score_multivalue_integrated_service_probe",
+        "reason": "Retain exact Python/baseline/integrated hash, protocol, and count gates while recording completion cycles, service penalty cycles, shared-result blocking/arbitration, router/service contention, occupancy maxima, and explicit exclusions over the bounded 14-case matrix; any selected scale point is representative evidence, not an architectural or performance ranking."
+      },
+      "status": "pending",
+      "notes": "The dependency item is already merged/materialized. This request is ready for normal control-plane dispatch only after the proposal implementation itself is merged."
+    }
+  ]
+}

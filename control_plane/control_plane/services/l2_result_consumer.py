@@ -667,6 +667,10 @@ _DECODER_EVIDENCE_OUTPUT_KEYS: tuple[tuple[str, str], ...] = (
         "decode_score_local_cluster_frontier_report",
     ),
     (
+        "decode_score_multivalue_integrated_service_out",
+        "decode_score_multivalue_integrated_service_report",
+    ),
+    (
         "score_bank_proxy_equivalence_out",
         "score_bank_proxy_equivalence_report",
     ),
@@ -772,6 +776,7 @@ def _decoder_quality_brief(evidence_payload: dict[str, Any]) -> dict[str, Any]:
         "recommended_next_l1_points",
         "required_follow_on_ppa",
         "best",
+        "selected_scale_point",
         "sweep_summary",
         "assumptions",
         "next_step",
@@ -1190,6 +1195,43 @@ def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, 
         ):
             if key in source_best_dict:
                 parts.append(f"{key}={source_best_dict.get(key)}")
+        summary = "; ".join(parts)
+        return outcome, summary if summary.endswith(".") else summary + "."
+
+    if model == "llm_decoder_attention_decode_score_multivalue_integrated_service_probe_v1":
+        summary_row = dict(evidence_payload.get("summary") or {})
+        selected_scale_point = dict(evidence_payload.get("selected_scale_point") or {})
+        diagnosis = dict(evidence_payload.get("diagnosis") or {})
+        outcome = str(diagnosis.get("decision") or "multivalue_integrated_service_probe_recorded")
+        parts = [
+            f"Decoder multivalue integrated-service evidence recorded from {evidence_ref}: decision={outcome}",
+        ]
+        for key in (
+            "validated_case_count",
+            "max_cluster_count",
+            "max_completion_cycle",
+            "max_service_penalty_cycles",
+            "stress_case_id",
+            "all_hash_gates_passed",
+            "all_protocol_gates_passed",
+            "all_count_gates_passed",
+        ):
+            if key in summary_row:
+                parts.append(f"{key}={summary_row.get(key)}")
+        for key in (
+            "selection_role",
+            "case_id",
+            "completion_cycle",
+            "service_penalty_cycles",
+            "shared_result_egress_block_cycles",
+            "router_arbitration_contention_cycles",
+            "bank_conflict_count",
+        ):
+            if key in selected_scale_point:
+                parts.append(f"selected_scale_point_{key}={selected_scale_point.get(key)}")
+        recommended_next = str(diagnosis.get("recommended_next_step", "")).strip()
+        if recommended_next:
+            parts.append(f"recommended_next_step={recommended_next}")
         summary = "; ".join(parts)
         return outcome, summary if summary.endswith(".") else summary + "."
 

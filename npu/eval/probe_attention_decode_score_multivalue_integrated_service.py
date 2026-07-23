@@ -26,8 +26,8 @@ from npu.sim.perf.attention_separated import unpack_signed
 JsonDict = dict[str, Any]
 
 REPORT_EXCLUSIONS = [
+    "physical_ppa",
     "hbm",
-    "array_pnr",
     "total_token_energy",
     "value_sram_macro_timing",
     "score_bank_macro_timing",
@@ -35,14 +35,14 @@ REPORT_EXCLUSIONS = [
 
 DEFAULT_CASES: list[JsonDict] = [
     {
-        "case_id": "c1_p128_b2_rr",
+        "case_id": "c1_p128_b4_rr",
         "cluster_count": 1,
         "packet_w": 128,
-        "banks": 2,
-        "req_queue_depth": 2,
-        "resp_queue_depth": 2,
-        "bank_queue_depth": 2,
-        "read_latency": 1,
+        "banks": 4,
+        "req_queue_depth": 4,
+        "resp_queue_depth": 4,
+        "bank_queue_depth": 4,
+        "read_latency": 2,
         "arb_mode": "round_robin",
         "locality_burst_max": 2,
     },
@@ -51,24 +51,156 @@ DEFAULT_CASES: list[JsonDict] = [
         "cluster_count": 2,
         "packet_w": 128,
         "banks": 4,
-        "req_queue_depth": 2,
-        "resp_queue_depth": 2,
-        "bank_queue_depth": 2,
+        "req_queue_depth": 4,
+        "resp_queue_depth": 4,
+        "bank_queue_depth": 4,
         "read_latency": 2,
         "arb_mode": "round_robin",
         "locality_burst_max": 2,
     },
     {
-        "case_id": "c4_p256_b8_locality",
+        "case_id": "c4_p128_b4_rr",
         "cluster_count": 4,
+        "packet_w": 128,
+        "banks": 4,
+        "req_queue_depth": 4,
+        "resp_queue_depth": 4,
+        "bank_queue_depth": 4,
+        "read_latency": 2,
+        "arb_mode": "round_robin",
+        "locality_burst_max": 2,
+    },
+    {
+        "case_id": "c8_p128_b4_rr",
+        "cluster_count": 8,
+        "packet_w": 128,
+        "banks": 4,
+        "req_queue_depth": 4,
+        "resp_queue_depth": 4,
+        "bank_queue_depth": 4,
+        "read_latency": 2,
+        "arb_mode": "round_robin",
+        "locality_burst_max": 2,
+    },
+    {
+        "case_id": "c16_p128_b4_rr",
+        "cluster_count": 16,
+        "packet_w": 128,
+        "banks": 4,
+        "req_queue_depth": 4,
+        "resp_queue_depth": 4,
+        "bank_queue_depth": 4,
+        "read_latency": 2,
+        "arb_mode": "round_robin",
+        "locality_burst_max": 2,
+    },
+    {
+        "case_id": "c32_p128_b4_rr",
+        "cluster_count": 32,
+        "packet_w": 128,
+        "banks": 4,
+        "req_queue_depth": 4,
+        "resp_queue_depth": 4,
+        "bank_queue_depth": 4,
+        "read_latency": 2,
+        "arb_mode": "round_robin",
+        "locality_burst_max": 2,
+    },
+    {
+        "case_id": "c8_p256_b8_rr",
+        "cluster_count": 8,
         "packet_w": 256,
         "banks": 8,
-        "req_queue_depth": 3,
-        "resp_queue_depth": 2,
-        "bank_queue_depth": 3,
-        "read_latency": 3,
+        "req_queue_depth": 4,
+        "resp_queue_depth": 4,
+        "bank_queue_depth": 4,
+        "read_latency": 2,
+        "arb_mode": "round_robin",
+        "locality_burst_max": 2,
+    },
+    {
+        "case_id": "c8_p256_b8_locality",
+        "cluster_count": 8,
+        "packet_w": 256,
+        "banks": 8,
+        "req_queue_depth": 4,
+        "resp_queue_depth": 4,
+        "bank_queue_depth": 4,
+        "read_latency": 2,
         "arb_mode": "locality_first_bounded",
-        "locality_burst_max": 3,
+        "locality_burst_max": 4,
+    },
+    {
+        "case_id": "c16_p256_b16_rr",
+        "cluster_count": 16,
+        "packet_w": 256,
+        "banks": 16,
+        "req_queue_depth": 4,
+        "resp_queue_depth": 4,
+        "bank_queue_depth": 4,
+        "read_latency": 2,
+        "arb_mode": "round_robin",
+        "locality_burst_max": 2,
+    },
+    {
+        "case_id": "c16_p256_b16_locality",
+        "cluster_count": 16,
+        "packet_w": 256,
+        "banks": 16,
+        "req_queue_depth": 4,
+        "resp_queue_depth": 4,
+        "bank_queue_depth": 4,
+        "read_latency": 2,
+        "arb_mode": "locality_first_bounded",
+        "locality_burst_max": 4,
+    },
+    {
+        "case_id": "c32_p256_b32_rr",
+        "cluster_count": 32,
+        "packet_w": 256,
+        "banks": 32,
+        "req_queue_depth": 4,
+        "resp_queue_depth": 4,
+        "bank_queue_depth": 4,
+        "read_latency": 2,
+        "arb_mode": "round_robin",
+        "locality_burst_max": 2,
+    },
+    {
+        "case_id": "c32_p256_b32_locality",
+        "cluster_count": 32,
+        "packet_w": 256,
+        "banks": 32,
+        "req_queue_depth": 4,
+        "resp_queue_depth": 4,
+        "bank_queue_depth": 4,
+        "read_latency": 2,
+        "arb_mode": "locality_first_bounded",
+        "locality_burst_max": 4,
+    },
+    {
+        "case_id": "c32_p256_b32_q1_rr",
+        "cluster_count": 32,
+        "packet_w": 256,
+        "banks": 32,
+        "req_queue_depth": 1,
+        "resp_queue_depth": 1,
+        "bank_queue_depth": 1,
+        "read_latency": 2,
+        "arb_mode": "round_robin",
+        "locality_burst_max": 2,
+    },
+    {
+        "case_id": "c32_p256_b32_rl6_rr",
+        "cluster_count": 32,
+        "packet_w": 256,
+        "banks": 32,
+        "req_queue_depth": 4,
+        "resp_queue_depth": 4,
+        "bank_queue_depth": 4,
+        "read_latency": 6,
+        "arb_mode": "round_robin",
+        "locality_burst_max": 2,
     },
 ]
 
@@ -1253,6 +1385,16 @@ def _summarize_case(case: JsonDict, baseline: JsonDict, integrated: JsonDict, pr
         and integrated_requests == expected_request_rows
         and integrated_wide == expected_wide_rows
     )
+    baseline_hash_gate_ok = (
+        _hash(baseline_scores) == _hash(expected_score_rows)
+        and _hash(baseline_results) == _hash(expected_result_rows)
+    )
+    integrated_hash_gate_ok = (
+        _hash(integrated_scores) == _hash(expected_score_rows)
+        and _hash(integrated_results) == _hash(expected_result_rows)
+        and _hash(integrated_requests) == _hash(expected_request_rows)
+        and _hash(integrated_wide) == _hash(expected_wide_rows)
+    )
     no_protocol_errors = (
         not baseline["protocol_error"]
         and not integrated["shared"]["protocol_error"]
@@ -1286,6 +1428,7 @@ def _summarize_case(case: JsonDict, baseline: JsonDict, integrated: JsonDict, pr
             "completion_cycle": baseline["completion_cycle"],
             "score_hash": _hash(baseline_scores),
             "final_hash": _hash(baseline_results),
+            "hash_gate_ok": baseline_hash_gate_ok,
             "score_matches_expected": baseline_scores == expected_score_rows,
             "final_matches_expected": baseline_results == expected_result_rows,
             "cluster_done": per_cluster_done,
@@ -1298,6 +1441,7 @@ def _summarize_case(case: JsonDict, baseline: JsonDict, integrated: JsonDict, pr
             "final_hash": _hash(integrated_results),
             "request_hash": _hash(integrated_requests),
             "wide_response_matrix_hash": _hash(integrated_wide),
+            "hash_gate_ok": integrated_hash_gate_ok,
             "exact_match": exact_match,
             "no_protocol_errors": no_protocol_errors,
             "no_drop_duplicate_deadlock_timeout": no_drop_duplicate_deadlock_timeout,
@@ -1338,6 +1482,11 @@ def _summarize_case(case: JsonDict, baseline: JsonDict, integrated: JsonDict, pr
             },
             "top_sha256": integrated["top_sha256"],
         },
+        "gates": {
+            "hash_gate_ok": baseline_hash_gate_ok and integrated_hash_gate_ok,
+            "protocol_gate_ok": no_protocol_errors,
+            "count_gate_ok": counts_ok,
+        },
         "expected_hashes": {
             "score_hash": _hash(expected_score_rows),
             "final_hash": _hash(expected_result_rows),
@@ -1352,6 +1501,98 @@ def _summarize_case(case: JsonDict, baseline: JsonDict, integrated: JsonDict, pr
             "baseline": baseline["manifest"],
             "integrated": integrated["manifest"],
         },
+    }
+
+
+def _selected_scale_point(reports: list[JsonDict]) -> JsonDict:
+    nominal = [
+        case
+        for case in reports
+        if int(case["config"]["req_queue_depth"]) == 4
+        and int(case["config"]["resp_queue_depth"]) == 4
+        and int(case["config"]["bank_queue_depth"]) == 4
+        and int(case["config"]["read_latency"]) == 2
+        and str(case["config"]["arb_mode"]) == "round_robin"
+    ]
+    selection_pool = nominal or reports
+    selection_role = (
+        "representative_largest_nominal_scale_point"
+        if nominal
+        else "representative_largest_available_scale_point"
+    )
+    selection_basis = (
+        "Largest tested cluster_count, then packet_w, then banks among q4/read_latency=2/round_robin "
+        "cases; coverage representative only, not a performance or architectural ranking."
+        if nominal
+        else "Largest tested cluster_count, then packet_w, then banks because no q4/read_latency=2/round_robin "
+        "case was provided; coverage representative only, not a performance or architectural ranking."
+    )
+    selected = max(
+        selection_pool,
+        key=lambda case: (
+            int(case["config"]["cluster_count"]),
+            int(case["config"]["packet_w"]),
+            int(case["config"]["banks"]),
+            str(case["case_id"]),
+        ),
+    )
+    config = dict(selected["config"])
+    integrated = dict(selected["integrated_service"])
+    return {
+        "selection_role": selection_role,
+        "selection_basis": selection_basis,
+        "arch_id": "decode_score_multivalue_integrated_service",
+        "macro_mode": "rtl_probe",
+        "cluster_count": config["cluster_count"],
+        "bank_count": config["banks"],
+        "packet_payload_bytes": int(config["packet_w"]) // 8,
+        "schedule_policy": "shared_score_value_service_probe",
+        "bank_arbiter_policy": config["arb_mode"],
+        "completion_cycle": integrated["completion_cycle"],
+        "service_penalty_cycles": integrated["service_penalty_cycles"],
+        "dominant_tile_resource": "onchip_shared_service",
+        "case_id": selected["case_id"],
+        "shared_result_egress_block_cycles": integrated["counters"]["shared_result"]["egress_block_cycles"],
+        "router_arbitration_contention_cycles": integrated["counters"]["arbitration_contention_cycles"],
+        "bank_conflict_count": integrated["counters"]["bank_conflict_count"],
+    }
+
+
+def _report_summary(reports: list[JsonDict]) -> JsonDict:
+    stress_case = max(
+        reports,
+        key=lambda case: (
+            int(case["integrated_service"]["service_penalty_cycles"]),
+            int(case["integrated_service"]["completion_cycle"]),
+            int(case["config"]["cluster_count"]),
+        ),
+    )
+    return {
+        "validated_case_count": len(reports),
+        "max_cluster_count": max(int(case["config"]["cluster_count"]) for case in reports),
+        "max_completion_cycle": max(int(case["integrated_service"]["completion_cycle"]) for case in reports),
+        "max_service_penalty_cycles": max(
+            int(case["integrated_service"]["service_penalty_cycles"]) for case in reports
+        ),
+        "max_router_arbitration_contention_cycles": max(
+            int(case["integrated_service"]["counters"]["arbitration_contention_cycles"]) for case in reports
+        ),
+        "max_shared_result_egress_block_cycles": max(
+            int(case["integrated_service"]["counters"]["shared_result"]["egress_block_cycles"]) for case in reports
+        ),
+        "max_bank_conflict_count": max(
+            int(case["integrated_service"]["counters"]["bank_conflict_count"]) for case in reports
+        ),
+        "max_router_req_occupancy": max(
+            int(case["integrated_service"]["counters"]["max_occupancy"]["router_req"]) for case in reports
+        ),
+        "max_service_req_occupancy": max(
+            int(case["integrated_service"]["counters"]["max_occupancy"]["service_req"]) for case in reports
+        ),
+        "stress_case_id": str(stress_case["case_id"]),
+        "all_hash_gates_passed": all(bool(case["gates"]["hash_gate_ok"]) for case in reports),
+        "all_protocol_gates_passed": all(bool(case["gates"]["protocol_gate_ok"]) for case in reports),
+        "all_count_gates_passed": all(bool(case["gates"]["count_gate_ok"]) for case in reports),
     }
 
 
@@ -1396,7 +1637,13 @@ def _validate_case(case: JsonDict) -> JsonDict:
     }
 
 
-def build_report(config: JsonDict | None = None) -> JsonDict:
+def build_report(
+    config: JsonDict | None = None,
+    *,
+    proposal_id: str | None = None,
+    proposal_path: str | None = None,
+    depends_on_item_ids: list[str] | None = None,
+) -> JsonDict:
     payload = config or {"cases": DEFAULT_CASES}
     case_rows = payload.get("cases")
     if not isinstance(case_rows, list) or not case_rows:
@@ -1415,8 +1662,19 @@ def build_report(config: JsonDict | None = None) -> JsonDict:
     decision = "pass" if all(case["decision"] == "pass" for case in reports) else "fail"
     result = {
         "version": 1,
-        "model": "attention_decode_score_multivalue_integrated_service_probe_v1",
+        "model": "llm_decoder_attention_decode_score_multivalue_integrated_service_probe_v1",
         "decision": decision,
+        "diagnosis": {
+            "decision": (
+                "multivalue_integrated_service_probe_passed"
+                if decision == "pass"
+                else "multivalue_integrated_service_probe_failed"
+            ),
+            "recommended_next_step": (
+                "Use this merged/materialized integrated-service probe as the shared-score on-chip service "
+                "closure input before any NoC, HBM, physical PPA, SRAM macro timing, or token-energy claim."
+            ),
+        },
         "exclusions": REPORT_EXCLUSIONS,
         "source_identities": {
             "repo_commit": _git_head(),
@@ -1441,8 +1699,20 @@ def build_report(config: JsonDict | None = None) -> JsonDict:
             ],
         },
         "preload_entries": preload_entries,
+        "selected_scale_point": _selected_scale_point(reports),
+        "summary": _report_summary(reports),
         "cases": reports,
     }
+    linkage: JsonDict = {}
+    if proposal_id:
+        linkage["proposal_id"] = str(proposal_id)
+    if proposal_path:
+        linkage["proposal_path"] = str(proposal_path)
+    depends = [str(item).strip() for item in (depends_on_item_ids or []) if str(item).strip()]
+    if depends:
+        linkage["depends_on_item_ids"] = depends
+    if linkage:
+        result["source_links"] = linkage
     validate_report(result)
     return result
 
@@ -1450,7 +1720,7 @@ def build_report(config: JsonDict | None = None) -> JsonDict:
 def validate_report(payload: JsonDict) -> None:
     if payload.get("version") != 1:
         raise ValueError("report version must be 1")
-    if payload.get("model") != "attention_decode_score_multivalue_integrated_service_probe_v1":
+    if payload.get("model") != "llm_decoder_attention_decode_score_multivalue_integrated_service_probe_v1":
         raise ValueError("unexpected report model")
     if payload.get("exclusions") != REPORT_EXCLUSIONS:
         raise ValueError(f"report exclusions must explicitly be {', '.join(REPORT_EXCLUSIONS)}")
@@ -1463,6 +1733,24 @@ def validate_report(payload: JsonDict) -> None:
     cases = payload.get("cases")
     if not isinstance(cases, list) or not cases:
         raise ValueError("report must contain cases")
+    summary = payload.get("summary")
+    if not isinstance(summary, dict):
+        raise ValueError("report must contain summary")
+    if int(summary.get("validated_case_count", 0)) != len(cases):
+        raise ValueError("summary validated_case_count mismatch")
+    selected_scale_point = payload.get("selected_scale_point")
+    if not isinstance(selected_scale_point, dict):
+        raise ValueError("report must contain selected_scale_point")
+    if selected_scale_point.get("selection_role") not in {
+        "representative_largest_nominal_scale_point",
+        "representative_largest_available_scale_point",
+    }:
+        raise ValueError("selected_scale_point lacks representative selection role")
+    if "not a performance or architectural ranking" not in str(selected_scale_point.get("selection_basis", "")):
+        raise ValueError("selected_scale_point must explicitly disclaim ranking")
+    case_ids = {str(case.get("case_id")) for case in cases if isinstance(case, dict)}
+    if str(selected_scale_point.get("case_id")) not in case_ids:
+        raise ValueError("selected_scale_point does not reference a report case")
     for case in cases:
         if not isinstance(case, dict):
             raise ValueError("case rows must be objects")
@@ -1505,6 +1793,86 @@ def validate_report(payload: JsonDict) -> None:
             raise ValueError(f"unexpected shared_result egress II for {case.get('case_id')}")
         if int(case.get("config", {}).get("cluster_count", 0)) > 1 and egress.get("back_to_back_fire_seen") is not True:
             raise ValueError(f"missing shared_result back-to-back evidence for {case.get('case_id')}")
+        gates = case.get("gates")
+        if not isinstance(gates, dict) or not all(bool(gates.get(key)) for key in ("hash_gate_ok", "protocol_gate_ok", "count_gate_ok")):
+            raise ValueError(f"gate status missing or failed for {case.get('case_id')}")
+
+
+def _build_markdown(report: JsonDict) -> str:
+    summary = dict(report["summary"])
+    selected_scale_point = dict(report["selected_scale_point"])
+    linkage = dict(report.get("source_links") or {})
+    lines = [
+        "# Attention Decode Score Multivalue Integrated Service Probe",
+        "",
+        f"- decision: `{report['decision']}`",
+        f"- outcome: `{report['diagnosis']['decision']}`",
+        f"- repo commit: `{report['source_identities']['repo_commit']}`",
+        f"- cases: `{summary['validated_case_count']}`",
+        f"- max_cluster_count: `{summary['max_cluster_count']}`",
+        f"- max_completion_cycle: `{summary['max_completion_cycle']}`",
+        f"- max_service_penalty_cycles: `{summary['max_service_penalty_cycles']}`",
+        f"- stress_case_id: `{summary['stress_case_id']}`",
+        f"- selected_scale_point: `{selected_scale_point['case_id']}`",
+        f"- selected_scale_point_role: `{selected_scale_point['selection_role']}`",
+        f"- selected_scale_point_note: {selected_scale_point['selection_basis']}",
+        f"- gates: `hash={summary['all_hash_gates_passed']}` `protocol={summary['all_protocol_gates_passed']}` `count={summary['all_count_gates_passed']}`",
+        f"- exclusions: `{', '.join(report['exclusions'])}`",
+    ]
+    if linkage.get("proposal_id"):
+        lines.append(f"- proposal_id: `{linkage['proposal_id']}`")
+    if linkage.get("proposal_path"):
+        lines.append(f"- proposal_path: `{linkage['proposal_path']}`")
+    depends = linkage.get("depends_on_item_ids")
+    if isinstance(depends, list) and depends:
+        lines.append(f"- depends_on_item_ids: `{', '.join(str(item) for item in depends)}`")
+    lines.extend(
+        [
+            "",
+            "## Cases",
+            "",
+            "| case | cfg | done | penalty | gate | req stall | router arb | bank conflict | resp block r/s | shared arb/block | occ rreq/rresp/sreq/sresp |",
+            "| --- | --- | ---: | ---: | --- | ---: | ---: | ---: | --- | --- | --- |",
+        ]
+    )
+    for case in report["cases"]:
+        config = dict(case["config"])
+        integrated = dict(case["integrated_service"])
+        counters = dict(integrated["counters"])
+        occupancy = dict(counters["max_occupancy"])
+        shared = dict(counters["shared_result"])
+        response_block = dict(counters["response_block_cycles"])
+        gate = dict(case["gates"])
+        lines.append(
+            "| {case_id} | c{cluster}/p{packet}/b{banks}/{arb}/q{queue}/rl{latency} | {done} | {penalty} | "
+            "h:{hash_gate}/p:{protocol_gate}/c:{count_gate} | {req_stall} | {router_arb} | {bank_conflict} | "
+            "{router_block}/{service_block} | {shared_arb}/{shared_block} | {router_req}/{router_resp}/{service_req}/{service_resp} |".format(
+                case_id=case["case_id"],
+                cluster=config["cluster_count"],
+                packet=config["packet_w"],
+                banks=config["banks"],
+                arb=config["arb_mode"],
+                queue=config["req_queue_depth"],
+                latency=config["read_latency"],
+                done=integrated["completion_cycle"],
+                penalty=integrated["service_penalty_cycles"],
+                hash_gate="ok" if gate["hash_gate_ok"] else "fail",
+                protocol_gate="ok" if gate["protocol_gate_ok"] else "fail",
+                count_gate="ok" if gate["count_gate_ok"] else "fail",
+                req_stall=counters["request_injection_stall_cycles"],
+                router_arb=counters["arbitration_contention_cycles"],
+                bank_conflict=counters["bank_conflict_count"],
+                router_block=response_block["router"],
+                service_block=response_block["service"],
+                shared_arb=shared["arbitration_contention_cycles"],
+                shared_block=shared["egress_block_cycles"],
+                router_req=occupancy["router_req"],
+                router_resp=occupancy["router_resp"],
+                service_req=occupancy["service_req"],
+                service_resp=occupancy["service_resp"],
+            )
+        )
+    return "\n".join(lines) + "\n"
 
 
 def main() -> int:
@@ -1512,6 +1880,9 @@ def main() -> int:
     parser.add_argument("--config", type=Path)
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--out-md", type=Path)
+    parser.add_argument("--proposal-id")
+    parser.add_argument("--proposal-path")
+    parser.add_argument("--depends-on-item-id", action="append", default=[])
     args = parser.parse_args()
     config = None
     if args.config is not None:
@@ -1519,18 +1890,17 @@ def main() -> int:
         if not isinstance(config_payload, dict):
             raise SystemExit("config must decode to a JSON object")
         config = config_payload
-    report = build_report(config)
+    report = build_report(
+        config,
+        proposal_id=str(args.proposal_id or "").strip() or None,
+        proposal_path=str(args.proposal_path or "").strip() or None,
+        depends_on_item_ids=[str(item).strip() for item in args.depends_on_item_id if str(item).strip()],
+    )
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     if args.out_md is not None:
         args.out_md.parent.mkdir(parents=True, exist_ok=True)
-        args.out_md.write_text(
-            "# Attention Decode Score Multivalue Integrated Service Probe\n\n"
-            f"- decision: `{report['decision']}`\n"
-            f"- repo commit: `{report['source_identities']['repo_commit']}`\n"
-            f"- cases: `{len(report['cases'])}`\n",
-            encoding="utf-8",
-        )
+        args.out_md.write_text(_build_markdown(report), encoding="utf-8")
     return 0 if report["decision"] == "pass" else 1
 
 

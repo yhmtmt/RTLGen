@@ -8851,6 +8851,79 @@ def test_generate_l2_campaign_task_adds_decode_score_multivalue_cluster_frontier
             )
 
 
+def test_generate_l2_campaign_task_adds_decode_score_multivalue_integrated_service() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id="l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1",
+                    proposal_id="prop_l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1",
+                    proposal_path=(
+                        "docs/proposals/"
+                        "prop_l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1/proposal.json"
+                    ),
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    abstraction_layer="decoder_attention_decode_score_multivalue_integrated_service",
+                    evaluation_mode="frontier_detail",
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            commands = work_item.task_request.request_payload["task"]["commands"]
+            run = commands[0]["run"]
+            decoder_inputs = work_item.input_manifest["decoder_contract"]
+
+            assert [command["name"] for command in commands[:2]] == [
+                "probe_decode_score_multivalue_integrated_service",
+                "validate_runs",
+            ]
+            assert "probe_attention_decode_score_multivalue_integrated_service.py" in run
+            assert "--proposal-id prop_l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1" in run
+            assert (
+                "--proposal-path "
+                "docs/proposals/prop_l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1/proposal.json"
+            ) in run
+            assert (
+                "--depends-on-item-id "
+                "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1"
+            ) in run
+            assert (
+                decoder_inputs["decode_score_multivalue_integrated_service_equivalence"].endswith(
+                    "decoder_attention_decode_score_multivalue_cluster_equivalence__"
+                    "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1.json"
+                )
+            )
+            assert "shared-result blocking/arbitration" in decoder_inputs[
+                "decode_score_multivalue_integrated_service_scope"
+            ]
+            assert "physical PPA" in decoder_inputs["decode_score_multivalue_integrated_service_scope"]
+            assert (
+                decoder_inputs["decode_score_multivalue_integrated_service_out"]
+                == "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_decode_score_multivalue_integrated_service__"
+                "l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1.json"
+            )
+            assert any(
+                output.endswith(
+                    "decoder_attention_decode_score_multivalue_integrated_service__"
+                    "l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1.md"
+                )
+                for output in work_item.task_request.request_payload["task"]["expected_outputs"]
+            )
+
+
 def test_generate_l2_campaign_task_cluster_frontier_uses_cluster_activity_v1_dependency() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"

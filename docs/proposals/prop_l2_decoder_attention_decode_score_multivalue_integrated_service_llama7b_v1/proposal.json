@@ -1,0 +1,81 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1",
+  "created_utc": "2026-07-23T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Llama7B multivalue integrated service probe",
+  "abstraction_layer": "decoder_attention_decode_score_multivalue_integrated_service",
+  "hypothesis": "Once the exact shared-score multivalue cluster equivalence item is merged and materialized, a bounded integrated service probe through cluster_count 32 can preserve the exact Python/baseline/integrated hash contract while exposing the first realistic on-chip service penalties, shared-result blocking, router arbitration, bank contention, and occupancy limits without claiming NoC/HBM/physical closure.",
+  "direct_comparison": {
+    "primary_question": "Does the merged shared-score multivalue cluster retain exact result hashes and protocol/count gates once the integrated on-chip value service is exercised across a bounded scale/resource matrix through 32 clusters?",
+    "include": [
+      "depend on the merged exact shared-score multivalue cluster equivalence item and require merged/materialized inputs",
+      "fixed-resource scaling at cluster_count 1/2/4/8/16/32 with identical p128, banks=4, queue depths=4, read_latency=2, round_robin, locality_burst_max=2",
+      "scaled-resource p256 points at c8/b8, c16/b16, and c32/b32 with queue depths=4, read_latency=2, and round_robin/locality variants",
+      "one queue-depth stress case and one read-latency stress case at c32",
+      "compact repo-portable JSON/Markdown evidence that reports completion cycles, service penalty cycles, shared-result blocking/arbitration, router/service contention and occupancy, explicit exclusions, and proposal/dependency linkage",
+      "label the largest nominal round-robin coverage case only as a representative selected_scale_point, not as an architectural or performance best"
+    ],
+    "exclude": [
+      "do not claim physical PPA",
+      "do not claim SRAM macro timing closure",
+      "do not claim HBM service closure",
+      "do not claim total-token energy or token energy rankings",
+      "do not emit full stdout traces or intermediate tensors"
+    ],
+    "follow_on_broad_sweep": [
+      "If the integrated-service probe passes, consume it as the shared-score service evidence for later NoC/value-memory composition work.",
+      "If the probe exposes blocking hotspots, use the case summary to prioritize the next router/service composition abstraction before any physical or HBM claim."
+    ]
+  },
+  "expected_benefit": [
+    "turns the exact multivalue equivalence point into merged service-aware evidence",
+    "bounds integrated shared-result and banked-value contention through cluster_count 32 without expanding into full system closure",
+    "provides portable evidence that the control plane can dispatch and later consume without full logs"
+  ],
+  "risks": [
+    "the bounded case matrix may still miss a more pathological service regime outside the chosen queue and latency points",
+    "passing this probe does not close value-memory composition, NoC composition, HBM service, or physical PPA",
+    "the service probe may reveal scaling penalties that weaken the shared-score family before later composition work"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Run the integrated shared-score multivalue decode-service RTL probe across the bounded scale/resource matrix through cluster_count 32 and record compact service evidence only.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_decode_score_multivalue_integrated_service",
+      "comparison_role": "frontier_validation",
+      "paired_baseline_item_id": "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "record_decode_score_multivalue_integrated_service_probe",
+        "reason": "Retain exact Python/baseline/integrated hash, protocol, and count gates while recording completion cycles, service penalty cycles, shared-result blocking/arbitration, router/service contention, occupancy maxima, and explicit exclusions over the bounded 14-case matrix; any selected scale point is representative evidence, not an architectural or performance ranking."
+      },
+      "status": "pending"
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_cluster_equivalence__l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1.json",
+    "docs/proposals/prop_decoder_attention_decode_score_multivalue_cluster_llama7b_v1/proposal.json",
+    "docs/proposals/prop_decoder_attention_decode_score_multivalue_cluster_llama7b_v1/evaluation_requests.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/probe_attention_decode_score_multivalue_integrated_service.py",
+    "control_plane/control_plane/services/l2_task_generator.py",
+    "control_plane/control_plane/services/l2_result_consumer.py",
+    "tests/test_attention_decode_score_multivalue_integrated_service.py"
+  ],
+  "remaining_abstractions_after_this_step": [
+    "NoC composition is still open beyond the bounded integrated service probe.",
+    "HBM service remains unclaimed.",
+    "Physical PPA and SRAM macro timing remain unclaimed.",
+    "Token-energy claims remain out of scope."
+  ]
+}
