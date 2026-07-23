@@ -26,10 +26,14 @@ NOC_REASSEMBLER=npu/sim/rtl/noc_value_matrix_reassembler.sv
 VALUE_SERVICE=npu/sim/rtl/banked_value_memory_service.sv
 TB_NOC_ROUTER=npu/sim/rtl/tb_noc_ready_valid_router.sv
 TB_VALUE_SERVICE=npu/sim/rtl/tb_banked_value_memory_service.sv
+TB_VALUE_SERVICE_PARALLEL=npu/sim/rtl/tb_banked_value_memory_service_parallel.sv
+TB_REASSEMBLER=npu/sim/rtl/tb_noc_value_matrix_reassembler.sv
 OUT_NOC_ROUTER=build_noc_router.vvp
 OUT_VALUE_SERVICE=build_value_service.vvp
+OUT_VALUE_SERVICE_PARALLEL=build_value_service_parallel.vvp
+OUT_REASSEMBLER=build_reassembler.vvp
 
-.PHONY: gen gen-arch build run run-axi run-axi-multi run-arch run-axi-arch run-axi-multi-arch run-arch-sram run-axi-arch-sram run-axi-multi-arch-sram run-arch-event run-axi-arch-event run-axi-multi-arch-event run-noc-router-rr-128 run-noc-router-local-128 run-noc-router-local-256 run-value-service-128 run-value-service-256 status clean
+.PHONY: gen gen-arch build run run-axi run-axi-multi run-arch run-axi-arch run-axi-multi-arch run-arch-sram run-axi-arch-sram run-axi-multi-arch-sram run-arch-event run-axi-arch-event run-axi-multi-arch-event run-noc-router-rr-128 run-noc-router-local-128 run-noc-router-local-256 run-value-service-128 run-value-service-256 run-value-service-parallel-128 run-value-service-parallel-256 run-reassembler-128 run-reassembler-256 status clean
 
 gen:
 	python3 npu/rtlgen/gen.py --config $(CONFIG) --out npu/rtlgen/out
@@ -107,6 +111,22 @@ run-value-service-128:
 run-value-service-256:
 	$(IVERILOG) $(IVERILOGFLAGS) -P tb_banked_value_memory_service.PACKET_W=256 -s tb_banked_value_memory_service -o $(OUT_VALUE_SERVICE) $(NOC_FIFO) $(NOC_ROUTER) $(NOC_REASSEMBLER) $(VALUE_SERVICE) $(TB_VALUE_SERVICE)
 	$(VVP) $(OUT_VALUE_SERVICE)
+
+run-value-service-parallel-128:
+	$(IVERILOG) $(IVERILOGFLAGS) -P tb_banked_value_memory_service_parallel.PACKET_W=128 -s tb_banked_value_memory_service_parallel -o $(OUT_VALUE_SERVICE_PARALLEL) $(NOC_FIFO) $(NOC_ROUTER) $(NOC_REASSEMBLER) $(VALUE_SERVICE) $(TB_VALUE_SERVICE_PARALLEL)
+	$(VVP) $(OUT_VALUE_SERVICE_PARALLEL)
+
+run-value-service-parallel-256:
+	$(IVERILOG) $(IVERILOGFLAGS) -P tb_banked_value_memory_service_parallel.PACKET_W=256 -s tb_banked_value_memory_service_parallel -o $(OUT_VALUE_SERVICE_PARALLEL) $(NOC_FIFO) $(NOC_ROUTER) $(NOC_REASSEMBLER) $(VALUE_SERVICE) $(TB_VALUE_SERVICE_PARALLEL)
+	$(VVP) $(OUT_VALUE_SERVICE_PARALLEL)
+
+run-reassembler-128:
+	$(IVERILOG) $(IVERILOGFLAGS) -P tb_noc_value_matrix_reassembler.PACKET_W=128 -s tb_noc_value_matrix_reassembler -o $(OUT_REASSEMBLER) $(NOC_REASSEMBLER) $(TB_REASSEMBLER)
+	$(VVP) $(OUT_REASSEMBLER)
+
+run-reassembler-256:
+	$(IVERILOG) $(IVERILOGFLAGS) -P tb_noc_value_matrix_reassembler.PACKET_W=256 -s tb_noc_value_matrix_reassembler -o $(OUT_REASSEMBLER) $(NOC_REASSEMBLER) $(TB_REASSEMBLER)
+	$(VVP) $(OUT_REASSEMBLER)
 
 status:
 	python3 npu/docs/update_status.py

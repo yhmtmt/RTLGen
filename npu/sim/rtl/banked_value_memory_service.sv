@@ -87,6 +87,8 @@ module banked_value_memory_service #(
   reg [BANKS-1:0] bank_ready_fragment_r;
   reg [BANK_PTR_W-1:0] resp_rr_cursor;
   reg [BANK_PTR_W-1:0] resp_grant_bank_r;
+  reg resp_lock_valid_r;
+  reg [BANK_PTR_W-1:0] resp_lock_bank_r;
   reg any_ready_response_r;
   reg [REQ_OCC_W-1:0] req_occupancy_sum_r;
   reg [RESP_OCC_W-1:0] resp_occupancy_sum_r;
@@ -239,15 +241,20 @@ module banked_value_memory_service #(
 
     any_ready_response_r = 1'b0;
     resp_grant_bank_r = resp_rr_cursor;
-    for (scan_i = 0; scan_i < BANKS; scan_i = scan_i + 1) begin
-      scan_bank_int = resp_rr_cursor + scan_i;
-      if (scan_bank_int >= BANKS) begin
-        scan_bank_int = scan_bank_int - BANKS;
-      end
-      scan_bank = scan_bank_int[BANK_PTR_W-1:0];
-      if (!any_ready_response_r && bank_ready_fragment_r[scan_bank]) begin
-        any_ready_response_r = 1'b1;
-        resp_grant_bank_r = scan_bank;
+    if (resp_lock_valid_r) begin
+      any_ready_response_r = bank_ready_fragment_r[resp_lock_bank_r];
+      resp_grant_bank_r = resp_lock_bank_r;
+    end else begin
+      for (scan_i = 0; scan_i < BANKS; scan_i = scan_i + 1) begin
+        scan_bank_int = resp_rr_cursor + scan_i;
+        if (scan_bank_int >= BANKS) begin
+          scan_bank_int = scan_bank_int - BANKS;
+        end
+        scan_bank = scan_bank_int[BANK_PTR_W-1:0];
+        if (!any_ready_response_r && bank_ready_fragment_r[scan_bank]) begin
+          any_ready_response_r = 1'b1;
+          resp_grant_bank_r = scan_bank;
+        end
       end
     end
   end
@@ -307,6 +314,8 @@ module banked_value_memory_service #(
         bank_latency[seq_bank_i] <= {LAT_W{1'b0}};
       end
       resp_rr_cursor <= {BANK_PTR_W{1'b0}};
+      resp_lock_valid_r <= 1'b0;
+      resp_lock_bank_r <= {BANK_PTR_W{1'b0}};
       accepted_req_count <= {COUNTER_W{1'b0}};
       emitted_resp_count <= {COUNTER_W{1'b0}};
       bank_conflict_count <= {COUNTER_W{1'b0}};
@@ -366,15 +375,19 @@ module banked_value_memory_service #(
         if (resp_last) begin
           bank_busy[resp_grant_bank_r] <= 1'b0;
           active_fragment[resp_grant_bank_r] <= {FRAG_IDX_W{1'b0}};
+          resp_lock_valid_r <= 1'b0;
+          resp_lock_bank_r <= {BANK_PTR_W{1'b0}};
           emitted_resp_count <= emitted_resp_count + {{(COUNTER_W-1){1'b0}}, 1'b1};
+          if (resp_grant_bank_r == (BANKS - 1)) begin
+            resp_rr_cursor <= {BANK_PTR_W{1'b0}};
+          end else begin
+            resp_rr_cursor <= resp_grant_bank_r + {{(BANK_PTR_W-1){1'b0}}, 1'b1};
+          end
         end else begin
           active_fragment[resp_grant_bank_r] <=
             active_fragment[resp_grant_bank_r] + {{(FRAG_IDX_W-1){1'b0}}, 1'b1};
-        end
-        if (resp_grant_bank_r == (BANKS - 1)) begin
-          resp_rr_cursor <= {BANK_PTR_W{1'b0}};
-        end else begin
-          resp_rr_cursor <= resp_grant_bank_r + {{(BANK_PTR_W-1){1'b0}}, 1'b1};
+          resp_lock_valid_r <= 1'b1;
+          resp_lock_bank_r <= resp_grant_bank_r;
         end
       end
 

@@ -272,7 +272,7 @@ module noc_ready_valid_router #(
         .rst_n(rst_n),
         .in_valid(src_req_valid[req_gi]),
         .in_ready(src_req_ready[req_gi]),
-        .in_data(pack_req(src_req_source[(req_gi * SOURCE_W) +: SOURCE_W],
+        .in_data(pack_req(req_gi[SOURCE_W-1:0],
                           src_req_tag[(req_gi * TAG_W) +: TAG_W],
                           src_req_addr[(req_gi * ADDR_W) +: ADDR_W],
                           src_req_value_slice[(req_gi * VALUE_SLICE_W) +: VALUE_SLICE_W])),

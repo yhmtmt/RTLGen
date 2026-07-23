@@ -61,6 +61,7 @@ module tb_noc_ready_valid_router;
   wire [31:0] resp_max_occupancy;
 
   integer observed_req_tags [0:15];
+  integer observed_req_sources [0:15];
   integer observed_req_count;
   integer fairness_grants_to_source1;
   integer fairness_total_grants;
@@ -206,6 +207,7 @@ module tb_noc_ready_valid_router;
 
       if (req_valid && req_ready) begin
         observed_req_tags[observed_req_count] <= req_tag;
+        observed_req_sources[observed_req_count] <= req_source;
         observed_req_count <= observed_req_count + 1;
         if ((ARB_MODE == 1) && (fairness_total_grants < 6)) begin
           fairness_total_grants <= fairness_total_grants + 1;
@@ -252,11 +254,16 @@ module tb_noc_ready_valid_router;
 
     @(negedge clk);
     set_request(0, 8'h01, 12'd0, 4'h0);
+    src_req_source[0 +: SOURCE_W] = 2'd2;
     repeat (3) @(posedge clk);
     @(negedge clk);
     clear_request(0);
     req_ready = 1'b1;
     wait (observed_req_count >= 1);
+    if (observed_req_sources[0] !== 0) begin
+      $display("ERROR: request source spoofed through ingress got=%0d", observed_req_sources[0]);
+      $finish(1);
+    end
     observed_req_count = 0;
     req_ready = 1'b0;
 

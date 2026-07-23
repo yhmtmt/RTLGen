@@ -30,17 +30,23 @@ module noc_value_matrix_reassembler #(
   output wire [TAG_W-1:0] wide_tag,
   output wire [ADDR_W-1:0] wide_addr,
   output wire [VALUE_SLICE_W-1:0] wide_value_slice,
-  output wire [VALUE_W-1:0] wide_matrix
+  output wire [VALUE_W-1:0] wide_matrix,
+  output reg protocol_error
 ) ;
   localparam integer FRAGMENTS = VALUE_W / PACKET_W;
 
   reg collecting;
+  reg [FRAG_IDX_W-1:0] expected_fragment_r;
   reg wide_valid_r;
   reg [SOURCE_W-1:0] wide_source_r;
   reg [TAG_W-1:0] wide_tag_r;
   reg [ADDR_W-1:0] wide_addr_r;
   reg [VALUE_SLICE_W-1:0] wide_value_slice_r;
   reg [VALUE_W-1:0] wide_matrix_r;
+  reg metadata_match;
+  reg fragment_in_order;
+  reg last_consistent;
+  reg segment_valid_r;
 
   wire seg_fire = seg_valid && seg_ready;
   wire wide_fire = wide_valid && wide_ready;
@@ -79,28 +85,57 @@ module noc_value_matrix_reassembler #(
   always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
       collecting <= 1'b0;
+      expected_fragment_r <= {{(FRAG_IDX_W-1){1'b0}}, 1'b1};
       wide_valid_r <= 1'b0;
       wide_source_r <= {SOURCE_W{1'b0}};
       wide_tag_r <= {TAG_W{1'b0}};
       wide_addr_r <= {ADDR_W{1'b0}};
       wide_value_slice_r <= {VALUE_SLICE_W{1'b0}};
       wide_matrix_r <= {VALUE_W{1'b0}};
+      protocol_error <= 1'b0;
     end else begin
       if (wide_fire) begin
         wide_valid_r <= 1'b0;
       end
 
       if (seg_fire) begin
+        metadata_match = !collecting ||
+                         ((seg_source == wide_source_r) &&
+                          (seg_tag == wide_tag_r) &&
+                          (seg_addr == wide_addr_r) &&
+                          (seg_value_slice == wide_value_slice_r));
+        fragment_in_order = collecting ?
+          (seg_fragment_idx == expected_fragment_r) :
+          (seg_fragment_idx == {FRAG_IDX_W{1'b0}});
+        last_consistent = seg_last ?
+          (seg_fragment_idx == (FRAGMENTS - 1)) :
+          (seg_fragment_idx != (FRAGMENTS - 1));
+        segment_valid_r = metadata_match && fragment_in_order && last_consistent;
+
         if (!collecting) begin
           wide_source_r <= seg_source;
           wide_tag_r <= seg_tag;
           wide_addr_r <= seg_addr;
           wide_value_slice_r <= seg_value_slice;
-          collecting <= !seg_last;
         end
-        wide_matrix_r[(seg_fragment_idx * PACKET_W) +: PACKET_W] <= seg_data;
-        if (seg_last) begin
-          wide_valid_r <= 1'b1;
+
+        if (!segment_valid_r) begin
+          protocol_error <= 1'b1;
+          collecting <= 1'b0;
+          expected_fragment_r <= {{(FRAG_IDX_W-1){1'b0}}, 1'b1};
+        end else begin
+          wide_matrix_r[(seg_fragment_idx * PACKET_W) +: PACKET_W] <= seg_data;
+          if (seg_last) begin
+            wide_valid_r <= 1'b1;
+            collecting <= 1'b0;
+            expected_fragment_r <= {{(FRAG_IDX_W-1){1'b0}}, 1'b1};
+          end else begin
+            collecting <= 1'b1;
+            expected_fragment_r <= seg_fragment_idx + {{(FRAG_IDX_W-1){1'b0}}, 1'b1};
+          end
+        end
+
+        if (!segment_valid_r) begin
           collecting <= 1'b0;
         end
       end
