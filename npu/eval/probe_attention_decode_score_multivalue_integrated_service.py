@@ -25,6 +25,14 @@ from npu.sim.perf.attention_separated import unpack_signed
 
 JsonDict = dict[str, Any]
 
+REPORT_EXCLUSIONS = [
+    "hbm",
+    "array_pnr",
+    "total_token_energy",
+    "value_sram_macro_timing",
+    "score_bank_macro_timing",
+]
+
 DEFAULT_CASES: list[JsonDict] = [
     {
         "case_id": "c1_p128_b2_rr",
@@ -110,7 +118,8 @@ _INT_SHARED_RE = re.compile(
     r"INT_SHARED completion_cycle=(\d+) protocol_error=(\d+) router_inject=(\d+) arb=(\d+) router_resp_block=(\d+) "
     r"router_req_occ=(\d+) router_req_max=(\d+) router_resp_occ=(\d+) router_resp_max=(\d+) "
     r"service_req=(\d+) service_emit=(\d+) bank_conflict=(\d+) service_resp_block=(\d+) "
-    r"service_req_occ=(\d+) service_req_max=(\d+) service_resp_occ=(\d+) service_resp_max=(\d+)"
+    r"service_req_occ=(\d+) service_req_max=(\d+) service_resp_occ=(\d+) service_resp_max=(\d+) "
+    r"result_arb=(\d+) result_egress=(\d+)"
 )
 
 
@@ -520,6 +529,7 @@ endmodule
 
 def _integrated_testbench(*, top_name: str, cluster_count: int, values: list[list[list[list[int]]]]) -> str:
     total_beats = 3 * 128
+    source_w = max(1, (cluster_count - 1).bit_length())
     entries = _preload_entries(values)
     preload_init = "\n".join(
         f"    preload_addr_mem[{idx}] = 14'd{entry['addr']}; preload_slice_mem[{idx}] = 4'd{entry['slice']}; preload_matrix_mem[{idx}] = 512'h{entry['matrix_hex']};"
@@ -593,22 +603,10 @@ def _integrated_testbench(*, top_name: str, cluster_count: int, values: list[lis
       if (dut.transport_wide_valid[{cluster}] && dut.cluster_value_resp_ready[{cluster}]) begin
         wide_count[{cluster}] <= wide_count[{cluster}] + 1;
         $display("INT_WIDE cluster={cluster} source=%0d tag=%0d addr=%0d slice=%0d cycle=%0d matrix=%0128x proto=%0d",
-                 dut.transport_wide_source[({cluster}*{max(1, (cluster_count - 1).bit_length())}) +: {max(1, (cluster_count - 1).bit_length())}],
+                 dut.transport_wide_source[({cluster}*{source_w}) +: {source_w}],
                  dut.transport_wide_tag[(8*{cluster}) +: 8], dut.transport_wide_addr[(14*{cluster}) +: 14],
                  dut.transport_wide_value_slice[(4*{cluster}) +: 4], cycle,
                  dut.cluster_value_resp_matrix[(512*{cluster}) +: 512], dut.reassembler_protocol_error[{cluster}]);
-      end
-      if (cluster_result_valid[{cluster}] && cluster_result_ready[{cluster}]) begin
-        $display("INT_RESULT cluster={cluster} slice=%0d last=%0d id=%0d max=%0d sum=%0d value=%080x cycle=%0d error=%0d",
-                 cluster_result_slice[(4*{cluster}) +: 4], cluster_result_last[{cluster}],
-                 cluster_result_command_id[(16*{cluster}) +: 16], $signed(cluster_result_global_max[(32*{cluster}) +: 32]),
-                 cluster_result_exp_sum[(33*{cluster}) +: 33], cluster_result_value[(320*{cluster}) +: 320], cycle, cluster_protocol_error[{cluster}]);
-        if (cluster_result_last[{cluster}]) begin
-          done[{cluster}] <= 1'b1;
-          done_cycle[{cluster}] <= cycle;
-          $display("INT_DONE cluster={cluster} cycle=%0d accepted=%0d completed=%0d", cycle,
-                   cluster_accepted_count[(32*{cluster}) +: 32], cluster_completed_count[(32*{cluster}) +: 32]);
-        end
       end
 """
         )
@@ -644,19 +642,28 @@ module tb;
   reg [CLUSTERS*8-1:0] cluster_input_a;
   reg [CLUSTERS*64-1:0] cluster_input_b;
   wire [CLUSTERS-1:0] cluster_result_valid;
-  reg [CLUSTERS-1:0] cluster_result_ready;
+  wire [CLUSTERS-1:0] cluster_result_ready;
   wire [CLUSTERS*16-1:0] cluster_result_command_id;
   wire [CLUSTERS*32-1:0] cluster_result_global_max;
   wire [CLUSTERS*33-1:0] cluster_result_exp_sum;
   wire [CLUSTERS*4-1:0] cluster_result_slice;
   wire [CLUSTERS-1:0] cluster_result_last;
   wire [CLUSTERS*320-1:0] cluster_result_value;
+  wire shared_result_valid;
+  reg  shared_result_ready;
+  wire [{source_w - 1}:0] shared_result_cluster;
+  wire [15:0] shared_result_command_id;
+  wire [31:0] shared_result_global_max;
+  wire [32:0] shared_result_exp_sum;
+  wire [3:0] shared_result_slice;
+  wire shared_result_last;
+  wire [319:0] shared_result_value;
   wire [CLUSTERS*32-1:0] cluster_accepted_count;
   wire [CLUSTERS*32-1:0] cluster_completed_count;
   wire [CLUSTERS*32-1:0] cluster_cycle_count;
   wire [CLUSTERS-1:0] cluster_protocol_error;
   wire [CLUSTERS*8-1:0] transport_req_tag;
-  wire [CLUSTERS*{max(1, (cluster_count - 1).bit_length())}-1:0] transport_wide_source;
+  wire [CLUSTERS*{source_w}-1:0] transport_wide_source;
   wire [CLUSTERS*8-1:0] transport_wide_tag;
   wire [CLUSTERS*14-1:0] transport_wide_addr;
   wire [CLUSTERS*4-1:0] transport_wide_value_slice;
@@ -685,6 +692,7 @@ module tb;
   integer done_cycle [0:CLUSTERS-1];
   integer req_count [0:CLUSTERS-1];
   integer wide_count [0:CLUSTERS-1];
+  integer shared_result_count [0:CLUSTERS-1];
   integer input_stall_cycles [0:CLUSTERS-1];
   integer input_starve_cycles [0:CLUSTERS-1];
   integer result_block_cycles [0:CLUSTERS-1];
@@ -719,6 +727,15 @@ module tb;
     .cluster_result_slice(cluster_result_slice),
     .cluster_result_last(cluster_result_last),
     .cluster_result_value(cluster_result_value),
+    .shared_result_valid(shared_result_valid),
+    .shared_result_ready(shared_result_ready),
+    .shared_result_cluster(shared_result_cluster),
+    .shared_result_command_id(shared_result_command_id),
+    .shared_result_global_max(shared_result_global_max),
+    .shared_result_exp_sum(shared_result_exp_sum),
+    .shared_result_slice(shared_result_slice),
+    .shared_result_last(shared_result_last),
+    .shared_result_value(shared_result_value),
     .cluster_accepted_count(cluster_accepted_count),
     .cluster_completed_count(cluster_completed_count),
     .cluster_cycle_count(cluster_cycle_count),
@@ -758,7 +775,7 @@ module tb;
     cluster_input_last = {{CLUSTERS{{1'b0}}}};
     cluster_input_a = {{(CLUSTERS*8){{1'b0}}}};
     cluster_input_b = {{(CLUSTERS*64){{1'b0}}}};
-    cluster_result_ready = {{CLUSTERS{{1'b1}}}};
+    shared_result_ready = 1'b1;
 {chr(10).join(per_cluster_drive)}
   end
 
@@ -773,6 +790,7 @@ module tb;
         done_cycle[idx] <= 0;
         req_count[idx] <= 0;
         wide_count[idx] <= 0;
+        shared_result_count[idx] <= 0;
         input_stall_cycles[idx] <= 0;
         input_starve_cycles[idx] <= 0;
         result_block_cycles[idx] <= 0;
@@ -789,18 +807,31 @@ module tb;
       end
 {chr(10).join(per_cluster_seq)}
 {chr(10).join(per_cluster_log)}
+      if (shared_result_valid && shared_result_ready) begin
+        shared_result_count[shared_result_cluster] <= shared_result_count[shared_result_cluster] + 1;
+        $display("INT_RESULT cluster=%0d slice=%0d last=%0d id=%0d max=%0d sum=%0d value=%080x cycle=%0d error=%0d",
+                 shared_result_cluster, shared_result_slice, shared_result_last, shared_result_command_id,
+                 $signed(shared_result_global_max), shared_result_exp_sum, shared_result_value, cycle, protocol_error);
+        if (shared_result_last) begin
+          done[shared_result_cluster] <= 1'b1;
+          done_cycle[shared_result_cluster] <= cycle;
+          $display("INT_DONE cluster=%0d cycle=%0d accepted=%0d completed=%0d", shared_result_cluster, cycle,
+                   cluster_accepted_count[(32*shared_result_cluster) +: 32],
+                   cluster_completed_count[(32*shared_result_cluster) +: 32]);
+        end
+      end
       if ({' && '.join(per_cluster_done)}) begin
 {chr(10).join(
     f'        $display("INT_COUNTER cluster={cluster} input_stall=%0d input_starve=%0d result_block=%0d req_count=%0d wide_count=%0d", input_stall_cycles[{cluster}], input_starve_cycles[{cluster}], result_block_cycles[{cluster}], req_count[{cluster}], wide_count[{cluster}]);'
     for cluster in range(cluster_count)
 )}
-        $display("INT_SHARED completion_cycle=%0d protocol_error=%0d router_inject=%0d arb=%0d router_resp_block=%0d router_req_occ=%0d router_req_max=%0d router_resp_occ=%0d router_resp_max=%0d service_req=%0d service_emit=%0d bank_conflict=%0d service_resp_block=%0d service_req_occ=%0d service_req_max=%0d service_resp_occ=%0d service_resp_max=%0d",
+        $display("INT_SHARED completion_cycle=%0d protocol_error=%0d router_inject=%0d arb=%0d router_resp_block=%0d router_req_occ=%0d router_req_max=%0d router_resp_occ=%0d router_resp_max=%0d service_req=%0d service_emit=%0d bank_conflict=%0d service_resp_block=%0d service_req_occ=%0d service_req_max=%0d service_resp_occ=%0d service_resp_max=%0d result_arb=%0d result_egress=%0d",
                  cycle, protocol_error, router_injection_stall_cycles, router_arbitration_contention_cycles,
                  router_response_block_cycles, router_req_current_occupancy, router_req_max_occupancy,
                  router_resp_current_occupancy, router_resp_max_occupancy, service_accepted_req_count,
                  service_emitted_resp_count, service_bank_conflict_count, service_response_block_cycles,
                  service_req_current_occupancy, service_req_max_occupancy, service_resp_current_occupancy,
-                 service_resp_max_occupancy);
+                 service_resp_max_occupancy, dut.result_arbitration_contention_cycles, dut.result_egress_block_cycles);
         #1 $finish;
       end
       if (cycle > 60000) $fatal(1, "integrated timeout");
@@ -1014,6 +1045,8 @@ def _run_integrated(case: JsonDict, values: list[list[list[list[int]]]]) -> Json
         "service_req_max_occupancy": int(shared_match.group(15)),
         "service_resp_current_occupancy": int(shared_match.group(16)),
         "service_resp_max_occupancy": int(shared_match.group(17)),
+        "result_arbitration_contention_cycles": int(shared_match.group(18)),
+        "result_egress_block_cycles": int(shared_match.group(19)),
     }
     return {
         "score_rows": scores,
@@ -1145,7 +1178,8 @@ def _summarize_case(case: JsonDict, baseline: JsonDict, integrated: JsonDict, pr
         and not any(row["protocol_error"] for row in integrated["results"])
         and not any(row["protocol_error"] for row in integrated["wide_rows"])
     )
-    cycle_bound_ok = integrated["shared"]["completion_cycle"] >= baseline["completion_cycle"]
+    service_penalty_cycles = integrated["shared"]["completion_cycle"] - baseline["completion_cycle"]
+    cycle_bound_ok = service_penalty_cycles >= 0
     no_drop_duplicate_deadlock_timeout = counts_ok and len(per_cluster_done) == cluster_count
     decision = "pass" if exact_match and no_protocol_errors and cycle_bound_ok and no_drop_duplicate_deadlock_timeout else "fail"
 
@@ -1177,6 +1211,7 @@ def _summarize_case(case: JsonDict, baseline: JsonDict, integrated: JsonDict, pr
         },
         "integrated_service": {
             "completion_cycle": integrated["shared"]["completion_cycle"],
+            "service_penalty_cycles": service_penalty_cycles,
             "score_hash": _hash(integrated_scores),
             "final_hash": _hash(integrated_results),
             "request_hash": _hash(integrated_requests),
@@ -1194,6 +1229,10 @@ def _summarize_case(case: JsonDict, baseline: JsonDict, integrated: JsonDict, pr
                 "response_block_cycles": {
                     "router": integrated["shared"]["router_response_block_cycles"],
                     "service": integrated["shared"]["service_response_block_cycles"],
+                },
+                "shared_result": {
+                    "arbitration_contention_cycles": integrated["shared"]["result_arbitration_contention_cycles"],
+                    "egress_block_cycles": integrated["shared"]["result_egress_block_cycles"],
                 },
                 "max_occupancy": {
                     "router_req": integrated["shared"]["router_req_max_occupancy"],
@@ -1290,7 +1329,7 @@ def build_report(config: JsonDict | None = None) -> JsonDict:
         "version": 1,
         "model": "attention_decode_score_multivalue_integrated_service_probe_v1",
         "decision": decision,
-        "exclusions": ["hbm", "array_pnr", "total_token_energy"],
+        "exclusions": REPORT_EXCLUSIONS,
         "source_identities": {
             "repo_commit": _git_head(),
             "tool_versions": {
@@ -1325,8 +1364,8 @@ def validate_report(payload: JsonDict) -> None:
         raise ValueError("report version must be 1")
     if payload.get("model") != "attention_decode_score_multivalue_integrated_service_probe_v1":
         raise ValueError("unexpected report model")
-    if payload.get("exclusions") != ["hbm", "array_pnr", "total_token_energy"]:
-        raise ValueError("report exclusions must explicitly be hbm, array_pnr, total_token_energy")
+    if payload.get("exclusions") != REPORT_EXCLUSIONS:
+        raise ValueError(f"report exclusions must explicitly be {', '.join(REPORT_EXCLUSIONS)}")
     source = payload.get("source_identities")
     if not isinstance(source, dict) or not source.get("repo_commit"):
         raise ValueError("report lacks source identities")
@@ -1345,6 +1384,8 @@ def validate_report(payload: JsonDict) -> None:
         integrated = case.get("integrated_service")
         if not isinstance(baseline, dict) or not isinstance(integrated, dict):
             raise ValueError("case lacks baseline or integrated section")
+        if int(integrated.get("service_penalty_cycles", -1)) < 0:
+            raise ValueError(f"negative service penalty for {case.get('case_id')}")
         if int(integrated.get("completion_cycle", -1)) < int(baseline.get("completion_cycle", 0)):
             raise ValueError(f"integrated completion cycle below baseline for {case.get('case_id')}")
         if integrated.get("exact_match") is not True:
