@@ -134,23 +134,33 @@ def _classify_failure(
     max_retry_attempts: int,
     validation_error: str | None = None,
 ) -> dict[str, Any]:
+    failed = next((result for result in command_results if result.returncode != 0), None)
+
     if checkout_error is not None:
         category = "checkout_error"
         retryable = True
         failed_command = None
         detail = checkout_error
+        stage = "checkout"
+    elif failed is not None and failed.canceled:
+        failed_command = failed.name
+        detail = "timed out" if failed.timed_out else f"exit_code={failed.returncode}"
+        category = "command_canceled"
+        retryable = False
+        stage = failed_command or "execution"
     elif worker_error is not None:
         category = "worker_error"
         retryable = True
         failed_command = None
         detail = worker_error
+        stage = "worker"
     elif validation_error is not None:
         category = "validation_error"
         retryable = False
         failed_command = "acceptance"
         detail = validation_error
+        stage = "acceptance"
     else:
-        failed = next((result for result in command_results if result.returncode != 0), None)
         if failed is None:
             return {
                 "category": "none",
@@ -178,16 +188,7 @@ def _classify_failure(
         else:
             category = "command_failure"
             retryable = False
-
-    stage = (
-        "checkout"
-        if checkout_error is not None
-        else (
-            "worker"
-            if worker_error is not None
-            else ("acceptance" if validation_error is not None else (failed_command or "execution"))
-        )
-    )
+        stage = failed_command or "execution"
     signature = detail if isinstance(detail, str) else None
     requeue = retryable and attempt < max_retry_attempts
     return {
