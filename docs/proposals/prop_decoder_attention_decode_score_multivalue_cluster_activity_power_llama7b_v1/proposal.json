@@ -453,7 +453,7 @@
     {
       "item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v16",
       "task_type": "l2_campaign",
-      "objective": "Measure shared-score multivalue-cluster activity-backed power only after the explicit-onehot 8ns PNR item passes, using config_explicit_onehot_fsm.json, decode_score_multivalue_cluster_v1_8ns_explicit_onehot_fsm_v1_proxy_die_2500, empty/default SYNTH_ARGS, and the strict explicit_onehot diagnostic. Require direct routed phase VCD, 100% sequential output coverage, matched==applied, zero query/apply errors, finite positive every-phase power, and no vectorless, fallback, or stale rows.",
+      "objective": "Measure shared-score multivalue-cluster activity-backed power only after the explicit-onehot 8ns PNR item passes, using config_explicit_onehot_fsm.json, decode_score_multivalue_cluster_v1_8ns_explicit_onehot_fsm_v1_proxy_die_2500, empty/default SYNTH_ARGS, and the materialized strict explicit_onehot explicit_onehot_fsm_diagnostic.json. Require direct routed phase VCD, 100% sequential output coverage, matched==applied, zero query/apply errors, finite positive every-phase power, and no vectorless, fallback, stale-row, or mismatched-diagnostic evidence.",
       "evaluation_mode": "frontier_detail",
       "abstraction_layer": "decoder_attention_decode_score_multivalue_cluster_activity_power",
       "comparison_role": "shared_score_multivalue_cluster_activity_power_gate",
@@ -472,7 +472,7 @@
       },
       "expected_result": {
         "direction": "record_shared_score_multivalue_cluster_activity_power_gate",
-        "reason": "v16 accepts only config_explicit_onehot_fsm.json and decode_score_multivalue_cluster_v1_8ns_explicit_onehot_fsm_v1_proxy_die_2500 with empty/default SYNTH_ARGS, requires the strict explicit_onehot checker diagnostic bound to the selected metrics row and synthesized netlist hashes, preserves all existing quality/equivalence/direct-VCD/macro/clock/numeric/artifact gates, enforces 1.0 sequential-output coverage plus matched==applied and zero query/apply errors, and forbids vectorless, fallback, stale-row, clamped, substituted, heuristic, or otherwise relaxed evidence."
+        "reason": "v16 accepts only config_explicit_onehot_fsm.json and decode_score_multivalue_cluster_v1_8ns_explicit_onehot_fsm_v1_proxy_die_2500 with empty/default SYNTH_ARGS, requires the materialized strict explicit_onehot explicit_onehot_fsm_diagnostic.json to be promotion-valid and bound to the exact measured metrics row identity and config/netlist hashes, preserves all existing quality/equivalence/direct-VCD/macro/clock/numeric/artifact gates, enforces 1.0 sequential-output coverage plus matched==applied and zero query/apply errors, and forbids vectorless, fallback, stale-row, clamped, substituted, heuristic, mismatched-diagnostic, or otherwise relaxed evidence."
       },
       "status": "pending_implementation_merge"
     }

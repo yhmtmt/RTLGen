@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import csv
+import hashlib
 import json
 from pathlib import Path
 from unittest import mock
@@ -15,6 +16,7 @@ def _write_metrics(path: Path) -> None:
     fields = [
         "design",
         "platform",
+        "config_hash",
         "param_hash",
         "tag",
         "status",
@@ -27,6 +29,7 @@ def _write_metrics(path: Path) -> None:
         {
             "design": "cluster",
             "platform": "nangate45",
+            "config_hash": "cfg10",
             "param_hash": "p10",
             "tag": "die2500",
             "status": "ok",
@@ -40,6 +43,7 @@ def _write_metrics(path: Path) -> None:
         {
             "design": "cluster",
             "platform": "nangate45",
+            "config_hash": "cfg8a",
             "param_hash": "p8a",
             "tag": "die2500",
             "status": "ok",
@@ -53,6 +57,7 @@ def _write_metrics(path: Path) -> None:
         {
             "design": "cluster",
             "platform": "nangate45",
+            "config_hash": "cfg8b",
             "param_hash": "p8b",
             "tag": "die3000",
             "status": "ok",
@@ -74,6 +79,7 @@ def _write_metrics_rows(path: Path, rows: list[dict[str, str]]) -> None:
     fields = [
         "design",
         "platform",
+        "config_hash",
         "param_hash",
         "tag",
         "status",
@@ -86,6 +92,55 @@ def _write_metrics_rows(path: Path, rows: list[dict[str, str]]) -> None:
         writer = csv.DictWriter(handle, fieldnames=fields)
         writer.writeheader()
         writer.writerows(rows)
+
+
+def _sha256_text(text: str) -> str:
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def _write_exact_state_diagnostic(
+    path: Path,
+    *,
+    config_sha256: str,
+    selected_exact_row: dict[str, object],
+    promotion_valid: bool = True,
+    checker: str = "attention_decode_score_multivalue_cluster_explicit_onehot_fsm_v1",
+    profile: str = "explicit_onehot",
+    expected_flow_variant: str = (
+        "decode_score_multivalue_cluster_v1_8ns_explicit_onehot_fsm_v1_proxy_die_2500"
+    ),
+    expected_config_path: str = (
+        "runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/"
+        "config_explicit_onehot_fsm.json"
+    ),
+    netlist_sha256: str = "netlist-sha256",
+) -> None:
+    path.write_text(
+        json.dumps(
+            {
+                "version": 1,
+                "checker": checker,
+                "profile": profile,
+                "expected_flow_variant": expected_flow_variant,
+                "expected_config_path": expected_config_path,
+                "selected_exact_row": selected_exact_row,
+                "config_exists": True,
+                "config_sha256": config_sha256,
+                "config_fsm_encoding": "explicit_onehot",
+                "expected_logical_netlist_path": (
+                    "results/nangate45/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/"
+                    "decode_score_multivalue_cluster_v1_8ns_explicit_onehot_fsm_v1_proxy_die_2500/1_synth.v"
+                ),
+                "netlist_exists": True,
+                "netlist_sha256": netlist_sha256,
+                "signals": {},
+                "width_valid": True,
+                "promotion_valid": promotion_valid,
+                "promotion_reasons": [] if promotion_valid else ["test invalid diagnostic"],
+            }
+        ),
+        encoding="utf-8",
+    )
 
 
 def test_feasible_metrics_selects_exact_clock_and_timing(tmp_path: Path) -> None:
@@ -103,6 +158,7 @@ def test_feasible_metrics_excludes_non_matching_onehot_rows(tmp_path: Path) -> N
             {
                 "design": "cluster",
                 "platform": "nangate45",
+                "config_hash": "cfg1",
                 "param_hash": "p1",
                 "tag": "onehot",
                 "status": "ok",
@@ -120,6 +176,7 @@ def test_feasible_metrics_excludes_non_matching_onehot_rows(tmp_path: Path) -> N
             {
                 "design": "cluster",
                 "platform": "nangate45",
+                "config_hash": "cfg2",
                 "param_hash": "p2",
                 "tag": "binary",
                 "status": "ok",
@@ -161,6 +218,7 @@ def test_feasible_metrics_rejects_wrong_synth_args(tmp_path: Path) -> None:
             {
                 "design": "cluster",
                 "platform": "nangate45",
+                "config_hash": "cfg1",
                 "param_hash": "p1",
                 "tag": "binary",
                 "status": "ok",
@@ -200,6 +258,7 @@ def test_feasible_metrics_accepts_exact_explicit_onehot_row_with_strict_contract
             {
                 "design": "cluster",
                 "platform": "nangate45",
+                "config_hash": "cfg1",
                 "param_hash": "p1",
                 "tag": "explicit-onehot",
                 "status": "ok",
@@ -216,6 +275,7 @@ def test_feasible_metrics_accepts_exact_explicit_onehot_row_with_strict_contract
             {
                 "design": "cluster",
                 "platform": "nangate45",
+                "config_hash": "cfg2",
                 "param_hash": "p2",
                 "tag": "other",
                 "status": "ok",
@@ -245,7 +305,10 @@ def test_feasible_metrics_accepts_exact_explicit_onehot_row_with_strict_contract
 
 def test_build_report_records_strict_selection_contract_and_pnr_dependency(tmp_path: Path) -> None:
     config = tmp_path / "config.json"
-    config.write_text("{}", encoding="utf-8")
+    config.write_text(
+        '{"attention_decode_score_multivalue_cluster":{"fsm_encoding":"explicit_onehot"}}',
+        encoding="utf-8",
+    )
     metrics = tmp_path / "metrics.csv"
     _write_metrics_rows(
         metrics,
@@ -253,6 +316,24 @@ def test_build_report_records_strict_selection_contract_and_pnr_dependency(tmp_p
             {
                 "design": "cluster",
                 "platform": "nangate45",
+                "config_hash": "cfg0",
+                "param_hash": "p0",
+                "tag": "explicit-onehot-stale",
+                "status": "ok",
+                "critical_path_ns": "7.0",
+                "die_area": "5900000",
+                "instance_area_um2": "2900000",
+                "params_json": json.dumps(
+                    {
+                        "CLOCK_PERIOD": 8,
+                        "FLOW_VARIANT": "decode_score_multivalue_cluster_v1_8ns_explicit_onehot_fsm_v1_proxy_die_2500",
+                    }
+                ),
+            },
+            {
+                "design": "cluster",
+                "platform": "nangate45",
+                "config_hash": "cfg1",
                 "param_hash": "p1",
                 "tag": "explicit-onehot",
                 "status": "ok",
@@ -267,6 +348,23 @@ def test_build_report_records_strict_selection_contract_and_pnr_dependency(tmp_p
                 ),
             },
         ],
+    )
+    diagnostic = tmp_path / "explicit_onehot_fsm_diagnostic.json"
+    _write_exact_state_diagnostic(
+        diagnostic,
+        config_sha256=_sha256_text(config.read_text(encoding="utf-8")),
+        selected_exact_row={
+            "design": "cluster",
+            "platform": "nangate45",
+            "config_hash": "cfg1",
+            "param_hash": "p1",
+            "tag": "explicit-onehot",
+            "status": "ok",
+            "flow_variant": "decode_score_multivalue_cluster_v1_8ns_explicit_onehot_fsm_v1_proxy_die_2500",
+            "clock_period_ns": 8.0,
+            "critical_path_ns": 7.1,
+            "synth_args": "",
+        },
     )
     manifest = {
         "clock_period_ns": 8.0,
@@ -299,16 +397,30 @@ def test_build_report_records_strict_selection_contract_and_pnr_dependency(tmp_p
             required_flow_variant="decode_score_multivalue_cluster_v1_8ns_explicit_onehot_fsm_v1_proxy_die_2500",
             required_synth_args="",
             source_pnr_item_id="l1_decoder_attention_decode_score_multivalue_cluster_pnr_explicit_onehot_fsm_8ns_v1",
+            exact_state_diagnostic_json=diagnostic,
         )
     assert payload["selection_contract"] == {
         "required_flow_variant": "decode_score_multivalue_cluster_v1_8ns_explicit_onehot_fsm_v1_proxy_die_2500",
         "required_synth_args": "",
+        "required_exact_state_checker": "attention_decode_score_multivalue_cluster_explicit_onehot_fsm_v1",
+        "required_exact_state_profile": "explicit_onehot",
+        "required_exact_state_diagnostic_json": "<evaluator-local-path>/explicit_onehot_fsm_diagnostic.json",
         "min_sequential_register_activity_coverage": 0.95,
     }
     assert payload["source_dependencies"] == [
         "l1_decoder_attention_decode_score_multivalue_cluster_pnr_explicit_onehot_fsm_8ns_v1",
         "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1",
     ]
+    assert payload["exact_state_diagnostic"]["diagnostic_json"] == (
+        "<evaluator-local-path>/explicit_onehot_fsm_diagnostic.json"
+    )
+    assert payload["exact_state_diagnostic"]["config_sha256"] == _sha256_text(
+        config.read_text(encoding="utf-8")
+    )
+    assert payload["exact_state_diagnostic"]["netlist_sha256"] == "netlist-sha256"
+    assert payload["best"]["exact_state_provenance"]["selected_exact_row"]["param_hash"] == "p1"
+    assert payload["best"]["ppa_metric"]["param_hash"] == "p1"
+    assert str(diagnostic) not in json.dumps(payload)
 
 
 def test_build_report_keeps_legacy_source_dependencies_without_v14_source_pnr_id(tmp_path: Path) -> None:
@@ -352,8 +464,127 @@ def test_build_report_keeps_legacy_source_dependencies_without_v14_source_pnr_id
     assert payload["selection_contract"] == {
         "required_flow_variant": None,
         "required_synth_args": None,
+        "required_exact_state_checker": None,
+        "required_exact_state_profile": None,
+        "required_exact_state_diagnostic_json": None,
         "min_sequential_register_activity_coverage": 0.95,
     }
+    assert payload["exact_state_diagnostic"] is None
+
+
+def test_build_report_rejects_missing_strict_exact_state_diagnostic(tmp_path: Path) -> None:
+    config = tmp_path / "config.json"
+    config.write_text("{}", encoding="utf-8")
+    metrics = tmp_path / "metrics.csv"
+    _write_metrics_rows(
+        metrics,
+        [
+            {
+                "design": "cluster",
+                "platform": "nangate45",
+                "config_hash": "cfg1",
+                "param_hash": "p1",
+                "tag": "explicit-onehot",
+                "status": "ok",
+                "critical_path_ns": "7.1",
+                "die_area": "6000000",
+                "instance_area_um2": "3000000",
+                "params_json": json.dumps(
+                    {
+                        "CLOCK_PERIOD": 8,
+                        "FLOW_VARIANT": "decode_score_multivalue_cluster_v1_8ns_explicit_onehot_fsm_v1_proxy_die_2500",
+                    }
+                ),
+            },
+        ],
+    )
+    equivalence = tmp_path / "equivalence.json"
+    equivalence.write_text(json.dumps({"equivalence_pass": True}), encoding="utf-8")
+    try:
+        audit.build_report(
+            config=config,
+            cluster_metrics_csv=metrics,
+            equivalence_json=equivalence,
+            orfs_design_config=tmp_path / "config.mk",
+            clock_period_ns=8.0,
+            activity_dir=tmp_path / "activity",
+            required_flow_variant="decode_score_multivalue_cluster_v1_8ns_explicit_onehot_fsm_v1_proxy_die_2500",
+            required_synth_args="",
+            source_pnr_item_id="l1_decoder_attention_decode_score_multivalue_cluster_pnr_explicit_onehot_fsm_8ns_v1",
+        )
+    except ValueError as exc:
+        assert "requires exact_state_diagnostic_json" in str(exc)
+    else:
+        raise AssertionError("strict report accepted without exact-state diagnostic")
+
+
+def test_build_report_rejects_diagnostic_promoted_for_different_row(tmp_path: Path) -> None:
+    config = tmp_path / "config.json"
+    config.write_text(
+        '{"attention_decode_score_multivalue_cluster":{"fsm_encoding":"explicit_onehot"}}',
+        encoding="utf-8",
+    )
+    metrics = tmp_path / "metrics.csv"
+    _write_metrics_rows(
+        metrics,
+        [
+            {
+                "design": "cluster",
+                "platform": "nangate45",
+                "config_hash": "cfg1",
+                "param_hash": "p1",
+                "tag": "explicit-onehot",
+                "status": "ok",
+                "critical_path_ns": "7.1",
+                "die_area": "6000000",
+                "instance_area_um2": "3000000",
+                "params_json": json.dumps(
+                    {
+                        "CLOCK_PERIOD": 8,
+                        "FLOW_VARIANT": "decode_score_multivalue_cluster_v1_8ns_explicit_onehot_fsm_v1_proxy_die_2500",
+                    }
+                ),
+            },
+        ],
+    )
+    diagnostic = tmp_path / "explicit_onehot_fsm_diagnostic.json"
+    _write_exact_state_diagnostic(
+        diagnostic,
+        config_sha256=_sha256_text(config.read_text(encoding="utf-8")),
+        selected_exact_row={
+            "design": "cluster",
+            "platform": "nangate45",
+            "config_hash": "cfg2",
+            "param_hash": "p2",
+            "tag": "explicit-onehot",
+            "status": "ok",
+            "flow_variant": "decode_score_multivalue_cluster_v1_8ns_explicit_onehot_fsm_v1_proxy_die_2500",
+            "clock_period_ns": 8.0,
+            "critical_path_ns": 7.1,
+            "synth_args": "",
+        },
+    )
+    equivalence = tmp_path / "equivalence.json"
+    equivalence.write_text(json.dumps({"equivalence_pass": True}), encoding="utf-8")
+    with mock.patch.object(audit, "generate_phase_activity") as generate:
+        try:
+            audit.build_report(
+                config=config,
+                cluster_metrics_csv=metrics,
+                equivalence_json=equivalence,
+                orfs_design_config=tmp_path / "config.mk",
+                clock_period_ns=8.0,
+                activity_dir=tmp_path / "activity",
+                required_flow_variant="decode_score_multivalue_cluster_v1_8ns_explicit_onehot_fsm_v1_proxy_die_2500",
+                required_synth_args="",
+                source_pnr_item_id="l1_decoder_attention_decode_score_multivalue_cluster_pnr_explicit_onehot_fsm_8ns_v1",
+                exact_state_diagnostic_json=diagnostic,
+            )
+        except ValueError as exc:
+            assert "config_hash mismatch: expected cfg2, got cfg1" in str(exc)
+        else:
+            raise AssertionError("diagnostic promoted for a different row was accepted")
+    generate.assert_not_called()
 
 
 def test_build_report_rejects_invalid_min_sequential_register_activity_coverage(tmp_path: Path) -> None:

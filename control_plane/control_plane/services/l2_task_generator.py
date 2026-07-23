@@ -43,6 +43,10 @@ _CLUSTER_ACTIVITY_POWER_V16_SYNTH_ARGS = ""
 _CLUSTER_ACTIVITY_POWER_V16_PNR_ITEM = (
     "l1_decoder_attention_decode_score_multivalue_cluster_pnr_explicit_onehot_fsm_8ns_v1"
 )
+_CLUSTER_ACTIVITY_POWER_V16_EXACT_STATE_DIAGNOSTIC = (
+    "runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/"
+    "explicit_onehot_fsm_diagnostic.json"
+)
 _CLUSTER_ACTIVITY_POWER_V16_MIN_SEQUENTIAL_REGISTER_ACTIVITY_COVERAGE = 1.0
 
 
@@ -6916,6 +6920,9 @@ def _decoder_attention_decode_score_multivalue_cluster_activity_power_evidence(*
     )
     required_synth_args = _CLUSTER_ACTIVITY_POWER_V16_SYNTH_ARGS if require_exact_row else None
     source_pnr_item_id = _CLUSTER_ACTIVITY_POWER_V16_PNR_ITEM if require_exact_row else None
+    exact_state_diagnostic_json = (
+        _CLUSTER_ACTIVITY_POWER_V16_EXACT_STATE_DIAGNOSTIC if require_exact_row else None
+    )
     min_seq_register_activity_coverage = (
         _CLUSTER_ACTIVITY_POWER_V16_MIN_SEQUENTIAL_REGISTER_ACTIVITY_COVERAGE
         if require_exact_row
@@ -6928,6 +6935,8 @@ def _decoder_attention_decode_score_multivalue_cluster_activity_power_evidence(*
         command_args.append(f"--required-synth-args={required_synth_args}")
     if source_pnr_item_id is not None:
         command_args.append(f"--source-pnr-item-id {source_pnr_item_id}")
+    if exact_state_diagnostic_json is not None:
+        command_args.append(f"--exact-state-diagnostic-json {exact_state_diagnostic_json}")
     if min_seq_register_activity_coverage is not None:
         command_args.append(
             f"--min-sequential-register-activity-coverage {min_seq_register_activity_coverage}"
@@ -6959,6 +6968,10 @@ def _decoder_attention_decode_score_multivalue_cluster_activity_power_evidence(*
         inputs["decode_score_multivalue_cluster_required_synth_args"] = required_synth_args
     if source_pnr_item_id is not None:
         inputs["decode_score_multivalue_cluster_source_pnr_item_id"] = source_pnr_item_id
+    if exact_state_diagnostic_json is not None:
+        inputs["decode_score_multivalue_cluster_exact_state_diagnostic_json"] = (
+            exact_state_diagnostic_json
+        )
     if min_seq_register_activity_coverage is not None:
         inputs["decode_score_multivalue_cluster_min_sequential_register_activity_coverage"] = (
             min_seq_register_activity_coverage

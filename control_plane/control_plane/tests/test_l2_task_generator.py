@@ -8286,6 +8286,11 @@ def test_generate_l2_campaign_task_adds_decode_score_multivalue_cluster_activity
                 in run
             )
             assert (
+                "--exact-state-diagnostic-json "
+                "runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/"
+                "explicit_onehot_fsm_diagnostic.json" in run
+            )
+            assert (
                 decoder_inputs["decode_score_multivalue_cluster_required_flow_variant"]
                 == "decode_score_multivalue_cluster_v1_8ns_explicit_onehot_fsm_v1_proxy_die_2500"
             )
@@ -8295,6 +8300,11 @@ def test_generate_l2_campaign_task_adds_decode_score_multivalue_cluster_activity
             assert (
                 decoder_inputs["decode_score_multivalue_cluster_source_pnr_item_id"]
                 == "l1_decoder_attention_decode_score_multivalue_cluster_pnr_explicit_onehot_fsm_8ns_v1"
+            )
+            assert (
+                decoder_inputs["decode_score_multivalue_cluster_exact_state_diagnostic_json"]
+                == "runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/"
+                "explicit_onehot_fsm_diagnostic.json"
             )
             assert (
                 decoder_inputs["decode_score_multivalue_cluster_min_sequential_register_activity_coverage"]
