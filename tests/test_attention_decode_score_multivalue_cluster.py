@@ -43,7 +43,9 @@ def test_multivalue_cluster_manifest_closes_full_head_boundary(tmp_path: Path) -
     assert manifest["result_beats_per_command"] == 16
     assert manifest["divider_cycles_per_command"] == 7680
     assert manifest["fsm_encoding"] == "default"
+    assert manifest["controller_state_width"] == 3
     assert manifest["submodule_manifests"]["multivalue_reducer"]["fsm_encoding"] == "default"
+    assert manifest["submodule_manifests"]["multivalue_reducer"]["state_width"] == 4
 
 
 def test_multivalue_cluster_default_fsm_encoding_preserves_rtl_and_has_no_attribute(
@@ -76,26 +78,48 @@ def test_multivalue_cluster_targeted_binary_attributes_and_manifests(tmp_path: P
     assert manifest["submodule_manifests"]["multivalue_reducer"]["fsm_encoding"] == "binary"
 
 
-@pytest.mark.parametrize("generator", ["cluster", "reducer"])
-def test_multivalue_generators_reject_invalid_fsm_encoding(
-    tmp_path: Path, generator: str
-) -> None:
-    if generator == "cluster":
-        config = _config(fsm_encoding="onehot")
-        generate_fn = generate
-    else:
-        config = {
-            "top_name": "reducer",
-            "attention_two_pass_multivalue_stream": {
-                "max_blocks": 16,
-                "value_slices": 16,
-                "divider_impl": "iterative_restoring",
-                "fsm_encoding": "onehot",
-            },
-        }
-        generate_fn = generate_multivalue_reducer
+def test_multivalue_cluster_explicit_onehot_attributes_and_manifests(tmp_path: Path) -> None:
+    generate(_config(fsm_encoding="explicit_onehot"), tmp_path)
 
-    with pytest.raises(SystemExit, match="fsm_encoding must be default or binary"):
+    rtl = (tmp_path / "top.v").read_text(encoding="utf-8")
+    manifest = json.loads(
+        (tmp_path / "attention_decode_score_multivalue_cluster_manifest.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert '(* fsm_encoding = "none", fsm_extract = "no" *) reg [6:0] state_q;' in rtl
+    assert '(* fsm_encoding = "none", fsm_extract = "no" *) reg [10:0] state;' in rtl
+    assert manifest["fsm_encoding"] == "explicit_onehot"
+    assert manifest["controller_state_width"] == 7
+    assert manifest["submodule_manifests"]["multivalue_reducer"]["fsm_encoding"] == "explicit_onehot"
+    assert manifest["submodule_manifests"]["multivalue_reducer"]["state_width"] == 11
+
+
+@pytest.mark.parametrize(
+    ("generator", "config"),
+    [
+        ("cluster", _config(fsm_encoding="onehot")),
+        (
+            "reducer",
+            {
+                "top_name": "reducer",
+                "attention_two_pass_multivalue_stream": {
+                    "max_blocks": 16,
+                    "value_slices": 16,
+                    "divider_impl": "iterative_restoring",
+                    "fsm_encoding": "onehot",
+                },
+            },
+        ),
+    ],
+)
+def test_multivalue_generators_reject_invalid_fsm_encoding(
+    tmp_path: Path, generator: str, config: dict
+) -> None:
+    generate_fn = generate if generator == "cluster" else generate_multivalue_reducer
+    with pytest.raises(
+        SystemExit, match="fsm_encoding must be default, binary, or explicit_onehot"
+    ):
         generate_fn(config, tmp_path)
 
 
@@ -147,3 +171,16 @@ def test_multivalue_cluster_targeted_binary_matches_default_functional_hashes() 
     assert targeted_report["equivalence_pass"] is True
     assert targeted_report["score_tensor_hash"] == default_report["score_tensor_hash"]
     assert targeted_report["final_tensor_hash"] == default_report["final_tensor_hash"]
+
+
+def test_multivalue_cluster_explicit_onehot_matches_default_functional_hashes() -> None:
+    if not shutil.which("iverilog") or not shutil.which("vvp"):
+        pytest.skip("iverilog/vvp unavailable")
+
+    default_report = build_report(_config())
+    onehot_report = build_report(_config(fsm_encoding="explicit_onehot"))
+
+    assert default_report["equivalence_pass"] is True
+    assert onehot_report["equivalence_pass"] is True
+    assert onehot_report["score_tensor_hash"] == default_report["score_tensor_hash"]
+    assert onehot_report["final_tensor_hash"] == default_report["final_tensor_hash"]

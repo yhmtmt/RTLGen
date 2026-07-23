@@ -20,6 +20,10 @@ TARGETED_TAG = "decode_score_multivalue_cluster_v1_8ns_targeted_binary_fsm"
 TARGETED_VARIANT = (
     "decode_score_multivalue_cluster_v1_8ns_targeted_binary_fsm_v1_proxy_die_2500"
 )
+EXPLICIT_ONEHOT_TAG = "decode_score_multivalue_cluster_v1_8ns_explicit_onehot_fsm"
+EXPLICIT_ONEHOT_VARIANT = (
+    "decode_score_multivalue_cluster_v1_8ns_explicit_onehot_fsm_v1_proxy_die_2500"
+)
 
 VALID_PACKED_NETLIST_DECLARATIONS = """\
 module top;
@@ -77,6 +81,13 @@ module top;
   wire \\reducer.state[1] ;
   wire \\reducer.state[2] ;
   wire \\reducer.state[3] ;
+endmodule
+"""
+
+VALID_EXPLICIT_ONEHOT_PACKED_NETLIST_DECLARATIONS = """\
+module top;
+  wire [6:0] \\state_q ;
+  wire [10:0] \\reducer.state ;
 endmodule
 """
 
@@ -381,6 +392,51 @@ def test_check_attention_decode_score_multivalue_cluster_binary_fsm_accepts_targ
         assert diagnostic["promotion_valid"] is True
 
 
+def test_check_attention_decode_score_multivalue_cluster_binary_fsm_accepts_explicit_onehot_profile() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        root = Path(td)
+        metrics = _metrics_path(root)
+        _write_netlist(
+            root,
+            flow_variant=EXPLICIT_ONEHOT_VARIANT,
+            body=VALID_EXPLICIT_ONEHOT_PACKED_NETLIST_DECLARATIONS,
+        )
+        _write_metrics(
+            metrics,
+            [
+                _write_row(
+                    status="ok",
+                    critical_path_ns=7.2,
+                    result_path=(
+                        "runs/designs/npu_blocks/"
+                        "attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/result.json"
+                    ),
+                    tag=EXPLICIT_ONEHOT_TAG,
+                    flow_variant=EXPLICIT_ONEHOT_VARIANT,
+                    synth_args=None,
+                )
+            ],
+        )
+        diagnostic_out = metrics.parent / "explicit_onehot_fsm_diagnostic.json"
+
+        proc = _run_checker(
+            metrics,
+            synth_results_dir=_synth_results_dir(root),
+            diagnostic_out=diagnostic_out,
+            profile="explicit_onehot",
+        )
+
+        assert proc.returncode == 0, proc.stderr
+        diagnostic = json.loads(diagnostic_out.read_text(encoding="utf-8"))
+        assert diagnostic["profile"] == "explicit_onehot"
+        assert diagnostic["checker"] == "attention_decode_score_multivalue_cluster_explicit_onehot_fsm_v1"
+        assert diagnostic["selected_exact_row"]["flow_variant"] == EXPLICIT_ONEHOT_VARIANT
+        assert diagnostic["selected_exact_row"]["synth_args"] == ""
+        assert diagnostic["config_fsm_encoding"] == "explicit_onehot"
+        assert diagnostic["width_valid"] is True
+        assert diagnostic["promotion_valid"] is True
+
+
 def test_check_attention_decode_score_multivalue_cluster_binary_fsm_targeted_profile_relies_on_post_synth_widths() -> None:
     with tempfile.TemporaryDirectory() as td:
         root = Path(td)
@@ -632,6 +688,33 @@ def test_check_attention_decode_score_multivalue_cluster_binary_fsm_rejects_redu
         assert proc.returncode != 0
         assert "invalid width for reducer.state" in proc.stderr
         assert "details" in proc.stderr
+
+
+def test_check_attention_decode_score_multivalue_cluster_binary_fsm_rejects_explicit_onehot_width_mismatch() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        root = Path(td)
+        metrics = _metrics_path(root)
+        _write_netlist(root, flow_variant=EXPLICIT_ONEHOT_VARIANT, body=INVALID_REDUCER_STATE)
+        _write_metrics(
+            metrics,
+            [
+                _write_row(
+                    status="ok",
+                    critical_path_ns=7.2,
+                    result_path="runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/result.json",
+                    tag=EXPLICIT_ONEHOT_TAG,
+                    flow_variant=EXPLICIT_ONEHOT_VARIANT,
+                    synth_args=None,
+                )
+            ],
+        )
+        proc = _run_checker(
+            metrics,
+            synth_results_dir=_synth_results_dir(root),
+            profile="explicit_onehot",
+        )
+        assert proc.returncode != 0
+        assert "invalid width for reducer.state" in proc.stderr
 
 
 @pytest.mark.parametrize(

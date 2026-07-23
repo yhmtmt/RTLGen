@@ -5,12 +5,16 @@ from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
 import json
 import math
 import re
 from pathlib import Path
 from typing import Any
 
+from npu.eval.check_attention_decode_score_multivalue_cluster_binary_fsm import (
+    PROFILES as EXACT_STATE_PROFILES,
+)
 from npu.eval.generate_attention_decode_score_multivalue_cluster_activity import (
     generate_phase_activity,
 )
@@ -24,6 +28,10 @@ _MAX_FAILURE_DETAIL_BYTES = 4096
 _ABSOLUTE_PATH_RE = re.compile(r"/[^\s\"'`<>|&(){}\[\]]+")
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _EVALUATOR_LOCAL_PATH_PLACEHOLDER = "<evaluator-local-path>"
+_STRICT_EXACT_STATE_PROFILE = EXACT_STATE_PROFILES["explicit_onehot"]
+_STRICT_EXACT_STATE_PNR_ITEM = (
+    "l1_decoder_attention_decode_score_multivalue_cluster_pnr_explicit_onehot_fsm_8ns_v1"
+)
 
 
 def _redact_path(path: str) -> str:
@@ -35,6 +43,15 @@ def _redact_path(path: str) -> str:
         except ValueError:
             return _EVALUATOR_LOCAL_PATH_PLACEHOLDER
     return normalized
+
+
+def _portable_path(path: Path) -> str:
+    if not path.is_absolute():
+        return path.as_posix()
+    try:
+        return path.resolve().relative_to(_REPO_ROOT.resolve()).as_posix()
+    except ValueError:
+        return f"{_EVALUATOR_LOCAL_PATH_PLACEHOLDER}/{path.name}"
 
 
 def _sanitize_failure_line(line: str) -> str:
@@ -96,19 +113,31 @@ def _metric_provenance(row: JsonDict, metrics_csv: Path) -> JsonDict:
     }
 
 
-def _feasible_metrics(
+def _sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1 << 20), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _raw_feasible_metrics(
     metrics_csv: Path,
     clock_period_ns: float,
     *,
     required_flow_variant: str | None = None,
     required_synth_args: str | None = None,
 ) -> list[JsonDict]:
-    normalized_required_flow_variant = str(required_flow_variant or "").strip() or None
-    normalized_required_synth_args = str(required_synth_args or "").strip() or None
+    normalized_required_flow_variant = (
+        None if required_flow_variant is None else str(required_flow_variant).strip()
+    )
+    normalized_required_synth_args = (
+        None if required_synth_args is None else str(required_synth_args).strip()
+    )
 
     with metrics_csv.open(newline="", encoding="utf-8") as handle:
         raw_rows = [dict(row) for row in csv.DictReader(handle)]
-    selected: dict[str, JsonDict] = {}
+    feasible: list[JsonDict] = []
     for row in raw_rows:
         if str(row.get("status", "")) != "ok":
             continue
@@ -131,18 +160,16 @@ def _feasible_metrics(
             continue
         if not math.isfinite(critical_path) or critical_path > clock_period_ns:
             continue
-        previous = selected.get(flow_variant)
-        if previous is None or float(row.get("instance_area_um2") or math.inf) < float(
-            previous.get("instance_area_um2") or math.inf
-        ):
-            selected[flow_variant] = row
-    if not selected:
+        feasible.append(row)
+    if not feasible:
         if normalized_required_flow_variant is not None or normalized_required_synth_args is not None:
             details = []
             if normalized_required_flow_variant is not None:
                 details.append(f"FLOW_VARIANT={normalized_required_flow_variant}")
             if normalized_required_synth_args is not None:
-                details.append(f"SYNTH_ARGS={normalized_required_synth_args}")
+                details.append(
+                    f"SYNTH_ARGS={normalized_required_synth_args or '<empty/default>'}"
+                )
             raise ValueError(
                 f"no status=ok timing-feasible rows in {metrics_csv} matching "
                 f"{', '.join(details)} at {clock_period_ns:g} ns"
@@ -150,6 +177,29 @@ def _feasible_metrics(
         raise ValueError(
             f"no status=ok timing-feasible {clock_period_ns:g} ns rows in {metrics_csv}"
         )
+    return feasible
+
+
+def _feasible_metrics(
+    metrics_csv: Path,
+    clock_period_ns: float,
+    *,
+    required_flow_variant: str | None = None,
+    required_synth_args: str | None = None,
+) -> list[JsonDict]:
+    selected: dict[str, JsonDict] = {}
+    for row in _raw_feasible_metrics(
+        metrics_csv,
+        clock_period_ns,
+        required_flow_variant=required_flow_variant,
+        required_synth_args=required_synth_args,
+    ):
+        flow_variant = str(_params(row).get("FLOW_VARIANT", "")).strip()
+        previous = selected.get(flow_variant)
+        if previous is None or float(row.get("instance_area_um2") or math.inf) < float(
+            previous.get("instance_area_um2") or math.inf
+        ):
+            selected[flow_variant] = row
     return sorted(
         selected.values(),
         key=lambda row: (
@@ -175,6 +225,242 @@ def _sanitized_failure(exc: Exception) -> JsonDict:
         "error_summary": summary,
         "detail": sanitized_lines,
     }
+
+
+def _requires_strict_exact_state_diagnostic(
+    *,
+    required_flow_variant: str | None,
+    source_pnr_item_id: str | None,
+) -> bool:
+    return (
+        str(required_flow_variant or "").strip() == _STRICT_EXACT_STATE_PROFILE.flow_variant
+        or str(source_pnr_item_id or "").strip() == _STRICT_EXACT_STATE_PNR_ITEM
+    )
+
+
+def _validate_strict_exact_state_diagnostic(
+    *,
+    diagnostic_path: Path,
+    config: Path,
+    clock_period_ns: float,
+    required_flow_variant: str | None,
+    required_synth_args: str | None,
+) -> JsonDict:
+    diagnostic = _load(diagnostic_path)
+    reasons: list[str] = []
+
+    checker = str(diagnostic.get("checker") or "").strip()
+    if checker != _STRICT_EXACT_STATE_PROFILE.checker_id:
+        reasons.append(
+            "checker mismatch: expected "
+            f"{_STRICT_EXACT_STATE_PROFILE.checker_id}, got {checker or '<missing>'}"
+        )
+    profile = str(diagnostic.get("profile") or "").strip()
+    if profile != _STRICT_EXACT_STATE_PROFILE.name:
+        reasons.append(
+            "profile mismatch: expected "
+            f"{_STRICT_EXACT_STATE_PROFILE.name}, got {profile or '<missing>'}"
+        )
+    expected_flow_variant = str(diagnostic.get("expected_flow_variant") or "").strip()
+    if expected_flow_variant != _STRICT_EXACT_STATE_PROFILE.flow_variant:
+        reasons.append(
+            "expected_flow_variant mismatch: expected "
+            f"{_STRICT_EXACT_STATE_PROFILE.flow_variant}, got {expected_flow_variant or '<missing>'}"
+        )
+    if (
+        required_flow_variant is not None
+        and expected_flow_variant != str(required_flow_variant).strip()
+    ):
+        reasons.append(
+            "expected_flow_variant does not match required flow variant "
+            f"{str(required_flow_variant).strip()}"
+        )
+    expected_config_path = str(diagnostic.get("expected_config_path") or "").strip()
+    if expected_config_path != _STRICT_EXACT_STATE_PROFILE.config_path:
+        reasons.append(
+            "expected_config_path mismatch: expected "
+            f"{_STRICT_EXACT_STATE_PROFILE.config_path}, got {expected_config_path or '<missing>'}"
+        )
+    if diagnostic.get("promotion_valid") is not True:
+        reasons.append("promotion_valid is not true")
+    if diagnostic.get("width_valid") is not True:
+        reasons.append("width_valid is not true")
+    if diagnostic.get("config_exists") is not True:
+        reasons.append("config_exists is not true")
+    if diagnostic.get("netlist_exists") is not True:
+        reasons.append("netlist_exists is not true")
+    config_fsm_encoding = str(diagnostic.get("config_fsm_encoding") or "").strip()
+    if config_fsm_encoding != _STRICT_EXACT_STATE_PROFILE.expected_fsm_encoding:
+        reasons.append(
+            "config_fsm_encoding mismatch: expected "
+            f"{_STRICT_EXACT_STATE_PROFILE.expected_fsm_encoding}, got "
+            f"{config_fsm_encoding or '<missing>'}"
+        )
+
+    config_sha256 = str(diagnostic.get("config_sha256") or "").strip()
+    actual_config_sha256 = _sha256_file(config)
+    if not config_sha256:
+        reasons.append("missing config_sha256")
+    elif config_sha256 != actual_config_sha256:
+        reasons.append("config_sha256 does not match the provided config")
+
+    netlist_sha256 = str(diagnostic.get("netlist_sha256") or "").strip()
+    if not netlist_sha256:
+        reasons.append("missing netlist_sha256")
+
+    selected_exact_row = diagnostic.get("selected_exact_row")
+    selected_row: JsonDict | None = selected_exact_row if isinstance(selected_exact_row, dict) else None
+    if selected_row is None:
+        reasons.append("selected_exact_row is missing or malformed")
+        selected_row = {}
+
+    required_flow_variant_text = None if required_flow_variant is None else str(required_flow_variant).strip()
+    required_synth_args_text = None if required_synth_args is None else str(required_synth_args).strip()
+    observed_row_flow_variant = str(selected_row.get("flow_variant") or "").strip()
+    if observed_row_flow_variant != _STRICT_EXACT_STATE_PROFILE.flow_variant:
+        reasons.append(
+            "selected_exact_row flow_variant mismatch: expected "
+            f"{_STRICT_EXACT_STATE_PROFILE.flow_variant}, got "
+            f"{observed_row_flow_variant or '<missing>'}"
+        )
+    if (
+        required_flow_variant_text is not None
+        and observed_row_flow_variant != required_flow_variant_text
+    ):
+        reasons.append(
+            "selected_exact_row flow_variant does not match required flow variant "
+            f"{required_flow_variant_text}"
+        )
+    observed_row_synth_args = str(selected_row.get("synth_args") or "").strip()
+    if observed_row_synth_args != _STRICT_EXACT_STATE_PROFILE.synth_args:
+        reasons.append(
+            "selected_exact_row synth_args mismatch: expected "
+            f"{_STRICT_EXACT_STATE_PROFILE.synth_args or '<empty/default>'}, got "
+            f"{observed_row_synth_args or '<missing>'}"
+        )
+    if (
+        required_synth_args_text is not None
+        and observed_row_synth_args != required_synth_args_text
+    ):
+        reasons.append(
+            "selected_exact_row synth_args does not match required_synth_args "
+            f"{required_synth_args_text or '<empty/default>'}"
+        )
+    if str(selected_row.get("status") or "").strip() != "ok":
+        reasons.append("selected_exact_row status is not ok")
+    for key in ("design", "platform", "config_hash", "param_hash"):
+        if not str(selected_row.get(key) or "").strip():
+            reasons.append(f"selected_exact_row is missing {key}")
+    try:
+        observed_clock_period = float(selected_row.get("clock_period_ns"))
+    except (TypeError, ValueError):
+        reasons.append("selected_exact_row clock_period_ns is missing or invalid")
+    else:
+        if abs(observed_clock_period - clock_period_ns) > 1e-9:
+            reasons.append(
+                "selected_exact_row clock_period_ns mismatch: expected "
+                f"{clock_period_ns:g}, got {observed_clock_period:g}"
+            )
+    try:
+        observed_critical_path = float(selected_row.get("critical_path_ns"))
+    except (TypeError, ValueError):
+        reasons.append("selected_exact_row critical_path_ns is missing or invalid")
+    else:
+        if not math.isfinite(observed_critical_path):
+            reasons.append("selected_exact_row critical_path_ns is not finite")
+        elif observed_critical_path > clock_period_ns:
+            reasons.append(
+                "selected_exact_row critical_path_ns exceeds required clock period "
+                f"{clock_period_ns:g}"
+            )
+
+    if reasons:
+        raise ValueError("strict explicit-onehot exact-state diagnostic rejected: " + "; ".join(reasons))
+
+    return {
+        "diagnostic_json": _portable_path(diagnostic_path),
+        "diagnostic_sha256": _sha256_file(diagnostic_path),
+        "checker": checker,
+        "profile": profile,
+        "expected_flow_variant": expected_flow_variant,
+        "expected_config_path": expected_config_path,
+        "config_sha256": config_sha256,
+        "netlist_sha256": netlist_sha256,
+        "selected_exact_row": selected_row,
+    }
+
+
+def _metric_matches_selected_exact_row(metric: JsonDict, selected_row: JsonDict) -> list[str]:
+    params = _params(metric)
+    reasons: list[str] = []
+    for key in ("design", "platform", "config_hash", "param_hash"):
+        expected = str(selected_row.get(key) or "").strip()
+        observed = str(metric.get(key) or "").strip()
+        if observed != expected:
+            reasons.append(
+                f"{key} mismatch: expected {expected or '<missing>'}, got {observed or '<missing>'}"
+            )
+    observed_flow_variant = str(params.get("FLOW_VARIANT") or "").strip()
+    expected_flow_variant = str(selected_row.get("flow_variant") or "").strip()
+    if observed_flow_variant != expected_flow_variant:
+        reasons.append(
+            "flow_variant mismatch: expected "
+            f"{expected_flow_variant or '<missing>'}, got {observed_flow_variant or '<missing>'}"
+        )
+    observed_synth_args = str(params.get("SYNTH_ARGS") or "").strip()
+    expected_synth_args = str(selected_row.get("synth_args") or "").strip()
+    if observed_synth_args != expected_synth_args:
+        reasons.append(
+            "synth_args mismatch: expected "
+            f"{expected_synth_args or '<empty/default>'}, got "
+            f"{observed_synth_args or '<missing>'}"
+        )
+    try:
+        observed_critical_path = float(metric.get("critical_path_ns") or math.inf)
+        expected_critical_path = float(selected_row.get("critical_path_ns"))
+    except (TypeError, ValueError):
+        reasons.append("critical_path_ns is missing or invalid for exact-row binding")
+    else:
+        if abs(observed_critical_path - expected_critical_path) > 1e-9:
+            reasons.append(
+                "critical_path_ns mismatch: expected "
+                f"{expected_critical_path:g}, got {observed_critical_path:g}"
+            )
+    return reasons
+
+
+def _select_strict_exact_state_metric(
+    feasible_metrics: list[JsonDict],
+    exact_state_provenance: JsonDict,
+) -> JsonDict:
+    selected_row = exact_state_provenance["selected_exact_row"]
+    matches: list[JsonDict] = []
+    mismatches: list[tuple[JsonDict, list[str]]] = []
+    for metric in feasible_metrics:
+        reasons = _metric_matches_selected_exact_row(metric, selected_row)
+        if reasons:
+            mismatches.append((metric, reasons))
+        else:
+            matches.append(metric)
+    if not matches:
+        detail = ""
+        if mismatches:
+            metric, reasons = mismatches[0]
+            detail = (
+                f"; first mismatch for param_hash={str(metric.get('param_hash') or '<missing>').strip()}: "
+                + "; ".join(reasons)
+            )
+        raise ValueError(
+            "strict explicit-onehot exact-state diagnostic rejected: no timing-feasible metrics row "
+            "matches selected_exact_row identity"
+            + detail
+        )
+    if len(matches) > 1:
+        raise ValueError(
+            "strict explicit-onehot exact-state diagnostic rejected: ambiguous timing-feasible "
+            f"metrics rows matched selected_exact_row identity ({len(matches)} matches)"
+        )
+    return matches[0]
 
 
 def _write_markdown(payload: JsonDict, path: Path) -> None:
@@ -225,12 +511,43 @@ def build_report(
     required_flow_variant: str | None = None,
     required_synth_args: str | None = None,
     source_pnr_item_id: str | None = None,
+    exact_state_diagnostic_json: Path | None = None,
 ) -> JsonDict:
     if not (0.0 < min_sequential_register_activity_coverage <= 1.0):
         raise ValueError("min_sequential_register_activity_coverage must be in (0, 1]")
     equivalence = _load(equivalence_json)
     if not equivalence.get("equivalence_pass"):
         raise ValueError("multivalue-cluster end-to-end equivalence did not pass")
+    require_strict_exact_state_diagnostic = _requires_strict_exact_state_diagnostic(
+        required_flow_variant=required_flow_variant,
+        source_pnr_item_id=source_pnr_item_id,
+    )
+    if require_strict_exact_state_diagnostic and exact_state_diagnostic_json is None:
+        raise ValueError(
+            "strict explicit-onehot activity power requires exact_state_diagnostic_json"
+        )
+    feasible_metrics = _raw_feasible_metrics(
+        cluster_metrics_csv,
+        clock_period_ns,
+        required_flow_variant=required_flow_variant,
+        required_synth_args=required_synth_args,
+    )
+    exact_state_provenance: JsonDict | None = None
+    selected_metrics = _feasible_metrics(
+        cluster_metrics_csv,
+        clock_period_ns,
+        required_flow_variant=required_flow_variant,
+        required_synth_args=required_synth_args,
+    )
+    if exact_state_diagnostic_json is not None:
+        exact_state_provenance = _validate_strict_exact_state_diagnostic(
+            diagnostic_path=exact_state_diagnostic_json,
+            config=config,
+            clock_period_ns=clock_period_ns,
+            required_flow_variant=required_flow_variant,
+            required_synth_args=required_synth_args,
+        )
+        selected_metrics = [_select_strict_exact_state_metric(feasible_metrics, exact_state_provenance)]
     activity_dir.mkdir(parents=True, exist_ok=True)
     for name in (
         "score_fill.vcd",
@@ -252,12 +569,7 @@ def build_report(
         activity_dir / "attention_decode_score_multivalue_cluster_activity_manifest.json"
     )
     rows: list[JsonDict] = []
-    for metric in _feasible_metrics(
-        cluster_metrics_csv,
-        clock_period_ns,
-        required_flow_variant=required_flow_variant,
-        required_synth_args=required_synth_args,
-    ):
+    for metric in selected_metrics:
         params = _params(metric)
         flow_variant = str(params["FLOW_VARIANT"])
         candidate: JsonDict = {
@@ -265,6 +577,8 @@ def build_report(
             "flow_variant": flow_variant,
             "ppa_metric": _metric_provenance(metric, cluster_metrics_csv),
         }
+        if exact_state_provenance is not None:
+            candidate["exact_state_provenance"] = exact_state_provenance
         try:
             activity_power = build_power_report(
                 manifest=activity_manifest,
@@ -340,10 +654,30 @@ def build_report(
             ]
         ),
         "selection_contract": {
-            "required_flow_variant": str(required_flow_variant or "").strip() or None,
-            "required_synth_args": str(required_synth_args or "").strip() or None,
+            "required_flow_variant": (
+                None if required_flow_variant is None else str(required_flow_variant).strip()
+            ),
+            "required_synth_args": (
+                None if required_synth_args is None else str(required_synth_args).strip()
+            ),
+            "required_exact_state_checker": (
+                _STRICT_EXACT_STATE_PROFILE.checker_id
+                if require_strict_exact_state_diagnostic
+                else None
+            ),
+            "required_exact_state_profile": (
+                _STRICT_EXACT_STATE_PROFILE.name
+                if require_strict_exact_state_diagnostic
+                else None
+            ),
+            "required_exact_state_diagnostic_json": (
+                None
+                if exact_state_diagnostic_json is None
+                else _portable_path(exact_state_diagnostic_json)
+            ),
             "min_sequential_register_activity_coverage": min_sequential_register_activity_coverage,
         },
+        "exact_state_diagnostic": exact_state_provenance,
         "remaining_abstractions": [
             "FakeRAM area and power use Nangate45 proxy LEF/Liberty views, not SRAM compiler signoff.",
             "Value-memory, NoC, HBM/DRAM, command-distribution, and clock-tree composition outside the cluster are not included.",
@@ -376,6 +710,12 @@ def main() -> int:
         help="Optional source PNR work-item ID for source_dependencies tracking",
     )
     parser.add_argument(
+        "--exact-state-diagnostic-json",
+        type=Path,
+        default=None,
+        help="Required strict explicit-onehot exact-state diagnostic for v16 activity power",
+    )
+    parser.add_argument(
         "--min-sequential-register-activity-coverage",
         type=float,
         default=0.95,
@@ -394,6 +734,7 @@ def main() -> int:
         required_flow_variant=args.required_flow_variant,
         required_synth_args=args.required_synth_args,
         source_pnr_item_id=args.source_pnr_item_id,
+        exact_state_diagnostic_json=args.exact_state_diagnostic_json,
         min_sequential_register_activity_coverage=args.min_sequential_register_activity_coverage,
     )
     args.out.parent.mkdir(parents=True, exist_ok=True)

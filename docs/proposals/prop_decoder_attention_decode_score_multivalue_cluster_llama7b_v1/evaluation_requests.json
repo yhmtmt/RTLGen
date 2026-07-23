@@ -189,6 +189,33 @@
         "direction": "measure_shared_score_multivalue_cluster_targeted_binary_fsm_ppa",
         "reason": "Use a fresh config and flow parameter hash with explicit binary FSM attributes and normal Yosys FSM optimization. Promotion still requires an exact successful 8 ns row and post-synthesis 3/4-bit state-width evidence; no retained widths are claimed before issue #1416 materializes that diagnostic."
       },
+      "status": "canceled_runtime_infeasible",
+      "status_reason": "Canceled after 31.8h runtime; targeted-binary is non-promotable as a physically feasible successor."
+    },
+    {
+      "item_id": "l1_decoder_attention_decode_score_multivalue_cluster_pnr_explicit_onehot_fsm_8ns_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure an 8 ns explicit-onehot FSM candidate that keeps the v2 physical architecture and uses source-level one-hot state vectors for the cluster controller and multivalue reducer, with guarded exact post-synthesis 7/11-bit state widths and empty/default SYNTH_ARGS.",
+      "evaluation_mode": "frontier_followup",
+      "abstraction_layer": "decoder_attention_decode_score_multivalue_cluster",
+      "comparison_role": "shared_score_multivalue_cluster_explicit_onehot_fsm_pnr",
+      "config_paths": [
+        "runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/config_explicit_onehot_fsm.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/decode_score_multivalue_cluster_v1/sweeps/nangate45_decode_score_multivalue_cluster_8ns_explicit_onehot_fsm_v1.json",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "paired_baseline_item_id": "l1_decoder_attention_decode_score_multivalue_cluster_pnr_8ns_v2",
+      "prior_item_ids": [
+        "l1_decoder_attention_decode_score_multivalue_cluster_pnr_targeted_binary_fsm_8ns_v1"
+      ],
+      "expected_result": {
+        "direction": "measure_shared_score_multivalue_cluster_explicit_onehot_fsm_ppa",
+        "reason": "Use a fresh config and flow parameter hash with source-level explicit one-hot FSM state vectors, exact empty/default SYNTH_ARGS, exact-state diagnostic evidence bound to the selected metrics row and synthesized netlist, and no reliance on Yosys auto-recoding. Promotion still requires a successful 8 ns row with critical_path_ns<=8 and exact post-synthesis 7/11-bit state widths."
+      },
       "status": "pending_implementation_merge"
     }
   ],

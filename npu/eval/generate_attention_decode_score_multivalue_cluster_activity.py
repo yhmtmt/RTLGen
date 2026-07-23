@@ -85,27 +85,102 @@ def _validate_request(*, config: JsonDict, block_count: int, head_dim: int) -> J
     if block_count > len(beats):
         raise ValueError(f"block_count must be <= available representative blocks ({len(beats)})")
     score_scale_lanes = int(body.get("score_scale_lanes_per_cycle", 1))
+    fsm_encoding = str(body.get("fsm_encoding", "default")).strip().lower()
     return {
         "top_name": top_name,
         "max_blocks": max_blocks,
         "score_scale_lanes_per_cycle": score_scale_lanes,
+        "fsm_encoding": fsm_encoding,
         "beats": beats[:block_count],
         "values": values[:block_count],
     }
 
 
-def _phase_expr(phase: str) -> str:
+def _cluster_state_literal(fsm_encoding: str, state_name: str) -> str:
+    if fsm_encoding == "explicit_onehot":
+        states = {
+            "IDLE": "7'b0000001",
+            "TILE_CMD": "7'b0000010",
+            "TILE_INPUT": "7'b0000100",
+            "TILE_RESULT": "7'b0001000",
+            "SCALE": "7'b0010000",
+            "FILL": "7'b0100000",
+            "WAIT_RESULT": "7'b1000000",
+        }
+    else:
+        states = {
+            "IDLE": "3'd0",
+            "TILE_CMD": "3'd1",
+            "TILE_INPUT": "3'd2",
+            "TILE_RESULT": "3'd3",
+            "SCALE": "3'd4",
+            "FILL": "3'd5",
+            "WAIT_RESULT": "3'd6",
+        }
+    return states[state_name]
+
+
+def _reducer_state_literal(fsm_encoding: str, state_name: str) -> str:
+    if fsm_encoding == "explicit_onehot":
+        states = {
+            "IDLE": "11'b00000000001",
+            "FILL": "11'b00000000010",
+            "CLEAR": "11'b00000000100",
+            "SCORE_REQ": "11'b00000001000",
+            "SCORE_DATA": "11'b00000010000",
+            "VALUE_REQ": "11'b00000100000",
+            "VALUE_DATA": "11'b00001000000",
+            "DIVIDE": "11'b00010000000",
+            "DIV_LOAD": "11'b00100000000",
+            "DIV_ITER": "11'b01000000000",
+            "RESULT": "11'b10000000000",
+        }
+    else:
+        states = {
+            "IDLE": "4'd0",
+            "FILL": "4'd1",
+            "CLEAR": "4'd2",
+            "SCORE_REQ": "4'd3",
+            "SCORE_DATA": "4'd4",
+            "VALUE_REQ": "4'd5",
+            "VALUE_DATA": "4'd6",
+            "DIVIDE": "4'd7",
+            "DIV_LOAD": "4'd8",
+            "DIV_ITER": "4'd9",
+            "RESULT": "4'd10",
+        }
+    return states[state_name]
+
+
+def _phase_expr(phase: str, config: JsonDict) -> str:
+    fsm_encoding = str(_cluster_body(config).get("fsm_encoding", "default")).strip().lower()
     if phase == "score_fill":
-        return "(dut.state_q == 3'd0 && command_valid && command_ready) || dut.state_q == 3'd1 || dut.state_q == 3'd2 || dut.state_q == 3'd3 || dut.state_q == 3'd4 || dut.state_q == 3'd5"
+        score_fill_states = ("IDLE", "TILE_CMD", "TILE_INPUT", "TILE_RESULT", "SCALE", "FILL")
+        return " || ".join(
+            [
+                f"(dut.state_q == {_cluster_state_literal(fsm_encoding, 'IDLE')} && command_valid && command_ready)"
+            ]
+            + [
+                f"dut.state_q == {_cluster_state_literal(fsm_encoding, state_name)}"
+                for state_name in score_fill_states[1:]
+            ]
+        )
     if phase == "replay_value":
-        return "dut.reducer.state == 4'd2 || dut.reducer.state == 4'd3 || dut.reducer.state == 4'd4 || dut.reducer.state == 4'd5 || dut.reducer.state == 4'd6"
+        return " || ".join(
+            f"dut.reducer.state == {_reducer_state_literal(fsm_encoding, state_name)}"
+            for state_name in ("CLEAR", "SCORE_REQ", "SCORE_DATA", "VALUE_REQ", "VALUE_DATA")
+        )
     if phase == "finalize_result":
-        return "dut.reducer.state == 4'd7 || dut.reducer.state == 4'd8 || dut.reducer.state == 4'd9 || dut.reducer.state == 4'd10"
+        return " || ".join(
+            f"dut.reducer.state == {_reducer_state_literal(fsm_encoding, state_name)}"
+            for state_name in ("DIVIDE", "DIV_LOAD", "DIV_ITER", "RESULT")
+        )
     raise ValueError(f"unknown phase: {phase}")
 
 
 def _testbench(
     *,
+    config: JsonDict,
     top_name: str,
     beats: list[list[tuple[int, list[int]]]],
     values: list[list[list[list[int]]]],
@@ -130,7 +205,7 @@ def _testbench(
         for block in range(block_count)
         for value_slice in range(_VALUE_SLICES)
     )
-    phase_active = _phase_expr(phase)
+    phase_active = _phase_expr(phase, config)
     clock_half_period = clock_period_ns / 2.0
     # Explicitly dump only bit-accurate feedback and accumulation vectors.
     # Do not add raw RTL FSM state vectors here; post-compile state encodings differ from RTL.
@@ -313,6 +388,7 @@ def _run_phase(
         tb_path = tmp / "tb.sv"
         tb_path.write_text(
             _testbench(
+                config=config,
                 top_name=str(validated["top_name"]),
                 beats=validated["beats"],
                 values=validated["values"],

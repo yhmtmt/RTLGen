@@ -8244,7 +8244,7 @@ def test_generate_l2_campaign_task_adds_decode_score_multivalue_cluster_activity
             )
 
 
-def test_generate_l2_campaign_task_adds_decode_score_multivalue_cluster_activity_power_v14() -> None:
+def test_generate_l2_campaign_task_adds_decode_score_multivalue_cluster_activity_power_v16() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
         repo_root.mkdir()
@@ -8259,7 +8259,7 @@ def test_generate_l2_campaign_task_adds_decode_score_multivalue_cluster_activity
                 Layer2CampaignGenerateRequest(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
-                    item_id="l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v14",
+                    item_id="l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v16",
                     requested_by="@tester",
                     source_commit=source_commit,
                     abstraction_layer="decoder_attention_decode_score_multivalue_cluster_activity_power",
@@ -8274,27 +8274,37 @@ def test_generate_l2_campaign_task_adds_decode_score_multivalue_cluster_activity
 
             assert (
                 "--required-flow-variant "
-                "decode_score_multivalue_cluster_v1_8ns_binary_fsm_v4_proxy_die_2500" in run
+                "decode_score_multivalue_cluster_v1_8ns_explicit_onehot_fsm_v1_proxy_die_2500" in run
             )
-            assert "--required-synth-args=-nofsm" in run
+            assert "--required-synth-args=" in run
             assert (
                 "--min-sequential-register-activity-coverage 1.0" in run
             )
             assert (
                 "--source-pnr-item-id "
-                "l1_decoder_attention_decode_score_multivalue_cluster_pnr_binary_fsm_8ns_v3_r3"
+                "l1_decoder_attention_decode_score_multivalue_cluster_pnr_explicit_onehot_fsm_8ns_v1"
                 in run
             )
             assert (
-                decoder_inputs["decode_score_multivalue_cluster_required_flow_variant"]
-                == "decode_score_multivalue_cluster_v1_8ns_binary_fsm_v4_proxy_die_2500"
+                "--exact-state-diagnostic-json "
+                "runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/"
+                "explicit_onehot_fsm_diagnostic.json" in run
             )
             assert (
-                decoder_inputs["decode_score_multivalue_cluster_required_synth_args"] == "-nofsm"
+                decoder_inputs["decode_score_multivalue_cluster_required_flow_variant"]
+                == "decode_score_multivalue_cluster_v1_8ns_explicit_onehot_fsm_v1_proxy_die_2500"
+            )
+            assert (
+                decoder_inputs["decode_score_multivalue_cluster_required_synth_args"] == ""
             )
             assert (
                 decoder_inputs["decode_score_multivalue_cluster_source_pnr_item_id"]
-                == "l1_decoder_attention_decode_score_multivalue_cluster_pnr_binary_fsm_8ns_v3_r3"
+                == "l1_decoder_attention_decode_score_multivalue_cluster_pnr_explicit_onehot_fsm_8ns_v1"
+            )
+            assert (
+                decoder_inputs["decode_score_multivalue_cluster_exact_state_diagnostic_json"]
+                == "runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/"
+                "explicit_onehot_fsm_diagnostic.json"
             )
             assert (
                 decoder_inputs["decode_score_multivalue_cluster_min_sequential_register_activity_coverage"]
@@ -8329,20 +8339,20 @@ def test_cluster_activity_power_item_for_consumer_prefers_requested_version_for_
     )
 
 
-def test_cluster_activity_power_item_for_consumer_selects_v14_for_cluster_frontier() -> None:
+def test_cluster_activity_power_item_for_consumer_selects_v16_for_cluster_frontier() -> None:
     assert (
         _cluster_activity_power_item_for_consumer(
             item_id="l2_decoder_attention_decode_score_multivalue_cluster_frontier_llama7b_v1",
             depends_on_item_ids=[
                 "l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2",
-                "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v14",
+                "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v16",
             ],
         )
-        == "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v14"
+        == "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v16"
     )
 
 
-def test_gqa_folded_activity_request_manifests_require_cluster_activity_power_v14() -> None:
+def test_gqa_folded_activity_request_manifests_require_cluster_activity_power_v16() -> None:
     repo_root = Path(__file__).resolve().parents[3]
     proposal_dir = (
         repo_root
@@ -8353,7 +8363,7 @@ def test_gqa_folded_activity_request_manifests_require_cluster_activity_power_v1
         for lanes in (1, 2, 4)
     }
     required_dependency = (
-        "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v14"
+        "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v16"
     )
 
     for manifest_name, items_key in (

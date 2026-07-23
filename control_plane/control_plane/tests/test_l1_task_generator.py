@@ -899,6 +899,37 @@ def _write_attention_decode_score_multivalue_cluster_targeted_binary_config(
     return str(config_path.relative_to(repo_root))
 
 
+def _write_attention_decode_score_multivalue_cluster_explicit_onehot_config(
+    repo_root: Path,
+) -> str:
+    design_dir = (
+        repo_root
+        / "runs"
+        / "designs"
+        / "npu_blocks"
+        / "attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv"
+    )
+    design_dir.mkdir(parents=True, exist_ok=True)
+    config_path = design_dir / "config_explicit_onehot_fsm.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "top_name": "attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv",
+                "attention_decode_score_multivalue_cluster": {
+                    "max_blocks": 16384,
+                    "array_n": 8,
+                    "value_slices": 16,
+                    "divider_impl": "iterative_restoring",
+                    "score_scale_lanes_per_cycle": 1,
+                    "fsm_encoding": "explicit_onehot",
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    return str(config_path.relative_to(repo_root))
+
+
 def _write_attention_decode_score_multivalue_cluster_8ns_bridge_sweep(repo_root: Path) -> str:
     sweep_path = (
         repo_root
@@ -1042,6 +1073,52 @@ def _write_attention_decode_score_multivalue_cluster_targeted_binary_fsm_8ns_swe
                     "TAG": ["decode_score_multivalue_cluster_v1_8ns_targeted_binary_fsm"],
                     "FLOW_VARIANT": [
                         "decode_score_multivalue_cluster_v1_8ns_targeted_binary_fsm_v1"
+                    ],
+                    "CLOCK_PERIOD": [8],
+                    "SYNTH_HIERARCHICAL": [1],
+                    "SYNTH_MEMORY_MAX_BITS": [65536],
+                    "PLACE_DENSITY": [0.4],
+                },
+                "mode_compare": {
+                    "modes": [
+                        {
+                            "name": "proxy_die_2500",
+                            "use_macro": True,
+                            "param_overrides": {
+                                "DIE_AREA": "0 0 2500 2500",
+                                "CORE_AREA": "50 50 2450 2450",
+                            },
+                        }
+                    ]
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    return str(sweep_path.relative_to(repo_root))
+
+
+def _write_attention_decode_score_multivalue_cluster_explicit_onehot_fsm_8ns_sweep(
+    repo_root: Path,
+) -> str:
+    sweep_path = (
+        repo_root
+        / "runs"
+        / "campaigns"
+        / "npu"
+        / "decode_score_multivalue_cluster_v1"
+        / "sweeps"
+        / "nangate45_decode_score_multivalue_cluster_8ns_explicit_onehot_fsm_v1.json"
+    )
+    sweep_path.parent.mkdir(parents=True, exist_ok=True)
+    sweep_path.write_text(
+        json.dumps(
+            {
+                "tag_prefix": "decode_score_multivalue_cluster_v1_8ns_explicit_onehot_fsm",
+                "flow_params": {
+                    "TAG": ["decode_score_multivalue_cluster_v1_8ns_explicit_onehot_fsm"],
+                    "FLOW_VARIANT": [
+                        "decode_score_multivalue_cluster_v1_8ns_explicit_onehot_fsm_v1"
                     ],
                     "CLOCK_PERIOD": [8],
                     "SYNTH_HIERARCHICAL": [1],
@@ -3108,6 +3185,61 @@ def test_generate_l1_sweep_task_adds_targeted_binary_fsm_retry_profile_and_diagn
             )
 
 
+def test_generate_l1_sweep_task_adds_explicit_onehot_retry_profile_and_diagnostic() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        config_path = _write_attention_decode_score_multivalue_cluster_explicit_onehot_config(
+            repo_root
+        )
+        sweep_path = (
+            _write_attention_decode_score_multivalue_cluster_explicit_onehot_fsm_8ns_sweep(
+                repo_root
+            )
+        )
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l1_sweep_task(
+                session,
+                Layer1SweepGenerateRequest(
+                    repo_root=str(repo_root),
+                    sweep_path=sweep_path,
+                    config_paths=[config_path],
+                    platform="nangate45",
+                    out_root="runs/designs/npu_blocks",
+                    item_id=(
+                        "l1_decoder_attention_decode_score_multivalue_cluster_pnr_"
+                        "explicit_onehot_fsm_8ns_v1"
+                    ),
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    abstraction_layer="decoder_attention_decode_score_multivalue_cluster",
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            checker_commands = [
+                command
+                for command in work_item.command_manifest
+                if command["name"] == "check_attention_decode_score_multivalue_cluster_explicit_onehot"
+            ]
+            assert len(checker_commands) == 1
+            assert checker_commands[0]["run"].endswith(
+                "--diagnostic-out runs/designs/npu_blocks/"
+                "attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/"
+                "explicit_onehot_fsm_diagnostic.json --profile explicit_onehot"
+            )
+            assert (
+                "runs/designs/npu_blocks/"
+                "attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/"
+                "explicit_onehot_fsm_diagnostic.json"
+                in work_item.expected_outputs
+            )
+
+
 def test_binary_fsm_retry_profile_requires_exact_config_and_sweep() -> None:
     targeted_item_id = (
         "l1_decoder_attention_decode_score_multivalue_cluster_pnr_"
@@ -3149,6 +3281,36 @@ def test_binary_fsm_retry_profile_requires_exact_config_and_sweep() -> None:
                 "runs/campaigns/npu/decode_score_multivalue_cluster_v1/sweeps/"
                 "nangate45_decode_score_multivalue_cluster_8ns_binary_fsm_v4.json"
             ),
+            config_paths=[targeted_config],
+        )
+        is None
+    )
+
+    explicit_item_id = (
+        "l1_decoder_attention_decode_score_multivalue_cluster_pnr_"
+        "explicit_onehot_fsm_8ns_v1"
+    )
+    explicit_config = (
+        "runs/designs/npu_blocks/"
+        "attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/"
+        "config_explicit_onehot_fsm.json"
+    )
+    explicit_sweep = (
+        "runs/campaigns/npu/decode_score_multivalue_cluster_v1/sweeps/"
+        "nangate45_decode_score_multivalue_cluster_8ns_explicit_onehot_fsm_v1.json"
+    )
+    assert (
+        _multivalue_cluster_binary_fsm_profile(
+            item_id=explicit_item_id,
+            sweep_path=explicit_sweep,
+            config_paths=[explicit_config],
+        ).name
+        == "explicit_onehot"
+    )
+    assert (
+        _multivalue_cluster_binary_fsm_profile(
+            item_id=explicit_item_id,
+            sweep_path=explicit_sweep,
             config_paths=[targeted_config],
         )
         is None
