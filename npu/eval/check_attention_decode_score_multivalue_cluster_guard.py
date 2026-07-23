@@ -9,18 +9,51 @@ from pathlib import Path
 import re
 
 
+def _load_json(path: Path) -> dict[str, object]:
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _resolve_selected_config(*, design_dir: Path, selected: Path | None) -> Path:
+    config_path = selected or (design_dir / "config.json")
+    config_path = config_path.resolve()
+    if not config_path.exists():
+        raise SystemExit(f"missing config: {config_path}")
+    try:
+        relative_path = config_path.relative_to(design_dir)
+    except ValueError as exc:
+        raise SystemExit(f"selected config must live under design-dir: {config_path}") from exc
+    if len(relative_path.parts) != 1:
+        raise SystemExit(
+            f"selected config must be a direct child of design-dir, got: {relative_path.as_posix()}"
+        )
+    return config_path
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--design-dir", type=Path, required=True)
+    parser.add_argument(
+        "--config",
+        type=Path,
+        default=None,
+        help="Config used to generate the design; defaults to <design-dir>/config.json",
+    )
     args = parser.parse_args()
     design_dir = args.design_dir.resolve()
-    config = json.loads((design_dir / "config.json").read_text(encoding="utf-8"))
+    config_path = _resolve_selected_config(design_dir=design_dir, selected=args.config)
+    config = _load_json(config_path)
     rtl_dir = design_dir / "verilog"
-    manifest = json.loads(
-        (rtl_dir / "attention_decode_score_multivalue_cluster_manifest.json").read_text(encoding="utf-8")
-    )
+    generated_config_path = rtl_dir / "config.json"
+    if not generated_config_path.exists():
+        raise SystemExit(f"missing generated config: {generated_config_path}")
+    generated_config = _load_json(generated_config_path)
+    manifest = _load_json(rtl_dir / "attention_decode_score_multivalue_cluster_manifest.json")
     rtl = (rtl_dir / "top.v").read_text(encoding="utf-8")
     errors: list[str] = []
+    if config != generated_config:
+        errors.append(
+            f"selected config {config_path} does not match generated config {generated_config_path}"
+        )
     expected_top = str(config.get("top_name") or "")
     if manifest.get("top_name") != expected_top:
         errors.append("manifest top_name does not match config")
@@ -80,6 +113,7 @@ def main() -> int:
         json.dumps(
             {
                 "design": expected_top,
+                "config": str(config_path),
                 "guard": "attention_decode_score_multivalue_cluster_v1",
                 "status": "ok",
             },

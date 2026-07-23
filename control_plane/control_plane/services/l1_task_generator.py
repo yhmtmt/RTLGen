@@ -867,7 +867,7 @@ def _read_config_target(
                     "name": "check_attention_decode_score_multivalue_cluster_guard",
                     "run": (
                         "python3 npu/eval/check_attention_decode_score_multivalue_cluster_guard.py "
-                        f"--design-dir {design_dir}"
+                        f"--design-dir {design_dir} --config {config_rel}"
                     ),
                 },
                 {

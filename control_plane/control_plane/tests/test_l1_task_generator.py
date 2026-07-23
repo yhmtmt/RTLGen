@@ -3005,6 +3005,11 @@ def test_generate_l1_sweep_task_supports_attention_decode_score_multivalue_clust
             ]
             assert "gen_attention_decode_score_multivalue_cluster.py" in work_item.command_manifest[0]["run"]
             assert "check_attention_decode_score_multivalue_cluster_guard.py" in work_item.command_manifest[1]["run"]
+            assert (
+                "--config runs/designs/npu_blocks/"
+                "attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/config.json"
+                in work_item.command_manifest[1]["run"]
+            )
             assert "--top attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv" in work_item.command_manifest[2]["run"]
             assert (
                 "--macro_manifest runs/designs/npu_blocks/"
@@ -3212,7 +3217,7 @@ def test_generate_l1_sweep_task_adds_explicit_onehot_retry_profile_and_diagnosti
                     out_root="runs/designs/npu_blocks",
                     item_id=(
                         "l1_decoder_attention_decode_score_multivalue_cluster_pnr_"
-                        "explicit_onehot_fsm_8ns_v1"
+                        "explicit_onehot_fsm_8ns_v1_r1"
                     ),
                     requested_by="@tester",
                     source_commit=source_commit,
@@ -3227,6 +3232,16 @@ def test_generate_l1_sweep_task_adds_explicit_onehot_retry_profile_and_diagnosti
                 if command["name"] == "check_attention_decode_score_multivalue_cluster_explicit_onehot"
             ]
             assert len(checker_commands) == 1
+            assert (
+                "--config runs/designs/npu_blocks/"
+                "attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/"
+                "config_explicit_onehot_fsm.json"
+                in next(
+                    command["run"]
+                    for command in work_item.command_manifest
+                    if command["name"] == "check_attention_decode_score_multivalue_cluster_guard"
+                )
+            )
             assert checker_commands[0]["run"].endswith(
                 "--diagnostic-out runs/designs/npu_blocks/"
                 "attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/"
@@ -3288,7 +3303,7 @@ def test_binary_fsm_retry_profile_requires_exact_config_and_sweep() -> None:
 
     explicit_item_id = (
         "l1_decoder_attention_decode_score_multivalue_cluster_pnr_"
-        "explicit_onehot_fsm_8ns_v1"
+        "explicit_onehot_fsm_8ns_v1_r1"
     )
     explicit_config = (
         "runs/designs/npu_blocks/"
