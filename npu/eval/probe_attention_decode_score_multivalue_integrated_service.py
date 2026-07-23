@@ -1503,6 +1503,8 @@ def validate_report(payload: JsonDict) -> None:
             raise ValueError(f"shared_result_egress missing for {case.get('case_id')}")
         if int(egress.get("documented_initiation_interval", 0)) != 1:
             raise ValueError(f"unexpected shared_result egress II for {case.get('case_id')}")
+        if int(case.get("config", {}).get("cluster_count", 0)) > 1 and egress.get("back_to_back_fire_seen") is not True:
+            raise ValueError(f"missing shared_result back-to-back evidence for {case.get('case_id')}")
 
 
 def main() -> int:

@@ -237,7 +237,9 @@ def test_integrated_service_fixed_resource_scaling_pair() -> None:
 def test_integrated_service_validate_report_rejects_incomplete_evidence() -> None:
     if not _iverilog_available():
         pytest.skip("iverilog/vvp unavailable")
-    report = build_report({"cases": [_case(case_id="validate", cluster_count=1, packet_w=128, banks=2, arb_mode="round_robin")]})
+    report = build_report(
+        {"cases": [_case(case_id="validate", cluster_count=2, packet_w=128, banks=2, arb_mode="round_robin")]}
+    )
     broken = json.loads(json.dumps(report))
     broken["exclusions"] = REPORT_EXCLUSIONS[:-1]
     with pytest.raises(ValueError, match="exclusions"):
@@ -256,4 +258,9 @@ def test_integrated_service_validate_report_rejects_incomplete_evidence() -> Non
     broken = json.loads(json.dumps(report))
     broken["cases"][0]["integrated_service"]["shared_result_egress"]["documented_initiation_interval"] = 2
     with pytest.raises(ValueError, match="shared_result egress II"):
+        validate_report(broken)
+
+    broken = json.loads(json.dumps(report))
+    broken["cases"][0]["integrated_service"]["shared_result_egress"]["back_to_back_fire_seen"] = False
+    with pytest.raises(ValueError, match="back-to-back evidence"):
         validate_report(broken)
