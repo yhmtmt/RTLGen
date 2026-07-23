@@ -1,0 +1,105 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "decoder_contract": {
+        "decode_score_multivalue_integrated_service_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_integrated_service__l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1.json",
+        "decode_score_multivalue_integrated_service_scope": "Run the integrated shared-score value-service RTL probe across a bounded 14-case matrix through cluster_count 32. Retain exact Python/baseline/integrated hash, protocol, and count gates while reporting completion cycles, service penalty cycles, shared-result blocking/arbitration, router/service contention and occupancy, and explicit exclusions for physical PPA, SRAM macro timing, HBM, and token energy.",
+        "decode_score_multivalue_integrated_service_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_integrated_service__l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1.md",
+        "decode_score_multivalue_integrated_service_equivalence": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_cluster_equivalence__l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1.json"
+      }
+    },
+    "commands": [
+      {
+        "run": "python3 npu/eval/probe_attention_decode_score_multivalue_integrated_service.py --out runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_integrated_service__l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1.json --out-md runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_integrated_service__l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1.md --depends-on-item-id l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1 --proposal-id prop_l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1 --proposal-path docs/proposals/prop_l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1/proposal.json",
+        "name": "probe_decode_score_multivalue_integrated_service"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate_runs"
+      }
+    ],
+    "objective": "Measure exact shared-score multivalue RTL with finite shared-result, router, banked SRAM service, and bounded scheduling through 32 clusters.",
+    "acceptance": [
+      "Write all declared decoder evidence artifacts",
+      "Keep evidence artifact paths repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "source_mode": "src_verilog",
+    "expected_outputs": [
+      "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_integrated_service__l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1.json",
+      "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_integrated_service__l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1.md"
+    ]
+  },
+  "layer": "layer2",
+  "state": "evaluated",
+  "title": "L2 Llama7B multivalue integrated on-chip service probe",
+  "result": {
+    "branch": "eval/l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1/s20260723t131050z",
+    "completed_utc": "2026-07-23T13:10:48.000187Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "b7c2d9c80c1c",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260723t131050z][host:b7c2d9c80c1c][item:l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1]",
+    "metrics_rows": [],
+    "metrics_exempt_reason": "evidence_only_decoder_evidence",
+    "queue_item_id": "l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1",
+    "session_id": "s20260723t131050z",
+    "status": "ok",
+    "summary": "2/2 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1/s20260723t131050z",
+    "pr_title": "eval: run l2 llama7b multivalue integrated on-chip service probe",
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Include metrics row references in result.metrics_rows",
+      "Keep committed result_path fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260723t131050z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 60,
+  "created_utc": "2026-07-23T12:35:57.535114Z",
+  "requested_by": "developer_agent",
+  "developer_loop": {
+    "comparison": {
+      "role": "frontier_validation",
+      "paired_baseline_item_id": "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1"
+    },
+    "evaluation": {
+      "mode": "frontier_detail",
+      "expected_reason": "Retain exact Python/baseline/integrated hashes and protocol/count gates while recording finite service penalties and contention across the bounded 14-case matrix.",
+      "expected_direction": "record_decode_score_multivalue_integrated_service_probe"
+    },
+    "abstraction": {
+      "layer": "decoder_attention_decode_score_multivalue_integrated_service"
+    },
+    "proposal_id": "prop_l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1",
+    "dependencies": {
+      "item_ids": [
+        "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    },
+    "proposal_path": "docs/proposals/prop_l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1/proposal.json"
+  },
+  "source_requirement": {
+    "repo": "",
+    "reason": "evaluator runtime must contain the queued job source commit",
+    "version": 1,
+    "required_ref": "origin/master",
+    "required_sha": "1e3258cd16a33487c8b91a80964070470e1c5b87",
+    "requires_daemon_restart": true
+  }
+}

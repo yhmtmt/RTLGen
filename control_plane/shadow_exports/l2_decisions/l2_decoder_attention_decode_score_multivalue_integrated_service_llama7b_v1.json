@@ -1,0 +1,110 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-07-23T13:10:49.855301Z",
+  "item_id": "l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1",
+  "run_key": "l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1_run_699edb450df4fb42",
+  "layer": "layer2",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l2_campaign",
+  "source_commit": "1e3258cd16a33487c8b91a80964070470e1c5b87",
+  "review_metadata_source_commit": "1e3258cd16a33487c8b91a80964070470e1c5b87",
+  "objective": "Measure exact shared-score multivalue RTL with finite shared-result, router, banked SRAM service, and bounded scheduling through 32 clusters.",
+  "input_manifest": {
+    "decoder_contract": {
+      "decode_score_multivalue_integrated_service_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_integrated_service__l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1.json",
+      "decode_score_multivalue_integrated_service_scope": "Run the integrated shared-score value-service RTL probe across a bounded 14-case matrix through cluster_count 32. Retain exact Python/baseline/integrated hash, protocol, and count gates while reporting completion cycles, service penalty cycles, shared-result blocking/arbitration, router/service contention and occupancy, and explicit exclusions for physical PPA, SRAM macro timing, HBM, and token energy.",
+      "decode_score_multivalue_integrated_service_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_integrated_service__l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1.md",
+      "decode_score_multivalue_integrated_service_equivalence": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_cluster_equivalence__l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1.json"
+    }
+  },
+  "recommendation": {
+    "source": "decoder_evidence",
+    "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_integrated_service__l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1.json",
+    "arch_id": "decoder_attention_decode_score_multivalue_integrated_service",
+    "macro_mode": "evidence_only",
+    "outcome": "multivalue_integrated_service_probe_passed"
+  },
+  "objective_profiles": [],
+  "evaluation_record": {
+    "proposal_id": "prop_l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1",
+    "title": "Llama7B multivalue integrated service probe",
+    "primary_question": "Does the merged shared-score multivalue cluster retain exact result hashes and protocol/count gates once the integrated on-chip value service is exercised across a bounded scale/resource matrix through 32 clusters?",
+    "evaluation_mode": "frontier_detail",
+    "comparison_role": "frontier_validation",
+    "abstraction_layer": "decoder_attention_decode_score_multivalue_integrated_service",
+    "expected_direction": "record_decode_score_multivalue_integrated_service_probe",
+    "expected_reason": "Retain exact Python/baseline/integrated hashes and protocol/count gates while recording finite service penalties and contention across the bounded 14-case matrix.",
+    "summary": "Decoder multivalue integrated-service evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_integrated_service__l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1.json: decision=multivalue_integrated_service_probe_passed; validated_case_count=14; max_cluster_count=32; max_completion_cycle=21925; max_service_penalty_cycles=13591; stress_case_id=c32_p256_b32_rl6_rr; all_hash_gates_passed=True; all_protocol_gates_passed=True; all_count_gates_passed=True; selected_scale_point_selection_role=representative_largest_nominal_scale_point; selected_scale_point_case_id=c32_p256_b32_rr; selected_scale_point_completion_cycle=15821; selected_scale_point_service_penalty_cycles=7487; selected_scale_point_shared_result_egress_block_cycles=6; selected_scale_point_router_arbitration_contention_cycles=7606; selected_scale_point_bank_conflict_count=1533; recommended_next_step=Use this merged/materialized integrated-service probe as the shared-score on-chip service closure input before any NoC, HBM, physical PPA, SRAM macro timing, or token-energy claim.",
+    "outcome": "multivalue_integrated_service_probe_passed",
+    "expectation_status": "unspecified"
+  },
+  "proposal_assessment": {
+    "proposal_id": "prop_l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1",
+    "title": "Llama7B multivalue integrated service probe",
+    "kind": "architecture",
+    "primary_question": "Does the merged shared-score multivalue cluster retain exact result hashes and protocol/count gates once the integrated on-chip value service is exercised across a bounded scale/resource matrix through 32 clusters?",
+    "evaluation_mode": "frontier_detail",
+    "comparison_role": "frontier_validation",
+    "outcome": "multivalue_integrated_service_probe_passed",
+    "summary": "Decoder multivalue integrated-service evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_integrated_service__l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1.json: decision=multivalue_integrated_service_probe_passed; validated_case_count=14; max_cluster_count=32; max_completion_cycle=21925; max_service_penalty_cycles=13591; stress_case_id=c32_p256_b32_rl6_rr; all_hash_gates_passed=True; all_protocol_gates_passed=True; all_count_gates_passed=True; selected_scale_point_selection_role=representative_largest_nominal_scale_point; selected_scale_point_case_id=c32_p256_b32_rr; selected_scale_point_completion_cycle=15821; selected_scale_point_service_penalty_cycles=7487; selected_scale_point_shared_result_egress_block_cycles=6; selected_scale_point_router_arbitration_contention_cycles=7606; selected_scale_point_bank_conflict_count=1533; recommended_next_step=Use this merged/materialized integrated-service probe as the shared-score on-chip service closure input before any NoC, HBM, physical PPA, SRAM macro timing, or token-energy claim.",
+    "baseline_ref": null,
+    "baseline_item_id": null,
+    "matched_row_count": 0,
+    "matched_rows": [],
+    "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_integrated_service__l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1.json",
+    "decoder_quality": {
+      "diagnosis": {
+        "decision": "multivalue_integrated_service_probe_passed",
+        "recommended_next_step": "Use this merged/materialized integrated-service probe as the shared-score on-chip service closure input before any NoC, HBM, physical PPA, SRAM macro timing, or token-energy claim."
+      },
+      "selected_scale_point": {
+        "arch_id": "decode_score_multivalue_integrated_service",
+        "bank_arbiter_policy": "round_robin",
+        "bank_conflict_count": 1533,
+        "bank_count": 32,
+        "case_id": "c32_p256_b32_rr",
+        "cluster_count": 32,
+        "completion_cycle": 15821,
+        "dominant_tile_resource": "onchip_shared_service",
+        "macro_mode": "rtl_probe",
+        "packet_payload_bytes": 32,
+        "router_arbitration_contention_cycles": 7606,
+        "schedule_policy": "shared_score_value_service_probe",
+        "selection_basis": "Largest tested cluster_count, then packet_w, then banks among q4/read_latency=2/round_robin cases; coverage representative only, not a performance or architectural ranking.",
+        "selection_role": "representative_largest_nominal_scale_point",
+        "service_penalty_cycles": 7487,
+        "shared_result_egress_block_cycles": 6
+      }
+    }
+  },
+  "source_refs": {
+    "decoder_evidence_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_integrated_service__l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1.json",
+    "decoder_decode_score_multivalue_integrated_service_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_integrated_service__l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1.json",
+    "decoder_decode_score_multivalue_integrated_service_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_integrated_service__l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1.md"
+  },
+  "decoder_quality": {
+    "diagnosis": {
+      "decision": "multivalue_integrated_service_probe_passed",
+      "recommended_next_step": "Use this merged/materialized integrated-service probe as the shared-score on-chip service closure input before any NoC, HBM, physical PPA, SRAM macro timing, or token-energy claim."
+    },
+    "selected_scale_point": {
+      "arch_id": "decode_score_multivalue_integrated_service",
+      "bank_arbiter_policy": "round_robin",
+      "bank_conflict_count": 1533,
+      "bank_count": 32,
+      "case_id": "c32_p256_b32_rr",
+      "cluster_count": 32,
+      "completion_cycle": 15821,
+      "dominant_tile_resource": "onchip_shared_service",
+      "macro_mode": "rtl_probe",
+      "packet_payload_bytes": 32,
+      "router_arbitration_contention_cycles": 7606,
+      "schedule_policy": "shared_score_value_service_probe",
+      "selection_basis": "Largest tested cluster_count, then packet_w, then banks among q4/read_latency=2/round_robin cases; coverage representative only, not a performance or architectural ranking.",
+      "selection_role": "representative_largest_nominal_scale_point",
+      "service_penalty_cycles": 7487,
+      "shared_result_egress_block_cycles": 6
+    }
+  }
+}
