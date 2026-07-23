@@ -5942,6 +5942,147 @@ def test_consume_l2_result_hbm_command_calibrated_service_uses_decoder_evidence(
             )
 
 
+def test_consume_l2_result_decode_score_multivalue_integrated_service_uses_decoder_evidence() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            proposal_dir = (
+                repo_root
+                / "docs"
+                / "proposals"
+                / "prop_l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1"
+            )
+            _write(
+                proposal_dir / "proposal.json",
+                json.dumps(
+                    {
+                        "proposal_id": "prop_l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1",
+                        "kind": "architecture",
+                        "title": "Integrated shared-score multivalue service probe",
+                        "direct_comparison": {
+                            "primary_question": "Does the bounded integrated service matrix retain exact hashes and protocol/count gates?"
+                        },
+                    },
+                    indent=2,
+                )
+                + "\n",
+            )
+            evidence_rel = (
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_decode_score_multivalue_integrated_service__"
+                "l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1.json"
+            )
+            report_rel = (
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_decode_score_multivalue_integrated_service__"
+                "l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1.md"
+            )
+            _write(
+                repo_root / evidence_rel,
+                json.dumps(
+                    {
+                        "model": "llm_decoder_attention_decode_score_multivalue_integrated_service_probe_v1",
+                        "decision": "pass",
+                        "diagnosis": {
+                            "decision": "multivalue_integrated_service_probe_passed",
+                            "recommended_next_step": "Use this as the merged on-chip service closure input only.",
+                        },
+                        "best": {
+                            "arch_id": "decode_score_multivalue_integrated_service",
+                            "macro_mode": "rtl_probe",
+                            "cluster_count": 32,
+                            "bank_count": 32,
+                            "packet_payload_bytes": 32,
+                            "total_cycles": 1200,
+                            "dominant_tile_resource": "onchip_shared_service",
+                            "selected_case_id": "c32_p256_b32_rr",
+                            "selected_case_service_penalty_cycles": 48,
+                            "selected_case_shared_result_egress_block_cycles": 17,
+                            "selected_case_router_arbitration_contention_cycles": 21,
+                            "selected_case_bank_conflict_count": 9,
+                        },
+                        "summary": {
+                            "validated_case_count": 14,
+                            "max_cluster_count": 32,
+                            "max_completion_cycle": 1200,
+                            "max_service_penalty_cycles": 48,
+                            "stress_case_id": "c32_p256_b32_q1_rr",
+                            "all_hash_gates_passed": True,
+                            "all_protocol_gates_passed": True,
+                            "all_count_gates_passed": True,
+                        },
+                        "remaining_abstractions": [
+                            "No physical PPA, SRAM macro timing, HBM, or total-token energy claim.",
+                        ],
+                    },
+                    indent=2,
+                )
+                + "\n",
+            )
+            _write(repo_root / report_rel, "# integrated service probe\n")
+            item_id = _seed_campaign_work_item(
+                session,
+                repo_root,
+                item_id="l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1",
+                campaign_dir_rel="runs/campaigns/npu/decode_score_multivalue_integrated_service_campaign",
+                summary_rows=(
+                    "scope,arch_id,macro_mode,objective_rank,latency_ms_mean,energy_mj_mean,critical_path_ns_mean,total_power_mw_mean,flow_elapsed_s_mean,throughput_infer_per_s_mean\n"
+                    "aggregate,fp16_nm1_demo,flat_nomacro,1,0.4,0.15,5.5,0.18,1000,1.0\n"
+                ),
+                proposal_path=(
+                    "docs/proposals/"
+                    "prop_l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1"
+                ),
+                comparison={"role": "frontier_validation"},
+            )
+            work_item = session.query(WorkItem).filter_by(item_id=item_id).one()
+            payload = copy.deepcopy(work_item.task_request.request_payload or {})
+            payload["developer_loop"]["evaluation"] = {
+                "mode": "frontier_detail",
+                "expected_direction": "record_decode_score_multivalue_integrated_service_probe",
+                "expected_reason": "Use the merged integrated-service probe before composition claims.",
+            }
+            payload["developer_loop"]["abstraction"] = {
+                "layer": "decoder_attention_decode_score_multivalue_integrated_service",
+            }
+            work_item.task_request.request_payload = payload
+            work_item.input_manifest = {
+                "decoder_contract": {
+                    "decode_score_multivalue_integrated_service_out": evidence_rel,
+                    "decode_score_multivalue_integrated_service_report": report_rel,
+                }
+            }
+            work_item.expected_outputs = [*(work_item.expected_outputs or []), evidence_rel, report_rel]
+            session.commit()
+
+            result = consume_l2_result(session, Layer2ConsumeRequest(repo_root=str(repo_root), item_id=item_id))
+
+            decision_payload = json.loads(
+                (repo_root / "control_plane" / "shadow_exports" / "l2_decisions" / f"{item_id}.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            assert result.recommended_arch_id == "decode_score_multivalue_integrated_service"
+            assert decision_payload["proposal_assessment"]["outcome"] == (
+                "multivalue_integrated_service_probe_passed"
+            )
+            assert decision_payload["recommendation"]["source"] == "decoder_evidence"
+            assert decision_payload["recommendation"]["cluster_count"] == 32
+            assert decision_payload["recommendation"]["bank_count"] == 32
+            assert (
+                decision_payload["source_refs"]["decoder_decode_score_multivalue_integrated_service_out"]
+                == evidence_rel
+            )
+            assert (
+                decision_payload["source_refs"]["decoder_decode_score_multivalue_integrated_service_report"]
+                == report_rel
+            )
+
+
 def test_consume_l2_result_measured_compute_energy_closure_uses_decoder_evidence() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"

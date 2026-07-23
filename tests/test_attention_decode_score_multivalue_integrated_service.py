@@ -83,10 +83,27 @@ def test_multivalue_service_generator_manifest(tmp_path: Path) -> None:
 
 
 def test_integrated_service_default_cases_cover_requested_surface() -> None:
-    assert {row["cluster_count"] for row in DEFAULT_CASES} >= {1, 2, 4}
+    assert len(DEFAULT_CASES) == 14
+    assert {row["cluster_count"] for row in DEFAULT_CASES} >= {1, 2, 4, 8, 16, 32}
     assert {row["packet_w"] for row in DEFAULT_CASES} == {128, 256}
-    assert {row["banks"] for row in DEFAULT_CASES} >= {2, 4, 8}
+    assert {row["banks"] for row in DEFAULT_CASES} >= {4, 8, 16, 32}
     assert {row["arb_mode"] for row in DEFAULT_CASES} == {"round_robin", "locality_first_bounded"}
+    fixed_resource = {
+        row["case_id"]
+        for row in DEFAULT_CASES
+        if row["packet_w"] == 128 and row["banks"] == 4 and row["arb_mode"] == "round_robin"
+    }
+    assert fixed_resource == {
+        "c1_p128_b4_rr",
+        "c2_p128_b4_rr",
+        "c4_p128_b4_rr",
+        "c8_p128_b4_rr",
+        "c16_p128_b4_rr",
+        "c32_p128_b4_rr",
+    }
+    assert {"c32_p256_b32_q1_rr", "c32_p256_b32_rl6_rr"} <= {
+        row["case_id"] for row in DEFAULT_CASES
+    }
 
 
 @pytest.mark.parametrize("packet_w", [128, 256])
@@ -196,24 +213,24 @@ def test_integrated_service_fixed_resource_scaling_pair() -> None:
                     case_id="fixed_c1",
                     cluster_count=1,
                     packet_w=128,
-                    banks=2,
+                    banks=4,
                     arb_mode="round_robin",
                     locality_burst_max=2,
-                    req_queue_depth=2,
-                    resp_queue_depth=2,
-                    bank_queue_depth=2,
+                    req_queue_depth=4,
+                    resp_queue_depth=4,
+                    bank_queue_depth=4,
                     read_latency=2,
                 ),
                 _case(
                     case_id="fixed_c2",
                     cluster_count=2,
                     packet_w=128,
-                    banks=2,
+                    banks=4,
                     arb_mode="round_robin",
                     locality_burst_max=2,
-                    req_queue_depth=2,
-                    resp_queue_depth=2,
-                    bank_queue_depth=2,
+                    req_queue_depth=4,
+                    resp_queue_depth=4,
+                    bank_queue_depth=4,
                     read_latency=2,
                 ),
             ]
@@ -222,16 +239,42 @@ def test_integrated_service_fixed_resource_scaling_pair() -> None:
     c1, c2 = report["cases"]
     assert report["decision"] == "pass"
     assert c1["config"]["packet_w"] == c2["config"]["packet_w"] == 128
-    assert c1["config"]["banks"] == c2["config"]["banks"] == 2
-    assert c1["config"]["req_queue_depth"] == c2["config"]["req_queue_depth"] == 2
-    assert c1["config"]["resp_queue_depth"] == c2["config"]["resp_queue_depth"] == 2
-    assert c1["config"]["bank_queue_depth"] == c2["config"]["bank_queue_depth"] == 2
+    assert c1["config"]["banks"] == c2["config"]["banks"] == 4
+    assert c1["config"]["req_queue_depth"] == c2["config"]["req_queue_depth"] == 4
+    assert c1["config"]["resp_queue_depth"] == c2["config"]["resp_queue_depth"] == 4
+    assert c1["config"]["bank_queue_depth"] == c2["config"]["bank_queue_depth"] == 4
     assert c1["config"]["read_latency"] == c2["config"]["read_latency"] == 2
     assert c1["config"]["arb_mode"] == c2["config"]["arb_mode"] == "round_robin"
     assert c2["integrated_service"]["completion_cycle"] >= c1["integrated_service"]["completion_cycle"]
     assert c2["integrated_service"]["service_penalty_cycles"] >= c1["integrated_service"]["service_penalty_cycles"]
     assert c2["integrated_service"]["counters"]["shared_result"]["egress_block_cycles"] > 0
     assert c2["integrated_service"]["shared_result_egress"]["back_to_back_fire_seen"] is True
+
+
+def test_integrated_service_report_retains_linkage_and_summary() -> None:
+    if not _iverilog_available():
+        pytest.skip("iverilog/vvp unavailable")
+    report = build_report(
+        {"cases": [_case(case_id="linkage", cluster_count=2, packet_w=128, banks=4, arb_mode="round_robin")]},
+        proposal_id="prop_l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1",
+        proposal_path=(
+            "docs/proposals/prop_l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1/proposal.json"
+        ),
+        depends_on_item_ids=["l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1"],
+    )
+    assert report["model"] == "llm_decoder_attention_decode_score_multivalue_integrated_service_probe_v1"
+    assert report["source_links"]["proposal_id"] == (
+        "prop_l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1"
+    )
+    assert report["source_links"]["proposal_path"].endswith("/proposal.json")
+    assert report["source_links"]["depends_on_item_ids"] == [
+        "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1"
+    ]
+    assert report["summary"]["validated_case_count"] == 1
+    assert report["summary"]["all_hash_gates_passed"] is True
+    assert report["summary"]["all_protocol_gates_passed"] is True
+    assert report["summary"]["all_count_gates_passed"] is True
+    assert report["best"]["arch_id"] == "decode_score_multivalue_integrated_service"
 
 
 def test_integrated_service_validate_report_rejects_incomplete_evidence() -> None:

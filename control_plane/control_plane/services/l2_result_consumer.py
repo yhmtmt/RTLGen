@@ -667,6 +667,10 @@ _DECODER_EVIDENCE_OUTPUT_KEYS: tuple[tuple[str, str], ...] = (
         "decode_score_local_cluster_frontier_report",
     ),
     (
+        "decode_score_multivalue_integrated_service_out",
+        "decode_score_multivalue_integrated_service_report",
+    ),
+    (
         "score_bank_proxy_equivalence_out",
         "score_bank_proxy_equivalence_report",
     ),
@@ -1190,6 +1194,41 @@ def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, 
         ):
             if key in source_best_dict:
                 parts.append(f"{key}={source_best_dict.get(key)}")
+        summary = "; ".join(parts)
+        return outcome, summary if summary.endswith(".") else summary + "."
+
+    if model == "llm_decoder_attention_decode_score_multivalue_integrated_service_probe_v1":
+        summary_row = dict(evidence_payload.get("summary") or {})
+        best = dict(evidence_payload.get("best") or {})
+        diagnosis = dict(evidence_payload.get("diagnosis") or {})
+        outcome = str(diagnosis.get("decision") or "multivalue_integrated_service_probe_recorded")
+        parts = [
+            f"Decoder multivalue integrated-service evidence recorded from {evidence_ref}: decision={outcome}",
+        ]
+        for key in (
+            "validated_case_count",
+            "max_cluster_count",
+            "max_completion_cycle",
+            "max_service_penalty_cycles",
+            "stress_case_id",
+            "all_hash_gates_passed",
+            "all_protocol_gates_passed",
+            "all_count_gates_passed",
+        ):
+            if key in summary_row:
+                parts.append(f"{key}={summary_row.get(key)}")
+        for key in (
+            "selected_case_id",
+            "selected_case_service_penalty_cycles",
+            "selected_case_shared_result_egress_block_cycles",
+            "selected_case_router_arbitration_contention_cycles",
+            "selected_case_bank_conflict_count",
+        ):
+            if key in best:
+                parts.append(f"{key}={best.get(key)}")
+        recommended_next = str(diagnosis.get("recommended_next_step", "")).strip()
+        if recommended_next:
+            parts.append(f"recommended_next_step={recommended_next}")
         summary = "; ".join(parts)
         return outcome, summary if summary.endswith(".") else summary + "."
 
