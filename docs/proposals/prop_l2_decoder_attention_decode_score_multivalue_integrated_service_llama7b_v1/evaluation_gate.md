@@ -23,3 +23,5 @@
 
 ## Gate Condition
 - The run must remain evidence-only and must not claim NoC/HBM/physical/token-energy closure.
+- Any singled-out case must be labeled as a representative scale point, not as
+  an architectural or performance best.

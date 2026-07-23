@@ -5991,19 +5991,24 @@ def test_consume_l2_result_decode_score_multivalue_integrated_service_uses_decod
                             "decision": "multivalue_integrated_service_probe_passed",
                             "recommended_next_step": "Use this as the merged on-chip service closure input only.",
                         },
-                        "best": {
+                        "selected_scale_point": {
+                            "selection_role": "representative_largest_nominal_scale_point",
+                            "selection_basis": (
+                                "Largest tested nominal scale point; coverage representative only, "
+                                "not a performance or architectural ranking."
+                            ),
                             "arch_id": "decode_score_multivalue_integrated_service",
                             "macro_mode": "rtl_probe",
                             "cluster_count": 32,
                             "bank_count": 32,
                             "packet_payload_bytes": 32,
-                            "total_cycles": 1200,
+                            "completion_cycle": 1200,
+                            "service_penalty_cycles": 48,
                             "dominant_tile_resource": "onchip_shared_service",
-                            "selected_case_id": "c32_p256_b32_rr",
-                            "selected_case_service_penalty_cycles": 48,
-                            "selected_case_shared_result_egress_block_cycles": 17,
-                            "selected_case_router_arbitration_contention_cycles": 21,
-                            "selected_case_bank_conflict_count": 9,
+                            "case_id": "c32_p256_b32_rr",
+                            "shared_result_egress_block_cycles": 17,
+                            "router_arbitration_contention_cycles": 21,
+                            "bank_conflict_count": 9,
                         },
                         "summary": {
                             "validated_case_count": 14,
@@ -6066,13 +6071,16 @@ def test_consume_l2_result_decode_score_multivalue_integrated_service_uses_decod
                     encoding="utf-8"
                 )
             )
-            assert result.recommended_arch_id == "decode_score_multivalue_integrated_service"
+            assert result.recommended_arch_id == "fp16_nm1_demo"
             assert decision_payload["proposal_assessment"]["outcome"] == (
                 "multivalue_integrated_service_probe_passed"
             )
-            assert decision_payload["recommendation"]["source"] == "decoder_evidence"
-            assert decision_payload["recommendation"]["cluster_count"] == 32
-            assert decision_payload["recommendation"]["bank_count"] == 32
+            assert decision_payload["recommendation"].get("source") != "decoder_evidence"
+            selected_scale_point = decision_payload["proposal_assessment"]["decoder_quality"][
+                "selected_scale_point"
+            ]
+            assert selected_scale_point["case_id"] == "c32_p256_b32_rr"
+            assert selected_scale_point["selection_role"] == "representative_largest_nominal_scale_point"
             assert (
                 decision_payload["source_refs"]["decoder_decode_score_multivalue_integrated_service_out"]
                 == evidence_rel

@@ -18,7 +18,7 @@
       "requires_materialized_refs": true,
       "expected_result": {
         "direction": "record_decode_score_multivalue_integrated_service_probe",
-        "reason": "Retain exact Python/baseline/integrated hash, protocol, and count gates while recording completion cycles, service penalty cycles, shared-result blocking/arbitration, router/service contention, occupancy maxima, and explicit exclusions over the bounded 14-case matrix."
+        "reason": "Retain exact Python/baseline/integrated hash, protocol, and count gates while recording completion cycles, service penalty cycles, shared-result blocking/arbitration, router/service contention, occupancy maxima, and explicit exclusions over the bounded 14-case matrix; any selected scale point is representative evidence, not an architectural or performance ranking."
       },
       "status": "pending",
       "notes": "The dependency item is already merged/materialized. This request is ready for normal control-plane dispatch only after the proposal implementation itself is merged."

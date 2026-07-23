@@ -34,6 +34,8 @@ composition work.
   - compact repo-portable JSON/Markdown only
   - no full stdout traces
   - no intermediate tensors
+  - identify the largest nominal round-robin case only as a representative
+    `selected_scale_point`, never as an architectural or performance best
 
 ## Knowledge Inputs
 - `runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_cluster_equivalence__l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1.json`

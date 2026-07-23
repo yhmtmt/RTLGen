@@ -1504,19 +1504,43 @@ def _summarize_case(case: JsonDict, baseline: JsonDict, integrated: JsonDict, pr
     }
 
 
-def _summary_best(reports: list[JsonDict]) -> JsonDict:
+def _selected_scale_point(reports: list[JsonDict]) -> JsonDict:
+    nominal = [
+        case
+        for case in reports
+        if int(case["config"]["req_queue_depth"]) == 4
+        and int(case["config"]["resp_queue_depth"]) == 4
+        and int(case["config"]["bank_queue_depth"]) == 4
+        and int(case["config"]["read_latency"]) == 2
+        and str(case["config"]["arb_mode"]) == "round_robin"
+    ]
+    selection_pool = nominal or reports
+    selection_role = (
+        "representative_largest_nominal_scale_point"
+        if nominal
+        else "representative_largest_available_scale_point"
+    )
+    selection_basis = (
+        "Largest tested cluster_count, then packet_w, then banks among q4/read_latency=2/round_robin "
+        "cases; coverage representative only, not a performance or architectural ranking."
+        if nominal
+        else "Largest tested cluster_count, then packet_w, then banks because no q4/read_latency=2/round_robin "
+        "case was provided; coverage representative only, not a performance or architectural ranking."
+    )
     selected = max(
-        reports,
+        selection_pool,
         key=lambda case: (
             int(case["config"]["cluster_count"]),
             int(case["config"]["packet_w"]),
-            int(case["integrated_service"]["service_penalty_cycles"]),
-            int(case["integrated_service"]["completion_cycle"]),
+            int(case["config"]["banks"]),
+            str(case["case_id"]),
         ),
     )
     config = dict(selected["config"])
     integrated = dict(selected["integrated_service"])
     return {
+        "selection_role": selection_role,
+        "selection_basis": selection_basis,
         "arch_id": "decode_score_multivalue_integrated_service",
         "macro_mode": "rtl_probe",
         "cluster_count": config["cluster_count"],
@@ -1524,13 +1548,13 @@ def _summary_best(reports: list[JsonDict]) -> JsonDict:
         "packet_payload_bytes": int(config["packet_w"]) // 8,
         "schedule_policy": "shared_score_value_service_probe",
         "bank_arbiter_policy": config["arb_mode"],
-        "total_cycles": integrated["completion_cycle"],
+        "completion_cycle": integrated["completion_cycle"],
+        "service_penalty_cycles": integrated["service_penalty_cycles"],
         "dominant_tile_resource": "onchip_shared_service",
-        "selected_case_id": selected["case_id"],
-        "selected_case_service_penalty_cycles": integrated["service_penalty_cycles"],
-        "selected_case_shared_result_egress_block_cycles": integrated["counters"]["shared_result"]["egress_block_cycles"],
-        "selected_case_router_arbitration_contention_cycles": integrated["counters"]["arbitration_contention_cycles"],
-        "selected_case_bank_conflict_count": integrated["counters"]["bank_conflict_count"],
+        "case_id": selected["case_id"],
+        "shared_result_egress_block_cycles": integrated["counters"]["shared_result"]["egress_block_cycles"],
+        "router_arbitration_contention_cycles": integrated["counters"]["arbitration_contention_cycles"],
+        "bank_conflict_count": integrated["counters"]["bank_conflict_count"],
     }
 
 
@@ -1675,7 +1699,7 @@ def build_report(
             ],
         },
         "preload_entries": preload_entries,
-        "best": _summary_best(reports),
+        "selected_scale_point": _selected_scale_point(reports),
         "summary": _report_summary(reports),
         "cases": reports,
     }
@@ -1714,6 +1738,19 @@ def validate_report(payload: JsonDict) -> None:
         raise ValueError("report must contain summary")
     if int(summary.get("validated_case_count", 0)) != len(cases):
         raise ValueError("summary validated_case_count mismatch")
+    selected_scale_point = payload.get("selected_scale_point")
+    if not isinstance(selected_scale_point, dict):
+        raise ValueError("report must contain selected_scale_point")
+    if selected_scale_point.get("selection_role") not in {
+        "representative_largest_nominal_scale_point",
+        "representative_largest_available_scale_point",
+    }:
+        raise ValueError("selected_scale_point lacks representative selection role")
+    if "not a performance or architectural ranking" not in str(selected_scale_point.get("selection_basis", "")):
+        raise ValueError("selected_scale_point must explicitly disclaim ranking")
+    case_ids = {str(case.get("case_id")) for case in cases if isinstance(case, dict)}
+    if str(selected_scale_point.get("case_id")) not in case_ids:
+        raise ValueError("selected_scale_point does not reference a report case")
     for case in cases:
         if not isinstance(case, dict):
             raise ValueError("case rows must be objects")
@@ -1763,6 +1800,7 @@ def validate_report(payload: JsonDict) -> None:
 
 def _build_markdown(report: JsonDict) -> str:
     summary = dict(report["summary"])
+    selected_scale_point = dict(report["selected_scale_point"])
     linkage = dict(report.get("source_links") or {})
     lines = [
         "# Attention Decode Score Multivalue Integrated Service Probe",
@@ -1775,6 +1813,9 @@ def _build_markdown(report: JsonDict) -> str:
         f"- max_completion_cycle: `{summary['max_completion_cycle']}`",
         f"- max_service_penalty_cycles: `{summary['max_service_penalty_cycles']}`",
         f"- stress_case_id: `{summary['stress_case_id']}`",
+        f"- selected_scale_point: `{selected_scale_point['case_id']}`",
+        f"- selected_scale_point_role: `{selected_scale_point['selection_role']}`",
+        f"- selected_scale_point_note: {selected_scale_point['selection_basis']}",
         f"- gates: `hash={summary['all_hash_gates_passed']}` `protocol={summary['all_protocol_gates_passed']}` `count={summary['all_count_gates_passed']}`",
         f"- exclusions: `{', '.join(report['exclusions'])}`",
     ]

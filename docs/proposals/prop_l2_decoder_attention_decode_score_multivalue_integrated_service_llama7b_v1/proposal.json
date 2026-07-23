@@ -14,7 +14,8 @@
       "fixed-resource scaling at cluster_count 1/2/4/8/16/32 with identical p128, banks=4, queue depths=4, read_latency=2, round_robin, locality_burst_max=2",
       "scaled-resource p256 points at c8/b8, c16/b16, and c32/b32 with queue depths=4, read_latency=2, and round_robin/locality variants",
       "one queue-depth stress case and one read-latency stress case at c32",
-      "compact repo-portable JSON/Markdown evidence that reports completion cycles, service penalty cycles, shared-result blocking/arbitration, router/service contention and occupancy, explicit exclusions, and proposal/dependency linkage"
+      "compact repo-portable JSON/Markdown evidence that reports completion cycles, service penalty cycles, shared-result blocking/arbitration, router/service contention and occupancy, explicit exclusions, and proposal/dependency linkage",
+      "label the largest nominal round-robin coverage case only as a representative selected_scale_point, not as an architectural or performance best"
     ],
     "exclude": [
       "do not claim physical PPA",
@@ -55,7 +56,7 @@
       "requires_materialized_refs": true,
       "expected_result": {
         "direction": "record_decode_score_multivalue_integrated_service_probe",
-        "reason": "Retain exact Python/baseline/integrated hash, protocol, and count gates while recording completion cycles, service penalty cycles, shared-result blocking/arbitration, router/service contention, occupancy maxima, and explicit exclusions over the bounded 14-case matrix."
+        "reason": "Retain exact Python/baseline/integrated hash, protocol, and count gates while recording completion cycles, service penalty cycles, shared-result blocking/arbitration, router/service contention, occupancy maxima, and explicit exclusions over the bounded 14-case matrix; any selected scale point is representative evidence, not an architectural or performance ranking."
       },
       "status": "pending"
     }

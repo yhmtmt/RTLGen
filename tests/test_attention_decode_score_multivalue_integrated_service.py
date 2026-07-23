@@ -12,6 +12,7 @@ if str(REPO_ROOT) not in sys.path:
 from npu.eval.probe_attention_decode_score_multivalue_integrated_service import (
     DEFAULT_CASES,
     REPORT_EXCLUSIONS,
+    _selected_scale_point,
     build_report,
     validate_report,
 )
@@ -274,7 +275,62 @@ def test_integrated_service_report_retains_linkage_and_summary() -> None:
     assert report["summary"]["all_hash_gates_passed"] is True
     assert report["summary"]["all_protocol_gates_passed"] is True
     assert report["summary"]["all_count_gates_passed"] is True
-    assert report["best"]["arch_id"] == "decode_score_multivalue_integrated_service"
+    assert report["selected_scale_point"]["arch_id"] == "decode_score_multivalue_integrated_service"
+    assert report["selected_scale_point"]["case_id"] == "linkage"
+    assert "not a performance or architectural ranking" in report["selected_scale_point"]["selection_basis"]
+
+
+def test_integrated_service_selected_scale_point_is_nominal_not_worst_penalty() -> None:
+    reports = [
+        {
+            "case_id": "c32_nominal_rr",
+            "config": {
+                "cluster_count": 32,
+                "packet_w": 256,
+                "banks": 32,
+                "req_queue_depth": 4,
+                "resp_queue_depth": 4,
+                "bank_queue_depth": 4,
+                "read_latency": 2,
+                "arb_mode": "round_robin",
+            },
+            "integrated_service": {
+                "completion_cycle": 100,
+                "service_penalty_cycles": 10,
+                "counters": {
+                    "shared_result": {"egress_block_cycles": 3},
+                    "arbitration_contention_cycles": 4,
+                    "bank_conflict_count": 5,
+                },
+            },
+        },
+        {
+            "case_id": "c32_stress_q1",
+            "config": {
+                "cluster_count": 32,
+                "packet_w": 256,
+                "banks": 32,
+                "req_queue_depth": 1,
+                "resp_queue_depth": 1,
+                "bank_queue_depth": 1,
+                "read_latency": 2,
+                "arb_mode": "round_robin",
+            },
+            "integrated_service": {
+                "completion_cycle": 900,
+                "service_penalty_cycles": 800,
+                "counters": {
+                    "shared_result": {"egress_block_cycles": 30},
+                    "arbitration_contention_cycles": 40,
+                    "bank_conflict_count": 50,
+                },
+            },
+        },
+    ]
+    selected = _selected_scale_point(reports)
+    assert selected["case_id"] == "c32_nominal_rr"
+    assert selected["service_penalty_cycles"] == 10
+    assert selected["selection_role"] == "representative_largest_nominal_scale_point"
 
 
 def test_integrated_service_validate_report_rejects_incomplete_evidence() -> None:

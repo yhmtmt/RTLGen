@@ -776,6 +776,7 @@ def _decoder_quality_brief(evidence_payload: dict[str, Any]) -> dict[str, Any]:
         "recommended_next_l1_points",
         "required_follow_on_ppa",
         "best",
+        "selected_scale_point",
         "sweep_summary",
         "assumptions",
         "next_step",
@@ -1199,7 +1200,7 @@ def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, 
 
     if model == "llm_decoder_attention_decode_score_multivalue_integrated_service_probe_v1":
         summary_row = dict(evidence_payload.get("summary") or {})
-        best = dict(evidence_payload.get("best") or {})
+        selected_scale_point = dict(evidence_payload.get("selected_scale_point") or {})
         diagnosis = dict(evidence_payload.get("diagnosis") or {})
         outcome = str(diagnosis.get("decision") or "multivalue_integrated_service_probe_recorded")
         parts = [
@@ -1218,14 +1219,16 @@ def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, 
             if key in summary_row:
                 parts.append(f"{key}={summary_row.get(key)}")
         for key in (
-            "selected_case_id",
-            "selected_case_service_penalty_cycles",
-            "selected_case_shared_result_egress_block_cycles",
-            "selected_case_router_arbitration_contention_cycles",
-            "selected_case_bank_conflict_count",
+            "selection_role",
+            "case_id",
+            "completion_cycle",
+            "service_penalty_cycles",
+            "shared_result_egress_block_cycles",
+            "router_arbitration_contention_cycles",
+            "bank_conflict_count",
         ):
-            if key in best:
-                parts.append(f"{key}={best.get(key)}")
+            if key in selected_scale_point:
+                parts.append(f"selected_scale_point_{key}={selected_scale_point.get(key)}")
         recommended_next = str(diagnosis.get("recommended_next_step", "")).strip()
         if recommended_next:
             parts.append(f"recommended_next_step={recommended_next}")

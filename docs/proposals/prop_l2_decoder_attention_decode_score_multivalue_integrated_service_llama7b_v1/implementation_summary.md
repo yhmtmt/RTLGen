@@ -17,6 +17,9 @@
   - explicit exclusions
   - proposal/dependency linkage
 - Markdown now summarizes the same evidence in a compact per-case table.
+- The largest nominal round-robin coverage point is labeled
+  `selected_scale_point`; it is explicitly not an architectural or performance
+  ranking and is not consumed as a decoder recommendation.
 
 ## Local Validation
 - focused pytest coverage for:
