@@ -141,12 +141,12 @@ def test_feasible_metrics_excludes_non_matching_onehot_rows(tmp_path: Path) -> N
             metrics,
             8.0,
             required_flow_variant=(
-                "decode_score_multivalue_cluster_v1_8ns_binary_fsm_v3_proxy_die_2500"
+                "decode_score_multivalue_cluster_v1_8ns_explicit_onehot_fsm_v1_proxy_die_2500"
             ),
-            required_synth_args="-nofsm",
+            required_synth_args="",
         )
     except ValueError as exc:
-        assert "FLOW_VARIANT=decode_score_multivalue_cluster_v1_8ns_binary_fsm_v3_proxy_die_2500" in str(
+        assert "FLOW_VARIANT=decode_score_multivalue_cluster_v1_8ns_explicit_onehot_fsm_v1_proxy_die_2500" in str(
             exc
         )
     else:
@@ -182,17 +182,17 @@ def test_feasible_metrics_rejects_wrong_synth_args(tmp_path: Path) -> None:
             metrics,
             8.0,
             required_flow_variant=(
-                "decode_score_multivalue_cluster_v1_8ns_binary_fsm_v3_proxy_die_2500"
+                "decode_score_multivalue_cluster_v1_8ns_explicit_onehot_fsm_v1_proxy_die_2500"
             ),
-            required_synth_args="-nofsm",
+            required_synth_args="",
         )
     except ValueError as exc:
-        assert "SYNTH_ARGS=-nofsm" in str(exc)
+        assert "SYNTH_ARGS=<empty/default>" in str(exc)
     else:
         raise AssertionError("wrong synth args was not rejected")
 
 
-def test_feasible_metrics_accepts_exact_binary_row_with_strict_contract(tmp_path: Path) -> None:
+def test_feasible_metrics_accepts_exact_explicit_onehot_row_with_strict_contract(tmp_path: Path) -> None:
     metrics = tmp_path / "metrics.csv"
     _write_metrics_rows(
         metrics,
@@ -201,7 +201,7 @@ def test_feasible_metrics_accepts_exact_binary_row_with_strict_contract(tmp_path
                 "design": "cluster",
                 "platform": "nangate45",
                 "param_hash": "p1",
-                "tag": "binary",
+                "tag": "explicit-onehot",
                 "status": "ok",
                 "critical_path_ns": "7.1",
                 "die_area": "6000000",
@@ -209,8 +209,7 @@ def test_feasible_metrics_accepts_exact_binary_row_with_strict_contract(tmp_path
                 "params_json": json.dumps(
                     {
                         "CLOCK_PERIOD": 8,
-                        "FLOW_VARIANT": "decode_score_multivalue_cluster_v1_8ns_binary_fsm_v3_proxy_die_2500",
-                        "SYNTH_ARGS": "-nofsm",
+                        "FLOW_VARIANT": "decode_score_multivalue_cluster_v1_8ns_explicit_onehot_fsm_v1_proxy_die_2500",
                     }
                 ),
             },
@@ -236,11 +235,11 @@ def test_feasible_metrics_accepts_exact_binary_row_with_strict_contract(tmp_path
     rows = audit._feasible_metrics(
         metrics,
         8.0,
-        required_flow_variant="decode_score_multivalue_cluster_v1_8ns_binary_fsm_v3_proxy_die_2500",
-        required_synth_args="-nofsm",
+        required_flow_variant="decode_score_multivalue_cluster_v1_8ns_explicit_onehot_fsm_v1_proxy_die_2500",
+        required_synth_args="",
     )
     assert [audit._params(row)["FLOW_VARIANT"] for row in rows] == [
-        "decode_score_multivalue_cluster_v1_8ns_binary_fsm_v3_proxy_die_2500",
+        "decode_score_multivalue_cluster_v1_8ns_explicit_onehot_fsm_v1_proxy_die_2500",
     ]
 
 
@@ -255,7 +254,7 @@ def test_build_report_records_strict_selection_contract_and_pnr_dependency(tmp_p
                 "design": "cluster",
                 "platform": "nangate45",
                 "param_hash": "p1",
-                "tag": "binary",
+                "tag": "explicit-onehot",
                 "status": "ok",
                 "critical_path_ns": "7.1",
                 "die_area": "6000000",
@@ -263,8 +262,7 @@ def test_build_report_records_strict_selection_contract_and_pnr_dependency(tmp_p
                 "params_json": json.dumps(
                     {
                         "CLOCK_PERIOD": 8,
-                        "FLOW_VARIANT": "decode_score_multivalue_cluster_v1_8ns_binary_fsm_v3_proxy_die_2500",
-                        "SYNTH_ARGS": "-nofsm",
+                        "FLOW_VARIANT": "decode_score_multivalue_cluster_v1_8ns_explicit_onehot_fsm_v1_proxy_die_2500",
                     }
                 ),
             },
@@ -298,17 +296,17 @@ def test_build_report_records_strict_selection_contract_and_pnr_dependency(tmp_p
             orfs_design_config=tmp_path / "config.mk",
             clock_period_ns=8.0,
             activity_dir=tmp_path / "activity",
-            required_flow_variant="decode_score_multivalue_cluster_v1_8ns_binary_fsm_v3_proxy_die_2500",
-            required_synth_args="-nofsm",
-            source_pnr_item_id="l1_decoder_attention_decode_score_multivalue_cluster_pnr_binary_fsm_8ns_v3",
+            required_flow_variant="decode_score_multivalue_cluster_v1_8ns_explicit_onehot_fsm_v1_proxy_die_2500",
+            required_synth_args="",
+            source_pnr_item_id="l1_decoder_attention_decode_score_multivalue_cluster_pnr_explicit_onehot_fsm_8ns_v1",
         )
     assert payload["selection_contract"] == {
-        "required_flow_variant": "decode_score_multivalue_cluster_v1_8ns_binary_fsm_v3_proxy_die_2500",
-        "required_synth_args": "-nofsm",
+        "required_flow_variant": "decode_score_multivalue_cluster_v1_8ns_explicit_onehot_fsm_v1_proxy_die_2500",
+        "required_synth_args": "",
         "min_sequential_register_activity_coverage": 0.95,
     }
     assert payload["source_dependencies"] == [
-        "l1_decoder_attention_decode_score_multivalue_cluster_pnr_binary_fsm_8ns_v3",
+        "l1_decoder_attention_decode_score_multivalue_cluster_pnr_explicit_onehot_fsm_8ns_v1",
         "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1",
     ]
 

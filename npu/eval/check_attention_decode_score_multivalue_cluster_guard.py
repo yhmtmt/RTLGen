@@ -55,6 +55,25 @@ def main() -> int:
         errors.append("result must remain a streamed 320-bit slice, not a 5120-bit port")
     if "/ exp_sum_accum" in rtl or "% exp_sum_accum" in rtl:
         errors.append("iterative divider RTL must not infer arithmetic division")
+    body = config.get("attention_decode_score_multivalue_cluster")
+    fsm_encoding = str(body.get("fsm_encoding", "default")).strip().lower() if isinstance(body, dict) else "default"
+    if manifest.get("fsm_encoding") != fsm_encoding:
+        errors.append("manifest fsm_encoding does not match config")
+    if fsm_encoding == "explicit_onehot":
+        if manifest.get("controller_state_width") != 7:
+            errors.append("explicit_onehot controller_state_width must be 7")
+        reducer_manifest = manifest.get("submodule_manifests", {}).get("multivalue_reducer", {})
+        if reducer_manifest.get("state_width") != 11:
+            errors.append("explicit_onehot reducer state_width must be 11")
+        if '(* fsm_encoding = "none", fsm_extract = "no" *) reg [6:0] state_q;' not in rtl:
+            errors.append("explicit_onehot RTL missing guarded 7-bit cluster state register")
+        if '(* fsm_encoding = "none", fsm_extract = "no" *) reg [10:0] state;' not in rtl:
+            errors.append("explicit_onehot RTL missing guarded 11-bit reducer state register")
+    elif fsm_encoding == "binary":
+        if '(* fsm_encoding = "binary" *) reg [2:0] state_q;' not in rtl:
+            errors.append("binary RTL missing cluster state attribute")
+        if '(* fsm_encoding = "binary" *) reg [3:0] state;' not in rtl:
+            errors.append("binary RTL missing reducer state attribute")
     if errors:
         raise SystemExit("; ".join(errors))
     print(

@@ -222,13 +222,13 @@
       "depends_on_item_ids": [
         "l2_decoder_attention_decode_score_multivalue_gqa8_folded_lane_equivalence_llama7b_v1",
         "l1_decoder_attention_decode_score_multivalue_gqa8_folded_lanes1_pnr_v1",
-        "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v14"
+        "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v16"
       ],
       "requires_merged_inputs": true,
       "requires_materialized_refs": true,
       "expected_result": {
         "direction": "measure_folded_lanes1_direct_activity_energy",
-        "reason": "Keep this activity item pending until strict cluster activity-power v14 is merged and materialized; the minimum-area point then needs direct phase-accounted energy rather than vectorless power."
+        "reason": "Keep this activity item pending until strict cluster activity-power v16 is merged and materialized; targeted-binary v15 was canceled after 31.8h runtime and must not be consumed. The minimum-area point then needs direct phase-accounted energy rather than vectorless power."
       },
       "status": "pending_control_plane_merge"
     },
@@ -242,13 +242,13 @@
       "depends_on_item_ids": [
         "l2_decoder_attention_decode_score_multivalue_gqa8_folded_lane_equivalence_llama7b_v1",
         "l1_decoder_attention_decode_score_multivalue_gqa8_folded_lanes2_pnr_v1",
-        "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v14"
+        "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v16"
       ],
       "requires_merged_inputs": true,
       "requires_materialized_refs": true,
       "expected_result": {
         "direction": "measure_folded_lanes2_direct_activity_energy",
-        "reason": "Keep this activity item pending until strict cluster activity-power v14 is merged and materialized; the midpoint then needs direct routed energy instead of linear lane scaling."
+        "reason": "Keep this activity item pending until strict cluster activity-power v16 is merged and materialized; targeted-binary v15 was canceled after 31.8h runtime and must not be consumed. The midpoint then needs direct routed energy instead of linear lane scaling."
       },
       "status": "pending_control_plane_merge"
     },
@@ -262,13 +262,13 @@
       "depends_on_item_ids": [
         "l2_decoder_attention_decode_score_multivalue_gqa8_folded_lane_equivalence_llama7b_v1",
         "l1_decoder_attention_decode_score_multivalue_gqa8_folded_lanes4_pnr_v1",
-        "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v14"
+        "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v16"
       ],
       "requires_merged_inputs": true,
       "requires_materialized_refs": true,
       "expected_result": {
         "direction": "measure_folded_lanes4_direct_activity_energy",
-        "reason": "Keep this activity item pending until strict cluster activity-power v14 is merged and materialized; the near-parallel point then needs direct routed energy before trading area for latency."
+        "reason": "Keep this activity item pending until strict cluster activity-power v16 is merged and materialized; targeted-binary v15 was canceled after 31.8h runtime and must not be consumed. The near-parallel point then needs direct routed energy before trading area for latency."
       },
       "status": "pending_control_plane_merge"
     },

@@ -1457,17 +1457,19 @@ def _is_multivalue_cluster_8ns_bridge_sweep(*, item_id: str, sweep_path: str) ->
 
 
 @dataclass(frozen=True)
-class _BinaryFsmCheckerProfile:
+class _ExactStateCheckerProfile:
     name: str
+    command_name: str
     retry_base_item_id: str
     config_path: str
     sweep_path: str
     diagnostic_filename: str
 
 
-_BINARY_FSM_CHECKER_PROFILES = (
-    _BinaryFsmCheckerProfile(
+_EXACT_STATE_CHECKER_PROFILES = (
+    _ExactStateCheckerProfile(
         name="v4_nofsm",
+        command_name="check_attention_decode_score_multivalue_cluster_binary_fsm",
         retry_base_item_id=(
             "l1_decoder_attention_decode_score_multivalue_cluster_pnr_"
             "binary_fsm_8ns_v3"
@@ -1482,8 +1484,9 @@ _BINARY_FSM_CHECKER_PROFILES = (
         ),
         diagnostic_filename="binary_fsm_diagnostic.json",
     ),
-    _BinaryFsmCheckerProfile(
+    _ExactStateCheckerProfile(
         name="targeted_binary",
+        command_name="check_attention_decode_score_multivalue_cluster_binary_fsm",
         retry_base_item_id=(
             "l1_decoder_attention_decode_score_multivalue_cluster_pnr_"
             "targeted_binary_fsm_8ns_v1"
@@ -1499,15 +1502,33 @@ _BINARY_FSM_CHECKER_PROFILES = (
         ),
         diagnostic_filename="targeted_binary_fsm_diagnostic.json",
     ),
+    _ExactStateCheckerProfile(
+        name="explicit_onehot",
+        command_name="check_attention_decode_score_multivalue_cluster_explicit_onehot",
+        retry_base_item_id=(
+            "l1_decoder_attention_decode_score_multivalue_cluster_pnr_"
+            "explicit_onehot_fsm_8ns_v1"
+        ),
+        config_path=(
+            "runs/designs/npu_blocks/"
+            "attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/"
+            "config_explicit_onehot_fsm.json"
+        ),
+        sweep_path=(
+            "runs/campaigns/npu/decode_score_multivalue_cluster_v1/sweeps/"
+            "nangate45_decode_score_multivalue_cluster_8ns_explicit_onehot_fsm_v1.json"
+        ),
+        diagnostic_filename="explicit_onehot_fsm_diagnostic.json",
+    ),
 )
 
 
 def _multivalue_cluster_binary_fsm_profile(
     *, item_id: str, sweep_path: str, config_paths: list[str]
-) -> _BinaryFsmCheckerProfile | None:
+) -> _ExactStateCheckerProfile | None:
     normalized_sweep = Path(sweep_path).as_posix()
     normalized_configs = [Path(path).as_posix() for path in config_paths]
-    for profile in _BINARY_FSM_CHECKER_PROFILES:
+    for profile in _EXACT_STATE_CHECKER_PROFILES:
         if (
             _retry_base(item_id) == profile.retry_base_item_id
             and normalized_sweep == profile.sweep_path
@@ -1818,7 +1839,7 @@ def generate_l1_sweep_task(session: Session, request: Layer1SweepGenerateRequest
             / binary_fsm_profile.diagnostic_filename
         )
         checker_command = {
-            "name": "check_attention_decode_score_multivalue_cluster_binary_fsm",
+            "name": binary_fsm_profile.command_name,
             "run": (
                 "python3 npu/eval/check_attention_decode_score_multivalue_cluster_binary_fsm.py "
                 f"--metrics-path {targets[0].expected_metrics_path} "

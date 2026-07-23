@@ -103,8 +103,12 @@ def _feasible_metrics(
     required_flow_variant: str | None = None,
     required_synth_args: str | None = None,
 ) -> list[JsonDict]:
-    normalized_required_flow_variant = str(required_flow_variant or "").strip() or None
-    normalized_required_synth_args = str(required_synth_args or "").strip() or None
+    normalized_required_flow_variant = (
+        None if required_flow_variant is None else str(required_flow_variant).strip()
+    )
+    normalized_required_synth_args = (
+        None if required_synth_args is None else str(required_synth_args).strip()
+    )
 
     with metrics_csv.open(newline="", encoding="utf-8") as handle:
         raw_rows = [dict(row) for row in csv.DictReader(handle)]
@@ -142,7 +146,9 @@ def _feasible_metrics(
             if normalized_required_flow_variant is not None:
                 details.append(f"FLOW_VARIANT={normalized_required_flow_variant}")
             if normalized_required_synth_args is not None:
-                details.append(f"SYNTH_ARGS={normalized_required_synth_args}")
+                details.append(
+                    f"SYNTH_ARGS={normalized_required_synth_args or '<empty/default>'}"
+                )
             raise ValueError(
                 f"no status=ok timing-feasible rows in {metrics_csv} matching "
                 f"{', '.join(details)} at {clock_period_ns:g} ns"
@@ -340,8 +346,12 @@ def build_report(
             ]
         ),
         "selection_contract": {
-            "required_flow_variant": str(required_flow_variant or "").strip() or None,
-            "required_synth_args": str(required_synth_args or "").strip() or None,
+            "required_flow_variant": (
+                None if required_flow_variant is None else str(required_flow_variant).strip()
+            ),
+            "required_synth_args": (
+                None if required_synth_args is None else str(required_synth_args).strip()
+            ),
             "min_sequential_register_activity_coverage": min_sequential_register_activity_coverage,
         },
         "remaining_abstractions": [

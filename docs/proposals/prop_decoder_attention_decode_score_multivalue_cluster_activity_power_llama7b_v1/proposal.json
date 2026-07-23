@@ -416,11 +416,70 @@
         "direction": "record_shared_score_multivalue_cluster_activity_power_gate",
         "reason": "v14 preserves all existing quality/equivalence/direct-VCD/macro/clock/numeric/artifact gates, strengthens DFF-output coverage to 1.0, requires applied==matched and zero query/apply errors, and keeps all sidecar rows evaluator-local while forbidding clamping, substitution, heuristic activity, and other gate relaxation. It selects only decode_score_multivalue_cluster_v1_8ns_binary_fsm_v4_proxy_die_2500 with SYNTH_ARGS=-nofsm."
       },
+      "status": "superseded_before_dispatch",
+      "retracted_by_item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v15",
+      "retraction_reason": "replace_global_nofsm_candidate_with_targeted_binary_fsm_candidate",
+      "notes": "v14 was never launched. It remains immutable history for the global -nofsm candidate and must not be reused as targeted-binary or explicit-onehot evidence."
+    },
+    {
+      "item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v15",
+      "task_type": "l2_campaign",
+      "objective": "Measure shared-score multivalue-cluster activity-backed power only after the targeted-binary 8ns PNR item passes, using config_targeted_binary_fsm.json, decode_score_multivalue_cluster_v1_8ns_targeted_binary_fsm_v1_proxy_die_2500, normal empty SYNTH_ARGS, and the promotion-valid targeted_binary diagnostic. Preserve exact merged equivalence linkage, direct routed sequential activity, 100% sequential coverage, and finite power for every required phase.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_decode_score_multivalue_cluster_activity_power",
+      "comparison_role": "shared_score_multivalue_cluster_activity_power_gate",
+      "depends_on_item_ids": [
+        "l1_decoder_attention_decode_score_multivalue_cluster_pnr_targeted_binary_fsm_8ns_v1",
+        "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "paired_baseline_item_id": "l1_decoder_attention_decode_score_multivalue_cluster_pnr_targeted_binary_fsm_8ns_v1",
+      "revision": {
+        "reason": "targeted_binary_fsm_postroute_activity_mapping",
+        "invalidates_item_ids": [
+          "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v14"
+        ]
+      },
+      "expected_result": {
+        "direction": "record_shared_score_multivalue_cluster_activity_power_gate",
+        "reason": "v15 accepts only the exact targeted config and flow, empty/default SYNTH_ARGS, a promotion-valid targeted_binary checker diagnostic bound to the selected metrics hashes, direct routed phase VCD power, 100% sequential coverage with complete applied/matched assignments, and finite positive required-phase power. Vectorless, v14, stale-row, baseline, and fallback evidence remain non-promotable."
+      },
+      "status": "superseded_before_dispatch",
+      "retracted_by_item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v16",
+      "retraction_reason": "targeted_binary_runtime_infeasible",
+      "notes": "Draft PR #1427 must not merge. The targeted-binary PNR branch was canceled after 31.8h runtime and is non-promotable as an activity-power prerequisite."
+    },
+    {
+      "item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v16",
+      "task_type": "l2_campaign",
+      "objective": "Measure shared-score multivalue-cluster activity-backed power only after the explicit-onehot 8ns PNR item passes, using config_explicit_onehot_fsm.json, decode_score_multivalue_cluster_v1_8ns_explicit_onehot_fsm_v1_proxy_die_2500, empty/default SYNTH_ARGS, and the strict explicit_onehot diagnostic. Require direct routed phase VCD, 100% sequential output coverage, matched==applied, zero query/apply errors, finite positive every-phase power, and no vectorless, fallback, or stale rows.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_decode_score_multivalue_cluster_activity_power",
+      "comparison_role": "shared_score_multivalue_cluster_activity_power_gate",
+      "depends_on_item_ids": [
+        "l1_decoder_attention_decode_score_multivalue_cluster_pnr_explicit_onehot_fsm_8ns_v1",
+        "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "paired_baseline_item_id": "l1_decoder_attention_decode_score_multivalue_cluster_pnr_explicit_onehot_fsm_8ns_v1",
+      "revision": {
+        "reason": "explicit_onehot_fsm_postroute_activity_mapping",
+        "invalidates_item_ids": [
+          "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v15"
+        ]
+      },
+      "expected_result": {
+        "direction": "record_shared_score_multivalue_cluster_activity_power_gate",
+        "reason": "v16 accepts only config_explicit_onehot_fsm.json and decode_score_multivalue_cluster_v1_8ns_explicit_onehot_fsm_v1_proxy_die_2500 with empty/default SYNTH_ARGS, requires the strict explicit_onehot checker diagnostic bound to the selected metrics row and synthesized netlist hashes, preserves all existing quality/equivalence/direct-VCD/macro/clock/numeric/artifact gates, enforces 1.0 sequential-output coverage plus matched==applied and zero query/apply errors, and forbids vectorless, fallback, stale-row, clamped, substituted, heuristic, or otherwise relaxed evidence."
+      },
       "status": "pending_implementation_merge"
     }
   ],
   "baseline_refs": [
     "runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/config.json",
+    "runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/config_explicit_onehot_fsm.json",
     "runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/metrics.csv",
     "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_cluster_equivalence__l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1.json",
     "docs/proposals/prop_decoder_attention_decode_score_multivalue_cluster_llama7b_v1/proposal.json"

@@ -1,0 +1,35 @@
+{
+  "tag_prefix": "decode_score_multivalue_cluster_v1_8ns_explicit_onehot_fsm",
+  "flow_params": {
+    "TAG": [
+      "decode_score_multivalue_cluster_v1_8ns_explicit_onehot_fsm"
+    ],
+    "FLOW_VARIANT": [
+      "decode_score_multivalue_cluster_v1_8ns_explicit_onehot_fsm_v1"
+    ],
+    "CLOCK_PERIOD": [
+      8
+    ],
+    "SYNTH_HIERARCHICAL": [
+      1
+    ],
+    "SYNTH_MEMORY_MAX_BITS": [
+      65536
+    ],
+    "PLACE_DENSITY": [
+      0.4
+    ]
+  },
+  "mode_compare": {
+    "modes": [
+      {
+        "name": "proxy_die_2500",
+        "use_macro": true,
+        "param_overrides": {
+          "DIE_AREA": "0 0 2500 2500",
+          "CORE_AREA": "50 50 2450 2450"
+        }
+      }
+    ]
+  }
+}

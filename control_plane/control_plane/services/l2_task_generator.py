@@ -31,15 +31,19 @@ class Layer2TaskGenerationError(RuntimeError):
 _RETRY_SUFFIX_RE = re.compile(r"_r\d+$")
 _VERSION_SUFFIX_RE = re.compile(r"_v(\d+)$")
 _GQA_FOLDED_ACTIVITY_LANES_RE = re.compile(r"_gqa8_folded_lanes(1|2|4|8)_activity_power_")
-_CLUSTER_ACTIVITY_POWER_STRICT_REVISION = 14
-_CLUSTER_ACTIVITY_POWER_V14_FLOW_VARIANT = (
-    "decode_score_multivalue_cluster_v1_8ns_binary_fsm_v4_proxy_die_2500"
+_CLUSTER_ACTIVITY_POWER_STRICT_REVISION = 16
+_CLUSTER_ACTIVITY_POWER_V16_CONFIG = (
+    "runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/"
+    "config_explicit_onehot_fsm.json"
 )
-_CLUSTER_ACTIVITY_POWER_V14_SYNTH_ARGS = "-nofsm"
-_CLUSTER_ACTIVITY_POWER_V14_PNR_ITEM = (
-    "l1_decoder_attention_decode_score_multivalue_cluster_pnr_binary_fsm_8ns_v3_r3"
+_CLUSTER_ACTIVITY_POWER_V16_FLOW_VARIANT = (
+    "decode_score_multivalue_cluster_v1_8ns_explicit_onehot_fsm_v1_proxy_die_2500"
 )
-_CLUSTER_ACTIVITY_POWER_V14_MIN_SEQUENTIAL_REGISTER_ACTIVITY_COVERAGE = 1.0
+_CLUSTER_ACTIVITY_POWER_V16_SYNTH_ARGS = ""
+_CLUSTER_ACTIVITY_POWER_V16_PNR_ITEM = (
+    "l1_decoder_attention_decode_score_multivalue_cluster_pnr_explicit_onehot_fsm_8ns_v1"
+)
+_CLUSTER_ACTIVITY_POWER_V16_MIN_SEQUENTIAL_REGISTER_ACTIVITY_COVERAGE = 1.0
 
 
 @dataclass(frozen=True)
@@ -6888,8 +6892,9 @@ def _decoder_attention_decode_score_multivalue_cluster_activity_power_evidence(*
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     require_exact_row = _cluster_activity_power_requires_strict_selection(item_id)
     config = (
-        "runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/"
-        "config.json"
+        _CLUSTER_ACTIVITY_POWER_V16_CONFIG
+        if require_exact_row
+        else "runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/config.json"
     )
     cluster_metrics_csv = (
         "runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/"
@@ -6907,12 +6912,12 @@ def _decoder_attention_decode_score_multivalue_cluster_activity_power_evidence(*
     out = f"{base}/decoder_attention_decode_score_multivalue_cluster_activity_power__{item_id}.json"
     report = f"{base}/decoder_attention_decode_score_multivalue_cluster_activity_power__{item_id}.md"
     required_flow_variant = (
-        _CLUSTER_ACTIVITY_POWER_V14_FLOW_VARIANT if require_exact_row else None
+        _CLUSTER_ACTIVITY_POWER_V16_FLOW_VARIANT if require_exact_row else None
     )
-    required_synth_args = _CLUSTER_ACTIVITY_POWER_V14_SYNTH_ARGS if require_exact_row else None
-    source_pnr_item_id = _CLUSTER_ACTIVITY_POWER_V14_PNR_ITEM if require_exact_row else None
+    required_synth_args = _CLUSTER_ACTIVITY_POWER_V16_SYNTH_ARGS if require_exact_row else None
+    source_pnr_item_id = _CLUSTER_ACTIVITY_POWER_V16_PNR_ITEM if require_exact_row else None
     min_seq_register_activity_coverage = (
-        _CLUSTER_ACTIVITY_POWER_V14_MIN_SEQUENTIAL_REGISTER_ACTIVITY_COVERAGE
+        _CLUSTER_ACTIVITY_POWER_V16_MIN_SEQUENTIAL_REGISTER_ACTIVITY_COVERAGE
         if require_exact_row
         else None
     )

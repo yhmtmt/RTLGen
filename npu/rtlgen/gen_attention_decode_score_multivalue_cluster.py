@@ -47,8 +47,8 @@ def _validate(config: dict[str, Any]) -> dict[str, int | str]:
         raise SystemExit("score_scale_lanes_per_cycle must be one of 1,2,4,8")
     if divider_impl != "iterative_restoring":
         raise SystemExit("divider_impl must be iterative_restoring")
-    if fsm_encoding not in {"default", "binary"}:
-        raise SystemExit("fsm_encoding must be default or binary")
+    if fsm_encoding not in {"default", "binary", "explicit_onehot"}:
+        raise SystemExit("fsm_encoding must be default, binary, or explicit_onehot")
     body.update(
         {
             "max_blocks": max_blocks,
@@ -69,6 +69,30 @@ def _validate(config: dict[str, Any]) -> dict[str, int | str]:
     }
 
 
+_CLUSTER_STATE_NAMES = (
+    "IDLE",
+    "TILE_CMD",
+    "TILE_INPUT",
+    "TILE_RESULT",
+    "SCALE",
+    "FILL",
+    "WAIT_RESULT",
+)
+
+
+def _onehot_state_declarations(*, state_names: tuple[str, ...], state_name: str) -> str:
+    width = len(state_names)
+    declarations = [
+        f"  localparam [{width - 1}:0] {name} = {width}'b{'0' * (width - index - 1)}1{'0' * index};"
+        for index, name in enumerate(state_names)
+    ]
+    declarations.append(
+        '  (* fsm_encoding = "none", fsm_extract = "no" *) '
+        f"reg [{width - 1}:0] {state_name};"
+    )
+    return "\n".join(declarations)
+
+
 def _widen(expr: str, in_bits: int, out_bits: int) -> str:
     if in_bits >= out_bits:
         return expr
@@ -80,7 +104,16 @@ def _wrapper(*, top_name: str, params: dict[str, int | str], tile_top: str, bank
     count_bits = _clog2(max_blocks + 1)
     addr_bits = _clog2(max_blocks)
     scale_lanes = int(params["score_scale_lanes_per_cycle"])
-    fsm_attribute = '(* fsm_encoding = "binary" *) ' if params["fsm_encoding"] == "binary" else ""
+    state_decl = "  reg [2:0] state_q;"
+    state_params = (
+        "  localparam [2:0] IDLE = 3'd0, TILE_CMD = 3'd1, TILE_INPUT = 3'd2,\n"
+        "      TILE_RESULT = 3'd3, SCALE = 3'd4, FILL = 3'd5, WAIT_RESULT = 3'd6;"
+    )
+    if params["fsm_encoding"] == "binary":
+        state_decl = '  (* fsm_encoding = "binary" *) reg [2:0] state_q;'
+    elif params["fsm_encoding"] == "explicit_onehot":
+        state_params = _onehot_state_declarations(state_names=_CLUSTER_STATE_NAMES, state_name="state_q")
+        state_decl = ""
     command_count = "command_block_count" if count_bits == 15 else f"command_block_count[{count_bits - 1}:0]"
     read_addr = _widen("score_read_req_addr", addr_bits, 14)
     write_addr = _widen("score_write_addr", addr_bits, 14)
@@ -133,10 +166,9 @@ module {top_name} (
   localparam integer COUNT_W = {count_bits};
   localparam integer ADDR_W = {addr_bits};
   localparam integer SCORE_SCALE_LANES_PER_CYCLE = {scale_lanes};
-  localparam [2:0] IDLE = 3'd0, TILE_CMD = 3'd1, TILE_INPUT = 3'd2,
-      TILE_RESULT = 3'd3, SCALE = 3'd4, FILL = 3'd5, WAIT_RESULT = 3'd6;
+{state_params}
 
-  {fsm_attribute}reg [2:0] state_q;
+{state_decl}
   reg [COUNT_W-1:0] block_index_q;
   reg [COUNT_W-1:0] active_block_count_q;
   reg [31:0] active_multiplier_q;
@@ -368,6 +400,10 @@ def generate(config: dict[str, Any], out_dir: Path) -> None:
         "score_tile_array_n": 8,
         "score_scale_lanes_per_cycle": params["score_scale_lanes_per_cycle"],
         "fsm_encoding": params["fsm_encoding"],
+        "controller_state_width": (
+            len(_CLUSTER_STATE_NAMES) if params["fsm_encoding"] == "explicit_onehot" else 3
+        ),
+        "controller_state_names": list(_CLUSTER_STATE_NAMES),
         "value_slices": params["value_slices"],
         "value_dimensions": int(params["value_slices"]) * 8,
         "score_passes_per_command": 1,

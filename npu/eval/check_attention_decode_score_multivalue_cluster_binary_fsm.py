@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Validate exact-state decode-score multivalue-cluster rows for binary-FSM PNR."""
+"""Validate exact-state decode-score multivalue-cluster rows for strict FSM PNR profiles."""
 
 from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
 import json
 import math
 import re
@@ -22,44 +23,72 @@ EXPECTED_PLATFORM = "nangate45"
 EXPECTED_DESIGN = "attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv"
 EXPECTED_RESULT_PATH_TOKEN = EXPECTED_DESIGN
 DEFAULT_SYNTH_RESULTS_DIR = Path("/orfs/flow/results")
+REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
 @dataclass(frozen=True)
-class BinaryFsmProfile:
+class ExactStateProfile:
     name: str
     tag_prefix: str
     flow_variant: str
     synth_args: str
     checker_id: str
+    expected_signal_indices: dict[str, set[int]]
+    config_path: str
+    expected_fsm_encoding: str
 
 
 PROFILES = {
-    "v4_nofsm": BinaryFsmProfile(
+    "v4_nofsm": ExactStateProfile(
         name="v4_nofsm",
         tag_prefix="decode_score_multivalue_cluster_v1_8ns_binary_fsm",
         flow_variant="decode_score_multivalue_cluster_v1_8ns_binary_fsm_v4_proxy_die_2500",
         synth_args="-nofsm",
         checker_id="attention_decode_score_multivalue_cluster_binary_fsm_v4",
+        expected_signal_indices={
+            "state_q": {0, 1, 2},
+            "reducer.state": {0, 1, 2, 3},
+        },
+        config_path=(
+            "runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/"
+            "config.json"
+        ),
+        expected_fsm_encoding="default",
     ),
-    "targeted_binary": BinaryFsmProfile(
+    "targeted_binary": ExactStateProfile(
         name="targeted_binary",
         tag_prefix="decode_score_multivalue_cluster_v1_8ns_targeted_binary_fsm",
-        flow_variant=(
-            "decode_score_multivalue_cluster_v1_8ns_targeted_binary_fsm_v1_proxy_die_2500"
-        ),
+        flow_variant="decode_score_multivalue_cluster_v1_8ns_targeted_binary_fsm_v1_proxy_die_2500",
         synth_args="",
         checker_id="attention_decode_score_multivalue_cluster_targeted_binary_fsm_v1",
+        expected_signal_indices={
+            "state_q": {0, 1, 2},
+            "reducer.state": {0, 1, 2, 3},
+        },
+        config_path=(
+            "runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/"
+            "config_targeted_binary_fsm.json"
+        ),
+        expected_fsm_encoding="binary",
+    ),
+    "explicit_onehot": ExactStateProfile(
+        name="explicit_onehot",
+        tag_prefix="decode_score_multivalue_cluster_v1_8ns_explicit_onehot_fsm",
+        flow_variant="decode_score_multivalue_cluster_v1_8ns_explicit_onehot_fsm_v1_proxy_die_2500",
+        synth_args="",
+        checker_id="attention_decode_score_multivalue_cluster_explicit_onehot_fsm_v1",
+        expected_signal_indices={
+            "state_q": set(range(7)),
+            "reducer.state": set(range(11)),
+        },
+        config_path=(
+            "runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/"
+            "config_explicit_onehot_fsm.json"
+        ),
+        expected_fsm_encoding="explicit_onehot",
     ),
 }
 DEFAULT_PROFILE = "v4_nofsm"
-EXPECTED_TAG_PREFIX = PROFILES[DEFAULT_PROFILE].tag_prefix
-EXPECTED_FLOW_VARIANT = PROFILES[DEFAULT_PROFILE].flow_variant
-EXPECTED_SYNTH_ARGS = PROFILES[DEFAULT_PROFILE].synth_args
-
-EXPECTED_SIGNAL_INDICES = {
-    "state_q": {0, 1, 2},
-    "reducer.state": {0, 1, 2, 3},
-}
 
 _COMMENT_RE = re.compile(r"//.*?$|/\*.*?\*/", re.MULTILINE | re.DOTALL)
 _DECL_KEYWORD_RE = re.compile(r"\b(?:wire|reg|logic|output|input|inout|tri)\b")
@@ -124,16 +153,22 @@ def _iter_declaration_items(statement: str):
         yield match
 
 
-def _load_netlist_signal_evidence(path: Path) -> _SignalEvidence:
-    evidence: _SignalEvidence = {
+def _empty_signal_evidence(expected_signal_indices: dict[str, set[int]]) -> _SignalEvidence:
+    return {
         signal: {"packed": set(), "bits": set()}
-        for signal in EXPECTED_SIGNAL_INDICES
+        for signal in expected_signal_indices
     }
+
+
+def _load_netlist_signal_evidence(
+    path: Path, expected_signal_indices: dict[str, set[int]]
+) -> _SignalEvidence:
+    evidence = _empty_signal_evidence(expected_signal_indices)
     text = _strip_verilog_comments(path.read_text(encoding="utf-8"))
     for statement in text.split(";"):
         for match in _iter_declaration_items(statement):
             name = _normalize_verilog_identifier(match.group("name"))
-            if name not in EXPECTED_SIGNAL_INDICES:
+            if name not in expected_signal_indices:
                 continue
             signal_data = evidence[name]
             msb = match.group("msb")
@@ -150,9 +185,11 @@ def _load_netlist_signal_evidence(path: Path) -> _SignalEvidence:
 
 
 def _load_signal_indices_or_widths(
-    signal: str, signal_data: dict[str, set[int] | set[tuple[int, int]]]
+    signal: str,
+    signal_data: dict[str, set[int] | set[tuple[int, int]]],
+    expected_signal_indices: dict[str, set[int]],
 ) -> set[int]:
-    expected_indices = EXPECTED_SIGNAL_INDICES[signal]
+    expected_indices = expected_signal_indices[signal]
     packed = signal_data["packed"]
     bits = signal_data["bits"]
     if not isinstance(packed, set) or not isinstance(bits, set):
@@ -203,13 +240,15 @@ def _optional_int(value: object) -> int | str | None:
         return _portable_text(text)
 
 
-def _serialize_signal_evidence(evidence: _SignalEvidence) -> dict[str, object]:
+def _serialize_signal_evidence(
+    evidence: _SignalEvidence, expected_signal_indices: dict[str, set[int]]
+) -> dict[str, object]:
     serialized: dict[str, object] = {}
     for signal, signal_data in evidence.items():
         packed = cast(set[tuple[int, int]], signal_data["packed"])
         bits = cast(set[int], signal_data["bits"])
         serialized[signal] = {
-            "expected_bit_indices": sorted(EXPECTED_SIGNAL_INDICES[signal]),
+            "expected_bit_indices": sorted(expected_signal_indices[signal]),
             "observed_packed_ranges": [
                 {"msb": msb, "lsb": lsb} for msb, lsb in sorted(packed)
             ],
@@ -218,35 +257,61 @@ def _serialize_signal_evidence(evidence: _SignalEvidence) -> dict[str, object]:
     return serialized
 
 
-def _inspect_netlist_widths(path: Path) -> tuple[dict[str, object], bool, list[str]]:
-    empty = {
-        signal: {"packed": set(), "bits": set()}
-        for signal in EXPECTED_SIGNAL_INDICES
-    }
+def _inspect_netlist_widths(
+    path: Path, expected_signal_indices: dict[str, set[int]]
+) -> tuple[dict[str, object], bool, list[str]]:
+    empty = _empty_signal_evidence(expected_signal_indices)
     try:
-        evidence = _load_netlist_signal_evidence(path)
+        evidence = _load_netlist_signal_evidence(path, expected_signal_indices)
     except (OSError, UnicodeError) as exc:
-        return _serialize_signal_evidence(empty), False, [
+        return _serialize_signal_evidence(empty, expected_signal_indices), False, [
             f"netlist_read_failed:{type(exc).__name__}"
         ]
 
     reasons: list[str] = []
-    for signal in EXPECTED_SIGNAL_INDICES:
+    for signal in expected_signal_indices:
         try:
-            observed = _load_signal_indices_or_widths(signal, evidence[signal])
+            observed = _load_signal_indices_or_widths(signal, evidence[signal], expected_signal_indices)
         except ValueError as exc:
             reasons.append(str(exc))
             continue
         if not observed:
             reasons.append(f"missing declaration for {signal}")
-        elif observed != EXPECTED_SIGNAL_INDICES[signal]:
-            missing = sorted(EXPECTED_SIGNAL_INDICES[signal] - observed)
-            extra = sorted(observed - EXPECTED_SIGNAL_INDICES[signal])
+        elif observed != expected_signal_indices[signal]:
+            missing = sorted(expected_signal_indices[signal] - observed)
+            extra = sorted(observed - expected_signal_indices[signal])
             if missing:
                 reasons.append(f"missing declaration for {signal}: missing indices {missing}")
             if extra:
                 reasons.append(f"invalid width for {signal}: out-of-range indices {extra}")
-    return _serialize_signal_evidence(evidence), not reasons, reasons
+    return _serialize_signal_evidence(evidence, expected_signal_indices), not reasons, reasons
+
+
+def _sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1 << 20), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _load_expected_config(profile: ExactStateProfile) -> tuple[Path, bool, str | None, str | None]:
+    config_path = REPO_ROOT / profile.config_path
+    if not config_path.is_file():
+        return config_path, False, None, None
+    try:
+        payload = json.loads(config_path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError):
+        return config_path, True, _sha256_file(config_path), None
+    body = payload.get("attention_decode_score_multivalue_cluster")
+    if not isinstance(body, dict):
+        return config_path, True, _sha256_file(config_path), None
+    return (
+        config_path,
+        True,
+        _sha256_file(config_path),
+        str(body.get("fsm_encoding", "default")).strip().lower(),
+    )
 
 
 def _derive_synth_netlist_path(
@@ -280,7 +345,7 @@ def _iter_metrics_rows(metrics_path: Path):
 
 
 def _exact_binary_fsm_identity(
-    row: dict[str, str], profile: BinaryFsmProfile
+    row: dict[str, str], profile: ExactStateProfile
 ) -> dict[str, object] | None:
     try:
         params = _parse_params_json(_to_str(row.get("params_json", "")))
@@ -324,6 +389,7 @@ def _row_diagnostic(
     *,
     params: dict[str, object],
     synth_results_dir: Path,
+    profile: ExactStateProfile,
 ) -> dict[str, object]:
     platform = _to_str(row.get("platform"))
     design = _to_str(row.get("design"))
@@ -346,19 +412,38 @@ def _row_diagnostic(
             "observed_packed_ranges": [],
             "observed_bit_indices": [],
         }
-        for signal, indices in EXPECTED_SIGNAL_INDICES.items()
+        for signal, indices in profile.expected_signal_indices.items()
     }
     width_valid = False
     promotion_reasons: list[str] = []
+    netlist_sha256: str | None = None
     if netlist_exists:
-        signal_evidence, width_valid, width_reasons = _inspect_netlist_widths(netlist_path)
+        signal_evidence, width_valid, width_reasons = _inspect_netlist_widths(
+            netlist_path, profile.expected_signal_indices
+        )
         promotion_reasons.extend(width_reasons)
+        netlist_sha256 = _sha256_file(netlist_path)
     else:
         promotion_reasons.append("missing exact netlist")
+
+    config_path, config_exists, config_sha256, config_fsm_encoding = _load_expected_config(profile)
+    if not config_exists:
+        promotion_reasons.append("expected config is missing")
+    elif config_fsm_encoding != profile.expected_fsm_encoding:
+        promotion_reasons.append(
+            f"config fsm_encoding {config_fsm_encoding or '<missing>'} does not match "
+            f"{profile.expected_fsm_encoding}"
+        )
 
     status = _to_str(row.get("status")).lower()
     if status != "ok":
         promotion_reasons.append(f"status is {status or 'missing'}, not ok")
+
+    failure_stage = _portable_text(row.get("failure_stage"))
+    failure_returncode = _optional_int(row.get("failure_returncode"))
+    failure_signature = _portable_text(row.get("failure_signature"))
+    if failure_stage or failure_returncode is not None or failure_signature:
+        promotion_reasons.append("selected row carries failure-stage metadata")
 
     critical_path_ns: float | None = None
     try:
@@ -376,6 +461,11 @@ def _row_diagnostic(
         and critical_path_ns <= EXPECTED_CLOCK_PERIOD
         and netlist_exists
         and width_valid
+        and config_exists
+        and config_fsm_encoding == profile.expected_fsm_encoding
+        and not failure_stage
+        and failure_returncode is None
+        and not failure_signature
     )
     return {
         "selected_exact_row": {
@@ -394,12 +484,17 @@ def _row_diagnostic(
             "synth_hierarchical": _to_str(params.get("SYNTH_HIERARCHICAL")),
             "synth_memory_max_bits": _to_str(params.get("SYNTH_MEMORY_MAX_BITS")),
             "synth_args": _to_str(params.get("SYNTH_ARGS")),
-            "failure_stage": _portable_text(row.get("failure_stage")),
-            "failure_returncode": _optional_int(row.get("failure_returncode")),
-            "failure_signature": _portable_text(row.get("failure_signature")),
+            "failure_stage": failure_stage,
+            "failure_returncode": failure_returncode,
+            "failure_signature": failure_signature,
         },
+        "expected_config_path": profile.config_path,
+        "config_exists": config_exists,
+        "config_sha256": config_sha256,
+        "config_fsm_encoding": config_fsm_encoding,
         "expected_logical_netlist_path": logical_netlist_path,
         "netlist_exists": netlist_exists,
+        "netlist_sha256": netlist_sha256,
         "signals": signal_evidence,
         "width_valid": width_valid,
         "promotion_valid": promotion_valid,
@@ -422,22 +517,27 @@ def validate_binary_fsm_metrics(
     try:
         profile = PROFILES[profile_name]
     except KeyError as exc:
-        raise ValueError(f"unknown binary-FSM checker profile: {profile_name}") from exc
+        raise ValueError(f"unknown exact-state checker profile: {profile_name}") from exc
     diagnostic: dict[str, object] = {
         "version": 1,
         "checker": profile.checker_id,
         "profile": profile.name,
         "expected_flow_variant": profile.flow_variant,
+        "expected_config_path": profile.config_path,
         "selected_exact_row": None,
+        "config_exists": False,
+        "config_sha256": None,
+        "config_fsm_encoding": None,
         "expected_logical_netlist_path": None,
         "netlist_exists": False,
+        "netlist_sha256": None,
         "signals": {
             signal: {
                 "expected_bit_indices": sorted(indices),
                 "observed_packed_ranges": [],
                 "observed_bit_indices": [],
             }
-            for signal, indices in EXPECTED_SIGNAL_INDICES.items()
+            for signal, indices in profile.expected_signal_indices.items()
         },
         "width_valid": False,
         "promotion_valid": False,
@@ -459,6 +559,7 @@ def validate_binary_fsm_metrics(
             row,
             params=params,
             synth_results_dir=synth_results_dir,
+            profile=profile,
         )
         for row, params in exact_rows
     ]
@@ -479,13 +580,14 @@ def validate_binary_fsm_metrics(
     if detail:
         detail = "; details: " + detail
     raise ValueError(
-        "missing required 8ns exact-state binary-FSM decode-score multivalue-cluster row "
+        "missing required 8ns exact-state decode-score multivalue-cluster row "
         f"(profile={profile.name}, status=ok, TAG={profile.tag_prefix}*, "
         f"FLOW_VARIANT={profile.flow_variant}, "
         "DIE_AREA=0 0 2500 2500, CORE_AREA=50 50 2450 2450, "
         f"SYNTH_ARGS={profile.synth_args or '<empty/default>'}, "
         "PLACE_DENSITY=0.4, SYNTH_HIERARCHICAL=1, SYNTH_MEMORY_MAX_BITS=65536, "
-        "critical_path_ns<=8, exact 3/4-bit state widths)" + detail
+        f"critical_path_ns<=8, exact state widths={{{', '.join(f'{name}:{len(bits)}' for name, bits in profile.expected_signal_indices.items())}}})"
+        + detail
     )
 
 

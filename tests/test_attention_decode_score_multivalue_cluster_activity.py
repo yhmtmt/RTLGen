@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 
+from npu.eval import generate_attention_decode_score_multivalue_cluster_activity as activity
 from npu.eval.generate_attention_decode_score_multivalue_cluster_activity import generate_phase_activity
 
 
@@ -13,8 +14,8 @@ def _tool_available(name: str) -> bool:
     return shutil.which(name) is not None or (Path("/oss-cad-suite/bin") / name).exists()
 
 
-def _config() -> dict:
-    return {
+def _config(*, fsm_encoding: str | None = None) -> dict:
+    config = {
         "top_name": "attention_decode_score_multivalue_cluster_activity",
         "attention_decode_score_multivalue_cluster": {
             "max_blocks": 16384,
@@ -24,6 +25,20 @@ def _config() -> dict:
             "score_scale_lanes_per_cycle": 1,
         },
     }
+    if fsm_encoding is not None:
+        config["attention_decode_score_multivalue_cluster"]["fsm_encoding"] = fsm_encoding
+    return config
+
+
+def test_phase_expr_uses_explicit_onehot_literals() -> None:
+    score_fill = activity._phase_expr("score_fill", _config(fsm_encoding="explicit_onehot"))
+    replay_value = activity._phase_expr("replay_value", _config(fsm_encoding="explicit_onehot"))
+    finalize_result = activity._phase_expr("finalize_result", _config(fsm_encoding="explicit_onehot"))
+
+    assert "dut.state_q == 7'b0000001" in score_fill
+    assert "dut.state_q == 7'b0100000" in score_fill
+    assert "dut.reducer.state == 11'b00000000100" in replay_value
+    assert "dut.reducer.state == 11'b10000000000" in finalize_result
 
 
 def test_multivalue_cluster_activity_generates_phase_vcds_and_manifest(tmp_path: Path) -> None:
