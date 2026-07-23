@@ -22,8 +22,9 @@ from control_plane.models.work_items import WorkItem
 from control_plane.models.worker_leases import WorkerLease
 from control_plane.services.run_service import request_run_cancel
 from control_plane.services.worker_service import run_worker
+from control_plane.workers.command_runner import CommandResult
 from control_plane.workers.checkout import cleanup_checkout, prepare_checkout, _materialize_missing_submodules
-from control_plane.workers.executor import WorkerConfig, _materialize_generated_inputs
+from control_plane.workers.executor import WorkerConfig, _classify_failure, _materialize_generated_inputs
 
 
 def seed_ready_work_item(session: Session, *, item_id: str, repo_root: Path, failing: bool) -> WorkItem:
@@ -837,11 +838,15 @@ def test_worker_honors_cancel_requested_during_command() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
         repo_root.mkdir()
+        init_git_repo(repo_root)
         db_path = Path(td) / "cp.db"
         engine = create_engine(f"sqlite+pysqlite:///{db_path}", future=True)
         create_all(engine)
+        item_id = "item_cancel"
         with Session(engine) as session:
-            seeded = seed_timeout_work_item(session, item_id="item_cancel")
+            seeded = seed_timeout_work_item(session, item_id=item_id)
+            seeded.assigned_machine_key = "worker-1"
+            session.commit()
 
         session_factory = build_session_factory(engine)
         results_box: list[list] = []
@@ -870,7 +875,7 @@ def test_worker_honors_cancel_requested_during_command() -> None:
         deadline = time.time() + 5
         while time.time() < deadline and run_key is None:
             with Session(engine) as session:
-                run = session.query(Run).join(WorkItem).filter(WorkItem.item_id == seeded.item_id).first()
+                run = session.query(Run).join(WorkItem).filter(WorkItem.item_id == item_id).first()
                 if run is not None:
                     run_key = run.run_key
                     request_run_cancel(session, run_key=run_key, requested_by="tester", reason="stop test")
@@ -883,11 +888,121 @@ def test_worker_honors_cancel_requested_during_command() -> None:
         assert results_box[0][0].status == "canceled"
 
         with Session(engine) as session:
-            work_item = session.query(WorkItem).filter_by(item_id=seeded.item_id).one()
+            work_item = session.query(WorkItem).filter_by(item_id=item_id).one()
             run = session.query(Run).filter_by(run_key=run_key).one()
             assert work_item.state == WorkItemState.FAILED
             assert run.status == RunStatus.CANCELED
             assert run.result_payload["failure_classification"]["category"] == "command_canceled"
+
+
+def test_worker_cancellation_takes_precedence_over_heartbeat_stop_error() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        init_git_repo(repo_root)
+        db_path = Path(td) / "cp.db"
+        engine = create_engine(f"sqlite+pysqlite:///{db_path}", future=True)
+        create_all(engine)
+        item_id = "item_cancel_heartbeat_error"
+        with Session(engine) as session:
+            seeded = seed_timeout_work_item(session, item_id=item_id)
+            seeded.assigned_machine_key = "worker-1"
+            session.commit()
+
+        session_factory = build_session_factory(engine)
+        results_box: list[list] = []
+
+        import control_plane.workers.executor as executor
+
+        original_stop = executor.LeaseHeartbeatPump.stop
+
+        def _stop_with_timeout(self) -> str:
+            original_stop(self)
+            return "ConnectionTimeout"
+
+        def _run_worker() -> None:
+            results_box.append(
+                run_worker(
+                    session_factory,
+                    config=WorkerConfig(
+                        repo_root=str(repo_root),
+                        machine_key="worker-1",
+                        capabilities={"platform": "nangate45", "flow": "openroad"},
+                        capability_filter={"platform": "nangate45", "flow": "openroad"},
+                        lease_seconds=60,
+                        heartbeat_seconds=1,
+                        command_progress_seconds=1,
+                        max_retry_attempts=2,
+                    ),
+                    max_items=1,
+                )
+            )
+
+        with mock.patch.object(
+            executor.LeaseHeartbeatPump,
+            "stop",
+            autospec=True,
+            side_effect=_stop_with_timeout,
+        ):
+            worker_thread = threading.Thread(target=_run_worker)
+            worker_thread.start()
+
+            run_key = None
+            deadline = time.time() + 5
+            while time.time() < deadline and run_key is None:
+                with Session(engine) as session:
+                    run = session.query(Run).join(WorkItem).filter(WorkItem.item_id == item_id).first()
+                    if run is not None:
+                        run_key = run.run_key
+                        request_run_cancel(session, run_key=run_key, requested_by="tester", reason="stop test")
+                        break
+                time.sleep(0.1)
+
+            worker_thread.join(timeout=10)
+
+        assert run_key is not None
+        assert results_box
+        assert results_box[0][0].status == "canceled"
+
+        with Session(engine) as session:
+            work_item = session.query(WorkItem).filter_by(item_id=item_id).one()
+            runs = session.query(Run).filter_by(work_item_id=work_item.id).all()
+            assert len(runs) == 1
+            run = runs[0]
+            assert work_item.state == WorkItemState.FAILED
+            assert run.status == RunStatus.CANCELED
+            assert run.result_payload["heartbeat_error"] == "ConnectionTimeout"
+            assert run.result_payload["worker_error"] == "heartbeat_error=ConnectionTimeout"
+            assert run.result_payload["failure_classification"]["category"] == "command_canceled"
+            assert run.result_payload["failure_classification"]["retryable"] is False
+            assert run.result_payload["retry_decision"]["requeue"] is False
+
+
+def test_classify_failure_keeps_worker_error_retryable_without_command_cancel() -> None:
+    failure = _classify_failure(
+        command_results=[
+            CommandResult(
+                name="heartbeat_only",
+                command="true",
+                returncode=0,
+                duration_seconds=0.1,
+                stdout_log="stdout.log",
+                stderr_log="stderr.log",
+                timed_out=False,
+                stalled=False,
+                canceled=False,
+            )
+        ],
+        worker_error="heartbeat_error=ConnectionTimeout",
+        checkout_error=None,
+        attempt=1,
+        max_retry_attempts=2,
+    )
+
+    assert failure["category"] == "worker_error"
+    assert failure["stage"] == "worker"
+    assert failure["retryable"] is True
+    assert failure["requeue"] is True
 
 
 def test_worker_continues_when_cancel_check_db_disconnect_occurs() -> None:
