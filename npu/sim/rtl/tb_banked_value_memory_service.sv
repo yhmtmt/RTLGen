@@ -25,7 +25,6 @@ module tb_banked_value_memory_service;
 
   reg [SOURCES-1:0] src_req_valid;
   wire [SOURCES-1:0] src_req_ready;
-  reg [SOURCES*SOURCE_W-1:0] src_req_source;
   reg [SOURCES*TAG_W-1:0] src_req_tag;
   reg [SOURCES*ADDR_W-1:0] src_req_addr;
   reg [SOURCES*VALUE_SLICE_W-1:0] src_req_value_slice;
@@ -107,7 +106,6 @@ module tb_banked_value_memory_service;
     .rst_n(rst_n),
     .src_req_valid(src_req_valid),
     .src_req_ready(src_req_ready),
-    .src_req_source(src_req_source),
     .src_req_tag(src_req_tag),
     .src_req_addr(src_req_addr),
     .src_req_value_slice(src_req_value_slice),
@@ -261,7 +259,6 @@ module tb_banked_value_memory_service;
     input [VALUE_SLICE_W-1:0] value_slice;
     begin
       src_req_valid[src] = 1'b1;
-      src_req_source[(src * SOURCE_W) +: SOURCE_W] = src[SOURCE_W-1:0];
       src_req_tag[(src * TAG_W) +: TAG_W] = tag;
       src_req_addr[(src * ADDR_W) +: ADDR_W] = addr;
       src_req_value_slice[(src * VALUE_SLICE_W) +: VALUE_SLICE_W] = value_slice;
@@ -272,7 +269,6 @@ module tb_banked_value_memory_service;
     input integer src;
     begin
       src_req_valid[src] = 1'b0;
-      src_req_source[(src * SOURCE_W) +: SOURCE_W] = {SOURCE_W{1'b0}};
       src_req_tag[(src * TAG_W) +: TAG_W] = {TAG_W{1'b0}};
       src_req_addr[(src * ADDR_W) +: ADDR_W] = {ADDR_W{1'b0}};
       src_req_value_slice[(src * VALUE_SLICE_W) +: VALUE_SLICE_W] = {VALUE_SLICE_W{1'b0}};
@@ -329,7 +325,6 @@ module tb_banked_value_memory_service;
     preload_value_slice = {VALUE_SLICE_W{1'b0}};
     preload_matrix = {VALUE_W{1'b0}};
     src_req_valid = {SOURCES{1'b0}};
-    src_req_source = {(SOURCES * SOURCE_W){1'b0}};
     src_req_tag = {(SOURCES * TAG_W){1'b0}};
     src_req_addr = {(SOURCES * ADDR_W){1'b0}};
     src_req_value_slice = {(SOURCES * VALUE_SLICE_W){1'b0}};

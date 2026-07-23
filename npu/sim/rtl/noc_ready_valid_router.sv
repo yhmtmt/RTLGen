@@ -25,7 +25,6 @@ module noc_ready_valid_router #(
 
   input wire [SOURCES-1:0] src_req_valid,
   output wire [SOURCES-1:0] src_req_ready,
-  input wire [SOURCES*SOURCE_W-1:0] src_req_source,
   input wire [SOURCES*TAG_W-1:0] src_req_tag,
   input wire [SOURCES*ADDR_W-1:0] src_req_addr,
   input wire [SOURCES*VALUE_SLICE_W-1:0] src_req_value_slice,
