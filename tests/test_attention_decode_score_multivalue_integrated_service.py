@@ -75,7 +75,9 @@ def test_multivalue_service_generator_manifest(tmp_path: Path) -> None:
     assert manifest["packet_w"] == 256
     assert manifest["banks"] == 8
     assert manifest["arb_mode"] == "locality_first_bounded"
-    assert manifest["shared_result_egress"] == "single_ready_valid_round_robin_v1"
+    assert manifest["shared_result_egress"] == "single_ready_valid_round_robin_hold_reg_v2"
+    assert manifest["shared_result_egress_initiation_interval"] == 1
+    assert manifest["shared_result_egress_stall_semantics"] == "stable_until_handshake"
     assert manifest["response_metadata_guard"] == "single_outstanding_per_cluster_v1"
     assert manifest["submodule_manifests"]["multivalue_cluster"]["result_beats_per_command"] == 16
 
@@ -121,6 +123,7 @@ def test_integrated_service_zero_contention_exact(packet_w: int) -> None:
     assert case["integrated_service"]["wide_response_count"] == 48
     assert case["integrated_service"]["counters"]["bank_conflict_count"] == 0
     assert case["integrated_service"]["counters"]["shared_result"]["egress_block_cycles"] >= 0
+    assert case["integrated_service"]["shared_result_egress"]["documented_initiation_interval"] == 1
     assert case["baseline_no_stall"]["score_hash"] == case["expected_hashes"]["score_hash"]
     assert case["baseline_no_stall"]["final_hash"] == case["expected_hashes"]["final_hash"]
     assert case["integrated_service"]["final_hash"] == case["expected_hashes"]["final_hash"]
@@ -169,6 +172,9 @@ def test_integrated_service_same_bank_contention_exact(
     assert case["integrated_service"]["counters"]["bank_conflict_count"] > 0
     assert case["integrated_service"]["counters"]["arbitration_contention_cycles"] > 0
     assert case["integrated_service"]["counters"]["shared_result"]["arbitration_contention_cycles"] >= 0
+    assert case["integrated_service"]["counters"]["shared_result"]["egress_block_cycles"] > 0
+    assert case["integrated_service"]["shared_result_egress"]["documented_initiation_interval"] == 1
+    assert case["integrated_service"]["shared_result_egress"]["back_to_back_fire_seen"] is True
     assert case["integrated_service"]["counters"]["request_injection_stall_cycles"] >= 0
     assert case["integrated_service"]["service_counts"]["accepted_req_count"] == 48 * cluster_count
     assert case["integrated_service"]["service_counts"]["emitted_resp_count"] == 48 * cluster_count
@@ -224,6 +230,8 @@ def test_integrated_service_fixed_resource_scaling_pair() -> None:
     assert c1["config"]["arb_mode"] == c2["config"]["arb_mode"] == "round_robin"
     assert c2["integrated_service"]["completion_cycle"] >= c1["integrated_service"]["completion_cycle"]
     assert c2["integrated_service"]["service_penalty_cycles"] >= c1["integrated_service"]["service_penalty_cycles"]
+    assert c2["integrated_service"]["counters"]["shared_result"]["egress_block_cycles"] > 0
+    assert c2["integrated_service"]["shared_result_egress"]["back_to_back_fire_seen"] is True
 
 
 def test_integrated_service_validate_report_rejects_incomplete_evidence() -> None:
@@ -243,4 +251,9 @@ def test_integrated_service_validate_report_rejects_incomplete_evidence() -> Non
     broken = json.loads(json.dumps(report))
     broken["cases"][0]["integrated_service"]["service_penalty_cycles"] = -1
     with pytest.raises(ValueError, match="negative service penalty"):
+        validate_report(broken)
+
+    broken = json.loads(json.dumps(report))
+    broken["cases"][0]["integrated_service"]["shared_result_egress"]["documented_initiation_interval"] = 2
+    with pytest.raises(ValueError, match="shared_result egress II"):
         validate_report(broken)

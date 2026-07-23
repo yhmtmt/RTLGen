@@ -245,17 +245,26 @@ module {top_name} (
   reg  [SOURCE_W-1:0] expected_source_q [0:CLUSTERS-1];
   reg  [CLUSTERS-1:0] response_pending_q;
   reg  protocol_error_q;
-  reg  shared_result_valid_r;
-  reg  [SOURCE_W-1:0] shared_result_grant_idx_r;
+  reg  shared_result_valid_q;
+  reg  [SOURCE_W-1:0] shared_result_cluster_q;
+  reg  [15:0] shared_result_command_id_q;
+  reg  [31:0] shared_result_global_max_q;
+  reg  [32:0] shared_result_exp_sum_q;
+  reg  [3:0] shared_result_slice_q;
+  reg  shared_result_last_q;
+  reg  [319:0] shared_result_value_q;
   reg  [SOURCE_W-1:0] result_rr_cursor_q;
+  reg  candidate_valid_r;
+  reg  [SOURCE_W-1:0] candidate_idx_r;
   reg  [SOURCE_W-1:0] scan_cluster_r;
-  reg  [31:0] shared_result_valid_count_r;
+  reg  [31:0] candidate_valid_count_r;
   integer shared_valid_i;
   integer shared_scan_i;
   integer shared_scan_int;
   integer resp_meta_i;
 
-  wire shared_result_fire = shared_result_valid && shared_result_ready;
+  wire shared_result_fire = shared_result_valid_q && shared_result_ready;
+  wire shared_result_capture = candidate_valid_r && (!shared_result_valid_q || shared_result_fire);
 
   assign cluster_result_valid = raw_cluster_result_valid;
   assign cluster_result_ready = raw_cluster_result_ready;
@@ -265,19 +274,14 @@ module {top_name} (
   assign cluster_result_slice = raw_cluster_result_slice;
   assign cluster_result_last = raw_cluster_result_last;
   assign cluster_result_value = raw_cluster_result_value;
-  assign shared_result_valid = shared_result_valid_r;
-  assign shared_result_cluster = shared_result_grant_idx_r;
-  assign shared_result_command_id =
-    raw_cluster_result_command_id[(shared_result_grant_idx_r * 16) +: 16];
-  assign shared_result_global_max =
-    raw_cluster_result_global_max[(shared_result_grant_idx_r * 32) +: 32];
-  assign shared_result_exp_sum =
-    raw_cluster_result_exp_sum[(shared_result_grant_idx_r * 33) +: 33];
-  assign shared_result_slice =
-    raw_cluster_result_slice[(shared_result_grant_idx_r * 4) +: 4];
-  assign shared_result_last = raw_cluster_result_last[shared_result_grant_idx_r];
-  assign shared_result_value =
-    raw_cluster_result_value[(shared_result_grant_idx_r * 320) +: 320];
+  assign shared_result_valid = shared_result_valid_q;
+  assign shared_result_cluster = shared_result_cluster_q;
+  assign shared_result_command_id = shared_result_command_id_q;
+  assign shared_result_global_max = shared_result_global_max_q;
+  assign shared_result_exp_sum = shared_result_exp_sum_q;
+  assign shared_result_slice = shared_result_slice_q;
+  assign shared_result_last = shared_result_last_q;
+  assign shared_result_value = shared_result_value_q;
 
   genvar gi;
   generate
@@ -286,7 +290,7 @@ module {top_name} (
       assign transport_req_tag[(gi * TAG_W) +: TAG_W] = request_tag_q[gi];
       assign transport_wide_valid[gi] = cluster_value_resp_valid[gi];
       assign raw_cluster_result_ready[gi] =
-        shared_result_valid_r && (shared_result_grant_idx_r == gi[SOURCE_W-1:0]) && shared_result_ready;
+        shared_result_capture && (candidate_idx_r == gi[SOURCE_W-1:0]);
 
       {cluster_top} u_cluster (
           .clk(clk),
@@ -458,12 +462,12 @@ module {top_name} (
   assign protocol_error = protocol_error_q || (|cluster_protocol_error) || (|reassembler_protocol_error);
 
   always @(*) begin
-    shared_result_valid_r = 1'b0;
-    shared_result_grant_idx_r = result_rr_cursor_q;
-    shared_result_valid_count_r = 32'd0;
+    candidate_valid_r = 1'b0;
+    candidate_idx_r = result_rr_cursor_q;
+    candidate_valid_count_r = 32'd0;
     for (shared_valid_i = 0; shared_valid_i < CLUSTERS; shared_valid_i = shared_valid_i + 1) begin
       if (raw_cluster_result_valid[shared_valid_i]) begin
-        shared_result_valid_count_r = shared_result_valid_count_r + 32'd1;
+        candidate_valid_count_r = candidate_valid_count_r + 32'd1;
       end
     end
     for (shared_scan_i = 0; shared_scan_i < CLUSTERS; shared_scan_i = shared_scan_i + 1) begin
@@ -472,9 +476,9 @@ module {top_name} (
         shared_scan_int = shared_scan_int - CLUSTERS;
       end
       scan_cluster_r = shared_scan_int[SOURCE_W-1:0];
-      if (!shared_result_valid_r && raw_cluster_result_valid[scan_cluster_r]) begin
-        shared_result_valid_r = 1'b1;
-        shared_result_grant_idx_r = scan_cluster_r;
+      if (!candidate_valid_r && raw_cluster_result_valid[scan_cluster_r]) begin
+        candidate_valid_r = 1'b1;
+        candidate_idx_r = scan_cluster_r;
       end
     end
   end
@@ -484,6 +488,14 @@ module {top_name} (
     if (!rst_n) begin
       protocol_error_q <= 1'b0;
       response_pending_q <= {{CLUSTERS{{1'b0}}}};
+      shared_result_valid_q <= 1'b0;
+      shared_result_cluster_q <= {{SOURCE_W{{1'b0}}}};
+      shared_result_command_id_q <= 16'd0;
+      shared_result_global_max_q <= 32'd0;
+      shared_result_exp_sum_q <= 33'd0;
+      shared_result_slice_q <= 4'd0;
+      shared_result_last_q <= 1'b0;
+      shared_result_value_q <= 320'd0;
       result_rr_cursor_q <= {{SOURCE_W{{1'b0}}}};
       result_arbitration_contention_cycles <= 32'd0;
       result_egress_block_cycles <= 32'd0;
@@ -495,18 +507,33 @@ module {top_name} (
         expected_source_q[tag_i] <= {{SOURCE_W{{1'b0}}}};
       end
     end else begin
-      if (shared_result_valid_r && (shared_result_valid_count_r > 32'd1)) begin
+      if (shared_result_capture && (candidate_valid_count_r > 32'd1)) begin
         result_arbitration_contention_cycles <= result_arbitration_contention_cycles + 32'd1;
       end
-      if (shared_result_valid && !shared_result_ready) begin
+      if (shared_result_valid_q && !shared_result_ready) begin
         result_egress_block_cycles <= result_egress_block_cycles + 32'd1;
       end
-      if (shared_result_fire) begin
-        if (shared_result_grant_idx_r == (CLUSTERS - 1)) begin
+      if (shared_result_capture) begin
+        shared_result_valid_q <= 1'b1;
+        shared_result_cluster_q <= candidate_idx_r;
+        shared_result_command_id_q <=
+          raw_cluster_result_command_id[(candidate_idx_r * 16) +: 16];
+        shared_result_global_max_q <=
+          raw_cluster_result_global_max[(candidate_idx_r * 32) +: 32];
+        shared_result_exp_sum_q <=
+          raw_cluster_result_exp_sum[(candidate_idx_r * 33) +: 33];
+        shared_result_slice_q <=
+          raw_cluster_result_slice[(candidate_idx_r * 4) +: 4];
+        shared_result_last_q <= raw_cluster_result_last[candidate_idx_r];
+        shared_result_value_q <=
+          raw_cluster_result_value[(candidate_idx_r * 320) +: 320];
+        if (candidate_idx_r == (CLUSTERS - 1)) begin
           result_rr_cursor_q <= {{SOURCE_W{{1'b0}}}};
         end else begin
-          result_rr_cursor_q <= shared_result_grant_idx_r + 1'b1;
+          result_rr_cursor_q <= candidate_idx_r + 1'b1;
         end
+      end else if (shared_result_fire) begin
+        shared_result_valid_q <= 1'b0;
       end
       for (tag_i = 0; tag_i < CLUSTERS; tag_i = tag_i + 1) begin
         if (src_req_valid[tag_i] && src_req_ready[tag_i]) begin
@@ -608,7 +635,9 @@ def generate(config: JsonDict, out_dir: Path) -> None:
         "value_slices": 16,
         "score_scale_lanes_per_cycle": params["score_scale_lanes_per_cycle"],
         "fsm_encoding": params["fsm_encoding"],
-        "shared_result_egress": "single_ready_valid_round_robin_v1",
+        "shared_result_egress": "single_ready_valid_round_robin_hold_reg_v2",
+        "shared_result_egress_initiation_interval": 1,
+        "shared_result_egress_stall_semantics": "stable_until_handshake",
         "response_metadata_guard": "single_outstanding_per_cluster_v1",
         "dependency_sources": dependency_sources,
         "generated_top_sha256": _sha256_text(top_text),

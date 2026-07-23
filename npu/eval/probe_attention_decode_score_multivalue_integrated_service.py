@@ -119,7 +119,7 @@ _INT_SHARED_RE = re.compile(
     r"router_req_occ=(\d+) router_req_max=(\d+) router_resp_occ=(\d+) router_resp_max=(\d+) "
     r"service_req=(\d+) service_emit=(\d+) bank_conflict=(\d+) service_resp_block=(\d+) "
     r"service_req_occ=(\d+) service_req_max=(\d+) service_resp_occ=(\d+) service_resp_max=(\d+) "
-    r"result_arb=(\d+) result_egress=(\d+)"
+    r"result_arb=(\d+) result_egress=(\d+) result_b2b=(\d+)"
 )
 
 
@@ -687,8 +687,15 @@ module tb;
   wire protocol_error;
   reg [CLUSTERS-1:0] command_sent;
   reg [CLUSTERS-1:0] done;
+  reg shared_result_block_active;
+  reg shared_result_block_done;
+  reg shared_result_block_competitor_seen;
+  reg shared_result_back_to_back_seen;
+  reg prev_shared_result_fire;
+  reg blocked_payload_valid;
   integer cycle;
   integer idx;
+  integer shared_result_block_cycles_left;
   integer done_cycle [0:CLUSTERS-1];
   integer req_count [0:CLUSTERS-1];
   integer wide_count [0:CLUSTERS-1];
@@ -696,6 +703,13 @@ module tb;
   integer input_stall_cycles [0:CLUSTERS-1];
   integer input_starve_cycles [0:CLUSTERS-1];
   integer result_block_cycles [0:CLUSTERS-1];
+  reg [{source_w - 1}:0] blocked_cluster_q;
+  reg [15:0] blocked_command_id_q;
+  reg [31:0] blocked_global_max_q;
+  reg [32:0] blocked_exp_sum_q;
+  reg [3:0] blocked_slice_q;
+  reg blocked_last_q;
+  reg [319:0] blocked_value_q;
 {chr(10).join(per_cluster_decl)}
 
   always #5 clk = ~clk;
@@ -776,6 +790,10 @@ module tb;
     cluster_input_a = {{(CLUSTERS*8){{1'b0}}}};
     cluster_input_b = {{(CLUSTERS*64){{1'b0}}}};
     shared_result_ready = 1'b1;
+    if ((CLUSTERS > 1) && !shared_result_block_done &&
+        (shared_result_block_active || shared_result_valid)) begin
+      shared_result_ready = 1'b0;
+    end
 {chr(10).join(per_cluster_drive)}
   end
 
@@ -785,7 +803,21 @@ module tb;
       preload_done <= 1'b0;
       command_sent <= {{CLUSTERS{{1'b0}}}};
       done <= {{CLUSTERS{{1'b0}}}};
+      shared_result_block_active <= 1'b0;
+      shared_result_block_done <= 1'b0;
+      shared_result_block_competitor_seen <= 1'b0;
+      shared_result_back_to_back_seen <= 1'b0;
+      prev_shared_result_fire <= 1'b0;
+      blocked_payload_valid <= 1'b0;
       cycle <= 0;
+      shared_result_block_cycles_left <= 0;
+      blocked_cluster_q <= {source_w}'d0;
+      blocked_command_id_q <= 16'd0;
+      blocked_global_max_q <= 32'd0;
+      blocked_exp_sum_q <= 33'd0;
+      blocked_slice_q <= 4'd0;
+      blocked_last_q <= 1'b0;
+      blocked_value_q <= 320'd0;
       for (idx = 0; idx < CLUSTERS; idx = idx + 1) begin
         done_cycle[idx] <= 0;
         req_count[idx] <= 0;
@@ -805,9 +837,54 @@ module tb;
           preload_index <= preload_index + 1;
         end
       end
+      if ((CLUSTERS > 1) && !shared_result_block_done && !shared_result_block_active && shared_result_valid) begin
+        shared_result_block_active <= 1'b1;
+        shared_result_block_competitor_seen <= 1'b0;
+        shared_result_block_cycles_left <= 3;
+        blocked_payload_valid <= 1'b0;
+      end
+      if (shared_result_block_active) begin
+        if (shared_result_block_cycles_left > 0) begin
+          shared_result_block_cycles_left <= shared_result_block_cycles_left - 1;
+        end
+        for (idx = 0; idx < CLUSTERS; idx = idx + 1) begin
+          if ((idx != shared_result_cluster) && cluster_result_valid[idx]) begin
+            shared_result_block_competitor_seen <= 1'b1;
+          end
+        end
+        if (!shared_result_valid) begin
+          $fatal(1, "shared result valid dropped while blocked");
+        end
+        if (!blocked_payload_valid) begin
+          blocked_payload_valid <= 1'b1;
+          blocked_cluster_q <= shared_result_cluster;
+          blocked_command_id_q <= shared_result_command_id;
+          blocked_global_max_q <= shared_result_global_max;
+          blocked_exp_sum_q <= shared_result_exp_sum;
+          blocked_slice_q <= shared_result_slice;
+          blocked_last_q <= shared_result_last;
+          blocked_value_q <= shared_result_value;
+        end else if ((shared_result_cluster != blocked_cluster_q) ||
+                     (shared_result_command_id != blocked_command_id_q) ||
+                     (shared_result_global_max != blocked_global_max_q) ||
+                     (shared_result_exp_sum != blocked_exp_sum_q) ||
+                     (shared_result_slice != blocked_slice_q) ||
+                     (shared_result_last != blocked_last_q) ||
+                     (shared_result_value != blocked_value_q)) begin
+          $fatal(1, "shared result payload changed while blocked");
+        end
+        if ((shared_result_block_cycles_left == 0) && shared_result_block_competitor_seen) begin
+          shared_result_block_active <= 1'b0;
+          shared_result_block_done <= 1'b1;
+          blocked_payload_valid <= 1'b0;
+        end
+      end
 {chr(10).join(per_cluster_seq)}
 {chr(10).join(per_cluster_log)}
       if (shared_result_valid && shared_result_ready) begin
+        if (prev_shared_result_fire) begin
+          shared_result_back_to_back_seen <= 1'b1;
+        end
         shared_result_count[shared_result_cluster] <= shared_result_count[shared_result_cluster] + 1;
         $display("INT_RESULT cluster=%0d slice=%0d last=%0d id=%0d max=%0d sum=%0d value=%080x cycle=%0d error=%0d",
                  shared_result_cluster, shared_result_slice, shared_result_last, shared_result_command_id,
@@ -820,18 +897,22 @@ module tb;
                    cluster_completed_count[(32*shared_result_cluster) +: 32]);
         end
       end
+      prev_shared_result_fire <= shared_result_valid && shared_result_ready;
       if ({' && '.join(per_cluster_done)}) begin
+{f'        if ((CLUSTERS > 1) && !shared_result_block_done) $fatal(1, "shared result stability stress did not complete");'}
+{f'        if ((CLUSTERS > 1) && !shared_result_back_to_back_seen) $fatal(1, "shared result did not sustain back-to-back handshakes");'}
 {chr(10).join(
     f'        $display("INT_COUNTER cluster={cluster} input_stall=%0d input_starve=%0d result_block=%0d req_count=%0d wide_count=%0d", input_stall_cycles[{cluster}], input_starve_cycles[{cluster}], result_block_cycles[{cluster}], req_count[{cluster}], wide_count[{cluster}]);'
     for cluster in range(cluster_count)
 )}
-        $display("INT_SHARED completion_cycle=%0d protocol_error=%0d router_inject=%0d arb=%0d router_resp_block=%0d router_req_occ=%0d router_req_max=%0d router_resp_occ=%0d router_resp_max=%0d service_req=%0d service_emit=%0d bank_conflict=%0d service_resp_block=%0d service_req_occ=%0d service_req_max=%0d service_resp_occ=%0d service_resp_max=%0d result_arb=%0d result_egress=%0d",
+        $display("INT_SHARED completion_cycle=%0d protocol_error=%0d router_inject=%0d arb=%0d router_resp_block=%0d router_req_occ=%0d router_req_max=%0d router_resp_occ=%0d router_resp_max=%0d service_req=%0d service_emit=%0d bank_conflict=%0d service_resp_block=%0d service_req_occ=%0d service_req_max=%0d service_resp_occ=%0d service_resp_max=%0d result_arb=%0d result_egress=%0d result_b2b=%0d",
                  cycle, protocol_error, router_injection_stall_cycles, router_arbitration_contention_cycles,
                  router_response_block_cycles, router_req_current_occupancy, router_req_max_occupancy,
                  router_resp_current_occupancy, router_resp_max_occupancy, service_accepted_req_count,
                  service_emitted_resp_count, service_bank_conflict_count, service_response_block_cycles,
                  service_req_current_occupancy, service_req_max_occupancy, service_resp_current_occupancy,
-                 service_resp_max_occupancy, dut.result_arbitration_contention_cycles, dut.result_egress_block_cycles);
+                 service_resp_max_occupancy, dut.result_arbitration_contention_cycles, dut.result_egress_block_cycles,
+                 shared_result_back_to_back_seen);
         #1 $finish;
       end
       if (cycle > 60000) $fatal(1, "integrated timeout");
@@ -1047,6 +1128,7 @@ def _run_integrated(case: JsonDict, values: list[list[list[list[int]]]]) -> Json
         "service_resp_max_occupancy": int(shared_match.group(17)),
         "result_arbitration_contention_cycles": int(shared_match.group(18)),
         "result_egress_block_cycles": int(shared_match.group(19)),
+        "result_back_to_back_fire_seen": bool(int(shared_match.group(20))),
     }
     return {
         "score_rows": scores,
@@ -1248,6 +1330,12 @@ def _summarize_case(case: JsonDict, baseline: JsonDict, integrated: JsonDict, pr
                 "accepted_req_count": integrated["shared"]["service_accepted_req_count"],
                 "emitted_resp_count": integrated["shared"]["service_emitted_resp_count"],
             },
+            "shared_result_egress": {
+                "architecture": integrated["manifest"]["shared_result_egress"],
+                "documented_initiation_interval": integrated["manifest"]["shared_result_egress_initiation_interval"],
+                "stall_semantics": integrated["manifest"]["shared_result_egress_stall_semantics"],
+                "back_to_back_fire_seen": integrated["shared"]["result_back_to_back_fire_seen"],
+            },
             "top_sha256": integrated["top_sha256"],
         },
         "expected_hashes": {
@@ -1405,10 +1493,16 @@ def validate_report(payload: JsonDict) -> None:
             "arbitration_contention_cycles",
             "bank_conflict_count",
             "response_block_cycles",
+            "shared_result",
             "max_occupancy",
         }
         if required_counter_keys - set(counters):
             raise ValueError(f"incomplete counters for {case.get('case_id')}")
+        egress = integrated.get("shared_result_egress")
+        if not isinstance(egress, dict):
+            raise ValueError(f"shared_result_egress missing for {case.get('case_id')}")
+        if int(egress.get("documented_initiation_interval", 0)) != 1:
+            raise ValueError(f"unexpected shared_result egress II for {case.get('case_id')}")
 
 
 def main() -> int:
