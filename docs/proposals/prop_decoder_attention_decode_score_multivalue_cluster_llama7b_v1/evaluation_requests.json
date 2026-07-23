@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_decoder_attention_decode_score_multivalue_cluster_llama7b_v1",
-  "source_commit_note": "R3 used the fresh v4 identity but failed global placement with RSZ-1008 and is explicitly non-promotable. Issue #1416 must supply its diagnostic before any retained-state-width claim. Keep the targeted-binary candidate pending until this generator/config/sweep/checker implementation is merged; it preserves normal Yosys FSM optimization and does not claim physical or width evidence here.",
+  "source_commit_note": "R3 used the fresh v4 identity but failed global placement with RSZ-1008 and is explicitly non-promotable. The explicit-onehot v1 item never reached PPA: its generator used config_explicit_onehot_fsm.json, but the pre-PPA guard hardcoded design-dir/config.json and rejected the manifest fsm_encoding as a guard_config_selection_mismatch, so that evidence is non-physical. R1 keeps the same explicit-onehot config/sweep/baseline while requiring the selected config path and the strict exact-state diagnostic before any physical claim.",
   "architecture_revision": {
     "reason": "shared_score_multivalue_cluster_replaces_repeated_score_fill_bound",
     "invalidates_item_ids": [
@@ -215,6 +215,33 @@
       "expected_result": {
         "direction": "measure_shared_score_multivalue_cluster_explicit_onehot_fsm_ppa",
         "reason": "Use a fresh config and flow parameter hash with source-level explicit one-hot FSM state vectors, exact empty/default SYNTH_ARGS, exact-state diagnostic evidence bound to the selected metrics row and synthesized netlist, and no reliance on Yosys auto-recoding. Promotion still requires a successful 8 ns row with critical_path_ns<=8 and exact post-synthesis 7/11-bit state widths."
+      },
+      "status": "failed_before_pnr",
+      "status_reason": "Non-physical pre-PPA failure: guard_config_selection_mismatch. The generator used config_explicit_onehot_fsm.json, but check_attention_decode_score_multivalue_cluster_guard.py hardcoded design-dir/config.json, rejected manifest fsm_encoding=explicit_onehot against the baseline config, and produced no physical evidence."
+    },
+    {
+      "item_id": "l1_decoder_attention_decode_score_multivalue_cluster_pnr_explicit_onehot_fsm_8ns_v1_r1",
+      "task_type": "l1_sweep",
+      "objective": "Measure an 8 ns explicit-onehot FSM candidate that keeps the v2 physical architecture and uses source-level one-hot state vectors for the cluster controller and multivalue reducer, with guarded exact post-synthesis 7/11-bit state widths and empty/default SYNTH_ARGS.",
+      "evaluation_mode": "frontier_followup",
+      "abstraction_layer": "decoder_attention_decode_score_multivalue_cluster",
+      "comparison_role": "shared_score_multivalue_cluster_explicit_onehot_fsm_pnr",
+      "config_paths": [
+        "runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/config_explicit_onehot_fsm.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/decode_score_multivalue_cluster_v1/sweeps/nangate45_decode_score_multivalue_cluster_8ns_explicit_onehot_fsm_v1.json",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "paired_baseline_item_id": "l1_decoder_attention_decode_score_multivalue_cluster_pnr_8ns_v2",
+      "prior_item_ids": [
+        "l1_decoder_attention_decode_score_multivalue_cluster_pnr_explicit_onehot_fsm_8ns_v1"
+      ],
+      "expected_result": {
+        "direction": "measure_shared_score_multivalue_cluster_explicit_onehot_fsm_ppa",
+        "reason": "Retry the same explicit-onehot config/sweep/baseline after the guard config-selection fix. Promotion still requires the selected config path to match the generated design, the strict explicit_onehot exact-state diagnostic bound to the measured row and synthesized netlist, a successful 8 ns row with critical_path_ns<=8, and exact post-synthesis 7/11-bit state widths."
       },
       "status": "pending_implementation_merge"
     }

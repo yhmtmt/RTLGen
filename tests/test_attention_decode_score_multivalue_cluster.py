@@ -29,6 +29,23 @@ def _config(*, scale_lanes: int = 1, fsm_encoding: str | None = None) -> dict:
     return config
 
 
+def _run_guard(design_dir: Path, *, config_path: Path | None = None) -> subprocess.CompletedProcess[str]:
+    command = [
+        sys.executable,
+        "npu/eval/check_attention_decode_score_multivalue_cluster_guard.py",
+        "--design-dir",
+        str(design_dir),
+    ]
+    if config_path is not None:
+        command.extend(["--config", str(config_path)])
+    return subprocess.run(
+        command,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+
 def test_multivalue_cluster_manifest_closes_full_head_boundary(tmp_path: Path) -> None:
     generate(_config(), tmp_path)
     manifest = json.loads(
@@ -129,17 +146,41 @@ def test_multivalue_cluster_guard_accepts_generated_design(tmp_path: Path) -> No
     config = _config()
     (design_dir / "config.json").write_text(json.dumps(config), encoding="utf-8")
     generate(config, design_dir / "verilog")
-    subprocess.run(
-        [
-            sys.executable,
-            "npu/eval/check_attention_decode_score_multivalue_cluster_guard.py",
-            "--design-dir",
-            str(design_dir),
-        ],
-        check=True,
-        capture_output=True,
-        text=True,
+    proc = _run_guard(design_dir)
+    assert proc.returncode == 0, proc.stderr
+
+
+def test_multivalue_cluster_guard_accepts_generated_design_with_selected_explicit_onehot_config(
+    tmp_path: Path,
+) -> None:
+    design_dir = tmp_path / "design"
+    design_dir.mkdir()
+    baseline_config = _config()
+    explicit_config = _config(fsm_encoding="explicit_onehot")
+    (design_dir / "config.json").write_text(json.dumps(baseline_config), encoding="utf-8")
+    explicit_config_path = design_dir / "config_explicit_onehot_fsm.json"
+    explicit_config_path.write_text(json.dumps(explicit_config), encoding="utf-8")
+    generate(explicit_config, design_dir / "verilog")
+
+    proc = _run_guard(design_dir, config_path=explicit_config_path)
+    assert proc.returncode == 0, proc.stderr
+
+
+def test_multivalue_cluster_guard_rejects_generated_design_when_default_config_mismatches_selected_rtl(
+    tmp_path: Path,
+) -> None:
+    design_dir = tmp_path / "design"
+    design_dir.mkdir()
+    (design_dir / "config.json").write_text(json.dumps(_config()), encoding="utf-8")
+    explicit_config = _config(fsm_encoding="explicit_onehot")
+    (design_dir / "config_explicit_onehot_fsm.json").write_text(
+        json.dumps(explicit_config), encoding="utf-8"
     )
+    generate(explicit_config, design_dir / "verilog")
+
+    proc = _run_guard(design_dir)
+    assert proc.returncode != 0
+    assert "does not match generated config" in proc.stderr
 
 
 @pytest.mark.parametrize("scale_lanes", [1, 8])
