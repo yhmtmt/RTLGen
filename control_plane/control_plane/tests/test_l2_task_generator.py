@@ -19,6 +19,7 @@ from control_plane.services.l2_task_generator import (
     Layer2CampaignGenerateRequest,
     Layer2TaskGenerationError,
     _cluster_activity_power_item_for_consumer,
+    _multivalue_integrated_service_item_for_consumer,
     generate_l2_campaign_task,
 )
 
@@ -8352,6 +8353,54 @@ def test_cluster_activity_power_item_for_consumer_selects_v16_for_cluster_fronti
     )
 
 
+def test_multivalue_integrated_service_item_for_consumer_prefers_latest_retry() -> None:
+    assert _multivalue_integrated_service_item_for_consumer(depends_on_item_ids=None) == (
+        "l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1_r1"
+    )
+    assert _multivalue_integrated_service_item_for_consumer(
+        depends_on_item_ids=[
+            "l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1",
+            "l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1_r2",
+            "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1",
+        ]
+    ) == "l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1_r2"
+
+
+def test_multivalue_cluster_frontier_request_manifests_remain_dependency_gated() -> None:
+    repo_root = Path(__file__).resolve().parents[3]
+    proposal_dir = (
+        repo_root
+        / "docs/proposals/prop_decoder_attention_decode_score_multivalue_cluster_frontier_llama7b_v1"
+    )
+    expected_depends = {
+        "l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2",
+        "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v16",
+        "l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1_r1",
+    }
+
+    for manifest_name, items_key in (
+        ("proposal.json", "required_evaluations"),
+        ("evaluation_requests.json", "requested_items"),
+    ):
+        manifest = json.loads((proposal_dir / manifest_name).read_text(encoding="utf-8"))
+        assert "Replace with the merge commit" in manifest["source_commit_note"] if manifest_name == "evaluation_requests.json" else True
+        if manifest_name == "evaluation_requests.json":
+            note = manifest["source_commit_note"]
+            assert "already-merged/materialized" not in note
+            assert "READY but not yet materialized" in note
+            assert "activity-power v16 remains pending" in note
+        items = {item["item_id"]: item for item in manifest[items_key]}
+        revision = items["l2_decoder_attention_decode_score_multivalue_cluster_frontier_llama7b_v1_r1"]
+        assert set(revision["depends_on_item_ids"]) == expected_depends
+        assert revision["requires_materialized_refs"] is True
+        assert revision["status"] == "pending_implementation_merge"
+        assert "not ready for normal dispatch" in revision["notes"]
+        assert "dependency-gated" in revision["notes"]
+        assert "READY but not yet materialized" in revision["notes"]
+        assert "July 24, 2026" in revision["notes"]
+        assert "merged/materialized" in revision["expected_result"]["reason"]
+
+
 def test_gqa_folded_activity_request_manifests_require_cluster_activity_power_v16() -> None:
     repo_root = Path(__file__).resolve().parents[3]
     proposal_dir = (
@@ -8684,9 +8733,18 @@ def test_generate_l2_campaign_task_cluster_frontier_uses_cluster_activity_v2_dep
                 in run
             )
             assert (
+                "--integrated-service-json runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_decode_score_multivalue_integrated_service__"
+                "l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1_r1.json"
+                in run
+            )
+            assert (
                 decoder_inputs["decode_score_multivalue_cluster_frontier_activity_power"].endswith(
                     "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v2.json"
                 )
+            )
+            assert decoder_inputs["decode_score_multivalue_cluster_frontier_integrated_service"].endswith(
+                "l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1_r1.json"
             )
             assert (
                 "l2_decoder_attention_decode_score_multivalue_cluster_frontier_llama7b_v1.json"
@@ -8781,7 +8839,7 @@ def test_generate_l2_campaign_task_adds_decode_score_multivalue_cluster_frontier
                 Layer2CampaignGenerateRequest(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
-                    item_id="l2_decoder_attention_decode_score_multivalue_cluster_frontier_llama7b_v1",
+                    item_id="l2_decoder_attention_decode_score_multivalue_cluster_frontier_llama7b_v1_r1",
                     requested_by="@tester",
                     source_commit=source_commit,
                     abstraction_layer="decoder_attention_decode_score_multivalue_cluster_frontier",
@@ -8812,7 +8870,14 @@ def test_generate_l2_campaign_task_adds_decode_score_multivalue_cluster_frontier
                 "--activity-power-json "
                 "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
                 "decoder_attention_decode_score_multivalue_cluster_activity_power__"
-                "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1.json"
+                "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v16.json"
+                in run
+            )
+            assert (
+                "--integrated-service-json "
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_decode_score_multivalue_integrated_service__"
+                "l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1_r1.json"
                 in run
             )
             assert "--cluster-counts 1,2,4,8,16,32" in run
@@ -8823,29 +8888,34 @@ def test_generate_l2_campaign_task_adds_decode_score_multivalue_cluster_frontier
             )
             assert (
                 decoder_inputs["decode_score_multivalue_cluster_frontier_activity_power"].endswith(
-                    "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1.json"
+                    "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v16.json"
+                )
+            )
+            assert (
+                decoder_inputs["decode_score_multivalue_cluster_frontier_integrated_service"].endswith(
+                    "l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1_r1.json"
                 )
             )
             assert (
                 decoder_inputs["decode_score_multivalue_cluster_frontier_cluster_counts"]
                 == "1,2,4,8,16,32"
             )
-            assert "exact full-head fill/replay/divider cycles" in decoder_inputs[
+            assert "deterministic integrated-service c1/c2/c4/c8/c16/c32" in decoder_inputs[
                 "decode_score_multivalue_cluster_frontier_scope"
             ]
-            assert "do not claim total-token energy yet" in decoder_inputs[
+            assert "do not claim total-token energy" in decoder_inputs[
                 "decode_score_multivalue_cluster_frontier_scope"
             ]
             assert (
                 decoder_inputs["decode_score_multivalue_cluster_frontier_out"]
                 == "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
                 "decoder_attention_decode_score_multivalue_cluster_frontier__"
-                "l2_decoder_attention_decode_score_multivalue_cluster_frontier_llama7b_v1.json"
+                "l2_decoder_attention_decode_score_multivalue_cluster_frontier_llama7b_v1_r1.json"
             )
             assert any(
                 output.endswith(
                     "decoder_attention_decode_score_multivalue_cluster_frontier__"
-                    "l2_decoder_attention_decode_score_multivalue_cluster_frontier_llama7b_v1.md"
+                    "l2_decoder_attention_decode_score_multivalue_cluster_frontier_llama7b_v1_r1.md"
                 )
                 for output in work_item.task_request.request_payload["task"]["expected_outputs"]
             )

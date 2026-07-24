@@ -11,7 +11,61 @@ def _write(path: Path, payload: dict) -> Path:
     return path
 
 
-def _inputs(tmp_path: Path) -> tuple[Path, Path]:
+def _service_report(tmp_path: Path) -> Path:
+    cases = []
+    for cluster_count, ratio in (
+        (1, 1.25),
+        (2, 1.375),
+        (4, 1.5),
+        (8, 1.625),
+        (16, 1.75),
+        (32, 2.0),
+    ):
+        case_id = f"c{cluster_count}_p128_b4_rr"
+        baseline_cycle = 80
+        integrated_cycle = int(baseline_cycle * ratio)
+        cases.append(
+            {
+                "case_id": case_id,
+                "decision": "pass",
+                "config": {
+                    "cluster_count": cluster_count,
+                    "packet_w": 128,
+                    "banks": 4,
+                    "req_queue_depth": 4,
+                    "resp_queue_depth": 4,
+                    "bank_queue_depth": 4,
+                    "read_latency": 2,
+                    "arb_mode": "round_robin",
+                    "locality_burst_max": 2,
+                },
+                "baseline_no_stall": {"completion_cycle": baseline_cycle},
+                "integrated_service": {
+                    "completion_cycle": integrated_cycle,
+                    "exact_match": True,
+                    "no_protocol_errors": True,
+                    "no_drop_duplicate_deadlock_timeout": True,
+                    "cycle_bound_ok": True,
+                },
+                "gates": {
+                    "hash_gate_ok": True,
+                    "protocol_gate_ok": True,
+                    "count_gate_ok": True,
+                },
+            }
+        )
+    return _write(
+        tmp_path / "integrated_service.json",
+        {
+            "model": "llm_decoder_attention_decode_score_multivalue_integrated_service_probe_v1",
+            "decision": "pass",
+            "diagnosis": {"decision": "multivalue_integrated_service_probe_passed"},
+            "cases": cases,
+        },
+    )
+
+
+def _inputs(tmp_path: Path) -> tuple[Path, Path, Path]:
     source = _write(
         tmp_path / "source.json",
         {
@@ -89,53 +143,92 @@ def _inputs(tmp_path: Path) -> tuple[Path, Path]:
             },
         },
     )
-    return prior, activity
+    service = _service_report(tmp_path)
+    return prior, activity, service
 
 
 def test_recost_uses_full_head_commands_activity_energy_and_linked_schedule(tmp_path: Path) -> None:
-    prior, activity = _inputs(tmp_path)
+    prior, activity, service = _inputs(tmp_path)
     report = build_report(
-        prior_frontier_json=prior, activity_power_json=activity, cluster_counts=[1, 2, 4, 8, 16, 32]
+        prior_frontier_json=prior,
+        activity_power_json=activity,
+        integrated_service_json=service,
+        cluster_counts=[1, 2, 4, 8, 16, 32],
     )
 
     rows = {row["cluster_count"]: row for row in report["rows"]}
     assert report["inputs"]["source_schedule_json"].endswith("source.json")
+    assert report["inputs"]["integrated_service_json"].endswith("integrated_service.json")
     assert report["schedule_contract"]["full_head_commands_per_layer"] == 32
-    assert report["schedule_contract"]["full_head_command_cycles"] == 300
-    assert report["schedule_contract"]["full_head_phase_cycles"] == {"fill": 200, "replay": 100}
+    assert report["schedule_contract"]["full_head_command_cycles_no_stall_baseline"] == 300
+    assert report["schedule_contract"]["full_head_phase_cycles_no_stall_baseline"] == {
+        "fill": 200,
+        "replay": 100,
+    }
+    assert report["service_cycle_calibration"]["probe_contract"]["microkernel_context_tokens"] == 128
+    assert report["service_cycle_calibration"]["probe_contract"]["microkernel_value_dim"] == 128
     assert rows[1]["cluster_waves_per_layer"] == 32
     assert rows[32]["cluster_waves_per_layer"] == 1
-    assert rows[32]["attention_cycles"] == 300
+    assert rows[32]["service_completion_ratio"] == pytest.approx(2.0)
+    assert rows[32]["service_no_stall_full_context_cycles_per_wave"] == 300
+    assert rows[32]["service_calibrated_full_context_cycles_per_wave"] == 600
+    assert rows[32]["attention_cycles"] == 600
     assert rows[32]["clock_ns"] == 8.0
     assert rows[32]["dense_qkv_tile_count"] == 640
     assert rows[1]["attention_cluster_dynamic_energy_mj_per_token"] == pytest.approx(
         rows[32]["attention_cluster_dynamic_energy_mj_per_token"]
     )
-    assert rows[1]["attention_cluster_service_window_leakage_energy_mj_per_token"] == pytest.approx(
+    assert rows[32]["energy_lower_bound_component_estimate"] is True
+    assert (
         rows[32]["attention_cluster_service_window_leakage_energy_mj_per_token"]
+        > rows[1]["attention_cluster_service_window_leakage_energy_mj_per_token"]
     )
     assert "attention_cluster_leakage_energy_mj_per_token" not in rows[32]
-    assert "service_windows_only" in rows[32]["energy_status"]
+    assert "lower_bound_component_estimate" in rows[32]["energy_status"]
+    assert any(
+        "service completion ratio calibrates latency and service-window leakage only" in item
+        for item in report["service_cycle_calibration"]["limitations"]
+    )
+    assert any(
+        "lower-bound component estimate" in item
+        for item in report["service_cycle_calibration"]["limitations"]
+    )
     assert report["precision"]["decision"] == "decode_score_multivalue_cluster_equivalence_pass"
     assert report["precision"]["final_tensor_hash"] == "final"
     assert report["promotion_status"].endswith("full_architecture_promotion_blocked")
+    assert "lower-bound component estimate" in " ".join(
+        report["remaining_abstractions"]
+    )
+    assert "service-fabric PPA/energy" in " ".join(
+        report["remaining_abstractions"]
+    )
 
 
 def test_recost_rejects_unpromoted_activity_and_unsupported_cluster_count(tmp_path: Path) -> None:
-    prior, activity = _inputs(tmp_path)
+    prior, activity, service = _inputs(tmp_path)
     payload = json.loads(activity.read_text(encoding="utf-8"))
     payload["promotion_gate_pass"] = False
     activity.write_text(json.dumps(payload), encoding="utf-8")
     with pytest.raises(ValueError, match="promotion gate"):
-        build_report(prior_frontier_json=prior, activity_power_json=activity, cluster_counts=[1])
+        build_report(
+            prior_frontier_json=prior,
+            activity_power_json=activity,
+            integrated_service_json=service,
+            cluster_counts=[1],
+        )
 
-    _, activity = _inputs(tmp_path)
+    _, activity, service = _inputs(tmp_path)
     with pytest.raises(ValueError, match="cluster count"):
-        build_report(prior_frontier_json=prior, activity_power_json=activity, cluster_counts=[64])
+        build_report(
+            prior_frontier_json=prior,
+            activity_power_json=activity,
+            integrated_service_json=service,
+            cluster_counts=[64],
+        )
 
 
 def test_recost_reserves_retained_noncompute_logic_from_compute_budget(tmp_path: Path) -> None:
-    prior, activity = _inputs(tmp_path)
+    prior, activity, service = _inputs(tmp_path)
     prior_payload = json.loads(prior.read_text(encoding="utf-8"))
     source = Path(prior_payload["inputs"]["prior_frontier_json"])
     source_payload = json.loads(source.read_text(encoding="utf-8"))
@@ -153,6 +246,7 @@ def test_recost_reserves_retained_noncompute_logic_from_compute_budget(tmp_path:
     report = build_report(
         prior_frontier_json=prior,
         activity_power_json=activity,
+        integrated_service_json=service,
         cluster_counts=[1],
     )
 
@@ -189,7 +283,7 @@ def test_recost_rejects_invalid_activity_promotion_contract(
     bad_value: object,
     message: str,
 ) -> None:
-    prior, activity = _inputs(tmp_path)
+    prior, activity, service = _inputs(tmp_path)
     payload = json.loads(activity.read_text(encoding="utf-8"))
     target = payload
     for field in field_path[:-1]:
@@ -201,12 +295,13 @@ def test_recost_rejects_invalid_activity_promotion_contract(
         build_report(
             prior_frontier_json=prior,
             activity_power_json=activity,
+            integrated_service_json=service,
             cluster_counts=[1],
         )
 
 
 def test_recost_rejects_schedule_clock_slower_than_activity_clock(tmp_path: Path) -> None:
-    prior, activity = _inputs(tmp_path)
+    prior, activity, service = _inputs(tmp_path)
     prior_payload = json.loads(prior.read_text(encoding="utf-8"))
     source = Path(prior_payload["inputs"]["prior_frontier_json"])
     source_payload = json.loads(source.read_text(encoding="utf-8"))
@@ -217,6 +312,7 @@ def test_recost_rejects_schedule_clock_slower_than_activity_clock(tmp_path: Path
         build_report(
             prior_frontier_json=prior,
             activity_power_json=activity,
+            integrated_service_json=service,
             cluster_counts=[1],
         )
 
@@ -235,7 +331,7 @@ def test_recost_rejects_nonpositive_or_fractional_activity_cycles(
     field_path: tuple[object, ...],
     bad_value: object,
 ) -> None:
-    prior, activity = _inputs(tmp_path)
+    prior, activity, service = _inputs(tmp_path)
     payload = json.loads(activity.read_text(encoding="utf-8"))
     target = payload
     for field in field_path[:-1]:
@@ -247,15 +343,89 @@ def test_recost_rejects_nonpositive_or_fractional_activity_cycles(
         build_report(
             prior_frontier_json=prior,
             activity_power_json=activity,
+            integrated_service_json=service,
             cluster_counts=[1],
         )
 
 
 def test_recost_rejects_nondivisor_cluster_count(tmp_path: Path) -> None:
-    prior, activity = _inputs(tmp_path)
+    prior, activity, service = _inputs(tmp_path)
     with pytest.raises(ValueError, match="does not divide 32 heads"):
         build_report(
             prior_frontier_json=prior,
             activity_power_json=activity,
+            integrated_service_json=service,
             cluster_counts=[3],
         )
+
+
+@pytest.mark.parametrize(
+    ("mutator", "message"),
+    [
+        (lambda payload: payload.__setitem__("model", "wrong-model"), "unexpected model"),
+        (lambda payload: payload.__setitem__("decision", "fail"), "unexpected decision"),
+        (
+            lambda payload: payload.__setitem__("diagnosis", {"decision": "wrong"}),
+            "unexpected diagnosis",
+        ),
+        (
+            lambda payload: payload["cases"].pop(),
+            "must contain exactly one c32_p128_b4_rr case",
+        ),
+        (
+            lambda payload: payload["cases"][0]["config"].__setitem__("packet_w", 256),
+            "deterministic packet_w=128",
+        ),
+        (
+            lambda payload: payload["cases"][0]["gates"].__setitem__("count_gate_ok", False),
+            "did not keep all integrated-service gates green",
+        ),
+        (
+            lambda payload: payload["cases"][0]["integrated_service"].__setitem__("exact_match", False),
+            "lacks exact integrated-service hash equivalence",
+        ),
+        (
+            lambda payload: payload["cases"][0]["integrated_service"].__setitem__("completion_cycle", 40),
+            "fell below the no-stall baseline",
+        ),
+    ],
+)
+def test_recost_rejects_invalid_integrated_service_report(
+    tmp_path: Path,
+    mutator,
+    message: str,
+) -> None:
+    prior, activity, service = _inputs(tmp_path)
+    payload = json.loads(service.read_text(encoding="utf-8"))
+    mutator(payload)
+    service.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(ValueError, match=message):
+        build_report(
+            prior_frontier_json=prior,
+            activity_power_json=activity,
+            integrated_service_json=service,
+            cluster_counts=[1, 2, 4, 8, 16, 32],
+        )
+
+
+def test_recost_does_not_substitute_microkernel_completion_cycles_for_full_context_cycles(
+    tmp_path: Path,
+) -> None:
+    prior, activity, service = _inputs(tmp_path)
+    report = build_report(
+        prior_frontier_json=prior,
+        activity_power_json=activity,
+        integrated_service_json=service,
+        cluster_counts=[32],
+    )
+
+    row = report["rows"][0]
+    assert row["service_calibration_microkernel_no_stall_completion_cycle"] == 80
+    assert row["service_calibration_microkernel_integrated_completion_cycle"] == 160
+    assert row["service_calibrated_full_context_cycles_per_wave"] == 600
+    assert row["service_calibrated_full_context_cycles_per_wave"] != row[
+        "service_calibration_microkernel_integrated_completion_cycle"
+    ]
+    assert row["attention_cycles"] == 600
+    assert row["attention_cycles"] > row["service_no_stall_full_context_cycles_per_wave"]

@@ -48,6 +48,12 @@ _CLUSTER_ACTIVITY_POWER_V16_EXACT_STATE_DIAGNOSTIC = (
     "explicit_onehot_fsm_diagnostic.json"
 )
 _CLUSTER_ACTIVITY_POWER_V16_MIN_SEQUENTIAL_REGISTER_ACTIVITY_COVERAGE = 1.0
+_MULTIVALUE_INTEGRATED_SERVICE_BASE_ITEM = (
+    "l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1"
+)
+_MULTIVALUE_INTEGRATED_SERVICE_DEFAULT_ITEM = (
+    "l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1_r1"
+)
 
 
 @dataclass(frozen=True)
@@ -150,6 +156,27 @@ def _cluster_activity_power_item_for_consumer(
 def _gqa_folded_activity_lanes(item_id: str) -> int | None:
     match = _GQA_FOLDED_ACTIVITY_LANES_RE.search(_retry_base(item_id))
     return int(match.group(1)) if match else None
+
+
+def _multivalue_integrated_service_item_for_consumer(
+    *, depends_on_item_ids: list[str] | None
+) -> str:
+    prefix = _MULTIVALUE_INTEGRATED_SERVICE_BASE_ITEM
+    candidate_item_ids = [
+        str(dep).strip()
+        for dep in (depends_on_item_ids or [])
+        if str(dep).strip() == prefix or str(dep).strip().startswith(f"{prefix}_r")
+    ]
+    if not candidate_item_ids:
+        return _MULTIVALUE_INTEGRATED_SERVICE_DEFAULT_ITEM
+
+    def _rank(candidate: str) -> int:
+        match = _RETRY_SUFFIX_RE.search(candidate)
+        if not match:
+            return 0
+        return int(match.group(0)[2:])
+
+    return max(candidate_item_ids, key=_rank)
 
 
 def _proposal_dir(repo_root: Path, proposal_path: str | None) -> Path | None:
@@ -7181,13 +7208,30 @@ def _decoder_attention_decode_score_multivalue_cluster_frontier_evidence(
         f"{base}/decoder_attention_decode_score_local_cluster_frontier__"
         "l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2.json"
     )
-    cluster_activity_power_item = _cluster_activity_power_item_for_consumer(
-        item_id=item_id,
-        depends_on_item_ids=depends_on_item_ids,
-    )
+    explicit_cluster_activity = [
+        str(dep).strip()
+        for dep in (depends_on_item_ids or [])
+        if str(dep).strip().startswith(
+            "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_"
+        )
+    ]
+    if explicit_cluster_activity:
+        cluster_activity_power_item = _cluster_activity_power_item_for_consumer(
+            item_id=item_id,
+            depends_on_item_ids=depends_on_item_ids,
+        )
+    else:
+        cluster_activity_power_item = "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v16"
     activity_power = (
         f"{base}/decoder_attention_decode_score_multivalue_cluster_activity_power__"
         f"{cluster_activity_power_item}.json"
+    )
+    integrated_service_item = _multivalue_integrated_service_item_for_consumer(
+        depends_on_item_ids=depends_on_item_ids
+    )
+    integrated_service = (
+        f"{base}/decoder_attention_decode_score_multivalue_integrated_service__"
+        f"{integrated_service_item}.json"
     )
     cluster_counts = "1,2,4,8,16,32"
     out = f"{base}/decoder_attention_decode_score_multivalue_cluster_frontier__{item_id}.json"
@@ -7196,16 +7240,17 @@ def _decoder_attention_decode_score_multivalue_cluster_frontier_evidence(
         "inputs": {
             "decode_score_multivalue_cluster_frontier_prior_frontier": prior,
             "decode_score_multivalue_cluster_frontier_activity_power": activity_power,
+            "decode_score_multivalue_cluster_frontier_integrated_service": integrated_service,
             "decode_score_multivalue_cluster_frontier_cluster_counts": cluster_counts,
             "decode_score_multivalue_cluster_frontier_out": out,
             "decode_score_multivalue_cluster_frontier_report": report,
             "decode_score_multivalue_cluster_frontier_scope": (
                 "Recost the corrected local-cluster frontier using the measured shared-score multivalue "
-                "cluster active-energy audit, exact full-head fill/replay/divider cycles, and cluster-count "
-                "tradeoffs from 1 through 32 while preserving the unchanged precision contract from "
-                "equivalence. Keep this evidence-only, do not claim total-token energy yet, and leave "
-                "no-stall scheduling, value-memory composition, NoC composition, and HBM service as explicit "
-                "remaining abstractions."
+                "cluster active-energy audit plus deterministic integrated-service c1/c2/c4/c8/c16/c32 "
+                "completion ratios over the fixed p128/b4/q4/rl2 round-robin policy. Scale only the "
+                "activity-backed full-context per-wave cluster service cycles, preserve the unchanged "
+                "precision contract from equivalence, do not claim total-token energy, and keep HBM, "
+                "NoC composition, and service-fabric PPA/energy as explicit remaining abstractions."
             ),
         },
         "commands": [
@@ -7215,6 +7260,7 @@ def _decoder_attention_decode_score_multivalue_cluster_frontier_evidence(
                     "python3 -m npu.eval.audit_attention_decode_score_multivalue_cluster_frontier "
                     f"--prior-frontier-json {prior} "
                     f"--activity-power-json {activity_power} "
+                    f"--integrated-service-json {integrated_service} "
                     f"--cluster-counts {cluster_counts} "
                     f"--out {out} --out-md {report}"
                 ),
