@@ -241,9 +241,10 @@
       ],
       "expected_result": {
         "direction": "measure_shared_score_multivalue_cluster_explicit_onehot_fsm_ppa",
-        "reason": "Retry the same explicit-onehot config/sweep/baseline after the guard config-selection fix. Promotion still requires the selected config path to match the generated design, the strict explicit_onehot exact-state diagnostic bound to the measured row and synthesized netlist, a successful 8 ns row with critical_path_ns<=8, and exact post-synthesis 7/11-bit state widths."
+        "reason": "R1 retried the same explicit-onehot config/sweep/baseline after the guard config-selection fix and reached successful PNR, but the post-PNR strict explicit_onehot checker still failed. Because explicit_onehot_fsm_diagnostic.json was not transported from that run, the exact checker failure cause remains unavailable."
       },
-      "status": "pending_implementation_merge"
+      "status": "failed_non_promotable",
+      "status_reason": "Successful PNR evidence exists for r1, but the strict post-synthesis checker failed and the diagnostic artifact was not transported, so the exact cause is not confirmed. The row is not promoted. A checker-only rescue remains conditional on preserving the evaluator's exact 1_synth.v and materializing the already DB-transported metrics artifact without rerunning OpenROAD; no dispatchable follow-up item is queued until that path exists."
     }
   ],
   "source_commit": "b968b50997ff980dd0a367ff0fe7c98d4f89b7fb"

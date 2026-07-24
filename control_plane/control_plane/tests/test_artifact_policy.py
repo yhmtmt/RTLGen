@@ -13,6 +13,22 @@ def test_transportable_expected_output_rejects_campaign_artifacts_dir() -> None:
     )
 
 
+def test_transportable_expected_output_allows_design_local_fsm_diagnostic_and_timing_report() -> None:
+    base = "runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv"
+
+    assert is_transportable_expected_output(f"{base}/explicit_onehot_fsm_diagnostic.json")
+    assert is_transportable_expected_output(f"{base}/trials/trial_001/explicit_onehot_fsm_diagnostic.json")
+    assert is_transportable_expected_output(f"{base}/timing_debug_report.md")
+
+
+def test_transportable_expected_output_rejects_design_local_source_rtl_and_manifests() -> None:
+    base = "runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv"
+
+    assert not is_transportable_expected_output(f"{base}/1_synth.v")
+    assert not is_transportable_expected_output(f"{base}/generated_sv2v.v")
+    assert not is_transportable_expected_output(f"{base}/manifest.json")
+
+
 def test_transportable_expected_output_allows_compact_attention_kv_dataset() -> None:
     assert is_transportable_expected_output(
         "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"

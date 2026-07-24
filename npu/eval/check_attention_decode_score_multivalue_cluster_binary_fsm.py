@@ -104,7 +104,7 @@ _DECL_ITEM_RE = re.compile(
 )
 _ABSOLUTE_PATH_RE = re.compile(r"(?<![A-Za-z0-9_.-])/(?:[^\s:]+/?)+")
 
-_SignalEvidence = dict[str, dict[str, set[int] | set[tuple[int, int]]]]
+_DeclarationEvidence = dict[str, dict[str, set[int] | set[tuple[int, int]]]]
 
 
 def _parse_params_json(value: str) -> dict[str, object]:
@@ -153,24 +153,17 @@ def _iter_declaration_items(statement: str):
         yield match
 
 
-def _empty_signal_evidence(expected_signal_indices: dict[str, set[int]]) -> _SignalEvidence:
-    return {
-        signal: {"packed": set(), "bits": set()}
-        for signal in expected_signal_indices
-    }
+def _empty_declaration_evidence() -> dict[str, set[int] | set[tuple[int, int]]]:
+    return {"packed": set(), "bits": set()}
 
 
-def _load_netlist_signal_evidence(
-    path: Path, expected_signal_indices: dict[str, set[int]]
-) -> _SignalEvidence:
-    evidence = _empty_signal_evidence(expected_signal_indices)
+def _load_netlist_signal_evidence(path: Path) -> _DeclarationEvidence:
+    evidence: _DeclarationEvidence = {}
     text = _strip_verilog_comments(path.read_text(encoding="utf-8"))
     for statement in text.split(";"):
         for match in _iter_declaration_items(statement):
             name = _normalize_verilog_identifier(match.group("name"))
-            if name not in expected_signal_indices:
-                continue
-            signal_data = evidence[name]
+            signal_data = evidence.setdefault(name, _empty_declaration_evidence())
             msb = match.group("msb")
             lsb = match.group("lsb")
             bit = match.group("bit")
@@ -184,8 +177,79 @@ def _load_netlist_signal_evidence(
     return evidence
 
 
+def _candidate_signal_names(
+    signal: str, evidence: _DeclarationEvidence
+) -> list[tuple[str, str]]:
+    if signal in evidence:
+        return [(signal, "exact")]
+    suffix = f".{signal}"
+    return [
+        (name, "qualified_suffix")
+        for name in sorted(evidence)
+        if name.endswith(suffix)
+    ]
+
+
+def _serialize_signal_candidate(
+    *,
+    candidate_name: str,
+    match_type: str,
+    signal_data: dict[str, set[int] | set[tuple[int, int]]],
+    width_valid: bool,
+    reasons: list[str],
+) -> dict[str, object]:
+    packed = cast(set[tuple[int, int]], signal_data["packed"])
+    bits = cast(set[int], signal_data["bits"])
+    return {
+        "name": candidate_name,
+        "match_type": match_type,
+        "width_valid": width_valid,
+        "reasons": reasons,
+        "observed_packed_ranges": [
+            {"msb": msb, "lsb": lsb} for msb, lsb in sorted(packed)
+        ],
+        "observed_bit_indices": sorted(bits),
+    }
+
+
+def _serialize_signal_evidence(
+    *,
+    expected_indices: set[int],
+    selected_name: str | None = None,
+    match_type: str | None = None,
+    selected_data: dict[str, set[int] | set[tuple[int, int]]] | None = None,
+    candidate_declarations: list[dict[str, object]] | None = None,
+) -> dict[str, object]:
+    packed: set[tuple[int, int]] = set()
+    bits: set[int] = set()
+    if selected_data is not None:
+        packed = cast(set[tuple[int, int]], selected_data["packed"])
+        bits = cast(set[int], selected_data["bits"])
+    return {
+        "expected_bit_indices": sorted(expected_indices),
+        "matched_declaration": selected_name,
+        "match_type": match_type,
+        "observed_packed_ranges": [
+            {"msb": msb, "lsb": lsb} for msb, lsb in sorted(packed)
+        ],
+        "observed_bit_indices": sorted(bits),
+        "candidate_declarations": list(candidate_declarations or []),
+    }
+
+
+def _empty_serialized_signal_evidence(
+    expected_signal_indices: dict[str, set[int]]
+) -> dict[str, dict[str, object]]:
+    return {
+        signal: _serialize_signal_evidence(expected_indices=indices)
+        for signal, indices in expected_signal_indices.items()
+    }
+
+
 def _load_signal_indices_or_widths(
+    *,
     signal: str,
+    candidate_name: str,
     signal_data: dict[str, set[int] | set[tuple[int, int]]],
     expected_signal_indices: dict[str, set[int]],
 ) -> set[int]:
@@ -195,10 +259,14 @@ def _load_signal_indices_or_widths(
     if not isinstance(packed, set) or not isinstance(bits, set):
         raise TypeError(f"invalid internal evidence for {signal}")
 
+    if packed and bits:
+        raise ValueError(
+            f"invalid declaration for {signal}: candidate {candidate_name} mixes packed and bit declarations"
+        )
     if packed:
         if len(packed) != 1:
             raise ValueError(
-                f"invalid declaration for {signal}: multiple packed ranges present"
+                f"invalid declaration for {signal}: candidate {candidate_name} has multiple packed ranges present"
             )
         msb, lsb = next(iter(packed))
         expected_width = len(expected_indices)
@@ -207,7 +275,7 @@ def _load_signal_indices_or_widths(
         high = max(msb, lsb)
         if observed_width != expected_width or low != 0 or high != expected_width - 1:
             raise ValueError(
-                f"invalid width for {signal}: packed range [{msb}:{lsb}] is "
+                f"invalid width for {signal}: candidate {candidate_name} packed range [{msb}:{lsb}] is "
                 f"incompatible with allowed indices {sorted(expected_indices)}"
             )
         return set(range(expected_width))
@@ -218,7 +286,7 @@ def _load_signal_indices_or_widths(
     out_of_range = set(bits) - expected_indices
     if out_of_range:
         raise ValueError(
-            f"invalid width for {signal}: bit indices include out-of-range indices {sorted(out_of_range)}"
+            f"invalid width for {signal}: candidate {candidate_name} bit indices include out-of-range indices {sorted(out_of_range)}"
         )
     return set(bits)
 
@@ -240,51 +308,114 @@ def _optional_int(value: object) -> int | str | None:
         return _portable_text(text)
 
 
-def _serialize_signal_evidence(
-    evidence: _SignalEvidence, expected_signal_indices: dict[str, set[int]]
-) -> dict[str, object]:
-    serialized: dict[str, object] = {}
-    for signal, signal_data in evidence.items():
-        packed = cast(set[tuple[int, int]], signal_data["packed"])
-        bits = cast(set[int], signal_data["bits"])
-        serialized[signal] = {
-            "expected_bit_indices": sorted(expected_signal_indices[signal]),
-            "observed_packed_ranges": [
-                {"msb": msb, "lsb": lsb} for msb, lsb in sorted(packed)
-            ],
-            "observed_bit_indices": sorted(bits),
-        }
-    return serialized
-
-
 def _inspect_netlist_widths(
     path: Path, expected_signal_indices: dict[str, set[int]]
 ) -> tuple[dict[str, object], bool, list[str]]:
-    empty = _empty_signal_evidence(expected_signal_indices)
+    empty = _empty_serialized_signal_evidence(expected_signal_indices)
     try:
-        evidence = _load_netlist_signal_evidence(path, expected_signal_indices)
+        evidence = _load_netlist_signal_evidence(path)
     except (OSError, UnicodeError) as exc:
-        return _serialize_signal_evidence(empty, expected_signal_indices), False, [
+        return empty, False, [
             f"netlist_read_failed:{type(exc).__name__}"
         ]
 
     reasons: list[str] = []
+    serialized: dict[str, object] = {}
     for signal in expected_signal_indices:
-        try:
-            observed = _load_signal_indices_or_widths(signal, evidence[signal], expected_signal_indices)
-        except ValueError as exc:
-            reasons.append(str(exc))
-            continue
-        if not observed:
+        candidates = _candidate_signal_names(signal, evidence)
+        if not candidates:
+            serialized[signal] = _serialize_signal_evidence(
+                expected_indices=expected_signal_indices[signal]
+            )
             reasons.append(f"missing declaration for {signal}")
-        elif observed != expected_signal_indices[signal]:
-            missing = sorted(expected_signal_indices[signal] - observed)
-            extra = sorted(observed - expected_signal_indices[signal])
-            if missing:
-                reasons.append(f"missing declaration for {signal}: missing indices {missing}")
-            if extra:
-                reasons.append(f"invalid width for {signal}: out-of-range indices {extra}")
-    return _serialize_signal_evidence(evidence, expected_signal_indices), not reasons, reasons
+            continue
+
+        candidate_declarations: list[dict[str, object]] = []
+        valid_candidates: list[tuple[str, str, dict[str, set[int] | set[tuple[int, int]]]]] = []
+        candidate_reasons: list[str] = []
+        for candidate_name, match_type in candidates:
+            candidate_data = evidence[candidate_name]
+            try:
+                observed = _load_signal_indices_or_widths(
+                    signal=signal,
+                    candidate_name=candidate_name,
+                    signal_data=candidate_data,
+                    expected_signal_indices=expected_signal_indices,
+                )
+            except ValueError as exc:
+                reason_list = [str(exc)]
+                candidate_reasons.extend(reason_list)
+                candidate_declarations.append(
+                    _serialize_signal_candidate(
+                        candidate_name=candidate_name,
+                        match_type=match_type,
+                        signal_data=candidate_data,
+                        width_valid=False,
+                        reasons=reason_list,
+                    )
+                )
+                continue
+
+            reason_list: list[str] = []
+            if not observed:
+                reason_list = [f"missing declaration for {signal}"]
+            elif observed != expected_signal_indices[signal]:
+                missing = sorted(expected_signal_indices[signal] - observed)
+                if missing:
+                    reason_list.append(
+                        f"missing declaration for {signal}: candidate {candidate_name} missing indices {missing}"
+                    )
+            if reason_list:
+                candidate_reasons.extend(reason_list)
+            else:
+                valid_candidates.append((candidate_name, match_type, candidate_data))
+            candidate_declarations.append(
+                _serialize_signal_candidate(
+                    candidate_name=candidate_name,
+                    match_type=match_type,
+                    signal_data=candidate_data,
+                    width_valid=not reason_list,
+                    reasons=reason_list,
+                )
+            )
+
+        if candidates[0][1] == "exact":
+            candidate_name, match_type = candidates[0]
+            candidate_data = evidence[candidate_name]
+            serialized[signal] = _serialize_signal_evidence(
+                expected_indices=expected_signal_indices[signal],
+                selected_name=candidate_name,
+                match_type=match_type,
+                selected_data=candidate_data,
+                candidate_declarations=candidate_declarations,
+            )
+            if not valid_candidates:
+                reasons.extend(candidate_reasons or [f"missing declaration for {signal}"])
+            continue
+
+        if len(valid_candidates) == 1:
+            candidate_name, match_type, candidate_data = valid_candidates[0]
+            serialized[signal] = _serialize_signal_evidence(
+                expected_indices=expected_signal_indices[signal],
+                selected_name=candidate_name,
+                match_type=match_type,
+                selected_data=candidate_data,
+                candidate_declarations=candidate_declarations,
+            )
+            continue
+
+        serialized[signal] = _serialize_signal_evidence(
+            expected_indices=expected_signal_indices[signal],
+            candidate_declarations=candidate_declarations,
+        )
+        if len(valid_candidates) > 1:
+            reasons.append(
+                f"ambiguous qualified declaration for {signal}: multiple exact-width candidates "
+                f"{sorted(name for name, _, _ in valid_candidates)}"
+            )
+        else:
+            reasons.extend(candidate_reasons or [f"missing declaration for {signal}"])
+    return serialized, not reasons, reasons
 
 
 def _sha256_file(path: Path) -> str:
@@ -406,14 +537,9 @@ def _row_diagnostic(
         flow_variant=flow_variant,
     )
     netlist_exists = netlist_path.is_file()
-    signal_evidence: dict[str, object] = {
-        signal: {
-            "expected_bit_indices": sorted(indices),
-            "observed_packed_ranges": [],
-            "observed_bit_indices": [],
-        }
-        for signal, indices in profile.expected_signal_indices.items()
-    }
+    signal_evidence: dict[str, object] = _empty_serialized_signal_evidence(
+        profile.expected_signal_indices
+    )
     width_valid = False
     promotion_reasons: list[str] = []
     netlist_sha256: str | None = None
@@ -531,14 +657,7 @@ def validate_binary_fsm_metrics(
         "expected_logical_netlist_path": None,
         "netlist_exists": False,
         "netlist_sha256": None,
-        "signals": {
-            signal: {
-                "expected_bit_indices": sorted(indices),
-                "observed_packed_ranges": [],
-                "observed_bit_indices": [],
-            }
-            for signal, indices in profile.expected_signal_indices.items()
-        },
+        "signals": _empty_serialized_signal_evidence(profile.expected_signal_indices),
         "width_valid": False,
         "promotion_valid": False,
         "promotion_reasons": [],

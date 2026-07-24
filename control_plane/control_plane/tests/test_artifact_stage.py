@@ -210,3 +210,29 @@ def test_collect_expected_output_artifacts_includes_large_attention_schedule_dat
     assert artifacts[0].metadata["transport_policy"] == "inline_text_evidence"
     assert "inline_utf8" not in artifacts[0].metadata
     assert artifacts[1].metadata["inline_utf8"] == "# endpoint schedule\n"
+
+
+def test_collect_expected_output_artifacts_includes_design_local_diagnostic_and_timing_report(
+    tmp_path: Path,
+) -> None:
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+    base = (
+        "runs/designs/npu_blocks/"
+        "attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv"
+    )
+    diagnostic_rel = f"{base}/explicit_onehot_fsm_diagnostic.json"
+    report_rel = f"{base}/timing_debug_report.md"
+    _write_json(repo_root / diagnostic_rel, {"promotion_valid": False, "promotion_reasons": ["status is flow_failed, not ok"]})
+    (repo_root / report_rel).write_text("# timing debug\n", encoding="utf-8")
+
+    artifacts = collect_expected_output_artifacts(
+        repo_root=str(repo_root),
+        expected_outputs=[diagnostic_rel, report_rel],
+    )
+
+    assert [artifact.path for artifact in artifacts] == [diagnostic_rel, report_rel]
+    assert all(artifact.kind == "expected_output" for artifact in artifacts)
+    assert all(artifact.metadata["transport_policy"] == "inline_text_evidence" for artifact in artifacts)
+    assert artifacts[0].metadata["inline_utf8"].startswith("{\n")
+    assert artifacts[1].metadata["inline_utf8"] == "# timing debug\n"
