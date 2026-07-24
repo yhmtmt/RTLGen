@@ -41,7 +41,7 @@ _CLUSTER_ACTIVITY_POWER_V16_FLOW_VARIANT = (
 )
 _CLUSTER_ACTIVITY_POWER_V16_SYNTH_ARGS = ""
 _CLUSTER_ACTIVITY_POWER_V16_PNR_ITEM = (
-    "l1_decoder_attention_decode_score_multivalue_cluster_pnr_explicit_onehot_fsm_8ns_v1"
+    "l1_decoder_attention_decode_score_multivalue_cluster_pnr_explicit_onehot_fsm_8ns_v1_r2"
 )
 _CLUSTER_ACTIVITY_POWER_V16_EXACT_STATE_DIAGNOSTIC = (
     "runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/"
