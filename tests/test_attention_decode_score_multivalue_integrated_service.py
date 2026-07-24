@@ -1,3 +1,4 @@
+import hashlib
 import json
 from pathlib import Path
 import shutil
@@ -9,7 +10,10 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
+import npu.eval.probe_attention_decode_score_multivalue_integrated_service as probe_module
 from npu.eval.probe_attention_decode_score_multivalue_integrated_service import (
+    COMPACT_REPORT_MAX_BYTES,
+    COMPACT_REPORT_MAX_LINES,
     DEFAULT_CASES,
     REPORT_EXCLUSIONS,
     _selected_scale_point,
@@ -278,6 +282,194 @@ def test_integrated_service_report_retains_linkage_and_summary() -> None:
     assert report["selected_scale_point"]["arch_id"] == "decode_score_multivalue_integrated_service"
     assert report["selected_scale_point"]["case_id"] == "linkage"
     assert "not a performance or architectural ranking" in report["selected_scale_point"]["selection_basis"]
+    assert report["report_contract"]["shape"] == "deduplicated_shared_artifact_identities_v1"
+    assert report["source_identities"]["generated_artifacts"]["shared_preload"]["entry_count"] == 48
+    case = report["cases"][0]
+    assert "generated_manifests" not in case
+    assert "preload" not in case
+    assert set(case["source_refs"]) == {
+        "shared_preload",
+        "baseline_manifest",
+        "integrated_manifest",
+        "baseline_top",
+        "integrated_top",
+    }
+
+
+def test_integrated_service_report_compact_size_gate_with_large_manifests(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def _baseline_manifest(case: dict) -> dict:
+        return {
+            "semantic_profile": "decode_m1x8_multivalue_cluster_equivalence_v1",
+            "cluster_count": int(case["cluster_count"]),
+            "result_beats_per_command": 16,
+            "debug_payload": "b" * 8192,
+        }
+
+    def _integrated_manifest(case: dict) -> dict:
+        return {
+            "semantic_profile": "decode_m1x8_shared_score_16x8d_value_iterdiv_onchip_service_v1",
+            "cluster_count": int(case["cluster_count"]),
+            "packet_w": int(case["packet_w"]),
+            "banks": int(case["banks"]),
+            "arb_mode": str(case["arb_mode"]),
+            "shared_result_egress": "single_ready_valid_round_robin_hold_reg_v2",
+            "shared_result_egress_initiation_interval": 1,
+            "shared_result_egress_stall_semantics": "stable_until_handshake",
+            "response_metadata_guard": "single_outstanding_per_cluster_v1",
+            "submodule_manifests": {
+                "multivalue_cluster": {
+                    "result_beats_per_command": 16,
+                }
+            },
+            "debug_payload": "i" * 8192,
+        }
+
+    def _fake_baseline(case: dict, expected_clusters: list[dict], values: list[list[list[list[int]]]]) -> dict:
+        del values
+        score_rows = [
+            {"cluster": cluster, "addr": addr, "row": rows}
+            for cluster, payload in enumerate(expected_clusters)
+            for addr, rows in enumerate(payload["score_rows"])
+        ]
+        results = [
+            {
+                **row,
+                "cycle": 80 + row["slice"],
+                "protocol_error": False,
+            }
+            for payload in expected_clusters
+            for row in payload["results"]
+        ]
+        cluster_count = int(case["cluster_count"])
+        done_rows = {
+            cluster: {
+                "cycle": 100 + cluster,
+                "accepted": 48,
+                "completed": 16,
+            }
+            for cluster in range(cluster_count)
+        }
+        top_sha256 = hashlib.sha256(f"baseline:{cluster_count}".encode()).hexdigest()
+        return {
+            "score_rows": score_rows,
+            "results": results,
+            "done_rows": done_rows,
+            "completion_cycle": 180 + cluster_count,
+            "protocol_error": False,
+            "manifest": _baseline_manifest(case),
+            "top_sha256": top_sha256,
+        }
+
+    def _fake_integrated(case: dict, values: list[list[list[list[int]]]]) -> dict:
+        cluster_count = int(case["cluster_count"])
+        expected_clusters = [
+            probe_module._cluster_expected(cluster, values)
+            for cluster in range(cluster_count)
+        ]
+        score_rows = [
+            {"cluster": cluster, "addr": addr, "row": rows}
+            for cluster, payload in enumerate(expected_clusters)
+            for addr, rows in enumerate(payload["score_rows"])
+        ]
+        request_rows = [
+            {
+                **row,
+                "cycle": 20 + row["tag"],
+            }
+            for payload in expected_clusters
+            for row in payload["request_records"]
+        ]
+        wide_rows = [
+            {
+                **row,
+                "cycle": 40 + row["tag"],
+                "protocol_error": False,
+            }
+            for payload in expected_clusters
+            for row in payload["response_records"]
+        ]
+        results = [
+            {
+                **row,
+                "cycle": 220 + row["slice"],
+                "protocol_error": False,
+            }
+            for payload in expected_clusters
+            for row in payload["results"]
+        ]
+        done_rows = {
+            cluster: {
+                "cycle": 240 + cluster,
+                "accepted": 48,
+                "completed": 16,
+            }
+            for cluster in range(cluster_count)
+        }
+        counter_rows = {
+            cluster: {
+                "input_stall_cycles": cluster,
+                "input_starvation_cycles": 0,
+                "result_egress_block_cycles": max(cluster_count - 1, 0),
+                "request_count": 48,
+                "wide_response_count": 48,
+            }
+            for cluster in range(cluster_count)
+        }
+        top_sha256 = hashlib.sha256(
+            f"integrated:{json.dumps(case, sort_keys=True)}".encode()
+        ).hexdigest()
+        return {
+            "score_rows": score_rows,
+            "request_rows": request_rows,
+            "wide_rows": wide_rows,
+            "results": results,
+            "done_rows": done_rows,
+            "counter_rows": counter_rows,
+            "shared": {
+                "completion_cycle": 260 + cluster_count,
+                "protocol_error": False,
+                "router_injection_stall_cycles": cluster_count,
+                "router_arbitration_contention_cycles": max(cluster_count - 1, 0),
+                "router_response_block_cycles": cluster_count // 2,
+                "router_req_current_occupancy": 0,
+                "router_req_max_occupancy": min(cluster_count, int(case["req_queue_depth"]) + 1),
+                "router_resp_current_occupancy": 0,
+                "router_resp_max_occupancy": min(cluster_count, int(case["resp_queue_depth"]) + 1),
+                "service_accepted_req_count": 48 * cluster_count,
+                "service_emitted_resp_count": 48 * cluster_count,
+                "service_bank_conflict_count": max(cluster_count - 1, 0),
+                "service_response_block_cycles": cluster_count // 2,
+                "service_req_current_occupancy": 0,
+                "service_req_max_occupancy": min(cluster_count, int(case["bank_queue_depth"]) + 1),
+                "service_resp_current_occupancy": 0,
+                "service_resp_max_occupancy": min(cluster_count, int(case["resp_queue_depth"]) + 1),
+                "result_arbitration_contention_cycles": max(cluster_count - 1, 0),
+                "result_egress_block_cycles": max(cluster_count - 1, 0),
+                "result_back_to_back_fire_seen": True,
+            },
+            "manifest": _integrated_manifest(case),
+            "top_sha256": top_sha256,
+        }
+
+    monkeypatch.setattr(probe_module, "_run_baseline", _fake_baseline)
+    monkeypatch.setattr(probe_module, "_run_integrated", _fake_integrated)
+
+    report = build_report()
+    rendered = json.dumps(report, indent=2, sort_keys=True)
+
+    assert len(rendered.encode()) <= COMPACT_REPORT_MAX_BYTES
+    assert len(rendered.splitlines()) <= COMPACT_REPORT_MAX_LINES
+    assert "preload_entries" not in report
+    assert "debug_payload" not in rendered
+    assert all("generated_manifests" not in case for case in report["cases"])
+    assert all("preload" not in case for case in report["cases"])
+    assert report["source_identities"]["generated_artifacts"]["shared_preload"]["payload_elided"] is True
+    assert all(
+        row["result_beats_per_command"] == 16
+        for row in report["source_identities"]["generated_artifacts"]["generated_manifests"]
+    )
 
 
 def test_integrated_service_selected_scale_point_is_nominal_not_worst_penalty() -> None:
@@ -362,4 +554,19 @@ def test_integrated_service_validate_report_rejects_incomplete_evidence() -> Non
     broken = json.loads(json.dumps(report))
     broken["cases"][0]["integrated_service"]["shared_result_egress"]["back_to_back_fire_seen"] = False
     with pytest.raises(ValueError, match="back-to-back evidence"):
+        validate_report(broken)
+
+    broken = json.loads(json.dumps(report))
+    broken["preload_entries"] = []
+    with pytest.raises(ValueError, match="elide preload payloads"):
+        validate_report(broken)
+
+    broken = json.loads(json.dumps(report))
+    broken["source_identities"]["generated_artifacts"]["generated_manifests"][0]["result_beats_per_command"] = 0
+    with pytest.raises(ValueError, match="finite positive result_beats_per_command"):
+        validate_report(broken)
+
+    broken = json.loads(json.dumps(report))
+    broken["debug_payload"] = "x" * COMPACT_REPORT_MAX_BYTES
+    with pytest.raises(ValueError, match="compact size gate"):
         validate_report(broken)

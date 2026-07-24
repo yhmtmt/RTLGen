@@ -14,7 +14,7 @@
       "fixed-resource scaling at cluster_count 1/2/4/8/16/32 with identical p128, banks=4, queue depths=4, read_latency=2, round_robin, locality_burst_max=2",
       "scaled-resource p256 points at c8/b8, c16/b16, and c32/b32 with queue depths=4, read_latency=2, and round_robin/locality variants",
       "one queue-depth stress case and one read-latency stress case at c32",
-      "compact repo-portable JSON/Markdown evidence that reports completion cycles, service penalty cycles, shared-result blocking/arbitration, router/service contention and occupancy, explicit exclusions, and proposal/dependency linkage",
+      "compact repo-portable JSON/Markdown evidence that reports completion cycles, service penalty cycles, shared-result blocking/arbitration, router/service contention and occupancy, explicit exclusions, proposal/dependency linkage, and a deduplicated shared-artifact size/shape gate of <=100000 pretty-printed JSON bytes and <=2500 lines",
       "label the largest nominal round-robin coverage case only as a representative selected_scale_point, not as an architectural or performance best"
     ],
     "exclude": [
@@ -57,6 +57,33 @@
       "expected_result": {
         "direction": "record_decode_score_multivalue_integrated_service_probe",
         "reason": "Retain exact Python/baseline/integrated hash, protocol, and count gates while recording completion cycles, service penalty cycles, shared-result blocking/arbitration, router/service contention, occupancy maxima, and explicit exclusions over the bounded 14-case matrix; any selected scale point is representative evidence, not an architectural or performance ranking."
+      },
+      "status": "superseded_before_merge",
+      "superseded_by_item_id": "l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1_r1",
+      "notes": "PR #1436 completed the functional 14-case probe and kept every hash/protocol/count gate green, but the committed JSON repeated generated manifests and preload payloads, expanding the artifact to 403110 bytes / 11271 lines. The evidence is not invalid; it is superseded before merge only on compactness/portability shape."
+    },
+    {
+      "item_id": "l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1_r1",
+      "task_type": "l2_campaign",
+      "objective": "Rerun the integrated shared-score multivalue decode-service RTL probe across the same bounded 14-case scale/resource matrix through cluster_count 32, preserving all functional gates while emitting only compact deduplicated service evidence.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_decode_score_multivalue_integrated_service",
+      "comparison_role": "frontier_validation",
+      "paired_baseline_item_id": "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "revision": {
+        "reason": "compact_report_shape_gate",
+        "supersedes_item_ids": [
+          "l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1"
+        ]
+      },
+      "expected_result": {
+        "direction": "record_decode_score_multivalue_integrated_service_probe",
+        "reason": "Retain exact Python/baseline/integrated hash, protocol, and count gates while recording completion cycles, service penalty cycles, shared-result blocking/arbitration, router/service contention, occupancy maxima, explicit exclusions, and a compact report shape gate that keeps deduplicated pretty-printed JSON at or below 100000 bytes and 2500 lines over the same bounded 14-case matrix; any selected scale point remains representative evidence, not an architectural or performance ranking."
       },
       "status": "pending"
     }

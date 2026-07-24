@@ -18,13 +18,13 @@ gates while exposing the service contention profile across the bounded matrix.
 - metric: exclusions
   - threshold: the evidence explicitly lists physical PPA, SRAM macro timing, HBM, and total-token energy as excluded claims
 - metric: compactness
-  - threshold: outputs remain repo-portable JSON/Markdown without full stdout or intermediate tensors
+  - threshold: outputs remain repo-portable JSON/Markdown without full stdout or intermediate tensors, use deduplicated shared artifact identities, and keep pretty-printed JSON at or below `100000` bytes / `2500` lines
 - metric: selection semantics
   - threshold: the largest nominal round-robin coverage point is reported only
     as `selected_scale_point`, with no architectural-best or performance-best claim
 
 ## Local Command
-- command: `python3 npu/eval/probe_attention_decode_score_multivalue_integrated_service.py --proposal-id prop_l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1 --proposal-path docs/proposals/prop_l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1/proposal.json --depends-on-item-id l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1 --out /tmp/decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1.json --out-md /tmp/decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1.md`
+- command: `python3 npu/eval/probe_attention_decode_score_multivalue_integrated_service.py --proposal-id prop_l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1 --proposal-path docs/proposals/prop_l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1/proposal.json --depends-on-item-id l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1 --out /tmp/decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1_r1.json --out-md /tmp/decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1_r1.md`
 
 ## Result
 - status: ready_after_proposal_merge
