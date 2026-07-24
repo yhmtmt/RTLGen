@@ -244,7 +244,34 @@
         "reason": "R1 retried the same explicit-onehot config/sweep/baseline after the guard config-selection fix and reached successful PNR, but the post-PNR strict explicit_onehot checker still failed. Because explicit_onehot_fsm_diagnostic.json was not transported from that run, the exact checker failure cause remains unavailable."
       },
       "status": "failed_non_promotable",
-      "status_reason": "Successful PNR evidence exists for r1, but the strict post-synthesis checker failed and the diagnostic artifact was not transported, so the exact cause is not confirmed. The row is not promoted. A checker-only rescue remains conditional on preserving the evaluator's exact 1_synth.v and materializing the already DB-transported metrics artifact without rerunning OpenROAD; no dispatchable follow-up item is queued until that path exists."
+      "status_reason": "Successful PNR evidence exists for r1, but the strict post-synthesis checker failed and the diagnostic artifact was not transported, so the exact cause is not confirmed. The row is not promoted."
+    },
+    {
+      "item_id": "l1_decoder_attention_decode_score_multivalue_cluster_pnr_explicit_onehot_fsm_8ns_v1_r2",
+      "task_type": "l1_sweep",
+      "objective": "Run one executable exact-sweep retry of the 8 ns explicit-onehot FSM candidate with the exact existing explicit-onehot config/sweep, merged equivalence prerequisite, and PR #1438 strict-checker plus failed-run diagnostic transport. This executes the same run_block_sweep command, may reuse an evaluator-local cached result only when the required FSM-capture cache matches exactly, and otherwise reruns full OpenROAD; it is not checker-only.",
+      "evaluation_mode": "frontier_followup",
+      "abstraction_layer": "decoder_attention_decode_score_multivalue_cluster",
+      "comparison_role": "shared_score_multivalue_cluster_explicit_onehot_fsm_pnr",
+      "config_paths": [
+        "runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/config_explicit_onehot_fsm.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/decode_score_multivalue_cluster_v1/sweeps/nangate45_decode_score_multivalue_cluster_8ns_explicit_onehot_fsm_v1.json",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "paired_baseline_item_id": "l1_decoder_attention_decode_score_multivalue_cluster_pnr_8ns_v2",
+      "prior_item_ids": [
+        "l1_decoder_attention_decode_score_multivalue_cluster_pnr_explicit_onehot_fsm_8ns_v1_r1"
+      ],
+      "expected_result": {
+        "direction": "measure_shared_score_multivalue_cluster_explicit_onehot_fsm_ppa",
+        "reason": "R2 reruns the exact explicit-onehot sweep command once on the same config/sweep/baseline with PR #1438 strict explicit_onehot checker matching and failed-run diagnostic transport, so promotion can require exact row-bound diagnostic evidence instead of inferred failure state. It may reuse an evaluator-local cached result only when the required FSM-capture cache matches exactly; otherwise it reruns full OpenROAD. This retry is not checker-only."
+      },
+      "status": "pending_proposal_merge",
+      "status_reason": "Will be queued after proposal merge as an executable exact-sweep retry, not a checker-only rescue. It will execute the exact existing explicit-onehot run_block_sweep command with merged equivalence, materialized refs, and PR #1438 strict-checker diagnostic transport; evaluator-local cache reuse is acceptable only when the required FSM-capture cache matches exactly, otherwise the sweep reruns full OpenROAD."
     }
   ],
   "source_commit": "b968b50997ff980dd0a367ff0fe7c98d4f89b7fb"

@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1",
-  "source_commit_note": "PR #1413 merged complete block_weight VCD/FSM provenance, PR #1414 merged the binary-FSM PNR point, and PR #1415 merged strict v14 row selection and 100% routed-state coverage. v3_r2 was superseded because it reused the same sweep hash. V14 now depends on `l1_decoder_attention_decode_score_multivalue_cluster_pnr_binary_fsm_8ns_v3_r3`; neither this retry implementation nor its result is claimed merged here.",
+  "source_commit_note": "PR #1413 merged complete block_weight VCD/FSM provenance, PR #1414 merged the binary-FSM PNR point, and PR #1415 merged strict v14 row selection and 100% routed-state coverage. PR #1430 merged the explicit-onehot activity-power implementation, and PR #1438 now preserves future strict-checker diagnostics while tightening row-to-diagnostic matching. The completed explicit-onehot r1 PNR row is still non-promotable because its strict diagnostic was lost, so v16 now waits on the post-proposal-merge explicit-onehot r2 exact-sweep retry rather than any checker-only recovery path.",
   "requested_items": [
     {
       "item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1",
@@ -502,12 +502,12 @@
     {
       "item_id": "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v16",
       "task_type": "l2_campaign",
-      "objective": "Measure shared-score multivalue-cluster activity-backed power only after the explicit-onehot 8ns PNR item passes, using config_explicit_onehot_fsm.json, decode_score_multivalue_cluster_v1_8ns_explicit_onehot_fsm_v1_proxy_die_2500, empty/default SYNTH_ARGS, and the materialized strict explicit_onehot explicit_onehot_fsm_diagnostic.json. Require direct routed phase VCD, 100% sequential output coverage, matched==applied, zero query/apply errors, finite positive every-phase power, and no vectorless, fallback, stale-row, or mismatched-diagnostic evidence.",
+      "objective": "Measure shared-score multivalue-cluster activity-backed power only if the explicit-onehot r2 exact-sweep retry becomes promotion-valid for strict explicit-state checking, using config_explicit_onehot_fsm.json, decode_score_multivalue_cluster_v1_8ns_explicit_onehot_fsm_v1_proxy_die_2500, empty/default SYNTH_ARGS, and the materialized strict explicit_onehot explicit_onehot_fsm_diagnostic.json bound to that exact row. Require direct routed phase VCD, 100% sequential output coverage, matched==applied, zero query/apply errors, finite positive every-phase power, and no vectorless, fallback, stale-row, or mismatched-diagnostic evidence.",
       "evaluation_mode": "frontier_detail",
       "abstraction_layer": "decoder_attention_decode_score_multivalue_cluster_activity_power",
       "comparison_role": "shared_score_multivalue_cluster_activity_power_gate",
       "depends_on_item_ids": [
-        "l1_decoder_attention_decode_score_multivalue_cluster_pnr_explicit_onehot_fsm_8ns_v1",
+        "l1_decoder_attention_decode_score_multivalue_cluster_pnr_explicit_onehot_fsm_8ns_v1_r2",
         "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1"
       ],
       "requires_merged_inputs": true,
@@ -520,10 +520,11 @@
       },
       "expected_result": {
         "direction": "record_shared_score_multivalue_cluster_activity_power_gate",
-        "reason": "v16 accepts only config_explicit_onehot_fsm.json and decode_score_multivalue_cluster_v1_8ns_explicit_onehot_fsm_v1_proxy_die_2500 with empty/default SYNTH_ARGS, requires the materialized strict explicit_onehot explicit_onehot_fsm_diagnostic.json to be promotion-valid and bound to the exact measured metrics row identity and config/netlist hashes, preserves all existing quality/equivalence/direct-VCD/macro/clock/numeric/artifact gates, enforces 1.0 sequential-output coverage plus matched==applied and zero query/apply errors, and forbids vectorless, fallback, stale-row, clamped, substituted, heuristic, mismatched-diagnostic, or otherwise relaxed evidence."
+        "reason": "v16 accepts only config_explicit_onehot_fsm.json and decode_score_multivalue_cluster_v1_8ns_explicit_onehot_fsm_v1_proxy_die_2500 with empty/default SYNTH_ARGS, requires the materialized strict explicit_onehot explicit_onehot_fsm_diagnostic.json to be promotion-valid and bound to the exact r2 measured metrics row identity plus config/netlist hashes, preserves all existing quality/equivalence/direct-VCD/macro/clock/numeric/artifact gates, enforces 1.0 sequential-output coverage plus matched==applied and zero query/apply errors, and forbids vectorless, fallback, stale-row, clamped, substituted, heuristic, mismatched-diagnostic, or otherwise relaxed evidence. R2 is an executable exact-sweep retry that runs the same run_block_sweep command and may reuse evaluator-local cache only when the required FSM-capture cache matches exactly."
       },
-      "status": "pending_implementation_merge",
-      "paired_baseline_item_id": "l1_decoder_attention_decode_score_multivalue_cluster_pnr_explicit_onehot_fsm_8ns_v1"
+      "status": "blocked_on_prerequisite",
+      "paired_baseline_item_id": "l1_decoder_attention_decode_score_multivalue_cluster_pnr_explicit_onehot_fsm_8ns_v1_r2",
+      "status_reason": "Blocked and non-dispatchable pending a promotion-valid strict explicit_onehot result from the r2 exact-sweep retry after proposal merge. Explicit-onehot r1 completed PNR, but its strict post-synthesis checker failed and the diagnostic artifact was lost, so no promotion-valid strict explicit_onehot evidence exists for the exact row/config/netlist identity. PR #1430 merged the implementation, and PR #1438 preserves future diagnostics and tightens matching. Keep fail-closed exact row/config/netlist/VCD gates; if a future explicit replacement item is needed, it must supersede v16 rather than dispatch from this state."
     }
   ],
   "source_commit": "b968b50997ff980dd0a367ff0fe7c98d4f89b7fb"

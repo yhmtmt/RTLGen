@@ -3217,7 +3217,7 @@ def test_generate_l1_sweep_task_adds_explicit_onehot_retry_profile_and_diagnosti
                     out_root="runs/designs/npu_blocks",
                     item_id=(
                         "l1_decoder_attention_decode_score_multivalue_cluster_pnr_"
-                        "explicit_onehot_fsm_8ns_v1_r1"
+                        "explicit_onehot_fsm_8ns_v1_r2"
                     ),
                     requested_by="@tester",
                     source_commit=source_commit,
@@ -3231,7 +3231,27 @@ def test_generate_l1_sweep_task_adds_explicit_onehot_retry_profile_and_diagnosti
                 for command in work_item.command_manifest
                 if command["name"] == "check_attention_decode_score_multivalue_cluster_explicit_onehot"
             ]
+            run_block_sweep = next(
+                command
+                for command in work_item.command_manifest
+                if command["name"] == "run_block_sweep"
+            )
             assert len(checker_commands) == 1
+            assert run_block_sweep["run"] == (
+                "export PATH=/oss-cad-suite/bin:$PATH && "
+                "python3 npu/synth/run_block_sweep.py "
+                "--design_dir runs/designs/npu_blocks/"
+                "attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv "
+                "--platform nangate45 "
+                "--top attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv "
+                "--sweep runs/campaigns/npu/decode_score_multivalue_cluster_v1/sweeps/"
+                "nangate45_decode_score_multivalue_cluster_8ns_explicit_onehot_fsm_v1.json "
+                "--out_root runs/designs/npu_blocks "
+                "--macro_manifest runs/designs/npu_blocks/"
+                "attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/"
+                "macro_manifest.json "
+                "--skip_existing"
+            )
             assert (
                 "--config runs/designs/npu_blocks/"
                 "attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/"
@@ -3303,7 +3323,7 @@ def test_binary_fsm_retry_profile_requires_exact_config_and_sweep() -> None:
 
     explicit_item_id = (
         "l1_decoder_attention_decode_score_multivalue_cluster_pnr_"
-        "explicit_onehot_fsm_8ns_v1_r1"
+        "explicit_onehot_fsm_8ns_v1_r2"
     )
     explicit_config = (
         "runs/designs/npu_blocks/"
