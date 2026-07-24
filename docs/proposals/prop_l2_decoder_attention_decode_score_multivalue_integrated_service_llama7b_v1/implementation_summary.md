@@ -6,6 +6,10 @@
 - Wired compact JSON/Markdown evidence outputs and result-consumer recognition.
 - Expanded the probe to the requested bounded 14-case matrix through
   `cluster_count=32`.
+- Recorded `l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1`
+  as superseded before merge: PR #1436 passed its functional gates, but its
+  committed JSON repeated generated-manifest and preload payloads. The clean
+  rerun target is `..._v1_r1`.
 
 ## Evidence Contract
 - JSON now retains:
@@ -16,6 +20,9 @@
   - router/service contention and occupancy maxima
   - explicit exclusions
   - proposal/dependency linkage
+- JSON now deduplicates shared preload/manifest/top identities at the report
+  level and enforces a pretty-printed compactness gate of `<=100000` bytes /
+  `<=2500` lines.
 - Markdown now summarizes the same evidence in a compact per-case table.
 - The largest nominal round-robin coverage point is labeled
   `selected_scale_point`; it is explicitly not an architectural or performance
@@ -24,9 +31,8 @@
 ## Local Validation
 - focused pytest coverage for:
   - probe defaults and linkage
-  - L2 task generation
-  - L2 result consumption
+  - compact report shape rejection
+  - full-matrix size regression with oversized synthetic manifests
 - passed `pytest -q tests/test_attention_decode_score_multivalue_integrated_service.py`
-- passed `PYTHONPATH=/workspaces/RTLGen-l2-score-service-v1/control_plane pytest -q control_plane/control_plane/tests/test_l2_task_generator.py -k "decode_score_multivalue_integrated_service or decode_score_multivalue_cluster_frontier"`
-- passed `PYTHONPATH=/workspaces/RTLGen-l2-score-service-v1/control_plane pytest -q control_plane/control_plane/tests/test_l2_result_consumer.py -k "decode_score_multivalue_integrated_service or hbm_command_calibrated_service"`
-- passed `python3 scripts/validate_runs.py --skip_eval_queue`
+- passed `python3 -m py_compile npu/eval/probe_attention_decode_score_multivalue_integrated_service.py`
+- passed real 14-case `build_report()` probe on Friday, July 24, 2026 UTC with compact output size `67278` bytes / `1690` lines (`403110` bytes / `11271` lines in the superseded PR #1436 artifact)

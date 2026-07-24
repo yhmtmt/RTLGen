@@ -32,6 +32,9 @@ REPORT_EXCLUSIONS = [
     "value_sram_macro_timing",
     "score_bank_macro_timing",
 ]
+COMPACT_REPORT_SHAPE = "deduplicated_shared_artifact_identities_v1"
+COMPACT_REPORT_MAX_BYTES = 100_000
+COMPACT_REPORT_MAX_LINES = 2_500
 
 DEFAULT_CASES: list[JsonDict] = [
     {
@@ -271,6 +274,87 @@ def _hash(value: object) -> str:
 
 def _sha256_file(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _pretty_json_metrics(value: object) -> tuple[int, int]:
+    rendered = json.dumps(value, indent=2, sort_keys=True)
+    return len(rendered.encode()), len(rendered.splitlines())
+
+
+def _compact_dict(payload: JsonDict) -> JsonDict:
+    return {key: value for key, value in payload.items() if value is not None}
+
+
+def _register_generated_manifest(catalog: dict[str, JsonDict], kind: str, manifest: JsonDict) -> str:
+    manifest_sha256 = _hash(manifest)
+    artifact_id = f"{kind}_manifest_{manifest_sha256[:12]}"
+    if artifact_id not in catalog:
+        result_beats = manifest.get("result_beats_per_command")
+        if result_beats is None:
+            result_beats = (
+                manifest.get("submodule_manifests", {})
+                .get("multivalue_cluster", {})
+                .get("result_beats_per_command")
+            )
+        catalog[artifact_id] = _compact_dict(
+            {
+                "artifact_id": artifact_id,
+                "artifact_kind": f"{kind}_manifest",
+                "manifest_sha256": manifest_sha256,
+                "semantic_profile": manifest.get("semantic_profile"),
+                "cluster_count": manifest.get("cluster_count"),
+                "packet_w": manifest.get("packet_w"),
+                "banks": manifest.get("banks"),
+                "arb_mode": manifest.get("arb_mode"),
+                "shared_result_egress": manifest.get("shared_result_egress"),
+                "shared_result_egress_initiation_interval": manifest.get(
+                    "shared_result_egress_initiation_interval"
+                ),
+                "shared_result_egress_stall_semantics": manifest.get("shared_result_egress_stall_semantics"),
+                "response_metadata_guard": manifest.get("response_metadata_guard"),
+                "result_beats_per_command": result_beats,
+            }
+        )
+    return artifact_id
+
+
+def _register_generated_top(
+    catalog: dict[str, JsonDict],
+    kind: str,
+    top_sha256: str,
+    case: JsonDict,
+) -> str:
+    artifact_id = f"{kind}_top_{top_sha256[:12]}"
+    if artifact_id not in catalog:
+        catalog[artifact_id] = _compact_dict(
+            {
+                "artifact_id": artifact_id,
+                "artifact_kind": f"{kind}_top",
+                "sha256": top_sha256,
+                "cluster_count": int(case["cluster_count"]),
+                "packet_w": int(case["packet_w"]) if kind == "integrated" else None,
+                "banks": int(case["banks"]) if kind == "integrated" else None,
+                "arb_mode": str(case["arb_mode"]) if kind == "integrated" else None,
+            }
+        )
+    return artifact_id
+
+
+def _record_case_source_refs(
+    case: JsonDict,
+    baseline: JsonDict,
+    integrated: JsonDict,
+    shared_preload_identity: JsonDict,
+    manifest_catalog: dict[str, JsonDict],
+    top_catalog: dict[str, JsonDict],
+) -> JsonDict:
+    return {
+        "shared_preload": str(shared_preload_identity["artifact_id"]),
+        "baseline_manifest": _register_generated_manifest(manifest_catalog, "baseline", baseline["manifest"]),
+        "integrated_manifest": _register_generated_manifest(manifest_catalog, "integrated", integrated["manifest"]),
+        "baseline_top": _register_generated_top(top_catalog, "baseline", str(baseline["top_sha256"]), case),
+        "integrated_top": _register_generated_top(top_catalog, "integrated", str(integrated["top_sha256"]), case),
+    }
 
 
 def _git_head() -> str:
@@ -1327,7 +1411,7 @@ def _canonical_wide(rows: list[JsonDict]) -> list[JsonDict]:
     ]
 
 
-def _summarize_case(case: JsonDict, baseline: JsonDict, integrated: JsonDict, preload_entries: list[JsonDict]) -> JsonDict:
+def _summarize_case(case: JsonDict, baseline: JsonDict, integrated: JsonDict, source_refs: JsonDict) -> JsonDict:
     cluster_count = int(case["cluster_count"])
     values = _shared_value_matrices()
     expected_clusters = [_cluster_expected(cluster, values) for cluster in range(cluster_count)]
@@ -1351,23 +1435,11 @@ def _summarize_case(case: JsonDict, baseline: JsonDict, integrated: JsonDict, pr
     integrated_wide = _canonical_wide(integrated["wide_rows"])
     expected_wide_rows = _canonical_wide(expected_wide)
 
-    per_cluster_done = [
-        {
-            "cluster": cluster,
-            "baseline_cycle": int(baseline["done_rows"][cluster]["cycle"]),
-            "integrated_cycle": int(integrated["done_rows"][cluster]["cycle"]),
-            "accepted_count": int(integrated["done_rows"][cluster]["accepted"]),
-            "completed_count": int(integrated["done_rows"][cluster]["completed"]),
-        }
+    done_cluster_count = sum(
+        1
         for cluster in range(cluster_count)
-    ]
-    per_cluster_counters = [
-        {
-            "cluster": cluster,
-            **integrated["counter_rows"][cluster],
-        }
-        for cluster in range(cluster_count)
-    ]
+        if cluster in baseline["done_rows"] and cluster in integrated["done_rows"]
+    )
 
     counts_ok = (
         len(baseline_results) == 16 * cluster_count
@@ -1404,12 +1476,13 @@ def _summarize_case(case: JsonDict, baseline: JsonDict, integrated: JsonDict, pr
     )
     service_penalty_cycles = integrated["shared"]["completion_cycle"] - baseline["completion_cycle"]
     cycle_bound_ok = service_penalty_cycles >= 0
-    no_drop_duplicate_deadlock_timeout = counts_ok and len(per_cluster_done) == cluster_count
+    no_drop_duplicate_deadlock_timeout = counts_ok and done_cluster_count == cluster_count
     decision = "pass" if exact_match and no_protocol_errors and cycle_bound_ok and no_drop_duplicate_deadlock_timeout else "fail"
 
     return {
         "case_id": str(case["case_id"]),
         "decision": decision,
+        "source_refs": dict(source_refs),
         "config": {
             key: case[key]
             for key in (
@@ -1429,10 +1502,6 @@ def _summarize_case(case: JsonDict, baseline: JsonDict, integrated: JsonDict, pr
             "score_hash": _hash(baseline_scores),
             "final_hash": _hash(baseline_results),
             "hash_gate_ok": baseline_hash_gate_ok,
-            "score_matches_expected": baseline_scores == expected_score_rows,
-            "final_matches_expected": baseline_results == expected_result_rows,
-            "cluster_done": per_cluster_done,
-            "top_sha256": baseline["top_sha256"],
         },
         "integrated_service": {
             "completion_cycle": integrated["shared"]["completion_cycle"],
@@ -1446,9 +1515,7 @@ def _summarize_case(case: JsonDict, baseline: JsonDict, integrated: JsonDict, pr
             "no_protocol_errors": no_protocol_errors,
             "no_drop_duplicate_deadlock_timeout": no_drop_duplicate_deadlock_timeout,
             "cycle_bound_ok": cycle_bound_ok,
-            "cluster_done": per_cluster_done,
             "counters": {
-                "cluster_input": per_cluster_counters,
                 "request_injection_stall_cycles": integrated["shared"]["router_injection_stall_cycles"],
                 "arbitration_contention_cycles": integrated["shared"]["router_arbitration_contention_cycles"],
                 "bank_conflict_count": integrated["shared"]["service_bank_conflict_count"],
@@ -1480,7 +1547,6 @@ def _summarize_case(case: JsonDict, baseline: JsonDict, integrated: JsonDict, pr
                 "stall_semantics": integrated["manifest"]["shared_result_egress_stall_semantics"],
                 "back_to_back_fire_seen": integrated["shared"]["result_back_to_back_fire_seen"],
             },
-            "top_sha256": integrated["top_sha256"],
         },
         "gates": {
             "hash_gate_ok": baseline_hash_gate_ok and integrated_hash_gate_ok,
@@ -1492,14 +1558,6 @@ def _summarize_case(case: JsonDict, baseline: JsonDict, integrated: JsonDict, pr
             "final_hash": _hash(expected_result_rows),
             "request_hash": _hash(expected_request_rows),
             "wide_response_matrix_hash": _hash(expected_wide_rows),
-        },
-        "preload": {
-            "entry_count": len(preload_entries),
-            "entries_hash": _hash(preload_entries),
-        },
-        "generated_manifests": {
-            "baseline": baseline["manifest"],
-            "integrated": integrated["manifest"],
         },
     }
 
@@ -1652,12 +1710,29 @@ def build_report(
 
     values = _shared_value_matrices()
     preload_entries = _preload_entries(values)
+    shared_preload_identity = {
+        "artifact_id": "shared_preload_v1",
+        "entry_count": len(preload_entries),
+        "entries_hash": _hash(preload_entries),
+        "payload_elided": True,
+        "source": "shared_value_matrices_v1",
+    }
+    manifest_catalog: dict[str, JsonDict] = {}
+    top_catalog: dict[str, JsonDict] = {}
     reports = []
     for case in cases:
         expected_clusters = [_cluster_expected(cluster, values) for cluster in range(int(case["cluster_count"]))]
         baseline = _run_baseline(case, expected_clusters, values)
         integrated = _run_integrated(case, values)
-        reports.append(_summarize_case(case, baseline, integrated, preload_entries))
+        source_refs = _record_case_source_refs(
+            case,
+            baseline,
+            integrated,
+            shared_preload_identity,
+            manifest_catalog,
+            top_catalog,
+        )
+        reports.append(_summarize_case(case, baseline, integrated, source_refs))
 
     decision = "pass" if all(case["decision"] == "pass" for case in reports) else "fail"
     result = {
@@ -1676,6 +1751,11 @@ def build_report(
             ),
         },
         "exclusions": REPORT_EXCLUSIONS,
+        "report_contract": {
+            "shape": COMPACT_REPORT_SHAPE,
+            "max_pretty_json_bytes": COMPACT_REPORT_MAX_BYTES,
+            "max_pretty_json_lines": COMPACT_REPORT_MAX_LINES,
+        },
         "source_identities": {
             "repo_commit": _git_head(),
             "tool_versions": {
@@ -1697,8 +1777,16 @@ def build_report(
                     "npu/sim/rtl/noc_value_matrix_reassembler.sv",
                 )
             ],
+            "generated_artifacts": {
+                "shared_preload": shared_preload_identity,
+                "generated_manifests": [
+                    manifest_catalog[key] for key in sorted(manifest_catalog)
+                ],
+                "generated_tops": [
+                    top_catalog[key] for key in sorted(top_catalog)
+                ],
+            },
         },
-        "preload_entries": preload_entries,
         "selected_scale_point": _selected_scale_point(reports),
         "summary": _report_summary(reports),
         "cases": reports,
@@ -1724,12 +1812,40 @@ def validate_report(payload: JsonDict) -> None:
         raise ValueError("unexpected report model")
     if payload.get("exclusions") != REPORT_EXCLUSIONS:
         raise ValueError(f"report exclusions must explicitly be {', '.join(REPORT_EXCLUSIONS)}")
+    contract = payload.get("report_contract")
+    if contract != {
+        "shape": COMPACT_REPORT_SHAPE,
+        "max_pretty_json_bytes": COMPACT_REPORT_MAX_BYTES,
+        "max_pretty_json_lines": COMPACT_REPORT_MAX_LINES,
+    }:
+        raise ValueError("report compactness contract mismatch")
     source = payload.get("source_identities")
     if not isinstance(source, dict) or not source.get("repo_commit"):
         raise ValueError("report lacks source identities")
-    preload_entries = payload.get("preload_entries")
-    if not isinstance(preload_entries, list) or len(preload_entries) != 48:
-        raise ValueError("report must include all 48 preload entries")
+    if "preload_entries" in payload:
+        raise ValueError("report must elide preload payloads from committed output")
+    generated_artifacts = source.get("generated_artifacts")
+    if not isinstance(generated_artifacts, dict):
+        raise ValueError("report lacks generated artifact identities")
+    shared_preload = generated_artifacts.get("shared_preload")
+    if not isinstance(shared_preload, dict):
+        raise ValueError("report lacks shared preload identity")
+    if int(shared_preload.get("entry_count", 0)) != 48 or shared_preload.get("payload_elided") is not True:
+        raise ValueError("shared preload identity is incomplete")
+    manifest_rows = generated_artifacts.get("generated_manifests")
+    if not isinstance(manifest_rows, list) or not manifest_rows:
+        raise ValueError("report lacks generated manifest identities")
+    for row in manifest_rows:
+        if not isinstance(row, dict):
+            raise ValueError("generated manifest identities must be objects")
+        result_beats = row.get("result_beats_per_command")
+        if not isinstance(result_beats, int) or result_beats <= 0:
+            raise ValueError("generated manifest identity lacks finite positive result_beats_per_command")
+        if result_beats != 16:
+            raise ValueError("unexpected result_beats_per_command for generated manifest identity")
+    top_rows = generated_artifacts.get("generated_tops")
+    if not isinstance(top_rows, list) or not top_rows:
+        raise ValueError("report lacks generated top identities")
     cases = payload.get("cases")
     if not isinstance(cases, list) or not cases:
         raise ValueError("report must contain cases")
@@ -1751,11 +1867,35 @@ def validate_report(payload: JsonDict) -> None:
     case_ids = {str(case.get("case_id")) for case in cases if isinstance(case, dict)}
     if str(selected_scale_point.get("case_id")) not in case_ids:
         raise ValueError("selected_scale_point does not reference a report case")
+    manifest_ids = {
+        str(row.get("artifact_id"))
+        for row in manifest_rows
+        if isinstance(row, dict) and row.get("artifact_id")
+    }
+    top_ids = {
+        str(row.get("artifact_id"))
+        for row in top_rows
+        if isinstance(row, dict) and row.get("artifact_id")
+    }
+    shared_preload_id = str(shared_preload.get("artifact_id"))
     for case in cases:
         if not isinstance(case, dict):
             raise ValueError("case rows must be objects")
         if case.get("decision") != "pass":
             raise ValueError(f"case failed: {case.get('case_id')}")
+        if "generated_manifests" in case or "preload" in case:
+            raise ValueError(f"non-compact case payload present for {case.get('case_id')}")
+        source_refs = case.get("source_refs")
+        if not isinstance(source_refs, dict):
+            raise ValueError(f"source_refs missing for {case.get('case_id')}")
+        if str(source_refs.get("shared_preload")) != shared_preload_id:
+            raise ValueError(f"shared preload reference mismatch for {case.get('case_id')}")
+        for ref_key in ("baseline_manifest", "integrated_manifest"):
+            if str(source_refs.get(ref_key)) not in manifest_ids:
+                raise ValueError(f"unknown manifest reference for {case.get('case_id')}")
+        for ref_key in ("baseline_top", "integrated_top"):
+            if str(source_refs.get(ref_key)) not in top_ids:
+                raise ValueError(f"unknown top reference for {case.get('case_id')}")
         baseline = case.get("baseline_no_stall")
         integrated = case.get("integrated_service")
         if not isinstance(baseline, dict) or not isinstance(integrated, dict):
@@ -1776,7 +1916,6 @@ def validate_report(payload: JsonDict) -> None:
         if not isinstance(counters, dict):
             raise ValueError(f"counters missing for {case.get('case_id')}")
         required_counter_keys = {
-            "cluster_input",
             "request_injection_stall_cycles",
             "arbitration_contention_cycles",
             "bank_conflict_count",
@@ -1796,11 +1935,19 @@ def validate_report(payload: JsonDict) -> None:
         gates = case.get("gates")
         if not isinstance(gates, dict) or not all(bool(gates.get(key)) for key in ("hash_gate_ok", "protocol_gate_ok", "count_gate_ok")):
             raise ValueError(f"gate status missing or failed for {case.get('case_id')}")
+    pretty_json_bytes, pretty_json_lines = _pretty_json_metrics(payload)
+    if pretty_json_bytes > COMPACT_REPORT_MAX_BYTES or pretty_json_lines > COMPACT_REPORT_MAX_LINES:
+        raise ValueError(
+            "report exceeds compact size gate "
+            f"({pretty_json_bytes} bytes / {pretty_json_lines} lines)"
+        )
 
 
 def _build_markdown(report: JsonDict) -> str:
     summary = dict(report["summary"])
     selected_scale_point = dict(report["selected_scale_point"])
+    contract = dict(report["report_contract"])
+    pretty_json_bytes, pretty_json_lines = _pretty_json_metrics(report)
     linkage = dict(report.get("source_links") or {})
     lines = [
         "# Attention Decode Score Multivalue Integrated Service Probe",
@@ -1817,6 +1964,11 @@ def _build_markdown(report: JsonDict) -> str:
         f"- selected_scale_point_role: `{selected_scale_point['selection_role']}`",
         f"- selected_scale_point_note: {selected_scale_point['selection_basis']}",
         f"- gates: `hash={summary['all_hash_gates_passed']}` `protocol={summary['all_protocol_gates_passed']}` `count={summary['all_count_gates_passed']}`",
+        f"- compact_report_shape: `{contract['shape']}`",
+        (
+            f"- compact_report_size: `{pretty_json_bytes} bytes / {pretty_json_lines} lines` "
+            f"(gate <= {contract['max_pretty_json_bytes']} bytes / {contract['max_pretty_json_lines']} lines)"
+        ),
         f"- exclusions: `{', '.join(report['exclusions'])}`",
     ]
     if linkage.get("proposal_id"):

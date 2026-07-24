@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1",
   "source_commit": "7691291314ff3739164633f6e5f17a1b3eb15c84",
-  "source_commit_note": "Replace with the merge commit that contains this proposal and the integrated-service generator hook before dispatch. Do not dispatch from an unmerged local branch.",
+  "source_commit_note": "Replace with the merge commit that contains this proposal and the compact-report evaluator update before dispatch. Do not dispatch from an unmerged local branch. PR #1436's original v1 evidence passed its functional gates but is superseded before merge on noncompact artifact shape only.",
   "requested_items": [
     {
       "item_id": "l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1",
@@ -20,8 +20,35 @@
         "direction": "record_decode_score_multivalue_integrated_service_probe",
         "reason": "Retain exact Python/baseline/integrated hash, protocol, and count gates while recording completion cycles, service penalty cycles, shared-result blocking/arbitration, router/service contention, occupancy maxima, and explicit exclusions over the bounded 14-case matrix; any selected scale point is representative evidence, not an architectural or performance ranking."
       },
+      "status": "superseded_before_merge",
+      "superseded_by_item_id": "l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1_r1",
+      "notes": "PR #1436 exercised the intended 14-case matrix and kept functional hash/protocol/count gates green, but the committed report repeated generated manifests and preload payloads, reaching 403110 bytes / 11271 lines. The evidence is still valid as functional history; it is superseded before merge only to enforce compact portable report shape."
+    },
+    {
+      "item_id": "l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1_r1",
+      "task_type": "l2_campaign",
+      "objective": "Rerun the integrated shared-score multivalue decode-service RTL probe across the same bounded 14-case scale/resource matrix through cluster_count 32, preserving all functional gates while emitting only compact deduplicated service evidence.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_decode_score_multivalue_integrated_service",
+      "comparison_role": "frontier_validation",
+      "paired_baseline_item_id": "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "revision": {
+        "reason": "compact_report_shape_gate",
+        "supersedes_item_ids": [
+          "l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1"
+        ]
+      },
+      "expected_result": {
+        "direction": "record_decode_score_multivalue_integrated_service_probe",
+        "reason": "Retain exact Python/baseline/integrated hash, protocol, and count gates while recording completion cycles, service penalty cycles, shared-result blocking/arbitration, router/service contention, occupancy maxima, and explicit exclusions over the same bounded 14-case matrix, while enforcing a deduplicated compact report size/shape gate of <=100000 pretty-printed JSON bytes and <=2500 lines; any selected scale point remains representative evidence, not an architectural or performance ranking."
+      },
       "status": "pending",
-      "notes": "The dependency item is already merged/materialized. This request is ready for normal control-plane dispatch only after the proposal implementation itself is merged."
+      "notes": "The dependency item is already merged/materialized. This replacement request is ready for normal control-plane dispatch only after the proposal implementation itself is merged."
     }
   ]
 }

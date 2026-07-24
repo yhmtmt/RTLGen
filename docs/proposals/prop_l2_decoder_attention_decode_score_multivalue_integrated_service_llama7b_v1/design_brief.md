@@ -31,7 +31,7 @@ composition work.
   - no HBM closure
   - no total-token energy claim
 - output discipline:
-  - compact repo-portable JSON/Markdown only
+  - compact repo-portable JSON/Markdown only, with deduplicated shared artifact identities and a pretty-printed JSON gate of `<=100000` bytes / `<=2500` lines
   - no full stdout traces
   - no intermediate tensors
   - identify the largest nominal round-robin case only as a representative
