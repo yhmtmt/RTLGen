@@ -16,6 +16,44 @@ _EXPECTED_ACTIVITY_MODEL = "decoder_attention_decode_score_multivalue_cluster_ac
 _EXPECTED_ACTIVITY_DECISION = "activity_backed_cluster_power_measured"
 _EXPECTED_EQUIVALENCE_DECISION = "decode_score_multivalue_cluster_equivalence_pass"
 _EXPECTED_PRECISION_STATUS = "unchanged_integer_contract_from_merged_multivalue_equivalence"
+_EXPECTED_INTEGRATED_SERVICE_MODEL = "llm_decoder_attention_decode_score_multivalue_integrated_service_probe_v1"
+_EXPECTED_INTEGRATED_SERVICE_DECISION = "pass"
+_EXPECTED_INTEGRATED_SERVICE_DIAGNOSIS = "multivalue_integrated_service_probe_passed"
+_EXPECTED_SERVICE_POLICY = {
+    "packet_w": 128,
+    "banks": 4,
+    "req_queue_depth": 4,
+    "resp_queue_depth": 4,
+    "bank_queue_depth": 4,
+    "read_latency": 2,
+    "arb_mode": "round_robin",
+    "locality_burst_max": 2,
+}
+_EXPECTED_SERVICE_CASE_IDS = {
+    1: "c1_p128_b4_rr",
+    2: "c2_p128_b4_rr",
+    4: "c4_p128_b4_rr",
+    8: "c8_p128_b4_rr",
+    16: "c16_p128_b4_rr",
+    32: "c32_p128_b4_rr",
+}
+_SERVICE_CALIBRATION_LIMITATIONS = [
+    (
+        "Integrated-service calibration comes from a 128-context, 128-value-dimension "
+        "shared-score microkernel probe rather than full decoder sequence composition."
+    ),
+    "HBM/DRAM service is excluded from the integrated-service calibration.",
+    "Service-fabric PPA and service-fabric energy are excluded from this frontier recost.",
+    (
+        "The service completion ratio calibrates latency and service-window leakage only; "
+        "cluster dynamic energy remains the activity-backed no-stall command estimate."
+    ),
+    (
+        "Added stall-driven or service-fabric switching dynamic energy is excluded, so the "
+        "reported energy is a lower-bound component estimate rather than a full serviced-token energy."
+    ),
+    "Total token energy remains incomplete; only activity-backed cluster energy is reported.",
+]
 
 
 def _load(path: Path) -> JsonDict:
@@ -116,6 +154,103 @@ def _validated_activity_best(activity_report: JsonDict) -> JsonDict:
     return best
 
 
+def _service_ratio_cases(
+    service_report: JsonDict, cluster_counts: list[int]
+) -> tuple[dict[int, JsonDict], JsonDict]:
+    if service_report.get("model") != _EXPECTED_INTEGRATED_SERVICE_MODEL:
+        raise ValueError("integrated-service report has an unexpected model")
+    if service_report.get("decision") != _EXPECTED_INTEGRATED_SERVICE_DECISION:
+        raise ValueError("integrated-service report has an unexpected decision")
+    diagnosis = service_report.get("diagnosis")
+    if not isinstance(diagnosis, dict) or diagnosis.get("decision") != _EXPECTED_INTEGRATED_SERVICE_DIAGNOSIS:
+        raise ValueError("integrated-service report has an unexpected diagnosis")
+    cases = service_report.get("cases")
+    if not isinstance(cases, list) or not cases:
+        raise ValueError("integrated-service report lacks cases")
+    requested = set(cluster_counts)
+    ratios: dict[int, JsonDict] = {}
+    for cluster_count in sorted(requested):
+        expected_case_id = _EXPECTED_SERVICE_CASE_IDS.get(cluster_count)
+        if expected_case_id is None:
+            raise ValueError(f"no deterministic integrated-service case is defined for c{cluster_count}")
+        matches = [
+            case for case in cases if isinstance(case, dict) and str(case.get("case_id")) == expected_case_id
+        ]
+        if len(matches) != 1:
+            raise ValueError(f"integrated-service report must contain exactly one {expected_case_id} case")
+        case = matches[0]
+        config = case.get("config")
+        baseline = case.get("baseline_no_stall")
+        integrated = case.get("integrated_service")
+        gates = case.get("gates")
+        if not isinstance(config, dict) or not isinstance(baseline, dict) or not isinstance(integrated, dict):
+            raise ValueError(f"{expected_case_id} lacks config/baseline/integrated sections")
+        if not isinstance(gates, dict):
+            raise ValueError(f"{expected_case_id} lacks gate status")
+        if not all(bool(gates.get(key)) for key in ("hash_gate_ok", "protocol_gate_ok", "count_gate_ok")):
+            raise ValueError(f"{expected_case_id} did not keep all integrated-service gates green")
+        if integrated.get("exact_match") is not True:
+            raise ValueError(f"{expected_case_id} lacks exact integrated-service hash equivalence")
+        if integrated.get("no_protocol_errors") is not True:
+            raise ValueError(f"{expected_case_id} reported integrated-service protocol errors")
+        if integrated.get("no_drop_duplicate_deadlock_timeout") is not True:
+            raise ValueError(f"{expected_case_id} lacks integrated-service liveness/drop coverage")
+        if integrated.get("cycle_bound_ok") is not True:
+            raise ValueError(f"{expected_case_id} violated the integrated-service cycle bound")
+        if _positive_int(config.get("cluster_count"), f"{expected_case_id} cluster_count") != cluster_count:
+            raise ValueError(f"{expected_case_id} cluster_count does not match the requested frontier point")
+        for field, expected in _EXPECTED_SERVICE_POLICY.items():
+            value = config.get(field)
+            if field == "arb_mode":
+                if str(value).strip() != str(expected):
+                    raise ValueError(f"{expected_case_id} must keep deterministic {field}={expected}")
+            else:
+                if _positive_int(value, f"{expected_case_id} {field}") != int(expected):
+                    raise ValueError(f"{expected_case_id} must keep deterministic {field}={expected}")
+        baseline_cycle = _positive_int(
+            baseline.get("completion_cycle"), f"{expected_case_id} no-stall baseline completion_cycle"
+        )
+        integrated_cycle = _positive_int(
+            integrated.get("completion_cycle"), f"{expected_case_id} integrated completion_cycle"
+        )
+        if integrated_cycle < baseline_cycle:
+            raise ValueError(f"{expected_case_id} integrated completion_cycle fell below the no-stall baseline")
+        ratios[cluster_count] = {
+            "case_id": expected_case_id,
+            "cluster_count": cluster_count,
+            "baseline_completion_cycle": baseline_cycle,
+            "integrated_completion_cycle": integrated_cycle,
+            "completion_ratio": integrated_cycle / baseline_cycle,
+            "config": {
+                "packet_w": int(config["packet_w"]),
+                "banks": int(config["banks"]),
+                "req_queue_depth": int(config["req_queue_depth"]),
+                "resp_queue_depth": int(config["resp_queue_depth"]),
+                "bank_queue_depth": int(config["bank_queue_depth"]),
+                "read_latency": int(config["read_latency"]),
+                "arb_mode": str(config["arb_mode"]),
+                "locality_burst_max": int(config["locality_burst_max"]),
+            },
+        }
+    return ratios, {
+        "report_model": _EXPECTED_INTEGRATED_SERVICE_MODEL,
+        "report_decision": _EXPECTED_INTEGRATED_SERVICE_DECISION,
+        "report_diagnosis": _EXPECTED_INTEGRATED_SERVICE_DIAGNOSIS,
+        "ratio_definition": "integrated_service.completion_cycle / baseline_no_stall.completion_cycle",
+        "scaled_target": "activity-backed full-context per-wave cluster service cycles",
+        "probe_contract": {
+            "microkernel_context_tokens": 128,
+            "microkernel_value_dim": 128,
+            "consumed_case_ids": [
+                _EXPECTED_SERVICE_CASE_IDS[count] for count in sorted(requested)
+            ],
+            "resource_policy": dict(_EXPECTED_SERVICE_POLICY),
+        },
+        "limitations": list(_SERVICE_CALIBRATION_LIMITATIONS),
+        "cases": [ratios[count] for count in sorted(requested)],
+    }
+
+
 def _activity_energy(activity: JsonDict) -> JsonDict:
     phases = activity.get("phases")
     if not isinstance(phases, list) or not phases:
@@ -158,6 +293,7 @@ def _row(
     activity_clock_ns: float,
     energy: JsonDict,
     dense_tile: JsonDict,
+    service_ratio_case: JsonDict,
 ) -> JsonDict:
     heads = _positive_int(schedule["attention_heads"], "attention heads")
     layers = _positive_int(schedule["layers"], "layers")
@@ -189,7 +325,11 @@ def _row(
     qkv_work = hidden**2 + 2 * hidden * kv_heads * head_dim
     qkv_cycles = math.ceil(qkv_work / (dense_count * dense_macs)) if dense_count else None
     waves = math.ceil(heads / cluster_count)
-    attention_cycles = waves * command_cycles
+    service_ratio = _positive(
+        service_ratio_case["completion_ratio"], f"c{cluster_count} integrated-service completion ratio"
+    )
+    per_wave_service_cycles = math.ceil(command_cycles * service_ratio)
+    attention_cycles = waves * per_wave_service_cycles
     fixed_cycles = _nonnegative_int(
         schedule.get("command_dispatch_cycles", 0), "command dispatch cycles"
     ) + _nonnegative_int(
@@ -211,13 +351,23 @@ def _row(
     dynamic_j = active_commands_per_token * float(energy["dynamic_j_per_head_command"])
     leakage_j = deployed_command_slots * float(
         energy["service_window_leakage_j_per_head_command"]
-    )
+    ) * service_ratio
     component_energy_j = dynamic_j + leakage_j
     return {
         "candidate_id": f"decode_score_multivalue_cluster_c{cluster_count}",
         "cluster_count": cluster_count,
         "head_commands_per_layer": heads,
         "cluster_waves_per_layer": waves,
+        "service_no_stall_full_context_cycles_per_wave": command_cycles,
+        "service_completion_ratio": round(service_ratio, 12),
+        "service_calibrated_full_context_cycles_per_wave": per_wave_service_cycles,
+        "service_calibration_case_id": service_ratio_case["case_id"],
+        "service_calibration_microkernel_no_stall_completion_cycle": service_ratio_case[
+            "baseline_completion_cycle"
+        ],
+        "service_calibration_microkernel_integrated_completion_cycle": service_ratio_case[
+            "integrated_completion_cycle"
+        ],
         "dense_qkv_tile_count": dense_count,
         "dense_qkv_useful_parallelism_limit": qkv_useful_limit,
         "qkv_cycles": qkv_cycles,
@@ -252,8 +402,9 @@ def _row(
         "attention_cluster_dynamic_energy_mj_per_token": dynamic_j * 1.0e3,
         "attention_cluster_service_window_leakage_energy_mj_per_token": leakage_j * 1.0e3,
         "attention_cluster_modeled_service_energy_mj_per_token": component_energy_j * 1.0e3,
+        "energy_lower_bound_component_estimate": True,
         "energy_status": (
-            "activity_backed_attention_cluster_service_windows_only_"
+            "activity_backed_cluster_dynamic_plus_service_window_leakage_lower_bound_component_estimate_"
             "total_token_energy_incomplete"
         ),
     }
@@ -285,10 +436,15 @@ def _pareto(rows: list[JsonDict]) -> list[JsonDict]:
 
 
 def build_report(
-    *, prior_frontier_json: Path, activity_power_json: Path, cluster_counts: list[int]
+    *,
+    prior_frontier_json: Path,
+    activity_power_json: Path,
+    integrated_service_json: Path,
+    cluster_counts: list[int],
 ) -> JsonDict:
     prior = _load(prior_frontier_json)
     activity_report = _load(activity_power_json)
+    integrated_service_report = _load(integrated_service_json)
     best = _validated_activity_best(activity_report)
     schedule, schedule_source = _source_schedule(prior, prior_frontier_json)
     hidden = _positive_int(schedule["hidden_size"], "hidden size")
@@ -319,6 +475,9 @@ def build_report(
         "activity clock",
     )
     energy = _activity_energy(activity)
+    service_ratios, service_calibration = _service_ratio_cases(
+        integrated_service_report, validated_cluster_counts
+    )
     phase_cycles = {
         str(phase.get("phase", phase.get("name", f"phase_{index}"))): int(
             phase["full_context_cycles"]
@@ -334,6 +493,7 @@ def build_report(
             activity_clock_ns=activity_clock_ns,
             energy=energy,
             dense_tile=dense_tile,
+            service_ratio_case=service_ratios[count],
         )
         for count in validated_cluster_counts
     ]
@@ -349,6 +509,7 @@ def build_report(
         "inputs": {
             "prior_frontier_json": str(prior_frontier_json),
             "activity_power_json": str(activity_power_json),
+            "integrated_service_json": str(integrated_service_json),
             "source_schedule_json": schedule_source,
         },
         "schedule_contract": {
@@ -359,10 +520,11 @@ def build_report(
             "sequence_length": int(schedule["sequence_length"]),
             "layers": int(schedule["layers"]),
             "full_head_commands_per_layer": int(schedule["attention_heads"]),
-            "full_head_command_cycles": command_cycles,
-            "full_head_phase_cycles": phase_cycles,
+            "full_head_command_cycles_no_stall_baseline": command_cycles,
+            "full_head_phase_cycles_no_stall_baseline": phase_cycles,
             "sequence_sharding_supported": False,
         },
+        "service_cycle_calibration": service_calibration,
         "selected_cluster": {
             "candidate_id": best.get("candidate_id"),
             "flow_variant": best.get("flow_variant"),
@@ -384,20 +546,23 @@ def build_report(
         "promotion_status": "component_frontier_promoted_full_architecture_promotion_blocked",
         "remaining_abstractions": [
             (
-                "Value memory is modeled as ready/no-stall with the measured one-cycle "
-                "response contract."
+                "On-chip shared value-service latency is calibrated from deterministic c1/c2/c4/c8/c16/c32 "
+                "integrated-service ratios, but the calibration is still a 128-context/128-value-dimension "
+                "microkernel proxy rather than full decoder memory-system composition."
             ),
             (
-                "Producer, Q/K/V transport, NoC, HBM/DRAM, off-cluster value memory, "
+                "Producer, Q/K/V transport, NoC, off-cluster value memory, HBM/DRAM, "
                 "and clock-tree composition are outside this frontier."
             ),
             "Dense QKV tile PPA is measured independently and composed by an area/schedule model.",
             "FakeRAM uses Nangate45 proxy LEF/Liberty views without SRAM compiler signoff.",
             "Score multiplier and shift derivation remain external to the cluster boundary.",
             (
-                "Total token energy is incomplete; only activity-backed attention-cluster "
-                "dynamic energy and service-window leakage are reported. Leakage outside "
-                "the modeled cluster service windows is not included."
+                "Total token energy is incomplete; the integrated-service ratio calibrates latency and "
+                "service-window leakage only, while activity-backed attention-cluster dynamic energy remains "
+                "the no-stall command estimate. Added stall/fabric switching dynamic energy, service-fabric "
+                "PPA/energy, and leakage outside the modeled cluster service windows are not included, so "
+                "the reported energy is a lower-bound component estimate."
             ),
             (
                 "Sequence sharding and cross-cluster head reduction are not implemented, "
@@ -409,6 +574,7 @@ def build_report(
 
 def _write_markdown(payload: JsonDict, path: Path) -> None:
     best = payload["best_throughput_candidate"]
+    calibration = payload["service_cycle_calibration"]
     lines = [
         "# Llama7B shared-score multivalue cluster frontier",
         "",
@@ -423,18 +589,29 @@ def _write_markdown(payload: JsonDict, path: Path) -> None:
             "- attention-cluster service-window leakage: "
             f"`{best['attention_cluster_service_window_leakage_energy_mj_per_token']}` mJ/token"
         ),
+        (
+            "- integrated-service calibration: "
+            f"`{best['service_calibration_case_id']}` ratio=`{best['service_completion_ratio']}` "
+            f"scaled from `{best['service_no_stall_full_context_cycles_per_wave']}` to "
+            f"`{best['service_calibrated_full_context_cycles_per_wave']}` cycles/wave"
+        ),
         "- total-token energy: `incomplete`",
+        (
+            "- calibration limits: "
+            f"{'; '.join(str(item) for item in calibration['limitations'])}"
+        ),
         "",
         (
-            "| candidate | clusters | waves/layer | QKV tiles | latency us | token/s | "
+            "| candidate | clusters | waves/layer | ratio | cycles/wave | QKV tiles | latency us | token/s | "
             "area mm2 | modeled service mJ/token |"
         ),
-        "|---|---:|---:|---:|---:|---:|---:|---:|",
+        "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
     ]
     for row in payload["rows"]:
         lines.append(
             f"| {row['candidate_id']} | {row['cluster_count']} | "
-            f"{row['cluster_waves_per_layer']} | {row['dense_qkv_tile_count']} | "
+            f"{row['cluster_waves_per_layer']} | {row['service_completion_ratio']} | "
+            f"{row['service_calibrated_full_context_cycles_per_wave']} | {row['dense_qkv_tile_count']} | "
             f"{row['latency_us']} | {row['token_throughput_per_s']} | "
             f"{row['embodied_logic_plus_shared_sram_area_mm2']} | "
             f"{row['attention_cluster_modeled_service_energy_mj_per_token']} |"
@@ -449,6 +626,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--prior-frontier-json", type=Path, required=True)
     parser.add_argument("--activity-power-json", type=Path, required=True)
+    parser.add_argument("--integrated-service-json", type=Path, required=True)
     parser.add_argument("--cluster-counts", default="1,2,4,8,16,32")
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--out-md", type=Path, required=True)
@@ -456,6 +634,7 @@ def main() -> int:
     payload = build_report(
         prior_frontier_json=args.prior_frontier_json,
         activity_power_json=args.activity_power_json,
+        integrated_service_json=args.integrated_service_json,
         cluster_counts=[int(value) for value in args.cluster_counts.split(",")],
     )
     args.out.parent.mkdir(parents=True, exist_ok=True)

@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_decoder_attention_decode_score_multivalue_cluster_frontier_llama7b_v1",
-  "source_commit": "db2f9ae94fc10860c5d9a5b0384d5dbd6f6b71bd",
-  "source_commit_note": "Keep this evidence-only frontier recost pending until strict shared-score multivalue activity-power v16 is merged and its evidence is materialized. Activity-power v13 is invalid, v14 was superseded before dispatch, and targeted-binary v15 was canceled after 31.8h runtime; this request does not claim that v16 evidence exists.",
+  "source_commit": "48b75806a96b6e281f080de5e3539dbdfd2f9217",
+  "source_commit_note": "Replace with the merge commit that contains this service-aware frontier recost update after merge and before dispatch. The frontier implementation itself is still local here, integrated-service compact r1 evidence is READY but not yet materialized, and activity-power v16 remains pending; do not dispatch this frontier revision until both dependency evidence items are merged/materialized.",
   "requested_items": [
     {
       "item_id": "l2_decoder_attention_decode_score_multivalue_cluster_frontier_llama7b_v1",
@@ -19,9 +19,39 @@
       "requires_materialized_refs": true,
       "expected_result": {
         "direction": "recast_shared_score_multivalue_cluster_frontier",
-        "reason": "Keep this frontier pending until strict activity-power v16 is merged and materialized; targeted-binary v15 was canceled after 31.8h runtime and must not be consumed. Only then may ranking charge exact full-head cycles, valid measured active-cluster energy, and area/QKV tradeoffs together while keeping precision fixed from the merged equivalence result and withholding any total-token energy claim."
+        "reason": "Preserve this item only as superseded history. It reused no-stall activity full-context cycles directly and therefore cannot serve as the service-aware frontier recost once the intended integrated-service compact r1 evidence is actually merged/materialized."
       },
-      "status": "pending_implementation_merge"
+      "status": "superseded_before_merge",
+      "superseded_by_item_id": "l2_decoder_attention_decode_score_multivalue_cluster_frontier_llama7b_v1_r1",
+      "notes": "The activity-backed frontier shape remains useful history, but it must not be dispatched without the integrated-service completion-ratio calibration being merged/materialized."
+    },
+    {
+      "item_id": "l2_decoder_attention_decode_score_multivalue_cluster_frontier_llama7b_v1_r1",
+      "task_type": "l2_campaign",
+      "objective": "Recost the shared-score multivalue decode cluster frontier using the corrected local-cluster frontier v2, strict activity-backed cluster energy, and deterministic integrated-service completion ratios for c1/c2/c4/c8/c16/c32 across cluster counts 1/2/4/8/16/32.",
+      "evaluation_mode": "frontier_recost",
+      "abstraction_layer": "decoder_attention_decode_score_multivalue_cluster_frontier",
+      "comparison_role": "shared_score_multivalue_cluster_frontier_recost",
+      "paired_baseline_item_id": "l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2",
+        "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v16",
+        "l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1_r1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "revision": {
+        "reason": "service_aware_completion_ratio_calibration",
+        "supersedes_item_ids": [
+          "l2_decoder_attention_decode_score_multivalue_cluster_frontier_llama7b_v1"
+        ]
+      },
+      "expected_result": {
+        "direction": "recast_shared_score_multivalue_cluster_frontier",
+        "reason": "Use deterministic integrated-service completion ratios from compact r1 evidence, once merged/materialized, to scale activity-backed full-context per-wave cluster service cycles for c1/c2/c4/c8/c16/c32, while preserving strict activity-backed power requirements, withholding total-token energy, and explicitly limiting the calibration to the probe's 128-context, 128-value-dimension, no-HBM, no-service-fabric-PPA/energy scope."
+      },
+      "status": "pending_implementation_merge",
+      "notes": "This revision remains dependency-gated and is not ready for normal dispatch. As of July 24, 2026, integrated-service compact r1 evidence is READY but not yet materialized, activity-power v16 remains pending, and both inputs must merge/materialize before dispatch."
     }
   ]
 }

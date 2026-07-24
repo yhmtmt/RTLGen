@@ -6,12 +6,13 @@
   "kind": "architecture",
   "title": "Shared-score multivalue cluster frontier recost for Llama7B",
   "abstraction_layer": "decoder_attention_decode_score_multivalue_cluster_frontier",
-  "hypothesis": "Once the shared-score multivalue cluster carries measured active-cluster energy and the corrected local-cluster frontier v2 remains the prior bound, the Llama7B recost can replace the repeated-score-fill architecture bound with exact full-head cycles, measured active energy, and cluster-count area/QKV tradeoffs while keeping precision unchanged from the merged equivalence proof.",
+  "hypothesis": "Once the shared-score multivalue cluster carries measured active-cluster energy, the corrected local-cluster frontier v2 remains the prior bound, and activity-power v16 plus integrated-service compact r1 evidence are both merged/materialized, the Llama7B recost can replace the repeated-score-fill architecture bound with service-aware full-head cycles, measured active energy, and cluster-count area/QKV tradeoffs while keeping precision unchanged from the merged equivalence proof.",
   "direct_comparison": {
-    "primary_question": "Across 1, 2, 4, 8, 16, and 32 shared-score clusters, how does the measured multivalue architecture trade exact full-head cycles and active-cluster energy against area/QKV cost relative to the corrected local-cluster frontier v2?",
+    "primary_question": "Across 1, 2, 4, 8, 16, and 32 shared-score clusters, how does the measured multivalue architecture trade service-aware full-head cycles and active-cluster energy against area/QKV cost relative to the corrected local-cluster frontier v2?",
     "baseline": "l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2",
     "include": [
       "exact full-head score-fill, value-replay, divider, and aggregate cycles taken from the multivalue cluster frontier audit",
+      "dimensionless integrated-service completion ratios from deterministic c1/c2/c4/c8/c16/c32 fixed-policy cases to scale per-wave full-context service cycles",
       "measured active-cluster energy derived from the shared-score activity-power evidence",
       "area and QKV tradeoff across cluster counts 1, 2, 4, 8, 16, and 32",
       "unchanged arithmetic and precision contract inherited from l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1",
@@ -19,7 +20,8 @@
     ],
     "exclude": [
       "do not claim total-token energy yet from the active-cluster measurement alone",
-      "do not treat no-stall service, value-memory composition, NoC composition, or HBM service as already closed",
+      "do not treat service-aware latency calibration as service-fabric PPA/energy closure",
+      "do not treat value-memory composition, NoC composition, or HBM service as already closed",
       "do not overwrite or erase the corrected local-cluster frontier v2 evidence; keep it as the prior lower-bound reference"
     ],
     "metrics": [
@@ -37,13 +39,14 @@
     ]
   },
   "expected_benefit": [
-    "replaces the repeated-score-fill lower bound with a measured shared-score frontier recost",
+    "replaces the repeated-score-fill lower bound with a service-aware shared-score frontier recost",
     "makes the exact cycle, energy, and area/QKV tradeoffs explicit for deployable cluster counts",
     "preserves the already-proven precision contract without reopening a new quality claim"
   ],
   "risks": [
     "measured active-cluster energy may still leave the shared-score design unattractive at some cluster counts",
-    "full-head recost remains sensitive to unclosed no-stall, value-memory, NoC, and HBM abstractions",
+    "full-head recost remains sensitive to the microkernel-scale integrated-service calibration plus unclosed value-memory, NoC, and HBM abstractions",
+    "until activity-power v16 and integrated-service compact r1 are both merged/materialized, this frontier revision remains dependency-gated and cannot be dispatched normally",
     "the active-cluster measurement is insufficient for any total-token energy ranking until wider composition closes"
   ],
   "required_evaluations": [
@@ -63,28 +66,64 @@
       "requires_materialized_refs": true,
       "expected_result": {
         "direction": "recast_shared_score_multivalue_cluster_frontier",
-        "reason": "Keep this frontier pending until strict activity-power v16 is merged and materialized; targeted-binary v15 was canceled after 31.8h runtime and must not be consumed. Only then may ranking charge exact full-head cycles, valid measured active-cluster energy, and area/QKV tradeoffs together while keeping precision fixed from the merged equivalence result and withholding any total-token energy claim."
+        "reason": "Keep this frontier only as superseded history. It used no-stall full-head cycles directly and therefore missed the intended integrated-service c1/c2/c4/c8/c16/c32 latency penalty ratios required for service-aware recost. Preserve the evidence record, but do not use it for updated ranking."
       },
-      "status": "pending_implementation_merge"
+      "status": "superseded_before_merge",
+      "superseded_by_item_id": "l2_decoder_attention_decode_score_multivalue_cluster_frontier_llama7b_v1_r1",
+      "notes": "This original request established the activity-backed frontier recost shape, but it predates the compact integrated-service r1 evidence path and therefore understates service-aware latency by reusing no-stall full-context cycles directly."
+    },
+    {
+      "item_id": "l2_decoder_attention_decode_score_multivalue_cluster_frontier_llama7b_v1_r1",
+      "task_type": "l2_campaign",
+      "objective": "Recost the shared-score multivalue decode cluster frontier using the corrected local-cluster frontier v2, strict activity-backed cluster energy, and deterministic integrated-service completion ratios for c1/c2/c4/c8/c16/c32 across cluster counts 1/2/4/8/16/32.",
+      "evaluation_mode": "frontier_recost",
+      "abstraction_layer": "decoder_attention_decode_score_multivalue_cluster_frontier",
+      "comparison_role": "shared_score_multivalue_cluster_frontier_recost",
+      "paired_baseline_item_id": "l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2",
+        "l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v16",
+        "l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1_r1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "revision": {
+        "reason": "service_aware_completion_ratio_calibration",
+        "supersedes_item_ids": [
+          "l2_decoder_attention_decode_score_multivalue_cluster_frontier_llama7b_v1"
+        ]
+      },
+      "expected_result": {
+        "direction": "recast_shared_score_multivalue_cluster_frontier",
+        "reason": "Use deterministic integrated-service completion ratios from compact r1 evidence, once merged/materialized, to scale activity-backed full-context per-wave cluster service cycles for c1/c2/c4/c8/c16/c32, while preserving strict activity-backed power requirements, withholding total-token energy, and explicitly limiting the calibration to the probe's 128-context, 128-value-dimension, no-HBM, no-service-fabric-PPA/energy scope."
+      },
+      "status": "pending_implementation_merge",
+      "notes": "This revision consumes the compact integrated-service r1 evidence path rather than reusing no-stall cycles directly, but as of July 24, 2026 it remains dependency-gated and is not ready for normal dispatch: integrated-service compact r1 is READY but not yet materialized, activity-power v16 remains pending, and both inputs must merge/materialize before dispatch."
     }
   ],
   "baseline_refs": [
     "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_local_cluster_frontier__l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2.json",
     "control_plane/shadow_exports/l2_decisions/l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v2.json",
-    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_cluster_activity_power__l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v2.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_cluster_activity_power__l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v16.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_integrated_service__l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1_r1.json",
     "docs/proposals/prop_decoder_attention_decode_score_multivalue_cluster_llama7b_v1/proposal.json",
-    "docs/proposals/prop_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1/proposal.json"
+    "docs/proposals/prop_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1/proposal.json",
+    "docs/proposals/prop_l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1/proposal.json"
   ],
   "knowledge_refs": [
     "npu/eval/audit_attention_decode_score_multivalue_cluster_frontier.py",
+    "npu/eval/probe_attention_decode_score_multivalue_integrated_service.py",
     "docs/proposals/prop_decoder_attention_decode_score_multivalue_cluster_llama7b_v1/evaluation_requests.json",
-    "docs/proposals/prop_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1/evaluation_requests.json"
+    "docs/proposals/prop_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1/evaluation_requests.json",
+    "docs/proposals/prop_l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1/evaluation_requests.json"
   ],
   "remaining_abstractions_after_this_step": [
-    "No-stall service remains a model-level abstraction rather than a measured integrated scheduling result.",
+    "Integrated-service completion ratios calibrate only latency and service-window duration from a bounded 128-context/128-value-dimension microkernel probe.",
     "Value-memory composition is still external to this cluster-level recost and must be closed separately.",
     "NoC composition remains open; this frontier does not include full transport contention or routing-energy closure.",
     "HBM service remains open; this recost is not a full memory-system closure.",
+    "The service ratio calibrates latency and service-window leakage only; cluster dynamic energy remains the activity-backed no-stall command estimate, and added stall/fabric switching dynamic energy is excluded, so reported energy remains a lower-bound component estimate.",
+    "Service-fabric PPA and service-fabric energy remain excluded from this recost.",
     "Measured active-cluster energy is not yet a total-token energy claim."
   ]
 }

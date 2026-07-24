@@ -1810,6 +1810,11 @@ def validate_report(payload: JsonDict) -> None:
         raise ValueError("report version must be 1")
     if payload.get("model") != "llm_decoder_attention_decode_score_multivalue_integrated_service_probe_v1":
         raise ValueError("unexpected report model")
+    if payload.get("decision") != "pass":
+        raise ValueError("integrated-service report decision must be pass")
+    diagnosis = payload.get("diagnosis")
+    if not isinstance(diagnosis, dict) or diagnosis.get("decision") != "multivalue_integrated_service_probe_passed":
+        raise ValueError("integrated-service report diagnosis must record a passed probe")
     if payload.get("exclusions") != REPORT_EXCLUSIONS:
         raise ValueError(f"report exclusions must explicitly be {', '.join(REPORT_EXCLUSIONS)}")
     contract = payload.get("report_contract")
@@ -1854,6 +1859,8 @@ def validate_report(payload: JsonDict) -> None:
         raise ValueError("report must contain summary")
     if int(summary.get("validated_case_count", 0)) != len(cases):
         raise ValueError("summary validated_case_count mismatch")
+    if not all(bool(summary.get(key)) for key in ("all_hash_gates_passed", "all_protocol_gates_passed", "all_count_gates_passed")):
+        raise ValueError("summary must record all report gates as passed")
     selected_scale_point = payload.get("selected_scale_point")
     if not isinstance(selected_scale_point, dict):
         raise ValueError("report must contain selected_scale_point")

@@ -532,6 +532,21 @@ def test_integrated_service_validate_report_rejects_incomplete_evidence() -> Non
         {"cases": [_case(case_id="validate", cluster_count=2, packet_w=128, banks=2, arb_mode="round_robin")]}
     )
     broken = json.loads(json.dumps(report))
+    broken["decision"] = "fail"
+    with pytest.raises(ValueError, match="decision must be pass"):
+        validate_report(broken)
+
+    broken = json.loads(json.dumps(report))
+    broken["diagnosis"]["decision"] = "multivalue_integrated_service_probe_failed"
+    with pytest.raises(ValueError, match="diagnosis must record a passed probe"):
+        validate_report(broken)
+
+    broken = json.loads(json.dumps(report))
+    broken["summary"]["all_hash_gates_passed"] = False
+    with pytest.raises(ValueError, match="summary must record all report gates as passed"):
+        validate_report(broken)
+
+    broken = json.loads(json.dumps(report))
     broken["exclusions"] = REPORT_EXCLUSIONS[:-1]
     with pytest.raises(ValueError, match="exclusions"):
         validate_report(broken)
