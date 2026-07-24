@@ -759,6 +759,100 @@ def test_worker_marks_failed_run_when_command_fails() -> None:
             assert run.result_payload["retry_decision"]["requeue"] is False
 
 
+def test_worker_stages_design_local_diagnostic_and_timing_report_on_failure() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        init_git_repo(repo_root)
+        db_path = Path(td) / "cp.db"
+        engine = create_engine(f"sqlite+pysqlite:///{db_path}", future=True)
+        create_all(engine)
+        item_id = "item_fail_with_diagnostic"
+        metrics_rel = f"runs/campaigns/{item_id}/metrics.csv"
+        diagnostic_rel = (
+            "runs/designs/npu_blocks/"
+            "attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/"
+            "explicit_onehot_fsm_diagnostic.json"
+        )
+        report_rel = (
+            "runs/designs/npu_blocks/"
+            "attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/"
+            "timing_debug_report.md"
+        )
+        with Session(engine) as session:
+            seed_ready_work_item(session, item_id=item_id, repo_root=repo_root, failing=False)
+            work_item = session.query(WorkItem).filter_by(item_id=item_id).one()
+            work_item.assigned_machine_key = "worker-1"
+            work_item.state = WorkItemState.READY
+            work_item.command_manifest = [
+                {
+                    "name": "write_metrics_and_diagnostic",
+                    "run": (
+                        "python3 -c \"from pathlib import Path; "
+                        f"metrics=Path('{metrics_rel}'); "
+                        f"diagnostic=Path('{diagnostic_rel}'); "
+                        f"report=Path('{report_rel}'); "
+                        "metrics.parent.mkdir(parents=True, exist_ok=True); "
+                        "diagnostic.parent.mkdir(parents=True, exist_ok=True); "
+                        "report.parent.mkdir(parents=True, exist_ok=True); "
+                        "metrics.write_text('metric,value\\nlatency,1\\n', encoding='utf-8'); "
+                        "diagnostic.write_text('{\\n"
+                        "\\\"promotion_valid\\\": false,\\n"
+                        "\\\"promotion_reasons\\\": [\\\"status is flow_failed, not ok\\\"]\\n"
+                        "}\\n', encoding='utf-8'); "
+                        "report.write_text('# timing debug\\n', encoding='utf-8')\""
+                    ),
+                },
+                {
+                    "name": "fail_step",
+                    "run": "python3 -c \"import sys; sys.exit(3)\"",
+                },
+            ]
+            work_item.expected_outputs = [metrics_rel, diagnostic_rel, report_rel]
+            session.commit()
+
+        session_factory = build_session_factory(engine)
+        results = run_worker(
+            session_factory,
+            config=WorkerConfig(
+                repo_root=str(repo_root),
+                machine_key="worker-1",
+                capabilities={"platform": "nangate45", "flow": "openroad"},
+                capability_filter={"platform": "nangate45", "flow": "openroad"},
+                lease_seconds=60,
+                heartbeat_seconds=1,
+            ),
+            max_items=1,
+        )
+
+        assert len(results) == 1
+        assert results[0].status == "failed"
+
+        with Session(engine) as session:
+            run = session.query(Run).filter_by(run_key=results[0].run_key).one()
+            payload = dict(run.result_payload or {})
+            expected_artifacts = {
+                artifact.path: artifact for artifact in run.artifacts if artifact.kind == "expected_output"
+            }
+            assert run.status == RunStatus.FAILED
+            assert payload["failure_classification"]["category"] == "command_failure"
+            assert diagnostic_rel in expected_artifacts
+            assert report_rel in expected_artifacts
+            assert (
+                expected_artifacts[diagnostic_rel].metadata_["transport_policy"]
+                == "inline_text_evidence"
+            )
+            assert (
+                expected_artifacts[report_rel].metadata_["transport_policy"]
+                == "inline_text_evidence"
+            )
+            assert (
+                expected_artifacts[diagnostic_rel].metadata_["inline_utf8"]
+                == '{\n"promotion_valid": false,\n"promotion_reasons": ["status is flow_failed, not ok"]\n}\n'
+            )
+            assert expected_artifacts[report_rel].metadata_["inline_utf8"] == "# timing debug\n"
+
+
 def test_worker_marks_command_timeout_terminal() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"

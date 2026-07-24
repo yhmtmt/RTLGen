@@ -91,6 +91,33 @@ module top;
 endmodule
 """
 
+VALID_QUALIFIED_SUFFIX_EXPLICIT_ONEHOT_DECLARATIONS = """\
+module top;
+  wire [6:0] \\cluster_ctrl/state_q ;
+  wire [10:0] \\cluster_ctrl/reducer.state ;
+endmodule
+"""
+
+AMBIGUOUS_QUALIFIED_SUFFIX_EXPLICIT_ONEHOT_DECLARATIONS = """\
+module top;
+  wire [6:0] \\cluster_a/state_q ;
+  wire [6:0] \\cluster_b/state_q ;
+  wire [10:0] \\cluster_ctrl/reducer.state ;
+endmodule
+"""
+
+PARTIAL_QUALIFIED_SUFFIX_EXPLICIT_ONEHOT_DECLARATIONS = """\
+module top;
+  wire \\cluster_ctrl/state_q[0] ;
+  wire \\cluster_ctrl/state_q[1] ;
+  wire \\cluster_ctrl/state_q[2] ;
+  wire \\cluster_ctrl/state_q[3] ;
+  wire \\cluster_ctrl/state_q[4] ;
+  wire \\cluster_ctrl/state_q[5] ;
+  wire [10:0] \\cluster_ctrl/reducer.state ;
+endmodule
+"""
+
 
 def _synth_results_dir(root: Path) -> Path:
     return root / "orfs" / "flow" / "results"
@@ -437,6 +464,48 @@ def test_check_attention_decode_score_multivalue_cluster_binary_fsm_accepts_expl
         assert diagnostic["promotion_valid"] is True
 
 
+def test_check_attention_decode_score_multivalue_cluster_binary_fsm_accepts_unique_qualified_suffix_candidates() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        root = Path(td)
+        metrics = _metrics_path(root)
+        _write_netlist(
+            root,
+            flow_variant=EXPLICIT_ONEHOT_VARIANT,
+            body=VALID_QUALIFIED_SUFFIX_EXPLICIT_ONEHOT_DECLARATIONS,
+        )
+        _write_metrics(
+            metrics,
+            [
+                _write_row(
+                    status="ok",
+                    critical_path_ns=7.2,
+                    result_path=(
+                        "runs/designs/npu_blocks/"
+                        "attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/result.json"
+                    ),
+                    tag=EXPLICIT_ONEHOT_TAG,
+                    flow_variant=EXPLICIT_ONEHOT_VARIANT,
+                    synth_args=None,
+                )
+            ],
+        )
+        diagnostic_out = metrics.parent / "explicit_onehot_fsm_diagnostic.json"
+
+        proc = _run_checker(
+            metrics,
+            synth_results_dir=_synth_results_dir(root),
+            diagnostic_out=diagnostic_out,
+            profile="explicit_onehot",
+        )
+
+        assert proc.returncode == 0, proc.stderr
+        diagnostic = json.loads(diagnostic_out.read_text(encoding="utf-8"))
+        assert diagnostic["signals"]["state_q"]["matched_declaration"] == "cluster_ctrl.state_q"
+        assert diagnostic["signals"]["state_q"]["match_type"] == "qualified_suffix"
+        assert diagnostic["signals"]["reducer.state"]["matched_declaration"] == "cluster_ctrl.reducer.state"
+        assert diagnostic["promotion_valid"] is True
+
+
 def test_check_attention_decode_score_multivalue_cluster_binary_fsm_targeted_profile_relies_on_post_synth_widths() -> None:
     with tempfile.TemporaryDirectory() as td:
         root = Path(td)
@@ -717,6 +786,76 @@ def test_check_attention_decode_score_multivalue_cluster_binary_fsm_rejects_expl
         assert "invalid width for reducer.state" in proc.stderr
 
 
+def test_check_attention_decode_score_multivalue_cluster_binary_fsm_rejects_ambiguous_qualified_suffix_candidates() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        root = Path(td)
+        metrics = _metrics_path(root)
+        _write_netlist(
+            root,
+            flow_variant=EXPLICIT_ONEHOT_VARIANT,
+            body=AMBIGUOUS_QUALIFIED_SUFFIX_EXPLICIT_ONEHOT_DECLARATIONS,
+        )
+        _write_metrics(
+            metrics,
+            [
+                _write_row(
+                    status="ok",
+                    critical_path_ns=7.2,
+                    result_path=(
+                        "runs/designs/npu_blocks/"
+                        "attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/result.json"
+                    ),
+                    tag=EXPLICIT_ONEHOT_TAG,
+                    flow_variant=EXPLICIT_ONEHOT_VARIANT,
+                    synth_args=None,
+                )
+            ],
+        )
+        proc = _run_checker(
+            metrics,
+            synth_results_dir=_synth_results_dir(root),
+            profile="explicit_onehot",
+        )
+
+        assert proc.returncode != 0
+        assert "ambiguous qualified declaration for state_q" in proc.stderr
+
+
+def test_check_attention_decode_score_multivalue_cluster_binary_fsm_rejects_partial_qualified_suffix_candidate() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        root = Path(td)
+        metrics = _metrics_path(root)
+        _write_netlist(
+            root,
+            flow_variant=EXPLICIT_ONEHOT_VARIANT,
+            body=PARTIAL_QUALIFIED_SUFFIX_EXPLICIT_ONEHOT_DECLARATIONS,
+        )
+        _write_metrics(
+            metrics,
+            [
+                _write_row(
+                    status="ok",
+                    critical_path_ns=7.2,
+                    result_path=(
+                        "runs/designs/npu_blocks/"
+                        "attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/result.json"
+                    ),
+                    tag=EXPLICIT_ONEHOT_TAG,
+                    flow_variant=EXPLICIT_ONEHOT_VARIANT,
+                    synth_args=None,
+                )
+            ],
+        )
+        proc = _run_checker(
+            metrics,
+            synth_results_dir=_synth_results_dir(root),
+            profile="explicit_onehot",
+        )
+
+        assert proc.returncode != 0
+        assert "missing declaration for state_q: candidate cluster_ctrl.state_q missing indices [6]" in proc.stderr
+
+
 @pytest.mark.parametrize(
     "declaration",
     [INVALID_STATE_Q, INVALID_STATE_Q_BIT],
@@ -759,5 +898,40 @@ def test_check_attention_decode_score_multivalue_cluster_binary_fsm_rejects_when
             ],
         )
         proc = _run_checker(metrics, synth_results_dir=_synth_results_dir(Path(td)))
+        assert proc.returncode != 0
+        assert "missing exact netlist" in proc.stderr
+
+
+def test_check_attention_decode_score_multivalue_cluster_binary_fsm_does_not_promote_from_source_rtl_without_exact_netlist() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        root = Path(td)
+        metrics = _metrics_path(root)
+        design_dir = metrics.parent
+        design_dir.mkdir(parents=True, exist_ok=True)
+        (design_dir / "generated_sv2v.v").write_text(VALID_EXPLICIT_ONEHOT_PACKED_NETLIST_DECLARATIONS, encoding="utf-8")
+        (design_dir / "manifest.json").write_text('{"source":"rtl"}\n', encoding="utf-8")
+        _write_metrics(
+            metrics,
+            [
+                _write_row(
+                    status="ok",
+                    critical_path_ns=7.2,
+                    result_path=(
+                        "runs/designs/npu_blocks/"
+                        "attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/result.json"
+                    ),
+                    tag=EXPLICIT_ONEHOT_TAG,
+                    flow_variant=EXPLICIT_ONEHOT_VARIANT,
+                    synth_args=None,
+                )
+            ],
+        )
+
+        proc = _run_checker(
+            metrics,
+            synth_results_dir=_synth_results_dir(root),
+            profile="explicit_onehot",
+        )
+
         assert proc.returncode != 0
         assert "missing exact netlist" in proc.stderr
