@@ -1,0 +1,89 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-07-19T06:37:33.148092Z",
+  "item_id": "l1_decoder_attention_decode_score_multivalue_gqa8_folded_lanes2_pnr_v1",
+  "run_key": "l1_decoder_attention_decode_score_multivalue_gqa8_folded_lanes2_pnr_v1_run_6c51a9cd7a58a8da",
+  "layer": "layer1",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l1_sweep",
+  "source_commit": "f63fd55c1360dcc9b072e672c8ccc0ff2234ac6b",
+  "objective": "Measure the 2-lane folded GQA8 group at the matched-density 3.55 mm die and 8/10 ns targets, retaining failed rows as explicit boundary evidence.",
+  "input_manifest": {
+    "sweeps": [
+      "runs/campaigns/npu/decode_score_multivalue_gqa_folded_lanes_v1/sweeps/nangate45_decode_score_multivalue_gqa_lanes2.json"
+    ],
+    "configs": [
+      "runs/designs/npu_blocks/attention_decode_score_multivalue_gqa_group_lanes2_int8_m1x8_iterdiv/config.json"
+    ],
+    "out_root": "runs/designs/npu_blocks",
+    "design_dirs": [],
+    "macro_manifests": [],
+    "candidate_manifests": [],
+    "required_submodules": []
+  },
+  "proposal_count": 0,
+  "evaluation_record": {
+    "evaluation_mode": "frontier_followup",
+    "abstraction_layer": "decoder_attention_decode_score_multivalue_gqa_folded_lane",
+    "result_kind": "boundary_evidence",
+    "physical_metrics_present": false,
+    "timing_feasible": null,
+    "summary": "No status=ok Layer 1 rows were produced; non-ok metrics rows are recorded as explicit boundary evidence.",
+    "boundary_status_counts": {
+      "flow_failed": 2
+    }
+  },
+  "proposal_assessment": {
+    "outcome": "boundary_no_feasible_points",
+    "summary": "All current Layer 1 metrics rows are non-ok; this is accepted as frontier boundary evidence, not a promotable design point.",
+    "failure_row_count": 2
+  },
+  "proposals": [],
+  "trial_summary": {
+    "item_id": "l1_decoder_attention_decode_score_multivalue_gqa8_folded_lanes2_pnr_v1",
+    "completed_trials": 1,
+    "success_count": 0,
+    "failure_count": 1,
+    "success_rate": 0.0,
+    "partial_metrics_count": 0,
+    "metrics": {}
+  },
+  "source_refs": {
+    "trial_metrics_csvs": [
+      "runs/designs/npu_blocks/attention_decode_score_multivalue_gqa_group_lanes2_int8_m1x8_iterdiv/metrics.csv"
+    ],
+    "summary_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_decode_score_multivalue_gqa8_folded_lanes2_pnr_v1/summary_stats.json",
+    "failure_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_decode_score_multivalue_gqa8_folded_lanes2_pnr_v1/failure_stats.json",
+    "trial_table_csv": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_decode_score_multivalue_gqa8_folded_lanes2_pnr_v1/trial_table.csv"
+  },
+  "boundary_evidence": {
+    "row_count": 2,
+    "rows": [
+      {
+        "metrics_csv": "runs/designs/npu_blocks/attention_decode_score_multivalue_gqa_group_lanes2_int8_m1x8_iterdiv/metrics.csv",
+        "status": "flow_failed",
+        "design": "attention_decode_score_multivalue_gqa_group_lanes2_int8_m1x8_iterdiv",
+        "platform": "nangate45",
+        "config_hash": "15c64ae08158",
+        "param_hash": "df86bb25",
+        "tag": "decode_score_multivalue_gqa_lanes2_v1_matched_density_die_3550",
+        "result_path": "/orfs/flow/logs/nangate45/attention_decode_score_multivalue_gqa_group_lanes2_int8_m1x8_iterdiv/decode_score_multivalue_gqa_group_lanes_v1_matched_density_die_3550",
+        "work_result_json": "runs/designs/npu_blocks/attention_decode_score_multivalue_gqa_group_lanes2_int8_m1x8_iterdiv/work/df86bb25/result.json",
+        "params_json": "{\"CLOCK_PERIOD\": 10, \"CORE_AREA\": \"50 50 3500 3500\", \"DIE_AREA\": \"0 0 3550 3550\", \"FLOW_VARIANT\": \"decode_score_multivalue_gqa_group_lanes_v1_matched_density_die_3550\", \"PLACE_DENSITY\": 0.4, \"SYNTH_HIERARCHICAL\": 1, \"SYNTH_MEMORY_MAX_BITS\": 65536, \"TAG\": \"decode_score_multivalue_gqa_lanes2_v1_matched_density_die_3550\", \"tag_prefix\": \"decode_score_multivalue_gqa_lanes2_v1\"}"
+      },
+      {
+        "metrics_csv": "runs/designs/npu_blocks/attention_decode_score_multivalue_gqa_group_lanes2_int8_m1x8_iterdiv/metrics.csv",
+        "status": "flow_failed",
+        "design": "attention_decode_score_multivalue_gqa_group_lanes2_int8_m1x8_iterdiv",
+        "platform": "nangate45",
+        "config_hash": "15c64ae08158",
+        "param_hash": "8b5cbc08",
+        "tag": "decode_score_multivalue_gqa_lanes2_v1_matched_density_die_3550",
+        "result_path": "/orfs/flow/logs/nangate45/attention_decode_score_multivalue_gqa_group_lanes2_int8_m1x8_iterdiv/decode_score_multivalue_gqa_group_lanes_v1_matched_density_die_3550",
+        "work_result_json": "runs/designs/npu_blocks/attention_decode_score_multivalue_gqa_group_lanes2_int8_m1x8_iterdiv/work/8b5cbc08/result.json",
+        "params_json": "{\"CLOCK_PERIOD\": 8, \"CORE_AREA\": \"50 50 3500 3500\", \"DIE_AREA\": \"0 0 3550 3550\", \"FLOW_VARIANT\": \"decode_score_multivalue_gqa_group_lanes_v1_matched_density_die_3550\", \"PLACE_DENSITY\": 0.4, \"SYNTH_HIERARCHICAL\": 1, \"SYNTH_MEMORY_MAX_BITS\": 65536, \"TAG\": \"decode_score_multivalue_gqa_lanes2_v1_matched_density_die_3550\", \"tag_prefix\": \"decode_score_multivalue_gqa_lanes2_v1\"}"
+      }
+    ]
+  }
+}
