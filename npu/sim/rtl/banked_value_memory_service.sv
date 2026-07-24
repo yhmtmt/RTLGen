@@ -16,7 +16,8 @@ module banked_value_memory_service #(
   parameter integer BANK_QUEUE_DEPTH = 2,
   parameter integer READ_LATENCY = 2,
   parameter integer COUNTER_W = 32,
-  parameter integer INIT_FROM_GENERATOR = 0
+  parameter integer INIT_FROM_GENERATOR = 0,
+  parameter integer MEMORY_IMPL = 0
 ) (
   input wire clk,
   input wire rst_n,
@@ -67,6 +68,10 @@ module banked_value_memory_service #(
   localparam integer REQ_TAG_LSB = REQ_SRC_LSB + SOURCE_W;
   localparam integer REQ_ADDR_LSB = REQ_TAG_LSB + TAG_W;
   localparam integer REQ_SLICE_LSB = REQ_ADDR_LSB + ADDR_W;
+  localparam integer VALUE_MACRO_W = 32;
+  localparam integer VALUE_MACRO_LANES = VALUE_W / VALUE_MACRO_W;
+  localparam integer VALUE_MACRO_DEPTH = 64;
+  localparam integer VALUE_MACRO_ADDR_W = 6;
 
   wire [BANKS-1:0] bank_fifo_in_valid;
   wire [BANKS-1:0] bank_fifo_in_ready;
@@ -75,6 +80,7 @@ module banked_value_memory_service #(
   wire [BANKS-1:0] bank_launch_fire;
   wire [BANKS*REQ_META_W-1:0] bank_fifo_out_bus;
   wire [BANKS*BANK_COUNT_W-1:0] bank_fifo_occupancy_bus;
+  wire [BANKS*VALUE_W-1:0] macro_bank_read_matrix_bus;
 
   reg [BANKS-1:0] bank_busy;
   reg [SOURCE_W-1:0] active_source [0:BANKS-1];
@@ -85,6 +91,8 @@ module banked_value_memory_service #(
   reg [FRAG_IDX_W-1:0] active_fragment [0:BANKS-1];
   reg [LAT_W-1:0] bank_latency [0:BANKS-1];
   reg [BANKS-1:0] bank_ready_fragment_r;
+  reg [BANKS-1:0] macro_read_pending_q;
+  reg [BANKS-1:0] macro_capture_pending_q;
   reg [BANK_PTR_W-1:0] resp_rr_cursor;
   reg [BANK_PTR_W-1:0] resp_grant_bank_r;
   reg resp_lock_valid_r;
@@ -93,7 +101,7 @@ module banked_value_memory_service #(
   reg [REQ_OCC_W-1:0] req_occupancy_sum_r;
   reg [RESP_OCC_W-1:0] resp_occupancy_sum_r;
 
-  reg [VALUE_W-1:0] value_mem [0:STORE_ENTRY_COUNT-1];
+  reg [VALUE_W-1:0] behavioral_value_mem [0:STORE_ENTRY_COUNT-1];
 
   integer occ_bank_i;
   integer seq_bank_i;
@@ -162,6 +170,16 @@ module banked_value_memory_service #(
     end
   endfunction
 
+  function [VALUE_MACRO_ADDR_W-1:0] macro_bank_row;
+    input [ADDR_W-1:0] addr;
+    input [VALUE_SLICE_W-1:0] value_slice;
+    integer row_index;
+    begin
+      row_index = ((addr / BANKS) * VALUE_SLICE_COUNT) + value_slice;
+      macro_bank_row = row_index[VALUE_MACRO_ADDR_W-1:0];
+    end
+  endfunction
+
   function [VALUE_W-1:0] generated_matrix;
     input integer addr;
     input integer value_slice;
@@ -218,8 +236,49 @@ module banked_value_memory_service #(
 
       assign bank_fifo_in_valid[bank_gi] =
         req_valid && (bank_from_addr(req_addr) == bank_gi[BANK_SEL_W-1:0]);
-      assign bank_fifo_out_ready[bank_gi] = !bank_busy[bank_gi] && bank_fifo_out_valid[bank_gi];
+      assign bank_fifo_out_ready[bank_gi] =
+        !bank_busy[bank_gi] &&
+        bank_fifo_out_valid[bank_gi] &&
+        !(preload_fire && (bank_from_addr(preload_addr) == bank_gi[BANK_SEL_W-1:0]) && (MEMORY_IMPL != 0));
       assign bank_launch_fire[bank_gi] = bank_fifo_out_valid[bank_gi] && bank_fifo_out_ready[bank_gi];
+    end
+
+    if (MEMORY_IMPL != 0) begin : gen_value_macro_backend
+      genvar macro_bank_gi;
+      for (macro_bank_gi = 0; macro_bank_gi < BANKS; macro_bank_gi = macro_bank_gi + 1) begin : gen_value_bank
+        wire bank_preload_fire;
+        wire bank_read_fire;
+        wire [VALUE_MACRO_ADDR_W-1:0] bank_macro_addr;
+        wire [ADDR_W-1:0] bank_launch_addr;
+        wire [VALUE_SLICE_W-1:0] bank_launch_slice;
+
+        assign bank_preload_fire =
+          preload_fire && (bank_from_addr(preload_addr) == macro_bank_gi[BANK_SEL_W-1:0]);
+        assign bank_launch_addr =
+          meta_addr(bank_fifo_out_bus[(macro_bank_gi * REQ_META_W) +: REQ_META_W]);
+        assign bank_launch_slice =
+          meta_slice(bank_fifo_out_bus[(macro_bank_gi * REQ_META_W) +: REQ_META_W]);
+        assign bank_read_fire =
+          bank_launch_fire[macro_bank_gi] && (bank_launch_addr < STORE_DEPTH[ADDR_W-1:0]);
+        assign bank_macro_addr = bank_preload_fire ?
+          macro_bank_row(preload_addr, preload_value_slice) :
+          macro_bank_row(bank_launch_addr, bank_launch_slice);
+
+        genvar value_lane_gi;
+        for (value_lane_gi = 0; value_lane_gi < VALUE_MACRO_LANES; value_lane_gi = value_lane_gi + 1) begin : gen_value_lane
+          fakeram45_64x32 u_value_mem_lane (
+            .rd_out(macro_bank_read_matrix_bus[
+              (macro_bank_gi * VALUE_W) + (value_lane_gi * VALUE_MACRO_W) +: VALUE_MACRO_W
+            ]),
+            .addr_in(bank_macro_addr),
+            .we_in(bank_preload_fire),
+            .wd_in(preload_matrix[(value_lane_gi * VALUE_MACRO_W) +: VALUE_MACRO_W]),
+            .w_mask_in({VALUE_MACRO_W{bank_preload_fire}}),
+            .clk(clk),
+            .ce_in(bank_preload_fire || bank_read_fire)
+          );
+        end
+      end
     end
   endgenerate
 
@@ -289,13 +348,36 @@ module banked_value_memory_service #(
       $error("banked_value_memory_service STORE_DEPTH exceeds ADDR_W encoding");
       $finish(1);
     end
+    if (MEMORY_IMPL != 0) begin
+      if (BANKS != 4) begin
+        $error("macro-backed banked_value_memory_service requires BANKS=4, got %0d", BANKS);
+        $finish(1);
+      end
+      if (STORE_DEPTH != 16) begin
+        $error("macro-backed banked_value_memory_service requires STORE_DEPTH=16, got %0d", STORE_DEPTH);
+        $finish(1);
+      end
+      if (READ_LATENCY != 2) begin
+        $error("macro-backed banked_value_memory_service requires READ_LATENCY=2, got %0d", READ_LATENCY);
+        $finish(1);
+      end
+      if (VALUE_MACRO_LANES != 16) begin
+        $error("macro-backed banked_value_memory_service requires sixteen 32-bit value lanes");
+        $finish(1);
+      end
+      if ((STORE_ENTRY_COUNT / BANKS) != VALUE_MACRO_DEPTH) begin
+        $error("macro-backed banked_value_memory_service requires exact 64-entry per-bank depth, got %0d",
+               (STORE_ENTRY_COUNT / BANKS));
+        $finish(1);
+      end
+    end
     for (init_i = 0; init_i < STORE_ENTRY_COUNT; init_i = init_i + 1) begin
       if (INIT_FROM_GENERATOR != 0) begin
         init_addr = init_i / VALUE_SLICE_COUNT;
         init_slice = init_i % VALUE_SLICE_COUNT;
-        value_mem[init_i] = generated_matrix(init_addr, init_slice);
+        behavioral_value_mem[init_i] = generated_matrix(init_addr, init_slice);
       end else begin
-        value_mem[init_i] = {VALUE_W{1'b0}};
+        behavioral_value_mem[init_i] = {VALUE_W{1'b0}};
       end
     end
   end
@@ -304,6 +386,8 @@ module banked_value_memory_service #(
   always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
       bank_busy <= {BANKS{1'b0}};
+      macro_read_pending_q <= {BANKS{1'b0}};
+      macro_capture_pending_q <= {BANKS{1'b0}};
       for (seq_bank_i = 0; seq_bank_i < BANKS; seq_bank_i = seq_bank_i + 1) begin
         active_source[seq_bank_i] <= {SOURCE_W{1'b0}};
         active_tag[seq_bank_i] <= {TAG_W{1'b0}};
@@ -323,9 +407,9 @@ module banked_value_memory_service #(
       req_max_occupancy <= {COUNTER_W{1'b0}};
       resp_max_occupancy <= {COUNTER_W{1'b0}};
     end else begin
-      if (preload_fire && (preload_addr < STORE_DEPTH[ADDR_W-1:0])) begin
+      if ((MEMORY_IMPL == 0) && preload_fire && (preload_addr < STORE_DEPTH[ADDR_W-1:0])) begin
         preload_idx = store_index(preload_addr, preload_value_slice);
-        value_mem[preload_idx] <= preload_matrix;
+        behavioral_value_mem[preload_idx] <= preload_matrix;
       end
 
       if (req_fire) begin
@@ -337,6 +421,16 @@ module banked_value_memory_service #(
       end
 
       for (seq_bank_i = 0; seq_bank_i < BANKS; seq_bank_i = seq_bank_i + 1) begin
+        if (macro_read_pending_q[seq_bank_i]) begin
+          macro_read_pending_q[seq_bank_i] <= 1'b0;
+          macro_capture_pending_q[seq_bank_i] <= 1'b1;
+        end
+        if (macro_capture_pending_q[seq_bank_i]) begin
+          active_matrix[seq_bank_i] <=
+            macro_bank_read_matrix_bus[(seq_bank_i * VALUE_W) +: VALUE_W];
+          macro_capture_pending_q[seq_bank_i] <= 1'b0;
+        end
+
         if (bank_launch_fire[seq_bank_i]) begin
           bank_busy[seq_bank_i] <= 1'b1;
           active_source[seq_bank_i] <=
@@ -348,19 +442,24 @@ module banked_value_memory_service #(
           active_slice[seq_bank_i] <=
             meta_slice(bank_fifo_out_bus[(seq_bank_i * REQ_META_W) +: REQ_META_W]);
           active_fragment[seq_bank_i] <= {FRAG_IDX_W{1'b0}};
-          if (READ_LATENCY == 0) begin
-            bank_latency[seq_bank_i] <= {LAT_W{1'b0}};
-          end else begin
-            bank_latency[seq_bank_i] <= READ_LATENCY[LAT_W-1:0];
-          end
+          bank_latency[seq_bank_i] <= READ_LATENCY[LAT_W-1:0];
           if (meta_addr(bank_fifo_out_bus[(seq_bank_i * REQ_META_W) +: REQ_META_W]) <
               STORE_DEPTH[ADDR_W-1:0]) begin
-            active_matrix[seq_bank_i] <=
-              value_mem[store_index(
-                meta_addr(bank_fifo_out_bus[(seq_bank_i * REQ_META_W) +: REQ_META_W]),
-                meta_slice(bank_fifo_out_bus[(seq_bank_i * REQ_META_W) +: REQ_META_W]))];
+            if (MEMORY_IMPL == 0) begin
+              active_matrix[seq_bank_i] <=
+                behavioral_value_mem[store_index(
+                  meta_addr(bank_fifo_out_bus[(seq_bank_i * REQ_META_W) +: REQ_META_W]),
+                  meta_slice(bank_fifo_out_bus[(seq_bank_i * REQ_META_W) +: REQ_META_W]))];
+              macro_read_pending_q[seq_bank_i] <= 1'b0;
+              macro_capture_pending_q[seq_bank_i] <= 1'b0;
+            end else begin
+              macro_read_pending_q[seq_bank_i] <= 1'b1;
+              macro_capture_pending_q[seq_bank_i] <= 1'b0;
+            end
           end else begin
             active_matrix[seq_bank_i] <= {VALUE_W{1'b0}};
+            macro_read_pending_q[seq_bank_i] <= 1'b0;
+            macro_capture_pending_q[seq_bank_i] <= 1'b0;
           end
         end else if (bank_busy[seq_bank_i] && (bank_latency[seq_bank_i] != {LAT_W{1'b0}})) begin
           bank_latency[seq_bank_i] <=

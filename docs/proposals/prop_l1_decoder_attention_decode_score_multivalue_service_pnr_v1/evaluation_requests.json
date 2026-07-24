@@ -1,0 +1,58 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_decode_score_multivalue_service_pnr_v1",
+  "source_commit_note": "Replace with the merge commit that contains this corrected c1-first physical-prep patch before dispatch.",
+  "requested_items": [
+    {
+      "item_id": "l1_decoder_attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_pnr_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure the composed multivalue service at c1 using the exact 4-bank x 16-lane fakeram45_64x32 value-memory macro contract and a conservative 3.0 mm die envelope.",
+      "evaluation_mode": "frontier_followup",
+      "abstraction_layer": "decoder_attention_decode_score_multivalue_service",
+      "comparison_role": "composed_service_c1_physical_prep",
+      "paired_baseline_item_id": "l1_decoder_attention_decode_score_multivalue_cluster_pnr_v1",
+      "config_paths": [
+        "runs/designs/npu_blocks/attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/decode_score_multivalue_service_v1/sweeps/nangate45_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_3000.json",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1_r1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "measure_composed_multivalue_service_c1_ppa",
+        "reason": "Record total composed PPA as the authoritative metric while using the single-cluster baseline only as implementation-context sensitivity, not intrinsic additive fabric PPA."
+      },
+      "status": "pending_implementation_merge"
+    },
+    {
+      "item_id": "l1_decoder_attention_decode_score_multivalue_service_c2_p128_b4_q4_rl2_rr_pnr_v1",
+      "task_type": "l1_sweep",
+      "objective": "Conditionally measure the composed multivalue service at c2 using the exact 4-bank x 16-lane fakeram45_64x32 value-memory macro contract and a 3.7 mm hierarchy comparison sweep only after the corrected c1 physical path is accepted.",
+      "evaluation_mode": "frontier_followup",
+      "abstraction_layer": "decoder_attention_decode_score_multivalue_service",
+      "comparison_role": "composed_service_c2_physical_prep",
+      "config_paths": [
+        "runs/designs/npu_blocks/attention_decode_score_multivalue_service_c2_p128_b4_q4_rl2_rr/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/decode_score_multivalue_service_v1/sweeps/nangate45_decode_score_multivalue_service_c2_p128_b4_q4_rl2_rr_3700.json",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1_r1",
+        "l1_decoder_attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_pnr_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "measure_composed_multivalue_service_c2_ppa",
+        "reason": "Require at least one 10 ns c2 hierarchy mode to pass at the pin/macro-derived 3.7 mm envelope; if both modes fail, stop the monolithic path and do not advance later service scales."
+      },
+      "status": "conditional_follow_on",
+      "notes": "No exact merged cluster-only c2 baseline exists yet; c2 deltas must therefore be treated as implementation-context observations only, and the item stays gated behind accepted c1 macro-backed evidence through an explicit dependency on l1_decoder_attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_pnr_v1."
+    }
+  ],
+  "follow_on_notes": [
+    "c2 is intentionally kept conditional behind accepted c1 macro-backed evidence and now depends explicitly on l1_decoder_attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_pnr_v1.",
+    "c8 is intentionally deferred from this first patch and remains a later-gated follow-up after c1/c2 feasibility is materialized.",
+    "c16 and c32 remain later-gated follow-ups after c8 runtime and physical feasibility are proven."
+  ]
+}
