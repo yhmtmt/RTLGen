@@ -4,6 +4,7 @@ from pathlib import Path
 import pytest
 
 from npu.eval.audit_attention_decode_score_multivalue_cluster_frontier import build_report
+from npu.eval.probe_attention_decode_score_multivalue_integrated_service import _workload_contract
 
 
 def _write(path: Path, payload: dict) -> Path:
@@ -60,6 +61,7 @@ def _service_report(tmp_path: Path) -> Path:
             "model": "llm_decoder_attention_decode_score_multivalue_integrated_service_probe_v1",
             "decision": "pass",
             "diagnosis": {"decision": "multivalue_integrated_service_probe_passed"},
+            "workload_contract": _workload_contract(),
             "cases": cases,
         },
     )
@@ -165,8 +167,9 @@ def test_recost_uses_full_head_commands_activity_energy_and_linked_schedule(tmp_
         "fill": 200,
         "replay": 100,
     }
-    assert report["service_cycle_calibration"]["probe_contract"]["microkernel_context_tokens"] == 128
-    assert report["service_cycle_calibration"]["probe_contract"]["microkernel_value_dim"] == 128
+    assert report["service_cycle_calibration"]["probe_contract"]["active_context_tokens"] == 24
+    assert report["service_cycle_calibration"]["probe_contract"]["max_context_capacity_tokens"] == 128
+    assert report["service_cycle_calibration"]["probe_contract"]["value_dim"] == 128
     assert rows[1]["cluster_waves_per_layer"] == 32
     assert rows[32]["cluster_waves_per_layer"] == 1
     assert rows[32]["service_completion_ratio"] == pytest.approx(2.0)
@@ -429,3 +432,18 @@ def test_recost_does_not_substitute_microkernel_completion_cycles_for_full_conte
     ]
     assert row["attention_cycles"] == 600
     assert row["attention_cycles"] > row["service_no_stall_full_context_cycles_per_wave"]
+
+
+def test_recost_rejects_integrated_service_workload_contract_mismatch(tmp_path: Path) -> None:
+    prior, activity, service = _inputs(tmp_path)
+    payload = json.loads(service.read_text(encoding="utf-8"))
+    payload["workload_contract"]["active_context_tokens"] = 128
+    service.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="workload contract mismatch"):
+        build_report(
+            prior_frontier_json=prior,
+            activity_power_json=activity,
+            integrated_service_json=service,
+            cluster_counts=[1],
+        )

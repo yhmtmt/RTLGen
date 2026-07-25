@@ -32,7 +32,7 @@ _VALUE_MODEL_PATH = REPO_ROOT / "npu/sim/rtl/fakeram45_64x32_model.sv"
 _C1_CASE = next(case for case in probe.DEFAULT_CASES if str(case["case_id"]) == "c1_p128_b4_rr")
 _REQUIRED_SERVICE_FIELDS = {
     "cluster_count": int(_C1_CASE["cluster_count"]),
-    "max_blocks": 16,
+    "max_blocks": int(probe._workload_contract()["max_blocks"]),
     "packet_w": int(_C1_CASE["packet_w"]),
     "banks": int(_C1_CASE["banks"]),
     "req_queue_depth": int(_C1_CASE["req_queue_depth"]),
@@ -274,6 +274,8 @@ def generate_activity(config: JsonDict, out_dir: Path, *, clock_period_ns: float
     normalized_config = _normalize_config(config)
     out_dir.mkdir(parents=True, exist_ok=True)
     values = probe._shared_value_matrices()
+    workload_contract = probe._workload_contract()
+    expected_counts = probe._workload_expected_counts(workload_contract)
     reference = probe._run_integrated(dict(_C1_CASE), values)
     macro = _run_macro_integrated(normalized_config, out_dir, clock_period_ns=clock_period_ns)
     _assert_reference_equivalence(reference, macro)
@@ -282,6 +284,14 @@ def generate_activity(config: JsonDict, out_dir: Path, *, clock_period_ns: float
     score_rows = probe._canonical_scores(macro["score_rows"])
     result_rows = probe._canonical_results(macro["results"])
     wide_rows = probe._canonical_wide(macro["wide_rows"])
+    if len(score_rows) != int(expected_counts["score_row_count"]):
+        raise RuntimeError("generated activity score rows do not match the workload contract")
+    if len(request_rows) != int(expected_counts["request_count"]):
+        raise RuntimeError("generated activity request rows do not match the workload contract")
+    if len(wide_rows) != int(expected_counts["wide_response_count"]):
+        raise RuntimeError("generated activity wide-response rows do not match the workload contract")
+    if len(result_rows) != int(expected_counts["result_count"]):
+        raise RuntimeError("generated activity result rows do not match the workload contract")
     request_banks = sorted({int(row["addr"]) % int(_C1_CASE["banks"]) for row in request_rows})
     preload_banks = sorted({int(entry["addr"]) % int(_C1_CASE["banks"]) for entry in probe._preload_entries(values)})
     inactive_banks = sorted(set(range(int(_C1_CASE["banks"]))) - set(request_banks))
@@ -295,6 +305,7 @@ def generate_activity(config: JsonDict, out_dir: Path, *, clock_period_ns: float
         "model": "attention_decode_score_multivalue_service_activity_v1",
         "generator": "npu/eval/generate_attention_decode_score_multivalue_service_activity.py",
         "case_id": str(_C1_CASE["case_id"]),
+        "workload_contract": workload_contract,
         "artifacts": {
             "config_json": _OUTPUT_CONFIG_NAME,
             "top_verilog": _OUTPUT_TOP_NAME,
@@ -339,6 +350,7 @@ def generate_activity(config: JsonDict, out_dir: Path, *, clock_period_ns: float
                 "one deterministic c1_p128_b4_rr integrated-service command",
                 "macro-backed value-memory backend macro_banked_4x16x64x32",
                 "bounded DUT VCD from reset release through command completion",
+                "active workload contract is 3 blocks x 8 context tokens = 24 active context tokens at value_dim=128",
                 "dynamic switching observed only on banks 0, 1, and 2 under the exact three-block reference workload",
             ],
             "remaining": [

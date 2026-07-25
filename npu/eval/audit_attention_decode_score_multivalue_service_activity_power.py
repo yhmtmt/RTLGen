@@ -25,6 +25,10 @@ from npu.eval.generate_attention_decode_score_multivalue_service_activity import
     _OUTPUT_VCD_NAME,
     generate_activity,
 )
+from npu.eval.probe_attention_decode_score_multivalue_integrated_service import (
+    _workload_contract as _expected_workload_contract,
+    _workload_expected_counts,
+)
 from npu.synth.run_postroute_vcd_power import build_report as build_power_report
 
 JsonDict = dict[str, Any]
@@ -48,9 +52,6 @@ _EXPECTED_MACRO_COUNTS = {
 }
 _SCORE_PINS_PER_MACRO = 11 + 39 + 39 + 1 + 1
 _VALUE_PINS_PER_MACRO = 6 + 32 + 32 + 1 + 1
-_EXPECTED_REQUEST_COUNT = 48
-_EXPECTED_WIDE_RESPONSE_COUNT = 48
-_EXPECTED_RESULT_COUNT = 16
 _POSTROUTE_MANIFEST_NAME = "attention_decode_score_multivalue_service_postroute_power_manifest.json"
 _POSTROUTE_MACRO_ACTIVITY_NAME = (
     "attention_decode_score_multivalue_service_fakeram_macro_pin_vcd_activity_v1.json"
@@ -231,6 +232,10 @@ def _validate_cluster_equivalence(payload: JsonDict) -> JsonDict:
 
 
 def _validate_integrated_service(payload: JsonDict) -> JsonDict:
+    expected_workload = _expected_workload_contract()
+    expected_counts = _workload_expected_counts(expected_workload)
+    if payload.get("workload_contract") != expected_workload:
+        raise ValueError("integrated-service workload contract mismatch")
     cases = payload.get("cases")
     if not isinstance(cases, list):
         raise ValueError("integrated-service report must contain cases[]")
@@ -287,11 +292,11 @@ def _validate_integrated_service(payload: JsonDict) -> JsonDict:
         raise ValueError(
             "integrated-service c1 counters incomplete: " + ", ".join(sorted(missing))
         )
-    if int(integrated.get("request_count", 0)) != _EXPECTED_REQUEST_COUNT:
+    if int(integrated.get("request_count", 0)) != int(expected_counts["request_count"]):
         raise ValueError("integrated-service c1 request_count mismatch")
-    if int(integrated.get("wide_response_count", 0)) != _EXPECTED_WIDE_RESPONSE_COUNT:
+    if int(integrated.get("wide_response_count", 0)) != int(expected_counts["wide_response_count"]):
         raise ValueError("integrated-service c1 wide_response_count mismatch")
-    if int(integrated.get("result_count", 0)) != _EXPECTED_RESULT_COUNT:
+    if int(integrated.get("result_count", 0)) != int(expected_counts["result_count"]):
         raise ValueError("integrated-service c1 result_count mismatch")
     gates = case.get("gates")
     if not isinstance(gates, dict) or not all(
@@ -308,6 +313,7 @@ def _validate_integrated_service(payload: JsonDict) -> JsonDict:
                 raise ValueError(f"integrated-service summary {key} failed")
     return {
         "case_id": _CASE_ID,
+        "config": dict(config),
         "decision": "pass",
         "exact_match": True,
         "no_protocol_errors": True,
@@ -319,6 +325,7 @@ def _validate_integrated_service(payload: JsonDict) -> JsonDict:
         "counters": counters,
         "gates": {key: True for key in ("hash_gate_ok", "protocol_gate_ok", "count_gate_ok")},
         "shared_result_egress": egress,
+        "workload_contract": expected_workload,
         "hashes": {
             "score_hash": _require_string_hash(integrated, "score_hash", "integrated-service c1"),
             "final_hash": _require_string_hash(integrated, "final_hash", "integrated-service c1"),
@@ -331,10 +338,14 @@ def _validate_integrated_service(payload: JsonDict) -> JsonDict:
 
 
 def _validate_generated_activity_manifest(activity_manifest: JsonDict, activity_dir: Path) -> JsonDict:
+    expected_workload = _expected_workload_contract()
+    expected_counts = _workload_expected_counts(expected_workload)
     if str(activity_manifest.get("model") or "").strip() != "attention_decode_score_multivalue_service_activity_v1":
         raise ValueError("generated activity manifest model mismatch")
     if str(activity_manifest.get("case_id") or "").strip() != _CASE_ID:
         raise ValueError("generated activity manifest case_id mismatch")
+    if activity_manifest.get("workload_contract") != expected_workload:
+        raise ValueError("generated activity manifest workload contract mismatch")
     if float(activity_manifest.get("clock_period_ns", 0.0)) != 10.0:
         raise ValueError("generated activity manifest clock_period_ns mismatch")
     cycle_count = int(activity_manifest.get("cycle_count", 0))
@@ -343,11 +354,11 @@ def _validate_generated_activity_manifest(activity_manifest: JsonDict, activity_
     counters = activity_manifest.get("request_result_protocol_counters")
     if not isinstance(counters, dict):
         raise ValueError("generated activity manifest request_result_protocol_counters missing")
-    if int(counters.get("request_count", 0)) != _EXPECTED_REQUEST_COUNT:
+    if int(counters.get("request_count", 0)) != int(expected_counts["request_count"]):
         raise ValueError("generated activity manifest request_count mismatch")
-    if int(counters.get("wide_response_count", 0)) != _EXPECTED_WIDE_RESPONSE_COUNT:
+    if int(counters.get("wide_response_count", 0)) != int(expected_counts["wide_response_count"]):
         raise ValueError("generated activity manifest wide_response_count mismatch")
-    if int(counters.get("result_count", 0)) != _EXPECTED_RESULT_COUNT:
+    if int(counters.get("result_count", 0)) != int(expected_counts["result_count"]):
         raise ValueError("generated activity manifest result_count mismatch")
     shared = counters.get("shared")
     if not isinstance(shared, dict) or shared.get("protocol_error") is not False:
@@ -373,6 +384,7 @@ def _validate_generated_activity_manifest(activity_manifest: JsonDict, activity_
         "generated_manifest_sha256": _sha256_file(activity_dir / _OUTPUT_MANIFEST_NAME),
         "generated_manifest_hashes": dict(activity_manifest.get("hashes") or {}),
         "bank_coverage": bank_coverage,
+        "workload_contract": expected_workload,
     }
 
 
@@ -791,6 +803,20 @@ def build_report(
                 "total_power_mw": float(metric.get("total_power_mw") or 0.0),
             }
     best = candidate if candidate.get("status") == "activity_backed" else None
+    if activity_meta["workload_contract"] != integrated_service["workload_contract"]:
+        raise ValueError("generated activity workload contract does not match integrated-service c1")
+    generated_hashes = activity_meta["generated_manifest_hashes"]
+    integrated_hashes = integrated_service["hashes"]
+    for generated_key, integrated_key in (
+        ("score_hash", "score_hash"),
+        ("final_hash", "final_hash"),
+        ("request_hash", "request_hash"),
+        ("wide_response_matrix_hash", "wide_response_matrix_hash"),
+    ):
+        if str(generated_hashes.get(generated_key) or "").strip() != str(integrated_hashes[integrated_key]).strip():
+            raise ValueError(
+                f"generated activity {generated_key} does not match integrated-service c1 {integrated_key}"
+            )
     return {
         "version": 1,
         "model": _MODEL,
@@ -828,6 +854,7 @@ def build_report(
             "vcd_sha256": activity_meta["vcd_sha256"],
             "clock_period_ns": clock_period_ns,
             "cycle_count": int(activity_meta["cycle_count"]),
+            "workload_contract": activity_meta["workload_contract"],
         },
         "macro_manifest_contract": {
             "counts": activity_meta["macro_counts"],

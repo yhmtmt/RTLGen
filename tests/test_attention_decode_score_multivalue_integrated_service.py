@@ -16,6 +16,8 @@ from npu.eval.probe_attention_decode_score_multivalue_integrated_service import 
     COMPACT_REPORT_MAX_LINES,
     DEFAULT_CASES,
     REPORT_EXCLUSIONS,
+    _workload_contract,
+    _workload_expected_counts,
     _selected_scale_point,
     build_report,
     validate_report,
@@ -322,11 +324,15 @@ def test_integrated_service_report_retains_linkage_and_summary() -> None:
     assert report["summary"]["all_hash_gates_passed"] is True
     assert report["summary"]["all_protocol_gates_passed"] is True
     assert report["summary"]["all_count_gates_passed"] is True
+    assert report["workload_contract"] == _workload_contract()
     assert report["selected_scale_point"]["arch_id"] == "decode_score_multivalue_integrated_service"
     assert report["selected_scale_point"]["case_id"] == "linkage"
     assert "not a performance or architectural ranking" in report["selected_scale_point"]["selection_basis"]
     assert report["report_contract"]["shape"] == "deduplicated_shared_artifact_identities_v1"
-    assert report["source_identities"]["generated_artifacts"]["shared_preload"]["entry_count"] == 48
+    assert (
+        report["source_identities"]["generated_artifacts"]["shared_preload"]["entry_count"]
+        == _workload_expected_counts()["preload_entry_count"]
+    )
     case = report["cases"][0]
     assert "generated_manifests" not in case
     assert "preload" not in case
@@ -513,6 +519,83 @@ def test_integrated_service_report_compact_size_gate_with_large_manifests(
         row["result_beats_per_command"] == 16
         for row in report["source_identities"]["generated_artifacts"]["generated_manifests"]
     )
+
+
+def test_integrated_service_report_workload_contract_rejects_128_as_active_context() -> None:
+    report = {
+        "version": 1,
+        "model": "llm_decoder_attention_decode_score_multivalue_integrated_service_probe_v1",
+        "decision": "pass",
+        "diagnosis": {"decision": "multivalue_integrated_service_probe_passed"},
+        "exclusions": REPORT_EXCLUSIONS,
+        "report_contract": {
+            "shape": "deduplicated_shared_artifact_identities_v1",
+            "max_pretty_json_bytes": COMPACT_REPORT_MAX_BYTES,
+            "max_pretty_json_lines": COMPACT_REPORT_MAX_LINES,
+        },
+        "workload_contract": {
+            **_workload_contract(),
+            "active_context_tokens": 128,
+        },
+        "source_identities": {
+            "repo_commit": "deadbeef",
+            "generated_artifacts": {
+                "shared_preload": {
+                    "artifact_id": "shared_preload_v1",
+                    "entry_count": _workload_expected_counts()["preload_entry_count"],
+                    "payload_elided": True,
+                },
+                "generated_manifests": [{"artifact_id": "m1", "result_beats_per_command": 16}],
+                "generated_tops": [{"artifact_id": "t1"}],
+            },
+        },
+        "selected_scale_point": {
+            "selection_role": "representative_largest_available_scale_point",
+            "selection_basis": "coverage representative only, not a performance or architectural ranking.",
+            "case_id": "c1",
+        },
+        "summary": {
+            "validated_case_count": 1,
+            "all_hash_gates_passed": True,
+            "all_protocol_gates_passed": True,
+            "all_count_gates_passed": True,
+        },
+        "cases": [
+            {
+                "case_id": "c1",
+                "decision": "pass",
+                "source_refs": {
+                    "shared_preload": "shared_preload_v1",
+                    "baseline_manifest": "m1",
+                    "integrated_manifest": "m1",
+                    "baseline_top": "t1",
+                    "integrated_top": "t1",
+                },
+                "baseline_no_stall": {"completion_cycle": 1},
+                "integrated_service": {
+                    "completion_cycle": 1,
+                    "service_penalty_cycles": 0,
+                    "exact_match": True,
+                    "no_protocol_errors": True,
+                    "no_drop_duplicate_deadlock_timeout": True,
+                    "cycle_bound_ok": True,
+                    "counters": {
+                        "request_injection_stall_cycles": 0,
+                        "arbitration_contention_cycles": 0,
+                        "bank_conflict_count": 0,
+                        "response_block_cycles": {"router": 0, "service": 0},
+                        "shared_result": {"arbitration_contention_cycles": 0, "egress_block_cycles": 0},
+                        "max_occupancy": {"router_req": 0, "router_resp": 0, "service_req": 0, "service_resp": 0},
+                    },
+                    "shared_result_egress": {"documented_initiation_interval": 1},
+                },
+                "gates": {"hash_gate_ok": True, "protocol_gate_ok": True, "count_gate_ok": True},
+            }
+        ],
+    }
+
+    with pytest.raises(ValueError, match="workload_contract mismatch"):
+        validate_report(report)
 
 
 def test_integrated_service_selected_scale_point_is_nominal_not_worst_penalty() -> None:

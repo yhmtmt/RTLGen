@@ -13,6 +13,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from npu.eval import audit_attention_decode_score_multivalue_service_activity_power as audit
+from npu.eval.probe_attention_decode_score_multivalue_integrated_service import _workload_contract
 
 
 def _config(path: Path) -> None:
@@ -105,6 +106,7 @@ def _integrated_service(path: Path, *, exact_match: bool = True, include_counter
     path.write_text(
         json.dumps(
             {
+                "workload_contract": _workload_contract(),
                 "summary": {
                     "all_hash_gates_passed": True,
                     "all_protocol_gates_passed": True,
@@ -157,6 +159,7 @@ def _generated_activity_manifest() -> dict:
     return {
         "model": "attention_decode_score_multivalue_service_activity_v1",
         "case_id": "c1_p128_b4_rr",
+        "workload_contract": _workload_contract(),
         "clock_period_ns": 10.0,
         "cycle_count": 321,
         "request_result_protocol_counters": {
@@ -170,7 +173,13 @@ def _generated_activity_manifest() -> dict:
             "inactive_banks": [3],
             "inactive_reason": "three_block_reference_workload",
         },
-        "hashes": {"vcd_sha256": "vcd-hash"},
+        "hashes": {
+            "vcd_sha256": "vcd-hash",
+            "score_hash": "score-hash",
+            "final_hash": "final-hash",
+            "request_hash": "request-hash",
+            "wide_response_matrix_hash": "wide-hash",
+        },
     }
 
 
@@ -199,6 +208,14 @@ def _adapted_manifest(tmp_path: Path) -> tuple[dict, Path, dict]:
         "adapted_activity_manifest_sha256": audit._sha256_file(manifest_path),
         "vcd_sha256": "vcd-hash",
         "cycle_count": 321,
+        "generated_manifest_hashes": {
+            "vcd_sha256": "vcd-hash",
+            "score_hash": "score-hash",
+            "final_hash": "final-hash",
+            "request_hash": "request-hash",
+            "wide_response_matrix_hash": "wide-hash",
+        },
+        "workload_contract": _workload_contract(),
         "macro_counts": {"fakeram45_2048x39": 56, "fakeram45_64x32": 64},
         "macro_activity_contract": {
             "profile": "multivalue_service_c1_v1",
@@ -348,6 +365,8 @@ def test_build_report_success_keeps_paths_portable_and_writes_markdown(tmp_path:
     assert best["component_service_window_energy"]["energy_j"]["dynamic"] == pytest.approx(0.30 * 321e-9 * 10.0)
     assert best["component_service_window_energy"]["energy_j"]["leakage"] == pytest.approx(0.05 * 321e-9 * 10.0)
     assert payload["bank3_dynamic_inactivity"]["inactive_banks"] == [3]
+    assert payload["dependency_contract"]["integrated_service_c1"]["config"]["cluster_count"] == 1
+    assert payload["activity_contract"]["workload_contract"] == _workload_contract()
     assert "/tmp/" not in json.dumps(payload, sort_keys=True)
     assert "/orfs/" not in json.dumps(payload, sort_keys=True)
 
@@ -426,3 +445,86 @@ def test_build_report_rejects_non_positive_power_components(tmp_path: Path) -> N
     assert payload["promotion_gate_pass"] is False
     assert payload["candidates"][0]["status"] == "rejected_gate"
     assert "finite positive number" in payload["candidates"][0]["failure"]["error_summary"]
+
+
+def test_validate_generated_activity_manifest_rejects_128_as_active_context(tmp_path: Path) -> None:
+    payload = _generated_activity_manifest()
+    payload["workload_contract"]["active_context_tokens"] = 128
+    (tmp_path / audit._OUTPUT_MANIFEST_NAME).write_text(
+        json.dumps(payload, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="workload contract mismatch"):
+        audit._validate_generated_activity_manifest(payload, tmp_path)
+
+
+def test_build_report_rejects_generated_activity_hash_mismatch(tmp_path: Path) -> None:
+    config = tmp_path / "config.json"
+    _config(config)
+    metrics = tmp_path / "metrics.csv"
+    _write_metrics(metrics, [_ok_metric()])
+    equivalence = tmp_path / "equivalence.json"
+    _cluster_equivalence(equivalence)
+    integrated = tmp_path / "integrated.json"
+    _integrated_service(integrated)
+    adapted_manifest, manifest_path, adapted_meta = _adapted_manifest(tmp_path)
+    generated = _generated_activity_manifest()
+    generated["hashes"]["request_hash"] = "wrong-request-hash"
+
+    with mock.patch.object(audit, "generate_activity", return_value=generated), mock.patch.object(
+        audit,
+        "_prepare_postroute_power_manifest",
+        return_value=(adapted_manifest, manifest_path, adapted_meta | {"generated_manifest_hashes": generated["hashes"], "workload_contract": _workload_contract()}),
+    ), mock.patch.object(
+        audit,
+        "build_power_report",
+        return_value=_power_report(manifest_sha256=adapted_meta["adapted_activity_manifest_sha256"], with_abs_path=False),
+    ):
+        with pytest.raises(ValueError, match="generated activity request_hash does not match integrated-service c1 request_hash"):
+            audit.build_report(
+                config=config,
+                c1_metrics_csv=metrics,
+                equivalence_json=equivalence,
+                integrated_service_json=integrated,
+                orfs_design_config=Path("/orfs/flow/designs/nangate45/service/config.mk"),
+                clock_period_ns=10.0,
+                activity_dir=tmp_path / "activity",
+            )
+
+
+def test_build_report_does_not_compare_integrated_hashes_to_cluster_equivalence_hashes(tmp_path: Path) -> None:
+    config = tmp_path / "config.json"
+    _config(config)
+    metrics = tmp_path / "metrics.csv"
+    _write_metrics(metrics, [_ok_metric()])
+    equivalence = tmp_path / "equivalence.json"
+    _cluster_equivalence(equivalence)
+    eq_payload = json.loads(equivalence.read_text(encoding="utf-8"))
+    eq_payload["score_tensor_hash"] = "different-score-hash"
+    eq_payload["final_tensor_hash"] = "different-final-hash"
+    equivalence.write_text(json.dumps(eq_payload), encoding="utf-8")
+    integrated = tmp_path / "integrated.json"
+    _integrated_service(integrated)
+    adapted_manifest, manifest_path, adapted_meta = _adapted_manifest(tmp_path)
+
+    with mock.patch.object(audit, "generate_activity", return_value=_generated_activity_manifest()), mock.patch.object(
+        audit,
+        "_prepare_postroute_power_manifest",
+        return_value=(adapted_manifest, manifest_path, adapted_meta | {"workload_contract": _workload_contract()}),
+    ), mock.patch.object(
+        audit,
+        "build_power_report",
+        return_value=_power_report(manifest_sha256=adapted_meta["adapted_activity_manifest_sha256"], with_abs_path=False),
+    ):
+        payload = audit.build_report(
+            config=config,
+            c1_metrics_csv=metrics,
+            equivalence_json=equivalence,
+            integrated_service_json=integrated,
+            orfs_design_config=Path("/orfs/flow/designs/nangate45/service/config.mk"),
+            clock_period_ns=10.0,
+            activity_dir=tmp_path / "activity",
+        )
+
+    assert payload["promotion_gate_pass"] is True

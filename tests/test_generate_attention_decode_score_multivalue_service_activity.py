@@ -18,6 +18,7 @@ from npu.eval.generate_attention_decode_score_multivalue_service_activity import
     _REQUIRED_SERVICE_FIELDS,
     _normalize_config,
 )
+from npu.eval.probe_attention_decode_score_multivalue_integrated_service import _workload_contract
 
 
 def _iverilog_available() -> bool:
@@ -35,6 +36,7 @@ def test_normalize_config_requires_macro_backed_c1() -> None:
     normalized = _normalize_config(_config())
     assert normalized["top_name"] == "attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_macro_activity"
     assert normalized["attention_decode_score_multivalue_service"] == _REQUIRED_SERVICE_FIELDS
+    assert normalized["attention_decode_score_multivalue_service"]["max_blocks"] == _workload_contract()["max_blocks"]
 
 
 def test_integrated_testbench_default_clock_text_and_8ns_override() -> None:
@@ -53,6 +55,7 @@ def test_integrated_testbench_default_clock_text_and_8ns_override() -> None:
     assert "  always #5 clk = ~clk;" in default_tb
     assert "always #4 clk = ~clk;" in fast_tb
     assert "always #4 clk = ~clk;" not in default_tb
+    assert "cluster_command_block_count[(15*idx) +: 15] = 15'd3;" in default_tb
 
 
 def test_activity_generator_source_has_no_artificial_macro_touch() -> None:
@@ -86,6 +89,9 @@ def test_generate_service_activity_is_deterministic(tmp_path: Path) -> None:
     manifest_a = json.loads((out_a / _OUTPUT_MANIFEST_NAME).read_text(encoding="utf-8"))
     manifest_b = json.loads((out_b / _OUTPUT_MANIFEST_NAME).read_text(encoding="utf-8"))
     assert manifest_a == manifest_b
+    assert manifest_a["workload_contract"] == _workload_contract()
+    assert manifest_a["workload_contract"]["active_context_tokens"] == 24
+    assert manifest_a["workload_contract"]["max_context_capacity_tokens"] == 128
     assert manifest_a["cycle_count"] > 0
     assert manifest_a["clock_period_ns"] == 10.0
     assert manifest_a["request_result_protocol_counters"]["request_count"] == 48
@@ -101,6 +107,7 @@ def test_generate_service_activity_is_deterministic(tmp_path: Path) -> None:
     assert not manifest_a["artifacts"]["vcd"].startswith("/")
     assert str(REPO_ROOT / "npu/eval") not in json.dumps(manifest_a, sort_keys=True)
     assert "bank3 switching" in " ".join(manifest_a["scope"]["remaining"])
+    assert "24 active context tokens" in " ".join(manifest_a["scope"]["exercised"])
 
     top_text = (out_a / _OUTPUT_TOP_NAME).read_text(encoding="utf-8")
     assert "fakeram45_2048x39" in top_text

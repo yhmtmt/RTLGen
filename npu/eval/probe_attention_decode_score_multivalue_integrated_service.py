@@ -396,6 +396,8 @@ def _shared_value_matrices() -> list[list[list[list[int]]]]:
 
 
 def _cluster_beats(cluster_index: int, *, head_dim: int = 128) -> list[list[tuple[int, list[int]]]]:
+    workload = _workload_contract()
+    beat_count = int(head_dim)
     return [
         [
             (
@@ -405,9 +407,9 @@ def _cluster_beats(cluster_index: int, *, head_dim: int = 128) -> list[list[tupl
                     for lane in range(8)
                 ],
             )
-            for beat in range(head_dim)
+            for beat in range(beat_count)
         ]
-        for block in range(3)
+        for block in range(int(workload["command_block_count"]))
     ]
 
 
@@ -416,16 +418,18 @@ def _raw_scores(block: list[tuple[int, list[int]]]) -> list[int]:
 
 
 def _cluster_expected(cluster_index: int, values: list[list[list[list[int]]]]) -> JsonDict:
-    beats = _cluster_beats(cluster_index)
+    workload = _workload_contract()
+    expected_counts = _workload_expected_counts(workload)
+    beats = _cluster_beats(cluster_index, head_dim=int(workload["value_dim"]))
     score_rows = [list(requantize_score_row(_raw_scores(block), multiplier=1, shift=0)) for block in beats]
     results: list[JsonDict] = []
-    for value_slice in range(16):
+    for value_slice in range(int(expected_counts["result_count"])):
         stats = two_pass_stats(score_rows, [values[block][value_slice] for block in range(len(values))])
         results.append(
             {
                 "cluster": cluster_index,
                 "slice": value_slice,
-                "last": value_slice == 15,
+                "last": value_slice == int(expected_counts["result_count"]) - 1,
                 "command_id": 0x4A21 + cluster_index,
                 "global_max": stats.max_score,
                 "exp_sum": stats.exp_sum,
@@ -436,7 +440,7 @@ def _cluster_expected(cluster_index: int, values: list[list[list[list[int]]]]) -
     response_records = []
     tag = 0
     for block in range(len(values)):
-        for value_slice in range(16):
+        for value_slice in range(int(expected_counts["result_count"])):
             matrix_hex = f"{_pack([lane for row in values[block][value_slice] for lane in row], 8):0128x}"
             request_records.append(
                 {
@@ -467,9 +471,10 @@ def _cluster_expected(cluster_index: int, values: list[list[list[list[int]]]]) -
 
 
 def _preload_entries(values: list[list[list[list[int]]]]) -> list[JsonDict]:
+    expected_counts = _workload_expected_counts()
     entries = []
     for block in range(len(values)):
-        for value_slice in range(16):
+        for value_slice in range(int(expected_counts["result_count"])):
             matrix_hex = f"{_pack([lane for row in values[block][value_slice] for lane in row], 8):0128x}"
             entries.append(
                 {
@@ -495,12 +500,80 @@ def _cluster_config(top_name: str) -> JsonDict:
     }
 
 
+def _workload_contract() -> JsonDict:
+    values = _shared_value_matrices()
+    if not values:
+        raise ValueError("shared_value_matrices must provide at least one command block")
+    command_block_count = len(values)
+    value_slices = len(values[0])
+    if value_slices < 1:
+        raise ValueError("shared_value_matrices must provide at least one value slice")
+    context_tokens_per_block = len(values[0][0])
+    if context_tokens_per_block < 1:
+        raise ValueError("shared_value_matrices must provide at least one context row per slice")
+    lanes_per_row = len(values[0][0][0])
+    if lanes_per_row < 1:
+        raise ValueError("shared_value_matrices must provide at least one lane per row")
+    for block_index, block in enumerate(values):
+        if len(block) != value_slices:
+            raise ValueError(
+                f"shared_value_matrices block {block_index} value_slices mismatch: "
+                f"expected {value_slices}, got {len(block)}"
+            )
+        for slice_index, matrix in enumerate(block):
+            if len(matrix) != context_tokens_per_block:
+                raise ValueError(
+                    f"shared_value_matrices block {block_index} slice {slice_index} "
+                    f"context_tokens_per_block mismatch: expected {context_tokens_per_block}, got {len(matrix)}"
+                )
+            for row_index, row in enumerate(matrix):
+                if len(row) != lanes_per_row:
+                    raise ValueError(
+                        f"shared_value_matrices block {block_index} slice {slice_index} row {row_index} "
+                        f"lane width mismatch: expected {lanes_per_row}, got {len(row)}"
+                    )
+    cluster_config = _cluster_config("workload_contract")["attention_decode_score_multivalue_cluster"]
+    if int(cluster_config["array_n"]) != context_tokens_per_block:
+        raise ValueError("cluster array_n does not match the exercised context_tokens_per_block")
+    if int(cluster_config["value_slices"]) != value_slices:
+        raise ValueError("cluster value_slices do not match the exercised value slices")
+    max_blocks = int(cluster_config["max_blocks"])
+    value_dim = value_slices * lanes_per_row
+    return {
+        "command_block_count": command_block_count,
+        "context_tokens_per_block": context_tokens_per_block,
+        "active_context_tokens": command_block_count * context_tokens_per_block,
+        "max_blocks": max_blocks,
+        "max_context_capacity_tokens": max_blocks * context_tokens_per_block,
+        "value_dim": value_dim,
+    }
+
+
+def _workload_expected_counts(contract: JsonDict | None = None) -> JsonDict:
+    workload = dict(contract or _workload_contract())
+    command_block_count = int(workload["command_block_count"])
+    context_tokens_per_block = int(workload["context_tokens_per_block"])
+    value_dim = int(workload["value_dim"])
+    if value_dim % context_tokens_per_block != 0:
+        raise ValueError("value_dim must be divisible by context_tokens_per_block")
+    result_count = value_dim // context_tokens_per_block
+    return {
+        "score_row_count": command_block_count,
+        "request_count": command_block_count * result_count,
+        "wide_response_count": command_block_count * result_count,
+        "result_count": result_count,
+        "preload_entry_count": command_block_count * result_count,
+        "input_beat_count": command_block_count * value_dim,
+    }
+
+
 def _service_config(case: JsonDict, top_name: str) -> JsonDict:
+    workload = _workload_contract()
     return {
         "top_name": top_name,
         "attention_decode_score_multivalue_service": {
             "cluster_count": int(case["cluster_count"]),
-            "max_blocks": 16,
+            "max_blocks": int(workload["max_blocks"]),
             "packet_w": int(case["packet_w"]),
             "banks": int(case["banks"]),
             "req_queue_depth": int(case["req_queue_depth"]),
@@ -515,11 +588,18 @@ def _service_config(case: JsonDict, top_name: str) -> JsonDict:
 
 
 def _baseline_testbench(*, top_name: str, cluster_count: int, values: list[list[list[list[int]]]]) -> str:
-    total_beats = 3 * 128
+    workload = _workload_contract()
+    expected_counts = _workload_expected_counts(workload)
+    if len(values) != int(workload["command_block_count"]):
+        raise ValueError("baseline workload values do not match command_block_count")
+    total_beats = int(expected_counts["input_beat_count"])
+    result_count = int(expected_counts["result_count"])
     value_init = "\n".join(
-        f"    value_mem[{addr * 16 + value_slice}] = 512'h{entry['matrix_hex']};"
-        for addr in range(3)
-        for value_slice, entry in enumerate(_preload_entries(values)[addr * 16 : (addr + 1) * 16])
+        f"    value_mem[{addr * result_count + value_slice}] = 512'h{entry['matrix_hex']};"
+        for addr in range(int(workload["command_block_count"]))
+        for value_slice, entry in enumerate(
+            _preload_entries(values)[addr * result_count : (addr + 1) * result_count]
+        )
     )
     per_cluster_decl: list[str] = []
     per_cluster_mem_init: list[str] = []
@@ -527,7 +607,10 @@ def _baseline_testbench(*, top_name: str, cluster_count: int, values: list[list[
     per_cluster_seq: list[str] = []
     per_cluster_log: list[str] = []
     per_cluster_done: list[str] = []
-    last_indices = {127, 255, 383}
+    last_indices = {
+        ((block_index + 1) * int(workload["value_dim"])) - 1
+        for block_index in range(int(workload["command_block_count"]))
+    }
 
     for cluster in range(cluster_count):
         beats = [beat for block in _cluster_beats(cluster) for beat in block]
@@ -577,7 +660,7 @@ def _baseline_testbench(*, top_name: str, cluster_count: int, values: list[list[
           value_response_valid[{cluster}] <= 1'b1;
           value_response_addr[(14*{cluster}) +: 14] <= pending_addr_{cluster};
           value_response_slice[(4*{cluster}) +: 4] <= pending_slice_{cluster};
-          value_response_matrix[(512*{cluster}) +: 512] <= value_mem[(pending_addr_{cluster} * 16) + pending_slice_{cluster}];
+          value_response_matrix[(512*{cluster}) +: 512] <= value_mem[(pending_addr_{cluster} * {result_count}) + pending_slice_{cluster}];
         end else begin
           pending_delay_{cluster} <= pending_delay_{cluster} - 1;
         end
@@ -670,7 +753,7 @@ module tb;
   wire [CLUSTERS*32-1:0] cluster_completed_count;
   wire [CLUSTERS*32-1:0] cluster_cycle_count;
   wire [CLUSTERS-1:0] cluster_protocol_error;
-  reg [511:0] value_mem [0:(3*16)-1];
+  reg [511:0] value_mem [0:({int(workload['command_block_count'])}*{result_count})-1];
   reg [CLUSTERS-1:0] command_sent;
   reg [CLUSTERS-1:0] value_pending;
   reg [CLUSTERS-1:0] done;
@@ -731,7 +814,7 @@ module tb;
     cluster_command_score_shift = {{(CLUSTERS*6){{1'b0}}}};
     for (idx = 0; idx < CLUSTERS; idx = idx + 1) begin
       cluster_command_id[(16*idx) +: 16] = 16'h4a21 + idx[15:0];
-      cluster_command_block_count[(15*idx) +: 15] = 15'd3;
+      cluster_command_block_count[(15*idx) +: 15] = 15'd{int(workload['command_block_count'])};
       cluster_command_score_multiplier[(32*idx) +: 32] = 32'd1;
       cluster_command_score_shift[(6*idx) +: 6] = 6'd0;
     end
@@ -754,9 +837,15 @@ def _integrated_testbench(
 ) -> str:
     if clock_period_ns <= 0.0:
         raise ValueError("clock_period_ns must be > 0")
-    total_beats = 3 * 128
+    workload = _workload_contract()
+    expected_counts = _workload_expected_counts(workload)
+    if len(values) != int(workload["command_block_count"]):
+        raise ValueError("integrated workload values do not match command_block_count")
+    total_beats = int(expected_counts["input_beat_count"])
     source_w = max(1, (cluster_count - 1).bit_length())
     entries = _preload_entries(values)
+    if len(entries) != int(expected_counts["preload_entry_count"]):
+        raise ValueError("integrated workload preload entries do not match the derived contract")
     preload_init = "\n".join(
         f"    preload_addr_mem[{idx}] = 14'd{entry['addr']}; preload_slice_mem[{idx}] = 4'd{entry['slice']}; preload_matrix_mem[{idx}] = 512'h{entry['matrix_hex']};"
         for idx, entry in enumerate(entries)
@@ -767,7 +856,10 @@ def _integrated_testbench(
     per_cluster_seq: list[str] = []
     per_cluster_log: list[str] = []
     per_cluster_done: list[str] = []
-    last_indices = {127, 255, 383}
+    last_indices = {
+        ((block_index + 1) * int(workload["value_dim"])) - 1
+        for block_index in range(int(workload["command_block_count"]))
+    }
 
     for cluster in range(cluster_count):
         beats = [beat for block in _cluster_beats(cluster) for beat in block]
@@ -1155,7 +1247,7 @@ module tb;
     cluster_command_score_shift = {{(CLUSTERS*6){{1'b0}}}};
     for (idx = 0; idx < CLUSTERS; idx = idx + 1) begin
       cluster_command_id[(16*idx) +: 16] = 16'h4a21 + idx[15:0];
-      cluster_command_block_count[(15*idx) +: 15] = 15'd3;
+      cluster_command_block_count[(15*idx) +: 15] = 15'd{int(workload['command_block_count'])};
       cluster_command_score_multiplier[(32*idx) +: 32] = 32'd1;
       cluster_command_score_shift[(6*idx) +: 6] = 6'd0;
     end
@@ -1443,6 +1535,7 @@ def _canonical_wide(rows: list[JsonDict]) -> list[JsonDict]:
 
 def _summarize_case(case: JsonDict, baseline: JsonDict, integrated: JsonDict, source_refs: JsonDict) -> JsonDict:
     cluster_count = int(case["cluster_count"])
+    expected_counts = _workload_expected_counts()
     values = _shared_value_matrices()
     expected_clusters = [_cluster_expected(cluster, values) for cluster in range(cluster_count)]
     expected_scores = [
@@ -1472,12 +1565,12 @@ def _summarize_case(case: JsonDict, baseline: JsonDict, integrated: JsonDict, so
     )
 
     counts_ok = (
-        len(baseline_results) == 16 * cluster_count
-        and len(integrated_results) == 16 * cluster_count
-        and len(integrated_requests) == 48 * cluster_count
-        and len(integrated_wide) == 48 * cluster_count
-        and integrated["shared"]["service_accepted_req_count"] == 48 * cluster_count
-        and integrated["shared"]["service_emitted_resp_count"] == 48 * cluster_count
+        len(baseline_results) == int(expected_counts["result_count"]) * cluster_count
+        and len(integrated_results) == int(expected_counts["result_count"]) * cluster_count
+        and len(integrated_requests) == int(expected_counts["request_count"]) * cluster_count
+        and len(integrated_wide) == int(expected_counts["wide_response_count"]) * cluster_count
+        and integrated["shared"]["service_accepted_req_count"] == int(expected_counts["request_count"]) * cluster_count
+        and integrated["shared"]["service_emitted_resp_count"] == int(expected_counts["wide_response_count"]) * cluster_count
     )
     exact_match = (
         baseline_scores == expected_score_rows
@@ -1738,6 +1831,7 @@ def build_report(
         raise ValueError("config must provide non-empty cases list")
     cases = [_validate_case(row if isinstance(row, dict) else {}) for row in case_rows]
 
+    workload_contract = _workload_contract()
     values = _shared_value_matrices()
     preload_entries = _preload_entries(values)
     shared_preload_identity = {
@@ -1786,6 +1880,7 @@ def build_report(
             "max_pretty_json_bytes": COMPACT_REPORT_MAX_BYTES,
             "max_pretty_json_lines": COMPACT_REPORT_MAX_LINES,
         },
+        "workload_contract": workload_contract,
         "source_identities": {
             "repo_commit": _git_head(),
             "tool_versions": {
@@ -1854,6 +1949,9 @@ def validate_report(payload: JsonDict) -> None:
         "max_pretty_json_lines": COMPACT_REPORT_MAX_LINES,
     }:
         raise ValueError("report compactness contract mismatch")
+    workload_contract = payload.get("workload_contract")
+    if workload_contract != _workload_contract():
+        raise ValueError("report workload_contract mismatch")
     source = payload.get("source_identities")
     if not isinstance(source, dict) or not source.get("repo_commit"):
         raise ValueError("report lacks source identities")
@@ -1865,7 +1963,10 @@ def validate_report(payload: JsonDict) -> None:
     shared_preload = generated_artifacts.get("shared_preload")
     if not isinstance(shared_preload, dict):
         raise ValueError("report lacks shared preload identity")
-    if int(shared_preload.get("entry_count", 0)) != 48 or shared_preload.get("payload_elided") is not True:
+    if (
+        int(shared_preload.get("entry_count", 0)) != _workload_expected_counts()["preload_entry_count"]
+        or shared_preload.get("payload_elided") is not True
+    ):
         raise ValueError("shared preload identity is incomplete")
     manifest_rows = generated_artifacts.get("generated_manifests")
     if not isinstance(manifest_rows, list) or not manifest_rows:
@@ -2002,6 +2103,12 @@ def _build_markdown(report: JsonDict) -> str:
         f"- selected_scale_point_note: {selected_scale_point['selection_basis']}",
         f"- gates: `hash={summary['all_hash_gates_passed']}` `protocol={summary['all_protocol_gates_passed']}` `count={summary['all_count_gates_passed']}`",
         f"- compact_report_shape: `{contract['shape']}`",
+        (
+            "- workload_contract: "
+            f"`active_context_tokens={report['workload_contract']['active_context_tokens']}` "
+            f"`max_context_capacity_tokens={report['workload_contract']['max_context_capacity_tokens']}` "
+            f"`value_dim={report['workload_contract']['value_dim']}`"
+        ),
         (
             f"- compact_report_size: `{pretty_json_bytes} bytes / {pretty_json_lines} lines` "
             f"(gate <= {contract['max_pretty_json_bytes']} bytes / {contract['max_pretty_json_lines']} lines)"
