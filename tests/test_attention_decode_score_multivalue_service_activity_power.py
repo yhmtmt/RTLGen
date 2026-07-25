@@ -62,8 +62,8 @@ def _write_metrics(path: Path, rows: list[dict[str, str]]) -> None:
 
 def _ok_metric(*, param_hash: str = "p1", flow_variant: str = audit._REQUIRED_FLOW_VARIANT) -> dict[str, str]:
     return {
-        "design": "service",
-        "platform": "nangate45",
+        "design": audit._EXPECTED_DESIGN,
+        "platform": audit._EXPECTED_PLATFORM,
         "config_hash": "cfg1",
         "param_hash": param_hash,
         "tag": "die3000",
@@ -200,6 +200,24 @@ def _adapted_manifest(tmp_path: Path) -> tuple[dict, Path, dict]:
         "vcd_sha256": "vcd-hash",
         "cycle_count": 321,
         "macro_counts": {"fakeram45_2048x39": 56, "fakeram45_64x32": 64},
+        "macro_activity_contract": {
+            "profile": "multivalue_service_c1_v1",
+            "total_assignment_count": 9704,
+            "macro_classes": {
+                "fakeram45_2048x39": {
+                    "instance_scope_prefix": "score_bank",
+                    "instance_count": 56,
+                    "pins_per_instance": 91,
+                    "assignment_count": 5096,
+                },
+                "fakeram45_64x32": {
+                    "instance_scope_prefix": "gen_value_macro_backend",
+                    "instance_count": 64,
+                    "pins_per_instance": 72,
+                    "assignment_count": 4608,
+                },
+            },
+        },
         "bank_coverage": {"inactive_banks": [3]},
     }
 
@@ -212,8 +230,11 @@ def _power_report(*, manifest_sha256: str, with_abs_path: bool = False) -> dict:
         "measured_cycles": 321,
         "full_context_cycles": 321,
         "annotation_gate_pass": True,
+        "macro_activity_gate_pass": True,
+        "structural_macro_activity_gate_pass": True,
         "sequential_register_activity_gate_pass": True,
         "clock_period_gate_pass": True,
+        "macro_activity_assignment_count": 9704,
         "power": {
             "internal_w": 0.10,
             "switching_w": 0.20,
@@ -240,6 +261,12 @@ def test_select_c1_metric_rejects_ambiguity_and_flow_mismatch(tmp_path: Path) ->
 
     _write_metrics(metrics, [_ok_metric(param_hash="p1"), _ok_metric(param_hash="p2")])
     with pytest.raises(ValueError, match="found 2"):
+        audit._select_c1_metric(metrics, clock_period_ns=10.0)
+
+    wrong_design = _ok_metric()
+    wrong_design["design"] = "other_design"
+    _write_metrics(metrics, [wrong_design])
+    with pytest.raises(ValueError, match="design"):
         audit._select_c1_metric(metrics, clock_period_ns=10.0)
 
 

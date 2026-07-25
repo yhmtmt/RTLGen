@@ -12,7 +12,9 @@ import re
 from pathlib import Path
 from typing import Any
 
-from npu.eval.extract_fakeram_vcd_activity import extract_fakeram_vcd_activity
+from npu.eval.extract_fakeram_vcd_activity import (
+    extract_multivalue_service_fakeram_vcd_activity,
+)
 from npu.eval.extract_sequential_register_vcd_activity import (
     extract_sequential_register_vcd_activity,
 )
@@ -37,11 +39,15 @@ _MAX_FAILURE_DETAIL_BYTES = 4096
 _MODEL = "decoder_attention_decode_score_multivalue_service_activity_power_v1"
 _SCOPE = "tb/dut"
 _CASE_ID = "c1_p128_b4_rr"
+_EXPECTED_DESIGN = "attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr"
+_EXPECTED_PLATFORM = "nangate45"
 _REQUIRED_FLOW_VARIANT = "decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_3000_v1"
 _EXPECTED_MACRO_COUNTS = {
     "fakeram45_2048x39": 56,
     "fakeram45_64x32": 64,
 }
+_SCORE_PINS_PER_MACRO = 11 + 39 + 39 + 1 + 1
+_VALUE_PINS_PER_MACRO = 6 + 32 + 32 + 1 + 1
 _EXPECTED_REQUEST_COUNT = 48
 _EXPECTED_WIDE_RESPONSE_COUNT = 48
 _EXPECTED_RESULT_COUNT = 16
@@ -51,6 +57,13 @@ _POSTROUTE_MACRO_ACTIVITY_NAME = (
 )
 _POSTROUTE_SEQUENTIAL_ACTIVITY_NAME = (
     "attention_decode_score_multivalue_service_sequential_register_vcd_activity_v1.json"
+)
+_SCORE_ACTIVITY_RE = re.compile(
+    r"^score_bank/u_group_(\d+)_slice_(\d+)/(?:addr_in\[\d+\]|wd_in\[\d+\]|w_mask_in\[\d+\]|we_in|ce_in)$"
+)
+_VALUE_ACTIVITY_RE = re.compile(
+    r"^gen_value_macro_backend/gen_value_bank\[(\d+)\]/gen_value_lane\[(\d+)\]/u_value_mem_lane/"
+    r"(?:addr_in\[\d+\]|wd_in\[\d+\]|w_mask_in\[\d+\]|we_in|ce_in)$"
 )
 
 
@@ -156,6 +169,10 @@ def _select_c1_metric(
     for row in rows:
         if str(row.get("status", "")).strip() != "ok":
             continue
+        if str(row.get("design", "")).strip() != _EXPECTED_DESIGN:
+            continue
+        if str(row.get("platform", "")).strip() != _EXPECTED_PLATFORM:
+            continue
         params = _params(row)
         flow_variant = str(params.get("FLOW_VARIANT", "")).strip()
         if flow_variant != required_flow_variant:
@@ -176,12 +193,13 @@ def _select_c1_metric(
         matches.append(row)
     if not matches:
         raise ValueError(
-            "expected exactly one status=ok timing-feasible c1 row with FLOW_VARIANT "
-            f"{required_flow_variant}"
+            "expected exactly one status=ok timing-feasible c1 row with design "
+            f"{_EXPECTED_DESIGN}, platform {_EXPECTED_PLATFORM}, and FLOW_VARIANT {required_flow_variant}"
         )
     if len(matches) != 1:
         raise ValueError(
-            "expected exactly one status=ok timing-feasible c1 row with FLOW_VARIANT "
+            "expected exactly one status=ok timing-feasible c1 row with design "
+            f"{_EXPECTED_DESIGN}, platform {_EXPECTED_PLATFORM}, and FLOW_VARIANT "
             f"{required_flow_variant}, found {len(matches)}"
         )
     return matches[0]
@@ -380,6 +398,105 @@ def _validate_macro_manifest_counts(macro_manifest: JsonDict) -> JsonDict:
     }
 
 
+def _validate_service_macro_activity_contract(
+    macro_activity: JsonDict,
+    *,
+    macro_counts: JsonDict,
+) -> JsonDict:
+    pins = macro_activity.get("pins")
+    if not isinstance(pins, list) or not pins:
+        raise ValueError("service macro activity pins[] missing")
+
+    score_instances: set[str] = set()
+    value_instances: set[str] = set()
+    score_pin_count = 0
+    value_pin_count = 0
+    for row in pins:
+        if not isinstance(row, dict):
+            raise ValueError("service macro activity pins[] must contain objects")
+        full_name = str(row.get("full_name") or "").strip()
+        if not full_name:
+            raise ValueError("service macro activity pin full_name missing")
+        score_match = _SCORE_ACTIVITY_RE.fullmatch(full_name)
+        if score_match is not None:
+            score_pin_count += 1
+            score_instances.add(f"score_bank/u_group_{score_match.group(1)}_slice_{score_match.group(2)}")
+            continue
+        value_match = _VALUE_ACTIVITY_RE.fullmatch(full_name)
+        if value_match is not None:
+            value_pin_count += 1
+            value_instances.add(
+                "gen_value_macro_backend/gen_value_bank[{bank}]/gen_value_lane[{lane}]/u_value_mem_lane".format(
+                    bank=value_match.group(1),
+                    lane=value_match.group(2),
+                )
+            )
+            continue
+        raise ValueError(f"service macro activity contains unsupported full_name: {full_name}")
+
+    expected_score_instance_count = int(macro_counts["fakeram45_2048x39"])
+    expected_value_instance_count = int(macro_counts["fakeram45_64x32"])
+    expected_score_pin_count = expected_score_instance_count * _SCORE_PINS_PER_MACRO
+    expected_value_pin_count = expected_value_instance_count * _VALUE_PINS_PER_MACRO
+    if len(score_instances) != expected_score_instance_count or score_pin_count != expected_score_pin_count:
+        raise ValueError(
+            "service macro activity score-bank structural coverage mismatch: expected "
+            f"{expected_score_instance_count} instances / {expected_score_pin_count} pins, got "
+            f"{len(score_instances)} instances / {score_pin_count} pins"
+        )
+    if len(value_instances) != expected_value_instance_count or value_pin_count != expected_value_pin_count:
+        raise ValueError(
+            "service macro activity value-memory structural coverage mismatch: expected "
+            f"{expected_value_instance_count} instances / {expected_value_pin_count} pins, got "
+            f"{len(value_instances)} instances / {value_pin_count} pins"
+        )
+
+    structural_contract = macro_activity.get("structural_macro_contract")
+    if not isinstance(structural_contract, dict):
+        raise ValueError("service macro activity structural_macro_contract missing")
+    if str(structural_contract.get("profile") or "").strip() != "multivalue_service_c1_v1":
+        raise ValueError("service macro activity structural_macro_contract profile mismatch")
+    if int(structural_contract.get("total_assignment_count", 0)) != len(pins):
+        raise ValueError("service macro activity total_assignment_count mismatch")
+    macro_classes = structural_contract.get("macro_classes")
+    if not isinstance(macro_classes, list):
+        raise ValueError("service macro activity macro_classes missing")
+    by_name = {
+        str(row.get("macro_name") or "").strip(): row
+        for row in macro_classes
+        if isinstance(row, dict) and str(row.get("macro_name") or "").strip()
+    }
+    expected_classes = {
+        "fakeram45_2048x39": {
+            "instance_scope_prefix": "score_bank",
+            "instance_count": expected_score_instance_count,
+            "pins_per_instance": _SCORE_PINS_PER_MACRO,
+            "assignment_count": expected_score_pin_count,
+        },
+        "fakeram45_64x32": {
+            "instance_scope_prefix": "gen_value_macro_backend",
+            "instance_count": expected_value_instance_count,
+            "pins_per_instance": _VALUE_PINS_PER_MACRO,
+            "assignment_count": expected_value_pin_count,
+        },
+    }
+    for macro_name, expected in expected_classes.items():
+        row = by_name.get(macro_name)
+        if not isinstance(row, dict):
+            raise ValueError(f"service macro activity macro_classes missing {macro_name}")
+        for key, expected_value in expected.items():
+            if row.get(key) != expected_value:
+                raise ValueError(
+                    f"service macro activity {macro_name} {key} mismatch: "
+                    f"expected {expected_value!r}, got {row.get(key)!r}"
+                )
+    return {
+        "profile": "multivalue_service_c1_v1",
+        "total_assignment_count": len(pins),
+        "macro_classes": expected_classes,
+    }
+
+
 def _prepare_postroute_power_manifest(
     *,
     activity_dir: Path,
@@ -397,10 +514,14 @@ def _prepare_postroute_power_manifest(
     if not (activity_dir / _OUTPUT_SERVICE_MANIFEST_NAME).is_file():
         raise ValueError("generated service manifest missing from activity_dir")
 
-    macro_activity = extract_fakeram_vcd_activity(
+    macro_activity = extract_multivalue_service_fakeram_vcd_activity(
         vcd_path,
         source_vcd_sha256=generated_meta["vcd_sha256"],
         scope=_SCOPE,
+    )
+    macro_activity_contract = _validate_service_macro_activity_contract(
+        macro_activity,
+        macro_counts=macro_counts,
     )
     macro_activity_path = activity_dir / _POSTROUTE_MACRO_ACTIVITY_NAME
     macro_activity_path.write_text(
@@ -447,6 +568,7 @@ def _prepare_postroute_power_manifest(
         "vcd_sha256": generated_meta["vcd_sha256"],
         "cycle_count": generated_meta["cycle_count"],
         "macro_counts": macro_counts,
+        "macro_activity_contract": macro_activity_contract,
         "bank_coverage": generated_meta["bank_coverage"],
     }
 
@@ -468,6 +590,7 @@ def _strict_service_window_measurement(
     expected_vcd_sha256: str,
     expected_clock_period_ns: float,
     expected_cycle_count: int,
+    expected_macro_assignment_count: int,
 ) -> JsonDict:
     if activity_power.get("promotion_gate_pass") is not True:
         raise ValueError("postroute power promotion_gate_pass failed")
@@ -491,10 +614,16 @@ def _strict_service_window_measurement(
         raise ValueError("postroute power full_context_cycles mismatch")
     if phase.get("annotation_gate_pass") is not True:
         raise ValueError("postroute power aggregate annotation gate failed")
+    if phase.get("macro_activity_gate_pass") is not True:
+        raise ValueError("postroute power macro activity gate failed")
+    if phase.get("structural_macro_activity_gate_pass") is not True:
+        raise ValueError("postroute power structural macro activity gate failed")
     if phase.get("sequential_register_activity_gate_pass") is not True:
         raise ValueError("postroute power sequential register coverage gate failed")
     if phase.get("clock_period_gate_pass") is not True:
         raise ValueError("postroute power clock period gate failed")
+    if int(phase.get("macro_activity_assignment_count", 0)) != expected_macro_assignment_count:
+        raise ValueError("postroute power macro_activity_assignment_count mismatch")
     power = phase.get("power")
     if not isinstance(power, dict):
         raise ValueError("postroute power phase power section missing")
@@ -643,6 +772,9 @@ def build_report(
                 expected_vcd_sha256=activity_meta["vcd_sha256"],
                 expected_clock_period_ns=clock_period_ns,
                 expected_cycle_count=int(activity_meta["cycle_count"]),
+                expected_macro_assignment_count=int(
+                    activity_meta["macro_activity_contract"]["total_assignment_count"]
+                ),
             )
         except Exception as exc:
             candidate["status"] = "rejected_gate"
@@ -701,6 +833,7 @@ def build_report(
             "counts": activity_meta["macro_counts"],
             "statement": "Exact macro counts are required: 56 fakeram45_2048x39 score banks and 64 fakeram45_64x32 value-memory macros.",
         },
+        "macro_activity_contract": activity_meta["macro_activity_contract"],
         "bank3_dynamic_inactivity": {
             "inactive_banks": activity_meta["bank_coverage"]["inactive_banks"],
             "statement": (
