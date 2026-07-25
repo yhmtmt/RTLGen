@@ -1,0 +1,756 @@
+#!/usr/bin/env python3
+"""Audit strict c1 routed power for the multivalue integrated service."""
+
+from __future__ import annotations
+
+import argparse
+import csv
+import hashlib
+import json
+import math
+import re
+from pathlib import Path
+from typing import Any
+
+from npu.eval.extract_fakeram_vcd_activity import extract_fakeram_vcd_activity
+from npu.eval.extract_sequential_register_vcd_activity import (
+    extract_sequential_register_vcd_activity,
+)
+from npu.eval.generate_attention_decode_score_multivalue_service_activity import (
+    _OUTPUT_MACRO_MANIFEST_NAME,
+    _OUTPUT_MANIFEST_NAME,
+    _OUTPUT_SERVICE_MANIFEST_NAME,
+    _OUTPUT_VCD_NAME,
+    generate_activity,
+)
+from npu.synth.run_postroute_vcd_power import build_report as build_power_report
+
+JsonDict = dict[str, Any]
+
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+_EVALUATOR_LOCAL_PATH_PLACEHOLDER = "<evaluator-local-path>"
+_ABSOLUTE_PATH_RE = re.compile(r"/[^\s\"'`<>|&(){}\[\]]+")
+_MAX_FAILURE_DETAIL_LINES = 16
+_MAX_FAILURE_DETAIL_LINE_CHARS = 400
+_MAX_FAILURE_DETAIL_BYTES = 4096
+
+_MODEL = "decoder_attention_decode_score_multivalue_service_activity_power_v1"
+_SCOPE = "tb/dut"
+_CASE_ID = "c1_p128_b4_rr"
+_REQUIRED_FLOW_VARIANT = "decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_3000_v1"
+_EXPECTED_MACRO_COUNTS = {
+    "fakeram45_2048x39": 56,
+    "fakeram45_64x32": 64,
+}
+_EXPECTED_REQUEST_COUNT = 48
+_EXPECTED_WIDE_RESPONSE_COUNT = 48
+_EXPECTED_RESULT_COUNT = 16
+_POSTROUTE_MANIFEST_NAME = "attention_decode_score_multivalue_service_postroute_power_manifest.json"
+_POSTROUTE_MACRO_ACTIVITY_NAME = (
+    "attention_decode_score_multivalue_service_fakeram_macro_pin_vcd_activity_v1.json"
+)
+_POSTROUTE_SEQUENTIAL_ACTIVITY_NAME = (
+    "attention_decode_score_multivalue_service_sequential_register_vcd_activity_v1.json"
+)
+
+
+def _load(path: Path) -> JsonDict:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(payload, dict):
+        raise ValueError(f"expected a JSON object: {path}")
+    return payload
+
+
+def _sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1 << 20), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _portable_path(path: Path) -> str:
+    if not path.is_absolute():
+        return path.as_posix()
+    try:
+        return path.resolve().relative_to(_REPO_ROOT.resolve()).as_posix()
+    except ValueError:
+        return f"{_EVALUATOR_LOCAL_PATH_PLACEHOLDER}/{path.name}"
+
+
+def _redact_path(text: str) -> str:
+    token = Path(text.rstrip(".,;:!?)]}"))
+    if token.is_absolute():
+        return _portable_path(token)
+    return text
+
+
+def _sanitize_failure_line(line: str) -> str:
+    return _ABSOLUTE_PATH_RE.sub(lambda match: _redact_path(match.group(0)), line)
+
+
+def _collect_failure_detail(lines: list[str]) -> list[str]:
+    detail = [line.strip() for line in lines if line.strip()]
+    detail = [line[:_MAX_FAILURE_DETAIL_LINE_CHARS] for line in detail[-_MAX_FAILURE_DETAIL_LINES:]]
+    while detail and sum(len(line) for line in detail) > _MAX_FAILURE_DETAIL_BYTES:
+        detail = detail[1:]
+    return detail
+
+
+def _sanitized_failure(exc: Exception) -> JsonDict:
+    lines = [_sanitize_failure_line(line).strip() for line in str(exc).splitlines()]
+    lines = [line for line in lines if line]
+    summary = lines[0][:240] if lines else f"{type(exc).__name__} failure"
+    return {
+        "error_type": type(exc).__name__,
+        "error_summary": summary,
+        "detail": _collect_failure_detail(lines),
+    }
+
+
+def _params(row: JsonDict) -> JsonDict:
+    try:
+        payload = json.loads(str(row.get("params_json", "{}")))
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"invalid params_json for PPA row {row.get('param_hash')}") from exc
+    if not isinstance(payload, dict):
+        raise ValueError(f"params_json is not an object for PPA row {row.get('param_hash')}")
+    return payload
+
+
+def _metric_provenance(row: JsonDict, metrics_csv: Path) -> JsonDict:
+    fields = (
+        "design",
+        "platform",
+        "config_hash",
+        "param_hash",
+        "tag",
+        "status",
+        "critical_path_ns",
+        "die_area",
+        "total_power_mw",
+        "instance_area_um2",
+        "stdcell_area_um2",
+        "stdcell_count",
+        "core_area_um2",
+        "utilization_pct",
+        "flow_elapsed_seconds",
+        "stage_elapsed_seconds",
+        "params_json",
+    )
+    return {
+        "metrics_csv": _portable_path(metrics_csv),
+        **{field: row[field] for field in fields if str(row.get(field, "")).strip()},
+    }
+
+
+def _select_c1_metric(
+    metrics_csv: Path,
+    *,
+    clock_period_ns: float,
+    required_flow_variant: str = _REQUIRED_FLOW_VARIANT,
+) -> JsonDict:
+    with metrics_csv.open(newline="", encoding="utf-8") as handle:
+        rows = [dict(row) for row in csv.DictReader(handle)]
+    matches: list[JsonDict] = []
+    for row in rows:
+        if str(row.get("status", "")).strip() != "ok":
+            continue
+        params = _params(row)
+        flow_variant = str(params.get("FLOW_VARIANT", "")).strip()
+        if flow_variant != required_flow_variant:
+            continue
+        try:
+            row_clock = float(params.get("CLOCK_PERIOD", 0.0))
+            critical_path_ns = float(row.get("critical_path_ns") or math.inf)
+        except (TypeError, ValueError) as exc:
+            raise ValueError("selected c1 row has invalid CLOCK_PERIOD or critical_path_ns") from exc
+        if abs(row_clock - clock_period_ns) > 1e-9:
+            raise ValueError(
+                f"selected c1 row CLOCK_PERIOD mismatch: expected {clock_period_ns:g}, got {row_clock:g}"
+            )
+        if not math.isfinite(critical_path_ns) or critical_path_ns > clock_period_ns:
+            raise ValueError(
+                f"selected c1 row is not timing-feasible at {clock_period_ns:g} ns"
+            )
+        matches.append(row)
+    if not matches:
+        raise ValueError(
+            "expected exactly one status=ok timing-feasible c1 row with FLOW_VARIANT "
+            f"{required_flow_variant}"
+        )
+    if len(matches) != 1:
+        raise ValueError(
+            "expected exactly one status=ok timing-feasible c1 row with FLOW_VARIANT "
+            f"{required_flow_variant}, found {len(matches)}"
+        )
+    return matches[0]
+
+
+def _require_string_hash(payload: JsonDict, key: str, label: str) -> str:
+    value = str(payload.get(key) or "").strip()
+    if not value:
+        raise ValueError(f"{label} missing {key}")
+    return value
+
+
+def _validate_cluster_equivalence(payload: JsonDict) -> JsonDict:
+    if payload.get("equivalence_pass") is not True:
+        raise ValueError("merged cluster equivalence did not pass")
+    decision = str(payload.get("decision") or "").strip()
+    if decision != "decode_score_multivalue_cluster_equivalence_pass":
+        raise ValueError(
+            "merged cluster equivalence decision mismatch: "
+            f"expected decode_score_multivalue_cluster_equivalence_pass, got {decision or '<missing>'}"
+        )
+    return {
+        "equivalence_pass": True,
+        "decision": decision,
+        "score_tensor_hash": _require_string_hash(payload, "score_tensor_hash", "merged cluster equivalence"),
+        "final_tensor_hash": _require_string_hash(payload, "final_tensor_hash", "merged cluster equivalence"),
+        "semantic_profile": str(payload.get("semantic_profile") or "").strip() or None,
+    }
+
+
+def _validate_integrated_service(payload: JsonDict) -> JsonDict:
+    cases = payload.get("cases")
+    if not isinstance(cases, list):
+        raise ValueError("integrated-service report must contain cases[]")
+    selected = [
+        case
+        for case in cases
+        if isinstance(case, dict) and str(case.get("case_id") or "").strip() == _CASE_ID
+    ]
+    if len(selected) != 1:
+        raise ValueError(f"integrated-service report must contain exactly one {_CASE_ID} case")
+    case = selected[0]
+    if case.get("decision") != "pass":
+        raise ValueError(f"integrated-service {_CASE_ID} case did not pass")
+    config = case.get("config")
+    if not isinstance(config, dict):
+        raise ValueError("integrated-service c1 config is missing")
+    expected_config = {
+        "cluster_count": 1,
+        "packet_w": 128,
+        "banks": 4,
+        "req_queue_depth": 4,
+        "resp_queue_depth": 4,
+        "bank_queue_depth": 4,
+        "read_latency": 2,
+        "arb_mode": "round_robin",
+        "locality_burst_max": 2,
+    }
+    for key, expected in expected_config.items():
+        if config.get(key) != expected:
+            raise ValueError(
+                f"integrated-service c1 config mismatch for {key}: expected {expected!r}, got {config.get(key)!r}"
+            )
+    integrated = case.get("integrated_service")
+    if not isinstance(integrated, dict):
+        raise ValueError("integrated-service c1 section is missing")
+    if integrated.get("exact_match") is not True:
+        raise ValueError("integrated-service c1 exact_result_match gate failed")
+    for key in ("no_protocol_errors", "no_drop_duplicate_deadlock_timeout", "cycle_bound_ok"):
+        if integrated.get(key) is not True:
+            raise ValueError(f"integrated-service c1 {key} gate failed")
+    counters = integrated.get("counters")
+    if not isinstance(counters, dict):
+        raise ValueError("integrated-service c1 counters missing")
+    required_counter_keys = {
+        "request_injection_stall_cycles",
+        "arbitration_contention_cycles",
+        "bank_conflict_count",
+        "response_block_cycles",
+        "shared_result",
+        "max_occupancy",
+    }
+    missing = required_counter_keys - set(counters)
+    if missing:
+        raise ValueError(
+            "integrated-service c1 counters incomplete: " + ", ".join(sorted(missing))
+        )
+    if int(integrated.get("request_count", 0)) != _EXPECTED_REQUEST_COUNT:
+        raise ValueError("integrated-service c1 request_count mismatch")
+    if int(integrated.get("wide_response_count", 0)) != _EXPECTED_WIDE_RESPONSE_COUNT:
+        raise ValueError("integrated-service c1 wide_response_count mismatch")
+    if int(integrated.get("result_count", 0)) != _EXPECTED_RESULT_COUNT:
+        raise ValueError("integrated-service c1 result_count mismatch")
+    gates = case.get("gates")
+    if not isinstance(gates, dict) or not all(
+        bool(gates.get(key)) for key in ("hash_gate_ok", "protocol_gate_ok", "count_gate_ok")
+    ):
+        raise ValueError("integrated-service c1 gates failed")
+    egress = integrated.get("shared_result_egress")
+    if not isinstance(egress, dict) or int(egress.get("documented_initiation_interval", 0)) != 1:
+        raise ValueError("integrated-service c1 shared_result_egress contract failed")
+    summary = payload.get("summary")
+    if isinstance(summary, dict):
+        for key in ("all_hash_gates_passed", "all_protocol_gates_passed", "all_count_gates_passed"):
+            if summary.get(key) is not True:
+                raise ValueError(f"integrated-service summary {key} failed")
+    return {
+        "case_id": _CASE_ID,
+        "decision": "pass",
+        "exact_match": True,
+        "no_protocol_errors": True,
+        "no_drop_duplicate_deadlock_timeout": True,
+        "cycle_bound_ok": True,
+        "request_count": int(integrated["request_count"]),
+        "wide_response_count": int(integrated["wide_response_count"]),
+        "result_count": int(integrated["result_count"]),
+        "counters": counters,
+        "gates": {key: True for key in ("hash_gate_ok", "protocol_gate_ok", "count_gate_ok")},
+        "shared_result_egress": egress,
+        "hashes": {
+            "score_hash": _require_string_hash(integrated, "score_hash", "integrated-service c1"),
+            "final_hash": _require_string_hash(integrated, "final_hash", "integrated-service c1"),
+            "request_hash": _require_string_hash(integrated, "request_hash", "integrated-service c1"),
+            "wide_response_matrix_hash": _require_string_hash(
+                integrated, "wide_response_matrix_hash", "integrated-service c1"
+            ),
+        },
+    }
+
+
+def _validate_generated_activity_manifest(activity_manifest: JsonDict, activity_dir: Path) -> JsonDict:
+    if str(activity_manifest.get("model") or "").strip() != "attention_decode_score_multivalue_service_activity_v1":
+        raise ValueError("generated activity manifest model mismatch")
+    if str(activity_manifest.get("case_id") or "").strip() != _CASE_ID:
+        raise ValueError("generated activity manifest case_id mismatch")
+    if float(activity_manifest.get("clock_period_ns", 0.0)) != 10.0:
+        raise ValueError("generated activity manifest clock_period_ns mismatch")
+    cycle_count = int(activity_manifest.get("cycle_count", 0))
+    if cycle_count <= 0:
+        raise ValueError("generated activity manifest cycle_count must be positive")
+    counters = activity_manifest.get("request_result_protocol_counters")
+    if not isinstance(counters, dict):
+        raise ValueError("generated activity manifest request_result_protocol_counters missing")
+    if int(counters.get("request_count", 0)) != _EXPECTED_REQUEST_COUNT:
+        raise ValueError("generated activity manifest request_count mismatch")
+    if int(counters.get("wide_response_count", 0)) != _EXPECTED_WIDE_RESPONSE_COUNT:
+        raise ValueError("generated activity manifest wide_response_count mismatch")
+    if int(counters.get("result_count", 0)) != _EXPECTED_RESULT_COUNT:
+        raise ValueError("generated activity manifest result_count mismatch")
+    shared = counters.get("shared")
+    if not isinstance(shared, dict) or shared.get("protocol_error") is not False:
+        raise ValueError("generated activity manifest shared protocol contract failed")
+    bank_coverage = activity_manifest.get("value_bank_coverage")
+    if not isinstance(bank_coverage, dict):
+        raise ValueError("generated activity manifest value_bank_coverage missing")
+    if bank_coverage.get("addressed_banks_over_trace") != [0, 1, 2]:
+        raise ValueError("generated activity manifest addressed_banks_over_trace mismatch")
+    if bank_coverage.get("inactive_banks") != [3]:
+        raise ValueError("generated activity manifest inactive_banks mismatch")
+    if bank_coverage.get("inactive_reason") != "three_block_reference_workload":
+        raise ValueError("generated activity manifest inactive_reason mismatch")
+    vcd_hash = str(activity_manifest.get("hashes", {}).get("vcd_sha256") or "").strip().lower()
+    if not vcd_hash:
+        raise ValueError("generated activity manifest vcd_sha256 missing")
+    if not (activity_dir / _OUTPUT_MANIFEST_NAME).is_file():
+        raise ValueError("generated activity manifest file missing from activity_dir")
+    return {
+        "clock_period_ns": 10.0,
+        "cycle_count": cycle_count,
+        "vcd_sha256": vcd_hash,
+        "generated_manifest_sha256": _sha256_file(activity_dir / _OUTPUT_MANIFEST_NAME),
+        "generated_manifest_hashes": dict(activity_manifest.get("hashes") or {}),
+        "bank_coverage": bank_coverage,
+    }
+
+
+def _validate_macro_manifest_counts(macro_manifest: JsonDict) -> JsonDict:
+    params = macro_manifest.get("manifest_params")
+    if not isinstance(params, dict):
+        raise ValueError("macro_manifest manifest_params missing")
+    score_bank_macro_count = int(params.get("score_bank_macro_count", 0))
+    value_memory_macro_count = int(params.get("value_memory_macro_count", 0))
+    if score_bank_macro_count != _EXPECTED_MACRO_COUNTS["fakeram45_2048x39"]:
+        raise ValueError(
+            "macro_manifest score-bank macro count mismatch: expected "
+            f"{_EXPECTED_MACRO_COUNTS['fakeram45_2048x39']}, got {score_bank_macro_count}"
+        )
+    if value_memory_macro_count != _EXPECTED_MACRO_COUNTS["fakeram45_64x32"]:
+        raise ValueError(
+            "macro_manifest value-memory macro count mismatch: expected "
+            f"{_EXPECTED_MACRO_COUNTS['fakeram45_64x32']}, got {value_memory_macro_count}"
+        )
+    return {
+        "fakeram45_2048x39": score_bank_macro_count,
+        "fakeram45_64x32": value_memory_macro_count,
+    }
+
+
+def _prepare_postroute_power_manifest(
+    *,
+    activity_dir: Path,
+    activity_manifest: JsonDict,
+) -> tuple[JsonDict, Path, JsonDict]:
+    generated_meta = _validate_generated_activity_manifest(activity_manifest, activity_dir)
+    macro_counts = _validate_macro_manifest_counts(
+        _load(activity_dir / _OUTPUT_MACRO_MANIFEST_NAME)
+    )
+    vcd_path = activity_dir / _OUTPUT_VCD_NAME
+    if not vcd_path.is_file():
+        raise ValueError("generated VCD missing from activity_dir")
+    if _sha256_file(vcd_path) != generated_meta["vcd_sha256"]:
+        raise ValueError("generated VCD hash does not match the generated activity manifest")
+    if not (activity_dir / _OUTPUT_SERVICE_MANIFEST_NAME).is_file():
+        raise ValueError("generated service manifest missing from activity_dir")
+
+    macro_activity = extract_fakeram_vcd_activity(
+        vcd_path,
+        source_vcd_sha256=generated_meta["vcd_sha256"],
+        scope=_SCOPE,
+    )
+    macro_activity_path = activity_dir / _POSTROUTE_MACRO_ACTIVITY_NAME
+    macro_activity_path.write_text(
+        json.dumps(macro_activity, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    sequential_activity = extract_sequential_register_vcd_activity(
+        vcd_path,
+        source_vcd_sha256=generated_meta["vcd_sha256"],
+        scope=_SCOPE,
+    )
+    sequential_activity_path = activity_dir / _POSTROUTE_SEQUENTIAL_ACTIVITY_NAME
+    sequential_activity_path.write_text(
+        json.dumps(sequential_activity, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    adapted_manifest = {
+        "version": 1,
+        "model": "attention_decode_score_multivalue_service_postroute_activity_manifest_v1",
+        "clock_period_ns": activity_manifest["clock_period_ns"],
+        "phases": [
+            {
+                "phase": "service_window",
+                "vcd": _OUTPUT_VCD_NAME,
+                "vcd_sha256": generated_meta["vcd_sha256"],
+                "macro_activity": macro_activity_path.name,
+                "macro_activity_sha256": _sha256_file(macro_activity_path),
+                "sequential_register_activity": sequential_activity_path.name,
+                "sequential_register_activity_sha256": _sha256_file(sequential_activity_path),
+                "measured_cycles": generated_meta["cycle_count"],
+                "full_context_cycles": generated_meta["cycle_count"],
+                "requires_macro_activity": True,
+            }
+        ],
+    }
+    adapted_manifest_path = activity_dir / _POSTROUTE_MANIFEST_NAME
+    adapted_manifest_path.write_text(
+        json.dumps(adapted_manifest, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    return adapted_manifest, adapted_manifest_path, {
+        "generated_activity_manifest_sha256": generated_meta["generated_manifest_sha256"],
+        "adapted_activity_manifest_sha256": _sha256_file(adapted_manifest_path),
+        "vcd_sha256": generated_meta["vcd_sha256"],
+        "cycle_count": generated_meta["cycle_count"],
+        "macro_counts": macro_counts,
+        "bank_coverage": generated_meta["bank_coverage"],
+    }
+
+
+def _finite_positive(value: object, label: str) -> float:
+    try:
+        numeric = float(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"{label} must be a finite positive number") from exc
+    if not math.isfinite(numeric) or numeric <= 0.0:
+        raise ValueError(f"{label} must be a finite positive number")
+    return numeric
+
+
+def _strict_service_window_measurement(
+    *,
+    activity_power: JsonDict,
+    manifest_sha256: str,
+    expected_vcd_sha256: str,
+    expected_clock_period_ns: float,
+    expected_cycle_count: int,
+) -> JsonDict:
+    if activity_power.get("promotion_gate_pass") is not True:
+        raise ValueError("postroute power promotion_gate_pass failed")
+    if activity_power.get("status") != "activity_backed":
+        raise ValueError("postroute power status is not activity_backed")
+    if abs(float(activity_power.get("clock_period_ns", 0.0)) - expected_clock_period_ns) > 1e-9:
+        raise ValueError("postroute power clock_period_ns mismatch")
+    if str(activity_power.get("source_activity_manifest_sha256") or "").strip().lower() != manifest_sha256:
+        raise ValueError("postroute power source_activity_manifest_sha256 mismatch")
+    phases = activity_power.get("phases")
+    if not isinstance(phases, list) or len(phases) != 1 or not isinstance(phases[0], dict):
+        raise ValueError("postroute power must contain exactly one service_window phase")
+    phase = phases[0]
+    if str(phase.get("phase") or "").strip() != "service_window":
+        raise ValueError("postroute power phase name mismatch")
+    if str(phase.get("vcd_sha256") or "").strip().lower() != expected_vcd_sha256:
+        raise ValueError("postroute power VCD hash mismatch")
+    if int(phase.get("measured_cycles", 0)) != expected_cycle_count:
+        raise ValueError("postroute power measured_cycles mismatch")
+    if int(phase.get("full_context_cycles", 0)) != expected_cycle_count:
+        raise ValueError("postroute power full_context_cycles mismatch")
+    if phase.get("annotation_gate_pass") is not True:
+        raise ValueError("postroute power aggregate annotation gate failed")
+    if phase.get("sequential_register_activity_gate_pass") is not True:
+        raise ValueError("postroute power sequential register coverage gate failed")
+    if phase.get("clock_period_gate_pass") is not True:
+        raise ValueError("postroute power clock period gate failed")
+    power = phase.get("power")
+    if not isinstance(power, dict):
+        raise ValueError("postroute power phase power section missing")
+    internal_w = _finite_positive(power.get("internal_w"), "internal_w")
+    switching_w = _finite_positive(power.get("switching_w"), "switching_w")
+    leakage_w = _finite_positive(power.get("leakage_w"), "leakage_w")
+    total_w = _finite_positive(power.get("total_w"), "total_w")
+    if abs((internal_w + switching_w + leakage_w) - total_w) > 1e-9:
+        raise ValueError("postroute power total_w does not match internal+switching+leakage")
+    service_window_s = expected_cycle_count * expected_clock_period_ns * 1e-9
+    dynamic_energy_j = (internal_w + switching_w) * service_window_s
+    leakage_energy_j = leakage_w * service_window_s
+    total_energy_j = dynamic_energy_j + leakage_energy_j
+    return {
+        "label": "component_service_window_energy",
+        "is_total_token_energy": False,
+        "cycle_count": expected_cycle_count,
+        "duration_s": service_window_s,
+        "power_w": {
+            "internal": internal_w,
+            "switching": switching_w,
+            "dynamic": internal_w + switching_w,
+            "leakage": leakage_w,
+            "total": total_w,
+        },
+        "energy_j": {
+            "dynamic": dynamic_energy_j,
+            "leakage": leakage_energy_j,
+            "dynamic_plus_leakage": total_energy_j,
+        },
+    }
+
+
+def _write_markdown(payload: JsonDict, path: Path) -> None:
+    best = payload.get("best") if isinstance(payload.get("best"), dict) else {}
+    service_window = (
+        best.get("component_service_window_energy")
+        if isinstance(best.get("component_service_window_energy"), dict)
+        else {}
+    )
+    composed_ppa = (
+        best.get("authoritative_composed_c1_total_ppa")
+        if isinstance(best.get("authoritative_composed_c1_total_ppa"), dict)
+        else {}
+    )
+    lines = [
+        "# Strict c1 routed service power audit",
+        "",
+        f"- decision: `{payload['decision']}`",
+        f"- promotion_gate_pass: `{payload['promotion_gate_pass']}`",
+        f"- required_flow_variant: `{payload['selection_contract']['required_flow_variant']}`",
+        f"- bank3 dynamic inactivity: `{payload['bank3_dynamic_inactivity']['inactive_banks']}`",
+        f"- bank3 note: {payload['bank3_dynamic_inactivity']['statement']}",
+        "",
+        "| status | path ns | total power mW | service-window dynamic J | service-window leakage J | service-window total J |",
+        "|---|---:|---:|---:|---:|---:|",
+        "| {status} | {path_ns} | {total_power_mw} | {dynamic} | {leakage} | {total} |".format(
+            status=best.get("status"),
+            path_ns=composed_ppa.get("critical_path_ns"),
+            total_power_mw=composed_ppa.get("total_power_mw"),
+            dynamic=service_window.get("energy_j", {}).get("dynamic"),
+            leakage=service_window.get("energy_j", {}).get("leakage"),
+            total=service_window.get("energy_j", {}).get("dynamic_plus_leakage"),
+        ),
+        "",
+        "## Macro Contract",
+        "",
+        f"- `fakeram45_2048x39`: `{payload['macro_manifest_contract']['counts']['fakeram45_2048x39']}`",
+        f"- `fakeram45_64x32`: `{payload['macro_manifest_contract']['counts']['fakeram45_64x32']}`",
+    ]
+    if payload["promotion_gate_pass"] is not True:
+        failure = payload["candidates"][0].get("failure")
+        if isinstance(failure, dict):
+            lines.extend(
+                [
+                    "",
+                    "## Failure",
+                    "",
+                    f"- type: `{failure.get('error_type')}`",
+                    f"- summary: {failure.get('error_summary')}",
+                ]
+            )
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def build_report(
+    *,
+    config: Path,
+    c1_metrics_csv: Path,
+    equivalence_json: Path,
+    integrated_service_json: Path,
+    orfs_design_config: Path,
+    clock_period_ns: float,
+    activity_dir: Path,
+    min_sequential_register_activity_coverage: float = 0.95,
+) -> JsonDict:
+    if abs(clock_period_ns - 10.0) > 1e-9:
+        raise ValueError("strict c1 routed service power audit requires a 10 ns clock")
+    cluster_equivalence = _validate_cluster_equivalence(_load(equivalence_json))
+    integrated_service = _validate_integrated_service(_load(integrated_service_json))
+    metric = _select_c1_metric(
+        c1_metrics_csv,
+        clock_period_ns=clock_period_ns,
+        required_flow_variant=_REQUIRED_FLOW_VARIANT,
+    )
+    activity_dir.mkdir(parents=True, exist_ok=True)
+    activity_manifest = generate_activity(
+        _load(config),
+        activity_dir,
+        clock_period_ns=clock_period_ns,
+    )
+    adapted_manifest, adapted_manifest_path, activity_meta = _prepare_postroute_power_manifest(
+        activity_dir=activity_dir,
+        activity_manifest=activity_manifest,
+    )
+    candidate: JsonDict = {
+        "candidate_id": f"multivalue_service_activity_{_REQUIRED_FLOW_VARIANT}",
+        "flow_variant": _REQUIRED_FLOW_VARIANT,
+        "ppa_metric": _metric_provenance(metric, c1_metrics_csv),
+    }
+    try:
+        activity_power = build_power_report(
+            manifest=adapted_manifest,
+            manifest_path=adapted_manifest_path,
+            design_config=orfs_design_config,
+            flow_variant=_REQUIRED_FLOW_VARIANT,
+            scope=_SCOPE,
+            min_vcd_coverage=0.05,
+            min_vcd_pins=32,
+            min_sequential_register_activity_coverage=min_sequential_register_activity_coverage,
+            min_macro_active_coverage=0.01,
+            min_macro_active_pins=16,
+            timeout_seconds=1800,
+        )
+    except Exception as exc:
+        candidate["status"] = "measurement_failed"
+        candidate["promotion_gate_pass"] = False
+        candidate["failure"] = _sanitized_failure(exc)
+    else:
+        candidate["activity_power"] = activity_power
+        try:
+            service_window_energy = _strict_service_window_measurement(
+                activity_power=activity_power,
+                manifest_sha256=activity_meta["adapted_activity_manifest_sha256"],
+                expected_vcd_sha256=activity_meta["vcd_sha256"],
+                expected_clock_period_ns=clock_period_ns,
+                expected_cycle_count=int(activity_meta["cycle_count"]),
+            )
+        except Exception as exc:
+            candidate["status"] = "rejected_gate"
+            candidate["promotion_gate_pass"] = False
+            candidate["failure"] = _sanitized_failure(exc)
+        else:
+            candidate["status"] = "activity_backed"
+            candidate["promotion_gate_pass"] = True
+            candidate["component_service_window_energy"] = service_window_energy
+            candidate["authoritative_composed_c1_total_ppa"] = {
+                "critical_path_ns": float(metric["critical_path_ns"]),
+                "instance_area_um2": float(metric.get("instance_area_um2") or 0.0),
+                "die_area": float(metric.get("die_area") or 0.0),
+                "total_power_mw": float(metric.get("total_power_mw") or 0.0),
+            }
+    best = candidate if candidate.get("status") == "activity_backed" else None
+    return {
+        "version": 1,
+        "model": _MODEL,
+        "decision": (
+            "activity_backed_service_power_measured"
+            if best is not None
+            else "activity_power_rejected_no_gated_candidate"
+        ),
+        "promotion_gate_pass": best is not None,
+        "candidate_count": 1,
+        "promoted_candidate_count": 1 if best is not None else 0,
+        "best_candidate_id": best["candidate_id"] if best is not None else None,
+        "best": best,
+        "candidates": [candidate],
+        "selection_contract": {
+            "case_id": _CASE_ID,
+            "required_flow_variant": _REQUIRED_FLOW_VARIANT,
+            "clock_period_ns": clock_period_ns,
+            "status": "exactly_one_status_ok_timing_feasible_row_required",
+        },
+        "source_dependencies": {
+            "service_config": _portable_path(config),
+            "c1_metrics_csv": _portable_path(c1_metrics_csv),
+            "merged_cluster_equivalence_json": _portable_path(equivalence_json),
+            "integrated_service_r1_json": _portable_path(integrated_service_json),
+            "orfs_design_config": _portable_path(orfs_design_config),
+        },
+        "dependency_contract": {
+            "cluster_equivalence": cluster_equivalence,
+            "integrated_service_c1": integrated_service,
+        },
+        "activity_contract": {
+            "generated_activity_manifest_sha256": activity_meta["generated_activity_manifest_sha256"],
+            "adapted_activity_manifest_sha256": activity_meta["adapted_activity_manifest_sha256"],
+            "vcd_sha256": activity_meta["vcd_sha256"],
+            "clock_period_ns": clock_period_ns,
+            "cycle_count": int(activity_meta["cycle_count"]),
+        },
+        "macro_manifest_contract": {
+            "counts": activity_meta["macro_counts"],
+            "statement": "Exact macro counts are required: 56 fakeram45_2048x39 score banks and 64 fakeram45_64x32 value-memory macros.",
+        },
+        "bank3_dynamic_inactivity": {
+            "inactive_banks": activity_meta["bank_coverage"]["inactive_banks"],
+            "statement": (
+                "No artificial activity was injected. Bank3 may remain dynamically inactive in this exact c1 workload; "
+                "it is not required to toggle, while leakage remains part of routed power."
+            ),
+        },
+        "precision_status": (
+            "unchanged_integer_contract_from_merged_cluster_equivalence_and_integrated_service"
+        ),
+        "remaining_abstractions": [
+            "The service-window energy is direct routed component energy for this exact c1 workload, not total token energy.",
+            "FakeRAM power uses proxy Nangate45 macro views rather than SRAM compiler signoff.",
+            "Evaluator-local VCD, ODB, and SPEF paths remain redacted from the portable output.",
+        ],
+    }
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--config", type=Path, required=True)
+    parser.add_argument("--c1-metrics-csv", type=Path, required=True)
+    parser.add_argument("--equivalence-json", type=Path, required=True)
+    parser.add_argument("--integrated-service-json", type=Path, required=True)
+    parser.add_argument("--orfs-design-config", type=Path, required=True)
+    parser.add_argument("--clock-period-ns", type=float, default=10.0)
+    parser.add_argument("--activity-dir", type=Path, required=True)
+    parser.add_argument("--out", type=Path, required=True)
+    parser.add_argument("--out-md", type=Path, required=True)
+    parser.add_argument(
+        "--min-sequential-register-activity-coverage",
+        type=float,
+        default=0.95,
+    )
+    args = parser.parse_args()
+    payload = build_report(
+        config=args.config,
+        c1_metrics_csv=args.c1_metrics_csv,
+        equivalence_json=args.equivalence_json,
+        integrated_service_json=args.integrated_service_json,
+        orfs_design_config=args.orfs_design_config,
+        clock_period_ns=args.clock_period_ns,
+        activity_dir=args.activity_dir,
+        min_sequential_register_activity_coverage=args.min_sequential_register_activity_coverage,
+    )
+    args.out.parent.mkdir(parents=True, exist_ok=True)
+    args.out.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    _write_markdown(payload, args.out_md)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
