@@ -8477,9 +8477,11 @@ def test_service_measured_frontier_request_manifests_remain_dependency_gated() -
         assert "July 25, 2026" in item["notes"]
         assert "only c1 is a measured composed-service anchor" in item["notes"]
         assert "c2+ remain blocked/unpromoted" in item["notes"]
-        assert "scale the direct routed microkernel activity explicitly to the Llama7B context" in item[
-            "expected_result"
-        ]["reason"]
+        expected_reason = item["expected_result"]["reason"]
+        assert "24-active-context-token" in expected_reason
+        assert "ceil(sequence_length / 24)" in expected_reason
+        assert "final partial window" in expected_reason
+        assert "128 tokens labeled only as capacity" in expected_reason
         assert "c2+ blocked/unpromoted" in item["expected_result"]["reason"]
         assert "exact integer precision unchanged" in item["expected_result"]["reason"]
         assert "broader SRAM/NoC/HBM/producer/dense energy remains outside" in item[

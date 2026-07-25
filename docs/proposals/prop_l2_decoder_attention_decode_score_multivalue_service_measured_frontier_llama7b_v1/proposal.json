@@ -8,13 +8,13 @@
   "abstraction_layer": "decoder_attention_decode_score_multivalue_service_measured_frontier",
   "hypothesis": "Once the service-aware shared-score multivalue cluster frontier r1 and the strict c1 composed-service activity-power audit are both merged/materialized, the Llama7B frontier can replace rather than add the old cluster area/energy proxy with a measured composed-service c1 anchor while keeping c2+ blocked/unpromoted, preserving exact integer precision, and keeping broader system energy outside.",
   "direct_comparison": {
-    "primary_question": "How does the shared-score multivalue Llama7B frontier change when the prior cluster area/energy proxy is replaced with the measured composed-service c1 anchor and only the direct routed microkernel activity is scaled into the Llama7B context?",
+    "primary_question": "How does the shared-score multivalue Llama7B frontier change when the prior cluster area/energy proxy is replaced with the measured composed-service c1 anchor and the direct routed 24-active-context-token microkernel activity is scaled into the Llama7B context while 128 tokens remains explicitly a capacity bound?",
     "baseline": "l2_decoder_attention_decode_score_multivalue_cluster_frontier_llama7b_v1_r1",
     "include": [
       "only c1 as the measured composed-service anchor",
       "the prior service-aware shared-score multivalue cluster frontier structure from l2_decoder_attention_decode_score_multivalue_cluster_frontier_llama7b_v1_r1",
       "strict c1 direct routed service-window activity from l2_decoder_attention_decode_score_multivalue_service_c1_activity_power_llama7b_v1",
-      "explicit scaling from the routed microkernel measurement into the Llama7B context",
+      "explicit ceil(sequence_length / 24) scaling from the routed 24-active-context-token microkernel measurement into the Llama7B context, with the final partial window conservatively charged",
       "exact integer precision unchanged from the inherited equivalence-backed frontier contract",
       "repo-portable JSON and Markdown outputs only from an evidence-only evaluator"
     ],
@@ -49,7 +49,7 @@
     {
       "item_id": "l2_decoder_attention_decode_score_multivalue_service_measured_frontier_llama7b_v1",
       "task_type": "l2_campaign",
-      "objective": "Replace the prior shared-score multivalue cluster frontier area/energy proxy with the measured composed-service c1 anchor, scaling only the direct routed microkernel activity into the Llama7B context while keeping c2+ blocked/unpromoted.",
+      "objective": "Replace the prior shared-score multivalue cluster frontier area/energy proxy with the measured composed-service c1 anchor, scaling the direct routed 24-active-context-token microkernel activity into the Llama7B context while keeping the 128-token capacity distinct and c2+ blocked/unpromoted.",
       "evaluation_mode": "frontier_recost",
       "abstraction_layer": "decoder_attention_decode_score_multivalue_service_measured_frontier",
       "comparison_role": "measured_c1_service_frontier_anchor_replacement",
@@ -62,7 +62,7 @@
       "requires_materialized_refs": true,
       "expected_result": {
         "direction": "replace_multivalue_cluster_area_energy_with_measured_c1_service_anchor",
-        "reason": "Use only the measured composed-service c1 anchor to replace the old cluster area/energy proxy, scale the direct routed microkernel activity explicitly to the Llama7B context, keep c2+ blocked/unpromoted, preserve exact integer precision unchanged, and withhold any total-token energy claim while broader SRAM/NoC/HBM/producer/dense energy remains outside."
+        "reason": "Use only the measured composed-service c1 anchor to replace the old cluster area/energy proxy, scale the direct routed 24-active-context-token window with ceil(sequence_length / 24), conservatively charge the final partial window, keep 128 tokens labeled only as capacity, keep c2+ blocked/unpromoted, preserve exact integer precision unchanged, and withhold any total-token energy claim while broader SRAM/NoC/HBM/producer/dense energy remains outside."
       },
       "status": "pending_implementation_merge",
       "notes": "This request remains dependency-gated and pending implementation/dependency merge. As of July 25, 2026, only c1 is a measured composed-service anchor, c2+ remain blocked/unpromoted, and the measured-service frontier audit CLI plus both dependency artifacts must merge/materialize before normal dispatch."
@@ -80,7 +80,7 @@
   ],
   "remaining_abstractions_after_this_step": [
     "Only c1 is measured; c2 and higher service points remain blocked/unpromoted.",
-    "The direct routed microkernel activity is scaled into the Llama7B context, not remeasured at full system scope.",
+    "The direct routed microkernel activity covers 24 active context tokens, while 128 tokens is only the measured service capacity. Dynamic energy is scaled with ceil(sequence_length / 24), conservatively charging the final partial window, rather than remeasured at full system scope.",
     "This is not a total-token energy claim.",
     "Broader SRAM, NoC, HBM, producer, and dense energy remain outside this frontier replacement.",
     "The exact integer precision contract is inherited unchanged rather than reopened here."

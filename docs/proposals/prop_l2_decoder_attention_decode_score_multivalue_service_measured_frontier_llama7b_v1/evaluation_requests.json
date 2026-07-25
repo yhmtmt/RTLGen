@@ -5,7 +5,7 @@
     {
       "item_id": "l2_decoder_attention_decode_score_multivalue_service_measured_frontier_llama7b_v1",
       "task_type": "l2_campaign",
-      "objective": "Replace the prior shared-score multivalue cluster frontier area/energy proxy with the measured composed-service c1 anchor, scaling only the direct routed microkernel activity into the Llama7B context while keeping c2+ blocked/unpromoted.",
+      "objective": "Replace the prior shared-score multivalue cluster frontier area/energy proxy with the measured composed-service c1 anchor, scaling the direct routed 24-active-context-token microkernel activity into the Llama7B context while keeping the 128-token capacity distinct and c2+ blocked/unpromoted.",
       "evaluation_mode": "frontier_recost",
       "abstraction_layer": "decoder_attention_decode_score_multivalue_service_measured_frontier",
       "comparison_role": "measured_c1_service_frontier_anchor_replacement",
@@ -18,7 +18,7 @@
       "requires_materialized_refs": true,
       "expected_result": {
         "direction": "replace_multivalue_cluster_area_energy_with_measured_c1_service_anchor",
-        "reason": "Replace rather than add the old cluster area/energy proxy, use only the measured composed-service c1 anchor, scale the direct routed microkernel activity explicitly to the Llama7B context, keep c2+ blocked/unpromoted, preserve exact integer precision unchanged, and withhold any total-token energy claim while broader SRAM/NoC/HBM/producer/dense energy remains outside."
+        "reason": "Replace rather than add the old cluster area/energy proxy, use only the measured composed-service c1 anchor, scale the direct routed 24-active-context-token window with ceil(sequence_length / 24), conservatively charge the final partial window, keep 128 tokens labeled only as capacity, keep c2+ blocked/unpromoted, preserve exact integer precision unchanged, and withhold any total-token energy claim while broader SRAM/NoC/HBM/producer/dense energy remains outside."
       },
       "status": "pending_implementation_merge",
       "notes": "This request remains dependency-gated and pending implementation/dependency merge. As of July 25, 2026, only c1 is a measured composed-service anchor, c2+ remain blocked/unpromoted, and the measured-service frontier audit CLI plus both dependency artifacts must merge/materialize before normal dispatch."
