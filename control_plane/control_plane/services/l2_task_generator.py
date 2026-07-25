@@ -54,6 +54,12 @@ _MULTIVALUE_INTEGRATED_SERVICE_BASE_ITEM = (
 _MULTIVALUE_INTEGRATED_SERVICE_DEFAULT_ITEM = (
     "l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1_r1"
 )
+_MULTIVALUE_SERVICE_C1_PNR_ITEM = (
+    "l1_decoder_attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_pnr_v1"
+)
+_MULTIVALUE_SERVICE_C1_DESIGN = (
+    "attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr"
+)
 
 
 @dataclass(frozen=True)
@@ -7321,6 +7327,75 @@ def _decoder_attention_decode_score_multivalue_integrated_service_evidence(
     }
 
 
+def _decoder_attention_decode_score_multivalue_service_activity_power_evidence(
+    *, item_id: str, depends_on_item_ids: list[str] | None = None
+) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    design = _MULTIVALUE_SERVICE_C1_DESIGN
+    config = f"runs/designs/npu_blocks/{design}/config.json"
+    metrics_csv = f"runs/designs/npu_blocks/{design}/metrics.csv"
+    equivalence_json = (
+        f"{base}/decoder_attention_decode_score_multivalue_cluster_equivalence__"
+        "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1.json"
+    )
+    integrated_service_item = _multivalue_integrated_service_item_for_consumer(
+        depends_on_item_ids=depends_on_item_ids
+    )
+    integrated_service_json = (
+        f"{base}/decoder_attention_decode_score_multivalue_integrated_service__"
+        f"{integrated_service_item}.json"
+    )
+    orfs_design_config = f"/orfs/flow/designs/nangate45/{design}/config.mk"
+    activity_dir = "/tmp/rtlgen_multivalue_service_c1_activity"
+    out = f"{base}/decoder_attention_decode_score_multivalue_service_activity_power__{item_id}.json"
+    report = f"{base}/decoder_attention_decode_score_multivalue_service_activity_power__{item_id}.md"
+    return {
+        "inputs": {
+            "decode_score_multivalue_service_c1_config": config,
+            "decode_score_multivalue_service_c1_pnr_metrics_csv": metrics_csv,
+            "decode_score_multivalue_service_c1_source_pnr_item_id": _MULTIVALUE_SERVICE_C1_PNR_ITEM,
+            "decode_score_multivalue_service_c1_equivalence_json": equivalence_json,
+            "decode_score_multivalue_service_c1_integrated_service_json": integrated_service_json,
+            "decode_score_multivalue_service_c1_orfs_design_config": orfs_design_config,
+            "decode_score_multivalue_service_c1_activity_dir": activity_dir,
+            "decode_score_multivalue_service_activity_power_out": out,
+            "decode_score_multivalue_service_activity_power_report": report,
+            "decode_score_multivalue_service_activity_power_scope": (
+                "Audit strict c1 routed composed-service activity power after merged/materialized "
+                "integrated-service, c1 PNR, and shared-score multivalue cluster-equivalence evidence. "
+                "Measure only direct routed component service-window energy, inherit the exact integer "
+                "precision contract from the merged equivalence proof, do not force bank3 activity, keep "
+                "VCD/ODB/SPEF evaluator-local, and do not claim total-token energy."
+            ),
+            "decode_score_multivalue_service_activity_power_promotion_gate": (
+                "Promotion requires a timing-feasible 10 ns c1 routed row, exact integrated-service c1 "
+                "hash/protocol/count gates, explicit annotation coverage, finite positive routed power, "
+                "and a direct service-window measurement rather than compositional token-energy accounting."
+            ),
+            "decode_score_multivalue_service_activity_power_local_only_artifacts": ["VCD", "ODB", "SPEF"],
+        },
+        "commands": [
+            {
+                "name": "audit_decode_score_multivalue_service_activity_power",
+                "run": (
+                    "python3 -m npu.eval.audit_attention_decode_score_multivalue_service_activity_power "
+                    f"--config {config} "
+                    f"--c1-metrics-csv {metrics_csv} "
+                    f"--equivalence-json {equivalence_json} "
+                    f"--integrated-service-json {integrated_service_json} "
+                    f"--orfs-design-config {orfs_design_config} "
+                    "--clock-period-ns 10 "
+                    f"--activity-dir {activity_dir} "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            }
+        ],
+        "expected_outputs": [out, report],
+        "evidence_only": True,
+    }
+
+
 def _decoder_attention_decode_score_multivalue_gqa_group_frontier_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     evidence_version = _gqa_evidence_version_for_consumer(item_id)
@@ -10981,6 +11056,7 @@ def _build_payload(
         "decoder_attention_decode_score_multivalue_gqa_array_equivalence",
         "decoder_attention_decode_score_multivalue_cluster_activity_power",
         "decoder_attention_decode_score_multivalue_integrated_service",
+        "decoder_attention_decode_score_multivalue_service_activity_power",
         "decoder_attention_decode_score_multivalue_gqa_group_activity_power",
         "decoder_attention_decode_score_tile_frontier",
         "decoder_attention_decode_score_local_cluster_frontier",
@@ -11246,6 +11322,11 @@ def _build_payload(
                 item_id=item_id,
                 proposal_id=proposal_id,
                 proposal_path=proposal_path,
+            )
+        elif abstraction_layer_name == "decoder_attention_decode_score_multivalue_service_activity_power":
+            decoder_evidence = _decoder_attention_decode_score_multivalue_service_activity_power_evidence(
+                item_id=item_id,
+                depends_on_item_ids=depends_on_item_ids,
             )
         elif abstraction_layer_name == "decoder_attention_decode_score_multivalue_gqa_group_activity_power":
             decoder_evidence = _decoder_attention_decode_score_multivalue_gqa_group_activity_power_evidence(

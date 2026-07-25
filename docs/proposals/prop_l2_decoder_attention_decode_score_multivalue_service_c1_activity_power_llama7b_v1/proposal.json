@@ -1,0 +1,95 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_decode_score_multivalue_service_c1_activity_power_llama7b_v1",
+  "created_utc": "2026-07-25T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Strict c1 composed-service activity power gate for Llama7B",
+  "abstraction_layer": "decoder_attention_decode_score_multivalue_service_activity_power",
+  "hypothesis": "Once the compact integrated-service r1 probe, the merged c1 composed-service PNR row, and the shared-score multivalue cluster-equivalence evidence are all merged and materialized, a strict c1 routed audit can report only direct composed service-window energy with exact inherited precision and without forcing bank3 activity or making any total-token energy claim.",
+  "direct_comparison": {
+    "primary_question": "Does the routed c1 composed service remain physically interesting once the merged c1 PNR row is combined with strict integrated-service and cluster-equivalence gates plus evaluator-local switching evidence, while reporting only direct service-window energy?",
+    "baseline": "l1_decoder_attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_pnr_v1 as the authoritative composed c1 PPA row, with integrated-service r1 and shared-score multivalue cluster-equivalence evidence as strict dependency gates.",
+    "include": [
+      "strict c1 p128/b4/q4/rl2/round_robin composed-service routed row at 10 ns",
+      "merged/materialized integrated-service c1 exact hash/protocol/count evidence from l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1_r1",
+      "merged/materialized shared-score multivalue cluster-equivalence evidence using the exact JSON path already consumed by related audits",
+      "direct routed component service-window dynamic and leakage energy only",
+      "bank activity reporting that preserves observed bank3 inactivity instead of forcing synthetic toggles",
+      "repo-portable JSON and Markdown outputs only, with raw VCD, ODB, SPEF, and temporary activity directories kept evaluator-local"
+    ],
+    "exclude": [
+      "do not claim total-token energy or token rankings",
+      "do not force bank3 activity or invent synthetic bank coverage",
+      "do not reopen arithmetic precision, semantic equivalence, NoC closure, HBM closure, or service-fabric PPA/energy closure",
+      "do not commit evaluator-local activity artifacts"
+    ],
+    "metrics": [
+      "critical_path_ns",
+      "total_power_mw",
+      "service_window_dynamic_energy_j",
+      "service_window_leakage_energy_j",
+      "service_window_total_energy_j",
+      "vcd_annotation_coverage",
+      "sequential_register_activity_coverage",
+      "macro_active_coverage",
+      "bank3_inactive",
+      "promotion_gate_pass"
+    ]
+  },
+  "expected_benefit": [
+    "converts the composed c1 service point from vectorless total power to a strict activity-backed component energy measurement",
+    "preserves the exact integer precision contract already proven by the merged equivalence gate",
+    "makes the scope boundary explicit by measuring only direct routed service-window energy and withholding total-token energy"
+  ],
+  "risks": [
+    "the merged c1 row may fail strict annotation or positive-power gates even after routing succeeds",
+    "bank3 may remain inactive for the reference workload, which is acceptable evidence here but limits broader service-window coverage",
+    "passing this audit still does not close service-fabric energy, NoC composition, HBM service, or total-token energy"
+  ],
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_decode_score_multivalue_service_c1_activity_power_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Audit strict c1 routed composed-service activity power at 10 ns using merged/materialized c1 PNR, integrated-service r1, and shared-score multivalue cluster-equivalence evidence while reporting only direct service-window energy.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_decode_score_multivalue_service_activity_power",
+      "comparison_role": "strict_c1_service_activity_power_gate",
+      "paired_baseline_item_id": "l1_decoder_attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_pnr_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1_r1",
+        "l1_decoder_attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_pnr_v1",
+        "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "record_strict_c1_composed_service_activity_power",
+        "reason": "Require merged/materialized integrated-service r1, composed c1 PNR, and shared-score multivalue cluster-equivalence evidence before dispatch; then measure only direct routed service-window energy at 10 ns, preserve exact inherited precision, leave bank3 inactivity unforced, and withhold total-token energy."
+      },
+      "status": "pending_implementation_merge",
+      "notes": "This request is dependency-gated and not ready for normal dispatch. As of July 25, 2026, the repository checkout does not contain the integrated-service r1 JSON or the c1 composed-service metrics row, so both dependencies must merge/materialize before dispatch even though the shared-score multivalue cluster-equivalence JSON path is already the same repo path used by related audits."
+    }
+  ],
+  "baseline_refs": [
+    "runs/designs/npu_blocks/attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr/config.json",
+    "runs/designs/npu_blocks/attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr/metrics.csv",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_integrated_service__l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1_r1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_cluster_equivalence__l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1.json",
+    "docs/proposals/prop_l1_decoder_attention_decode_score_multivalue_service_pnr_v1/proposal.json",
+    "docs/proposals/prop_l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1/proposal.json",
+    "docs/proposals/prop_decoder_attention_decode_score_multivalue_cluster_llama7b_v1/proposal.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/audit_attention_decode_score_multivalue_service_activity_power.py",
+    "tests/test_attention_decode_score_multivalue_service_activity_power.py",
+    "control_plane/control_plane/services/l2_task_generator.py"
+  ],
+  "remaining_abstractions_after_this_step": [
+    "This gate measures only direct routed service-window energy and is not a total-token energy claim.",
+    "Bank3 inactivity is reported as observed evidence rather than repaired with synthetic activity.",
+    "Service-fabric dynamic energy outside the direct service window remains excluded.",
+    "NoC composition, HBM service, and broader memory-system closure remain open.",
+    "The exact integer precision contract is inherited and not re-audited here."
+  ]
+}

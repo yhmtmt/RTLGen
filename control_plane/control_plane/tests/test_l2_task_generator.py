@@ -8401,6 +8401,45 @@ def test_multivalue_cluster_frontier_request_manifests_remain_dependency_gated()
         assert "merged/materialized" in revision["expected_result"]["reason"]
 
 
+def test_service_activity_power_request_manifests_remain_dependency_gated() -> None:
+    repo_root = Path(__file__).resolve().parents[3]
+    proposal_dir = (
+        repo_root
+        / "docs/proposals/prop_l2_decoder_attention_decode_score_multivalue_service_c1_activity_power_llama7b_v1"
+    )
+    expected_depends = {
+        "l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1_r1",
+        "l1_decoder_attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_pnr_v1",
+        "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1",
+    }
+
+    for manifest_name, items_key in (
+        ("proposal.json", "required_evaluations"),
+        ("evaluation_requests.json", "requested_items"),
+    ):
+        manifest = json.loads((proposal_dir / manifest_name).read_text(encoding="utf-8"))
+        if manifest_name == "evaluation_requests.json":
+            note = manifest["source_commit_note"]
+            assert "Replace with the merge commit" in note
+            assert "July 25, 2026" in note
+            assert "not materialized in the repository checkout" in note
+        item = manifest[items_key][0]
+        assert (
+            item["item_id"]
+            == "l2_decoder_attention_decode_score_multivalue_service_c1_activity_power_llama7b_v1"
+        )
+        assert set(item["depends_on_item_ids"]) == expected_depends
+        assert item["requires_merged_inputs"] is True
+        assert item["requires_materialized_refs"] is True
+        assert item["status"] == "pending_implementation_merge"
+        assert "dependency-gated" in item["notes"]
+        assert "not ready for normal dispatch" in item["notes"]
+        assert "July 25, 2026" in item["notes"]
+        assert "shared-score multivalue cluster-equivalence JSON path" in item["notes"]
+        assert "direct routed service-window energy" in item["expected_result"]["reason"]
+        assert "bank3 inactivity unforced" in item["expected_result"]["reason"]
+
+
 def test_gqa_folded_activity_request_manifests_require_cluster_activity_power_v16() -> None:
     repo_root = Path(__file__).resolve().parents[3]
     proposal_dir = (
@@ -8989,6 +9028,108 @@ def test_generate_l2_campaign_task_adds_decode_score_multivalue_integrated_servi
                 output.endswith(
                     "decoder_attention_decode_score_multivalue_integrated_service__"
                     "l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1.md"
+                )
+                for output in work_item.task_request.request_payload["task"]["expected_outputs"]
+            )
+
+
+def test_generate_l2_campaign_task_adds_decode_score_multivalue_service_activity_power() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id=(
+                        "l2_decoder_attention_decode_score_multivalue_service_c1_activity_power_llama7b_v1"
+                    ),
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    abstraction_layer="decoder_attention_decode_score_multivalue_service_activity_power",
+                    evaluation_mode="frontier_detail",
+                    depends_on_item_ids=[
+                        "l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1_r1",
+                        "l1_decoder_attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_pnr_v1",
+                        "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1",
+                    ],
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            commands = work_item.task_request.request_payload["task"]["commands"]
+            run = commands[0]["run"]
+            decoder_inputs = work_item.input_manifest["decoder_contract"]
+
+            assert [command["name"] for command in commands[:2]] == [
+                "audit_decode_score_multivalue_service_activity_power",
+                "validate_runs",
+            ]
+            assert (
+                "-m npu.eval.audit_attention_decode_score_multivalue_service_activity_power"
+                in run
+            )
+            assert (
+                "--config runs/designs/npu_blocks/"
+                "attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr/config.json"
+                in run
+            )
+            assert (
+                "--c1-metrics-csv runs/designs/npu_blocks/"
+                "attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr/metrics.csv"
+                in run
+            )
+            assert (
+                "--equivalence-json runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_decode_score_multivalue_cluster_equivalence__"
+                "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1.json"
+                in run
+            )
+            assert (
+                "--integrated-service-json runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_decode_score_multivalue_integrated_service__"
+                "l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1_r1.json"
+                in run
+            )
+            assert (
+                "--orfs-design-config /orfs/flow/designs/nangate45/"
+                "attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr/config.mk"
+                in run
+            )
+            assert "--clock-period-ns 10" in run
+            assert "--activity-dir /tmp/rtlgen_multivalue_service_c1_activity" in run
+            assert decoder_inputs["decode_score_multivalue_service_c1_source_pnr_item_id"] == (
+                "l1_decoder_attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_pnr_v1"
+            )
+            assert decoder_inputs["decode_score_multivalue_service_activity_power_out"] == (
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_decode_score_multivalue_service_activity_power__"
+                "l2_decoder_attention_decode_score_multivalue_service_c1_activity_power_llama7b_v1.json"
+            )
+            assert decoder_inputs[
+                "decode_score_multivalue_service_activity_power_local_only_artifacts"
+            ] == ["VCD", "ODB", "SPEF"]
+            assert "direct routed component service-window energy" in decoder_inputs[
+                "decode_score_multivalue_service_activity_power_scope"
+            ]
+            assert "do not force bank3 activity" in decoder_inputs[
+                "decode_score_multivalue_service_activity_power_scope"
+            ]
+            assert "exact integrated-service c1 hash/protocol/count gates" in decoder_inputs[
+                "decode_score_multivalue_service_activity_power_promotion_gate"
+            ]
+            assert any(
+                output.endswith(
+                    "decoder_attention_decode_score_multivalue_service_activity_power__"
+                    "l2_decoder_attention_decode_score_multivalue_service_c1_activity_power_llama7b_v1.md"
                 )
                 for output in work_item.task_request.request_payload["task"]["expected_outputs"]
             )
