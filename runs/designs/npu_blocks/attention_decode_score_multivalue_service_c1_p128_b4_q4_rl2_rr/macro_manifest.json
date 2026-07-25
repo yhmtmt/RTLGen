@@ -1,0 +1,60 @@
+{
+  "additional_gds": [],
+  "additional_lefs": [
+    "/orfs/flow/platforms/nangate45/lef/fakeram45_2048x39.lef",
+    "/orfs/flow/platforms/nangate45/lef/fakeram45_64x32.lef"
+  ],
+  "additional_libs": [
+    "/orfs/flow/platforms/nangate45/lib/fakeram45_2048x39.lib",
+    "/orfs/flow/platforms/nangate45/lib/fakeram45_64x32.lib"
+  ],
+  "blackbox_verilog": [
+    "npu/rtl/fakeram45_2048x39_blackbox.v",
+    "npu/rtl/fakeram45_64x32_blackbox.v"
+  ],
+  "blackboxes": [
+    "fakeram45_2048x39",
+    "fakeram45_64x32"
+  ],
+  "design_id": "attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr",
+  "flow_variant": "decode_score_multivalue_service_v1",
+  "manifest_params": {
+    "arb_mode": "round_robin",
+    "banks": 4,
+    "cluster_count": 1,
+    "locality_burst_max": 2,
+    "macro_eval_excludes_io_pads": true,
+    "max_blocks": 16,
+    "minimum_core_side_um": 2563,
+    "minimum_die_side_um": 2663,
+    "packet_w": 128,
+    "read_latency": 2,
+    "score_bank_macro_count": 56,
+    "score_passes_per_command": 1,
+    "score_scale_lanes_per_cycle": 1,
+    "semantic_profile": "decode_m1x8_shared_score_16x8d_value_iterdiv_onchip_service_v1",
+    "shared_result_egress": "single_ready_valid_round_robin_hold_reg_v2",
+    "top_pin_bits": 2176,
+    "total_macro_count": 120,
+    "value_memory_backend": "macro_banked_4x16x64x32",
+    "value_memory_bank_count": 4,
+    "value_memory_lane_width_bits": 32,
+    "value_memory_logical_depth_per_bank": 64,
+    "value_memory_logical_depth_total": 256,
+    "value_memory_macro_count": 64,
+    "value_memory_macro_depth": 64,
+    "value_memory_macro_overprovision_factor": 1,
+    "value_memory_macros_per_bank": 16,
+    "value_memory_physical_contract": "banked_4x16x64x32_exact_capacity",
+    "value_memory_promotable": true,
+    "value_slices": 16
+  },
+  "module": "attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr",
+  "platform": "nangate45",
+  "source": {
+    "config": "runs/designs/npu_blocks/attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr/config.json",
+    "generator": "npu/rtlgen/gen_attention_decode_score_multivalue_service.py",
+    "mode": "generated_composed_multivalue_service"
+  },
+  "version": "0.1"
+}

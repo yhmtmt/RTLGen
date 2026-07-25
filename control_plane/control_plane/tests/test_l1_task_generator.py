@@ -868,6 +868,65 @@ def _write_example_attention_decode_score_multivalue_cluster_repo(repo_root: Pat
     return str(config_path.relative_to(repo_root)), str(sweep_path.relative_to(repo_root))
 
 
+def _write_example_attention_decode_score_multivalue_service_repo(repo_root: Path) -> tuple[str, str]:
+    design_dir = (
+        repo_root
+        / "runs"
+        / "designs"
+        / "npu_blocks"
+        / "attention_decode_score_multivalue_service_c2_p128_b4_q4_rl2_rr"
+    )
+    design_dir.mkdir(parents=True)
+    config_path = design_dir / "config.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "top_name": "attention_decode_score_multivalue_service_c2_p128_b4_q4_rl2_rr",
+                "attention_decode_score_multivalue_service": {
+                    "cluster_count": 2,
+                    "max_blocks": 16,
+                    "packet_w": 128,
+                    "banks": 4,
+                    "req_queue_depth": 4,
+                    "resp_queue_depth": 4,
+                    "bank_queue_depth": 4,
+                    "read_latency": 2,
+                    "arb_mode": "round_robin",
+                    "locality_burst_max": 2,
+                    "score_scale_lanes_per_cycle": 1,
+                    "value_memory_backend": "macro_banked_4x16x64x32",
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    (design_dir / "macro_manifest.json").write_text("{}\n", encoding="utf-8")
+    sweep_path = (
+        repo_root
+        / "runs"
+        / "campaigns"
+        / "npu"
+        / "decode_score_multivalue_service_v1"
+        / "sweeps"
+        / "nangate45_decode_score_multivalue_service_c2_p128_b4_q4_rl2_rr_3700.json"
+    )
+    sweep_path.parent.mkdir(parents=True)
+    sweep_path.write_text(
+        json.dumps(
+            {
+                "flow_params": {
+                    "CLOCK_PERIOD": [10],
+                    "PLACE_DENSITY": [0.4],
+                    "SYNTH_HIERARCHICAL": [1],
+                    "SYNTH_MEMORY_MAX_BITS": [65536],
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+    return str(config_path.relative_to(repo_root)), str(sweep_path.relative_to(repo_root))
+
+
 def _write_attention_decode_score_multivalue_cluster_targeted_binary_config(
     repo_root: Path,
 ) -> str:
@@ -3020,6 +3079,86 @@ def test_generate_l1_sweep_task_supports_attention_decode_score_multivalue_clust
                 "runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/metrics.csv",
                 "runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv/timing_debug_report.md",
             ]
+
+
+def test_generate_l1_sweep_task_supports_attention_decode_score_multivalue_service_configs() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        config_path, sweep_path = _write_example_attention_decode_score_multivalue_service_repo(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l1_sweep_task(
+                session,
+                Layer1SweepGenerateRequest(
+                    repo_root=str(repo_root),
+                    sweep_path=sweep_path,
+                    config_paths=[config_path],
+                    platform="nangate45",
+                    out_root="runs/designs/npu_blocks",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    abstraction_layer="decoder_attention_decode_score_multivalue_service",
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            assert [command["name"] for command in work_item.command_manifest] == [
+                "generate_attention_decode_score_multivalue_service_rtl",
+                "check_attention_decode_score_multivalue_service_guard",
+                "run_block_sweep",
+                "check_attention_decode_score_multivalue_service_physical",
+                "extract_attention_decode_score_multivalue_service_timing_paths",
+                "build_runs_index",
+                "validate",
+            ]
+            assert "gen_attention_decode_score_multivalue_service.py" in work_item.command_manifest[0]["run"]
+            assert "check_attention_decode_score_multivalue_service_guard.py" in work_item.command_manifest[1]["run"]
+            assert (
+                "--config runs/designs/npu_blocks/"
+                "attention_decode_score_multivalue_service_c2_p128_b4_q4_rl2_rr/config.json"
+                in work_item.command_manifest[1]["run"]
+            )
+            assert "--top attention_decode_score_multivalue_service_c2_p128_b4_q4_rl2_rr" in work_item.command_manifest[2]["run"]
+            assert (
+                "--macro_manifest runs/designs/npu_blocks/"
+                "attention_decode_score_multivalue_service_c2_p128_b4_q4_rl2_rr/macro_manifest.json"
+                in work_item.command_manifest[2]["run"]
+            )
+            assert "check_attention_decode_score_multivalue_service_physical.py" in work_item.command_manifest[3]["run"]
+            assert work_item.expected_outputs == [
+                "runs/designs/npu_blocks/attention_decode_score_multivalue_service_c2_p128_b4_q4_rl2_rr/metrics.csv",
+                "runs/designs/npu_blocks/attention_decode_score_multivalue_service_c2_p128_b4_q4_rl2_rr/timing_debug_report.md",
+            ]
+
+
+def test_multivalue_service_pnr_proposal_keeps_c2_gated_on_c1_dependency() -> None:
+    repo_root = Path(__file__).resolve().parents[3]
+    proposal_dir = (
+        repo_root
+        / "docs"
+        / "proposals"
+        / "prop_l1_decoder_attention_decode_score_multivalue_service_pnr_v1"
+    )
+    proposal = json.loads((proposal_dir / "proposal.json").read_text(encoding="utf-8"))
+    evaluation_requests = json.loads((proposal_dir / "evaluation_requests.json").read_text(encoding="utf-8"))
+
+    c1_item_id = "l1_decoder_attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_pnr_v1"
+    service_dep_id = "l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1_r1"
+    proposal_by_id = {entry["item_id"]: entry for entry in proposal["required_evaluations"]}
+    request_by_id = {entry["item_id"]: entry for entry in evaluation_requests["requested_items"]}
+
+    c2_proposal = proposal_by_id["l1_decoder_attention_decode_score_multivalue_service_c2_p128_b4_q4_rl2_rr_pnr_v1"]
+    c2_request = request_by_id["l1_decoder_attention_decode_score_multivalue_service_c2_p128_b4_q4_rl2_rr_pnr_v1"]
+
+    assert c2_proposal["status"] == "conditional_follow_on"
+    assert c2_request["status"] == "conditional_follow_on"
+    assert c2_proposal["depends_on_item_ids"] == [service_dep_id, c1_item_id]
+    assert c2_request["depends_on_item_ids"] == [service_dep_id, c1_item_id]
+    assert c1_item_id in (proposal_dir / "design_brief.md").read_text(encoding="utf-8")
 
 
 def test_generate_l1_sweep_task_adds_bridge_checker_for_exact_8ns_multivalue_cluster_item() -> None:

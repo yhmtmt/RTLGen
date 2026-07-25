@@ -27,6 +27,27 @@ _SIM_RTL_PATHS = (
     "npu/sim/rtl/noc_value_matrix_reassembler.sv",
 )
 
+_SCORE_BANK_BLACKBOX = "fakeram45_2048x39"
+_SCORE_BANK_BLACKBOX_VERILOG = "npu/rtl/fakeram45_2048x39_blackbox.v"
+_SCORE_BANK_LEF = "/orfs/flow/platforms/nangate45/lef/fakeram45_2048x39.lef"
+_SCORE_BANK_LIB = "/orfs/flow/platforms/nangate45/lib/fakeram45_2048x39.lib"
+_SCORE_BANK_SIZE_UM = (206.910, 219.800)
+_SCORE_BANK_MACROS_PER_CLUSTER = 56
+
+_VALUE_MEM_BLACKBOX = "fakeram45_64x32"
+_VALUE_MEM_BLACKBOX_VERILOG = "npu/rtl/fakeram45_64x32_blackbox.v"
+_VALUE_MEM_LEF = "/orfs/flow/platforms/nangate45/lef/fakeram45_64x32.lef"
+_VALUE_MEM_LIB = "/orfs/flow/platforms/nangate45/lib/fakeram45_64x32.lib"
+_VALUE_MEM_SIZE_UM = (20.140, 61.600)
+_VALUE_MEM_MACRO_COUNT = 64
+_VALUE_MEM_BANKS = 4
+_VALUE_MEM_MACROS_PER_BANK = 16
+_VALUE_MEM_MACRO_DEPTH = 64
+_VALUE_MEM_LOGICAL_DEPTH = 256
+_VALUE_MEM_LOGICAL_DEPTH_PER_BANK = 64
+_TOP_LEVEL_CORE_MARGIN_UM = 50
+_PIN_PITCH_UM = 4.0
+
 
 def _load(path: Path) -> JsonDict:
     payload = json.loads(path.read_text(encoding="utf-8"))
@@ -65,6 +86,7 @@ def _validate(config: JsonDict) -> JsonDict:
     locality_burst_max = int(body.get("locality_burst_max", 2))
     score_scale_lanes_per_cycle = int(body.get("score_scale_lanes_per_cycle", 1))
     fsm_encoding = str(body.get("fsm_encoding", "default")).strip().lower()
+    value_memory_backend = str(body.get("value_memory_backend", "behavioral")).strip().lower()
 
     if cluster_count < 1 or cluster_count > 32:
         raise SystemExit("cluster_count must be in [1, 32]")
@@ -86,6 +108,15 @@ def _validate(config: JsonDict) -> JsonDict:
         raise SystemExit("score_scale_lanes_per_cycle must be one of 1,2,4,8")
     if fsm_encoding not in {"default", "binary"}:
         raise SystemExit("fsm_encoding must be default or binary")
+    if value_memory_backend not in {"behavioral", "macro_banked_4x16x64x32"}:
+        raise SystemExit("value_memory_backend must be behavioral or macro_banked_4x16x64x32")
+    if value_memory_backend == "macro_banked_4x16x64x32":
+        if max_blocks != 16:
+            raise SystemExit("macro_banked_4x16x64x32 requires max_blocks=16")
+        if banks != _VALUE_MEM_BANKS:
+            raise SystemExit("macro_banked_4x16x64x32 requires banks=4")
+        if read_latency != 2:
+            raise SystemExit("macro_banked_4x16x64x32 requires read_latency=2")
 
     return {
         "top_name": top_name,
@@ -101,6 +132,107 @@ def _validate(config: JsonDict) -> JsonDict:
         "locality_burst_max": locality_burst_max,
         "score_scale_lanes_per_cycle": score_scale_lanes_per_cycle,
         "fsm_encoding": fsm_encoding,
+        "value_memory_backend": value_memory_backend,
+    }
+
+
+def _source_w(cluster_count: int) -> int:
+    return _clog2(cluster_count)
+
+
+def _total_top_pin_bits(cluster_count: int) -> int:
+    source_w = _source_w(cluster_count)
+    base_bits = 1487 + source_w
+    per_cluster_bits = 687 + source_w
+    return base_bits + (cluster_count * per_cluster_bits)
+
+
+def _value_memory_macro_count(params: JsonDict) -> int:
+    if params["value_memory_backend"] != "macro_banked_4x16x64x32":
+        return 0
+    return _VALUE_MEM_MACRO_COUNT
+
+
+def _minimum_core_side_um(params: JsonDict) -> int:
+    score_bank_area = (
+        int(params["cluster_count"])
+        * _SCORE_BANK_MACROS_PER_CLUSTER
+        * _SCORE_BANK_SIZE_UM[0]
+        * _SCORE_BANK_SIZE_UM[1]
+    )
+    value_memory_area = (
+        _value_memory_macro_count(params) * _VALUE_MEM_SIZE_UM[0] * _VALUE_MEM_SIZE_UM[1]
+    )
+    macro_bound_um = math.sqrt((score_bank_area + value_memory_area) / 0.4)
+    pin_bound_um = (_total_top_pin_bits(int(params["cluster_count"])) * _PIN_PITCH_UM) / 4.0
+    return int(math.ceil(max(macro_bound_um, pin_bound_um)))
+
+
+def _generated_macro_manifest(*, top_name: str, params: JsonDict) -> JsonDict:
+    value_memory_backend = str(params["value_memory_backend"])
+    score_bank_macro_count = int(params["cluster_count"]) * _SCORE_BANK_MACROS_PER_CLUSTER
+    value_memory_macro_count = _value_memory_macro_count(params)
+    blackboxes = [_SCORE_BANK_BLACKBOX]
+    additional_lefs = [_SCORE_BANK_LEF]
+    additional_libs = [_SCORE_BANK_LIB]
+    blackbox_verilog = [_SCORE_BANK_BLACKBOX_VERILOG]
+    if value_memory_macro_count:
+        blackboxes.append(_VALUE_MEM_BLACKBOX)
+        additional_lefs.append(_VALUE_MEM_LEF)
+        additional_libs.append(_VALUE_MEM_LIB)
+        blackbox_verilog.append(_VALUE_MEM_BLACKBOX_VERILOG)
+    minimum_core_side_um = _minimum_core_side_um(params)
+    return {
+        "version": "0.1",
+        "design_id": top_name,
+        "module": top_name,
+        "platform": "nangate45",
+        "flow_variant": "decode_score_multivalue_service_v1",
+        "blackboxes": blackboxes,
+        "additional_lefs": additional_lefs,
+        "additional_libs": additional_libs,
+        "additional_gds": [],
+        "blackbox_verilog": blackbox_verilog,
+        "source": {
+            "mode": "generated_composed_multivalue_service",
+            "generator": "npu/rtlgen/gen_attention_decode_score_multivalue_service.py",
+            "config": f"runs/designs/npu_blocks/{top_name}/config.json",
+        },
+        "manifest_params": {
+            "semantic_profile": "decode_m1x8_shared_score_16x8d_value_iterdiv_onchip_service_v1",
+            "cluster_count": int(params["cluster_count"]),
+            "score_bank_macro_count": score_bank_macro_count,
+            "value_memory_backend": value_memory_backend,
+            "value_memory_macro_count": value_memory_macro_count,
+            "value_memory_bank_count": _VALUE_MEM_BANKS if value_memory_macro_count else 0,
+            "value_memory_macros_per_bank": _VALUE_MEM_MACROS_PER_BANK if value_memory_macro_count else 0,
+            "value_memory_macro_depth": _VALUE_MEM_MACRO_DEPTH if value_memory_macro_count else 0,
+            "value_memory_logical_depth_per_bank": _VALUE_MEM_LOGICAL_DEPTH_PER_BANK if value_memory_macro_count else 0,
+            "value_memory_logical_depth_total": _VALUE_MEM_LOGICAL_DEPTH if value_memory_macro_count else 0,
+            "value_memory_macro_overprovision_factor": 1 if value_memory_macro_count else 0,
+            "value_memory_lane_width_bits": 32 if value_memory_macro_count else 0,
+            "value_memory_physical_contract": (
+                "banked_4x16x64x32_exact_capacity"
+                if value_memory_macro_count
+                else "behavioral_only_non_promotable"
+            ),
+            "value_memory_promotable": bool(value_memory_macro_count),
+            "total_macro_count": score_bank_macro_count + value_memory_macro_count,
+            "packet_w": int(params["packet_w"]),
+            "banks": int(params["banks"]),
+            "max_blocks": int(params["max_blocks"]),
+            "read_latency": int(params["read_latency"]),
+            "arb_mode": str(params["arb_mode"]),
+            "locality_burst_max": int(params["locality_burst_max"]),
+            "score_scale_lanes_per_cycle": int(params["score_scale_lanes_per_cycle"]),
+            "score_passes_per_command": 1,
+            "value_slices": 16,
+            "shared_result_egress": "single_ready_valid_round_robin_hold_reg_v2",
+            "top_pin_bits": _total_top_pin_bits(int(params["cluster_count"])),
+            "minimum_core_side_um": minimum_core_side_um,
+            "minimum_die_side_um": minimum_core_side_um + (2 * _TOP_LEVEL_CORE_MARGIN_UM),
+            "macro_eval_excludes_io_pads": True,
+        },
     }
 
 
@@ -114,6 +246,7 @@ def _wrapper(*, top_name: str, params: JsonDict, cluster_top: str) -> str:
     read_latency = int(params["read_latency"])
     locality_burst_max = int(params["locality_burst_max"])
     arb_mode = 0 if params["arb_mode"] == "round_robin" else 1
+    memory_impl = 1 if params["value_memory_backend"] == "macro_banked_4x16x64x32" else 0
     source_w = _clog2(cluster_count)
     frag_idx_w = _clog2(512 // packet_w)
     return f"""// Auto-generated by npu/rtlgen/gen_attention_decode_score_multivalue_service.py
@@ -425,7 +558,8 @@ module {top_name} (
     .BANKS({banks}),
     .BANK_QUEUE_DEPTH({bank_queue_depth}),
     .READ_LATENCY({read_latency}),
-    .INIT_FROM_GENERATOR(0)
+    .INIT_FROM_GENERATOR(0),
+    .MEMORY_IMPL({memory_impl})
   ) u_service (
     .clk(clk),
     .rst_n(rst_n),
@@ -616,6 +750,14 @@ def generate(config: JsonDict, out_dir: Path) -> None:
             for rel in _SIM_RTL_PATHS
         ],
     ]
+    if params["value_memory_backend"] == "macro_banked_4x16x64x32":
+        dependency_sources.append(
+            {
+                "path": _VALUE_MEM_BLACKBOX_VERILOG,
+                "sha256": _sha256_file(REPO_ROOT / _VALUE_MEM_BLACKBOX_VERILOG),
+            }
+        )
+    macro_manifest = _generated_macro_manifest(top_name=top_name, params=params)
     manifest = {
         "version": 1,
         "generator": "npu/rtlgen/gen_attention_decode_score_multivalue_service.py",
@@ -635,18 +777,31 @@ def generate(config: JsonDict, out_dir: Path) -> None:
         "value_slices": 16,
         "score_scale_lanes_per_cycle": params["score_scale_lanes_per_cycle"],
         "fsm_encoding": params["fsm_encoding"],
+        "value_memory_backend": params["value_memory_backend"],
+        "value_memory_promotable": bool(_value_memory_macro_count(params)),
+        "score_bank_macro_count": int(params["cluster_count"]) * _SCORE_BANK_MACROS_PER_CLUSTER,
+        "value_memory_macro_count": _value_memory_macro_count(params),
+        "total_macro_count": int(params["cluster_count"]) * _SCORE_BANK_MACROS_PER_CLUSTER + _value_memory_macro_count(params),
+        "top_pin_bits": _total_top_pin_bits(int(params["cluster_count"])),
+        "minimum_core_side_um": _minimum_core_side_um(params),
+        "minimum_die_side_um": _minimum_core_side_um(params) + (2 * _TOP_LEVEL_CORE_MARGIN_UM),
         "shared_result_egress": "single_ready_valid_round_robin_hold_reg_v2",
         "shared_result_egress_initiation_interval": 1,
         "shared_result_egress_stall_semantics": "stable_until_handshake",
         "response_metadata_guard": "single_outstanding_per_cluster_v1",
         "dependency_sources": dependency_sources,
         "generated_top_sha256": _sha256_text(top_text),
+        "generated_macro_manifest_sha256": _sha256_text(json.dumps(macro_manifest, sort_keys=True)),
         "submodule_manifests": {
             "multivalue_cluster": cluster_manifest,
         },
     }
     (out_dir / "attention_decode_score_multivalue_service_manifest.json").write_text(
         json.dumps(manifest, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    (out_dir / "macro_manifest.json").write_text(
+        json.dumps(macro_manifest, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
     )
 

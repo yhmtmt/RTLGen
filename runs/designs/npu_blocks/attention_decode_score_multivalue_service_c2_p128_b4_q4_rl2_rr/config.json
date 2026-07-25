@@ -1,0 +1,17 @@
+{
+  "top_name": "attention_decode_score_multivalue_service_c2_p128_b4_q4_rl2_rr",
+  "attention_decode_score_multivalue_service": {
+    "cluster_count": 2,
+    "max_blocks": 16,
+    "packet_w": 128,
+    "banks": 4,
+    "req_queue_depth": 4,
+    "resp_queue_depth": 4,
+    "bank_queue_depth": 4,
+    "read_latency": 2,
+    "arb_mode": "round_robin",
+    "locality_burst_max": 2,
+    "score_scale_lanes_per_cycle": 1,
+    "value_memory_backend": "macro_banked_4x16x64x32"
+  }
+}

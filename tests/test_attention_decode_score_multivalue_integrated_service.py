@@ -69,12 +69,14 @@ def test_multivalue_service_generator_manifest(tmp_path: Path) -> None:
             "arb_mode": "locality_first_bounded",
             "locality_burst_max": 3,
             "score_scale_lanes_per_cycle": 1,
+            "value_memory_backend": "behavioral",
         },
     }
     generate(config, tmp_path)
     manifest = json.loads(
         (tmp_path / "attention_decode_score_multivalue_service_manifest.json").read_text(encoding="utf-8")
     )
+    macro_manifest = json.loads((tmp_path / "macro_manifest.json").read_text(encoding="utf-8"))
     assert manifest["semantic_profile"] == "decode_m1x8_shared_score_16x8d_value_iterdiv_onchip_service_v1"
     assert manifest["cluster_count"] == 4
     assert manifest["packet_w"] == 256
@@ -85,6 +87,47 @@ def test_multivalue_service_generator_manifest(tmp_path: Path) -> None:
     assert manifest["shared_result_egress_stall_semantics"] == "stable_until_handshake"
     assert manifest["response_metadata_guard"] == "single_outstanding_per_cluster_v1"
     assert manifest["submodule_manifests"]["multivalue_cluster"]["result_beats_per_command"] == 16
+    assert macro_manifest["manifest_params"]["score_bank_macro_count"] == 224
+    assert macro_manifest["manifest_params"]["value_memory_backend"] == "behavioral"
+    assert macro_manifest["manifest_params"]["value_memory_promotable"] is False
+
+
+def test_multivalue_service_generator_banked_4x16x64x32_macro_contract(tmp_path: Path) -> None:
+    config = {
+        "top_name": "attention_decode_score_multivalue_service_c2_p128_b4_q4_rl2_rr",
+        "attention_decode_score_multivalue_service": {
+            "cluster_count": 2,
+            "max_blocks": 16,
+            "packet_w": 128,
+            "banks": 4,
+            "req_queue_depth": 4,
+            "resp_queue_depth": 4,
+            "bank_queue_depth": 4,
+            "read_latency": 2,
+            "arb_mode": "round_robin",
+            "locality_burst_max": 2,
+            "score_scale_lanes_per_cycle": 1,
+            "value_memory_backend": "macro_banked_4x16x64x32",
+        },
+    }
+    generate(config, tmp_path)
+    manifest = json.loads(
+        (tmp_path / "attention_decode_score_multivalue_service_manifest.json").read_text(encoding="utf-8")
+    )
+    macro_manifest = json.loads((tmp_path / "macro_manifest.json").read_text(encoding="utf-8"))
+    assert manifest["value_memory_backend"] == "macro_banked_4x16x64x32"
+    assert manifest["value_memory_macro_count"] == 64
+    assert manifest["total_macro_count"] == 176
+    assert macro_manifest["manifest_params"]["value_memory_macro_count"] == 64
+    assert macro_manifest["manifest_params"]["value_memory_macros_per_bank"] == 16
+    assert macro_manifest["manifest_params"]["value_memory_macro_depth"] == 64
+    assert macro_manifest["manifest_params"]["value_memory_logical_depth_per_bank"] == 64
+    assert macro_manifest["manifest_params"]["value_memory_logical_depth_total"] == 256
+    assert macro_manifest["manifest_params"]["value_memory_macro_overprovision_factor"] == 1
+    assert (
+        macro_manifest["manifest_params"]["value_memory_physical_contract"]
+        == "banked_4x16x64x32_exact_capacity"
+    )
 
 
 def test_integrated_service_default_cases_cover_requested_surface() -> None:

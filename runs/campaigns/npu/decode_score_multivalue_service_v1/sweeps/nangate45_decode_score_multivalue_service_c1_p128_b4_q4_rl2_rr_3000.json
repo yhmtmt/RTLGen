@@ -1,0 +1,35 @@
+{
+  "tag_prefix": "decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_3000_v1",
+  "flow_params": {
+    "TAG": [
+      "decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_3000_v1"
+    ],
+    "FLOW_VARIANT": [
+      "decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_3000_v1"
+    ],
+    "CLOCK_PERIOD": [
+      10
+    ],
+    "PLACE_DENSITY": [
+      0.4
+    ],
+    "SYNTH_HIERARCHICAL": [
+      1
+    ],
+    "SYNTH_MEMORY_MAX_BITS": [
+      65536
+    ]
+  },
+  "mode_compare": {
+    "modes": [
+      {
+        "name": "macro_conservative_c1_die_3000",
+        "use_macro": true,
+        "param_overrides": {
+          "DIE_AREA": "0 0 3000 3000",
+          "CORE_AREA": "50 50 2950 2950"
+        }
+      }
+    ]
+  }
+}
