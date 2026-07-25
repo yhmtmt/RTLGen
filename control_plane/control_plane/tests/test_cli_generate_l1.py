@@ -7,6 +7,58 @@ from unittest.mock import patch
 from control_plane.cli.main import main
 
 
+def test_generate_l1_sweep_cli_omitted_dependencies_remain_unspecified(monkeypatch) -> None:
+    from control_plane.cli import generate_l1_sweep
+    from control_plane.services.l1_task_generator import Layer1TaskGenerateResult
+
+    class _SessionContext:
+        def __enter__(self) -> object:
+            return object()
+
+        def __exit__(self, exc_type: object, exc: object, tb: object) -> None:
+            return None
+
+    captured = {}
+
+    monkeypatch.setattr(generate_l1_sweep, "build_engine", lambda _database_url: object())
+    monkeypatch.setattr(generate_l1_sweep, "create_all", lambda _engine: None)
+    monkeypatch.setattr(generate_l1_sweep, "build_session_factory", lambda _engine: _SessionContext)
+
+    def fake_generate(_session: object, request: object) -> Layer1TaskGenerateResult:
+        captured["depends_on_item_ids"] = request.depends_on_item_ids
+        return Layer1TaskGenerateResult(
+            item_id="l1_demo",
+            status="applied",
+            work_item_id="wi",
+            task_request_id="tr",
+        )
+
+    monkeypatch.setattr(generate_l1_sweep, "generate_l1_sweep_task", fake_generate)
+
+    result = generate_l1_sweep.main(
+        [
+            "--database-url",
+            "sqlite+pysqlite:///:memory:",
+            "--repo-root",
+            "/tmp/repo",
+            "--sweep-path",
+            "runs/designs/demo/sweep.json",
+            "--configs",
+            "runs/designs/demo/config.json",
+            "--platform",
+            "nangate45",
+            "--out-root",
+            "runs/designs/demo",
+            "--item-id",
+            "l1_demo",
+            "--no-auto-dispatch",
+        ]
+    )
+
+    assert result == 0
+    assert captured["depends_on_item_ids"] is None
+
+
 def test_top_level_generate_l1_forwards_extended_generation_flags() -> None:
     with patch("control_plane.cli.main.generate_l1_sweep_main", return_value=0) as generate:
         result = main(

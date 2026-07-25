@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+import shutil
 import subprocess
 import tempfile
 from unittest.mock import patch
@@ -18,6 +19,7 @@ from control_plane.models.enums import RunStatus, WorkItemState
 from control_plane.models.runs import Run
 from control_plane.models.task_requests import TaskRequest
 from control_plane.models.work_items import WorkItem
+from control_plane.services.dependency_gate import refresh_all_blocked_items
 from control_plane.services.l1_task_generator import (
     Layer1SweepGenerateRequest,
     Layer1TaskGenerationError,
@@ -314,6 +316,151 @@ def _init_git_repo(repo_root: Path) -> str:
     subprocess.run(["git", "-C", str(repo_root), "push", "-u", "origin", "HEAD:master"], check=True, capture_output=True, text=True)
     result = subprocess.run(["git", "-C", str(repo_root), "rev-parse", "HEAD"], check=True, capture_output=True, text=True)
     return result.stdout.strip()
+
+
+def _copy_fixture_file(*, src_repo_root: Path, dst_repo_root: Path, rel_path: str) -> None:
+    src = src_repo_root / rel_path
+    dst = dst_repo_root / rel_path
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(src, dst)
+
+
+def _prepare_checked_in_multivalue_service_repo(repo_root: Path) -> tuple[str, str, str, str]:
+    src_repo_root = Path(__file__).resolve().parents[3]
+    proposal_rel = "docs/proposals/prop_l1_decoder_attention_decode_score_multivalue_service_pnr_v1"
+    c1_config_rel = (
+        "runs/designs/npu_blocks/attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr/config.json"
+    )
+    c1_macro_rel = (
+        "runs/designs/npu_blocks/attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr/macro_manifest.json"
+    )
+    c1_sweep_rel = (
+        "runs/campaigns/npu/decode_score_multivalue_service_v1/sweeps/"
+        "nangate45_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_3000.json"
+    )
+    c2_config_rel = (
+        "runs/designs/npu_blocks/attention_decode_score_multivalue_service_c2_p128_b4_q4_rl2_rr/config.json"
+    )
+    c2_macro_rel = (
+        "runs/designs/npu_blocks/attention_decode_score_multivalue_service_c2_p128_b4_q4_rl2_rr/macro_manifest.json"
+    )
+    c2_sweep_rel = (
+        "runs/campaigns/npu/decode_score_multivalue_service_v1/sweeps/"
+        "nangate45_decode_score_multivalue_service_c2_p128_b4_q4_rl2_rr_3700.json"
+    )
+
+    shutil.copytree(src_repo_root / proposal_rel, repo_root / proposal_rel)
+    for rel_path in (c1_config_rel, c1_macro_rel, c1_sweep_rel, c2_config_rel, c2_macro_rel, c2_sweep_rel):
+        _copy_fixture_file(src_repo_root=src_repo_root, dst_repo_root=repo_root, rel_path=rel_path)
+    return c1_config_rel, c1_sweep_rel, c2_config_rel, c2_sweep_rel
+
+
+def _seed_materialized_dependency(
+    session: Session,
+    *,
+    repo_root: Path,
+    item_id: str,
+    layer: str,
+    task_type: str,
+    source_commit: str,
+    artifact_kind: str,
+    expected_output_rel: str | None = None,
+) -> WorkItem:
+    task_request = TaskRequest(
+        request_key=f"test:{item_id}",
+        source="test",
+        requested_by="@tester",
+        title=item_id,
+        description=item_id,
+        layer=layer,
+        flow="openroad",
+        priority=1,
+        request_payload={},
+        source_commit=source_commit,
+    )
+    session.add(task_request)
+    session.flush()
+    work_item = WorkItem(
+        work_item_key=f"test:{item_id}",
+        task_request_id=task_request.id,
+        item_id=item_id,
+        layer=layer,
+        flow="openroad",
+        platform="nangate45",
+        task_type=task_type,
+        state=WorkItemState.MERGED,
+        priority=1,
+        source_mode="config" if layer == "layer1" else "src_verilog",
+        input_manifest={},
+        command_manifest=[],
+        expected_outputs=[expected_output_rel] if expected_output_rel else [],
+        acceptance_rules=[],
+        source_commit=source_commit,
+    )
+    session.add(work_item)
+    session.flush()
+    run = Run(
+        run_key=f"test:{item_id}:run",
+        work_item_id=work_item.id,
+        attempt=1,
+        executor_type="internal_worker",
+        status=RunStatus.SUCCEEDED,
+        started_at=utcnow(),
+        completed_at=utcnow(),
+        checkout_commit=source_commit,
+        result_summary="ok",
+        result_payload={},
+    )
+    session.add(run)
+    session.flush()
+
+    decision_rel = f"control_plane/shadow_exports/review/{item_id}/decision.json"
+    review_rel = f"control_plane/shadow_exports/review/{item_id}/review_package.json"
+    queue_rel = f"control_plane/shadow_exports/review/{item_id}/evaluated.json"
+    for rel_path, contents in (
+        (decision_rel, "{}\n"),
+        (review_rel, "{}\n"),
+        (
+            queue_rel,
+            json.dumps({"task": {"expected_outputs": [expected_output_rel] if expected_output_rel else []}}, indent=2) + "\n",
+        ),
+    ):
+        path = repo_root / rel_path
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(contents, encoding="utf-8")
+    if expected_output_rel:
+        expected_output_path = repo_root / expected_output_rel
+        expected_output_path.parent.mkdir(parents=True, exist_ok=True)
+        expected_output_path.write_text("status,metric\nok,1\n", encoding="utf-8")
+
+    for kind, rel_path in (
+        (artifact_kind, decision_rel),
+        ("review_package", review_rel),
+        ("queue_snapshot", queue_rel),
+    ):
+        session.add(
+            Artifact(
+                run_id=run.id,
+                kind=kind,
+                storage_mode="repo",
+                path=rel_path,
+                sha256="test",
+                metadata_={},
+            )
+        )
+    if expected_output_rel:
+        session.add(
+            Artifact(
+                run_id=run.id,
+                kind="expected_output",
+                storage_mode="repo",
+                path=expected_output_rel,
+                sha256="test",
+                metadata_={},
+            )
+        )
+    session.flush()
+    return work_item
 
 
 def _write_example_block_repo(
@@ -2149,6 +2296,90 @@ def test_generate_l1_sweep_task_inherits_proposal_dependencies_and_starts_blocke
             }
 
 
+def test_generate_l1_sweep_task_explicit_dependencies_create_blocked_item_without_proposal_metadata() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        config_path, sweep_path = _write_example_repo(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l1_sweep_task(
+                session,
+                Layer1SweepGenerateRequest(
+                    repo_root=str(repo_root),
+                    sweep_path=sweep_path,
+                    config_paths=[config_path],
+                    platform="nangate45",
+                    out_root="runs/designs/activations",
+                    item_id="l1_demo_explicit_dependency_v1",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    depends_on_item_ids=["l2_missing_equivalence_v1"],
+                    requires_merged_inputs=True,
+                    requires_materialized_refs=True,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            assert work_item.state == WorkItemState.BLOCKED
+            assert work_item.task_request.request_payload["developer_loop"]["dependencies"] == {
+                "item_ids": ["l2_missing_equivalence_v1"],
+                "requires_merged_inputs": True,
+                "requires_materialized_refs": True,
+            }
+
+
+def test_generate_l1_sweep_task_starts_dispatch_pending_when_dependency_is_merged_and_materialized() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        config_path, sweep_path = _write_example_repo(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            _seed_materialized_dependency(
+                session,
+                repo_root=repo_root,
+                item_id="l2_demo_equivalence_v1",
+                layer="layer2",
+                task_type="l2_campaign",
+                source_commit=source_commit,
+                artifact_kind="decision_proposal",
+                expected_output_rel="runs/campaigns/l2_demo_equivalence_v1/summary.csv",
+            )
+            session.commit()
+
+            result = generate_l1_sweep_task(
+                session,
+                Layer1SweepGenerateRequest(
+                    repo_root=str(repo_root),
+                    sweep_path=sweep_path,
+                    config_paths=[config_path],
+                    platform="nangate45",
+                    out_root="runs/designs/activations",
+                    item_id="l1_demo_dependency_satisfied_v1",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    depends_on_item_ids=["l2_demo_equivalence_v1"],
+                    requires_merged_inputs=True,
+                    requires_materialized_refs=True,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            assert work_item.state == WorkItemState.DISPATCH_PENDING
+            assert work_item.task_request.request_payload["developer_loop"]["dependencies"] == {
+                "item_ids": ["l2_demo_equivalence_v1"],
+                "requires_merged_inputs": True,
+                "requires_materialized_refs": True,
+            }
+
+
 def test_generate_l1_sweep_task_auto_discovers_proposal_for_existing_item() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
@@ -2398,6 +2629,110 @@ def test_generate_l1_sweep_task_upserts_existing_item() -> None:
             work_item = session.query(WorkItem).filter_by(item_id="l1_demo_softmax").one()
             assert work_item.task_request.title == "Layer1 demo updated"
             assert work_item.task_request.requested_by == "@tester2"
+
+
+def test_generate_l1_sweep_task_preserves_running_item_on_upsert_even_when_new_dependencies_are_unsatisfied() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        config_path, sweep_path = _write_example_repo(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l1_sweep_task(
+                session,
+                Layer1SweepGenerateRequest(
+                    repo_root=str(repo_root),
+                    sweep_path=sweep_path,
+                    config_paths=[config_path],
+                    platform="nangate45",
+                    out_root="runs/designs/activations",
+                    item_id="l1_demo_running_v1",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                ),
+            )
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            work_item.state = WorkItemState.RUNNING
+            work_item.assigned_machine_key = "eval-a"
+            session.commit()
+
+            generate_l1_sweep_task(
+                session,
+                Layer1SweepGenerateRequest(
+                    repo_root=str(repo_root),
+                    sweep_path=sweep_path,
+                    config_paths=[config_path],
+                    platform="nangate45",
+                    out_root="runs/designs/activations",
+                    item_id="l1_demo_running_v1",
+                    requested_by="@tester2",
+                    source_commit=source_commit,
+                    depends_on_item_ids=["l2_missing_equivalence_v1"],
+                    requires_merged_inputs=True,
+                    requires_materialized_refs=True,
+                ),
+            )
+
+            session.refresh(work_item)
+            assert work_item.state == WorkItemState.RUNNING
+            assert work_item.assigned_machine_key == "eval-a"
+            assert work_item.task_request.requested_by == "@tester2"
+            assert work_item.task_request.request_payload["developer_loop"]["dependencies"]["item_ids"] == [
+                "l2_missing_equivalence_v1"
+            ]
+
+
+def test_generate_l1_sweep_task_preserves_merged_item_on_upsert() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        config_path, sweep_path = _write_example_repo(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l1_sweep_task(
+                session,
+                Layer1SweepGenerateRequest(
+                    repo_root=str(repo_root),
+                    sweep_path=sweep_path,
+                    config_paths=[config_path],
+                    platform="nangate45",
+                    out_root="runs/designs/activations",
+                    item_id="l1_demo_merged_v1",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                ),
+            )
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            work_item.state = WorkItemState.MERGED
+            session.commit()
+
+            generate_l1_sweep_task(
+                session,
+                Layer1SweepGenerateRequest(
+                    repo_root=str(repo_root),
+                    sweep_path=sweep_path,
+                    config_paths=[config_path],
+                    platform="nangate45",
+                    out_root="runs/designs/activations",
+                    item_id="l1_demo_merged_v1",
+                    title="Layer1 merged item updated",
+                    requested_by="@tester2",
+                    source_commit=source_commit,
+                    depends_on_item_ids=["l2_missing_equivalence_v1"],
+                    requires_merged_inputs=True,
+                    requires_materialized_refs=True,
+                ),
+            )
+
+            session.refresh(work_item)
+            assert work_item.state == WorkItemState.MERGED
+            assert work_item.task_request.title == "Layer1 merged item updated"
 
 
 def test_generate_l1_sweep_task_supports_integrated_npu_block_configs() -> None:
@@ -3159,6 +3494,137 @@ def test_multivalue_service_pnr_proposal_keeps_c2_gated_on_c1_dependency() -> No
     assert c2_proposal["depends_on_item_ids"] == [service_dep_id, c1_item_id]
     assert c2_request["depends_on_item_ids"] == [service_dep_id, c1_item_id]
     assert c1_item_id in (proposal_dir / "design_brief.md").read_text(encoding="utf-8")
+
+
+def test_generate_l1_sweep_task_checked_in_service_requests_gate_and_refresh_release() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        c1_config_path, c1_sweep_path, c2_config_path, c2_sweep_path = _prepare_checked_in_multivalue_service_repo(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        service_dep_id = "l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1_r1"
+        c1_item_id = "l1_decoder_attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_pnr_v1"
+        c2_item_id = "l1_decoder_attention_decode_score_multivalue_service_c2_p128_b4_q4_rl2_rr_pnr_v1"
+
+        with Session(engine) as session:
+            c1_result = generate_l1_sweep_task(
+                session,
+                Layer1SweepGenerateRequest(
+                    repo_root=str(repo_root),
+                    sweep_path=c1_sweep_path,
+                    config_paths=[c1_config_path],
+                    platform="nangate45",
+                    out_root="runs/designs/npu_blocks",
+                    item_id=c1_item_id,
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                ),
+            )
+            c1_item = session.query(WorkItem).filter_by(item_id=c1_result.item_id).one()
+            assert c1_item.state == WorkItemState.BLOCKED
+            assert c1_item.task_request.request_payload["developer_loop"]["dependencies"] == {
+                "item_ids": [service_dep_id],
+                "requires_merged_inputs": True,
+                "requires_materialized_refs": True,
+            }
+
+            _seed_materialized_dependency(
+                session,
+                repo_root=repo_root,
+                item_id=service_dep_id,
+                layer="layer2",
+                task_type="l2_campaign",
+                source_commit=source_commit,
+                artifact_kind="decision_proposal",
+                expected_output_rel="runs/campaigns/integrated_service/summary.csv",
+            )
+            session.commit()
+
+            c2_result = generate_l1_sweep_task(
+                session,
+                Layer1SweepGenerateRequest(
+                    repo_root=str(repo_root),
+                    sweep_path=c2_sweep_path,
+                    config_paths=[c2_config_path],
+                    platform="nangate45",
+                    out_root="runs/designs/npu_blocks",
+                    item_id=c2_item_id,
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                ),
+            )
+            c2_item = session.query(WorkItem).filter_by(item_id=c2_result.item_id).one()
+            assert c2_item.state == WorkItemState.BLOCKED
+            assert c2_item.task_request.request_payload["developer_loop"]["dependencies"] == {
+                "item_ids": [service_dep_id, c1_item_id],
+                "requires_merged_inputs": True,
+                "requires_materialized_refs": True,
+            }
+
+            released = refresh_all_blocked_items(session, repo_root=repo_root)
+            session.commit()
+            session.refresh(c1_item)
+            session.refresh(c2_item)
+            assert released == [c1_item_id]
+            assert c1_item.state == WorkItemState.DISPATCH_PENDING
+            assert c2_item.state == WorkItemState.BLOCKED
+
+            c1_item.state = WorkItemState.MERGED
+            c1_metrics_rel = (
+                "runs/designs/npu_blocks/attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr/metrics.csv"
+            )
+            c1_promotion_rel = f"control_plane/shadow_exports/review/{c1_item_id}/promotion.json"
+            c1_review_rel = f"control_plane/shadow_exports/review/{c1_item_id}/review_package.json"
+            c1_queue_rel = f"control_plane/shadow_exports/review/{c1_item_id}/evaluated.json"
+            for rel_path, contents in (
+                (c1_promotion_rel, "{}\n"),
+                (c1_review_rel, "{}\n"),
+                (c1_queue_rel, json.dumps({"task": {"expected_outputs": [c1_metrics_rel]}}, indent=2) + "\n"),
+                (c1_metrics_rel, "status,metric\nok,1\n"),
+            ):
+                path = repo_root / rel_path
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(contents, encoding="utf-8")
+            c1_run = Run(
+                run_key=f"test:{c1_item_id}:run",
+                work_item_id=c1_item.id,
+                attempt=1,
+                executor_type="internal_worker",
+                status=RunStatus.SUCCEEDED,
+                started_at=utcnow(),
+                completed_at=utcnow(),
+                checkout_commit=source_commit,
+                result_summary="ok",
+                result_payload={},
+            )
+            session.add(c1_run)
+            session.flush()
+            for kind, rel_path in (
+                ("promotion_proposal", c1_promotion_rel),
+                ("review_package", c1_review_rel),
+                ("queue_snapshot", c1_queue_rel),
+                ("expected_output", c1_metrics_rel),
+            ):
+                session.add(
+                    Artifact(
+                        run_id=c1_run.id,
+                        kind=kind,
+                        storage_mode="repo",
+                        path=rel_path,
+                        sha256="test",
+                        metadata_={},
+                    )
+                )
+            session.commit()
+
+            released = refresh_all_blocked_items(session, repo_root=repo_root)
+            session.commit()
+            session.refresh(c2_item)
+            assert released == [c2_item_id]
+            assert c2_item.state == WorkItemState.DISPATCH_PENDING
 
 
 def test_generate_l1_sweep_task_adds_bridge_checker_for_exact_8ns_multivalue_cluster_item() -> None:

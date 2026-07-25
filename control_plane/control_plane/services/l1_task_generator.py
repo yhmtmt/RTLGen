@@ -1730,7 +1730,19 @@ def _build_payload(
         },
         "result": None,
     }
-    if proposal_id or proposal_path or evaluation_mode or abstraction_layer:
+    if (
+        proposal_id
+        or proposal_path
+        or evaluation_mode
+        or abstraction_layer
+        or expected_direction
+        or expected_reason
+        or comparison_role
+        or paired_baseline_item_id
+        or depends_on_item_ids
+        or requires_merged_inputs
+        or requires_materialized_refs
+    ):
         payload["developer_loop"] = {
             "proposal_id": proposal_id or "",
             "proposal_path": proposal_path or "",

@@ -231,6 +231,34 @@ def test_auto_dispatch_item_repairs_assigned_dispatch_pending_item() -> None:
         assert item.state == WorkItemState.READY
 
 
+def test_auto_dispatch_item_skips_blocked_item() -> None:
+    with make_session() as session:
+        upsert_worker_machine(
+            session,
+            machine_key="eval-a",
+            hostname="eval-a",
+            role="evaluator",
+            slot_capacity=1,
+            capabilities={"platform": "nangate45", "flow": "openroad"},
+        )
+        _seed_ready_item(session, item_id="item_a", platform="nangate45", priority=5)
+        item = session.query(WorkItem).filter_by(item_id="item_a").one()
+        item.state = WorkItemState.BLOCKED
+        session.commit()
+
+        result = auto_dispatch_item(session, item_id="item_a", machine_key="eval-a")
+
+        assert result == AutoDispatchItemResult(
+            item_id="item_a",
+            status="skipped",
+            machine_key=None,
+            reason="dependency_blocked",
+        )
+        session.refresh(item)
+        assert item.assigned_machine_key is None
+        assert item.state == WorkItemState.BLOCKED
+
+
 def test_auto_dispatch_item_skips_when_multiple_eligible_machines() -> None:
     with make_session() as session:
         upsert_worker_machine(
