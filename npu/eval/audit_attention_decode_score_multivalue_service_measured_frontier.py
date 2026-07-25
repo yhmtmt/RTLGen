@@ -54,6 +54,7 @@ _EXPECTED_KV_HEADS = 4
 _EXPECTED_LAYERS = 32
 _EXPECTED_SERVICE_CLOCK_NS = 10.0
 _EXPECTED_MICROKERNEL_CONTEXT_TOKENS = 128
+_EXPECTED_ACTIVE_CONTEXT_TOKENS = 24
 
 
 def _load(path: Path) -> JsonDict:
@@ -111,22 +112,45 @@ def _string(value: Any, label: str) -> str:
     return text
 
 
-def _source_schedule(frontier: JsonDict, frontier_path: Path) -> tuple[JsonDict, str]:
-    schedule = frontier.get("source_schedule")
+def _resolved_path(path_value: str, base_path: Path) -> Path:
+    path = Path(path_value)
+    if not path.is_absolute():
+        path = base_path.parent / path
+    return path.resolve()
+
+
+def _extract_schedule(payload: JsonDict, label: str) -> JsonDict:
+    schedule = payload.get("source_schedule")
     if isinstance(schedule, dict):
-        return schedule, _portable_path(frontier_path)
-    inputs = frontier.get("inputs")
-    linked = inputs.get("prior_frontier_json") if isinstance(inputs, dict) else None
-    if not isinstance(linked, str) or not linked.strip():
-        raise ValueError("prior frontier lacks source_schedule and a prior_frontier_json linkage")
-    linked_path = Path(linked)
-    if not linked_path.is_absolute():
-        linked_path = Path.cwd() / linked_path
-    linked_payload = _load(linked_path)
-    schedule = linked_payload.get("source_schedule")
-    if not isinstance(schedule, dict):
-        raise ValueError(f"linked prior frontier lacks source_schedule: {linked}")
-    return schedule, _portable_path(linked_path)
+        return schedule
+    if "hidden_size" in payload and "attention_heads" in payload and "sequence_length" in payload:
+        return payload
+    raise ValueError(f"{label} lacks source_schedule")
+
+
+def _source_schedule(frontier: JsonDict, frontier_path: Path) -> tuple[JsonDict, str]:
+    visited = {frontier_path.resolve()}
+    current_payload = frontier
+    current_path = frontier_path.resolve()
+    for _ in range(8):
+        inputs = current_payload.get("inputs")
+        if isinstance(inputs, dict):
+            source_schedule_json = inputs.get("source_schedule_json")
+            if isinstance(source_schedule_json, str) and source_schedule_json.strip():
+                source_path = _resolved_path(source_schedule_json, current_path)
+                return _extract_schedule(_load(source_path), "linked source_schedule_json"), _portable_path(source_path)
+        schedule = current_payload.get("source_schedule")
+        if isinstance(schedule, dict):
+            return schedule, _portable_path(current_path)
+        linked = inputs.get("prior_frontier_json") if isinstance(inputs, dict) else None
+        if not isinstance(linked, str) or not linked.strip():
+            raise ValueError("prior frontier lacks inputs.source_schedule_json and a recursive prior_frontier_json chain")
+        current_path = _resolved_path(linked, current_path)
+        if current_path in visited:
+            raise ValueError("prior frontier source_schedule resolution encountered a cycle")
+        visited.add(current_path)
+        current_payload = _load(current_path)
+    raise ValueError("prior frontier source_schedule resolution exceeded the maximum recursion depth")
 
 
 def _validate_optional_item_id(payload: JsonDict, expected: str, label: str) -> None:
@@ -174,7 +198,7 @@ def _validated_prior_frontier(
         raise ValueError("prior frontier kv_heads mismatch")
     if _positive_int(schedule_contract.get("layers"), "prior layers") != _EXPECTED_LAYERS:
         raise ValueError("prior frontier layers mismatch")
-    _positive_int(schedule_contract.get("sequence_length"), "prior sequence_length")
+    sequence_length = _positive_int(schedule_contract.get("sequence_length"), "prior sequence_length")
     if schedule_contract.get("sequence_sharding_supported") is not False:
         raise ValueError("prior frontier must keep sequence_sharding_supported=false")
     dense_qkv_tile = prior.get("dense_qkv_tile")
@@ -207,35 +231,49 @@ def _validated_prior_frontier(
     c1_row = c1_rows[0]
     if _string(c1_row.get("service_calibration_case_id"), "prior c1 service_calibration_case_id") != _EXPECTED_CASE_ID:
         raise ValueError("prior frontier c1 service_calibration_case_id mismatch")
-    if _positive_int(
+    _positive_int(
         c1_row.get("service_calibration_microkernel_integrated_completion_cycle"),
         "prior c1 service_calibration_microkernel_integrated_completion_cycle",
-    ) <= 0:
-        raise ValueError("prior frontier c1 microkernel integrated completion cycle must be positive")
+    )
     if _positive_int(c1_row.get("cluster_waves_per_layer"), "prior c1 cluster_waves_per_layer") != _EXPECTED_HEADS:
         raise ValueError("prior frontier c1 cluster_waves_per_layer mismatch")
     if _positive_int(c1_row.get("head_commands_per_layer"), "prior c1 head_commands_per_layer") != _EXPECTED_HEADS:
         raise ValueError("prior frontier c1 head_commands_per_layer mismatch")
-    if _positive_int(
+    _positive_int(
         c1_row.get("service_no_stall_full_context_cycles_per_wave"),
         "prior c1 service_no_stall_full_context_cycles_per_wave",
-    ) <= 0:
-        raise ValueError("prior frontier c1 no-stall full-context cycles must be positive")
-    if _positive_int(
+    )
+    _positive_int(
         c1_row.get("service_calibrated_full_context_cycles_per_wave"),
         "prior c1 service_calibrated_full_context_cycles_per_wave",
-    ) <= 0:
-        raise ValueError("prior frontier c1 calibrated full-context cycles must be positive")
-    if _positive_int(c1_row.get("fixed_cycles"), "prior c1 fixed_cycles") < 0:
-        raise ValueError("prior frontier c1 fixed_cycles must be nonnegative")
+    )
+    _nonnegative_int(c1_row.get("fixed_cycles"), "prior c1 fixed_cycles")
     _positive(c1_row.get("clock_ns"), "prior c1 clock_ns")
     schedule, schedule_source = _source_schedule(prior, prior_frontier_json)
+    if _positive_int(schedule.get("hidden_size"), "resolved schedule hidden_size") != _positive_int(
+        schedule_contract.get("hidden_size"), "prior contract hidden_size"
+    ):
+        raise ValueError("resolved schedule hidden_size mismatch vs prior schedule_contract")
+    if _positive_int(schedule.get("attention_heads"), "resolved schedule attention_heads") != _positive_int(
+        schedule_contract.get("attention_heads"), "prior contract attention_heads"
+    ):
+        raise ValueError("resolved schedule attention_heads mismatch vs prior schedule_contract")
+    if _positive_int(schedule.get("kv_heads"), "resolved schedule kv_heads") != _positive_int(
+        schedule_contract.get("kv_heads"), "prior contract kv_heads"
+    ):
+        raise ValueError("resolved schedule kv_heads mismatch vs prior schedule_contract")
+    if _positive_int(schedule.get("layers"), "resolved schedule layers") != _positive_int(
+        schedule_contract.get("layers"), "prior contract layers"
+    ):
+        raise ValueError("resolved schedule layers mismatch vs prior schedule_contract")
+    if _positive_int(schedule.get("sequence_length"), "resolved schedule sequence_length") != sequence_length:
+        raise ValueError("resolved schedule sequence_length mismatch vs prior schedule_contract")
     return schedule, schedule_source, dense_qkv_tile, c1_row, rows, precision
 
 
 def _validated_service_activity(
     service_report: JsonDict, prior_precision: JsonDict
-) -> tuple[JsonDict, JsonDict, JsonDict, JsonDict, JsonDict]:
+) -> tuple[JsonDict, JsonDict, JsonDict, JsonDict, JsonDict, JsonDict, JsonDict]:
     if _string(service_report.get("model"), "service activity-power model") != _EXPECTED_SERVICE_MODEL:
         raise ValueError("service activity-power report has an unexpected model")
     if _string(service_report.get("decision"), "service activity-power decision") != _EXPECTED_SERVICE_DECISION:
@@ -250,8 +288,14 @@ def _validated_service_activity(
     best = service_report.get("best")
     if not isinstance(best, dict):
         raise ValueError("service activity-power report lacks best")
+    if _string(service_report.get("best_candidate_id"), "service best_candidate_id") != _string(
+        best.get("candidate_id"), "service best candidate_id"
+    ):
+        raise ValueError("service best_candidate_id mismatch")
     if _string(best.get("status"), "service best status") != "activity_backed":
         raise ValueError("service best is not activity_backed")
+    if best.get("promotion_gate_pass") is not True:
+        raise ValueError("service best promotion_gate_pass failed")
     if _string(best.get("flow_variant"), "service best flow_variant") != _EXPECTED_SERVICE_FLOW_VARIANT:
         raise ValueError("service best flow_variant mismatch")
     metric = best.get("ppa_metric")
@@ -329,6 +373,19 @@ def _validated_service_activity(
         raise ValueError("service report lacks activity_contract")
     if abs(_positive(activity_contract.get("clock_period_ns"), "service activity_contract clock_period_ns") - _EXPECTED_SERVICE_CLOCK_NS) > 1e-9:
         raise ValueError("service activity clock_period_ns mismatch")
+    workload_contract = service_report.get("activity_workload_contract")
+    if not isinstance(workload_contract, dict):
+        raise ValueError("service report lacks activity_workload_contract")
+    if _positive_int(
+        workload_contract.get("active_context_tokens"),
+        "service activity_workload_contract active_context_tokens",
+    ) != _EXPECTED_ACTIVE_CONTEXT_TOKENS:
+        raise ValueError("service activity_workload_contract active_context_tokens mismatch")
+    if _positive_int(
+        workload_contract.get("measured_context_capacity_tokens"),
+        "service activity_workload_contract measured_context_capacity_tokens",
+    ) != _EXPECTED_MICROKERNEL_CONTEXT_TOKENS:
+        raise ValueError("service activity_workload_contract measured_context_capacity_tokens mismatch")
     bank3 = service_report.get("bank3_dynamic_inactivity")
     if not isinstance(bank3, dict):
         raise ValueError("service report lacks bank3_dynamic_inactivity")
@@ -360,7 +417,14 @@ def _validated_service_activity(
         raise ValueError("service window lacks energy_j")
     _positive(energy_j.get("dynamic"), "service window dynamic energy")
     _positive(energy_j.get("leakage"), "service window leakage energy")
-    _positive(energy_j.get("dynamic_plus_leakage"), "service window total energy")
+    if not math.isclose(
+        _positive(energy_j.get("dynamic"), "service window dynamic energy")
+        + _positive(energy_j.get("leakage"), "service window leakage energy"),
+        _positive(energy_j.get("dynamic_plus_leakage"), "service window total energy"),
+        rel_tol=0.0,
+        abs_tol=1e-18,
+    ):
+        raise ValueError("service window total energy does not match dynamic+leakage")
     dependency_contract = service_report.get("dependency_contract")
     if not isinstance(dependency_contract, dict):
         raise ValueError("service report lacks dependency_contract")
@@ -393,15 +457,16 @@ def _validated_service_activity(
     hashes = integrated_service.get("hashes")
     if not isinstance(hashes, dict):
         raise ValueError("service integrated_service_c1 lacks hashes")
-    if _string(hashes.get("score_hash"), "service integrated_service_c1 score_hash") != _string(
-        prior_precision.get("score_tensor_hash"), "prior precision score_tensor_hash"
-    ):
-        raise ValueError("service integrated_service_c1 score_hash mismatch")
-    if _string(hashes.get("final_hash"), "service integrated_service_c1 final_hash") != _string(
-        prior_precision.get("final_tensor_hash"), "prior precision final_tensor_hash"
-    ):
-        raise ValueError("service integrated_service_c1 final_hash mismatch")
-    return best, authoritative, service_window, activity_contract, macro_activity_contract
+    integrated_hashes = {
+        "score_hash": _string(hashes.get("score_hash"), "service integrated_service_c1 score_hash"),
+        "final_hash": _string(hashes.get("final_hash"), "service integrated_service_c1 final_hash"),
+        "request_hash": _string(hashes.get("request_hash"), "service integrated_service_c1 request_hash"),
+        "wide_response_matrix_hash": _string(
+            hashes.get("wide_response_matrix_hash"),
+            "service integrated_service_c1 wide_response_matrix_hash",
+        ),
+    }
+    return best, authoritative, service_window, activity_contract, workload_contract, macro_activity_contract, integrated_hashes
 
 
 def _recompute_dense_tiles(
@@ -461,10 +526,6 @@ def _measured_row(
     kv_heads = _positive_int(schedule.get("kv_heads"), "schedule kv_heads")
     layers = _positive_int(schedule.get("layers"), "schedule layers")
     sequence_length = _positive_int(schedule.get("sequence_length"), "schedule sequence_length")
-    microkernel_context_tokens = _EXPECTED_MICROKERNEL_CONTEXT_TOKENS
-    if sequence_length % microkernel_context_tokens != 0:
-        raise ValueError("sequence_length must be divisible by microkernel_context_tokens")
-    context_tile_count = sequence_length // microkernel_context_tokens
     prior_microkernel_cycle = _positive_int(
         prior_c1_row.get("service_calibration_microkernel_integrated_completion_cycle"),
         "prior c1 service_calibration_microkernel_integrated_completion_cycle",
@@ -502,13 +563,18 @@ def _measured_row(
     prior_clock_ns = _positive(prior_c1_row.get("clock_ns"), "prior c1 clock_ns")
     clock_ns = max(prior_clock_ns, _EXPECTED_SERVICE_CLOCK_NS)
     latency_us = total_cycles * clock_ns / 1000.0 if total_cycles is not None else None
-    timing_feasible = _positive(authoritative_service_ppa.get("critical_path_ns"), "authoritative service critical_path_ns") <= _EXPECTED_SERVICE_CLOCK_NS
+    timing_feasible = _positive(authoritative_service_ppa.get("critical_path_ns"), "authoritative service critical_path_ns") <= clock_ns
 
     microkernel_duration_s = _positive(service_window.get("duration_s"), "service window duration_s")
     service_duration_s = service_cycles_per_wave * clock_ns * 1.0e-9
     dynamic_j = _positive(service_window.get("energy_j", {}).get("dynamic"), "service window dynamic energy")
     leakage_j = _positive(service_window.get("energy_j", {}).get("leakage"), "service window leakage energy")
-    full_context_dynamic_per_head_j = dynamic_j * context_tile_count
+    active_context_tokens = _EXPECTED_ACTIVE_CONTEXT_TOKENS
+    measured_context_capacity_tokens = _EXPECTED_MICROKERNEL_CONTEXT_TOKENS
+    full_measured_window_count = math.ceil(sequence_length / active_context_tokens)
+    full_measured_window_count_exact = sequence_length // active_context_tokens
+    final_partial_tokens = sequence_length % active_context_tokens
+    full_context_dynamic_per_head_j = dynamic_j * full_measured_window_count
     full_context_leakage_per_head_j = leakage_j * (service_duration_s / microkernel_duration_s)
     full_context_component_per_head_j = full_context_dynamic_per_head_j + full_context_leakage_per_head_j
     full_token_commands = heads * layers
@@ -572,7 +638,12 @@ def _measured_row(
             "The 16KiB service value store remains counted inside the service instance area as a "
             "command-working-set macro component, and broader schedule shared/tile SRAM remains separately charged."
         ),
-        "context_tile_count": context_tile_count,
+        "measured_window_active_context_tokens": active_context_tokens,
+        "measured_window_context_capacity_tokens": measured_context_capacity_tokens,
+        "full_measured_window_count": full_measured_window_count,
+        "full_measured_window_count_exact": full_measured_window_count_exact,
+        "final_partial_tokens": final_partial_tokens,
+        "final_partial_window_conservatively_charged_as_full_measured_window": final_partial_tokens > 0,
         "service_window_duration_s": microkernel_duration_s,
         "full_context_service_duration_s_per_head_command": service_duration_s,
         "service_window_dynamic_energy_j": dynamic_j,
@@ -623,7 +694,15 @@ def build_report(
         prior,
         prior_cluster_frontier_json,
     )
-    best, authoritative_service_ppa, service_window, activity_contract, macro_activity_contract = _validated_service_activity(
+    (
+        best,
+        authoritative_service_ppa,
+        service_window,
+        activity_contract,
+        workload_contract,
+        macro_activity_contract,
+        integrated_hashes,
+    ) = _validated_service_activity(
         service,
         prior_precision,
     )
@@ -634,6 +713,8 @@ def build_report(
         authoritative_service_ppa=authoritative_service_ppa,
         service_window=service_window,
     )
+    if not measured["compute_budget_area_fit"] or not measured["timing_feasible"]:
+        raise ValueError("recomputed c1 measured anchor is not feasible for promotion")
     blocked_rows = [
         _blocked_row(row)
         for row in sorted(prior_rows, key=lambda item: _positive_int(item.get("cluster_count"), "prior row cluster_count"))
@@ -670,16 +751,22 @@ def build_report(
             "layers": _positive_int(schedule.get("layers"), "schedule layers"),
             "sequence_length": _positive_int(schedule.get("sequence_length"), "schedule sequence_length"),
             "microkernel_context_tokens": _EXPECTED_MICROKERNEL_CONTEXT_TOKENS,
-            "context_tile_count": measured["context_tile_count"],
+            "measured_window_active_context_tokens": measured["measured_window_active_context_tokens"],
+            "measured_window_context_capacity_tokens": measured["measured_window_context_capacity_tokens"],
+            "full_measured_window_count": measured["full_measured_window_count"],
+            "full_measured_window_count_exact": measured["full_measured_window_count_exact"],
+            "final_partial_tokens": measured["final_partial_tokens"],
             "full_head_commands_per_token": _EXPECTED_HEADS * _EXPECTED_LAYERS,
         },
         "selected_service_activity_candidate": {
             "candidate_id": _string(best.get("candidate_id"), "service best candidate_id"),
             "flow_variant": _string(best.get("flow_variant"), "service best flow_variant"),
+            "integrated_service_hashes": integrated_hashes,
             "activity_contract": {
                 "clock_period_ns": _positive(activity_contract.get("clock_period_ns"), "service activity clock_period_ns"),
                 "cycle_count": _positive_int(activity_contract.get("cycle_count"), "service activity cycle_count"),
             },
+            "activity_workload_contract": workload_contract,
             "macro_activity_contract": macro_activity_contract,
         },
         "precision": {

@@ -45,6 +45,14 @@ def _source_schedule(tmp_path: Path, *, sequence_length: int = 131072) -> Path:
 
 def _prior_frontier(tmp_path: Path, *, sequence_length: int = 131072) -> Path:
     source = _source_schedule(tmp_path, sequence_length=sequence_length)
+    linked_prior = _write(
+        tmp_path / "linked_local_cluster_frontier.json",
+        {
+            "inputs": {
+                "source_schedule_json": str(source),
+            }
+        },
+    )
     rows = [
         {
             "candidate_id": "decode_score_multivalue_cluster_c1",
@@ -122,7 +130,7 @@ def _prior_frontier(tmp_path: Path, *, sequence_length: int = 131072) -> Path:
             "decision": "shared_score_multivalue_cluster_measured_component_frontier_promoted",
             "promotion_status": "component_frontier_promoted_full_architecture_promotion_blocked",
             "item_id": "l2_decoder_attention_decode_score_multivalue_cluster_frontier_llama7b_v1_r1",
-            "inputs": {"prior_frontier_json": str(source)},
+            "inputs": {"prior_frontier_json": str(linked_prior)},
             "schedule_contract": {
                 "hidden_size": 4096,
                 "attention_heads": 32,
@@ -179,6 +187,7 @@ def _service_activity_power(tmp_path: Path) -> Path:
                 "candidate_id": "multivalue_service_activity_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_3000_v1",
                 "flow_variant": "decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_3000_v1",
                 "status": "activity_backed",
+                "promotion_gate_pass": True,
                 "ppa_metric": {
                     "design": "attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr",
                     "platform": "nangate45",
@@ -228,8 +237,8 @@ def _service_activity_power(tmp_path: Path) -> Path:
                     "no_drop_duplicate_deadlock_timeout": True,
                     "cycle_bound_ok": True,
                     "hashes": {
-                        "score_hash": "score-hash",
-                        "final_hash": "final-hash",
+                        "score_hash": "integrated-c1-score-hash",
+                        "final_hash": "integrated-c1-final-hash",
                         "request_hash": "request-hash",
                         "wide_response_matrix_hash": "wide-hash",
                     },
@@ -238,6 +247,12 @@ def _service_activity_power(tmp_path: Path) -> Path:
             "activity_contract": {
                 "clock_period_ns": 10.0,
                 "cycle_count": 160,
+            },
+            "activity_workload_contract": {
+                "active_context_tokens": 24,
+                "measured_context_capacity_tokens": 128,
+                "score_hash": "activity-workload-score-hash",
+                "final_hash": "activity-workload-final-hash",
             },
             "macro_manifest_contract": {
                 "counts": {"fakeram45_2048x39": 56, "fakeram45_64x32": 64},
@@ -281,7 +296,7 @@ def test_build_report_success_recomputes_latency_area_and_component_energy(tmp_p
     )
 
     assert payload["decision"] == "strict_c1_measured_service_anchor_promoted_c2plus_blocked"
-    assert payload["schedule_contract"]["context_tile_count"] == 1024
+    assert payload["inputs"]["source_schedule_json"].endswith("source_schedule.json")
     assert len(payload["promoted_rows"]) == 1
     row = payload["best_measured_anchor"]
     assert row["cluster_count"] == 1
@@ -298,10 +313,18 @@ def test_build_report_success_recomputes_latency_area_and_component_energy(tmp_p
     assert row["prior_cluster_area_mm2"] == pytest.approx(2.0)
     assert row["authoritative_composed_service_area_mm2"] == pytest.approx(3.0)
     assert "16KiB service value store" in row["area_replacement_provenance"]
-    assert row["service_component_dynamic_energy_mj_per_token"] == pytest.approx(503.31648)
+    assert row["service_component_dynamic_energy_mj_per_token"] == pytest.approx(2684.68224)
     assert row["service_component_leakage_energy_mj_per_token"] == pytest.approx(0.2048)
-    assert row["service_component_energy_mj_per_token"] == pytest.approx(503.52128)
+    assert row["service_component_energy_mj_per_token"] == pytest.approx(2684.88704)
     assert row["direct_total_token_energy"] is False
+    assert row["full_measured_window_count"] == 5462
+    assert row["full_measured_window_count_exact"] == 5461
+    assert row["final_partial_tokens"] == 8
+    assert row["final_partial_window_conservatively_charged_as_full_measured_window"] is True
+    assert (
+        payload["selected_service_activity_candidate"]["integrated_service_hashes"]["score_hash"]
+        == "integrated-c1-score-hash"
+    )
 
 
 def test_build_report_prevents_old_cluster_and_service_area_double_count(tmp_path: Path) -> None:
@@ -317,6 +340,26 @@ def test_build_report_prevents_old_cluster_and_service_area_double_count(tmp_pat
     assert row["dense_qkv_tile_count"] == 4
     assert row["logic_area_mm2"] == pytest.approx(12.0)
     assert row["area_replacement_delta_mm2"] == pytest.approx(1.0)
+
+
+def test_build_report_accepts_distinct_integrated_hash_domain(tmp_path: Path) -> None:
+    prior = _prior_frontier(tmp_path)
+    service = _service_activity_power(tmp_path)
+
+    payload = build_report(
+        prior_cluster_frontier_json=prior,
+        service_activity_power_json=service,
+    )
+
+    assert payload["precision"]["score_tensor_hash"] == "score-hash"
+    assert (
+        payload["selected_service_activity_candidate"]["integrated_service_hashes"]["score_hash"]
+        == "integrated-c1-score-hash"
+    )
+    assert (
+        payload["selected_service_activity_candidate"]["integrated_service_hashes"]["final_hash"]
+        == "integrated-c1-final-hash"
+    )
 
 
 def test_build_report_rejects_cycle_mismatch(tmp_path: Path) -> None:
@@ -363,11 +406,35 @@ def test_build_report_rejects_precision_gate_mismatch(tmp_path: Path) -> None:
         )
 
 
-def test_build_report_rejects_non_divisible_sequence(tmp_path: Path) -> None:
+def test_build_report_uses_24_token_measured_window_ceil_and_partial_charge(tmp_path: Path) -> None:
     prior = _prior_frontier(tmp_path, sequence_length=131000)
     service = _service_activity_power(tmp_path)
 
-    with pytest.raises(ValueError, match="divisible by microkernel_context_tokens"):
+    payload = build_report(
+        prior_cluster_frontier_json=prior,
+        service_activity_power_json=service,
+    )
+
+    row = payload["best_measured_anchor"]
+    assert row["full_measured_window_count"] == 5459
+    assert row["full_measured_window_count_exact"] == 5458
+    assert row["final_partial_tokens"] == 8
+    assert row["final_partial_window_conservatively_charged_as_full_measured_window"] is True
+    assert row["service_component_dynamic_energy_mj_per_token"] == pytest.approx(2683.20768)
+
+
+def test_build_report_rejects_recomputed_infeasible_c1(tmp_path: Path) -> None:
+    prior = _prior_frontier(tmp_path)
+    prior_payload = json.loads(prior.read_text(encoding="utf-8"))
+    linked_prior = Path(prior_payload["inputs"]["prior_frontier_json"])
+    linked_payload = json.loads(linked_prior.read_text(encoding="utf-8"))
+    source = Path(linked_payload["inputs"]["source_schedule_json"])
+    source_payload = json.loads(source.read_text(encoding="utf-8"))
+    source_payload["source_schedule"]["compute_budget_um2"] = 3_500_000
+    source.write_text(json.dumps(source_payload), encoding="utf-8")
+    service = _service_activity_power(tmp_path)
+
+    with pytest.raises(ValueError, match="not feasible for promotion"):
         build_report(
             prior_cluster_frontier_json=prior,
             service_activity_power_json=service,
