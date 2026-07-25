@@ -743,7 +743,17 @@ endmodule
 """
 
 
-def _integrated_testbench(*, top_name: str, cluster_count: int, values: list[list[list[list[int]]]]) -> str:
+def _integrated_testbench(
+    *,
+    top_name: str,
+    cluster_count: int,
+    values: list[list[list[list[int]]]],
+    vcd_path: str | None = None,
+    vcd_dumpvars: list[str] | None = None,
+    clock_period_ns: float = 10.0,
+) -> str:
+    if clock_period_ns <= 0.0:
+        raise ValueError("clock_period_ns must be > 0")
     total_beats = 3 * 128
     source_w = max(1, (cluster_count - 1).bit_length())
     entries = _preload_entries(values)
@@ -828,7 +838,8 @@ def _integrated_testbench(*, top_name: str, cluster_count: int, values: list[lis
         )
         per_cluster_done.append(f"done[{cluster}]")
 
-    return f"""`timescale 1ns/1ps
+    clock_stmt = "  always #5 clk = ~clk;" if clock_period_ns == 10.0 else f"  always #{clock_period_ns / 2.0:g} clk = ~clk;"
+    tb = f"""`timescale 1ns/1ps
 {_FAKERAM_MODEL}
 module tb;
   localparam integer CLUSTERS = {cluster_count};
@@ -928,7 +939,7 @@ module tb;
   reg [319:0] blocked_value_q;
 {chr(10).join(per_cluster_decl)}
 
-  always #5 clk = ~clk;
+{clock_stmt}
 
   {top_name} dut (
     .clk(clk),
@@ -1154,6 +1165,25 @@ module tb;
   end
 endmodule
 """
+    if vcd_path is None:
+        return tb
+    dumpvars = vcd_dumpvars or ["dut"]
+    dump_lines = "\n".join(f"    $dumpvars(0, {target});" for target in dumpvars)
+    vcd_block = f"""
+
+  initial begin
+    $dumpfile({json.dumps(vcd_path)});
+{dump_lines}
+    $dumpoff;
+    @(posedge rst_n);
+    $dumpon;
+    wait ({' && '.join(per_cluster_done)});
+    @(posedge clk);
+    $dumpoff;
+  end
+"""
+    prefix, suffix = tb.rsplit("\nendmodule\n", 1)
+    return f"{prefix}{vcd_block}\nendmodule\n{suffix}"
 
 
 def _compile_and_run(*, sources: list[Path], top: str = "tb", timeout: int = 180) -> str:
