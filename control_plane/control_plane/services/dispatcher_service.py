@@ -135,6 +135,8 @@ def auto_dispatch_item(
     work_item = session.query(WorkItem).filter(WorkItem.item_id == item_id).one_or_none()
     if work_item is None:
         raise NoEligibleWorkItem(f"work item not found: {item_id}")
+    if work_item.state == WorkItemState.BLOCKED:
+        return AutoDispatchItemResult(item_id=item_id, status="skipped", reason="dependency_blocked")
     if work_item.state in {WorkItemState.MERGED, WorkItemState.SUPERSEDED}:
         return AutoDispatchItemResult(item_id=item_id, status="skipped", reason=f"terminal_state:{work_item.state.value}")
     if work_item.assigned_machine_key:
