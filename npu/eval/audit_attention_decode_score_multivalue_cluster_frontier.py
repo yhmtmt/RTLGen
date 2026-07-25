@@ -9,6 +9,9 @@ import math
 from pathlib import Path
 from typing import Any
 
+from npu.eval.probe_attention_decode_score_multivalue_integrated_service import (
+    _workload_contract as _expected_workload_contract,
+)
 
 JsonDict = dict[str, Any]
 
@@ -39,7 +42,7 @@ _EXPECTED_SERVICE_CASE_IDS = {
 }
 _SERVICE_CALIBRATION_LIMITATIONS = [
     (
-        "Integrated-service calibration comes from a 128-context, 128-value-dimension "
+        "Integrated-service calibration comes from a 24-active-context/128-capacity/128-value-dimension "
         "shared-score microkernel probe rather than full decoder sequence composition."
     ),
     "HBM/DRAM service is excluded from the integrated-service calibration.",
@@ -157,6 +160,7 @@ def _validated_activity_best(activity_report: JsonDict) -> JsonDict:
 def _service_ratio_cases(
     service_report: JsonDict, cluster_counts: list[int]
 ) -> tuple[dict[int, JsonDict], JsonDict]:
+    expected_workload = _expected_workload_contract()
     if service_report.get("model") != _EXPECTED_INTEGRATED_SERVICE_MODEL:
         raise ValueError("integrated-service report has an unexpected model")
     if service_report.get("decision") != _EXPECTED_INTEGRATED_SERVICE_DECISION:
@@ -164,6 +168,8 @@ def _service_ratio_cases(
     diagnosis = service_report.get("diagnosis")
     if not isinstance(diagnosis, dict) or diagnosis.get("decision") != _EXPECTED_INTEGRATED_SERVICE_DIAGNOSIS:
         raise ValueError("integrated-service report has an unexpected diagnosis")
+    if service_report.get("workload_contract") != expected_workload:
+        raise ValueError("integrated-service report workload contract mismatch")
     cases = service_report.get("cases")
     if not isinstance(cases, list) or not cases:
         raise ValueError("integrated-service report lacks cases")
@@ -239,8 +245,7 @@ def _service_ratio_cases(
         "ratio_definition": "integrated_service.completion_cycle / baseline_no_stall.completion_cycle",
         "scaled_target": "activity-backed full-context per-wave cluster service cycles",
         "probe_contract": {
-            "microkernel_context_tokens": 128,
-            "microkernel_value_dim": 128,
+            **expected_workload,
             "consumed_case_ids": [
                 _EXPECTED_SERVICE_CASE_IDS[count] for count in sorted(requested)
             ],
@@ -547,8 +552,8 @@ def build_report(
         "remaining_abstractions": [
             (
                 "On-chip shared value-service latency is calibrated from deterministic c1/c2/c4/c8/c16/c32 "
-                "integrated-service ratios, but the calibration is still a 128-context/128-value-dimension "
-                "microkernel proxy rather than full decoder memory-system composition."
+                "integrated-service ratios, but the calibration is still a 24-active-context/128-capacity/"
+                "128-value-dimension microkernel proxy rather than full decoder memory-system composition."
             ),
             (
                 "Producer, Q/K/V transport, NoC, off-cluster value memory, HBM/DRAM, "

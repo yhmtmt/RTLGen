@@ -95,7 +95,7 @@
       },
       "expected_result": {
         "direction": "recast_shared_score_multivalue_cluster_frontier",
-        "reason": "Use deterministic integrated-service completion ratios from compact r1 evidence, once merged/materialized, to scale activity-backed full-context per-wave cluster service cycles for c1/c2/c4/c8/c16/c32, while preserving strict activity-backed power requirements, withholding total-token energy, and explicitly limiting the calibration to the probe's 128-context, 128-value-dimension, no-HBM, no-service-fabric-PPA/energy scope."
+        "reason": "Use deterministic integrated-service completion ratios from compact r1 evidence, once merged/materialized, to scale activity-backed full-context per-wave cluster service cycles for c1/c2/c4/c8/c16/c32, while preserving strict activity-backed power requirements, withholding total-token energy, and explicitly limiting the calibration to the probe's exercised 3 blocks x 8 context entries = 24 active context tokens, 128-token maximum capacity, 128-value-dimension, no-HBM, no-service-fabric-PPA/energy scope."
       },
       "status": "pending_implementation_merge",
       "notes": "This revision consumes the compact integrated-service r1 evidence path rather than reusing no-stall cycles directly, but as of July 24, 2026 it remains dependency-gated and is not ready for normal dispatch: integrated-service compact r1 is READY but not yet materialized, activity-power v16 remains pending, and both inputs must merge/materialize before dispatch."
@@ -118,7 +118,7 @@
     "docs/proposals/prop_l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1/evaluation_requests.json"
   ],
   "remaining_abstractions_after_this_step": [
-    "Integrated-service completion ratios calibrate only latency and service-window duration from a bounded 128-context/128-value-dimension microkernel probe.",
+    "Integrated-service completion ratios calibrate only latency and service-window duration from a bounded microkernel probe exercising 3 blocks x 8 context entries = 24 active context tokens at 128-value dimension; 128 tokens is maximum capacity, not the measured active context.",
     "Value-memory composition is still external to this cluster-level recost and must be closed separately.",
     "NoC composition remains open; this frontier does not include full transport contention or routing-energy closure.",
     "HBM service remains open; this recost is not a full memory-system closure.",
