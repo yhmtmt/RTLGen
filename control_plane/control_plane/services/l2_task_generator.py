@@ -54,6 +54,15 @@ _MULTIVALUE_INTEGRATED_SERVICE_BASE_ITEM = (
 _MULTIVALUE_INTEGRATED_SERVICE_DEFAULT_ITEM = (
     "l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1_r1"
 )
+_MULTIVALUE_CLUSTER_FRONTIER_BASE_ITEM = (
+    "l2_decoder_attention_decode_score_multivalue_cluster_frontier_llama7b_v1"
+)
+_MULTIVALUE_CLUSTER_FRONTIER_DEFAULT_ITEM = (
+    "l2_decoder_attention_decode_score_multivalue_cluster_frontier_llama7b_v1_r1"
+)
+_MULTIVALUE_SERVICE_ACTIVITY_POWER_DEFAULT_ITEM = (
+    "l2_decoder_attention_decode_score_multivalue_service_c1_activity_power_llama7b_v1"
+)
 _MULTIVALUE_SERVICE_C1_PNR_ITEM = (
     "l1_decoder_attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_pnr_v1"
 )
@@ -124,6 +133,14 @@ def _gqa_evidence_version_for_consumer(item_id: str) -> str:
     return "v2" if revision >= 2 else "v1"
 
 
+def _item_version_retry_rank(candidate: str) -> tuple[int, int]:
+    version_match = _VERSION_SUFFIX_RE.search(_retry_base(candidate))
+    version = int(version_match.group(1)) if version_match else 1
+    retry_match = _RETRY_SUFFIX_RE.search(candidate)
+    retry = int(retry_match.group(0)[2:]) if retry_match else 0
+    return version, retry
+
+
 def _cluster_activity_power_revision(item_id: str) -> int:
     match = _VERSION_SUFFIX_RE.search(_retry_base(item_id))
     return int(match.group(1)) if match else 1
@@ -183,6 +200,34 @@ def _multivalue_integrated_service_item_for_consumer(
         return int(match.group(0)[2:])
 
     return max(candidate_item_ids, key=_rank)
+
+
+def _multivalue_cluster_frontier_item_for_consumer(
+    *, depends_on_item_ids: list[str] | None
+) -> str:
+    prefix = _MULTIVALUE_CLUSTER_FRONTIER_BASE_ITEM
+    candidate_item_ids = [
+        str(dep).strip()
+        for dep in (depends_on_item_ids or [])
+        if str(dep).strip() == prefix or str(dep).strip().startswith(f"{prefix}_r")
+    ]
+    if not candidate_item_ids:
+        return _MULTIVALUE_CLUSTER_FRONTIER_DEFAULT_ITEM
+    return max(candidate_item_ids, key=_item_version_retry_rank)
+
+
+def _multivalue_service_activity_power_item_for_consumer(
+    *, depends_on_item_ids: list[str] | None
+) -> str:
+    prefix = "l2_decoder_attention_decode_score_multivalue_service_c1_activity_power_llama7b_"
+    candidate_item_ids = [
+        str(dep).strip()
+        for dep in (depends_on_item_ids or [])
+        if str(dep).strip().startswith(prefix)
+    ]
+    if not candidate_item_ids:
+        return _MULTIVALUE_SERVICE_ACTIVITY_POWER_DEFAULT_ITEM
+    return max(candidate_item_ids, key=_item_version_retry_rank)
 
 
 def _proposal_dir(repo_root: Path, proposal_path: str | None) -> Path | None:
@@ -7396,6 +7441,62 @@ def _decoder_attention_decode_score_multivalue_service_activity_power_evidence(
     }
 
 
+def _decoder_attention_decode_score_multivalue_service_measured_frontier_evidence(
+    *, item_id: str, depends_on_item_ids: list[str] | None = None
+) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    prior_cluster_frontier_item = _multivalue_cluster_frontier_item_for_consumer(
+        depends_on_item_ids=depends_on_item_ids
+    )
+    prior_cluster_frontier = (
+        f"{base}/decoder_attention_decode_score_multivalue_cluster_frontier__"
+        f"{prior_cluster_frontier_item}.json"
+    )
+    service_activity_power_item = _multivalue_service_activity_power_item_for_consumer(
+        depends_on_item_ids=depends_on_item_ids
+    )
+    service_activity_power = (
+        f"{base}/decoder_attention_decode_score_multivalue_service_activity_power__"
+        f"{service_activity_power_item}.json"
+    )
+    out = f"{base}/decoder_attention_decode_score_multivalue_service_measured_frontier__{item_id}.json"
+    report = f"{base}/decoder_attention_decode_score_multivalue_service_measured_frontier__{item_id}.md"
+    return {
+        "inputs": {
+            "decode_score_multivalue_service_measured_frontier_prior_cluster_frontier": (
+                prior_cluster_frontier
+            ),
+            "decode_score_multivalue_service_measured_frontier_service_activity_power": (
+                service_activity_power
+            ),
+            "decode_score_multivalue_service_measured_frontier_out": out,
+            "decode_score_multivalue_service_measured_frontier_report": report,
+            "decode_score_multivalue_service_measured_frontier_scope": (
+                "Replace the prior shared-score multivalue cluster frontier area/energy proxy with the "
+                "measured composed-service c1 anchor only. Keep c2+ service points blocked/unpromoted, "
+                "scale the direct routed microkernel service-window activity explicitly into the "
+                "Llama7B context, preserve the exact integer precision contract unchanged, do not claim "
+                "total-token energy, and leave broader SRAM, NoC, HBM, producer, and dense energy "
+                "outside this measured-service frontier."
+            ),
+        },
+        "commands": [
+            {
+                "name": "audit_decode_score_multivalue_service_measured_frontier",
+                "run": (
+                    "python3 -m npu.eval.audit_attention_decode_score_multivalue_service_measured_frontier "
+                    f"--prior-cluster-frontier-json {prior_cluster_frontier} "
+                    f"--service-activity-power-json {service_activity_power} "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            }
+        ],
+        "expected_outputs": [out, report],
+        "evidence_only": True,
+    }
+
+
 def _decoder_attention_decode_score_multivalue_gqa_group_frontier_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     evidence_version = _gqa_evidence_version_for_consumer(item_id)
@@ -11057,6 +11158,7 @@ def _build_payload(
         "decoder_attention_decode_score_multivalue_cluster_activity_power",
         "decoder_attention_decode_score_multivalue_integrated_service",
         "decoder_attention_decode_score_multivalue_service_activity_power",
+        "decoder_attention_decode_score_multivalue_service_measured_frontier",
         "decoder_attention_decode_score_multivalue_gqa_group_activity_power",
         "decoder_attention_decode_score_tile_frontier",
         "decoder_attention_decode_score_local_cluster_frontier",
@@ -11325,6 +11427,11 @@ def _build_payload(
             )
         elif abstraction_layer_name == "decoder_attention_decode_score_multivalue_service_activity_power":
             decoder_evidence = _decoder_attention_decode_score_multivalue_service_activity_power_evidence(
+                item_id=item_id,
+                depends_on_item_ids=depends_on_item_ids,
+            )
+        elif abstraction_layer_name == "decoder_attention_decode_score_multivalue_service_measured_frontier":
+            decoder_evidence = _decoder_attention_decode_score_multivalue_service_measured_frontier_evidence(
                 item_id=item_id,
                 depends_on_item_ids=depends_on_item_ids,
             )
