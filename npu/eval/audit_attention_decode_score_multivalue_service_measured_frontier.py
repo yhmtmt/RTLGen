@@ -53,8 +53,14 @@ _EXPECTED_HEADS = 32
 _EXPECTED_KV_HEADS = 4
 _EXPECTED_LAYERS = 32
 _EXPECTED_SERVICE_CLOCK_NS = 10.0
-_EXPECTED_MICROKERNEL_CONTEXT_TOKENS = 128
-_EXPECTED_ACTIVE_CONTEXT_TOKENS = 24
+_EXPECTED_WORKLOAD_CONTRACT = {
+    "command_block_count": 3,
+    "context_tokens_per_block": 8,
+    "active_context_tokens": 24,
+    "max_blocks": 16,
+    "max_context_capacity_tokens": 128,
+    "value_dim": 128,
+}
 
 
 def _load(path: Path) -> JsonDict:
@@ -126,6 +132,18 @@ def _extract_schedule(payload: JsonDict, label: str) -> JsonDict:
     if "hidden_size" in payload and "attention_heads" in payload and "sequence_length" in payload:
         return payload
     raise ValueError(f"{label} lacks source_schedule")
+
+
+def _validated_workload_contract(payload: Any, label: str) -> JsonDict:
+    if not isinstance(payload, dict):
+        raise ValueError(f"{label} must be an object")
+    validated: JsonDict = {}
+    for key, expected in _EXPECTED_WORKLOAD_CONTRACT.items():
+        value = _positive_int(payload.get(key), f"{label} {key}")
+        if value != expected:
+            raise ValueError(f"{label} {key} mismatch: expected {expected}, got {value}")
+        validated[key] = value
+    return validated
 
 
 def _source_schedule(frontier: JsonDict, frontier_path: Path) -> tuple[JsonDict, str]:
@@ -212,12 +230,7 @@ def _validated_prior_frontier(
     probe_contract = calibration.get("probe_contract")
     if not isinstance(probe_contract, dict):
         raise ValueError("prior frontier lacks service probe_contract")
-    microkernel_context_tokens = _positive_int(
-        probe_contract.get("microkernel_context_tokens"),
-        "prior frontier microkernel_context_tokens",
-    )
-    if microkernel_context_tokens != _EXPECTED_MICROKERNEL_CONTEXT_TOKENS:
-        raise ValueError("prior frontier microkernel_context_tokens mismatch")
+    workload_contract = _validated_workload_contract(probe_contract, "prior frontier probe_contract")
     rows = [row for row in prior.get("rows", []) if isinstance(row, dict)]
     if not rows:
         raise ValueError("prior frontier has no rows")
@@ -268,11 +281,13 @@ def _validated_prior_frontier(
         raise ValueError("resolved schedule layers mismatch vs prior schedule_contract")
     if _positive_int(schedule.get("sequence_length"), "resolved schedule sequence_length") != sequence_length:
         raise ValueError("resolved schedule sequence_length mismatch vs prior schedule_contract")
-    return schedule, schedule_source, dense_qkv_tile, c1_row, rows, precision
+    return schedule, schedule_source, dense_qkv_tile, c1_row, rows, precision, workload_contract
 
 
 def _validated_service_activity(
-    service_report: JsonDict, prior_precision: JsonDict
+    service_report: JsonDict,
+    prior_precision: JsonDict,
+    prior_workload_contract: JsonDict,
 ) -> tuple[JsonDict, JsonDict, JsonDict, JsonDict, JsonDict, JsonDict, JsonDict]:
     if _string(service_report.get("model"), "service activity-power model") != _EXPECTED_SERVICE_MODEL:
         raise ValueError("service activity-power report has an unexpected model")
@@ -373,19 +388,12 @@ def _validated_service_activity(
         raise ValueError("service report lacks activity_contract")
     if abs(_positive(activity_contract.get("clock_period_ns"), "service activity_contract clock_period_ns") - _EXPECTED_SERVICE_CLOCK_NS) > 1e-9:
         raise ValueError("service activity clock_period_ns mismatch")
-    workload_contract = service_report.get("activity_workload_contract")
-    if not isinstance(workload_contract, dict):
-        raise ValueError("service report lacks activity_workload_contract")
-    if _positive_int(
-        workload_contract.get("active_context_tokens"),
-        "service activity_workload_contract active_context_tokens",
-    ) != _EXPECTED_ACTIVE_CONTEXT_TOKENS:
-        raise ValueError("service activity_workload_contract active_context_tokens mismatch")
-    if _positive_int(
-        workload_contract.get("measured_context_capacity_tokens"),
-        "service activity_workload_contract measured_context_capacity_tokens",
-    ) != _EXPECTED_MICROKERNEL_CONTEXT_TOKENS:
-        raise ValueError("service activity_workload_contract measured_context_capacity_tokens mismatch")
+    workload_contract = _validated_workload_contract(
+        activity_contract.get("workload_contract"),
+        "service activity_contract workload_contract",
+    )
+    if workload_contract != prior_workload_contract:
+        raise ValueError("service activity_contract workload_contract mismatch vs prior probe_contract")
     bank3 = service_report.get("bank3_dynamic_inactivity")
     if not isinstance(bank3, dict):
         raise ValueError("service report lacks bank3_dynamic_inactivity")
@@ -447,10 +455,19 @@ def _validated_service_activity(
         raise ValueError("service integrated_service_c1 case_id mismatch")
     if _string(integrated_service.get("decision"), "service integrated_service_c1 decision") != "pass":
         raise ValueError("service integrated_service_c1 decision mismatch")
+    config = integrated_service.get("config")
+    if not isinstance(config, dict):
+        raise ValueError("service integrated_service_c1 config is missing")
     for key, expected in _EXPECTED_SERVICE_CONFIG.items():
-        config_value = integrated_service.get("config", {}).get(key) if isinstance(integrated_service.get("config"), dict) else None
-        if config_value is not None and config_value != expected:
+        config_value = config.get(key)
+        if config_value != expected:
             raise ValueError(f"service integrated_service_c1 config mismatch for {key}")
+    integrated_workload_contract = _validated_workload_contract(
+        integrated_service.get("workload_contract"),
+        "service integrated_service_c1 workload_contract",
+    )
+    if integrated_workload_contract != workload_contract:
+        raise ValueError("service integrated_service_c1 workload_contract mismatch vs activity workload_contract")
     for key in ("exact_match", "no_protocol_errors", "no_drop_duplicate_deadlock_timeout", "cycle_bound_ok"):
         if integrated_service.get(key) is not True:
             raise ValueError(f"service integrated_service_c1 {key} gate failed")
@@ -520,6 +537,7 @@ def _measured_row(
     prior_c1_row: JsonDict,
     authoritative_service_ppa: JsonDict,
     service_window: JsonDict,
+    workload_contract: JsonDict,
 ) -> JsonDict:
     hidden = _positive_int(schedule.get("hidden_size"), "schedule hidden_size")
     heads = _positive_int(schedule.get("attention_heads"), "schedule attention_heads")
@@ -569,8 +587,14 @@ def _measured_row(
     service_duration_s = service_cycles_per_wave * clock_ns * 1.0e-9
     dynamic_j = _positive(service_window.get("energy_j", {}).get("dynamic"), "service window dynamic energy")
     leakage_j = _positive(service_window.get("energy_j", {}).get("leakage"), "service window leakage energy")
-    active_context_tokens = _EXPECTED_ACTIVE_CONTEXT_TOKENS
-    measured_context_capacity_tokens = _EXPECTED_MICROKERNEL_CONTEXT_TOKENS
+    active_context_tokens = _positive_int(
+        workload_contract.get("active_context_tokens"),
+        "workload_contract active_context_tokens",
+    )
+    measured_context_capacity_tokens = _positive_int(
+        workload_contract.get("max_context_capacity_tokens"),
+        "workload_contract max_context_capacity_tokens",
+    )
     full_measured_window_count = math.ceil(sequence_length / active_context_tokens)
     full_measured_window_count_exact = sequence_length // active_context_tokens
     final_partial_tokens = sequence_length % active_context_tokens
@@ -690,7 +714,15 @@ def build_report(
 ) -> JsonDict:
     prior = _load(prior_cluster_frontier_json)
     service = _load(service_activity_power_json)
-    schedule, schedule_source, dense_qkv_tile, prior_c1_row, prior_rows, prior_precision = _validated_prior_frontier(
+    (
+        schedule,
+        schedule_source,
+        dense_qkv_tile,
+        prior_c1_row,
+        prior_rows,
+        prior_precision,
+        workload_contract,
+    ) = _validated_prior_frontier(
         prior,
         prior_cluster_frontier_json,
     )
@@ -705,6 +737,7 @@ def build_report(
     ) = _validated_service_activity(
         service,
         prior_precision,
+        workload_contract,
     )
     measured = _measured_row(
         schedule=schedule,
@@ -712,6 +745,7 @@ def build_report(
         prior_c1_row=prior_c1_row,
         authoritative_service_ppa=authoritative_service_ppa,
         service_window=service_window,
+        workload_contract=workload_contract,
     )
     if not measured["compute_budget_area_fit"] or not measured["timing_feasible"]:
         raise ValueError("recomputed c1 measured anchor is not feasible for promotion")
@@ -750,7 +784,7 @@ def build_report(
             "kv_heads": _positive_int(schedule.get("kv_heads"), "schedule kv_heads"),
             "layers": _positive_int(schedule.get("layers"), "schedule layers"),
             "sequence_length": _positive_int(schedule.get("sequence_length"), "schedule sequence_length"),
-            "microkernel_context_tokens": _EXPECTED_MICROKERNEL_CONTEXT_TOKENS,
+            "workload_contract": dict(workload_contract),
             "measured_window_active_context_tokens": measured["measured_window_active_context_tokens"],
             "measured_window_context_capacity_tokens": measured["measured_window_context_capacity_tokens"],
             "full_measured_window_count": measured["full_measured_window_count"],

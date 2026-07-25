@@ -43,6 +43,17 @@ def _source_schedule(tmp_path: Path, *, sequence_length: int = 131072) -> Path:
     )
 
 
+def _workload_contract() -> dict:
+    return {
+        "command_block_count": 3,
+        "context_tokens_per_block": 8,
+        "active_context_tokens": 24,
+        "max_blocks": 16,
+        "max_context_capacity_tokens": 128,
+        "value_dim": 128,
+    }
+
+
 def _prior_frontier(tmp_path: Path, *, sequence_length: int = 131072) -> Path:
     source = _source_schedule(tmp_path, sequence_length=sequence_length)
     linked_prior = _write(
@@ -145,8 +156,7 @@ def _prior_frontier(tmp_path: Path, *, sequence_length: int = 131072) -> Path:
             },
             "service_cycle_calibration": {
                 "probe_contract": {
-                    "microkernel_context_tokens": 128,
-                    "microkernel_value_dim": 128,
+                    **_workload_contract(),
                     "consumed_case_ids": ["c1_p128_b4_rr", "c2_p128_b4_rr"],
                     "resource_policy": {
                         "packet_w": 128,
@@ -231,6 +241,18 @@ def _service_activity_power(tmp_path: Path) -> Path:
                 },
                 "integrated_service_c1": {
                     "case_id": "c1_p128_b4_rr",
+                    "config": {
+                        "cluster_count": 1,
+                        "packet_w": 128,
+                        "banks": 4,
+                        "req_queue_depth": 4,
+                        "resp_queue_depth": 4,
+                        "bank_queue_depth": 4,
+                        "read_latency": 2,
+                        "arb_mode": "round_robin",
+                        "locality_burst_max": 2,
+                    },
+                    "workload_contract": _workload_contract(),
                     "decision": "pass",
                     "exact_match": True,
                     "no_protocol_errors": True,
@@ -247,12 +269,7 @@ def _service_activity_power(tmp_path: Path) -> Path:
             "activity_contract": {
                 "clock_period_ns": 10.0,
                 "cycle_count": 160,
-            },
-            "activity_workload_contract": {
-                "active_context_tokens": 24,
-                "measured_context_capacity_tokens": 128,
-                "score_hash": "activity-workload-score-hash",
-                "final_hash": "activity-workload-final-hash",
+                "workload_contract": _workload_contract(),
             },
             "macro_manifest_contract": {
                 "counts": {"fakeram45_2048x39": 56, "fakeram45_64x32": 64},
@@ -297,6 +314,7 @@ def test_build_report_success_recomputes_latency_area_and_component_energy(tmp_p
 
     assert payload["decision"] == "strict_c1_measured_service_anchor_promoted_c2plus_blocked"
     assert payload["inputs"]["source_schedule_json"].endswith("source_schedule.json")
+    assert payload["schedule_contract"]["workload_contract"] == _workload_contract()
     assert len(payload["promoted_rows"]) == 1
     row = payload["best_measured_anchor"]
     assert row["cluster_count"] == 1
@@ -324,6 +342,10 @@ def test_build_report_success_recomputes_latency_area_and_component_energy(tmp_p
     assert (
         payload["selected_service_activity_candidate"]["integrated_service_hashes"]["score_hash"]
         == "integrated-c1-score-hash"
+    )
+    assert (
+        payload["selected_service_activity_candidate"]["activity_workload_contract"]
+        == _workload_contract()
     )
 
 
@@ -400,6 +422,20 @@ def test_build_report_rejects_precision_gate_mismatch(tmp_path: Path) -> None:
     service.write_text(json.dumps(payload), encoding="utf-8")
 
     with pytest.raises(ValueError, match="final_tensor_hash mismatch"):
+        build_report(
+            prior_cluster_frontier_json=prior,
+            service_activity_power_json=service,
+        )
+
+
+def test_build_report_rejects_workload_contract_schema_drift(tmp_path: Path) -> None:
+    prior = _prior_frontier(tmp_path)
+    service = _service_activity_power(tmp_path)
+    payload = json.loads(service.read_text(encoding="utf-8"))
+    payload["activity_contract"]["workload_contract"]["active_context_tokens"] = 25
+    service.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="workload_contract"):
         build_report(
             prior_cluster_frontier_json=prior,
             service_activity_power_json=service,
