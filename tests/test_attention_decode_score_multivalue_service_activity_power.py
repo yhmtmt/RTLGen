@@ -480,7 +480,7 @@ def test_build_report_rejects_generated_activity_hash_mismatch(tmp_path: Path) -
         audit,
         "build_power_report",
         return_value=_power_report(manifest_sha256=adapted_meta["adapted_activity_manifest_sha256"], with_abs_path=False),
-    ):
+    ) as build_power_report_mock:
         with pytest.raises(ValueError, match="generated activity request_hash does not match integrated-service c1 request_hash"):
             audit.build_report(
                 config=config,
@@ -491,6 +491,7 @@ def test_build_report_rejects_generated_activity_hash_mismatch(tmp_path: Path) -
                 clock_period_ns=10.0,
                 activity_dir=tmp_path / "activity",
             )
+    build_power_report_mock.assert_not_called()
 
 
 def test_build_report_does_not_compare_integrated_hashes_to_cluster_equivalence_hashes(tmp_path: Path) -> None:

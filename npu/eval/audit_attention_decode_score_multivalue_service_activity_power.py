@@ -752,6 +752,20 @@ def build_report(
         activity_dir=activity_dir,
         activity_manifest=activity_manifest,
     )
+    if activity_meta["workload_contract"] != integrated_service["workload_contract"]:
+        raise ValueError("generated activity workload contract does not match integrated-service c1")
+    generated_hashes = activity_meta["generated_manifest_hashes"]
+    integrated_hashes = integrated_service["hashes"]
+    for generated_key, integrated_key in (
+        ("score_hash", "score_hash"),
+        ("final_hash", "final_hash"),
+        ("request_hash", "request_hash"),
+        ("wide_response_matrix_hash", "wide_response_matrix_hash"),
+    ):
+        if str(generated_hashes.get(generated_key) or "").strip() != str(integrated_hashes[integrated_key]).strip():
+            raise ValueError(
+                f"generated activity {generated_key} does not match integrated-service c1 {integrated_key}"
+            )
     candidate: JsonDict = {
         "candidate_id": f"multivalue_service_activity_{_REQUIRED_FLOW_VARIANT}",
         "flow_variant": _REQUIRED_FLOW_VARIANT,
@@ -803,20 +817,6 @@ def build_report(
                 "total_power_mw": float(metric.get("total_power_mw") or 0.0),
             }
     best = candidate if candidate.get("status") == "activity_backed" else None
-    if activity_meta["workload_contract"] != integrated_service["workload_contract"]:
-        raise ValueError("generated activity workload contract does not match integrated-service c1")
-    generated_hashes = activity_meta["generated_manifest_hashes"]
-    integrated_hashes = integrated_service["hashes"]
-    for generated_key, integrated_key in (
-        ("score_hash", "score_hash"),
-        ("final_hash", "final_hash"),
-        ("request_hash", "request_hash"),
-        ("wide_response_matrix_hash", "wide_response_matrix_hash"),
-    ):
-        if str(generated_hashes.get(generated_key) or "").strip() != str(integrated_hashes[integrated_key]).strip():
-            raise ValueError(
-                f"generated activity {generated_key} does not match integrated-service c1 {integrated_key}"
-            )
     return {
         "version": 1,
         "model": _MODEL,
