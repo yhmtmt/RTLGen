@@ -20,6 +20,7 @@ from npu.eval.extract_fakeram_vcd_activity import (
 )
 from npu.eval.generate_attention_decode_score_multivalue_service_activity import (
     _REQUIRED_SERVICE_FIELDS,
+    _load,
     generate_activity,
 )
 
@@ -37,6 +38,13 @@ def _service_config() -> dict[str, object]:
         "top_name": "attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_macro_activity",
         "attention_decode_score_multivalue_service": dict(_REQUIRED_SERVICE_FIELDS),
     }
+
+
+def _service_config_c2() -> dict[str, object]:
+    return _load(
+        REPO_ROOT
+        / "runs/designs/npu_blocks/attention_decode_score_multivalue_service_c2_p128_b4_q4_rl2_rr/config.json"
+    )
 
 
 def _mini_vcd() -> str:
@@ -370,6 +378,113 @@ def test_extract_multivalue_service_activity_tracks_both_macro_classes(tmp_path:
     assert classes["fakeram45_64x32"]["assignment_count"] == 72
 
 
+def test_extract_multivalue_service_activity_preserves_c2_cluster_identity(tmp_path: Path) -> None:
+    vcd_path = tmp_path / "service_macro_c2.vcd"
+    _write_vcd(
+        vcd_path,
+        "\n".join(
+            [
+                "$timescale",
+                "1ns/1ps",
+                "$end",
+                "$scope module tb $end",
+                "$scope module dut $end",
+                "$scope begin gen_cluster[0] $end",
+                "$scope module u_cluster $end",
+                "$scope module score_bank $end",
+                "$scope module u_group_0_slice_0 $end",
+                "$var reg 11 a addr_in [10:0] $end",
+                "$var reg 39 b wd_in [38:0] $end",
+                "$var reg 39 c w_mask_in [38:0] $end",
+                "$var reg 1 d we_in $end",
+                "$var reg 1 e ce_in $end",
+                "$upscope $end",
+                "$upscope $end",
+                "$upscope $end",
+                "$upscope $end",
+                "$scope begin gen_cluster[1] $end",
+                "$scope module u_cluster $end",
+                "$scope module score_bank $end",
+                "$scope module u_group_0_slice_0 $end",
+                "$var reg 11 f addr_in [10:0] $end",
+                "$var reg 39 g wd_in [38:0] $end",
+                "$var reg 39 h w_mask_in [38:0] $end",
+                "$var reg 1 i we_in $end",
+                "$var reg 1 j ce_in $end",
+                "$upscope $end",
+                "$upscope $end",
+                "$upscope $end",
+                "$upscope $end",
+                "$scope begin gen_value_macro_backend $end",
+                "$scope begin gen_value_bank[0] $end",
+                "$scope begin gen_value_lane[0] $end",
+                "$scope module u_value_mem_lane $end",
+                "$var reg 6 k addr_in [5:0] $end",
+                "$var reg 32 l wd_in [31:0] $end",
+                "$var reg 32 m w_mask_in [31:0] $end",
+                "$var reg 1 n we_in $end",
+                "$var reg 1 o ce_in $end",
+                "$upscope $end",
+                "$upscope $end",
+                "$upscope $end",
+                "$upscope $end",
+                "$upscope $end",
+                "$enddefinitions",
+                "#0",
+                f"b{'0'*11} a",
+                f"b{'0'*39} b",
+                f"b{'0'*39} c",
+                "0d",
+                "1e",
+                f"b{'0'*11} f",
+                f"b{'0'*39} g",
+                f"b{'0'*39} h",
+                "0i",
+                "1j",
+                f"b{'0'*6} k",
+                f"b{'0'*32} l",
+                f"b{'0'*32} m",
+                "0n",
+                "0o",
+                "#10",
+                "$dumpon",
+                "#20",
+                "1d",
+                "1i",
+                "1o",
+                "#40",
+                "0d",
+                "0i",
+                "0o",
+                "#50",
+                "$dumpoff",
+            ]
+        ),
+    )
+    payload = extract_multivalue_service_fakeram_vcd_activity(
+        vcd_path,
+        source_vcd_sha256=hashlib.sha256(vcd_path.read_bytes()).hexdigest(),
+        scope="tb/dut",
+        cluster_count=2,
+        case_id="c2_p128_b4_rr",
+        group_indices=(0,),
+        slice_indices=(0,),
+        value_bank_indices=(0,),
+        value_lane_indices=(0,),
+        expected_pin_count=254,
+    )
+
+    assert payload["target_profile"] == "multivalue_service_c2_v1"
+    by_name = {row["full_name"]: row for row in payload["pins"]}
+    assert "gen_cluster[0]/u_cluster/score_bank/u_group_0_slice_0/we_in" in by_name
+    assert "gen_cluster[1]/u_cluster/score_bank/u_group_0_slice_0/we_in" in by_name
+    contract = payload["structural_macro_contract"]
+    classes = {row["macro_name"]: row for row in contract["macro_classes"]}
+    assert classes["fakeram45_2048x39"]["instance_count"] == 2
+    assert classes["fakeram45_64x32"]["instance_count"] == 1
+    assert contract["total_assignment_count"] == 254
+
+
 @pytest.mark.skipif(not _iverilog_available(), reason="iverilog/vvp unavailable")
 def test_extract_multivalue_service_activity_real_generated_vcd_sidecar(tmp_path: Path) -> None:
     activity_dir = tmp_path / "activity"
@@ -397,3 +512,34 @@ def test_extract_multivalue_service_activity_real_generated_vcd_sidecar(tmp_path
         "gen_value_macro_backend/gen_value_bank[3]/gen_value_lane[15]/u_value_mem_lane/ce_in"
         in full_names
     )
+
+
+@pytest.mark.skipif(not _iverilog_available(), reason="iverilog/vvp unavailable")
+def test_extract_multivalue_service_activity_real_generated_c2_vcd_sidecar(tmp_path: Path) -> None:
+    activity_dir = tmp_path / "activity_c2"
+    manifest = generate_activity(_service_config_c2(), activity_dir, case_id="c2_p128_b4_rr")
+    vcd_path = activity_dir / manifest["artifacts"]["vcd"]
+    payload = extract_multivalue_service_fakeram_vcd_activity(
+        vcd_path,
+        source_vcd_sha256=manifest["hashes"]["vcd_sha256"],
+        scope="tb/dut",
+        cluster_count=2,
+        case_id="c2_p128_b4_rr",
+    )
+
+    assert payload["target_profile"] == "multivalue_service_c2_v1"
+    assert len(payload["pins"]) == 14800
+    classes = {row["macro_name"]: row for row in payload["structural_macro_contract"]["macro_classes"]}
+    assert classes["fakeram45_2048x39"]["instance_count"] == 112
+    assert classes["fakeram45_2048x39"]["assignment_count"] == 10192
+    assert classes["fakeram45_64x32"]["instance_count"] == 64
+    assert classes["fakeram45_64x32"]["assignment_count"] == 4608
+    full_names = {row["full_name"] for row in payload["pins"]}
+    score_instances = {name.rsplit("/", 1)[0] for name in full_names if "/score_bank/" in name}
+    value_instances = {
+        name.rsplit("/", 1)[0] for name in full_names if name.startswith("gen_value_macro_backend/")
+    }
+    assert len(score_instances) == 112
+    assert len(value_instances) == 64
+    assert any(name.startswith("gen_cluster[0]/u_cluster/score_bank/") for name in full_names)
+    assert any(name.startswith("gen_cluster[1]/u_cluster/score_bank/") for name in full_names)

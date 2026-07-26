@@ -60,14 +60,29 @@ _MULTIVALUE_CLUSTER_FRONTIER_BASE_ITEM = (
 _MULTIVALUE_CLUSTER_FRONTIER_DEFAULT_ITEM = (
     "l2_decoder_attention_decode_score_multivalue_cluster_frontier_llama7b_v1_r1"
 )
-_MULTIVALUE_SERVICE_ACTIVITY_POWER_DEFAULT_ITEM = (
+_MULTIVALUE_SERVICE_C1_ACTIVITY_POWER_DEFAULT_ITEM = (
     "l2_decoder_attention_decode_score_multivalue_service_c1_activity_power_llama7b_v1"
+)
+_MULTIVALUE_SERVICE_C2_ACTIVITY_POWER_DEFAULT_ITEM = (
+    "l2_decoder_attention_decode_score_multivalue_service_c2_activity_power_llama7b_v1"
 )
 _MULTIVALUE_SERVICE_C1_PNR_ITEM = (
     "l1_decoder_attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_pnr_v1"
 )
+_MULTIVALUE_SERVICE_C2_PNR_ITEM = (
+    "l1_decoder_attention_decode_score_multivalue_service_c2_p128_b4_q4_rl2_rr_pnr_v1"
+)
 _MULTIVALUE_SERVICE_C1_DESIGN = (
     "attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr"
+)
+_MULTIVALUE_SERVICE_C2_DESIGN = (
+    "attention_decode_score_multivalue_service_c2_p128_b4_q4_rl2_rr"
+)
+_MULTIVALUE_SERVICE_MEASURED_FRONTIER_C1_ONLY_DEFAULT_ITEM = (
+    "l2_decoder_attention_decode_score_multivalue_service_measured_frontier_llama7b_v1"
+)
+_MULTIVALUE_SERVICE_MEASURED_FRONTIER_C1_C2_DEFAULT_ITEM = (
+    "l2_decoder_attention_decode_score_multivalue_service_measured_frontier_llama7b_v2"
 )
 
 
@@ -217,16 +232,23 @@ def _multivalue_cluster_frontier_item_for_consumer(
 
 
 def _multivalue_service_activity_power_item_for_consumer(
-    *, depends_on_item_ids: list[str] | None
+    *, depends_on_item_ids: list[str] | None, cluster_count: int = 1
 ) -> str:
-    prefix = "l2_decoder_attention_decode_score_multivalue_service_c1_activity_power_llama7b_"
+    prefix = (
+        "l2_decoder_attention_decode_score_multivalue_service_"
+        f"c{cluster_count}_activity_power_llama7b_"
+    )
     candidate_item_ids = [
         str(dep).strip()
         for dep in (depends_on_item_ids or [])
         if str(dep).strip().startswith(prefix)
     ]
     if not candidate_item_ids:
-        return _MULTIVALUE_SERVICE_ACTIVITY_POWER_DEFAULT_ITEM
+        return (
+            _MULTIVALUE_SERVICE_C1_ACTIVITY_POWER_DEFAULT_ITEM
+            if cluster_count == 1
+            else _MULTIVALUE_SERVICE_C2_ACTIVITY_POWER_DEFAULT_ITEM
+        )
     return max(candidate_item_ids, key=_item_version_retry_rank)
 
 
@@ -7376,7 +7398,9 @@ def _decoder_attention_decode_score_multivalue_service_activity_power_evidence(
     *, item_id: str, depends_on_item_ids: list[str] | None = None
 ) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
-    design = _MULTIVALUE_SERVICE_C1_DESIGN
+    is_c2 = "service_c2_activity_power" in item_id
+    case_id = "c2_p128_b4_rr" if is_c2 else "c1_p128_b4_rr"
+    design = _MULTIVALUE_SERVICE_C2_DESIGN if is_c2 else _MULTIVALUE_SERVICE_C1_DESIGN
     config = f"runs/designs/npu_blocks/{design}/config.json"
     metrics_csv = f"runs/designs/npu_blocks/{design}/metrics.csv"
     equivalence_json = (
@@ -7391,32 +7415,51 @@ def _decoder_attention_decode_score_multivalue_service_activity_power_evidence(
         f"{integrated_service_item}.json"
     )
     orfs_design_config = f"/orfs/flow/designs/nangate45/{design}/config.mk"
-    activity_dir = "/tmp/rtlgen_multivalue_service_c1_activity"
+    activity_dir = f"/tmp/rtlgen_multivalue_service_{case_id.split('_', 1)[0]}_activity"
     out = f"{base}/decoder_attention_decode_score_multivalue_service_activity_power__{item_id}.json"
     report = f"{base}/decoder_attention_decode_score_multivalue_service_activity_power__{item_id}.md"
+    pnr_item = _MULTIVALUE_SERVICE_C2_PNR_ITEM if is_c2 else _MULTIVALUE_SERVICE_C1_PNR_ITEM
+    config_key_prefix = f"decode_score_multivalue_service_{case_id.split('_', 1)[0]}"
+    scope = (
+        "Audit strict c2 routed composed-service activity power after merged/materialized "
+        "integrated-service c2, c2 PNR, and shared-score multivalue cluster-equivalence evidence. "
+        "Measure only direct routed whole-service window energy, inherit the exact integer precision "
+        "contract from the merged equivalence proof, require complete relevant FakeRAM macro-class "
+        "annotation, keep VCD/ODB/SPEF evaluator-local, and do not claim total-token energy."
+        if is_c2
+        else (
+            "Audit strict c1 routed composed-service activity power after merged/materialized "
+            "integrated-service, c1 PNR, and shared-score multivalue cluster-equivalence evidence. "
+            "Measure only direct routed component service-window energy, inherit the exact integer "
+            "precision contract from the merged equivalence proof, do not force bank3 activity, keep "
+            "VCD/ODB/SPEF evaluator-local, and do not claim total-token energy."
+        )
+    )
+    promotion_gate = (
+        "Promotion requires a timing-feasible 10 ns c2 routed row, exact integrated-service c2 "
+        "hash/protocol/count gates, validation that the c2 activity cycle count matches case "
+        "c2_p128_b4_rr, complete relevant FakeRAM macro-class annotation, finite positive routed "
+        "power, and direct whole-service-window measurement rather than compositional token-energy accounting."
+        if is_c2
+        else (
+            "Promotion requires a timing-feasible 10 ns c1 routed row, exact integrated-service c1 "
+            "hash/protocol/count gates, explicit annotation coverage, finite positive routed power, "
+            "and a direct service-window measurement rather than compositional token-energy accounting."
+        )
+    )
     return {
         "inputs": {
-            "decode_score_multivalue_service_c1_config": config,
-            "decode_score_multivalue_service_c1_pnr_metrics_csv": metrics_csv,
-            "decode_score_multivalue_service_c1_source_pnr_item_id": _MULTIVALUE_SERVICE_C1_PNR_ITEM,
-            "decode_score_multivalue_service_c1_equivalence_json": equivalence_json,
-            "decode_score_multivalue_service_c1_integrated_service_json": integrated_service_json,
-            "decode_score_multivalue_service_c1_orfs_design_config": orfs_design_config,
-            "decode_score_multivalue_service_c1_activity_dir": activity_dir,
+            f"{config_key_prefix}_config": config,
+            f"{config_key_prefix}_pnr_metrics_csv": metrics_csv,
+            f"{config_key_prefix}_source_pnr_item_id": pnr_item,
+            f"{config_key_prefix}_equivalence_json": equivalence_json,
+            f"{config_key_prefix}_integrated_service_json": integrated_service_json,
+            f"{config_key_prefix}_orfs_design_config": orfs_design_config,
+            f"{config_key_prefix}_activity_dir": activity_dir,
             "decode_score_multivalue_service_activity_power_out": out,
             "decode_score_multivalue_service_activity_power_report": report,
-            "decode_score_multivalue_service_activity_power_scope": (
-                "Audit strict c1 routed composed-service activity power after merged/materialized "
-                "integrated-service, c1 PNR, and shared-score multivalue cluster-equivalence evidence. "
-                "Measure only direct routed component service-window energy, inherit the exact integer "
-                "precision contract from the merged equivalence proof, do not force bank3 activity, keep "
-                "VCD/ODB/SPEF evaluator-local, and do not claim total-token energy."
-            ),
-            "decode_score_multivalue_service_activity_power_promotion_gate": (
-                "Promotion requires a timing-feasible 10 ns c1 routed row, exact integrated-service c1 "
-                "hash/protocol/count gates, explicit annotation coverage, finite positive routed power, "
-                "and a direct service-window measurement rather than compositional token-energy accounting."
-            ),
+            "decode_score_multivalue_service_activity_power_scope": scope,
+            "decode_score_multivalue_service_activity_power_promotion_gate": promotion_gate,
             "decode_score_multivalue_service_activity_power_local_only_artifacts": ["VCD", "ODB", "SPEF"],
         },
         "commands": [
@@ -7425,14 +7468,18 @@ def _decoder_attention_decode_score_multivalue_service_activity_power_evidence(
                 "run": (
                     "python3 -m npu.eval.audit_attention_decode_score_multivalue_service_activity_power "
                     f"--config {config} "
-                    f"--c1-metrics-csv {metrics_csv} "
-                    f"--equivalence-json {equivalence_json} "
-                    f"--integrated-service-json {integrated_service_json} "
-                    f"--orfs-design-config {orfs_design_config} "
-                    "--clock-period-ns 10 "
-                    f"--activity-dir {activity_dir} "
-                    f"--out {out} "
-                    f"--out-md {report}"
+                    + (
+                        f"--metrics-csv {metrics_csv} --case-id {case_id} "
+                        if is_c2
+                        else f"--c1-metrics-csv {metrics_csv} "
+                    )
+                    + f"--equivalence-json {equivalence_json} "
+                    + f"--integrated-service-json {integrated_service_json} "
+                    + f"--orfs-design-config {orfs_design_config} "
+                    + "--clock-period-ns 10 "
+                    + f"--activity-dir {activity_dir} "
+                    + f"--out {out} "
+                    + f"--out-md {report}"
                 ),
             }
         ],
@@ -7445,6 +7492,7 @@ def _decoder_attention_decode_score_multivalue_service_measured_frontier_evidenc
     *, item_id: str, depends_on_item_ids: list[str] | None = None
 ) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    c2_enabled = "llama7b_v2" in item_id
     prior_cluster_frontier_item = _multivalue_cluster_frontier_item_for_consumer(
         depends_on_item_ids=depends_on_item_ids
     )
@@ -7452,44 +7500,77 @@ def _decoder_attention_decode_score_multivalue_service_measured_frontier_evidenc
         f"{base}/decoder_attention_decode_score_multivalue_cluster_frontier__"
         f"{prior_cluster_frontier_item}.json"
     )
-    service_activity_power_item = _multivalue_service_activity_power_item_for_consumer(
-        depends_on_item_ids=depends_on_item_ids
+    service_activity_power_item_c1 = _multivalue_service_activity_power_item_for_consumer(
+        depends_on_item_ids=depends_on_item_ids,
+        cluster_count=1,
     )
-    service_activity_power = (
+    service_activity_power_c1 = (
         f"{base}/decoder_attention_decode_score_multivalue_service_activity_power__"
-        f"{service_activity_power_item}.json"
+        f"{service_activity_power_item_c1}.json"
+    )
+    service_activity_power_item_c2 = (
+        _multivalue_service_activity_power_item_for_consumer(
+            depends_on_item_ids=depends_on_item_ids,
+            cluster_count=2,
+        )
+        if c2_enabled
+        else None
+    )
+    service_activity_power_c2 = (
+        f"{base}/decoder_attention_decode_score_multivalue_service_activity_power__"
+        f"{service_activity_power_item_c2}.json"
+        if service_activity_power_item_c2
+        else None
     )
     out = f"{base}/decoder_attention_decode_score_multivalue_service_measured_frontier__{item_id}.json"
     report = f"{base}/decoder_attention_decode_score_multivalue_service_measured_frontier__{item_id}.md"
+    scope = (
+        "Replace the prior shared-score multivalue cluster frontier area/energy proxy with measured "
+        "composed-service c1 and c2 anchors only. Compare c1 and c2 using measured latency/area/dynamic/"
+        "leakage, scale whole-service measured windows with ceil(sequence_length / 24) and then "
+        "cluster_waves_per_layer * layers instead of heads * layers, preserve the exact integer "
+        "precision contract unchanged, do not claim total-token energy, and leave broader SRAM, "
+        "NoC, HBM, producer, and dense energy outside while c3+ remain blocked/unpromoted."
+        if c2_enabled
+        else (
+            "Replace the prior shared-score multivalue cluster frontier area/energy proxy with the "
+            "measured composed-service c1 anchor only. Keep c2+ service points blocked/unpromoted, "
+            "scale the direct routed microkernel service-window activity explicitly into the "
+            "Llama7B context, preserve the exact integer precision contract unchanged, do not claim "
+            "total-token energy, and leave broader SRAM, NoC, HBM, producer, and dense energy "
+            "outside this measured-service frontier."
+        )
+    )
+    command = (
+        "python3 -m npu.eval.audit_attention_decode_score_multivalue_service_measured_frontier "
+        f"--prior-cluster-frontier-json {prior_cluster_frontier} "
+        f"--service-activity-power-json {service_activity_power_c1} "
+        + (
+            f"--service-activity-power-json {service_activity_power_c2} "
+            if c2_enabled and service_activity_power_c2 is not None
+            else ""
+        )
+        + f"--out {out} --out-md {report}"
+    )
     return {
         "inputs": {
             "decode_score_multivalue_service_measured_frontier_prior_cluster_frontier": (
                 prior_cluster_frontier
             ),
-            "decode_score_multivalue_service_measured_frontier_service_activity_power": (
-                service_activity_power
-            ),
+            "decode_score_multivalue_service_measured_frontier_service_activity_power": service_activity_power_c1,
+            "decode_score_multivalue_service_measured_frontier_service_activity_powers": [
+                value
+                for value in (service_activity_power_c1, service_activity_power_c2)
+                if value is not None
+            ],
             "decode_score_multivalue_service_measured_frontier_out": out,
             "decode_score_multivalue_service_measured_frontier_report": report,
-            "decode_score_multivalue_service_measured_frontier_scope": (
-                "Replace the prior shared-score multivalue cluster frontier area/energy proxy with the "
-                "measured composed-service c1 anchor only. Keep c2+ service points blocked/unpromoted, "
-                "scale the direct routed microkernel service-window activity explicitly into the "
-                "Llama7B context, preserve the exact integer precision contract unchanged, do not claim "
-                "total-token energy, and leave broader SRAM, NoC, HBM, producer, and dense energy "
-                "outside this measured-service frontier."
-            ),
+            "decode_score_multivalue_service_measured_frontier_scope": scope,
         },
         "commands": [
             {
                 "name": "audit_decode_score_multivalue_service_measured_frontier",
-                "run": (
-                    "python3 -m npu.eval.audit_attention_decode_score_multivalue_service_measured_frontier "
-                    f"--prior-cluster-frontier-json {prior_cluster_frontier} "
-                    f"--service-activity-power-json {service_activity_power} "
-                    f"--out {out} "
-                    f"--out-md {report}"
-                ),
+                "run": command,
             }
         ],
         "expected_outputs": [out, report],

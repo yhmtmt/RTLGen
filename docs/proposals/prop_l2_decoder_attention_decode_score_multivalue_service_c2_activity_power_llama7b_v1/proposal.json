@@ -1,0 +1,94 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_decode_score_multivalue_service_c2_activity_power_llama7b_v1",
+  "created_utc": "2026-07-26T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Strict c2 composed-service activity power gate for Llama7B",
+  "abstraction_layer": "decoder_attention_decode_score_multivalue_service_activity_power",
+  "hypothesis": "Once the compact integrated-service r1 probe, the merged c2 composed-service PNR row, and the shared-score multivalue cluster-equivalence evidence are all merged and materialized, a strict c2 routed audit can report only direct whole-service window energy with exact inherited precision, exact c2 cycle/hash gating, complete relevant FakeRAM annotation, and no total-token energy claim.",
+  "direct_comparison": {
+    "primary_question": "Does the routed c2 composed service remain physically interesting once the merged c2 PNR row is combined with strict integrated-service c2 and cluster-equivalence gates plus evaluator-local switching evidence, while reporting only direct whole-service window energy?",
+    "baseline": "l1_decoder_attention_decode_score_multivalue_service_c2_p128_b4_q4_rl2_rr_pnr_v1 as the authoritative composed c2 PPA row, with integrated-service r1 and shared-score multivalue cluster-equivalence evidence as strict dependency gates.",
+    "include": [
+      "strict c2 p128/b4/q4/rl2/round_robin composed-service routed row at 10 ns",
+      "merged/materialized integrated-service c2 exact hash/protocol/count evidence from l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1_r1",
+      "validation that the c2 activity cycle count matches case c2_p128_b4_rr and integrated completion cycle 8863",
+      "merged/materialized shared-score multivalue cluster-equivalence evidence using the exact JSON path already consumed by related audits",
+      "direct routed whole-service window dynamic and leakage energy only",
+      "complete relevant FakeRAM macro-class annotation for the c2 composed service",
+      "repo-portable JSON and Markdown outputs only, with raw VCD, ODB, SPEF, and temporary activity directories kept evaluator-local"
+    ],
+    "exclude": [
+      "do not claim total-token energy or token rankings",
+      "do not reopen arithmetic precision, semantic equivalence, NoC closure, HBM closure, or service-fabric PPA/energy closure",
+      "do not commit evaluator-local activity artifacts"
+    ],
+    "metrics": [
+      "critical_path_ns",
+      "total_power_mw",
+      "service_window_dynamic_energy_j",
+      "service_window_leakage_energy_j",
+      "service_window_total_energy_j",
+      "vcd_annotation_coverage",
+      "sequential_register_activity_coverage",
+      "macro_active_coverage",
+      "promotion_gate_pass"
+    ]
+  },
+  "expected_benefit": [
+    "converts the composed c2 service point from vectorless total power to a strict activity-backed whole-service component energy measurement",
+    "preserves the exact integer precision contract already proven by the merged equivalence gate",
+    "makes the scope boundary explicit by measuring only direct routed whole-service window energy and withholding total-token energy"
+  ],
+  "risks": [
+    "the merged c2 row may fail strict annotation or positive-power gates even after routing succeeds",
+    "the c2 measured service point could still lose on area or timing despite closing the activity path",
+    "passing this audit still does not close service-fabric energy, NoC composition, HBM service, or total-token energy"
+  ],
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_decode_score_multivalue_service_c2_activity_power_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Audit strict c2 routed composed-service activity power at 10 ns using merged/materialized c2 PNR, integrated-service r1, and shared-score multivalue cluster-equivalence evidence while reporting only direct whole-service window energy.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_decode_score_multivalue_service_activity_power",
+      "comparison_role": "strict_c2_service_activity_power_gate",
+      "paired_baseline_item_id": "l1_decoder_attention_decode_score_multivalue_service_c2_p128_b4_q4_rl2_rr_pnr_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1_r1",
+        "l1_decoder_attention_decode_score_multivalue_service_c2_p128_b4_q4_rl2_rr_pnr_v1",
+        "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "record_strict_c2_composed_service_activity_power",
+        "reason": "Require merged/materialized integrated-service r1, composed c2 PNR, and shared-score multivalue cluster-equivalence evidence before dispatch; then measure only direct routed whole-service window energy at 10 ns, preserve exact inherited precision, validate c2_p128_b4_rr cycle 8863 and hashes before physical power build, require complete relevant FakeRAM macro-class annotation, and withhold total-token energy."
+      },
+      "status": "pending_implementation_merge",
+      "notes": "This request remains dependency-gated and is not ready for normal dispatch. As of Sunday, July 26, 2026, the integrated-service r1 JSON and the c2 composed-service metrics row are not both materialized in the repository checkout, and both must merge/materialize before dispatch even though the shared-score multivalue cluster-equivalence JSON path is already the same repo path used by related audits."
+    }
+  ],
+  "baseline_refs": [
+    "runs/designs/npu_blocks/attention_decode_score_multivalue_service_c2_p128_b4_q4_rl2_rr/config.json",
+    "runs/designs/npu_blocks/attention_decode_score_multivalue_service_c2_p128_b4_q4_rl2_rr/metrics.csv",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_integrated_service__l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1_r1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_cluster_equivalence__l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1.json",
+    "docs/proposals/prop_l1_decoder_attention_decode_score_multivalue_service_pnr_v1/proposal.json",
+    "docs/proposals/prop_l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1/proposal.json",
+    "docs/proposals/prop_decoder_attention_decode_score_multivalue_cluster_llama7b_v1/proposal.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/audit_attention_decode_score_multivalue_service_activity_power.py",
+    "tests/test_attention_decode_score_multivalue_service_activity_power.py",
+    "control_plane/control_plane/services/l2_task_generator.py"
+  ],
+  "remaining_abstractions_after_this_step": [
+    "This gate measures only direct routed whole-service window energy and is not a total-token energy claim.",
+    "FakeRAM power still uses proxy Nangate45 macro views rather than SRAM compiler signoff.",
+    "Service-fabric dynamic energy outside the direct service window remains excluded.",
+    "NoC composition, HBM service, and broader memory-system closure remain open.",
+    "The exact integer precision contract is inherited and not re-audited here."
+  ]
+}

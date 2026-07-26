@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate a deterministic c1 integrated-service VCD and portable activity manifest."""
+"""Generate a deterministic c1/c2 integrated-service VCD and portable activity manifest."""
 
 from __future__ import annotations
 
@@ -30,6 +30,15 @@ _OUTPUT_SERVICE_MANIFEST_NAME = "attention_decode_score_multivalue_service_manif
 _OUTPUT_MACRO_MANIFEST_NAME = "macro_manifest.json"
 _VALUE_MODEL_PATH = REPO_ROOT / "npu/sim/rtl/fakeram45_64x32_model.sv"
 _C1_CASE = next(case for case in probe.DEFAULT_CASES if str(case["case_id"]) == "c1_p128_b4_rr")
+_SUPPORTED_CASE_IDS = ("c1_p128_b4_rr", "c2_p128_b4_rr")
+_SUPPORTED_CASES = {
+    str(case["case_id"]): json.loads(json.dumps(case))
+    for case in probe.DEFAULT_CASES
+    if str(case["case_id"]) in _SUPPORTED_CASE_IDS
+}
+_SUPPORTED_CASES_BY_CLUSTER_COUNT = {
+    int(case["cluster_count"]): dict(case) for case in _SUPPORTED_CASES.values()
+}
 _REQUIRED_SERVICE_FIELDS = {
     "cluster_count": int(_C1_CASE["cluster_count"]),
     "max_blocks": int(probe._workload_contract()["max_blocks"]),
@@ -44,6 +53,39 @@ _REQUIRED_SERVICE_FIELDS = {
     "score_scale_lanes_per_cycle": 1,
     "value_memory_backend": "macro_banked_4x16x64x32",
 }
+
+
+def _required_service_fields(case: JsonDict) -> JsonDict:
+    return {
+        "cluster_count": int(case["cluster_count"]),
+        "max_blocks": int(probe._workload_contract()["max_blocks"]),
+        "packet_w": int(case["packet_w"]),
+        "banks": int(case["banks"]),
+        "req_queue_depth": int(case["req_queue_depth"]),
+        "resp_queue_depth": int(case["resp_queue_depth"]),
+        "bank_queue_depth": int(case["bank_queue_depth"]),
+        "read_latency": int(case["read_latency"]),
+        "arb_mode": str(case["arb_mode"]),
+        "locality_burst_max": int(case["locality_burst_max"]),
+        "score_scale_lanes_per_cycle": 1,
+        "value_memory_backend": "macro_banked_4x16x64x32",
+    }
+
+
+def _supported_case(*, case_id: str | None = None, cluster_count: int | None = None) -> JsonDict:
+    if case_id is not None:
+        case = _SUPPORTED_CASES.get(str(case_id).strip())
+        if case is None:
+            raise ValueError(f"unsupported case_id: {case_id}")
+        return dict(case)
+    if cluster_count is None:
+        raise ValueError("case selection requires case_id or cluster_count")
+    case = _SUPPORTED_CASES_BY_CLUSTER_COUNT.get(int(cluster_count))
+    if case is None:
+        raise ValueError(
+            f"unsupported cluster_count {cluster_count}; expected one of {sorted(_SUPPORTED_CASES_BY_CLUSTER_COUNT)}"
+        )
+    return dict(case)
 
 
 def _load(path: Path) -> JsonDict:
@@ -79,20 +121,38 @@ def _normalize_vcd(path: Path) -> None:
     tmp_path.replace(path)
 
 
-def _normalize_config(config: JsonDict) -> JsonDict:
+def _normalize_config_with_case(
+    config: JsonDict,
+    *,
+    case_id: str | None = None,
+) -> tuple[JsonDict, JsonDict]:
     top_name = str(config.get("top_name") or "").strip()
     if not top_name:
         raise ValueError("config requires non-empty top_name")
     body = config.get("attention_decode_score_multivalue_service")
     if not isinstance(body, dict):
         raise ValueError("config requires attention_decode_score_multivalue_service object")
+    cluster_count = int(body.get("cluster_count", 0))
+    case = _supported_case(case_id=case_id, cluster_count=cluster_count)
     normalized_body: JsonDict = {}
-    for key, expected in _REQUIRED_SERVICE_FIELDS.items():
+    for key, expected in _required_service_fields(case).items():
         value = body.get(key, expected)
         if value != expected:
             raise ValueError(f"attention_decode_score_multivalue_service.{key} must be {expected!r}")
         normalized_body[key] = expected
-    return {"top_name": top_name, "attention_decode_score_multivalue_service": normalized_body}
+    return {"top_name": top_name, "attention_decode_score_multivalue_service": normalized_body}, case
+
+
+def _normalize_config(config: JsonDict) -> JsonDict:
+    normalized, _ = _normalize_config_with_case(config)
+    return normalized
+
+
+def _scaled_expected_counts(workload_contract: JsonDict, *, cluster_count: int) -> JsonDict:
+    expected_counts = dict(probe._workload_expected_counts(workload_contract))
+    for key in ("score_row_count", "request_count", "wide_response_count", "result_count"):
+        expected_counts[key] = int(expected_counts[key]) * int(cluster_count)
+    return expected_counts
 
 
 def _compile_and_run(*, sources: list[Path], timeout: int = 240) -> str:
@@ -112,7 +172,13 @@ def _compile_and_run(*, sources: list[Path], timeout: int = 240) -> str:
         return run.stdout
 
 
-def _run_macro_integrated(config: JsonDict, out_dir: Path, *, clock_period_ns: float) -> JsonDict:
+def _run_macro_integrated(
+    config: JsonDict,
+    out_dir: Path,
+    *,
+    case: JsonDict,
+    clock_period_ns: float,
+) -> JsonDict:
     values = probe._shared_value_matrices()
     with tempfile.TemporaryDirectory(prefix="multivalue-service-activity-") as tmp_text:
         tmp = Path(tmp_text)
@@ -129,7 +195,7 @@ def _run_macro_integrated(config: JsonDict, out_dir: Path, *, clock_period_ns: f
             raise RuntimeError("generated RTL is missing fakeram45_64x32 instances")
         tb_text = probe._integrated_testbench(
             top_name=str(config["top_name"]),
-            cluster_count=int(_C1_CASE["cluster_count"]),
+            cluster_count=int(case["cluster_count"]),
             values=values,
             vcd_path=str((out_dir / _OUTPUT_VCD_NAME).resolve()),
             vcd_dumpvars=["dut"],
@@ -268,16 +334,27 @@ def _assert_portable_manifest_strings(payload: object) -> None:
         raise RuntimeError("portable manifest field contains absolute evaluator path")
 
 
-def generate_activity(config: JsonDict, out_dir: Path, *, clock_period_ns: float = _DEFAULT_CLOCK_PERIOD_NS) -> JsonDict:
+def generate_activity(
+    config: JsonDict,
+    out_dir: Path,
+    *,
+    clock_period_ns: float = _DEFAULT_CLOCK_PERIOD_NS,
+    case_id: str | None = None,
+) -> JsonDict:
     if clock_period_ns <= 0.0:
         raise ValueError("clock_period_ns must be > 0")
-    normalized_config = _normalize_config(config)
+    normalized_config, case = _normalize_config_with_case(config, case_id=case_id)
     out_dir.mkdir(parents=True, exist_ok=True)
     values = probe._shared_value_matrices()
     workload_contract = probe._workload_contract()
-    expected_counts = probe._workload_expected_counts(workload_contract)
-    reference = probe._run_integrated(dict(_C1_CASE), values)
-    macro = _run_macro_integrated(normalized_config, out_dir, clock_period_ns=clock_period_ns)
+    expected_counts = _scaled_expected_counts(workload_contract, cluster_count=int(case["cluster_count"]))
+    reference = probe._run_integrated(dict(case), values)
+    macro = _run_macro_integrated(
+        normalized_config,
+        out_dir,
+        case=case,
+        clock_period_ns=clock_period_ns,
+    )
     _assert_reference_equivalence(reference, macro)
 
     request_rows = probe._canonical_requests(macro["request_rows"])
@@ -292,9 +369,9 @@ def generate_activity(config: JsonDict, out_dir: Path, *, clock_period_ns: float
         raise RuntimeError("generated activity wide-response rows do not match the workload contract")
     if len(result_rows) != int(expected_counts["result_count"]):
         raise RuntimeError("generated activity result rows do not match the workload contract")
-    request_banks = sorted({int(row["addr"]) % int(_C1_CASE["banks"]) for row in request_rows})
-    preload_banks = sorted({int(entry["addr"]) % int(_C1_CASE["banks"]) for entry in probe._preload_entries(values)})
-    inactive_banks = sorted(set(range(int(_C1_CASE["banks"]))) - set(request_banks))
+    request_banks = sorted({int(row["addr"]) % int(case["banks"]) for row in request_rows})
+    preload_banks = sorted({int(entry["addr"]) % int(case["banks"]) for entry in probe._preload_entries(values)})
+    inactive_banks = sorted(set(range(int(case["banks"]))) - set(request_banks))
     if "fakeram45_2048x39" not in (out_dir / _OUTPUT_TOP_NAME).read_text(encoding="utf-8"):
         raise RuntimeError("generated top.v no longer contains fakeram45_2048x39")
     if "fakeram45_64x32" not in (out_dir / _OUTPUT_TOP_NAME).read_text(encoding="utf-8"):
@@ -304,7 +381,7 @@ def generate_activity(config: JsonDict, out_dir: Path, *, clock_period_ns: float
         "version": 1,
         "model": "attention_decode_score_multivalue_service_activity_v1",
         "generator": "npu/eval/generate_attention_decode_score_multivalue_service_activity.py",
-        "case_id": str(_C1_CASE["case_id"]),
+        "case_id": str(case["case_id"]),
         "workload_contract": workload_contract,
         "artifacts": {
             "config_json": _OUTPUT_CONFIG_NAME,
@@ -314,7 +391,7 @@ def generate_activity(config: JsonDict, out_dir: Path, *, clock_period_ns: float
             "vcd": _OUTPUT_VCD_NAME,
         },
         "hashes": {
-            "case_sha256": _hash_json(_C1_CASE),
+            "case_sha256": _hash_json(case),
             "config_sha256": _hash_json(normalized_config),
             "top_sha256": macro["top_sha256"],
             "vcd_sha256": _sha256_file(out_dir / _OUTPUT_VCD_NAME),
@@ -347,22 +424,31 @@ def generate_activity(config: JsonDict, out_dir: Path, *, clock_period_ns: float
         "compiled_behavioral_models": ["fakeram45_2048x39", "fakeram45_64x32"],
         "scope": {
             "exercised": [
-                "one deterministic c1_p128_b4_rr integrated-service command",
+                f"one deterministic {case['case_id']} integrated-service command",
                 "macro-backed value-memory backend macro_banked_4x16x64x32",
                 "bounded DUT VCD from reset release through command completion",
                 "active workload contract is 3 blocks x 8 context tokens = 24 active context tokens at value_dim=128",
-                "dynamic switching observed only on banks 0, 1, and 2 under the exact three-block reference workload",
+                (
+                    "dynamic switching observed on addressed value-memory banks only under the exact "
+                    "three-block reference workload"
+                ),
             ],
             "remaining": [
                 "no power audit, SAIF extraction, or post-route activity processing",
-                "no non-c1 cases, no multi-cluster cases, and no alternate arbitration points",
-                "c1 dynamic power from this exact workload does not cover bank3 switching while bank3 leakage remains present in total composed PPA/power",
+                (
+                    "no non-c1/c2 cases, no alternate arbitration points, and no broader sequence "
+                    "composition outside this exact workload"
+                ),
+                (
+                    f"{case['case_id']} dynamic power from this exact workload may not cover every bank's "
+                    "switching while leakage remains present in total composed PPA/power"
+                ),
             ],
         },
     }
-    if manifest["value_bank_coverage"]["addressed_banks_over_trace"] != [0, 1, 2]:
+    if str(case["case_id"]) == "c1_p128_b4_rr" and manifest["value_bank_coverage"]["addressed_banks_over_trace"] != [0, 1, 2]:
         raise RuntimeError("exact c1 workload must address only banks 0, 1, and 2 over the trace")
-    if manifest["value_bank_coverage"]["inactive_banks"] != [3]:
+    if str(case["case_id"]) == "c1_p128_b4_rr" and manifest["value_bank_coverage"]["inactive_banks"] != [3]:
         raise RuntimeError("exact c1 workload must leave bank3 inactive")
     _assert_portable_manifest_strings(manifest)
     (out_dir / _OUTPUT_MANIFEST_NAME).write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -374,8 +460,14 @@ def main() -> int:
     parser.add_argument("--config", type=Path, required=True)
     parser.add_argument("--out-dir", type=Path, required=True)
     parser.add_argument("--clock-period-ns", type=float, default=_DEFAULT_CLOCK_PERIOD_NS)
+    parser.add_argument("--case-id", type=str)
     args = parser.parse_args()
-    generate_activity(_load(args.config), args.out_dir, clock_period_ns=args.clock_period_ns)
+    generate_activity(
+        _load(args.config),
+        args.out_dir,
+        clock_period_ns=args.clock_period_ns,
+        case_id=args.case_id,
+    )
     return 0
 
 

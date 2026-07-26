@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import math
 from pathlib import Path
 import sys
 
@@ -108,7 +109,7 @@ def _prior_frontier(tmp_path: Path, *, sequence_length: int = 131072) -> Path:
             "service_calibrated_full_context_cycles_per_wave": 440,
             "service_calibration_case_id": "c2_p128_b4_rr",
             "service_calibration_microkernel_no_stall_completion_cycle": 128,
-            "service_calibration_microkernel_integrated_completion_cycle": 176,
+            "service_calibration_microkernel_integrated_completion_cycle": 8863,
             "dense_qkv_tile_count": 3,
             "dense_qkv_useful_parallelism_limit": 640,
             "qkv_cycles": 683,
@@ -192,6 +193,13 @@ def _service_activity_power(tmp_path: Path) -> Path:
             "decision": "activity_backed_service_power_measured",
             "promotion_gate_pass": True,
             "precision_status": "unchanged_integer_contract_from_merged_cluster_equivalence_and_integrated_service",
+            "selection_contract": {
+                "case_id": "c1_p128_b4_rr",
+                "cluster_count": 1,
+                "required_flow_variant": "decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_3000_v1",
+                "clock_period_ns": 10.0,
+                "status": "exactly_one_status_ok_timing_feasible_row_required",
+            },
             "best_candidate_id": "multivalue_service_activity_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_3000_v1",
             "best": {
                 "candidate_id": "multivalue_service_activity_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_3000_v1",
@@ -226,6 +234,12 @@ def _service_activity_power(tmp_path: Path) -> Path:
                     },
                 },
                 "authoritative_composed_c1_total_ppa": {
+                    "critical_path_ns": 9.2,
+                    "instance_area_um2": 3_000_000,
+                    "die_area": 9_000_000,
+                    "total_power_mw": 12.75,
+                },
+                "authoritative_composed_total_ppa": {
                     "critical_path_ns": 9.2,
                     "instance_area_um2": 3_000_000,
                     "die_area": 9_000_000,
@@ -297,6 +311,138 @@ def _service_activity_power(tmp_path: Path) -> Path:
                 "statement": (
                     "No artificial activity was injected. Bank3 may remain dynamically inactive in this exact c1 "
                     "workload; it is not required to toggle, while leakage remains part of routed power."
+                ),
+            },
+        },
+    )
+
+
+def _service_activity_power_c2(tmp_path: Path) -> Path:
+    return _write(
+        tmp_path / "service_activity_power_c2.json",
+        {
+            "model": "decoder_attention_decode_score_multivalue_service_activity_power_v1",
+            "decision": "activity_backed_service_power_measured",
+            "promotion_gate_pass": True,
+            "precision_status": "unchanged_integer_contract_from_merged_cluster_equivalence_and_integrated_service",
+            "selection_contract": {
+                "case_id": "c2_p128_b4_rr",
+                "cluster_count": 2,
+                "required_flow_variant": "decode_score_multivalue_service_c2_p128_b4_q4_rl2_rr_3700_v1",
+                "clock_period_ns": 10.0,
+                "status": "exactly_one_status_ok_timing_feasible_row_required",
+            },
+            "best_candidate_id": "multivalue_service_activity_decode_score_multivalue_service_c2_p128_b4_q4_rl2_rr_3700_v1",
+            "best": {
+                "candidate_id": "multivalue_service_activity_decode_score_multivalue_service_c2_p128_b4_q4_rl2_rr_3700_v1",
+                "flow_variant": "decode_score_multivalue_service_c2_p128_b4_q4_rl2_rr_3700_v1",
+                "status": "activity_backed",
+                "promotion_gate_pass": True,
+                "ppa_metric": {
+                    "design": "attention_decode_score_multivalue_service_c2_p128_b4_q4_rl2_rr",
+                    "platform": "nangate45",
+                    "param_hash": "p2",
+                    "config_hash": "cfg2",
+                    "tag": "die3700",
+                    "status": "ok",
+                    "critical_path_ns": "9.7",
+                    "instance_area_um2": "4500000",
+                    "params_json": json.dumps(
+                        {
+                            "CLOCK_PERIOD": 10,
+                            "FLOW_VARIANT": "decode_score_multivalue_service_c2_p128_b4_q4_rl2_rr_3700_v1",
+                        }
+                    ),
+                },
+                "component_service_window_energy": {
+                    "label": "component_service_window_energy",
+                    "is_total_token_energy": False,
+                    "cycle_count": 8863,
+                    "duration_s": 8.863e-5,
+                    "energy_j": {
+                        "dynamic": 1.0e-6,
+                        "leakage": 2.0e-7,
+                        "dynamic_plus_leakage": 1.2e-6,
+                    },
+                },
+                "authoritative_composed_c2_total_ppa": {
+                    "critical_path_ns": 9.7,
+                    "instance_area_um2": 4_500_000,
+                    "die_area": 13_690_000,
+                    "total_power_mw": 18.1,
+                },
+                "authoritative_composed_total_ppa": {
+                    "critical_path_ns": 9.7,
+                    "instance_area_um2": 4_500_000,
+                    "die_area": 13_690_000,
+                    "total_power_mw": 18.1,
+                },
+            },
+            "dependency_contract": {
+                "cluster_equivalence": {
+                    "equivalence_pass": True,
+                    "decision": "decode_score_multivalue_cluster_equivalence_pass",
+                    "score_tensor_hash": "score-hash",
+                    "final_tensor_hash": "final-hash",
+                },
+                "integrated_service_c2": {
+                    "case_id": "c2_p128_b4_rr",
+                    "config": {
+                        "cluster_count": 2,
+                        "packet_w": 128,
+                        "banks": 4,
+                        "req_queue_depth": 4,
+                        "resp_queue_depth": 4,
+                        "bank_queue_depth": 4,
+                        "read_latency": 2,
+                        "arb_mode": "round_robin",
+                        "locality_burst_max": 2,
+                    },
+                    "workload_contract": _workload_contract(),
+                    "decision": "pass",
+                    "exact_match": True,
+                    "no_protocol_errors": True,
+                    "no_drop_duplicate_deadlock_timeout": True,
+                    "cycle_bound_ok": True,
+                    "hashes": {
+                        "score_hash": "integrated-c2-score-hash",
+                        "final_hash": "integrated-c2-final-hash",
+                        "request_hash": "integrated-c2-request-hash",
+                        "wide_response_matrix_hash": "integrated-c2-wide-hash",
+                    },
+                },
+            },
+            "activity_contract": {
+                "clock_period_ns": 10.0,
+                "cycle_count": 8863,
+                "workload_contract": _workload_contract(),
+            },
+            "macro_manifest_contract": {
+                "counts": {"fakeram45_2048x39": 112, "fakeram45_64x32": 64},
+            },
+            "macro_activity_contract": {
+                "profile": "multivalue_service_c2_v1",
+                "total_assignment_count": 14800,
+                "macro_classes": {
+                    "fakeram45_2048x39": {
+                        "instance_scope_prefix": "score_bank",
+                        "instance_count": 112,
+                        "pins_per_instance": 91,
+                        "assignment_count": 10192,
+                    },
+                    "fakeram45_64x32": {
+                        "instance_scope_prefix": "gen_value_macro_backend",
+                        "instance_count": 64,
+                        "pins_per_instance": 72,
+                        "assignment_count": 4608,
+                    },
+                },
+            },
+            "bank3_dynamic_inactivity": {
+                "inactive_banks": [3],
+                "statement": (
+                    "No artificial activity was injected. Banks [3] may remain dynamically inactive in this exact "
+                    "c2_p128_b4_rr workload; they are not required to toggle, while leakage remains part of routed power."
                 ),
             },
         },
@@ -493,3 +639,68 @@ def test_build_report_keeps_c2_blocked_unpromoted(tmp_path: Path) -> None:
     assert blocked[0]["promoted"] is False
     assert blocked[0]["rankable_as_measured"] is False
     assert "pending_equivalent_composed_physical_activity_evidence" in blocked[0]["status"]
+    assert "best_throughput_candidate" not in payload
+    assert "pareto_rows" not in payload
+
+
+def test_build_report_promotes_c2_with_whole_service_window_accounting(tmp_path: Path) -> None:
+    prior = _prior_frontier(tmp_path)
+    service_c1 = _service_activity_power(tmp_path)
+    service_c2 = _service_activity_power_c2(tmp_path)
+
+    payload = build_report(
+        prior_cluster_frontier_json=prior,
+        service_activity_power_jsons=[service_c1, service_c2],
+    )
+
+    assert payload["decision"] == "strict_c1_c2_measured_service_anchors_promoted_c3plus_blocked"
+    assert len(payload["promoted_rows"]) == 2
+    assert payload["best_throughput_candidate"]["cluster_count"] == 2
+    assert {row["cluster_count"] for row in payload["pareto_rows"]} == {1, 2}
+    c2_row = next(row for row in payload["promoted_rows"] if row["cluster_count"] == 2)
+    assert c2_row["service_calibration_case_id"] == "c2_p128_b4_rr"
+    assert c2_row["service_activity_microkernel_cycle_count"] == 8863
+    assert c2_row["service_window_energy_accounting"] == (
+        "whole_measured_service_window_scaled_by_measured_windows_and_service_waves"
+    )
+    assert c2_row["full_context_service_wave_count"] == 16 * 32
+    assert c2_row["service_component_dynamic_energy_mj_per_token"] == pytest.approx(2796.544)
+    assert c2_row["service_component_leakage_energy_mj_per_token"] == pytest.approx(0.00508360600248223)
+    assert c2_row["service_component_energy_mj_per_token"] == pytest.approx(2796.5490836060025)
+    assert "full_context_dynamic_energy_j_per_head_command" not in c2_row
+    assert "full_context_leakage_energy_j_per_head_command" not in c2_row
+    c1_row = next(row for row in payload["promoted_rows"] if row["cluster_count"] == 1)
+    assert "full_context_dynamic_energy_j_per_head_command" in c1_row
+    assert "full_context_leakage_energy_j_per_head_command" in c1_row
+
+
+def test_build_report_c2_regression_guard_rejects_head_count_double_count(tmp_path: Path) -> None:
+    prior = _prior_frontier(tmp_path)
+    service_c1 = _service_activity_power(tmp_path)
+    service_c2 = _service_activity_power_c2(tmp_path)
+
+    payload = build_report(
+        prior_cluster_frontier_json=prior,
+        service_activity_power_jsons=[service_c1, service_c2],
+    )
+
+    c2_row = next(row for row in payload["promoted_rows"] if row["cluster_count"] == 2)
+    wrong_dynamic_mj = 1.0e-6 * math.ceil(131072 / 24) * 32 * 32 * 1.0e3
+    assert c2_row["service_component_dynamic_energy_mj_per_token"] != pytest.approx(wrong_dynamic_mj)
+
+
+def test_build_report_rejects_c2_cycle_mismatch(tmp_path: Path) -> None:
+    prior = _prior_frontier(tmp_path)
+    service_c1 = _service_activity_power(tmp_path)
+    service_c2 = _service_activity_power_c2(tmp_path)
+    payload = json.loads(service_c2.read_text(encoding="utf-8"))
+    payload["activity_contract"]["cycle_count"] = 8864
+    payload["best"]["component_service_window_energy"]["cycle_count"] = 8864
+    payload["best"]["component_service_window_energy"]["duration_s"] = 8.864e-5
+    service_c2.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="service activity cycle_count"):
+        build_report(
+            prior_cluster_frontier_json=prior,
+            service_activity_power_jsons=[service_c1, service_c2],
+        )
