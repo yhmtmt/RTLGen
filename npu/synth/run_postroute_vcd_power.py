@@ -87,6 +87,7 @@ def _load_macro_activity(
     *,
     vcd_sha256: str,
     phase_vcd_basename: str,
+    allow_empty: bool = False,
 ) -> list[JsonDict]:
     raw = _load_json(path)
     version = raw.get("version")
@@ -132,7 +133,11 @@ def _load_macro_activity(
             f"macro activity active range invalid for {path}: active_end_tick must be > active_start_tick"
         )
     pins = raw.get("pins")
-    if not isinstance(pins, list) or not pins:
+    if not isinstance(pins, list):
+        raise ValueError(f"macro activity sidecar must contain non-empty pins[]: {path}")
+    if not pins:
+        if allow_empty:
+            return []
         raise ValueError(f"macro activity sidecar must contain non-empty pins[]: {path}")
     seen: set[str] = set()
     rows: list[JsonDict] = []
@@ -309,30 +314,40 @@ def _phase_rows(manifest: JsonDict, manifest_path: Path) -> list[JsonDict]:
                 f"phase {phase} VCD hash mismatch: expected {expected_hash}, got {actual_hash}"
             )
         vcd_basename = vcd.name
+        requires_macro_activity = bool(
+            raw.get("requires_macro_activity", phase in {"score_fill", "replay_value"})
+        )
         macro_activity_value = str(
             raw.get("macro_activity", raw.get("macro_activity_path", ""))
         ).strip()
-        if not macro_activity_value:
-            raise ValueError(f"phase {phase} is missing macro_activity")
-        macro_activity = Path(macro_activity_value)
-        if not macro_activity.is_absolute():
-            macro_activity = (manifest_path.parent / macro_activity).resolve()
-        if not macro_activity.is_file():
-            raise FileNotFoundError(f"phase macro activity sidecar does not exist: {macro_activity}")
-        expected_macro_activity_hash = str(raw.get("macro_activity_sha256", "")).strip().lower()
-        if not expected_macro_activity_hash:
-            raise ValueError(f"phase {phase} requires macro_activity_sha256")
-        macro_activity_hash = _sha256(macro_activity)
-        if expected_macro_activity_hash != macro_activity_hash:
-            raise ValueError(
-                f"phase {phase} macro activity hash mismatch: "
-                f"expected {expected_macro_activity_hash}, got {macro_activity_hash}"
+        macro_activity_hash = ""
+        macro_activity_rows: list[JsonDict] = []
+        macro_activity: Path | None = None
+        if macro_activity_value:
+            macro_activity = Path(macro_activity_value)
+            if not macro_activity.is_absolute():
+                macro_activity = (manifest_path.parent / macro_activity).resolve()
+            if not macro_activity.is_file():
+                raise FileNotFoundError(
+                    f"phase macro activity sidecar does not exist: {macro_activity}"
+                )
+            expected_macro_activity_hash = str(raw.get("macro_activity_sha256", "")).strip().lower()
+            if not expected_macro_activity_hash:
+                raise ValueError(f"phase {phase} requires macro_activity_sha256")
+            macro_activity_hash = _sha256(macro_activity)
+            if expected_macro_activity_hash != macro_activity_hash:
+                raise ValueError(
+                    f"phase {phase} macro activity hash mismatch: "
+                    f"expected {expected_macro_activity_hash}, got {macro_activity_hash}"
+                )
+            macro_activity_rows = _load_macro_activity(
+                macro_activity,
+                vcd_sha256=actual_hash,
+                phase_vcd_basename=vcd_basename,
+                allow_empty=not requires_macro_activity,
             )
-        macro_activity_rows = _load_macro_activity(
-            macro_activity,
-            vcd_sha256=actual_hash,
-            phase_vcd_basename=vcd_basename,
-        )
+        elif requires_macro_activity:
+            raise ValueError(f"phase {phase} is missing macro_activity")
         sequential_activity_value = str(
             raw.get("sequential_register_activity", raw.get("sequential_register_activity_path", ""))
         ).strip()
@@ -384,7 +399,7 @@ def _phase_rows(manifest: JsonDict, manifest_path: Path) -> list[JsonDict]:
                 "_resolved_vcd": str(vcd),
                 "vcd_sha256": actual_hash,
                 "macro_activity": macro_activity_value,
-                "_resolved_macro_activity": str(macro_activity),
+                "_resolved_macro_activity": str(macro_activity) if macro_activity is not None else "",
                 "macro_activity_sha256": macro_activity_hash,
                 "_macro_activity_rows": macro_activity_rows,
                 "macro_activity_assignment_count": len(macro_activity_rows),
@@ -395,9 +410,7 @@ def _phase_rows(manifest: JsonDict, manifest_path: Path) -> list[JsonDict]:
                 "sequential_register_activity_assignment_count": len(sequential_activity_rows),
                 "measured_cycles": measured_cycles,
                 "full_context_cycles": full_context_cycles,
-                "requires_macro_activity": bool(
-                    raw.get("requires_macro_activity", phase in {"score_fill", "replay_value"})
-                ),
+                "requires_macro_activity": requires_macro_activity,
             }
         )
     return rows

@@ -1,0 +1,74 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_score32_schedule_wrapper_activity_integrated_frontier_ranking_llama7b_v1",
+  "created_utc": "2026-07-26T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Score32 schedule-wrapper activity-integrated frontier ranking",
+  "abstraction_layer": "decoder_attention_score32_integrated_frontier_ranking",
+  "hypothesis": "The score32 schedule-wrapper row should keep the current latency/area closure but replace its compute-energy term with the measured whole-wrapper 986-cycle service-window energy before being reranked against exact-FP16 and mixed-int8 artifacts.",
+  "direct_comparison": {
+    "primary_question": "Does substituting measured whole-wrapper activity energy into the score32 schedule-wrapper row change the current Llama7B precision-safe frontier decision?",
+    "include": [
+      "consume the schedule-wrapper recost for latency and area",
+      "replace score32 compute energy with measured wrapper service-window energy times 428 replicas, 8 tile waves, and 32 layers",
+      "keep HBM energy unchanged",
+      "preserve score32 quality/equivalence gates",
+      "report throughput, area, energy, precision, and Pareto status",
+      "retain the residual 343 per-layer cycles outside the measured wrapper activity term with qkv=192, reduction=141, kv_write=10"
+    ],
+    "exclude": [
+      "new OpenROAD PPA",
+      "new generation-quality evaluation",
+      "new HBM controller RTL",
+      "claims that the residual 343 per-layer cycles were measured in the wrapper activity trace"
+    ]
+  },
+  "expected_benefit": [
+    "replaces the older recost-only compute-energy term with direct routed wrapper activity evidence",
+    "keeps the Llama7B schedule-wrapper row synchronized with the stricter postroute audit",
+    "preserves immutable history by creating a new ranking item instead of mutating the merged v1 schedule-wrapper rerank"
+  ],
+  "risks": [
+    "HBM energy remains reused from the existing score32 HBM closure",
+    "the wrapper activity term intentionally excludes the residual 343 cycles per layer",
+    "the ranking remains an evidence audit rather than a new physical implementation"
+  ],
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_score32_schedule_wrapper_activity_integrated_frontier_ranking_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Rerank the score32 schedule-wrapper row using measured wrapper activity energy and existing schedule-wrapper latency/area evidence.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_score32_integrated_frontier_ranking",
+      "comparison_role": "score32_schedule_wrapper_activity_integrated_frontier_ranking",
+      "paired_baseline_item_id": "l2_decoder_attention_score32_schedule_wrapper_integrated_frontier_ranking_llama7b_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_score32_schedule_wrapper_postroute_activity_power_llama7b_v1",
+        "l2_decoder_attention_composed_datapath_score32_exp_lut_div_schedule_wrapper_recost_llama7b_v1",
+        "l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1",
+        "l2_decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality_llama7b_v1",
+        "l2_decoder_attention_measured_compute_energy_closure_llama7b_v1",
+        "l2_decoder_attention_mixed_int8_energy_closure_llama7b_v1_r2",
+        "l2_decoder_attention_integrated_energy_closure_llama7b_v1_r2"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "record_schedule_wrapper_activity_integrated_frontier_ranking",
+        "reason": "The result should show whether direct routed wrapper activity energy changes the current score32 Llama7B frontier recommendation."
+      },
+      "status": "pending"
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_schedule_wrapper_postroute_activity_power__l2_decoder_attention_score32_schedule_wrapper_postroute_activity_power_llama7b_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_score32_exp_lut_div_schedule_wrapper_recost_llama7b_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exp_lut_hbm_dram_service_closure__l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/audit_llm_decoder_attention_score32_integrated_frontier_ranking.py",
+    "docs/proposals/prop_l2_decoder_attention_score32_schedule_wrapper_postroute_activity_power_llama7b_v1/proposal.json",
+    "docs/proposals/prop_l2_decoder_attention_score32_schedule_wrapper_integrated_frontier_ranking_llama7b_v1/proposal.json"
+  ]
+}
