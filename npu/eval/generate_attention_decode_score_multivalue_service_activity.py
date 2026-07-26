@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate a deterministic c1 integrated-service VCD and portable activity manifest."""
+"""Generate a deterministic c1/c2 integrated-service VCD and portable activity manifest."""
 
 from __future__ import annotations
 
@@ -146,6 +146,13 @@ def _normalize_config_with_case(
 def _normalize_config(config: JsonDict) -> JsonDict:
     normalized, _ = _normalize_config_with_case(config)
     return normalized
+
+
+def _scaled_expected_counts(workload_contract: JsonDict, *, cluster_count: int) -> JsonDict:
+    expected_counts = dict(probe._workload_expected_counts(workload_contract))
+    for key in ("score_row_count", "request_count", "wide_response_count", "result_count"):
+        expected_counts[key] = int(expected_counts[key]) * int(cluster_count)
+    return expected_counts
 
 
 def _compile_and_run(*, sources: list[Path], timeout: int = 240) -> str:
@@ -340,7 +347,7 @@ def generate_activity(
     out_dir.mkdir(parents=True, exist_ok=True)
     values = probe._shared_value_matrices()
     workload_contract = probe._workload_contract()
-    expected_counts = probe._workload_expected_counts(workload_contract)
+    expected_counts = _scaled_expected_counts(workload_contract, cluster_count=int(case["cluster_count"]))
     reference = probe._run_integrated(dict(case), values)
     macro = _run_macro_integrated(
         normalized_config,

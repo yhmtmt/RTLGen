@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Audit strict c1 routed power for the multivalue integrated service."""
+"""Audit strict c1/c2 routed power for the multivalue integrated service."""
 
 from __future__ import annotations
 
@@ -46,7 +46,6 @@ _SCOPE = "tb/dut"
 _EXPECTED_PLATFORM = "nangate45"
 _SCORE_PINS_PER_MACRO = 11 + 39 + 39 + 1 + 1
 _VALUE_PINS_PER_MACRO = 6 + 32 + 32 + 1 + 1
-_EXPECTED_MACRO_ACTIVITY_PROFILE = "multivalue_service_c1_v1"
 _POSTROUTE_MANIFEST_NAME = "attention_decode_score_multivalue_service_postroute_power_manifest.json"
 _POSTROUTE_MACRO_ACTIVITY_NAME = (
     "attention_decode_score_multivalue_service_fakeram_macro_pin_vcd_activity_v1.json"
@@ -55,7 +54,8 @@ _POSTROUTE_SEQUENTIAL_ACTIVITY_NAME = (
     "attention_decode_score_multivalue_service_sequential_register_vcd_activity_v1.json"
 )
 _SCORE_ACTIVITY_RE = re.compile(
-    r"^score_bank/u_group_(\d+)_slice_(\d+)/(?:addr_in\[\d+\]|wd_in\[\d+\]|w_mask_in\[\d+\]|we_in|ce_in)$"
+    r"^(?P<instance>(?:[^/]+/)*score_bank/u_group_(\d+)_slice_(\d+))/"
+    r"(?:addr_in\[\d+\]|wd_in\[\d+\]|w_mask_in\[\d+\]|we_in|ce_in)$"
 )
 _VALUE_ACTIVITY_RE = re.compile(
     r"^gen_value_macro_backend/gen_value_bank\[(\d+)\]/gen_value_lane\[(\d+)\]/u_value_mem_lane/"
@@ -102,6 +102,17 @@ _EXPECTED_MACRO_COUNTS = dict(_SERVICE_CASES["c1_p128_b4_rr"].macro_counts)
 
 def _case_label(case_contract: _ServiceCaseContract) -> str:
     return "c1" if case_contract.case_id == "c1_p128_b4_rr" else case_contract.case_id
+
+
+def _macro_activity_profile(case_contract: _ServiceCaseContract) -> str:
+    return f"multivalue_service_{case_contract.case_id.split('_', 1)[0]}_v1"
+
+
+def _scaled_expected_counts(*, cluster_count: int) -> JsonDict:
+    expected_counts = dict(_workload_expected_counts(_expected_workload_contract()))
+    for key in ("request_count", "wide_response_count", "result_count"):
+        expected_counts[key] = int(expected_counts[key]) * int(cluster_count)
+    return expected_counts
 
 
 def _load(path: Path) -> JsonDict:
@@ -249,7 +260,9 @@ def _select_metric(
             row_clock = float(params.get("CLOCK_PERIOD", 0.0))
             critical_path_ns = float(row.get("critical_path_ns") or math.inf)
         except (TypeError, ValueError) as exc:
-            raise ValueError("selected c1 row has invalid CLOCK_PERIOD or critical_path_ns") from exc
+            raise ValueError(
+                f"selected {case_contract.case_id} row has invalid CLOCK_PERIOD or critical_path_ns"
+            ) from exc
         if abs(row_clock - clock_period_ns) > 1e-9:
             raise ValueError(
                 f"selected {case_contract.case_id} row CLOCK_PERIOD mismatch: expected {clock_period_ns:g}, got {row_clock:g}"
@@ -312,7 +325,7 @@ def _validate_integrated_service(
     case_contract: _ServiceCaseContract = _SERVICE_CASES["c1_p128_b4_rr"],
 ) -> JsonDict:
     expected_workload = _expected_workload_contract()
-    expected_counts = _workload_expected_counts(expected_workload)
+    expected_counts = _scaled_expected_counts(cluster_count=case_contract.cluster_count)
     if payload.get("workload_contract") != expected_workload:
         raise ValueError("integrated-service workload contract mismatch")
     cases = payload.get("cases")
@@ -423,7 +436,7 @@ def _validate_generated_activity_manifest(
     case_contract: _ServiceCaseContract = _SERVICE_CASES["c1_p128_b4_rr"],
 ) -> JsonDict:
     expected_workload = _expected_workload_contract()
-    expected_counts = _workload_expected_counts(expected_workload)
+    expected_counts = _scaled_expected_counts(cluster_count=case_contract.cluster_count)
     if str(activity_manifest.get("model") or "").strip() != "attention_decode_score_multivalue_service_activity_v1":
         raise ValueError("generated activity manifest model mismatch")
     if str(activity_manifest.get("case_id") or "").strip() != case_contract.case_id:
@@ -507,6 +520,7 @@ def _validate_service_macro_activity_contract(
     macro_activity: JsonDict,
     *,
     macro_counts: JsonDict,
+    case_contract: _ServiceCaseContract,
 ) -> JsonDict:
     pins = macro_activity.get("pins")
     if not isinstance(pins, list) or not pins:
@@ -525,7 +539,7 @@ def _validate_service_macro_activity_contract(
         score_match = _SCORE_ACTIVITY_RE.fullmatch(full_name)
         if score_match is not None:
             score_pin_count += 1
-            score_instances.add(f"score_bank/u_group_{score_match.group(1)}_slice_{score_match.group(2)}")
+            score_instances.add(str(score_match.group("instance")))
             continue
         value_match = _VALUE_ACTIVITY_RE.fullmatch(full_name)
         if value_match is not None:
@@ -559,7 +573,7 @@ def _validate_service_macro_activity_contract(
     structural_contract = macro_activity.get("structural_macro_contract")
     if not isinstance(structural_contract, dict):
         raise ValueError("service macro activity structural_macro_contract missing")
-    if str(structural_contract.get("profile") or "").strip() != _EXPECTED_MACRO_ACTIVITY_PROFILE:
+    if str(structural_contract.get("profile") or "").strip() != _macro_activity_profile(case_contract):
         raise ValueError("service macro activity structural_macro_contract profile mismatch")
     if int(structural_contract.get("total_assignment_count", 0)) != len(pins):
         raise ValueError("service macro activity total_assignment_count mismatch")
@@ -596,7 +610,7 @@ def _validate_service_macro_activity_contract(
                     f"expected {expected_value!r}, got {row.get(key)!r}"
                 )
     return {
-        "profile": _EXPECTED_MACRO_ACTIVITY_PROFILE,
+        "profile": _macro_activity_profile(case_contract),
         "total_assignment_count": len(pins),
         "macro_classes": expected_classes,
     }
@@ -629,10 +643,13 @@ def _prepare_postroute_power_manifest(
         vcd_path,
         source_vcd_sha256=generated_meta["vcd_sha256"],
         scope=_SCOPE,
+        cluster_count=case_contract.cluster_count,
+        case_id=case_contract.case_id,
     )
     macro_activity_contract = _validate_service_macro_activity_contract(
         macro_activity,
         macro_counts=macro_counts,
+        case_contract=case_contract,
     )
     macro_activity_path = activity_dir / _POSTROUTE_MACRO_ACTIVITY_NAME
     macro_activity_path.write_text(

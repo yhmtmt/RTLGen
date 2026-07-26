@@ -16,6 +16,14 @@ from npu.eval import audit_attention_decode_score_multivalue_service_activity_po
 from npu.eval.probe_attention_decode_score_multivalue_integrated_service import _workload_contract
 
 
+def _scaled_counts(cluster_count: int) -> dict[str, int]:
+    return {
+        "request_count": 48 * int(cluster_count),
+        "wide_response_count": 48 * int(cluster_count),
+        "result_count": 16 * int(cluster_count),
+    }
+
+
 def _config(path: Path, *, cluster_count: int = 1) -> None:
     top_name = (
         "attention_decode_score_multivalue_service_c2_p128_b4_q4_rl2_rr_macro_activity"
@@ -126,6 +134,7 @@ def _integrated_service(
     }
     if not include_counters:
         counters.pop("max_occupancy")
+    counts = _scaled_counts(cluster_count)
     path.write_text(
         json.dumps(
             {
@@ -155,9 +164,9 @@ def _integrated_service(
                             "no_protocol_errors": True,
                             "no_drop_duplicate_deadlock_timeout": True,
                             "cycle_bound_ok": True,
-                            "request_count": 48,
-                            "wide_response_count": 48,
-                            "result_count": 16,
+                            "request_count": counts["request_count"],
+                            "wide_response_count": counts["wide_response_count"],
+                            "result_count": counts["result_count"],
                             "completion_cycle": cycle_count,
                             "score_hash": "score-hash",
                             "final_hash": "final-hash",
@@ -182,12 +191,14 @@ def _integrated_service(
 def _generated_activity_manifest(
     *,
     case_id: str = "c1_p128_b4_rr",
+    cluster_count: int = 1,
     cycle_count: int = 321,
     score_hash: str = "score-hash",
     final_hash: str = "final-hash",
     request_hash: str = "request-hash",
     wide_hash: str = "wide-hash",
 ) -> dict:
+    counts = _scaled_counts(cluster_count)
     return {
         "model": "attention_decode_score_multivalue_service_activity_v1",
         "case_id": case_id,
@@ -195,9 +206,9 @@ def _generated_activity_manifest(
         "clock_period_ns": 10.0,
         "cycle_count": cycle_count,
         "request_result_protocol_counters": {
-            "request_count": 48,
-            "wide_response_count": 48,
-            "result_count": 16,
+            "request_count": counts["request_count"],
+            "wide_response_count": counts["wide_response_count"],
+            "result_count": counts["result_count"],
             "shared": {"protocol_error": False},
         },
         "value_bank_coverage": {
@@ -617,7 +628,7 @@ def test_build_report_supports_c2_case_and_validates_cycle_contract_before_power
     with mock.patch.object(
         audit,
         "generate_activity",
-        return_value=_generated_activity_manifest(case_id="c2_p128_b4_rr", cycle_count=8863),
+        return_value=_generated_activity_manifest(case_id="c2_p128_b4_rr", cluster_count=2, cycle_count=8863),
     ), mock.patch.object(
         audit,
         "_prepare_postroute_power_manifest",
@@ -681,6 +692,7 @@ def test_build_report_rejects_c2_hash_mismatch_before_power(tmp_path: Path) -> N
     )
     generated = _generated_activity_manifest(
         case_id="c2_p128_b4_rr",
+        cluster_count=2,
         cycle_count=8863,
         request_hash="wrong-request-hash",
     )

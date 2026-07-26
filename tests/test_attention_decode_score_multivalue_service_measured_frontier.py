@@ -421,7 +421,7 @@ def _service_activity_power_c2(tmp_path: Path) -> Path:
                 "counts": {"fakeram45_2048x39": 112, "fakeram45_64x32": 64},
             },
             "macro_activity_contract": {
-                "profile": "multivalue_service_c1_v1",
+                "profile": "multivalue_service_c2_v1",
                 "total_assignment_count": 14800,
                 "macro_classes": {
                     "fakeram45_2048x39": {
@@ -639,6 +639,8 @@ def test_build_report_keeps_c2_blocked_unpromoted(tmp_path: Path) -> None:
     assert blocked[0]["promoted"] is False
     assert blocked[0]["rankable_as_measured"] is False
     assert "pending_equivalent_composed_physical_activity_evidence" in blocked[0]["status"]
+    assert "best_throughput_candidate" not in payload
+    assert "pareto_rows" not in payload
 
 
 def test_build_report_promotes_c2_with_whole_service_window_accounting(tmp_path: Path) -> None:
@@ -653,6 +655,8 @@ def test_build_report_promotes_c2_with_whole_service_window_accounting(tmp_path:
 
     assert payload["decision"] == "strict_c1_c2_measured_service_anchors_promoted_c3plus_blocked"
     assert len(payload["promoted_rows"]) == 2
+    assert payload["best_throughput_candidate"]["cluster_count"] == 2
+    assert {row["cluster_count"] for row in payload["pareto_rows"]} == {1, 2}
     c2_row = next(row for row in payload["promoted_rows"] if row["cluster_count"] == 2)
     assert c2_row["service_calibration_case_id"] == "c2_p128_b4_rr"
     assert c2_row["service_activity_microkernel_cycle_count"] == 8863
@@ -663,6 +667,11 @@ def test_build_report_promotes_c2_with_whole_service_window_accounting(tmp_path:
     assert c2_row["service_component_dynamic_energy_mj_per_token"] == pytest.approx(2796.544)
     assert c2_row["service_component_leakage_energy_mj_per_token"] == pytest.approx(0.00508360600248223)
     assert c2_row["service_component_energy_mj_per_token"] == pytest.approx(2796.5490836060025)
+    assert "full_context_dynamic_energy_j_per_head_command" not in c2_row
+    assert "full_context_leakage_energy_j_per_head_command" not in c2_row
+    c1_row = next(row for row in payload["promoted_rows"] if row["cluster_count"] == 1)
+    assert "full_context_dynamic_energy_j_per_head_command" in c1_row
+    assert "full_context_leakage_energy_j_per_head_command" in c1_row
 
 
 def test_build_report_c2_regression_guard_rejects_head_count_double_count(tmp_path: Path) -> None:

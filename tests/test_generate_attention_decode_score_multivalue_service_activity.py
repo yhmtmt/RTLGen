@@ -16,7 +16,9 @@ from npu.eval.generate_attention_decode_score_multivalue_service_activity import
     _OUTPUT_TOP_NAME,
     _OUTPUT_VCD_NAME,
     _REQUIRED_SERVICE_FIELDS,
+    _load,
     _normalize_config,
+    generate_activity,
 )
 from npu.eval.probe_attention_decode_score_multivalue_integrated_service import _workload_contract
 
@@ -30,6 +32,13 @@ def _config() -> dict[str, object]:
         "top_name": "attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_macro_activity",
         "attention_decode_score_multivalue_service": dict(_REQUIRED_SERVICE_FIELDS),
     }
+
+
+def _c2_repo_config() -> dict[str, object]:
+    return _load(
+        REPO_ROOT
+        / "runs/designs/npu_blocks/attention_decode_score_multivalue_service_c2_p128_b4_q4_rl2_rr/config.json"
+    )
 
 
 def test_normalize_config_requires_macro_backed_c1() -> None:
@@ -106,7 +115,7 @@ def test_generate_service_activity_is_deterministic(tmp_path: Path) -> None:
     assert manifest_a["artifacts"]["vcd"] == _OUTPUT_VCD_NAME
     assert not manifest_a["artifacts"]["vcd"].startswith("/")
     assert str(REPO_ROOT / "npu/eval") not in json.dumps(manifest_a, sort_keys=True)
-    assert "bank3 switching" in " ".join(manifest_a["scope"]["remaining"])
+    assert "every bank's switching" in " ".join(manifest_a["scope"]["remaining"])
     assert "24 active context tokens" in " ".join(manifest_a["scope"]["exercised"])
 
     top_text = (out_a / _OUTPUT_TOP_NAME).read_text(encoding="utf-8")
@@ -117,3 +126,16 @@ def test_generate_service_activity_is_deterministic(tmp_path: Path) -> None:
     vcd_b = (out_b / _OUTPUT_VCD_NAME).read_bytes()
     assert vcd_a == vcd_b
     assert manifest_a["hashes"]["vcd_sha256"] == manifest_b["hashes"]["vcd_sha256"]
+
+
+@pytest.mark.skipif(not _iverilog_available(), reason="iverilog/vvp unavailable")
+def test_generate_service_activity_c2_uses_aggregate_protocol_counts(tmp_path: Path) -> None:
+    activity_dir = tmp_path / "activity_c2"
+    manifest = generate_activity(_c2_repo_config(), activity_dir, case_id="c2_p128_b4_rr")
+
+    assert manifest["case_id"] == "c2_p128_b4_rr"
+    assert manifest["cycle_count"] == 8863
+    assert manifest["request_result_protocol_counters"]["request_count"] == 96
+    assert manifest["request_result_protocol_counters"]["wide_response_count"] == 96
+    assert manifest["request_result_protocol_counters"]["result_count"] == 32
+    assert manifest["request_result_protocol_counters"]["shared"]["protocol_error"] is False

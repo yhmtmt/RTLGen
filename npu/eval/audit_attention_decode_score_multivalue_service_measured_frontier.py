@@ -29,7 +29,6 @@ _EXPECTED_SERVICE_PRECISION_STATUS = (
     "unchanged_integer_contract_from_merged_cluster_equivalence_and_integrated_service"
 )
 _EXPECTED_SERVICE_PLATFORM = "nangate45"
-_EXPECTED_SERVICE_MACRO_PROFILE = "multivalue_service_c1_v1"
 _EXPECTED_HIDDEN = 4096
 _EXPECTED_HEADS = 32
 _EXPECTED_KV_HEADS = 4
@@ -185,7 +184,11 @@ def _service_case(case_id: str) -> JsonDict:
     contract = _SERVICE_CASES.get(str(case_id).strip())
     if contract is None:
         raise ValueError(f"unsupported measured-service case_id: {case_id}")
-    return dict(contract)
+    return {"case_id": str(case_id).strip(), **dict(contract)}
+
+
+def _service_macro_profile(case_contract: JsonDict) -> str:
+    return f"multivalue_service_{str(case_contract['case_id']).split('_', 1)[0]}_v1"
 
 
 def _validated_prior_frontier(
@@ -395,7 +398,9 @@ def _validated_service_activity(
     macro_activity_contract = service_report.get("macro_activity_contract")
     if not isinstance(macro_activity_contract, dict):
         raise ValueError("service report lacks macro_activity_contract")
-    if _string(macro_activity_contract.get("profile"), "service macro_activity profile") != _EXPECTED_SERVICE_MACRO_PROFILE:
+    if _string(macro_activity_contract.get("profile"), "service macro_activity profile") != _service_macro_profile(
+        case_contract
+    ):
         raise ValueError("service macro_activity profile mismatch")
     macro_classes = macro_activity_contract.get("macro_classes")
     if not isinstance(macro_classes, dict):
@@ -531,7 +536,7 @@ def _validated_service_activity(
             "service integrated_service wide_response_matrix_hash",
         ),
     }
-    return {
+    row = {
         "case_id": case_id,
         "cluster_count": int(case_contract["cluster_count"]),
         "best": best,
@@ -544,6 +549,7 @@ def _validated_service_activity(
         "flow_variant": case_contract["flow_variant"],
         "design": case_contract["design"],
     }
+    return row
 
 
 def _recompute_dense_tiles(
@@ -690,7 +696,7 @@ def _measured_row(
     component_total_j = full_context_component_per_service_wave_j * full_service_wave_count
     prior_cluster_area_mm2 = _positive(prior_row.get("cluster_area_mm2"), f"prior c{cluster_count} cluster_area_mm2")
 
-    return {
+    row = {
         "candidate_id": f"decode_score_multivalue_service_measured_c{cluster_count}",
         "source_prior_candidate_id": _string(prior_row.get("candidate_id"), f"prior c{cluster_count} candidate_id"),
         "cluster_count": cluster_count,
@@ -765,8 +771,6 @@ def _measured_row(
         "service_window_leakage_energy_j": leakage_j,
         "full_context_dynamic_energy_j_per_service_wave": full_context_dynamic_per_service_wave_j,
         "full_context_leakage_energy_j_per_service_wave": full_context_leakage_per_service_wave_j,
-        "full_context_dynamic_energy_j_per_head_command": full_context_dynamic_per_service_wave_j,
-        "full_context_leakage_energy_j_per_head_command": full_context_leakage_per_service_wave_j,
         "service_component_dynamic_energy_mj_per_token": component_dynamic_j * 1.0e3,
         "service_component_leakage_energy_mj_per_token": component_leakage_j * 1.0e3,
         "service_component_energy_mj_per_token": component_total_j * 1.0e3,
@@ -783,6 +787,32 @@ def _measured_row(
             "producer and dense QKV activity energy are excluded",
         ],
     }
+    if cluster_count == 1:
+        row["full_context_dynamic_energy_j_per_head_command"] = full_context_dynamic_per_service_wave_j
+        row["full_context_leakage_energy_j_per_head_command"] = full_context_leakage_per_service_wave_j
+    return row
+
+
+def _dominates(lhs: JsonDict, rhs: JsonDict) -> bool:
+    objective_keys = (
+        "latency_us",
+        "embodied_logic_plus_existing_shared_tile_sram_area_mm2",
+        "service_component_energy_mj_per_token",
+    )
+    lhs_values = [float(lhs[key]) for key in objective_keys]
+    rhs_values = [float(rhs[key]) for key in objective_keys]
+    return all(left <= right for left, right in zip(lhs_values, rhs_values)) and any(
+        left < right for left, right in zip(lhs_values, rhs_values)
+    )
+
+
+def _pareto_rows(rows: list[JsonDict]) -> list[JsonDict]:
+    pareto: list[JsonDict] = []
+    for candidate in rows:
+        if any(_dominates(other, candidate) for other in rows if other is not candidate):
+            continue
+        pareto.append(candidate)
+    return sorted(pareto, key=lambda row: (float(row["latency_us"]), int(row["cluster_count"])))
 
 
 def _blocked_row(row: JsonDict, *, blocker: str | None = None) -> JsonDict:
@@ -893,6 +923,7 @@ def build_report(
 
     best_anchor = max(promoted_rows, key=lambda row: float(row["token_throughput_per_s"]))
     c2_promoted = any(row["cluster_count"] == 2 for row in promoted_rows)
+    pareto_rows = _pareto_rows(promoted_rows) if c2_promoted else []
     c1_service = validated_service_activities[1]
     c1_contract = _service_case(c1_service["case_id"])
     selected_candidates = {
@@ -984,6 +1015,7 @@ def build_report(
         "promoted_rows": promoted_rows,
         "blocked_rows": blocked_rows,
         "best_measured_anchor": best_anchor,
+        **({"best_throughput_candidate": best_anchor, "pareto_rows": pareto_rows} if c2_promoted else {}),
         "promotion_status": (
             "strict_c1_c2_measured_anchors_promoted_c3plus_unpromoted_pending_equivalent_composed_physical_activity_evidence"
             if c2_promoted
@@ -993,6 +1025,12 @@ def build_report(
             (
                 "This report promotes only directly measured composed-service anchors. "
                 + ("c1 and c2 are promoted; c3+ remain blocked." if c2_promoted else "Only c1 is promoted; c2+ remain blocked.")
+            ),
+            (
+                "When multiple measured anchors are promoted, best_throughput_candidate is reported separately and pareto_rows define"
+                " the non-dominated latency/embodied-area/service-energy frontier."
+                if c2_promoted
+                else "best_measured_anchor remains the sole promoted c1 anchor in the c1-only path."
             ),
             "The activity-backed energy is a microkernel-scaled composed-service component estimate, not direct total-token energy.",
             "Measured whole-service window energy is scaled with ceil(sequence_length / 24) and then multiplied by cluster_waves_per_layer * layers; c2 must not be multiplied by heads * layers.",
@@ -1008,12 +1046,13 @@ def build_report(
 
 
 def _write_markdown(payload: JsonDict, path: Path) -> None:
-    anchor = payload["best_measured_anchor"]
+    anchor = payload.get("best_throughput_candidate", payload["best_measured_anchor"])
+    anchor_label = "best throughput candidate" if "best_throughput_candidate" in payload else "best measured anchor"
     lines = [
         "# Llama7B measured composed-service frontier",
         "",
         f"- decision: `{payload['decision']}`",
-        f"- best measured anchor: `{anchor['candidate_id']}`",
+        f"- {anchor_label}: `{anchor['candidate_id']}`",
         f"- clock ns: `{anchor['clock_ns']}`",
         f"- latency us: `{anchor['latency_us']}`",
         f"- dense QKV tiles: `{anchor['dense_qkv_tile_count']}`",
@@ -1033,9 +1072,16 @@ def _write_markdown(payload: JsonDict, path: Path) -> None:
         ),
         "- total-token energy: `not directly measured here`",
         "",
-        "| candidate | clusters | status | promoted | rankable | latency us | area mm2 | service component mJ/token |",
-        "|---|---:|---|---|---|---:|---:|---:|",
     ]
+    if "pareto_rows" in payload:
+        lines.append(f"- pareto rows: `{', '.join(row['candidate_id'] for row in payload['pareto_rows'])}`")
+        lines.append("")
+    lines.extend(
+        [
+            "| candidate | clusters | status | promoted | rankable | latency us | area mm2 | service component mJ/token |",
+        "|---|---:|---|---|---|---:|---:|---:|",
+        ]
+    )
     for row in payload["rows"]:
         area = row.get("embodied_logic_plus_existing_shared_tile_sram_area_mm2")
         energy = row.get("service_component_energy_mj_per_token")

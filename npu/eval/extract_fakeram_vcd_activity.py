@@ -128,6 +128,7 @@ def _parse_range_indices(raw: str | None, width: int) -> list[int]:
 def _score_scope_result(
     parts: list[str],
     *,
+    cluster_count: int,
     group_indices: tuple[int, ...],
     slice_indices: tuple[int, ...],
 ) -> tuple[str, _MacroClassSpec] | None:
@@ -146,7 +147,11 @@ def _score_scope_result(
             continue
         if index + 2 != len(parts):
             continue
-        return (f"score_bank/{group_scope}", _SCORE_MACRO_SPEC)
+        if int(cluster_count) > 1 and index > 0:
+            full_scope = "/".join([*parts[:index], "score_bank", group_scope])
+        else:
+            full_scope = f"score_bank/{group_scope}"
+        return (full_scope, _SCORE_MACRO_SPEC)
     return None
 
 
@@ -185,6 +190,7 @@ def _parse_target_scope(
     scope_path: str,
     *,
     root_scope: str,
+    cluster_count: int,
     group_indices: tuple[int, ...],
     slice_indices: tuple[int, ...],
     include_value_memory: bool,
@@ -201,6 +207,7 @@ def _parse_target_scope(
     parts = remainder.split("/")
     score_result = _score_scope_result(
         parts,
+        cluster_count=cluster_count,
         group_indices=group_indices,
         slice_indices=slice_indices,
     )
@@ -259,6 +266,7 @@ def _pins_per_instance(spec: _MacroClassSpec) -> int:
 
 def _contract_rows(
     *,
+    cluster_count: int,
     include_value_memory: bool,
     group_indices: tuple[int, ...],
     slice_indices: tuple[int, ...],
@@ -268,7 +276,7 @@ def _contract_rows(
     pin_count_by_macro: dict[str, int],
 ) -> tuple[list[JsonDict], int]:
     expected: list[tuple[_MacroClassSpec, int]] = [
-        (_SCORE_MACRO_SPEC, len(group_indices) * len(slice_indices)),
+        (_SCORE_MACRO_SPEC, int(cluster_count) * len(group_indices) * len(slice_indices)),
     ]
     if include_value_memory:
         expected.append((_VALUE_MACRO_SPEC, len(value_bank_indices) * len(value_lane_indices)))
@@ -308,6 +316,7 @@ def _extract_macro_vcd_activity(
     *,
     source_vcd_sha256: str,
     scope: str,
+    cluster_count: int,
     group_indices: tuple[int, ...],
     slice_indices: tuple[int, ...],
     expected_pin_count: int | None,
@@ -376,6 +385,7 @@ def _extract_macro_vcd_activity(
         scope_result = _parse_target_scope(
             scope_path,
             root_scope=scope,
+            cluster_count=cluster_count,
             group_indices=group_indices,
             slice_indices=slice_indices,
             include_value_memory=include_value_memory,
@@ -445,7 +455,9 @@ def _extract_macro_vcd_activity(
             id_to_specs[var_id] = (_signal_base(full_names[0]), len(full_names))
 
     if expected_pin_count is None:
-        expected_pin_count = _pins_per_instance(_SCORE_MACRO_SPEC) * len(group_indices) * len(slice_indices)
+        expected_pin_count = (
+            _pins_per_instance(_SCORE_MACRO_SPEC) * int(cluster_count) * len(group_indices) * len(slice_indices)
+        )
         if include_value_memory:
             expected_pin_count += _pins_per_instance(_VALUE_MACRO_SPEC) * len(value_bank_indices) * len(
                 value_lane_indices
@@ -567,6 +579,7 @@ def _extract_macro_vcd_activity(
         )
 
     contract_rows, total_assignment_count = _contract_rows(
+        cluster_count=cluster_count,
         include_value_memory=include_value_memory,
         group_indices=group_indices,
         slice_indices=slice_indices,
@@ -615,6 +628,7 @@ def extract_fakeram_vcd_activity(
         vcd_path,
         source_vcd_sha256=source_vcd_sha256,
         scope=scope,
+        cluster_count=1,
         group_indices=group_indices,
         slice_indices=slice_indices,
         expected_pin_count=expected_pin_count,
@@ -630,23 +644,32 @@ def extract_multivalue_service_fakeram_vcd_activity(
     *,
     source_vcd_sha256: str,
     scope: str = TARGET_SCOPE_PREFIX,
+    cluster_count: int = 1,
+    case_id: str | None = None,
     group_indices: tuple[int, ...] = tuple(range(8)),
     slice_indices: tuple[int, ...] = tuple(range(7)),
     value_bank_indices: tuple[int, ...] = tuple(range(4)),
     value_lane_indices: tuple[int, ...] = tuple(range(16)),
     expected_pin_count: int | None = None,
 ) -> JsonDict:
+    if int(cluster_count) <= 0:
+        raise ValueError("cluster_count must be positive")
+    if case_id is not None and str(case_id).strip():
+        profile = f"multivalue_service_{str(case_id).split('_', 1)[0]}_v1"
+    else:
+        profile = f"multivalue_service_c{int(cluster_count)}_v1"
     return _extract_macro_vcd_activity(
         vcd_path,
         source_vcd_sha256=source_vcd_sha256,
         scope=scope,
+        cluster_count=cluster_count,
         group_indices=group_indices,
         slice_indices=slice_indices,
         expected_pin_count=expected_pin_count,
         include_value_memory=True,
         value_bank_indices=value_bank_indices,
         value_lane_indices=value_lane_indices,
-        target_profile="multivalue_service_c1_v1",
+        target_profile=profile,
     )
 
 
