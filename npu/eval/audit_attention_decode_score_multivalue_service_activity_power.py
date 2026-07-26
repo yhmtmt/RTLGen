@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+from dataclasses import dataclass
 import hashlib
 import json
 import math
@@ -42,16 +43,10 @@ _MAX_FAILURE_DETAIL_BYTES = 4096
 
 _MODEL = "decoder_attention_decode_score_multivalue_service_activity_power_v1"
 _SCOPE = "tb/dut"
-_CASE_ID = "c1_p128_b4_rr"
-_EXPECTED_DESIGN = "attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr"
 _EXPECTED_PLATFORM = "nangate45"
-_REQUIRED_FLOW_VARIANT = "decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_3000_v1"
-_EXPECTED_MACRO_COUNTS = {
-    "fakeram45_2048x39": 56,
-    "fakeram45_64x32": 64,
-}
 _SCORE_PINS_PER_MACRO = 11 + 39 + 39 + 1 + 1
 _VALUE_PINS_PER_MACRO = 6 + 32 + 32 + 1 + 1
+_EXPECTED_MACRO_ACTIVITY_PROFILE = "multivalue_service_c1_v1"
 _POSTROUTE_MANIFEST_NAME = "attention_decode_score_multivalue_service_postroute_power_manifest.json"
 _POSTROUTE_MACRO_ACTIVITY_NAME = (
     "attention_decode_score_multivalue_service_fakeram_macro_pin_vcd_activity_v1.json"
@@ -66,6 +61,47 @@ _VALUE_ACTIVITY_RE = re.compile(
     r"^gen_value_macro_backend/gen_value_bank\[(\d+)\]/gen_value_lane\[(\d+)\]/u_value_mem_lane/"
     r"(?:addr_in\[\d+\]|wd_in\[\d+\]|w_mask_in\[\d+\]|we_in|ce_in)$"
 )
+
+
+@dataclass(frozen=True)
+class _ServiceCaseContract:
+    case_id: str
+    cluster_count: int
+    design: str
+    flow_variant: str
+    macro_counts: dict[str, int]
+    dependency_key: str
+    authoritative_ppa_key: str
+
+
+_SERVICE_CASES = {
+    "c1_p128_b4_rr": _ServiceCaseContract(
+        case_id="c1_p128_b4_rr",
+        cluster_count=1,
+        design="attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr",
+        flow_variant="decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_3000_v1",
+        macro_counts={"fakeram45_2048x39": 56, "fakeram45_64x32": 64},
+        dependency_key="integrated_service_c1",
+        authoritative_ppa_key="authoritative_composed_c1_total_ppa",
+    ),
+    "c2_p128_b4_rr": _ServiceCaseContract(
+        case_id="c2_p128_b4_rr",
+        cluster_count=2,
+        design="attention_decode_score_multivalue_service_c2_p128_b4_q4_rl2_rr",
+        flow_variant="decode_score_multivalue_service_c2_p128_b4_q4_rl2_rr_3700_v1",
+        macro_counts={"fakeram45_2048x39": 112, "fakeram45_64x32": 64},
+        dependency_key="integrated_service_c2",
+        authoritative_ppa_key="authoritative_composed_c2_total_ppa",
+    ),
+}
+_CASE_ID = _SERVICE_CASES["c1_p128_b4_rr"].case_id
+_EXPECTED_DESIGN = _SERVICE_CASES["c1_p128_b4_rr"].design
+_REQUIRED_FLOW_VARIANT = _SERVICE_CASES["c1_p128_b4_rr"].flow_variant
+_EXPECTED_MACRO_COUNTS = dict(_SERVICE_CASES["c1_p128_b4_rr"].macro_counts)
+
+
+def _case_label(case_contract: _ServiceCaseContract) -> str:
+    return "c1" if case_contract.case_id == "c1_p128_b4_rr" else case_contract.case_id
 
 
 def _load(path: Path) -> JsonDict:
@@ -122,6 +158,37 @@ def _sanitized_failure(exc: Exception) -> JsonDict:
     }
 
 
+def _service_case_contract(
+    *,
+    case_id: str | None = None,
+    cluster_count: int | None = None,
+) -> _ServiceCaseContract:
+    if case_id is not None:
+        contract = _SERVICE_CASES.get(str(case_id).strip())
+        if contract is None:
+            raise ValueError(f"unsupported service activity case_id: {case_id}")
+        return contract
+    if cluster_count is None:
+        raise ValueError("service activity case selection requires case_id or cluster_count")
+    for contract in _SERVICE_CASES.values():
+        if contract.cluster_count == int(cluster_count):
+            return contract
+    raise ValueError(f"unsupported service activity cluster_count: {cluster_count}")
+
+
+def _case_from_config(config: JsonDict, *, explicit_case_id: str | None = None) -> _ServiceCaseContract:
+    body = config.get("attention_decode_score_multivalue_service")
+    if not isinstance(body, dict):
+        raise ValueError("config requires attention_decode_score_multivalue_service object")
+    contract = _service_case_contract(
+        case_id=explicit_case_id,
+        cluster_count=int(body.get("cluster_count", 0)),
+    )
+    if int(body.get("cluster_count", 0)) != contract.cluster_count:
+        raise ValueError("service config cluster_count does not match the selected case")
+    return contract
+
+
 def _params(row: JsonDict) -> JsonDict:
     try:
         payload = json.loads(str(row.get("params_json", "{}")))
@@ -158,11 +225,11 @@ def _metric_provenance(row: JsonDict, metrics_csv: Path) -> JsonDict:
     }
 
 
-def _select_c1_metric(
+def _select_metric(
     metrics_csv: Path,
     *,
+    case_contract: _ServiceCaseContract,
     clock_period_ns: float,
-    required_flow_variant: str = _REQUIRED_FLOW_VARIANT,
 ) -> JsonDict:
     with metrics_csv.open(newline="", encoding="utf-8") as handle:
         rows = [dict(row) for row in csv.DictReader(handle)]
@@ -170,13 +237,13 @@ def _select_c1_metric(
     for row in rows:
         if str(row.get("status", "")).strip() != "ok":
             continue
-        if str(row.get("design", "")).strip() != _EXPECTED_DESIGN:
+        if str(row.get("design", "")).strip() != case_contract.design:
             continue
         if str(row.get("platform", "")).strip() != _EXPECTED_PLATFORM:
             continue
         params = _params(row)
         flow_variant = str(params.get("FLOW_VARIANT", "")).strip()
-        if flow_variant != required_flow_variant:
+        if flow_variant != case_contract.flow_variant:
             continue
         try:
             row_clock = float(params.get("CLOCK_PERIOD", 0.0))
@@ -185,25 +252,33 @@ def _select_c1_metric(
             raise ValueError("selected c1 row has invalid CLOCK_PERIOD or critical_path_ns") from exc
         if abs(row_clock - clock_period_ns) > 1e-9:
             raise ValueError(
-                f"selected c1 row CLOCK_PERIOD mismatch: expected {clock_period_ns:g}, got {row_clock:g}"
+                f"selected {case_contract.case_id} row CLOCK_PERIOD mismatch: expected {clock_period_ns:g}, got {row_clock:g}"
             )
         if not math.isfinite(critical_path_ns) or critical_path_ns > clock_period_ns:
             raise ValueError(
-                f"selected c1 row is not timing-feasible at {clock_period_ns:g} ns"
+                f"selected {case_contract.case_id} row is not timing-feasible at {clock_period_ns:g} ns"
             )
         matches.append(row)
     if not matches:
         raise ValueError(
-            "expected exactly one status=ok timing-feasible c1 row with design "
-            f"{_EXPECTED_DESIGN}, platform {_EXPECTED_PLATFORM}, and FLOW_VARIANT {required_flow_variant}"
+            "expected exactly one status=ok timing-feasible row with design "
+            f"{case_contract.design}, platform {_EXPECTED_PLATFORM}, and FLOW_VARIANT {case_contract.flow_variant}"
         )
     if len(matches) != 1:
         raise ValueError(
-            "expected exactly one status=ok timing-feasible c1 row with design "
-            f"{_EXPECTED_DESIGN}, platform {_EXPECTED_PLATFORM}, and FLOW_VARIANT "
-            f"{required_flow_variant}, found {len(matches)}"
+            "expected exactly one status=ok timing-feasible row with design "
+            f"{case_contract.design}, platform {_EXPECTED_PLATFORM}, and FLOW_VARIANT "
+            f"{case_contract.flow_variant}, found {len(matches)}"
         )
     return matches[0]
+
+
+def _select_c1_metric(metrics_csv: Path, *, clock_period_ns: float) -> JsonDict:
+    return _select_metric(
+        metrics_csv,
+        case_contract=_SERVICE_CASES["c1_p128_b4_rr"],
+        clock_period_ns=clock_period_ns,
+    )
 
 
 def _require_string_hash(payload: JsonDict, key: str, label: str) -> str:
@@ -231,7 +306,11 @@ def _validate_cluster_equivalence(payload: JsonDict) -> JsonDict:
     }
 
 
-def _validate_integrated_service(payload: JsonDict) -> JsonDict:
+def _validate_integrated_service(
+    payload: JsonDict,
+    *,
+    case_contract: _ServiceCaseContract = _SERVICE_CASES["c1_p128_b4_rr"],
+) -> JsonDict:
     expected_workload = _expected_workload_contract()
     expected_counts = _workload_expected_counts(expected_workload)
     if payload.get("workload_contract") != expected_workload:
@@ -242,18 +321,18 @@ def _validate_integrated_service(payload: JsonDict) -> JsonDict:
     selected = [
         case
         for case in cases
-        if isinstance(case, dict) and str(case.get("case_id") or "").strip() == _CASE_ID
+        if isinstance(case, dict) and str(case.get("case_id") or "").strip() == case_contract.case_id
     ]
     if len(selected) != 1:
-        raise ValueError(f"integrated-service report must contain exactly one {_CASE_ID} case")
+        raise ValueError(f"integrated-service report must contain exactly one {case_contract.case_id} case")
     case = selected[0]
     if case.get("decision") != "pass":
-        raise ValueError(f"integrated-service {_CASE_ID} case did not pass")
+        raise ValueError(f"integrated-service {case_contract.case_id} case did not pass")
     config = case.get("config")
     if not isinstance(config, dict):
-        raise ValueError("integrated-service c1 config is missing")
+        raise ValueError(f"integrated-service {case_contract.case_id} config is missing")
     expected_config = {
-        "cluster_count": 1,
+        "cluster_count": case_contract.cluster_count,
         "packet_w": 128,
         "banks": 4,
         "req_queue_depth": 4,
@@ -266,19 +345,19 @@ def _validate_integrated_service(payload: JsonDict) -> JsonDict:
     for key, expected in expected_config.items():
         if config.get(key) != expected:
             raise ValueError(
-                f"integrated-service c1 config mismatch for {key}: expected {expected!r}, got {config.get(key)!r}"
+                f"integrated-service {case_contract.case_id} config mismatch for {key}: expected {expected!r}, got {config.get(key)!r}"
             )
     integrated = case.get("integrated_service")
     if not isinstance(integrated, dict):
-        raise ValueError("integrated-service c1 section is missing")
+        raise ValueError(f"integrated-service {case_contract.case_id} section is missing")
     if integrated.get("exact_match") is not True:
-        raise ValueError("integrated-service c1 exact_result_match gate failed")
+        raise ValueError(f"integrated-service {case_contract.case_id} exact_result_match gate failed")
     for key in ("no_protocol_errors", "no_drop_duplicate_deadlock_timeout", "cycle_bound_ok"):
         if integrated.get(key) is not True:
-            raise ValueError(f"integrated-service c1 {key} gate failed")
+            raise ValueError(f"integrated-service {case_contract.case_id} {key} gate failed")
     counters = integrated.get("counters")
     if not isinstance(counters, dict):
-        raise ValueError("integrated-service c1 counters missing")
+        raise ValueError(f"integrated-service {case_contract.case_id} counters missing")
     required_counter_keys = {
         "request_injection_stall_cycles",
         "arbitration_contention_cycles",
@@ -290,29 +369,29 @@ def _validate_integrated_service(payload: JsonDict) -> JsonDict:
     missing = required_counter_keys - set(counters)
     if missing:
         raise ValueError(
-            "integrated-service c1 counters incomplete: " + ", ".join(sorted(missing))
+            f"integrated-service {case_contract.case_id} counters incomplete: " + ", ".join(sorted(missing))
         )
     if int(integrated.get("request_count", 0)) != int(expected_counts["request_count"]):
-        raise ValueError("integrated-service c1 request_count mismatch")
+        raise ValueError(f"integrated-service {case_contract.case_id} request_count mismatch")
     if int(integrated.get("wide_response_count", 0)) != int(expected_counts["wide_response_count"]):
-        raise ValueError("integrated-service c1 wide_response_count mismatch")
+        raise ValueError(f"integrated-service {case_contract.case_id} wide_response_count mismatch")
     if int(integrated.get("result_count", 0)) != int(expected_counts["result_count"]):
-        raise ValueError("integrated-service c1 result_count mismatch")
+        raise ValueError(f"integrated-service {case_contract.case_id} result_count mismatch")
     gates = case.get("gates")
     if not isinstance(gates, dict) or not all(
         bool(gates.get(key)) for key in ("hash_gate_ok", "protocol_gate_ok", "count_gate_ok")
     ):
-        raise ValueError("integrated-service c1 gates failed")
+        raise ValueError(f"integrated-service {case_contract.case_id} gates failed")
     egress = integrated.get("shared_result_egress")
     if not isinstance(egress, dict) or int(egress.get("documented_initiation_interval", 0)) != 1:
-        raise ValueError("integrated-service c1 shared_result_egress contract failed")
+        raise ValueError(f"integrated-service {case_contract.case_id} shared_result_egress contract failed")
     summary = payload.get("summary")
     if isinstance(summary, dict):
         for key in ("all_hash_gates_passed", "all_protocol_gates_passed", "all_count_gates_passed"):
             if summary.get(key) is not True:
                 raise ValueError(f"integrated-service summary {key} failed")
     return {
-        "case_id": _CASE_ID,
+        "case_id": case_contract.case_id,
         "config": dict(config),
         "decision": "pass",
         "exact_match": True,
@@ -327,22 +406,27 @@ def _validate_integrated_service(payload: JsonDict) -> JsonDict:
         "shared_result_egress": egress,
         "workload_contract": expected_workload,
         "hashes": {
-            "score_hash": _require_string_hash(integrated, "score_hash", "integrated-service c1"),
-            "final_hash": _require_string_hash(integrated, "final_hash", "integrated-service c1"),
-            "request_hash": _require_string_hash(integrated, "request_hash", "integrated-service c1"),
+            "score_hash": _require_string_hash(integrated, "score_hash", f"integrated-service {case_contract.case_id}"),
+            "final_hash": _require_string_hash(integrated, "final_hash", f"integrated-service {case_contract.case_id}"),
+            "request_hash": _require_string_hash(integrated, "request_hash", f"integrated-service {case_contract.case_id}"),
             "wide_response_matrix_hash": _require_string_hash(
-                integrated, "wide_response_matrix_hash", "integrated-service c1"
+                integrated, "wide_response_matrix_hash", f"integrated-service {case_contract.case_id}"
             ),
         },
     }
 
 
-def _validate_generated_activity_manifest(activity_manifest: JsonDict, activity_dir: Path) -> JsonDict:
+def _validate_generated_activity_manifest(
+    activity_manifest: JsonDict,
+    activity_dir: Path,
+    *,
+    case_contract: _ServiceCaseContract = _SERVICE_CASES["c1_p128_b4_rr"],
+) -> JsonDict:
     expected_workload = _expected_workload_contract()
     expected_counts = _workload_expected_counts(expected_workload)
     if str(activity_manifest.get("model") or "").strip() != "attention_decode_score_multivalue_service_activity_v1":
         raise ValueError("generated activity manifest model mismatch")
-    if str(activity_manifest.get("case_id") or "").strip() != _CASE_ID:
+    if str(activity_manifest.get("case_id") or "").strip() != case_contract.case_id:
         raise ValueError("generated activity manifest case_id mismatch")
     if activity_manifest.get("workload_contract") != expected_workload:
         raise ValueError("generated activity manifest workload contract mismatch")
@@ -366,12 +450,17 @@ def _validate_generated_activity_manifest(activity_manifest: JsonDict, activity_
     bank_coverage = activity_manifest.get("value_bank_coverage")
     if not isinstance(bank_coverage, dict):
         raise ValueError("generated activity manifest value_bank_coverage missing")
-    if bank_coverage.get("addressed_banks_over_trace") != [0, 1, 2]:
-        raise ValueError("generated activity manifest addressed_banks_over_trace mismatch")
-    if bank_coverage.get("inactive_banks") != [3]:
-        raise ValueError("generated activity manifest inactive_banks mismatch")
+    if not isinstance(bank_coverage.get("addressed_banks_over_trace"), list):
+        raise ValueError("generated activity manifest addressed_banks_over_trace missing")
+    if not isinstance(bank_coverage.get("inactive_banks"), list):
+        raise ValueError("generated activity manifest inactive_banks missing")
     if bank_coverage.get("inactive_reason") != "three_block_reference_workload":
         raise ValueError("generated activity manifest inactive_reason mismatch")
+    if case_contract.case_id == "c1_p128_b4_rr":
+        if bank_coverage.get("addressed_banks_over_trace") != [0, 1, 2]:
+            raise ValueError("generated activity manifest addressed_banks_over_trace mismatch")
+        if bank_coverage.get("inactive_banks") != [3]:
+            raise ValueError("generated activity manifest inactive_banks mismatch")
     vcd_hash = str(activity_manifest.get("hashes", {}).get("vcd_sha256") or "").strip().lower()
     if not vcd_hash:
         raise ValueError("generated activity manifest vcd_sha256 missing")
@@ -388,21 +477,25 @@ def _validate_generated_activity_manifest(activity_manifest: JsonDict, activity_
     }
 
 
-def _validate_macro_manifest_counts(macro_manifest: JsonDict) -> JsonDict:
+def _validate_macro_manifest_counts(
+    macro_manifest: JsonDict,
+    *,
+    case_contract: _ServiceCaseContract = _SERVICE_CASES["c1_p128_b4_rr"],
+) -> JsonDict:
     params = macro_manifest.get("manifest_params")
     if not isinstance(params, dict):
         raise ValueError("macro_manifest manifest_params missing")
     score_bank_macro_count = int(params.get("score_bank_macro_count", 0))
     value_memory_macro_count = int(params.get("value_memory_macro_count", 0))
-    if score_bank_macro_count != _EXPECTED_MACRO_COUNTS["fakeram45_2048x39"]:
+    if score_bank_macro_count != case_contract.macro_counts["fakeram45_2048x39"]:
         raise ValueError(
             "macro_manifest score-bank macro count mismatch: expected "
-            f"{_EXPECTED_MACRO_COUNTS['fakeram45_2048x39']}, got {score_bank_macro_count}"
+            f"{case_contract.macro_counts['fakeram45_2048x39']}, got {score_bank_macro_count}"
         )
-    if value_memory_macro_count != _EXPECTED_MACRO_COUNTS["fakeram45_64x32"]:
+    if value_memory_macro_count != case_contract.macro_counts["fakeram45_64x32"]:
         raise ValueError(
             "macro_manifest value-memory macro count mismatch: expected "
-            f"{_EXPECTED_MACRO_COUNTS['fakeram45_64x32']}, got {value_memory_macro_count}"
+            f"{case_contract.macro_counts['fakeram45_64x32']}, got {value_memory_macro_count}"
         )
     return {
         "fakeram45_2048x39": score_bank_macro_count,
@@ -466,7 +559,7 @@ def _validate_service_macro_activity_contract(
     structural_contract = macro_activity.get("structural_macro_contract")
     if not isinstance(structural_contract, dict):
         raise ValueError("service macro activity structural_macro_contract missing")
-    if str(structural_contract.get("profile") or "").strip() != "multivalue_service_c1_v1":
+    if str(structural_contract.get("profile") or "").strip() != _EXPECTED_MACRO_ACTIVITY_PROFILE:
         raise ValueError("service macro activity structural_macro_contract profile mismatch")
     if int(structural_contract.get("total_assignment_count", 0)) != len(pins):
         raise ValueError("service macro activity total_assignment_count mismatch")
@@ -503,7 +596,7 @@ def _validate_service_macro_activity_contract(
                     f"expected {expected_value!r}, got {row.get(key)!r}"
                 )
     return {
-        "profile": "multivalue_service_c1_v1",
+        "profile": _EXPECTED_MACRO_ACTIVITY_PROFILE,
         "total_assignment_count": len(pins),
         "macro_classes": expected_classes,
     }
@@ -513,10 +606,16 @@ def _prepare_postroute_power_manifest(
     *,
     activity_dir: Path,
     activity_manifest: JsonDict,
+    case_contract: _ServiceCaseContract,
 ) -> tuple[JsonDict, Path, JsonDict]:
-    generated_meta = _validate_generated_activity_manifest(activity_manifest, activity_dir)
+    generated_meta = _validate_generated_activity_manifest(
+        activity_manifest,
+        activity_dir,
+        case_contract=case_contract,
+    )
     macro_counts = _validate_macro_manifest_counts(
-        _load(activity_dir / _OUTPUT_MACRO_MANIFEST_NAME)
+        _load(activity_dir / _OUTPUT_MACRO_MANIFEST_NAME),
+        case_contract=case_contract,
     )
     vcd_path = activity_dir / _OUTPUT_VCD_NAME
     if not vcd_path.is_file():
@@ -677,16 +776,18 @@ def _write_markdown(payload: JsonDict, path: Path) -> None:
         else {}
     )
     composed_ppa = (
-        best.get("authoritative_composed_c1_total_ppa")
-        if isinstance(best.get("authoritative_composed_c1_total_ppa"), dict)
+        best.get("authoritative_composed_total_ppa")
+        if isinstance(best.get("authoritative_composed_total_ppa"), dict)
         else {}
     )
+    selection_contract = payload.get("selection_contract", {})
+    case_id = selection_contract.get("case_id", "service_case")
     lines = [
-        "# Strict c1 routed service power audit",
+        f"# Strict {case_id} routed service power audit",
         "",
         f"- decision: `{payload['decision']}`",
         f"- promotion_gate_pass: `{payload['promotion_gate_pass']}`",
-        f"- required_flow_variant: `{payload['selection_contract']['required_flow_variant']}`",
+        f"- required_flow_variant: `{selection_contract.get('required_flow_variant')}`",
         f"- bank3 dynamic inactivity: `{payload['bank3_dynamic_inactivity']['inactive_banks']}`",
         f"- bank3 note: {payload['bank3_dynamic_inactivity']['statement']}",
         "",
@@ -725,35 +826,49 @@ def _write_markdown(payload: JsonDict, path: Path) -> None:
 def build_report(
     *,
     config: Path,
-    c1_metrics_csv: Path,
+    c1_metrics_csv: Path | None = None,
+    metrics_csv: Path | None = None,
     equivalence_json: Path,
     integrated_service_json: Path,
     orfs_design_config: Path,
     clock_period_ns: float,
     activity_dir: Path,
     min_sequential_register_activity_coverage: float = 0.95,
+    case_id: str | None = None,
 ) -> JsonDict:
     if abs(clock_period_ns - 10.0) > 1e-9:
-        raise ValueError("strict c1 routed service power audit requires a 10 ns clock")
+        raise ValueError("strict routed service power audit requires a 10 ns clock")
+    config_payload = _load(config)
+    case_contract = _case_from_config(config_payload, explicit_case_id=case_id)
+    selected_metrics_csv = metrics_csv or c1_metrics_csv
+    if selected_metrics_csv is None:
+        raise ValueError("metrics_csv is required")
     cluster_equivalence = _validate_cluster_equivalence(_load(equivalence_json))
-    integrated_service = _validate_integrated_service(_load(integrated_service_json))
-    metric = _select_c1_metric(
-        c1_metrics_csv,
+    integrated_service = _validate_integrated_service(
+        _load(integrated_service_json),
+        case_contract=case_contract,
+    )
+    metric = _select_metric(
+        selected_metrics_csv,
+        case_contract=case_contract,
         clock_period_ns=clock_period_ns,
-        required_flow_variant=_REQUIRED_FLOW_VARIANT,
     )
     activity_dir.mkdir(parents=True, exist_ok=True)
     activity_manifest = generate_activity(
-        _load(config),
+        config_payload,
         activity_dir,
         clock_period_ns=clock_period_ns,
+        case_id=case_contract.case_id,
     )
     adapted_manifest, adapted_manifest_path, activity_meta = _prepare_postroute_power_manifest(
         activity_dir=activity_dir,
         activity_manifest=activity_manifest,
+        case_contract=case_contract,
     )
     if activity_meta["workload_contract"] != integrated_service["workload_contract"]:
-        raise ValueError("generated activity workload contract does not match integrated-service c1")
+        raise ValueError(
+            f"generated activity workload contract does not match integrated-service {case_contract.case_id}"
+        )
     generated_hashes = activity_meta["generated_manifest_hashes"]
     integrated_hashes = integrated_service["hashes"]
     for generated_key, integrated_key in (
@@ -764,19 +879,19 @@ def build_report(
     ):
         if str(generated_hashes.get(generated_key) or "").strip() != str(integrated_hashes[integrated_key]).strip():
             raise ValueError(
-                f"generated activity {generated_key} does not match integrated-service c1 {integrated_key}"
+                f"generated activity {generated_key} does not match integrated-service {_case_label(case_contract)} {integrated_key}"
             )
     candidate: JsonDict = {
-        "candidate_id": f"multivalue_service_activity_{_REQUIRED_FLOW_VARIANT}",
-        "flow_variant": _REQUIRED_FLOW_VARIANT,
-        "ppa_metric": _metric_provenance(metric, c1_metrics_csv),
+        "candidate_id": f"multivalue_service_activity_{case_contract.flow_variant}",
+        "flow_variant": case_contract.flow_variant,
+        "ppa_metric": _metric_provenance(metric, selected_metrics_csv),
     }
     try:
         activity_power = build_power_report(
             manifest=adapted_manifest,
             manifest_path=adapted_manifest_path,
             design_config=orfs_design_config,
-            flow_variant=_REQUIRED_FLOW_VARIANT,
+            flow_variant=case_contract.flow_variant,
             scope=_SCOPE,
             min_vcd_coverage=0.05,
             min_vcd_pins=32,
@@ -810,13 +925,27 @@ def build_report(
             candidate["status"] = "activity_backed"
             candidate["promotion_gate_pass"] = True
             candidate["component_service_window_energy"] = service_window_energy
-            candidate["authoritative_composed_c1_total_ppa"] = {
+            authoritative_ppa = {
                 "critical_path_ns": float(metric["critical_path_ns"]),
                 "instance_area_um2": float(metric.get("instance_area_um2") or 0.0),
                 "die_area": float(metric.get("die_area") or 0.0),
                 "total_power_mw": float(metric.get("total_power_mw") or 0.0),
             }
+            candidate["authoritative_composed_total_ppa"] = authoritative_ppa
+            candidate[case_contract.authoritative_ppa_key] = dict(authoritative_ppa)
     best = candidate if candidate.get("status") == "activity_backed" else None
+    inactive_banks = activity_meta["bank_coverage"]["inactive_banks"]
+    if case_contract.case_id == "c1_p128_b4_rr":
+        inactivity_statement = (
+            "No artificial activity was injected. Bank3 may remain dynamically inactive in this exact c1 workload; "
+            "it is not required to toggle, while leakage remains part of routed power."
+        )
+    else:
+        inactivity_statement = (
+            "No artificial activity was injected. Banks "
+            f"{inactive_banks} may remain dynamically inactive in this exact {case_contract.case_id} workload; "
+            "they are not required to toggle, while leakage remains part of routed power."
+        )
     return {
         "version": 1,
         "model": _MODEL,
@@ -832,21 +961,22 @@ def build_report(
         "best": best,
         "candidates": [candidate],
         "selection_contract": {
-            "case_id": _CASE_ID,
-            "required_flow_variant": _REQUIRED_FLOW_VARIANT,
+            "case_id": case_contract.case_id,
+            "cluster_count": case_contract.cluster_count,
+            "required_flow_variant": case_contract.flow_variant,
             "clock_period_ns": clock_period_ns,
             "status": "exactly_one_status_ok_timing_feasible_row_required",
         },
         "source_dependencies": {
             "service_config": _portable_path(config),
-            "c1_metrics_csv": _portable_path(c1_metrics_csv),
+            "metrics_csv": _portable_path(selected_metrics_csv),
             "merged_cluster_equivalence_json": _portable_path(equivalence_json),
             "integrated_service_r1_json": _portable_path(integrated_service_json),
             "orfs_design_config": _portable_path(orfs_design_config),
         },
         "dependency_contract": {
             "cluster_equivalence": cluster_equivalence,
-            "integrated_service_c1": integrated_service,
+            case_contract.dependency_key: integrated_service,
         },
         "activity_contract": {
             "generated_activity_manifest_sha256": activity_meta["generated_activity_manifest_sha256"],
@@ -858,21 +988,25 @@ def build_report(
         },
         "macro_manifest_contract": {
             "counts": activity_meta["macro_counts"],
-            "statement": "Exact macro counts are required: 56 fakeram45_2048x39 score banks and 64 fakeram45_64x32 value-memory macros.",
+            "statement": (
+                "Exact macro counts are required: "
+                f"{activity_meta['macro_counts']['fakeram45_2048x39']} fakeram45_2048x39 score banks and "
+                f"{activity_meta['macro_counts']['fakeram45_64x32']} fakeram45_64x32 value-memory macros."
+            ),
         },
         "macro_activity_contract": activity_meta["macro_activity_contract"],
         "bank3_dynamic_inactivity": {
-            "inactive_banks": activity_meta["bank_coverage"]["inactive_banks"],
-            "statement": (
-                "No artificial activity was injected. Bank3 may remain dynamically inactive in this exact c1 workload; "
-                "it is not required to toggle, while leakage remains part of routed power."
-            ),
+            "inactive_banks": inactive_banks,
+            "statement": inactivity_statement,
         },
         "precision_status": (
             "unchanged_integer_contract_from_merged_cluster_equivalence_and_integrated_service"
         ),
         "remaining_abstractions": [
-            "The service-window energy is direct routed component energy for this exact c1 workload, not total token energy.",
+            (
+                f"The service-window energy is direct routed component energy for this exact "
+                f"{case_contract.case_id} workload, not total token energy."
+            ),
             "FakeRAM power uses proxy Nangate45 macro views rather than SRAM compiler signoff.",
             "Evaluator-local VCD, ODB, and SPEF paths remain redacted from the portable output.",
         ],
@@ -882,7 +1016,8 @@ def build_report(
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", type=Path, required=True)
-    parser.add_argument("--c1-metrics-csv", type=Path, required=True)
+    parser.add_argument("--c1-metrics-csv", type=Path)
+    parser.add_argument("--metrics-csv", type=Path)
     parser.add_argument("--equivalence-json", type=Path, required=True)
     parser.add_argument("--integrated-service-json", type=Path, required=True)
     parser.add_argument("--orfs-design-config", type=Path, required=True)
@@ -890,6 +1025,7 @@ def main() -> int:
     parser.add_argument("--activity-dir", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--out-md", type=Path, required=True)
+    parser.add_argument("--case-id", type=str)
     parser.add_argument(
         "--min-sequential-register-activity-coverage",
         type=float,
@@ -899,12 +1035,14 @@ def main() -> int:
     payload = build_report(
         config=args.config,
         c1_metrics_csv=args.c1_metrics_csv,
+        metrics_csv=args.metrics_csv,
         equivalence_json=args.equivalence_json,
         integrated_service_json=args.integrated_service_json,
         orfs_design_config=args.orfs_design_config,
         clock_period_ns=args.clock_period_ns,
         activity_dir=args.activity_dir,
         min_sequential_register_activity_coverage=args.min_sequential_register_activity_coverage,
+        case_id=args.case_id,
     )
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")

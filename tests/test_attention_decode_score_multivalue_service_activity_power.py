@@ -16,13 +16,18 @@ from npu.eval import audit_attention_decode_score_multivalue_service_activity_po
 from npu.eval.probe_attention_decode_score_multivalue_integrated_service import _workload_contract
 
 
-def _config(path: Path) -> None:
+def _config(path: Path, *, cluster_count: int = 1) -> None:
+    top_name = (
+        "attention_decode_score_multivalue_service_c2_p128_b4_q4_rl2_rr_macro_activity"
+        if cluster_count == 2
+        else "attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_macro_activity"
+    )
     path.write_text(
         json.dumps(
             {
-                "top_name": "attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_macro_activity",
+                "top_name": top_name,
                 "attention_decode_score_multivalue_service": {
-                    "cluster_count": 1,
+                    "cluster_count": cluster_count,
                     "max_blocks": 16,
                     "packet_w": 128,
                     "banks": 4,
@@ -61,18 +66,28 @@ def _write_metrics(path: Path, rows: list[dict[str, str]]) -> None:
         writer.writerows(rows)
 
 
-def _ok_metric(*, param_hash: str = "p1", flow_variant: str = audit._REQUIRED_FLOW_VARIANT) -> dict[str, str]:
+def _ok_metric(
+    *,
+    param_hash: str = "p1",
+    flow_variant: str = audit._REQUIRED_FLOW_VARIANT,
+    design: str = audit._EXPECTED_DESIGN,
+    critical_path_ns: str = "9.2",
+    die_area: str = "9000000",
+    total_power_mw: str = "12.75",
+    instance_area_um2: str = "3300000",
+    tag: str = "die3000",
+) -> dict[str, str]:
     return {
-        "design": audit._EXPECTED_DESIGN,
+        "design": design,
         "platform": audit._EXPECTED_PLATFORM,
         "config_hash": "cfg1",
         "param_hash": param_hash,
-        "tag": "die3000",
+        "tag": tag,
         "status": "ok",
-        "critical_path_ns": "9.2",
-        "die_area": "9000000",
-        "total_power_mw": "12.75",
-        "instance_area_um2": "3300000",
+        "critical_path_ns": critical_path_ns,
+        "die_area": die_area,
+        "total_power_mw": total_power_mw,
+        "instance_area_um2": instance_area_um2,
         "params_json": json.dumps({"CLOCK_PERIOD": 10, "FLOW_VARIANT": flow_variant}),
     }
 
@@ -92,7 +107,15 @@ def _cluster_equivalence(path: Path, *, passed: bool = True) -> None:
     )
 
 
-def _integrated_service(path: Path, *, exact_match: bool = True, include_counters: bool = True) -> None:
+def _integrated_service(
+    path: Path,
+    *,
+    case_id: str = "c1_p128_b4_rr",
+    cluster_count: int = 1,
+    exact_match: bool = True,
+    include_counters: bool = True,
+    cycle_count: int = 321,
+) -> None:
     counters = {
         "request_injection_stall_cycles": 0,
         "arbitration_contention_cycles": 1,
@@ -114,10 +137,10 @@ def _integrated_service(path: Path, *, exact_match: bool = True, include_counter
                 },
                 "cases": [
                     {
-                        "case_id": "c1_p128_b4_rr",
+                        "case_id": case_id,
                         "decision": "pass",
                         "config": {
-                            "cluster_count": 1,
+                            "cluster_count": cluster_count,
                             "packet_w": 128,
                             "banks": 4,
                             "req_queue_depth": 4,
@@ -135,6 +158,7 @@ def _integrated_service(path: Path, *, exact_match: bool = True, include_counter
                             "request_count": 48,
                             "wide_response_count": 48,
                             "result_count": 16,
+                            "completion_cycle": cycle_count,
                             "score_hash": "score-hash",
                             "final_hash": "final-hash",
                             "request_hash": "request-hash",
@@ -155,13 +179,21 @@ def _integrated_service(path: Path, *, exact_match: bool = True, include_counter
     )
 
 
-def _generated_activity_manifest() -> dict:
+def _generated_activity_manifest(
+    *,
+    case_id: str = "c1_p128_b4_rr",
+    cycle_count: int = 321,
+    score_hash: str = "score-hash",
+    final_hash: str = "final-hash",
+    request_hash: str = "request-hash",
+    wide_hash: str = "wide-hash",
+) -> dict:
     return {
         "model": "attention_decode_score_multivalue_service_activity_v1",
-        "case_id": "c1_p128_b4_rr",
+        "case_id": case_id,
         "workload_contract": _workload_contract(),
         "clock_period_ns": 10.0,
-        "cycle_count": 321,
+        "cycle_count": cycle_count,
         "request_result_protocol_counters": {
             "request_count": 48,
             "wide_response_count": 48,
@@ -175,15 +207,27 @@ def _generated_activity_manifest() -> dict:
         },
         "hashes": {
             "vcd_sha256": "vcd-hash",
-            "score_hash": "score-hash",
-            "final_hash": "final-hash",
-            "request_hash": "request-hash",
-            "wide_response_matrix_hash": "wide-hash",
+            "score_hash": score_hash,
+            "final_hash": final_hash,
+            "request_hash": request_hash,
+            "wide_response_matrix_hash": wide_hash,
         },
     }
 
 
-def _adapted_manifest(tmp_path: Path) -> tuple[dict, Path, dict]:
+def _adapted_manifest(
+    tmp_path: Path,
+    *,
+    cycle_count: int = 321,
+    macro_counts: dict[str, int] | None = None,
+    score_hash: str = "score-hash",
+    final_hash: str = "final-hash",
+    request_hash: str = "request-hash",
+    wide_hash: str = "wide-hash",
+) -> tuple[dict, Path, dict]:
+    macro_counts = macro_counts or {"fakeram45_2048x39": 56, "fakeram45_64x32": 64}
+    score_instances = int(macro_counts["fakeram45_2048x39"])
+    value_instances = int(macro_counts["fakeram45_64x32"])
     manifest = {
         "clock_period_ns": 10.0,
         "phases": [
@@ -195,8 +239,8 @@ def _adapted_manifest(tmp_path: Path) -> tuple[dict, Path, dict]:
                 "macro_activity_sha256": "macro-sidecar-hash",
                 "sequential_register_activity": "service_seq_activity.json",
                 "sequential_register_activity_sha256": "seq-sidecar-hash",
-                "measured_cycles": 321,
-                "full_context_cycles": 321,
+                "measured_cycles": cycle_count,
+                "full_context_cycles": cycle_count,
                 "requires_macro_activity": True,
             }
         ],
@@ -207,31 +251,31 @@ def _adapted_manifest(tmp_path: Path) -> tuple[dict, Path, dict]:
         "generated_activity_manifest_sha256": "generated-manifest-hash",
         "adapted_activity_manifest_sha256": audit._sha256_file(manifest_path),
         "vcd_sha256": "vcd-hash",
-        "cycle_count": 321,
+        "cycle_count": cycle_count,
         "generated_manifest_hashes": {
             "vcd_sha256": "vcd-hash",
-            "score_hash": "score-hash",
-            "final_hash": "final-hash",
-            "request_hash": "request-hash",
-            "wide_response_matrix_hash": "wide-hash",
+            "score_hash": score_hash,
+            "final_hash": final_hash,
+            "request_hash": request_hash,
+            "wide_response_matrix_hash": wide_hash,
         },
         "workload_contract": _workload_contract(),
-        "macro_counts": {"fakeram45_2048x39": 56, "fakeram45_64x32": 64},
+        "macro_counts": dict(macro_counts),
         "macro_activity_contract": {
             "profile": "multivalue_service_c1_v1",
-            "total_assignment_count": 9704,
+            "total_assignment_count": score_instances * 91 + value_instances * 72,
             "macro_classes": {
                 "fakeram45_2048x39": {
                     "instance_scope_prefix": "score_bank",
-                    "instance_count": 56,
+                    "instance_count": score_instances,
                     "pins_per_instance": 91,
-                    "assignment_count": 5096,
+                    "assignment_count": score_instances * 91,
                 },
                 "fakeram45_64x32": {
                     "instance_scope_prefix": "gen_value_macro_backend",
-                    "instance_count": 64,
+                    "instance_count": value_instances,
                     "pins_per_instance": 72,
-                    "assignment_count": 4608,
+                    "assignment_count": value_instances * 72,
                 },
             },
         },
@@ -239,19 +283,25 @@ def _adapted_manifest(tmp_path: Path) -> tuple[dict, Path, dict]:
     }
 
 
-def _power_report(*, manifest_sha256: str, with_abs_path: bool = False) -> dict:
+def _power_report(
+    *,
+    manifest_sha256: str,
+    with_abs_path: bool = False,
+    cycle_count: int = 321,
+    macro_activity_assignment_count: int = 9704,
+) -> dict:
     phase = {
         "phase": "service_window",
         "vcd": "/tmp/private/activity.vcd" if with_abs_path else "attention_decode_score_multivalue_service_activity.vcd",
         "vcd_sha256": "vcd-hash",
-        "measured_cycles": 321,
-        "full_context_cycles": 321,
+        "measured_cycles": cycle_count,
+        "full_context_cycles": cycle_count,
         "annotation_gate_pass": True,
         "macro_activity_gate_pass": True,
         "structural_macro_activity_gate_pass": True,
         "sequential_register_activity_gate_pass": True,
         "clock_period_gate_pass": True,
-        "macro_activity_assignment_count": 9704,
+        "macro_activity_assignment_count": macro_activity_assignment_count,
         "power": {
             "internal_w": 0.10,
             "switching_w": 0.20,
@@ -529,3 +579,135 @@ def test_build_report_does_not_compare_integrated_hashes_to_cluster_equivalence_
         )
 
     assert payload["promotion_gate_pass"] is True
+
+
+def test_build_report_supports_c2_case_and_validates_cycle_contract_before_power(tmp_path: Path) -> None:
+    config = tmp_path / "config_c2.json"
+    _config(config, cluster_count=2)
+    metrics = tmp_path / "metrics_c2.csv"
+    _write_metrics(
+        metrics,
+        [
+            _ok_metric(
+                flow_variant="decode_score_multivalue_service_c2_p128_b4_q4_rl2_rr_3700_v1",
+                design="attention_decode_score_multivalue_service_c2_p128_b4_q4_rl2_rr",
+                critical_path_ns="9.7",
+                die_area="13690000",
+                total_power_mw="18.1",
+                instance_area_um2="4500000",
+                tag="die3700",
+            )
+        ],
+    )
+    equivalence = tmp_path / "equivalence.json"
+    _cluster_equivalence(equivalence)
+    integrated = tmp_path / "integrated_c2.json"
+    _integrated_service(
+        integrated,
+        case_id="c2_p128_b4_rr",
+        cluster_count=2,
+        cycle_count=8863,
+    )
+    adapted_manifest, manifest_path, adapted_meta = _adapted_manifest(
+        tmp_path,
+        cycle_count=8863,
+        macro_counts={"fakeram45_2048x39": 112, "fakeram45_64x32": 64},
+    )
+
+    with mock.patch.object(
+        audit,
+        "generate_activity",
+        return_value=_generated_activity_manifest(case_id="c2_p128_b4_rr", cycle_count=8863),
+    ), mock.patch.object(
+        audit,
+        "_prepare_postroute_power_manifest",
+        return_value=(adapted_manifest, manifest_path, adapted_meta),
+    ), mock.patch.object(
+        audit,
+        "build_power_report",
+        return_value=_power_report(
+            manifest_sha256=adapted_meta["adapted_activity_manifest_sha256"],
+            with_abs_path=False,
+            cycle_count=8863,
+            macro_activity_assignment_count=14800,
+        ),
+    ):
+        payload = audit.build_report(
+            config=config,
+            metrics_csv=metrics,
+            case_id="c2_p128_b4_rr",
+            equivalence_json=equivalence,
+            integrated_service_json=integrated,
+            orfs_design_config=Path("/orfs/flow/designs/nangate45/service_c2/config.mk"),
+            clock_period_ns=10.0,
+            activity_dir=tmp_path / "activity_c2",
+        )
+
+    assert payload["promotion_gate_pass"] is True
+    assert payload["selection_contract"]["case_id"] == "c2_p128_b4_rr"
+    assert payload["selection_contract"]["cluster_count"] == 2
+    assert payload["dependency_contract"]["integrated_service_c2"]["case_id"] == "c2_p128_b4_rr"
+    assert payload["activity_contract"]["cycle_count"] == 8863
+    assert payload["best"]["authoritative_composed_c2_total_ppa"]["instance_area_um2"] == 4_500_000
+    assert payload["macro_manifest_contract"]["counts"]["fakeram45_2048x39"] == 112
+
+
+def test_build_report_rejects_c2_hash_mismatch_before_power(tmp_path: Path) -> None:
+    config = tmp_path / "config_c2.json"
+    _config(config, cluster_count=2)
+    metrics = tmp_path / "metrics_c2.csv"
+    _write_metrics(
+        metrics,
+        [
+            _ok_metric(
+                flow_variant="decode_score_multivalue_service_c2_p128_b4_q4_rl2_rr_3700_v1",
+                design="attention_decode_score_multivalue_service_c2_p128_b4_q4_rl2_rr",
+                critical_path_ns="9.7",
+                die_area="13690000",
+                total_power_mw="18.1",
+                instance_area_um2="4500000",
+                tag="die3700",
+            )
+        ],
+    )
+    equivalence = tmp_path / "equivalence.json"
+    _cluster_equivalence(equivalence)
+    integrated = tmp_path / "integrated_c2.json"
+    _integrated_service(
+        integrated,
+        case_id="c2_p128_b4_rr",
+        cluster_count=2,
+        cycle_count=8863,
+    )
+    generated = _generated_activity_manifest(
+        case_id="c2_p128_b4_rr",
+        cycle_count=8863,
+        request_hash="wrong-request-hash",
+    )
+    adapted_manifest, manifest_path, adapted_meta = _adapted_manifest(
+        tmp_path,
+        cycle_count=8863,
+        macro_counts={"fakeram45_2048x39": 112, "fakeram45_64x32": 64},
+        request_hash="wrong-request-hash",
+    )
+
+    with mock.patch.object(audit, "generate_activity", return_value=generated), mock.patch.object(
+        audit,
+        "_prepare_postroute_power_manifest",
+        return_value=(adapted_manifest, manifest_path, adapted_meta),
+    ), mock.patch.object(audit, "build_power_report") as build_power_report_mock:
+        with pytest.raises(
+            ValueError,
+            match="generated activity request_hash does not match integrated-service c2_p128_b4_rr request_hash",
+        ):
+            audit.build_report(
+                config=config,
+                metrics_csv=metrics,
+                case_id="c2_p128_b4_rr",
+                equivalence_json=equivalence,
+                integrated_service_json=integrated,
+                orfs_design_config=Path("/orfs/flow/designs/nangate45/service_c2/config.mk"),
+                clock_period_ns=10.0,
+                activity_dir=tmp_path / "activity_c2",
+            )
+    build_power_report_mock.assert_not_called()
