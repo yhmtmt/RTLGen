@@ -7091,6 +7091,86 @@ def test_generate_l2_campaign_task_adds_schedule_wrapper_integrated_frontier_ran
             )
 
 
+def test_generate_l2_campaign_task_adds_schedule_wrapper_postroute_activity_power_input() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id="l2_decoder_attention_score32_schedule_wrapper_postroute_activity_power_llama7b_v1",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    abstraction_layer="decoder_attention_score32_schedule_wrapper_postroute_activity_power",
+                    evaluation_mode="frontier_detail",
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            run = work_item.task_request.request_payload["task"]["commands"][0]["run"]
+            decoder_inputs = work_item.input_manifest["decoder_contract"]
+
+            assert "audit_llm_decoder_attention_score32_schedule_wrapper_postroute_activity_power.py" in run
+            assert "--config runs/designs/npu_blocks/attention_dual_stream_schedule_wrapper_score32_exp_lut_8x8_c2/config.json" in run
+            assert "--metrics-csv runs/designs/npu_blocks/attention_dual_stream_schedule_wrapper_score32_exp_lut_8x8_c2/metrics.csv" in run
+            assert "--recost-json runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_score32_exp_lut_div_schedule_wrapper_recost_llama7b_v1.json" in run
+            assert decoder_inputs["attention_score32_schedule_wrapper_activity_dir"] == "/tmp/rtlgen_score32_schedule_wrapper_activity_power"
+            assert decoder_inputs["attention_score32_schedule_wrapper_postroute_activity_power_local_only_artifacts"] == [
+                "VCD",
+                "ODB",
+                "SPEF",
+            ]
+
+
+def test_generate_l2_campaign_task_adds_schedule_wrapper_activity_integrated_frontier_ranking_input() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id="l2_decoder_attention_score32_schedule_wrapper_activity_integrated_frontier_ranking_llama7b_v1",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    abstraction_layer="decoder_attention_score32_integrated_frontier_ranking",
+                    evaluation_mode="frontier_detail",
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            run = work_item.task_request.request_payload["task"]["commands"][0]["run"]
+            decoder_inputs = work_item.input_manifest["decoder_contract"]
+
+            assert "--score32-physical-feasibility-json" in run
+            assert "--score32-activity-power-json" in run
+            assert (
+                "decoder_attention_score32_schedule_wrapper_postroute_activity_power__"
+                "l2_decoder_attention_score32_schedule_wrapper_postroute_activity_power_llama7b_v1.json"
+            ) in run
+            assert decoder_inputs["attention_score32_schedule_wrapper_postroute_activity_power"].endswith(
+                "decoder_attention_score32_schedule_wrapper_postroute_activity_power__"
+                "l2_decoder_attention_score32_schedule_wrapper_postroute_activity_power_llama7b_v1.json"
+            )
+
+
 def test_generate_l2_campaign_task_adds_attention_score32_hbm_controller_replay_integrated_frontier_ranking_input() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"

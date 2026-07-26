@@ -1,0 +1,25 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_score32_schedule_wrapper_postroute_activity_power_llama7b_v1",
+  "source_commit_note": "Leave this request pending for manual dispatch only because raw VCD/ODB/SPEF remain evaluator-local.",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_score32_schedule_wrapper_postroute_activity_power_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Measure routed score32 schedule-wrapper service-window activity power for one 986-cycle deployed wrapper instance.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_score32_schedule_wrapper_postroute_activity_power",
+      "comparison_role": "score32_schedule_wrapper_postroute_activity_power",
+      "paired_baseline_item_id": "l2_decoder_attention_composed_datapath_score32_exp_lut_div_schedule_wrapper_recost_llama7b_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_composed_datapath_score32_exp_lut_div_schedule_wrapper_recost_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "record_schedule_wrapper_postroute_activity_power",
+        "reason": "The result should capture only repo-portable JSON/MD outputs while the raw VCD/ODB/SPEF stay local."
+      },
+      "status": "pending"
+    }
+  ]
+}

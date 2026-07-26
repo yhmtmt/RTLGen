@@ -1,0 +1,67 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_score32_schedule_wrapper_postroute_activity_power_llama7b_v1",
+  "created_utc": "2026-07-26T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Score32 schedule-wrapper postroute activity power",
+  "abstraction_layer": "decoder_attention_score32_schedule_wrapper_postroute_activity_power",
+  "hypothesis": "A direct postroute wrapper activity audit can replace the older score32 schedule-wrapper compute-power recost with a measured 986-cycle whole-wrapper service-window energy while preserving the authoritative 10 ns routed annotation contract.",
+  "direct_comparison": {
+    "primary_question": "What is the direct routed energy of one 986-cycle deployed score32 schedule-wrapper service window, and does the activity audit keep the 4-cycle local service distinct from the full tile window?",
+    "include": [
+      "select exactly the density-0.4 authoritative routed wrapper row",
+      "generate actual wrapper RTL and a deterministic 986-cycle activity trace",
+      "use a macro-less postroute phase with sequential-register activity sidecar",
+      "validate the recost, cycle-count, and activity hashes before power",
+      "report separate dynamic and leakage energy using 10 ns annotation and max(10 ns, 48.6509 ns) promotion clocks"
+    ],
+    "exclude": [
+      "new OpenROAD synthesis/place-route",
+      "portable raw VCD/ODB/SPEF artifacts",
+      "full-token energy claims outside the wrapper activity term",
+      "vendor SRAM or HBM signoff current traces"
+    ]
+  },
+  "expected_benefit": [
+    "replaces analytic schedule-wrapper compute power with direct routed activity power",
+    "locks the 986-cycle Llama7B service-window contract into the evidence path",
+    "feeds a stricter score32 rerank without mutating older merged artifacts"
+  ],
+  "risks": [
+    "raw VCD/ODB/SPEF remain evaluator-local and cannot be reviewed from committed artifacts alone",
+    "the wrapper result/hash evidence is limited to observable protocol/count timelines because hardware equivalence hash remains disabled",
+    "the residual 343 per-layer cycles remain outside the measured wrapper activity term"
+  ],
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_score32_schedule_wrapper_postroute_activity_power_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Measure routed score32 schedule-wrapper service-window activity power for one 986-cycle deployed wrapper instance.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_score32_schedule_wrapper_postroute_activity_power",
+      "comparison_role": "score32_schedule_wrapper_postroute_activity_power",
+      "paired_baseline_item_id": "l2_decoder_attention_composed_datapath_score32_exp_lut_div_schedule_wrapper_recost_llama7b_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_composed_datapath_score32_exp_lut_div_schedule_wrapper_recost_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "record_schedule_wrapper_postroute_activity_power",
+        "reason": "The result should produce direct routed wrapper dynamic/leakage energy for the exact 986-cycle score32 service window without collapsing it to cluster_service_cycles=4."
+      },
+      "status": "pending"
+    }
+  ],
+  "baseline_refs": [
+    "runs/designs/npu_blocks/attention_dual_stream_schedule_wrapper_score32_exp_lut_8x8_c2/config.json",
+    "runs/designs/npu_blocks/attention_dual_stream_schedule_wrapper_score32_exp_lut_8x8_c2/metrics.csv",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_score32_exp_lut_div_schedule_wrapper_recost_llama7b_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/generate_attention_dual_stream_schedule_wrapper_activity.py",
+    "npu/eval/audit_llm_decoder_attention_score32_schedule_wrapper_postroute_activity_power.py",
+    "npu/synth/run_postroute_vcd_power.py"
+  ]
+}

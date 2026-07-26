@@ -6163,7 +6163,12 @@ def _decoder_attention_score32_integrated_frontier_ranking_evidence(
         if hbm_controller_replay_ppa_item_id
         else None
     )
-    use_schedule_wrapper_recost = "schedule_wrapper" in item_id
+    score32_activity_power = (
+        f"{base}/decoder_attention_score32_schedule_wrapper_postroute_activity_power__"
+        "l2_decoder_attention_score32_schedule_wrapper_postroute_activity_power_llama7b_v1.json"
+    )
+    use_activity_power = "activity_integrated_frontier_ranking" in item_id
+    use_schedule_wrapper_recost = ("schedule_wrapper" in item_id) or use_activity_power
     use_hbm_controller_replay = "hbm_controller_replay" in item_id
     score32_quality = (
         f"{base}/decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality__"
@@ -6196,6 +6201,8 @@ def _decoder_attention_score32_integrated_frontier_ranking_evidence(
             command += f"--score32-hbm-controller-replay-ppa-json {score32_hbm_controller_replay_ppa} "
     if use_schedule_wrapper_recost:
         command += f"--score32-physical-feasibility-json {schedule_wrapper_recost} "
+    if use_activity_power:
+        command += f"--score32-activity-power-json {score32_activity_power} "
     command += (
         f"--score32-quality-json {score32_quality} "
         f"--measured-compute-energy-json {measured_compute} "
@@ -6224,6 +6231,11 @@ def _decoder_attention_score32_integrated_frontier_ranking_evidence(
                 if use_schedule_wrapper_recost
                 else {}
             ),
+            **(
+                {"attention_score32_schedule_wrapper_postroute_activity_power": score32_activity_power}
+                if use_activity_power
+                else {}
+            ),
             "attention_score32_exp_lut_generation_quality": score32_quality,
             "attention_measured_compute_energy_closure": measured_compute,
             "attention_mixed_int8_energy_closure": mixed_int8,
@@ -6243,6 +6255,67 @@ def _decoder_attention_score32_integrated_frontier_ranking_evidence(
                 "name": "audit_decoder_attention_score32_integrated_frontier_ranking",
                 "run": command,
             },
+        ],
+        "expected_outputs": [out, report],
+        "evidence_only": True,
+    }
+
+
+def _decoder_attention_score32_schedule_wrapper_postroute_activity_power_evidence(
+    *, item_id: str
+) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    design = "attention_dual_stream_schedule_wrapper_score32_exp_lut_8x8_c2"
+    config = f"runs/designs/npu_blocks/{design}/config.json"
+    metrics_csv = f"runs/designs/npu_blocks/{design}/metrics.csv"
+    recost_json = (
+        f"{base}/decoder_attention_composed_datapath_physical_feasibility__"
+        "l2_decoder_attention_composed_datapath_score32_exp_lut_div_schedule_wrapper_recost_llama7b_v1.json"
+    )
+    orfs_design_config = f"/orfs/flow/designs/nangate45/{design}/config.mk"
+    activity_dir = "/tmp/rtlgen_score32_schedule_wrapper_activity_power"
+    out = f"{base}/decoder_attention_score32_schedule_wrapper_postroute_activity_power__{item_id}.json"
+    report = f"{base}/decoder_attention_score32_schedule_wrapper_postroute_activity_power__{item_id}.md"
+    return {
+        "inputs": {
+            "attention_score32_schedule_wrapper_config": config,
+            "attention_score32_schedule_wrapper_metrics_csv": metrics_csv,
+            "attention_score32_schedule_wrapper_recost_json": recost_json,
+            "attention_score32_schedule_wrapper_orfs_design_config": orfs_design_config,
+            "attention_score32_schedule_wrapper_activity_dir": activity_dir,
+            "attention_score32_schedule_wrapper_postroute_activity_power_out": out,
+            "attention_score32_schedule_wrapper_postroute_activity_power_report": report,
+            "attention_score32_schedule_wrapper_postroute_activity_power_scope": (
+                "Audit direct postroute wrapper activity power for the score32 dual-stream schedule wrapper "
+                "using the authoritative 10 ns, density-0.4 routed row and the 986-cycle Llama7B service-window "
+                "contract. Keep raw VCD/ODB/SPEF evaluator-local, reject any collapse to the 4-cycle "
+                "cluster-service micro-transaction, and record only repo-portable JSON/MD outputs."
+            ),
+            "attention_score32_schedule_wrapper_postroute_activity_power_promotion_gate": (
+                "Promotion requires exact wrapper RTL protocol/count/hash gates, the authoritative density-0.4 "
+                "routed row, a macro-less sequential-register activity phase, finite positive routed power, and "
+                "an explicit distinction between the 10 ns annotation clock and the 48.6509 ns promotion clock."
+            ),
+            "attention_score32_schedule_wrapper_postroute_activity_power_local_only_artifacts": [
+                "VCD",
+                "ODB",
+                "SPEF",
+            ],
+        },
+        "commands": [
+            {
+                "name": "audit_decoder_attention_score32_schedule_wrapper_postroute_activity_power",
+                "run": (
+                    "python3 npu/eval/audit_llm_decoder_attention_score32_schedule_wrapper_postroute_activity_power.py "
+                    f"--config {config} "
+                    f"--metrics-csv {metrics_csv} "
+                    f"--recost-json {recost_json} "
+                    f"--orfs-design-config {orfs_design_config} "
+                    f"--activity-dir {activity_dir} "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            }
         ],
         "expected_outputs": [out, report],
         "evidence_only": True,
@@ -11250,6 +11323,7 @@ def _build_payload(
         "decoder_attention_score32_exp_lut_hbm_dram_service_closure",
         "decoder_attention_score32_hbm_controller_replay",
         "decoder_attention_score32_integrated_frontier_ranking",
+        "decoder_attention_score32_schedule_wrapper_postroute_activity_power",
         "decoder_attention_score32_compute_activity_energy",
         "decoder_attention_score32_separated_compute_recost",
         "decoder_attention_separated_cluster_equivalence",
@@ -11548,6 +11622,10 @@ def _build_payload(
             decoder_evidence = _decoder_attention_score32_integrated_frontier_ranking_evidence(
                 item_id=item_id,
                 depends_on_item_ids=depends_on_item_ids,
+            )
+        elif abstraction_layer_name == "decoder_attention_score32_schedule_wrapper_postroute_activity_power":
+            decoder_evidence = _decoder_attention_score32_schedule_wrapper_postroute_activity_power_evidence(
+                item_id=item_id
             )
         elif abstraction_layer_name == "decoder_attention_score32_compute_activity_energy":
             decoder_evidence = _decoder_attention_score32_compute_activity_energy_evidence(item_id=item_id)

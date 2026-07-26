@@ -1628,6 +1628,77 @@ class PostrouteVcdPowerTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "macro_activity"):
                 MODULE._phase_rows(manifest, path)
 
+    def test_phase_rows_allow_omitted_macro_activity_when_not_required(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_text:
+            root = Path(temp_text)
+            vcd = root / "trace.vcd"
+            vcd.write_text("$enddefinitions $end\n", encoding="utf-8")
+            sequential_activity = self._write_sequential_activity(root=root, vcd=vcd)
+            manifest = {
+                "clock_period_ns": 8.0,
+                "phases": [
+                    {
+                        "phase": "wrapper_window",
+                        "vcd": vcd.name,
+                        "vcd_sha256": MODULE._sha256(vcd),
+                        "sequential_register_activity": sequential_activity.name,
+                        "sequential_register_activity_sha256": MODULE._sha256(sequential_activity),
+                        "measured_cycles": 20,
+                        "full_context_cycles": 20,
+                        "requires_macro_activity": False,
+                    }
+                ],
+            }
+            manifest_path = root / "manifest.json"
+            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+            rows = MODULE._phase_rows(manifest, manifest_path)
+            self.assertEqual(len(rows), 1)
+            self.assertFalse(rows[0]["requires_macro_activity"])
+            self.assertEqual(rows[0]["macro_activity_assignment_count"], 0)
+            self.assertEqual(rows[0]["macro_activity"], "")
+            self.assertEqual(rows[0]["macro_activity_sha256"], "")
+
+    def test_phase_rows_allow_empty_macro_activity_sidecar_when_not_required(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_text:
+            root = Path(temp_text)
+            vcd = root / "trace.vcd"
+            vcd.write_text("$enddefinitions $end\n", encoding="utf-8")
+            macro_activity = root / "empty_macro_activity.json"
+            macro_activity.write_text(
+                json.dumps(
+                    self._macro_activity(
+                        phase_name="wrapper_window",
+                        vcd=vcd,
+                        overrides={"pins": []},
+                    )
+                ),
+                encoding="utf-8",
+            )
+            sequential_activity = self._write_sequential_activity(root=root, vcd=vcd)
+            manifest = {
+                "clock_period_ns": 8.0,
+                "phases": [
+                    {
+                        "phase": "wrapper_window",
+                        "vcd": vcd.name,
+                        "vcd_sha256": MODULE._sha256(vcd),
+                        "macro_activity": macro_activity.name,
+                        "macro_activity_sha256": MODULE._sha256(macro_activity),
+                        "sequential_register_activity": sequential_activity.name,
+                        "sequential_register_activity_sha256": MODULE._sha256(sequential_activity),
+                        "measured_cycles": 20,
+                        "full_context_cycles": 20,
+                        "requires_macro_activity": False,
+                    }
+                ],
+            }
+            manifest_path = root / "manifest.json"
+            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+            rows = MODULE._phase_rows(manifest, manifest_path)
+            self.assertEqual(len(rows), 1)
+            self.assertEqual(rows[0]["macro_activity_assignment_count"], 0)
+            self.assertEqual(rows[0]["_macro_activity_rows"], [])
+
     def test_phase_rows_rejects_invalid_macro_activity_schema(self) -> None:
         with tempfile.TemporaryDirectory() as temp_text:
             root = Path(temp_text)

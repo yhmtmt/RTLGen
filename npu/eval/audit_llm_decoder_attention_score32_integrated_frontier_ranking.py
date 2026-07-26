@@ -118,6 +118,7 @@ def _score32_row(
     score32_hbm_controller_replay: JsonDict | None = None,
     score32_hbm_controller_replay_ppa: JsonDict | None = None,
     score32_physical: JsonDict | None = None,
+    score32_activity_power: JsonDict | None = None,
 ) -> JsonDict:
     replay_best = _as_dict(score32_hbm_controller_replay.get("best_latency")) if score32_hbm_controller_replay else {}
     best = replay_best or _as_dict(score32_hbm.get("best_latency"))
@@ -165,6 +166,28 @@ def _score32_row(
                 *remaining_abstractions,
                 *list(score32_physical.get("remaining_abstractions") or []),
                 "HBM/DRAM service and energy are reused from the score32 HBM closure because the wrapper recost does not change token memory traffic.",
+            }
+        )
+
+    if score32_activity_power is not None:
+        activity_best = _as_dict(score32_activity_power.get("best"))
+        activity_energy_j = _as_float(activity_best.get("replica_scaled_wrapper_compute_energy_j_per_token"))
+        if activity_energy_j <= 0.0:
+            raise ValueError("score32 activity-power evidence is missing replica-scaled wrapper compute energy")
+        activity_recost = _as_dict(score32_activity_power.get("recost_contract"))
+        latency_us = _as_float(activity_recost.get("latency_us"), latency_us)
+        if latency_us > 0.0:
+            token_throughput_per_s = 1_000_000.0 / latency_us
+        compute_energy_mj_per_token = activity_energy_j * 1.0e3
+        total_energy_mj_per_token = compute_energy_mj_per_token + hbm_energy_mj_per_token
+        source_artifact = "score32_schedule_wrapper_postroute_activity_power_with_hbm_service"
+        candidate_id = "score32_exp_lut_schedule_wrapper_activity_hbm_service_best"
+        abstraction_status = "measured_schedule_wrapper_postroute_activity_hbm_command_service"
+        remaining_abstractions = sorted(
+            {
+                *remaining_abstractions,
+                "HBM/DRAM service and energy are reused from the score32 HBM closure because the wrapper activity audit does not change token memory traffic.",
+                "The 343 residual per-layer cycles remain outside the measured wrapper activity term: qkv=192, reduction=141, kv_write=10.",
             }
         )
 
@@ -261,6 +284,7 @@ def _score32_row(
         "quality_backed": quality["quality_backed"],
         "quality": quality,
         "score32_hbm_controller_replay_ppa": controller_ppa_recost,
+        "score32_activity_power": score32_activity_power,
         "abstraction_status": abstraction_status,
         "remaining_abstractions": remaining_abstractions,
         "promotable": bool(quality["quality_backed"]),
@@ -397,6 +421,31 @@ def _energy_rank(rows: list[JsonDict], *, promotable_only: bool = False) -> list
     )
 
 
+def _annotate_pareto(rows: list[JsonDict]) -> list[JsonDict]:
+    annotated: list[JsonDict] = []
+    for row in rows:
+        dominated = False
+        for other in rows:
+            if other is row:
+                continue
+            if (
+                _as_float(other.get("latency_us"), 1.0e99) <= _as_float(row.get("latency_us"), 1.0e99)
+                and _as_float(other.get("energy_mj_per_token"), 1.0e99)
+                <= _as_float(row.get("energy_mj_per_token"), 1.0e99)
+                and _as_float(other.get("die_area_mm2"), 1.0e99) <= _as_float(row.get("die_area_mm2"), 1.0e99)
+                and (
+                    _as_float(other.get("latency_us"), 1.0e99) < _as_float(row.get("latency_us"), 1.0e99)
+                    or _as_float(other.get("energy_mj_per_token"), 1.0e99)
+                    < _as_float(row.get("energy_mj_per_token"), 1.0e99)
+                    or _as_float(other.get("die_area_mm2"), 1.0e99) < _as_float(row.get("die_area_mm2"), 1.0e99)
+                )
+            ):
+                dominated = True
+                break
+        annotated.append({**row, "pareto_status": "dominated" if dominated else "pareto"})
+    return annotated
+
+
 def build_report(args: argparse.Namespace) -> JsonDict:
     score32_hbm = _load_json(args.score32_hbm_dram_service_json)
     measured_command = _load_json(args.score32_measured_command_control_json)
@@ -413,6 +462,7 @@ def build_report(args: argparse.Namespace) -> JsonDict:
         channel_count=replay_channel_count,
     )
     score32_physical = _load_json(args.score32_physical_feasibility_json) if args.score32_physical_feasibility_json else None
+    score32_activity_power = _load_json(args.score32_activity_power_json) if args.score32_activity_power_json else None
     score32_quality = _load_json(args.score32_quality_json)
     measured_compute = _load_json(args.measured_compute_energy_json)
     mixed_int8 = _load_json(args.mixed_int8_energy_json)
@@ -440,7 +490,7 @@ def build_report(args: argparse.Namespace) -> JsonDict:
         ),
         mixed_int8_quality_frontier,
     )
-    rows = [
+    rows = _annotate_pareto([
         _score32_row(
             score32_hbm,
             measured_command,
@@ -448,6 +498,7 @@ def build_report(args: argparse.Namespace) -> JsonDict:
             score32_hbm_controller_replay,
             score32_hbm_controller_replay_ppa,
             score32_physical,
+            score32_activity_power,
         ),
         _prior_row(
             candidate_id=str(_best_row(measured_compute).get("candidate_id") or "measured_fp16_compute_energy_best"),
@@ -465,7 +516,7 @@ def build_report(args: argparse.Namespace) -> JsonDict:
         ),
         mixed_int8_row,
         _abstract_integrated_row(integrated),
-    ]
+    ])
 
     latency_rank = _rank_rows(rows)
     energy_rank = _energy_rank(rows)
@@ -495,6 +546,9 @@ def build_report(args: argparse.Namespace) -> JsonDict:
             "score32_hbm_controller_replay_ppa_metrics": score32_hbm_controller_replay_ppa,
             "score32_physical_feasibility_json": str(args.score32_physical_feasibility_json)
             if args.score32_physical_feasibility_json
+            else None,
+            "score32_activity_power_json": str(args.score32_activity_power_json)
+            if args.score32_activity_power_json
             else None,
             "score32_quality_json": str(args.score32_quality_json),
             "measured_compute_energy_json": str(args.measured_compute_energy_json),
@@ -555,16 +609,23 @@ def build_report(args: argparse.Namespace) -> JsonDict:
         "assumptions": [
             "Rows are ranked by explicit metrics from merged evidence; no new PPA is synthesized in this audit.",
             (
-                "The score32 row is quality-backed by the bounded generation-quality gate and measured through "
-                "wrapper, command-control, SRAM-envelope, and HBM/DRAM service closure."
-                if not args.score32_hbm_controller_replay_json
+            "The score32 row is quality-backed by the bounded generation-quality gate and measured through "
+            "wrapper, command-control, SRAM-envelope, and HBM/DRAM service closure."
+                if not args.score32_hbm_controller_replay_json and args.score32_activity_power_json is None
                 else (
-                    "The score32 row is quality-backed by the bounded generation-quality gate and measured through "
-                    "wrapper, command-control, SRAM-envelope, and deterministic cycle-level HBM controller replay."
-                    if args.score32_hbm_controller_replay_ppa_json is None
-                    else "The score32 row is quality-backed by the bounded generation-quality gate and measured "
-                    "through wrapper, command-control, SRAM-envelope, deterministic HBM replay, and measured "
-                    "Nangate45 RTL PPA recost for replay-controller area, active energy, and control timing."
+                    "The score32 row keeps the schedule-wrapper latency/area closure but replaces compute energy "
+                    "with the measured 986-cycle whole-wrapper activity term scaled by 428 replicas, 8 tile waves, "
+                    "and 32 layers; the residual 343 per-layer cycles remain outside that measured wrapper term "
+                    "(qkv=192, reduction=141, kv_write=10)."
+                    if args.score32_activity_power_json is not None and not args.score32_hbm_controller_replay_json
+                    else (
+                        "The score32 row is quality-backed by the bounded generation-quality gate and measured through "
+                        "wrapper, command-control, SRAM-envelope, and deterministic cycle-level HBM controller replay."
+                        if args.score32_hbm_controller_replay_ppa_json is None
+                        else "The score32 row is quality-backed by the bounded generation-quality gate and measured "
+                        "through wrapper, command-control, SRAM-envelope, deterministic HBM replay, and measured "
+                        "Nangate45 RTL PPA recost for replay-controller area, active energy, and control timing."
+                    )
                 )
             ),
             (
@@ -612,13 +673,13 @@ def write_markdown(path: Path, payload: JsonDict) -> None:
     for row in payload["promotable_latency_rank"]:
         lines.append(
             "| {candidate_id} | {latency_us} | {token_throughput_per_s} | {energy_mj_per_token} | "
-            "{die_area_mm2} | {precision_status} |".format(**row)
+            "{die_area_mm2} | {precision_status} ({pareto_status}) |".format(**row)
         )
     lines.extend(["", "## All Rows", "", "| candidate | promotable | latency us | energy mJ/token | status |", "|---|---:|---:|---:|---|"])
     for row in payload["latency_rank"]:
         lines.append(
             "| {candidate_id} | {promotable} | {latency_us} | {energy_mj_per_token} | "
-            "{abstraction_status} |".format(**row)
+            "{abstraction_status} / {pareto_status} |".format(**row)
         )
     lines.extend(["", "## Assumptions", ""])
     lines.extend(f"- {item}" for item in payload["assumptions"])
@@ -633,6 +694,7 @@ def main() -> int:
     parser.add_argument("--score32-hbm-controller-replay-json", type=Path)
     parser.add_argument("--score32-hbm-controller-replay-ppa-json", type=Path)
     parser.add_argument("--score32-physical-feasibility-json", type=Path)
+    parser.add_argument("--score32-activity-power-json", type=Path)
     parser.add_argument("--score32-quality-json", type=Path, required=True)
     parser.add_argument("--measured-compute-energy-json", type=Path, required=True)
     parser.add_argument("--mixed-int8-energy-json", type=Path, required=True)

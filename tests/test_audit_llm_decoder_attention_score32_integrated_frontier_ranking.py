@@ -16,6 +16,7 @@ def _args(tmp_path: Path) -> Namespace:
         score32_hbm_controller_replay_json=tmp_path / "score32_replay.json",
         score32_hbm_controller_replay_ppa_json=None,
         score32_physical_feasibility_json=None,
+        score32_activity_power_json=None,
         score32_quality_json=tmp_path / "score32_quality.json",
         measured_compute_energy_json=tmp_path / "measured_compute.json",
         mixed_int8_energy_json=tmp_path / "mixed_int8.json",
@@ -300,3 +301,56 @@ def test_integrated_frontier_ranking_invalidates_stale_mixed_int8_energy_row(tmp
     )
     assert report["next_step"]["mixed_int8_old_candidate_quality_invalidated"] is True
     assert report["next_step"]["mixed_int8_requires_quality_closure"] is False
+
+
+def test_integrated_frontier_ranking_replaces_score32_compute_energy_with_activity_power(tmp_path: Path) -> None:
+    _populate_inputs(tmp_path)
+    args = _args(tmp_path)
+    args.score32_hbm_controller_replay_json = None
+    args.score32_physical_feasibility_json = tmp_path / "schedule_wrapper_recost.json"
+    args.score32_activity_power_json = tmp_path / "schedule_wrapper_activity_power.json"
+    _write_json(
+        args.score32_physical_feasibility_json,
+        {
+            "best_requested": {
+                "replica_recost_latency_us": 12814.257853,
+                "replica_recost_compute_area_um2": 693452.0 * 428,
+                "die_area_mm2": 800.0,
+                "replica_recost_macs_per_cycle": 768,
+            },
+            "remaining_abstractions": ["profile_scaled_noc_sram_energy"],
+        },
+    )
+    _write_json(
+        args.score32_activity_power_json,
+        {
+            "best": {
+                "replica_scaled_wrapper_compute_energy_j_per_token": 0.321,
+            },
+            "recost_contract": {
+                "latency_us": 12814.257853,
+                "residual_layer_cycles": 343,
+                "residual_breakdown": {
+                    "qkv_cycles": 192,
+                    "cross_tile_reduction_cycles": 141,
+                    "kv_write_cycles": 10,
+                },
+            },
+        },
+    )
+
+    report = build_report(args)
+    score32_row = report["rows"][0]
+
+    assert score32_row["candidate_id"] == "score32_exp_lut_schedule_wrapper_activity_hbm_service_best"
+    assert score32_row["compute_energy_mj_per_token"] == 321.0
+    assert score32_row["hbm_energy_mj_per_token"] == 0.8
+    assert score32_row["energy_mj_per_token"] == 321.8
+    assert score32_row["token_throughput_per_s"] == 1_000_000.0 / 12814.257853
+    assert score32_row["pareto_status"] in {"pareto", "dominated"}
+    assert (
+        "The 343 residual per-layer cycles remain outside the measured wrapper activity term: qkv=192, reduction=141, kv_write=10."
+        in score32_row["remaining_abstractions"]
+    )
+    assert report["inputs"]["score32_activity_power_json"] == str(args.score32_activity_power_json)
+    assert any("measured 986-cycle whole-wrapper activity term" in item for item in report["assumptions"])
