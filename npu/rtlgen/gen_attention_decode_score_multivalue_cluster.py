@@ -39,6 +39,8 @@ def _validate(config: dict[str, Any]) -> dict[str, int | str]:
     scale_lanes = int(body.get("score_scale_lanes_per_cycle", 1))
     divider_impl = str(body.get("divider_impl", "iterative_restoring"))
     fsm_encoding = str(body.get("fsm_encoding", "default")).strip().lower()
+    result_mode = str(body.get("result_mode", "normalized")).strip().lower()
+    head_id_bits = int(body.get("head_id_bits", 5))
     if max_blocks < 8 or max_blocks > 16384 or max_blocks & (max_blocks - 1):
         raise SystemExit("max_blocks must be a power of two in [8, 16384]")
     if array_n != 8 or value_slices != 16:
@@ -49,6 +51,10 @@ def _validate(config: dict[str, Any]) -> dict[str, int | str]:
         raise SystemExit("divider_impl must be iterative_restoring")
     if fsm_encoding not in {"default", "binary", "explicit_onehot"}:
         raise SystemExit("fsm_encoding must be default, binary, or explicit_onehot")
+    if result_mode not in {"normalized", "exact_partial"}:
+        raise SystemExit("result_mode must be normalized or exact_partial")
+    if head_id_bits < 1 or head_id_bits > 8:
+        raise SystemExit("head_id_bits must be in [1, 8]")
     body.update(
         {
             "max_blocks": max_blocks,
@@ -56,6 +62,8 @@ def _validate(config: dict[str, Any]) -> dict[str, int | str]:
             "value_slices": value_slices,
             "score_scale_lanes_per_cycle": scale_lanes,
             "divider_impl": divider_impl,
+            "result_mode": result_mode,
+            "head_id_bits": head_id_bits,
         }
     )
     return {
@@ -66,6 +74,8 @@ def _validate(config: dict[str, Any]) -> dict[str, int | str]:
         "score_scale_lanes_per_cycle": scale_lanes,
         "divider_impl": divider_impl,
         "fsm_encoding": fsm_encoding,
+        "result_mode": result_mode,
+        "head_id_bits": head_id_bits,
     }
 
 
@@ -104,6 +114,18 @@ def _wrapper(*, top_name: str, params: dict[str, int | str], tile_top: str, bank
     count_bits = _clog2(max_blocks + 1)
     addr_bits = _clog2(max_blocks)
     scale_lanes = int(params["score_scale_lanes_per_cycle"])
+    result_mode = str(params["result_mode"])
+    head_id_bits = int(params["head_id_bits"])
+    partial_mode = result_mode == "exact_partial"
+    command_head_port = (
+        f"\n    input  wire [{head_id_bits - 1}:0]  command_head_id," if partial_mode else ""
+    )
+    result_head_port = (
+        f"\n    output wire [{head_id_bits - 1}:0] result_head_id," if partial_mode else ""
+    )
+    reducer_command_head = ", .command_head_id(command_head_id)" if partial_mode else ""
+    reducer_result_head = ", .result_head_id(result_head_id)" if partial_mode else ""
+    result_value_bits = 328 if partial_mode else 320
     state_decl = "  reg [2:0] state_q;"
     state_params = (
         "  localparam [2:0] IDLE = 3'd0, TILE_CMD = 3'd1, TILE_INPUT = 3'd2,\n"
@@ -133,6 +155,7 @@ module {top_name} (
     output wire         command_ready,
     input  wire [15:0]  command_id,
     input  wire [14:0]  command_block_count,
+{command_head_port}
     input  wire [31:0]  command_score_multiplier,
     input  wire [5:0]   command_score_shift,
     input  wire         input_valid,
@@ -154,9 +177,10 @@ module {top_name} (
     output wire [15:0]  result_command_id,
     output wire signed [31:0] result_global_max,
     output wire [32:0]  result_exp_sum,
+{result_head_port}
     output wire [3:0]   result_slice,
     output wire         result_last,
-    output wire [319:0] result_value,
+    output wire [{result_value_bits - 1}:0] result_value,
     output wire [31:0]  accepted_count,
     output wire [31:0]  completed_count,
     output wire [31:0]  cycle_count,
@@ -257,7 +281,7 @@ module {top_name} (
   {reduce_top} reducer (
       .clk(clk), .rst_n(rst_n),
       .command_valid(state_q == IDLE && command_valid && command_count_valid),
-      .command_ready(reduce_command_ready), .command_id(command_id),
+      .command_ready(reduce_command_ready), .command_id(command_id){reducer_command_head},
       .command_block_count({command_count}),
       .fill_valid(state_q == FILL), .fill_ready(reduce_fill_ready), .fill_score_row(scaled_score_row_q),
       .score_write_valid(score_write_valid), .score_write_ready(score_write_ready),
@@ -272,7 +296,7 @@ module {top_name} (
       .value_response_address(value_response_address[ADDR_W-1:0]),
       .value_response_slice(value_response_slice), .value_response_matrix(value_response_matrix),
       .result_valid(result_valid), .result_ready(result_ready), .result_command_id(result_command_id),
-      .result_global_max(result_global_max), .result_exp_sum(result_exp_sum),
+      .result_global_max(result_global_max), .result_exp_sum(result_exp_sum){reducer_result_head},
       .result_slice(result_slice), .result_last(result_last), .result_value(result_value),
       .accepted_count(accepted_count), .completed_count(completed_count), .cycle_count(cycle_count),
       .protocol_error(reduce_protocol_error)
@@ -343,7 +367,7 @@ endmodule
 
 
 def generate(config: dict[str, Any], out_dir: Path) -> None:
-    params = _validate(config)
+    params = _validate(json.loads(json.dumps(config)))
     top_name = str(params["top_name"])
     tile_top = f"{top_name}__score_tile"
     bank_top = f"{top_name}__score_bank"
@@ -373,6 +397,8 @@ def generate(config: dict[str, Any], out_dir: Path) -> None:
                     "max_blocks": int(params["max_blocks"]),
                     "value_slices": int(params["value_slices"]),
                     "divider_impl": "iterative_restoring",
+                    "result_mode": params["result_mode"],
+                    "head_id_bits": params["head_id_bits"],
                     "fsm_encoding": params["fsm_encoding"],
                 },
             },
@@ -395,11 +421,18 @@ def generate(config: dict[str, Any], out_dir: Path) -> None:
         "version": 1,
         "generator": "npu/rtlgen/gen_attention_decode_score_multivalue_cluster.py",
         "top_name": top_name,
-        "semantic_profile": "decode_m1x8_shared_score_16x8d_value_iterdiv_v1",
+        "semantic_profile": (
+            "decode_m1x8_shared_score_16x8d_value_exact_partial_v1"
+            if params["result_mode"] == "exact_partial"
+            else "decode_m1x8_shared_score_16x8d_value_iterdiv_v1"
+        ),
         "max_blocks": params["max_blocks"],
         "score_tile_array_n": 8,
         "score_scale_lanes_per_cycle": params["score_scale_lanes_per_cycle"],
         "fsm_encoding": params["fsm_encoding"],
+        "result_mode": params["result_mode"],
+        "head_id_bits": params["head_id_bits"],
+        "equivalence_hash": False,
         "controller_state_width": (
             len(_CLUSTER_STATE_NAMES) if params["fsm_encoding"] == "explicit_onehot" else 3
         ),
@@ -411,7 +444,7 @@ def generate(config: dict[str, Any], out_dir: Path) -> None:
         "score_reads_per_block": 1,
         "value_reads_per_block": params["value_slices"],
         "result_beats_per_command": params["value_slices"],
-        "result_value_bits_per_beat": 320,
+        "result_value_bits_per_beat": 328 if params["result_mode"] == "exact_partial" else 320,
         "score_bank_macro_count": bank_manifest["macro_count"],
         "score_bank_proxy_semantics": bank_manifest["proxy_semantics"],
         "divider_cycles_per_command": reduce_manifest["divider_cycles_per_command"],
