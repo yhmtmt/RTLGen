@@ -101,7 +101,7 @@ module {top_name} (
 );
   localparam integer VALUE_SLICES = {value_slices};
   localparam integer HEAD_ID_BITS = {head_id_bits};
-  localparam [{slice_bits - 1}:0] LAST_SLICE = VALUE_SLICES - 1;
+  localparam [{slice_bits - 1}:0] LAST_SLICE = {slice_bits}'d{value_slices - 1};
 
   reg left_hold_valid_q;
   reg [15:0] left_command_id_hold_q;

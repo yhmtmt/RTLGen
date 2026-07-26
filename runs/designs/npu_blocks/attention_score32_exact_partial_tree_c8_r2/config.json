@@ -1,0 +1,9 @@
+{
+  "top_name": "attention_score32_exact_partial_tree_c8_r2",
+  "attention_score32_exact_partial_tree": {
+    "clusters": 8,
+    "radix": 2,
+    "value_slices": 16,
+    "head_id_bits": 5
+  }
+}

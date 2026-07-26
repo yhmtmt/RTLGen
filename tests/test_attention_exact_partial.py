@@ -1,7 +1,11 @@
 from npu.sim.perf.attention_exact_partial import (
+    EXACT_STATE_BYTES_PER_CLUSTER_32_HEADS,
     ExactPartialBeat,
+    LEAF_STREAM_BYTES_PER_CLUSTER_32_HEADS,
     PARTIAL_PAYLOAD_BITS,
+    exact_partial_tree_service_manifest,
     finalize_partial_stream,
+    merge_balanced_partial_streams,
     merge_partial_beats,
     merge_partial_streams,
     merge_partial_streams_via_local_normalization,
@@ -89,6 +93,39 @@ def test_partial_stream_merge_survives_finalization() -> None:
 
     assert len(finalized) == 16
     assert all(len(value_slice) == 8 for value_slice in finalized)
+
+
+def test_balanced_tree_merge_matches_left_to_right_pairing() -> None:
+    leaves = [
+        partial_stream_from_blocks(
+            command_id=0x4A21,
+            head_id=3,
+            score_rows=_score_rows(seed),
+            value_blocks=_value_blocks(seed + 2),
+        )
+        for seed in (5, 11, 17, 23)
+    ]
+
+    merged = merge_balanced_partial_streams(leaves)
+    expected = merge_partial_streams(
+        merge_partial_streams(leaves[0], leaves[1]),
+        merge_partial_streams(leaves[2], leaves[3]),
+    )
+
+    assert merged == expected
+
+
+def test_exact_partial_tree_service_manifest_is_consistent() -> None:
+    manifest = exact_partial_tree_service_manifest(clusters=16)
+
+    assert manifest["radix"] == 2
+    assert manifest["tree_stages"] == 4
+    assert manifest["tree_nodes"] == 15
+    assert manifest["exact_state_bytes_per_cluster"] == EXACT_STATE_BYTES_PER_CLUSTER_32_HEADS == 21252
+    assert manifest["leaf_stream_bytes_per_cluster"] == LEAF_STREAM_BYTES_PER_CLUSTER_32_HEADS == 26816
+    assert manifest["total_leaf_stream_bytes"] == 16 * 26816
+    assert manifest["direct_328bit_links_unclosed"] is True
+    assert manifest["final_divider_embodied"] is False
 
 
 def test_normalized_merge_boundary_is_not_exact() -> None:
