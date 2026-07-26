@@ -69,6 +69,9 @@ Evaluator:
 - `RTLCP_DATABASE_URL`
 - `RTLCP_MACHINE_KEY`
 - `RTLCP_HOSTNAME`
+- `RTLCP_ROLE=evaluator`
+- `RTLCP_DB_MODE=remote`
+- `VENV_PATH` when the clean service checkout has no `.venv`
 
 Notebook:
 - `RTLCP_DATABASE_URL`
@@ -89,12 +92,38 @@ PYTHONPATH=/workspaces/rtlgen-eval-clean/control_plane
 For the local evaluator container, prefer the checked-in wrapper:
 
 ```sh
+/workspaces/rtlgen-eval-clean/control_plane/scripts/restart_local_control_plane_daemons.sh preflight
 /workspaces/rtlgen-eval-clean/control_plane/scripts/restart_local_control_plane_daemons.sh restart
 ```
 
 The wrapper starts the API, dev resolver, worker daemon, and eval resolver from
-the same service checkout and fails fast if `control_plane` imports resolve
-outside that checkout.
+the same service checkout and fails fast when:
+- `RTLCP_DATABASE_URL` is missing
+- `RTLCP_MACHINE_KEY` is missing
+- the selected `VENV_PATH` is incomplete
+- `RTLCP_DB_MODE=remote` or `RTLCP_ROLE=evaluator` points at localhost / `127.0.0.1` / `::1`
+- `RTLCP_STOP_ON_NO_WORK=1` or a finite positive `RTLCP_MAX_POLLS` is set without `RTLCP_ALLOW_FINITE_WORKER_DAEMON=1`
+- `control_plane` imports resolve outside that checkout
+
+Recommended evaluator env file entries:
+
+```sh
+RTLCP_ROLE=evaluator
+RTLCP_DB_MODE=remote
+RTLCP_DATABASE_URL=postgresql+psycopg://rtlgen:rtlgen@<notebook-host-ip>:5432/rtlgen_control_plane
+RTLCP_MACHINE_KEY=<stable evaluator machine key>
+VENV_PATH=/workspaces/RTLGen/control_plane/.venv
+```
+
+Use localhost only for explicitly declared local developer mode:
+
+```sh
+RTLCP_ROLE=server
+RTLCP_DB_MODE=local
+RTLCP_DATABASE_URL=postgresql+psycopg://rtlgen:rtlgen@localhost:5432/rtlgen_control_plane
+RTLCP_MACHINE_KEY=dev-local-control-plane
+VENV_PATH=/workspaces/RTLGen/control_plane/.venv
+```
 
 ## Service Behavior
 
@@ -151,6 +180,15 @@ python3 -m control_plane.cli.main submission-status \
   --database-url "$RTLCP_DATABASE_URL" \
   --format table
 ```
+
+Managed daemon diagnostics from the clean evaluator service checkout:
+- PID files: `/workspaces/rtlgen-eval-clean/control_plane/runtime_logs/daemons/<service>.pid`
+- daemon logs: `/workspaces/rtlgen-eval-clean/control_plane/runtime_logs/daemons/<service>.log`
+- worker job logs: `/workspaces/rtlgen-eval-clean/control_plane/runtime_logs/worker_jobs/`
+
+Override only when needed:
+- `RTLCP_RUNTIME_DIR` for PID and daemon log files
+- `RTLCP_LOG_ROOT` for worker job logs
 
 ## Recovery
 

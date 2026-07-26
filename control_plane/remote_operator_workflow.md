@@ -61,9 +61,17 @@ export RTLCP_ROLE=evaluator
 export RTLCP_DB_MODE=remote
 export RTLCP_AUTOSTART_WORKER_DAEMON=1
 export RTLCP_DATABASE_URL='postgresql+psycopg://rtlgen:rtlgen@<notebook-host-ip>:5432/rtlgen_control_plane'
+export RTLCP_MACHINE_KEY='<stable evaluator machine key>'
+# export VENV_PATH='/workspaces/RTLGen/control_plane/.venv'  # required when the clean service checkout has no .venv
 ```
 
 After changing these values, recreate or reopen the devcontainer so `containerEnv` is refreshed.
+
+Managed evaluator wrappers fail closed:
+- do not rely on a default localhost `RTLCP_DATABASE_URL`
+- export `RTLCP_MACHINE_KEY` explicitly so hostname changes do not create a detached worker identity
+- keep daemon settings persistent unless `RTLCP_ALLOW_FINITE_WORKER_DAEMON=1` is deliberately set
+- set `VENV_PATH` explicitly when the clean service checkout does not contain its own `.venv`
 
 ## Database URLs
 
@@ -243,3 +251,13 @@ Operational restart shortcuts:
   - `control_plane/scripts/restart_completion_loop.sh`
 - evaluator worker daemon:
   - `control_plane/scripts/restart_worker_daemon.sh`
+
+Managed evaluator bundle preflight:
+```sh
+export RTLCP_ROLE=evaluator
+export RTLCP_DB_MODE=remote
+export RTLCP_DATABASE_URL='postgresql+psycopg://rtlgen:rtlgen@<notebook-host-ip>:5432/rtlgen_control_plane'
+export RTLCP_MACHINE_KEY='<stable evaluator machine key>'
+export VENV_PATH='/workspaces/RTLGen/control_plane/.venv'
+/workspaces/rtlgen-eval-clean/control_plane/scripts/restart_local_control_plane_daemons.sh preflight
+```

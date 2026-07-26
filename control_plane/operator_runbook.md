@@ -48,11 +48,39 @@ Evaluator host before opening the devcontainer:
 export RTLCP_ROLE=evaluator
 export RTLCP_DB_MODE=remote
 export RTLCP_DATABASE_URL='postgresql+psycopg://rtlgen:rtlgen@<notebook-host-ip>:5432/rtlgen_control_plane'
+export RTLCP_MACHINE_KEY='<stable evaluator machine key>'
 export RTLCP_AUTOSTART_WORKER_DAEMON=1
+# export VENV_PATH='/workspaces/RTLGen/control_plane/.venv'  # required when the clean service checkout has no .venv
 ```
 
 After changing these values:
 - recreate or reopen the devcontainer
+
+Managed evaluator daemons fail closed now:
+- `RTLCP_DATABASE_URL` must be exported explicitly for `start`, `restart`, `check-import`, and `preflight`
+- `RTLCP_MACHINE_KEY` must be exported explicitly for `start`, `restart`, and `preflight`
+- `RTLCP_STOP_ON_NO_WORK=1` and any finite positive `RTLCP_MAX_POLLS` are rejected unless `RTLCP_ALLOW_FINITE_WORKER_DAEMON=1` is also set
+- when the clean service checkout does not contain its own `.venv`, set `VENV_PATH` to a real control-plane virtualenv before running the managed daemon wrapper
+
+Evaluator managed-daemon preflight:
+```sh
+export RTLCP_ROLE=evaluator
+export RTLCP_DB_MODE=remote
+export RTLCP_DATABASE_URL='postgresql+psycopg://rtlgen:rtlgen@<notebook-host-ip>:5432/rtlgen_control_plane'
+export RTLCP_MACHINE_KEY='<stable evaluator machine key>'
+export VENV_PATH='/workspaces/RTLGen/control_plane/.venv'
+/workspaces/rtlgen-eval-clean/control_plane/scripts/restart_local_control_plane_daemons.sh preflight
+```
+
+Developer-local explicit preflight is still allowed with localhost when you declare local mode:
+```sh
+export RTLCP_ROLE=server
+export RTLCP_DB_MODE=local
+export RTLCP_DATABASE_URL='postgresql+psycopg://rtlgen:rtlgen@localhost:5432/rtlgen_control_plane'
+export RTLCP_MACHINE_KEY='dev-local-control-plane'
+export VENV_PATH='/workspaces/RTLGen/control_plane/.venv'
+/workspaces/rtlgen-eval-clean/control_plane/scripts/restart_local_control_plane_daemons.sh preflight
+```
 
 ## Standard Automatic Flow
 
@@ -135,6 +163,11 @@ Evaluator worker restart:
 /workspaces/RTLGen/control_plane/scripts/restart_worker_daemon.sh
 ```
 
+Managed evaluator bundle restart:
+```sh
+/workspaces/rtlgen-eval-clean/control_plane/scripts/restart_local_control_plane_daemons.sh restart
+```
+
 Operator dashboard:
 ```sh
 /workspaces/RTLGen/control_plane/scripts/operator_status.sh --format table
@@ -152,6 +185,17 @@ Request remote evaluator refresh after a control-plane merge:
 ```
 
 The command opens or updates a GitHub issue with the target commit, pull/update checklist, daemon restart checklist, and a machine-readable evaluator acknowledgement block. Use it instead of drafting ad hoc evaluator update issues.
+
+## Managed Daemon Paths
+
+Default managed-daemon diagnostics under the clean evaluator service checkout:
+- daemon PID files: `/workspaces/rtlgen-eval-clean/control_plane/runtime_logs/daemons/<service>.pid`
+- daemon stdout/stderr logs: `/workspaces/rtlgen-eval-clean/control_plane/runtime_logs/daemons/<service>.log`
+- worker job logs: `/workspaces/rtlgen-eval-clean/control_plane/runtime_logs/worker_jobs/`
+
+The wrapper prints the effective paths during `preflight`. Override them only with:
+- `RTLCP_RUNTIME_DIR` for daemon PID/log files
+- `RTLCP_LOG_ROOT` for worker job logs
 
 ## What Healthy Looks Like
 
