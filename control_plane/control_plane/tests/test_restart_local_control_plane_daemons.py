@@ -44,10 +44,13 @@ def _run_script(repo_root: Path, action: str, **env_overrides: str) -> subproces
         "RTLCP_ALLOW_FINITE_WORKER_DAEMON",
         "RTLCP_DATABASE_URL",
         "RTLCP_DB_MODE",
+        "RTLCP_LOG_ROOT",
         "RTLCP_MACHINE_KEY",
         "RTLCP_MAX_POLLS",
         "RTLCP_ROLE",
+        "RTLCP_RUNTIME_DIR",
         "RTLCP_STOP_ON_NO_WORK",
+        "RTLCP_STOP_LEGACY_PROCESSES",
         "REPO_ROOT",
         "RTLGEN_SERVICE_REPO",
         "VENV_PATH",
@@ -179,6 +182,35 @@ def test_preflight_requires_virtualenv_files(tmp_path: Path) -> None:
     assert result.returncode == 1
     assert "Set VENV_PATH explicitly" in result.stderr
     assert f"{repo_root}/control_plane/.venv/bin/python" in result.stderr
+
+
+def test_invalid_restart_does_not_stop_existing_pid(tmp_path: Path) -> None:
+    repo_root = _make_service_repo(tmp_path)
+    runtime_dir = tmp_path / "runtime"
+    runtime_dir.mkdir()
+    running = subprocess.Popen(["sleep", "60"])
+    pid_file = runtime_dir / "api.pid"
+    pid_file.write_text(f"{running.pid}\n", encoding="utf-8")
+
+    try:
+        result = _run_script(
+            repo_root,
+            "restart",
+            RTLCP_ROLE="evaluator",
+            RTLCP_DB_MODE="remote",
+            RTLCP_RUNTIME_DIR=str(runtime_dir),
+            RTLCP_STOP_LEGACY_PROCESSES="0",
+            RTLCP_DATABASE_URL="postgresql+psycopg://rtlgen:secret@db.example.com:5432/rtlgen_control_plane",
+        )
+
+        assert result.returncode == 1
+        assert "RTLCP_MACHINE_KEY must be exported explicitly for restart" in result.stderr
+        assert pid_file.exists()
+        assert running.poll() is None
+        os.kill(running.pid, 0)
+    finally:
+        running.terminate()
+        running.wait(timeout=5)
 
 
 @pytest.mark.parametrize(

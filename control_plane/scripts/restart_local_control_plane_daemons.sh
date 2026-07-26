@@ -259,7 +259,11 @@ _start_service() {
 }
 
 _start_all() {
-  _preflight
+  local run_preflight
+  run_preflight="${1:-1}"
+  if [[ "${run_preflight}" == "1" ]]; then
+    _preflight
+  fi
   mkdir -p "${RUNTIME_DIR}" "${WORKER_LOG_ROOT}"
   _start_service api "${REPO_ROOT}/control_plane/scripts/run_api_service.sh"
   _start_service dev-resolver "${REPO_ROOT}/control_plane/scripts/run_dev_resolver_service.sh"
@@ -296,8 +300,9 @@ case "${ACTION}" in
     _stop_all
     ;;
   restart)
+    _preflight
     _stop_all
-    _start_all
+    _start_all 0
     ;;
   status)
     _status_all
