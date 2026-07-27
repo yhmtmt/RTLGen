@@ -11,7 +11,9 @@ from npu.sim.perf.attention_exact_partial import (
     finalize_partial_beat,
     finalize_partial_beats,
     finalize_partial_stream,
+    finalizer_accept_interval_cycles,
     finalizer_cycles_per_beat,
+    finalizer_output_latency_cycles,
     merge_balanced_partial_streams,
     merge_partial_beats,
     merge_partial_streams,
@@ -177,6 +179,8 @@ def test_exact_finalized_tree_service_manifest_is_consistent() -> None:
     assert manifest["final_link_bits_per_beat"] == FINAL_LINK_BITS == 346
     assert manifest["divider_lanes"] == 8
     assert manifest["divider_cycles_per_beat"] == 57
+    assert manifest["per_bank_output_latency_cycles"] == 58
+    assert manifest["per_bank_accept_interval_cycles"] == 59
     assert manifest["direct_328bit_links_unclosed"] is True
     assert manifest["final_divider_embodied"] is True
 
@@ -248,8 +252,14 @@ def test_exact_finalizer_cycle_reference_scales_with_lane_count() -> None:
     assert finalizer_cycles_per_beat(8) == 57
     assert finalizer_cycles_per_beat(4) == 114
     assert finalizer_cycles_per_beat(1) == 456
+    assert finalizer_output_latency_cycles(8) == 58
+    assert finalizer_output_latency_cycles(4) == 115
+    assert finalizer_output_latency_cycles(1) == 457
+    assert finalizer_accept_interval_cycles(8) == 59
+    assert finalizer_accept_interval_cycles(4) == 116
+    assert finalizer_accept_interval_cycles(1) == 458
     assert lane8["accepted_count"] == 2
     assert lane8["completed_count"] == 2
-    assert lane8["first_output_cycle"] == 57
-    assert lane4["first_output_cycle"] == 114
-    assert lane1["first_output_cycle"] == 456
+    assert lane8["first_output_cycle"] == 58
+    assert lane4["first_output_cycle"] == 115
+    assert lane1["first_output_cycle"] == 457

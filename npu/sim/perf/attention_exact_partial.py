@@ -281,7 +281,7 @@ def simulate_exact_finalizer(
     cycle = 0
     for index, beat in enumerate(finalized):
         accept_events.append({"index": index, "cycle": cycle})
-        cycle += groups * divide_cycles
+        cycle += finalizer_output_latency_cycles(lanes)
         if ready_pattern:
             while not ready_pattern[cycle % len(ready_pattern)]:
                 cycle += 1
@@ -315,6 +315,14 @@ def finalizer_cycles_per_beat(divider_lanes: int) -> int:
     if lanes not in {1, 2, 4, 8}:
         raise ValueError("divider_lanes must be one of 1, 2, 4, 8")
     return (SLICE_LANES // lanes) * 57
+
+
+def finalizer_output_latency_cycles(divider_lanes: int) -> int:
+    return finalizer_cycles_per_beat(divider_lanes) + 1
+
+
+def finalizer_accept_interval_cycles(divider_lanes: int) -> int:
+    return finalizer_cycles_per_beat(divider_lanes) + 2
 
 
 def merge_partial_streams(
@@ -471,11 +479,148 @@ def exact_finalized_tree_service_manifest(
             "divider_groups_per_beat": SLICE_LANES // lanes,
             "divider_iterations_per_group": 57,
             "divider_cycles_per_beat": finalizer_cycles_per_beat(lanes),
+            "per_bank_output_latency_cycles": finalizer_output_latency_cycles(lanes),
+            "per_bank_accept_interval_cycles": finalizer_accept_interval_cycles(lanes),
             "root_output_bytes": ((FINAL_LINK_BITS * VALUE_SLICES * int(heads)) + 7) // 8,
             "direct_328bit_links_unclosed": True,
             "final_divider_embodied": True,
             "finalizer_boundary": "embodied",
             "future_area_sensitivity": "folded_tree_or_lane_count",
+        }
+    )
+    return manifest
+
+
+def simulate_exact_banked_finalizer(
+    stream: Iterable[ExactPartialBeat],
+    *,
+    divider_lanes: int,
+    finalizer_banks: int,
+    output_ready_pattern: Iterable[bool] | None = None,
+) -> dict[str, object]:
+    lanes = int(divider_lanes)
+    banks = int(finalizer_banks)
+    if lanes not in {1, 2, 4, 8}:
+        raise ValueError("divider_lanes must be one of 1, 2, 4, 8")
+    if banks < 1 or banks > 64:
+        raise ValueError("finalizer_banks must be in [1, 64]")
+    beats = tuple(stream)
+    finalized = tuple(finalize_partial_beat(beat) for beat in beats)
+    ready_pattern = tuple(bool(value) for value in output_ready_pattern) if output_ready_pattern is not None else ()
+    divide_cycles = finalizer_cycles_per_beat(lanes)
+    output_latency_cycles = finalizer_output_latency_cycles(lanes)
+    next_issue_index = 0
+    dispatch_bank = 0
+    cycle = 0
+    order_fifo: list[int] = []
+    high_watermark = 0
+    dispatch_stall_cycles = 0
+    bank_state = [
+        {
+            "busy_cycles_left": 0,
+            "output_pending": False,
+            "output_index": -1,
+            "accepted_count": 0,
+            "completed_count": 0,
+        }
+        for _ in range(banks)
+    ]
+    accept_events: list[dict[str, int]] = []
+    result_events: list[dict[str, int | bool]] = []
+
+    while next_issue_index < len(finalized) or order_fifo:
+        head_bank = order_fifo[0] if order_fifo else -1
+        out_ready = ready_pattern[cycle % len(ready_pattern)] if ready_pattern else True
+        dequeue_fire = bool(order_fifo and bank_state[head_bank]["output_pending"] and out_ready)
+        enqueue_ready = (len(order_fifo) < banks) or dequeue_fire
+        selected_bank_ready = (
+            next_issue_index < len(finalized)
+            and bank_state[dispatch_bank]["busy_cycles_left"] == 0
+            and not bank_state[dispatch_bank]["output_pending"]
+        )
+        enqueue_fire = bool(next_issue_index < len(finalized) and enqueue_ready and selected_bank_ready)
+        if next_issue_index < len(finalized) and not enqueue_fire:
+            dispatch_stall_cycles += 1
+
+        if dequeue_fire:
+            output_index = int(bank_state[head_bank]["output_index"])
+            beat = finalized[output_index]
+            result_events.append(
+                {
+                    "index": output_index,
+                    "cycle": cycle,
+                    "bank": head_bank,
+                    "command_id": beat.command_id,
+                    "head_id": beat.head_id,
+                    "slice": beat.slice_index,
+                    "last": beat.last,
+                }
+            )
+
+        if enqueue_fire:
+            bank_state[dispatch_bank]["busy_cycles_left"] = output_latency_cycles
+            bank_state[dispatch_bank]["output_pending"] = False
+            bank_state[dispatch_bank]["output_index"] = next_issue_index
+            bank_state[dispatch_bank]["accepted_count"] += 1
+            accept_events.append({"index": next_issue_index, "cycle": cycle, "bank": dispatch_bank})
+            order_fifo.append(dispatch_bank)
+            high_watermark = max(high_watermark, len(order_fifo))
+            next_issue_index += 1
+            dispatch_bank = (dispatch_bank + 1) % banks
+
+        if dequeue_fire:
+            bank_state[head_bank]["output_pending"] = False
+            bank_state[head_bank]["output_index"] = -1
+            bank_state[head_bank]["completed_count"] += 1
+            order_fifo.pop(0)
+
+        for state in bank_state:
+            if int(state["busy_cycles_left"]) > 0:
+                state["busy_cycles_left"] = int(state["busy_cycles_left"]) - 1
+                if int(state["busy_cycles_left"]) == 0:
+                    state["output_pending"] = True
+
+        cycle += 1
+
+    return {
+        "divider_lanes": lanes,
+        "finalizer_banks": banks,
+        "divider_cycles_per_beat": divide_cycles,
+        "per_bank_output_latency_cycles": output_latency_cycles,
+        "per_bank_accept_interval_cycles": finalizer_accept_interval_cycles(lanes),
+        "accept_events": accept_events,
+        "result_events": result_events,
+        "accepted_count": len(accept_events),
+        "completed_count": len(result_events),
+        "dispatch_stall_cycles": dispatch_stall_cycles,
+        "order_fifo_high_watermark": high_watermark,
+        "drain_cycles": cycle,
+        "bank_accepted_count": [int(state["accepted_count"]) for state in bank_state],
+        "bank_completed_count": [int(state["completed_count"]) for state in bank_state],
+    }
+
+
+def exact_banked_finalized_tree_service_manifest(
+    *,
+    clusters: int,
+    heads: int = 32,
+    divider_lanes: int = 8,
+    finalizer_banks: int = 1,
+) -> dict[str, int | bool | str]:
+    banks = int(finalizer_banks)
+    if banks < 1 or banks > 64:
+        raise ValueError("finalizer_banks must be in [1, 64]")
+    manifest = dict(exact_finalized_tree_service_manifest(clusters=clusters, heads=heads, divider_lanes=divider_lanes))
+    manifest.update(
+        {
+            "finalizer_banks": banks,
+            "order_fifo_depth": banks,
+            "order_fifo_entry_bits": max(1, (banks - 1).bit_length()),
+            "order_fifo_storage_bits": banks * max(1, (banks - 1).bit_length()),
+            "ordering_contract": "round_robin_dispatch_fifo_retire",
+            "per_bank_output_latency_cycles": finalizer_output_latency_cycles(divider_lanes),
+            "per_bank_accept_interval_cycles": finalizer_accept_interval_cycles(divider_lanes),
+            "minimum_banks_for_wrap_free_lane8_service": finalizer_accept_interval_cycles(8),
         }
     )
     return manifest
@@ -496,7 +641,10 @@ __all__ = [
     "VALUE_SLICES",
     "exact_partial_tree_service_manifest",
     "exact_finalized_tree_service_manifest",
+    "exact_banked_finalized_tree_service_manifest",
     "finalizer_cycles_per_beat",
+    "finalizer_output_latency_cycles",
+    "finalizer_accept_interval_cycles",
     "finalize_partial_beat",
     "finalize_partial_beats",
     "finalize_partial_stream",
@@ -509,6 +657,7 @@ __all__ = [
     "partial_stream_from_blocks",
     "pack_final_values",
     "simulate_exact_finalizer",
+    "simulate_exact_banked_finalizer",
     "unpack_final_values",
     "unpack_numerators",
 ]

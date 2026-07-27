@@ -108,6 +108,8 @@ def test_root_finalizer_and_wrapper_manifests(tmp_path: Path) -> None:
 
     assert finalizer_manifest["divider_lanes"] == 4
     assert finalizer_manifest["divider_cycles_per_beat"] == 114
+    assert finalizer_manifest["output_latency_cycles_per_beat"] == 115
+    assert finalizer_manifest["accept_interval_cycles_per_beat"] == 116
     assert finalizer_manifest["final_divider_embodied"] is True
     assert wrapper_manifest["clusters"] == 16
     assert wrapper_manifest["divider_lanes"] == 8
