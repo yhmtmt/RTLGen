@@ -1,0 +1,83 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_score32_exact_partial_tree_cluster_ppa_v1",
+  "created_utc": "2026-07-27T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit",
+  "title": "Score32 exact partial tree cluster PPA baseline",
+  "abstraction_layer": "architecture_block",
+  "hypothesis": "A standalone radix-2 exact-partial tree sweep can isolate cluster fan-in cost and expose placement or timing failure modes before any direct-link, NoC, SRAM, or root-finalizer composition is treated as physically grounded.",
+  "direct_comparison": {
+    "primary_question": "What Nangate45 area and timing boundary is exposed by standalone score32 exact partial trees at 2, 4, 8, and 16 clusters under a fixed first-pass 8 ns, 2500 um die, 2400 um core envelope?",
+    "candidate": "l1_decoder_attention_score32_exact_partial_tree_cluster_ppa_v1",
+    "include": [
+      "actual attention_score32_exact_partial_tree RTL generation",
+      "strict config/manifest/RTL guard before synthesis",
+      "hierarchical OpenROAD block sweeps at place densities 0.30 and 0.50",
+      "timing-summary extraction for each cluster configuration"
+    ],
+    "exclude": [
+      "no direct 328-bit link, NoC, or SRAM placement closure claim",
+      "no root finalizer or composed exact-finalized tree in this patch",
+      "no claim that the standalone tree represents full decoder-attention macro closure"
+    ],
+    "metrics": [
+      "critical_path_ns",
+      "die_area",
+      "total_power_mw",
+      "stdcell_count",
+      "timing_debug_report"
+    ]
+  },
+  "remaining_abstractions": [
+    "This item measures only the standalone exact partial reduction tree; the direct 328-bit internal links remain unclosed.",
+    "NoC transport, SRAM placement, and cluster-to-memory physical composition remain separate sources of area and timing risk.",
+    "The root finalizer is excluded here; any later composed macro must consume this as a tree-only boundary anchor, not as full-path closure evidence."
+  ],
+  "required_evaluations": [
+    {
+      "item_id": "l1_decoder_attention_score32_exact_partial_tree_cluster_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure Nangate45 PPA for standalone score32 exact partial trees at 2, 4, 8, and 16 clusters.",
+      "evaluation_mode": "frontier_followup",
+      "abstraction_layer": "architecture_block",
+      "comparison_role": "exact_partial_tree_cluster_anchor",
+      "configs": [
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_c2_r2/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_c4_r2/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_c8_r2/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_c16_r2/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/attention_score32_exact_partial_tree_v1/sweeps/nangate45_attention_score32_exact_partial_tree_cluster_firstpass.json",
+      "out_root": "runs/designs/npu_blocks",
+      "expected_outputs": [
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_c2_r2/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_c2_r2/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_c4_r2/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_c4_r2/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_c8_r2/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_c8_r2/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_c16_r2/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_c16_r2/timing_debug_report.md"
+      ],
+      "expected_result": {
+        "direction": "measure_exact_partial_tree_cluster_cost",
+        "reason": "This isolates spatial tree fan-in cost and captures timing or placement failure as boundary evidence before any direct-link or finalizer composition claim is attempted."
+      },
+      "status": "pending_implementation_merge",
+      "notes": "Boundary evidence is valid here, especially for c16; direct 328-bit links, NoC/SRAM placement, and the root finalizer remain separate abstractions."
+    }
+  ],
+  "source_refs": [
+    "npu/rtlgen/gen_attention_score32_exact_partial_tree.py",
+    "npu/eval/check_attention_score32_exact_partial_tree_guard.py",
+    "runs/designs/npu_blocks/attention_score32_exact_partial_tree_c2_r2/config.json",
+    "runs/designs/npu_blocks/attention_score32_exact_partial_tree_c4_r2/config.json",
+    "runs/designs/npu_blocks/attention_score32_exact_partial_tree_c8_r2/config.json",
+    "runs/designs/npu_blocks/attention_score32_exact_partial_tree_c16_r2/config.json",
+    "runs/campaigns/npu/attention_score32_exact_partial_tree_v1/sweeps/nangate45_attention_score32_exact_partial_tree_cluster_firstpass.json"
+  ],
+  "knowledge_refs": [
+    "npu/docs/attention_score32_exact_partial_tree_contract.md"
+  ]
+}
