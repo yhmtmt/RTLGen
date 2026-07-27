@@ -286,6 +286,8 @@ def generate(config: dict[str, Any], out_dir: Path) -> None:
         "divider_groups_per_beat": 8 // divider_lanes,
         "divider_iterations_per_group": 57,
         "divider_cycles_per_beat": (8 // divider_lanes) * 57,
+        "output_latency_cycles_per_beat": ((8 // divider_lanes) * 57) + 1,
+        "accept_interval_cycles_per_beat": ((8 // divider_lanes) * 57) + 2,
         "input_value_bits_per_beat": 328,
         "output_value_bits_per_beat": 320,
         "result_interface": "ready_valid_exact_finalized_slice_stream",

@@ -7,7 +7,11 @@ Phase C closes the semantic boundary that phase B left open: the radix-2 exact-p
 - Input beat: `command_id`, `head_id`, `slice`, `last`, shared `exp_sum[32:0]`, and 8 signed `S41` numerators packed into 328 payload bits.
 - Output beat: `command_id`, `head_id`, `slice`, `last`, and 8 signed `S40` finalized values packed into 320 payload bits.
 - Arithmetic: symmetric rounding of `abs(numerator) * 65535 / exp_sum` with sign restore, no combinational `/`, sequential restoring division only.
-- Physical divider lanes: `1/2/4/8`, with ideal standalone service of `456/228/114/57` divide cycles per beat.
+- Physical divider lanes: `1/2/4/8`.
+- Timing terms are distinct:
+  - divide iterations per beat: `456/228/114/57`
+  - earliest output latency per beat: `457/229/115/58`
+  - earliest re-accept interval per beat: `458/230/116/59`
 - Protocol errors: sticky error on `exp_sum == 0`; metadata/last-semantics errors propagate from the tree and are also surfaced at the wrapper boundary.
 
 ## Composition Boundary
@@ -28,5 +32,7 @@ Phase C closes the semantic boundary that phase B left open: the radix-2 exact-p
 ## Reporting Contract
 
 - Probe output must distinguish theoretical `32`-head service accounting from measured workload.
+- Probe output must also distinguish divide iterations from output latency and
+  from re-accept interval.
 - Measured composed-tree evidence is authoritative for first output, last output, drain cycles, accepted/output counts, and root output interval.
 - Standalone divider-cycle figures are ideal service references only; they are not a claim about full-tree initiation interval under backpressure.
