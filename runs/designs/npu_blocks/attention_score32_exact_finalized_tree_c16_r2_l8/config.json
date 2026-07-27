@@ -1,0 +1,10 @@
+{
+  "top_name": "attention_score32_exact_finalized_tree_c16_r2_l8",
+  "attention_score32_exact_finalized_tree": {
+    "clusters": 16,
+    "radix": 2,
+    "value_slices": 16,
+    "head_id_bits": 5,
+    "divider_lanes": 8
+  }
+}
