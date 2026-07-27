@@ -33,15 +33,22 @@ def _prepare_design_dir(tmp_path: Path, *, banks: int) -> Path:
 
 
 def _run_guard(design_dir: Path) -> subprocess.CompletedProcess[str]:
+    return _run_guard_with_sweep(design_dir)
+
+
+def _run_guard_with_sweep(design_dir: Path, sweep: Path | None = None) -> subprocess.CompletedProcess[str]:
+    command = [
+        sys.executable,
+        "npu/eval/check_attention_score32_exact_banked_finalized_tree_guard.py",
+        "--design-dir",
+        str(design_dir),
+        "--config",
+        str(design_dir / "config.json"),
+    ]
+    if sweep is not None:
+        command.extend(["--sweep", str(sweep)])
     return subprocess.run(
-        [
-            sys.executable,
-            "npu/eval/check_attention_score32_exact_banked_finalized_tree_guard.py",
-            "--design-dir",
-            str(design_dir),
-            "--config",
-            str(design_dir / "config.json"),
-        ],
+        command,
         cwd=REPO_ROOT,
         check=False,
         capture_output=True,
@@ -138,3 +145,71 @@ def test_banked_exact_finalized_tree_guard_does_not_flag_pair_merge_division_as_
     result = _run_guard(design_dir)
     assert result.returncode != 0
     assert "generated finalizer RTL must not contain combinational division operators" not in result.stderr
+
+
+def test_banked_exact_finalized_tree_guard_accepts_banked_ppa_sweep_membership(tmp_path: Path) -> None:
+    sweep_path = (
+        REPO_ROOT
+        / "runs"
+        / "campaigns"
+        / "npu"
+        / "attention_score32_exact_banked_finalized_tree_v1"
+        / "sweeps"
+        / "nangate45_attention_score32_exact_banked_finalized_tree_c16_bank_firstpass.json"
+    )
+    for banks in (16, 32, 59, 64):
+        design_dir = _prepare_design_dir(tmp_path / f"ppa_case_{banks}", banks=banks)
+        result = _run_guard_with_sweep(design_dir, sweep=sweep_path)
+        assert result.returncode == 0, result.stderr
+
+
+def test_banked_exact_finalized_tree_guard_rejects_non_ppa_bank_membership_when_sweep_is_supplied(tmp_path: Path) -> None:
+    sweep_path = (
+        REPO_ROOT
+        / "runs"
+        / "campaigns"
+        / "npu"
+        / "attention_score32_exact_banked_finalized_tree_v1"
+        / "sweeps"
+        / "nangate45_attention_score32_exact_banked_finalized_tree_c16_bank_firstpass.json"
+    )
+    design_dir = _prepare_design_dir(tmp_path, banks=57)
+    result = _run_guard_with_sweep(design_dir, sweep=sweep_path)
+    assert result.returncode != 0
+    assert "banked PPA sweep membership requires c16/r2/l8 with finalizer_banks in {16, 32, 59, 64}" in result.stderr
+
+
+def test_banked_exact_finalized_tree_guard_rejects_ppa_sweep_knob_drift(tmp_path: Path) -> None:
+    design_dir = _prepare_design_dir(tmp_path, banks=59)
+    sweep_path = tmp_path / "nangate45_attention_score32_exact_banked_finalized_tree_c16_bank_firstpass.json"
+    sweep_path.write_text(
+        json.dumps(
+            {
+                "tag_prefix": "attention_score32_exact_banked_finalized_tree_c16_bank_firstpass_v1",
+                "flow_params": {
+                    "CLOCK_PERIOD": [8.0],
+                    "DIE_AREA": ["0 0 2500 2500"],
+                    "CORE_AREA": ["50 50 2450 2450"],
+                    "PLACE_DENSITY": [0.3, 0.5],
+                    "SYNTH_HIERARCHICAL": [1],
+                },
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    result = _run_guard_with_sweep(design_dir, sweep=sweep_path)
+    assert result.returncode != 0
+    assert "banked PPA sweep flow_params do not match the checked-in banked-finalized-tree contract" in result.stderr
+
+
+def test_banked_exact_finalized_tree_guard_rejects_equivalence_hash_token_in_datapath(tmp_path: Path) -> None:
+    design_dir = _prepare_design_dir(tmp_path, banks=59)
+    top_path = design_dir / "verilog" / "top.v"
+    top_path.write_text(top_path.read_text(encoding="utf-8") + "\nwire equivalence_hash = 1'b0;\n", encoding="utf-8")
+
+    result = _run_guard(design_dir)
+    assert result.returncode != 0
+    assert "functional datapath must not contain equivalence_hash tokens" in result.stderr

@@ -1,0 +1,39 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_score32_exact_banked_finalized_tree_c16_bank_ppa_v1",
+  "source_commit_note": "Replace with the merge commit that adds the banked exact-finalized-tree configs, strict PPA guard, sweep, and L1 task-generator support before dispatch.",
+  "requested_items": [
+    {
+      "item_id": "l1_decoder_attention_score32_exact_banked_finalized_tree_c16_bank_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure Nangate45 PPA for the merged c16/r2/l8 score32 exact banked finalized tree at finalizer banks 16, 32, 59, and 64.",
+      "evaluation_mode": "frontier_followup",
+      "abstraction_layer": "architecture_block",
+      "comparison_role": "exact_banked_finalized_tree_c16_bank_anchor",
+      "priority": 94,
+      "configs": [
+        "runs/designs/npu_blocks/attention_score32_exact_banked_finalized_tree_c16_r2_l8_b16/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_banked_finalized_tree_c16_r2_l8_b32/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_banked_finalized_tree_c16_r2_l8_b59/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_banked_finalized_tree_c16_r2_l8_b64/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/attention_score32_exact_banked_finalized_tree_v1/sweeps/nangate45_attention_score32_exact_banked_finalized_tree_c16_bank_firstpass.json",
+      "out_root": "runs/designs/npu_blocks",
+      "expected_outputs": [
+        "runs/designs/npu_blocks/attention_score32_exact_banked_finalized_tree_c16_r2_l8_b16/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_banked_finalized_tree_c16_r2_l8_b16/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_score32_exact_banked_finalized_tree_c16_r2_l8_b32/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_banked_finalized_tree_c16_r2_l8_b32/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_score32_exact_banked_finalized_tree_c16_r2_l8_b59/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_banked_finalized_tree_c16_r2_l8_b59/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_score32_exact_banked_finalized_tree_c16_r2_l8_b64/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_banked_finalized_tree_c16_r2_l8_b64/timing_debug_report.md"
+      ],
+      "expected_result": {
+        "direction": "measure_exact_banked_finalized_tree_c16_bank_cost",
+        "reason": "This records the sub-wrap b16/b32 cost, the first wrap-free b59 point, and the b64 power-of-two overhead while keeping the same merged c16/r2/l8 architecture and fixed perimeter-aware envelope."
+      },
+      "status": "pending_implementation_merge",
+      "notes": "Merged banked wrapper PPA only; 16 external leaf streams, direct 328-bit transport, NoC and SRAM placement, and full decoder composition remain unclosed."
+    }
+  ]
+}

@@ -1801,6 +1801,58 @@ def _write_example_attention_score32_exact_finalized_tree_repo(repo_root: Path) 
     return str(config_path.relative_to(repo_root)), str(sweep_path.relative_to(repo_root))
 
 
+def _write_example_attention_score32_exact_banked_finalized_tree_repo(repo_root: Path) -> tuple[str, str]:
+    design_dir = repo_root / "runs" / "designs" / "npu_blocks" / "attention_score32_exact_banked_finalized_tree_smoke_c16_r2_l8_b16"
+    design_dir.mkdir(parents=True, exist_ok=True)
+    config_path = design_dir / "config.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "top_name": "attention_score32_exact_banked_finalized_tree_smoke_c16_r2_l8_b16",
+                "attention_score32_exact_banked_finalized_tree": {
+                    "clusters": 16,
+                    "radix": 2,
+                    "value_slices": 16,
+                    "head_id_bits": 5,
+                    "divider_lanes": 8,
+                    "finalizer_banks": 16,
+                },
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    sweep_path = (
+        repo_root
+        / "runs"
+        / "campaigns"
+        / "npu"
+        / "attention_score32_exact_banked_finalized_tree_v1"
+        / "sweeps"
+        / "nangate45_attention_score32_exact_banked_finalized_tree_c16_bank_firstpass.json"
+    )
+    sweep_path.parent.mkdir(parents=True, exist_ok=True)
+    sweep_path.write_text(
+        json.dumps(
+            {
+                "tag_prefix": "attention_score32_exact_banked_finalized_tree_c16_bank_firstpass_v1",
+                "flow_params": {
+                    "CLOCK_PERIOD": [8.0],
+                    "DIE_AREA": ["0 0 2700 2700"],
+                    "CORE_AREA": ["100 100 2600 2600"],
+                    "PLACE_DENSITY": [0.3, 0.5],
+                    "SYNTH_HIERARCHICAL": [1],
+                },
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    return str(config_path.relative_to(repo_root)), str(sweep_path.relative_to(repo_root))
+
+
 def _write_second_attention_score32_exact_partial_tree_repo(repo_root: Path) -> str:
     design_dir = repo_root / "runs" / "designs" / "npu_blocks" / "attention_score32_exact_partial_tree_smoke_c16_r2"
     design_dir.mkdir(parents=True, exist_ok=True)
@@ -1860,6 +1912,81 @@ def _write_second_attention_score32_exact_finalized_tree_repo(repo_root: Path) -
                     "value_slices": 16,
                     "head_id_bits": 5,
                     "divider_lanes": 8,
+                },
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    return str(config_path.relative_to(repo_root))
+
+
+def _write_second_attention_score32_exact_banked_finalized_tree_repo(repo_root: Path) -> str:
+    design_dir = repo_root / "runs" / "designs" / "npu_blocks" / "attention_score32_exact_banked_finalized_tree_smoke_c16_r2_l8_b32"
+    design_dir.mkdir(parents=True, exist_ok=True)
+    config_path = design_dir / "config.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "top_name": "attention_score32_exact_banked_finalized_tree_smoke_c16_r2_l8_b32",
+                "attention_score32_exact_banked_finalized_tree": {
+                    "clusters": 16,
+                    "radix": 2,
+                    "value_slices": 16,
+                    "head_id_bits": 5,
+                    "divider_lanes": 8,
+                    "finalizer_banks": 32,
+                },
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    return str(config_path.relative_to(repo_root))
+
+
+def _write_third_attention_score32_exact_banked_finalized_tree_repo(repo_root: Path) -> str:
+    design_dir = repo_root / "runs" / "designs" / "npu_blocks" / "attention_score32_exact_banked_finalized_tree_smoke_c16_r2_l8_b59"
+    design_dir.mkdir(parents=True, exist_ok=True)
+    config_path = design_dir / "config.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "top_name": "attention_score32_exact_banked_finalized_tree_smoke_c16_r2_l8_b59",
+                "attention_score32_exact_banked_finalized_tree": {
+                    "clusters": 16,
+                    "radix": 2,
+                    "value_slices": 16,
+                    "head_id_bits": 5,
+                    "divider_lanes": 8,
+                    "finalizer_banks": 59,
+                },
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    return str(config_path.relative_to(repo_root))
+
+
+def _write_fourth_attention_score32_exact_banked_finalized_tree_repo(repo_root: Path) -> str:
+    design_dir = repo_root / "runs" / "designs" / "npu_blocks" / "attention_score32_exact_banked_finalized_tree_smoke_c16_r2_l8_b64"
+    design_dir.mkdir(parents=True, exist_ok=True)
+    config_path = design_dir / "config.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "top_name": "attention_score32_exact_banked_finalized_tree_smoke_c16_r2_l8_b64",
+                "attention_score32_exact_banked_finalized_tree": {
+                    "clusters": 16,
+                    "radix": 2,
+                    "value_slices": 16,
+                    "head_id_bits": 5,
+                    "divider_lanes": 8,
+                    "finalizer_banks": 64,
                 },
             },
             indent=2,
@@ -3358,6 +3485,115 @@ def test_generate_l1_sweep_task_supports_attention_score32_exact_partial_tree_co
             }
 
 
+def test_generate_l1_sweep_task_supports_attention_score32_exact_banked_finalized_tree_configs() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        config_path, sweep_path = _write_example_attention_score32_exact_banked_finalized_tree_repo(repo_root)
+        proposal_dir = (
+            repo_root
+            / "docs"
+            / "proposals"
+            / "prop_l1_decoder_attention_score32_exact_banked_finalized_tree_c16_bank_ppa_v1"
+        )
+        proposal_dir.mkdir(parents=True, exist_ok=True)
+        item_id = "l1_decoder_attention_score32_exact_banked_finalized_tree_c16_bank_ppa_v1"
+        (proposal_dir / "proposal.json").write_text(
+            json.dumps(
+                {
+                    "proposal_id": "prop_l1_decoder_attention_score32_exact_banked_finalized_tree_c16_bank_ppa_v1",
+                    "abstraction_layer": "architecture_block",
+                },
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (proposal_dir / "evaluation_requests.json").write_text(
+            json.dumps(
+                {
+                    "proposal_id": "prop_l1_decoder_attention_score32_exact_banked_finalized_tree_c16_bank_ppa_v1",
+                    "requested_items": [
+                        {
+                            "item_id": item_id,
+                            "task_type": "l1_sweep",
+                            "evaluation_mode": "frontier_followup",
+                            "abstraction_layer": "architecture_block",
+                            "comparison_role": "exact_banked_finalized_tree_c16_bank_anchor",
+                            "priority": 94,
+                            "expected_result": {
+                                "direction": "measure_exact_banked_finalized_tree_c16_bank_cost",
+                                "reason": "Use the merged banked wrapper to compare sub-wrap, wrap-free, and power-of-two bank counts.",
+                            },
+                        }
+                    ],
+                },
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l1_sweep_task(
+                session,
+                Layer1SweepGenerateRequest(
+                    repo_root=str(repo_root),
+                    sweep_path=sweep_path,
+                    config_paths=[config_path],
+                    platform="nangate45",
+                    out_root="runs/designs/npu_blocks",
+                    item_id=item_id,
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    proposal_id="prop_l1_decoder_attention_score32_exact_banked_finalized_tree_c16_bank_ppa_v1",
+                    proposal_path=str(proposal_dir.relative_to(repo_root)),
+                    update_proposal_files=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            assert work_item.priority == 94
+            assert [command["name"] for command in work_item.command_manifest] == [
+                "generate_attention_score32_exact_banked_finalized_tree_rtl",
+                "check_attention_score32_exact_banked_finalized_tree_guard",
+                "run_block_sweep",
+                "extract_attention_score32_exact_banked_finalized_tree_timing_paths",
+                "build_runs_index",
+                "validate",
+            ]
+            assert work_item.command_manifest[0]["run"] == (
+                "export PATH=/oss-cad-suite/bin:$PATH && "
+                "python3 npu/rtlgen/gen_attention_score32_exact_banked_finalized_tree.py "
+                "--config runs/designs/npu_blocks/attention_score32_exact_banked_finalized_tree_smoke_c16_r2_l8_b16/config.json "
+                "--out runs/designs/npu_blocks/attention_score32_exact_banked_finalized_tree_smoke_c16_r2_l8_b16/verilog"
+            )
+            assert work_item.command_manifest[1]["run"] == (
+                "python3 npu/eval/check_attention_score32_exact_banked_finalized_tree_guard.py "
+                "--design-dir runs/designs/npu_blocks/attention_score32_exact_banked_finalized_tree_smoke_c16_r2_l8_b16 "
+                "--config runs/designs/npu_blocks/attention_score32_exact_banked_finalized_tree_smoke_c16_r2_l8_b16/config.json "
+                "--sweep runs/campaigns/npu/attention_score32_exact_banked_finalized_tree_v1/sweeps/"
+                "nangate45_attention_score32_exact_banked_finalized_tree_c16_bank_firstpass.json"
+            )
+            assert "--top attention_score32_exact_banked_finalized_tree_smoke_c16_r2_l8_b16" in work_item.command_manifest[2]["run"]
+            assert work_item.command_manifest[3]["run"] == (
+                "python3 npu/eval/extract_openroad_timing_summary.py "
+                "--design-dir runs/designs/npu_blocks/attention_score32_exact_banked_finalized_tree_smoke_c16_r2_l8_b16 "
+                "--out runs/designs/npu_blocks/attention_score32_exact_banked_finalized_tree_smoke_c16_r2_l8_b16/timing_debug_report.md "
+                "--max-paths 8"
+            )
+            assert work_item.expected_outputs == [
+                "runs/designs/npu_blocks/attention_score32_exact_banked_finalized_tree_smoke_c16_r2_l8_b16/metrics.csv",
+                "runs/designs/npu_blocks/attention_score32_exact_banked_finalized_tree_smoke_c16_r2_l8_b16/timing_debug_report.md",
+            ]
+            assert work_item.task_request.request_payload["developer_loop"]["abstraction"] == {
+                "layer": "architecture_block"
+            }
+
+
 def test_generate_l1_sweep_task_supports_attention_hbm_replay_controller_configs() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
@@ -3939,6 +4175,44 @@ def test_exact_finalized_tree_c16_lane_ppa_proposal_is_pending_merge_with_all_la
     assert request_entry["sweep_path"] == expected_sweep
     assert "non-additive PPA" in proposal["hypothesis"]
     assert "full decoder composition remain unclosed" in proposal_entry["notes"]
+
+
+def test_exact_banked_finalized_tree_c16_bank_ppa_proposal_is_pending_merge_with_four_bank_configs() -> None:
+    repo_root = Path(__file__).resolve().parents[3]
+    proposal_dir = (
+        repo_root
+        / "docs"
+        / "proposals"
+        / "prop_l1_decoder_attention_score32_exact_banked_finalized_tree_c16_bank_ppa_v1"
+    )
+    proposal = json.loads((proposal_dir / "proposal.json").read_text(encoding="utf-8"))
+    evaluation_requests = json.loads((proposal_dir / "evaluation_requests.json").read_text(encoding="utf-8"))
+
+    item_id = "l1_decoder_attention_score32_exact_banked_finalized_tree_c16_bank_ppa_v1"
+    expected_configs = [
+        "runs/designs/npu_blocks/attention_score32_exact_banked_finalized_tree_c16_r2_l8_b16/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_banked_finalized_tree_c16_r2_l8_b32/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_banked_finalized_tree_c16_r2_l8_b59/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_banked_finalized_tree_c16_r2_l8_b64/config.json",
+    ]
+    expected_sweep = (
+        "runs/campaigns/npu/attention_score32_exact_banked_finalized_tree_v1/sweeps/"
+        "nangate45_attention_score32_exact_banked_finalized_tree_c16_bank_firstpass.json"
+    )
+    proposal_entry = {entry["item_id"]: entry for entry in proposal["required_evaluations"]}[item_id]
+    request_entry = {entry["item_id"]: entry for entry in evaluation_requests["requested_items"]}[item_id]
+
+    assert proposal["abstraction_layer"] == "architecture_block"
+    assert proposal_entry["priority"] == 94
+    assert request_entry["priority"] == 94
+    assert proposal_entry["status"] == "pending_implementation_merge"
+    assert request_entry["status"] == "pending_implementation_merge"
+    assert proposal_entry["configs"] == expected_configs
+    assert request_entry["configs"] == expected_configs
+    assert proposal_entry["sweep_path"] == expected_sweep
+    assert request_entry["sweep_path"] == expected_sweep
+    assert "b59 is the first measured one-result/cycle point" in proposal["hypothesis"]
+    assert "100 um perimeter keepout" in proposal_entry["notes"]
 
 
 def test_generate_l1_sweep_task_checked_in_service_requests_gate_and_refresh_release() -> None:
@@ -4922,6 +5196,70 @@ def test_generate_l1_sweep_task_emits_commands_for_each_attention_score32_exact_
                 "runs/designs/npu_blocks/attention_score32_exact_finalized_tree_smoke_c16_r2_l4/timing_debug_report.md",
                 "runs/designs/npu_blocks/attention_score32_exact_finalized_tree_smoke_c16_r2_l8/metrics.csv",
                 "runs/designs/npu_blocks/attention_score32_exact_finalized_tree_smoke_c16_r2_l8/timing_debug_report.md",
+            ]
+
+
+def test_generate_l1_sweep_task_emits_commands_for_each_attention_score32_exact_banked_finalized_tree_config() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        config_path, sweep_path = _write_example_attention_score32_exact_banked_finalized_tree_repo(repo_root)
+        second_config_path = _write_second_attention_score32_exact_banked_finalized_tree_repo(repo_root)
+        third_config_path = _write_third_attention_score32_exact_banked_finalized_tree_repo(repo_root)
+        fourth_config_path = _write_fourth_attention_score32_exact_banked_finalized_tree_repo(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l1_sweep_task(
+                session,
+                Layer1SweepGenerateRequest(
+                    repo_root=str(repo_root),
+                    sweep_path=sweep_path,
+                    config_paths=[config_path, second_config_path, third_config_path, fourth_config_path],
+                    platform="nangate45",
+                    out_root="runs/designs/npu_blocks",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    abstraction_layer="architecture_block",
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            assert [command["name"] for command in work_item.command_manifest] == [
+                "generate_attention_score32_exact_banked_finalized_tree_rtl_attention_score32_exact_banked_finalized_tree_smoke_c16_r2_l8_b16",
+                "check_attention_score32_exact_banked_finalized_tree_guard_attention_score32_exact_banked_finalized_tree_smoke_c16_r2_l8_b16",
+                "run_block_sweep_attention_score32_exact_banked_finalized_tree_smoke_c16_r2_l8_b16",
+                "extract_attention_score32_exact_banked_finalized_tree_timing_paths_attention_score32_exact_banked_finalized_tree_smoke_c16_r2_l8_b16",
+                "generate_attention_score32_exact_banked_finalized_tree_rtl_attention_score32_exact_banked_finalized_tree_smoke_c16_r2_l8_b32",
+                "check_attention_score32_exact_banked_finalized_tree_guard_attention_score32_exact_banked_finalized_tree_smoke_c16_r2_l8_b32",
+                "run_block_sweep_attention_score32_exact_banked_finalized_tree_smoke_c16_r2_l8_b32",
+                "extract_attention_score32_exact_banked_finalized_tree_timing_paths_attention_score32_exact_banked_finalized_tree_smoke_c16_r2_l8_b32",
+                "generate_attention_score32_exact_banked_finalized_tree_rtl_attention_score32_exact_banked_finalized_tree_smoke_c16_r2_l8_b59",
+                "check_attention_score32_exact_banked_finalized_tree_guard_attention_score32_exact_banked_finalized_tree_smoke_c16_r2_l8_b59",
+                "run_block_sweep_attention_score32_exact_banked_finalized_tree_smoke_c16_r2_l8_b59",
+                "extract_attention_score32_exact_banked_finalized_tree_timing_paths_attention_score32_exact_banked_finalized_tree_smoke_c16_r2_l8_b59",
+                "generate_attention_score32_exact_banked_finalized_tree_rtl_attention_score32_exact_banked_finalized_tree_smoke_c16_r2_l8_b64",
+                "check_attention_score32_exact_banked_finalized_tree_guard_attention_score32_exact_banked_finalized_tree_smoke_c16_r2_l8_b64",
+                "run_block_sweep_attention_score32_exact_banked_finalized_tree_smoke_c16_r2_l8_b64",
+                "extract_attention_score32_exact_banked_finalized_tree_timing_paths_attention_score32_exact_banked_finalized_tree_smoke_c16_r2_l8_b64",
+                "build_runs_index",
+                "validate",
+            ]
+            assert "attention_score32_exact_banked_finalized_tree_smoke_c16_r2_l8_b16/config.json" in work_item.command_manifest[0]["run"]
+            assert "attention_score32_exact_banked_finalized_tree_smoke_c16_r2_l8_b32/config.json" in work_item.command_manifest[4]["run"]
+            assert "attention_score32_exact_banked_finalized_tree_smoke_c16_r2_l8_b59/config.json" in work_item.command_manifest[8]["run"]
+            assert "attention_score32_exact_banked_finalized_tree_smoke_c16_r2_l8_b64/config.json" in work_item.command_manifest[12]["run"]
+            assert work_item.expected_outputs == [
+                "runs/designs/npu_blocks/attention_score32_exact_banked_finalized_tree_smoke_c16_r2_l8_b16/metrics.csv",
+                "runs/designs/npu_blocks/attention_score32_exact_banked_finalized_tree_smoke_c16_r2_l8_b16/timing_debug_report.md",
+                "runs/designs/npu_blocks/attention_score32_exact_banked_finalized_tree_smoke_c16_r2_l8_b32/metrics.csv",
+                "runs/designs/npu_blocks/attention_score32_exact_banked_finalized_tree_smoke_c16_r2_l8_b32/timing_debug_report.md",
+                "runs/designs/npu_blocks/attention_score32_exact_banked_finalized_tree_smoke_c16_r2_l8_b59/metrics.csv",
+                "runs/designs/npu_blocks/attention_score32_exact_banked_finalized_tree_smoke_c16_r2_l8_b59/timing_debug_report.md",
+                "runs/designs/npu_blocks/attention_score32_exact_banked_finalized_tree_smoke_c16_r2_l8_b64/metrics.csv",
+                "runs/designs/npu_blocks/attention_score32_exact_banked_finalized_tree_smoke_c16_r2_l8_b64/timing_debug_report.md",
             ]
 
 
