@@ -843,6 +843,56 @@ def _read_config_target(
                 },
             ],
         )
+    elif "top_name" in cfg and "attention_score32_exact_finalized_tree" in cfg:
+        top_name = str(cfg["top_name"]).strip()
+        if not top_name:
+            raise Layer1TaskGenerationError(f"top_name must not be empty in {config_path}")
+        try:
+            design_dir = str(config_path.parent.resolve().relative_to(repo_root.resolve()))
+        except ValueError as exc:
+            raise Layer1TaskGenerationError(
+                f"score32 exact finalized tree config must live under repo_root/runs/designs/...: {config_path}"
+            ) from exc
+        design_name = config_path.parent.name
+        return Layer1ConfigTarget(
+            design_kind="block",
+            design_name=design_name,
+            expected_metrics_path=block_metrics_path(design_name),
+            expected_report_paths=[f"{design_dir}/timing_debug_report.md"],
+            commands=[
+                {
+                    "name": "generate_attention_score32_exact_finalized_tree_rtl",
+                    "run": _with_oss_cad_path(
+                        "python3 npu/rtlgen/gen_attention_score32_exact_finalized_tree.py "
+                        f"--config {config_rel} --out {design_dir}/verilog"
+                    ),
+                },
+                {
+                    "name": "check_attention_score32_exact_finalized_tree_guard",
+                    "run": (
+                        "python3 npu/eval/check_attention_score32_exact_finalized_tree_guard.py "
+                        f"--design-dir {design_dir} --config {config_rel}"
+                    ),
+                },
+                {
+                    "name": "run_block_sweep",
+                    "run": _with_oss_cad_path(
+                        "python3 npu/synth/run_block_sweep.py "
+                        f"--design_dir {design_dir} --platform {{platform}} --top {top_name} "
+                        f"--sweep {{sweep_path}} --out_root {out_root} "
+                        + (f"--make_target {make_target} " if make_target else "")
+                        + "--skip_existing"
+                    ),
+                },
+                {
+                    "name": "extract_attention_score32_exact_finalized_tree_timing_paths",
+                    "run": (
+                        "python3 npu/eval/extract_openroad_timing_summary.py "
+                        f"--design-dir {design_dir} --out {design_dir}/timing_debug_report.md --max-paths 8"
+                    ),
+                },
+            ],
+        )
     elif "top_name" in cfg and "attention_score32_exact_partial_tree" in cfg:
         top_name = str(cfg["top_name"]).strip()
         if not top_name:

@@ -1,0 +1,38 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_score32_exact_finalized_tree_c16_lane_ppa_v1",
+  "source_commit_note": "Replace with the merge commit that adds the composed exact-finalized-tree configs, strict guard, sweep, and L1 task-generator support before dispatch.",
+  "requested_items": [
+    {
+      "item_id": "l1_decoder_attention_score32_exact_finalized_tree_c16_lane_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure Nangate45 PPA for the composed c16 score32 exact finalized tree at divider lanes 1, 2, 4, and 8.",
+      "evaluation_mode": "frontier_followup",
+      "abstraction_layer": "architecture_block",
+      "comparison_role": "exact_finalized_tree_c16_lane_anchor",
+      "configs": [
+        "runs/designs/npu_blocks/attention_score32_exact_finalized_tree_c16_r2_l1/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_finalized_tree_c16_r2_l2/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_finalized_tree_c16_r2_l4/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_finalized_tree_c16_r2_l8/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/attention_score32_exact_finalized_tree_v1/sweeps/nangate45_attention_score32_exact_finalized_tree_c16_lane_firstpass.json",
+      "out_root": "runs/designs/npu_blocks",
+      "expected_outputs": [
+        "runs/designs/npu_blocks/attention_score32_exact_finalized_tree_c16_r2_l1/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_finalized_tree_c16_r2_l1/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_score32_exact_finalized_tree_c16_r2_l2/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_finalized_tree_c16_r2_l2/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_score32_exact_finalized_tree_c16_r2_l4/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_finalized_tree_c16_r2_l4/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_score32_exact_finalized_tree_c16_r2_l8/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_finalized_tree_c16_r2_l8/timing_debug_report.md"
+      ],
+      "expected_result": {
+        "direction": "measure_exact_finalized_tree_c16_lane_cost",
+        "reason": "This measures the composed tree plus embodied finalizer cost directly, capturing non-additive PPA before transport or decoder-level closure work."
+      },
+      "status": "pending_implementation_merge",
+      "notes": "Composed c16 tree plus finalizer PPA only; 16 external leaf streams, direct 328-bit transport, NoC and SRAM placement, and full decoder composition remain unclosed."
+    }
+  ]
+}

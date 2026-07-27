@@ -1,0 +1,114 @@
+import json
+from pathlib import Path
+import re
+import subprocess
+import sys
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from npu.rtlgen.gen_attention_score32_exact_finalized_tree import generate
+
+
+def _config_path(lanes: int) -> Path:
+    return (
+        REPO_ROOT
+        / "runs"
+        / "designs"
+        / "npu_blocks"
+        / f"attention_score32_exact_finalized_tree_c16_r2_l{lanes}"
+        / "config.json"
+    )
+
+
+def _prepare_design_dir(tmp_path: Path, *, lanes: int) -> Path:
+    tmp_path.mkdir(parents=True, exist_ok=True)
+    design_dir = tmp_path / f"attention_score32_exact_finalized_tree_c16_r2_l{lanes}"
+    design_dir.mkdir()
+    config = json.loads(_config_path(lanes).read_text(encoding="utf-8"))
+    (design_dir / "config.json").write_text(json.dumps(config, indent=2) + "\n", encoding="utf-8")
+    generate(config, design_dir / "verilog")
+    return design_dir
+
+
+def _run_guard(design_dir: Path) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        [
+            sys.executable,
+            "npu/eval/check_attention_score32_exact_finalized_tree_guard.py",
+            "--design-dir",
+            str(design_dir),
+            "--config",
+            str(design_dir / "config.json"),
+        ],
+        cwd=REPO_ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+
+def test_exact_finalized_tree_guard_accepts_all_checked_in_lane_configs(tmp_path: Path) -> None:
+    for lanes in (1, 2, 4, 8):
+        design_dir = _prepare_design_dir(tmp_path / f"case_{lanes}", lanes=lanes)
+        result = _run_guard(design_dir)
+        assert result.returncode == 0, result.stderr
+        payload = json.loads(result.stdout)
+        assert payload["divider_lanes"] == lanes
+        assert payload["clusters"] == 16
+        assert payload["tree_nodes"] == 15
+        assert payload["tree_stages"] == 4
+        assert payload["status"] == "ok"
+
+
+def test_exact_finalized_tree_guard_rejects_stale_generated_top(tmp_path: Path) -> None:
+    design_dir = _prepare_design_dir(tmp_path, lanes=4)
+    top_path = design_dir / "verilog" / "top.v"
+    top_path.write_text(top_path.read_text(encoding="utf-8") + "\n// stale artifact drift\n", encoding="utf-8")
+
+    result = _run_guard(design_dir)
+    assert result.returncode != 0
+    assert "generated RTL artifacts do not match current generator output: top.v" in result.stderr
+
+
+def test_exact_finalized_tree_guard_rejects_manifest_boundary_mismatch(tmp_path: Path) -> None:
+    design_dir = _prepare_design_dir(tmp_path, lanes=2)
+    manifest_path = design_dir / "verilog" / "attention_score32_exact_finalized_tree_manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["direct_328bit_links_unclosed"] = False
+    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+
+    result = _run_guard(design_dir)
+    assert result.returncode != 0
+    assert "generated manifest direct_328bit_links_unclosed must be True" in result.stderr
+
+
+def test_exact_finalized_tree_guard_rejects_tree_to_finalizer_wiring_mismatch(tmp_path: Path) -> None:
+    design_dir = _prepare_design_dir(tmp_path, lanes=8)
+    top_path = design_dir / "verilog" / "top.v"
+    text = top_path.read_text(encoding="utf-8")
+    top_path.write_text(
+        text.replace(".in_value(tree_root_value),", ".in_value(root_value),"),
+        encoding="utf-8",
+    )
+
+    result = _run_guard(design_dir)
+    assert result.returncode != 0
+    assert "generated RTL missing semantic token: .in_value(tree_root_value)," in result.stderr
+
+
+def test_exact_finalized_tree_guard_rejects_combinational_divide_in_finalizer(tmp_path: Path) -> None:
+    design_dir = _prepare_design_dir(tmp_path, lanes=1)
+    top_path = design_dir / "verilog" / "top.v"
+    text = top_path.read_text(encoding="utf-8")
+    module_name = "attention_score32_exact_finalized_tree_c16_r2_l1__root_finalizer"
+    pattern = re.compile(rf"(module\s+{re.escape(module_name)}\b.*?)(endmodule\s*)", re.DOTALL)
+    match = pattern.search(text)
+    assert match is not None
+    finalizer_with_divide = match.group(1) + "  wire [31:0] bad_div = 32'd8 / 32'd2;\n" + match.group(2)
+    top_path.write_text(text[: match.start()] + finalizer_with_divide + text[match.end() :], encoding="utf-8")
+
+    result = _run_guard(design_dir)
+    assert result.returncode != 0
+    assert "generated finalizer RTL must not contain combinational division operators" in result.stderr
