@@ -1,0 +1,84 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_score32_exact_finalized_tree_c16_lane_ppa_v1",
+  "created_utc": "2026-07-27T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit",
+  "title": "Score32 exact finalized-tree c16 lane PPA baseline",
+  "abstraction_layer": "architecture_block",
+  "hypothesis": "A composed c16 exact-partial tree plus embodied root finalizer sweep will expose the non-additive PPA cost of the integrated control path across 1/2/4/8 divider lanes before any transport or full-decoder closure claims are made.",
+  "direct_comparison": {
+    "primary_question": "What Nangate45 area and timing tradeoff comes from the composed 16-cluster score32 exact finalized tree when divider lanes vary across 1, 2, 4, and 8 under a fixed first-pass 8 ns, 2500 um die, 2450 um core envelope?",
+    "candidate": "l1_decoder_attention_score32_exact_finalized_tree_c16_lane_ppa_v1",
+    "include": [
+      "actual attention_score32_exact_finalized_tree RTL generation",
+      "strict config, manifest, regeneration, and wiring guard before synthesis",
+      "hierarchical OpenROAD block sweeps at place densities 0.30 and 0.50",
+      "timing-summary extraction for each composed lane configuration"
+    ],
+    "exclude": [
+      "no closure claim for 16 external leaf streams or direct 328-bit transport",
+      "no NoC or SRAM placement closure claim",
+      "no claim that this composed macro closes the full decoder attention path"
+    ],
+    "metrics": [
+      "critical_path_ns",
+      "die_area",
+      "total_power_mw",
+      "stdcell_count",
+      "timing_debug_report"
+    ]
+  },
+  "remaining_abstractions": [
+    "This item measures only the composed c16 tree plus finalizer non-additive PPA; 16 external leaf streams and direct 328-bit transport remain unclosed.",
+    "NoC placement, SRAM placement, and macro-to-macro transport are still open physical risks outside this block-only measurement.",
+    "Full decoder composition remains unclosed, so later integrated conclusions must treat this as a component anchor rather than path closure evidence."
+  ],
+  "required_evaluations": [
+    {
+      "item_id": "l1_decoder_attention_score32_exact_finalized_tree_c16_lane_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure Nangate45 PPA for the composed c16 score32 exact finalized tree at divider lanes 1, 2, 4, and 8.",
+      "evaluation_mode": "frontier_followup",
+      "abstraction_layer": "architecture_block",
+      "comparison_role": "exact_finalized_tree_c16_lane_anchor",
+      "configs": [
+        "runs/designs/npu_blocks/attention_score32_exact_finalized_tree_c16_r2_l1/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_finalized_tree_c16_r2_l2/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_finalized_tree_c16_r2_l4/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_finalized_tree_c16_r2_l8/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/attention_score32_exact_finalized_tree_v1/sweeps/nangate45_attention_score32_exact_finalized_tree_c16_lane_firstpass.json",
+      "out_root": "runs/designs/npu_blocks",
+      "expected_outputs": [
+        "runs/designs/npu_blocks/attention_score32_exact_finalized_tree_c16_r2_l1/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_finalized_tree_c16_r2_l1/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_score32_exact_finalized_tree_c16_r2_l2/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_finalized_tree_c16_r2_l2/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_score32_exact_finalized_tree_c16_r2_l4/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_finalized_tree_c16_r2_l4/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_score32_exact_finalized_tree_c16_r2_l8/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_finalized_tree_c16_r2_l8/timing_debug_report.md"
+      ],
+      "expected_result": {
+        "direction": "measure_exact_finalized_tree_c16_lane_cost",
+        "reason": "This measures the composed tree plus embodied finalizer cost directly, capturing non-additive PPA before transport or decoder-level closure work."
+      },
+      "status": "pending_implementation_merge",
+      "notes": "This is a composed c16 tree plus finalizer PPA probe only; external leaf streams, direct 328-bit transport, NoC and SRAM placement, and full decoder composition remain unclosed."
+    }
+  ],
+  "source_refs": [
+    "npu/rtlgen/gen_attention_score32_exact_finalized_tree.py",
+    "npu/eval/check_attention_score32_exact_finalized_tree_guard.py",
+    "runs/designs/npu_blocks/attention_score32_exact_finalized_tree_c16_r2_l1/config.json",
+    "runs/designs/npu_blocks/attention_score32_exact_finalized_tree_c16_r2_l2/config.json",
+    "runs/designs/npu_blocks/attention_score32_exact_finalized_tree_c16_r2_l4/config.json",
+    "runs/designs/npu_blocks/attention_score32_exact_finalized_tree_c16_r2_l8/config.json",
+    "runs/campaigns/npu/attention_score32_exact_finalized_tree_v1/sweeps/nangate45_attention_score32_exact_finalized_tree_c16_lane_firstpass.json"
+  ],
+  "knowledge_refs": [
+    "npu/docs/attention_score32_exact_partial_tree_contract.md",
+    "npu/docs/attention_score32_exact_root_finalizer_contract.md"
+  ]
+}
