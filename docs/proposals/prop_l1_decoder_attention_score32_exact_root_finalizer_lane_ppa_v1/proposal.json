@@ -1,0 +1,83 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_score32_exact_root_finalizer_lane_ppa_v1",
+  "created_utc": "2026-07-27T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit",
+  "title": "Score32 exact root finalizer lane PPA baseline",
+  "abstraction_layer": "architecture_block",
+  "hypothesis": "A standalone exact root finalizer lane sweep can isolate sequential divider lane count cost before any composed-tree or wide-link closure work is treated as physically grounded.",
+  "direct_comparison": {
+    "primary_question": "What Nangate45 area/timing tradeoff is introduced by 1/2/4/8 sequential divider lanes in the standalone score32 exact root finalizer under a fixed first-pass 8 ns, 1000 um die, 900 um core envelope?",
+    "candidate": "l1_decoder_attention_score32_exact_root_finalizer_lane_ppa_v1",
+    "include": [
+      "actual attention_score32_exact_root_finalizer RTL generation",
+      "strict config/manifest/RTL guard before synthesis",
+      "hierarchical OpenROAD block sweeps at place densities 0.30 and 0.50",
+      "timing-summary extraction for each lane configuration"
+    ],
+    "exclude": [
+      "no partial-tree or composed-tree PPA in this patch",
+      "no NoC, SRAM, or wide internal exact-partial link closure claim",
+      "no claim that this standalone macro represents full decoder-attention closure"
+    ],
+    "metrics": [
+      "critical_path_ns",
+      "die_area",
+      "total_power_mw",
+      "stdcell_count",
+      "timing_debug_report"
+    ]
+  },
+  "remaining_abstractions": [
+    "This item measures only the standalone exact root finalizer; it does not include the exact-partial reduction tree or direct 328-bit internal links.",
+    "Tree fan-in, NoC transport, and macro composition remain separate sources of area and timing risk.",
+    "Any later composed macro or Llama-scale recost must consume this as a divider-lane anchor, not as full-path closure evidence."
+  ],
+  "required_evaluations": [
+    {
+      "item_id": "l1_decoder_attention_score32_exact_root_finalizer_lane_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure Nangate45 PPA for standalone score32 exact root finalizers at divider lanes 1, 2, 4, and 8.",
+      "evaluation_mode": "frontier_followup",
+      "abstraction_layer": "architecture_block",
+      "comparison_role": "exact_root_finalizer_lane_anchor",
+      "configs": [
+        "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l1/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l2/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l4/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l8/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/attention_score32_exact_root_finalizer_v1/sweeps/nangate45_attention_score32_exact_root_finalizer_lane_firstpass.json",
+      "out_root": "runs/designs/npu_blocks",
+      "expected_outputs": [
+        "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l1/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l1/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l2/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l2/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l4/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l4/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l8/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l8/timing_debug_report.md"
+      ],
+      "expected_result": {
+        "direction": "measure_exact_root_finalizer_lane_cost",
+        "reason": "This isolates sequential divider-lane area and timing before any composed-tree or wide-link closure claim is attempted."
+      },
+      "status": "pending_implementation_merge",
+      "notes": "This is an isolated finalizer baseline only; tree/NoC links and the composed macro stay out of scope for this item."
+    }
+  ],
+  "source_refs": [
+    "npu/rtlgen/gen_attention_score32_exact_root_finalizer.py",
+    "npu/eval/check_attention_score32_exact_root_finalizer_guard.py",
+    "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l1/config.json",
+    "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l2/config.json",
+    "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l4/config.json",
+    "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l8/config.json",
+    "runs/campaigns/npu/attention_score32_exact_root_finalizer_v1/sweeps/nangate45_attention_score32_exact_root_finalizer_lane_firstpass.json"
+  ],
+  "knowledge_refs": [
+    "npu/docs/attention_score32_exact_root_finalizer_contract.md"
+  ]
+}
