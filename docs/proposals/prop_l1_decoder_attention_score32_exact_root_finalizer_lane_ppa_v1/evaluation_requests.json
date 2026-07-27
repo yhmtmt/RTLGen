@@ -1,0 +1,38 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_score32_exact_root_finalizer_lane_ppa_v1",
+  "source_commit_note": "Replace with the merge commit that adds the standalone exact-root-finalizer configs, strict guard, sweep, and L1 task-generator support before dispatch.",
+  "requested_items": [
+    {
+      "item_id": "l1_decoder_attention_score32_exact_root_finalizer_lane_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure Nangate45 PPA for standalone score32 exact root finalizers at divider lanes 1, 2, 4, and 8.",
+      "evaluation_mode": "frontier_followup",
+      "abstraction_layer": "architecture_block",
+      "comparison_role": "exact_root_finalizer_lane_anchor",
+      "configs": [
+        "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l1/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l2/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l4/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l8/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/attention_score32_exact_root_finalizer_v1/sweeps/nangate45_attention_score32_exact_root_finalizer_lane_firstpass.json",
+      "out_root": "runs/designs/npu_blocks",
+      "expected_outputs": [
+        "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l1/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l1/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l2/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l2/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l4/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l4/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l8/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l8/timing_debug_report.md"
+      ],
+      "expected_result": {
+        "direction": "measure_exact_root_finalizer_lane_cost",
+        "reason": "This isolates sequential divider-lane area and timing before any composed-tree or wide-link closure claim is attempted."
+      },
+      "status": "pending_implementation_merge",
+      "notes": "Isolated finalizer-lane baseline only; tree, NoC, direct 328-bit links, and the composed macro remain separate abstractions."
+    }
+  ]
+}
