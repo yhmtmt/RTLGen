@@ -1700,6 +1700,79 @@ def _write_example_attention_score32_exact_root_finalizer_repo(repo_root: Path) 
     return str(config_path.relative_to(repo_root)), str(sweep_path.relative_to(repo_root))
 
 
+def _write_example_attention_score32_exact_partial_tree_repo(repo_root: Path) -> tuple[str, str]:
+    design_dir = repo_root / "runs" / "designs" / "npu_blocks" / "attention_score32_exact_partial_tree_smoke_c4_r2"
+    design_dir.mkdir(parents=True, exist_ok=True)
+    config_path = design_dir / "config.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "top_name": "attention_score32_exact_partial_tree_smoke_c4_r2",
+                "attention_score32_exact_partial_tree": {
+                    "clusters": 4,
+                    "radix": 2,
+                    "value_slices": 16,
+                    "head_id_bits": 5,
+                },
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    sweep_path = (
+        repo_root
+        / "runs"
+        / "campaigns"
+        / "npu"
+        / "attention_score32_exact_partial_tree_v1"
+        / "sweeps"
+        / "nangate45_attention_score32_exact_partial_tree_cluster_firstpass.json"
+    )
+    sweep_path.parent.mkdir(parents=True, exist_ok=True)
+    sweep_path.write_text(
+        json.dumps(
+            {
+                "tag_prefix": "attention_score32_exact_partial_tree_cluster_firstpass_v1",
+                "flow_params": {
+                    "CLOCK_PERIOD": [8.0],
+                    "DIE_AREA": ["0 0 2500 2500"],
+                    "CORE_AREA": ["50 50 2450 2450"],
+                    "PLACE_DENSITY": [0.3, 0.5],
+                    "SYNTH_HIERARCHICAL": [1],
+                },
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    return str(config_path.relative_to(repo_root)), str(sweep_path.relative_to(repo_root))
+
+
+def _write_second_attention_score32_exact_partial_tree_repo(repo_root: Path) -> str:
+    design_dir = repo_root / "runs" / "designs" / "npu_blocks" / "attention_score32_exact_partial_tree_smoke_c16_r2"
+    design_dir.mkdir(parents=True, exist_ok=True)
+    config_path = design_dir / "config.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "top_name": "attention_score32_exact_partial_tree_smoke_c16_r2",
+                "attention_score32_exact_partial_tree": {
+                    "clusters": 16,
+                    "radix": 2,
+                    "value_slices": 16,
+                    "head_id_bits": 5,
+                },
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    return str(config_path.relative_to(repo_root))
+
+
 def _write_second_attention_score32_exact_root_finalizer_repo(repo_root: Path) -> str:
     design_dir = repo_root / "runs" / "designs" / "npu_blocks" / "attention_score32_exact_root_finalizer_smoke_l8"
     design_dir.mkdir(parents=True, exist_ok=True)
@@ -3150,6 +3223,66 @@ def test_generate_l1_sweep_task_supports_attention_score32_exact_root_finalizer_
             }
 
 
+def test_generate_l1_sweep_task_supports_attention_score32_exact_partial_tree_configs() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        config_path, sweep_path = _write_example_attention_score32_exact_partial_tree_repo(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l1_sweep_task(
+                session,
+                Layer1SweepGenerateRequest(
+                    repo_root=str(repo_root),
+                    sweep_path=sweep_path,
+                    config_paths=[config_path],
+                    platform="nangate45",
+                    out_root="runs/designs/npu_blocks",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    abstraction_layer="architecture_block",
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            assert [command["name"] for command in work_item.command_manifest] == [
+                "generate_attention_score32_exact_partial_tree_rtl",
+                "check_attention_score32_exact_partial_tree_guard",
+                "run_block_sweep",
+                "extract_attention_score32_exact_partial_tree_timing_paths",
+                "build_runs_index",
+                "validate",
+            ]
+            assert work_item.command_manifest[0]["run"] == (
+                "export PATH=/oss-cad-suite/bin:$PATH && "
+                "python3 npu/rtlgen/gen_attention_score32_exact_partial_tree.py "
+                "--config runs/designs/npu_blocks/attention_score32_exact_partial_tree_smoke_c4_r2/config.json "
+                "--out runs/designs/npu_blocks/attention_score32_exact_partial_tree_smoke_c4_r2/verilog"
+            )
+            assert work_item.command_manifest[1]["run"] == (
+                "python3 npu/eval/check_attention_score32_exact_partial_tree_guard.py "
+                "--design-dir runs/designs/npu_blocks/attention_score32_exact_partial_tree_smoke_c4_r2 "
+                "--config runs/designs/npu_blocks/attention_score32_exact_partial_tree_smoke_c4_r2/config.json"
+            )
+            assert "--top attention_score32_exact_partial_tree_smoke_c4_r2" in work_item.command_manifest[2]["run"]
+            assert work_item.command_manifest[3]["run"] == (
+                "python3 npu/eval/extract_openroad_timing_summary.py "
+                "--design-dir runs/designs/npu_blocks/attention_score32_exact_partial_tree_smoke_c4_r2 "
+                "--out runs/designs/npu_blocks/attention_score32_exact_partial_tree_smoke_c4_r2/timing_debug_report.md "
+                "--max-paths 8"
+            )
+            assert work_item.expected_outputs == [
+                "runs/designs/npu_blocks/attention_score32_exact_partial_tree_smoke_c4_r2/metrics.csv",
+                "runs/designs/npu_blocks/attention_score32_exact_partial_tree_smoke_c4_r2/timing_debug_report.md",
+            ]
+            assert work_item.task_request.request_payload["developer_loop"]["abstraction"] == {
+                "layer": "architecture_block"
+            }
+
+
 def test_generate_l1_sweep_task_supports_attention_hbm_replay_controller_configs() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
@@ -3660,6 +3793,41 @@ def test_exact_root_finalizer_lane_ppa_proposal_is_pending_merge_with_all_lane_c
     assert proposal_entry["sweep_path"] == expected_sweep
     assert request_entry["sweep_path"] == expected_sweep
     assert "isolated finalizer baseline" in proposal_entry["notes"]
+
+
+def test_exact_partial_tree_cluster_ppa_proposal_is_pending_merge_with_all_cluster_configs() -> None:
+    repo_root = Path(__file__).resolve().parents[3]
+    proposal_dir = (
+        repo_root
+        / "docs"
+        / "proposals"
+        / "prop_l1_decoder_attention_score32_exact_partial_tree_cluster_ppa_v1"
+    )
+    proposal = json.loads((proposal_dir / "proposal.json").read_text(encoding="utf-8"))
+    evaluation_requests = json.loads((proposal_dir / "evaluation_requests.json").read_text(encoding="utf-8"))
+
+    item_id = "l1_decoder_attention_score32_exact_partial_tree_cluster_ppa_v1"
+    expected_configs = [
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_c2_r2/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_c4_r2/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_c8_r2/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_c16_r2/config.json",
+    ]
+    expected_sweep = (
+        "runs/campaigns/npu/attention_score32_exact_partial_tree_v1/sweeps/"
+        "nangate45_attention_score32_exact_partial_tree_cluster_firstpass.json"
+    )
+    proposal_entry = {entry["item_id"]: entry for entry in proposal["required_evaluations"]}[item_id]
+    request_entry = {entry["item_id"]: entry for entry in evaluation_requests["requested_items"]}[item_id]
+
+    assert proposal["abstraction_layer"] == "architecture_block"
+    assert proposal_entry["status"] == "pending_implementation_merge"
+    assert request_entry["status"] == "pending_implementation_merge"
+    assert proposal_entry["configs"] == expected_configs
+    assert request_entry["configs"] == expected_configs
+    assert proposal_entry["sweep_path"] == expected_sweep
+    assert request_entry["sweep_path"] == expected_sweep
+    assert "Boundary evidence is valid here" in proposal_entry["notes"]
 
 
 def test_generate_l1_sweep_task_checked_in_service_requests_gate_and_refresh_release() -> None:
@@ -4547,6 +4715,54 @@ def test_generate_l1_sweep_task_supports_multi_attention_score32_exact_root_fina
                 "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_smoke_l4/timing_debug_report.md",
                 "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_smoke_l8/metrics.csv",
                 "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_smoke_l8/timing_debug_report.md",
+            ]
+
+
+def test_generate_l1_sweep_task_emits_commands_for_each_attention_score32_exact_partial_tree_config() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        config_path, sweep_path = _write_example_attention_score32_exact_partial_tree_repo(repo_root)
+        second_config_path = _write_second_attention_score32_exact_partial_tree_repo(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l1_sweep_task(
+                session,
+                Layer1SweepGenerateRequest(
+                    repo_root=str(repo_root),
+                    sweep_path=sweep_path,
+                    config_paths=[config_path, second_config_path],
+                    platform="nangate45",
+                    out_root="runs/designs/npu_blocks",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    abstraction_layer="architecture_block",
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            assert [command["name"] for command in work_item.command_manifest] == [
+                "generate_attention_score32_exact_partial_tree_rtl_attention_score32_exact_partial_tree_smoke_c4_r2",
+                "check_attention_score32_exact_partial_tree_guard_attention_score32_exact_partial_tree_smoke_c4_r2",
+                "run_block_sweep_attention_score32_exact_partial_tree_smoke_c4_r2",
+                "extract_attention_score32_exact_partial_tree_timing_paths_attention_score32_exact_partial_tree_smoke_c4_r2",
+                "generate_attention_score32_exact_partial_tree_rtl_attention_score32_exact_partial_tree_smoke_c16_r2",
+                "check_attention_score32_exact_partial_tree_guard_attention_score32_exact_partial_tree_smoke_c16_r2",
+                "run_block_sweep_attention_score32_exact_partial_tree_smoke_c16_r2",
+                "extract_attention_score32_exact_partial_tree_timing_paths_attention_score32_exact_partial_tree_smoke_c16_r2",
+                "build_runs_index",
+                "validate",
+            ]
+            assert "attention_score32_exact_partial_tree_smoke_c4_r2/config.json" in work_item.command_manifest[0]["run"]
+            assert "attention_score32_exact_partial_tree_smoke_c16_r2/config.json" in work_item.command_manifest[4]["run"]
+            assert work_item.expected_outputs == [
+                "runs/designs/npu_blocks/attention_score32_exact_partial_tree_smoke_c4_r2/metrics.csv",
+                "runs/designs/npu_blocks/attention_score32_exact_partial_tree_smoke_c4_r2/timing_debug_report.md",
+                "runs/designs/npu_blocks/attention_score32_exact_partial_tree_smoke_c16_r2/metrics.csv",
+                "runs/designs/npu_blocks/attention_score32_exact_partial_tree_smoke_c16_r2/timing_debug_report.md",
             ]
 
 

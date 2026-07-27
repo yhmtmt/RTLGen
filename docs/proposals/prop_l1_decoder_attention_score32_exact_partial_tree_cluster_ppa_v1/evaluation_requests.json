@@ -1,0 +1,38 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_score32_exact_partial_tree_cluster_ppa_v1",
+  "source_commit_note": "Replace with the merge commit that adds the standalone exact-partial-tree guard, sweep, proposal, and L1 task-generator support before dispatch.",
+  "requested_items": [
+    {
+      "item_id": "l1_decoder_attention_score32_exact_partial_tree_cluster_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure Nangate45 PPA for standalone score32 exact partial trees at 2, 4, 8, and 16 clusters.",
+      "evaluation_mode": "frontier_followup",
+      "abstraction_layer": "architecture_block",
+      "comparison_role": "exact_partial_tree_cluster_anchor",
+      "configs": [
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_c2_r2/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_c4_r2/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_c8_r2/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_c16_r2/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/attention_score32_exact_partial_tree_v1/sweeps/nangate45_attention_score32_exact_partial_tree_cluster_firstpass.json",
+      "out_root": "runs/designs/npu_blocks",
+      "expected_outputs": [
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_c2_r2/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_c2_r2/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_c4_r2/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_c4_r2/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_c8_r2/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_c8_r2/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_c16_r2/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_c16_r2/timing_debug_report.md"
+      ],
+      "expected_result": {
+        "direction": "measure_exact_partial_tree_cluster_cost",
+        "reason": "This isolates spatial tree fan-in cost and captures timing or placement failure as boundary evidence before any direct-link or finalizer composition claim is attempted."
+      },
+      "status": "pending_implementation_merge",
+      "notes": "Standalone tree-only boundary baseline; direct 328-bit links, NoC/SRAM placement, and the root finalizer remain separate abstractions."
+    }
+  ]
+}
