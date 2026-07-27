@@ -26,7 +26,12 @@ from npu.sim.perf.attention_separated import (
 HEAD_ID_BITS = 5
 SLICE_LANES = 8
 VALUE_SLICES = 16
+SLICE_INDEX_BITS = (VALUE_SLICES - 1).bit_length()
 PARTIAL_PAYLOAD_BITS = SLICE_LANES * WEIGHTED_NUMERATOR_BITS
+PARTIAL_LINK_BITS = PARTIAL_PAYLOAD_BITS + 16 + HEAD_ID_BITS + SCORE_BITS + EXP_SUM_BITS + SLICE_INDEX_BITS + 1
+EXACT_STATE_BITS_PER_HEAD = (VALUE_SLICES * PARTIAL_PAYLOAD_BITS) + SCORE_BITS + EXP_SUM_BITS
+EXACT_STATE_BYTES_PER_CLUSTER_32_HEADS = (EXACT_STATE_BITS_PER_HEAD * 32) // 8
+LEAF_STREAM_BYTES_PER_CLUSTER_32_HEADS = (PARTIAL_LINK_BITS * VALUE_SLICES * 32) // 8
 MERGE_SCALE = (1 << MERGE_SCALE_BITS) - 1
 
 
@@ -207,6 +212,30 @@ def merge_partial_streams(
     return tuple(merge_partial_beats(left_beats[index], right_beats[index]) for index in range(VALUE_SLICES))
 
 
+def merge_balanced_partial_streams(streams: Iterable[Iterable[ExactPartialBeat]]) -> tuple[ExactPartialBeat, ...]:
+    level = [tuple(stream) for stream in streams]
+    if not level:
+        raise ValueError("expected at least one partial stream")
+    if len(level) & (len(level) - 1):
+        raise ValueError("stream count must be a power of two")
+    expected_beats = len(level[0])
+    if expected_beats == 0:
+        raise ValueError("partial streams must be non-empty")
+    if any(len(stream) != expected_beats for stream in level):
+        raise ValueError("all partial streams must contain the same beat count")
+    while len(level) > 1:
+        next_level: list[tuple[ExactPartialBeat, ...]] = []
+        for index in range(0, len(level), 2):
+            next_level.append(
+                tuple(
+                    merge_partial_beats(level[index][beat_index], level[index + 1][beat_index])
+                    for beat_index in range(expected_beats)
+                )
+            )
+        level = next_level
+    return level[0]
+
+
 def merge_partial_streams_via_local_normalization(
     left: Iterable[ExactPartialBeat],
     right: Iterable[ExactPartialBeat],
@@ -278,13 +307,50 @@ def normalized_merge_guard_case() -> tuple[tuple[ExactPartialBeat, ...], tuple[E
     return left, right
 
 
+def exact_partial_tree_service_manifest(*, clusters: int, heads: int = 32) -> dict[str, int | bool | str]:
+    cluster_count = int(clusters)
+    head_count = int(heads)
+    if cluster_count < 2 or cluster_count > 16 or (cluster_count & (cluster_count - 1)):
+        raise ValueError("clusters must be a power of two in [2, 16]")
+    if head_count < 1:
+        raise ValueError("heads must be positive")
+    stages = int(math.log2(cluster_count))
+    nodes = cluster_count - 1
+    exact_state_bytes_per_cluster = (EXACT_STATE_BITS_PER_HEAD * head_count) // 8
+    leaf_stream_bytes_per_cluster = (PARTIAL_LINK_BITS * VALUE_SLICES * head_count) // 8
+    return {
+        "clusters": cluster_count,
+        "heads": head_count,
+        "radix": 2,
+        "tree_stages": stages,
+        "tree_nodes": nodes,
+        "value_slices": VALUE_SLICES,
+        "slice_lanes": SLICE_LANES,
+        "partial_payload_bits_per_beat": PARTIAL_PAYLOAD_BITS,
+        "partial_link_bits_per_beat": PARTIAL_LINK_BITS,
+        "exact_state_bytes_per_cluster": exact_state_bytes_per_cluster,
+        "leaf_stream_bytes_per_cluster": leaf_stream_bytes_per_cluster,
+        "total_leaf_stream_bytes": leaf_stream_bytes_per_cluster * cluster_count,
+        "direct_328bit_links_unclosed": True,
+        "final_divider_embodied": False,
+        "finalizer_boundary": "next_phase",
+        "future_area_sensitivity": "folded_or_radix4_tree",
+    }
+
+
 __all__ = [
+    "EXACT_STATE_BYTES_PER_CLUSTER_32_HEADS",
     "ExactPartialBeat",
     "HEAD_ID_BITS",
+    "LEAF_STREAM_BYTES_PER_CLUSTER_32_HEADS",
     "PARTIAL_PAYLOAD_BITS",
+    "PARTIAL_LINK_BITS",
     "SLICE_LANES",
+    "SLICE_INDEX_BITS",
     "VALUE_SLICES",
+    "exact_partial_tree_service_manifest",
     "finalize_partial_stream",
+    "merge_balanced_partial_streams",
     "merge_partial_beats",
     "merge_partial_streams",
     "merge_partial_streams_via_local_normalization",
