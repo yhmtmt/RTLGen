@@ -266,6 +266,23 @@ def _resolve_requested_entry_bool(
     return bool(entry.get(key))
 
 
+def _resolve_requested_entry_int(
+    entry: dict[str, Any] | None,
+    *,
+    key: str,
+    explicit: int,
+    default: int,
+) -> int:
+    if explicit != default:
+        return explicit
+    if not isinstance(entry, dict):
+        return explicit
+    try:
+        return int(entry.get(key, explicit))
+    except (TypeError, ValueError):
+        return explicit
+
+
 def _retry_base(item_id: str) -> str:
     return item_id.rsplit("_r", 1)[0] if "_r" in item_id else item_id
 
@@ -836,6 +853,56 @@ def _read_config_target(
                 },
                 {
                     "name": "extract_attention_score32_exact_root_finalizer_timing_paths",
+                    "run": (
+                        "python3 npu/eval/extract_openroad_timing_summary.py "
+                        f"--design-dir {design_dir} --out {design_dir}/timing_debug_report.md --max-paths 8"
+                    ),
+                },
+            ],
+        )
+    elif "top_name" in cfg and "attention_score32_exact_banked_finalized_tree" in cfg:
+        top_name = str(cfg["top_name"]).strip()
+        if not top_name:
+            raise Layer1TaskGenerationError(f"top_name must not be empty in {config_path}")
+        try:
+            design_dir = str(config_path.parent.resolve().relative_to(repo_root.resolve()))
+        except ValueError as exc:
+            raise Layer1TaskGenerationError(
+                f"score32 exact banked finalized tree config must live under repo_root/runs/designs/...: {config_path}"
+            ) from exc
+        design_name = config_path.parent.name
+        return Layer1ConfigTarget(
+            design_kind="block",
+            design_name=design_name,
+            expected_metrics_path=block_metrics_path(design_name),
+            expected_report_paths=[f"{design_dir}/timing_debug_report.md"],
+            commands=[
+                {
+                    "name": "generate_attention_score32_exact_banked_finalized_tree_rtl",
+                    "run": _with_oss_cad_path(
+                        "python3 npu/rtlgen/gen_attention_score32_exact_banked_finalized_tree.py "
+                        f"--config {config_rel} --out {design_dir}/verilog"
+                    ),
+                },
+                {
+                    "name": "check_attention_score32_exact_banked_finalized_tree_guard",
+                    "run": (
+                        "python3 npu/eval/check_attention_score32_exact_banked_finalized_tree_guard.py "
+                        f"--design-dir {design_dir} --config {config_rel} --sweep {{sweep_path}}"
+                    ),
+                },
+                {
+                    "name": "run_block_sweep",
+                    "run": _with_oss_cad_path(
+                        "python3 npu/synth/run_block_sweep.py "
+                        f"--design_dir {design_dir} --platform {{platform}} --top {top_name} "
+                        f"--sweep {{sweep_path}} --out_root {out_root} "
+                        + (f"--make_target {make_target} " if make_target else "")
+                        + "--skip_existing"
+                    ),
+                },
+                {
+                    "name": "extract_attention_score32_exact_banked_finalized_tree_timing_paths",
                     "run": (
                         "python3 npu/eval/extract_openroad_timing_summary.py "
                         f"--design-dir {design_dir} --out {design_dir}/timing_debug_report.md --max-paths 8"
@@ -1994,6 +2061,12 @@ def generate_l1_sweep_task(session: Session, request: Layer1SweepGenerateRequest
         key="requires_materialized_refs",
         explicit=request.requires_materialized_refs,
     )
+    effective_priority = _resolve_requested_entry_int(
+        requested_entry,
+        key="priority",
+        explicit=request.priority,
+        default=1,
+    )
     _validate_architecture_block_sweep_policy(
         sweep_path=(repo_root / sweep_path).resolve(),
         abstraction_layer=effective_abstraction_layer,
@@ -2129,7 +2202,7 @@ def generate_l1_sweep_task(session: Session, request: Layer1SweepGenerateRequest
         title=title,
         objective=objective,
         requested_by=request.requested_by,
-        priority=request.priority,
+        priority=effective_priority,
         platform=request.platform,
         sweep_path=sweep_path,
         config_paths=config_paths,
@@ -2188,7 +2261,7 @@ def generate_l1_sweep_task(session: Session, request: Layer1SweepGenerateRequest
         platform=request.platform,
         task_type="l1_sweep",
         state=WorkItemState.DRAFT,
-        priority=request.priority,
+        priority=effective_priority,
         source_mode="config",
     )
     transient_task_request = TaskRequest(
@@ -2199,7 +2272,7 @@ def generate_l1_sweep_task(session: Session, request: Layer1SweepGenerateRequest
         description=objective,
         layer=LayerName.LAYER1,
         flow=FlowName.OPENROAD,
-        priority=request.priority,
+        priority=effective_priority,
         request_payload=payload,
         source_commit=source_commit,
     )
@@ -2218,7 +2291,7 @@ def generate_l1_sweep_task(session: Session, request: Layer1SweepGenerateRequest
             description=objective,
             layer=LayerName.LAYER1,
             flow=FlowName.OPENROAD,
-            priority=request.priority,
+            priority=effective_priority,
             request_payload=payload,
             source_commit=source_commit,
         )
@@ -2234,7 +2307,7 @@ def generate_l1_sweep_task(session: Session, request: Layer1SweepGenerateRequest
             platform=request.platform,
             task_type="l1_sweep",
             state=initial_state,
-            priority=request.priority,
+            priority=effective_priority,
             source_mode="config",
             input_manifest=payload["task"]["inputs"],
             command_manifest=payload["task"]["commands"],
@@ -2261,11 +2334,11 @@ def generate_l1_sweep_task(session: Session, request: Layer1SweepGenerateRequest
     existing.task_request.requested_by = request.requested_by
     existing.task_request.title = title
     existing.task_request.description = objective
-    existing.task_request.priority = request.priority
+    existing.task_request.priority = effective_priority
     existing.task_request.request_payload = payload
     existing.task_request.source_commit = source_commit
 
-    existing.priority = request.priority
+    existing.priority = effective_priority
     existing.platform = request.platform
     existing.source_mode = "config"
     existing.input_manifest = payload["task"]["inputs"]

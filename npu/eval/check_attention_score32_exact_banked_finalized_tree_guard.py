@@ -26,6 +26,15 @@ from npu.sim.perf.attention_exact_partial import (
 
 _SUPPORTED_CLUSTERS = {2, 4, 8, 16}
 _SUPPORTED_LANES = {1, 2, 4, 8}
+_PPA_SWEEP_TAG_PREFIX = "attention_score32_exact_banked_finalized_tree_c16_bank_firstpass_v1"
+_PPA_SWEEP_FLOW_PARAMS = {
+    "CLOCK_PERIOD": [8.0],
+    "DIE_AREA": ["0 0 2700 2700"],
+    "CORE_AREA": ["100 100 2600 2600"],
+    "PLACE_DENSITY": [0.3, 0.5],
+    "SYNTH_HIERARCHICAL": [1],
+}
+_PPA_SWEEP_ALLOWED_BANKS = {16, 32, 59, 64}
 
 
 def _load_json(path: Path) -> dict[str, object]:
@@ -93,10 +102,33 @@ def _compare_current_generation(*, config: dict[str, object], rtl_dir: Path) -> 
                 raise SystemExit(f"generated RTL artifacts do not match current generator output: {relative_name}")
 
 
+def _validate_ppa_sweep(*, config: dict[str, object], sweep_path: Path) -> None:
+    if not sweep_path.is_file():
+        raise SystemExit(f"missing sweep: {sweep_path}")
+    sweep = _load_json(sweep_path)
+    if sweep.get("tag_prefix") != _PPA_SWEEP_TAG_PREFIX:
+        raise SystemExit(f"banked PPA sweep tag_prefix must be {_PPA_SWEEP_TAG_PREFIX}")
+    if sweep.get("flow_params") != _PPA_SWEEP_FLOW_PARAMS:
+        raise SystemExit("banked PPA sweep flow_params do not match the checked-in banked-finalized-tree contract")
+
+    body = config.get("attention_score32_exact_banked_finalized_tree")
+    if not isinstance(body, dict):
+        raise SystemExit("config must contain attention_score32_exact_banked_finalized_tree object")
+    clusters = int(body.get("clusters", 0))
+    radix = int(body.get("radix", 0))
+    divider_lanes = int(body.get("divider_lanes", 0))
+    finalizer_banks = int(body.get("finalizer_banks", 0))
+    if clusters != 16 or radix != 2 or divider_lanes != 8 or finalizer_banks not in _PPA_SWEEP_ALLOWED_BANKS:
+        raise SystemExit(
+            "banked PPA sweep membership requires c16/r2/l8 with finalizer_banks in {16, 32, 59, 64}"
+        )
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--design-dir", type=Path, required=True)
     ap.add_argument("--config", type=Path, default=None)
+    ap.add_argument("--sweep", type=Path, default=None)
     args = ap.parse_args(argv)
 
     design_dir = args.design_dir.resolve()
@@ -113,6 +145,8 @@ def main(argv: list[str] | None = None) -> int:
     generated_config = _load_json(generated_config_path)
     if config != generated_config:
         raise SystemExit("generated config does not match source config")
+    if args.sweep is not None:
+        _validate_ppa_sweep(config=config, sweep_path=args.sweep.resolve())
 
     top_name = str(config.get("top_name") or "").strip()
     if not top_name:
@@ -185,6 +219,7 @@ def main(argv: list[str] | None = None) -> int:
     }
     for key, expected in expected_manifest.items():
         _require(manifest, key, expected, "generated manifest")
+    _require(manifest, "service_model", service_manifest, "generated manifest")
 
     submanifests = manifest.get("submodule_manifests")
     if not isinstance(submanifests, dict):
@@ -256,6 +291,8 @@ def main(argv: list[str] | None = None) -> int:
     _require_token(finalizer_module, "assign in_ready = (state_q == IDLE) && !out_valid_q;", "generated finalizer RTL")
     if _contains_operator_division(finalizer_module):
         raise SystemExit("generated finalizer RTL must not contain combinational division operators")
+    if "equivalence_hash" in rtl:
+        raise SystemExit("functional datapath must not contain equivalence_hash tokens")
 
     _compare_current_generation(config=config, rtl_dir=rtl_dir)
 
