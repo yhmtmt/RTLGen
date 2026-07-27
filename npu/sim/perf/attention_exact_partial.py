@@ -8,6 +8,7 @@ from typing import Iterable
 
 from npu.sim.perf.attention_online import (
     EXP_SUM_BITS,
+    FINAL_VALUE_BITS,
     MERGE_SCALE_BITS,
     SCORE_BITS,
     WEIGHTED_NUMERATOR_BITS,
@@ -32,6 +33,8 @@ PARTIAL_LINK_BITS = PARTIAL_PAYLOAD_BITS + 16 + HEAD_ID_BITS + SCORE_BITS + EXP_
 EXACT_STATE_BITS_PER_HEAD = (VALUE_SLICES * PARTIAL_PAYLOAD_BITS) + SCORE_BITS + EXP_SUM_BITS
 EXACT_STATE_BYTES_PER_CLUSTER_32_HEADS = (EXACT_STATE_BITS_PER_HEAD * 32) // 8
 LEAF_STREAM_BYTES_PER_CLUSTER_32_HEADS = (PARTIAL_LINK_BITS * VALUE_SLICES * 32) // 8
+FINAL_PAYLOAD_BITS = SLICE_LANES * FINAL_VALUE_BITS
+FINAL_LINK_BITS = FINAL_PAYLOAD_BITS + 16 + HEAD_ID_BITS + SLICE_INDEX_BITS + 1
 MERGE_SCALE = (1 << MERGE_SCALE_BITS) - 1
 
 
@@ -112,6 +115,31 @@ class ExactPartialBeat:
         )
 
 
+@dataclass(frozen=True)
+class ExactFinalizedBeat:
+    command_id: int
+    head_id: int
+    slice_index: int
+    last: bool
+    values: tuple[int, ...]
+
+    def __post_init__(self) -> None:
+        if not 0 <= int(self.command_id) < (1 << 16):
+            raise ValueError("command_id must fit unsigned 16 bits")
+        if not 0 <= int(self.head_id) < (1 << HEAD_ID_BITS):
+            raise ValueError(f"head_id must fit unsigned {HEAD_ID_BITS} bits")
+        if not 0 <= int(self.slice_index) < VALUE_SLICES:
+            raise ValueError(f"slice_index must be in [0, {VALUE_SLICES})")
+        if bool(self.last) != (int(self.slice_index) == VALUE_SLICES - 1):
+            raise ValueError("last must match the terminal slice index")
+        values = tuple(int(value) for value in self.values)
+        if len(values) != SLICE_LANES:
+            raise ValueError(f"values must contain {SLICE_LANES} lanes")
+        limit = 1 << (FINAL_VALUE_BITS - 1)
+        if any(not -limit <= value < limit for value in values):
+            raise ValueError(f"values must fit signed {FINAL_VALUE_BITS} bits")
+
+
 def pack_numerators(values: Iterable[int]) -> int:
     mask = (1 << WEIGHTED_NUMERATOR_BITS) - 1
     lanes = tuple(int(value) for value in values)
@@ -127,6 +155,25 @@ def unpack_numerators(word: int) -> tuple[int, ...]:
         raw = (int(word) >> (index * WEIGHTED_NUMERATOR_BITS)) & mask
         if raw & (1 << (WEIGHTED_NUMERATOR_BITS - 1)):
             raw -= 1 << WEIGHTED_NUMERATOR_BITS
+        values.append(raw)
+    return tuple(values)
+
+
+def pack_final_values(values: Iterable[int]) -> int:
+    mask = (1 << FINAL_VALUE_BITS) - 1
+    lanes = tuple(int(value) for value in values)
+    if len(lanes) != SLICE_LANES:
+        raise ValueError(f"expected {SLICE_LANES} lanes")
+    return sum((value & mask) << (index * FINAL_VALUE_BITS) for index, value in enumerate(lanes))
+
+
+def unpack_final_values(word: int) -> tuple[int, ...]:
+    mask = (1 << FINAL_VALUE_BITS) - 1
+    values: list[int] = []
+    for index in range(SLICE_LANES):
+        raw = (int(word) >> (index * FINAL_VALUE_BITS)) & mask
+        if raw & (1 << (FINAL_VALUE_BITS - 1)):
+            raw -= 1 << FINAL_VALUE_BITS
         values.append(raw)
     return tuple(values)
 
@@ -167,6 +214,20 @@ def partial_stream_from_blocks(
     return tuple(beats)
 
 
+def finalize_partial_beat(beat: ExactPartialBeat) -> ExactFinalizedBeat:
+    return ExactFinalizedBeat(
+        command_id=beat.command_id,
+        head_id=beat.head_id,
+        slice_index=beat.slice_index,
+        last=beat.last,
+        values=tuple(int(value) for value in finalize_value(beat.as_stats())),
+    )
+
+
+def finalize_partial_beats(stream: Iterable[ExactPartialBeat]) -> tuple[ExactFinalizedBeat, ...]:
+    return tuple(finalize_partial_beat(beat) for beat in stream)
+
+
 def merge_partial_beats(left: ExactPartialBeat, right: ExactPartialBeat) -> ExactPartialBeat:
     if left.command_id != right.command_id:
         raise ValueError("command_id mismatch across partial beats")
@@ -199,6 +260,61 @@ def merge_partial_beats(left: ExactPartialBeat, right: ExactPartialBeat) -> Exac
 
 def finalize_partial_stream(stream: Iterable[ExactPartialBeat]) -> tuple[tuple[int, ...], ...]:
     return tuple(finalize_value(beat.as_stats()) for beat in stream)
+
+
+def simulate_exact_finalizer(
+    stream: Iterable[ExactPartialBeat],
+    *,
+    divider_lanes: int,
+    output_ready_pattern: Iterable[bool] | None = None,
+) -> dict[str, object]:
+    lanes = int(divider_lanes)
+    if lanes not in {1, 2, 4, 8}:
+        raise ValueError("divider_lanes must be one of 1, 2, 4, 8")
+    groups = SLICE_LANES // lanes
+    divide_cycles = 57
+    ready_pattern = tuple(output_ready_pattern) if output_ready_pattern is not None else ()
+    partials = tuple(stream)
+    finalized = tuple(finalize_partial_beat(beat) for beat in partials)
+    accept_events: list[dict[str, int]] = []
+    result_events: list[dict[str, int | bool]] = []
+    cycle = 0
+    for index, beat in enumerate(finalized):
+        accept_events.append({"index": index, "cycle": cycle})
+        cycle += groups * divide_cycles
+        if ready_pattern:
+            while not ready_pattern[cycle % len(ready_pattern)]:
+                cycle += 1
+        result_events.append(
+            {
+                "index": index,
+                "cycle": cycle,
+                "command_id": beat.command_id,
+                "head_id": beat.head_id,
+                "slice": beat.slice_index,
+                "last": beat.last,
+            }
+        )
+        cycle += 1
+    return {
+        "divider_lanes": lanes,
+        "groups_per_beat": groups,
+        "divide_cycles_per_group": divide_cycles,
+        "accept_events": accept_events,
+        "result_events": result_events,
+        "accepted_count": len(accept_events),
+        "completed_count": len(result_events),
+        "first_output_cycle": result_events[0]["cycle"] if result_events else -1,
+        "last_output_cycle": result_events[-1]["cycle"] if result_events else -1,
+        "drain_cycles": cycle,
+    }
+
+
+def finalizer_cycles_per_beat(divider_lanes: int) -> int:
+    lanes = int(divider_lanes)
+    if lanes not in {1, 2, 4, 8}:
+        raise ValueError("divider_lanes must be one of 1, 2, 4, 8")
+    return (SLICE_LANES // lanes) * 57
 
 
 def merge_partial_streams(
@@ -338,9 +454,39 @@ def exact_partial_tree_service_manifest(*, clusters: int, heads: int = 32) -> di
     }
 
 
+def exact_finalized_tree_service_manifest(
+    *,
+    clusters: int,
+    heads: int = 32,
+    divider_lanes: int = 8,
+) -> dict[str, int | bool | str]:
+    manifest = dict(exact_partial_tree_service_manifest(clusters=clusters, heads=heads))
+    lanes = int(divider_lanes)
+    manifest.update(
+        {
+            "final_payload_bits_per_beat": FINAL_PAYLOAD_BITS,
+            "final_link_bits_per_beat": FINAL_LINK_BITS,
+            "divider_lanes": lanes,
+            "physical_divider_lanes": lanes,
+            "divider_groups_per_beat": SLICE_LANES // lanes,
+            "divider_iterations_per_group": 57,
+            "divider_cycles_per_beat": finalizer_cycles_per_beat(lanes),
+            "root_output_bytes": ((FINAL_LINK_BITS * VALUE_SLICES * int(heads)) + 7) // 8,
+            "direct_328bit_links_unclosed": True,
+            "final_divider_embodied": True,
+            "finalizer_boundary": "embodied",
+            "future_area_sensitivity": "folded_tree_or_lane_count",
+        }
+    )
+    return manifest
+
+
 __all__ = [
     "EXACT_STATE_BYTES_PER_CLUSTER_32_HEADS",
+    "ExactFinalizedBeat",
     "ExactPartialBeat",
+    "FINAL_PAYLOAD_BITS",
+    "FINAL_LINK_BITS",
     "HEAD_ID_BITS",
     "LEAF_STREAM_BYTES_PER_CLUSTER_32_HEADS",
     "PARTIAL_PAYLOAD_BITS",
@@ -349,6 +495,10 @@ __all__ = [
     "SLICE_INDEX_BITS",
     "VALUE_SLICES",
     "exact_partial_tree_service_manifest",
+    "exact_finalized_tree_service_manifest",
+    "finalizer_cycles_per_beat",
+    "finalize_partial_beat",
+    "finalize_partial_beats",
     "finalize_partial_stream",
     "merge_balanced_partial_streams",
     "merge_partial_beats",
@@ -357,5 +507,8 @@ __all__ = [
     "normalized_merge_guard_case",
     "pack_numerators",
     "partial_stream_from_blocks",
+    "pack_final_values",
+    "simulate_exact_finalizer",
+    "unpack_final_values",
     "unpack_numerators",
 ]

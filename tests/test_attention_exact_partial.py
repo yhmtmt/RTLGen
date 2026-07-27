@@ -1,17 +1,27 @@
 from npu.sim.perf.attention_exact_partial import (
     EXACT_STATE_BYTES_PER_CLUSTER_32_HEADS,
+    FINAL_LINK_BITS,
+    FINAL_PAYLOAD_BITS,
+    ExactFinalizedBeat,
     ExactPartialBeat,
     LEAF_STREAM_BYTES_PER_CLUSTER_32_HEADS,
     PARTIAL_PAYLOAD_BITS,
+    exact_finalized_tree_service_manifest,
     exact_partial_tree_service_manifest,
+    finalize_partial_beat,
+    finalize_partial_beats,
     finalize_partial_stream,
+    finalizer_cycles_per_beat,
     merge_balanced_partial_streams,
     merge_partial_beats,
     merge_partial_streams,
     merge_partial_streams_via_local_normalization,
     normalized_merge_guard_case,
+    pack_final_values,
     pack_numerators,
     partial_stream_from_blocks,
+    simulate_exact_finalizer,
+    unpack_final_values,
     unpack_numerators,
 )
 
@@ -59,6 +69,15 @@ def test_pack_unpack_partial_numerators_round_trip() -> None:
     assert unpack_numerators(packed) == lanes
 
 
+def test_pack_unpack_final_values_round_trip() -> None:
+    lanes = (-321, 511, -1024, 777, -13, 0, 9999, -8888)
+    packed = pack_final_values(lanes)
+
+    assert FINAL_PAYLOAD_BITS == 320
+    assert FINAL_LINK_BITS == 346
+    assert unpack_final_values(packed) == lanes
+
+
 def test_partial_stream_merge_matches_attention_online_semantics() -> None:
     left = partial_stream_from_blocks(
         command_id=0x4A21,
@@ -95,6 +114,24 @@ def test_partial_stream_merge_survives_finalization() -> None:
     assert all(len(value_slice) == 8 for value_slice in finalized)
 
 
+def test_finalize_partial_beat_matches_stream_helper() -> None:
+    beat = partial_stream_from_blocks(
+        command_id=0x4A21,
+        head_id=3,
+        score_rows=_score_rows(5),
+        value_blocks=_value_blocks(7),
+    )[0]
+
+    finalized = finalize_partial_beat(beat)
+
+    assert isinstance(finalized, ExactFinalizedBeat)
+    assert finalized == finalize_partial_beats((beat,))[0]
+    assert finalized.command_id == beat.command_id
+    assert finalized.head_id == beat.head_id
+    assert finalized.slice_index == beat.slice_index
+    assert finalized.last == beat.last
+
+
 def test_balanced_tree_merge_matches_left_to_right_pairing() -> None:
     leaves = [
         partial_stream_from_blocks(
@@ -126,6 +163,22 @@ def test_exact_partial_tree_service_manifest_is_consistent() -> None:
     assert manifest["total_leaf_stream_bytes"] == 16 * 26816
     assert manifest["direct_328bit_links_unclosed"] is True
     assert manifest["final_divider_embodied"] is False
+
+
+def test_exact_finalized_tree_service_manifest_is_consistent() -> None:
+    manifest = exact_finalized_tree_service_manifest(clusters=16, divider_lanes=8)
+
+    assert manifest["radix"] == 2
+    assert manifest["tree_stages"] == 4
+    assert manifest["tree_nodes"] == 15
+    assert manifest["exact_state_bytes_per_cluster"] == EXACT_STATE_BYTES_PER_CLUSTER_32_HEADS == 21252
+    assert manifest["leaf_stream_bytes_per_cluster"] == LEAF_STREAM_BYTES_PER_CLUSTER_32_HEADS == 26816
+    assert manifest["final_payload_bits_per_beat"] == FINAL_PAYLOAD_BITS == 320
+    assert manifest["final_link_bits_per_beat"] == FINAL_LINK_BITS == 346
+    assert manifest["divider_lanes"] == 8
+    assert manifest["divider_cycles_per_beat"] == 57
+    assert manifest["direct_328bit_links_unclosed"] is True
+    assert manifest["final_divider_embodied"] is True
 
 
 def test_normalized_merge_boundary_is_not_exact() -> None:
@@ -178,3 +231,25 @@ def test_partial_stream_merge_handles_near_limit_score_deltas_in_both_orderings(
     assert merged_lr.exp_sum == dominant.exp_sum
     assert merged_lr.numerators == dominant.numerators
     assert merged_rl == merged_lr
+
+
+def test_exact_finalizer_cycle_reference_scales_with_lane_count() -> None:
+    stream = partial_stream_from_blocks(
+        command_id=0x4A21,
+        head_id=3,
+        score_rows=_score_rows(5),
+        value_blocks=_value_blocks(7),
+    )[:2]
+
+    lane8 = simulate_exact_finalizer(stream, divider_lanes=8)
+    lane4 = simulate_exact_finalizer(stream, divider_lanes=4)
+    lane1 = simulate_exact_finalizer(stream, divider_lanes=1)
+
+    assert finalizer_cycles_per_beat(8) == 57
+    assert finalizer_cycles_per_beat(4) == 114
+    assert finalizer_cycles_per_beat(1) == 456
+    assert lane8["accepted_count"] == 2
+    assert lane8["completed_count"] == 2
+    assert lane8["first_output_cycle"] == 57
+    assert lane4["first_output_cycle"] == 114
+    assert lane1["first_output_cycle"] == 456
