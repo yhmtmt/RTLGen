@@ -39,6 +39,8 @@ def _validate(config: dict[str, Any]) -> dict[str, int | str]:
     divider_impl = str(body.get("divider_impl", "iterative_restoring")).strip()
     query_heads_per_kv = int(body.get("query_heads_per_kv", 8))
     group_count = int(body.get("group_count", 0))
+    result_mode = str(body.get("result_mode", "normalized")).strip().lower()
+    head_id_bits = int(body.get("head_id_bits", 5))
 
     if max_blocks < 8 or max_blocks > 16384 or max_blocks & (max_blocks - 1):
         raise SystemExit("max_blocks must be a power of two in [8, 16384]")
@@ -54,18 +56,11 @@ def _validate(config: dict[str, Any]) -> dict[str, int | str]:
         raise SystemExit("query_heads_per_kv must be 8 for Llama7B GQA8")
     if group_count not in _SUPPORTED_GROUP_COUNTS:
         raise SystemExit("group_count must be exactly one of 1, 2, or 4")
+    if result_mode not in {"normalized", "exact_partial"}:
+        raise SystemExit("result_mode must be normalized or exact_partial")
+    if head_id_bits < 1 or head_id_bits > 8:
+        raise SystemExit("head_id_bits must be in [1, 8]")
 
-    body.update(
-        {
-            "max_blocks": max_blocks,
-            "array_n": array_n,
-            "value_slices": value_slices,
-            "score_scale_lanes_per_cycle": scale_lanes,
-            "divider_impl": divider_impl,
-            "query_heads_per_kv": query_heads_per_kv,
-            "group_count": group_count,
-        }
-    )
     return {
         "top_name": top_name,
         "max_blocks": max_blocks,
@@ -75,6 +70,8 @@ def _validate(config: dict[str, Any]) -> dict[str, int | str]:
         "divider_impl": divider_impl,
         "query_heads_per_kv": query_heads_per_kv,
         "group_count": group_count,
+        "result_mode": result_mode,
+        "head_id_bits": head_id_bits,
     }
 
 
@@ -83,9 +80,25 @@ def _slice(name: str, index: int, width: int) -> str:
     return f"{name}[{lo + width - 1}:{lo}]"
 
 
-def _group_instances(group_top: str, group_count: int) -> str:
+def _group_instances(
+    group_top: str,
+    group_count: int,
+    *,
+    partial_mode: bool,
+    head_id_bits: int,
+    result_value_bits: int,
+) -> str:
     instances = []
     for group in range(group_count):
+        command_head_base_port = ""
+        result_head_id_port = ""
+        if partial_mode:
+            command_head_base_port = (
+                f"\n      .command_head_base({_slice('command_head_base', group, head_id_bits)}),"
+            )
+            result_head_id_port = (
+                f"\n      .result_head_id({_slice('result_head_id', group, head_id_bits)}),"
+            )
         instances.append(
             f"""  {group_top} u_group_{group} (
       .clk(clk),
@@ -93,7 +106,7 @@ def _group_instances(group_top: str, group_count: int) -> str:
       .command_valid(command_valid && command_ready),
       .command_ready(child_command_ready[{group}]),
       .command_id(command_id),
-      .command_block_count(command_block_count),
+      .command_block_count(command_block_count),{command_head_base_port}
       .command_score_multiplier(command_score_multiplier),
       .command_score_shift(command_score_shift),
       .input_valid(input_valid && input_ready),
@@ -113,12 +126,13 @@ def _group_instances(group_top: str, group_count: int) -> str:
       .result_valid(result_valid[{group}]),
       .result_ready(result_ready[{group}]),
       .result_head({_slice("result_head", group, 3)}),
+      {result_head_id_port}
       .result_command_id({_slice("result_command_id", group, 16)}),
       .result_global_max({_slice("result_global_max", group, 32)}),
       .result_exp_sum({_slice("result_exp_sum", group, 33)}),
       .result_slice({_slice("result_slice", group, 4)}),
       .result_last(result_last[{group}]),
-      .result_value({_slice("result_value", group, 320)}),
+      .result_value({_slice("result_value", group, result_value_bits)}),
       .accepted_count({_slice("accepted_count", group, 32)}),
       .completed_count({_slice("completed_count", group, 32)}),
       .cycle_count({_slice("cycle_count", group, 32)}),
@@ -128,15 +142,22 @@ def _group_instances(group_top: str, group_count: int) -> str:
     return "\n\n".join(instances)
 
 
-def _wrapper(*, top_name: str, group_top: str, group_count: int) -> str:
+def _wrapper(*, top_name: str, group_top: str, group_count: int, partial_mode: bool, head_id_bits: int) -> str:
     total_query_bits = group_count * 64
     total_result_heads = group_count * 3
     total_result_commands = group_count * 16
     total_result_max = group_count * 32
     total_result_sums = group_count * 33
     total_result_slices = group_count * 4
-    total_result_values = group_count * 320
+    result_value_bits = 328 if partial_mode else 320
+    total_result_values = group_count * result_value_bits
     total_counter_bits = group_count * 32
+    command_head_base_port = (
+        f"\n    input  wire [{group_count * head_id_bits - 1}:0] command_head_base," if partial_mode else ""
+    )
+    result_head_id_port = (
+        f"\n    output wire [{group_count * head_id_bits - 1}:0] result_head_id," if partial_mode else ""
+    )
     return f"""// Auto-generated by npu/rtlgen/gen_attention_decode_score_multivalue_gqa_array.py
 module {top_name} (
     input  wire                         clk,
@@ -144,7 +165,7 @@ module {top_name} (
     input  wire                         command_valid,
     output wire                         command_ready,
     input  wire [15:0]                  command_id,
-    input  wire [14:0]                  command_block_count,
+    input  wire [14:0]                  command_block_count,{command_head_base_port}
     input  wire [31:0]                  command_score_multiplier,
     input  wire [5:0]                   command_score_shift,
     input  wire                         input_valid,
@@ -164,6 +185,7 @@ module {top_name} (
     output wire [{group_count - 1}:0]   result_valid,
     input  wire [{group_count - 1}:0]   result_ready,
     output wire [{total_result_heads - 1}:0] result_head,
+{result_head_id_port}
     output wire [{total_result_commands - 1}:0] result_command_id,
     output wire signed [{total_result_max - 1}:0] result_global_max,
     output wire [{total_result_sums - 1}:0] result_exp_sum,
@@ -189,10 +211,10 @@ module {top_name} (
   wire input_ready_all = &child_input_ready;
 
   assign command_ready = command_ready_all;
-  assign input_ready = input_ready_all;
-  assign protocol_error = |child_protocol_error;
+    assign input_ready = input_ready_all;
+    assign protocol_error = |child_protocol_error;
 
-{_group_instances(group_top, group_count)}
+{_group_instances(group_top, group_count, partial_mode=partial_mode, head_id_bits=head_id_bits, result_value_bits=result_value_bits)}
 endmodule
 """
 
@@ -216,6 +238,8 @@ def generate(config: dict[str, Any], out_dir: Path) -> None:
                     "divider_impl": str(params["divider_impl"]),
                     "score_scale_lanes_per_cycle": int(params["score_scale_lanes_per_cycle"]),
                     "query_heads_per_kv": int(params["query_heads_per_kv"]),
+                    "result_mode": str(params["result_mode"]),
+                    "head_id_bits": int(params["head_id_bits"]),
                 },
             },
             group_dir,
@@ -227,7 +251,18 @@ def generate(config: dict[str, Any], out_dir: Path) -> None:
             )
         )
 
-    rtl = group_rtl + "\n\n" + _wrapper(top_name=top_name, group_top=group_top, group_count=group_count) + "\n"
+    rtl = (
+        group_rtl
+        + "\n\n"
+        + _wrapper(
+            top_name=top_name,
+            group_top=group_top,
+            group_count=group_count,
+            partial_mode=str(params["result_mode"]) == "exact_partial",
+            head_id_bits=int(params["head_id_bits"]),
+        )
+        + "\n"
+    )
     (out_dir / "top.v").write_text(rtl, encoding="utf-8")
     (out_dir / "config.json").write_text(json.dumps(config, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     manifest = {
@@ -235,6 +270,8 @@ def generate(config: dict[str, Any], out_dir: Path) -> None:
         "generator": "npu/rtlgen/gen_attention_decode_score_multivalue_gqa_array.py",
         "top_name": top_name,
         "semantic_profile": "decode_m1x8_shared_score_16x8d_value_iterdiv_gqa8_array_v1",
+        "result_mode": str(params["result_mode"]),
+        "head_id_bits": int(params["head_id_bits"]),
         "max_blocks": int(params["max_blocks"]),
         "score_tile_array_n": int(params["array_n"]),
         "score_scale_lanes_per_cycle": int(params["score_scale_lanes_per_cycle"]),
@@ -250,7 +287,7 @@ def generate(config: dict[str, Any], out_dir: Path) -> None:
         "serialization": "none",
         "no_serialization": True,
         "result_beats_per_command_per_group": 128,
-        "result_value_bits_per_beat": 320,
+        "result_value_bits_per_beat": 328 if str(params["result_mode"]) == "exact_partial" else 320,
         "submodule_manifests": {"gqa_group": group_manifest},
     }
     (out_dir / "attention_decode_score_multivalue_gqa_array_manifest.json").write_text(
