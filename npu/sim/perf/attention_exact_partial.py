@@ -849,6 +849,7 @@ def exact_partial_dual_stream_gqa8_producer_service_manifest(
     max_blocks: int = 8,
     command_count: int | None = None,
     blocks_per_stream: int = 2,
+    block_counts_per_stream: tuple[int, ...] | None = None,
     head_dim: int = 3,
     head_bases: tuple[int, ...] | None = None,
     llama_wave_reference_cycles: int | None = None,
@@ -864,10 +865,19 @@ def exact_partial_dual_stream_gqa8_producer_service_manifest(
         raise ValueError("max_blocks must be a power of two in [8, 16384]")
     if resolved_command_count < 1:
         raise ValueError("command_count must be positive")
-    if resolved_blocks_per_stream < 1 or resolved_blocks_per_stream > block_limit:
-        raise ValueError("blocks_per_stream must be in [1, max_blocks]")
     if resolved_head_dim < 1:
         raise ValueError("head_dim must be positive")
+    if block_counts_per_stream is None:
+        if resolved_blocks_per_stream < 1 or resolved_blocks_per_stream > block_limit:
+            raise ValueError("blocks_per_stream must be in [1, max_blocks]")
+        block_counts = tuple(resolved_blocks_per_stream for _ in range(resolved_command_count))
+    else:
+        block_counts = tuple(int(value) for value in block_counts_per_stream)
+        if len(block_counts) != resolved_command_count:
+            raise ValueError("block_counts_per_stream length must match command_count")
+        if any(value < 1 or value > block_limit for value in block_counts):
+            raise ValueError("block_counts_per_stream entries must be in [1, max_blocks]")
+        resolved_blocks_per_stream = max(block_counts)
     if head_bases is None:
         bases = tuple((group % (head_count // 8)) * 8 for group in range(resolved_command_count))
     else:
@@ -906,6 +916,8 @@ def exact_partial_dual_stream_gqa8_producer_service_manifest(
             "per_wave_local_block_ceiling_per_stream": 2,
             "persistent_local_reducer_waves": 8,
             "probe_blocks_per_stream": resolved_blocks_per_stream,
+            "probe_block_counts_per_stream": list(block_counts),
+            "probe_blocks_per_stream_uniform": len(set(block_counts)) == 1,
             "probe_head_dim": resolved_head_dim,
             "probe_head_bases": list(bases),
             "probe_total_heads": head_count,
@@ -914,7 +926,9 @@ def exact_partial_dual_stream_gqa8_producer_service_manifest(
             "head_base_alignment_bits": 3,
             "global_tile_tokens": 1024,
             "global_tile_token_blocks": 128,
-            "worst_loaded_jobs_per_datapath_upper_bound": 5,
+            "per_datapath_group_commands_per_wave": 4,
+            "worst_loaded_total_blocks_per_stream_per_datapath_per_wave": 5,
+            "worst_loaded_two_block_commands_per_datapath_per_wave": 1,
         },
         "comparison_baseline_contract": "python_structured_exact_partial_stream_reference",
         "comparison_cycle_origin": "cycle0_on_atomic_dual_stream_input_issue",

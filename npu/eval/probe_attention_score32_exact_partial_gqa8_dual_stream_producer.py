@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 from pathlib import Path
 import re
@@ -68,6 +69,18 @@ endmodule
 """
 
 
+def compact_report(report: JsonDict) -> JsonDict:
+    """Replace full equivalence rows with reproducible digests for committed evidence."""
+    compact = dict(report)
+    for key in ("observed_rows", "expected_rows"):
+        rows = compact.pop(key)
+        encoded = json.dumps(rows, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        compact[f"{key}_sha256"] = hashlib.sha256(encoded).hexdigest()
+        compact[f"{key}_count"] = len(rows)
+    compact["equivalence_evidence_policy"] = "structured_compare_then_commit_counts_and_sha256"
+    return compact
+
+
 def _tool(name: str) -> str:
     path = shutil.which(name)
     if path:
@@ -108,6 +121,7 @@ def _resolve_workload(
     heads: int | None,
     command_count: int | None,
     blocks_per_stream: int | None,
+    block_counts_per_stream: tuple[int, ...] | None,
     head_dim: int | None,
     head_bases: tuple[int, ...] | None,
 ) -> dict[str, object]:
@@ -115,21 +129,45 @@ def _resolve_workload(
     if not isinstance(defaults, dict):
         defaults = {}
     resolved_heads = int(heads if heads is not None else defaults.get("heads", 8))
-    resolved_command_count = int(command_count if command_count is not None else defaults.get("command_count", resolved_heads // 8))
-    resolved_blocks_per_stream = int(blocks_per_stream if blocks_per_stream is not None else defaults.get("blocks_per_stream", 2))
     resolved_head_dim = int(head_dim if head_dim is not None else defaults.get("head_dim", 3))
     configured_head_bases = head_bases
     if configured_head_bases is None and isinstance(defaults.get("head_bases"), list):
         configured_head_bases = tuple(int(value) for value in defaults["head_bases"])
+    configured_block_counts = block_counts_per_stream
+    if configured_block_counts is None and isinstance(defaults.get("block_counts_per_stream"), list):
+        configured_block_counts = tuple(int(value) for value in defaults["block_counts_per_stream"])
+
+    resolved_command_count_source = command_count
+    if resolved_command_count_source is None and "command_count" in defaults:
+        resolved_command_count_source = defaults["command_count"]
+    if resolved_command_count_source is None and configured_block_counts is not None:
+        resolved_command_count_source = len(configured_block_counts)
+    if resolved_command_count_source is None and configured_head_bases is not None:
+        resolved_command_count_source = len(configured_head_bases)
+    resolved_command_count = int(
+        resolved_command_count_source if resolved_command_count_source is not None else resolved_heads // 8
+    )
 
     if resolved_heads < 8 or resolved_heads > 32 or resolved_heads % 8:
         raise ValueError("heads must be a multiple of 8 in [8, 32]")
     if resolved_command_count < 1:
         raise ValueError("command_count must be positive")
-    if resolved_blocks_per_stream < 1 or resolved_blocks_per_stream > 8:
-        raise ValueError("blocks_per_stream must be in [1, 8]")
     if resolved_head_dim < 1:
         raise ValueError("head_dim must be positive")
+    if configured_block_counts is None:
+        resolved_blocks_per_stream = int(blocks_per_stream if blocks_per_stream is not None else defaults.get("blocks_per_stream", 2))
+        if resolved_blocks_per_stream < 1 or resolved_blocks_per_stream > 8:
+            raise ValueError("blocks_per_stream must be in [1, 8]")
+        resolved_block_counts = tuple(resolved_blocks_per_stream for _ in range(resolved_command_count))
+    else:
+        if blocks_per_stream is not None:
+            raise ValueError("blocks_per_stream and block_counts_per_stream are mutually exclusive")
+        if len(configured_block_counts) != resolved_command_count:
+            raise ValueError("block_counts_per_stream length must match command_count")
+        if any(value < 1 or value > 8 for value in configured_block_counts):
+            raise ValueError("block_counts_per_stream entries must be in [1, 8]")
+        resolved_block_counts = tuple(int(value) for value in configured_block_counts)
+        resolved_blocks_per_stream = max(resolved_block_counts)
     if configured_head_bases is None:
         head_groups = tuple(group * 8 for group in range(resolved_heads // 8))
         configured_head_bases = tuple(head_groups[index % len(head_groups)] for index in range(resolved_command_count))
@@ -142,6 +180,7 @@ def _resolve_workload(
         "heads": resolved_heads,
         "command_count": resolved_command_count,
         "blocks_per_stream": resolved_blocks_per_stream,
+        "block_counts_per_stream": resolved_block_counts,
         "head_dim": resolved_head_dim,
         "head_bases": tuple(configured_head_bases),
         "llama_wave_reference_cycles": defaults.get("llama_wave_reference_cycles"),
@@ -170,11 +209,11 @@ def _block_beats(
     stream: int,
     command_index: int,
     *,
-    blocks_per_stream: int,
+    block_count_per_stream: int,
     head_dim: int,
 ) -> list[list[tuple[list[int], list[int]]]]:
     blocks: list[list[tuple[list[int], list[int]]]] = []
-    for block in range(blocks_per_stream):
+    for block in range(block_count_per_stream):
         block_beats: list[tuple[list[int], list[int]]] = []
         for beat in range(head_dim):
             queries = [
@@ -190,7 +229,7 @@ def _block_beats(
     return blocks
 
 
-def _values_for(stream: int, command_index: int, *, blocks_per_stream: int) -> list[list[list[list[int]]]]:
+def _values_for(stream: int, command_index: int, *, block_count_per_stream: int) -> list[list[list[list[int]]]]:
     return [
         [
             [
@@ -203,7 +242,7 @@ def _values_for(stream: int, command_index: int, *, blocks_per_stream: int) -> l
             ]
             for value_slice in range(16)
         ]
-        for block in range(blocks_per_stream)
+        for block in range(block_count_per_stream)
     ]
 
 
@@ -217,18 +256,24 @@ def _raw_scores(block: list[tuple[list[int], list[int]]], head_lane: int) -> lis
 def _expected(workload: dict[str, object]) -> list[dict[str, object]]:
     heads = int(workload["heads"])
     command_count = int(workload["command_count"])
-    blocks_per_stream = int(workload["blocks_per_stream"])
+    block_counts_per_stream = tuple(int(value) for value in workload["block_counts_per_stream"])
     head_dim = int(workload["head_dim"])
     head_bases = tuple(int(value) for value in workload["head_bases"])
     rows: list[dict[str, object]] = []
     for command_index, command in enumerate(
         _command_schedule(heads=heads, command_count=command_count, head_bases=head_bases)
     ):
+        block_count_per_stream = block_counts_per_stream[command_index]
         merged_per_head = []
         for head_lane in range(8):
             stream_partials = []
             for stream in range(2):
-                blocks = _block_beats(stream, command_index, blocks_per_stream=blocks_per_stream, head_dim=head_dim)
+                blocks = _block_beats(
+                    stream,
+                    command_index,
+                    block_count_per_stream=block_count_per_stream,
+                    head_dim=head_dim,
+                )
                 score_rows = [
                     list(
                         requantize_score_row(
@@ -244,7 +289,11 @@ def _expected(workload: dict[str, object]) -> list[dict[str, object]]:
                         command_id=int(command["command_id"]),
                         head_id=int(command["head_base"]) + head_lane,
                         score_rows=score_rows,
-                        value_blocks=_values_for(stream, command_index, blocks_per_stream=blocks_per_stream),
+                        value_blocks=_values_for(
+                            stream,
+                            command_index,
+                            block_count_per_stream=block_count_per_stream,
+                        ),
                     )
                 )
             merged_per_head.append(merge_partial_streams(stream_partials[0], stream_partials[1]))
@@ -273,27 +322,37 @@ def _testbench(
 ) -> str:
     heads = int(workload["heads"])
     command_count = int(workload["command_count"])
-    blocks_per_stream = int(workload["blocks_per_stream"])
+    block_counts_per_stream = tuple(int(value) for value in workload["block_counts_per_stream"])
     head_dim = int(workload["head_dim"])
     head_bases = tuple(int(value) for value in workload["head_bases"])
     commands = _command_schedule(heads=heads, command_count=command_count, head_bases=head_bases)
     beats0 = []
     beats1 = []
     lasts = []
+    beat_offsets = []
+    block_offsets = []
+    total_blocks = 0
     for command_index in range(len(commands)):
-        blocks0 = _block_beats(0, command_index, blocks_per_stream=blocks_per_stream, head_dim=head_dim)
-        blocks1 = _block_beats(1, command_index, blocks_per_stream=blocks_per_stream, head_dim=head_dim)
-        for block in range(blocks_per_stream):
+        block_count_per_stream = block_counts_per_stream[command_index]
+        beat_offsets.append(len(beats0))
+        block_offsets.append(total_blocks)
+        blocks0 = _block_beats(0, command_index, block_count_per_stream=block_count_per_stream, head_dim=head_dim)
+        blocks1 = _block_beats(1, command_index, block_count_per_stream=block_count_per_stream, head_dim=head_dim)
+        for block in range(block_count_per_stream):
             for beat in range(head_dim):
                 queries0, keys0 = blocks0[block][beat]
                 queries1, keys1 = blocks1[block][beat]
                 beats0.append((queries0, keys0))
                 beats1.append((queries1, keys1))
                 lasts.append(1 if beat == head_dim - 1 else 0)
+        total_blocks += block_count_per_stream
 
     cmd_init = "\n".join(
         f"    cmd_id_mem[{index}] = 16'h{int(command['command_id']):04x}; "
         f"cmd_head_base_mem[{index}] = 5'd{int(command['head_base'])}; "
+        f"cmd_block_count_mem[{index}] = 15'd{block_counts_per_stream[index]}; "
+        f"cmd_beat_limit_mem[{index}] = 32'd{beat_offsets[index] + (block_counts_per_stream[index] * head_dim)}; "
+        f"cmd_block_offset_mem[{index}] = 32'd{block_offsets[index]}; "
         f"cmd_mult_mem[{index}] = 32'd{int(command['multiplier'])}; "
         f"cmd_shift_mem[{index}] = 6'd{int(command['shift'])};"
         for index, command in enumerate(commands)
@@ -307,17 +366,19 @@ def _testbench(
     value_init = []
     for stream in range(2):
         for command_index in range(len(commands)):
-            values = _values_for(stream, command_index, blocks_per_stream=blocks_per_stream)
-            for block in range(blocks_per_stream):
+            block_count_per_stream = block_counts_per_stream[command_index]
+            values = _values_for(stream, command_index, block_count_per_stream=block_count_per_stream)
+            for block in range(block_count_per_stream):
                 for value_slice in range(16):
                     flat = [lane for row in values[block][value_slice] for lane in row]
                     value_init.append(
-                        f"    value_mem[{(((stream * len(commands)) + command_index) * blocks_per_stream + block) * 16 + value_slice}] = 512'h{_pack(flat, 8):0128x};"
+                        f"    value_mem[{((stream * total_blocks) + block_offsets[command_index] + block) * 16 + value_slice}] = 512'h{_pack(flat, 8):0128x};"
                     )
     ready_init = "\n".join(
         f"    result_ready_mem[{index}] = 1'b{1 if value else 0};" for index, value in enumerate(output_ready_pattern)
     )
     total_beats = len(beats0)
+    max_blocks_per_stream = max(block_counts_per_stream)
     total_results = len(commands) * 8 * 16
     command_valid_expr = "1'b1" if not stress_interfaces else "(((cycle + issued_commands) % 5) != 2)"
     input_valid_expr = "1'b1" if not stress_interfaces else "(((cycle + input_index) % 7) != 3)"
@@ -333,10 +394,10 @@ def _testbench(
 module tb;
   localparam integer HEADS = {heads};
   localparam integer COMMAND_COUNT = {len(commands)};
-  localparam integer BLOCK_COUNT = {blocks_per_stream};
+  localparam integer MAX_BLOCK_COUNT = {max_blocks_per_stream};
   localparam integer HEAD_DIM = {head_dim};
-  localparam integer BEATS_PER_COMMAND = BLOCK_COUNT * HEAD_DIM;
   localparam integer TOTAL_BEATS = {total_beats};
+  localparam integer TOTAL_BLOCKS = {total_blocks};
   localparam integer TOTAL_RESULTS = {total_results};
   localparam integer READY_PATTERN_LEN = {len(output_ready_pattern)};
 
@@ -353,12 +414,15 @@ module tb;
 
   reg [15:0] cmd_id_mem [0:COMMAND_COUNT-1];
   reg [4:0] cmd_head_base_mem [0:COMMAND_COUNT-1];
+  reg [14:0] cmd_block_count_mem [0:COMMAND_COUNT-1];
+  reg [31:0] cmd_beat_limit_mem [0:COMMAND_COUNT-1];
+  reg [31:0] cmd_block_offset_mem [0:COMMAND_COUNT-1];
   reg [31:0] cmd_mult_mem [0:COMMAND_COUNT-1];
   reg [5:0] cmd_shift_mem [0:COMMAND_COUNT-1];
   reg [127:0] query_mem [0:TOTAL_BEATS-1];
   reg [127:0] key_mem [0:TOTAL_BEATS-1];
   reg last_mem [0:TOTAL_BEATS-1];
-  reg [511:0] value_mem [0:(2*COMMAND_COUNT*BLOCK_COUNT*16)-1];
+  reg [511:0] value_mem [0:(2*TOTAL_BLOCKS*16)-1];
   reg result_ready_mem [0:READY_PATTERN_LEN-1];
 
   reg command_valid;
@@ -404,6 +468,7 @@ module tb;
   reg [13:0] pending_addr0 = 0, pending_addr1 = 0;
   reg [3:0] pending_slice0 = 0, pending_slice1 = 0;
   integer pending_delay0 = 0, pending_delay1 = 0;
+  integer issued_beat_limit;
 
   always #5 clk = ~clk;
 
@@ -414,7 +479,7 @@ module tb;
       .command_ready(command_ready),
       .command_id(cmd_id_mem[issued_commands]),
       .command_head_base(cmd_head_base_mem[issued_commands]),
-      .command_block_count(BLOCK_COUNT),
+      .command_block_count(cmd_block_count_mem[issued_commands]),
       .command_score_multiplier(cmd_mult_mem[issued_commands]),
       .command_score_shift(cmd_shift_mem[issued_commands]),
       .input_valid(input_valid),
@@ -456,8 +521,9 @@ module tb;
   );
 
   always @* begin
+    issued_beat_limit = issued_commands == 0 ? 0 : cmd_beat_limit_mem[issued_commands - 1];
     command_valid = rst_n && issued_commands < COMMAND_COUNT && {command_valid_expr};
-    input_valid = rst_n && input_index < (issued_commands * BEATS_PER_COMMAND) && {input_valid_expr};
+    input_valid = rst_n && input_index < issued_beat_limit && {input_valid_expr};
     input_query = input_index < TOTAL_BEATS ? query_mem[input_index] : 0;
     input_key = input_index < TOTAL_BEATS ? key_mem[input_index] : 0;
     input_last = input_index < TOTAL_BEATS ? last_mem[input_index] : 0;
@@ -518,7 +584,7 @@ module tb;
           value_response_valid[0] <= 1;
           value_response_address[13:0] <= pending_addr0;
           value_response_slice[3:0] <= pending_slice0;
-          value_response_matrix[511:0] <= value_mem[((active_cmd0 * BLOCK_COUNT) + pending_addr0) * 16 + pending_slice0];
+          value_response_matrix[511:0] <= value_mem[((cmd_block_offset_mem[active_cmd0] + pending_addr0) * 16) + pending_slice0];
         end else begin
           pending_delay0 <= pending_delay0 - 1;
         end
@@ -529,7 +595,7 @@ module tb;
           value_response_valid[1] <= 1;
           value_response_address[27:14] <= pending_addr1;
           value_response_slice[7:4] <= pending_slice1;
-          value_response_matrix[1023:512] <= value_mem[(((COMMAND_COUNT + active_cmd1) * BLOCK_COUNT) + pending_addr1) * 16 + pending_slice1];
+          value_response_matrix[1023:512] <= value_mem[(((TOTAL_BLOCKS + cmd_block_offset_mem[active_cmd1]) + pending_addr1) * 16) + pending_slice1];
         end else begin
           pending_delay1 <= pending_delay1 - 1;
         end
@@ -593,6 +659,7 @@ def _run_case(
     heads: int | None,
     command_count: int | None,
     blocks_per_stream: int | None,
+    block_counts_per_stream: tuple[int, ...] | None,
     head_dim: int | None,
     head_bases: tuple[int, ...] | None,
     output_ready_pattern: tuple[bool, ...],
@@ -603,6 +670,7 @@ def _run_case(
         heads=heads,
         command_count=command_count,
         blocks_per_stream=blocks_per_stream,
+        block_counts_per_stream=block_counts_per_stream,
         head_dim=head_dim,
         head_bases=head_bases,
     )
@@ -614,7 +682,12 @@ def _run_case(
         probe_defaults = run_config.setdefault("probe_defaults", {})
         probe_defaults["heads"] = int(workload["heads"])
         probe_defaults["command_count"] = int(workload["command_count"])
-        probe_defaults["blocks_per_stream"] = int(workload["blocks_per_stream"])
+        if len(set(int(value) for value in workload["block_counts_per_stream"])) == 1:
+            probe_defaults["blocks_per_stream"] = int(workload["blocks_per_stream"])
+            probe_defaults.pop("block_counts_per_stream", None)
+        else:
+            probe_defaults["block_counts_per_stream"] = list(int(value) for value in workload["block_counts_per_stream"])
+            probe_defaults.pop("blocks_per_stream", None)
         probe_defaults["head_dim"] = int(workload["head_dim"])
         probe_defaults["head_bases"] = list(int(value) for value in workload["head_bases"])
         generate_tree(run_config, temp_dir / "rtl")
@@ -716,6 +789,7 @@ def _run_case(
         "heads": resolved_heads,
         "commands": int(workload["command_count"]),
         "blocks_per_stream": int(workload["blocks_per_stream"]),
+        "block_counts_per_stream": list(int(value) for value in workload["block_counts_per_stream"]),
         "head_dim": int(workload["head_dim"]),
         "head_bases": list(int(value) for value in workload["head_bases"]),
         "command_accepts": command_accepts,
@@ -738,6 +812,7 @@ def build_report(
     heads: int | None = None,
     command_count: int | None = None,
     blocks_per_stream: int | None = None,
+    block_counts_per_stream: tuple[int, ...] | None = None,
     head_dim: int | None = None,
     head_bases: tuple[int, ...] | None = None,
     output_ready_pattern: tuple[bool, ...] | None = None,
@@ -756,6 +831,7 @@ def build_report(
         heads=heads,
         command_count=command_count,
         blocks_per_stream=blocks_per_stream,
+        block_counts_per_stream=block_counts_per_stream,
         head_dim=head_dim,
         head_bases=head_bases,
         output_ready_pattern=ready_pattern,
@@ -772,6 +848,7 @@ def build_report(
         "heads": int(result["heads"]),
         "commands": result["commands"],
         "blocks_per_stream": int(result["blocks_per_stream"]),
+        "block_counts_per_stream": result["block_counts_per_stream"],
         "head_dim": int(result["head_dim"]),
         "head_bases": result["head_bases"],
         "outputs": result["outputs"],
@@ -806,6 +883,7 @@ def build_report(
             max_blocks=int(base_config["attention_score32_exact_partial_gqa8_dual_stream_producer"]["max_blocks"]),
             command_count=int(result["commands"]),
             blocks_per_stream=int(result["blocks_per_stream"]),
+            block_counts_per_stream=tuple(int(value) for value in result["block_counts_per_stream"]),
             head_dim=int(result["head_dim"]),
             head_bases=tuple(int(value) for value in result["head_bases"]),
             llama_wave_reference_cycles=reference_cycles if isinstance(reference_cycles, int) else None,
@@ -819,11 +897,17 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--heads", type=int, default=None)
     parser.add_argument("--command-count", type=int, default=None)
     parser.add_argument("--blocks-per-stream", type=int, default=None)
+    parser.add_argument("--block-counts-per-stream", type=str, default=None)
     parser.add_argument("--head-dim", type=int, default=None)
     parser.add_argument("--head-bases", type=str, default=None)
     parser.add_argument("--result-ready-pattern", type=str, default=None)
     parser.add_argument("--ideal-interfaces", action="store_true")
     parser.add_argument("--json", action="store_true")
+    parser.add_argument(
+        "--compact-json",
+        action="store_true",
+        help="omit full expected/observed rows and emit their counts and SHA-256 digests",
+    )
     args = parser.parse_args(argv)
 
     config = _default_config()
@@ -839,18 +923,27 @@ def main(argv: list[str] | None = None) -> int:
         head_bases = tuple(int(token.strip()) for token in args.head_bases.split(",") if token.strip())
         if not head_bases:
             raise SystemExit("head-bases must not be empty")
+    block_counts_per_stream = None
+    if args.block_counts_per_stream:
+        block_counts_per_stream = tuple(
+            int(token.strip()) for token in args.block_counts_per_stream.split(",") if token.strip()
+        )
+        if not block_counts_per_stream:
+            raise SystemExit("block-counts-per-stream must not be empty")
     report = build_report(
         config=config,
         heads=args.heads,
         command_count=args.command_count,
         blocks_per_stream=args.blocks_per_stream,
+        block_counts_per_stream=block_counts_per_stream,
         head_dim=args.head_dim,
         head_bases=head_bases,
         output_ready_pattern=pattern,
         stress_interfaces=False if args.ideal_interfaces else None,
     )
-    if args.json:
-        print(json.dumps(report, indent=2, sort_keys=True))
+    if args.json or args.compact_json:
+        payload = compact_report(report) if args.compact_json else report
+        print(json.dumps(payload, indent=2, sort_keys=True))
     else:
         print(
             json.dumps(
