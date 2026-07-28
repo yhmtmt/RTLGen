@@ -1,0 +1,43 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_score32_local_temporal_reducer_v1",
+  "source_commit_note": "Dispatch must use the merge commit that adds this request, sweep, and L1 task-generator support; b1a55fe4104b81e1e230cab1785190362d987089 is only the physical-harness implementation floor.",
+  "requested_items": [
+    {
+      "item_id": "l1_decoder_attention_score32_local_temporal_reducer_ppa_v1",
+      "task_type": "l1_sweep",
+      "title": "Layer 1 score32 local temporal reducer physical harness boundary sweep",
+      "objective": "Measure Nangate45 PPA for the merged score32 exact local temporal reducer physical harness at p53/p54 in reducer and source_only modes using a narrow-IO practical floorplan, accepting flow_failed and timeout outcomes as explicit boundary evidence.",
+      "status": "pending",
+      "evaluation_mode": "frontier_followup",
+      "abstraction_layer": "decoder_attention_score32_local_temporal_reducer",
+      "comparison_role": "functional_local_hierarchy_anchor",
+      "paired_baseline_item_id": "l1_decoder_attention_score32_exact_partial_dual_stream_producer_ppa_v1",
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "configs": [
+        "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_physical_harness_p53_reducer_w8/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_physical_harness_p53_source_only_w8/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_physical_harness_p54_reducer_w8/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_physical_harness_p54_source_only_w8/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/attention_score32_local_temporal_reducer_v1/sweeps/nangate45_attention_score32_local_temporal_reducer_physical_harness_boundary.json",
+      "out_root": "runs/designs/npu_blocks",
+      "expected_outputs": [
+        "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_physical_harness_p53_reducer_w8/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_physical_harness_p53_reducer_w8/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_physical_harness_p53_source_only_w8/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_physical_harness_p53_source_only_w8/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_physical_harness_p54_reducer_w8/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_physical_harness_p54_reducer_w8/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_physical_harness_p54_source_only_w8/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_physical_harness_p54_source_only_w8/timing_debug_report.md"
+      ],
+      "acceptance_notes": "Run the physical-harness generator, guard, run_block_sweep, and timing-summary commands for each config. Keep the point count small because reducer synthesis is expensive. Accept status=ok rows plus non-ok rows such as flow_failed and timeout/timeouts as explicit boundary evidence.",
+      "expected_result": {
+        "direction": "measure_local_temporal_reducer_boundary",
+        "reason": "The merged local reducer and source-only harnesses establish whether the 53/54-way eight-wave stateful hierarchy is physically explorable before later L2 cadence recost work consumes it."
+      },
+      "notes": "Do not dispatch until the job-prep merge commit is on origin/master."
+    }
+  ]
+}
