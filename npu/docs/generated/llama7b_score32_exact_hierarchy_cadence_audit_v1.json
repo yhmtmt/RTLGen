@@ -1,0 +1,286 @@
+{
+  "arithmetically_reproduced_frontier": {
+    "global_distribution": {
+      "clusters_with_53_datapaths": 8,
+      "clusters_with_54_datapaths": 8,
+      "conservative_per_cluster_macs_per_cycle": 6784
+    },
+    "measured_wrapper_best_row": {
+      "critical_path_ns": 48.6509,
+      "param_hash": "78fa1b5e",
+      "row_index": 1,
+      "stdcell_area_um2": 693452.0,
+      "tag": "attention_dual_stream_schedule_wrapper_score32_exp_lut",
+      "total_power_mw": 60.7
+    },
+    "subtile_pipeline_reconstruction": {
+      "aux_memory_span_cycles": 688,
+      "compute_mode": "dual_mac",
+      "hbm_exposed_cycles": 815,
+      "normalize_strategy": "online_correction",
+      "pipeline_attention_cycles": 986,
+      "prefetch_distance": 3,
+      "subtile_aux_memory_cycles": 86,
+      "subtile_count": 8,
+      "subtile_hbm_cycles": 163,
+      "subtile_qk_cycles": 78,
+      "subtile_stats_cycles": 15,
+      "subtile_value_cycles": 78,
+      "trace": [
+        {
+          "aux_release_cycle": 0,
+          "hbm_ready_cycle": 0,
+          "qk_done_cycle": 78,
+          "qk_start_cycle": 0,
+          "stats_done_cycle": 93,
+          "stats_start_cycle": 78,
+          "subtile": 0,
+          "value_done_cycle": 171,
+          "value_start_cycle": 93
+        },
+        {
+          "aux_release_cycle": 86,
+          "hbm_ready_cycle": 0,
+          "qk_done_cycle": 164,
+          "qk_start_cycle": 86,
+          "stats_done_cycle": 179,
+          "stats_start_cycle": 164,
+          "subtile": 1,
+          "value_done_cycle": 257,
+          "value_start_cycle": 179
+        },
+        {
+          "aux_release_cycle": 172,
+          "hbm_ready_cycle": 0,
+          "qk_done_cycle": 250,
+          "qk_start_cycle": 172,
+          "stats_done_cycle": 265,
+          "stats_start_cycle": 250,
+          "subtile": 2,
+          "value_done_cycle": 343,
+          "value_start_cycle": 265
+        },
+        {
+          "aux_release_cycle": 258,
+          "hbm_ready_cycle": 163,
+          "qk_done_cycle": 336,
+          "qk_start_cycle": 258,
+          "stats_done_cycle": 351,
+          "stats_start_cycle": 336,
+          "subtile": 3,
+          "value_done_cycle": 429,
+          "value_start_cycle": 351
+        },
+        {
+          "aux_release_cycle": 344,
+          "hbm_ready_cycle": 326,
+          "qk_done_cycle": 422,
+          "qk_start_cycle": 344,
+          "stats_done_cycle": 437,
+          "stats_start_cycle": 422,
+          "subtile": 4,
+          "value_done_cycle": 515,
+          "value_start_cycle": 437
+        },
+        {
+          "aux_release_cycle": 430,
+          "hbm_ready_cycle": 489,
+          "qk_done_cycle": 567,
+          "qk_start_cycle": 489,
+          "stats_done_cycle": 582,
+          "stats_start_cycle": 567,
+          "subtile": 5,
+          "value_done_cycle": 660,
+          "value_start_cycle": 582
+        },
+        {
+          "aux_release_cycle": 516,
+          "hbm_ready_cycle": 652,
+          "qk_done_cycle": 730,
+          "qk_start_cycle": 652,
+          "stats_done_cycle": 745,
+          "stats_start_cycle": 730,
+          "subtile": 6,
+          "value_done_cycle": 823,
+          "value_start_cycle": 745
+        },
+        {
+          "aux_release_cycle": 602,
+          "hbm_ready_cycle": 815,
+          "qk_done_cycle": 893,
+          "qk_start_cycle": 815,
+          "stats_done_cycle": 908,
+          "stats_start_cycle": 893,
+          "subtile": 7,
+          "value_done_cycle": 986,
+          "value_start_cycle": 908
+        }
+      ]
+    },
+    "tile_work": {
+      "qk_cycles": 619,
+      "qk_macs": 4194304,
+      "stats_cycles": 116,
+      "value_cycles": 619,
+      "value_macs": 4194304
+    },
+    "wrapper_config": {
+      "array_m": 8,
+      "array_n": 8,
+      "clusters": 2,
+      "k_unroll": 1,
+      "semantic_profile": "score32_exp_lut_div",
+      "streams": 2,
+      "wrapper_cluster_macs_per_cycle": 128,
+      "wrapper_total_macs_per_cycle": 256
+    }
+  },
+  "decision": "score32_schedule_wrapper_cadence_arithmetically_reproducible_but_exact_hierarchy_unclosed",
+  "exact_hierarchy_gap": {
+    "block_protocol": {
+      "placeholder_c16_config_max_blocks": 16,
+      "placeholder_eight_wave_blocks_per_head_if_one_command": 1024,
+      "placeholder_eight_wave_shortfall_blocks": 1008,
+      "placeholder_per_wave_blocks_per_head": 128,
+      "placeholder_per_wave_shortfall_blocks": 112,
+      "placeholder_shortfall_is_diagnostic_only": true,
+      "tokens_per_block": 8
+    },
+    "exact_c16_slice": {
+      "frontier_ratio": 856,
+      "producer_score_tile_array_m": 1,
+      "producer_score_tile_array_n": 8,
+      "producers": 16,
+      "semantics_only_not_frontier_cadence": true,
+      "slice_macs_per_cycle": 128
+    },
+    "measured_wrapper_classification": {
+      "deterministic_stimulus_not_full_token_replay": true,
+      "functional_exact_partial_protocol_present": false,
+      "ppa_outputs_exposed_directly": true,
+      "seed_lfsr_and_stream_buffers_present": true,
+      "structural_density_anchor_only": true
+    },
+    "required_exact_hierarchy": {
+      "functional_producer_block_distribution_per_wave": {
+        "blocks_per_tile": 128,
+        "distribution_for_53_datapaths": {
+          "streams_with_1_block": 84,
+          "streams_with_2_blocks": 22
+        },
+        "distribution_for_54_datapaths": {
+          "streams_with_1_block": 88,
+          "streams_with_2_blocks": 20
+        },
+        "max_blocks_per_stream_per_wave": 2,
+        "streams_per_53_datapath_cluster": 106,
+        "streams_per_54_datapath_cluster": 108,
+        "streams_per_functional_producer": 2,
+        "supported_generator_min_max_blocks": 8,
+        "supported_generator_min_max_blocks_suffices": true
+      },
+      "local_grouping": "53_or_54_real_128mac_wrapper_cluster_partial_producers_per_global_cluster",
+      "local_merge_counts": {
+        "clusters_with_53_datapaths": 8,
+        "clusters_with_54_datapaths": 8,
+        "global_merges_per_beat": 15,
+        "merges_per_53_datapath_cluster": 52,
+        "merges_per_54_datapath_cluster": 53,
+        "total_local_merges_per_beat": 840
+      },
+      "next_unmeasured_block": "local_exact_partial_reducer_and_temporal_state_across_8_waves",
+      "real_partial_producers": 856,
+      "selected_temporal_accumulation_boundary": "per_wave_producer_emission_then_local_53_54_way_reduction_then_persistent_local_state_across_8_waves_then_one_c16_global_exact_reduction",
+      "single_c16_global_exact_reduction_after_local_aggregation": true
+    }
+  },
+  "model": "llm_decoder_attention_score32_exact_hierarchy_cadence_audit_v1",
+  "next_l1_contract": {
+    "max_blocks_per_stream_per_wave": 2,
+    "minimum_supported_max_blocks_for_functional_block": 8,
+    "per_wave_blocks_per_tile": 128,
+    "placeholder_c16_max_blocks_shortfall_is_diagnostic_only": true,
+    "producer_streams": 2,
+    "proposal_id": "prop_l1_decoder_attention_score32_exact_partial_dual_stream_producer_v1",
+    "required_functional_block": "functional_2stream_m8x8_exact_partial_producer_before_53_54_way_local_aggregation",
+    "required_macs_per_cycle_per_functional_block": 128,
+    "structural_wrapper_density_is_insufficient_for_functional_closure": true,
+    "temporal_accumulation_boundary": "local_reducer_persistent_across_8_waves_before_one_c16_global_exact_reduction"
+  },
+  "non_claims": [
+    "Do not revise frontier throughput or latency yet.",
+    "The 986-cycle tile service point is arithmetically reproducible from checked-in sources, but hardware-equivalence closure remains open.",
+    "The native c16 exact slice proves protocol semantics only; it does not validate the 109568-MAC/cycle frontier cadence.",
+    "The next unmeasured block is the local 53/54-way reducer plus temporal exact-partial state across 8 waves."
+  ],
+  "source_artifacts": {
+    "attention_online_source_py": {
+      "file_sha256": "1ac278e6fc4c85adcda4fe7af9709d66f4e9a4eca2fbe6de9061e9b86f95b36b",
+      "path": "npu/sim/perf/attention_online.py"
+    },
+    "composed_generator_py": {
+      "file_sha256": "92ebf07ae0e6a6f69bb508bb3f3952e86ccfb46e7c814d8fa3014d43509290f4",
+      "path": "npu/rtlgen/gen_attention_dual_stream_composed.py"
+    },
+    "exact_c16_config_json": {
+      "canonical_json_sha256": "24bfd12623867f96f87cf495354eadda2a146486d191f71f4e8153ba99a3df99",
+      "file_sha256": "8c55bd897be58145f1347f2329064b8915e9c9317f60e3d33842bcf84b437d12",
+      "path": "runs/designs/npu_blocks/attention_score32_exact_partial_producer_tree_c16_r2_l8_b59/config.json"
+    },
+    "exact_c16_generator_py": {
+      "file_sha256": "af0ba50382c849ea78f06cd85c3538e559c22a4b67997e1437111200213da81f",
+      "path": "npu/rtlgen/gen_attention_score32_exact_partial_producer_tree_c16.py"
+    },
+    "producer_cluster_generator_py": {
+      "file_sha256": "bf8a200beaf4ef5fdfd69326e6f08c70b890510965a1e529a877ee11a3490328",
+      "path": "npu/rtlgen/gen_attention_decode_score_multivalue_cluster.py"
+    },
+    "schedule_wrapper_generator_py": {
+      "file_sha256": "1080577e739c4bae657388c7d2a34277e6f1c3fd7a4624dcf8eecd0b216ae3ca",
+      "path": "npu/rtlgen/gen_attention_dual_stream_schedule_wrapper.py"
+    },
+    "schedule_wrapper_recost_json": {
+      "canonical_json_sha256": "497552e34ab153946bf5cbf792e6a1e8e4a5fe0e4976a9d63d2ed006ea699859",
+      "file_sha256": "34ab51abb4e3f30af0e827a8ea8fc1ec008039e2ddbdbce3de81713173fe08d6",
+      "path": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_score32_exp_lut_div_schedule_wrapper_recost_llama7b_v1.json"
+    },
+    "subtile_pipeline_generator_py": {
+      "file_sha256": "b63ab335f1c4644d59c11f6ba77df808f19e65a5b568250d975efe4067f3c270",
+      "path": "npu/eval/estimate_llm_decoder_attention_kv_subtile_pipeline_schedule.py"
+    },
+    "subtile_pipeline_json": {
+      "canonical_json_sha256": "945c6bc0ceda06c3f5e3061366d236d69b27aaf57af0aafe36d59bd944317e9a",
+      "file_sha256": "9d010ef3f93f757a019ae9fca3869488321646ce25ac062b6efdbd9d5aff0249",
+      "path": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_subtile_pipeline_schedule__l2_decoder_attention_kv_subtile_pipeline_schedule_llama7b_v1.json"
+    },
+    "wrapper_config_json": {
+      "canonical_json_sha256": "39bce3be932284ddf261a427d31b577fafbafe10000a6a772da06cd8ad584af5",
+      "file_sha256": "7fa3cbf33c3620a5207ca3440f8cac177fc5f9c42d917410427db88c5da0a45c",
+      "path": "runs/designs/npu_blocks/attention_dual_stream_schedule_wrapper_score32_exp_lut_8x8_c2/config.json"
+    },
+    "wrapper_metrics_csv": {
+      "file_sha256": "5bcb2215deeeeef101b3095aa28a5b2de5210594e315550add0c874dca08e876",
+      "path": "runs/designs/npu_blocks/attention_dual_stream_schedule_wrapper_score32_exp_lut_8x8_c2/metrics.csv",
+      "selected_row_index": 1,
+      "selected_row_sha256": "48ba314dc87924dad8ed2ba8f39ef6f55544a9f1eab9b3dca1e0392569eb7236"
+    }
+  },
+  "source_contract": {
+    "active_global_clusters": 16,
+    "cross_tile_reduction_cycles": 141,
+    "frontier_macs_per_cycle": 109568,
+    "kv_write_cycles": 10,
+    "qkv_cycles": 192,
+    "sequence_length": 131072,
+    "source_decision": "dual_stream_feasible",
+    "source_item_id": "l2_decoder_attention_composed_datapath_score32_exp_lut_div_schedule_wrapper_recost_llama7b_v1",
+    "tile_count": 128,
+    "tile_service_cycles": 986,
+    "tile_tokens": 1024,
+    "tile_waves": 8,
+    "total_cycles": 263392,
+    "wrapper_cluster_datapaths": 856,
+    "wrapper_count": 428
+  },
+  "version": 1
+}

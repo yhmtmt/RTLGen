@@ -1,0 +1,73 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_score32_exact_partial_dual_stream_producer_v1",
+  "created_utc": "2026-07-28T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit",
+  "title": "Functional score32 exact-partial dual-stream producer before local aggregation",
+  "abstraction_layer": "decoder_attention_score32_exact_partial_dual_stream_producer",
+  "hypothesis": "The current score32 schedule-wrapper frontier can only become a hardware-equivalent cadence claim after a functional 2-stream m8x8 exact-partial producer exists at the 128-MAC/cycle wrapper-cluster datapath boundary, emitting per-wave into a 53/54-way local reducer whose aggregate state persists across 8 waves before one c16 global exact reduction.",
+  "direct_comparison": {
+    "primary_question": "Can we replace the structural dual-stream PPA harness with a functional exact-partial producer that preserves the required 128 MAC/cycle local density, emits per-wave into local aggregation, and exposes the cadence needed for persistent local exact state across 8 waves?",
+    "baselines": [
+      "l2_decoder_attention_composed_datapath_score32_exp_lut_div_schedule_wrapper_recost_llama7b_v1",
+      "attention_score32_exact_partial_producer_tree_c16_r2_l8_b59"
+    ],
+    "candidate": "l1_decoder_attention_score32_exact_partial_dual_stream_producer_ppa_v1",
+    "include": [
+      "functional exact-partial producer protocol, not seeded structural-only PPA stimulus",
+      "two streams with m=8, n=8, k=1 and 128 MAC/cycle per producer block",
+      "temporal accumulation boundary fixed at the local reducer: per-wave producer emission, then persistent local aggregate state across 8 waves",
+      "functional producer max_blocks demand >= 2 blocks/stream per wave, rounded to the supported power-of-two floor max_blocks >= 8",
+      "ready/valid observability for exact partial-state cadence and accumulation state"
+    ],
+    "exclude": [
+      "53/54-way local reducer implementation in this step",
+      "global 16-way exact reduction/finalization changes in this step",
+      "OpenROAD dispatch from this proposal alone"
+    ],
+    "metrics": [
+      "critical_path_ns",
+      "stdcell_area_um2",
+      "total_power_mw",
+      "functional_exact_partial_protocol",
+      "max_blocks_contract",
+      "temporal_accumulation_boundary"
+    ]
+  },
+  "remaining_abstractions": [
+    "Local 53/54-way exact reducer and temporal merge state remain the next unmeasured block after this producer exists.",
+    "The existing schedule-wrapper PPA harness remains structural-only and cannot establish exact partial-state cadence.",
+    "The current c16 slice proves semantics at 128 MAC/cycle total, but it remains 856x below the frontier MAC density."
+  ],
+  "required_evaluations": [
+    {
+      "item_id": "l1_decoder_attention_score32_exact_partial_dual_stream_producer_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure a functional 2-stream m8x8 exact-partial producer block at 128 MAC/cycle, with per-wave producer emission into local reduction and producer max_blocks meeting the 2-block demand rounded to the supported floor max_blocks>=8.",
+      "evaluation_mode": "frontier_followup",
+      "abstraction_layer": "decoder_attention_score32_exact_partial_dual_stream_producer",
+      "comparison_role": "functional_density_anchor",
+      "paired_baseline_item_id": "l2_decoder_attention_composed_datapath_score32_exp_lut_div_schedule_wrapper_recost_llama7b_v1",
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "replace_structural_dual_stream_harness_with_functional_exact_partial_producer",
+        "reason": "The frontier cadence cannot be hardware-equivalent until the local 128-MAC/cycle producer block is functional, emits exact partials per wave, and feeds a measured local reducer/persistent-state boundary."
+      },
+      "status": "pending_implementation_merge"
+    }
+  ],
+  "source_refs": [
+    "npu/eval/audit_llm_decoder_attention_score32_exact_hierarchy_cadence.py",
+    "runs/designs/npu_blocks/attention_dual_stream_schedule_wrapper_score32_exp_lut_8x8_c2/config.json",
+    "runs/designs/npu_blocks/attention_dual_stream_schedule_wrapper_score32_exp_lut_8x8_c2/metrics.csv",
+    "runs/designs/npu_blocks/attention_score32_exact_partial_producer_tree_c16_r2_l8_b59/config.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_score32_exp_lut_div_schedule_wrapper_recost_llama7b_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_subtile_pipeline_schedule__l2_decoder_attention_kv_subtile_pipeline_schedule_llama7b_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/docs/attention_score32_exact_partial_producer_tree_c16_contract.md",
+    "docs/architecture/llama7b_attention_abstraction_closure_plan.md"
+  ]
+}
