@@ -1,0 +1,12 @@
+{
+  "top_name": "attention_score32_exact_local_temporal_reducer_physical_harness_p54_source_only_w8",
+  "attention_score32_exact_local_temporal_reducer_physical_harness": {
+    "producers": 54,
+    "mode": "source_only",
+    "waves": 8
+  },
+  "report_links": {
+    "proposal_id": "prop_l1_decoder_attention_score32_local_temporal_reducer_v1",
+    "proposal_path": "docs/proposals/prop_l1_decoder_attention_score32_local_temporal_reducer_v1/proposal.json"
+  }
+}
