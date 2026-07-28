@@ -1,0 +1,18 @@
+{
+  "top_name": "attention_score32_exact_local_temporal_reducer_p54_w8",
+  "attention_score32_exact_local_temporal_reducer": {
+    "producers": 54,
+    "value_slices": 16,
+    "head_id_bits": 5,
+    "persistent_waves": 8
+  },
+  "probe_defaults": {
+    "heads": 2,
+    "command_count": 2,
+    "seed": 29
+  },
+  "report_links": {
+    "proposal_id": "prop_l1_decoder_attention_score32_local_temporal_reducer_v1",
+    "proposal_path": "docs/proposals/prop_l1_decoder_attention_score32_local_temporal_reducer_v1/proposal.json"
+  }
+}

@@ -5,8 +5,11 @@ from npu.sim.perf.attention_exact_partial import (
     ExactFinalizedBeat,
     ExactPartialBeat,
     LEAF_STREAM_BYTES_PER_CLUSTER_32_HEADS,
+    LOCAL_TEMPORAL_WAVES,
     PARTIAL_PAYLOAD_BITS,
     exact_finalized_tree_service_manifest,
+    exact_local_temporal_reducer_service_manifest,
+    exact_partial_staged_tree_service_manifest,
     exact_partial_tree_service_manifest,
     finalize_partial_beat,
     finalize_partial_beats,
@@ -18,10 +21,12 @@ from npu.sim.perf.attention_exact_partial import (
     merge_partial_beats,
     merge_partial_streams,
     merge_partial_streams_via_local_normalization,
+    merge_staged_partial_streams,
     normalized_merge_guard_case,
     pack_final_values,
     pack_numerators,
     partial_stream_from_blocks,
+    reduce_local_temporal_partial_waves,
     simulate_exact_finalizer,
     unpack_final_values,
     unpack_numerators,
@@ -154,6 +159,86 @@ def test_balanced_tree_merge_matches_left_to_right_pairing() -> None:
     assert merged == expected
 
 
+def test_staged_tree_merge_carries_odd_leaf_forward() -> None:
+    leaves = [
+        partial_stream_from_blocks(
+            command_id=0x4A30 + index,
+            head_id=3,
+            score_rows=_score_rows(seed),
+            value_blocks=_value_blocks(seed + 2),
+        )
+        for index, seed in enumerate((5, 11, 17, 23, 29))
+    ]
+    remapped = [
+        tuple(
+            ExactPartialBeat(
+                command_id=0x4A21,
+                head_id=3,
+                slice_index=beat.slice_index,
+                last=beat.last,
+                max_score=beat.max_score,
+                exp_sum=beat.exp_sum,
+                numerators=beat.numerators,
+            )
+            for beat in stream
+        )
+        for stream in leaves
+    ]
+
+    merged = merge_staged_partial_streams(remapped)
+    expected = merge_partial_streams(
+        merge_partial_streams(
+            merge_partial_streams(remapped[0], remapped[1]),
+            merge_partial_streams(remapped[2], remapped[3]),
+        ),
+        remapped[4],
+    )
+
+    assert merged == expected
+
+
+def test_local_temporal_reduce_merges_exactly_eight_waves() -> None:
+    waves = []
+    for wave in range(LOCAL_TEMPORAL_WAVES):
+        streams = []
+        for producer in range(3):
+            streams.append(
+                partial_stream_from_blocks(
+                    command_id=0x4A21,
+                    head_id=7,
+                    score_rows=_score_rows(5 + producer + wave),
+                    value_blocks=_value_blocks(9 + producer + wave),
+                )
+            )
+        waves.append(tuple(streams))
+
+    reduced = reduce_local_temporal_partial_waves(tuple(waves))
+    expected = merge_partial_streams(
+        merge_partial_streams(
+            merge_partial_streams(
+                merge_partial_streams(
+                    merge_partial_streams(
+                        merge_partial_streams(
+                            merge_staged_partial_streams(waves[0]),
+                            merge_staged_partial_streams(waves[1]),
+                        ),
+                        merge_staged_partial_streams(waves[2]),
+                    ),
+                    merge_staged_partial_streams(waves[3]),
+                ),
+                merge_staged_partial_streams(waves[4]),
+            ),
+            merge_staged_partial_streams(waves[5]),
+        ),
+        merge_partial_streams(
+            merge_staged_partial_streams(waves[6]),
+            merge_staged_partial_streams(waves[7]),
+        ),
+    )
+
+    assert reduced == expected
+
+
 def test_exact_partial_tree_service_manifest_is_consistent() -> None:
     manifest = exact_partial_tree_service_manifest(clusters=16)
 
@@ -165,6 +250,18 @@ def test_exact_partial_tree_service_manifest_is_consistent() -> None:
     assert manifest["total_leaf_stream_bytes"] == 16 * 26816
     assert manifest["direct_328bit_links_unclosed"] is True
     assert manifest["final_divider_embodied"] is False
+
+
+def test_exact_partial_staged_tree_service_manifest_is_consistent() -> None:
+    manifest = exact_partial_staged_tree_service_manifest(producers=53, heads=8)
+
+    assert manifest["producers"] == 53
+    assert manifest["heads"] == 8
+    assert manifest["tree_stages"] == 6
+    assert manifest["tree_nodes"] == 52
+    assert manifest["partial_payload_bits_per_beat"] == PARTIAL_PAYLOAD_BITS
+    assert manifest["staging_contract"] == "pairwise_ready_valid_exact_merge_with_odd_leaf_carry"
+    assert manifest["direct_328bit_links_unclosed"] is True
 
 
 def test_exact_finalized_tree_service_manifest_is_consistent() -> None:
@@ -183,6 +280,21 @@ def test_exact_finalized_tree_service_manifest_is_consistent() -> None:
     assert manifest["per_bank_accept_interval_cycles"] == 59
     assert manifest["direct_328bit_links_unclosed"] is True
     assert manifest["final_divider_embodied"] is True
+
+
+def test_exact_local_temporal_reducer_service_manifest_is_consistent() -> None:
+    manifest = exact_local_temporal_reducer_service_manifest(producers=54, heads=2)
+
+    assert manifest["producers"] == 54
+    assert manifest["persistent_waves"] == 8
+    assert manifest["tree_stages"] == 6
+    assert manifest["tree_nodes"] == 53
+    assert manifest["comparison_baseline_contract"] == "python_structured_local_temporal_exact_partial_reference"
+    assert manifest["remaining_abstractions"] == [
+        "producer_fan_in_wiring_open",
+        "noc_sram_ppa_open",
+        "global_c16_exact_reduction_open",
+    ]
 
 
 def test_normalized_merge_boundary_is_not_exact() -> None:

@@ -28,6 +28,7 @@ from npu.sim.perf.attention_separated import (
 HEAD_ID_BITS = 5
 SLICE_LANES = 8
 VALUE_SLICES = 16
+LOCAL_TEMPORAL_WAVES = 8
 SLICE_INDEX_BITS = (VALUE_SLICES - 1).bit_length()
 PARTIAL_PAYLOAD_BITS = SLICE_LANES * WEIGHTED_NUMERATOR_BITS
 PARTIAL_LINK_BITS = PARTIAL_PAYLOAD_BITS + 16 + HEAD_ID_BITS + SCORE_BITS + EXP_SUM_BITS + SLICE_INDEX_BITS + 1
@@ -425,6 +426,54 @@ def merge_balanced_partial_streams(streams: Iterable[Iterable[ExactPartialBeat]]
     return level[0]
 
 
+def merge_staged_partial_streams(streams: Iterable[Iterable[ExactPartialBeat]]) -> tuple[ExactPartialBeat, ...]:
+    level = [tuple(stream) for stream in streams]
+    if not level:
+        raise ValueError("expected at least one partial stream")
+    expected_beats = len(level[0])
+    if expected_beats == 0:
+        raise ValueError("partial streams must be non-empty")
+    if any(len(stream) != expected_beats for stream in level):
+        raise ValueError("all partial streams must contain the same beat count")
+    while len(level) > 1:
+        next_level: list[tuple[ExactPartialBeat, ...]] = []
+        index = 0
+        while index < len(level):
+            if index + 1 >= len(level):
+                next_level.append(level[index])
+            else:
+                next_level.append(
+                    tuple(
+                        merge_partial_beats(level[index][beat_index], level[index + 1][beat_index])
+                        for beat_index in range(expected_beats)
+                    )
+                )
+            index += 2
+        level = next_level
+    return level[0]
+
+
+def reduce_local_temporal_partial_waves(
+    waves: Iterable[Iterable[Iterable[ExactPartialBeat]]],
+    *,
+    expected_waves: int = LOCAL_TEMPORAL_WAVES,
+) -> tuple[ExactPartialBeat, ...]:
+    wave_streams = [tuple(tuple(beat for beat in stream) for stream in wave) for wave in waves]
+    if len(wave_streams) != int(expected_waves):
+        raise ValueError(f"expected exactly {int(expected_waves)} waves")
+    if not wave_streams[0]:
+        raise ValueError("expected at least one producer stream per wave")
+    aggregate: tuple[ExactPartialBeat, ...] | None = None
+    for wave in wave_streams:
+        if not wave:
+            raise ValueError("expected at least one producer stream per wave")
+        local_root = merge_staged_partial_streams(wave)
+        aggregate = local_root if aggregate is None else merge_partial_streams(aggregate, local_root)
+    if aggregate is None:
+        raise AssertionError("unreachable")
+    return aggregate
+
+
 def merge_partial_streams_via_local_normalization(
     left: Iterable[ExactPartialBeat],
     right: Iterable[ExactPartialBeat],
@@ -524,6 +573,34 @@ def exact_partial_tree_service_manifest(*, clusters: int, heads: int = 32) -> di
         "final_divider_embodied": False,
         "finalizer_boundary": "next_phase",
         "future_area_sensitivity": "folded_or_radix4_tree",
+    }
+
+
+def exact_partial_staged_tree_service_manifest(*, producers: int, heads: int = 32) -> dict[str, int | bool | str]:
+    producer_count = int(producers)
+    head_count = int(heads)
+    if producer_count < 2 or producer_count > 64:
+        raise ValueError("producers must be in [2, 64]")
+    if head_count < 1:
+        raise ValueError("heads must be positive")
+    stages = int(math.ceil(math.log2(producer_count)))
+    exact_state_bytes_per_producer = (EXACT_STATE_BITS_PER_HEAD * head_count) // 8
+    leaf_stream_bytes_per_producer = (PARTIAL_LINK_BITS * VALUE_SLICES * head_count) // 8
+    return {
+        "producers": producer_count,
+        "heads": head_count,
+        "tree_stages": stages,
+        "tree_nodes": producer_count - 1,
+        "value_slices": VALUE_SLICES,
+        "slice_lanes": SLICE_LANES,
+        "partial_payload_bits_per_beat": PARTIAL_PAYLOAD_BITS,
+        "partial_link_bits_per_beat": PARTIAL_LINK_BITS,
+        "exact_state_bytes_per_producer": exact_state_bytes_per_producer,
+        "leaf_stream_bytes_per_producer": leaf_stream_bytes_per_producer,
+        "total_leaf_stream_bytes": leaf_stream_bytes_per_producer * producer_count,
+        "staging_contract": "pairwise_ready_valid_exact_merge_with_odd_leaf_carry",
+        "direct_328bit_links_unclosed": True,
+        "final_divider_embodied": False,
     }
 
 
@@ -851,6 +928,54 @@ def exact_partial_dual_stream_gqa8_producer_service_manifest(
     }
 
 
+def exact_local_temporal_reducer_service_manifest(
+    *,
+    producers: int,
+    waves: int = LOCAL_TEMPORAL_WAVES,
+    heads: int = 1,
+) -> dict[str, object]:
+    producer_count = int(producers)
+    wave_count = int(waves)
+    head_count = int(heads)
+    if producer_count not in {53, 54}:
+        raise ValueError("producers must be exactly 53 or 54")
+    if wave_count != LOCAL_TEMPORAL_WAVES:
+        raise ValueError(f"waves must be exactly {LOCAL_TEMPORAL_WAVES}")
+    if head_count < 1 or head_count > 32:
+        raise ValueError("heads must be in [1, 32]")
+    local_tree = exact_partial_staged_tree_service_manifest(producers=producer_count, heads=head_count)
+    return {
+        "producers": producer_count,
+        "persistent_waves": wave_count,
+        "heads": head_count,
+        "tree_stages": local_tree["tree_stages"],
+        "tree_nodes": local_tree["tree_nodes"],
+        "value_slices": VALUE_SLICES,
+        "partial_payload_bits_per_beat": PARTIAL_PAYLOAD_BITS,
+        "partial_link_bits_per_beat": PARTIAL_LINK_BITS,
+        "command_head_contract": "explicit_command_id_head_id_slice_last_metadata_per_beat",
+        "local_reduction_contract": "staged_exact_merge_with_odd_leaf_carry_until_single_local_root",
+        "temporal_accumulation_contract": "merge_local_root_into_persistent_exact_state_for_exactly_8_waves_then_emit",
+        "comparison_baseline_contract": "python_structured_local_temporal_exact_partial_reference",
+        "comparison_cycle_origin": "cycle0_on_first_leaf_issue_of_wave0",
+        "diagnostic_only_baseline": "none",
+        "producer_partial_protocol": {
+            "command_id_bits": 16,
+            "head_id_bits": HEAD_ID_BITS,
+            "global_max_bits": SCORE_BITS,
+            "exp_sum_bits": EXP_SUM_BITS,
+            "slice_index_bits": SLICE_INDEX_BITS,
+            "partial_payload_bits_per_beat": PARTIAL_PAYLOAD_BITS,
+            "partial_link_bits_per_beat": PARTIAL_LINK_BITS,
+        },
+        "remaining_abstractions": [
+            "producer_fan_in_wiring_open",
+            "noc_sram_ppa_open",
+            "global_c16_exact_reduction_open",
+        ],
+    }
+
+
 __all__ = [
     "EXACT_STATE_BYTES_PER_CLUSTER_32_HEADS",
     "ExactFinalizedBeat",
@@ -858,6 +983,7 @@ __all__ = [
     "FINAL_PAYLOAD_BITS",
     "FINAL_LINK_BITS",
     "HEAD_ID_BITS",
+    "LOCAL_TEMPORAL_WAVES",
     "LEAF_STREAM_BYTES_PER_CLUSTER_32_HEADS",
     "PARTIAL_PAYLOAD_BITS",
     "PARTIAL_LINK_BITS",
@@ -865,8 +991,10 @@ __all__ = [
     "SLICE_INDEX_BITS",
     "VALUE_SLICES",
     "exact_partial_tree_service_manifest",
+    "exact_partial_staged_tree_service_manifest",
     "exact_finalized_tree_service_manifest",
     "exact_banked_finalized_tree_service_manifest",
+    "exact_local_temporal_reducer_service_manifest",
     "exact_partial_producer_tree_service_manifest",
     "exact_partial_dual_stream_gqa8_producer_service_manifest",
     "exact_banked_finalized_tree_full_wave_saturated_service",
@@ -877,6 +1005,7 @@ __all__ = [
     "finalize_partial_beats",
     "finalize_partial_stream",
     "merge_balanced_partial_streams",
+    "merge_staged_partial_streams",
     "merge_partial_beats",
     "merge_partial_streams",
     "merge_partial_streams_via_local_normalization",
@@ -886,6 +1015,7 @@ __all__ = [
     "pack_final_values",
     "simulate_exact_finalizer",
     "simulate_exact_banked_finalizer",
+    "reduce_local_temporal_partial_waves",
     "unpack_final_values",
     "unpack_numerators",
 ]
