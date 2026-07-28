@@ -143,6 +143,19 @@ class ExactFinalizedBeat:
             raise ValueError(f"values must fit signed {FINAL_VALUE_BITS} bits")
 
 
+@dataclass(frozen=True)
+class ExactLocalTemporalClusterComposition:
+    wave_local_roots: tuple[tuple[ExactPartialBeat, ...], ...]
+    temporal_aggregate: tuple[ExactPartialBeat, ...]
+
+
+@dataclass(frozen=True)
+class ExactLocalGlobalGqa8Composition:
+    cluster_compositions: tuple[ExactLocalTemporalClusterComposition, ...]
+    global_merged_partials: tuple[ExactPartialBeat, ...]
+    finalized_beats: tuple[ExactFinalizedBeat, ...]
+
+
 def pack_numerators(values: Iterable[int]) -> int:
     mask = (1 << WEIGHTED_NUMERATOR_BITS) - 1
     lanes = tuple(int(value) for value in values)
@@ -484,6 +497,58 @@ def reduce_local_temporal_partial_waves(
     if aggregate is None:
         raise AssertionError("unreachable")
     return aggregate
+
+
+def compose_local_temporal_cluster_exact(
+    waves: Iterable[Iterable[Iterable[ExactPartialBeat]]],
+    *,
+    expected_waves: int = LOCAL_TEMPORAL_WAVES,
+) -> ExactLocalTemporalClusterComposition:
+    wave_streams = [tuple(tuple(beat for beat in stream) for stream in wave) for wave in waves]
+    if len(wave_streams) != int(expected_waves):
+        raise ValueError(f"expected exactly {int(expected_waves)} waves")
+    if not wave_streams[0]:
+        raise ValueError("expected at least one producer stream per wave")
+    wave_local_roots: list[tuple[ExactPartialBeat, ...]] = []
+    temporal_aggregate: tuple[ExactPartialBeat, ...] | None = None
+    for wave in wave_streams:
+        if not wave:
+            raise ValueError("expected at least one producer stream per wave")
+        local_root = merge_staged_partial_streams(wave)
+        wave_local_roots.append(local_root)
+        temporal_aggregate = (
+            local_root
+            if temporal_aggregate is None
+            else _merge_equal_partial_streams(temporal_aggregate, local_root)
+        )
+    if temporal_aggregate is None:
+        raise AssertionError("unreachable")
+    return ExactLocalTemporalClusterComposition(
+        wave_local_roots=tuple(wave_local_roots),
+        temporal_aggregate=temporal_aggregate,
+    )
+
+
+def compose_local16_global_tree_gqa8_exact(
+    clusters: Iterable[Iterable[Iterable[Iterable[ExactPartialBeat]]]],
+    *,
+    expected_clusters: int = 16,
+    expected_waves: int = LOCAL_TEMPORAL_WAVES,
+) -> ExactLocalGlobalGqa8Composition:
+    cluster_compositions = tuple(
+        compose_local_temporal_cluster_exact(cluster, expected_waves=expected_waves) for cluster in clusters
+    )
+    if len(cluster_compositions) != int(expected_clusters):
+        raise ValueError(f"expected exactly {int(expected_clusters)} clusters")
+    global_merged_partials = merge_balanced_partial_streams(
+        composition.temporal_aggregate for composition in cluster_compositions
+    )
+    finalized_beats = finalize_partial_beats(global_merged_partials)
+    return ExactLocalGlobalGqa8Composition(
+        cluster_compositions=cluster_compositions,
+        global_merged_partials=global_merged_partials,
+        finalized_beats=finalized_beats,
+    )
 
 
 def merge_partial_streams_via_local_normalization(
@@ -1146,9 +1211,96 @@ def exact_local_cluster_gqa8_service_manifest(
     }
 
 
+def exact_local16_global_tree_gqa8_service_manifest(
+    *,
+    cluster_producers: Iterable[int],
+    waves: int = LOCAL_TEMPORAL_WAVES,
+    head_groups: int = 2,
+    divider_lanes: int = 8,
+    finalizer_banks: int = 59,
+) -> dict[str, object]:
+    producer_counts = tuple(int(count) for count in cluster_producers)
+    if len(producer_counts) != 16:
+        raise ValueError("cluster_producers must contain exactly 16 entries")
+    if producer_counts.count(54) != 8 or producer_counts.count(53) != 8:
+        raise ValueError("cluster_producers must contain exactly eight 54s and eight 53s")
+    if int(waves) != LOCAL_TEMPORAL_WAVES:
+        raise ValueError(f"waves must be exactly {LOCAL_TEMPORAL_WAVES}")
+    if int(head_groups) < 1 or int(head_groups) > 4:
+        raise ValueError("head_groups must be in [1, 4]")
+    if int(divider_lanes) != 8:
+        raise ValueError("divider_lanes must remain fixed at 8")
+    if int(finalizer_banks) != 59:
+        raise ValueError("finalizer_banks must remain fixed at 59")
+
+    global_service = exact_banked_finalized_tree_service_manifest(
+        clusters=16,
+        heads=8 * int(head_groups),
+        divider_lanes=int(divider_lanes),
+        finalizer_banks=int(finalizer_banks),
+    )
+    return {
+        "clusters": 16,
+        "cluster_producers": list(producer_counts),
+        "clusters_with_54_producers": 8,
+        "clusters_with_53_producers": 8,
+        "total_local_producers": sum(producer_counts),
+        "persistent_waves": LOCAL_TEMPORAL_WAVES,
+        "query_head_groups": int(head_groups),
+        "query_heads_per_group": 8,
+        "value_slices": VALUE_SLICES,
+        "local_aggregate_beats_per_group": 8 * VALUE_SLICES,
+        "global_finalized_beats_per_group": 8 * VALUE_SLICES,
+        "partial_payload_bits_per_beat": PARTIAL_PAYLOAD_BITS,
+        "partial_link_bits_per_beat": PARTIAL_LINK_BITS,
+        "final_payload_bits_per_beat": FINAL_PAYLOAD_BITS,
+        "final_link_bits_per_beat": FINAL_LINK_BITS,
+        "command_head_contract": "explicit_group_major_head_base_sequence_preserved_through_local_and_global_exact_merge",
+        "local_reduction_contract": "per_cluster_staged_exact_merge_with_odd_leaf_carry_until_single_local_root_per_beat",
+        "temporal_accumulation_contract": "per_cluster_merge_local_root_into_128_banked_persistent_exact_state_for_exactly_8_waves",
+        "global_reduction_contract": "sixteen_cluster_radix2_exact_merge_then_ordered_banked_finalization",
+        "comparison_baseline_contract": "python_structured_local16_global_exact_gqa8_reference",
+        "comparison_cycle_origin": "cycle0_on_first_leaf_issue_of_cluster0_group0_wave0",
+        "diagnostic_only_baseline": "none",
+        "producer_partial_protocol": {
+            "command_id_bits": 16,
+            "head_id_bits": HEAD_ID_BITS,
+            "global_max_bits": SCORE_BITS,
+            "exp_sum_bits": EXP_SUM_BITS,
+            "slice_index_bits": SLICE_INDEX_BITS,
+            "partial_payload_bits_per_beat": PARTIAL_PAYLOAD_BITS,
+            "partial_link_bits_per_beat": PARTIAL_LINK_BITS,
+        },
+        "finalized_protocol": {
+            "command_id_bits": 16,
+            "head_id_bits": HEAD_ID_BITS,
+            "slice_index_bits": SLICE_INDEX_BITS,
+            "final_payload_bits_per_beat": FINAL_PAYLOAD_BITS,
+            "final_link_bits_per_beat": FINAL_LINK_BITS,
+        },
+        "global_tree_contract": {
+            "clusters": 16,
+            "radix": 2,
+            "divider_lanes": int(divider_lanes),
+            "finalizer_banks": int(finalizer_banks),
+            "compatible_with_full_heads": 32,
+            "measured_probe_heads": 8 * int(head_groups),
+            "per_bank_output_latency_cycles": global_service["per_bank_output_latency_cycles"],
+            "per_bank_accept_interval_cycles": global_service["per_bank_accept_interval_cycles"],
+        },
+        "remaining_abstractions": [
+            "producer_leaf_source_open",
+            "noc_sram_transport_open",
+            "physical_ppa_open",
+        ],
+    }
+
+
 __all__ = [
     "EXACT_STATE_BYTES_PER_CLUSTER_32_HEADS",
     "ExactFinalizedBeat",
+    "ExactLocalGlobalGqa8Composition",
+    "ExactLocalTemporalClusterComposition",
     "ExactPartialBeat",
     "FINAL_PAYLOAD_BITS",
     "FINAL_LINK_BITS",
@@ -1163,6 +1315,9 @@ __all__ = [
     "VALUE_SLICES",
     "exact_partial_tree_service_manifest",
     "exact_partial_staged_tree_service_manifest",
+    "compose_local16_global_tree_gqa8_exact",
+    "compose_local_temporal_cluster_exact",
+    "exact_local16_global_tree_gqa8_service_manifest",
     "exact_finalized_tree_service_manifest",
     "exact_banked_finalized_tree_service_manifest",
     "exact_local_temporal_reducer_service_manifest",
