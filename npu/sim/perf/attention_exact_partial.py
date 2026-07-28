@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import math
+import operator
 from typing import Iterable
 
 from npu.sim.perf.attention_online import (
@@ -325,6 +326,70 @@ def finalizer_accept_interval_cycles(divider_lanes: int) -> int:
     return finalizer_cycles_per_beat(divider_lanes) + 2
 
 
+def _require_int_arg(value: object, label: str) -> int:
+    if isinstance(value, bool):
+        raise ValueError(f"{label} must be an integer")
+    try:
+        return operator.index(value)
+    except TypeError as exc:
+        raise ValueError(f"{label} must be an integer") from exc
+
+
+def exact_banked_finalized_tree_full_wave_saturated_service(
+    *,
+    clusters: int,
+    heads: int = 32,
+    divider_lanes: int = 8,
+    finalizer_banks: int = 1,
+) -> dict[str, int | float | str | bool]:
+    cluster_count = _require_int_arg(clusters, "clusters")
+    head_count = _require_int_arg(heads, "heads")
+    lanes = _require_int_arg(divider_lanes, "divider_lanes")
+    banks = _require_int_arg(finalizer_banks, "finalizer_banks")
+    if cluster_count < 2 or cluster_count > 16 or (cluster_count & (cluster_count - 1)):
+        raise ValueError("clusters must be a power of two in [2, 16]")
+    if head_count < 1 or head_count > 32:
+        raise ValueError("heads must be in [1, 32]")
+    if lanes not in {1, 2, 4, 8}:
+        raise ValueError("divider_lanes must be one of 1, 2, 4, 8")
+    if banks < 1 or banks > 64:
+        raise ValueError("finalizer_banks must be in [1, 64]")
+
+    tree_stages = int(math.log2(cluster_count))
+    root_beats = head_count * VALUE_SLICES
+    divider_iterations = 57
+    output_latency_cycles = finalizer_output_latency_cycles(lanes)
+    accept_interval_cycles = finalizer_accept_interval_cycles(lanes)
+    first_output_cycle = tree_stages + output_latency_cycles
+    wrap_shortage_cycles = max(0, accept_interval_cycles - banks)
+    wrap_count = (root_beats - 1) // banks if root_beats > 1 else 0
+    dispatch_stall_cycles = wrap_count * wrap_shortage_cycles
+    interval_cycles = (root_beats - 1) + dispatch_stall_cycles if root_beats > 1 else 0
+    last_output_cycle = first_output_cycle + interval_cycles
+    drain_cycles = last_output_cycle + 1
+    return {
+        "service_mode": "full_wave_saturated_no_output_stall",
+        "clusters": cluster_count,
+        "tree_stages": tree_stages,
+        "heads": head_count,
+        "root_beats": root_beats,
+        "divider_lanes": lanes,
+        "finalizer_banks": banks,
+        "divider_iterations_per_group": divider_iterations,
+        "per_bank_output_latency_cycles": output_latency_cycles,
+        "per_bank_accept_interval_cycles": accept_interval_cycles,
+        "wrap_shortage_cycles_per_bank_reuse": wrap_shortage_cycles,
+        "wrap_event_count": wrap_count,
+        "dispatch_stall_cycles": dispatch_stall_cycles,
+        "first_output_cycle": first_output_cycle,
+        "last_output_cycle": last_output_cycle,
+        "interval_cycles": interval_cycles,
+        "cycles_per_beat": interval_cycles / float(max(1, root_beats - 1)),
+        "drain_cycles": drain_cycles,
+        "exact_no_stall_full_wave_service": dispatch_stall_cycles == 0,
+    }
+
+
 def merge_partial_streams(
     left: Iterable[ExactPartialBeat],
     right: Iterable[ExactPartialBeat],
@@ -642,6 +707,7 @@ __all__ = [
     "exact_partial_tree_service_manifest",
     "exact_finalized_tree_service_manifest",
     "exact_banked_finalized_tree_service_manifest",
+    "exact_banked_finalized_tree_full_wave_saturated_service",
     "finalizer_cycles_per_beat",
     "finalizer_output_latency_cycles",
     "finalizer_accept_interval_cycles",

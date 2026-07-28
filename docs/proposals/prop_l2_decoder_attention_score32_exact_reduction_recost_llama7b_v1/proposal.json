@@ -1,0 +1,88 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1",
+  "created_utc": "2026-07-28T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Score32 exact reduction schedule recost for Llama7B",
+  "abstraction_layer": "decoder_attention_score32_exact_reduction_recost",
+  "hypothesis": "The merged score32 schedule-wrapper recost still bakes in an obsolete 141-cycle cross-tile reduction assumption. Replacing only that term with the checked-in c16/r2/l8/b59 exact banked finalized-tree full-wave no-stall service contract should raise the reduction term to 574 cycles, shift per-layer and total latency accordingly, and provide the correction artifact that downstream score32 consumers must adopt before any further wrapper activity-power or integrated rerank revisions.",
+  "direct_comparison": {
+    "primary_question": "How does the score32 schedule-wrapper Llama7B row change when the obsolete 141-cycle reduction assumption is replaced by the exact c16/r2/l8/b59 full-wave banked-finalizer drain contract?",
+    "baseline": "l2_decoder_attention_composed_datapath_score32_exp_lut_div_schedule_wrapper_recost_llama7b_v1",
+    "include": [
+      "the merged schedule-wrapper recost JSON as the preserved source contract",
+      "the checked-in c16/r2/l8/b59 exact banked finalized-tree config",
+      "the analytical full-wave saturated service contract derived from tree stages plus exact 57/58/59 finalizer timing",
+      "compact JSON and Markdown outputs only"
+    ],
+    "exclude": [
+      "new RTL compilation or large-wave probe reruns",
+      "exact reducer PPA closure",
+      "exact reducer activity-energy closure",
+      "328-bit transport, NoC, or SRAM closure"
+    ]
+  },
+  "expected_benefit": [
+    "records the corrected reduction schedule without mutating the already-merged source artifact",
+    "preserves the obsolete 141-cycle contract explicitly so downstream consumers can be revised deliberately",
+    "forces later score32 work to adopt the exact b59 reduction schedule before claiming tighter wrapper or frontier conclusions"
+  ],
+  "risks": [
+    "this is still a schedule-only correction and does not close reducer area or activity energy",
+    "the current score32 schedule-wrapper postroute activity-power v1 item remains pointed at the obsolete source recost until a follow-on r2 consumer is merged",
+    "the 328-bit exact transport and memory hierarchy remain unclosed abstractions even after the schedule fix",
+    "producer arrival timing and overlap with the reducer are not embodied here; adding the 574-cycle drain after tile waves is a conservative serialized-stage schedule"
+  ],
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Correct the score32 schedule-wrapper Llama7B reduction schedule using the exact c16/r2/l8/b59 banked finalized-tree full-wave no-stall service contract.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_score32_exact_reduction_recost",
+      "comparison_role": "score32_exact_reduction_recost",
+      "paired_baseline_item_id": "l2_decoder_attention_composed_datapath_score32_exp_lut_div_schedule_wrapper_recost_llama7b_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_composed_datapath_score32_exp_lut_div_schedule_wrapper_recost_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "priority": 98,
+      "revision": {
+        "reason": "obsolete_141_cycle_reduction_schedule_assumption",
+        "superseded_contract": {
+          "source_item_id": "l2_decoder_attention_composed_datapath_score32_exp_lut_div_schedule_wrapper_recost_llama7b_v1",
+          "obsolete_best_requested_cross_tile_reduction_cycles": 141,
+          "replacement_cross_tile_reduction_cycles": 574
+        },
+        "blocked_downstream_item_ids": [
+          "l2_decoder_attention_score32_schedule_wrapper_postroute_activity_power_llama7b_v1"
+        ]
+      },
+      "expected_result": {
+        "direction": "record_score32_exact_reduction_recost",
+        "reason": "Preserve the merged schedule-wrapper source contract explicitly, emit the corrected reduction/layer/total/latency terms from the exact b59 service model, and keep the existing activity-power v1 item off the obsolete 141-cycle assumption until its own r2 consumer revision exists."
+      },
+      "status": "pending",
+      "notes": "Manual dispatch only. This item is evidence-only, depends on merged/materialized inputs, and should land before any downstream score32 wrapper activity-power or frontier consumer is revised to read the corrected reduction artifact."
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_score32_exp_lut_div_schedule_wrapper_recost_llama7b_v1.json",
+    "runs/designs/npu_blocks/attention_score32_exact_banked_finalized_tree_c16_r2_l8_b59/config.json",
+    "npu/docs/attention_score32_exact_banked_finalized_tree_contract.md"
+  ],
+  "knowledge_refs": [
+    "npu/eval/audit_llm_decoder_attention_score32_exact_reduction_recost.py",
+    "npu/sim/perf/attention_exact_partial.py",
+    "control_plane/control_plane/services/l2_task_generator.py"
+  ],
+  "remaining_abstractions_after_this_step": [
+    "Exact reducer PPA remains unclosed.",
+    "Exact reducer activity energy remains unclosed.",
+    "328-bit exact transport, NoC, and SRAM composition remain unclosed.",
+    "Producer arrival timing and overlap with the reducer are not embodied here; the 574-cycle drain is still applied after tile waves as a conservative serialized-stage schedule.",
+    "The downstream score32 schedule-wrapper postroute activity-power path still needs an explicit r2 consumer revision after this artifact merges."
+  ]
+}

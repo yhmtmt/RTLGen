@@ -1,0 +1,38 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1",
+  "source_commit_note": "Replace with the merge commit that contains this exact-reduction recost implementation after merge and before dispatch. Leave this request pending for manual dispatch only; it must consume merged/materialized inputs, and l2_decoder_attention_score32_schedule_wrapper_postroute_activity_power_llama7b_v1 must not keep running against the obsolete 141-cycle reduction assumption once this correction artifact exists.",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Correct the score32 schedule-wrapper Llama7B reduction schedule using the exact c16/r2/l8/b59 banked finalized-tree full-wave no-stall service contract.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_score32_exact_reduction_recost",
+      "comparison_role": "score32_exact_reduction_recost",
+      "paired_baseline_item_id": "l2_decoder_attention_composed_datapath_score32_exp_lut_div_schedule_wrapper_recost_llama7b_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_composed_datapath_score32_exp_lut_div_schedule_wrapper_recost_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "priority": 98,
+      "revision": {
+        "reason": "obsolete_141_cycle_reduction_schedule_assumption",
+        "superseded_contract": {
+          "source_item_id": "l2_decoder_attention_composed_datapath_score32_exp_lut_div_schedule_wrapper_recost_llama7b_v1",
+          "obsolete_best_requested_cross_tile_reduction_cycles": 141,
+          "replacement_cross_tile_reduction_cycles": 574
+        },
+        "blocked_downstream_item_ids": [
+          "l2_decoder_attention_score32_schedule_wrapper_postroute_activity_power_llama7b_v1"
+        ]
+      },
+      "expected_result": {
+        "direction": "record_score32_exact_reduction_recost",
+        "reason": "Preserve the merged source contract explicitly, emit the corrected exact b59 reduction schedule, and keep the existing activity-power v1 consumer off the obsolete 141-cycle assumption until its own r2 input swap is merged."
+      },
+      "status": "pending",
+      "notes": "Manual dispatch only. Run only the new exact-reduction recost audit, commit one JSON and one Markdown artifact, and do not alter DB state or materialize new refs from this request."
+    }
+  ]
+}
