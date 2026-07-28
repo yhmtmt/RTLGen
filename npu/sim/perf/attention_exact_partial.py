@@ -402,6 +402,17 @@ def merge_partial_streams(
     return tuple(merge_partial_beats(left_beats[index], right_beats[index]) for index in range(VALUE_SLICES))
 
 
+def _merge_equal_partial_streams(
+    left: Iterable[ExactPartialBeat],
+    right: Iterable[ExactPartialBeat],
+) -> tuple[ExactPartialBeat, ...]:
+    left_beats = tuple(left)
+    right_beats = tuple(right)
+    if not left_beats or len(left_beats) != len(right_beats):
+        raise ValueError("partial streams must be non-empty and contain the same beat count")
+    return tuple(merge_partial_beats(left_beats[index], right_beats[index]) for index in range(len(left_beats)))
+
+
 def merge_balanced_partial_streams(streams: Iterable[Iterable[ExactPartialBeat]]) -> tuple[ExactPartialBeat, ...]:
     level = [tuple(stream) for stream in streams]
     if not level:
@@ -468,7 +479,7 @@ def reduce_local_temporal_partial_waves(
         if not wave:
             raise ValueError("expected at least one producer stream per wave")
         local_root = merge_staged_partial_streams(wave)
-        aggregate = local_root if aggregate is None else merge_partial_streams(aggregate, local_root)
+        aggregate = local_root if aggregate is None else _merge_equal_partial_streams(aggregate, local_root)
     if aggregate is None:
         raise AssertionError("unreachable")
     return aggregate
@@ -990,6 +1001,58 @@ def exact_local_temporal_reducer_service_manifest(
     }
 
 
+def exact_local_temporal_reducer_gqa8_service_manifest(
+    *,
+    producers: int,
+    waves: int = LOCAL_TEMPORAL_WAVES,
+    head_groups: int = 2,
+) -> dict[str, object]:
+    producer_count = int(producers)
+    wave_count = int(waves)
+    group_count = int(head_groups)
+    if producer_count not in {53, 54}:
+        raise ValueError("producers must be exactly 53 or 54")
+    if wave_count != LOCAL_TEMPORAL_WAVES:
+        raise ValueError(f"waves must be exactly {LOCAL_TEMPORAL_WAVES}")
+    if group_count < 1 or group_count > 4:
+        raise ValueError("head_groups must be in [1, 4]")
+    local_tree = exact_partial_staged_tree_service_manifest(producers=producer_count, heads=8 * group_count)
+    return {
+        "producers": producer_count,
+        "persistent_waves": wave_count,
+        "query_head_groups": group_count,
+        "query_heads_per_group": 8,
+        "value_slices": VALUE_SLICES,
+        "beats_per_wave": 8 * VALUE_SLICES,
+        "beats_per_output_group": 8 * VALUE_SLICES,
+        "tree_stages": local_tree["tree_stages"],
+        "tree_nodes": local_tree["tree_nodes"],
+        "partial_payload_bits_per_beat": PARTIAL_PAYLOAD_BITS,
+        "partial_link_bits_per_beat": PARTIAL_LINK_BITS,
+        "command_head_contract": "explicit_head_base_plus_lane_serialized_head_major_slice_minor_stream",
+        "wave_terminal_contract": "advance_only_on_validated_head_lane7_slice15_after_128_beats",
+        "local_reduction_contract": "staged_exact_merge_with_odd_leaf_carry_until_single_local_root",
+        "temporal_accumulation_contract": "merge_local_root_into_128_banked_persistent_exact_state_for_exactly_8_waves_then_emit_128_beats",
+        "comparison_baseline_contract": "python_structured_gqa8_local_temporal_exact_partial_reference",
+        "comparison_cycle_origin": "cycle0_on_first_leaf_issue_of_group0_wave0",
+        "diagnostic_only_baseline": "none",
+        "producer_partial_protocol": {
+            "command_id_bits": 16,
+            "head_id_bits": HEAD_ID_BITS,
+            "global_max_bits": SCORE_BITS,
+            "exp_sum_bits": EXP_SUM_BITS,
+            "slice_index_bits": SLICE_INDEX_BITS,
+            "partial_payload_bits_per_beat": PARTIAL_PAYLOAD_BITS,
+            "partial_link_bits_per_beat": PARTIAL_LINK_BITS,
+        },
+        "remaining_abstractions": [
+            "producer_to_local_reducer_structural_fan_in_open",
+            "noc_sram_ppa_open",
+            "global_c16_exact_reduction_open",
+        ],
+    }
+
+
 __all__ = [
     "EXACT_STATE_BYTES_PER_CLUSTER_32_HEADS",
     "ExactFinalizedBeat",
@@ -1009,6 +1072,7 @@ __all__ = [
     "exact_finalized_tree_service_manifest",
     "exact_banked_finalized_tree_service_manifest",
     "exact_local_temporal_reducer_service_manifest",
+    "exact_local_temporal_reducer_gqa8_service_manifest",
     "exact_partial_producer_tree_service_manifest",
     "exact_partial_dual_stream_gqa8_producer_service_manifest",
     "exact_banked_finalized_tree_full_wave_saturated_service",

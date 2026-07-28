@@ -1,0 +1,61 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_score32_local_temporal_reducer_gqa8_v1",
+  "created_utc": "2026-07-28T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit",
+  "title": "Functional 53/54-way score32 local temporal reducer with GQA8-banked eight-wave persistence",
+  "abstraction_layer": "decoder_attention_score32_local_temporal_reducer_gqa8",
+  "hypothesis": "A separate GQA8-compatible exact-partial local temporal reducer can preserve one exact aggregate across 8 heads x 16 slices x 8 waves, using the existing staged local reducer and exact merge while advancing waves only on the validated terminal head-lane beat.",
+  "direct_comparison": {
+    "primary_question": "Can the 53/54-way local exact hierarchy consume producer-compatible GQA8 local-root streams, retain exact temporal state across eight waves, and emit the full 128-beat aggregate without collapsing waves on each per-head last marker?",
+    "baselines": [
+      "prop_l1_decoder_attention_score32_local_temporal_reducer_v1",
+      "prop_l1_decoder_attention_score32_exact_partial_gqa8_dual_stream_producer_v1"
+    ],
+    "candidate": "l1_decoder_attention_score32_local_temporal_reducer_gqa8_v1",
+    "include": [
+      "53-input and 54-input staged ready/valid exact-partial reduction",
+      "128-bank temporal exact state across 8 heads x 16 slices",
+      "explicit head-base plus lane contract validation",
+      "producer-compatible head-major slice-minor local-root ordering",
+      "ideal-interface service and separate stressed ready/valid evidence",
+      "structured RTL/perf equivalence for every emitted beat"
+    ],
+    "exclude": [
+      "producer-to-reducer physical fan-in closure",
+      "NoC and SRAM physical closure",
+      "global c16 integration PPA",
+      "frontier promotion from functional simulation alone",
+      "new PPA harness generation in this change"
+    ],
+    "metrics": [
+      "functional_exact_partial_protocol",
+      "validated_gqa8_wave_terminal_contract",
+      "local_root_count",
+      "temporal_merge_count",
+      "exact_output_beats",
+      "ideal_service_cycles",
+      "stressed_ready_valid_equivalence"
+    ]
+  },
+  "remaining_abstractions": [
+    "Producer-to-local-reducer structural fan-in remains open.",
+    "NoC and SRAM PPA remain open.",
+    "The global c16 exact reducer is still uncomposed here.",
+    "No GQA8-specific physical harness or sweep item was created in this change."
+  ],
+  "required_evaluations": [],
+  "source_refs": [
+    "npu/rtlgen/gen_attention_score32_exact_local_temporal_reducer_gqa8.py",
+    "npu/eval/probe_attention_score32_exact_local_temporal_reducer_gqa8.py",
+    "npu/sim/perf/attention_exact_partial.py",
+    "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_p53_w8/config.json",
+    "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_p54_w8/config.json"
+  ],
+  "knowledge_refs": [
+    "npu/docs/attention_score32_exact_local_temporal_reducer_gqa8_contract.md",
+    "npu/docs/attention_score32_exact_partial_gqa8_dual_stream_producer_contract.md",
+    "npu/docs/generated/llama7b_score32_exact_hierarchy_cadence_audit_v3.md"
+  ]
+}
