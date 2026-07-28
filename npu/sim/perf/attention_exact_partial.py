@@ -691,6 +691,70 @@ def exact_banked_finalized_tree_service_manifest(
     return manifest
 
 
+def exact_partial_producer_tree_service_manifest(
+    *,
+    heads: int = 32,
+    max_blocks: int = 16384,
+    divider_lanes: int = 8,
+    finalizer_banks: int = 59,
+) -> dict[str, object]:
+    head_count = int(heads)
+    block_limit = int(max_blocks)
+    if head_count < 1 or head_count > 32:
+        raise ValueError("heads must be in [1, 32]")
+    if block_limit < 8 or block_limit > 16384 or (block_limit & (block_limit - 1)):
+        raise ValueError("max_blocks must be a power of two in [8, 16384]")
+    manifest = dict(
+        exact_banked_finalized_tree_service_manifest(
+            clusters=2,
+            heads=head_count,
+            divider_lanes=divider_lanes,
+            finalizer_banks=finalizer_banks,
+        )
+    )
+    manifest.update(
+        {
+            "producers": 2,
+            "command_broadcast_mode": "same_head_broadcast_to_both_producers",
+            "head_mapping_contract": "explicit_head_id_no_tile_or_wave_inference",
+            "producer_input_contract": "per_producer_ready_valid_score_blocks_and_value_blocks",
+            "producer_partial_protocol": {
+                "command_id_bits": 16,
+                "head_id_bits": HEAD_ID_BITS,
+                "global_max_bits": SCORE_BITS,
+                "exp_sum_bits": EXP_SUM_BITS,
+                "slice_index_bits": SLICE_INDEX_BITS,
+                "partial_payload_bits_per_beat": PARTIAL_PAYLOAD_BITS,
+                "partial_link_bits_per_beat": PARTIAL_LINK_BITS,
+            },
+            "finalized_protocol": {
+                "command_id_bits": 16,
+                "head_id_bits": HEAD_ID_BITS,
+                "slice_index_bits": SLICE_INDEX_BITS,
+                "final_payload_bits_per_beat": FINAL_PAYLOAD_BITS,
+                "final_link_bits_per_beat": FINAL_LINK_BITS,
+            },
+            "producer_block_workload_assumptions": {
+                "command_block_count_range": [1, block_limit],
+                "probe_block_count_per_head": 3,
+                "probe_score_beats_per_block": 3,
+                "multiple_heads_run_in_order": True,
+                "no_tile_wave_to_head_aliasing": True,
+            },
+            "comparison_baseline_contract": "producer_parallel_then_reducer_staged",
+            "comparison_cycle_origin": "producer_phase_starts_at_cycle0_reducer_phase_starts_after_parallel_producer_drain",
+            "diagnostic_only_baseline": "producer_fully_serialized_then_reducer_staged",
+            "llama_tile_cadence_unclosed": True,
+            "remaining_abstractions": [
+                "direct_328bit_exact_partial_links_unclosed",
+                "native_c2_overlap_only",
+                "llama_16cluster_8tilewave_986cycle_mapping_open",
+            ],
+        }
+    )
+    return manifest
+
+
 __all__ = [
     "EXACT_STATE_BYTES_PER_CLUSTER_32_HEADS",
     "ExactFinalizedBeat",
@@ -707,6 +771,7 @@ __all__ = [
     "exact_partial_tree_service_manifest",
     "exact_finalized_tree_service_manifest",
     "exact_banked_finalized_tree_service_manifest",
+    "exact_partial_producer_tree_service_manifest",
     "exact_banked_finalized_tree_full_wave_saturated_service",
     "finalizer_cycles_per_beat",
     "finalizer_output_latency_cycles",
