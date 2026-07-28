@@ -1,4 +1,46 @@
 {
+  "block_count_contract": {
+    "blocks_per_stream_per_cluster": 64,
+    "default_blocks_per_stream": 1,
+    "extra_blocks_per_stream": 1,
+    "p53_group_ranges": [
+      [
+        0,
+        10
+      ],
+      [
+        11,
+        21
+      ],
+      [
+        22,
+        32
+      ],
+      [
+        33,
+        43
+      ]
+    ],
+    "p54_group_ranges": [
+      [
+        0,
+        9
+      ],
+      [
+        10,
+        19
+      ],
+      [
+        20,
+        29
+      ],
+      [
+        30,
+        39
+      ]
+    ],
+    "top_level_pin": false
+  },
   "checked_in_probe_defaults": {
     "command_count": 1,
     "head_bases": [
@@ -6,122 +48,6 @@
     ],
     "seed": 29
   },
-  "cluster_leaf_base_indices": [
-    0,
-    54,
-    108,
-    162,
-    216,
-    270,
-    324,
-    378,
-    432,
-    485,
-    538,
-    591,
-    644,
-    697,
-    750,
-    803
-  ],
-  "cluster_leaf_ranges": [
-    {
-      "cluster": 0,
-      "leaf_base": 0,
-      "leaf_limit": 53,
-      "producers": 54
-    },
-    {
-      "cluster": 1,
-      "leaf_base": 54,
-      "leaf_limit": 107,
-      "producers": 54
-    },
-    {
-      "cluster": 2,
-      "leaf_base": 108,
-      "leaf_limit": 161,
-      "producers": 54
-    },
-    {
-      "cluster": 3,
-      "leaf_base": 162,
-      "leaf_limit": 215,
-      "producers": 54
-    },
-    {
-      "cluster": 4,
-      "leaf_base": 216,
-      "leaf_limit": 269,
-      "producers": 54
-    },
-    {
-      "cluster": 5,
-      "leaf_base": 270,
-      "leaf_limit": 323,
-      "producers": 54
-    },
-    {
-      "cluster": 6,
-      "leaf_base": 324,
-      "leaf_limit": 377,
-      "producers": 54
-    },
-    {
-      "cluster": 7,
-      "leaf_base": 378,
-      "leaf_limit": 431,
-      "producers": 54
-    },
-    {
-      "cluster": 8,
-      "leaf_base": 432,
-      "leaf_limit": 484,
-      "producers": 53
-    },
-    {
-      "cluster": 9,
-      "leaf_base": 485,
-      "leaf_limit": 537,
-      "producers": 53
-    },
-    {
-      "cluster": 10,
-      "leaf_base": 538,
-      "leaf_limit": 590,
-      "producers": 53
-    },
-    {
-      "cluster": 11,
-      "leaf_base": 591,
-      "leaf_limit": 643,
-      "producers": 53
-    },
-    {
-      "cluster": 12,
-      "leaf_base": 644,
-      "leaf_limit": 696,
-      "producers": 53
-    },
-    {
-      "cluster": 13,
-      "leaf_base": 697,
-      "leaf_limit": 749,
-      "producers": 53
-    },
-    {
-      "cluster": 14,
-      "leaf_base": 750,
-      "leaf_limit": 802,
-      "producers": 53
-    },
-    {
-      "cluster": 15,
-      "leaf_base": 803,
-      "leaf_limit": 855,
-      "producers": 53
-    }
-  ],
   "cluster_producers": [
     54,
     54,
@@ -143,9 +69,9 @@
   "clusters": 16,
   "clusters_with_53_producers": 8,
   "clusters_with_54_producers": 8,
-  "command_schedule_contract": "group_major_gqa8_exact_8_wave_local_aggregation_preserved_across_all_16_clusters",
-  "comparison_baseline_contract": "python_structured_local16_global_exact_gqa8_reference",
-  "comparison_cycle_origin": "cycle0_on_first_leaf_issue_of_cluster0_group0_wave0",
+  "command_schedule_contract": "one_shared_atomic_wave_command_across_all_16_clusters",
+  "comparison_baseline_contract": "structured_full_row_producer_local_global_reference_comparison_hashes_summary_only",
+  "comparison_cycle_origin": "cycle0_on_first_atomic_wave_command_issue_across_all_16_clusters",
   "diagnostic_only_baseline": "none",
   "divider_lanes": 8,
   "equivalence_hash": false,
@@ -154,11 +80,11 @@
   "finalizer_banks": 59,
   "generator": "npu/rtlgen/gen_attention_score32_exact_local16_global_tree_gqa8.py",
   "head_id_bits": 5,
-  "head_mapping_contract": "flat_leaf_indices_partitioned_by_cluster_leaf_base_indices_without_head_metadata_remap",
+  "head_mapping_contract": "head_base_selects_internal_p54_and_p53_two_block_producer_windows",
   "interface_adaptation": {
-    "finalized_output_semantics": "existing_c16_banked_tree_root_contract_consumes_global_max_and_exp_sum_and_emits_finalized_values_only",
-    "local_to_global_leaf_mapping": "direct_ready_valid_command_id_head_id_global_max_exp_sum_slice_last_value_mapping_without_field_remap",
-    "top_leaf_partitioning": "direct_flat_packed_leaf_buses_partitioned_by_cluster_leaf_base_indices"
+    "local_to_global": "direct_16_reducer_output_mapping_without_field_remap",
+    "producer_inputs": "independent_flattened_ready_valid_query_key_lanes_for_all_856_producers",
+    "value_memory": "independent_flattened_request_response_lanes_for_all_1712_streams"
   },
   "linked_proposal_id": "prop_l1_decoder_attention_score32_exact_local16_global_tree_gqa8_v1",
   "linked_proposal_path": "docs/proposals/prop_l1_decoder_attention_score32_exact_local16_global_tree_gqa8_v1/proposal.json",
@@ -167,12 +93,12 @@
   "persistent_waves": 8,
   "radix": 2,
   "remaining_abstractions": [
-    "producer_leaf_source_open",
-    "noc_sram_transport_open",
+    "external_query_key_source_open",
+    "external_value_memory_system_open",
     "physical_ppa_open"
   ],
-  "result_interface": "packed_856_leaf_exact_partial_inputs_to_c16_ordered_banked_exact_finalized_root_stream",
-  "semantic_profile": "score32_exact_local16_global_tree_gqa8_v1",
+  "result_interface": "856_real_dual_stream_producers_to_16_local_reducers_to_c16_ordered_banked_finalized_root",
+  "semantic_profile": "score32_exact_local16_global_tree_gqa8_full_compute_v1",
   "service_model": {
     "cluster_producers": [
       54,
@@ -195,9 +121,10 @@
     "clusters": 16,
     "clusters_with_53_producers": 8,
     "clusters_with_54_producers": 8,
-    "command_head_contract": "explicit_group_major_head_base_sequence_preserved_through_local_and_global_exact_merge",
-    "comparison_baseline_contract": "python_structured_local16_global_exact_gqa8_reference",
-    "comparison_cycle_origin": "cycle0_on_first_leaf_issue_of_cluster0_group0_wave0",
+    "command_block_count_contract": "derived_internally_from_head_base_with_p54_ranges_0_9_10_19_20_29_30_39_and_p53_ranges_0_10_11_21_22_32_33_43",
+    "command_head_contract": "one_shared_atomic_wave_command_id_head_base_multiplier_shift_across_all_16_clusters",
+    "comparison_baseline_contract": "python_structured_full_row_producer_local16_global_exact_gqa8_reference",
+    "comparison_cycle_origin": "cycle0_on_first_atomic_wave_command_issue_across_all_16_clusters",
     "diagnostic_only_baseline": "none",
     "final_link_bits_per_beat": 346,
     "final_payload_bits_per_beat": 320,
@@ -225,6 +152,7 @@
     "partial_link_bits_per_beat": 419,
     "partial_payload_bits_per_beat": 328,
     "persistent_waves": 8,
+    "producer_input_contract": "independent_flattened_query_key_ready_valid_inputs_for_all_856_producers",
     "producer_partial_protocol": {
       "command_id_bits": 16,
       "exp_sum_bits": 33,
@@ -237,12 +165,14 @@
     "query_head_groups": 1,
     "query_heads_per_group": 8,
     "remaining_abstractions": [
-      "producer_leaf_source_open",
-      "noc_sram_transport_open",
+      "external_query_key_source_open",
+      "external_value_memory_system_open",
       "physical_ppa_open"
     ],
     "temporal_accumulation_contract": "per_cluster_merge_local_root_into_128_banked_persistent_exact_state_for_exactly_8_waves",
     "total_local_producers": 856,
+    "total_value_memory_lanes": 1712,
+    "value_memory_contract": "independent_flattened_request_response_interfaces_for_all_1712_stream_lanes",
     "value_slices": 16
   },
   "submodule_manifests": {
@@ -640,11 +570,278 @@
       "value_slices": 16,
       "version": 1,
       "wave_terminal_contract": "advance_only_on_validated_head_lane7_slice15_after_128_beats"
+    },
+    "shared_producer": {
+      "command_schedule_contract": "in_order_head_base_commands_broadcast_to_both_streams",
+      "equivalence_hash": false,
+      "exact_protocols": {
+        "producer_partial_protocol": {
+          "command_id_bits": 16,
+          "exp_sum_bits": 33,
+          "global_max_bits": 32,
+          "head_id_bits": 5,
+          "partial_link_bits_per_beat": 419,
+          "partial_payload_bits_per_beat": 328,
+          "slice_index_bits": 4
+        }
+      },
+      "generator": "npu/rtlgen/gen_attention_score32_exact_partial_gqa8_dual_stream_producer.py",
+      "head_id_bits": 5,
+      "head_mapping_contract": "explicit_head_base_plus_lane_no_tile_or_wave_inference",
+      "max_blocks": 8,
+      "partial_link_bits_per_beat": 419,
+      "partial_payload_bits_per_beat": 328,
+      "producer_result_mode": "exact_partial",
+      "query_heads_per_stream": 8,
+      "remaining_abstractions": [
+        "53or54_way_global_cluster_aggregation_open",
+        "8_wave_persistent_state_open",
+        "noc_sram_ppa_open"
+      ],
+      "result_interface": "two_exact_partial_gqa8_streams_to_pairwise_exact_merge",
+      "semantic_profile": "score32_exact_partial_gqa8_dual_stream_producer_v1",
+      "service_model": {
+        "command_broadcast_mode": "same_head_base_broadcast_to_both_stream_groups",
+        "comparison_baseline_contract": "python_structured_exact_partial_stream_reference",
+        "comparison_cycle_origin": "cycle0_on_atomic_dual_stream_input_issue",
+        "diagnostic_only_baseline": "none",
+        "head_mapping_contract": "explicit_head_base_plus_lane_no_tile_or_wave_inference",
+        "llama_wave_functional_service_reference": null,
+        "output_schedule_contract": "serialized_head_then_slice_exact_partial_stream",
+        "producer_block_workload_assumptions": {
+          "command_block_count_range": [
+            1,
+            8
+          ],
+          "global_tile_token_blocks": 128,
+          "global_tile_tokens": 1024,
+          "head_base_alignment_bits": 3,
+          "multiple_head_groups_run_in_order": true,
+          "per_datapath_group_commands_per_wave": 4,
+          "per_wave_local_block_ceiling_per_stream": 2,
+          "persistent_local_reducer_waves": 8,
+          "probe_block_counts_per_stream": [
+            2
+          ],
+          "probe_blocks_per_stream": 2,
+          "probe_blocks_per_stream_uniform": true,
+          "probe_command_count": 1,
+          "probe_head_bases": [
+            0
+          ],
+          "probe_head_dim": 3,
+          "probe_token_streams": 2,
+          "probe_total_heads": 8,
+          "worst_loaded_total_blocks_per_stream_per_datapath_per_wave": 5,
+          "worst_loaded_two_block_commands_per_datapath_per_wave": 1
+        },
+        "producer_input_contract": "packed_dual_stream_query_key_atomic_ready_valid",
+        "producer_partial_protocol": {
+          "command_id_bits": 16,
+          "exp_sum_bits": 33,
+          "global_max_bits": 32,
+          "head_id_bits": 5,
+          "partial_link_bits_per_beat": 419,
+          "partial_payload_bits_per_beat": 328,
+          "slice_index_bits": 4
+        },
+        "query_head_groups": 1,
+        "query_heads_per_stream": 8,
+        "remaining_abstractions": [
+          "53or54_way_global_cluster_aggregation_open",
+          "8_wave_persistent_state_open",
+          "noc_sram_ppa_open"
+        ],
+        "streams": 2,
+        "structural_score_macs_per_cycle": 128,
+        "token_lanes_per_head": 8,
+        "value_memory_contract": "per_stream_gqa_coalesced_value_reads"
+      },
+      "streams": 2,
+      "structural_score_macs_per_cycle": 128,
+      "submodule_manifests": {
+        "gqa_group": {
+          "generator": "npu/rtlgen/gen_attention_decode_score_multivalue_gqa_group.py",
+          "head_id_bits": 5,
+          "internal_value_reads_per_block_per_head": 16,
+          "key_input_replays_per_command": 1,
+          "max_blocks": 8,
+          "parallel_query_head_clusters": 8,
+          "parallel_query_head_lanes": 8,
+          "query_head_score_computations_per_command": 8,
+          "query_head_waves": 1,
+          "query_heads_per_kv": 8,
+          "query_input_replays_per_command": 1,
+          "result_beats_per_command": 128,
+          "result_mode": "exact_partial",
+          "result_value_bits_per_beat": 328,
+          "score_passes_per_query_head": 1,
+          "score_scale_lanes_per_cycle": 1,
+          "score_tile_array_n": 8,
+          "semantic_profile": "decode_m1x8_shared_score_16x8d_value_iterdiv_gqa8_group_v1",
+          "shared_external_value_reads_per_block": 16,
+          "submodule_manifests": {
+            "multivalue_cluster": {
+              "controller_state_names": [
+                "IDLE",
+                "TILE_CMD",
+                "TILE_INPUT",
+                "TILE_RESULT",
+                "SCALE",
+                "FILL",
+                "WAIT_RESULT"
+              ],
+              "controller_state_width": 3,
+              "divider_cycles_per_command": 0,
+              "equivalence_hash": false,
+              "fsm_encoding": "default",
+              "generator": "npu/rtlgen/gen_attention_decode_score_multivalue_cluster.py",
+              "head_id_bits": 5,
+              "max_blocks": 8,
+              "result_beats_per_command": 16,
+              "result_mode": "exact_partial",
+              "result_value_bits_per_beat": 328,
+              "score_bank_macro_count": 56,
+              "score_bank_proxy_semantics": "lef_lib_physical_proxy_only",
+              "score_passes_per_command": 1,
+              "score_reads_per_block": 1,
+              "score_scale_lanes_per_cycle": 1,
+              "score_tile_array_n": 8,
+              "score_writes_per_block": 1,
+              "semantic_profile": "decode_m1x8_shared_score_16x8d_value_exact_partial_v1",
+              "submodule_manifests": {
+                "multivalue_reducer": {
+                  "accumulator_clear_cycles": 16,
+                  "divider_cycles_per_command": 0,
+                  "divider_impl": "iterative_restoring",
+                  "divider_units": 0,
+                  "equivalence_hash": false,
+                  "fsm_encoding": "default",
+                  "head_id_bits": 5,
+                  "max_blocks": 8,
+                  "max_context_tokens": 64,
+                  "result_beats_per_command": 16,
+                  "result_interface": "ready_valid_exact_partial_slice_stream",
+                  "result_mode": "exact_partial",
+                  "result_value_bits_per_beat": 328,
+                  "score_reads_per_block": 1,
+                  "semantic_profile": "q8_k8_v8_a32_s32_exp_lut_b20_shared_score_multivalue_exact_partial_v1",
+                  "state_names": [
+                    "IDLE",
+                    "FILL",
+                    "CLEAR",
+                    "SCORE_REQ",
+                    "SCORE_DATA",
+                    "VALUE_REQ",
+                    "VALUE_DATA",
+                    "RESULT"
+                  ],
+                  "state_width": 3,
+                  "top_name": "attention_score32_exact_local16_global_tree_gqa8_p54x8_p53x8_c16_r2_l8_b59__producer__group__cluster__multivalue",
+                  "value_dimensions": 128,
+                  "value_reads_per_block": 16,
+                  "value_slices": 16,
+                  "version": 1
+                },
+                "score_bank": {
+                  "depth_groups": 8,
+                  "integration_target": "attention_two_pass_stream_score_bank_adapter",
+                  "interface": {
+                    "max_requests_per_cycle": 1,
+                    "read_latency_cycles": 1,
+                    "request": [
+                      "req_valid",
+                      "req_ready",
+                      "req_write",
+                      "req_addr",
+                      "req_wdata",
+                      "req_wmask"
+                    ],
+                    "response": [
+                      "rsp_valid",
+                      "rsp_rdata"
+                    ],
+                    "type": "synchronous_1rw"
+                  },
+                  "logical_depth": 16384,
+                  "logical_width": 256,
+                  "macro_count": 56,
+                  "macro_depth": 2048,
+                  "macro_name": "fakeram45_2048x39",
+                  "macro_width": 39,
+                  "proxy_semantics": "lef_lib_physical_proxy_only",
+                  "sram_signoff": false,
+                  "top_name": "attention_score32_exact_local16_global_tree_gqa8_p54x8_p53x8_c16_r2_l8_b59__producer__group__cluster__score_bank",
+                  "unused_pad_bits": 17,
+                  "version": 1,
+                  "width_slices_per_group": 7
+                },
+                "score_tile": {
+                  "accum_bits": 32,
+                  "accum_signed": true,
+                  "all_accumulators_observable": true,
+                  "array_m": 1,
+                  "array_n": 8,
+                  "command_clears_accumulators": true,
+                  "command_interface": "ready_valid_start",
+                  "functional_observability": "packed_score_row",
+                  "generator": "npu/rtlgen/gen_dense_gemm_tile_stream.py",
+                  "input_accepts_same_cycle_as_command": false,
+                  "input_interface": "ready_valid_vector_outer_product",
+                  "operand_bits": 8,
+                  "operand_signed": true,
+                  "packed_score_row_semantics": {
+                    "array_m_required": 1,
+                    "backpressure": "result_score_row_stable_while_result_valid_and_not_ready",
+                    "emission": "single_result_beat_per_command_after_final_input_accept",
+                    "fill_score_row_compatible": true,
+                    "lane_bits": 32,
+                    "lane_order": "result_score_row[j*32 +: 32] == lane_j",
+                    "lane_signed": true
+                  },
+                  "result_interface": "ready_valid_packed_score_row",
+                  "result_mode": "packed_score_row",
+                  "result_order": "packed_score_row_lane_major",
+                  "semantic_profile": "operational_dense_gemm_outer_product_stream_s8_s8_acc32",
+                  "top_name": "attention_score32_exact_local16_global_tree_gqa8_p54x8_p53x8_c16_r2_l8_b59__producer__group__cluster__score_tile",
+                  "version": 1
+                }
+              },
+              "top_name": "attention_score32_exact_local16_global_tree_gqa8_p54x8_p53x8_c16_r2_l8_b59__producer__group__cluster",
+              "value_dimensions": 128,
+              "value_reads_per_block": 16,
+              "value_slices": 16,
+              "version": 1
+            }
+          },
+          "top_name": "attention_score32_exact_local16_global_tree_gqa8_p54x8_p53x8_c16_r2_l8_b59__producer__group",
+          "value_dimensions_per_head": 128,
+          "value_slices": 16,
+          "version": 1
+        },
+        "merge": {
+          "equivalence_hash": false,
+          "generator": "npu/rtlgen/gen_attention_score32_online_state_merge.py",
+          "head_id_bits": 5,
+          "merge_scale_bits": 24,
+          "partial_payload_bits_per_beat": 328,
+          "result_interface": "ready_valid_exact_partial_slice_stream",
+          "semantic_profile": "score32_online_exact_partial_pair_merge_v1",
+          "top_name": "attention_score32_exact_local16_global_tree_gqa8_p54x8_p53x8_c16_r2_l8_b59__producer__merge",
+          "value_slices": 16,
+          "version": 1
+        }
+      },
+      "token_lanes_per_head": 8,
+      "top_name": "attention_score32_exact_local16_global_tree_gqa8_p54x8_p53x8_c16_r2_l8_b59__producer",
+      "value_slices": 16,
+      "version": 1
     }
   },
   "top_name": "attention_score32_exact_local16_global_tree_gqa8_p54x8_p53x8_c16_r2_l8_b59",
-  "top_pin_bits": 365474,
+  "top_pin_bits": 1173953,
   "total_local_producers": 856,
+  "total_value_memory_lanes": 1712,
   "value_slices": 16,
-  "version": 1
+  "version": 2
 }

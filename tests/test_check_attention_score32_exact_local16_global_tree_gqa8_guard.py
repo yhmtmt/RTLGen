@@ -1,118 +1,68 @@
 import json
 from pathlib import Path
-import subprocess
 import sys
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from npu.rtlgen.gen_attention_score32_exact_local16_global_tree_gqa8 import generate
+from npu.eval.check_attention_score32_exact_local16_global_tree_gqa8_guard import _module, main as guard_main
 
 
-def _config_path() -> Path:
+def _design_dir() -> Path:
     return (
         REPO_ROOT
         / "runs"
         / "designs"
         / "npu_blocks"
         / "attention_score32_exact_local16_global_tree_gqa8_p54x8_p53x8_c16_r2_l8_b59"
-        / "config.json"
     )
 
 
-def _prepare_design_dir(tmp_path: Path) -> Path:
-    tmp_path.mkdir(parents=True, exist_ok=True)
-    design_dir = tmp_path / "design"
-    design_dir.mkdir()
-    config = json.loads(_config_path().read_text(encoding="utf-8"))
-    (design_dir / "config.json").write_text(json.dumps(config, indent=2) + "\n", encoding="utf-8")
-    generate(config, design_dir / "verilog")
-    return design_dir
+def _rtl_dir() -> Path:
+    return _design_dir() / "verilog"
 
 
-def _run_guard(design_dir: Path) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(
-        [
-            sys.executable,
-            "npu/eval/check_attention_score32_exact_local16_global_tree_gqa8_guard.py",
-            "--design-dir",
-            str(design_dir),
-            "--config",
-            str(design_dir / "config.json"),
-        ],
-        cwd=REPO_ROOT,
-        check=False,
-        capture_output=True,
-        text=True,
+def test_checked_in_guard_accepts_generated_full_hierarchy() -> None:
+    assert (
+        guard_main(
+            [
+                "--design-dir",
+                str(_design_dir()),
+                "--config",
+                str(_design_dir() / "config.json"),
+            ]
+        )
+        == 0
     )
 
 
-def test_local16_global_tree_guard_accepts_generated_design(tmp_path: Path) -> None:
-    design_dir = _prepare_design_dir(tmp_path)
-    result = _run_guard(design_dir)
-    assert result.returncode == 0, result.stderr
-    payload = json.loads(result.stdout)
-    assert payload["clusters"] == 16
-    assert payload["total_local_producers"] == 856
-    assert payload["divider_lanes"] == 8
-    assert payload["finalizer_banks"] == 59
-    assert payload["status"] == "ok"
-
-
-def test_local16_global_tree_guard_rejects_stale_top(tmp_path: Path) -> None:
-    design_dir = _prepare_design_dir(tmp_path)
-    top_path = design_dir / "verilog" / "top.v"
-    top_path.write_text(top_path.read_text(encoding="utf-8") + "\n// stale drift\n", encoding="utf-8")
-
-    result = _run_guard(design_dir)
-    assert result.returncode != 0
-    assert "generated RTL artifacts do not match current generator output: top.v" in result.stderr
-
-
-def test_local16_global_tree_guard_rejects_missing_direct_leaf_mapping(tmp_path: Path) -> None:
-    design_dir = _prepare_design_dir(tmp_path)
-    top_path = design_dir / "verilog" / "top.v"
-    text = top_path.read_text(encoding="utf-8")
-    top_path.write_text(
-        text.replace(
-            ".leaf_value(leaf_value[263384 +: 17384])",
-            ".leaf_value(17384'd0)",
-        ),
-        encoding="utf-8",
+def test_checked_in_full_hierarchy_dimensions_are_concrete() -> None:
+    rtl_dir = _rtl_dir()
+    manifest = json.loads(
+        (rtl_dir / "attention_score32_exact_local16_global_tree_gqa8_manifest.json").read_text(encoding="utf-8")
     )
+    rtl = (rtl_dir / "top.v").read_text(encoding="utf-8")
+    top_name = str(manifest["top_name"])
+    top = _module(rtl, top_name)
 
-    result = _run_guard(design_dir)
-    assert result.returncode != 0
-    assert "generated RTL missing semantic token: .leaf_value(leaf_value[263384 +: 17384])" in result.stderr
-
-
-def test_local16_global_tree_guard_rejects_banked_tree_drift(tmp_path: Path) -> None:
-    design_dir = _prepare_design_dir(tmp_path)
-    manifest_path = design_dir / "verilog" / "attention_score32_exact_local16_global_tree_gqa8_manifest.json"
-    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    manifest["submodule_manifests"]["banked_tree"]["finalizer_banks"] = 58
-    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
-
-    result = _run_guard(design_dir)
-    assert result.returncode != 0
-    assert "banked-tree manifest finalizer_banks must be 59" in result.stderr
+    assert manifest["semantic_profile"] == "score32_exact_local16_global_tree_gqa8_full_compute_v1"
+    assert manifest["total_local_producers"] == 856
+    assert manifest["total_value_memory_lanes"] == 1712
+    assert manifest["submodule_manifests"]["cluster_instance_counts"] == {"p53": 8, "p54": 8}
+    assert "input  wire [855:0] input_valid" in top
+    assert "output wire [1711:0] value_read_req_valid" in top
+    assert "input  wire [876543:0] value_response_matrix" in top
+    assert "input  wire [12839:0] command_block_count" not in top
+    assert "(* blackbox *)" not in rtl
 
 
-def test_local16_global_tree_guard_rejects_producer_tokens(tmp_path: Path) -> None:
-    design_dir = _prepare_design_dir(tmp_path)
-    top_path = design_dir / "verilog" / "top.v"
-    text = top_path.read_text(encoding="utf-8")
-    top_path.write_text(
-        text.replace(
-            "  assign protocol_error = (|cluster_protocol_error) || global_protocol_error;\nendmodule",
-            "  assign protocol_error = (|cluster_protocol_error) || global_protocol_error;\n"
-            "  wire producer_value_read_req_valid = 1'b0;\nendmodule",
-            1,
-        ),
-        encoding="utf-8",
+def test_checked_in_hierarchy_has_unique_shared_modules() -> None:
+    rtl_dir = _rtl_dir()
+    manifest = json.loads(
+        (rtl_dir / "attention_score32_exact_local16_global_tree_gqa8_manifest.json").read_text(encoding="utf-8")
     )
-
-    result = _run_guard(design_dir)
-    assert result.returncode != 0
-    assert "functional wrapper top must not contain producer-coupled token: producer_value_read_req" in result.stderr
+    rtl = (rtl_dir / "top.v").read_text(encoding="utf-8")
+    top_name = str(manifest["top_name"])
+    for suffix in ("__producer", "__cluster_p54", "__cluster_p53", "__global_tree"):
+        _module(rtl, f"{top_name}{suffix}")

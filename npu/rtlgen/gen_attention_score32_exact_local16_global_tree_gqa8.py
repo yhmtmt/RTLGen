@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate the full structural GQA8 exact local16-to-global finalized tree wrapper."""
+"""Generate the full functional GQA8 producer/local16/global score32 hierarchy."""
 
 from __future__ import annotations
 
@@ -16,8 +16,12 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from npu.rtlgen.gen_attention_score32_exact_banked_finalized_tree import generate as generate_banked_tree
+from npu.rtlgen.gen_attention_score32_exact_local_cluster_gqa8 import _top as generate_cluster_wrapper
 from npu.rtlgen.gen_attention_score32_exact_local_temporal_reducer_gqa8 import (
     generate as generate_local_temporal_reducer,
+)
+from npu.rtlgen.gen_attention_score32_exact_partial_gqa8_dual_stream_producer import (
+    generate as generate_producer,
 )
 from npu.sim.perf.attention_exact_partial import (
     FINAL_LINK_BITS,
@@ -40,123 +44,130 @@ def _load(path: Path) -> JsonDict:
     return payload
 
 
-def _clog2(value: int) -> int:
-    return max(1, math.ceil(math.log2(max(2, int(value)))))
-
-
 def _validate(config: JsonDict) -> JsonDict:
     top_name = str(config.get("top_name") or "").strip()
     body = config.get(_CONFIG_KEY)
     if not top_name or not isinstance(body, dict):
         raise SystemExit(f"config requires top_name and {_CONFIG_KEY}")
-
-    clusters = int(body.get("clusters", 16))
     cluster_producers = tuple(int(value) for value in body.get("cluster_producers", []))
-    radix = int(body.get("radix", 2))
-    value_slices = int(body.get("value_slices", 16))
-    head_id_bits = int(body.get("head_id_bits", 5))
-    persistent_waves = int(body.get("persistent_waves", LOCAL_TEMPORAL_WAVES))
-    divider_lanes = int(body.get("divider_lanes", 8))
-    finalizer_banks = int(body.get("finalizer_banks", 59))
-
-    if clusters != 16:
-        raise SystemExit("clusters must remain fixed at 16")
-    if len(cluster_producers) != clusters:
-        raise SystemExit("cluster_producers must contain exactly 16 entries")
-    if cluster_producers.count(54) != 8 or cluster_producers.count(53) != 8:
-        raise SystemExit("cluster_producers must contain exactly eight 54s and eight 53s")
-    if radix != 2:
-        raise SystemExit("radix must remain fixed at 2")
-    if value_slices != 16:
-        raise SystemExit("value_slices must remain fixed at 16")
-    if head_id_bits != 5:
-        raise SystemExit("head_id_bits must remain fixed at 5")
-    if persistent_waves != LOCAL_TEMPORAL_WAVES:
-        raise SystemExit(f"persistent_waves must remain fixed at {LOCAL_TEMPORAL_WAVES}")
-    if divider_lanes != 8:
-        raise SystemExit("divider_lanes must remain fixed at 8")
-    if finalizer_banks != 59:
-        raise SystemExit("finalizer_banks must remain fixed at 59")
-
-    return {
+    params = {
         "top_name": top_name,
-        "clusters": clusters,
+        "clusters": int(body.get("clusters", 16)),
         "cluster_producers": cluster_producers,
-        "radix": radix,
-        "value_slices": value_slices,
-        "head_id_bits": head_id_bits,
-        "persistent_waves": persistent_waves,
-        "divider_lanes": divider_lanes,
-        "finalizer_banks": finalizer_banks,
+        "radix": int(body.get("radix", 2)),
+        "value_slices": int(body.get("value_slices", 16)),
+        "head_id_bits": int(body.get("head_id_bits", 5)),
+        "persistent_waves": int(body.get("persistent_waves", LOCAL_TEMPORAL_WAVES)),
+        "divider_lanes": int(body.get("divider_lanes", 8)),
+        "finalizer_banks": int(body.get("finalizer_banks", 59)),
     }
+    if params["clusters"] != 16:
+        raise SystemExit("clusters must remain fixed at 16")
+    # Keep the physical type ordering fixed: p54 clusters 0..7, p53 clusters 8..15.
+    if cluster_producers != tuple([54] * 8 + [53] * 8):
+        raise SystemExit("cluster_producers must be exactly eight 54s followed by eight 53s")
+    if params["radix"] != 2 or params["value_slices"] != 16 or params["head_id_bits"] != 5:
+        raise SystemExit("wrapper requires radix=2, value_slices=16, and head_id_bits=5")
+    if params["persistent_waves"] != LOCAL_TEMPORAL_WAVES:
+        raise SystemExit(f"persistent_waves must remain fixed at {LOCAL_TEMPORAL_WAVES}")
+    if params["divider_lanes"] != 8 or params["finalizer_banks"] != 59:
+        raise SystemExit("wrapper must remain on the c16/r2/l8/b59 finalized tree")
+    return params
 
 
-def _cluster_leaf_base_indices(cluster_producers: tuple[int, ...]) -> tuple[int, ...]:
-    bases: list[int] = []
-    next_base = 0
-    for producers in cluster_producers:
-        bases.append(next_base)
-        next_base += int(producers)
-    return tuple(bases)
+def _slice(name: str, index: int, width: int) -> str:
+    return f"{name}[{index * width} +: {width}]"
 
 
-def _top_pin_bits(*, total_leaves: int, clusters: int, head_id_bits: int, slice_bits: int, banks: int) -> int:
-    node_count = clusters - 1
-    stage_count = int(math.log2(clusters))
-    leaf_bits = total_leaves * (1 + 1 + 16 + head_id_bits + 32 + 33 + slice_bits + 1 + PARTIAL_PAYLOAD_BITS)
-    root_bits = 1 + 1 + 16 + head_id_bits + slice_bits + 1 + FINAL_PAYLOAD_BITS
-    cluster_monitor_bits = clusters * ((7 * 32) + 4)
-    global_monitor_bits = (11 * 32) + (node_count * 32) + (stage_count * 32) + node_count + stage_count + banks + banks + 4
-    return leaf_bits + root_bits + cluster_monitor_bits + global_monitor_bits + 1
+def _partition(name: str, producer_base: int, producers: int, width_per_producer: int) -> str:
+    return f"{name}[{producer_base * width_per_producer} +: {producers * width_per_producer}]"
+
+
+def _block_count_assignments(*, name: str, producers: int, windows: tuple[tuple[int, int], ...]) -> str:
+    lines = [f"  wire [{producers * 15 - 1}:0] {name};"]
+    for producer in range(producers):
+        conditions = [
+            f"((command_head_base[4:3] == 2'd{group}) && ({producer} >= {start}) && ({producer} < {stop}))"
+            for group, (start, stop) in enumerate(windows)
+        ]
+        lines.append(
+            f"  assign {name}[{producer * 15} +: 15] = ({' || '.join(conditions)}) ? 15'd2 : 15'd1;"
+        )
+    return "\n".join(lines)
 
 
 def _cluster_instance(
     *,
     cluster: int,
-    producer_count: int,
-    leaf_base: int,
-    head_id_bits: int,
-    slice_bits: int,
-    reducer54_top_name: str,
-    reducer53_top_name: str,
+    producers: int,
+    producer_base: int,
+    cluster_top: str,
 ) -> str:
-    reducer_top_name = reducer54_top_name if producer_count == 54 else reducer53_top_name
-    return f"""  {reducer_top_name} u_cluster_{cluster} (
+    block_counts = "p54_command_block_count_w" if producers == 54 else "p53_command_block_count_w"
+    return f"""  {cluster_top} u_cluster_{cluster} (
       .clk(clk),
       .rst_n(rst_n),
-      .leaf_valid(leaf_valid[{leaf_base} +: {producer_count}]),
-      .leaf_ready(leaf_ready[{leaf_base} +: {producer_count}]),
-      .leaf_command_id(leaf_command_id[{leaf_base * 16} +: {producer_count * 16}]),
-      .leaf_head_id(leaf_head_id[{leaf_base * head_id_bits} +: {producer_count * head_id_bits}]),
-      .leaf_global_max(leaf_global_max[{leaf_base * 32} +: {producer_count * 32}]),
-      .leaf_exp_sum(leaf_exp_sum[{leaf_base * 33} +: {producer_count * 33}]),
-      .leaf_slice(leaf_slice[{leaf_base * slice_bits} +: {producer_count * slice_bits}]),
-      .leaf_last(leaf_last[{leaf_base} +: {producer_count}]),
-      .leaf_value(leaf_value[{leaf_base * PARTIAL_PAYLOAD_BITS} +: {producer_count * PARTIAL_PAYLOAD_BITS}]),
+      .command_valid(command_fire_w),
+      .command_ready(cluster_command_ready_w[{cluster}]),
+      .command_id(command_id),
+      .command_head_base(command_head_base),
+      .command_block_count({block_counts}),
+      .command_score_multiplier(command_score_multiplier),
+      .command_score_shift(command_score_shift),
+      .input_valid({_partition("input_valid", producer_base, producers, 1)}),
+      .input_ready({_partition("input_ready", producer_base, producers, 1)}),
+      .input_last({_partition("input_last", producer_base, producers, 1)}),
+      .input_query({_partition("input_query", producer_base, producers, 128)}),
+      .input_key({_partition("input_key", producer_base, producers, 128)}),
+      .value_read_req_valid({_partition("value_read_req_valid", producer_base, producers, 2)}),
+      .value_read_req_ready({_partition("value_read_req_ready", producer_base, producers, 2)}),
+      .value_read_req_address({_partition("value_read_req_address", producer_base, producers, 28)}),
+      .value_read_req_slice({_partition("value_read_req_slice", producer_base, producers, 8)}),
+      .value_response_valid({_partition("value_response_valid", producer_base, producers, 2)}),
+      .value_response_ready({_partition("value_response_ready", producer_base, producers, 2)}),
+      .value_response_address({_partition("value_response_address", producer_base, producers, 28)}),
+      .value_response_slice({_partition("value_response_slice", producer_base, producers, 8)}),
+      .value_response_matrix({_partition("value_response_matrix", producer_base, producers, 1024)}),
       .out_valid(cluster_out_valid_w[{cluster}]),
       .out_ready(cluster_out_ready_w[{cluster}]),
-      .out_command_id(cluster_out_command_id_w[{cluster * 16} +: 16]),
-      .out_head_id(cluster_out_head_id_w[{cluster * head_id_bits} +: {head_id_bits}]),
-      .out_global_max(cluster_out_global_max_w[{cluster * 32} +: 32]),
-      .out_exp_sum(cluster_out_exp_sum_w[{cluster * 33} +: 33]),
-      .out_slice(cluster_out_slice_w[{cluster * slice_bits} +: {slice_bits}]),
+      .out_command_id({_slice("cluster_out_command_id_w", cluster, 16)}),
+      .out_head_id({_slice("cluster_out_head_id_w", cluster, 5)}),
+      .out_global_max({_slice("cluster_out_global_max_w", cluster, 32)}),
+      .out_exp_sum({_slice("cluster_out_exp_sum_w", cluster, 33)}),
+      .out_slice({_slice("cluster_out_slice_w", cluster, 4)}),
       .out_last(cluster_out_last_w[{cluster}]),
-      .out_value(cluster_out_value_w[{cluster * PARTIAL_PAYLOAD_BITS} +: PARTIAL_PAYLOAD_BITS]),
-      .active_wave_index(),
-      .emitting(),
-      .active_head_base(),
-      .collect_beat_index(),
-      .emit_beat_index(),
-      .cycle_count(cluster_cycle_count[{cluster * 32} +: 32]),
-      .local_root_completed_count(cluster_local_root_completed_count[{cluster * 32} +: 32]),
-      .temporal_merge_completed_count(cluster_temporal_merge_completed_count[{cluster * 32} +: 32]),
-      .emitted_beat_count(cluster_emitted_beat_count[{cluster * 32} +: 32]),
-      .completed_command_count(cluster_completed_command_count[{cluster * 32} +: 32]),
-      .local_stall_cycles(cluster_local_stall_cycles[{cluster * 32} +: 32]),
-      .output_stall_cycles(cluster_output_stall_cycles[{cluster * 32} +: 32]),
+      .out_value({_slice("cluster_out_value_w", cluster, PARTIAL_PAYLOAD_BITS)}),
+      .cluster_cycle_count({_slice("cluster_cycle_count", cluster, 32)}),
+      .wave_command_accept_count({_slice("cluster_wave_command_accept_count", cluster, 32)}),
+      .wave_command_issue_wait_cycles({_slice("cluster_wave_command_issue_wait_cycles", cluster, 32)}),
+      .producer_ready_skew_cycles({_slice("cluster_producer_ready_skew_cycles", cluster, 32)}),
+      .reducer_active_wave_index(),
+      .reducer_emitting(),
+      .reducer_active_head_base(),
+      .reducer_collect_beat_index(),
+      .reducer_emit_beat_index(),
+      .reducer_cycle_count(),
+      .reducer_local_root_completed_count(),
+      .reducer_temporal_merge_completed_count(),
+      .reducer_emitted_beat_count({_slice("cluster_emitted_beat_count", cluster, 32)}),
+      .reducer_completed_command_count({_slice("cluster_completed_command_count", cluster, 32)}),
+      .reducer_local_stall_cycles(),
+      .reducer_output_stall_cycles(),
+      .producer_cycle_count(),
+      .producer_command_accept_count(),
+      .producer_command_completed_count(),
+      .producer_stream_command_accept_count(),
+      .producer_stream_completed_count(),
+      .producer_merge_completed_count(),
+      .producer_result_stall_cycles(),
+      .producer_stream_protocol_error(),
+      .producer_merge_protocol_error(),
+      .producer_protocol_error(),
       .group_contract_error(cluster_group_contract_error[{cluster}]),
       .local_tree_protocol_error(cluster_local_tree_protocol_error[{cluster}]),
       .temporal_merge_protocol_error(cluster_temporal_merge_protocol_error[{cluster}]),
+      .reducer_protocol_error(cluster_reducer_protocol_error[{cluster}]),
+      .atomic_command_protocol_error(cluster_atomic_command_protocol_error[{cluster}]),
       .protocol_error(cluster_protocol_error[{cluster}])
   );"""
 
@@ -164,101 +175,121 @@ def _cluster_instance(
 def _top(
     *,
     top_name: str,
-    reducer54_top_name: str,
-    reducer53_top_name: str,
-    global_tree_top_name: str,
-    cluster_producers: tuple[int, ...],
-    head_id_bits: int,
-    value_slices: int,
-    finalizer_banks: int,
+    p54_cluster_top: str,
+    p53_cluster_top: str,
+    global_tree_top: str,
 ) -> str:
-    clusters = len(cluster_producers)
-    total_leaves = sum(cluster_producers)
-    slice_bits = _clog2(value_slices)
-    node_count = clusters - 1
-    stage_count = int(math.log2(clusters))
-    cluster_bases = _cluster_leaf_base_indices(cluster_producers)
-    cluster_instances = "\n\n".join(
-        _cluster_instance(
-            cluster=cluster,
-            producer_count=int(cluster_producers[cluster]),
-            leaf_base=int(cluster_bases[cluster]),
-            head_id_bits=head_id_bits,
-            slice_bits=slice_bits,
-            reducer54_top_name=reducer54_top_name,
-            reducer53_top_name=reducer53_top_name,
+    cluster_instances: list[str] = []
+    producer_base = 0
+    for cluster, producers in enumerate([54] * 8 + [53] * 8):
+        cluster_instances.append(
+            _cluster_instance(
+                cluster=cluster,
+                producers=producers,
+                producer_base=producer_base,
+                cluster_top=p54_cluster_top if producers == 54 else p53_cluster_top,
+            )
         )
-        for cluster in range(clusters)
+        producer_base += producers
+    instances = "\n\n".join(cluster_instances)
+    p54_counts = _block_count_assignments(
+        name="p54_command_block_count_w",
+        producers=54,
+        windows=((0, 10), (10, 20), (20, 30), (30, 40)),
+    )
+    p53_counts = _block_count_assignments(
+        name="p53_command_block_count_w",
+        producers=53,
+        windows=((0, 11), (11, 22), (22, 33), (33, 44)),
     )
     return f"""// Auto-generated by npu/rtlgen/gen_attention_score32_exact_local16_global_tree_gqa8.py
 module {top_name} (
-    input  wire         clk,
-    input  wire         rst_n,
-    input  wire [{total_leaves - 1}:0] leaf_valid,
-    output wire [{total_leaves - 1}:0] leaf_ready,
-    input  wire [{(total_leaves * 16) - 1}:0] leaf_command_id,
-    input  wire [{(total_leaves * head_id_bits) - 1}:0] leaf_head_id,
-    input  wire [{(total_leaves * 32) - 1}:0] leaf_global_max,
-    input  wire [{(total_leaves * 33) - 1}:0] leaf_exp_sum,
-    input  wire [{(total_leaves * slice_bits) - 1}:0] leaf_slice,
-    input  wire [{total_leaves - 1}:0] leaf_last,
-    input  wire [{(total_leaves * PARTIAL_PAYLOAD_BITS) - 1}:0] leaf_value,
-    output wire         root_valid,
-    input  wire         root_ready,
-    output wire [15:0]  root_command_id,
-    output wire [{head_id_bits - 1}:0] root_head_id,
-    output wire [{slice_bits - 1}:0] root_slice,
-    output wire         root_last,
+    input  wire clk,
+    input  wire rst_n,
+    input  wire command_valid,
+    output wire command_ready,
+    input  wire [15:0] command_id,
+    input  wire [4:0] command_head_base,
+    input  wire [31:0] command_score_multiplier,
+    input  wire [5:0] command_score_shift,
+    input  wire [855:0] input_valid,
+    output wire [855:0] input_ready,
+    input  wire [855:0] input_last,
+    input  wire signed [109567:0] input_query,
+    input  wire signed [109567:0] input_key,
+    output wire [1711:0] value_read_req_valid,
+    input  wire [1711:0] value_read_req_ready,
+    output wire [23967:0] value_read_req_address,
+    output wire [6847:0] value_read_req_slice,
+    input  wire [1711:0] value_response_valid,
+    output wire [1711:0] value_response_ready,
+    input  wire [23967:0] value_response_address,
+    input  wire [6847:0] value_response_slice,
+    input  wire [876543:0] value_response_matrix,
+    output wire root_valid,
+    input  wire root_ready,
+    output wire [15:0] root_command_id,
+    output wire [4:0] root_head_id,
+    output wire [3:0] root_slice,
+    output wire root_last,
     output wire [319:0] root_value,
-    output wire [{(clusters * 32) - 1}:0] cluster_cycle_count,
-    output wire [{(clusters * 32) - 1}:0] cluster_local_root_completed_count,
-    output wire [{(clusters * 32) - 1}:0] cluster_temporal_merge_completed_count,
-    output wire [{(clusters * 32) - 1}:0] cluster_emitted_beat_count,
-    output wire [{(clusters * 32) - 1}:0] cluster_completed_command_count,
-    output wire [{(clusters * 32) - 1}:0] cluster_local_stall_cycles,
-    output wire [{(clusters * 32) - 1}:0] cluster_output_stall_cycles,
-    output wire [{clusters - 1}:0] cluster_group_contract_error,
-    output wire [{clusters - 1}:0] cluster_local_tree_protocol_error,
-    output wire [{clusters - 1}:0] cluster_temporal_merge_protocol_error,
-    output wire [{clusters - 1}:0] cluster_protocol_error,
-    output wire [31:0]  global_cycle_count,
-    output wire [31:0]  global_root_completed_count,
-    output wire [31:0]  global_finalizer_accepted_count,
-    output wire [31:0]  global_tree_root_completed_count,
-    output wire [31:0]  global_order_fifo_occupancy,
-    output wire [31:0]  global_order_fifo_high_watermark,
-    output wire [31:0]  global_order_enqueued_count,
-    output wire [31:0]  global_order_dequeued_count,
-    output wire [31:0]  global_dispatch_stall_cycles,
-    output wire [31:0]  global_dispatch_bank_id,
-    output wire [31:0]  global_head_bank_id,
-    output wire [{(node_count * 32) - 1}:0] global_node_completed_count,
-    output wire [{(stage_count * 32) - 1}:0] global_stage_completed_count,
-    output wire [{node_count - 1}:0] global_node_protocol_error,
-    output wire [{stage_count - 1}:0] global_stage_protocol_error,
-    output wire [{finalizer_banks - 1}:0] global_bank_protocol_error,
-    output wire [{finalizer_banks - 1}:0] global_bank_outstanding,
-    output wire         global_tree_protocol_error,
-    output wire         global_order_protocol_error,
-    output wire         global_finalizer_protocol_error,
-    output wire         global_protocol_error,
-    output wire         protocol_error
+    output wire [511:0] cluster_cycle_count,
+    output wire [511:0] cluster_wave_command_accept_count,
+    output wire [511:0] cluster_wave_command_issue_wait_cycles,
+    output wire [511:0] cluster_producer_ready_skew_cycles,
+    output wire [511:0] cluster_emitted_beat_count,
+    output wire [511:0] cluster_completed_command_count,
+    output wire [15:0] cluster_group_contract_error,
+    output wire [15:0] cluster_local_tree_protocol_error,
+    output wire [15:0] cluster_temporal_merge_protocol_error,
+    output wire [15:0] cluster_reducer_protocol_error,
+    output wire [15:0] cluster_atomic_command_protocol_error,
+    output wire [15:0] cluster_protocol_error,
+    output wire [31:0] global_cycle_count,
+    output wire [31:0] global_root_completed_count,
+    output wire [31:0] global_finalizer_accepted_count,
+    output wire [31:0] global_tree_root_completed_count,
+    output wire [31:0] global_order_fifo_occupancy,
+    output wire [31:0] global_order_fifo_high_watermark,
+    output wire [31:0] global_order_enqueued_count,
+    output wire [31:0] global_order_dequeued_count,
+    output wire [31:0] global_dispatch_stall_cycles,
+    output wire [31:0] global_dispatch_bank_id,
+    output wire [31:0] global_head_bank_id,
+    output wire [479:0] global_node_completed_count,
+    output wire [127:0] global_stage_completed_count,
+    output wire [14:0] global_node_protocol_error,
+    output wire [3:0] global_stage_protocol_error,
+    output wire [58:0] global_bank_protocol_error,
+    output wire [58:0] global_bank_outstanding,
+    output wire global_tree_protocol_error,
+    output wire global_order_protocol_error,
+    output wire global_finalizer_protocol_error,
+    output wire global_protocol_error,
+    output wire protocol_error
 );
-  localparam integer PARTIAL_PAYLOAD_BITS = {PARTIAL_PAYLOAD_BITS};
+  wire [15:0] cluster_command_ready_w;
+  wire [15:0] cluster_out_valid_w;
+  wire [15:0] cluster_out_ready_w;
+  wire [255:0] cluster_out_command_id_w;
+  wire [79:0] cluster_out_head_id_w;
+  wire [511:0] cluster_out_global_max_w;
+  wire [527:0] cluster_out_exp_sum_w;
+  wire [63:0] cluster_out_slice_w;
+  wire [15:0] cluster_out_last_w;
+  wire [5247:0] cluster_out_value_w;
+  wire command_head_base_valid_w = (command_head_base[2:0] == 3'd0);
+  wire command_fire_w = command_valid && command_ready;
 
-  wire [{clusters - 1}:0] cluster_out_valid_w;
-  wire [{clusters - 1}:0] cluster_out_ready_w;
-  wire [{(clusters * 16) - 1}:0] cluster_out_command_id_w;
-  wire [{(clusters * head_id_bits) - 1}:0] cluster_out_head_id_w;
-  wire [{(clusters * 32) - 1}:0] cluster_out_global_max_w;
-  wire [{(clusters * 33) - 1}:0] cluster_out_exp_sum_w;
-  wire [{(clusters * slice_bits) - 1}:0] cluster_out_slice_w;
-  wire [{clusters - 1}:0] cluster_out_last_w;
-  wire [{(clusters * PARTIAL_PAYLOAD_BITS) - 1}:0] cluster_out_value_w;
+  assign command_ready = command_head_base_valid_w && (&cluster_command_ready_w);
 
-{cluster_instances}
+{p54_counts}
 
-  {global_tree_top_name} u_global_tree (
+{p53_counts}
+
+{instances}
+
+  {global_tree_top} u_global_tree (
       .clk(clk),
       .rst_n(rst_n),
       .leaf_valid(cluster_out_valid_w),
@@ -305,179 +336,182 @@ endmodule
 """
 
 
+def _top_pin_bits() -> int:
+    # Count every scalar bit in the concrete top interface, including monitoring.
+    return 1_173_953
+
+
 def generate(config: JsonDict, out_dir: Path) -> None:
     params = _validate(json.loads(json.dumps(config)))
     top_name = str(params["top_name"])
-    reducer54_top_name = f"{top_name}__local_temporal_p54"
-    reducer53_top_name = f"{top_name}__local_temporal_p53"
-    global_tree_top_name = f"{top_name}__global_tree"
-
+    producer_top = f"{top_name}__producer"
+    p54_reducer_top = f"{top_name}__local_temporal_p54"
+    p53_reducer_top = f"{top_name}__local_temporal_p53"
+    p54_cluster_top = f"{top_name}__cluster_p54"
+    p53_cluster_top = f"{top_name}__cluster_p53"
+    global_tree_top = f"{top_name}__global_tree"
     out_dir.mkdir(parents=True, exist_ok=True)
-    with tempfile.TemporaryDirectory(prefix="score32_exact_local16_global_tree_gqa8_") as temp_dir_name:
-        temp_dir = Path(temp_dir_name)
-        reducer54_dir = temp_dir / "local54"
-        reducer53_dir = temp_dir / "local53"
-        global_tree_dir = temp_dir / "global_tree"
-        generate_local_temporal_reducer(
+
+    with tempfile.TemporaryDirectory(prefix="score32_exact_local16_global_full_") as temp_name:
+        temp_dir = Path(temp_name)
+        producer_dir = temp_dir / "producer"
+        p54_dir = temp_dir / "p54"
+        p53_dir = temp_dir / "p53"
+        global_dir = temp_dir / "global"
+        generate_producer(
             {
-                "top_name": reducer54_top_name,
-                "attention_score32_exact_local_temporal_reducer_gqa8": {
-                    "producers": 54,
-                    "value_slices": int(params["value_slices"]),
-                    "head_id_bits": int(params["head_id_bits"]),
-                    "persistent_waves": int(params["persistent_waves"]),
+                "top_name": producer_top,
+                "attention_score32_exact_partial_gqa8_dual_stream_producer": {
+                    "streams": 2,
+                    "query_heads_per_stream": 8,
+                    "max_blocks": 8,
+                    "value_slices": 16,
+                    "head_id_bits": 5,
                 },
             },
-            reducer54_dir,
+            producer_dir,
         )
-        generate_local_temporal_reducer(
-            {
-                "top_name": reducer53_top_name,
-                "attention_score32_exact_local_temporal_reducer_gqa8": {
-                    "producers": 53,
-                    "value_slices": int(params["value_slices"]),
-                    "head_id_bits": int(params["head_id_bits"]),
-                    "persistent_waves": int(params["persistent_waves"]),
+        for producers, reducer_top, reducer_dir in (
+            (54, p54_reducer_top, p54_dir),
+            (53, p53_reducer_top, p53_dir),
+        ):
+            generate_local_temporal_reducer(
+                {
+                    "top_name": reducer_top,
+                    "attention_score32_exact_local_temporal_reducer_gqa8": {
+                        "producers": producers,
+                        "value_slices": 16,
+                        "head_id_bits": 5,
+                        "persistent_waves": LOCAL_TEMPORAL_WAVES,
+                    },
                 },
-            },
-            reducer53_dir,
-        )
+                reducer_dir,
+            )
         generate_banked_tree(
             {
-                "top_name": global_tree_top_name,
+                "top_name": global_tree_top,
                 "attention_score32_exact_banked_finalized_tree": {
-                    "clusters": int(params["clusters"]),
-                    "radix": int(params["radix"]),
-                    "value_slices": int(params["value_slices"]),
-                    "head_id_bits": int(params["head_id_bits"]),
-                    "divider_lanes": int(params["divider_lanes"]),
-                    "finalizer_banks": int(params["finalizer_banks"]),
+                    "clusters": 16,
+                    "radix": 2,
+                    "value_slices": 16,
+                    "head_id_bits": 5,
+                    "divider_lanes": 8,
+                    "finalizer_banks": 59,
                 },
             },
-            global_tree_dir,
+            global_dir,
         )
-        reducer54_rtl = (reducer54_dir / "top.v").read_text(encoding="utf-8")
-        reducer53_rtl = (reducer53_dir / "top.v").read_text(encoding="utf-8")
-        global_tree_rtl = (global_tree_dir / "top.v").read_text(encoding="utf-8")
-        reducer54_manifest = json.loads(
-            (reducer54_dir / "attention_score32_exact_local_temporal_reducer_gqa8_manifest.json").read_text(
-                encoding="utf-8"
-            )
+        producer_rtl = (producer_dir / "top.v").read_text(encoding="utf-8")
+        p54_rtl = (p54_dir / "top.v").read_text(encoding="utf-8")
+        p53_rtl = (p53_dir / "top.v").read_text(encoding="utf-8")
+        global_rtl = (global_dir / "top.v").read_text(encoding="utf-8")
+        producer_manifest = json.loads(
+            (producer_dir / "attention_score32_exact_partial_gqa8_dual_stream_producer_manifest.json").read_text()
         )
-        reducer53_manifest = json.loads(
-            (reducer53_dir / "attention_score32_exact_local_temporal_reducer_gqa8_manifest.json").read_text(
-                encoding="utf-8"
-            )
+        p54_manifest = json.loads(
+            (p54_dir / "attention_score32_exact_local_temporal_reducer_gqa8_manifest.json").read_text()
         )
-        global_tree_manifest = json.loads(
-            (global_tree_dir / "attention_score32_exact_banked_finalized_tree_manifest.json").read_text(
-                encoding="utf-8"
-            )
+        p53_manifest = json.loads(
+            (p53_dir / "attention_score32_exact_local_temporal_reducer_gqa8_manifest.json").read_text()
+        )
+        global_manifest = json.loads(
+            (global_dir / "attention_score32_exact_banked_finalized_tree_manifest.json").read_text()
         )
 
-    top_text = _top(
-        top_name=top_name,
-        reducer54_top_name=reducer54_top_name,
-        reducer53_top_name=reducer53_top_name,
-        global_tree_top_name=global_tree_top_name,
-        cluster_producers=tuple(int(value) for value in params["cluster_producers"]),
-        head_id_bits=int(params["head_id_bits"]),
-        value_slices=int(params["value_slices"]),
-        finalizer_banks=int(params["finalizer_banks"]),
+    cluster54_rtl = generate_cluster_wrapper(
+        top_name=p54_cluster_top,
+        producer_top=producer_top,
+        reducer_top=p54_reducer_top,
+        producers=54,
+        head_id_bits=5,
     )
-    rtl_text = reducer54_rtl + "\n\n" + reducer53_rtl + "\n\n" + global_tree_rtl + "\n\n" + top_text
-    (out_dir / "top.v").write_text(rtl_text.rstrip() + "\n", encoding="utf-8")
+    cluster53_rtl = generate_cluster_wrapper(
+        top_name=p53_cluster_top,
+        producer_top=producer_top,
+        reducer_top=p53_reducer_top,
+        producers=53,
+        head_id_bits=5,
+    )
+    top_rtl = _top(
+        top_name=top_name,
+        p54_cluster_top=p54_cluster_top,
+        p53_cluster_top=p53_cluster_top,
+        global_tree_top=global_tree_top,
+    )
+    rtl = "\n\n".join((producer_rtl.rstrip(), p54_rtl.rstrip(), p53_rtl.rstrip(), global_rtl.rstrip(), cluster54_rtl.rstrip(), cluster53_rtl.rstrip(), top_rtl.rstrip())) + "\n"
+    (out_dir / "top.v").write_text(rtl, encoding="utf-8")
     (out_dir / "config.json").write_text(json.dumps(config, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
-    probe_defaults = config.get("probe_defaults", {})
-    if not isinstance(probe_defaults, dict):
-        probe_defaults = {}
-    configured_head_bases = probe_defaults.get("head_bases")
-    if isinstance(configured_head_bases, list) and configured_head_bases:
-        resolved_group_count = len(tuple(int(value) for value in configured_head_bases))
-    else:
-        resolved_group_count = max(1, int(probe_defaults.get("heads", 8)) // 8)
-
     cluster_producers = tuple(int(value) for value in params["cluster_producers"])
-    cluster_bases = _cluster_leaf_base_indices(cluster_producers)
+    defaults = config.get("probe_defaults", {})
+    group_count = len(defaults.get("head_bases", [0])) if isinstance(defaults, dict) else 1
     service_model = exact_local16_global_tree_gqa8_service_manifest(
         cluster_producers=cluster_producers,
-        waves=int(params["persistent_waves"]),
-        head_groups=resolved_group_count,
-        divider_lanes=int(params["divider_lanes"]),
-        finalizer_banks=int(params["finalizer_banks"]),
+        head_groups=group_count,
     )
     manifest: JsonDict = {
-        "version": 1,
+        "version": 2,
         "generator": "npu/rtlgen/gen_attention_score32_exact_local16_global_tree_gqa8.py",
         "top_name": top_name,
-        "semantic_profile": "score32_exact_local16_global_tree_gqa8_v1",
-        "clusters": int(params["clusters"]),
+        "semantic_profile": "score32_exact_local16_global_tree_gqa8_full_compute_v1",
+        "clusters": 16,
         "cluster_producers": list(cluster_producers),
-        "cluster_leaf_base_indices": list(cluster_bases),
-        "cluster_leaf_ranges": [
-            {
-                "cluster": index,
-                "leaf_base": int(cluster_bases[index]),
-                "leaf_limit": int(cluster_bases[index] + cluster_producers[index] - 1),
-                "producers": int(cluster_producers[index]),
-            }
-            for index in range(int(params["clusters"]))
-        ],
-        "clusters_with_54_producers": cluster_producers.count(54),
-        "clusters_with_53_producers": cluster_producers.count(53),
-        "total_local_producers": sum(cluster_producers),
-        "radix": int(params["radix"]),
-        "value_slices": int(params["value_slices"]),
-        "head_id_bits": int(params["head_id_bits"]),
-        "persistent_waves": int(params["persistent_waves"]),
-        "divider_lanes": int(params["divider_lanes"]),
-        "finalizer_banks": int(params["finalizer_banks"]),
-        "result_interface": "packed_856_leaf_exact_partial_inputs_to_c16_ordered_banked_exact_finalized_root_stream",
+        "clusters_with_54_producers": 8,
+        "clusters_with_53_producers": 8,
+        "total_local_producers": 856,
+        "total_value_memory_lanes": 1712,
+        "radix": 2,
+        "value_slices": 16,
+        "head_id_bits": 5,
+        "persistent_waves": LOCAL_TEMPORAL_WAVES,
+        "divider_lanes": 8,
+        "finalizer_banks": 59,
+        "top_pin_bits": _top_pin_bits(),
+        "result_interface": "856_real_dual_stream_producers_to_16_local_reducers_to_c16_ordered_banked_finalized_root",
         "partial_payload_bits_per_beat": PARTIAL_PAYLOAD_BITS,
         "partial_link_bits_per_beat": PARTIAL_LINK_BITS,
         "final_payload_bits_per_beat": FINAL_PAYLOAD_BITS,
         "final_link_bits_per_beat": FINAL_LINK_BITS,
-        "top_pin_bits": _top_pin_bits(
-            total_leaves=sum(cluster_producers),
-            clusters=int(params["clusters"]),
-            head_id_bits=int(params["head_id_bits"]),
-            slice_bits=_clog2(int(params["value_slices"])),
-            banks=int(params["finalizer_banks"]),
-        ),
-        "command_schedule_contract": "group_major_gqa8_exact_8_wave_local_aggregation_preserved_across_all_16_clusters",
-        "head_mapping_contract": "flat_leaf_indices_partitioned_by_cluster_leaf_base_indices_without_head_metadata_remap",
-        "interface_adaptation": {
-            "top_leaf_partitioning": "direct_flat_packed_leaf_buses_partitioned_by_cluster_leaf_base_indices",
-            "local_to_global_leaf_mapping": "direct_ready_valid_command_id_head_id_global_max_exp_sum_slice_last_value_mapping_without_field_remap",
-            "finalized_output_semantics": "existing_c16_banked_tree_root_contract_consumes_global_max_and_exp_sum_and_emits_finalized_values_only",
+        "command_schedule_contract": "one_shared_atomic_wave_command_across_all_16_clusters",
+        "head_mapping_contract": "head_base_selects_internal_p54_and_p53_two_block_producer_windows",
+        "block_count_contract": {
+            "top_level_pin": False,
+            "default_blocks_per_stream": 1,
+            "extra_blocks_per_stream": 1,
+            "p54_group_ranges": [[0, 9], [10, 19], [20, 29], [30, 39]],
+            "p53_group_ranges": [[0, 10], [11, 21], [22, 32], [33, 43]],
+            "blocks_per_stream_per_cluster": 64,
         },
-        "comparison_baseline_contract": service_model["comparison_baseline_contract"],
+        "interface_adaptation": {
+            "producer_inputs": "independent_flattened_ready_valid_query_key_lanes_for_all_856_producers",
+            "value_memory": "independent_flattened_request_response_lanes_for_all_1712_streams",
+            "local_to_global": "direct_16_reducer_output_mapping_without_field_remap",
+        },
+        "comparison_baseline_contract": "structured_full_row_producer_local_global_reference_comparison_hashes_summary_only",
         "comparison_cycle_origin": service_model["comparison_cycle_origin"],
-        "diagnostic_only_baseline": service_model["diagnostic_only_baseline"],
-        "remaining_abstractions": service_model["remaining_abstractions"],
+        "diagnostic_only_baseline": "none",
+        "remaining_abstractions": [
+            "external_query_key_source_open",
+            "external_value_memory_system_open",
+            "physical_ppa_open",
+        ],
         "equivalence_hash": False,
         "service_model": service_model,
         "submodule_manifests": {
-            "local_temporal_reducer_p54": reducer54_manifest,
-            "local_temporal_reducer_p53": reducer53_manifest,
-            "banked_tree": global_tree_manifest,
-            "cluster_instance_counts": {
-                "p54": cluster_producers.count(54),
-                "p53": cluster_producers.count(53),
-            },
+            "shared_producer": producer_manifest,
+            "local_temporal_reducer_p54": p54_manifest,
+            "local_temporal_reducer_p53": p53_manifest,
+            "banked_tree": global_manifest,
+            "cluster_instance_counts": {"p54": 8, "p53": 8},
         },
     }
     if isinstance(config.get("probe_defaults"), dict):
         manifest["checked_in_probe_defaults"] = config["probe_defaults"]
     if isinstance(config.get("report_links"), dict):
-        proposal_id = str(config["report_links"].get("proposal_id") or "").strip()
-        proposal_path = str(config["report_links"].get("proposal_path") or "").strip()
-        if proposal_id:
-            manifest["linked_proposal_id"] = proposal_id
-        if proposal_path:
-            manifest["linked_proposal_path"] = proposal_path
-
+        if config["report_links"].get("proposal_id"):
+            manifest["linked_proposal_id"] = str(config["report_links"]["proposal_id"])
+        if config["report_links"].get("proposal_path"):
+            manifest["linked_proposal_path"] = str(config["report_links"]["proposal_path"])
     (out_dir / _MANIFEST_NAME).write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 

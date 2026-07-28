@@ -43,11 +43,41 @@ _SUMMARY_RE = re.compile(
     r"global_tree_error=(\d+) global_order_error=(\d+) global_finalizer_error=(\d+)"
 )
 _CLUSTER_SUMMARY_RE = re.compile(
-    r"CLUSTER_SUMMARY cluster=(\d+) local_root_completed=(\d+) temporal_completed=(\d+) emitted=(\d+) "
-    r"completed_commands=(\d+) local_stall=(\d+) output_stall=(\d+) group_error=(\d+) local_tree_error=(\d+) "
-    r"temporal_error=(\d+) protocol_error=(\d+)"
+    r"CLUSTER_SUMMARY cluster=(\d+) cycle=(\d+) wave_accept=(\d+) issue_wait=(\d+) ready_skew=(\d+) emitted=(\d+) "
+    r"completed_commands=(\d+) group_error=(\d+) local_tree_error=(\d+) temporal_error=(\d+) reducer_error=(\d+) "
+    r"atomic_error=(\d+) protocol_error=(\d+)"
 )
 _TB_TIMEOUT_RE = re.compile(r"TB_TIMEOUT cycle=(\d+)")
+
+_FAKERAM_MODEL = """
+module fakeram45_2048x39 (
+    output wire [38:0] rd_out, input wire [10:0] addr_in,
+    input wire we_in, input wire [38:0] wd_in, input wire [38:0] w_mask_in,
+    input wire clk, input wire ce_in
+);
+  reg [38:0] mem [0:2047];
+  reg [10:0] addr_q;
+  reg [38:0] rd_out_q;
+  integer idx;
+  initial begin
+    addr_q = 0;
+    rd_out_q = 0;
+    for (idx = 0; idx < 2048; idx = idx + 1) mem[idx] = 0;
+  end
+  always @(posedge clk) begin
+    rd_out_q <= mem[addr_q];
+    if (ce_in) begin
+      if (we_in) begin
+        for (idx = 0; idx < 39; idx = idx + 1) begin
+          if (w_mask_in[idx]) mem[addr_in][idx] <= wd_in[idx];
+        end
+      end
+      addr_q <= addr_in;
+    end
+  end
+  assign rd_out = rd_out_q;
+endmodule
+"""
 
 
 def _tool(name: str) -> str:
@@ -62,6 +92,66 @@ def _tool(name: str) -> str:
 
 def _hash(value: object) -> str:
     return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(",", ":")).encode("utf-8")).hexdigest()
+
+
+def compare_full_rows(
+    expected_rows: list[dict[str, object]],
+    observed_rows: list[dict[str, object]],
+) -> dict[str, object]:
+    """Compare every structured field; hashes are diagnostic summary only."""
+    result: dict[str, object] = {
+        "passed": expected_rows == observed_rows,
+        "expected_row_count": len(expected_rows),
+        "observed_row_count": len(observed_rows),
+        "expected_hash": _hash(expected_rows),
+        "observed_hash": _hash(observed_rows),
+        "first_mismatch": None,
+    }
+    shared_rows = min(len(expected_rows), len(observed_rows))
+    for index in range(shared_rows):
+        expected = expected_rows[index]
+        observed = observed_rows[index]
+        if expected == observed:
+            continue
+        fields = sorted(set(expected) | set(observed))
+        for field in fields:
+            if expected.get(field) != observed.get(field):
+                result["first_mismatch"] = {
+                    "row": index,
+                    "field": field,
+                    "expected": expected.get(field),
+                    "observed": observed.get(field),
+                }
+                return result
+    if len(expected_rows) != len(observed_rows):
+        result["first_mismatch"] = {
+            "row": shared_rows,
+            "field": "__row_count__",
+            "expected": len(expected_rows),
+            "observed": len(observed_rows),
+        }
+    return result
+
+
+def compare_compositional_rows(
+    *,
+    expected_cluster_rows: list[list[dict[str, object]]],
+    observed_cluster_rows: list[list[dict[str, object]]],
+    expected_root_rows: list[dict[str, object]],
+    observed_root_rows: list[dict[str, object]],
+) -> dict[str, object]:
+    if len(expected_cluster_rows) != 16 or len(observed_cluster_rows) != 16:
+        raise ValueError("compositional audit requires exactly 16 cluster row streams")
+    clusters = [
+        compare_full_rows(expected_cluster_rows[index], observed_cluster_rows[index])
+        for index in range(16)
+    ]
+    root = compare_full_rows(expected_root_rows, observed_root_rows)
+    return {
+        "passed": all(bool(result["passed"]) for result in clusters) and bool(root["passed"]),
+        "clusters": clusters,
+        "root": root,
+    }
 
 
 def _default_config() -> JsonDict:
@@ -317,59 +407,26 @@ def _ready_init(pattern: tuple[bool, ...]) -> str:
     return "\n".join(f"    root_ready_mem[{index}] = 1'b{1 if value else 0};" for index, value in enumerate(pattern))
 
 
+def _score_params(head_base: int) -> tuple[int, int]:
+    group_index = int(head_base) >> 3
+    if group_index == 0:
+        return (1 << 20), 0
+    if group_index == 1:
+        return 13, 1
+    if group_index == 2:
+        return 29, 2
+    return 37, 1
+
+
 def _command_init(workload: dict[str, object]) -> str:
-    commands = _command_schedule(workload)
-    return "\n".join(
-        f"    command_id_mem[{index}] = 16'h{int(command['command_id']):04x}; "
-        f"head_base_mem[{index}] = 5'd{int(command['head_base'])};"
-        for index, command in enumerate(commands)
-    )
-
-
-def _cluster_decl(cluster: int, producers: int, leaf_base: int) -> str:
-    return f"""  reg [11:0] cluster_{cluster}_beat_count_q;
-  wire cluster_{cluster}_pending_w = rst_n && (cluster_{cluster}_beat_count_q < TOTAL_CLUSTER_BEATS);
-  wire cluster_{cluster}_batch_ready_w = &leaf_ready[{leaf_base} +: {producers}];
-  wire cluster_{cluster}_batch_valid_w = cluster_{cluster}_pending_w && cluster_{cluster}_batch_ready_w;
-  wire [1:0] cluster_{cluster}_command_index_w = cluster_{cluster}_beat_count_q[11:10];
-  wire [2:0] cluster_{cluster}_wave_index_w = cluster_{cluster}_beat_count_q[9:7];
-  wire [2:0] cluster_{cluster}_head_lane_w = cluster_{cluster}_beat_count_q[6:4];
-  wire [3:0] cluster_{cluster}_slice_index_w = cluster_{cluster}_beat_count_q[3:0];
-  wire [4:0] cluster_{cluster}_head_base_w = head_base_mem[cluster_{cluster}_command_index_w];"""
-
-
-def _cluster_leaf_base(cluster_producers: list[int], cluster: int) -> int:
-    return sum(cluster_producers[:cluster])
-
-
-def _leaf_assigns(cluster_producers: tuple[int, ...]) -> str:
-    lines: list[str] = []
-    cluster_producer_list = list(cluster_producers)
-    for cluster, producers in enumerate(cluster_producer_list):
-        leaf_base = _cluster_leaf_base(cluster_producer_list, cluster)
-        lines.append(f"  assign leaf_valid[{leaf_base} +: {producers}] = {{{producers}{{cluster_{cluster}_batch_valid_w}}}};")
-        lines.append(f"  assign leaf_last[{leaf_base} +: {producers}] = {{{producers}{{cluster_{cluster}_slice_index_w == 4'd15}}}};")
-        for producer in range(producers):
-            global_index = leaf_base + producer
-            lines.extend(
-                [
-                    f"  assign leaf_command_id[{global_index * 16} +: 16] = command_id_mem[cluster_{cluster}_command_index_w];",
-                    f"  assign leaf_head_id[{global_index * 5} +: 5] = cluster_{cluster}_head_base_w + {{2'd0, cluster_{cluster}_head_lane_w}};",
-                    f"  assign leaf_global_max[{global_index * 32} +: 32] = partial_max_fn({cluster}, {producer}, cluster_{cluster}_command_index_w, cluster_{cluster}_wave_index_w, cluster_{cluster}_head_lane_w, cluster_{cluster}_slice_index_w, SEED);",
-                    f"  assign leaf_exp_sum[{global_index * 33} +: 33] = partial_exp_fn({cluster}, {producer}, cluster_{cluster}_command_index_w, cluster_{cluster}_wave_index_w, cluster_{cluster}_head_lane_w, cluster_{cluster}_slice_index_w, SEED);",
-                    f"  assign leaf_slice[{global_index * 4} +: 4] = cluster_{cluster}_slice_index_w;",
-                    f"  assign leaf_value[{global_index * 328} +: 328] = partial_value_fn({cluster}, {producer}, cluster_{cluster}_command_index_w, cluster_{cluster}_wave_index_w, cluster_{cluster}_head_lane_w, cluster_{cluster}_slice_index_w, SEED);",
-                ]
-            )
-    return "\n".join(lines)
-
-
-def _cluster_seq_body(cluster_producers: tuple[int, ...]) -> str:
-    lines: list[str] = []
-    for cluster, producers in enumerate(cluster_producers):
+    lines = []
+    for index, command in enumerate(_command_schedule(workload)):
+        multiplier, shift = _score_params(int(command["head_base"]))
         lines.append(
-            f"      if (cluster_{cluster}_batch_valid_w) begin "
-            f"cluster_{cluster}_beat_count_q <= cluster_{cluster}_beat_count_q + 1'b1; end"
+            f"    command_id_mem[{index}] = 16'h{int(command['command_id']):04x}; "
+            f"head_base_mem[{index}] = 5'd{int(command['head_base'])}; "
+            f"multiplier_mem[{index}] = 32'd{multiplier}; "
+            f"shift_mem[{index}] = 6'd{shift};"
         )
     return "\n".join(lines)
 
@@ -400,16 +457,18 @@ def _cluster_summary_logging() -> str:
     for cluster in range(16):
         lines.extend(
             [
-                f'        $display("CLUSTER_SUMMARY cluster={cluster} local_root_completed=%0d temporal_completed=%0d emitted=%0d completed_commands=%0d local_stall=%0d output_stall=%0d group_error=%0d local_tree_error=%0d temporal_error=%0d protocol_error=%0d",',
-                f"                 cluster_local_root_completed_count[{cluster * 32} +: 32],",
-                f"                 cluster_temporal_merge_completed_count[{cluster * 32} +: 32],",
+                f'        $display("CLUSTER_SUMMARY cluster={cluster} cycle=%0d wave_accept=%0d issue_wait=%0d ready_skew=%0d emitted=%0d completed_commands=%0d group_error=%0d local_tree_error=%0d temporal_error=%0d reducer_error=%0d atomic_error=%0d protocol_error=%0d",',
+                f"                 cluster_cycle_count[{cluster * 32} +: 32],",
+                f"                 cluster_wave_command_accept_count[{cluster * 32} +: 32],",
+                f"                 cluster_wave_command_issue_wait_cycles[{cluster * 32} +: 32],",
+                f"                 cluster_producer_ready_skew_cycles[{cluster * 32} +: 32],",
                 f"                 cluster_emitted_beat_count[{cluster * 32} +: 32],",
                 f"                 cluster_completed_command_count[{cluster * 32} +: 32],",
-                f"                 cluster_local_stall_cycles[{cluster * 32} +: 32],",
-                f"                 cluster_output_stall_cycles[{cluster * 32} +: 32],",
                 f"                 cluster_group_contract_error[{cluster}],",
                 f"                 cluster_local_tree_protocol_error[{cluster}],",
                 f"                 cluster_temporal_merge_protocol_error[{cluster}],",
+                f"                 cluster_reducer_protocol_error[{cluster}],",
+                f"                 cluster_atomic_command_protocol_error[{cluster}],",
                 f"                 cluster_protocol_error[{cluster}]);",
             ]
         )
@@ -417,20 +476,15 @@ def _cluster_summary_logging() -> str:
 
 
 def _testbench(*, top_name: str, cluster_producers: tuple[int, ...], workload: dict[str, object], output_ready_pattern: tuple[bool, ...]) -> str:
-    cluster_decls = "\n".join(
-        _cluster_decl(cluster, producers, _cluster_leaf_base(list(cluster_producers), cluster))
-        for cluster, producers in enumerate(cluster_producers)
-    )
     return f"""`timescale 1ns/1ps
 module tb;
-  localparam integer SEED = {int(workload["seed"])};
   localparam integer COMMANDS = {int(workload["command_count"])};
-  localparam integer TOTAL_CLUSTER_BEATS = COMMANDS * 1024;
   localparam integer TOTAL_RESULTS = COMMANDS * 128;
   localparam integer ROOT_READY_PATTERN_LEN = {len(output_ready_pattern)};
   reg clk = 0;
   reg rst_n = 0;
   integer cycle = 0;
+  integer issued_commands = 0;
   integer root_seen = 0;
   integer first_root_cycle = -1;
   integer last_root_cycle = -1;
@@ -438,17 +492,30 @@ module tb;
 
   reg [15:0] command_id_mem [0:COMMANDS-1];
   reg [4:0] head_base_mem [0:COMMANDS-1];
+  reg [31:0] multiplier_mem [0:COMMANDS-1];
+  reg [5:0] shift_mem [0:COMMANDS-1];
   reg root_ready_mem [0:ROOT_READY_PATTERN_LEN-1];
 
-  wire [855:0] leaf_valid;
-  wire [855:0] leaf_ready;
-  wire [13695:0] leaf_command_id;
-  wire [4279:0] leaf_head_id;
-  wire [27391:0] leaf_global_max;
-  wire [28247:0] leaf_exp_sum;
-  wire [3423:0] leaf_slice;
-  wire [855:0] leaf_last;
-  wire [280767:0] leaf_value;
+  reg command_valid;
+  wire command_ready;
+  reg [15:0] command_id;
+  reg [4:0] command_head_base;
+  reg [31:0] command_score_multiplier;
+  reg [5:0] command_score_shift;
+  reg [855:0] input_valid;
+  wire [855:0] input_ready;
+  reg [855:0] input_last;
+  reg signed [109567:0] input_query;
+  reg signed [109567:0] input_key;
+  wire [1711:0] value_read_req_valid;
+  reg [1711:0] value_read_req_ready;
+  wire [23967:0] value_read_req_address;
+  wire [6847:0] value_read_req_slice;
+  reg [1711:0] value_response_valid;
+  wire [1711:0] value_response_ready;
+  reg [23967:0] value_response_address;
+  reg [6847:0] value_response_slice;
+  reg [876543:0] value_response_matrix;
   wire root_valid;
   reg root_ready;
   wire [15:0] root_command_id;
@@ -457,15 +524,16 @@ module tb;
   wire root_last;
   wire [319:0] root_value;
   wire [(16 * 32) - 1:0] cluster_cycle_count;
-  wire [(16 * 32) - 1:0] cluster_local_root_completed_count;
-  wire [(16 * 32) - 1:0] cluster_temporal_merge_completed_count;
+  wire [(16 * 32) - 1:0] cluster_wave_command_accept_count;
+  wire [(16 * 32) - 1:0] cluster_wave_command_issue_wait_cycles;
+  wire [(16 * 32) - 1:0] cluster_producer_ready_skew_cycles;
   wire [(16 * 32) - 1:0] cluster_emitted_beat_count;
   wire [(16 * 32) - 1:0] cluster_completed_command_count;
-  wire [(16 * 32) - 1:0] cluster_local_stall_cycles;
-  wire [(16 * 32) - 1:0] cluster_output_stall_cycles;
   wire [15:0] cluster_group_contract_error;
   wire [15:0] cluster_local_tree_protocol_error;
   wire [15:0] cluster_temporal_merge_protocol_error;
+  wire [15:0] cluster_reducer_protocol_error;
+  wire [15:0] cluster_atomic_command_protocol_error;
   wire [15:0] cluster_protocol_error;
   wire [31:0] global_cycle_count;
   wire [31:0] global_root_completed_count;
@@ -490,112 +558,29 @@ module tb;
   wire global_protocol_error;
   wire protocol_error;
 
-{cluster_decls}
-
-  function automatic signed [31:0] partial_max_fn;
-    input integer cluster;
-    input integer producer;
-    input integer command_index;
-    input integer wave_index;
-    input integer head_lane;
-    input integer slice_index;
-    input integer seed_value;
-    integer raw;
-    begin
-      raw =
-          (seed_value * 41)
-          + (cluster * 29)
-          + (producer * 23)
-          + (command_index * 19)
-          + (wave_index * 17)
-          + (head_lane * 13)
-          + (slice_index * 11);
-      partial_max_fn = (raw % 255) - 127;
-    end
-  endfunction
-
-  function automatic [32:0] partial_exp_fn;
-    input integer cluster;
-    input integer producer;
-    input integer command_index;
-    input integer wave_index;
-    input integer head_lane;
-    input integer slice_index;
-    input integer seed_value;
-    integer raw;
-    begin
-      raw =
-          (seed_value * 43)
-          + (cluster * 31)
-          + (producer * 27)
-          + (command_index * 21)
-          + (wave_index * 15)
-          + (head_lane * 9)
-          + (slice_index * 5);
-      partial_exp_fn = 1 + (raw % 65535);
-    end
-  endfunction
-
-  function automatic signed [40:0] partial_lane_fn;
-    input integer cluster;
-    input integer producer;
-    input integer command_index;
-    input integer wave_index;
-    input integer head_lane;
-    input integer slice_index;
-    input integer lane;
-    input integer seed_value;
-    integer raw;
-    begin
-      raw =
-          (seed_value * 47)
-          + (cluster * 37)
-          + (producer * 29)
-          + (command_index * 23)
-          + (wave_index * 19)
-          + (head_lane * 17)
-          + (slice_index * 13)
-          + (lane * 11);
-      partial_lane_fn = (raw % 131071) - 65535;
-    end
-  endfunction
-
-  function automatic [327:0] partial_value_fn;
-    input integer cluster;
-    input integer producer;
-    input integer command_index;
-    input integer wave_index;
-    input integer head_lane;
-    input integer slice_index;
-    input integer seed_value;
-    begin
-      partial_value_fn = {{
-          partial_lane_fn(cluster, producer, command_index, wave_index, head_lane, slice_index, 7, seed_value),
-          partial_lane_fn(cluster, producer, command_index, wave_index, head_lane, slice_index, 6, seed_value),
-          partial_lane_fn(cluster, producer, command_index, wave_index, head_lane, slice_index, 5, seed_value),
-          partial_lane_fn(cluster, producer, command_index, wave_index, head_lane, slice_index, 4, seed_value),
-          partial_lane_fn(cluster, producer, command_index, wave_index, head_lane, slice_index, 3, seed_value),
-          partial_lane_fn(cluster, producer, command_index, wave_index, head_lane, slice_index, 2, seed_value),
-          partial_lane_fn(cluster, producer, command_index, wave_index, head_lane, slice_index, 1, seed_value),
-          partial_lane_fn(cluster, producer, command_index, wave_index, head_lane, slice_index, 0, seed_value)
-      }};
-    end
-  endfunction
-
-{_leaf_assigns(cluster_producers)}
-
   {top_name} dut (
       .clk(clk),
       .rst_n(rst_n),
-      .leaf_valid(leaf_valid),
-      .leaf_ready(leaf_ready),
-      .leaf_command_id(leaf_command_id),
-      .leaf_head_id(leaf_head_id),
-      .leaf_global_max(leaf_global_max),
-      .leaf_exp_sum(leaf_exp_sum),
-      .leaf_slice(leaf_slice),
-      .leaf_last(leaf_last),
-      .leaf_value(leaf_value),
+      .command_valid(command_valid),
+      .command_ready(command_ready),
+      .command_id(command_id),
+      .command_head_base(command_head_base),
+      .command_score_multiplier(command_score_multiplier),
+      .command_score_shift(command_score_shift),
+      .input_valid(input_valid),
+      .input_ready(input_ready),
+      .input_last(input_last),
+      .input_query(input_query),
+      .input_key(input_key),
+      .value_read_req_valid(value_read_req_valid),
+      .value_read_req_ready(value_read_req_ready),
+      .value_read_req_address(value_read_req_address),
+      .value_read_req_slice(value_read_req_slice),
+      .value_response_valid(value_response_valid),
+      .value_response_ready(value_response_ready),
+      .value_response_address(value_response_address),
+      .value_response_slice(value_response_slice),
+      .value_response_matrix(value_response_matrix),
       .root_valid(root_valid),
       .root_ready(root_ready),
       .root_command_id(root_command_id),
@@ -604,15 +589,16 @@ module tb;
       .root_last(root_last),
       .root_value(root_value),
       .cluster_cycle_count(cluster_cycle_count),
-      .cluster_local_root_completed_count(cluster_local_root_completed_count),
-      .cluster_temporal_merge_completed_count(cluster_temporal_merge_completed_count),
+      .cluster_wave_command_accept_count(cluster_wave_command_accept_count),
+      .cluster_wave_command_issue_wait_cycles(cluster_wave_command_issue_wait_cycles),
+      .cluster_producer_ready_skew_cycles(cluster_producer_ready_skew_cycles),
       .cluster_emitted_beat_count(cluster_emitted_beat_count),
       .cluster_completed_command_count(cluster_completed_command_count),
-      .cluster_local_stall_cycles(cluster_local_stall_cycles),
-      .cluster_output_stall_cycles(cluster_output_stall_cycles),
       .cluster_group_contract_error(cluster_group_contract_error),
       .cluster_local_tree_protocol_error(cluster_local_tree_protocol_error),
       .cluster_temporal_merge_protocol_error(cluster_temporal_merge_protocol_error),
+      .cluster_reducer_protocol_error(cluster_reducer_protocol_error),
+      .cluster_atomic_command_protocol_error(cluster_atomic_command_protocol_error),
       .cluster_protocol_error(cluster_protocol_error),
       .global_cycle_count(global_cycle_count),
       .global_root_completed_count(global_root_completed_count),
@@ -640,42 +626,37 @@ module tb;
 
   always #5 clk = ~clk;
 
-  initial begin
-{_command_init(workload)}
-{_ready_init(output_ready_pattern)}
-    root_ready = 1'b1;
-  end
-
   always @* begin
+    command_valid = rst_n && (issued_commands < COMMANDS);
+    command_id = command_valid ? command_id_mem[issued_commands] : 16'd0;
+    command_head_base = command_valid ? head_base_mem[issued_commands] : 5'd0;
+    command_score_multiplier = command_valid ? multiplier_mem[issued_commands] : 32'd0;
+    command_score_shift = command_valid ? shift_mem[issued_commands] : 6'd0;
+    input_valid = 856'd0;
+    input_last = 856'd0;
+    input_query = 109568'd0;
+    input_key = 109568'd0;
+    value_read_req_ready = ~1712'd0;
+    value_response_valid = 1712'd0;
+    value_response_address = 23968'd0;
+    value_response_slice = 6848'd0;
+    value_response_matrix = 876544'd0;
     root_ready = root_ready_mem[cycle % ROOT_READY_PATTERN_LEN];
   end
 
   always @(posedge clk) begin
     if (!rst_n) begin
       cycle <= 0;
+      issued_commands <= 0;
       root_seen <= 0;
       first_root_cycle <= -1;
       last_root_cycle <= -1;
       pending_summary <= 0;
-      cluster_0_beat_count_q <= 0;
-      cluster_1_beat_count_q <= 0;
-      cluster_2_beat_count_q <= 0;
-      cluster_3_beat_count_q <= 0;
-      cluster_4_beat_count_q <= 0;
-      cluster_5_beat_count_q <= 0;
-      cluster_6_beat_count_q <= 0;
-      cluster_7_beat_count_q <= 0;
-      cluster_8_beat_count_q <= 0;
-      cluster_9_beat_count_q <= 0;
-      cluster_10_beat_count_q <= 0;
-      cluster_11_beat_count_q <= 0;
-      cluster_12_beat_count_q <= 0;
-      cluster_13_beat_count_q <= 0;
-      cluster_14_beat_count_q <= 0;
-      cluster_15_beat_count_q <= 0;
     end else begin
       cycle <= cycle + 1;
-{_cluster_seq_body(cluster_producers)}
+      if (command_valid && command_ready) begin
+        issued_commands <= issued_commands + 1;
+      end
 {_cluster_result_logging()}
       if (root_valid && root_ready) begin
         $display("ROOT_RESULT cmd=%0d head=%0d slice=%0d last=%0d value=%080x cycle=%0d",
@@ -702,8 +683,13 @@ module tb;
   end
 
   initial begin
-    #1 rst_n = 0;
-    #30 rst_n = 1;
+{_command_init(workload)}
+{_ready_init(output_ready_pattern)}
+    clk = 1'b0;
+    rst_n = 1'b0;
+    repeat (3) @(posedge clk);
+    @(negedge clk);
+    rst_n = 1'b1;
   end
 endmodule
 """
@@ -766,16 +752,18 @@ def _parse_summary(stdout: str) -> tuple[dict[str, int], list[dict[str, int]], l
             cluster_summaries.append(
                 {
                     "cluster": int(match.group(1)),
-                    "local_root_completed_count": int(match.group(2)),
-                    "temporal_merge_completed_count": int(match.group(3)),
-                    "emitted_beat_count": int(match.group(4)),
-                    "completed_command_count": int(match.group(5)),
-                    "local_stall_cycles": int(match.group(6)),
-                    "output_stall_cycles": int(match.group(7)),
+                    "cycle_count": int(match.group(2)),
+                    "wave_command_accept_count": int(match.group(3)),
+                    "wave_command_issue_wait_cycles": int(match.group(4)),
+                    "producer_ready_skew_cycles": int(match.group(5)),
+                    "emitted_beat_count": int(match.group(6)),
+                    "completed_command_count": int(match.group(7)),
                     "group_contract_error": int(match.group(8)),
                     "local_tree_protocol_error": int(match.group(9)),
                     "temporal_merge_protocol_error": int(match.group(10)),
-                    "protocol_error": int(match.group(11)),
+                    "reducer_protocol_error": int(match.group(11)),
+                    "atomic_command_protocol_error": int(match.group(12)),
+                    "protocol_error": int(match.group(13)),
                 }
             )
             continue
@@ -821,6 +809,7 @@ def build_report(
         rtl_dir = temp_dir / "rtl"
         generate(resolved_config, rtl_dir)
         testbench_path = temp_dir / "tb.v"
+        fakeram_path = temp_dir / "fakeram45_2048x39.v"
         testbench_path.write_text(
             _testbench(
                 top_name=str(resolved_config["top_name"]),
@@ -830,22 +819,26 @@ def build_report(
             ),
             encoding="utf-8",
         )
+        fakeram_path.write_text(_FAKERAM_MODEL, encoding="utf-8")
         sim_path = temp_dir / "sim.out"
-        subprocess.run(
-            [
-                _tool("iverilog"),
-                "-g2012",
-                "-o",
-                str(sim_path),
-                str(rtl_dir / "top.v"),
-                str(testbench_path),
-            ],
-            check=True,
-            capture_output=True,
-            text=True,
-            timeout=max(180, timeout_sec),
-        )
         try:
+            subprocess.run(
+                [
+                    _tool("iverilog"),
+                    "-g2012",
+                    "-s",
+                    "tb",
+                    "-o",
+                    str(sim_path),
+                    str(rtl_dir / "top.v"),
+                    str(fakeram_path),
+                    str(testbench_path),
+                ],
+                check=True,
+                capture_output=True,
+                text=True,
+                timeout=timeout_sec,
+            )
             run_result = subprocess.run(
                 [_tool("vvp"), str(sim_path)],
                 check=True,
@@ -857,7 +850,7 @@ def build_report(
             stdout = run_result.stdout
         except subprocess.TimeoutExpired as exc:
             stdout = exc.stdout or ""
-            simulation_status = "timeout"
+            simulation_status = "subprocess_timeout"
         if isinstance(stdout, bytes):
             stdout = stdout.decode("utf-8", errors="replace")
 
@@ -871,8 +864,7 @@ def build_report(
     expected_cluster_summaries = [
         {
             "cluster": cluster,
-            "local_root_completed_count": int(workload["command_count"]) * 1024,
-            "temporal_merge_completed_count": int(workload["command_count"]) * 896,
+            "wave_command_accept_count": int(workload["command_count"]),
             "emitted_beat_count": int(workload["command_count"]) * 128,
             "completed_command_count": int(workload["command_count"]),
         }
@@ -880,24 +872,37 @@ def build_report(
     ]
     cluster_summaries_ok = len(cluster_summaries) == 16 and all(
         cluster_summaries[index]["cluster"] == expected_cluster_summaries[index]["cluster"]
-        and cluster_summaries[index]["local_root_completed_count"] == expected_cluster_summaries[index]["local_root_completed_count"]
-        and cluster_summaries[index]["temporal_merge_completed_count"] == expected_cluster_summaries[index]["temporal_merge_completed_count"]
+        and cluster_summaries[index]["wave_command_accept_count"] == expected_cluster_summaries[index]["wave_command_accept_count"]
         and cluster_summaries[index]["emitted_beat_count"] == expected_cluster_summaries[index]["emitted_beat_count"]
         and cluster_summaries[index]["completed_command_count"] == expected_cluster_summaries[index]["completed_command_count"]
         and cluster_summaries[index]["group_contract_error"] == 0
         and cluster_summaries[index]["local_tree_protocol_error"] == 0
         and cluster_summaries[index]["temporal_merge_protocol_error"] == 0
+        and cluster_summaries[index]["reducer_protocol_error"] == 0
+        and cluster_summaries[index]["atomic_command_protocol_error"] == 0
         and cluster_summaries[index]["protocol_error"] == 0
         for index in range(16)
     )
-    summary_ok = bool(summary) and summary.get("protocol_error", 1) == 0 and summary.get("global_tree_protocol_error", 1) == 0 and summary.get("global_order_protocol_error", 1) == 0 and summary.get("global_finalizer_protocol_error", 1) == 0
+    summary_ok = (
+        bool(summary)
+        and summary.get("protocol_error", 1) == 0
+        and summary.get("global_tree_protocol_error", 1) == 0
+        and summary.get("global_order_protocol_error", 1) == 0
+        and summary.get("global_finalizer_protocol_error", 1) == 0
+    )
+    row_audit = compare_compositional_rows(
+        expected_cluster_rows=reference["cluster_rows"],
+        observed_cluster_rows=observed_cluster_rows_by_cluster,
+        expected_root_rows=reference["root_rows"],
+        observed_root_rows=normalized_root_rows,
+    )
+    timed_out = simulation_status != "ok" or tb_timeout_cycle is not None
     passed = (
         simulation_status == "ok"
         and tb_timeout_cycle is None
         and summary_ok
         and cluster_summaries_ok
-        and observed_cluster_rows_by_cluster == reference["cluster_rows"]
-        and normalized_root_rows == reference["root_rows"]
+        and bool(row_audit["passed"])
         and summary.get("outputs") == len(reference["root_rows"])
         and summary.get("global_root_completed_count") == len(reference["root_rows"])
         and summary.get("global_finalizer_accepted_count") == len(reference["root_rows"])
@@ -906,7 +911,9 @@ def build_report(
 
     report: JsonDict = {
         "passed": passed,
-        "simulation_status": simulation_status if tb_timeout_cycle is None else "testbench_timeout",
+        "simulation_status": "testbench_timeout" if tb_timeout_cycle is not None else simulation_status,
+        "timed_out": timed_out,
+        "timeout_classification": "failed_inconclusive" if timed_out else None,
         "interface_mode": "stress" if tuple(output_ready_pattern) != (True,) else "ideal",
         "clusters": 16,
         "cluster_producers": list(cluster_producers),
@@ -935,6 +942,7 @@ def build_report(
         "cluster_summaries": cluster_summaries,
         "timeout_sec": int(timeout_sec),
         "tb_timeout_cycle": tb_timeout_cycle,
+        "full_row_audit": row_audit,
         "service_model": service_model,
     }
     linkage = dict(resolved_config.get("report_links") or {})
