@@ -1,0 +1,46 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_score32_local_temporal_reducer_gqa8_v1",
+  "proposal_path": "docs/proposals/prop_l1_decoder_attention_score32_local_temporal_reducer_gqa8_v1/proposal.json",
+  "source_commit_note": "Generate the DB task only after this job-prep change is merged, and pin source_requirement.required_sha to the then-current origin/master commit containing both the harness and task-generator support.",
+  "requested_items": [
+    {
+      "item_id": "l1_decoder_attention_score32_local_temporal_reducer_gqa8_ppa_v1",
+      "task_type": "l1_sweep",
+      "title": "Layer 1 GQA8 score32 local temporal reducer physical harness boundary sweep",
+      "proposal_id": "prop_l1_decoder_attention_score32_local_temporal_reducer_gqa8_v1",
+      "proposal_path": "docs/proposals/prop_l1_decoder_attention_score32_local_temporal_reducer_gqa8_v1/proposal.json",
+      "objective": "Measure Nangate45 PPA for the corrected merged GQA8 score32 exact local temporal reducer physical harness at p53/p54 in reducer and source_only modes using a bounded macro-style hierarchy sweep, accepting boundary-class flow outcomes as evidence.",
+      "status": "pending",
+      "evaluation_mode": "frontier_followup",
+      "abstraction_layer": "decoder_attention_score32_local_temporal_reducer_gqa8",
+      "comparison_role": "functional_gqa8_local_hierarchy_anchor",
+      "paired_baseline_item_id": "l1_decoder_attention_score32_exact_partial_gqa8_dual_stream_producer_ppa_v1",
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "configs": [
+        "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p53_reducer_w8/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p53_source_only_w8/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p54_reducer_w8/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p54_source_only_w8/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/attention_score32_local_temporal_reducer_gqa8_v1/sweeps/nangate45_attention_score32_local_temporal_reducer_gqa8_physical_harness_boundary.json",
+      "out_root": "runs/designs/npu_blocks",
+      "expected_outputs": [
+        "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p53_reducer_w8/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p53_reducer_w8/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p53_source_only_w8/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p53_source_only_w8/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p54_reducer_w8/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p54_reducer_w8/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p54_source_only_w8/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p54_source_only_w8/timing_debug_report.md"
+      ],
+      "acceptance_notes": "Run the GQA8 physical-harness generator, guard, run_block_sweep, and timing-summary commands for each config. Keep the sweep bounded, make no I/O pad assumptions, and accept ok, flow_failed, and timeout-class rows as explicit boundary evidence. Treat the structural-only reducer-vs-source_only delta as nonlinear until producer fan-in and global c16 composition are physically closed.",
+      "expected_result": {
+        "direction": "measure_gqa8_local_temporal_reducer_boundary",
+        "reason": "The corrected merged GQA8 harness establishes whether the 53/54-way eight-wave local hierarchy remains physically explorable before producer fan-in and global c16 composition consume it."
+      },
+      "notes": "Replacement remote OpenROAD request for the corrected GQA8 harness. The harness is structural-only, the reducer-vs-source_only delta is nonlinear until producer fan-in and global c16 closure exist, and the queued payload must carry exact developer_loop proposal linkage plus a queue-time source_requirement pin to the merged job-prep commit."
+    }
+  ]
+}
