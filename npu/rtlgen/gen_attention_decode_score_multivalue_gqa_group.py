@@ -39,6 +39,8 @@ def _validate(config: dict[str, Any]) -> dict[str, int | str]:
     divider_impl = str(body.get("divider_impl", "iterative_restoring")).strip()
     query_heads_per_kv = int(body.get("query_heads_per_kv", 8))
     parallel_lanes = int(body.get("parallel_query_head_lanes", query_heads_per_kv))
+    result_mode = str(body.get("result_mode", "normalized")).strip().lower()
+    head_id_bits = int(body.get("head_id_bits", 5))
 
     if max_blocks < 8 or max_blocks > 16384 or max_blocks & (max_blocks - 1):
         raise SystemExit("max_blocks must be a power of two in [8, 16384]")
@@ -54,17 +56,11 @@ def _validate(config: dict[str, Any]) -> dict[str, int | str]:
         raise SystemExit("query_heads_per_kv must be 8 for Llama7B GQA8")
     if parallel_lanes not in {1, 2, 4, 8} or query_heads_per_kv % parallel_lanes:
         raise SystemExit("parallel_query_head_lanes must be one of 1,2,4,8 and divide query_heads_per_kv")
+    if result_mode not in {"normalized", "exact_partial"}:
+        raise SystemExit("result_mode must be normalized or exact_partial")
+    if head_id_bits < 1 or head_id_bits > 8:
+        raise SystemExit("head_id_bits must be in [1, 8]")
 
-    body.update(
-        {
-            "max_blocks": max_blocks,
-            "array_n": array_n,
-            "value_slices": value_slices,
-            "score_scale_lanes_per_cycle": scale_lanes,
-            "divider_impl": divider_impl,
-            "query_heads_per_kv": query_heads_per_kv,
-        }
-    )
     return {
         "top_name": top_name,
         "max_blocks": max_blocks,
@@ -74,6 +70,8 @@ def _validate(config: dict[str, Any]) -> dict[str, int | str]:
         "divider_impl": divider_impl,
         "query_heads_per_kv": query_heads_per_kv,
         "parallel_query_head_lanes": parallel_lanes,
+        "result_mode": result_mode,
+        "head_id_bits": head_id_bits,
     }
 
 
@@ -90,9 +88,20 @@ def _match_expr(name: str, width: int, count: int) -> str:
     return " && ".join(f"({_bus_slice(name, idx, width)} == {base})" for idx in range(1, count))
 
 
-def _result_mux_cases(query_heads_per_kv: int) -> str:
+def _result_mux_cases(
+    query_heads_per_kv: int,
+    *,
+    result_value_bits: int,
+    partial_mode: bool,
+    head_id_bits: int,
+) -> str:
     cases: list[str] = []
     for head in range(query_heads_per_kv):
+        head_id_assign = ""
+        if partial_mode:
+            head_id_assign = (
+                f"\n        result_head_id = {_bus_slice('child_result_head_id_bus', head, head_id_bits)};"
+            )
         cases.append(
             f"""      3'd{head}: begin
         result_command_id = {_bus_slice("child_result_command_id_bus", head, 16)};
@@ -100,7 +109,7 @@ def _result_mux_cases(query_heads_per_kv: int) -> str:
         result_exp_sum = {_bus_slice("child_result_exp_sum_bus", head, 33)};
         result_slice = {_bus_slice("child_result_slice_bus", head, 4)};
         result_last = child_result_last[{head}];
-        result_value = {_bus_slice("child_result_value_bus", head, 320)};
+        result_value = {_bus_slice("child_result_value_bus", head, result_value_bits)};{head_id_assign}
       end"""
         )
     return "\n".join(cases)
@@ -113,9 +122,23 @@ def _result_ready_assigns(query_heads_per_kv: int, *, selector: str = "result_he
     return "\n".join(assigns)
 
 
-def _cluster_instances(cluster_top: str, query_heads_per_kv: int) -> str:
+def _cluster_instances(
+    cluster_top: str,
+    query_heads_per_kv: int,
+    *,
+    result_value_bits: int,
+    partial_mode: bool,
+    head_id_bits: int,
+) -> str:
     instances: list[str] = []
     for head in range(query_heads_per_kv):
+        command_head_port = ""
+        result_head_port = ""
+        if partial_mode:
+            command_head_port = f"\n      .command_head_id(command_head_base + {head_id_bits}'d{head}),"
+            result_head_port = (
+                f"\n      .result_head_id({_bus_slice('child_result_head_id_bus', head, head_id_bits)}),"
+            )
         instances.append(
             f"""  {cluster_top} u_head_{head} (
       .clk(clk),
@@ -123,7 +146,7 @@ def _cluster_instances(cluster_top: str, query_heads_per_kv: int) -> str:
       .command_valid(command_valid && command_ready),
       .command_ready(child_command_ready[{head}]),
       .command_id(command_id),
-      .command_block_count(command_block_count),
+      .command_block_count(command_block_count),{command_head_port}
       .command_score_multiplier(command_score_multiplier),
       .command_score_shift(command_score_shift),
       .input_valid(input_valid && input_ready),
@@ -145,9 +168,9 @@ def _cluster_instances(cluster_top: str, query_heads_per_kv: int) -> str:
       .result_command_id({_bus_slice("child_result_command_id_bus", head, 16)}),
       .result_global_max({_bus_slice("child_result_global_max_bus", head, 32)}),
       .result_exp_sum({_bus_slice("child_result_exp_sum_bus", head, 33)}),
-      .result_slice({_bus_slice("child_result_slice_bus", head, 4)}),
+      .result_slice({_bus_slice("child_result_slice_bus", head, 4)}),{result_head_port}
       .result_last(child_result_last[{head}]),
-      .result_value({_bus_slice("child_result_value_bus", head, 320)}),
+      .result_value({_bus_slice("child_result_value_bus", head, result_value_bits)}),
       .accepted_count({_bus_slice("child_accepted_count_bus", head, 32)}),
       .completed_count({_bus_slice("child_completed_count_bus", head, 32)}),
       .cycle_count({_bus_slice("child_cycle_count_bus", head, 32)}),
@@ -157,9 +180,26 @@ def _cluster_instances(cluster_top: str, query_heads_per_kv: int) -> str:
     return "\n\n".join(instances)
 
 
-def _folded_cluster_instances(cluster_top: str, parallel_lanes: int) -> str:
+def _folded_cluster_instances(
+    cluster_top: str,
+    parallel_lanes: int,
+    *,
+    result_value_bits: int,
+    partial_mode: bool,
+    head_id_bits: int,
+) -> str:
     instances: list[str] = []
     for lane in range(parallel_lanes):
+        command_head_port = ""
+        result_head_port = ""
+        if partial_mode:
+            command_head_port = (
+                "\n      .command_head_id("
+                f"child_command_head_base + ((wave_q * PARALLEL_QUERY_HEAD_LANES) + {head_id_bits}'d{lane})),"
+            )
+            result_head_port = (
+                f"\n      .result_head_id({_bus_slice('child_result_head_id_bus', lane, head_id_bits)}),"
+            )
         instances.append(
             f"""  wire signed [7:0] lane_input_query_{lane} =
       input_query[((wave_q * PARALLEL_QUERY_HEAD_LANES + {lane}) * 8) +: 8];
@@ -170,7 +210,7 @@ def _folded_cluster_instances(cluster_top: str, parallel_lanes: int) -> str:
       .command_valid(child_command_valid),
       .command_ready(child_command_ready[{lane}]),
       .command_id(child_command_id),
-      .command_block_count(child_command_block_count),
+      .command_block_count(child_command_block_count),{command_head_port}
       .command_score_multiplier(child_command_score_multiplier),
       .command_score_shift(child_command_score_shift),
       .input_valid(input_valid && input_ready),
@@ -192,9 +232,9 @@ def _folded_cluster_instances(cluster_top: str, parallel_lanes: int) -> str:
       .result_command_id({_bus_slice("child_result_command_id_bus", lane, 16)}),
       .result_global_max({_bus_slice("child_result_global_max_bus", lane, 32)}),
       .result_exp_sum({_bus_slice("child_result_exp_sum_bus", lane, 33)}),
-      .result_slice({_bus_slice("child_result_slice_bus", lane, 4)}),
+      .result_slice({_bus_slice("child_result_slice_bus", lane, 4)}),{result_head_port}
       .result_last(child_result_last[{lane}]),
-      .result_value({_bus_slice("child_result_value_bus", lane, 320)}),
+      .result_value({_bus_slice("child_result_value_bus", lane, result_value_bits)}),
       .accepted_count({_bus_slice("child_accepted_count_bus", lane, 32)}),
       .completed_count({_bus_slice("child_completed_count_bus", lane, 32)}),
       .cycle_count({_bus_slice("child_cycle_count_bus", lane, 32)}),
@@ -208,11 +248,43 @@ def _wrapper(*, top_name: str, params: dict[str, int | str], cluster_top: str) -
     max_blocks = int(params["max_blocks"])
     value_slices = int(params["value_slices"])
     query_heads_per_kv = int(params["query_heads_per_kv"])
+    partial_mode = str(params["result_mode"]) == "exact_partial"
+    head_id_bits = int(params["head_id_bits"])
+    result_value_bits = 328 if partial_mode else 320
     addr_bits = 14
     slice_bits = _clog2(value_slices)
     head_bits = _clog2(query_heads_per_kv)
     addr_match = _match_expr("child_value_read_req_address_bus", addr_bits, query_heads_per_kv)
     slice_match = _match_expr("child_value_read_req_slice_bus", slice_bits, query_heads_per_kv)
+    command_head_base_port = (
+        f"\n    input  wire [{head_id_bits - 1}:0] command_head_base," if partial_mode else ""
+    )
+    result_head_id_port = (
+        f"\n    output reg  [{head_id_bits - 1}:0] result_head_id," if partial_mode else ""
+    )
+    active_head_base_decl = (
+        f"\n  reg [HEAD_ID_BITS-1:0] active_command_head_base_q;" if partial_mode else ""
+    )
+    child_result_head_id_decl = (
+        f"\n  wire [QUERY_HEADS_PER_KV*HEAD_ID_BITS-1:0] child_result_head_id_bus;" if partial_mode else ""
+    )
+    active_head_base_reset = (
+        "\n      active_command_head_base_q <= {HEAD_ID_BITS{1'b0}};" if partial_mode else ""
+    )
+    active_head_base_accept = (
+        "\n        active_command_head_base_q <= command_head_base;" if partial_mode else ""
+    )
+    head_id_default = f"\n    result_head_id = {head_id_bits}'d0;" if partial_mode else ""
+    head_id_default_case = (
+        f"\n        result_head_id = {head_id_bits}'d0;" if partial_mode else ""
+    )
+    head_id_check = (
+        "\n        if (result_head_id != (active_command_head_base_q + result_head_q)) begin\n"
+        "          protocol_error_q <= 1'b1;\n"
+        "        end"
+        if partial_mode
+        else ""
+    )
     return f"""// Auto-generated by npu/rtlgen/gen_attention_decode_score_multivalue_gqa_group.py
 module {top_name} (
     input  wire         clk,
@@ -220,7 +292,7 @@ module {top_name} (
     input  wire         command_valid,
     output wire         command_ready,
     input  wire [15:0]  command_id,
-    input  wire [14:0]  command_block_count,
+    input  wire [14:0]  command_block_count,{command_head_base_port}
     input  wire [31:0]  command_score_multiplier,
     input  wire [5:0]   command_score_shift,
     input  wire         input_valid,
@@ -240,12 +312,13 @@ module {top_name} (
     output wire         result_valid,
     input  wire         result_ready,
     output wire [{head_bits - 1}:0] result_head,
+{result_head_id_port}
     output reg  [15:0]  result_command_id,
     output reg  signed [31:0] result_global_max,
     output reg  [32:0]  result_exp_sum,
     output reg  [{slice_bits - 1}:0] result_slice,
     output reg          result_last,
-    output reg  [319:0] result_value,
+    output reg  [{result_value_bits - 1}:0] result_value,
     output reg  [31:0]  accepted_count,
     output reg  [31:0]  completed_count,
     output reg  [31:0]  cycle_count,
@@ -254,11 +327,12 @@ module {top_name} (
   localparam integer MAX_BLOCKS = {max_blocks};
   localparam integer VALUE_SLICES = {value_slices};
   localparam integer QUERY_HEADS_PER_KV = {query_heads_per_kv};
+  localparam integer HEAD_ID_BITS = {head_id_bits};
 
   reg command_active_q;
   reg [{head_bits - 1}:0] result_head_q;
   reg [{slice_bits - 1}:0] expected_slice_q;
-  reg protocol_error_q;
+  reg protocol_error_q;{active_head_base_decl}
 
   wire [QUERY_HEADS_PER_KV-1:0] child_command_ready;
   wire [QUERY_HEADS_PER_KV-1:0] child_input_ready;
@@ -276,7 +350,7 @@ module {top_name} (
   wire [QUERY_HEADS_PER_KV*32-1:0] child_result_global_max_bus;
   wire [QUERY_HEADS_PER_KV*33-1:0] child_result_exp_sum_bus;
   wire [QUERY_HEADS_PER_KV*{slice_bits}-1:0] child_result_slice_bus;
-  wire [QUERY_HEADS_PER_KV*320-1:0] child_result_value_bus;
+  wire [QUERY_HEADS_PER_KV*{result_value_bits}-1:0] child_result_value_bus;{child_result_head_id_decl}
   wire [QUERY_HEADS_PER_KV*32-1:0] child_accepted_count_bus;
   wire [QUERY_HEADS_PER_KV*32-1:0] child_completed_count_bus;
   wire [QUERY_HEADS_PER_KV*32-1:0] child_cycle_count_bus;
@@ -317,28 +391,28 @@ module {top_name} (
     result_exp_sum = 33'd0;
     result_slice = {slice_bits}'d0;
     result_last = 1'b0;
-    result_value = 320'd0;
+    result_value = {result_value_bits}'d0;{head_id_default}
     case (result_head_q)
-{_result_mux_cases(query_heads_per_kv)}
+{_result_mux_cases(query_heads_per_kv, result_value_bits=result_value_bits, partial_mode=partial_mode, head_id_bits=head_id_bits)}
       default: begin
         result_command_id = 16'd0;
         result_global_max = 32'sd0;
         result_exp_sum = 33'd0;
         result_slice = {slice_bits}'d0;
         result_last = 1'b0;
-        result_value = 320'd0;
+        result_value = {result_value_bits}'d0;{head_id_default_case}
       end
     endcase
   end
 
-{_cluster_instances(cluster_top, query_heads_per_kv)}
+{_cluster_instances(cluster_top, query_heads_per_kv, result_value_bits=result_value_bits, partial_mode=partial_mode, head_id_bits=head_id_bits)}
 
   always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
       command_active_q <= 1'b0;
       result_head_q <= {head_bits}'d0;
       expected_slice_q <= {slice_bits}'d0;
-      protocol_error_q <= 1'b0;
+      protocol_error_q <= 1'b0;{active_head_base_reset}
       accepted_count <= 32'd0;
       completed_count <= 32'd0;
       cycle_count <= 32'd0;
@@ -353,6 +427,7 @@ module {top_name} (
         command_active_q <= 1'b1;
         result_head_q <= {head_bits}'d0;
         expected_slice_q <= {slice_bits}'d0;
+{active_head_base_accept}
         accepted_count <= accepted_count + 1'b1;
       end
 
@@ -360,6 +435,7 @@ module {top_name} (
         if (result_slice != expected_slice_q) begin
           protocol_error_q <= 1'b1;
         end
+{head_id_check}
         if (expected_slice_q == VALUE_SLICES - 1) begin
           if (!result_last) begin
             protocol_error_q <= 1'b1;
@@ -389,6 +465,9 @@ def _folded_wrapper(*, top_name: str, params: dict[str, int | str], cluster_top:
     value_slices = int(params["value_slices"])
     query_heads_per_kv = int(params["query_heads_per_kv"])
     parallel_lanes = int(params["parallel_query_head_lanes"])
+    partial_mode = str(params["result_mode"]) == "exact_partial"
+    head_id_bits = int(params["head_id_bits"])
+    result_value_bits = 328 if partial_mode else 320
     waves = query_heads_per_kv // parallel_lanes
     addr_bits = 14
     slice_bits = _clog2(value_slices)
@@ -396,6 +475,41 @@ def _folded_wrapper(*, top_name: str, params: dict[str, int | str], cluster_top:
     wave_bits = _clog2(waves)
     addr_match = _match_expr("child_value_read_req_address_bus", addr_bits, parallel_lanes)
     slice_match = _match_expr("child_value_read_req_slice_bus", slice_bits, parallel_lanes)
+    command_head_base_port = (
+        f"\n    input  wire [{head_id_bits - 1}:0] command_head_base," if partial_mode else ""
+    )
+    result_head_id_port = (
+        f"\n    output reg  [{head_id_bits - 1}:0] result_head_id," if partial_mode else ""
+    )
+    active_head_base_decl = (
+        f"\n  reg [HEAD_ID_BITS-1:0] active_command_head_base_q;" if partial_mode else ""
+    )
+    child_head_id_decl = (
+        f"\n  wire [PARALLEL_QUERY_HEAD_LANES*HEAD_ID_BITS-1:0] child_result_head_id_bus;" if partial_mode else ""
+    )
+    child_command_head_base_decl = (
+        "\n  wire [HEAD_ID_BITS-1:0] child_command_head_base =\n"
+        "      command_active_q ? active_command_head_base_q : command_head_base;"
+        if partial_mode
+        else ""
+    )
+    active_head_base_reset = (
+        "\n      active_command_head_base_q <= {HEAD_ID_BITS{1'b0}};" if partial_mode else ""
+    )
+    active_head_base_accept = (
+        "\n        active_command_head_base_q <= command_head_base;" if partial_mode else ""
+    )
+    head_id_default = f"\n    result_head_id = {head_id_bits}'d0;" if partial_mode else ""
+    head_id_default_case = (
+        f"\n        result_head_id = {head_id_bits}'d0;" if partial_mode else ""
+    )
+    head_id_check = (
+        "\n        if (result_head_id != (active_command_head_base_q + result_head)) begin\n"
+        "          protocol_error_q <= 1'b1;\n"
+        "        end"
+        if partial_mode
+        else ""
+    )
     return f"""// Auto-generated folded GQA wrapper by npu/rtlgen/gen_attention_decode_score_multivalue_gqa_group.py
 module {top_name} (
     input  wire         clk,
@@ -403,7 +517,7 @@ module {top_name} (
     input  wire         command_valid,
     output wire         command_ready,
     input  wire [15:0]  command_id,
-    input  wire [14:0]  command_block_count,
+    input  wire [14:0]  command_block_count,{command_head_base_port}
     input  wire [31:0]  command_score_multiplier,
     input  wire [5:0]   command_score_shift,
     input  wire         input_valid,
@@ -423,12 +537,13 @@ module {top_name} (
     output wire         result_valid,
     input  wire         result_ready,
     output wire [2:0]   result_head,
+{result_head_id_port}
     output reg  [15:0]  result_command_id,
     output reg  signed [31:0] result_global_max,
     output reg  [32:0]  result_exp_sum,
     output reg  [{slice_bits - 1}:0] result_slice,
     output reg          result_last,
-    output reg  [319:0] result_value,
+    output reg  [{result_value_bits - 1}:0] result_value,
     output reg  [31:0]  accepted_count,
     output reg  [31:0]  completed_count,
     output reg  [31:0]  cycle_count,
@@ -439,6 +554,7 @@ module {top_name} (
   localparam integer QUERY_HEADS_PER_KV = {query_heads_per_kv};
   localparam integer PARALLEL_QUERY_HEAD_LANES = {parallel_lanes};
   localparam integer QUERY_HEAD_WAVES = {waves};
+  localparam integer HEAD_ID_BITS = {head_id_bits};
 
   reg command_active_q;
   reg launch_pending_q;
@@ -449,7 +565,7 @@ module {top_name} (
   reg [14:0] active_block_count_q;
   reg [31:0] active_score_multiplier_q;
   reg [5:0] active_score_shift_q;
-  reg protocol_error_q;
+  reg protocol_error_q;{active_head_base_decl}
 
   wire [PARALLEL_QUERY_HEAD_LANES-1:0] child_command_ready;
   wire [PARALLEL_QUERY_HEAD_LANES-1:0] child_input_ready;
@@ -467,7 +583,7 @@ module {top_name} (
   wire [PARALLEL_QUERY_HEAD_LANES*32-1:0] child_result_global_max_bus;
   wire [PARALLEL_QUERY_HEAD_LANES*33-1:0] child_result_exp_sum_bus;
   wire [PARALLEL_QUERY_HEAD_LANES*{slice_bits}-1:0] child_result_slice_bus;
-  wire [PARALLEL_QUERY_HEAD_LANES*320-1:0] child_result_value_bus;
+  wire [PARALLEL_QUERY_HEAD_LANES*{result_value_bits}-1:0] child_result_value_bus;{child_head_id_decl}
   wire [PARALLEL_QUERY_HEAD_LANES*32-1:0] child_accepted_count_bus;
   wire [PARALLEL_QUERY_HEAD_LANES*32-1:0] child_completed_count_bus;
   wire [PARALLEL_QUERY_HEAD_LANES*32-1:0] child_cycle_count_bus;
@@ -481,6 +597,7 @@ module {top_name} (
   wire [31:0] child_command_score_multiplier =
       command_active_q ? active_score_multiplier_q : command_score_multiplier;
   wire [5:0] child_command_score_shift = command_active_q ? active_score_shift_q : command_score_shift;
+{child_command_head_base_decl}
   wire any_value_req_valid = |child_value_read_req_valid;
   wire all_value_req_valid = &child_value_read_req_valid;
   wire value_req_addr_match = {addr_match};
@@ -514,21 +631,21 @@ module {top_name} (
     result_exp_sum = 33'd0;
     result_slice = {slice_bits}'d0;
     result_last = 1'b0;
-    result_value = 320'd0;
+    result_value = {result_value_bits}'d0;{head_id_default}
     case (result_lane_q)
-{_result_mux_cases(parallel_lanes)}
+{_result_mux_cases(parallel_lanes, result_value_bits=result_value_bits, partial_mode=partial_mode, head_id_bits=head_id_bits)}
       default: begin
         result_command_id = 16'd0;
         result_global_max = 32'sd0;
         result_exp_sum = 33'd0;
         result_slice = {slice_bits}'d0;
         result_last = 1'b0;
-        result_value = 320'd0;
+        result_value = {result_value_bits}'d0;{head_id_default_case}
       end
     endcase
   end
 
-{_folded_cluster_instances(cluster_top, parallel_lanes)}
+{_folded_cluster_instances(cluster_top, parallel_lanes, result_value_bits=result_value_bits, partial_mode=partial_mode, head_id_bits=head_id_bits)}
 
   always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
@@ -541,7 +658,7 @@ module {top_name} (
       active_block_count_q <= 15'd0;
       active_score_multiplier_q <= 32'd0;
       active_score_shift_q <= 6'd0;
-      protocol_error_q <= 1'b0;
+      protocol_error_q <= 1'b0;{active_head_base_reset}
       accepted_count <= 32'd0;
       completed_count <= 32'd0;
       cycle_count <= 32'd0;
@@ -562,6 +679,7 @@ module {top_name} (
         active_block_count_q <= command_block_count;
         active_score_multiplier_q <= command_score_multiplier;
         active_score_shift_q <= command_score_shift;
+{active_head_base_accept}
         accepted_count <= accepted_count + 1'b1;
       end
 
@@ -573,6 +691,7 @@ module {top_name} (
         if (result_slice != expected_slice_q) begin
           protocol_error_q <= 1'b1;
         end
+{head_id_check}
         if (expected_slice_q == VALUE_SLICES - 1) begin
           if (!result_last) begin
             protocol_error_q <= 1'b1;
@@ -620,6 +739,8 @@ def generate(config: dict[str, Any], out_dir: Path) -> None:
                     "value_slices": int(params["value_slices"]),
                     "divider_impl": str(params["divider_impl"]),
                     "score_scale_lanes_per_cycle": int(params["score_scale_lanes_per_cycle"]),
+                    "result_mode": str(params["result_mode"]),
+                    "head_id_bits": int(params["head_id_bits"]),
                 },
             },
             cluster_dir,
@@ -643,6 +764,8 @@ def generate(config: dict[str, Any], out_dir: Path) -> None:
             if parallel_lanes == int(params["query_heads_per_kv"])
             else "decode_m1x8_shared_score_16x8d_value_iterdiv_gqa8_folded_group_v1"
         ),
+        "result_mode": str(params["result_mode"]),
+        "head_id_bits": int(params["head_id_bits"]),
         "query_heads_per_kv": int(params["query_heads_per_kv"]),
         "max_blocks": int(params["max_blocks"]),
         "score_tile_array_n": int(params["array_n"]),
@@ -661,7 +784,7 @@ def generate(config: dict[str, Any], out_dir: Path) -> None:
         ),
         "internal_value_reads_per_block_per_head": int(params["value_slices"]),
         "result_beats_per_command": int(params["query_heads_per_kv"]) * int(params["value_slices"]),
-        "result_value_bits_per_beat": 320,
+        "result_value_bits_per_beat": 328 if str(params["result_mode"]) == "exact_partial" else 320,
         "submodule_manifests": {
             "multivalue_cluster": cluster_manifest,
         },

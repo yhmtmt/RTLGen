@@ -766,6 +766,91 @@ def exact_partial_producer_tree_service_manifest(
     return manifest
 
 
+def exact_partial_dual_stream_gqa8_producer_service_manifest(
+    *,
+    heads: int = 32,
+    max_blocks: int = 8,
+    command_count: int | None = None,
+    blocks_per_stream: int = 2,
+    head_dim: int = 3,
+    head_bases: tuple[int, ...] | None = None,
+    llama_wave_reference_cycles: int | None = None,
+) -> dict[str, object]:
+    head_count = int(heads)
+    block_limit = int(max_blocks)
+    resolved_command_count = int(command_count if command_count is not None else head_count // 8)
+    resolved_blocks_per_stream = int(blocks_per_stream)
+    resolved_head_dim = int(head_dim)
+    if head_count < 8 or head_count > 32 or head_count % 8:
+        raise ValueError("heads must be a multiple of 8 in [8, 32]")
+    if block_limit < 8 or block_limit > 16384 or (block_limit & (block_limit - 1)):
+        raise ValueError("max_blocks must be a power of two in [8, 16384]")
+    if resolved_command_count < 1:
+        raise ValueError("command_count must be positive")
+    if resolved_blocks_per_stream < 1 or resolved_blocks_per_stream > block_limit:
+        raise ValueError("blocks_per_stream must be in [1, max_blocks]")
+    if resolved_head_dim < 1:
+        raise ValueError("head_dim must be positive")
+    if head_bases is None:
+        bases = tuple((group % (head_count // 8)) * 8 for group in range(resolved_command_count))
+    else:
+        bases = tuple(int(value) for value in head_bases)
+    if len(bases) != resolved_command_count:
+        raise ValueError("head_bases length must match command_count")
+    if any(base < 0 or base > 24 or base % 8 for base in bases):
+        raise ValueError("head_bases entries must be aligned to 8 in [0, 24]")
+    cadence_reference = {
+        "reference_cycles": int(llama_wave_reference_cycles),
+        "interpretation": "functional_service_evidence_only_no_frontier_revision",
+    } if llama_wave_reference_cycles is not None else None
+    return {
+        "streams": 2,
+        "query_heads_per_stream": 8,
+        "query_head_groups": head_count // 8,
+        "token_lanes_per_head": 8,
+        "structural_score_macs_per_cycle": 2 * 8 * 8,
+        "command_broadcast_mode": "same_head_base_broadcast_to_both_stream_groups",
+        "head_mapping_contract": "explicit_head_base_plus_lane_no_tile_or_wave_inference",
+        "producer_input_contract": "packed_dual_stream_query_key_atomic_ready_valid",
+        "value_memory_contract": "per_stream_gqa_coalesced_value_reads",
+        "output_schedule_contract": "serialized_head_then_slice_exact_partial_stream",
+        "producer_partial_protocol": {
+            "command_id_bits": 16,
+            "head_id_bits": HEAD_ID_BITS,
+            "global_max_bits": SCORE_BITS,
+            "exp_sum_bits": EXP_SUM_BITS,
+            "slice_index_bits": SLICE_INDEX_BITS,
+            "partial_payload_bits_per_beat": PARTIAL_PAYLOAD_BITS,
+            "partial_link_bits_per_beat": PARTIAL_LINK_BITS,
+        },
+        "producer_block_workload_assumptions": {
+            "command_block_count_range": [1, block_limit],
+            "probe_command_count": resolved_command_count,
+            "per_wave_local_block_ceiling_per_stream": 2,
+            "persistent_local_reducer_waves": 8,
+            "probe_blocks_per_stream": resolved_blocks_per_stream,
+            "probe_head_dim": resolved_head_dim,
+            "probe_head_bases": list(bases),
+            "probe_total_heads": head_count,
+            "probe_token_streams": 2,
+            "multiple_head_groups_run_in_order": True,
+            "head_base_alignment_bits": 3,
+            "global_tile_tokens": 1024,
+            "global_tile_token_blocks": 128,
+            "worst_loaded_jobs_per_datapath_upper_bound": 5,
+        },
+        "comparison_baseline_contract": "python_structured_exact_partial_stream_reference",
+        "comparison_cycle_origin": "cycle0_on_atomic_dual_stream_input_issue",
+        "diagnostic_only_baseline": "none",
+        "llama_wave_functional_service_reference": cadence_reference,
+        "remaining_abstractions": [
+            "53or54_way_global_cluster_aggregation_open",
+            "8_wave_persistent_state_open",
+            "noc_sram_ppa_open",
+        ],
+    }
+
+
 __all__ = [
     "EXACT_STATE_BYTES_PER_CLUSTER_32_HEADS",
     "ExactFinalizedBeat",
@@ -783,6 +868,7 @@ __all__ = [
     "exact_finalized_tree_service_manifest",
     "exact_banked_finalized_tree_service_manifest",
     "exact_partial_producer_tree_service_manifest",
+    "exact_partial_dual_stream_gqa8_producer_service_manifest",
     "exact_banked_finalized_tree_full_wave_saturated_service",
     "finalizer_cycles_per_beat",
     "finalizer_output_latency_cycles",

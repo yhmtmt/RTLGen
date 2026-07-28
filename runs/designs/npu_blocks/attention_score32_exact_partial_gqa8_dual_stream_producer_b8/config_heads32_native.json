@@ -1,0 +1,16 @@
+{
+  "attention_score32_exact_partial_gqa8_dual_stream_producer": {
+    "streams": 2,
+    "query_heads_per_stream": 8,
+    "head_id_bits": 5,
+    "max_blocks": 8,
+    "value_slices": 16
+  },
+  "probe_defaults": {
+    "heads": 32,
+    "command_count": 4,
+    "blocks_per_stream": 2,
+    "head_dim": 3
+  },
+  "top_name": "attention_score32_exact_partial_gqa8_dual_stream_producer_b8"
+}
