@@ -1,0 +1,16 @@
+{
+  "attention_score32_exact_partial_producer_tree": {
+    "clusters": 2,
+    "divider_lanes": 8,
+    "finalizer_banks": 59,
+    "head_id_bits": 5,
+    "max_blocks": 16,
+    "producers": 2,
+    "radix": 2,
+    "value_slices": 16
+  },
+  "probe_defaults": {
+    "heads": 4
+  },
+  "top_name": "attention_score32_exact_partial_producer_tree_c2_r2_l8_b59"
+}
