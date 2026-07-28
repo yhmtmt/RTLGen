@@ -788,6 +788,70 @@ def _write_example_attention_score32_exact_local_temporal_reducer_physical_harne
     )
 
 
+def _write_example_attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_repo(
+    repo_root: Path,
+) -> tuple[str, str]:
+    design_dir = (
+        repo_root
+        / "runs"
+        / "designs"
+        / "npu_blocks"
+        / "attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p53_reducer_w8"
+    )
+    design_dir.mkdir(parents=True, exist_ok=True)
+    config_path = design_dir / "config.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "top_name": "attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p53_reducer_w8",
+                "attention_score32_exact_local_temporal_reducer_gqa8_physical_harness": {
+                    "producers": 53,
+                    "mode": "reducer",
+                    "waves": 8,
+                },
+                "report_links": {
+                    "proposal_id": "prop_l1_decoder_attention_score32_local_temporal_reducer_gqa8_v1",
+                    "proposal_path": "docs/proposals/prop_l1_decoder_attention_score32_local_temporal_reducer_gqa8_v1/proposal.json",
+                },
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    sweep_path = (
+        repo_root
+        / "runs"
+        / "campaigns"
+        / "npu"
+        / "attention_score32_local_temporal_reducer_gqa8_v1"
+        / "sweeps"
+        / "nangate45_attention_score32_local_temporal_reducer_gqa8_physical_harness_boundary.json"
+    )
+    sweep_path.parent.mkdir(parents=True, exist_ok=True)
+    sweep_path.write_text(
+        json.dumps(
+            {
+                "tag_prefix": "attention_score32_local_temporal_reducer_gqa8_physical_harness_boundary_v1",
+                "flow_params": {
+                    "CLOCK_PERIOD": [8.0, 10.0],
+                    "DIE_AREA": ["0 0 2200 2200"],
+                    "CORE_AREA": ["80 80 2120 2120"],
+                    "PLACE_DENSITY": [0.35],
+                    "SYNTH_HIERARCHICAL": [1],
+                },
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    return (
+        str(config_path.relative_to(repo_root)),
+        str(sweep_path.relative_to(repo_root)),
+    )
+
+
 def _write_example_attention_schedule_wrapper_repo(repo_root: Path) -> tuple[str, str]:
     design_dir = repo_root / "runs" / "designs" / "npu_blocks" / "attention_dual_stream_schedule_wrapper_smoke_c2"
     design_dir.mkdir(parents=True, exist_ok=True)
@@ -1737,6 +1801,38 @@ def _write_second_attention_score32_exact_local_temporal_reducer_physical_harnes
                 "report_links": {
                     "proposal_id": "prop_l1_decoder_attention_score32_local_temporal_reducer_v1",
                     "proposal_path": "docs/proposals/prop_l1_decoder_attention_score32_local_temporal_reducer_v1/proposal.json",
+                },
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    return str(config_path.relative_to(repo_root))
+
+
+def _write_second_attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_repo(repo_root: Path) -> str:
+    design_dir = (
+        repo_root
+        / "runs"
+        / "designs"
+        / "npu_blocks"
+        / "attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p54_source_only_w8"
+    )
+    design_dir.mkdir(parents=True, exist_ok=True)
+    config_path = design_dir / "config.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "top_name": "attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p54_source_only_w8",
+                "attention_score32_exact_local_temporal_reducer_gqa8_physical_harness": {
+                    "producers": 54,
+                    "mode": "source_only",
+                    "waves": 8,
+                },
+                "report_links": {
+                    "proposal_id": "prop_l1_decoder_attention_score32_local_temporal_reducer_gqa8_v1",
+                    "proposal_path": "docs/proposals/prop_l1_decoder_attention_score32_local_temporal_reducer_gqa8_v1/proposal.json",
                 },
             },
             indent=2,
@@ -5249,6 +5345,108 @@ def test_generate_l1_sweep_task_supports_multi_attention_score32_exact_local_tem
                 "attention_score32_exact_local_temporal_reducer_physical_harness_p54_source_only_w8/metrics.csv",
                 "runs/designs/npu_blocks/"
                 "attention_score32_exact_local_temporal_reducer_physical_harness_p54_source_only_w8/"
+                "timing_debug_report.md",
+            ]
+
+
+def test_generate_l1_sweep_task_supports_multi_attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_configs() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        config_path, sweep_path = _write_example_attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_repo(
+            repo_root
+        )
+        second_config_path = _write_second_attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_repo(
+            repo_root
+        )
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l1_sweep_task(
+                session,
+                Layer1SweepGenerateRequest(
+                    repo_root=str(repo_root),
+                    sweep_path=sweep_path,
+                    config_paths=[config_path, second_config_path],
+                    platform="nangate45",
+                    out_root="runs/designs/npu_blocks",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    abstraction_layer="decoder_attention_score32_local_temporal_reducer_gqa8",
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            assert [command["name"] for command in work_item.command_manifest] == [
+                "generate_attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_rtl_"
+                "attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p53_reducer_w8",
+                "check_attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_guard_"
+                "attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p53_reducer_w8",
+                "run_block_sweep_attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p53_reducer_w8",
+                "extract_attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_timing_paths_"
+                "attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p53_reducer_w8",
+                "generate_attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_rtl_"
+                "attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p54_source_only_w8",
+                "check_attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_guard_"
+                "attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p54_source_only_w8",
+                "run_block_sweep_attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p54_source_only_w8",
+                "extract_attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_timing_paths_"
+                "attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p54_source_only_w8",
+                "build_runs_index",
+                "validate",
+            ]
+            assert (
+                "gen_attention_score32_exact_local_temporal_reducer_gqa8_physical_harness.py"
+                in work_item.command_manifest[0]["run"]
+            )
+            assert "attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p53_reducer_w8/config.json" in (
+                work_item.command_manifest[0]["run"]
+            )
+            assert (
+                "check_attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_guard.py"
+                in work_item.command_manifest[1]["run"]
+            )
+            assert "attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p54_source_only_w8/config.json" in (
+                work_item.command_manifest[4]["run"]
+            )
+            assert (
+                "--top attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p53_reducer_w8"
+                in work_item.command_manifest[2]["run"]
+            )
+            assert (
+                "--top attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p54_source_only_w8"
+                in work_item.command_manifest[6]["run"]
+            )
+            assert work_item.command_manifest[3]["run"] == (
+                "python3 npu/eval/extract_openroad_timing_summary.py "
+                "--design-dir runs/designs/npu_blocks/"
+                "attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p53_reducer_w8 "
+                "--out runs/designs/npu_blocks/"
+                "attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p53_reducer_w8/"
+                "timing_debug_report.md "
+                "--max-paths 8"
+            )
+            assert work_item.command_manifest[7]["run"] == (
+                "python3 npu/eval/extract_openroad_timing_summary.py "
+                "--design-dir runs/designs/npu_blocks/"
+                "attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p54_source_only_w8 "
+                "--out runs/designs/npu_blocks/"
+                "attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p54_source_only_w8/"
+                "timing_debug_report.md "
+                "--max-paths 8"
+            )
+            assert work_item.expected_outputs == [
+                "runs/designs/npu_blocks/"
+                "attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p53_reducer_w8/metrics.csv",
+                "runs/designs/npu_blocks/"
+                "attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p53_reducer_w8/"
+                "timing_debug_report.md",
+                "runs/designs/npu_blocks/"
+                "attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p54_source_only_w8/metrics.csv",
+                "runs/designs/npu_blocks/"
+                "attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p54_source_only_w8/"
                 "timing_debug_report.md",
             ]
 
