@@ -1,0 +1,6 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_score32_local_cluster_gqa8_v1",
+  "proposal_path": "docs/proposals/prop_l1_decoder_attention_score32_local_cluster_gqa8_v1/proposal.json",
+  "source_commit_note": "No DB task should be created from this file yet. Queue-time physical work stays blocked until NoC/SRAM closure and global c16 composition exist on a merged source commit.",
+  "requested_items": []
+}
