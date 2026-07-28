@@ -29,6 +29,7 @@ HEAD_ID_BITS = 5
 SLICE_LANES = 8
 VALUE_SLICES = 16
 LOCAL_TEMPORAL_WAVES = 8
+LOCAL_CLUSTER_GQA8_HEAD_BASES = (0, 8, 16, 24)
 SLICE_INDEX_BITS = (VALUE_SLICES - 1).bit_length()
 PARTIAL_PAYLOAD_BITS = SLICE_LANES * WEIGHTED_NUMERATOR_BITS
 PARTIAL_LINK_BITS = PARTIAL_PAYLOAD_BITS + 16 + HEAD_ID_BITS + SCORE_BITS + EXP_SUM_BITS + SLICE_INDEX_BITS + 1
@@ -1053,6 +1054,98 @@ def exact_local_temporal_reducer_gqa8_service_manifest(
     }
 
 
+def exact_local_cluster_gqa8_extra_producers(*, producers: int, group_index: int) -> tuple[int, ...]:
+    producer_count = int(producers)
+    resolved_group_index = int(group_index)
+    if producer_count == 53:
+        group_windows = ((0, 11), (11, 22), (22, 33), (33, 44))
+    elif producer_count == 54:
+        group_windows = ((0, 10), (10, 20), (20, 30), (30, 40))
+    else:
+        raise ValueError("producers must be exactly 53 or 54")
+    if resolved_group_index < 0 or resolved_group_index >= len(group_windows):
+        raise ValueError("group_index must be in [0, 3]")
+    start, stop = group_windows[resolved_group_index]
+    return tuple(range(start, stop))
+
+
+def exact_local_cluster_gqa8_command_block_counts(*, producers: int, group_index: int) -> tuple[int, ...]:
+    producer_count = int(producers)
+    extras = set(exact_local_cluster_gqa8_extra_producers(producers=producer_count, group_index=group_index))
+    return tuple(2 if producer_index in extras else 1 for producer_index in range(producer_count))
+
+
+def exact_local_cluster_gqa8_service_manifest(
+    *,
+    producers: int,
+    waves: int = LOCAL_TEMPORAL_WAVES,
+    head_bases: Iterable[int] = LOCAL_CLUSTER_GQA8_HEAD_BASES,
+) -> dict[str, object]:
+    producer_count = int(producers)
+    wave_count = int(waves)
+    resolved_head_bases = tuple(int(value) for value in head_bases)
+    if producer_count not in {53, 54}:
+        raise ValueError("producers must be exactly 53 or 54")
+    if wave_count != LOCAL_TEMPORAL_WAVES:
+        raise ValueError(f"waves must be exactly {LOCAL_TEMPORAL_WAVES}")
+    if resolved_head_bases != LOCAL_CLUSTER_GQA8_HEAD_BASES:
+        raise ValueError(f"head_bases must be exactly {LOCAL_CLUSTER_GQA8_HEAD_BASES}")
+
+    reducer_manifest = exact_local_temporal_reducer_gqa8_service_manifest(
+        producers=producer_count,
+        waves=wave_count,
+        head_groups=len(resolved_head_bases),
+    )
+    per_group_extra_producers = [
+        list(exact_local_cluster_gqa8_extra_producers(producers=producer_count, group_index=group_index))
+        for group_index in range(len(resolved_head_bases))
+    ]
+    per_group_block_counts = [
+        list(exact_local_cluster_gqa8_command_block_counts(producers=producer_count, group_index=group_index))
+        for group_index in range(len(resolved_head_bases))
+    ]
+    per_group_total_blocks_per_stream = [sum(group_counts) for group_counts in per_group_block_counts]
+    if any(total != 64 for total in per_group_total_blocks_per_stream):
+        raise AssertionError("every corrected GQA8 local-cluster group must cover exactly 64 blocks per stream")
+
+    return {
+        "producers": producer_count,
+        "persistent_waves": wave_count,
+        "query_head_groups": len(resolved_head_bases),
+        "query_heads_per_group": 8,
+        "head_bases": list(resolved_head_bases),
+        "group_major_wave_commands_per_group": wave_count,
+        "full_run_wave_command_count": len(resolved_head_bases) * wave_count,
+        "max_blocks": 8,
+        "per_producer_command_block_count_bits": 15,
+        "per_group_extra_producers": per_group_extra_producers,
+        "per_group_command_block_counts": per_group_block_counts,
+        "per_group_total_blocks_per_stream": per_group_total_blocks_per_stream,
+        "value_slices": VALUE_SLICES,
+        "aggregate_output_beats_per_group": 8 * VALUE_SLICES,
+        "aggregate_output_beats_per_full_run": len(resolved_head_bases) * 8 * VALUE_SLICES,
+        "partial_payload_bits_per_beat": PARTIAL_PAYLOAD_BITS,
+        "partial_link_bits_per_beat": PARTIAL_LINK_BITS,
+        "top_command_contract": "broadcast_command_id_head_base_multiplier_shift_with_packed_per_producer_block_counts",
+        "atomic_command_issue_contract": "all_producers_accept_same_wave_command_same_cycle_or_none",
+        "producer_input_contract": "independent_per_producer_dual_stream_query_key_last_ready_valid",
+        "value_memory_contract": "independent_per_producer_dual_stream_value_request_response_lanes",
+        "producer_leaf_wiring_contract": "index_preserving_direct_producer_result_leaf_connection_into_local_temporal_reducer",
+        "local_reduction_contract": reducer_manifest["local_reduction_contract"],
+        "temporal_accumulation_contract": "group_major_same_logical_command_across_8_waves_then_emit_before_next_head_base",
+        "comparison_baseline_contract": (
+            "python_structured_producer_reference_then_staged_p53p54_merge_then_group_major_8_wave_temporal_merge"
+        ),
+        "comparison_cycle_origin": "cycle0_on_first_atomic_wave_command_issue_for_head_base0_wave0",
+        "diagnostic_only_baseline": "none",
+        "remaining_abstractions": [
+            "noc_sram_ppa_open",
+            "global_c16_exact_reduction_open",
+        ],
+        "reducer_service_model": reducer_manifest,
+    }
+
+
 __all__ = [
     "EXACT_STATE_BYTES_PER_CLUSTER_32_HEADS",
     "ExactFinalizedBeat",
@@ -1061,6 +1154,7 @@ __all__ = [
     "FINAL_LINK_BITS",
     "HEAD_ID_BITS",
     "LOCAL_TEMPORAL_WAVES",
+    "LOCAL_CLUSTER_GQA8_HEAD_BASES",
     "LEAF_STREAM_BYTES_PER_CLUSTER_32_HEADS",
     "PARTIAL_PAYLOAD_BITS",
     "PARTIAL_LINK_BITS",
@@ -1073,6 +1167,9 @@ __all__ = [
     "exact_banked_finalized_tree_service_manifest",
     "exact_local_temporal_reducer_service_manifest",
     "exact_local_temporal_reducer_gqa8_service_manifest",
+    "exact_local_cluster_gqa8_extra_producers",
+    "exact_local_cluster_gqa8_command_block_counts",
+    "exact_local_cluster_gqa8_service_manifest",
     "exact_partial_producer_tree_service_manifest",
     "exact_partial_dual_stream_gqa8_producer_service_manifest",
     "exact_banked_finalized_tree_full_wave_saturated_service",

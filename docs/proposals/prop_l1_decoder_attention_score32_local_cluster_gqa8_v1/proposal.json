@@ -1,0 +1,84 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_score32_local_cluster_gqa8_v1",
+  "created_utc": "2026-07-28T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit",
+  "title": "Functional p53/p54 score32 exact local cluster wrapper with direct producer-to-reducer composition",
+  "abstraction_layer": "decoder_attention_score32_exact_local_cluster_gqa8",
+  "hypothesis": "The final functional local cluster should be the real p53 or p54 architecture: 53 or 54 exact partial GQA8 dual-stream producers, each preserving its own command block count, query/key input, and two value-memory lanes, with every producer result leaf wired index-preserving into the corrected eight-wave GQA8 local temporal reducer.",
+  "direct_comparison": {
+    "primary_question": "Can the full-width functional cluster preserve the real p53/p54 producer composition, corrected rotation schedule, and exact beat-by-beat reducer aggregate without collapsing the architecture into a proxy or hash-only check?",
+    "baselines": [
+      "prop_l1_decoder_attention_score32_exact_partial_gqa8_dual_stream_producer_v1",
+      "prop_l1_decoder_attention_score32_local_temporal_reducer_gqa8_v1"
+    ],
+    "candidate": "l1_decoder_attention_score32_local_cluster_gqa8_v1",
+    "include": [
+      "53 or 54 direct producer instances with no reduced proxy wrapper",
+      "broadcast command_id, head_base, multiplier, and shift with packed 15-bit per-producer block counts",
+      "all-or-none atomic wave-command issue across the full producer set",
+      "independent per-producer input valid/ready/last/query/key interfaces",
+      "all 2 x producers value-memory request and response lanes exposed at the top level",
+      "index-preserving producer result leaf wiring into the GQA8 local temporal reducer",
+      "group-major execution across four head bases and eight waves",
+      "structured reference comparison using real producer semantics, staged p53/p54 merge, then eight-wave temporal merge"
+    ],
+    "exclude": [
+      "NoC closure claims",
+      "SRAM macro closure claims",
+      "global c16 exact reduction claims",
+      "dispatch or DB-side evaluation creation",
+      "OpenROAD execution in this change"
+    ],
+    "metrics": [
+      "wave_command_accept_count",
+      "producer_ready_skew_cycles",
+      "producer_protocol_error_bits",
+      "reducer_protocol_error_bits",
+      "exact_output_beats",
+      "exact_metadata_equivalence",
+      "top_pin_bits"
+    ]
+  },
+  "implementation_plan": [
+    {
+      "step": "Generate one reusable producer submodule and instantiate it 53 or 54 times in the cluster wrapper.",
+      "details": "The wrapper must retain the producer's native exact result valid/ready/metadata/value interface and native dual-stream value-memory request/response lanes."
+    },
+    {
+      "step": "Drive the reducer directly from the producer result buses.",
+      "details": "Leaf ordering must stay producer-index preserving and must not add a hash-only or reduced-proxy abstraction layer."
+    },
+    {
+      "step": "Lock the corrected p53/p54 rotation schedule into the reference and probe.",
+      "details": "P53 extras are group0 producers 0..10, group1 11..21, group2 22..32, group3 33..43. P54 extras are group0 0..9, group1 10..19, group2 20..29, group3 30..39. Extras consume two blocks per stream and all other producers consume one."
+    },
+    {
+      "step": "Keep the verification architecture-aligned.",
+      "details": "Mandatory checks are p53 and p54 generation, Verilator lint, guard coverage, corrected schedule tests, direct wiring token tests, and at least one bounded full p53 ideal probe attempt."
+    }
+  ],
+  "required_evaluations": [],
+  "remaining_abstractions": [
+    "NoC and SRAM physical closure remain open because the wrapper only exposes functional request and response lanes.",
+    "Global c16 exact reduction remains open because this wrapper terminates at the local temporal reducer aggregate."
+  ],
+  "source_refs": [
+    "npu/rtlgen/gen_attention_score32_exact_local_cluster_gqa8.py",
+    "npu/eval/probe_attention_score32_exact_local_cluster_gqa8.py",
+    "npu/eval/check_attention_score32_exact_local_cluster_gqa8_guard.py",
+    "npu/sim/perf/attention_exact_partial.py",
+    "runs/designs/npu_blocks/attention_score32_exact_local_cluster_gqa8_p53_w8/config.json",
+    "runs/designs/npu_blocks/attention_score32_exact_local_cluster_gqa8_p54_w8/config.json",
+    "docs/proposals/prop_l1_decoder_attention_score32_local_cluster_gqa8_v1/evaluation_requests.json"
+  ],
+  "knowledge_refs": [
+    "npu/docs/attention_score32_exact_local_cluster_gqa8_contract.md",
+    "npu/docs/attention_score32_exact_local_temporal_reducer_gqa8_contract.md",
+    "npu/docs/attention_score32_exact_partial_gqa8_dual_stream_producer_contract.md"
+  ],
+  "contract_refs": [
+    "npu/docs/attention_score32_exact_local_cluster_gqa8_contract.md"
+  ]
+}
