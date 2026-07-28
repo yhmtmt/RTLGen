@@ -43,24 +43,46 @@
     {
       "item_id": "l1_decoder_attention_score32_local_temporal_reducer_ppa_v1",
       "task_type": "l1_sweep",
-      "objective": "Measure the functional 53/54-way staged exact-partial local reducer with eight-wave persistent state after implementation merge.",
+      "objective": "Measure Nangate45 PPA for the merged 53/54-way staged exact-partial local reducer physical harness in reducer and source_only modes with eight-wave persistent state, accepting boundary-class flow outcomes as evidence.",
       "evaluation_mode": "frontier_followup",
       "abstraction_layer": "decoder_attention_score32_local_temporal_reducer",
       "comparison_role": "functional_local_hierarchy_anchor",
       "paired_baseline_item_id": "l1_decoder_attention_score32_exact_partial_dual_stream_producer_ppa_v1",
       "requires_merged_inputs": true,
       "requires_materialized_refs": true,
+      "configs": [
+        "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_physical_harness_p53_reducer_w8/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_physical_harness_p53_source_only_w8/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_physical_harness_p54_reducer_w8/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_physical_harness_p54_source_only_w8/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/attention_score32_local_temporal_reducer_v1/sweeps/nangate45_attention_score32_local_temporal_reducer_physical_harness_boundary.json",
+      "out_root": "runs/designs/npu_blocks",
+      "expected_outputs": [
+        "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_physical_harness_p53_reducer_w8/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_physical_harness_p53_reducer_w8/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_physical_harness_p53_source_only_w8/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_physical_harness_p53_source_only_w8/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_physical_harness_p54_reducer_w8/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_physical_harness_p54_reducer_w8/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_physical_harness_p54_source_only_w8/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_physical_harness_p54_source_only_w8/timing_debug_report.md"
+      ],
+      "acceptance_notes": "Run the physical-harness generator, guard, run_block_sweep, and timing-summary commands for each config. Keep the sweep small and accept flow_failed/timeouts as explicit boundary evidence.",
       "expected_result": {
-        "direction": "close_local_exact_reduction_and_temporal_state",
-        "reason": "The producer measurement alone cannot establish tile cadence without the local reducer and eight-wave persistent state."
+        "direction": "measure_local_temporal_reducer_boundary",
+        "reason": "The producer measurement alone cannot establish whether the merged local reducer and source-only harness remain physically explorable with eight-wave persistent state."
       },
-      "status": "pending_implementation_merge"
+      "status": "pending"
     }
   ],
   "source_refs": [
     "npu/eval/audit_llm_decoder_attention_score32_exact_hierarchy_cadence_r2.py",
     "npu/eval/probe_attention_score32_exact_partial_gqa8_dual_stream_producer.py",
-    "runs/designs/npu_blocks/attention_score32_exact_partial_gqa8_dual_stream_producer_b8/config_llama_wave.json"
+    "npu/rtlgen/gen_attention_score32_exact_local_temporal_reducer_physical_harness.py",
+    "npu/eval/check_attention_score32_exact_local_temporal_reducer_physical_harness_guard.py",
+    "runs/designs/npu_blocks/attention_score32_exact_partial_gqa8_dual_stream_producer_b8/config_llama_wave.json",
+    "runs/campaigns/npu/attention_score32_local_temporal_reducer_v1/sweeps/nangate45_attention_score32_local_temporal_reducer_physical_harness_boundary.json"
   ],
   "knowledge_refs": [
     "npu/docs/generated/llama7b_score32_exact_hierarchy_cadence_audit_v2.md",
