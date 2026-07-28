@@ -27,8 +27,17 @@ partial state on every beat: `global_max`, `exp_sum`, `slice`, `last`, and
 
 - `max_blocks=8` is the intended local producer limit.
 - A `1024`-token tile is partitioned into `128` token blocks and distributed
-  across `53/54` datapaths and `2` token streams, so each local stream sees at
-  most `2` token blocks per wave.
+  across `53/54` dual-stream datapaths and `2` token streams.
+- One producer command covers one GQA8 head group for one tile wave and may
+  aggregate either `1` or `2` token blocks per stream.
+- For one tile wave and one GQA8 group:
+  - `p53`: `11` datapaths carry `2` blocks/stream and `42` carry `1`
+  - `p54`: `10` datapaths carry `2` blocks/stream and `44` carry `1`
+- Every datapath receives `4` group commands per tile wave. The worst-loaded
+  datapath schedule is `[2, 1, 1, 1]`, not five one-block commands.
+- Across `8` tile waves the intended reducer persistence is group-major:
+  process one fixed GQA8 group across all `8` tile waves, then emit/finalize
+  before the next head base unless a safe equivalent interleave is proven.
 - The checked-in smoke probe uses `1` command, `2` blocks per stream, and
   `head_dim=3`.
 - This producer emits one wave at a time. Local `53/54`-way aggregation and
@@ -58,6 +67,7 @@ Recorded on July 28, 2026 with:
 - `python npu/eval/probe_attention_score32_exact_partial_gqa8_dual_stream_producer.py --config runs/designs/npu_blocks/attention_score32_exact_partial_gqa8_dual_stream_producer_b8/config.json --json`
 - `python npu/eval/probe_attention_score32_exact_partial_gqa8_dual_stream_producer.py --config runs/designs/npu_blocks/attention_score32_exact_partial_gqa8_dual_stream_producer_b8/config_heads32_native.json --json`
 - `python npu/eval/probe_attention_score32_exact_partial_gqa8_dual_stream_producer.py --config runs/designs/npu_blocks/attention_score32_exact_partial_gqa8_dual_stream_producer_b8/config_llama_wave.json --json`
+- `python npu/eval/probe_attention_score32_exact_partial_gqa8_dual_stream_producer.py --config runs/designs/npu_blocks/attention_score32_exact_partial_gqa8_dual_stream_producer_b8/config_llama_wave_worst4_group_major.json --json`
 
 Checked-in smoke point:
 
@@ -102,6 +112,26 @@ Llama-wave functional service point:
 - exact beat equivalence: pass
 - compared directly to `986` cycles as functional service evidence only
 - this is not a frontier revision
+
+Corrected worst-loaded per-wave producer point:
+
+- heads: `32`
+- command groups: `4`
+- command head_bases: `[0, 8, 16, 24]`
+- block counts per stream: `[2, 1, 1, 1]`
+- head_dim: `128`
+- exact-partial output beats: `512`
+- ideal command/input/value-request/output interfaces
+- minimum modeled value-response latency
+- integrated drain cycles: `1536`
+- compared directly to `986` cycles: `+550`
+- command accepts/completions: `4 / 4`
+- stream accepts/completions: `[4, 4] / [4, 4]`
+- merge completions: `512`
+- result stall cycles: `0`
+- exact beat equivalence: pass
+- compared directly to `986` cycles as corrected producer service evidence only
+- this still does not close the group-major `8`-wave reducer schedule
 
 Both probes compare every emitted beat against a structured Python exact-partial
 reference. No hash reduction is used in the functional comparison path.

@@ -1,0 +1,142 @@
+{
+  "block_counts_per_stream": [
+    2,
+    1,
+    1,
+    1
+  ],
+  "blocks_per_stream": 2,
+  "command_accept_count": 4,
+  "command_accept_cycles": [
+    {
+      "command_id": 29184,
+      "cycle": 0,
+      "head_base": 0,
+      "index": 0
+    },
+    {
+      "command_id": 29185,
+      "cycle": 527,
+      "head_base": 8,
+      "index": 1
+    },
+    {
+      "command_id": 29186,
+      "cycle": 863,
+      "head_base": 16,
+      "index": 2
+    },
+    {
+      "command_id": 29187,
+      "cycle": 1199,
+      "head_base": 24,
+      "index": 3
+    }
+  ],
+  "command_complete_count": 4,
+  "commands": 4,
+  "decision": "score32_exact_partial_dual_stream_gqa8_pass",
+  "equivalence_evidence_policy": "structured_compare_then_commit_counts_and_sha256",
+  "expected_outputs": 512,
+  "expected_rows_count": 512,
+  "expected_rows_sha256": "9e4aeaf7f245fb2ba227636b032c5c00da7a9d3d8a0b885946ca83f8836c52aa",
+  "head_bases": [
+    0,
+    8,
+    16,
+    24
+  ],
+  "head_dim": 128,
+  "heads": 32,
+  "integrated_drain_cycles": 1536,
+  "interface_mode": "ideal",
+  "llama_wave_drain_delta_vs_986": 550,
+  "llama_wave_reference_cycles": 986,
+  "merge_complete_count": 512,
+  "merge_protocol_error": false,
+  "observed_rows_count": 512,
+  "observed_rows_sha256": "9e4aeaf7f245fb2ba227636b032c5c00da7a9d3d8a0b885946ca83f8836c52aa",
+  "outputs": 512,
+  "passed": true,
+  "protocol_error": false,
+  "result_stall_cycles": 0,
+  "service_model": {
+    "command_broadcast_mode": "same_head_base_broadcast_to_both_stream_groups",
+    "comparison_baseline_contract": "python_structured_exact_partial_stream_reference",
+    "comparison_cycle_origin": "cycle0_on_atomic_dual_stream_input_issue",
+    "diagnostic_only_baseline": "none",
+    "head_mapping_contract": "explicit_head_base_plus_lane_no_tile_or_wave_inference",
+    "llama_wave_functional_service_reference": {
+      "interpretation": "functional_service_evidence_only_no_frontier_revision",
+      "reference_cycles": 986
+    },
+    "output_schedule_contract": "serialized_head_then_slice_exact_partial_stream",
+    "producer_block_workload_assumptions": {
+      "command_block_count_range": [
+        1,
+        8
+      ],
+      "global_tile_token_blocks": 128,
+      "global_tile_tokens": 1024,
+      "head_base_alignment_bits": 3,
+      "multiple_head_groups_run_in_order": true,
+      "per_datapath_group_commands_per_wave": 4,
+      "per_wave_local_block_ceiling_per_stream": 2,
+      "persistent_local_reducer_waves": 8,
+      "probe_block_counts_per_stream": [
+        2,
+        1,
+        1,
+        1
+      ],
+      "probe_blocks_per_stream": 2,
+      "probe_blocks_per_stream_uniform": false,
+      "probe_command_count": 4,
+      "probe_head_bases": [
+        0,
+        8,
+        16,
+        24
+      ],
+      "probe_head_dim": 128,
+      "probe_token_streams": 2,
+      "probe_total_heads": 32,
+      "worst_loaded_total_blocks_per_stream_per_datapath_per_wave": 5,
+      "worst_loaded_two_block_commands_per_datapath_per_wave": 1
+    },
+    "producer_input_contract": "packed_dual_stream_query_key_atomic_ready_valid",
+    "producer_partial_protocol": {
+      "command_id_bits": 16,
+      "exp_sum_bits": 33,
+      "global_max_bits": 32,
+      "head_id_bits": 5,
+      "partial_link_bits_per_beat": 419,
+      "partial_payload_bits_per_beat": 328,
+      "slice_index_bits": 4
+    },
+    "query_head_groups": 4,
+    "query_heads_per_stream": 8,
+    "remaining_abstractions": [
+      "53or54_way_global_cluster_aggregation_open",
+      "8_wave_persistent_state_open",
+      "noc_sram_ppa_open"
+    ],
+    "streams": 2,
+    "structural_score_macs_per_cycle": 128,
+    "token_lanes_per_head": 8,
+    "value_memory_contract": "per_stream_gqa_coalesced_value_reads"
+  },
+  "stream_command_accept_count": [
+    4,
+    4
+  ],
+  "stream_complete_count": [
+    4,
+    4
+  ],
+  "stream_protocol_error": [
+    false,
+    false
+  ],
+  "top_name": "attention_score32_exact_partial_gqa8_dual_stream_producer_b8"
+}

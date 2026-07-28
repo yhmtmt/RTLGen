@@ -349,6 +349,9 @@ def generate(config: JsonDict, out_dir: Path) -> None:
         max_blocks=int(params["max_blocks"]),
         command_count=int(probe_defaults.get("command_count", int(probe_defaults.get("heads", 8)) // 8)),
         blocks_per_stream=int(probe_defaults.get("blocks_per_stream", 2)),
+        block_counts_per_stream=tuple(int(value) for value in probe_defaults.get("block_counts_per_stream", []))
+        if isinstance(probe_defaults.get("block_counts_per_stream"), list)
+        else None,
         head_dim=int(probe_defaults.get("head_dim", 3)),
         head_bases=tuple(int(value) for value in probe_defaults.get("head_bases", [])) if isinstance(probe_defaults.get("head_bases"), list) else None,
         llama_wave_reference_cycles=int(probe_defaults["llama_wave_reference_cycles"]) if "llama_wave_reference_cycles" in probe_defaults else None,

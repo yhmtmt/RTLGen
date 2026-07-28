@@ -49,7 +49,12 @@ def _run_guard(design_dir: Path, *, config_name: str) -> subprocess.CompletedPro
 
 
 def test_exact_partial_gqa8_dual_stream_producer_guard_accepts_checked_in_configs(tmp_path: Path) -> None:
-    for config_name in ("config.json", "config_heads32_native.json", "config_llama_wave.json"):
+    for config_name in (
+        "config.json",
+        "config_heads32_native.json",
+        "config_llama_wave.json",
+        "config_llama_wave_worst4_group_major.json",
+    ):
         design_dir = _prepare_design_dir(tmp_path / config_name.replace(".json", ""), config_name=config_name)
         result = _run_guard(design_dir, config_name=config_name)
         assert result.returncode == 0, result.stderr

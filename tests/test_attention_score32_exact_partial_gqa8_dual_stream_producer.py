@@ -10,7 +10,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from npu.eval.probe_attention_score32_exact_partial_gqa8_dual_stream_producer import build_report
+from npu.eval.probe_attention_score32_exact_partial_gqa8_dual_stream_producer import build_report, compact_report
 from npu.rtlgen.gen_attention_score32_exact_partial_gqa8_dual_stream_producer import generate
 
 _FAKERAM_MODEL = """
@@ -42,6 +42,18 @@ module fakeram45_2048x39 (
   assign rd_out = rd_out_q;
 endmodule
 """
+
+
+def test_compact_report_replaces_equivalence_rows_with_digests() -> None:
+    rows = [{"command_id": 1, "head_id": 2, "value": [3, 4]}]
+    report = compact_report({"passed": True, "observed_rows": rows, "expected_rows": rows})
+
+    assert "observed_rows" not in report
+    assert "expected_rows" not in report
+    assert report["observed_rows_count"] == 1
+    assert report["expected_rows_count"] == 1
+    assert report["observed_rows_sha256"] == report["expected_rows_sha256"]
+    assert report["equivalence_evidence_policy"] == "structured_compare_then_commit_counts_and_sha256"
 
 
 def _rtl_tools_available() -> bool:
@@ -105,6 +117,8 @@ def test_exact_partial_gqa8_dual_stream_producer_manifest_and_verilator_lint(tmp
         "per_wave_local_block_ceiling_per_stream": 2,
         "persistent_local_reducer_waves": 8,
         "probe_blocks_per_stream": 2,
+        "probe_block_counts_per_stream": [2],
+        "probe_blocks_per_stream_uniform": True,
         "probe_head_dim": 3,
         "probe_head_bases": [0],
         "probe_total_heads": 8,
@@ -113,7 +127,9 @@ def test_exact_partial_gqa8_dual_stream_producer_manifest_and_verilator_lint(tmp
         "head_base_alignment_bits": 3,
         "global_tile_tokens": 1024,
         "global_tile_token_blocks": 128,
-        "worst_loaded_jobs_per_datapath_upper_bound": 5,
+        "per_datapath_group_commands_per_wave": 4,
+        "worst_loaded_total_blocks_per_stream_per_datapath_per_wave": 5,
+        "worst_loaded_two_block_commands_per_datapath_per_wave": 1,
     }
     assert manifest["remaining_abstractions"] == [
         "53or54_way_global_cluster_aggregation_open",
@@ -238,6 +254,35 @@ def test_exact_partial_gqa8_dual_stream_producer_llama_wave_probe() -> None:
     assert report["result_stall_cycles"] == 0
     assert report["llama_wave_reference_cycles"] == 986
     assert report["llama_wave_drain_delta_vs_986"] == 695
+    assert report["protocol_error"] is False
+    assert report["stream_protocol_error"] == [False, False]
+    assert report["merge_protocol_error"] is False
+    assert report["observed_rows"] == report["expected_rows"]
+
+
+@pytest.mark.skipif(not _rtl_tools_available(), reason="RTL tools unavailable")
+def test_exact_partial_gqa8_dual_stream_producer_llama_wave_worst4_probe() -> None:
+    report = build_report(config=_load_config("config_llama_wave_worst4_group_major.json"))
+
+    assert report["passed"] is True
+    assert report["heads"] == 32
+    assert report["commands"] == 4
+    assert report["blocks_per_stream"] == 2
+    assert report["block_counts_per_stream"] == [2, 1, 1, 1]
+    assert report["head_dim"] == 128
+    assert report["head_bases"] == [0, 8, 16, 24]
+    assert report["outputs"] == 512
+    assert report["expected_outputs"] == 512
+    assert report["interface_mode"] == "ideal"
+    assert report["integrated_drain_cycles"] == 1536
+    assert report["command_accept_count"] == 4
+    assert report["command_complete_count"] == 4
+    assert report["stream_command_accept_count"] == [4, 4]
+    assert report["stream_complete_count"] == [4, 4]
+    assert report["merge_complete_count"] == 512
+    assert report["result_stall_cycles"] == 0
+    assert report["llama_wave_reference_cycles"] == 986
+    assert report["llama_wave_drain_delta_vs_986"] == 550
     assert report["protocol_error"] is False
     assert report["stream_protocol_error"] == [False, False]
     assert report["merge_protocol_error"] is False
