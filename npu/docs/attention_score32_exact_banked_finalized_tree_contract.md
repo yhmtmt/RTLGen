@@ -47,13 +47,13 @@ finalizers.
 - Full-wave exact output hash for all rows below:
   `027dd06c1e4e1bc77636eb4041aa7efd4fd6e55a090b337a6d33f78da89f65bd`
 
-| banks | first out | last out | interval cycles | cycles/beat |
-| --- | ---: | ---: | ---: | ---: |
-| 1 | 62 | 30211 | 30149 | 59.0 |
-| 57 | 62 | 589 | 527 | 1.031311 |
-| 58 | 62 | 581 | 519 | 1.015656 |
-| 59 | 62 | 573 | 511 | 1.0 |
-| 64 | 62 | 573 | 511 | 1.0 |
+| banks | first out | last out | drain cycles | interval cycles | cycles/beat |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 1 | 62 | 30211 | 30212 | 30149 | 59.0 |
+| 57 | 62 | 589 | 590 | 527 | 1.031311 |
+| 58 | 62 | 581 | 582 | 519 | 1.015656 |
+| 59 | 62 | 573 | 574 | 511 | 1.0 |
+| 64 | 62 | 573 | 574 | 511 | 1.0 |
 
 - These measurements are kept here so direct full-512 RTL evidence remains in
   the checked-in contract without forcing CI to recompile every large bank
@@ -78,3 +78,6 @@ finalizers.
   stream and its hash, not just counts.
 - Saturated service claims must be stated from measured RTL cycles, not from
   divide-iteration counts alone.
+- `exact_no_stall_full_wave_service` means `dispatch_stall_cycles == 0`, which
+  also covers short waves where `root_beats <= finalizer_banks` even if banks
+  are still below the steady-state `59`-cycle reuse interval.

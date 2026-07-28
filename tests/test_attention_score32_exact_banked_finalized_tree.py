@@ -15,6 +15,7 @@ from npu.eval.probe_attention_score32_exact_banked_finalized_tree import build_r
 from npu.rtlgen.gen_attention_score32_exact_banked_finalized_tree import generate
 from npu.sim.perf.attention_exact_partial import (
     ExactPartialBeat,
+    exact_banked_finalized_tree_full_wave_saturated_service,
     merge_balanced_partial_streams,
     partial_stream_from_blocks,
     simulate_exact_banked_finalizer,
@@ -264,6 +265,139 @@ def test_bank_wrap_boundary_full_wave_perf_model() -> None:
     assert bank58["result_events"][-1]["cycle"] - bank58["result_events"][0]["cycle"] == 519
     assert bank59["result_events"][-1]["cycle"] - bank59["result_events"][0]["cycle"] == 511
     assert bank64["result_events"][-1]["cycle"] - bank64["result_events"][0]["cycle"] == 511
+
+
+def test_banked_finalized_tree_full_wave_saturated_service_matches_recorded_contract() -> None:
+    bank1 = exact_banked_finalized_tree_full_wave_saturated_service(
+        clusters=16,
+        heads=32,
+        divider_lanes=8,
+        finalizer_banks=1,
+    )
+    bank57 = exact_banked_finalized_tree_full_wave_saturated_service(
+        clusters=16,
+        heads=32,
+        divider_lanes=8,
+        finalizer_banks=57,
+    )
+    bank58 = exact_banked_finalized_tree_full_wave_saturated_service(
+        clusters=16,
+        heads=32,
+        divider_lanes=8,
+        finalizer_banks=58,
+    )
+    bank59 = exact_banked_finalized_tree_full_wave_saturated_service(
+        clusters=16,
+        heads=32,
+        divider_lanes=8,
+        finalizer_banks=59,
+    )
+    bank64 = exact_banked_finalized_tree_full_wave_saturated_service(
+        clusters=16,
+        heads=32,
+        divider_lanes=8,
+        finalizer_banks=64,
+    )
+
+    assert bank1["divider_iterations_per_group"] == 57
+    assert bank1["per_bank_output_latency_cycles"] == 58
+    assert bank1["per_bank_accept_interval_cycles"] == 59
+    assert bank1["first_output_cycle"] == 62
+    assert bank1["last_output_cycle"] == 30211
+    assert bank1["drain_cycles"] == 30212
+    assert bank1["interval_cycles"] == 30149
+    assert bank1["cycles_per_beat"] == pytest.approx(59.0)
+    assert bank1["dispatch_stall_cycles"] == 29638
+    assert bank1["exact_no_stall_full_wave_service"] is False
+
+    assert bank57["first_output_cycle"] == 62
+    assert bank57["last_output_cycle"] == 589
+    assert bank57["drain_cycles"] == 590
+    assert bank57["interval_cycles"] == 527
+    assert bank57["cycles_per_beat"] == pytest.approx(527 / 511)
+    assert bank57["dispatch_stall_cycles"] == 16
+    assert bank57["exact_no_stall_full_wave_service"] is False
+
+    assert bank58["first_output_cycle"] == 62
+    assert bank58["last_output_cycle"] == 581
+    assert bank58["drain_cycles"] == 582
+    assert bank58["interval_cycles"] == 519
+    assert bank58["cycles_per_beat"] == pytest.approx(519 / 511)
+    assert bank58["dispatch_stall_cycles"] == 8
+    assert bank58["exact_no_stall_full_wave_service"] is False
+
+    assert bank59["first_output_cycle"] == 62
+    assert bank59["last_output_cycle"] == 573
+    assert bank59["drain_cycles"] == 574
+    assert bank59["interval_cycles"] == 511
+    assert bank59["cycles_per_beat"] == pytest.approx(1.0)
+    assert bank59["dispatch_stall_cycles"] == 0
+    assert bank59["exact_no_stall_full_wave_service"] is True
+
+    assert bank64["first_output_cycle"] == 62
+    assert bank64["last_output_cycle"] == 573
+    assert bank64["drain_cycles"] == 574
+    assert bank64["interval_cycles"] == 511
+    assert bank64["cycles_per_beat"] == pytest.approx(1.0)
+    assert bank64["dispatch_stall_cycles"] == 0
+    assert bank64["exact_no_stall_full_wave_service"] is True
+
+
+def test_banked_finalized_tree_short_wave_no_stall_without_bank_reuse_wrap() -> None:
+    short_wave = exact_banked_finalized_tree_full_wave_saturated_service(
+        clusters=16,
+        heads=1,
+        divider_lanes=8,
+        finalizer_banks=16,
+    )
+
+    assert short_wave["root_beats"] == 16
+    assert short_wave["wrap_event_count"] == 0
+    assert short_wave["wrap_shortage_cycles_per_bank_reuse"] == 43
+    assert short_wave["dispatch_stall_cycles"] == 0
+    assert short_wave["first_output_cycle"] == 62
+    assert short_wave["last_output_cycle"] == 77
+    assert short_wave["drain_cycles"] == 78
+    assert short_wave["cycles_per_beat"] == pytest.approx(1.0)
+    assert short_wave["exact_no_stall_full_wave_service"] is True
+
+
+def test_banked_finalized_tree_full_wave_saturated_service_rejects_invalid_inputs() -> None:
+    with pytest.raises(ValueError, match="clusters must be a power of two in \\[2, 16\\]"):
+        exact_banked_finalized_tree_full_wave_saturated_service(
+            clusters=3,
+            heads=32,
+            divider_lanes=8,
+            finalizer_banks=59,
+        )
+    with pytest.raises(ValueError, match="heads must be in \\[1, 32\\]"):
+        exact_banked_finalized_tree_full_wave_saturated_service(
+            clusters=16,
+            heads=0,
+            divider_lanes=8,
+            finalizer_banks=59,
+        )
+    with pytest.raises(ValueError, match="divider_lanes must be one of 1, 2, 4, 8"):
+        exact_banked_finalized_tree_full_wave_saturated_service(
+            clusters=16,
+            heads=32,
+            divider_lanes=3,
+            finalizer_banks=59,
+        )
+    with pytest.raises(ValueError, match="finalizer_banks must be in \\[1, 64\\]"):
+        exact_banked_finalized_tree_full_wave_saturated_service(
+            clusters=16,
+            heads=32,
+            divider_lanes=8,
+            finalizer_banks=65,
+        )
+    with pytest.raises(ValueError, match="clusters must be an integer"):
+        exact_banked_finalized_tree_full_wave_saturated_service(
+            clusters=16.0,
+            heads=32,
+            divider_lanes=8,
+            finalizer_banks=59,
+        )
 
 
 @pytest.mark.skipif(not _rtl_tools_available(), reason="RTL tools unavailable")

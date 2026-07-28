@@ -6322,6 +6322,47 @@ def _decoder_attention_score32_schedule_wrapper_postroute_activity_power_evidenc
     }
 
 
+def _decoder_attention_score32_exact_reduction_recost_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    source_recost_json = (
+        f"{base}/decoder_attention_composed_datapath_physical_feasibility__"
+        "l2_decoder_attention_composed_datapath_score32_exp_lut_div_schedule_wrapper_recost_llama7b_v1.json"
+    )
+    banked_config = (
+        "runs/designs/npu_blocks/attention_score32_exact_banked_finalized_tree_c16_r2_l8_b59/config.json"
+    )
+    out = f"{base}/decoder_attention_score32_exact_reduction_recost__{item_id}.json"
+    report = f"{base}/decoder_attention_score32_exact_reduction_recost__{item_id}.md"
+    return {
+        "inputs": {
+            "attention_score32_exact_reduction_recost_source_json": source_recost_json,
+            "attention_score32_exact_reduction_recost_banked_config": banked_config,
+            "attention_score32_exact_reduction_recost_out": out,
+            "attention_score32_exact_reduction_recost_report": report,
+            "attention_score32_exact_reduction_recost_scope": (
+                "Correct the obsolete 141-cycle score32 schedule-wrapper reduction assumption with the exact "
+                "ordered banked finalized-tree c16/r2/l8/b59 full-wave no-stall service contract while "
+                "preserving the source recost values explicitly and keeping reducer PPA/activity plus "
+                "328-bit transport/NoC/SRAM closure out of scope."
+            ),
+        },
+        "commands": [
+            {
+                "name": "audit_decoder_attention_score32_exact_reduction_recost",
+                "run": (
+                    "python3 npu/eval/audit_llm_decoder_attention_score32_exact_reduction_recost.py "
+                    f"--source-recost-json {source_recost_json} "
+                    f"--banked-config {banked_config} "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            }
+        ],
+        "expected_outputs": [out, report],
+        "evidence_only": True,
+    }
+
+
 def _decoder_attention_score32_compute_activity_energy_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_score32_compute_activity_energy__{item_id}.json"
@@ -11324,6 +11365,7 @@ def _build_payload(
         "decoder_attention_score32_hbm_controller_replay",
         "decoder_attention_score32_integrated_frontier_ranking",
         "decoder_attention_score32_schedule_wrapper_postroute_activity_power",
+        "decoder_attention_score32_exact_reduction_recost",
         "decoder_attention_score32_compute_activity_energy",
         "decoder_attention_score32_separated_compute_recost",
         "decoder_attention_separated_cluster_equivalence",
@@ -11627,6 +11669,8 @@ def _build_payload(
             decoder_evidence = _decoder_attention_score32_schedule_wrapper_postroute_activity_power_evidence(
                 item_id=item_id
             )
+        elif abstraction_layer_name == "decoder_attention_score32_exact_reduction_recost":
+            decoder_evidence = _decoder_attention_score32_exact_reduction_recost_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_score32_compute_activity_energy":
             decoder_evidence = _decoder_attention_score32_compute_activity_energy_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_score32_separated_compute_recost":
