@@ -27,7 +27,7 @@
       "NoC and SRAM physical closure",
       "global c16 integration PPA",
       "frontier promotion from functional simulation alone",
-      "new PPA harness generation in this change"
+      "new sweep or evaluation dispatch in this change"
     ],
     "metrics": [
       "functional_exact_partial_protocol",
@@ -43,18 +43,26 @@
     "Producer-to-local-reducer structural fan-in remains open.",
     "NoC and SRAM PPA remain open.",
     "The global c16 exact reducer is still uncomposed here.",
-    "No GQA8-specific physical harness or sweep item was created in this change."
+    "The new GQA8 physical harness is structural-only, and its reducer-vs-source_only PPA delta is nonlinear until the producer fan-in and global c16 composition are closed.",
+    "No GQA8-specific sweep, evaluation request, or dispatch item is created in this change."
   ],
   "required_evaluations": [],
   "source_refs": [
     "npu/rtlgen/gen_attention_score32_exact_local_temporal_reducer_gqa8.py",
+    "npu/rtlgen/gen_attention_score32_exact_local_temporal_reducer_gqa8_physical_harness.py",
+    "npu/eval/check_attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_guard.py",
     "npu/eval/probe_attention_score32_exact_local_temporal_reducer_gqa8.py",
     "npu/sim/perf/attention_exact_partial.py",
     "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_p53_w8/config.json",
-    "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_p54_w8/config.json"
+    "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_p54_w8/config.json",
+    "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p53_reducer_w8/config.json",
+    "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p53_source_only_w8/config.json",
+    "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p54_reducer_w8/config.json",
+    "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p54_source_only_w8/config.json"
   ],
   "knowledge_refs": [
     "npu/docs/attention_score32_exact_local_temporal_reducer_gqa8_contract.md",
+    "npu/docs/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_contract.md",
     "npu/docs/attention_score32_exact_partial_gqa8_dual_stream_producer_contract.md",
     "npu/docs/generated/llama7b_score32_exact_hierarchy_cadence_audit_v3.md"
   ]
