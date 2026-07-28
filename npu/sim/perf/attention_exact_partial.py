@@ -693,20 +693,30 @@ def exact_banked_finalized_tree_service_manifest(
 
 def exact_partial_producer_tree_service_manifest(
     *,
+    producers: int = 2,
+    clusters: int = 2,
     heads: int = 32,
     max_blocks: int = 16384,
     divider_lanes: int = 8,
     finalizer_banks: int = 59,
 ) -> dict[str, object]:
+    producer_count = int(producers)
+    cluster_count = int(clusters)
     head_count = int(heads)
     block_limit = int(max_blocks)
+    if producer_count < 2 or producer_count > 16 or (producer_count & (producer_count - 1)):
+        raise ValueError("producers must be a power of two in [2, 16]")
+    if cluster_count < 2 or cluster_count > 16 or (cluster_count & (cluster_count - 1)):
+        raise ValueError("clusters must be a power of two in [2, 16]")
+    if producer_count != cluster_count:
+        raise ValueError("producer-coupled exact-partial slice requires producers == clusters")
     if head_count < 1 or head_count > 32:
         raise ValueError("heads must be in [1, 32]")
     if block_limit < 8 or block_limit > 16384 or (block_limit & (block_limit - 1)):
         raise ValueError("max_blocks must be a power of two in [8, 16384]")
     manifest = dict(
         exact_banked_finalized_tree_service_manifest(
-            clusters=2,
+            clusters=cluster_count,
             heads=head_count,
             divider_lanes=divider_lanes,
             finalizer_banks=finalizer_banks,
@@ -714,8 +724,9 @@ def exact_partial_producer_tree_service_manifest(
     )
     manifest.update(
         {
-            "producers": 2,
-            "command_broadcast_mode": "same_head_broadcast_to_both_producers",
+            "producers": producer_count,
+            "clusters": cluster_count,
+            "command_broadcast_mode": f"same_head_broadcast_to_all_{producer_count}_producers",
             "head_mapping_contract": "explicit_head_id_no_tile_or_wave_inference",
             "producer_input_contract": "per_producer_ready_valid_score_blocks_and_value_blocks",
             "producer_partial_protocol": {
@@ -747,7 +758,7 @@ def exact_partial_producer_tree_service_manifest(
             "llama_tile_cadence_unclosed": True,
             "remaining_abstractions": [
                 "direct_328bit_exact_partial_links_unclosed",
-                "native_c2_overlap_only",
+                f"native_c{cluster_count}_overlap_only",
                 "llama_16cluster_8tilewave_986cycle_mapping_open",
             ],
         }
