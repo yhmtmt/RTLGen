@@ -1,0 +1,70 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_score32_local_temporal_reducer_v1",
+  "created_utc": "2026-07-28T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit",
+  "title": "Functional 53/54-way score32 local reducer with eight-wave persistent state",
+  "abstraction_layer": "decoder_attention_score32_local_temporal_reducer",
+  "hypothesis": "A staged exact-partial reducer can combine 53 or 54 functional producer streams per global cluster and retain one exact local aggregate across eight tile waves before the existing c16 global reduction, but its service cadence and PPA must be measured before the Llama7B frontier can be revised.",
+  "direct_comparison": {
+    "primary_question": "Can the local exact hierarchy consume the functional producer outputs, preserve exact online-state semantics across eight waves, and operate within the service budget needed by the Llama7B attention schedule?",
+    "baselines": [
+      "l1_decoder_attention_score32_exact_partial_dual_stream_producer_ppa_v1",
+      "attention_score32_exact_partial_producer_tree_c16_r2_l8_b59"
+    ],
+    "candidate": "l1_decoder_attention_score32_local_temporal_reducer_ppa_v1",
+    "include": [
+      "53-input and 54-input staged ready/valid exact-partial reduction",
+      "persistent local exact state across exactly eight waves",
+      "structured RTL/perf equivalence for every output beat",
+      "ideal-interface service and separate randomized backpressure evidence"
+    ],
+    "exclude": [
+      "producer fan-in NoC and SRAM physical closure",
+      "global c16 integration PPA",
+      "Llama7B frontier promotion from functional simulation alone"
+    ],
+    "metrics": [
+      "critical_path_ns",
+      "stdcell_area_um2",
+      "total_power_mw",
+      "ideal_service_cycles",
+      "functional_exact_partial_protocol",
+      "eight_wave_persistence"
+    ]
+  },
+  "remaining_abstractions": [
+    "Producer-to-local-reducer NoC and SRAM banking remain open.",
+    "The global c16 reducer must be composed after local temporal aggregation.",
+    "The 986-cycle arithmetic point is not sustained by the current functional producer."
+  ],
+  "required_evaluations": [
+    {
+      "item_id": "l1_decoder_attention_score32_local_temporal_reducer_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure the functional 53/54-way staged exact-partial local reducer with eight-wave persistent state after implementation merge.",
+      "evaluation_mode": "frontier_followup",
+      "abstraction_layer": "decoder_attention_score32_local_temporal_reducer",
+      "comparison_role": "functional_local_hierarchy_anchor",
+      "paired_baseline_item_id": "l1_decoder_attention_score32_exact_partial_dual_stream_producer_ppa_v1",
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "close_local_exact_reduction_and_temporal_state",
+        "reason": "The producer measurement alone cannot establish tile cadence without the local reducer and eight-wave persistent state."
+      },
+      "status": "pending_implementation_merge"
+    }
+  ],
+  "source_refs": [
+    "npu/eval/audit_llm_decoder_attention_score32_exact_hierarchy_cadence_r2.py",
+    "npu/eval/probe_attention_score32_exact_partial_gqa8_dual_stream_producer.py",
+    "runs/designs/npu_blocks/attention_score32_exact_partial_gqa8_dual_stream_producer_b8/config_llama_wave.json"
+  ],
+  "knowledge_refs": [
+    "npu/docs/generated/llama7b_score32_exact_hierarchy_cadence_audit_v2.md",
+    "npu/docs/attention_score32_exact_partial_gqa8_dual_stream_producer_contract.md",
+    "docs/architecture/llama7b_attention_abstraction_closure_plan.md"
+  ]
+}
