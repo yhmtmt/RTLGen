@@ -1,0 +1,86 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_score32_exact_local16_global_tree_gqa8_v1",
+  "created_utc": "2026-07-28T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit",
+  "title": "Full structural GQA8 score32 exact local16-to-global finalized tree wrapper",
+  "abstraction_layer": "decoder_attention_score32_exact_local16_global_tree_gqa8",
+  "hypothesis": "Sixteen real GQA8 exact local temporal reducers can be composed directly into the existing c16/r2/l8/b59 ordered banked finalized tree without producer-coupled placeholder logic, preserving exact partial metadata, group-major eight-wave semantics, and backpressure across the local-to-global boundary.",
+  "direct_comparison": {
+    "primary_question": "Can the full 856-leaf local16 wrapper preserve exact local reduction, exact temporal persistence, and exact global finalized output semantics while wiring the sixteen cluster aggregates directly into the existing finalized c16 tree?",
+    "baselines": [
+      "prop_l1_decoder_attention_score32_local_temporal_reducer_gqa8_v1",
+      "prop_l1_decoder_attention_score32_exact_banked_finalized_tree_c16_bank_ppa_v1"
+    ],
+    "candidate": "l1_decoder_attention_score32_exact_local16_global_tree_gqa8_v1",
+    "include": [
+      "sixteen-cluster structural composition",
+      "eight p54 reducers and eight p53 reducers",
+      "flat packed 856-leaf exact-partial wrapper boundary",
+      "direct field-preserving local-aggregate to global-tree mapping",
+      "structured staged-local then temporal then global exact reference",
+      "bounded full-wrapper RTL probe against that staged reference"
+    ],
+    "exclude": [
+      "producer microarchitecture insertion at the wrapper boundary",
+      "NoC or SRAM behavior insertion at the wrapper boundary",
+      "dispatch, DB, or OpenROAD execution in this implementation change",
+      "semantic changes to the existing local reducer or existing banked finalized tree"
+    ],
+    "metrics": [
+      "856_leaf_structural_instance_count",
+      "packed_leaf_bus_widths",
+      "direct_ready_valid_mapping",
+      "c16_r2_l8_b59_contract_preservation",
+      "bounded_full_wrapper_exact_root_hash",
+      "documented_heavier_run_timeout_if_not_tractable"
+    ]
+  },
+  "remaining_abstractions": [
+    "Producer/NoC/SRAM closure remains open at the packed local exact-partial boundary.",
+    "Physical PPA closure remains open for the full composed wrapper."
+  ],
+  "required_evaluations": [
+    {
+      "item_id": "l1_decoder_attention_score32_exact_local16_global_tree_gqa8_ppa_v1",
+      "task_type": "l1_sweep",
+      "proposal_id": "prop_l1_decoder_attention_score32_exact_local16_global_tree_gqa8_v1",
+      "proposal_path": "docs/proposals/prop_l1_decoder_attention_score32_exact_local16_global_tree_gqa8_v1/proposal.json",
+      "objective": "Measure the physical PPA boundary for the full structural local16-to-global exact wrapper after producer/NoC/SRAM assumptions are materialized at the packed local exact-partial boundary.",
+      "evaluation_mode": "frontier_followup",
+      "abstraction_layer": "decoder_attention_score32_exact_local16_global_tree_gqa8",
+      "comparison_role": "full_structural_wrapper_anchor",
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "configs": [
+        "runs/designs/npu_blocks/attention_score32_exact_local16_global_tree_gqa8_p54x8_p53x8_c16_r2_l8_b59/config.json"
+      ],
+      "out_root": "runs/designs/npu_blocks",
+      "expected_outputs": [
+        "runs/designs/npu_blocks/attention_score32_exact_local16_global_tree_gqa8_p54x8_p53x8_c16_r2_l8_b59/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_local16_global_tree_gqa8_p54x8_p53x8_c16_r2_l8_b59/timing_debug_report.md"
+      ],
+      "acceptance_notes": "Do not queue this until producer/NoC/SRAM assumptions are concretized. The current wrapper is intentionally functional-only and records only structural and arithmetic evidence.",
+      "expected_result": {
+        "direction": "measure_full_structural_wrapper_boundary",
+        "reason": "The full composed wrapper is structurally closed at the exact local-to-global interface, but producer/NoC/SRAM and physical PPA closure remain explicitly open."
+      },
+      "status": "pending"
+    }
+  ],
+  "source_refs": [
+    "npu/rtlgen/gen_attention_score32_exact_local16_global_tree_gqa8.py",
+    "npu/eval/probe_attention_score32_exact_local16_global_tree_gqa8.py",
+    "npu/eval/check_attention_score32_exact_local16_global_tree_gqa8_guard.py",
+    "npu/sim/perf/attention_exact_partial.py",
+    "runs/designs/npu_blocks/attention_score32_exact_local16_global_tree_gqa8_p54x8_p53x8_c16_r2_l8_b59/config.json",
+    "tests/test_attention_score32_exact_local16_global_tree_gqa8.py",
+    "tests/test_check_attention_score32_exact_local16_global_tree_gqa8_guard.py"
+  ],
+  "knowledge_refs": [
+    "npu/docs/attention_score32_exact_local16_global_tree_gqa8_contract.md",
+    "npu/docs/attention_score32_exact_local_temporal_reducer_gqa8_contract.md",
+    "npu/docs/attention_score32_exact_banked_finalized_tree_contract.md"
+  ]
+}

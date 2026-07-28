@@ -3,11 +3,16 @@ from npu.sim.perf.attention_exact_partial import (
     FINAL_LINK_BITS,
     FINAL_PAYLOAD_BITS,
     ExactFinalizedBeat,
+    ExactLocalGlobalGqa8Composition,
+    ExactLocalTemporalClusterComposition,
     ExactPartialBeat,
     LEAF_STREAM_BYTES_PER_CLUSTER_32_HEADS,
     LOCAL_TEMPORAL_WAVES,
     PARTIAL_PAYLOAD_BITS,
+    compose_local16_global_tree_gqa8_exact,
+    compose_local_temporal_cluster_exact,
     exact_finalized_tree_service_manifest,
+    exact_local16_global_tree_gqa8_service_manifest,
     exact_local_temporal_reducer_service_manifest,
     exact_partial_staged_tree_service_manifest,
     exact_partial_tree_service_manifest,
@@ -65,6 +70,19 @@ def _beat(*, max_score: int, exp_sum: int = 19, numerators: tuple[int, ...] = (1
         max_score=max_score,
         exp_sum=exp_sum,
         numerators=numerators,
+    )
+
+
+def _cluster_beat(*, cluster: int, producer: int, wave: int) -> ExactPartialBeat:
+    value_base = 10 + (cluster * 17) + (producer * 13) + (wave * 19)
+    return ExactPartialBeat(
+        command_id=0x5200,
+        head_id=7,
+        slice_index=15,
+        last=True,
+        max_score=((cluster * 29) + (producer * 11) + (wave * 7)) - 200,
+        exp_sum=200 + cluster + producer + wave,
+        numerators=tuple(value_base + lane for lane in range(8)),
     )
 
 
@@ -239,6 +257,45 @@ def test_local_temporal_reduce_merges_exactly_eight_waves() -> None:
     assert reduced == expected
 
 
+def test_local_temporal_cluster_composition_tracks_wave_roots_and_temporal_aggregate() -> None:
+    waves = tuple(
+        tuple(
+            tuple(_cluster_beat(cluster=3, producer=producer, wave=wave) for _ in range(1))
+            for producer in range(2)
+        )
+        for wave in range(LOCAL_TEMPORAL_WAVES)
+    )
+
+    composition = compose_local_temporal_cluster_exact(waves)
+
+    assert isinstance(composition, ExactLocalTemporalClusterComposition)
+    assert len(composition.wave_local_roots) == LOCAL_TEMPORAL_WAVES
+    assert all(len(root) == 1 for root in composition.wave_local_roots)
+    assert composition.wave_local_roots[0] == merge_staged_partial_streams(waves[0])
+    assert composition.temporal_aggregate == reduce_local_temporal_partial_waves(waves)
+
+
+def test_local16_global_gqa8_composition_matches_cluster_then_global_reference() -> None:
+    clusters = tuple(
+        tuple(
+            tuple(tuple(_cluster_beat(cluster=cluster, producer=producer, wave=wave) for _ in range(1)) for producer in range(2))
+            for wave in range(LOCAL_TEMPORAL_WAVES)
+        )
+        for cluster in range(16)
+    )
+
+    composition = compose_local16_global_tree_gqa8_exact(clusters)
+
+    assert isinstance(composition, ExactLocalGlobalGqa8Composition)
+    assert len(composition.cluster_compositions) == 16
+    expected_cluster_aggregates = tuple(
+        reduce_local_temporal_partial_waves(cluster) for cluster in clusters
+    )
+    assert tuple(component.temporal_aggregate for component in composition.cluster_compositions) == expected_cluster_aggregates
+    assert composition.global_merged_partials == merge_balanced_partial_streams(expected_cluster_aggregates)
+    assert composition.finalized_beats == finalize_partial_beats(composition.global_merged_partials)
+
+
 def test_exact_partial_tree_service_manifest_is_consistent() -> None:
     manifest = exact_partial_tree_service_manifest(clusters=16)
 
@@ -294,6 +351,25 @@ def test_exact_local_temporal_reducer_service_manifest_is_consistent() -> None:
         "producer_fan_in_wiring_open",
         "noc_sram_ppa_open",
         "global_c16_exact_reduction_open",
+    ]
+
+
+def test_exact_local16_global_tree_gqa8_service_manifest_is_consistent() -> None:
+    manifest = exact_local16_global_tree_gqa8_service_manifest(cluster_producers=((54,) * 8) + ((53,) * 8), head_groups=2)
+
+    assert manifest["clusters"] == 16
+    assert manifest["clusters_with_54_producers"] == 8
+    assert manifest["clusters_with_53_producers"] == 8
+    assert manifest["total_local_producers"] == 856
+    assert manifest["local_aggregate_beats_per_group"] == 128
+    assert manifest["global_finalized_beats_per_group"] == 128
+    assert manifest["comparison_baseline_contract"] == "python_structured_local16_global_exact_gqa8_reference"
+    assert manifest["global_tree_contract"]["divider_lanes"] == 8
+    assert manifest["global_tree_contract"]["finalizer_banks"] == 59
+    assert manifest["remaining_abstractions"] == [
+        "producer_leaf_source_open",
+        "noc_sram_transport_open",
+        "physical_ppa_open",
     ]
 
 
