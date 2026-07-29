@@ -1,0 +1,119 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "decoder_contract": {
+        "attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence__l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1_r7.json",
+        "attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_scope": "Run the fine-grained concrete compositional GQA8 cluster-SRAM RTL equivalence probe under bounded remote resources. Require the strict generated-top guard, serial exact single-producer replays, concrete p54/p53 SRAM endpoint and reducer/temporal-merge replays, and concrete global-tree simulation. Accept only exact producer/fill/SRAM/root counts, zero protocol or sticky errors, and a full structured row audit.",
+        "attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_config": "runs/designs/npu_blocks/attention_score32_exact_local16_global_tree_cluster_sram_gqa8_p54x8_p53x8_c16_r2_l8_b59/config.json",
+        "attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence__l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1_r7.md"
+      },
+      "worker_resources": {
+        "cpu_quota": "300%",
+        "tasks_max": 512,
+        "memory_max": "8G",
+        "memory_high": "6G",
+        "exclusive_worker": true,
+        "outer_timeout_seconds": 2400,
+        "stall_timeout_seconds": 1500
+      }
+    },
+    "commands": [
+      {
+        "run": "python3 control_plane/scripts/run_bounded_command.py --memory-high 6G --memory-max 8G --cpu-quota 300% --tasks-max 512 --runtime-max-sec 2400 -- python3 npu/eval/probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8.py --config runs/designs/npu_blocks/attention_score32_exact_local16_global_tree_cluster_sram_gqa8_p54x8_p53x8_c16_r2_l8_b59/config.json --sim-backend fine_compositional_icarus --compile-timeout-sec 1200 --timeout-sec 900 --root-ready-pattern 1,1,0,1 --out runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence__l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1_r7.json --out-md runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence__l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1_r7.md --proposal-id prop_l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1 --proposal-path docs/proposals/prop_l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1/proposal.json",
+        "name": "probe_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate_runs"
+      }
+    ],
+    "objective": "Run the corrected bounded remote fine-grained concrete RTL/perf equivalence gate with canonical 41-bit global sidecar packing for the complete score32 GQA8 path.",
+    "acceptance": [
+      "Write exactly the bounded JSON and Markdown probe reports declared in expected_outputs",
+      "Require report passed=true, classification=passed, and counts_passed=true",
+      "Require compositional_components.strict_generated_top_guard=passed",
+      "Require compositional_components.producer_replay_parallelism=1",
+      "Require compositional_components.global_sidecar.value_packing=canonical_pack_numerators",
+      "Require exact totals in report.summary: producer_handshake_count=8192, fill_target_accept_count=128, fill_row_accept_count=262144, sram_request_accept_count=262144, sram_response_accept_count=262144, cluster_row_count=2048, root_row_count=128, command_accept_count=8, cadence_command_accept_count=8, protocol_error=0",
+      "Require 16 cluster_summaries with errors=0 and exact per-cluster counts: wave_command_accept_count=8, completed_command_count=1, emitted_beat_count=128, fill_target_accept_count=8, fill_row_accept_count=16384, request_accept_count=16384, response_accept_count=16384, command_accept_count=8, command_release_count=8",
+      "Require full_row_audit.passed=true for every cluster stream and the root stream",
+      "Keep evidence artifact paths repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "source_mode": "src_verilog",
+    "expected_outputs": [
+      "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence__l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1_r7.json",
+      "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence__l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1_r7.md"
+    ]
+  },
+  "layer": "layer2",
+  "state": "evaluated",
+  "title": "Full score32 GQA8 canonical-sidecar fine compositional RTL equivalence r7",
+  "result": {
+    "branch": "eval/l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1_r7/s20260729t055616z",
+    "completed_utc": "2026-07-29T05:44:34.101471Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "b7c2d9c80c1c",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260729t055616z][host:b7c2d9c80c1c][item:l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1_r7]",
+    "metrics_rows": [],
+    "metrics_exempt_reason": "evidence_only_decoder_evidence",
+    "queue_item_id": "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1_r7",
+    "session_id": "s20260729t055616z",
+    "status": "ok",
+    "summary": "2/2 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1_r7/s20260729t055616z",
+    "pr_title": "eval: run full score32 gqa8 canonical-sidecar fine compositional rtl equivalence r7",
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Include metrics row references in result.metrics_rows",
+      "Keep committed result_path fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260729t055616z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1_r7"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1_r7",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 10,
+  "created_utc": "2026-07-29T05:18:10.750722Z",
+  "requested_by": "developer_agent",
+  "developer_loop": {
+    "comparison": {
+      "role": "equivalence_check",
+      "paired_baseline_item_id": ""
+    },
+    "evaluation": {
+      "mode": "frontier_detail",
+      "expected_reason": "Only a complete structured-row and protocol pass with canonical global-sidecar packing can promote this composed path into the measured Llama7B architecture model.",
+      "expected_direction": "prove_full_composed_equivalence_or_diagnose"
+    },
+    "abstraction": {
+      "layer": "decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence"
+    },
+    "proposal_id": "prop_l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1",
+    "dependencies": {
+      "item_ids": [],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    },
+    "proposal_path": "docs/proposals/prop_l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1/proposal.json"
+  },
+  "source_requirement": {
+    "repo": "",
+    "reason": "evaluator runtime must contain the queued job source commit",
+    "version": 1,
+    "required_ref": "origin/master",
+    "required_sha": "6ae44a18be7e187e1f0e53eb04d50574d09091d3",
+    "requires_daemon_restart": true
+  }
+}
