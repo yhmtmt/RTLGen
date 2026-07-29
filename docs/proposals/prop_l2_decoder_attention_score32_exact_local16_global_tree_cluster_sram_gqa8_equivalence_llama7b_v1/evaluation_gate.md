@@ -13,7 +13,7 @@
 - CPU: `CPUQuota=300%`
 - Tasks: `TasksMax=512`
 - Launcher: `control_plane/scripts/run_bounded_command.py`
-- Simulation backend: `verilator_hierarchical`
+- Simulation backend: `compositional_icarus`
 
 If a usable user `systemd` manager exists, the launcher applies the contract
 with `systemd-run --user --scope`. In evaluator containers without a user bus,
@@ -24,12 +24,11 @@ CPUs (`CPUQuota=300%` becomes at most three allowed CPUs). `MemoryHigh=6G` is
 advisory and reported as unavailable in fallback mode rather than claimed as
 exact cgroup enforcement.
 
-The probe backend should be `python3 npu/eval/probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8.py --sim-backend verilator_hierarchical --compile-timeout-sec 1200 --timeout-sec 900`.
-This backend uses Verilator `--binary --timing --hierarchical` with a generated
-control file that marks exactly the generated p54 cluster, p53 cluster, and
-global-tree modules as hierarchy blocks, adds `-Wno-fatal` so warnings do not
-become false compile failures, and records separate compile/simulation timeout
-metadata in the bounded JSON report.
+The probe backend should be `python3 npu/eval/probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8.py --sim-backend compositional_icarus --compile-timeout-sec 1200 --timeout-sec 900`.
+It must pass the existing strict generated-top guard, simulate the concrete p54
+and p53 cluster wrappers with all cluster-specific sidecars, and simulate the
+concrete global tree from the observed cluster streams. The JSON report must
+record the component phases and separate compile/simulation timeouts.
 
 Do not run this probe in the devcontainer.
 
@@ -48,6 +47,7 @@ The JSON report must contain:
 - 16 passing per-cluster summaries
 - zero protocol or sticky errors
 - passing structured comparisons for every cluster row and root row
+- `compositional_components.strict_generated_top_guard: passed`
 
 Hashes are diagnostics only. They cannot substitute for structured comparison.
 

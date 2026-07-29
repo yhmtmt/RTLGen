@@ -58,7 +58,12 @@ DIAGNOSTIC_TAIL_LIMIT = 4096
 MARKDOWN_DIAGNOSTIC_TAIL_LIMIT = 1024
 DEFAULT_SIM_BACKEND = "icarus"
 VERILATOR_HIERARCHICAL_BACKEND = "verilator_hierarchical"
-SIM_BACKEND_CHOICES = (DEFAULT_SIM_BACKEND, VERILATOR_HIERARCHICAL_BACKEND)
+COMPOSITIONAL_ICARUS_BACKEND = "compositional_icarus"
+SIM_BACKEND_CHOICES = (
+    DEFAULT_SIM_BACKEND,
+    VERILATOR_HIERARCHICAL_BACKEND,
+    COMPOSITIONAL_ICARUS_BACKEND,
+)
 VERILATOR_BUILD_JOBS = 3
 VERILATOR_CONTROL_FILE_NAME = "verilator_hier.vlt"
 VERILATOR_BINARY_NAME = "simv"
@@ -538,8 +543,8 @@ def _sim_backend_metadata(
     simulation_timeout_sec: int,
 ) -> JsonDict:
     metadata: JsonDict = {
-        "compile_tool": "iverilog" if sim_backend == DEFAULT_SIM_BACKEND else "verilator",
-        "run_tool": "vvp" if sim_backend == DEFAULT_SIM_BACKEND else "verilated_binary",
+        "compile_tool": "verilator" if sim_backend == VERILATOR_HIERARCHICAL_BACKEND else "iverilog",
+        "run_tool": "verilated_binary" if sim_backend == VERILATOR_HIERARCHICAL_BACKEND else "vvp",
         "compile_timeout_sec": int(compile_timeout_sec),
         "simulation_timeout_sec": int(simulation_timeout_sec),
     }
@@ -552,13 +557,22 @@ def _sim_backend_metadata(
                 "hierarchical_modules": _hierarchical_module_names(top_name),
             }
         )
+    elif sim_backend == COMPOSITIONAL_ICARUS_BACKEND:
+        metadata.update(
+            {
+                "proof": "concrete_rtl_composition",
+                "strict_generated_top_guard": True,
+                "components": ["p54_cluster", "p53_cluster", "global_tree"],
+                "cluster_replays": CLUSTERS,
+            }
+        )
     return metadata
 
 
 def _resolve_compile_timeout_sec(*, sim_backend: str, timeout_sec: int, compile_timeout_sec: int | None) -> int:
     if compile_timeout_sec is not None:
         return int(compile_timeout_sec)
-    if sim_backend == VERILATOR_HIERARCHICAL_BACKEND:
+    if sim_backend in (VERILATOR_HIERARCHICAL_BACKEND, COMPOSITIONAL_ICARUS_BACKEND):
         return DEFAULT_VERILATOR_COMPILE_TIMEOUT_SEC
     return int(timeout_sec)
 
@@ -1126,6 +1140,16 @@ def _bounded_tail(text: str, *, limit: int = DIAGNOSTIC_TAIL_LIMIT) -> str:
     return f"[truncated {omitted} chars]\n{text[-limit:]}"
 
 
+def _bounded_first_and_tail(text: str, *, limit: int = DIAGNOSTIC_TAIL_LIMIT) -> str:
+    if len(text) <= limit:
+        return text
+    marker = "\n...[middle omitted]...\n"
+    available = max(2, limit - len(marker))
+    head = available // 2
+    tail = available - head
+    return text[:head] + marker + text[-tail:]
+
+
 def _evaluate_observations(
     *,
     reference: dict[str, object],
@@ -1183,7 +1207,7 @@ def _evaluate_observations(
         "simulation_status": simulation_status,
         "returncode": returncode,
         "normalized_returncode": _normalize_returncode(returncode),
-        "stderr_tail": _bounded_tail(stderr),
+        "stderr_tail": _bounded_first_and_tail(stderr),
         "tb_timeout_cycle": tb_timeout_cycle,
         "summary": summary,
         "cluster_summaries": cluster_summaries,
@@ -1231,28 +1255,55 @@ def build_report(
     stdout = ""
     stderr = ""
     sidecars: dict[str, object] = {}
+    component_metadata: dict[str, object] = {}
+    phase_records: list[dict[str, object]] = []
 
     with tempfile.TemporaryDirectory(prefix="score32_exact_full_cluster_sram_probe_") as temp_name:
         temp_dir = Path(temp_name)
-        rtl_dir = temp_dir / "rtl"
+        rtl_dir = temp_dir / "verilog"
         generate(resolved_config, rtl_dir)
-        sidecars = _write_memh_sidecars(temp_dir, logical_head_groups=resolved_groups)
         tb_path = temp_dir / "tb.v"
-        tb_path.write_text(
-            _testbench(
-                top_name=str(resolved_config["top_name"]),
-                output_ready_pattern=tuple(bool(value) for value in output_ready_pattern),
-                logical_head_groups=resolved_groups,
-            ),
-            encoding="ascii",
-        )
+        if resolved_backend != COMPOSITIONAL_ICARUS_BACKEND:
+            sidecars = _write_memh_sidecars(temp_dir, logical_head_groups=resolved_groups)
+            tb_path.write_text(
+                _testbench(
+                    top_name=str(resolved_config["top_name"]),
+                    output_ready_pattern=tuple(bool(value) for value in output_ready_pattern),
+                    logical_head_groups=resolved_groups,
+                ),
+                encoding="ascii",
+            )
         fakeram_path = temp_dir / "fakeram45_2048x39.v"
         fakeram_path.write_text(full_probe._FAKERAM_MODEL, encoding="ascii")
         sim_path = temp_dir / "sim.out"
         control_path = temp_dir / VERILATOR_CONTROL_FILE_NAME
         obj_dir = temp_dir / "obj_dir"
         try:
-            if resolved_backend == VERILATOR_HIERARCHICAL_BACKEND:
+            if resolved_backend == COMPOSITIONAL_ICARUS_BACKEND:
+                from npu.eval.gqa8_compositional_exact import run_compositional_exact
+
+                compositional = run_compositional_exact(
+                    config=resolved_config,
+                    work_dir=temp_dir,
+                    rtl_dir=rtl_dir,
+                    fakeram_path=fakeram_path,
+                    logical_head_groups=resolved_groups,
+                    output_ready_pattern=tuple(bool(value) for value in output_ready_pattern),
+                    compile_timeout_sec=resolved_compile_timeout_sec,
+                    simulation_timeout_sec=int(timeout_sec),
+                )
+                simulation_status = str(compositional["simulation_status"])
+                returncode = int(compositional["returncode"])
+                stdout = str(compositional.get("stdout") or "")
+                stderr = str(compositional.get("stderr") or "")
+                component_metadata = dict(compositional.get("component_metadata") or {})
+                phase_records = list(compositional.get("phase_records") or [])
+                sidecars = {
+                    "storage": "temporary_component_local_memh",
+                    "persisted": False,
+                    "logical_head_groups": resolved_groups,
+                }
+            elif resolved_backend == VERILATOR_HIERARCHICAL_BACKEND:
                 control_path = _write_verilator_control_file(
                     temp_dir,
                     top_name=str(resolved_config["top_name"]),
@@ -1271,58 +1322,59 @@ def build_report(
                     tb_path=tb_path,
                     sim_path=sim_path,
                 )
-            compile_result = subprocess.run(
-                compile_command,
-                cwd=temp_dir,
-                capture_output=True,
-                text=True,
-                timeout=resolved_compile_timeout_sec,
-            )
-            if compile_result.returncode:
-                stdout = compile_result.stdout or ""
-                returncode = compile_result.returncode
-                stderr = _resource_diagnostic_text(
-                    stdout=stdout,
-                    stderr=compile_result.stderr or "",
-                )
-                simulation_status = (
-                    "resource_failure"
-                    if _is_resource_termination(
-                        returncode=compile_result.returncode,
-                        stdout=compile_result.stdout or "",
-                        stderr=compile_result.stderr or "",
-                    )
-                    else "compile_failed"
-                )
-            else:
-                run_command = (
-                    [str(obj_dir / VERILATOR_BINARY_NAME)]
-                    if resolved_backend == VERILATOR_HIERARCHICAL_BACKEND
-                    else [_tool("vvp"), str(sim_path)]
-                )
-                run_result = subprocess.run(
-                    run_command,
+            if resolved_backend != COMPOSITIONAL_ICARUS_BACKEND:
+                compile_result = subprocess.run(
+                    compile_command,
                     cwd=temp_dir,
                     capture_output=True,
                     text=True,
-                    timeout=int(timeout_sec),
+                    timeout=resolved_compile_timeout_sec,
                 )
-                stdout = run_result.stdout
-                stderr = _resource_diagnostic_text(
-                    stdout=run_result.stdout or "",
-                    stderr=run_result.stderr or "",
-                )
-                returncode = run_result.returncode
-                if run_result.returncode:
+                if compile_result.returncode:
+                    stdout = compile_result.stdout or ""
+                    returncode = compile_result.returncode
+                    stderr = _resource_diagnostic_text(
+                        stdout=stdout,
+                        stderr=compile_result.stderr or "",
+                    )
                     simulation_status = (
                         "resource_failure"
                         if _is_resource_termination(
-                            returncode=run_result.returncode,
-                            stdout=run_result.stdout or "",
-                            stderr=run_result.stderr or "",
+                            returncode=compile_result.returncode,
+                            stdout=compile_result.stdout or "",
+                            stderr=compile_result.stderr or "",
                         )
-                        else "run_failed"
+                        else "compile_failed"
                     )
+                else:
+                    run_command = (
+                        [str(obj_dir / VERILATOR_BINARY_NAME)]
+                        if resolved_backend == VERILATOR_HIERARCHICAL_BACKEND
+                        else [_tool("vvp"), str(sim_path)]
+                    )
+                    run_result = subprocess.run(
+                        run_command,
+                        cwd=temp_dir,
+                        capture_output=True,
+                        text=True,
+                        timeout=int(timeout_sec),
+                    )
+                    stdout = run_result.stdout
+                    stderr = _resource_diagnostic_text(
+                        stdout=run_result.stdout or "",
+                        stderr=run_result.stderr or "",
+                    )
+                    returncode = run_result.returncode
+                    if run_result.returncode:
+                        simulation_status = (
+                            "resource_failure"
+                            if _is_resource_termination(
+                                returncode=run_result.returncode,
+                                stdout=run_result.stdout or "",
+                                stderr=run_result.stderr or "",
+                            )
+                            else "run_failed"
+                        )
         except subprocess.TimeoutExpired as exc:
             simulation_status = "subprocess_timeout"
             returncode = 124
@@ -1377,6 +1429,8 @@ def build_report(
                 compile_timeout_sec=resolved_compile_timeout_sec,
                 simulation_timeout_sec=int(timeout_sec),
             ),
+            "compositional_components": component_metadata,
+            "component_phase_records": phase_records,
             "expected_counts": expected_counts(logical_head_groups=resolved_groups),
             "memh_sidecars": sidecars,
             "service_model": exact_local16_global_tree_cluster_sram_gqa8_service_manifest(
@@ -1416,7 +1470,7 @@ def _render_text(report: JsonDict) -> str:
         f"- expected_root_hash: `{report['expected_root_hash']}`",
     ]
     if not bool(report["passed"]):
-        stderr_tail = _bounded_tail(
+        stderr_tail = _bounded_first_and_tail(
             str(report.get("stderr_tail") or ""),
             limit=MARKDOWN_DIAGNOSTIC_TAIL_LIMIT,
         ).strip()

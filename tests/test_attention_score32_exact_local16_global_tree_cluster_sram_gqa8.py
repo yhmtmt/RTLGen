@@ -11,6 +11,7 @@ if str(REPO_ROOT) not in sys.path:
 from npu.eval.probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8 import (
     DIAGNOSTIC_TAIL_LIMIT,
     MARKDOWN_DIAGNOSTIC_TAIL_LIMIT,
+    COMPOSITIONAL_ICARUS_BACKEND,
     DEFAULT_ROOT_READY_PATTERN,
     DEFAULT_SIM_BACKEND,
     DEFAULT_SUBPROCESS_TIMEOUT_SEC,
@@ -38,6 +39,14 @@ from npu.eval.probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa
     expected_counts,
     expected_schedule_prefix,
     main,
+)
+from npu.eval.gqa8_compositional_exact import (
+    BACKEND as COMPOSITIONAL_RUNNER_BACKEND,
+    _pack_global_row,
+    _run_process,
+    cluster_testbench,
+    extract_module_family,
+    global_testbench,
 )
 from npu.rtlgen.gen_attention_score32_exact_local16_global_tree_cluster_sram_gqa8 import _validate
 
@@ -399,6 +408,144 @@ def test_icarus_command_remains_the_default_compilation_path(monkeypatch: Any, t
     ]
 
 
+def test_compositional_cluster_testbenches_use_concrete_rtl_and_local_sidecars() -> None:
+    p54 = cluster_testbench(top_name="score32_top__cluster_p54", producers=54, logical_head_groups=1)
+    p53 = cluster_testbench(top_name="score32_top__cluster_p53", producers=53, logical_head_groups=4)
+
+    assert COMPOSITIONAL_RUNNER_BACKEND == COMPOSITIONAL_ICARUS_BACKEND
+    assert "score32_top__cluster_p54 dut (" in p54
+    assert "localparam integer PRODUCERS = 54;" in p54
+    assert ".sram_fill_row_accept_count(fill_rows)" in p54
+    assert ".sram_release_guard_error(release_guard_error)" in p54
+    assert ".out_valid(out_valid), .out_ready(out_ready)" in p54
+    assert "if (out_valid && out_ready)" in p54
+    assert "$readmemh(\"query.memh\", query_mem)" in p54
+    assert "$readmemh(\"fill.memh\", fill_mem)" in p54
+    assert "input_query = '0" in p54
+    assert "score32_top__cluster_p53 dut (" in p53
+    assert "localparam integer PRODUCERS = 53;" in p53
+    assert "localparam integer COMMANDS = 32;" in p53
+
+
+def test_compositional_source_split_keeps_only_exact_generated_module_family() -> None:
+    rtl = "\n".join(
+        [
+            "module score__p54__leaf;\nendmodule",
+            "module score__p54;\n  score__p54__leaf u();\nendmodule",
+            "module score__p53;\nendmodule",
+        ]
+    )
+
+    family = extract_module_family(rtl, prefix="score__p54")
+
+    assert "module score__p54__leaf" in family
+    assert "module score__p54;" in family
+    assert "score__p53" not in family
+
+
+def test_compositional_source_split_selects_checked_concrete_rtl_families() -> None:
+    config = json.loads((_design_dir() / "config.json").read_text(encoding="utf-8"))
+    top_name = str(config["top_name"])
+    rtl = (_rtl_dir() / "top.v").read_text(encoding="utf-8")
+
+    p54 = extract_module_family(rtl, prefix=f"{top_name}__cluster_p54")
+    p53 = extract_module_family(rtl, prefix=f"{top_name}__cluster_p53")
+    global_tree = extract_module_family(rtl, prefix=f"{top_name}__global_tree")
+
+    assert f"module {top_name}__cluster_p54 (" in p54
+    assert f"module {top_name}__cluster_p53 (" not in p54
+    assert f"module {top_name}__cluster_p53 (" in p53
+    assert f"module {top_name}__cluster_p54 (" not in p53
+    assert f"module {top_name}__global_tree (" in global_tree
+    assert f"module {top_name}__global_tree__root_finalizer (" in global_tree
+
+
+def test_compositional_global_testbench_drives_exact_structured_cluster_rows() -> None:
+    tb = global_testbench(
+        top_name="score32_top__global_tree",
+        rows_per_cluster=128,
+        output_ready_pattern=(True, False),
+        timeout_cycles=50_000,
+    )
+
+    assert "score32_top__global_tree dut (" in tb
+    assert "reg [418:0] row_mem" in tb
+    assert ".leaf_global_max(leaf_global_max)" in tb
+    assert ".tree_protocol_error(tree_error)" in tb
+    assert "$readmemh(\"global_rows.memh\",row_mem)" in tb
+    assert "ROOT_RESULT" in tb
+    assert "GLOBAL_SUMMARY" in tb
+
+    row = {
+        "command_id": 0x8200,
+        "head_id": 7,
+        "global_max": -3,
+        "exp_sum": 123,
+        "slice": 9,
+        "last": True,
+        "value": [index - 4 for index in range(8)],
+    }
+    packed = _pack_global_row(row)
+    assert packed & 0xFFFF == 0x8200
+    assert (packed >> 16) & 0x1F == 7
+    assert (packed >> 21) & 0xFFFF_FFFF == 0xFFFF_FFFD
+    assert (packed >> 53) & ((1 << 33) - 1) == 123
+    assert (packed >> 86) & 0xF == 9
+    assert (packed >> 90) & 1 == 1
+
+
+def test_compositional_subprocess_resource_kill_stays_inconclusive(
+    monkeypatch: Any,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setattr(
+        "npu.eval.gqa8_compositional_exact.subprocess.run",
+        lambda *_args, **_kwargs: __import__("subprocess").CompletedProcess(
+            args=["iverilog"],
+            returncode=137,
+            stdout="",
+            stderr="Killed\n",
+        ),
+    )
+
+    _, failure = _run_process(
+        ["iverilog"],
+        cwd=tmp_path,
+        timeout_sec=1,
+        phase="compile_p54_cluster",
+    )
+
+    assert failure is not None
+    assert failure["status"] == "resource_failure"
+    assert failure["returncode"] == 137
+
+
+def test_compositional_subprocess_syntax_error_stays_conclusive(
+    monkeypatch: Any,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setattr(
+        "npu.eval.gqa8_compositional_exact.subprocess.run",
+        lambda *_args, **_kwargs: __import__("subprocess").CompletedProcess(
+            args=["iverilog"],
+            returncode=2,
+            stdout="",
+            stderr="tb.v:12: syntax error\n",
+        ),
+    )
+
+    _, failure = _run_process(
+        ["iverilog"],
+        cwd=tmp_path,
+        timeout_sec=1,
+        phase="compile_global_tree",
+    )
+
+    assert failure is not None
+    assert failure["status"] == "compile_failed"
+    assert failure["returncode"] == 2
+
+
 def test_observation_evaluator_validates_every_exact_total_and_row() -> None:
     reference, summary, cluster_summaries, cluster_rows, root_rows = _audit_fixture()
     result = _evaluate_observations(
@@ -610,7 +757,7 @@ def test_build_report_keeps_compile_syntax_errors_conclusive_and_bounded(
 
 
 def test_markdown_failure_report_keeps_bounded_subprocess_diagnostics() -> None:
-    stderr_tail = ("warning\n" * 400) + "Killed\n"
+    stderr_tail = "first meaningful error\n" + ("warning\n" * 400) + "Killed\n"
     report = {
         "passed": False,
         "classification": "failed_inconclusive",
@@ -631,6 +778,8 @@ def test_markdown_failure_report_keeps_bounded_subprocess_diagnostics() -> None:
     assert "- returncode: `-9`" in rendered
     assert "- normalized_returncode: `137`" in rendered
     assert "- stderr_tail:" in rendered
+    assert "first meaningful error" in rendered
+    assert "...[middle omitted]..." in rendered
     assert "Killed" in rendered
     assert stderr_tail not in rendered
     diagnostic = rendered.split("```text\n", 1)[1].rsplit("\n```", 1)[0]
@@ -781,6 +930,63 @@ def test_build_report_defaults_to_icarus_backend(
     }
     assert calls[0][0] == "/tools/iverilog"
     assert calls[1] == ["/tools/vvp", calls[0][5]]
+
+
+def test_build_report_selects_concrete_compositional_backend(monkeypatch: Any) -> None:
+    reference, summary, cluster_summaries, cluster_rows, root_rows = _audit_fixture()
+    captured: dict[str, object] = {}
+
+    monkeypatch.setattr(
+        "npu.eval.probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8.generate",
+        lambda config, rtl_dir: (
+            rtl_dir.mkdir(parents=True, exist_ok=True),
+            (rtl_dir / "config.json").write_text(json.dumps(config), encoding="utf-8"),
+        ),
+    )
+    monkeypatch.setattr(
+        "npu.eval.probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8._reference",
+        lambda **_kwargs: reference,
+    )
+    monkeypatch.setattr(
+        "npu.eval.probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8._parse_stdout",
+        lambda _stdout: (summary, cluster_summaries, cluster_rows, root_rows, None),
+    )
+
+    def fake_compositional(**kwargs: object) -> dict[str, object]:
+        captured.update(kwargs)
+        return {
+            "simulation_status": "ok",
+            "returncode": 0,
+            "stdout": "component observations",
+            "stderr": "",
+            "phase_records": [{"phase": "strict_generated_top_guard", "returncode": 0}],
+            "component_metadata": {
+                "proof": "concrete_rtl_composition",
+                "strict_generated_top_guard": "passed",
+            },
+        }
+
+    monkeypatch.setattr(
+        "npu.eval.gqa8_compositional_exact.run_compositional_exact",
+        fake_compositional,
+    )
+
+    report = build_report(
+        config=_minimal_probe_config(),
+        timeout_sec=9,
+        compile_timeout_sec=17,
+        sim_backend=COMPOSITIONAL_ICARUS_BACKEND,
+    )
+
+    assert report["passed"] is True
+    assert report["sim_backend"] == COMPOSITIONAL_ICARUS_BACKEND
+    assert report["compile_timeout_sec"] == 17
+    assert report["simulation_timeout_sec"] == 9
+    assert report["sim_backend_metadata"]["proof"] == "concrete_rtl_composition"
+    assert report["compositional_components"]["strict_generated_top_guard"] == "passed"
+    assert captured["compile_timeout_sec"] == 17
+    assert captured["simulation_timeout_sec"] == 9
+    assert captured["logical_head_groups"] == 1
 
 
 def test_checked_in_config_rejects_partition_drift() -> None:
