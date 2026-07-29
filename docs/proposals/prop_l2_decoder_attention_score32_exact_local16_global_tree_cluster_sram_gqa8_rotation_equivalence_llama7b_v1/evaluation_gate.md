@@ -52,5 +52,5 @@ Acceptance:
 
 Classification policy:
 
-- timeout, OOM, kill, or bounded resource failure: inconclusive
+- timeout, OOM, kill, or bounded resource failure, including compile or simulation termination by SIGKILL, shell exit `137`, or a bare `Killed` diagnostic: inconclusive
 - structured row mismatch, metadata mismatch, count mismatch, or protocol error: conclusive
