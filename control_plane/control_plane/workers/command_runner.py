@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import ctypes
 import os
 from pathlib import Path
 import signal
 import shlex
 import subprocess
+import sys
 import time
 from typing import Any, Callable
 
@@ -20,6 +22,10 @@ CancelCheck = Callable[[], bool]
 
 _CLOCK_TICKS_PER_SECOND = int(os.sysconf("SC_CLK_TCK"))
 _PAGE_SIZE_BYTES = int(os.sysconf("SC_PAGE_SIZE"))
+_POLL_INTERVAL_SECONDS = 0.05
+_PR_SET_CHILD_SUBREAPER = 36
+_PR_GET_CHILD_SUBREAPER = 37
+_LIBC = ctypes.CDLL(None, use_errno=True) if sys.platform.startswith("linux") else None
 
 
 class CommandExecutionError(RuntimeError):
@@ -37,6 +43,14 @@ class CommandResult:
     timed_out: bool
     stalled: bool
     canceled: bool
+
+
+@dataclass(frozen=True)
+class _ProcInfo:
+    pid: int
+    ppid: int
+    pgid: int
+    sid: int
 
 
 def _command_filename(index: int, name: str) -> str:
@@ -88,26 +102,33 @@ def run_command_manifest(
         with stdout_path.open("w", encoding="utf-8") as stdout_handle, stderr_path.open(
             "w", encoding="utf-8"
         ) as stderr_handle:
-            process = subprocess.Popen(
-                ["bash", "-lc", command],
-                cwd=work_dir,
-                env=env,
-                stdout=stdout_handle,
-                stderr=stderr_handle,
-                text=True,
-                start_new_session=True,
-            )
-            returncode = _monitor_command(
-                command_name=name,
-                process=process,
-                stdout_path=stdout_path,
-                stderr_path=stderr_path,
-                timeout_seconds=timeout_seconds,
-                stall_timeout_seconds=stall_timeout_seconds,
-                progress_interval_seconds=progress_interval_seconds,
-                cancel_requested=cancel_requested,
-                on_command_progress=on_command_progress,
-            )
+            previous_subreaper = _set_child_subreaper(True)
+            process: subprocess.Popen[str] | None = None
+            try:
+                process = subprocess.Popen(
+                    ["bash", "-lc", command],
+                    cwd=work_dir,
+                    env=env,
+                    stdout=stdout_handle,
+                    stderr=stderr_handle,
+                    text=True,
+                    start_new_session=True,
+                )
+                returncode = _monitor_command(
+                    command_name=name,
+                    process=process,
+                    stdout_path=stdout_path,
+                    stderr_path=stderr_path,
+                    timeout_seconds=timeout_seconds,
+                    stall_timeout_seconds=stall_timeout_seconds,
+                    progress_interval_seconds=progress_interval_seconds,
+                    cancel_requested=cancel_requested,
+                    on_command_progress=on_command_progress,
+                )
+            finally:
+                if process is not None:
+                    _reap_descendant_processes(os.getpid(), excluded_pid=process.pid)
+                _restore_child_subreaper(previous_subreaper)
             timed_out = returncode == 124
             stalled = returncode == 125
             canceled = returncode == 130
@@ -153,12 +174,111 @@ def shell_preview(command: str) -> list[str]:
     return shlex.split(command)
 
 
-def _terminate_process_group(process: subprocess.Popen[str], *, force: bool = False) -> None:
-    sig = signal.SIGKILL if force else signal.SIGTERM
-    try:
-        os.killpg(process.pid, sig)
-    except ProcessLookupError:
+def _set_child_subreaper(enabled: bool) -> bool | None:
+    if _LIBC is None:
+        return None
+    current = ctypes.c_int()
+    if _LIBC.prctl(_PR_GET_CHILD_SUBREAPER, ctypes.byref(current), 0, 0, 0) != 0:
+        return None
+    previous = bool(current.value)
+    if _LIBC.prctl(_PR_SET_CHILD_SUBREAPER, int(enabled), 0, 0, 0) != 0:
+        return None
+    return previous
+
+
+def _restore_child_subreaper(previous: bool | None) -> None:
+    if previous is None or _LIBC is None:
         return
+    _LIBC.prctl(_PR_SET_CHILD_SUBREAPER, int(previous), 0, 0, 0)
+
+
+def _snapshot_process_table() -> dict[int, _ProcInfo]:
+    snapshot: dict[int, _ProcInfo] = {}
+    try:
+        proc_entries = Path("/proc").iterdir()
+    except OSError:
+        return snapshot
+    for proc_dir in proc_entries:
+        if not proc_dir.name.isdigit():
+            continue
+        try:
+            stat_text = (proc_dir / "stat").read_text(encoding="utf-8")
+            comm_end = stat_text.rfind(")")
+            if comm_end < 0:
+                continue
+            fields = stat_text[comm_end + 2 :].split()
+            if len(fields) < 4:
+                continue
+            pid = int(proc_dir.name)
+            snapshot[pid] = _ProcInfo(
+                pid=pid,
+                ppid=int(fields[1]),
+                pgid=int(fields[2]),
+                sid=int(fields[3]),
+            )
+        except (FileNotFoundError, OSError, ValueError):
+            continue
+    return snapshot
+
+
+def _collect_descendant_processes(owner_pid: int) -> dict[int, _ProcInfo]:
+    snapshot = _snapshot_process_table()
+    children_by_parent: dict[int, list[_ProcInfo]] = {}
+    for proc in snapshot.values():
+        children_by_parent.setdefault(proc.ppid, []).append(proc)
+    descendants: dict[int, _ProcInfo] = {}
+    pending = [owner_pid]
+    while pending:
+        parent_pid = pending.pop()
+        for child in children_by_parent.get(parent_pid, []):
+            if child.pid in descendants:
+                continue
+            descendants[child.pid] = child
+            pending.append(child.pid)
+    return descendants
+
+
+def _reap_descendant_processes(owner_pid: int, *, excluded_pid: int) -> None:
+    for proc in _collect_descendant_processes(owner_pid).values():
+        if proc.pid == excluded_pid:
+            continue
+        try:
+            os.waitpid(proc.pid, os.WNOHANG)
+        except (ChildProcessError, ProcessLookupError):
+            continue
+
+
+def _signal_descendant_tree(*, owner_pid: int, signal_number: int) -> None:
+    descendants = _collect_descendant_processes(owner_pid)
+    process_groups = sorted({proc.pgid for proc in descendants.values() if proc.pgid > 0})
+    for process_group in process_groups:
+        try:
+            os.killpg(process_group, signal_number)
+        except ProcessLookupError:
+            continue
+    for proc in descendants.values():
+        try:
+            os.kill(proc.pid, signal_number)
+        except ProcessLookupError:
+            continue
+
+
+def _wait_for_descendant_exit(process: subprocess.Popen[str], deadline: float) -> bool:
+    owner_pid = os.getpid()
+    while time.monotonic() < deadline:
+        _reap_descendant_processes(owner_pid, excluded_pid=process.pid)
+        if process.poll() is not None and not _collect_descendant_processes(owner_pid):
+            return True
+        time.sleep(_POLL_INTERVAL_SECONDS)
+    _reap_descendant_processes(owner_pid, excluded_pid=process.pid)
+    return process.poll() is not None and not _collect_descendant_processes(owner_pid)
+
+
+def _terminate_process_group(process: subprocess.Popen[str], *, force: bool = False) -> None:
+    _signal_descendant_tree(
+        owner_pid=os.getpid(),
+        signal_number=signal.SIGKILL if force else signal.SIGTERM,
+    )
 
 
 def _last_output_age_seconds(*, stdout_path: Path, stderr_path: Path) -> float:
@@ -240,30 +360,24 @@ def _monitor_command(
                 canceled = False
             if canceled:
                 _terminate_process_group(process)
-                try:
-                    process.wait(timeout=10)
-                except subprocess.TimeoutExpired:
+                if not _wait_for_descendant_exit(process, time.monotonic() + 10):
                     _terminate_process_group(process, force=True)
-                    process.wait(timeout=5)
+                    _wait_for_descendant_exit(process, time.monotonic() + 5)
                 return 130
 
         if timeout_seconds is not None and now - started >= timeout_seconds:
             _terminate_process_group(process)
-            try:
-                process.wait(timeout=10)
-            except subprocess.TimeoutExpired:
+            if not _wait_for_descendant_exit(process, time.monotonic() + 10):
                 _terminate_process_group(process, force=True)
-                process.wait(timeout=5)
+                _wait_for_descendant_exit(process, time.monotonic() + 5)
             return 124
 
         last_output_age = _last_output_age_seconds(stdout_path=stdout_path, stderr_path=stderr_path)
         if stall_timeout_seconds is not None and last_output_age >= stall_timeout_seconds:
             _terminate_process_group(process)
-            try:
-                process.wait(timeout=10)
-            except subprocess.TimeoutExpired:
+            if not _wait_for_descendant_exit(process, time.monotonic() + 10):
                 _terminate_process_group(process, force=True)
-                process.wait(timeout=5)
+                _wait_for_descendant_exit(process, time.monotonic() + 5)
             return 125
 
         if on_command_progress is not None and now >= next_progress:
