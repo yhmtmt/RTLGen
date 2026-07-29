@@ -13,7 +13,7 @@
   - compile timeout `1200 s`
   - probe timeout `3600 s`
   - launcher `control_plane/scripts/run_bounded_command.py`
-  - simulation backend `compositional_icarus`
+  - simulation backend `fine_compositional_icarus`
 
 If a usable user `systemd` manager exists, the launcher applies the contract
 with `systemd-run --user --scope`. In evaluator containers without a user bus,
@@ -24,12 +24,13 @@ CPUs (`CPUQuota=300%` becomes at most three allowed CPUs). `MemoryHigh=6G`
 stays advisory in fallback mode and is reported that way instead of claimed as
 exact cgroup enforcement.
 
-The probe backend should be `python3 npu/eval/probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8.py --sim-backend compositional_icarus --compile-timeout-sec 1200 --timeout-sec 3600`.
-It must pass the existing strict generated-top guard, simulate the concrete p54
-and p53 cluster wrappers for every cluster-specific rotation sidecar set, and
-simulate the concrete global tree from the observed cluster streams. The
-bounded JSON report records each component phase and separate
-compile/simulation timeout metadata.
+The probe backend should be `python3 npu/eval/probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8.py --sim-backend fine_compositional_icarus --compile-timeout-sec 1200 --timeout-sec 3600`.
+It must pass the strict generated-top guard, serially replay the exact
+single-producer RTL for every rotated cluster/producer/command stimulus, check
+the SRAM request metadata, simulate the concrete p54/p53 SRAM endpoints and
+local reducer/temporal-merge modules, and simulate the concrete global tree
+from observed cluster streams. The bounded JSON report records each component
+phase, serial replay metadata, and separate compile/simulation timeouts.
 
 Acceptance:
 
@@ -59,6 +60,7 @@ Acceptance:
    - `command_release_count=32`
 6. `full_row_audit.passed=true` for all 16 clusters and the root stream
 7. `compositional_components.strict_generated_top_guard=passed`
+8. `compositional_components.producer_replay_parallelism=1`
 
 Classification policy:
 
