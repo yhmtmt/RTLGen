@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1",
+  "decision": "iterate",
+  "pr_number": 1500,
+  "merge_commit": "b12f32ffdcfc8b391aa079c3b403fb6d25a872ef",
+  "merged_utc": "2026-07-29T07:46:30.514828Z"
+}

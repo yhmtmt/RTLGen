@@ -32,8 +32,12 @@
         "direction": "prove_four_group_rotation_equivalence_or_diagnose",
         "reason": "The full Llama7B score32 hierarchy should not be recosted from a single-head-group proof alone."
       },
-      "status": "pending",
-      "notes": "Dispatch only to eval-daemon-b7c2d9c80c1c with the exclusive larger bounded resource contract in evaluation_gate.md. The launcher may use user-systemd cgroups or the documented portable fallback; timeout, OOM, or resource kill remains inconclusive."
+      "status": "merged",
+      "notes": "Dispatch only to eval-daemon-b7c2d9c80c1c with the exclusive larger bounded resource contract in evaluation_gate.md. The launcher may use user-systemd cgroups or the documented portable fallback; timeout, OOM, or resource kill remains inconclusive. Merged via PR #1500 and merge b12f32ffdcfc8b391aa079c3b403fb6d25a872ef at 2026-07-29T07:46:30.514828Z.",
+      "merged_pr_number": 1500,
+      "merge_commit": "b12f32ffdcfc8b391aa079c3b403fb6d25a872ef",
+      "merged_utc": "2026-07-29T07:46:30.514828Z"
     }
-  ]
+  ],
+  "source_commit": "c2557fcbd4f09e6be70296988e6c28a0dbeeb38a"
 }
