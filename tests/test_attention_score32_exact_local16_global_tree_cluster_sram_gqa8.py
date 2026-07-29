@@ -9,12 +9,14 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from npu.eval.probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8 import (
+    DIAGNOSTIC_TAIL_LIMIT,
     DEFAULT_ROOT_READY_PATTERN,
     DEFAULT_SUBPROCESS_TIMEOUT_SEC,
     EXPECTED_PER_CLUSTER,
     EXPECTED_TOTALS,
     ROWS_PER_BUFFER,
     TB_TIMEOUT_CYCLES,
+    build_report,
     _evaluate_observations,
     _failure_classification,
     _fill_rows_for_wave,
@@ -297,6 +299,15 @@ def _audit_fixture() -> tuple[
     return reference, summary, cluster_summaries, cluster_rows, root_rows
 
 
+def _minimal_probe_config() -> dict[str, object]:
+    return {
+        "top_name": "fake_top",
+        "attention_score32_exact_local16_global_tree_cluster_sram_gqa8": {
+            "cluster_producers": [54] * 8 + [53] * 8
+        },
+    }
+
+
 def test_observation_evaluator_validates_every_exact_total_and_row() -> None:
     reference, summary, cluster_summaries, cluster_rows, root_rows = _audit_fixture()
     result = _evaluate_observations(
@@ -406,10 +417,105 @@ def test_failure_classification_marks_timeouts_oom_and_kills_inconclusive() -> N
         assert _failure_classification(
             simulation_status=simulation_status,
             returncode=1,
-            stderr="ordinary simulator failure",
+            stderr="top.v:10: syntax error",
             tb_timeout_cycle=None,
             passed=False,
         ) == "failed_conclusive"
+
+
+def test_build_report_classifies_compile_sigkill_resource_failures_inconclusive(
+    monkeypatch: Any,
+) -> None:
+    reference, summary, cluster_summaries, cluster_rows, root_rows = _audit_fixture()
+
+    monkeypatch.setattr(
+        "npu.eval.probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8.generate",
+        lambda _config, rtl_dir: (rtl_dir.mkdir(parents=True, exist_ok=True), (rtl_dir / "top.v").write_text("module top; endmodule\n", encoding="ascii")),
+    )
+    monkeypatch.setattr(
+        "npu.eval.probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8._write_memh_sidecars",
+        lambda *_args, **_kwargs: {},
+    )
+    monkeypatch.setattr(
+        "npu.eval.probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8._reference",
+        lambda **_kwargs: reference,
+    )
+    monkeypatch.setattr(
+        "npu.eval.probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8._parse_stdout",
+        lambda _stdout: (summary, cluster_summaries, cluster_rows, root_rows, None),
+    )
+    monkeypatch.setattr(
+        "npu.eval.probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8._tool",
+        lambda _name: "/bin/true",
+    )
+
+    for returncode, stdout, stderr in (
+        (137, "", "Killed\n"),
+        (-9, "Killed\n", ""),
+    ):
+        monkeypatch.setattr(
+            "npu.eval.probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8.subprocess.run",
+            lambda *_args, **_kwargs: __import__("subprocess").CompletedProcess(
+                args=["iverilog"],
+                returncode=returncode,
+                stdout=stdout,
+                stderr=stderr,
+            ),
+        )
+        report = build_report(config=_minimal_probe_config(), timeout_sec=1)
+        assert report["passed"] is False
+        assert report["simulation_status"] == "resource_failure"
+        assert report["classification"] == "failed_inconclusive"
+        assert report["returncode"] == returncode
+        assert report["normalized_returncode"] == 137
+        assert "Killed" in report["stderr_tail"]
+
+
+def test_build_report_keeps_compile_syntax_errors_conclusive_and_bounded(
+    monkeypatch: Any,
+) -> None:
+    reference, summary, cluster_summaries, cluster_rows, root_rows = _audit_fixture()
+    long_stderr = ("noise\n" * 2000) + "top.v:10: syntax error\n"
+
+    monkeypatch.setattr(
+        "npu.eval.probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8.generate",
+        lambda _config, rtl_dir: (rtl_dir.mkdir(parents=True, exist_ok=True), (rtl_dir / "top.v").write_text("module top; endmodule\n", encoding="ascii")),
+    )
+    monkeypatch.setattr(
+        "npu.eval.probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8._write_memh_sidecars",
+        lambda *_args, **_kwargs: {},
+    )
+    monkeypatch.setattr(
+        "npu.eval.probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8._reference",
+        lambda **_kwargs: reference,
+    )
+    monkeypatch.setattr(
+        "npu.eval.probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8._parse_stdout",
+        lambda _stdout: (summary, cluster_summaries, cluster_rows, root_rows, None),
+    )
+    monkeypatch.setattr(
+        "npu.eval.probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8._tool",
+        lambda _name: "/bin/true",
+    )
+    monkeypatch.setattr(
+        "npu.eval.probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8.subprocess.run",
+        lambda *_args, **_kwargs: __import__("subprocess").CompletedProcess(
+            args=["iverilog"],
+            returncode=2,
+            stdout="",
+            stderr=long_stderr,
+        ),
+    )
+
+    report = build_report(config=_minimal_probe_config(), timeout_sec=1)
+
+    assert report["passed"] is False
+    assert report["simulation_status"] == "compile_failed"
+    assert report["classification"] == "failed_conclusive"
+    assert report["returncode"] == 2
+    assert report["normalized_returncode"] == 2
+    assert len(report["stderr_tail"]) <= DIAGNOSTIC_TAIL_LIMIT + 64
+    assert "top.v:10: syntax error" in report["stderr_tail"]
 
 
 def test_checked_in_config_rejects_partition_drift() -> None:

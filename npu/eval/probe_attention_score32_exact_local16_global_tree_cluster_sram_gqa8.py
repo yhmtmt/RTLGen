@@ -54,6 +54,7 @@ WAVES = LOCAL_TEMPORAL_WAVES
 TB_TIMEOUT_CYCLES = 50_000
 DEFAULT_SUBPROCESS_TIMEOUT_SEC = 900
 DEFAULT_ROOT_READY_PATTERN = (True, True, False, True)
+DIAGNOSTIC_TAIL_LIMIT = 4096
 ROWS_PER_STREAM = ROWS_PER_BUFFER // STREAMS
 
 EXPECTED_TOTALS = {
@@ -956,15 +957,59 @@ def _failure_classification(
     if passed:
         return "passed"
     inconclusive_codes = {124, 125, 137, -9}
-    oom = "out of memory" in stderr.lower() or "cannot allocate memory" in stderr.lower()
+    normalized_returncode = _normalize_returncode(returncode)
+    oom = _looks_like_oom(stderr)
+    killed = _looks_like_killed(stderr)
     if (
         simulation_status in {"subprocess_timeout", "resource_failure", "testbench_timeout"}
         or tb_timeout_cycle is not None
         or returncode in inconclusive_codes
+        or normalized_returncode == 137
         or oom
+        or killed
     ):
         return "failed_inconclusive"
     return "failed_conclusive"
+
+
+def _normalize_returncode(returncode: int | None) -> int | None:
+    if returncode is None:
+        return None
+    if returncode < 0:
+        return 128 + abs(returncode)
+    return returncode
+
+
+def _looks_like_oom(text: str) -> bool:
+    lowered = text.lower()
+    return "out of memory" in lowered or "cannot allocate memory" in lowered
+
+
+def _looks_like_killed(text: str) -> bool:
+    return any(line.strip().lower() == "killed" for line in text.splitlines())
+
+
+def _resource_diagnostic_text(*, stdout: str, stderr: str) -> str:
+    if stderr.strip():
+        return stderr
+    stdout_lines = [line.strip() for line in stdout.splitlines() if line.strip()]
+    for line in reversed(stdout_lines):
+        if _looks_like_killed(line) or _looks_like_oom(line):
+            return line
+    return ""
+
+
+def _is_resource_termination(*, returncode: int | None, stdout: str, stderr: str) -> bool:
+    diagnostic_text = "\n".join(part for part in (stderr, stdout) if part)
+    normalized_returncode = _normalize_returncode(returncode)
+    return normalized_returncode == 137 or _looks_like_oom(diagnostic_text) or _looks_like_killed(diagnostic_text)
+
+
+def _bounded_tail(text: str, *, limit: int = DIAGNOSTIC_TAIL_LIMIT) -> str:
+    if len(text) <= limit:
+        return text
+    omitted = len(text) - limit
+    return f"[truncated {omitted} chars]\n{text[-limit:]}"
 
 
 def _evaluate_observations(
@@ -1023,6 +1068,8 @@ def _evaluate_observations(
         "classification": classification,
         "simulation_status": simulation_status,
         "returncode": returncode,
+        "normalized_returncode": _normalize_returncode(returncode),
+        "stderr_tail": _bounded_tail(stderr),
         "tb_timeout_cycle": tb_timeout_cycle,
         "summary": summary,
         "cluster_summaries": cluster_summaries,
@@ -1097,9 +1144,21 @@ def build_report(
                 timeout=int(timeout_sec),
             )
             if compile_result.returncode:
-                simulation_status = "compile_failed"
+                stdout = compile_result.stdout or ""
                 returncode = compile_result.returncode
-                stderr = compile_result.stderr
+                stderr = _resource_diagnostic_text(
+                    stdout=stdout,
+                    stderr=compile_result.stderr or "",
+                )
+                simulation_status = (
+                    "resource_failure"
+                    if _is_resource_termination(
+                        returncode=compile_result.returncode,
+                        stdout=compile_result.stdout or "",
+                        stderr=compile_result.stderr or "",
+                    )
+                    else "compile_failed"
+                )
             else:
                 run_result = subprocess.run(
                     [_tool("vvp"), str(sim_path)],
@@ -1109,15 +1168,26 @@ def build_report(
                     timeout=int(timeout_sec),
                 )
                 stdout = run_result.stdout
-                stderr = run_result.stderr
+                stderr = _resource_diagnostic_text(
+                    stdout=run_result.stdout or "",
+                    stderr=run_result.stderr or "",
+                )
                 returncode = run_result.returncode
                 if run_result.returncode:
-                    simulation_status = "run_failed"
+                    simulation_status = (
+                        "resource_failure"
+                        if _is_resource_termination(
+                            returncode=run_result.returncode,
+                            stdout=run_result.stdout or "",
+                            stderr=run_result.stderr or "",
+                        )
+                        else "run_failed"
+                    )
         except subprocess.TimeoutExpired as exc:
             simulation_status = "subprocess_timeout"
             returncode = 124
             stdout = exc.stdout or ""
-            stderr = exc.stderr or ""
+            stderr = _resource_diagnostic_text(stdout=stdout, stderr=exc.stderr or "")
         except (MemoryError, OSError, RuntimeError) as exc:
             simulation_status = "resource_failure"
             returncode = 137 if isinstance(exc, MemoryError) else 125

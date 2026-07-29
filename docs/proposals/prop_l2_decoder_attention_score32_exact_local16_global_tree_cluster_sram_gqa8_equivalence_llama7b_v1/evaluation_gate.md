@@ -45,9 +45,10 @@ Hashes are diagnostics only. They cannot substitute for structured comparison.
 ## Failure classification
 
 Timeout, OOM, or resource termination is inconclusive and must not reject the
-architecture. Count, protocol, metadata, ordering, or row mismatches are
-conclusive implementation failures and must be fixed before PPA or Llama7B
-recosting.
+architecture. That includes compile or simulation termination by SIGKILL, shell
+exit `137`, or a bare `Killed` diagnostic from the bounded launcher/runtime.
+Count, protocol, metadata, ordering, or row mismatches are conclusive
+implementation failures and must be fixed before PPA or Llama7B recosting.
 
 ## Follow-on
 
