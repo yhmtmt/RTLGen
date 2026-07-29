@@ -59,10 +59,12 @@ MARKDOWN_DIAGNOSTIC_TAIL_LIMIT = 1024
 DEFAULT_SIM_BACKEND = "icarus"
 VERILATOR_HIERARCHICAL_BACKEND = "verilator_hierarchical"
 COMPOSITIONAL_ICARUS_BACKEND = "compositional_icarus"
+FINE_COMPOSITIONAL_ICARUS_BACKEND = "fine_compositional_icarus"
 SIM_BACKEND_CHOICES = (
     DEFAULT_SIM_BACKEND,
     VERILATOR_HIERARCHICAL_BACKEND,
     COMPOSITIONAL_ICARUS_BACKEND,
+    FINE_COMPOSITIONAL_ICARUS_BACKEND,
 )
 VERILATOR_BUILD_JOBS = 3
 VERILATOR_CONTROL_FILE_NAME = "verilator_hier.vlt"
@@ -566,13 +568,32 @@ def _sim_backend_metadata(
                 "cluster_replays": CLUSTERS,
             }
         )
+    elif sim_backend == FINE_COMPOSITIONAL_ICARUS_BACKEND:
+        metadata.update(
+            {
+                "proof": "fine_grained_concrete_rtl_composition",
+                "strict_generated_top_guard": True,
+                "components": [
+                    "single_producer",
+                    "cluster_sram_endpoint",
+                    "local_reducer_temporal_merge",
+                    "global_tree",
+                ],
+                "producer_replay_parallelism": 1,
+                "avoids_cluster_wrapper_elaboration": True,
+            }
+        )
     return metadata
 
 
 def _resolve_compile_timeout_sec(*, sim_backend: str, timeout_sec: int, compile_timeout_sec: int | None) -> int:
     if compile_timeout_sec is not None:
         return int(compile_timeout_sec)
-    if sim_backend in (VERILATOR_HIERARCHICAL_BACKEND, COMPOSITIONAL_ICARUS_BACKEND):
+    if sim_backend in (
+        VERILATOR_HIERARCHICAL_BACKEND,
+        COMPOSITIONAL_ICARUS_BACKEND,
+        FINE_COMPOSITIONAL_ICARUS_BACKEND,
+    ):
         return DEFAULT_VERILATOR_COMPILE_TIMEOUT_SEC
     return int(timeout_sec)
 
@@ -1110,7 +1131,11 @@ def _normalize_returncode(returncode: int | None) -> int | None:
 
 def _looks_like_oom(text: str) -> bool:
     lowered = text.lower()
-    return "out of memory" in lowered or "cannot allocate memory" in lowered
+    return (
+        "out of memory" in lowered
+        or "cannot allocate memory" in lowered
+        or "std::bad_alloc" in lowered
+    )
 
 
 def _looks_like_killed(text: str) -> bool:
@@ -1263,7 +1288,7 @@ def build_report(
         rtl_dir = temp_dir / "verilog"
         generate(resolved_config, rtl_dir)
         tb_path = temp_dir / "tb.v"
-        if resolved_backend != COMPOSITIONAL_ICARUS_BACKEND:
+        if resolved_backend not in (COMPOSITIONAL_ICARUS_BACKEND, FINE_COMPOSITIONAL_ICARUS_BACKEND):
             sidecars = _write_memh_sidecars(temp_dir, logical_head_groups=resolved_groups)
             tb_path.write_text(
                 _testbench(
@@ -1279,7 +1304,31 @@ def build_report(
         control_path = temp_dir / VERILATOR_CONTROL_FILE_NAME
         obj_dir = temp_dir / "obj_dir"
         try:
-            if resolved_backend == COMPOSITIONAL_ICARUS_BACKEND:
+            if resolved_backend == FINE_COMPOSITIONAL_ICARUS_BACKEND:
+                from npu.eval.gqa8_fine_compositional_exact import run_fine_compositional_exact
+
+                compositional = run_fine_compositional_exact(
+                    config=resolved_config,
+                    work_dir=temp_dir,
+                    rtl_dir=rtl_dir,
+                    fakeram_path=fakeram_path,
+                    logical_head_groups=resolved_groups,
+                    output_ready_pattern=tuple(bool(value) for value in output_ready_pattern),
+                    compile_timeout_sec=resolved_compile_timeout_sec,
+                    simulation_timeout_sec=int(timeout_sec),
+                )
+                simulation_status = str(compositional["simulation_status"])
+                returncode = int(compositional["returncode"])
+                stdout = str(compositional.get("stdout") or "")
+                stderr = str(compositional.get("stderr") or "")
+                component_metadata = dict(compositional.get("component_metadata") or {})
+                phase_records = list(compositional.get("phase_records") or [])
+                sidecars = {
+                    "storage": "temporary_fine_component_memh",
+                    "persisted": False,
+                    "logical_head_groups": resolved_groups,
+                }
+            elif resolved_backend == COMPOSITIONAL_ICARUS_BACKEND:
                 from npu.eval.gqa8_compositional_exact import run_compositional_exact
 
                 compositional = run_compositional_exact(
@@ -1322,7 +1371,7 @@ def build_report(
                     tb_path=tb_path,
                     sim_path=sim_path,
                 )
-            if resolved_backend != COMPOSITIONAL_ICARUS_BACKEND:
+            if resolved_backend not in (COMPOSITIONAL_ICARUS_BACKEND, FINE_COMPOSITIONAL_ICARUS_BACKEND):
                 compile_result = subprocess.run(
                     compile_command,
                     cwd=temp_dir,
@@ -1539,6 +1588,7 @@ __all__ = [
     "DEFAULT_SUBPROCESS_TIMEOUT_SEC",
     "EXPECTED_PER_CLUSTER",
     "EXPECTED_TOTALS",
+    "FINE_COMPOSITIONAL_ICARUS_BACKEND",
     "SIM_BACKEND_CHOICES",
     "TB_TIMEOUT_CYCLES",
     "VERILATOR_HIERARCHICAL_BACKEND",

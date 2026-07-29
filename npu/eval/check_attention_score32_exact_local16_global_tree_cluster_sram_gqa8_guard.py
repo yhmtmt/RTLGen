@@ -66,6 +66,14 @@ def main(argv: list[str] | None = None) -> int:
     top_name = str(config.get("top_name") or "")
     p54_cluster_top = f"{top_name}__cluster_p54"
     p53_cluster_top = f"{top_name}__cluster_p53"
+    p54_compute_top = f"{p54_cluster_top}__compute_cluster"
+    p53_compute_top = f"{p53_cluster_top}__compute_cluster"
+    p54_producer_top = f"{p54_compute_top}__producer"
+    p53_producer_top = f"{p53_compute_top}__producer"
+    p54_reducer_top = f"{p54_compute_top}__reducer"
+    p53_reducer_top = f"{p53_compute_top}__reducer"
+    p54_sram_top = f"{p54_cluster_top}__sram_endpoint"
+    p53_sram_top = f"{p53_cluster_top}__sram_endpoint"
     global_top = f"{top_name}__global_tree"
     manifest = _load(rtl_dir / MANIFEST_NAME)
     rtl = (rtl_dir / "top.v").read_text(encoding="utf-8")
@@ -92,6 +100,14 @@ def main(argv: list[str] | None = None) -> int:
     top = _module(rtl, top_name)
     p54_cluster = _module(rtl, p54_cluster_top)
     p53_cluster = _module(rtl, p53_cluster_top)
+    p54_compute = _module(rtl, p54_compute_top)
+    p53_compute = _module(rtl, p53_compute_top)
+    _module(rtl, p54_producer_top)
+    _module(rtl, p53_producer_top)
+    _module(rtl, p54_reducer_top)
+    _module(rtl, p53_reducer_top)
+    _module(rtl, p54_sram_top)
+    _module(rtl, p53_sram_top)
     _module(rtl, global_top)
 
     if len(re.findall(rf"\b{re.escape(p54_cluster_top)}\s+u_cluster_", top)) != 8:
@@ -103,6 +119,52 @@ def main(argv: list[str] | None = None) -> int:
             raise SystemExit(f"{label} composed cluster must instantiate exactly one real compute cluster")
         if len(re.findall(r"\bu_sram_endpoint\s*\(", module_text)) != 1:
             raise SystemExit(f"{label} composed cluster must instantiate exactly one SRAM endpoint")
+        for signal in (
+            "value_read_req_valid_w",
+            "value_read_req_ready_w",
+            "value_read_req_address_w",
+            "value_read_req_slice_w",
+            "value_response_valid_w",
+            "value_response_ready_w",
+            "value_response_address_w",
+            "value_response_slice_w",
+            "value_response_matrix_w",
+        ):
+            port = signal.removesuffix("_w")
+            if len(re.findall(rf"\.{port}\({signal}\)", module_text)) != 2:
+                raise SystemExit(
+                    f"{label} composed cluster must connect compute and SRAM through exact {signal}"
+                )
+
+    for module_text, label, producer_top, reducer_top, producers in (
+        (p54_compute, "p54", p54_producer_top, p54_reducer_top, 54),
+        (p53_compute, "p53", p53_producer_top, p53_reducer_top, 53),
+    ):
+        if len(re.findall(rf"\b{re.escape(producer_top)}\s+u_producer_\d+\s*\(", module_text)) != producers:
+            raise SystemExit(f"{label} compute cluster must instantiate exactly {producers} real producers")
+        if len(re.findall(rf"\b{re.escape(reducer_top)}\s+u_reducer\s*\(", module_text)) != 1:
+            raise SystemExit(f"{label} compute cluster must instantiate exactly one real reducer")
+        for token in (
+            ".result_valid(producer_result_valid_w[",
+            ".result_ready(producer_result_ready_w[",
+            ".result_command_id(producer_result_command_id_w[",
+            ".result_head_id(producer_result_head_id_w[",
+            ".result_global_max(producer_result_global_max_w[",
+            ".result_exp_sum(producer_result_exp_sum_w[",
+            ".result_slice(producer_result_slice_w[",
+            ".result_last(producer_result_last_w[",
+            ".result_value(producer_result_value_w[",
+            ".leaf_valid(producer_result_valid_w)",
+            ".leaf_ready(producer_result_ready_w)",
+            ".leaf_command_id(producer_result_command_id_w)",
+            ".leaf_head_id(producer_result_head_id_w)",
+            ".leaf_global_max(producer_result_global_max_w)",
+            ".leaf_exp_sum(producer_result_exp_sum_w)",
+            ".leaf_slice(producer_result_slice_w)",
+            ".leaf_last(producer_result_last_w)",
+            ".leaf_value(producer_result_value_w)",
+        ):
+            _require(module_text, token, f"{label} compute cluster RTL")
 
     for token in (
         "input  wire [15:0] fill_target_valid",

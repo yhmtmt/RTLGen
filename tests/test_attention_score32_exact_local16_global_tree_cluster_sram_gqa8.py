@@ -18,6 +18,7 @@ from npu.eval.probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa
     DEFAULT_VERILATOR_COMPILE_TIMEOUT_SEC,
     EXPECTED_PER_CLUSTER,
     EXPECTED_TOTALS,
+    FINE_COMPOSITIONAL_ICARUS_BACKEND,
     ROWS_PER_BUFFER,
     SIM_BACKEND_CHOICES,
     TB_TIMEOUT_CYCLES,
@@ -47,6 +48,14 @@ from npu.eval.gqa8_compositional_exact import (
     cluster_testbench,
     extract_module_family,
     global_testbench,
+)
+from npu.eval.gqa8_fine_compositional_exact import (
+    BACKEND as FINE_COMPOSITIONAL_RUNNER_BACKEND,
+    _check_request_metadata,
+    _check_sram_responses,
+    component_module_names,
+    producer_testbench,
+    sram_testbench,
 )
 from npu.rtlgen.gen_attention_score32_exact_local16_global_tree_cluster_sram_gqa8 import _validate
 
@@ -494,6 +503,116 @@ def test_compositional_global_testbench_drives_exact_structured_cluster_rows() -
     assert (packed >> 90) & 1 == 1
 
 
+def test_fine_compositional_boundary_names_are_exact() -> None:
+    names = component_module_names("score32_top")
+
+    assert FINE_COMPOSITIONAL_RUNNER_BACKEND == FINE_COMPOSITIONAL_ICARUS_BACKEND
+    assert names == {
+        "p54_producer": "score32_top__cluster_p54__compute_cluster__producer",
+        "p53_producer": "score32_top__cluster_p53__compute_cluster__producer",
+        "p54_reducer": "score32_top__cluster_p54__compute_cluster__reducer",
+        "p53_reducer": "score32_top__cluster_p53__compute_cluster__reducer",
+        "p54_sram": "score32_top__cluster_p54__sram_endpoint",
+        "p53_sram": "score32_top__cluster_p53__sram_endpoint",
+        "global_tree": "score32_top__global_tree",
+    }
+
+
+def test_fine_compositional_producer_harness_uses_one_real_producer_and_sidecars() -> None:
+    case = {
+        "commands": [{"command_id": 1}],
+        "query_words": [0],
+        "expected_rows": [{"command_id": 1}],
+        "total_blocks": 1,
+    }
+
+    tb = producer_testbench(
+        top_name="score32_top__cluster_p54__compute_cluster__producer",
+        case=case,
+        cluster=2,
+        producer=7,
+    )
+
+    assert "score32_top__cluster_p54__compute_cluster__producer dut (" in tb
+    assert "u_producer_" not in tb
+    assert "__cluster_p54 dut" not in tb
+    assert '$readmemh("producer_commands.memh",command_mem);' in tb
+    assert '$readmemh("value.memh",value_mem);' in tb
+    assert "PRODUCER_REQUEST" in tb
+    assert "PRODUCER_RESULT cluster=2 producer=7" in tb
+
+
+def test_fine_compositional_sram_harness_uses_real_endpoint_and_observed_requests() -> None:
+    sidecar = {
+        "commands": [{"command_id": 0x8200, "head_base": 0, "wave_index": 0}],
+        "counts": [[1, 0]],
+        "max_requests": 1,
+        "request_count": 1,
+    }
+
+    tb = sram_testbench(
+        top_name="score32_top__cluster_p54__sram_endpoint",
+        producers=1,
+        sidecar=sidecar,
+    )
+
+    assert "score32_top__cluster_p54__sram_endpoint dut (" in tb
+    assert "__compute_cluster" not in tb
+    assert '$readmemh("sram_requests.memh",req_mem);' in tb
+    assert '$readmemh("sram_fill.memh",fill_mem);' in tb
+    assert "SRAM_RESPONSE" in tb
+    assert "SRAM_SUMMARY" in tb
+
+
+def test_fine_compositional_request_metadata_requires_every_block_and_slice() -> None:
+    requests = [
+        [{"command": 0, "address": block, "slice": value_slice} for block in range(2) for value_slice in range(16)],
+        [{"command": 0, "address": block, "slice": value_slice} for block in range(2) for value_slice in range(16)],
+    ]
+
+    assert _check_request_metadata(requests, [2]) == {"passed": True}
+    requests[0].pop()
+    rejected = _check_request_metadata(requests, [2])
+    assert rejected["passed"] is False
+    assert rejected["stream"] == 0
+    assert rejected["command"] == 0
+
+
+def test_fine_compositional_sram_audit_checks_metadata_data_and_tag() -> None:
+    command = 0
+    lane = 0
+    address = 0
+    value_slice = 0
+    fill_rows = _fill_rows_for_wave(cluster=0, head_base=0, wave=0)
+    response = {
+        "command": command,
+        "lane": lane,
+        "address": address,
+        "slice": value_slice,
+        "data": fill_rows[0],
+        "tag": 0,
+    }
+    expected = [{key: response[key] for key in ("command", "lane", "address", "slice")}]
+
+    assert _check_sram_responses(
+        cluster=0,
+        logical_head_groups=1,
+        responses=[response],
+        expected_responses=expected,
+    ) == {"passed": True}
+
+    wrong_data = dict(response)
+    wrong_data["data"] = int(response["data"]) ^ 1
+    rejected = _check_sram_responses(
+        cluster=0,
+        logical_head_groups=1,
+        responses=[wrong_data],
+        expected_responses=expected,
+    )
+    assert rejected["passed"] is False
+    assert rejected["response"] == 0
+
+
 def test_compositional_subprocess_resource_kill_stays_inconclusive(
     monkeypatch: Any,
     tmp_path: Path,
@@ -544,6 +663,32 @@ def test_compositional_subprocess_syntax_error_stays_conclusive(
     assert failure is not None
     assert failure["status"] == "compile_failed"
     assert failure["returncode"] == 2
+
+
+def test_compositional_subprocess_bad_alloc_stays_inconclusive(
+    monkeypatch: Any,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setattr(
+        "npu.eval.gqa8_compositional_exact.subprocess.run",
+        lambda *_args, **_kwargs: __import__("subprocess").CompletedProcess(
+            args=["iverilog"],
+            returncode=255,
+            stdout="",
+            stderr="terminate called after throwing an instance of 'std::bad_alloc'\n",
+        ),
+    )
+
+    _, failure = _run_process(
+        ["iverilog"],
+        cwd=tmp_path,
+        timeout_sec=1,
+        phase="compile_p54_component",
+    )
+
+    assert failure is not None
+    assert failure["status"] == "resource_failure"
+    assert failure["returncode"] == 255
 
 
 def test_observation_evaluator_validates_every_exact_total_and_row() -> None:
@@ -986,6 +1131,66 @@ def test_build_report_selects_concrete_compositional_backend(monkeypatch: Any) -
     assert report["compositional_components"]["strict_generated_top_guard"] == "passed"
     assert captured["compile_timeout_sec"] == 17
     assert captured["simulation_timeout_sec"] == 9
+    assert captured["logical_head_groups"] == 1
+
+
+def test_build_report_selects_fine_compositional_backend(monkeypatch: Any) -> None:
+    reference, summary, cluster_summaries, cluster_rows, root_rows = _audit_fixture()
+    captured: dict[str, object] = {}
+
+    monkeypatch.setattr(
+        "npu.eval.probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8.generate",
+        lambda config, rtl_dir: (
+            rtl_dir.mkdir(parents=True, exist_ok=True),
+            (rtl_dir / "config.json").write_text(json.dumps(config), encoding="utf-8"),
+        ),
+    )
+    monkeypatch.setattr(
+        "npu.eval.probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8._reference",
+        lambda **_kwargs: reference,
+    )
+    monkeypatch.setattr(
+        "npu.eval.probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8._parse_stdout",
+        lambda _stdout: (summary, cluster_summaries, cluster_rows, root_rows, None),
+    )
+
+    def fake_fine(**kwargs: object) -> dict[str, object]:
+        captured.update(kwargs)
+        return {
+            "simulation_status": "ok",
+            "returncode": 0,
+            "stdout": "fine component observations",
+            "stderr": "",
+            "phase_records": [{"phase": "strict_generated_top_guard", "returncode": 0}],
+            "component_metadata": {
+                "proof": "fine_grained_concrete_rtl_composition",
+                "strict_generated_top_guard": "passed",
+                "producer_replay_parallelism": 1,
+            },
+        }
+
+    monkeypatch.setattr(
+        "npu.eval.gqa8_fine_compositional_exact.run_fine_compositional_exact",
+        fake_fine,
+    )
+
+    report = build_report(
+        config=_minimal_probe_config(),
+        timeout_sec=11,
+        compile_timeout_sec=19,
+        sim_backend=FINE_COMPOSITIONAL_ICARUS_BACKEND,
+    )
+
+    assert report["passed"] is True
+    assert report["sim_backend"] == FINE_COMPOSITIONAL_ICARUS_BACKEND
+    assert report["compile_timeout_sec"] == 19
+    assert report["simulation_timeout_sec"] == 11
+    assert report["sim_backend_metadata"]["proof"] == "fine_grained_concrete_rtl_composition"
+    assert report["sim_backend_metadata"]["producer_replay_parallelism"] == 1
+    assert report["compositional_components"]["strict_generated_top_guard"] == "passed"
+    assert report["compositional_components"]["producer_replay_parallelism"] == 1
+    assert captured["compile_timeout_sec"] == 19
+    assert captured["simulation_timeout_sec"] == 11
     assert captured["logical_head_groups"] == 1
 
 

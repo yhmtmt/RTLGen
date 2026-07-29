@@ -13,7 +13,7 @@
 - CPU: `CPUQuota=300%`
 - Tasks: `TasksMax=512`
 - Launcher: `control_plane/scripts/run_bounded_command.py`
-- Simulation backend: `compositional_icarus`
+- Simulation backend: `fine_compositional_icarus`
 
 If a usable user `systemd` manager exists, the launcher applies the contract
 with `systemd-run --user --scope`. In evaluator containers without a user bus,
@@ -24,11 +24,13 @@ CPUs (`CPUQuota=300%` becomes at most three allowed CPUs). `MemoryHigh=6G` is
 advisory and reported as unavailable in fallback mode rather than claimed as
 exact cgroup enforcement.
 
-The probe backend should be `python3 npu/eval/probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8.py --sim-backend compositional_icarus --compile-timeout-sec 1200 --timeout-sec 900`.
-It must pass the existing strict generated-top guard, simulate the concrete p54
-and p53 cluster wrappers with all cluster-specific sidecars, and simulate the
-concrete global tree from the observed cluster streams. The JSON report must
-record the component phases and separate compile/simulation timeouts.
+The probe backend should be `python3 npu/eval/probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8.py --sim-backend fine_compositional_icarus --compile-timeout-sec 1200 --timeout-sec 900`.
+It must pass the strict generated-top guard, serially replay the exact
+single-producer module for all 856 producer contexts, check its SRAM request
+metadata, simulate the concrete p54/p53 SRAM endpoints and local
+reducer/temporal-merge modules, and simulate the concrete global tree from
+observed cluster streams. The JSON report must record component phases,
+`producer_replay_parallelism=1`, and separate compile/simulation timeouts.
 
 Do not run this probe in the devcontainer.
 
@@ -48,6 +50,7 @@ The JSON report must contain:
 - zero protocol or sticky errors
 - passing structured comparisons for every cluster row and root row
 - `compositional_components.strict_generated_top_guard: passed`
+- `compositional_components.producer_replay_parallelism: 1`
 
 Hashes are diagnostics only. They cannot substitute for structured comparison.
 
