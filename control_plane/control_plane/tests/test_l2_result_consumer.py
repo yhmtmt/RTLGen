@@ -4099,6 +4099,160 @@ def test_consume_l2_result_writes_evidence_only_decision_without_campaign_output
             assert payload["source_refs"]["decoder_attention_kv_memory_report"] == report_rel
 
 
+@pytest.mark.parametrize(
+    ("contract_prefix", "item_suffix"),
+    (
+        (
+            "attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence",
+            "equivalence",
+        ),
+        (
+            "attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence",
+            "rotation_equivalence",
+        ),
+    ),
+)
+def test_consume_l2_result_treats_gqa8_equivalence_reports_as_decoder_evidence(
+    contract_prefix: str,
+    item_suffix: str,
+) -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        item_id = f"l2_gqa8_{item_suffix}_r7"
+        evidence_rel = f"runs/datasets/gqa8/{item_id}.json"
+        report_rel = f"runs/datasets/gqa8/{item_id}.md"
+        evidence_payload = {
+            "passed": True,
+            "classification": "passed",
+            "counts_passed": True,
+            "summary": {
+                "producer_handshake_count": 8_192,
+                "cluster_row_count": 2_048,
+                "root_row_count": 128,
+                "protocol_error": 0,
+            },
+            "compositional_components": {
+                "strict_generated_top_guard": "passed",
+                "producer_replay_parallelism": 1,
+                "global_sidecar": {
+                    "value_packing": "canonical_pack_numerators",
+                },
+            },
+            "full_row_audit": {
+                "passed": True,
+                "clusters": [{"passed": True} for _ in range(16)],
+                "root": {"passed": True},
+            },
+        }
+        _write(repo_root / evidence_rel, json.dumps(evidence_payload, indent=2) + "\n")
+        _write(repo_root / report_rel, "# GQA8 equivalence\n")
+
+        with Session(engine) as session:
+            task_request = TaskRequest(
+                request_key=f"l2_campaign:{item_id}",
+                source="test",
+                requested_by="@tester",
+                title="Layer2 GQA8 equivalence",
+                description="consume report-only GQA8 equivalence evidence",
+                layer=LayerName.LAYER2,
+                flow=FlowName.OPENROAD,
+                priority=1,
+                request_payload={
+                    "item_id": item_id,
+                    "layer": "layer2",
+                    "flow": "openroad",
+                    "developer_loop": {
+                        "proposal_id": f"prop_{item_id}",
+                        "evaluation": {
+                            "mode": "frontier_detail",
+                            "expected_direction": "iterate",
+                        },
+                        "comparison": {"role": "measurement_only"},
+                        "abstraction": {"layer": contract_prefix},
+                    },
+                },
+                source_commit="deadbeef",
+            )
+            session.add(task_request)
+            session.flush()
+            work_item = WorkItem(
+                work_item_key=f"l2_campaign:{item_id}",
+                task_request_id=task_request.id,
+                item_id=item_id,
+                layer=LayerName.LAYER2,
+                flow=FlowName.OPENROAD,
+                platform="nangate45",
+                task_type="l2_campaign",
+                state=WorkItemState.ARTIFACT_SYNC,
+                priority=1,
+                source_mode="src_verilog",
+                input_manifest={
+                    "decoder_contract": {
+                        f"{contract_prefix}_out": evidence_rel,
+                        f"{contract_prefix}_report": report_rel,
+                    }
+                },
+                command_manifest=[],
+                expected_outputs=[evidence_rel, report_rel],
+                acceptance_rules=[],
+                source_commit="deadbeef",
+            )
+            session.add(work_item)
+            session.flush()
+            run = Run(
+                run_key=f"{item_id}_run_1",
+                work_item_id=work_item.id,
+                attempt=1,
+                executor_type=ExecutorType.INTERNAL_WORKER,
+                status=RunStatus.SUCCEEDED,
+                started_at=utcnow(),
+                completed_at=utcnow(),
+                checkout_commit="deadbeef",
+                result_summary="2/2 commands succeeded",
+                result_payload={"queue_result": {"status": "ok"}},
+            )
+            session.add(run)
+            session.commit()
+
+            result = consume_l2_result(
+                session,
+                Layer2ConsumeRequest(repo_root=str(repo_root), item_id=item_id),
+            )
+
+            assert result.recommended_arch_id == contract_prefix
+            assert result.recommended_macro_mode == "evidence_only"
+            assert result.profile_count == 0
+            decision_path = (
+                repo_root
+                / "control_plane"
+                / "shadow_exports"
+                / "l2_decisions"
+                / f"{item_id}.json"
+            )
+            decision = json.loads(decision_path.read_text(encoding="utf-8"))
+            assert decision["recommendation"]["source"] == "decoder_evidence"
+            assert "best_point_json" not in decision["source_refs"]
+            assert decision["source_refs"]["decoder_evidence_json"] == evidence_rel
+            assert decision["source_refs"][f"decoder_{contract_prefix}_out"] == evidence_rel
+            assert decision["source_refs"][f"decoder_{contract_prefix}_report"] == report_rel
+            assert decision["decoder_quality"]["passed"] is True
+            assert decision["decoder_quality"]["full_row_audit"] == evidence_payload["full_row_audit"]
+            assessment_quality = decision["proposal_assessment"]["decoder_quality"]
+            assert assessment_quality["passed"] is True
+            assert assessment_quality["classification"] == "passed"
+            assert assessment_quality["counts_passed"] is True
+            assert assessment_quality["summary"] == evidence_payload["summary"]
+            assert (
+                assessment_quality["compositional_components"]
+                == evidence_payload["compositional_components"]
+            )
+            assert assessment_quality["full_row_audit"] == evidence_payload["full_row_audit"]
+
+
 def test_consume_l2_result_allows_explicit_target_path() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
