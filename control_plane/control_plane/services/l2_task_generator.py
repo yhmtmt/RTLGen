@@ -6349,6 +6349,12 @@ def _decoder_attention_score32_schedule_wrapper_postroute_activity_power_evidenc
 
 def _decoder_attention_score32_exact_reduction_recost_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    base_item_id = "l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1"
+    canonical_artifact_item_ids = {
+        base_item_id,
+        f"{base_item_id}_r2",
+    }
+    artifact_item_id = base_item_id if item_id in canonical_artifact_item_ids else item_id
     source_recost_json = (
         f"{base}/decoder_attention_composed_datapath_physical_feasibility__"
         "l2_decoder_attention_composed_datapath_score32_exp_lut_div_schedule_wrapper_recost_llama7b_v1.json"
@@ -6356,8 +6362,8 @@ def _decoder_attention_score32_exact_reduction_recost_evidence(*, item_id: str) 
     banked_config = (
         "runs/designs/npu_blocks/attention_score32_exact_banked_finalized_tree_c16_r2_l8_b59/config.json"
     )
-    out = f"{base}/decoder_attention_score32_exact_reduction_recost__{item_id}.json"
-    report = f"{base}/decoder_attention_score32_exact_reduction_recost__{item_id}.md"
+    out = f"{base}/decoder_attention_score32_exact_reduction_recost__{artifact_item_id}.json"
+    report = f"{base}/decoder_attention_score32_exact_reduction_recost__{artifact_item_id}.md"
     return {
         "inputs": {
             "attention_score32_exact_reduction_recost_source_json": source_recost_json,
