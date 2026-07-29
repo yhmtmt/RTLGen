@@ -314,6 +314,14 @@ def test_failure_classification_marks_timeouts_oom_and_kills_inconclusive() -> N
         tb_timeout_cycle=50000,
         passed=False,
     ) == "failed_inconclusive"
+    for simulation_status in ("compile_failed", "run_failed"):
+        assert _failure_classification(
+            simulation_status=simulation_status,
+            returncode=1,
+            stderr="ordinary simulator failure",
+            tb_timeout_cycle=None,
+            passed=False,
+        ) == "failed_conclusive"
 
 
 def test_checked_in_config_rejects_partition_drift() -> None:

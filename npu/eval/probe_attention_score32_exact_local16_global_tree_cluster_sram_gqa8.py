@@ -838,7 +838,7 @@ def _failure_classification(
     inconclusive_codes = {124, 125, 137, -9}
     oom = "out of memory" in stderr.lower() or "cannot allocate memory" in stderr.lower()
     if (
-        simulation_status != "ok"
+        simulation_status in {"subprocess_timeout", "resource_failure", "testbench_timeout"}
         or tb_timeout_cycle is not None
         or returncode in inconclusive_codes
         or oom
