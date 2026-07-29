@@ -13747,6 +13747,15 @@ def test_generate_l2_campaign_task_adds_cluster_sram_gqa8_equivalence_evidence()
                     ),
                     requested_by="@tester",
                     source_commit=source_commit,
+                    proposal_id=(
+                        "prop_l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_"
+                        "equivalence_llama7b_v1"
+                    ),
+                    proposal_path=(
+                        "docs/proposals/"
+                        "prop_l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_"
+                        "equivalence_llama7b_v1/proposal.json"
+                    ),
                     abstraction_layer=(
                         "decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence"
                     ),
@@ -13784,6 +13793,16 @@ def test_generate_l2_campaign_task_adds_cluster_sram_gqa8_equivalence_evidence()
             assert "--root-ready-pattern 1,1,0,1" in run
             assert "--out " in run
             assert "--out-md " in run
+            assert (
+                "--proposal-id "
+                "prop_l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_"
+                "equivalence_llama7b_v1"
+            ) in run
+            assert (
+                "--proposal-path docs/proposals/"
+                "prop_l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_"
+                "equivalence_llama7b_v1/proposal.json"
+            ) in run
             assert decoder_inputs[
                 "attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_config"
             ].endswith(

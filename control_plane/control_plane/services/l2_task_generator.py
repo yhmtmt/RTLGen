@@ -10254,6 +10254,8 @@ def _decoder_producer_ranker_ready_valid_equivalence_evidence(*, item_id: str) -
 def _decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_evidence(
     *,
     item_id: str,
+    proposal_id: str | None = None,
+    proposal_path: str | None = None,
 ) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     config = (
@@ -10269,6 +10271,12 @@ def _decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equiv
         f"{base}/decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence__"
         f"{item_id}.md"
     )
+    proposal_args: list[str] = []
+    if str(proposal_id or "").strip():
+        proposal_args.extend(["--proposal-id", str(proposal_id).strip()])
+    if str(proposal_path or "").strip():
+        proposal_args.extend(["--proposal-path", str(proposal_path).strip()])
+    proposal_arg_text = " ".join(shlex.quote(arg) for arg in proposal_args)
     command = (
         "systemd-run --user --scope "
         "-p MemoryHigh=6G -p MemoryMax=8G -p CPUQuota=300% -p TasksMax=512 "
@@ -10277,8 +10285,9 @@ def _decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equiv
         "--timeout-sec 900 "
         "--root-ready-pattern 1,1,0,1 "
         f"--out {out} "
-        f"--out-md {report}"
-    )
+        f"--out-md {report} "
+        f"{proposal_arg_text}"
+    ).strip()
     return {
         "inputs": {
             "attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_config": config,
@@ -11754,7 +11763,9 @@ def _build_payload(
         elif abstraction_layer_name == "decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence":
             decoder_evidence = (
                 _decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_evidence(
-                    item_id=item_id
+                    item_id=item_id,
+                    proposal_id=proposal_id,
+                    proposal_path=proposal_path,
                 )
             )
         elif abstraction_layer_name == "decoder_attention_separated_cluster_equivalence":

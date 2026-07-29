@@ -401,6 +401,23 @@ run the already queued exp-LUT branch:
     It should scale from this wrapper evidence and keep external SRAM, NoC,
     HBM/DRAM service, and full-array physical signoff as explicit remaining
     abstractions.
+13. Run
+    `l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1`
+    against the full 856-producer, sixteen-cluster SRAM, local-reducer, and
+    finalized-tree composition. Require exact aggregate and per-cluster
+    traffic counts, zero sticky errors, and structured equality for every
+    cluster and root row. Timeout or OOM is inconclusive; an arithmetic,
+    ordering, metadata, or protocol mismatch is conclusive.
+14. After the equivalence artifact merges, recost the Llama7B score32 point
+    with the measured command-to-root service interval and measured SRAM
+    request/fill traffic. Do not treat deterministic fill arrival as measured
+    HBM service, and do not charge inferred SRAM as a characterized macro.
+15. Close the remaining communication and physical abstractions with a
+    logically valid mesh topology/scheduler pair, SRAM macro PPA substitution,
+    and utilization-matched cluster-array physical slices. Rerank token
+    throughput, energy, area, and precision only after each substituted term
+    names its measured source and leaves no incompatible category mixed into
+    the same rank.
 
 All new evaluation jobs should run on the remote evaluator
 `eval-daemon-b7c2d9c80c1c`, not the devcontainer.
