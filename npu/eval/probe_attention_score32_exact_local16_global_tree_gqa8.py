@@ -23,10 +23,14 @@ from npu.sim.perf.attention_exact_partial import (
     LOCAL_TEMPORAL_WAVES,
     ExactPartialBeat,
     compose_local16_global_tree_gqa8_exact,
+    exact_local_cluster_gqa8_command_block_counts,
     exact_local16_global_tree_gqa8_service_manifest,
+    merge_partial_streams,
+    partial_stream_from_blocks,
     unpack_final_values,
     unpack_numerators,
 )
+from npu.sim.perf.attention_online import requantize_score_row
 
 JsonDict = dict[str, Any]
 _CONFIG_KEY = "attention_score32_exact_local16_global_tree_gqa8"
@@ -92,6 +96,11 @@ def _tool(name: str) -> str:
 
 def _hash(value: object) -> str:
     return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(",", ":")).encode("utf-8")).hexdigest()
+
+
+def _pack(values: list[int], bits: int) -> int:
+    mask = (1 << bits) - 1
+    return sum((int(value) & mask) << (index * bits) for index, value in enumerate(values))
 
 
 def compare_full_rows(
@@ -211,133 +220,283 @@ def _resolve_workload(
     }
 
 
-def _command_schedule(workload: dict[str, object]) -> tuple[dict[str, int], ...]:
+def _logical_commands(workload: dict[str, object]) -> tuple[dict[str, int], ...]:
+    commands = []
+    for index, head_base in enumerate(tuple(int(value) for value in workload["head_bases"])):
+        multiplier, shift = _score_params(int(head_base))
+        commands.append(
+            {
+                "logical_index": index,
+                "group_index": int(head_base) >> 3,
+                "command_id": 0x8200 + index,
+                "head_base": int(head_base),
+                "multiplier": multiplier,
+                "shift": shift,
+            }
+        )
+    return tuple(commands)
+
+
+def _wave_command_schedule(workload: dict[str, object]) -> tuple[dict[str, int], ...]:
+    commands = []
+    for logical_command in _logical_commands(workload):
+        for wave_index in range(LOCAL_TEMPORAL_WAVES):
+            commands.append({**logical_command, "wave_index": wave_index})
+    return tuple(commands)
+
+
+def _stream_block_beats(
+    *,
+    cluster: int,
+    producer: int,
+    group_index: int,
+    wave_index: int,
+    stream: int,
+    block_count: int,
+    seed: int,
+) -> tuple[tuple[tuple[tuple[int, ...], tuple[int, ...]], ...], ...]:
+    blocks = []
+    for block_index in range(block_count):
+        queries = tuple(
+            (
+                (
+                    seed * 17
+                    + cluster * 19
+                    + producer * 23
+                    + group_index * 29
+                    + wave_index * 31
+                    + stream * 37
+                    + block_index * 41
+                    + head_lane * 43
+                )
+                % 127
+            )
+            - 63
+            for head_lane in range(8)
+        )
+        keys = tuple(
+            (
+                (
+                    seed * 47
+                    + cluster * 53
+                    + producer * 59
+                    + group_index * 61
+                    + wave_index * 67
+                    + stream * 71
+                    + block_index * 73
+                    + token_lane * 79
+                )
+                % 127
+            )
+            - 63
+            for token_lane in range(8)
+        )
+        blocks.append((((tuple(queries), tuple(keys))),))
+    return tuple(blocks)
+
+
+def _value_blocks(
+    *,
+    cluster: int,
+    producer: int,
+    group_index: int,
+    wave_index: int,
+    stream: int,
+    block_count: int,
+    seed: int,
+) -> tuple[tuple[tuple[tuple[int, ...], ...], ...], ...]:
     return tuple(
-        {"command_id": 0x8200 + index, "head_base": int(workload["head_bases"][index])}
-        for index in range(int(workload["command_count"]))
+        tuple(
+            tuple(
+                tuple(
+                    (
+                        (
+                            seed * 83
+                            + cluster * 89
+                            + producer * 97
+                            + group_index * 101
+                            + wave_index * 103
+                            + stream * 107
+                            + block_index * 109
+                            + value_slice * 113
+                            + row * 127
+                            + lane * 131
+                        )
+                        % 255
+                    )
+                    - 127
+                    for lane in range(8)
+                )
+                for row in range(8)
+            )
+            for value_slice in range(16)
+        )
+        for block_index in range(block_count)
     )
 
 
-def _partial_max(
-    *,
-    cluster: int,
-    producer: int,
-    command_index: int,
-    wave: int,
-    head_lane: int,
-    slice_index: int,
-    seed: int,
-) -> int:
-    raw = (
-        (seed * 41)
-        + (cluster * 29)
-        + (producer * 23)
-        + (command_index * 19)
-        + (wave * 17)
-        + (head_lane * 13)
-        + (slice_index * 11)
-    ) % 255
-    return raw - 127
-
-
-def _partial_exp(
-    *,
-    cluster: int,
-    producer: int,
-    command_index: int,
-    wave: int,
-    head_lane: int,
-    slice_index: int,
-    seed: int,
-) -> int:
-    return 1 + (
-        (seed * 43)
-        + (cluster * 31)
-        + (producer * 27)
-        + (command_index * 21)
-        + (wave * 15)
-        + (head_lane * 9)
-        + (slice_index * 5)
-    ) % 65535
-
-
-def _partial_lane(
-    *,
-    cluster: int,
-    producer: int,
-    command_index: int,
-    wave: int,
-    head_lane: int,
-    slice_index: int,
-    lane: int,
-    seed: int,
-) -> int:
-    raw = (
-        (seed * 47)
-        + (cluster * 37)
-        + (producer * 29)
-        + (command_index * 23)
-        + (wave * 19)
-        + (head_lane * 17)
-        + (slice_index * 13)
-        + (lane * 11)
-    ) % 131071
-    return raw - 65535
+def _raw_scores(block: tuple[tuple[int, ...], tuple[int, ...]], head_lane: int) -> list[int]:
+    queries, keys = block
+    return [int(queries[head_lane]) * int(keys[token_lane]) for token_lane in range(8)]
 
 
 def _producer_wave_stream(
     *,
     cluster: int,
     producer: int,
-    command_index: int,
-    command_id: int,
-    head_base: int,
-    wave: int,
+    logical_command: dict[str, int],
+    wave_index: int,
+    block_count: int,
     seed: int,
 ) -> tuple[ExactPartialBeat, ...]:
-    beats: list[ExactPartialBeat] = []
+    merged_per_head = []
     for head_lane in range(8):
-        for slice_index in range(16):
-            beats.append(
-                ExactPartialBeat(
-                    command_id=command_id,
-                    head_id=head_base + head_lane,
-                    slice_index=slice_index,
-                    last=slice_index == 15,
-                    max_score=_partial_max(
+        stream_partials = []
+        for stream in range(2):
+            blocks = _stream_block_beats(
+                cluster=cluster,
+                producer=producer,
+                group_index=int(logical_command["group_index"]),
+                wave_index=wave_index,
+                stream=stream,
+                block_count=block_count,
+                seed=seed,
+            )
+            score_rows = [
+                list(
+                    requantize_score_row(
+                        _raw_scores(blocks[block_index][0], head_lane),
+                        multiplier=int(logical_command["multiplier"]),
+                        shift=int(logical_command["shift"]),
+                    )
+                )
+                for block_index in range(block_count)
+            ]
+            stream_partials.append(
+                partial_stream_from_blocks(
+                    command_id=int(logical_command["command_id"]),
+                    head_id=int(logical_command["head_base"]) + head_lane,
+                    score_rows=score_rows,
+                    value_blocks=_value_blocks(
                         cluster=cluster,
                         producer=producer,
-                        command_index=command_index,
-                        wave=wave,
-                        head_lane=head_lane,
-                        slice_index=slice_index,
+                        group_index=int(logical_command["group_index"]),
+                        wave_index=wave_index,
+                        stream=stream,
+                        block_count=block_count,
                         seed=seed,
-                    ),
-                    exp_sum=_partial_exp(
-                        cluster=cluster,
-                        producer=producer,
-                        command_index=command_index,
-                        wave=wave,
-                        head_lane=head_lane,
-                        slice_index=slice_index,
-                        seed=seed,
-                    ),
-                    numerators=tuple(
-                        _partial_lane(
-                            cluster=cluster,
-                            producer=producer,
-                            command_index=command_index,
-                            wave=wave,
-                            head_lane=head_lane,
-                            slice_index=slice_index,
-                            lane=lane,
-                            seed=seed,
-                        )
-                        for lane in range(8)
                     ),
                 )
             )
-    return tuple(beats)
+        merged_per_head.append(merge_partial_streams(stream_partials[0], stream_partials[1]))
+    return tuple(beat for head_stream in merged_per_head for beat in head_stream)
+
+
+def _cluster_bases(cluster_producers: tuple[int, ...]) -> tuple[int, ...]:
+    bases: list[int] = []
+    running = 0
+    for producer_count in cluster_producers:
+        bases.append(running)
+        running += int(producer_count)
+    return tuple(bases)
+
+
+def _hierarchy_driver_data(cluster_producers: tuple[int, ...], workload: dict[str, object]) -> dict[str, object]:
+    wave_commands = _wave_command_schedule(workload)
+    total_producers = sum(cluster_producers)
+    cluster_bases = _cluster_bases(cluster_producers)
+    query_mem: list[list[int]] = [[] for _ in range(total_producers)]
+    key_mem: list[list[int]] = [[] for _ in range(total_producers)]
+    last_mem: list[list[int]] = [[] for _ in range(total_producers)]
+    value_mem: list[list[int]] = [[] for _ in range(total_producers * 2)]
+    beat_limits = [[0 for _ in range(total_producers)] for _ in range(len(wave_commands))]
+    block_offsets = [[0 for _ in range(total_producers)] for _ in range(len(wave_commands))]
+    command_block_counts = [[0 for _ in range(total_producers)] for _ in range(len(wave_commands))]
+    max_beats_per_producer = 0
+    max_blocks_per_producer = 0
+
+    for cluster, producer_count in enumerate(cluster_producers):
+        producer_base = cluster_bases[cluster]
+        for producer in range(producer_count):
+            global_index = producer_base + producer
+            cumulative_beats = 0
+            cumulative_blocks = 0
+            stream_values: list[list[int]] = [[], []]
+            for command_index, wave_command in enumerate(wave_commands):
+                block_count = int(
+                    exact_local_cluster_gqa8_command_block_counts(
+                        producers=int(producer_count),
+                        group_index=int(wave_command["group_index"]),
+                    )[producer]
+                )
+                command_block_counts[command_index][global_index] = block_count
+                block_offsets[command_index][global_index] = cumulative_blocks
+                blocks0 = _stream_block_beats(
+                    cluster=cluster,
+                    producer=producer,
+                    group_index=int(wave_command["group_index"]),
+                    wave_index=int(wave_command["wave_index"]),
+                    stream=0,
+                    block_count=block_count,
+                    seed=int(workload["seed"]),
+                )
+                blocks1 = _stream_block_beats(
+                    cluster=cluster,
+                    producer=producer,
+                    group_index=int(wave_command["group_index"]),
+                    wave_index=int(wave_command["wave_index"]),
+                    stream=1,
+                    block_count=block_count,
+                    seed=int(workload["seed"]),
+                )
+                values0 = _value_blocks(
+                    cluster=cluster,
+                    producer=producer,
+                    group_index=int(wave_command["group_index"]),
+                    wave_index=int(wave_command["wave_index"]),
+                    stream=0,
+                    block_count=block_count,
+                    seed=int(workload["seed"]),
+                )
+                values1 = _value_blocks(
+                    cluster=cluster,
+                    producer=producer,
+                    group_index=int(wave_command["group_index"]),
+                    wave_index=int(wave_command["wave_index"]),
+                    stream=1,
+                    block_count=block_count,
+                    seed=int(workload["seed"]),
+                )
+                for block_index in range(block_count):
+                    queries0, keys0 = blocks0[block_index][0]
+                    queries1, keys1 = blocks1[block_index][0]
+                    query_mem[global_index].append(_pack(list(queries0), 8) | (_pack(list(queries1), 8) << 64))
+                    key_mem[global_index].append(_pack(list(keys0), 8) | (_pack(list(keys1), 8) << 64))
+                    last_mem[global_index].append(1)
+                    for value_slice in range(16):
+                        stream_values[0].append(_pack([lane for row in values0[block_index][value_slice] for lane in row], 8))
+                        stream_values[1].append(_pack([lane for row in values1[block_index][value_slice] for lane in row], 8))
+                cumulative_beats += block_count
+                cumulative_blocks += block_count
+                beat_limits[command_index][global_index] = cumulative_beats
+            value_mem[global_index * 2] = stream_values[0]
+            value_mem[(global_index * 2) + 1] = stream_values[1]
+            max_beats_per_producer = max(max_beats_per_producer, cumulative_beats)
+            max_blocks_per_producer = max(max_blocks_per_producer, cumulative_blocks)
+
+    return {
+        "wave_commands": wave_commands,
+        "cluster_bases": cluster_bases,
+        "query_mem": query_mem,
+        "key_mem": key_mem,
+        "last_mem": last_mem,
+        "value_mem": value_mem,
+        "beat_limits": beat_limits,
+        "block_offsets": block_offsets,
+        "command_block_counts": command_block_counts,
+        "max_beats_per_producer": max_beats_per_producer,
+        "max_blocks_per_producer": max_blocks_per_producer,
+    }
 
 
 def _reference(config: JsonDict, workload: dict[str, object]) -> dict[str, object]:
@@ -345,27 +504,30 @@ def _reference(config: JsonDict, workload: dict[str, object]) -> dict[str, objec
     if not isinstance(body, dict):
         raise ValueError(f"config must contain {_CONFIG_KEY}")
     cluster_producers = tuple(int(value) for value in body["cluster_producers"])
-    commands = _command_schedule(workload)
     expected_cluster_rows: list[list[dict[str, object]]] = [[] for _ in range(16)]
     expected_root_rows: list[dict[str, object]] = []
 
-    for command_index, command in enumerate(commands):
+    for logical_command in _logical_commands(workload):
         composition = compose_local16_global_tree_gqa8_exact(
-            (
+            tuple(
                 tuple(
                     tuple(
                         _producer_wave_stream(
                             cluster=cluster,
                             producer=producer,
-                            command_index=command_index,
-                            command_id=int(command["command_id"]),
-                            head_base=int(command["head_base"]),
-                            wave=wave,
+                            logical_command=logical_command,
+                            wave_index=wave_index,
+                            block_count=int(
+                                exact_local_cluster_gqa8_command_block_counts(
+                                    producers=int(cluster_producers[cluster]),
+                                    group_index=int(logical_command["group_index"]),
+                                )[producer]
+                            ),
                             seed=int(workload["seed"]),
                         )
                         for producer in range(cluster_producers[cluster])
                     )
-                    for wave in range(LOCAL_TEMPORAL_WAVES)
+                    for wave_index in range(LOCAL_TEMPORAL_WAVES)
                 )
                 for cluster in range(16)
             )
@@ -418,15 +580,22 @@ def _score_params(head_base: int) -> tuple[int, int]:
     return 37, 1
 
 
-def _command_init(workload: dict[str, object]) -> str:
+def _expected_cluster_summary_counts(workload: dict[str, object]) -> dict[str, int]:
+    return {
+        "wave_command_accept_count": int(workload["command_count"]) * LOCAL_TEMPORAL_WAVES,
+        "emitted_beat_count": int(workload["command_count"]) * 128,
+        "completed_command_count": int(workload["command_count"]),
+    }
+
+
+def _command_init(command_data: dict[str, object]) -> str:
     lines = []
-    for index, command in enumerate(_command_schedule(workload)):
-        multiplier, shift = _score_params(int(command["head_base"]))
+    for index, command in enumerate(tuple(command_data["wave_commands"])):
         lines.append(
             f"    command_id_mem[{index}] = 16'h{int(command['command_id']):04x}; "
             f"head_base_mem[{index}] = 5'd{int(command['head_base'])}; "
-            f"multiplier_mem[{index}] = 32'd{multiplier}; "
-            f"shift_mem[{index}] = 6'd{shift};"
+            f"multiplier_mem[{index}] = 32'd{int(command['multiplier'])}; "
+            f"shift_mem[{index}] = 6'd{int(command['shift'])};"
         )
     return "\n".join(lines)
 
@@ -476,24 +645,71 @@ def _cluster_summary_logging() -> str:
 
 
 def _testbench(*, top_name: str, cluster_producers: tuple[int, ...], workload: dict[str, object], output_ready_pattern: tuple[bool, ...]) -> str:
+    total_producers = sum(cluster_producers)
+    value_lanes = total_producers * 2
+    command_data = _hierarchy_driver_data(cluster_producers, workload)
+    wave_commands = tuple(command_data["wave_commands"])
+    query_mem = command_data["query_mem"]
+    key_mem = command_data["key_mem"]
+    last_mem = command_data["last_mem"]
+    value_mem = command_data["value_mem"]
+    beat_limits = command_data["beat_limits"]
+    block_offsets = command_data["block_offsets"]
+    max_beats_per_producer = int(command_data["max_beats_per_producer"])
+    max_blocks_per_producer = int(command_data["max_blocks_per_producer"])
+
+    beat_limit_init = []
+    for command_index in range(len(wave_commands)):
+        for producer in range(total_producers):
+            beat_limit_init.append(
+                f"    cmd_beat_limit_mem[{command_index}][{producer}] = 32'd{int(beat_limits[command_index][producer])}; "
+                f"cmd_block_offset_mem[{command_index}][{producer}] = 32'd{int(block_offsets[command_index][producer])};"
+            )
+    beat_init = []
+    for producer in range(total_producers):
+        for beat_index, packed_query in enumerate(query_mem[producer]):
+            flat_index = (producer * max_beats_per_producer) + beat_index
+            beat_init.append(
+                f"    query_mem[{flat_index}] = 128'h{int(packed_query):032x}; "
+                f"key_mem[{flat_index}] = 128'h{int(key_mem[producer][beat_index]):032x}; "
+                f"last_mem[{flat_index}] = 1'b{int(last_mem[producer][beat_index])};"
+            )
+    value_init = []
+    for lane_index in range(value_lanes):
+        for slice_index, packed_matrix in enumerate(value_mem[lane_index]):
+            flat_index = (lane_index * max_blocks_per_producer * 16) + slice_index
+            value_init.append(f"    value_mem[{flat_index}] = 512'h{int(packed_matrix):0128x};")
+
     return f"""`timescale 1ns/1ps
 module tb;
   localparam integer COMMANDS = {int(workload["command_count"])};
+  localparam integer WAVE_COMMANDS = {len(wave_commands)};
+  localparam integer TOTAL_PRODUCERS = {total_producers};
+  localparam integer VALUE_LANES = {value_lanes};
+  localparam integer MAX_BEATS_PER_PRODUCER = {max_beats_per_producer};
+  localparam integer MAX_BLOCKS_PER_PRODUCER = {max_blocks_per_producer};
   localparam integer TOTAL_RESULTS = COMMANDS * 128;
   localparam integer ROOT_READY_PATTERN_LEN = {len(output_ready_pattern)};
   reg clk = 0;
   reg rst_n = 0;
   integer cycle = 0;
   integer issued_commands = 0;
+  integer active_command_index = -1;
   integer root_seen = 0;
   integer first_root_cycle = -1;
   integer last_root_cycle = -1;
   reg pending_summary = 0;
 
-  reg [15:0] command_id_mem [0:COMMANDS-1];
-  reg [4:0] head_base_mem [0:COMMANDS-1];
-  reg [31:0] multiplier_mem [0:COMMANDS-1];
-  reg [5:0] shift_mem [0:COMMANDS-1];
+  reg [15:0] command_id_mem [0:WAVE_COMMANDS-1];
+  reg [4:0] head_base_mem [0:WAVE_COMMANDS-1];
+  reg [31:0] multiplier_mem [0:WAVE_COMMANDS-1];
+  reg [5:0] shift_mem [0:WAVE_COMMANDS-1];
+  reg [31:0] cmd_beat_limit_mem [0:WAVE_COMMANDS-1][0:TOTAL_PRODUCERS-1];
+  reg [31:0] cmd_block_offset_mem [0:WAVE_COMMANDS-1][0:TOTAL_PRODUCERS-1];
+  reg [127:0] query_mem [0:(TOTAL_PRODUCERS*MAX_BEATS_PER_PRODUCER)-1];
+  reg [127:0] key_mem [0:(TOTAL_PRODUCERS*MAX_BEATS_PER_PRODUCER)-1];
+  reg last_mem [0:(TOTAL_PRODUCERS*MAX_BEATS_PER_PRODUCER)-1];
+  reg [511:0] value_mem [0:(VALUE_LANES*MAX_BLOCKS_PER_PRODUCER*16)-1];
   reg root_ready_mem [0:ROOT_READY_PATTERN_LEN-1];
 
   reg command_valid;
@@ -502,20 +718,20 @@ module tb;
   reg [4:0] command_head_base;
   reg [31:0] command_score_multiplier;
   reg [5:0] command_score_shift;
-  reg [855:0] input_valid;
-  wire [855:0] input_ready;
-  reg [855:0] input_last;
-  reg signed [109567:0] input_query;
-  reg signed [109567:0] input_key;
-  wire [1711:0] value_read_req_valid;
-  reg [1711:0] value_read_req_ready;
-  wire [23967:0] value_read_req_address;
-  wire [6847:0] value_read_req_slice;
-  reg [1711:0] value_response_valid;
-  wire [1711:0] value_response_ready;
-  reg [23967:0] value_response_address;
-  reg [6847:0] value_response_slice;
-  reg [876543:0] value_response_matrix;
+  reg [TOTAL_PRODUCERS-1:0] input_valid;
+  wire [TOTAL_PRODUCERS-1:0] input_ready;
+  reg [TOTAL_PRODUCERS-1:0] input_last;
+  reg signed [(TOTAL_PRODUCERS*128)-1:0] input_query;
+  reg signed [(TOTAL_PRODUCERS*128)-1:0] input_key;
+  wire [VALUE_LANES-1:0] value_read_req_valid;
+  reg [VALUE_LANES-1:0] value_read_req_ready;
+  wire [(VALUE_LANES*14)-1:0] value_read_req_address;
+  wire [(VALUE_LANES*4)-1:0] value_read_req_slice;
+  reg [VALUE_LANES-1:0] value_response_valid;
+  wire [VALUE_LANES-1:0] value_response_ready;
+  reg [(VALUE_LANES*14)-1:0] value_response_address;
+  reg [(VALUE_LANES*4)-1:0] value_response_slice;
+  reg [(VALUE_LANES*512)-1:0] value_response_matrix;
   wire root_valid;
   reg root_ready;
   wire [15:0] root_command_id;
@@ -557,6 +773,16 @@ module tb;
   wire global_finalizer_protocol_error;
   wire global_protocol_error;
   wire protocol_error;
+
+  integer beat_issue [0:TOTAL_PRODUCERS-1];
+  reg pending_valid [0:VALUE_LANES-1];
+  reg [13:0] pending_addr [0:VALUE_LANES-1];
+  reg [3:0] pending_slice [0:VALUE_LANES-1];
+  integer pending_delay [0:VALUE_LANES-1];
+  integer producer_index;
+  integer lane_index;
+  integer flat_index;
+  integer response_index;
 
   {top_name} dut (
       .clk(clk),
@@ -627,35 +853,98 @@ module tb;
   always #5 clk = ~clk;
 
   always @* begin
-    command_valid = rst_n && (issued_commands < COMMANDS);
+    command_valid = rst_n && (issued_commands < WAVE_COMMANDS);
     command_id = command_valid ? command_id_mem[issued_commands] : 16'd0;
     command_head_base = command_valid ? head_base_mem[issued_commands] : 5'd0;
     command_score_multiplier = command_valid ? multiplier_mem[issued_commands] : 32'd0;
     command_score_shift = command_valid ? shift_mem[issued_commands] : 6'd0;
-    input_valid = 856'd0;
-    input_last = 856'd0;
-    input_query = 109568'd0;
-    input_key = 109568'd0;
-    value_read_req_ready = ~1712'd0;
-    value_response_valid = 1712'd0;
-    value_response_address = 23968'd0;
-    value_response_slice = 6848'd0;
-    value_response_matrix = 876544'd0;
+    input_valid = {{TOTAL_PRODUCERS{{1'b0}}}};
+    input_last = {{TOTAL_PRODUCERS{{1'b0}}}};
+    input_query = {{(TOTAL_PRODUCERS*128){{1'b0}}}};
+    input_key = {{(TOTAL_PRODUCERS*128){{1'b0}}}};
+    value_read_req_ready = {{VALUE_LANES{{1'b1}}}};
     root_ready = root_ready_mem[cycle % ROOT_READY_PATTERN_LEN];
+    for (producer_index = 0; producer_index < TOTAL_PRODUCERS; producer_index = producer_index + 1) begin
+      if (rst_n && (active_command_index >= 0) && (beat_issue[producer_index] < cmd_beat_limit_mem[active_command_index][producer_index])) begin
+        flat_index = (producer_index * MAX_BEATS_PER_PRODUCER) + beat_issue[producer_index];
+        input_valid[producer_index] = 1'b1;
+        input_last[producer_index] = last_mem[flat_index];
+        input_query[(producer_index * 128) +: 128] = query_mem[flat_index];
+        input_key[(producer_index * 128) +: 128] = key_mem[flat_index];
+      end
+    end
   end
 
   always @(posedge clk) begin
     if (!rst_n) begin
       cycle <= 0;
       issued_commands <= 0;
+      active_command_index <= -1;
       root_seen <= 0;
       first_root_cycle <= -1;
       last_root_cycle <= -1;
       pending_summary <= 0;
+      value_response_valid <= {{VALUE_LANES{{1'b0}}}};
+      value_response_address <= {{(VALUE_LANES*14){{1'b0}}}};
+      value_response_slice <= {{(VALUE_LANES*4){{1'b0}}}};
+      value_response_matrix <= {{(VALUE_LANES*512){{1'b0}}}};
+      for (producer_index = 0; producer_index < TOTAL_PRODUCERS; producer_index = producer_index + 1) begin
+        beat_issue[producer_index] <= 0;
+      end
+      for (lane_index = 0; lane_index < VALUE_LANES; lane_index = lane_index + 1) begin
+        pending_valid[lane_index] <= 1'b0;
+        pending_addr[lane_index] <= 14'd0;
+        pending_slice[lane_index] <= 4'd0;
+        pending_delay[lane_index] <= 0;
+      end
     end else begin
       cycle <= cycle + 1;
       if (command_valid && command_ready) begin
+        active_command_index <= issued_commands;
+        $display("COMMAND_ACCEPT idx=%0d cmd=%0d head_base=%0d logical=%0d wave=%0d cycle=%0d",
+                 issued_commands,
+                 command_id_mem[issued_commands],
+                 head_base_mem[issued_commands],
+                 issued_commands / {LOCAL_TEMPORAL_WAVES},
+                 issued_commands % {LOCAL_TEMPORAL_WAVES},
+                 global_cycle_count);
         issued_commands <= issued_commands + 1;
+      end
+      for (producer_index = 0; producer_index < TOTAL_PRODUCERS; producer_index = producer_index + 1) begin
+        if (input_valid[producer_index] && input_ready[producer_index]) begin
+          beat_issue[producer_index] <= beat_issue[producer_index] + 1;
+        end
+      end
+      for (lane_index = 0; lane_index < VALUE_LANES; lane_index = lane_index + 1) begin
+        if (value_response_valid[lane_index] && value_response_ready[lane_index]) begin
+          value_response_valid[lane_index] <= 1'b0;
+        end
+        if (value_read_req_valid[lane_index] && value_read_req_ready[lane_index]) begin
+          if (pending_valid[lane_index]) $fatal(1, "value lane %0d multiple outstanding request", lane_index);
+          pending_valid[lane_index] <= 1'b1;
+          pending_addr[lane_index] <= value_read_req_address[(lane_index * 14) +: 14];
+          pending_slice[lane_index] <= value_read_req_slice[(lane_index * 4) +: 4];
+          pending_delay[lane_index] <= 0;
+        end
+        if (pending_valid[lane_index]) begin
+          if (pending_delay[lane_index] == 0) begin
+            if (!value_response_valid[lane_index]) begin
+              producer_index = lane_index / 2;
+              response_index =
+                  ((lane_index * MAX_BLOCKS_PER_PRODUCER)
+                   + cmd_block_offset_mem[active_command_index][producer_index]
+                   + pending_addr[lane_index]) * 16
+                  + pending_slice[lane_index];
+              pending_valid[lane_index] <= 1'b0;
+              value_response_valid[lane_index] <= 1'b1;
+              value_response_address[(lane_index * 14) +: 14] <= pending_addr[lane_index];
+              value_response_slice[(lane_index * 4) +: 4] <= pending_slice[lane_index];
+              value_response_matrix[(lane_index * 512) +: 512] <= value_mem[response_index];
+            end
+          end else begin
+            pending_delay[lane_index] <= pending_delay[lane_index] - 1;
+          end
+        end
       end
 {_cluster_result_logging()}
       if (root_valid && root_ready) begin
@@ -672,10 +961,10 @@ module tb;
                  global_root_completed_count, global_finalizer_accepted_count, global_tree_root_completed_count,
                  global_dispatch_stall_cycles, global_order_fifo_occupancy, global_order_fifo_high_watermark,
                  global_tree_protocol_error, global_order_protocol_error, global_finalizer_protocol_error);
-{_cluster_summary_logging()}
+        {_cluster_summary_logging()}
         #1 $finish;
       end
-      if (cycle > {max(160000, int(workload["command_count"]) * 16000)}) begin
+      if (cycle > {max(160000, len(wave_commands) * 16000)}) begin
         $display("TB_TIMEOUT cycle=%0d", cycle);
         #1 $finish;
       end
@@ -683,7 +972,10 @@ module tb;
   end
 
   initial begin
-{_command_init(workload)}
+{_command_init(command_data)}
+{chr(10).join(beat_limit_init)}
+{chr(10).join(beat_init)}
+{chr(10).join(value_init)}
 {_ready_init(output_ready_pattern)}
     clk = 1'b0;
     rst_n = 1'b0;
@@ -861,15 +1153,8 @@ def build_report(
         [row for row in normalized_cluster_rows if int(row["cluster"]) == cluster] for cluster in range(16)
     ]
     expected_cluster_rows = [row for rows in reference["cluster_rows"] for row in rows]
-    expected_cluster_summaries = [
-        {
-            "cluster": cluster,
-            "wave_command_accept_count": int(workload["command_count"]),
-            "emitted_beat_count": int(workload["command_count"]) * 128,
-            "completed_command_count": int(workload["command_count"]),
-        }
-        for cluster in range(16)
-    ]
+    expected_counts = _expected_cluster_summary_counts(workload)
+    expected_cluster_summaries = [{"cluster": cluster, **expected_counts} for cluster in range(16)]
     cluster_summaries_ok = len(cluster_summaries) == 16 and all(
         cluster_summaries[index]["cluster"] == expected_cluster_summaries[index]["cluster"]
         and cluster_summaries[index]["wave_command_accept_count"] == expected_cluster_summaries[index]["wave_command_accept_count"]
@@ -920,6 +1205,7 @@ def build_report(
         "total_local_producers": sum(cluster_producers),
         "persistent_waves": LOCAL_TEMPORAL_WAVES,
         "command_count": int(workload["command_count"]),
+        "wave_command_count": int(workload["command_count"]) * LOCAL_TEMPORAL_WAVES,
         "head_bases": list(int(value) for value in workload["head_bases"]),
         "seed": int(workload["seed"]),
         "outputs": int(summary.get("outputs", len(observed_root_rows))),
