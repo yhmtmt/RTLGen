@@ -13,11 +13,13 @@ from npu.eval.probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa
     DEFAULT_SUBPROCESS_TIMEOUT_SEC,
     EXPECTED_PER_CLUSTER,
     EXPECTED_TOTALS,
+    ROWS_PER_BUFFER,
     TB_TIMEOUT_CYCLES,
     _evaluate_observations,
     _failure_classification,
     _fill_rows_for_wave,
     _testbench,
+    _write_memh_sidecars,
     compare_compositional_rows,
     compare_full_rows,
     expected_counts,
@@ -114,6 +116,30 @@ def test_schedule_prefix_is_group_major_and_wraps_cleanly() -> None:
     assert expected_schedule_prefix(command_count=33)[32] == (0, 0)
 
 
+def test_expected_counts_scale_to_four_head_groups() -> None:
+    scaled = expected_counts(logical_head_groups=4)
+    assert scaled["totals"] == {
+        "fill_target_accept_count": 512,
+        "fill_row_accept_count": 1048576,
+        "producer_handshake_count": 32768,
+        "sram_request_accept_count": 1048576,
+        "sram_response_accept_count": 1048576,
+        "cluster_row_count": 8192,
+        "root_row_count": 512,
+    }
+    assert scaled["per_cluster"][0] == {
+        "wave_command_accept_count": 32,
+        "completed_command_count": 4,
+        "emitted_beat_count": 512,
+        "fill_target_accept_count": 32,
+        "fill_row_accept_count": 65536,
+        "request_accept_count": 65536,
+        "response_accept_count": 65536,
+        "command_accept_count": 32,
+        "command_release_count": 32,
+    }
+
+
 def test_generated_testbench_is_real_memh_backed_composed_traffic() -> None:
     tb = _testbench(
         top_name="attention_score32_exact_local16_global_tree_cluster_sram_gqa8_test",
@@ -132,16 +158,16 @@ def test_generated_testbench_is_real_memh_backed_composed_traffic() -> None:
     assert "input_valid[producer_index] && input_ready[producer_index]" in tb
     assert "$countones(input_valid & input_ready)" in tb
     assert "fill_target_valid[cluster_index] = 1'b1;" in tb
-    assert "fill_target_buffer_sel[cluster_index] = fill_wave[cluster_index][0];" in tb
+    assert "fill_target_buffer_sel[cluster_index] = wave_index_mem[fill_command_index[cluster_index]][0];" in tb
     assert "fill_valid[cluster_index] = 1'b1;" in tb
     assert "fill_data[(cluster_index * 512) +: 512] = fill_mem[fill_flat_index];" in tb
     assert "fill_target_valid[cluster_index] && fill_target_ready[cluster_index]" in tb
     assert "fill_valid[cluster_index] && fill_ready[cluster_index]" in tb
-    assert "(fill_wave[cluster_index] < 2)" in tb
-    assert "fill_wave[cluster_index] <= (expected_wave_index + 1'b1)" in tb
-    assert "command_id = 16'h8200;" in tb
-    assert "command_head_base = 5'd0;" in tb
-    assert "issued_commands < WAVES" in tb
+    assert "fill_command_index[cluster_index] < ((WAVE_COMMANDS < 2) ? WAVE_COMMANDS : 2)" in tb
+    assert "fill_command_index[cluster_index] <= prefetch_limit_index" in tb
+    assert "command_id = command_valid ? command_id_mem[issued_commands] : 16'd0;" in tb
+    assert "command_head_base = command_valid ? head_base_mem[issued_commands] : 5'd0;" in tb
+    assert "issued_commands < WAVE_COMMANDS" in tb
     assert "dut.cluster_out_valid_w" in tb
     assert "dut.cluster_out_ready_w" in tb
     assert "ROOT_RESULT" in tb
@@ -151,6 +177,27 @@ def test_generated_testbench_is_real_memh_backed_composed_traffic() -> None:
     assert "root_ready_mem[1] = 1'b1;" in tb
     assert "root_ready_mem[2] = 1'b0;" in tb
     assert "root_ready_mem[3] = 1'b1;" in tb
+
+
+def test_generated_testbench_supports_four_group_rotation_schedule() -> None:
+    tb = _testbench(
+        top_name="attention_score32_exact_local16_global_tree_cluster_sram_gqa8_test",
+        logical_head_groups=4,
+    )
+
+    assert "localparam integer WAVE_COMMANDS = 32;" in tb
+    assert "localparam integer EXPECTED_ROOT_ROWS = 512;" in tb
+    assert "localparam integer TB_TIMEOUT_CYCLES = 200000;" in tb
+    assert "command_id_mem[0] = 16'h8200;" in tb
+    assert "command_id_mem[8] = 16'h8201;" in tb
+    assert "command_id_mem[16] = 16'h8202;" in tb
+    assert "command_id_mem[24] = 16'h8203;" in tb
+    assert "head_base_mem[8] = 5'd8;" in tb
+    assert "head_base_mem[16] = 5'd16;" in tb
+    assert "head_base_mem[24] = 5'd24;" in tb
+    assert "cmd_beat_limit_mem[31][855]" in tb
+    assert "fill_mem [0:(CLUSTERS*WAVE_COMMANDS*ROWS_PER_TARGET)-1];" in tb
+    assert "fill_command_index[cluster_index] <= prefetch_limit_index" in tb
 
 
 def test_fill_sidecar_layout_uses_exact_p54_and_p53_block_slots(monkeypatch: Any) -> None:
@@ -178,6 +225,46 @@ def test_fill_sidecar_layout_uses_exact_p54_and_p53_block_slots(monkeypatch: Any
     low_byte = lambda rows, slot: rows[slot * 16] & 0xFF
     assert [low_byte(p54, slot) for slot in (0, 1, 18, 19, 20)] == [0, 1, 18, 19, 20]
     assert [low_byte(p53, slot) for slot in (0, 1, 20, 21, 22)] == [0, 1, 20, 21, 22]
+
+
+def test_fill_sidecar_uses_cluster_major_wave_command_order(
+    tmp_path: Path,
+    monkeypatch: Any,
+) -> None:
+    fake_wave_commands = tuple(
+        {"head_base": head_base, "wave_index": wave_index}
+        for head_base in (0, 8)
+        for wave_index in range(8)
+    )
+    monkeypatch.setattr(
+        "npu.eval.probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8._driver_data",
+        lambda **_: {
+            "wave_commands": fake_wave_commands,
+            "query_words": [0],
+            "key_words": [0],
+            "max_beats_per_producer": 1,
+            "beat_limits": [[0]],
+        },
+    )
+
+    def fake_fill_rows_for_wave(*, cluster: int, wave: int, head_base: int = 0) -> list[int]:
+        sentinel = ((head_base & 0x1F) << 16) | ((cluster & 0xFF) << 8) | (wave & 0xFF)
+        return [sentinel] * ROWS_PER_BUFFER
+
+    monkeypatch.setattr(
+        "npu.eval.probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8._fill_rows_for_wave",
+        fake_fill_rows_for_wave,
+    )
+    sidecars = _write_memh_sidecars(tmp_path, logical_head_groups=2)
+    fill_lines = (tmp_path / sidecars["fill"]).read_text(encoding="ascii").splitlines()
+
+    def line_value(index: int) -> int:
+        return int(fill_lines[index], 16)
+
+    assert line_value(0) == 0x000000
+    assert line_value(ROWS_PER_BUFFER) == 0x000001
+    assert line_value(8 * ROWS_PER_BUFFER) == 0x080000
+    assert line_value(16 * ROWS_PER_BUFFER) == 0x000100
 
 
 def _audit_fixture() -> tuple[
@@ -391,16 +478,25 @@ def test_main_writes_bounded_json_and_markdown_reports(
         "npu.eval.probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8.build_default_config",
         lambda: fake_config,
     )
+    captured: dict[str, object] = {}
+
+    def fake_build_report(**kwargs: object) -> dict[str, object]:
+        captured.update(kwargs)
+        return fake_report
+
     monkeypatch.setattr(
         "npu.eval.probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8.build_report",
-        lambda **_: fake_report,
+        fake_build_report,
     )
 
     out = tmp_path / "nested" / "probe.json"
     out_md = tmp_path / "nested" / "probe.md"
-    exit_code = main(["--json", "--out", str(out), "--out-md", str(out_md)])
+    exit_code = main(
+        ["--json", "--logical-head-groups", "4", "--out", str(out), "--out-md", str(out_md)]
+    )
 
     assert exit_code == 0
+    assert captured["logical_head_groups"] == 4
     payload = json.loads(out.read_text(encoding="utf-8"))
     assert payload["passed"] is True
     assert payload["classification"] == "passed"

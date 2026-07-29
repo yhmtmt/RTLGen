@@ -1,0 +1,109 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1",
+  "created_utc": "2026-07-29T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Four-head-group rotation equivalence for composed score32 GQA8 cluster-SRAM hierarchy",
+  "abstraction_layer": "decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence",
+  "hypothesis": "The composed score32 GQA8 hierarchy preserves exact RTL/perf equivalence across the full four-group 0/8/16/24 rotation when command IDs, rotated p54/p53 extra-block ownership, cluster-SRAM fill traffic, and finalized root rows are exercised under one bounded sequential run.",
+  "direct_comparison": {
+    "primary_question": "Does the composed producer-to-SRAM-to-finalized-tree RTL path remain exact when the four logical head groups run sequentially for 32 wave commands with rotated command/head metadata and group-specific block ownership?",
+    "baselines": [
+      "prop_l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1",
+      "prop_l1_decoder_attention_score32_exact_local16_global_tree_gqa8_v1",
+      "prop_l1_decoder_attention_score32_local_cluster_gqa8_v1"
+    ],
+    "candidate": "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1",
+    "include": [
+      "856 real dual-stream score32 producer instances",
+      "four logical head groups with head_base values 0, 8, 16, and 24",
+      "32 total wave commands in group-major order",
+      "distinct command IDs for the four logical groups",
+      "rotated p54/p53 extra-block ownership via group_index=head_base>>3",
+      "sixteen explicit double-buffered cluster SRAM services",
+      "all 8192 structured cluster rows",
+      "all 512 structured finalized root rows",
+      "root ready pattern 1,1,0,1",
+      "exact aggregate and per-cluster traffic counters"
+    ],
+    "exclude": [
+      "OpenROAD or SRAM macro physical characterization",
+      "real HBM controller arrival timing and row policy",
+      "mesh NoC routing and arbitration",
+      "multiple simultaneous random seeds",
+      "quality or precision comparison beyond exact score32 arithmetic",
+      "full Llama7B token-level reranking in this equivalence job"
+    ],
+    "metrics": [
+      "producer_handshake_count",
+      "fill_target_accept_count",
+      "fill_row_accept_count",
+      "sram_request_accept_count",
+      "sram_response_accept_count",
+      "cluster_row_count",
+      "root_row_count",
+      "command_ids",
+      "head_bases",
+      "full_structured_cluster_row_audit",
+      "full_structured_root_row_audit",
+      "protocol_and_sticky_error_bits",
+      "first_and_last_root_cycle"
+    ]
+  },
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Run the bounded remote RTL/perf equivalence gate for the four-head-group rotation of the composed score32 GQA8 producer, cluster-SRAM, local-reducer, and finalized-tree path.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence",
+      "comparison_role": "equivalence_check",
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "run_physical": false,
+      "expected_result": {
+        "direction": "prove_four_group_rotation_equivalence_or_diagnose",
+        "reason": "The full Llama7B score32 hierarchy should not be recosted from a single-head-group proof alone."
+      }
+    }
+  ],
+  "acceptance_contract": {
+    "classification": "passed",
+    "passed": true,
+    "aggregate_counts": {
+      "producer_handshake_count": 32768,
+      "fill_target_accept_count": 512,
+      "fill_row_accept_count": 1048576,
+      "sram_request_accept_count": 1048576,
+      "sram_response_accept_count": 1048576,
+      "cluster_row_count": 8192,
+      "root_row_count": 512
+    },
+    "command_ids": [33280, 33281, 33282, 33283],
+    "head_bases": [0, 8, 16, 24],
+    "cluster_summaries": 16,
+    "protocol_errors": 0,
+    "structured_row_audit": true
+  },
+  "remaining_abstractions": [
+    "The external fill driver is deterministic and does not yet embody measured HBM command, row-hit, or contention behavior.",
+    "The inferred SRAM service is functionally concrete but not characterized as a foundry SRAM macro.",
+    "Inter-cluster and producer traffic does not yet traverse a physically measured mesh NoC.",
+    "The equivalence workload still uses one deterministic seed.",
+    "Full-array timing, power, area, and congestion remain unmeasured."
+  ],
+  "source_refs": [
+    "npu/eval/probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8.py",
+    "npu/rtlgen/gen_attention_score32_exact_local16_global_tree_cluster_sram_gqa8.py",
+    "npu/rtlgen/gen_attention_score32_exact_cluster_sram_composed_gqa8.py",
+    "npu/sim/perf/attention_score32_exact_cluster_sram_service_gqa8.py",
+    "npu/sim/perf/attention_exact_partial.py",
+    "runs/designs/npu_blocks/attention_score32_exact_local16_global_tree_cluster_sram_gqa8_p54x8_p53x8_c16_r2_l8_b59/config.json"
+  ],
+  "knowledge_refs": [
+    "npu/docs/attention_score32_exact_local16_global_tree_cluster_sram_gqa8_contract.md",
+    "npu/docs/attention_score32_exact_cluster_sram_service_gqa8_contract.md",
+    "docs/architecture/llama7b_attention_abstraction_closure_plan.md"
+  ]
+}

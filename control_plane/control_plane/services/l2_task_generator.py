@@ -10341,6 +10341,100 @@ def _decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equiv
     }
 
 
+def _decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_evidence(
+    *,
+    item_id: str,
+    proposal_id: str | None = None,
+    proposal_path: str | None = None,
+) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    config = (
+        "runs/designs/npu_blocks/"
+        "attention_score32_exact_local16_global_tree_cluster_sram_gqa8_p54x8_p53x8_c16_r2_l8_b59/"
+        "config.json"
+    )
+    out = (
+        f"{base}/decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence__"
+        f"{item_id}.json"
+    )
+    report = (
+        f"{base}/decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence__"
+        f"{item_id}.md"
+    )
+    proposal_args: list[str] = []
+    if str(proposal_id or "").strip():
+        proposal_args.extend(["--proposal-id", str(proposal_id).strip()])
+    if str(proposal_path or "").strip():
+        proposal_args.extend(["--proposal-path", str(proposal_path).strip()])
+    proposal_arg_text = " ".join(shlex.quote(arg) for arg in proposal_args)
+    command = (
+        "systemd-run --user --scope "
+        "-p MemoryHigh=6G -p MemoryMax=8G -p CPUQuota=300% -p TasksMax=512 "
+        "-p RuntimeMaxSec=4500 "
+        "python3 npu/eval/probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8.py "
+        f"--config {config} "
+        "--logical-head-groups 4 "
+        "--timeout-sec 3600 "
+        "--root-ready-pattern 1,1,0,1 "
+        f"--out {out} "
+        f"--out-md {report} "
+        f"{proposal_arg_text}"
+    ).strip()
+    return {
+        "inputs": {
+            "attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_config": config,
+            "attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_out": out,
+            "attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_report": report,
+            "attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_scope": (
+                "Run the bounded remote four-head-group rotation RTL equivalence probe under exclusive "
+                "resources. Accept only a passed bounded report with exact producer/fill/SRAM/root "
+                "counts, distinct command-id and head-base metadata for 0/8/16/24, rotated p54/p53 "
+                "ownership through group_index=head_base>>3, zero protocol or sticky cluster errors, "
+                "and a full structured row audit pass across all 16 clusters plus the root stream."
+            ),
+        },
+        "commands": [
+            {
+                "name": "probe_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence",
+                "run": command,
+            },
+        ],
+        "expected_outputs": [out, report],
+        "evidence_only": True,
+        "worker_resources": {
+            "exclusive_worker": True,
+            "memory_high": "6G",
+            "memory_max": "8G",
+            "cpu_quota": "300%",
+            "tasks_max": 512,
+            "outer_timeout_seconds": 4500,
+            "stall_timeout_seconds": 600,
+        },
+        "acceptance": [
+            "Write exactly the bounded JSON and Markdown probe reports declared in expected_outputs",
+            "Require report passed=true, classification=passed, and counts_passed=true",
+            (
+                "Require exact totals in report.summary: producer_handshake_count=32768, "
+                "fill_target_accept_count=512, fill_row_accept_count=1048576, "
+                "sram_request_accept_count=1048576, sram_response_accept_count=1048576, "
+                "cluster_row_count=8192, root_row_count=512, command_accept_count=32, "
+                "cadence_command_accept_count=32, protocol_error=0"
+            ),
+            (
+                "Require 16 cluster_summaries with errors=0 and exact per-cluster counts: "
+                "wave_command_accept_count=32, completed_command_count=4, emitted_beat_count=512, "
+                "fill_target_accept_count=32, fill_row_accept_count=65536, request_accept_count=65536, "
+                "response_accept_count=65536, command_accept_count=32, command_release_count=32"
+            ),
+            "Require report.command_ids=[33280, 33281, 33282, 33283] and report.head_bases=[0, 8, 16, 24]",
+            "Require full_row_audit.passed=true for every cluster stream and the root stream",
+            "Treat timeout, OOM, or bounded resource failures as inconclusive; treat mismatches as conclusive",
+            "Keep evidence artifact paths repo-portable",
+            "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing",
+        ],
+    }
+
+
 def _decoder_producer_ranker_physical_wrapper_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_producer_ranker_physical_wrapper__{item_id}.json"
@@ -11460,6 +11554,7 @@ def _build_payload(
         "decoder_attention_score32_compute_activity_energy",
         "decoder_attention_score32_separated_compute_recost",
         "decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence",
+        "decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence",
         "decoder_attention_separated_cluster_equivalence",
         "decoder_attention_hierarchical_softmax_architecture",
         "decoder_attention_two_pass_global_max_equivalence",
@@ -11773,6 +11868,14 @@ def _build_payload(
         elif abstraction_layer_name == "decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence":
             decoder_evidence = (
                 _decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_evidence(
+                    item_id=item_id,
+                    proposal_id=proposal_id,
+                    proposal_path=proposal_path,
+                )
+            )
+        elif abstraction_layer_name == "decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence":
+            decoder_evidence = (
+                _decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_evidence(
                     item_id=item_id,
                     proposal_id=proposal_id,
                     proposal_path=proposal_path,

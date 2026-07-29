@@ -32,7 +32,6 @@ from npu.sim.perf.attention_exact_partial import (
     unpack_numerators,
 )
 from npu.sim.perf.attention_score32_exact_cluster_sram_service_gqa8 import (
-    BLOCK_SLOTS_PER_STREAM,
     ROWS_PER_BUFFER,
     STREAMS,
     VALUE_SLICES,
@@ -45,14 +44,17 @@ JsonDict = dict[str, Any]
 CLUSTERS = 16
 CLUSTER_PRODUCERS = tuple([54] * 8 + [53] * 8)
 TOTAL_PRODUCERS = sum(CLUSTER_PRODUCERS)
-COMMAND_ID = 0x8200
+COMMAND_ID_BASE = 0x8200
 HEAD_BASE = 0
+HEAD_BASES = (0, 8, 16, 24)
+DEFAULT_LOGICAL_HEAD_GROUPS = 1
+MAX_LOGICAL_HEAD_GROUPS = len(HEAD_BASES)
 SEED = 29
 WAVES = LOCAL_TEMPORAL_WAVES
 TB_TIMEOUT_CYCLES = 50_000
 DEFAULT_SUBPROCESS_TIMEOUT_SEC = 900
 DEFAULT_ROOT_READY_PATTERN = (True, True, False, True)
-MAX_BEATS_PER_PRODUCER = WAVES * 2
+ROWS_PER_STREAM = ROWS_PER_BUFFER // STREAMS
 
 EXPECTED_TOTALS = {
     "fill_target_accept_count": 128,
@@ -178,23 +180,67 @@ def expected_schedule_prefix(*, command_count: int) -> tuple[tuple[int, int], ..
     return tuple((head_bases[(index // WAVES) % 4], index % WAVES) for index in range(resolved))
 
 
-def expected_counts() -> JsonDict:
+def expected_counts(*, logical_head_groups: int = DEFAULT_LOGICAL_HEAD_GROUPS) -> JsonDict:
+    resolved_groups = int(logical_head_groups)
+    if resolved_groups < 1 or resolved_groups > MAX_LOGICAL_HEAD_GROUPS:
+        raise ValueError(f"logical_head_groups must be in [1, {MAX_LOGICAL_HEAD_GROUPS}]")
+    scale = resolved_groups
+    per_cluster = {
+        "wave_command_accept_count": EXPECTED_PER_CLUSTER["wave_command_accept_count"] * scale,
+        "completed_command_count": EXPECTED_PER_CLUSTER["completed_command_count"] * scale,
+        "emitted_beat_count": EXPECTED_PER_CLUSTER["emitted_beat_count"] * scale,
+        "fill_target_accept_count": EXPECTED_PER_CLUSTER["fill_target_accept_count"] * scale,
+        "fill_row_accept_count": EXPECTED_PER_CLUSTER["fill_row_accept_count"] * scale,
+        "request_accept_count": EXPECTED_PER_CLUSTER["request_accept_count"] * scale,
+        "response_accept_count": EXPECTED_PER_CLUSTER["response_accept_count"] * scale,
+        "command_accept_count": EXPECTED_PER_CLUSTER["command_accept_count"] * scale,
+        "command_release_count": EXPECTED_PER_CLUSTER["command_release_count"] * scale,
+    }
+    totals = {
+        "fill_target_accept_count": EXPECTED_TOTALS["fill_target_accept_count"] * scale,
+        "fill_row_accept_count": EXPECTED_TOTALS["fill_row_accept_count"] * scale,
+        "producer_handshake_count": EXPECTED_TOTALS["producer_handshake_count"] * scale,
+        "sram_request_accept_count": EXPECTED_TOTALS["sram_request_accept_count"] * scale,
+        "sram_response_accept_count": EXPECTED_TOTALS["sram_response_accept_count"] * scale,
+        "cluster_row_count": EXPECTED_TOTALS["cluster_row_count"] * scale,
+        "root_row_count": EXPECTED_TOTALS["root_row_count"] * scale,
+    }
     return {
-        "totals": dict(EXPECTED_TOTALS),
-        "per_cluster": [dict(EXPECTED_PER_CLUSTER) for _ in range(CLUSTERS)],
+        "totals": totals,
+        "per_cluster": [dict(per_cluster) for _ in range(CLUSTERS)],
     }
 
 
-def _logical_command() -> dict[str, int]:
-    multiplier, shift = full_probe._score_params(HEAD_BASE)
-    return {
-        "logical_index": 0,
-        "group_index": 0,
-        "command_id": COMMAND_ID,
-        "head_base": HEAD_BASE,
-        "multiplier": multiplier,
-        "shift": shift,
-    }
+def _resolve_head_bases(logical_head_groups: int) -> tuple[int, ...]:
+    resolved = int(logical_head_groups)
+    if resolved < 1 or resolved > MAX_LOGICAL_HEAD_GROUPS:
+        raise ValueError(f"logical_head_groups must be in [1, {MAX_LOGICAL_HEAD_GROUPS}]")
+    return HEAD_BASES[:resolved]
+
+
+def _logical_commands(*, logical_head_groups: int = DEFAULT_LOGICAL_HEAD_GROUPS) -> tuple[dict[str, int], ...]:
+    commands: list[dict[str, int]] = []
+    for logical_index, head_base in enumerate(_resolve_head_bases(logical_head_groups)):
+        multiplier, shift = full_probe._score_params(head_base)
+        commands.append(
+            {
+                "logical_index": logical_index,
+                "group_index": head_base >> 3,
+                "command_id": COMMAND_ID_BASE + logical_index,
+                "head_base": head_base,
+                "multiplier": multiplier,
+                "shift": shift,
+            }
+        )
+    return tuple(commands)
+
+
+def _wave_commands(*, logical_head_groups: int = DEFAULT_LOGICAL_HEAD_GROUPS) -> tuple[dict[str, int], ...]:
+    commands: list[dict[str, int]] = []
+    for logical_command in _logical_commands(logical_head_groups=logical_head_groups):
+        for wave_index in range(WAVES):
+            commands.append({**logical_command, "wave_index": wave_index})
+    return tuple(commands)
 
 
 def _cluster_bases() -> tuple[int, ...]:
@@ -206,56 +252,56 @@ def _cluster_bases() -> tuple[int, ...]:
     return tuple(bases)
 
 
-def _reference() -> dict[str, object]:
-    logical_command = _logical_command()
-    composition = compose_local16_global_tree_gqa8_exact(
-        tuple(
+def _reference(*, logical_head_groups: int = DEFAULT_LOGICAL_HEAD_GROUPS) -> dict[str, object]:
+    cluster_rows: list[list[dict[str, object]]] = [[] for _ in range(CLUSTERS)]
+    root_rows: list[dict[str, object]] = []
+    for logical_command in _logical_commands(logical_head_groups=logical_head_groups):
+        composition = compose_local16_global_tree_gqa8_exact(
             tuple(
                 tuple(
-                    full_probe._producer_wave_stream(
-                        cluster=cluster,
-                        producer=producer,
-                        logical_command=logical_command,
-                        wave_index=wave,
-                        block_count=exact_local_cluster_gqa8_command_block_counts(
-                            producers=CLUSTER_PRODUCERS[cluster],
-                            group_index=0,
-                        )[producer],
-                        seed=SEED,
+                    tuple(
+                        full_probe._producer_wave_stream(
+                            cluster=cluster,
+                            producer=producer,
+                            logical_command=logical_command,
+                            wave_index=wave,
+                            block_count=exact_local_cluster_gqa8_command_block_counts(
+                                producers=CLUSTER_PRODUCERS[cluster],
+                                group_index=int(logical_command["group_index"]),
+                            )[producer],
+                            seed=SEED,
+                        )
+                        for producer in range(CLUSTER_PRODUCERS[cluster])
                     )
-                    for producer in range(CLUSTER_PRODUCERS[cluster])
+                    for wave in range(WAVES)
                 )
-                for wave in range(WAVES)
+                for cluster in range(CLUSTERS)
             )
-            for cluster in range(CLUSTERS)
         )
-    )
-    cluster_rows = [
-        [
+        for cluster in range(CLUSTERS):
+            cluster_rows[cluster].extend(
+                {
+                    "cluster": cluster,
+                    "command_id": beat.command_id,
+                    "head_id": beat.head_id,
+                    "slice": beat.slice_index,
+                    "last": beat.last,
+                    "global_max": beat.max_score,
+                    "exp_sum": beat.exp_sum,
+                    "value": list(beat.numerators),
+                }
+                for beat in composition.cluster_compositions[cluster].temporal_aggregate
+            )
+        root_rows.extend(
             {
-                "cluster": cluster,
                 "command_id": beat.command_id,
                 "head_id": beat.head_id,
                 "slice": beat.slice_index,
                 "last": beat.last,
-                "global_max": beat.max_score,
-                "exp_sum": beat.exp_sum,
-                "value": list(beat.numerators),
+                "value": list(beat.values),
             }
-            for beat in composition.cluster_compositions[cluster].temporal_aggregate
-        ]
-        for cluster in range(CLUSTERS)
-    ]
-    root_rows = [
-        {
-            "command_id": beat.command_id,
-            "head_id": beat.head_id,
-            "slice": beat.slice_index,
-            "last": beat.last,
-            "value": list(beat.values),
-        }
-        for beat in composition.finalized_beats
-    ]
+            for beat in composition.finalized_beats
+        )
     return {
         "cluster_rows": cluster_rows,
         "root_rows": root_rows,
@@ -264,53 +310,82 @@ def _reference() -> dict[str, object]:
     }
 
 
-def _query_key_words() -> tuple[list[int], list[int]]:
-    query_words = [0] * (TOTAL_PRODUCERS * MAX_BEATS_PER_PRODUCER)
-    key_words = [0] * (TOTAL_PRODUCERS * MAX_BEATS_PER_PRODUCER)
+def _driver_data(*, logical_head_groups: int = DEFAULT_LOGICAL_HEAD_GROUPS) -> dict[str, object]:
+    wave_commands = _wave_commands(logical_head_groups=logical_head_groups)
     cluster_bases = _cluster_bases()
+    query_streams: list[list[int]] = [[] for _ in range(TOTAL_PRODUCERS)]
+    key_streams: list[list[int]] = [[] for _ in range(TOTAL_PRODUCERS)]
+    beat_limits = [[0 for _ in range(TOTAL_PRODUCERS)] for _ in range(len(wave_commands))]
+    max_beats_per_producer = 0
     for cluster, producers in enumerate(CLUSTER_PRODUCERS):
-        block_counts = exact_local_cluster_gqa8_command_block_counts(producers=producers, group_index=0)
-        for producer, block_count in enumerate(block_counts):
+        for producer in range(producers):
             global_producer = cluster_bases[cluster] + producer
             beat_cursor = 0
-            for wave in range(WAVES):
-                stream_blocks = [
+            for command_index, wave_command in enumerate(wave_commands):
+                block_count = exact_local_cluster_gqa8_command_block_counts(
+                    producers=producers,
+                    group_index=int(wave_command["group_index"]),
+                )[producer]
+                stream_blocks = (
                     full_probe._stream_block_beats(
                         cluster=cluster,
                         producer=producer,
-                        group_index=0,
-                        wave_index=wave,
+                        group_index=int(wave_command["group_index"]),
+                        wave_index=int(wave_command["wave_index"]),
                         stream=stream,
                         block_count=block_count,
                         seed=SEED,
                     )
                     for stream in range(STREAMS)
-                ]
+                )
+                blocks = list(stream_blocks)
                 for block in range(block_count):
-                    queries0, keys0 = stream_blocks[0][block][0]
-                    queries1, keys1 = stream_blocks[1][block][0]
-                    flat = (global_producer * MAX_BEATS_PER_PRODUCER) + beat_cursor
-                    query_words[flat] = full_probe._pack(list(queries0), 8) | (
+                    queries0, keys0 = blocks[0][block][0]
+                    queries1, keys1 = blocks[1][block][0]
+                    query_streams[global_producer].append(
+                        full_probe._pack(list(queries0), 8) | (
                         full_probe._pack(list(queries1), 8) << 64
                     )
-                    key_words[flat] = full_probe._pack(list(keys0), 8) | (
+                    )
+                    key_streams[global_producer].append(
+                        full_probe._pack(list(keys0), 8) | (
                         full_probe._pack(list(keys1), 8) << 64
                     )
+                    )
                     beat_cursor += 1
-    return query_words, key_words
+                beat_limits[command_index][global_producer] = beat_cursor
+            max_beats_per_producer = max(max_beats_per_producer, beat_cursor)
+    query_words = [0] * (TOTAL_PRODUCERS * max_beats_per_producer)
+    key_words = [0] * (TOTAL_PRODUCERS * max_beats_per_producer)
+    for producer in range(TOTAL_PRODUCERS):
+        for beat_index, packed_query in enumerate(query_streams[producer]):
+            flat = (producer * max_beats_per_producer) + beat_index
+            query_words[flat] = packed_query
+            key_words[flat] = key_streams[producer][beat_index]
+    return {
+        "wave_commands": wave_commands,
+        "query_words": query_words,
+        "key_words": key_words,
+        "max_beats_per_producer": max_beats_per_producer,
+        "beat_limits": beat_limits,
+    }
 
 
-def _fill_rows_for_wave(*, cluster: int, wave: int) -> list[int]:
+def _fill_rows_for_wave(*, cluster: int, wave: int, head_base: int = HEAD_BASE) -> list[int]:
     producers = CLUSTER_PRODUCERS[cluster]
-    block_counts = exact_local_cluster_gqa8_command_block_counts(producers=producers, group_index=0)
-    slot_bases = exact_local_cluster_gqa8_slot_bases(producers=producers, group_index=0)
+    group_index = int(head_base) >> 3
+    block_counts = exact_local_cluster_gqa8_command_block_counts(
+        producers=producers,
+        group_index=group_index,
+    )
+    slot_bases = exact_local_cluster_gqa8_slot_bases(producers=producers, group_index=group_index)
     rows: list[int | None] = [None] * ROWS_PER_BUFFER
     for producer, block_count in enumerate(block_counts):
         for stream in range(STREAMS):
             value_blocks = full_probe._value_blocks(
                 cluster=cluster,
                 producer=producer,
-                group_index=0,
+                group_index=group_index,
                 wave_index=wave,
                 stream=stream,
                 block_count=block_count,
@@ -319,15 +394,15 @@ def _fill_rows_for_wave(*, cluster: int, wave: int) -> list[int]:
             for block in range(block_count):
                 block_slot = slot_bases[producer] + block
                 for value_slice in range(VALUE_SLICES):
-                    flat = (stream * BLOCK_SLOTS_PER_STREAM * VALUE_SLICES) + (
-                        block_slot * VALUE_SLICES
-                    ) + value_slice
+                    flat = (stream * ROWS_PER_STREAM) + (block_slot * VALUE_SLICES) + value_slice
                     rows[flat] = full_probe._pack(
                         [lane for row in value_blocks[block][value_slice] for lane in row],
                         8,
                     )
     if any(row is None for row in rows):
-        raise AssertionError(f"incomplete p{producers} fill schedule for cluster {cluster} wave {wave}")
+        raise AssertionError(
+            f"incomplete p{producers} fill schedule for cluster {cluster} head_base {head_base} wave {wave}"
+        )
     return [int(row) for row in rows]
 
 
@@ -338,8 +413,14 @@ def _write_memh(path: Path, values: Iterable[int], *, width_bits: int) -> None:
             handle.write(f"{int(value) & ((1 << width_bits) - 1):0{width_hex}x}\n")
 
 
-def _write_memh_sidecars(directory: Path) -> dict[str, object]:
-    query_words, key_words = _query_key_words()
+def _write_memh_sidecars(
+    directory: Path,
+    *,
+    logical_head_groups: int = DEFAULT_LOGICAL_HEAD_GROUPS,
+) -> dict[str, object]:
+    driver_data = _driver_data(logical_head_groups=logical_head_groups)
+    query_words = list(driver_data["query_words"])
+    key_words = list(driver_data["key_words"])
     query_path = directory / "query.memh"
     key_path = directory / "key.memh"
     fill_path = directory / "fill.memh"
@@ -347,8 +428,12 @@ def _write_memh_sidecars(directory: Path) -> dict[str, object]:
     _write_memh(key_path, key_words, width_bits=128)
     with fill_path.open("w", encoding="ascii") as handle:
         for cluster in range(CLUSTERS):
-            for wave in range(WAVES):
-                for value in _fill_rows_for_wave(cluster=cluster, wave=wave):
+            for wave_command in _wave_commands(logical_head_groups=logical_head_groups):
+                for value in _fill_rows_for_wave(
+                    cluster=cluster,
+                    head_base=int(wave_command["head_base"]),
+                    wave=int(wave_command["wave_index"]),
+                ):
                     handle.write(f"{value:0128x}\n")
     return {
         "query": query_path.name,
@@ -356,7 +441,10 @@ def _write_memh_sidecars(directory: Path) -> dict[str, object]:
         "fill": fill_path.name,
         "query_words": len(query_words),
         "key_words": len(key_words),
-        "fill_words": CLUSTERS * WAVES * ROWS_PER_BUFFER,
+        "fill_words": CLUSTERS * logical_head_groups * WAVES * ROWS_PER_BUFFER,
+        "max_beats_per_producer": int(driver_data["max_beats_per_producer"]),
+        "logical_head_groups": int(logical_head_groups),
+        "total_wave_commands": int(logical_head_groups) * WAVES,
     }
 
 
@@ -427,24 +515,47 @@ def _testbench(
     *,
     top_name: str,
     output_ready_pattern: tuple[bool, ...] = DEFAULT_ROOT_READY_PATTERN,
+    logical_head_groups: int = DEFAULT_LOGICAL_HEAD_GROUPS,
 ) -> str:
     if not output_ready_pattern:
         raise ValueError("root ready pattern must not be empty")
-    multiplier, shift = full_probe._score_params(HEAD_BASE)
+    driver_data = _driver_data(logical_head_groups=logical_head_groups)
+    wave_commands = tuple(driver_data["wave_commands"])
+    max_beats_per_producer = int(driver_data["max_beats_per_producer"])
+    beat_limits = list(driver_data["beat_limits"])
+    total_wave_commands = len(wave_commands)
+    total_root_rows = int(logical_head_groups) * EXPECTED_TOTALS["root_row_count"]
     ready_init = "\n".join(
         f"    root_ready_mem[{index}] = 1'b{int(value)};"
         for index, value in enumerate(output_ready_pattern)
+    )
+    command_init = "\n".join(
+        (
+            f"    command_id_mem[{index}] = 16'h{int(command['command_id']):04x}; "
+            f"head_base_mem[{index}] = 5'd{int(command['head_base'])}; "
+            f"multiplier_mem[{index}] = 32'd{int(command['multiplier'])}; "
+            f"shift_mem[{index}] = 6'd{int(command['shift'])}; "
+            f"wave_index_mem[{index}] = 3'd{int(command['wave_index'])};"
+        )
+        for index, command in enumerate(wave_commands)
+    )
+    beat_limit_init = "\n".join(
+        f"    cmd_beat_limit_mem[{command_index}][{producer}] = 32'd{int(beat_limits[command_index][producer])};"
+        for command_index in range(total_wave_commands)
+        for producer in range(TOTAL_PRODUCERS)
     )
     return f"""`timescale 1ns/1ps
 module tb;
   localparam integer CLUSTERS = {CLUSTERS};
   localparam integer WAVES = {WAVES};
+  localparam integer WAVE_COMMANDS = {total_wave_commands};
   localparam integer TOTAL_PRODUCERS = {TOTAL_PRODUCERS};
-  localparam integer MAX_BEATS_PER_PRODUCER = {MAX_BEATS_PER_PRODUCER};
+  localparam integer MAX_BEATS_PER_PRODUCER = {max_beats_per_producer};
   localparam integer ROWS_PER_TARGET = {ROWS_PER_BUFFER};
+  localparam integer ROWS_PER_STREAM = {ROWS_PER_STREAM};
   localparam integer ROOT_READY_PATTERN_LEN = {len(output_ready_pattern)};
-  localparam integer EXPECTED_ROOT_ROWS = {EXPECTED_TOTALS["root_row_count"]};
-  localparam integer TB_TIMEOUT_CYCLES = {TB_TIMEOUT_CYCLES};
+  localparam integer EXPECTED_ROOT_ROWS = {total_root_rows};
+  localparam integer TB_TIMEOUT_CYCLES = {int(logical_head_groups) * TB_TIMEOUT_CYCLES};
 
   reg clk = 1'b0;
   reg rst_n = 1'b0;
@@ -459,9 +570,15 @@ module tb;
   reg pending_summary = 1'b0;
   reg preload_complete;
 
+  reg [15:0] command_id_mem [0:WAVE_COMMANDS-1];
+  reg [4:0] head_base_mem [0:WAVE_COMMANDS-1];
+  reg [31:0] multiplier_mem [0:WAVE_COMMANDS-1];
+  reg [5:0] shift_mem [0:WAVE_COMMANDS-1];
+  reg [2:0] wave_index_mem [0:WAVE_COMMANDS-1];
+  reg [31:0] cmd_beat_limit_mem [0:WAVE_COMMANDS-1][0:TOTAL_PRODUCERS-1];
   reg [127:0] query_mem [0:(TOTAL_PRODUCERS*MAX_BEATS_PER_PRODUCER)-1];
   reg [127:0] key_mem [0:(TOTAL_PRODUCERS*MAX_BEATS_PER_PRODUCER)-1];
-  reg [511:0] fill_mem [0:(CLUSTERS*WAVES*ROWS_PER_TARGET)-1];
+  reg [511:0] fill_mem [0:(CLUSTERS*WAVE_COMMANDS*ROWS_PER_TARGET)-1];
   reg root_ready_mem [0:ROOT_READY_PATTERN_LEN-1];
 
   reg command_valid;
@@ -531,14 +648,14 @@ module tb;
   wire global_finalizer_protocol_error;
   wire [15:0] cluster_protocol_error;
   wire protocol_error;
+  integer expected_command_index;
+  integer prefetch_limit_index;
 
   integer beat_issue [0:TOTAL_PRODUCERS-1];
-  integer fill_wave [0:CLUSTERS-1];
+  integer fill_command_index [0:CLUSTERS-1];
   integer fill_row_index [0:CLUSTERS-1];
   integer producer_index;
   integer cluster_index;
-  integer local_producer;
-  integer producer_block_count;
   integer flat_index;
   integer fill_flat_index;
 
@@ -599,14 +716,19 @@ module tb;
 
   always @* begin
     preload_complete = 1'b1;
+    expected_command_index = ((expected_head_base >> 3) * WAVES) + expected_wave_index;
+    prefetch_limit_index = expected_command_index + 1;
+    if (prefetch_limit_index >= WAVE_COMMANDS)
+      prefetch_limit_index = WAVE_COMMANDS - 1;
     for (cluster_index = 0; cluster_index < CLUSTERS; cluster_index = cluster_index + 1)
-      if (fill_wave[cluster_index] < 2) preload_complete = 1'b0;
+      if (fill_command_index[cluster_index] < ((WAVE_COMMANDS < 2) ? WAVE_COMMANDS : 2))
+        preload_complete = 1'b0;
 
-    command_valid = rst_n && preload_complete && (issued_commands < WAVES);
-    command_id = 16'h{COMMAND_ID:04x};
-    command_head_base = 5'd{HEAD_BASE};
-    command_score_multiplier = 32'd{multiplier};
-    command_score_shift = 6'd{shift};
+    command_valid = rst_n && preload_complete && (issued_commands < WAVE_COMMANDS);
+    command_id = command_valid ? command_id_mem[issued_commands] : 16'd0;
+    command_head_base = command_valid ? head_base_mem[issued_commands] : 5'd0;
+    command_score_multiplier = command_valid ? multiplier_mem[issued_commands] : 32'd0;
+    command_score_shift = command_valid ? shift_mem[issued_commands] : 6'd0;
     root_ready = root_ready_mem[cycle % ROOT_READY_PATTERN_LEN];
 
     fill_target_valid = 16'd0;
@@ -621,24 +743,26 @@ module tb;
     fill_slice = 64'd0;
     fill_data = 8192'd0;
     for (cluster_index = 0; cluster_index < CLUSTERS; cluster_index = cluster_index + 1) begin
-      if (rst_n && (fill_wave[cluster_index] < WAVES)) begin
+      if (rst_n && (fill_command_index[cluster_index] < WAVE_COMMANDS)) begin
         if (fill_row_index[cluster_index] < 0) begin
-          if ((expected_head_base == 5'd0) &&
-              (fill_wave[cluster_index] <= (expected_wave_index + 1'b1))) begin
+          if (fill_command_index[cluster_index] <= prefetch_limit_index) begin
             fill_target_valid[cluster_index] = 1'b1;
-            fill_target_buffer_sel[cluster_index] = fill_wave[cluster_index][0];
-            fill_target_command_id[(cluster_index * 16) +: 16] = 16'h{COMMAND_ID:04x};
-            fill_target_head_base[(cluster_index * 5) +: 5] = 5'd{HEAD_BASE};
-            fill_target_wave_index[(cluster_index * 3) +: 3] = fill_wave[cluster_index][2:0];
+            fill_target_buffer_sel[cluster_index] = wave_index_mem[fill_command_index[cluster_index]][0];
+            fill_target_command_id[(cluster_index * 16) +: 16] =
+                command_id_mem[fill_command_index[cluster_index]];
+            fill_target_head_base[(cluster_index * 5) +: 5] =
+                head_base_mem[fill_command_index[cluster_index]];
+            fill_target_wave_index[(cluster_index * 3) +: 3] =
+                wave_index_mem[fill_command_index[cluster_index]];
           end
         end else begin
           fill_valid[cluster_index] = 1'b1;
-          fill_buffer_sel[cluster_index] = fill_wave[cluster_index][0];
-          fill_stream[cluster_index] = (fill_row_index[cluster_index] >= 1024);
+          fill_buffer_sel[cluster_index] = wave_index_mem[fill_command_index[cluster_index]][0];
+          fill_stream[cluster_index] = (fill_row_index[cluster_index] >= ROWS_PER_STREAM);
           fill_block_slot[(cluster_index * 6) +: 6] =
               (fill_row_index[cluster_index] >> 4) & 6'h3f;
           fill_slice[(cluster_index * 4) +: 4] = fill_row_index[cluster_index] & 4'hf;
-          fill_flat_index = ((cluster_index * WAVES + fill_wave[cluster_index]) * ROWS_PER_TARGET)
+          fill_flat_index = ((cluster_index * WAVE_COMMANDS + fill_command_index[cluster_index]) * ROWS_PER_TARGET)
               + fill_row_index[cluster_index];
           fill_data[(cluster_index * 512) +: 512] = fill_mem[fill_flat_index];
         end
@@ -650,15 +774,8 @@ module tb;
     input_query = 109568'd0;
     input_key = 109568'd0;
     for (producer_index = 0; producer_index < TOTAL_PRODUCERS; producer_index = producer_index + 1) begin
-      if (producer_index < 432) begin
-        local_producer = producer_index % 54;
-        producer_block_count = (local_producer < 10) ? 2 : 1;
-      end else begin
-        local_producer = (producer_index - 432) % 53;
-        producer_block_count = (local_producer < 11) ? 2 : 1;
-      end
       if (rst_n && (active_command_index >= 0) &&
-          (beat_issue[producer_index] < ((active_command_index + 1) * producer_block_count))) begin
+          (beat_issue[producer_index] < cmd_beat_limit_mem[active_command_index][producer_index])) begin
         flat_index = (producer_index * MAX_BEATS_PER_PRODUCER) + beat_issue[producer_index];
         input_valid[producer_index] = 1'b1;
         input_last[producer_index] = 1'b1;
@@ -682,14 +799,15 @@ module tb;
       for (producer_index = 0; producer_index < TOTAL_PRODUCERS; producer_index = producer_index + 1)
         beat_issue[producer_index] <= 0;
       for (cluster_index = 0; cluster_index < CLUSTERS; cluster_index = cluster_index + 1) begin
-        fill_wave[cluster_index] <= 0;
+        fill_command_index[cluster_index] <= 0;
         fill_row_index[cluster_index] <= -1;
       end
     end else begin
       cycle <= cycle + 1;
       if (command_valid && command_ready) begin
         $display("COMMAND_ACCEPT idx=%0d cmd=%0d head_base=%0d wave=%0d cycle=%0d",
-                 issued_commands, command_id, command_head_base, issued_commands, cycle);
+                 issued_commands, command_id, command_head_base,
+                 wave_index_mem[issued_commands], cycle);
         active_command_index <= issued_commands;
         issued_commands <= issued_commands + 1;
       end
@@ -698,7 +816,7 @@ module tb;
           fill_row_index[cluster_index] <= 0;
         if (fill_valid[cluster_index] && fill_ready[cluster_index]) begin
           if (fill_row_index[cluster_index] == ROWS_PER_TARGET - 1) begin
-            fill_wave[cluster_index] <= fill_wave[cluster_index] + 1;
+            fill_command_index[cluster_index] <= fill_command_index[cluster_index] + 1;
             fill_row_index[cluster_index] <= -1;
           end else begin
             fill_row_index[cluster_index] <= fill_row_index[cluster_index] + 1;
@@ -745,6 +863,8 @@ module tb;
     $readmemh("query.memh", query_mem);
     $readmemh("key.memh", key_mem);
     $readmemh("fill.memh", fill_mem);
+{command_init}
+{beat_limit_init}
 {ready_init}
     repeat (3) @(posedge clk);
     @(negedge clk);
@@ -854,6 +974,7 @@ def _evaluate_observations(
     cluster_summaries: list[dict[str, int]],
     observed_cluster_rows: list[list[dict[str, object]]],
     observed_root_rows: list[dict[str, object]],
+    logical_head_groups: int = DEFAULT_LOGICAL_HEAD_GROUPS,
     simulation_status: str = "ok",
     returncode: int | None = 0,
     stderr: str = "",
@@ -865,9 +986,13 @@ def _evaluate_observations(
         expected_root_rows=reference["root_rows"],  # type: ignore[arg-type]
         observed_root_rows=observed_root_rows,
     )
-    totals_ok = all(summary.get(key) == value for key, value in EXPECTED_TOTALS.items())
-    totals_ok = totals_ok and summary.get("command_accept_count") == WAVES
-    totals_ok = totals_ok and summary.get("cadence_command_accept_count") == WAVES
+    expected = expected_counts(logical_head_groups=logical_head_groups)
+    expected_totals = dict(expected["totals"])
+    expected_per_cluster = dict(expected["per_cluster"][0])
+    expected_wave_commands = int(logical_head_groups) * WAVES
+    totals_ok = all(summary.get(key) == value for key, value in expected_totals.items())
+    totals_ok = totals_ok and summary.get("command_accept_count") == expected_wave_commands
+    totals_ok = totals_ok and summary.get("cadence_command_accept_count") == expected_wave_commands
     totals_ok = totals_ok and summary.get("protocol_error") == 0
     clusters_ok = len(cluster_summaries) == CLUSTERS
     if clusters_ok:
@@ -875,7 +1000,7 @@ def _evaluate_observations(
             if observed.get("cluster") != cluster or observed.get("errors") != 0:
                 clusters_ok = False
                 break
-            if any(observed.get(key) != value for key, value in EXPECTED_PER_CLUSTER.items()):
+            if any(observed.get(key) != value for key, value in expected_per_cluster.items()):
                 clusters_ok = False
                 break
     passed = (
@@ -914,6 +1039,7 @@ def build_report(
     *,
     config: JsonDict | None = None,
     output_ready_pattern: tuple[bool, ...] = DEFAULT_ROOT_READY_PATTERN,
+    logical_head_groups: int = DEFAULT_LOGICAL_HEAD_GROUPS,
     timeout_sec: int = DEFAULT_SUBPROCESS_TIMEOUT_SEC,
     proposal_id: str | None = None,
     proposal_path: str | None = None,
@@ -925,7 +1051,10 @@ def build_report(
     cluster_producers = tuple(int(value) for value in body.get("cluster_producers", ()))
     if cluster_producers != CLUSTER_PRODUCERS:
         raise ValueError("probe requires exactly eight p54 clusters followed by eight p53 clusters")
-    reference = _reference()
+    resolved_groups = int(logical_head_groups)
+    if resolved_groups < 1 or resolved_groups > MAX_LOGICAL_HEAD_GROUPS:
+        raise ValueError(f"logical_head_groups must be in [1, {MAX_LOGICAL_HEAD_GROUPS}]")
+    reference = _reference(logical_head_groups=resolved_groups)
     simulation_status = "ok"
     returncode: int | None = 0
     stdout = ""
@@ -936,12 +1065,13 @@ def build_report(
         temp_dir = Path(temp_name)
         rtl_dir = temp_dir / "rtl"
         generate(resolved_config, rtl_dir)
-        sidecars = _write_memh_sidecars(temp_dir)
+        sidecars = _write_memh_sidecars(temp_dir, logical_head_groups=resolved_groups)
         tb_path = temp_dir / "tb.v"
         tb_path.write_text(
             _testbench(
                 top_name=str(resolved_config["top_name"]),
                 output_ready_pattern=tuple(bool(value) for value in output_ready_pattern),
+                logical_head_groups=resolved_groups,
             ),
             encoding="ascii",
         )
@@ -1005,6 +1135,7 @@ def build_report(
         cluster_summaries=cluster_summaries,
         observed_cluster_rows=cluster_rows,
         observed_root_rows=root_rows,
+        logical_head_groups=resolved_groups,
         simulation_status=effective_status,
         returncode=returncode,
         stderr=stderr,
@@ -1015,15 +1146,19 @@ def build_report(
             "clusters": CLUSTERS,
             "cluster_producers": list(CLUSTER_PRODUCERS),
             "total_local_producers": TOTAL_PRODUCERS,
-            "logical_head_groups": 1,
-            "head_base": HEAD_BASE,
-            "command_id": COMMAND_ID,
+            "logical_head_groups": resolved_groups,
+            "head_bases": list(_resolve_head_bases(resolved_groups)),
+            "command_ids": [
+                int(command["command_id"])
+                for command in _logical_commands(logical_head_groups=resolved_groups)
+            ],
             "seed": SEED,
             "persistent_waves": WAVES,
+            "total_wave_commands": resolved_groups * WAVES,
             "root_ready_pattern": [int(value) for value in output_ready_pattern],
-            "tb_timeout_cycles": TB_TIMEOUT_CYCLES,
+            "tb_timeout_cycles": resolved_groups * TB_TIMEOUT_CYCLES,
             "subprocess_timeout_sec": int(timeout_sec),
-            "expected_counts": expected_counts(),
+            "expected_counts": expected_counts(logical_head_groups=resolved_groups),
             "memh_sidecars": sidecars,
             "service_model": exact_local16_global_tree_cluster_sram_gqa8_service_manifest(
                 cluster_producers=CLUSTER_PRODUCERS
@@ -1075,6 +1210,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", type=Path)
     parser.add_argument("--root-ready-pattern", type=str, default="1,1,0,1")
+    parser.add_argument("--logical-head-groups", type=int, default=DEFAULT_LOGICAL_HEAD_GROUPS)
     parser.add_argument("--timeout-sec", type=int, default=DEFAULT_SUBPROCESS_TIMEOUT_SEC)
     parser.add_argument("--proposal-id", type=str)
     parser.add_argument("--proposal-path", type=str)
@@ -1087,6 +1223,7 @@ def main(argv: list[str] | None = None) -> int:
     report = build_report(
         config=config,
         output_ready_pattern=ready_pattern or DEFAULT_ROOT_READY_PATTERN,
+        logical_head_groups=int(args.logical_head_groups),
         timeout_sec=args.timeout_sec,
         proposal_id=str(args.proposal_id or "").strip() or None,
         proposal_path=str(args.proposal_path or "").strip() or None,

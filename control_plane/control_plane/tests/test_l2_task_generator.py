@@ -13852,3 +13852,94 @@ def test_generate_l2_campaign_task_adds_cluster_sram_gqa8_equivalence_evidence()
                 == expected_worker_resources
             )
             assert work_item.task_request.request_payload["source_requirement"]["required_sha"] == source_commit
+
+
+def test_generate_l2_campaign_task_adds_cluster_sram_gqa8_rotation_equivalence_evidence() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id=(
+                        "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_"
+                        "rotation_equivalence_llama7b_v1"
+                    ),
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    proposal_id=(
+                        "prop_l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_"
+                        "rotation_equivalence_llama7b_v1"
+                    ),
+                    proposal_path=(
+                        "docs/proposals/"
+                        "prop_l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_"
+                        "rotation_equivalence_llama7b_v1/proposal.json"
+                    ),
+                    abstraction_layer=(
+                        "decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_"
+                        "rotation_equivalence"
+                    ),
+                    evaluation_mode="frontier_detail",
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            commands = work_item.task_request.request_payload["task"]["commands"]
+            command_names = [command["name"] for command in commands]
+            decoder_inputs = work_item.input_manifest["decoder_contract"]
+            expected_outputs = work_item.task_request.request_payload["task"]["expected_outputs"]
+            acceptance = work_item.task_request.request_payload["task"]["acceptance"]
+            run = commands[0]["run"]
+            expected_worker_resources = {
+                "exclusive_worker": True,
+                "memory_high": "6G",
+                "memory_max": "8G",
+                "cpu_quota": "300%",
+                "tasks_max": 512,
+                "outer_timeout_seconds": 4500,
+                "stall_timeout_seconds": 600,
+            }
+
+            assert command_names == [
+                "probe_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence",
+                "validate_runs",
+            ]
+            assert (
+                "systemd-run --user --scope -p MemoryHigh=6G -p MemoryMax=8G "
+                "-p CPUQuota=300% -p TasksMax=512 -p RuntimeMaxSec=4500"
+            ) in run
+            assert "--logical-head-groups 4" in run
+            assert "--timeout-sec 3600" in run
+            assert (
+                "decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence__"
+                "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_"
+                "rotation_equivalence_llama7b_v1.json"
+            ) in decoder_inputs[
+                "attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_out"
+            ]
+            assert expected_outputs == [
+                decoder_inputs[
+                    "attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_out"
+                ],
+                decoder_inputs[
+                    "attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_report"
+                ],
+            ]
+            assert any("producer_handshake_count=32768" in rule for rule in acceptance)
+            assert any("completed_command_count=4" in rule for rule in acceptance)
+            assert any("report.command_ids=[33280, 33281, 33282, 33283]" in rule for rule in acceptance)
+            assert work_item.input_manifest["worker_resources"] == expected_worker_resources
+            assert (
+                work_item.task_request.request_payload["task"]["inputs"]["worker_resources"]
+                == expected_worker_resources
+            )

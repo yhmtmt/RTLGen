@@ -199,6 +199,17 @@ than free or heuristic assumptions.
     It must wait for the schedule-wrapper L1 PR to merge, then consume the
     c2/c4 metrics as measured compute/control blocks with manifest-derived
     wrapper MAC counts.
+  - the composed score32 GQA8 cluster-SRAM equivalence gate for one logical
+    head group is merged and bounded by
+    `l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1`.
+    That gate proves the producer-to-SRAM-to-finalized-tree path only for
+    `head_base=0` and eight waves.
+  - the next bounded abstraction-closure gate is
+    `l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1`.
+    It extends the same composed proof to the four-group `head_base=0,8,16,24`
+    rotation with 32 total waves, distinct command IDs, rotated p54/p53
+    extra-block ownership, 8192 cluster rows, and 512 root rows. The Llama7B
+    score32 hierarchy should not be recosted from the one-group proof alone.
 - New evaluations should continue to dispatch only to the remote evaluator
   `eval-daemon-b7c2d9c80c1c`, not the devcontainer.
 
