@@ -61,8 +61,15 @@ Acceptance:
 6. `full_row_audit.passed=true` for all 16 clusters and the root stream
 7. `compositional_components.strict_generated_top_guard=passed`
 8. `compositional_components.producer_replay_parallelism=1`
+9. `compositional_components.global_sidecar.value_packing=canonical_pack_numerators`
 
 Classification policy:
 
 - timeout, OOM, kill, or bounded resource failure, including compile or simulation termination by SIGKILL, shell exit `137`, or a bare `Killed` diagnostic: inconclusive
 - structured row mismatch, metadata mismatch, count mismatch, or protocol error: conclusive
+
+The r6 global-tree mismatch produced with the old 32-bit numerator stride is
+harness-inconclusive, not an RTL failure. The global sidecar carries eight
+41-bit lanes in the 328-bit `leaf_value`; require
+`global_sidecar.value_packing=canonical_pack_numerators` before treating a
+rerun's structured row mismatch as conclusive.

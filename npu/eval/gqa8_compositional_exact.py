@@ -15,12 +15,18 @@ from typing import Any
 from npu.eval.check_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_guard import (
     main as strict_guard_main,
 )
+from npu.sim.perf.attention_exact_partial import (
+    PARTIAL_PAYLOAD_BITS,
+    WEIGHTED_NUMERATOR_BITS,
+    pack_numerators,
+)
 
 JsonDict = dict[str, Any]
 
 BACKEND = "compositional_icarus"
 CLUSTER_RUN_JOBS = 3
-GLOBAL_ROW_BITS = 419
+GLOBAL_VALUE_OFFSET = 91
+GLOBAL_ROW_BITS = GLOBAL_VALUE_OFFSET + PARTIAL_PAYLOAD_BITS
 _GLOBAL_SUMMARY_RE = re.compile(
     r"GLOBAL_SUMMARY root_rows=(\d+) root_completed=(\d+) finalizer_accepted=(\d+) "
     r"tree_completed=(\d+) protocol_error=(\d+) first_root=(-?\d+) last_root=(-?\d+) drain=(\d+)"
@@ -316,9 +322,7 @@ def _pack_global_row(row: JsonDict) -> int:
     value |= int(row["exp_sum"]) << 53
     value |= int(row["slice"]) << 86
     value |= int(bool(row["last"])) << 90
-    numerators = row["value"]
-    packed_value = sum((int(lane) & 0xFFFF_FFFF) << (32 * index) for index, lane in enumerate(numerators))
-    value |= packed_value << 91
+    value |= pack_numerators(row["value"]) << GLOBAL_VALUE_OFFSET
     return value
 
 
@@ -329,7 +333,15 @@ def _write_global_sidecar(directory: Path, cluster_rows: list[list[JsonDict]]) -
         raise ValueError("global composition requires 16 equal-length cluster streams")
     words = [_pack_global_row(row) for rows in cluster_rows for row in rows]
     probe._write_memh(directory / "global_rows.memh", words, width_bits=GLOBAL_ROW_BITS)
-    return {"global_row_words": len(words), "rows_per_cluster": len(cluster_rows[0])}
+    return {
+        "global_row_words": len(words),
+        "rows_per_cluster": len(cluster_rows[0]),
+        "row_bits": GLOBAL_ROW_BITS,
+        "value_offset": GLOBAL_VALUE_OFFSET,
+        "numerator_lanes": 8,
+        "numerator_bits": WEIGHTED_NUMERATOR_BITS,
+        "value_packing": "canonical_pack_numerators",
+    }
 
 
 def global_testbench(

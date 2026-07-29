@@ -51,6 +51,7 @@ The JSON report must contain:
 - passing structured comparisons for every cluster row and root row
 - `compositional_components.strict_generated_top_guard: passed`
 - `compositional_components.producer_replay_parallelism: 1`
+- `compositional_components.global_sidecar.value_packing: canonical_pack_numerators`
 
 Hashes are diagnostics only. They cannot substitute for structured comparison.
 
@@ -61,6 +62,11 @@ architecture. That includes compile or simulation termination by SIGKILL, shell
 exit `137`, or a bare `Killed` diagnostic from the bounded launcher/runtime.
 Count, protocol, metadata, ordering, or row mismatches are conclusive
 implementation failures and must be fixed before PPA or Llama7B recosting.
+The r6 global-tree row mismatch produced before canonical 41-bit numerator
+packing is a harness-inconclusive result, not an RTL mismatch: that sidecar
+used a 32-bit lane stride for the 328-bit `leaf_value`. Apply the conclusive
+row-mismatch rule only to reruns whose component metadata records
+`global_sidecar.value_packing=canonical_pack_numerators`.
 
 ## Follow-on
 

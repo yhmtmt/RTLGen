@@ -10364,6 +10364,10 @@ def _decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equiv
             "Require compositional_components.strict_generated_top_guard=passed",
             "Require compositional_components.producer_replay_parallelism=1",
             (
+                "Require compositional_components.global_sidecar."
+                "value_packing=canonical_pack_numerators"
+            ),
+            (
                 "Require exact totals in report.summary: producer_handshake_count=8192, "
                 "fill_target_accept_count=128, fill_row_accept_count=262144, "
                 "sram_request_accept_count=262144, sram_response_accept_count=262144, "
@@ -10472,6 +10476,10 @@ def _decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotat
             "Require report passed=true, classification=passed, and counts_passed=true",
             "Require compositional_components.strict_generated_top_guard=passed",
             "Require compositional_components.producer_replay_parallelism=1",
+            (
+                "Require compositional_components.global_sidecar."
+                "value_packing=canonical_pack_numerators"
+            ),
             (
                 "Require exact totals in report.summary: producer_handshake_count=32768, "
                 "fill_target_accept_count=512, fill_row_accept_count=1048576, "

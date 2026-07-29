@@ -1,13 +1,19 @@
 import copy
 import json
 from pathlib import Path
+import shutil
+import subprocess
 import sys
+import tempfile
 from typing import Any
+
+import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
+from npu.eval import probe_attention_score32_exact_local16_global_tree_gqa8 as full_probe
 from npu.eval.probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8 import (
     DIAGNOSTIC_TAIL_LIMIT,
     MARKDOWN_DIAGNOSTIC_TAIL_LIMIT,
@@ -46,6 +52,7 @@ from npu.eval.gqa8_compositional_exact import (
     BACKEND as COMPOSITIONAL_RUNNER_BACKEND,
     _pack_global_row,
     _run_process,
+    _write_global_sidecar,
     cluster_testbench,
     extract_module_family,
     global_testbench,
@@ -61,7 +68,13 @@ from npu.eval.gqa8_fine_compositional_exact import (
     sram_testbench,
 )
 from npu.rtlgen.gen_attention_score32_exact_local16_global_tree_cluster_sram_gqa8 import _validate
-from npu.sim.perf.attention_exact_partial import pack_final_values, pack_numerators
+from npu.sim.perf.attention_exact_partial import (
+    ExactPartialBeat,
+    finalize_partial_beats,
+    merge_balanced_partial_streams,
+    pack_final_values,
+    pack_numerators,
+)
 
 
 def _design_dir() -> Path:
@@ -489,6 +502,16 @@ def test_compositional_global_testbench_drives_exact_structured_cluster_rows() -
     assert "ROOT_RESULT" in tb
     assert "GLOBAL_SUMMARY" in tb
 
+    numerators = [
+        (1 << 35) + 5,
+        -((1 << 34) + 7),
+        (1 << 40) - 1,
+        -(1 << 40),
+        (1 << 32) + 0xABCDEF,
+        -((1 << 33) + 0x12345),
+        17,
+        -19,
+    ]
     row = {
         "command_id": 0x8200,
         "head_id": 7,
@@ -496,7 +519,7 @@ def test_compositional_global_testbench_drives_exact_structured_cluster_rows() -
         "exp_sum": 123,
         "slice": 9,
         "last": True,
-        "value": [index - 4 for index in range(8)],
+        "value": numerators,
     }
     packed = _pack_global_row(row)
     assert packed & 0xFFFF == 0x8200
@@ -505,6 +528,127 @@ def test_compositional_global_testbench_drives_exact_structured_cluster_rows() -
     assert (packed >> 53) & ((1 << 33) - 1) == 123
     assert (packed >> 86) & 0xF == 9
     assert (packed >> 90) & 1 == 1
+    decoded = []
+    for lane in range(8):
+        raw = (packed >> (91 + lane * 41)) & ((1 << 41) - 1)
+        decoded.append(raw - (1 << 41) if raw & (1 << 40) else raw)
+    assert decoded == numerators
+    assert packed.bit_length() <= 419
+
+
+def test_concrete_global_tree_matches_canonical_sidecar_rows() -> None:
+    if shutil.which("iverilog") is None or shutil.which("vvp") is None:
+        pytest.skip("Icarus tools are unavailable")
+
+    streams: list[list[ExactPartialBeat]] = []
+    cluster_rows: list[list[dict[str, object]]] = []
+    for cluster in range(16):
+        beats = []
+        rows = []
+        for head in range(8):
+            for value_slice in range(16):
+                numerators = tuple(
+                    (
+                        (1 << 33)
+                        + cluster * 10_000
+                        + head * 1_000
+                        + value_slice * 10
+                        + lane
+                    )
+                    * (-1 if (cluster + lane) % 2 else 1)
+                    for lane in range(8)
+                )
+                beat = ExactPartialBeat(
+                    command_id=0x8200,
+                    head_id=head,
+                    slice_index=value_slice,
+                    last=value_slice == 15,
+                    max_score=cluster - 8,
+                    exp_sum=1_000 + cluster,
+                    numerators=numerators,
+                )
+                beats.append(beat)
+                rows.append(
+                    {
+                        "cluster": cluster,
+                        "command_id": beat.command_id,
+                        "head_id": beat.head_id,
+                        "slice": beat.slice_index,
+                        "last": beat.last,
+                        "global_max": beat.max_score,
+                        "exp_sum": beat.exp_sum,
+                        "value": list(beat.numerators),
+                    }
+                )
+        streams.append(beats)
+        cluster_rows.append(rows)
+    expected = [
+        {
+            "command_id": beat.command_id,
+            "head_id": beat.head_id,
+            "slice": beat.slice_index,
+            "last": beat.last,
+            "value": list(beat.values),
+        }
+        for beat in finalize_partial_beats(merge_balanced_partial_streams(streams))
+    ]
+
+    config = json.loads((_design_dir() / "config.json").read_text(encoding="utf-8"))
+    top_name = f"{config['top_name']}__global_tree"
+    generated_rtl = (_rtl_dir() / "top.v").read_text(encoding="utf-8")
+    with tempfile.TemporaryDirectory(prefix="gqa8_global_sidecar_test_") as temp_name:
+        work_dir = Path(temp_name)
+        rtl_dir = work_dir / "rtl"
+        rtl_dir.mkdir()
+        (rtl_dir / "top.v").write_text(
+            extract_module_family(generated_rtl, prefix=top_name),
+            encoding="utf-8",
+        )
+        sidecar = _write_global_sidecar(work_dir, cluster_rows)
+        assert sidecar["row_bits"] == 419
+        assert sidecar["value_offset"] == 91
+        assert sidecar["numerator_lanes"] == 8
+        assert sidecar["numerator_bits"] == 41
+        assert sidecar["value_packing"] == "canonical_pack_numerators"
+        tb_path = work_dir / "tb.v"
+        tb_path.write_text(
+            global_testbench(
+                top_name=top_name,
+                rows_per_cluster=int(sidecar["rows_per_cluster"]),
+                output_ready_pattern=(True, True, False, True),
+                timeout_cycles=TB_TIMEOUT_CYCLES,
+            ),
+            encoding="ascii",
+        )
+        fakeram_path = work_dir / "fakeram45_2048x39.v"
+        fakeram_path.write_text(full_probe._FAKERAM_MODEL, encoding="ascii")
+        sim_path = work_dir / "sim.out"
+        compile_result = subprocess.run(
+            _icarus_compile_command(
+                rtl_dir=rtl_dir,
+                fakeram_path=fakeram_path,
+                tb_path=tb_path,
+                sim_path=sim_path,
+            ),
+            cwd=work_dir,
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
+        assert compile_result.returncode == 0, compile_result.stderr
+        run_result = subprocess.run(
+            [shutil.which("vvp") or "vvp", str(sim_path)],
+            cwd=work_dir,
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
+        assert run_result.returncode == 0, run_result.stderr
+
+    _, _, _, observed, timeout_cycle = _parse_stdout(run_result.stdout)
+    audit = compare_full_rows(expected, observed)
+    assert timeout_cycle is None
+    assert audit["passed"] is True, audit
 
 
 def test_fine_compositional_boundary_names_are_exact() -> None:
