@@ -1,0 +1,39 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1",
+  "proposal_path": "docs/proposals/prop_l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1/proposal.json",
+  "source_commit_note": "Generate and dispatch only after this proposal and its task-generator mapping are merged. Pin the work item source_commit to that merge SHA.",
+  "requests": [
+    {
+      "item_id": "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1",
+      "task_type": "l2_campaign",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence",
+      "comparison_role": "equivalence_check",
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "run_physical": false,
+      "expected_direction": "prove_four_group_rotation_equivalence_or_diagnose",
+      "expected_reason": "Promote the composed score32 GQA8 hierarchy into the measured Llama7B model only after the 0/8/16/24 rotation passes exact structured-row, traffic-count, and protocol equivalence.",
+      "dispatch_machine_key": "eval-daemon-b7c2d9c80c1c"
+    }
+  ],
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Run the bounded remote RTL/perf equivalence gate for the four-head-group rotation of the composed score32 GQA8 producer, cluster-SRAM, local-reducer, and finalized-tree path.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence",
+      "comparison_role": "equivalence_check",
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "run_physical": false,
+      "expected_result": {
+        "direction": "prove_four_group_rotation_equivalence_or_diagnose",
+        "reason": "The full Llama7B score32 hierarchy should not be recosted from a single-head-group proof alone."
+      },
+      "status": "pending",
+      "notes": "Dispatch only to eval-daemon-b7c2d9c80c1c with the exclusive larger bounded resource contract in evaluation_gate.md."
+    }
+  ]
+}
