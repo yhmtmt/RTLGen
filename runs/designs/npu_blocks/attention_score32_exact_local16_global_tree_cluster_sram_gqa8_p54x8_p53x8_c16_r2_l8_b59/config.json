@@ -1,0 +1,40 @@
+{
+  "top_name": "attention_score32_exact_local16_global_tree_cluster_sram_gqa8_p54x8_p53x8_c16_r2_l8_b59",
+  "attention_score32_exact_local16_global_tree_cluster_sram_gqa8": {
+    "clusters": 16,
+    "cluster_producers": [
+      54,
+      54,
+      54,
+      54,
+      54,
+      54,
+      54,
+      54,
+      53,
+      53,
+      53,
+      53,
+      53,
+      53,
+      53,
+      53
+    ],
+    "radix": 2,
+    "value_slices": 16,
+    "head_id_bits": 5,
+    "persistent_waves": 8,
+    "divider_lanes": 8,
+    "finalizer_banks": 59
+  },
+  "probe_defaults": {
+    "head_bases": [
+      0,
+      8,
+      16,
+      24
+    ],
+    "waves": 8,
+    "seed": 29
+  }
+}

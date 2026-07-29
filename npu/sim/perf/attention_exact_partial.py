@@ -1303,6 +1303,98 @@ def exact_local16_global_tree_gqa8_service_manifest(
     }
 
 
+def exact_local16_global_tree_cluster_sram_gqa8_service_manifest(
+    *,
+    cluster_producers: Iterable[int],
+    divider_lanes: int = 8,
+    finalizer_banks: int = 59,
+) -> dict[str, object]:
+    producer_counts = tuple(int(count) for count in cluster_producers)
+    if len(producer_counts) != 16:
+        raise ValueError("cluster_producers must contain exactly 16 entries")
+    if producer_counts != tuple([54] * 8 + [53] * 8):
+        raise ValueError("cluster_producers must be exactly eight 54s followed by eight 53s")
+    if int(divider_lanes) != 8:
+        raise ValueError("divider_lanes must remain fixed at 8")
+    if int(finalizer_banks) != 59:
+        raise ValueError("finalizer_banks must remain fixed at 59")
+
+    from npu.sim.perf.attention_score32_exact_cluster_sram_service_gqa8 import cluster_sram_service_manifest
+
+    global_service = exact_banked_finalized_tree_service_manifest(
+        clusters=16,
+        heads=32,
+        divider_lanes=int(divider_lanes),
+        finalizer_banks=int(finalizer_banks),
+    )
+    per_cluster_lanes = [2 * producer_count for producer_count in producer_counts]
+    return {
+        "clusters": 16,
+        "cluster_producers": list(producer_counts),
+        "clusters_with_54_producers": 8,
+        "clusters_with_53_producers": 8,
+        "total_local_producers": sum(producer_counts),
+        "internal_value_memory_lanes": sum(per_cluster_lanes),
+        "per_cluster_internal_value_memory_lanes": per_cluster_lanes,
+        "external_fill_interfaces": 16,
+        "persistent_waves": LOCAL_TEMPORAL_WAVES,
+        "query_head_groups": 4,
+        "query_heads_per_group": 8,
+        "value_slices": VALUE_SLICES,
+        "partial_payload_bits_per_beat": PARTIAL_PAYLOAD_BITS,
+        "partial_link_bits_per_beat": PARTIAL_LINK_BITS,
+        "final_payload_bits_per_beat": FINAL_PAYLOAD_BITS,
+        "final_link_bits_per_beat": FINAL_LINK_BITS,
+        "command_head_contract": "one_shared_atomic_wave_command_id_head_base_multiplier_shift_across_all_16_clusters",
+        "command_wave_contract": "implicit_group_major_schedule_head_bases_0_8_16_24_each_wave_0_to_7_reset_to_head0_wave0",
+        "command_block_count_contract": (
+            "derived_internally_from_head_base_with_p54_ranges_0_9_10_19_20_29_30_39_"
+            "and_p53_ranges_0_10_11_21_22_32_33_43"
+        ),
+        "producer_input_contract": "independent_flattened_query_key_ready_valid_inputs_for_all_856_producers",
+        "external_fill_contract": (
+            "sixteen_per_cluster_hbm_return_fill_target_and_fill_row_channels_with_exact_command_id_head_base_wave_"
+            "and_buffer_sel_equal_to_wave_index_lsb"
+        ),
+        "fill_prefetch_window_contract": (
+            "reject_invalid_metadata_and_accept_only_current_expected_command_or_immediate_group_major_successor"
+        ),
+        "internal_value_memory_contract": (
+            "exactly_one_local_p54_or_p53_sram_endpoint_per_cluster_with_index_preserving_dual_stream_lane_wiring"
+        ),
+        "local_reduction_contract": "per_cluster_staged_exact_merge_with_odd_leaf_carry_until_single_local_root_per_beat",
+        "temporal_accumulation_contract": "per_cluster_merge_local_root_into_128_banked_persistent_exact_state_for_exactly_8_waves",
+        "release_invariant_contract": (
+            "release_once_per_wave_after_every_real_producer_command_completed_count_advances_and_"
+            "endpoint_outstanding_response_occupancy_is_zero"
+        ),
+        "buffer_mapping_contract": "double_buffer_select_is_deterministic_and_equals_wave_index_lsb",
+        "global_reduction_contract": "sixteen_cluster_radix2_exact_merge_then_ordered_banked_finalization",
+        "comparison_baseline_contract": "python_structured_full_row_producer_local16_global_exact_gqa8_reference",
+        "comparison_cycle_origin": "cycle0_on_first_atomic_wave_command_issue_for_head_base0_wave0",
+        "diagnostic_only_baseline": "none",
+        "global_tree_contract": {
+            "clusters": 16,
+            "radix": 2,
+            "divider_lanes": int(divider_lanes),
+            "finalizer_banks": int(finalizer_banks),
+            "compatible_with_full_heads": 32,
+            "measured_probe_heads": 32,
+            "per_bank_output_latency_cycles": global_service["per_bank_output_latency_cycles"],
+            "per_bank_accept_interval_cycles": global_service["per_bank_accept_interval_cycles"],
+        },
+        "per_cluster_sram_endpoint_service_models": {
+            "p54": cluster_sram_service_manifest(producers=54),
+            "p53": cluster_sram_service_manifest(producers=53),
+        },
+        "remaining_abstractions": [
+            "external_hbm_return_fill_plane_open",
+            "external_mesh_noc_fill_transport_open",
+            "physical_ppa_open",
+        ],
+    }
+
+
 __all__ = [
     "EXACT_STATE_BYTES_PER_CLUSTER_32_HEADS",
     "ExactFinalizedBeat",
@@ -1320,6 +1412,7 @@ __all__ = [
     "SLICE_LANES",
     "SLICE_INDEX_BITS",
     "VALUE_SLICES",
+    "exact_local16_global_tree_cluster_sram_gqa8_service_manifest",
     "exact_partial_tree_service_manifest",
     "exact_partial_staged_tree_service_manifest",
     "compose_local16_global_tree_gqa8_exact",
