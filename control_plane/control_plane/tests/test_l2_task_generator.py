@@ -13777,8 +13777,8 @@ def test_generate_l2_campaign_task_adds_cluster_sram_gqa8_equivalence_evidence()
                 "memory_max": "8G",
                 "cpu_quota": "300%",
                 "tasks_max": 512,
-                "outer_timeout_seconds": 1200,
-                "stall_timeout_seconds": 300,
+                "outer_timeout_seconds": 2400,
+                "stall_timeout_seconds": 1500,
             }
 
             assert command_names == [
@@ -13788,12 +13788,14 @@ def test_generate_l2_campaign_task_adds_cluster_sram_gqa8_equivalence_evidence()
             assert (
                 "python3 control_plane/scripts/run_bounded_command.py "
                 "--memory-high 6G --memory-max 8G --cpu-quota 300% "
-                "--tasks-max 512 --runtime-max-sec 1200 --"
+                "--tasks-max 512 --runtime-max-sec 2400 --"
             ) in run
             assert (
                 "python3 npu/eval/probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8.py"
                 in run
             )
+            assert "--sim-backend verilator_hierarchical" in run
+            assert "--compile-timeout-sec 1200" in run
             assert (
                 "runs/designs/npu_blocks/"
                 "attention_score32_exact_local16_global_tree_cluster_sram_gqa8_p54x8_p53x8_c16_r2_l8_b59/"
@@ -13907,8 +13909,8 @@ def test_generate_l2_campaign_task_adds_cluster_sram_gqa8_rotation_equivalence_e
                 "memory_max": "8G",
                 "cpu_quota": "300%",
                 "tasks_max": 512,
-                "outer_timeout_seconds": 4500,
-                "stall_timeout_seconds": 600,
+                "outer_timeout_seconds": 5100,
+                "stall_timeout_seconds": 1500,
             }
 
             assert command_names == [
@@ -13918,8 +13920,10 @@ def test_generate_l2_campaign_task_adds_cluster_sram_gqa8_rotation_equivalence_e
             assert (
                 "python3 control_plane/scripts/run_bounded_command.py "
                 "--memory-high 6G --memory-max 8G --cpu-quota 300% "
-                "--tasks-max 512 --runtime-max-sec 4500 --"
+                "--tasks-max 512 --runtime-max-sec 5100 --"
             ) in run
+            assert "--sim-backend verilator_hierarchical" in run
+            assert "--compile-timeout-sec 1200" in run
             assert "--logical-head-groups 4" in run
             assert "--timeout-sec 3600" in run
             assert (

@@ -55,6 +55,13 @@ TB_TIMEOUT_CYCLES = 50_000
 DEFAULT_SUBPROCESS_TIMEOUT_SEC = 900
 DEFAULT_ROOT_READY_PATTERN = (True, True, False, True)
 DIAGNOSTIC_TAIL_LIMIT = 4096
+DEFAULT_SIM_BACKEND = "icarus"
+VERILATOR_HIERARCHICAL_BACKEND = "verilator_hierarchical"
+SIM_BACKEND_CHOICES = (DEFAULT_SIM_BACKEND, VERILATOR_HIERARCHICAL_BACKEND)
+VERILATOR_BUILD_JOBS = 3
+VERILATOR_CONTROL_FILE_NAME = "verilator_hier.vlt"
+VERILATOR_BINARY_NAME = "simv"
+DEFAULT_VERILATOR_COMPILE_TIMEOUT_SEC = 1200
 ROWS_PER_STREAM = ROWS_PER_BUFFER // STREAMS
 
 EXPECTED_TOTALS = {
@@ -447,6 +454,112 @@ def _write_memh_sidecars(
         "logical_head_groups": int(logical_head_groups),
         "total_wave_commands": int(logical_head_groups) * WAVES,
     }
+
+
+def _hierarchical_module_names(top_name: str) -> dict[str, str]:
+    resolved_top = str(top_name).strip()
+    if not resolved_top:
+        raise ValueError("top_name must not be empty")
+    return {
+        "p54_cluster": f"{resolved_top}__cluster_p54",
+        "p53_cluster": f"{resolved_top}__cluster_p53",
+        "global_tree": f"{resolved_top}__global_tree",
+    }
+
+
+def _verilator_control_file_text(top_name: str) -> str:
+    module_names = _hierarchical_module_names(top_name)
+    return "\n".join(
+        [
+            "`verilator_config",
+            f'hier_block -module "{module_names["p54_cluster"]}"',
+            f'hier_block -module "{module_names["p53_cluster"]}"',
+            f'hier_block -module "{module_names["global_tree"]}"',
+            "",
+        ]
+    )
+
+
+def _write_verilator_control_file(directory: Path, *, top_name: str) -> Path:
+    control_path = directory / VERILATOR_CONTROL_FILE_NAME
+    control_path.write_text(_verilator_control_file_text(top_name), encoding="ascii")
+    return control_path
+
+
+def _icarus_compile_command(*, rtl_dir: Path, fakeram_path: Path, tb_path: Path, sim_path: Path) -> list[str]:
+    return [
+        _tool("iverilog"),
+        "-g2012",
+        "-s",
+        "tb",
+        "-o",
+        str(sim_path),
+        str(rtl_dir / "top.v"),
+        str(fakeram_path),
+        str(tb_path),
+    ]
+
+
+def _verilator_hierarchical_compile_command(
+    *,
+    rtl_dir: Path,
+    fakeram_path: Path,
+    tb_path: Path,
+    control_path: Path,
+    obj_dir: Path,
+) -> list[str]:
+    return [
+        _tool("verilator"),
+        "--binary",
+        "--timing",
+        "--hierarchical",
+        "-Wno-fatal",
+        "-j",
+        str(VERILATOR_BUILD_JOBS),
+        "--Mdir",
+        str(obj_dir),
+        "--top-module",
+        "tb",
+        "-o",
+        VERILATOR_BINARY_NAME,
+        str(control_path),
+        str(rtl_dir / "top.v"),
+        str(fakeram_path),
+        str(tb_path),
+    ]
+
+
+def _sim_backend_metadata(
+    *,
+    sim_backend: str,
+    top_name: str,
+    compile_timeout_sec: int,
+    simulation_timeout_sec: int,
+) -> JsonDict:
+    metadata: JsonDict = {
+        "compile_tool": "iverilog" if sim_backend == DEFAULT_SIM_BACKEND else "verilator",
+        "run_tool": "vvp" if sim_backend == DEFAULT_SIM_BACKEND else "verilated_binary",
+        "compile_timeout_sec": int(compile_timeout_sec),
+        "simulation_timeout_sec": int(simulation_timeout_sec),
+    }
+    if sim_backend == VERILATOR_HIERARCHICAL_BACKEND:
+        metadata.update(
+            {
+                "top_module": "tb",
+                "build_jobs": VERILATOR_BUILD_JOBS,
+                "control_file": VERILATOR_CONTROL_FILE_NAME,
+                "hierarchical_modules": _hierarchical_module_names(top_name),
+            }
+        )
+    return metadata
+
+
+def _resolve_compile_timeout_sec(*, sim_backend: str, timeout_sec: int, compile_timeout_sec: int | None) -> int:
+    if compile_timeout_sec is not None:
+        return int(compile_timeout_sec)
+    if sim_backend == VERILATOR_HIERARCHICAL_BACKEND:
+        return DEFAULT_VERILATOR_COMPILE_TIMEOUT_SEC
+    return int(timeout_sec)
 
 
 def _sum_slices(signal: str, width: int = 32) -> str:
@@ -1088,6 +1201,8 @@ def build_report(
     output_ready_pattern: tuple[bool, ...] = DEFAULT_ROOT_READY_PATTERN,
     logical_head_groups: int = DEFAULT_LOGICAL_HEAD_GROUPS,
     timeout_sec: int = DEFAULT_SUBPROCESS_TIMEOUT_SEC,
+    compile_timeout_sec: int | None = None,
+    sim_backend: str = DEFAULT_SIM_BACKEND,
     proposal_id: str | None = None,
     proposal_path: str | None = None,
 ) -> JsonDict:
@@ -1098,6 +1213,14 @@ def build_report(
     cluster_producers = tuple(int(value) for value in body.get("cluster_producers", ()))
     if cluster_producers != CLUSTER_PRODUCERS:
         raise ValueError("probe requires exactly eight p54 clusters followed by eight p53 clusters")
+    resolved_backend = str(sim_backend).strip()
+    if resolved_backend not in SIM_BACKEND_CHOICES:
+        raise ValueError(f"sim_backend must be one of {SIM_BACKEND_CHOICES}")
+    resolved_compile_timeout_sec = _resolve_compile_timeout_sec(
+        sim_backend=resolved_backend,
+        timeout_sec=int(timeout_sec),
+        compile_timeout_sec=compile_timeout_sec,
+    )
     resolved_groups = int(logical_head_groups)
     if resolved_groups < 1 or resolved_groups > MAX_LOGICAL_HEAD_GROUPS:
         raise ValueError(f"logical_head_groups must be in [1, {MAX_LOGICAL_HEAD_GROUPS}]")
@@ -1125,23 +1248,34 @@ def build_report(
         fakeram_path = temp_dir / "fakeram45_2048x39.v"
         fakeram_path.write_text(full_probe._FAKERAM_MODEL, encoding="ascii")
         sim_path = temp_dir / "sim.out"
+        control_path = temp_dir / VERILATOR_CONTROL_FILE_NAME
+        obj_dir = temp_dir / "obj_dir"
         try:
+            if resolved_backend == VERILATOR_HIERARCHICAL_BACKEND:
+                control_path = _write_verilator_control_file(
+                    temp_dir,
+                    top_name=str(resolved_config["top_name"]),
+                )
+                compile_command = _verilator_hierarchical_compile_command(
+                    rtl_dir=rtl_dir,
+                    fakeram_path=fakeram_path,
+                    tb_path=tb_path,
+                    control_path=control_path,
+                    obj_dir=obj_dir,
+                )
+            else:
+                compile_command = _icarus_compile_command(
+                    rtl_dir=rtl_dir,
+                    fakeram_path=fakeram_path,
+                    tb_path=tb_path,
+                    sim_path=sim_path,
+                )
             compile_result = subprocess.run(
-                [
-                    _tool("iverilog"),
-                    "-g2012",
-                    "-s",
-                    "tb",
-                    "-o",
-                    str(sim_path),
-                    str(rtl_dir / "top.v"),
-                    str(fakeram_path),
-                    str(tb_path),
-                ],
+                compile_command,
                 cwd=temp_dir,
                 capture_output=True,
                 text=True,
-                timeout=int(timeout_sec),
+                timeout=resolved_compile_timeout_sec,
             )
             if compile_result.returncode:
                 stdout = compile_result.stdout or ""
@@ -1160,8 +1294,13 @@ def build_report(
                     else "compile_failed"
                 )
             else:
+                run_command = (
+                    [str(obj_dir / VERILATOR_BINARY_NAME)]
+                    if resolved_backend == VERILATOR_HIERARCHICAL_BACKEND
+                    else [_tool("vvp"), str(sim_path)]
+                )
                 run_result = subprocess.run(
-                    [_tool("vvp"), str(sim_path)],
+                    run_command,
                     cwd=temp_dir,
                     capture_output=True,
                     text=True,
@@ -1227,7 +1366,16 @@ def build_report(
             "total_wave_commands": resolved_groups * WAVES,
             "root_ready_pattern": [int(value) for value in output_ready_pattern],
             "tb_timeout_cycles": resolved_groups * TB_TIMEOUT_CYCLES,
+            "compile_timeout_sec": resolved_compile_timeout_sec,
+            "simulation_timeout_sec": int(timeout_sec),
             "subprocess_timeout_sec": int(timeout_sec),
+            "sim_backend": resolved_backend,
+            "sim_backend_metadata": _sim_backend_metadata(
+                sim_backend=resolved_backend,
+                top_name=str(resolved_config["top_name"]),
+                compile_timeout_sec=resolved_compile_timeout_sec,
+                simulation_timeout_sec=int(timeout_sec),
+            ),
             "expected_counts": expected_counts(logical_head_groups=resolved_groups),
             "memh_sidecars": sidecars,
             "service_model": exact_local16_global_tree_cluster_sram_gqa8_service_manifest(
@@ -1254,6 +1402,9 @@ def _render_text(report: JsonDict) -> str:
             f"- passed: `{report['passed']}`",
             f"- classification: `{report['classification']}`",
             f"- simulation_status: `{report['simulation_status']}`",
+            f"- sim_backend: `{report['sim_backend']}`",
+            f"- compile_timeout_sec: `{report['compile_timeout_sec']}`",
+            f"- simulation_timeout_sec: `{report['simulation_timeout_sec']}`",
             f"- producer_handshakes: `{summary.get('producer_handshake_count', 0)}`",
             f"- fill_targets: `{summary.get('fill_target_accept_count', 0)}`",
             f"- fill_rows: `{summary.get('fill_row_accept_count', 0)}`",
@@ -1282,6 +1433,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--root-ready-pattern", type=str, default="1,1,0,1")
     parser.add_argument("--logical-head-groups", type=int, default=DEFAULT_LOGICAL_HEAD_GROUPS)
     parser.add_argument("--timeout-sec", type=int, default=DEFAULT_SUBPROCESS_TIMEOUT_SEC)
+    parser.add_argument("--compile-timeout-sec", type=int)
+    parser.add_argument("--sim-backend", choices=SIM_BACKEND_CHOICES, default=DEFAULT_SIM_BACKEND)
     parser.add_argument("--proposal-id", type=str)
     parser.add_argument("--proposal-path", type=str)
     parser.add_argument("--out", type=Path)
@@ -1295,6 +1448,8 @@ def main(argv: list[str] | None = None) -> int:
         output_ready_pattern=ready_pattern or DEFAULT_ROOT_READY_PATTERN,
         logical_head_groups=int(args.logical_head_groups),
         timeout_sec=args.timeout_sec,
+        compile_timeout_sec=args.compile_timeout_sec,
+        sim_backend=str(args.sim_backend),
         proposal_id=str(args.proposal_id or "").strip() or None,
         proposal_path=str(args.proposal_path or "").strip() or None,
     )
@@ -1310,10 +1465,13 @@ def main(argv: list[str] | None = None) -> int:
 
 __all__ = [
     "DEFAULT_ROOT_READY_PATTERN",
+    "DEFAULT_SIM_BACKEND",
     "DEFAULT_SUBPROCESS_TIMEOUT_SEC",
     "EXPECTED_PER_CLUSTER",
     "EXPECTED_TOTALS",
+    "SIM_BACKEND_CHOICES",
     "TB_TIMEOUT_CYCLES",
+    "VERILATOR_HIERARCHICAL_BACKEND",
     "build_report",
     "compare_compositional_rows",
     "compare_full_rows",

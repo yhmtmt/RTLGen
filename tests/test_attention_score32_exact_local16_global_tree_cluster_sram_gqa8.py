@@ -11,16 +11,25 @@ if str(REPO_ROOT) not in sys.path:
 from npu.eval.probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8 import (
     DIAGNOSTIC_TAIL_LIMIT,
     DEFAULT_ROOT_READY_PATTERN,
+    DEFAULT_SIM_BACKEND,
     DEFAULT_SUBPROCESS_TIMEOUT_SEC,
+    DEFAULT_VERILATOR_COMPILE_TIMEOUT_SEC,
     EXPECTED_PER_CLUSTER,
     EXPECTED_TOTALS,
     ROWS_PER_BUFFER,
+    SIM_BACKEND_CHOICES,
     TB_TIMEOUT_CYCLES,
+    VERILATOR_BUILD_JOBS,
+    VERILATOR_HIERARCHICAL_BACKEND,
     build_report,
     _evaluate_observations,
     _failure_classification,
     _fill_rows_for_wave,
+    _hierarchical_module_names,
+    _icarus_compile_command,
     _testbench,
+    _verilator_control_file_text,
+    _verilator_hierarchical_compile_command,
     _write_memh_sidecars,
     compare_compositional_rows,
     compare_full_rows,
@@ -308,6 +317,83 @@ def _minimal_probe_config() -> dict[str, object]:
     }
 
 
+def test_verilator_control_file_marks_exact_hierarchical_modules() -> None:
+    assert _hierarchical_module_names("score32_top") == {
+        "p54_cluster": "score32_top__cluster_p54",
+        "p53_cluster": "score32_top__cluster_p53",
+        "global_tree": "score32_top__global_tree",
+    }
+    assert _verilator_control_file_text("score32_top") == "\n".join(
+        [
+            "`verilator_config",
+            'hier_block -module "score32_top__cluster_p54"',
+            'hier_block -module "score32_top__cluster_p53"',
+            'hier_block -module "score32_top__global_tree"',
+            "",
+        ]
+    )
+
+
+def test_verilator_hierarchical_command_uses_bounded_parallelism_and_control_file(
+    monkeypatch: Any,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setattr(
+        "npu.eval.probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8._tool",
+        lambda name: f"/tools/{name}",
+    )
+
+    command = _verilator_hierarchical_compile_command(
+        rtl_dir=tmp_path / "rtl",
+        fakeram_path=tmp_path / "fakeram45_2048x39.v",
+        tb_path=tmp_path / "tb.v",
+        control_path=tmp_path / "verilator_hier.vlt",
+        obj_dir=tmp_path / "obj_dir",
+    )
+
+    assert command[:7] == [
+        "/tools/verilator",
+        "--binary",
+        "--timing",
+        "--hierarchical",
+        "-Wno-fatal",
+        "-j",
+        str(VERILATOR_BUILD_JOBS),
+    ]
+    assert "--Mdir" in command
+    assert "--top-module" in command
+    assert "tb" in command
+    assert str(tmp_path / "verilator_hier.vlt") in command
+    assert str(tmp_path / "rtl" / "top.v") in command
+    assert str(tmp_path / "tb.v") in command
+
+
+def test_icarus_command_remains_the_default_compilation_path(monkeypatch: Any, tmp_path: Path) -> None:
+    monkeypatch.setattr(
+        "npu.eval.probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8._tool",
+        lambda name: f"/tools/{name}",
+    )
+
+    command = _icarus_compile_command(
+        rtl_dir=tmp_path / "rtl",
+        fakeram_path=tmp_path / "fakeram45_2048x39.v",
+        tb_path=tmp_path / "tb.v",
+        sim_path=tmp_path / "sim.out",
+    )
+
+    assert command == [
+        "/tools/iverilog",
+        "-g2012",
+        "-s",
+        "tb",
+        "-o",
+        str(tmp_path / "sim.out"),
+        str(tmp_path / "rtl" / "top.v"),
+        str(tmp_path / "fakeram45_2048x39.v"),
+        str(tmp_path / "tb.v"),
+    ]
+
+
 def test_observation_evaluator_validates_every_exact_total_and_row() -> None:
     reference, summary, cluster_summaries, cluster_rows, root_rows = _audit_fixture()
     result = _evaluate_observations(
@@ -518,6 +604,130 @@ def test_build_report_keeps_compile_syntax_errors_conclusive_and_bounded(
     assert "top.v:10: syntax error" in report["stderr_tail"]
 
 
+def test_build_report_records_verilator_backend_metadata_and_command(
+    monkeypatch: Any,
+) -> None:
+    reference, summary, cluster_summaries, cluster_rows, root_rows = _audit_fixture()
+    calls: list[list[str]] = []
+
+    monkeypatch.setattr(
+        "npu.eval.probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8.generate",
+        lambda _config, rtl_dir: (
+            rtl_dir.mkdir(parents=True, exist_ok=True),
+            (rtl_dir / "top.v").write_text("module top; endmodule\n", encoding="ascii"),
+        ),
+    )
+    monkeypatch.setattr(
+        "npu.eval.probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8._write_memh_sidecars",
+        lambda *_args, **_kwargs: {},
+    )
+    monkeypatch.setattr(
+        "npu.eval.probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8._reference",
+        lambda **_kwargs: reference,
+    )
+    monkeypatch.setattr(
+        "npu.eval.probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8._parse_stdout",
+        lambda _stdout: (summary, cluster_summaries, cluster_rows, root_rows, None),
+    )
+    monkeypatch.setattr(
+        "npu.eval.probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8._tool",
+        lambda name: f"/tools/{name}",
+    )
+
+    def fake_run(command: list[str], **_kwargs: object) -> Any:
+        calls.append(list(command))
+        if len(calls) == 1:
+            return __import__("subprocess").CompletedProcess(args=command, returncode=0, stdout="", stderr="")
+        return __import__("subprocess").CompletedProcess(args=command, returncode=0, stdout="", stderr="")
+
+    monkeypatch.setattr(
+        "npu.eval.probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8.subprocess.run",
+        fake_run,
+    )
+
+    report = build_report(
+        config=_minimal_probe_config(),
+        timeout_sec=1,
+        sim_backend=VERILATOR_HIERARCHICAL_BACKEND,
+    )
+
+    assert report["passed"] is True
+    assert report["sim_backend"] == VERILATOR_HIERARCHICAL_BACKEND
+    assert report["compile_timeout_sec"] == DEFAULT_VERILATOR_COMPILE_TIMEOUT_SEC
+    assert report["simulation_timeout_sec"] == 1
+    assert report["sim_backend_metadata"] == {
+        "compile_tool": "verilator",
+        "run_tool": "verilated_binary",
+        "compile_timeout_sec": DEFAULT_VERILATOR_COMPILE_TIMEOUT_SEC,
+        "simulation_timeout_sec": 1,
+        "top_module": "tb",
+        "build_jobs": VERILATOR_BUILD_JOBS,
+        "control_file": "verilator_hier.vlt",
+        "hierarchical_modules": {
+            "p54_cluster": "fake_top__cluster_p54",
+            "p53_cluster": "fake_top__cluster_p53",
+            "global_tree": "fake_top__global_tree",
+        },
+    }
+    assert len(calls) == 2
+    assert calls[0][:4] == ["/tools/verilator", "--binary", "--timing", "--hierarchical"]
+    assert "verilator_hier.vlt" in " ".join(calls[0])
+    assert calls[1] == [str(Path(calls[0][calls[0].index("--Mdir") + 1]) / "simv")]
+
+
+def test_build_report_defaults_to_icarus_backend(
+    monkeypatch: Any,
+) -> None:
+    reference, summary, cluster_summaries, cluster_rows, root_rows = _audit_fixture()
+    calls: list[list[str]] = []
+
+    monkeypatch.setattr(
+        "npu.eval.probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8.generate",
+        lambda _config, rtl_dir: (
+            rtl_dir.mkdir(parents=True, exist_ok=True),
+            (rtl_dir / "top.v").write_text("module top; endmodule\n", encoding="ascii"),
+        ),
+    )
+    monkeypatch.setattr(
+        "npu.eval.probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8._write_memh_sidecars",
+        lambda *_args, **_kwargs: {},
+    )
+    monkeypatch.setattr(
+        "npu.eval.probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8._reference",
+        lambda **_kwargs: reference,
+    )
+    monkeypatch.setattr(
+        "npu.eval.probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8._parse_stdout",
+        lambda _stdout: (summary, cluster_summaries, cluster_rows, root_rows, None),
+    )
+    monkeypatch.setattr(
+        "npu.eval.probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8._tool",
+        lambda name: f"/tools/{name}",
+    )
+    monkeypatch.setattr(
+        "npu.eval.probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8.subprocess.run",
+        lambda command, **_kwargs: (
+            calls.append(list(command))
+            or __import__("subprocess").CompletedProcess(args=command, returncode=0, stdout="", stderr="")
+        ),
+    )
+
+    report = build_report(config=_minimal_probe_config(), timeout_sec=1)
+
+    assert DEFAULT_SIM_BACKEND in SIM_BACKEND_CHOICES
+    assert report["sim_backend"] == DEFAULT_SIM_BACKEND
+    assert report["compile_timeout_sec"] == 1
+    assert report["simulation_timeout_sec"] == 1
+    assert report["sim_backend_metadata"] == {
+        "compile_tool": "iverilog",
+        "run_tool": "vvp",
+        "compile_timeout_sec": 1,
+        "simulation_timeout_sec": 1,
+    }
+    assert calls[0][0] == "/tools/iverilog"
+    assert calls[1] == ["/tools/vvp", calls[0][5]]
+
+
 def test_checked_in_config_rejects_partition_drift() -> None:
     config = json.loads((_design_dir() / "config.json").read_text(encoding="utf-8"))
     _validate(config)
@@ -564,6 +774,15 @@ def test_main_writes_bounded_json_and_markdown_reports(
         "passed": True,
         "classification": "passed",
         "simulation_status": "ok",
+        "sim_backend": DEFAULT_SIM_BACKEND,
+        "compile_timeout_sec": DEFAULT_SUBPROCESS_TIMEOUT_SEC,
+        "simulation_timeout_sec": DEFAULT_SUBPROCESS_TIMEOUT_SEC,
+        "sim_backend_metadata": {
+            "compile_tool": "iverilog",
+            "run_tool": "vvp",
+            "compile_timeout_sec": DEFAULT_SUBPROCESS_TIMEOUT_SEC,
+            "simulation_timeout_sec": DEFAULT_SUBPROCESS_TIMEOUT_SEC,
+        },
         "summary": dict(EXPECTED_TOTALS),
         "cluster_summaries": [{"cluster": cluster, **EXPECTED_PER_CLUSTER, "errors": 0} for cluster in range(16)],
         "counts_passed": True,
@@ -603,6 +822,8 @@ def test_main_writes_bounded_json_and_markdown_reports(
 
     assert exit_code == 0
     assert captured["logical_head_groups"] == 4
+    assert captured["compile_timeout_sec"] is None
+    assert captured["sim_backend"] == DEFAULT_SIM_BACKEND
     payload = json.loads(out.read_text(encoding="utf-8"))
     assert payload["passed"] is True
     assert payload["classification"] == "passed"

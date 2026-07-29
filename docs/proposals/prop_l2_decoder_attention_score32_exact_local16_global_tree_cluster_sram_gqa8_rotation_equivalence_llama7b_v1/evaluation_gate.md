@@ -8,10 +8,12 @@
   - `MemoryMax=8G`
   - `CPUQuota=300%`
   - `TasksMax=512`
-  - outer runtime `4500 s`
-  - stall timeout `600 s`
+  - outer runtime `5100 s`
+  - stall timeout `1500 s`
+  - compile timeout `1200 s`
   - probe timeout `3600 s`
   - launcher `control_plane/scripts/run_bounded_command.py`
+  - simulation backend `verilator_hierarchical`
 
 If a usable user `systemd` manager exists, the launcher applies the contract
 with `systemd-run --user --scope`. In evaluator containers without a user bus,
@@ -21,6 +23,13 @@ derived from the current allowed CPUs and the requested quota rounded to whole
 CPUs (`CPUQuota=300%` becomes at most three allowed CPUs). `MemoryHigh=6G`
 stays advisory in fallback mode and is reported that way instead of claimed as
 exact cgroup enforcement.
+
+The probe backend should be `python3 npu/eval/probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8.py --sim-backend verilator_hierarchical --compile-timeout-sec 1200 --timeout-sec 3600`.
+This backend uses Verilator `--binary --timing --hierarchical` with a generated
+control file that marks exactly the generated p54 cluster, p53 cluster, and
+global-tree modules as hierarchy blocks, adds `-Wno-fatal` so warnings do not
+become false compile failures, and records separate compile/simulation timeout
+metadata in the bounded JSON report.
 
 Acceptance:
 
