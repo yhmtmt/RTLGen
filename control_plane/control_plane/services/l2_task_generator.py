@@ -10280,6 +10280,7 @@ def _decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equiv
     command = (
         "systemd-run --user --scope "
         "-p MemoryHigh=6G -p MemoryMax=8G -p CPUQuota=300% -p TasksMax=512 "
+        "-p RuntimeMaxSec=1200 "
         "python3 npu/eval/probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8.py "
         f"--config {config} "
         "--timeout-sec 900 "
@@ -10308,6 +10309,15 @@ def _decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equiv
         ],
         "expected_outputs": [out, report],
         "evidence_only": True,
+        "worker_resources": {
+            "exclusive_worker": True,
+            "memory_high": "6G",
+            "memory_max": "8G",
+            "cpu_quota": "300%",
+            "tasks_max": 512,
+            "outer_timeout_seconds": 1200,
+            "stall_timeout_seconds": 300,
+        },
         "acceptance": [
             "Write exactly the bounded JSON and Markdown probe reports declared in expected_outputs",
             "Require report passed=true, classification=passed, and counts_passed=true",
@@ -12004,6 +12014,9 @@ def _build_payload(
             commands = [*decoder_evidence["commands"], *commands]
             expected_outputs = _uniq([*expected_outputs, *decoder_evidence["expected_outputs"]])
             task_inputs["decoder_contract"] = decoder_evidence["inputs"]
+        worker_resources = decoder_evidence.get("worker_resources")
+        if isinstance(worker_resources, dict) and worker_resources:
+            task_inputs["worker_resources"] = dict(worker_resources)
 
     acceptance = [
         "Populate metrics.csv for all referenced design dirs",
