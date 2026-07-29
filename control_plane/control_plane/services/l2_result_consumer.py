@@ -587,6 +587,14 @@ _DECODER_EVIDENCE_OUTPUT_KEYS: tuple[tuple[str, str], ...] = (
         "attention_score32_separated_compute_recost_report",
     ),
     (
+        "attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_out",
+        "attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_report",
+    ),
+    (
+        "attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_out",
+        "attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_report",
+    ),
+    (
         "attention_separated_cluster_equivalence_out",
         "attention_separated_cluster_equivalence_report",
     ),
@@ -781,6 +789,12 @@ def _decoder_quality_brief(evidence_payload: dict[str, Any]) -> dict[str, Any]:
         "assumptions",
         "next_step",
         "source_artifacts",
+        "passed",
+        "classification",
+        "counts_passed",
+        "summary",
+        "compositional_components",
+        "full_row_audit",
     ):
         if key in evidence_payload:
             brief[key] = evidence_payload[key]
