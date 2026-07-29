@@ -31,6 +31,7 @@ This block composes:
   - the immediate group-major successor
 - successor progression includes both `wave7 -> next head_base wave0` and `head_base24 -> head_base0`
 - valid fill metadata outside that two-command prefetch window latches `fill_schedule_contract_error`
+- invalid fill metadata also latches `fill_schedule_contract_error`
 - allowed fill targets may hold `valid` while `ready` is low without error; that remains ordinary backpressure
 - buffer selection remains deterministic at the cluster endpoint: `buffer_sel == wave[0]`
 

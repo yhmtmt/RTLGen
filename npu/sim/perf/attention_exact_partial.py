@@ -1356,6 +1356,9 @@ def exact_local16_global_tree_cluster_sram_gqa8_service_manifest(
             "sixteen_per_cluster_hbm_return_fill_target_and_fill_row_channels_with_exact_command_id_head_base_wave_"
             "and_buffer_sel_equal_to_wave_index_lsb"
         ),
+        "fill_prefetch_window_contract": (
+            "reject_invalid_metadata_and_accept_only_current_expected_command_or_immediate_group_major_successor"
+        ),
         "internal_value_memory_contract": (
             "exactly_one_local_p54_or_p53_sram_endpoint_per_cluster_with_index_preserving_dual_stream_lane_wiring"
         ),

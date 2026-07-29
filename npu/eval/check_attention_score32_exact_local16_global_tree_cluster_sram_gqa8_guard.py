@@ -158,8 +158,10 @@ def main(argv: list[str] | None = None) -> int:
         "(fill_target_wave_index[(gfill * 3) +: 3] == next_schedule_wave_w));",
         "assign fill_target_ready[gfill] =",
         "fill_target_schedule_allowed_w[gfill] ? fill_target_ready_internal_w[gfill] : 1'b0;",
-        "if (fill_target_valid[0] && fill_target_metadata_valid_w[0] && !fill_target_schedule_allowed_w[0])",
-        "if (fill_target_valid[15] && fill_target_metadata_valid_w[15] && !fill_target_schedule_allowed_w[15])",
+        ".fill_target_valid(fill_target_valid[0] && fill_target_schedule_allowed_w[0])",
+        ".fill_target_valid(fill_target_valid[15] && fill_target_schedule_allowed_w[15])",
+        "if (fill_target_valid[0] && (!fill_target_metadata_valid_w[0] || !fill_target_schedule_allowed_w[0]))",
+        "if (fill_target_valid[15] && (!fill_target_metadata_valid_w[15] || !fill_target_schedule_allowed_w[15]))",
     ):
         _require(top, token)
 

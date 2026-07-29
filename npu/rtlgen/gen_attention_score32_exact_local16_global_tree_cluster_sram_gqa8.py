@@ -518,37 +518,37 @@ module {top_name} (
           !command_head_base_match_w) begin
         command_cadence_error_q <= 1'b1;
       end
-      if (fill_target_valid[0] && fill_target_metadata_valid_w[0] && !fill_target_schedule_allowed_w[0])
+      if (fill_target_valid[0] && (!fill_target_metadata_valid_w[0] || !fill_target_schedule_allowed_w[0]))
         cluster_fill_schedule_contract_error_q[0] <= 1'b1;
-      if (fill_target_valid[1] && fill_target_metadata_valid_w[1] && !fill_target_schedule_allowed_w[1])
+      if (fill_target_valid[1] && (!fill_target_metadata_valid_w[1] || !fill_target_schedule_allowed_w[1]))
         cluster_fill_schedule_contract_error_q[1] <= 1'b1;
-      if (fill_target_valid[2] && fill_target_metadata_valid_w[2] && !fill_target_schedule_allowed_w[2])
+      if (fill_target_valid[2] && (!fill_target_metadata_valid_w[2] || !fill_target_schedule_allowed_w[2]))
         cluster_fill_schedule_contract_error_q[2] <= 1'b1;
-      if (fill_target_valid[3] && fill_target_metadata_valid_w[3] && !fill_target_schedule_allowed_w[3])
+      if (fill_target_valid[3] && (!fill_target_metadata_valid_w[3] || !fill_target_schedule_allowed_w[3]))
         cluster_fill_schedule_contract_error_q[3] <= 1'b1;
-      if (fill_target_valid[4] && fill_target_metadata_valid_w[4] && !fill_target_schedule_allowed_w[4])
+      if (fill_target_valid[4] && (!fill_target_metadata_valid_w[4] || !fill_target_schedule_allowed_w[4]))
         cluster_fill_schedule_contract_error_q[4] <= 1'b1;
-      if (fill_target_valid[5] && fill_target_metadata_valid_w[5] && !fill_target_schedule_allowed_w[5])
+      if (fill_target_valid[5] && (!fill_target_metadata_valid_w[5] || !fill_target_schedule_allowed_w[5]))
         cluster_fill_schedule_contract_error_q[5] <= 1'b1;
-      if (fill_target_valid[6] && fill_target_metadata_valid_w[6] && !fill_target_schedule_allowed_w[6])
+      if (fill_target_valid[6] && (!fill_target_metadata_valid_w[6] || !fill_target_schedule_allowed_w[6]))
         cluster_fill_schedule_contract_error_q[6] <= 1'b1;
-      if (fill_target_valid[7] && fill_target_metadata_valid_w[7] && !fill_target_schedule_allowed_w[7])
+      if (fill_target_valid[7] && (!fill_target_metadata_valid_w[7] || !fill_target_schedule_allowed_w[7]))
         cluster_fill_schedule_contract_error_q[7] <= 1'b1;
-      if (fill_target_valid[8] && fill_target_metadata_valid_w[8] && !fill_target_schedule_allowed_w[8])
+      if (fill_target_valid[8] && (!fill_target_metadata_valid_w[8] || !fill_target_schedule_allowed_w[8]))
         cluster_fill_schedule_contract_error_q[8] <= 1'b1;
-      if (fill_target_valid[9] && fill_target_metadata_valid_w[9] && !fill_target_schedule_allowed_w[9])
+      if (fill_target_valid[9] && (!fill_target_metadata_valid_w[9] || !fill_target_schedule_allowed_w[9]))
         cluster_fill_schedule_contract_error_q[9] <= 1'b1;
-      if (fill_target_valid[10] && fill_target_metadata_valid_w[10] && !fill_target_schedule_allowed_w[10])
+      if (fill_target_valid[10] && (!fill_target_metadata_valid_w[10] || !fill_target_schedule_allowed_w[10]))
         cluster_fill_schedule_contract_error_q[10] <= 1'b1;
-      if (fill_target_valid[11] && fill_target_metadata_valid_w[11] && !fill_target_schedule_allowed_w[11])
+      if (fill_target_valid[11] && (!fill_target_metadata_valid_w[11] || !fill_target_schedule_allowed_w[11]))
         cluster_fill_schedule_contract_error_q[11] <= 1'b1;
-      if (fill_target_valid[12] && fill_target_metadata_valid_w[12] && !fill_target_schedule_allowed_w[12])
+      if (fill_target_valid[12] && (!fill_target_metadata_valid_w[12] || !fill_target_schedule_allowed_w[12]))
         cluster_fill_schedule_contract_error_q[12] <= 1'b1;
-      if (fill_target_valid[13] && fill_target_metadata_valid_w[13] && !fill_target_schedule_allowed_w[13])
+      if (fill_target_valid[13] && (!fill_target_metadata_valid_w[13] || !fill_target_schedule_allowed_w[13]))
         cluster_fill_schedule_contract_error_q[13] <= 1'b1;
-      if (fill_target_valid[14] && fill_target_metadata_valid_w[14] && !fill_target_schedule_allowed_w[14])
+      if (fill_target_valid[14] && (!fill_target_metadata_valid_w[14] || !fill_target_schedule_allowed_w[14]))
         cluster_fill_schedule_contract_error_q[14] <= 1'b1;
-      if (fill_target_valid[15] && fill_target_metadata_valid_w[15] && !fill_target_schedule_allowed_w[15])
+      if (fill_target_valid[15] && (!fill_target_metadata_valid_w[15] || !fill_target_schedule_allowed_w[15]))
         cluster_fill_schedule_contract_error_q[15] <= 1'b1;
       if (command_fire_w) begin
         cadence_command_accept_count_q <= cadence_command_accept_count_q + 1'b1;
@@ -662,9 +662,7 @@ def generate(config: JsonDict, out_dir: Path) -> None:
         "command_head_contract": service_model["command_head_contract"],
         "release_invariant_contract": service_model["release_invariant_contract"],
         "buffer_mapping_contract": service_model["buffer_mapping_contract"],
-        "fill_prefetch_window_contract": (
-            "per_cluster_fill_target_accepts_only_current_expected_command_or_immediate_group_major_successor"
-        ),
+        "fill_prefetch_window_contract": service_model["fill_prefetch_window_contract"],
         "interface_adaptation": {
             "producer_inputs": "independent_flattened_ready_valid_query_key_lanes_for_all_856_producers",
             "external_fill": "sixteen_per_cluster_hbm_return_fill_target_and_fill_row_interfaces",

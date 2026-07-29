@@ -135,5 +135,5 @@ def test_checked_in_top_removes_external_value_lanes_and_enforces_fill_window() 
     assert "assign fill_target_schedule_allowed_w[gfill] =" in rtl
     assert "fill_target_head_base[(gfill * 5) +: 5] == expected_head_base_w" in rtl
     assert "fill_target_head_base[(gfill * 5) +: 5] == next_expected_head_base_w" in rtl
-    assert "fill_target_valid[0] && fill_target_metadata_valid_w[0] && !fill_target_schedule_allowed_w[0]" in rtl
-
+    assert ".fill_target_valid(fill_target_valid[0] && fill_target_schedule_allowed_w[0])" in rtl
+    assert "fill_target_valid[0] && (!fill_target_metadata_valid_w[0] || !fill_target_schedule_allowed_w[0])" in rtl
