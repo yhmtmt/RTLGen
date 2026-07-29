@@ -55,6 +55,7 @@ TB_TIMEOUT_CYCLES = 50_000
 DEFAULT_SUBPROCESS_TIMEOUT_SEC = 900
 DEFAULT_ROOT_READY_PATTERN = (True, True, False, True)
 DIAGNOSTIC_TAIL_LIMIT = 4096
+MARKDOWN_DIAGNOSTIC_TAIL_LIMIT = 1024
 DEFAULT_SIM_BACKEND = "icarus"
 VERILATOR_HIERARCHICAL_BACKEND = "verilator_hierarchical"
 SIM_BACKEND_CHOICES = (DEFAULT_SIM_BACKEND, VERILATOR_HIERARCHICAL_BACKEND)
@@ -885,8 +886,8 @@ module tb;
 
     input_valid = 856'd0;
     input_last = 856'd0;
-    input_query = 109568'd0;
-    input_key = 109568'd0;
+    input_query = '0;
+    input_key = '0;
     for (producer_index = 0; producer_index < TOTAL_PRODUCERS; producer_index = producer_index + 1) begin
       if (rst_n && (active_command_index >= 0) &&
           (beat_issue[producer_index] < cmd_beat_limit_mem[active_command_index][producer_index])) begin
@@ -1395,27 +1396,42 @@ def build_report(
 
 def _render_text(report: JsonDict) -> str:
     summary = dict(report.get("summary") or {})
-    return "\n".join(
-        [
-            "# attention_score32_exact_local16_global_tree_cluster_sram_gqa8_probe",
-            "",
-            f"- passed: `{report['passed']}`",
-            f"- classification: `{report['classification']}`",
-            f"- simulation_status: `{report['simulation_status']}`",
-            f"- sim_backend: `{report['sim_backend']}`",
-            f"- compile_timeout_sec: `{report['compile_timeout_sec']}`",
-            f"- simulation_timeout_sec: `{report['simulation_timeout_sec']}`",
-            f"- producer_handshakes: `{summary.get('producer_handshake_count', 0)}`",
-            f"- fill_targets: `{summary.get('fill_target_accept_count', 0)}`",
-            f"- fill_rows: `{summary.get('fill_row_accept_count', 0)}`",
-            f"- sram_requests: `{summary.get('sram_request_accept_count', 0)}`",
-            f"- sram_responses: `{summary.get('sram_response_accept_count', 0)}`",
-            f"- cluster_rows: `{summary.get('cluster_row_count', 0)}`",
-            f"- root_rows: `{summary.get('root_row_count', 0)}`",
-            f"- observed_root_hash: `{report['observed_root_hash']}`",
-            f"- expected_root_hash: `{report['expected_root_hash']}`",
-        ]
-    )
+    lines = [
+        "# attention_score32_exact_local16_global_tree_cluster_sram_gqa8_probe",
+        "",
+        f"- passed: `{report['passed']}`",
+        f"- classification: `{report['classification']}`",
+        f"- simulation_status: `{report['simulation_status']}`",
+        f"- sim_backend: `{report['sim_backend']}`",
+        f"- compile_timeout_sec: `{report['compile_timeout_sec']}`",
+        f"- simulation_timeout_sec: `{report['simulation_timeout_sec']}`",
+        f"- producer_handshakes: `{summary.get('producer_handshake_count', 0)}`",
+        f"- fill_targets: `{summary.get('fill_target_accept_count', 0)}`",
+        f"- fill_rows: `{summary.get('fill_row_accept_count', 0)}`",
+        f"- sram_requests: `{summary.get('sram_request_accept_count', 0)}`",
+        f"- sram_responses: `{summary.get('sram_response_accept_count', 0)}`",
+        f"- cluster_rows: `{summary.get('cluster_row_count', 0)}`",
+        f"- root_rows: `{summary.get('root_row_count', 0)}`",
+        f"- observed_root_hash: `{report['observed_root_hash']}`",
+        f"- expected_root_hash: `{report['expected_root_hash']}`",
+    ]
+    if not bool(report["passed"]):
+        stderr_tail = _bounded_tail(
+            str(report.get("stderr_tail") or ""),
+            limit=MARKDOWN_DIAGNOSTIC_TAIL_LIMIT,
+        ).strip()
+        lines.extend(
+            [
+                f"- returncode: `{report.get('returncode')}`",
+                f"- normalized_returncode: `{report.get('normalized_returncode')}`",
+                "- stderr_tail:",
+                "",
+                "```text",
+                stderr_tail.replace("```", "`` `") or "(empty)",
+                "```",
+            ]
+        )
+    return "\n".join(lines)
 
 
 def _render_json(report: JsonDict) -> str:

@@ -10,6 +10,7 @@ if str(REPO_ROOT) not in sys.path:
 
 from npu.eval.probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8 import (
     DIAGNOSTIC_TAIL_LIMIT,
+    MARKDOWN_DIAGNOSTIC_TAIL_LIMIT,
     DEFAULT_ROOT_READY_PATTERN,
     DEFAULT_SIM_BACKEND,
     DEFAULT_SUBPROCESS_TIMEOUT_SEC,
@@ -27,6 +28,7 @@ from npu.eval.probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa
     _fill_rows_for_wave,
     _hierarchical_module_names,
     _icarus_compile_command,
+    _render_text,
     _testbench,
     _verilator_control_file_text,
     _verilator_hierarchical_compile_command,
@@ -164,6 +166,9 @@ def test_generated_testbench_is_real_memh_backed_composed_traffic() -> None:
     assert '$readmemh("key.memh", key_mem);' in tb
     assert '$readmemh("fill.memh", fill_mem);' in tb
     assert "input_valid[producer_index] = 1'b1;" in tb
+    assert "input_query = '0;" in tb
+    assert "input_key = '0;" in tb
+    assert "109568'd0" not in tb
     assert "input_query[(producer_index * 128) +: 128] = query_mem[flat_index];" in tb
     assert "input_key[(producer_index * 128) +: 128] = key_mem[flat_index];" in tb
     assert "input_valid[producer_index] && input_ready[producer_index]" in tb
@@ -602,6 +607,56 @@ def test_build_report_keeps_compile_syntax_errors_conclusive_and_bounded(
     assert report["normalized_returncode"] == 2
     assert len(report["stderr_tail"]) <= DIAGNOSTIC_TAIL_LIMIT + 64
     assert "top.v:10: syntax error" in report["stderr_tail"]
+
+
+def test_markdown_failure_report_keeps_bounded_subprocess_diagnostics() -> None:
+    stderr_tail = ("warning\n" * 400) + "Killed\n"
+    report = {
+        "passed": False,
+        "classification": "failed_inconclusive",
+        "simulation_status": "resource_failure",
+        "sim_backend": VERILATOR_HIERARCHICAL_BACKEND,
+        "compile_timeout_sec": 1200,
+        "simulation_timeout_sec": 900,
+        "returncode": -9,
+        "normalized_returncode": 137,
+        "stderr_tail": stderr_tail,
+        "summary": {},
+        "observed_root_hash": "",
+        "expected_root_hash": "",
+    }
+
+    rendered = _render_text(report)
+
+    assert "- returncode: `-9`" in rendered
+    assert "- normalized_returncode: `137`" in rendered
+    assert "- stderr_tail:" in rendered
+    assert "Killed" in rendered
+    assert stderr_tail not in rendered
+    diagnostic = rendered.split("```text\n", 1)[1].rsplit("\n```", 1)[0]
+    assert len(diagnostic) <= MARKDOWN_DIAGNOSTIC_TAIL_LIMIT + 64
+
+
+def test_markdown_pass_report_omits_failure_diagnostics() -> None:
+    report = {
+        "passed": True,
+        "classification": "passed",
+        "simulation_status": "ok",
+        "sim_backend": DEFAULT_SIM_BACKEND,
+        "compile_timeout_sec": 900,
+        "simulation_timeout_sec": 900,
+        "returncode": 0,
+        "normalized_returncode": 0,
+        "stderr_tail": "",
+        "summary": {},
+        "observed_root_hash": "expected",
+        "expected_root_hash": "expected",
+    }
+
+    rendered = _render_text(report)
+
+    assert "returncode" not in rendered
+    assert "stderr_tail" not in rendered
 
 
 def test_build_report_records_verilator_backend_metadata_and_command(
