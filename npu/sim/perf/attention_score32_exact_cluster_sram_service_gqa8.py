@@ -430,9 +430,22 @@ class ClusterSramServiceModel:
             return accepted_responses
 
         candidates: list[list[int]] = [[] for _ in range(BANKS)]
-        for lane, (_, slice_index) in request_by_lane.items():
+        for lane, (address, slice_index) in request_by_lane.items():
             if lane not in range(self.lanes):
                 self.errors["invalid_metadata"] = True
+            elif slice_index not in range(VALUE_SLICES):
+                if self.responses[lane] is None:
+                    self.errors["invalid_address"] = True
+                    self.responses[lane] = Response(
+                        lane=lane,
+                        address=address,
+                        slice_index=slice_index,
+                        data=0,
+                        tag=self.build_tag(lane=lane, address=address, slice_index=slice_index),
+                    )
+                    self.counters["request_accept_count"] += 1
+                else:
+                    self.counters["request_stall_cycles"] += 1
             elif self.responses[lane] is None:
                 candidates[slice_index].append(lane)
             else:

@@ -155,6 +155,18 @@ class ClusterSramServiceTests(unittest.TestCase):
         self.assertTrue(model.errors["invalid_address"])
         self.assertEqual(model.counters["request_accept_count"], 1)
 
+    def test_exact_cluster_sram_service_invalid_slice_returns_zero_and_sets_error(self) -> None:
+        for slice_index in (-1, 16):
+            with self.subTest(slice_index=slice_index):
+                model = _activate_model(producers=54, head_base=0)
+                model.step(requests=[(0, 0, slice_index)])
+                pending = model.responses[0]
+                assert pending is not None
+                self.assertEqual(pending.data, 0)
+                self.assertEqual(pending.slice_index, slice_index)
+                self.assertTrue(model.errors["invalid_address"])
+                self.assertEqual(model.counters["request_accept_count"], 1)
+
     def test_exact_cluster_sram_service_duplicate_fill_row_sets_overwrite(self) -> None:
         model = ClusterSramServiceModel(producers=53)
         self.assertTrue(model.accept_fill_target(buffer_sel=0, command_id=1, head_base=0, wave_index=0))
