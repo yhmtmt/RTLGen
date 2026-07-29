@@ -13771,6 +13771,15 @@ def test_generate_l2_campaign_task_adds_cluster_sram_gqa8_equivalence_evidence()
             expected_outputs = work_item.task_request.request_payload["task"]["expected_outputs"]
             acceptance = work_item.task_request.request_payload["task"]["acceptance"]
             run = commands[0]["run"]
+            expected_worker_resources = {
+                "exclusive_worker": True,
+                "memory_high": "6G",
+                "memory_max": "8G",
+                "cpu_quota": "300%",
+                "tasks_max": 512,
+                "outer_timeout_seconds": 1200,
+                "stall_timeout_seconds": 300,
+            }
 
             assert command_names == [
                 "probe_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence",
@@ -13778,7 +13787,7 @@ def test_generate_l2_campaign_task_adds_cluster_sram_gqa8_equivalence_evidence()
             ]
             assert (
                 "systemd-run --user --scope -p MemoryHigh=6G -p MemoryMax=8G "
-                "-p CPUQuota=300% -p TasksMax=512"
+                "-p CPUQuota=300% -p TasksMax=512 -p RuntimeMaxSec=1200"
             ) in run
             assert (
                 "python3 npu/eval/probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8.py"
@@ -13837,4 +13846,9 @@ def test_generate_l2_campaign_task_adds_cluster_sram_gqa8_equivalence_evidence()
             assert any("cluster_summaries" in rule and "errors=0" in rule for rule in acceptance)
             assert any("full_row_audit.passed=true" in rule for rule in acceptance)
             assert work_item.task_request.request_payload["task"]["inputs"]["decoder_contract"] == decoder_inputs
+            assert work_item.input_manifest["worker_resources"] == expected_worker_resources
+            assert (
+                work_item.task_request.request_payload["task"]["inputs"]["worker_resources"]
+                == expected_worker_resources
+            )
             assert work_item.task_request.request_payload["source_requirement"]["required_sha"] == source_commit
