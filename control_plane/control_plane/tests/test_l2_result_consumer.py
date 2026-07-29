@@ -7252,6 +7252,162 @@ def test_consume_l2_result_score32_separated_compute_recost_uses_decoder_evidenc
             )
 
 
+def test_consume_l2_result_score32_exact_reduction_full_gqa8_rerank_uses_decoder_evidence() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            proposal_dir = (
+                repo_root
+                / "docs"
+                / "proposals"
+                / "prop_l2_decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank_llama7b_v1"
+            )
+            _write(
+                proposal_dir / "proposal.json",
+                json.dumps(
+                    {
+                        "proposal_id": (
+                            "prop_l2_decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank_llama7b_v1"
+                        ),
+                        "kind": "architecture",
+                        "title": "Score32 exact-reduction full GQA8 rerank",
+                        "direct_comparison": {
+                            "primary_question": (
+                                "Does the quality-aware score32 frontier hold after exact reduction recost and full GQA8 equivalence closure?"
+                            )
+                        },
+                    },
+                    indent=2,
+                )
+                + "\n",
+            )
+            item_id = "l2_decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank_llama7b_v1"
+            evidence_rel = (
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank__"
+                f"{item_id}.json"
+            )
+            report_rel = (
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank__"
+                f"{item_id}.md"
+            )
+            _write(
+                repo_root / evidence_rel,
+                json.dumps(
+                    {
+                        "version": 1,
+                        "model": "llm_decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank_v1",
+                        "decision": "score32_exact_reduction_gqa8_full_equivalence_frontier_recorded",
+                        "diagnosis": {
+                            "decision": "score32_exact_reduction_gqa8_full_equivalence_frontier_recorded",
+                            "best_latency_candidate": "physical_hbm_gqa8_kv8_service_frontier",
+                            "best_energy_candidate": "physical_hbm_gqa8_kv8_service_frontier",
+                            "best_precision_safe_candidate": "score32_exp_lut_schedule_wrapper_hbm_controller_replay_best",
+                            "best_precision_safe_energy_candidate": (
+                                "die1200_dense_gemm_16x8_k1_p1_mac132736_lat1872.29_hbm0.465654_tt512"
+                            ),
+                            "score32_latency_us": 13488.364723,
+                            "score32_token_throughput_per_s": 74.137971543343,
+                            "score32_total_energy_mj_per_token": 484.704405630618,
+                            "score32_total_energy_mj_per_token_lower_bound": 467.191305313106,
+                            "score32_energy_estimate_status": (
+                                "conservative_upper_bound_latency_scaled_non_hbm_energy"
+                            ),
+                            "exact_energy_ranking_status": (
+                                "provisional_pending_reducer_and_global_tree_activity_power_measurement"
+                            ),
+                            "score32_die_area_mm2": 800.0,
+                            "score32_quality_status": "mixed_int8_generation_quality_pass",
+                            "score32_vs_measured_fp16_throughput_ratio": 5.378033093,
+                            "score32_vs_measured_fp16_energy_ratio": 5.935340342,
+                            "exact_reduction_source_latency_us": 12814.257853,
+                            "exact_reduction_corrected_latency_us": 13488.364723,
+                            "exact_reduction_delta_latency_us": 674.10687,
+                            "one_group_equivalence_item_id": (
+                                "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1_r7"
+                            ),
+                            "four_group_equivalence_item_id": (
+                                "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1"
+                            ),
+                            "remaining_abstractions": [
+                                "does not include vendor HBM current signoff",
+                                "full-array postroute PPA remains unmeasured",
+                            ],
+                        },
+                    },
+                    indent=2,
+                )
+                + "\n",
+            )
+            _write(repo_root / report_rel, "# score32 exact-reduction full GQA8 rerank\n")
+            item_id = _seed_campaign_work_item(
+                session,
+                repo_root,
+                item_id=item_id,
+                campaign_dir_rel="runs/campaigns/npu/score32_exact_reduction_full_gqa8_rerank_campaign",
+                summary_rows=(
+                    "scope,arch_id,macro_mode,objective_rank,latency_ms_mean,energy_mj_mean,critical_path_ns_mean,total_power_mw_mean,flow_elapsed_s_mean,throughput_infer_per_s_mean\n"
+                    "aggregate,fp16_nm1_demo,flat_nomacro,1,0.4,0.15,5.5,0.18,1000,1.0\n"
+                ),
+                proposal_path=(
+                    "docs/proposals/"
+                    "prop_l2_decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank_llama7b_v1"
+                ),
+                comparison={"role": "score32_exact_reduction_gqa8_full_equivalence_rerank"},
+            )
+            work_item = session.query(WorkItem).filter_by(item_id=item_id).one()
+            payload = copy.deepcopy(work_item.task_request.request_payload or {})
+            payload["developer_loop"]["evaluation"] = {
+                "mode": "frontier_detail",
+                "expected_direction": "record_score32_exact_reduction_gqa8_full_equivalence_rerank",
+                "expected_reason": (
+                    "Recost the quality-aware score32 frontier only after exact reduction and full GQA8 equivalence are both closed."
+                ),
+            }
+            payload["developer_loop"]["abstraction"] = {
+                "layer": "decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank",
+            }
+            work_item.task_request.request_payload = payload
+            work_item.input_manifest = {
+                "decoder_contract": {
+                    "attention_score32_exact_reduction_gqa8_full_equivalence_rerank_out": evidence_rel,
+                    "attention_score32_exact_reduction_gqa8_full_equivalence_rerank_report": report_rel,
+                }
+            }
+            work_item.expected_outputs = [*(work_item.expected_outputs or []), evidence_rel, report_rel]
+            session.commit()
+
+            consume_l2_result(session, Layer2ConsumeRequest(repo_root=str(repo_root), item_id=item_id))
+
+            decision_payload = json.loads(
+                (repo_root / "control_plane" / "shadow_exports" / "l2_decisions" / f"{item_id}.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            assessment = decision_payload["proposal_assessment"]
+            assert assessment["outcome"] == "score32_exact_reduction_gqa8_full_equivalence_frontier_recorded"
+            assert assessment["decoder_evidence_ref"] == evidence_rel
+            assert "score32_latency_us=13488.364723" in assessment["summary"]
+            assert "score32_total_energy_mj_per_token=484.704405630618" in assessment["summary"]
+            assert "score32_energy_estimate_status=conservative_upper_bound_latency_scaled_non_hbm_energy" in assessment["summary"]
+            assert "exact_energy_ranking_status=provisional_pending_reducer_and_global_tree_activity_power_measurement" in assessment["summary"]
+            assert (
+                decision_payload["source_refs"]["decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank_out"]
+                == evidence_rel
+            )
+            assert (
+                decision_payload["source_refs"][
+                    "decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank_report"
+                ]
+                == report_rel
+            )
+
+
 def test_consume_l2_result_attention_separated_cluster_equivalence_uses_decoder_evidence() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
