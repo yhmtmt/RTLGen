@@ -13724,3 +13724,117 @@ def test_generate_l2_campaign_task_adds_attention_pwl_recip_lut_boundary_evidenc
             assert work_item.task_request.request_payload["developer_loop"]["abstraction"] == {
                 "layer": "decoder_attention_pwl_recip_lut_boundary",
             }
+
+
+def test_generate_l2_campaign_task_adds_cluster_sram_gqa8_equivalence_evidence() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id=(
+                        "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_"
+                        "equivalence_llama7b_v1"
+                    ),
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    proposal_id=(
+                        "prop_l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_"
+                        "equivalence_llama7b_v1"
+                    ),
+                    proposal_path=(
+                        "docs/proposals/"
+                        "prop_l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_"
+                        "equivalence_llama7b_v1/proposal.json"
+                    ),
+                    abstraction_layer=(
+                        "decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence"
+                    ),
+                    evaluation_mode="frontier_detail",
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            commands = work_item.task_request.request_payload["task"]["commands"]
+            command_names = [command["name"] for command in commands]
+            decoder_inputs = work_item.input_manifest["decoder_contract"]
+            expected_outputs = work_item.task_request.request_payload["task"]["expected_outputs"]
+            acceptance = work_item.task_request.request_payload["task"]["acceptance"]
+            run = commands[0]["run"]
+
+            assert command_names == [
+                "probe_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence",
+                "validate_runs",
+            ]
+            assert (
+                "systemd-run --user --scope -p MemoryHigh=6G -p MemoryMax=8G "
+                "-p CPUQuota=300% -p TasksMax=512"
+            ) in run
+            assert (
+                "python3 npu/eval/probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8.py"
+                in run
+            )
+            assert (
+                "runs/designs/npu_blocks/"
+                "attention_score32_exact_local16_global_tree_cluster_sram_gqa8_p54x8_p53x8_c16_r2_l8_b59/"
+                "config.json"
+            ) in run
+            assert "--timeout-sec 900" in run
+            assert "--root-ready-pattern 1,1,0,1" in run
+            assert "--out " in run
+            assert "--out-md " in run
+            assert (
+                "--proposal-id "
+                "prop_l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_"
+                "equivalence_llama7b_v1"
+            ) in run
+            assert (
+                "--proposal-path docs/proposals/"
+                "prop_l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_"
+                "equivalence_llama7b_v1/proposal.json"
+            ) in run
+            assert decoder_inputs[
+                "attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_config"
+            ].endswith(
+                "attention_score32_exact_local16_global_tree_cluster_sram_gqa8_p54x8_p53x8_c16_r2_l8_b59/config.json"
+            )
+            assert decoder_inputs[
+                "attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_out"
+            ].endswith(
+                "decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence__"
+                "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_"
+                "equivalence_llama7b_v1.json"
+            )
+            assert decoder_inputs[
+                "attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_report"
+            ].endswith(
+                "decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence__"
+                "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_"
+                "equivalence_llama7b_v1.md"
+            )
+            assert expected_outputs == [
+                decoder_inputs[
+                    "attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_out"
+                ],
+                decoder_inputs[
+                    "attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_report"
+                ],
+            ]
+            assert work_item.expected_outputs == expected_outputs
+            assert acceptance == work_item.acceptance_rules
+            assert any("passed=true" in rule and "classification=passed" in rule for rule in acceptance)
+            assert any("producer_handshake_count=8192" in rule for rule in acceptance)
+            assert any("cluster_summaries" in rule and "errors=0" in rule for rule in acceptance)
+            assert any("full_row_audit.passed=true" in rule for rule in acceptance)
+            assert work_item.task_request.request_payload["task"]["inputs"]["decoder_contract"] == decoder_inputs
+            assert work_item.task_request.request_payload["source_requirement"]["required_sha"] == source_commit

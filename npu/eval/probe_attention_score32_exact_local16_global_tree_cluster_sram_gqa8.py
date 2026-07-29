@@ -1062,6 +1062,15 @@ def _render_text(report: JsonDict) -> str:
     )
 
 
+def _render_json(report: JsonDict) -> str:
+    return json.dumps(report, indent=2, sort_keys=True)
+
+
+def _write_output(path: Path, body: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(body + ("" if body.endswith("\n") else "\n"), encoding="utf-8")
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", type=Path)
@@ -1069,6 +1078,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--timeout-sec", type=int, default=DEFAULT_SUBPROCESS_TIMEOUT_SEC)
     parser.add_argument("--proposal-id", type=str)
     parser.add_argument("--proposal-path", type=str)
+    parser.add_argument("--out", type=Path)
+    parser.add_argument("--out-md", type=Path)
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args(argv)
     config = build_default_config() if args.config is None else json.loads(args.config.read_text(encoding="utf-8"))
@@ -1080,7 +1091,13 @@ def main(argv: list[str] | None = None) -> int:
         proposal_id=str(args.proposal_id or "").strip() or None,
         proposal_path=str(args.proposal_path or "").strip() or None,
     )
-    print(json.dumps(report, indent=2, sort_keys=True) if args.json else _render_text(report))
+    rendered_json = _render_json(report)
+    rendered_text = _render_text(report)
+    if args.out is not None:
+        _write_output(args.out, rendered_json)
+    if args.out_md is not None:
+        _write_output(args.out_md, rendered_text)
+    print(rendered_json if args.json else rendered_text)
     return 0 if report["passed"] else 1
 
 
