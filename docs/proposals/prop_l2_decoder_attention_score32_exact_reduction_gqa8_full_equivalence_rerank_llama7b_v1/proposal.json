@@ -1,0 +1,54 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank_llama7b_v1",
+  "created_utc": "2026-07-29T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Score32 exact-reduction rerank after full GQA8 equivalence closure",
+  "abstraction_layer": "decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank",
+  "hypothesis": "Once the exact reduction schedule correction and both one-group and four-group full GQA8 equivalence proofs are present, the quality-aware score32 HBM-controller-PPA frontier can be recosted without reusing the obsolete 141-cycle reduction term or overclaiming full-array PPA closure.",
+  "direct_comparison": {
+    "primary_question": "Does the quality-aware score32 frontier remain the best precision-safe throughput point after exact reduction recost and full GQA8 functional closure?",
+    "include": [
+      "consume the materialized score32 exact-reduction recost artifact",
+      "consume the latest quality-aware HBM-controller-PPA integrated frontier artifact",
+      "require successful one-group and four-group full GQA8 equivalence evidence",
+      "preserve throughput, energy, area, and precision dimensions",
+      "reject missing, failed, or mismatched prerequisite evidence"
+    ],
+    "exclude": [
+      "new RTL synthesis or dispatch",
+      "retroactive mutation of historical frontier evidence",
+      "claiming full-array postroute power or vendor HBM current signoff"
+    ]
+  },
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Recost and rerank the quality-aware score32 frontier after exact reduction correction and one-/four-group full GQA8 equivalence closure.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank",
+      "comparison_role": "score32_exact_reduction_gqa8_full_equivalence_rerank",
+      "paired_baseline_item_id": "l2_decoder_attention_score32_quality_aware_hbm_controller_replay_rtl_ppa_recost_frontier_llama7b_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1",
+        "l2_decoder_attention_score32_quality_aware_hbm_controller_replay_rtl_ppa_recost_frontier_llama7b_v1",
+        "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1_r7",
+        "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "record_score32_exact_reduction_gqa8_full_equivalence_rerank",
+        "reason": "Use exact reduction and full GQA8 equivalence prerequisites to replace the obsolete reduction latency term without double-counting."
+      },
+      "status": "ready_to_dispatch_after_implementation_merge"
+    }
+  ],
+  "remaining_abstractions_after_this_step": [
+    "The full 16-cluster score32 composition still lacks postroute aggregate PPA and toggle-power closure.",
+    "HBM controller replay energy remains measured at controller scope rather than vendor HBM current signoff.",
+    "NoC/SRAM energy for the full score32 composition remains inherited/profile-scaled rather than directly measured from the full-array RTL."
+  ]
+}

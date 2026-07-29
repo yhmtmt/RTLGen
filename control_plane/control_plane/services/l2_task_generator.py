@@ -6388,6 +6388,64 @@ def _decoder_attention_score32_exact_reduction_recost_evidence(*, item_id: str) 
     }
 
 
+def _decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank_evidence(
+    *,
+    item_id: str,
+) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    exact_reduction_json = (
+        f"{base}/decoder_attention_score32_exact_reduction_recost__"
+        "l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1.json"
+    )
+    quality_aware_frontier_json = (
+        f"{base}/decoder_attention_score32_integrated_frontier_ranking__"
+        "l2_decoder_attention_score32_quality_aware_hbm_controller_replay_rtl_ppa_recost_frontier_llama7b_v1.json"
+    )
+    one_group_equivalence_json = (
+        f"{base}/decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence__"
+        "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1_r7.json"
+    )
+    four_group_equivalence_json = (
+        f"{base}/decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence__"
+        "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1.json"
+    )
+    out = f"{base}/decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank__{item_id}.json"
+    report = f"{base}/decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank__{item_id}.md"
+    return {
+        "inputs": {
+            "attention_score32_exact_reduction_recost_json": exact_reduction_json,
+            "attention_score32_quality_aware_frontier_json": quality_aware_frontier_json,
+            "attention_score32_one_group_gqa8_equivalence_json": one_group_equivalence_json,
+            "attention_score32_four_group_gqa8_equivalence_json": four_group_equivalence_json,
+            "attention_score32_exact_reduction_gqa8_full_equivalence_rerank_out": out,
+            "attention_score32_exact_reduction_gqa8_full_equivalence_rerank_report": report,
+            "attention_score32_exact_reduction_gqa8_full_equivalence_rerank_scope": (
+                "Rerank the quality-aware score32 HBM-controller-PPA frontier with the exact banked reduction "
+                "latency correction only after both one-group and four-group full GQA8 composed equivalence have "
+                "passed. Preserve throughput, energy, area, and precision dimensions, reject missing or "
+                "mismatched evidence, and do not double-count the obsolete reduction term."
+            ),
+        },
+        "commands": [
+            {
+                "name": "audit_decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank",
+                "run": (
+                    "python3 "
+                    "npu/eval/audit_llm_decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank.py "
+                    f"--exact-reduction-json {exact_reduction_json} "
+                    f"--quality-aware-frontier-json {quality_aware_frontier_json} "
+                    f"--one-group-equivalence-json {one_group_equivalence_json} "
+                    f"--four-group-equivalence-json {four_group_equivalence_json} "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            }
+        ],
+        "expected_outputs": [out, report],
+        "evidence_only": True,
+    }
+
+
 def _decoder_attention_score32_compute_activity_energy_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_score32_compute_activity_energy__{item_id}.json"
@@ -11618,6 +11676,7 @@ def _build_payload(
         "decoder_attention_score32_integrated_frontier_ranking",
         "decoder_attention_score32_schedule_wrapper_postroute_activity_power",
         "decoder_attention_score32_exact_reduction_recost",
+        "decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank",
         "decoder_attention_score32_compute_activity_energy",
         "decoder_attention_score32_separated_compute_recost",
         "decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence",
@@ -11925,6 +11984,10 @@ def _build_payload(
             )
         elif abstraction_layer_name == "decoder_attention_score32_exact_reduction_recost":
             decoder_evidence = _decoder_attention_score32_exact_reduction_recost_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank":
+            decoder_evidence = _decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank_evidence(
+                item_id=item_id
+            )
         elif abstraction_layer_name == "decoder_attention_score32_compute_activity_energy":
             decoder_evidence = _decoder_attention_score32_compute_activity_energy_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_score32_separated_compute_recost":

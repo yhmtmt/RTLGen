@@ -583,6 +583,10 @@ _DECODER_EVIDENCE_OUTPUT_KEYS: tuple[tuple[str, str], ...] = (
         "attention_score32_compute_activity_energy_report",
     ),
     (
+        "attention_score32_exact_reduction_gqa8_full_equivalence_rerank_out",
+        "attention_score32_exact_reduction_gqa8_full_equivalence_rerank_report",
+    ),
+    (
         "attention_score32_separated_compute_recost_out",
         "attention_score32_separated_compute_recost_report",
     ),
@@ -2010,6 +2014,44 @@ def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, 
             "old_full_wrapper_area_um2",
             "old_full_wrapper_power_mw",
             "recommended_next_step",
+            "remaining_abstractions",
+        ):
+            if key in diagnosis_dict:
+                parts.append(f"{key}={diagnosis_dict.get(key)}")
+        summary = "; ".join(parts)
+        return outcome, summary if summary.endswith(".") else summary + "."
+
+    if model == "llm_decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank_v1":
+        diagnosis = evidence_payload.get("diagnosis")
+        diagnosis_dict = dict(diagnosis) if isinstance(diagnosis, dict) else {}
+        outcome = str(
+            diagnosis_dict.get("decision")
+            or evidence_payload.get("decision")
+            or "score32_exact_reduction_gqa8_full_equivalence_frontier_recorded"
+        )
+        parts = [
+            f"Decoder score32 exact-reduction full-GQA8 rerank recorded from {evidence_ref}: decision={outcome}",
+        ]
+        for key in (
+            "best_latency_candidate",
+            "best_energy_candidate",
+            "best_precision_safe_candidate",
+            "best_precision_safe_energy_candidate",
+            "score32_latency_us",
+            "score32_token_throughput_per_s",
+            "score32_total_energy_mj_per_token",
+            "score32_total_energy_mj_per_token_lower_bound",
+            "score32_energy_estimate_status",
+            "exact_energy_ranking_status",
+            "score32_die_area_mm2",
+            "score32_quality_status",
+            "score32_vs_measured_fp16_throughput_ratio",
+            "score32_vs_measured_fp16_energy_ratio",
+            "exact_reduction_source_latency_us",
+            "exact_reduction_corrected_latency_us",
+            "exact_reduction_delta_latency_us",
+            "one_group_equivalence_item_id",
+            "four_group_equivalence_item_id",
             "remaining_abstractions",
         ):
             if key in diagnosis_dict:
