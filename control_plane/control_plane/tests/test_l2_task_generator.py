@@ -13794,7 +13794,7 @@ def test_generate_l2_campaign_task_adds_cluster_sram_gqa8_equivalence_evidence()
                 "python3 npu/eval/probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8.py"
                 in run
             )
-            assert "--sim-backend verilator_hierarchical" in run
+            assert "--sim-backend compositional_icarus" in run
             assert "--compile-timeout-sec 1200" in run
             assert (
                 "runs/designs/npu_blocks/"
@@ -13805,6 +13805,7 @@ def test_generate_l2_campaign_task_adds_cluster_sram_gqa8_equivalence_evidence()
             assert "--root-ready-pattern 1,1,0,1" in run
             assert "--out " in run
             assert "--out-md " in run
+            assert any("strict_generated_top_guard=passed" in rule for rule in acceptance)
             assert (
                 "--proposal-id "
                 "prop_l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_"
@@ -13922,7 +13923,7 @@ def test_generate_l2_campaign_task_adds_cluster_sram_gqa8_rotation_equivalence_e
                 "--memory-high 6G --memory-max 8G --cpu-quota 300% "
                 "--tasks-max 512 --runtime-max-sec 5100 --"
             ) in run
-            assert "--sim-backend verilator_hierarchical" in run
+            assert "--sim-backend compositional_icarus" in run
             assert "--compile-timeout-sec 1200" in run
             assert "--logical-head-groups 4" in run
             assert "--timeout-sec 3600" in run
@@ -13943,6 +13944,7 @@ def test_generate_l2_campaign_task_adds_cluster_sram_gqa8_rotation_equivalence_e
             ]
             assert any("producer_handshake_count=32768" in rule for rule in acceptance)
             assert any("completed_command_count=4" in rule for rule in acceptance)
+            assert any("strict_generated_top_guard=passed" in rule for rule in acceptance)
             assert any("report.command_ids=[33280, 33281, 33282, 33283]" in rule for rule in acceptance)
             assert work_item.input_manifest["worker_resources"] == expected_worker_resources
             assert (

@@ -10307,7 +10307,7 @@ def _decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equiv
         "--config",
         config,
         "--sim-backend",
-        "verilator_hierarchical",
+        "compositional_icarus",
         "--compile-timeout-sec",
         "1200",
         "--timeout-sec",
@@ -10334,10 +10334,10 @@ def _decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equiv
             "attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_out": out,
             "attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_report": report,
             "attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_scope": (
-                "Run the single composed GQA8 cluster-SRAM RTL equivalence probe under bounded "
-                "remote resources. Accept only a passed bounded report with exact producer/fill/"
-                "SRAM/root counts, zero protocol or sticky cluster errors, and a full structured "
-                "row audit pass across all 16 clusters plus the root stream."
+                "Run the concrete compositional GQA8 cluster-SRAM RTL equivalence probe under bounded "
+                "remote resources. Require the strict generated-top guard, concrete p54/p53 cluster "
+                "replays, and concrete global-tree simulation. Accept only exact producer/fill/SRAM/"
+                "root counts, zero protocol or sticky errors, and a full structured row audit."
             ),
         },
         "commands": [
@@ -10360,6 +10360,7 @@ def _decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equiv
         "acceptance": [
             "Write exactly the bounded JSON and Markdown probe reports declared in expected_outputs",
             "Require report passed=true, classification=passed, and counts_passed=true",
+            "Require compositional_components.strict_generated_top_guard=passed",
             (
                 "Require exact totals in report.summary: producer_handshake_count=8192, "
                 "fill_target_accept_count=128, fill_row_accept_count=262144, "
@@ -10411,7 +10412,7 @@ def _decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotat
         "--config",
         config,
         "--sim-backend",
-        "verilator_hierarchical",
+        "compositional_icarus",
         "--compile-timeout-sec",
         "1200",
         "--logical-head-groups",
@@ -10440,11 +10441,10 @@ def _decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotat
             "attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_out": out,
             "attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_report": report,
             "attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_scope": (
-                "Run the bounded remote four-head-group rotation RTL equivalence probe under exclusive "
-                "resources. Accept only a passed bounded report with exact producer/fill/SRAM/root "
-                "counts, distinct command-id and head-base metadata for 0/8/16/24, rotated p54/p53 "
-                "ownership through group_index=head_base>>3, zero protocol or sticky cluster errors, "
-                "and a full structured row audit pass across all 16 clusters plus the root stream."
+                "Run the bounded concrete compositional four-head-group RTL equivalence probe under "
+                "exclusive resources. Require the strict generated-top guard, concrete p54/p53 "
+                "cluster replays, and concrete global-tree simulation with exact producer/fill/SRAM/"
+                "root counts, rotated 0/8/16/24 ownership, zero protocol errors, and full row audits."
             ),
         },
         "commands": [
@@ -10467,6 +10467,7 @@ def _decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotat
         "acceptance": [
             "Write exactly the bounded JSON and Markdown probe reports declared in expected_outputs",
             "Require report passed=true, classification=passed, and counts_passed=true",
+            "Require compositional_components.strict_generated_top_guard=passed",
             (
                 "Require exact totals in report.summary: producer_handshake_count=32768, "
                 "fill_target_accept_count=512, fill_row_accept_count=1048576, "

@@ -17,15 +17,19 @@ container without a user bus it falls back to process-group timeout, `RLIMIT_AS`
 CPUs and the requested quota rounded to whole CPUs. In both modes, timeout,
 OOM, or other resource termination remains inconclusive.
 
-The remote job now requests `--sim-backend verilator_hierarchical` so Verilator
-can use `--binary --timing --hierarchical` with exact control-file markings for
-the generated p54 cluster, p53 cluster, and global-tree modules. This keeps the
-generated top RTL, testbench, memh sidecars, stdout contract, and structured
-row oracle unchanged while avoiding Icarus monolithic elaboration blow-up.
+The remote job requests `--sim-backend compositional_icarus`. The probe first
+runs the existing strict generated-top regeneration, wiring, ordering, and
+semantic guard. It then compiles one concrete p54 cluster and one concrete p53
+cluster, including their real producers, reducers, temporal merge, and SRAM
+endpoint, and replays those binaries with each cluster's exact sidecars. A
+separate concrete global-tree simulation consumes the 16 observed cluster row
+streams. The existing strict structured-row, count, and protocol oracle judges
+the combined result. This avoids elaborating all 856 producers at once and
+does not substitute abstract arithmetic for RTL.
 The probe also carries a distinct `--compile-timeout-sec 1200` while the
 simulation timeout remains `--timeout-sec 900`. The bounded launcher contract
 is widened to a 2400-second outer timeout and a 1500-second stall timeout so a
-quiet hierarchical compile is not misclassified as a failed simulation. Timeout,
+quiet component compile is not misclassified as a failed simulation. Timeout,
 OOM, or other resource termination remains inconclusive.
 
 See `evaluation_gate.md` for the exact remote resource and acceptance contract.
