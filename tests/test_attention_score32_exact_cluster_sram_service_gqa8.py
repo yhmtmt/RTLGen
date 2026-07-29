@@ -81,6 +81,7 @@ class ClusterSramServiceTests(unittest.TestCase):
                 self.assertEqual(service_model["response_fifo_depth_per_lane"], 1)
                 self.assertEqual(service_model["bank_reads_per_cycle"], 1)
                 self.assertEqual(service_model["schedule"]["per_group_total_blocks_per_stream"], [64, 64, 64, 64])
+                self.assertIn("blocks_same_cycle_request_grants", service_model["release_contract"])
 
                 counts = exact_local_cluster_gqa8_command_block_counts(producers=producers, group_index=0)
                 bases = exact_local_cluster_gqa8_slot_bases(producers=producers, group_index=0)
@@ -188,6 +189,35 @@ class ClusterSramServiceTests(unittest.TestCase):
         self.assertEqual(drained[0].lane, 0)
         self.assertIsNotNone(model.responses[2])
         self.assertEqual(model.counters["request_accept_count"], 2)
+
+    def test_exact_cluster_sram_service_atomic_release_blocks_same_cycle_requests(self) -> None:
+        model = _activate_model(producers=53, buffer_sel=0, command_id=21, head_base=8, wave_index=4)
+        held_requests = [(0, 0, 0), (1, 0, 1)]
+
+        released = model.step(
+            requests=held_requests,
+            release_valid=True,
+            release_buffer_sel=0,
+        )
+        self.assertEqual(released, [])
+        self.assertIsNone(model.active)
+        self.assertIsNone(model.resident[0])
+        self.assertFalse(model.release_ready(buffer_sel=0))
+        self.assertEqual(model.buffer_occupancy_rows, (0, 0))
+        self.assertEqual(model.outstanding_response_occupancy, 0)
+        self.assertEqual(model.counters["command_release_count"], 1)
+        self.assertEqual(model.counters["request_accept_count"], 0)
+        self.assertEqual(model.counters["request_stall_cycles"], len(held_requests))
+        self.assertEqual(model.counters["bank_conflict_count"], 0)
+        self.assertFalse(model.protocol_error)
+        self.assertFalse(model.command_ready(buffer_sel=0, command_id=21, head_base=8, wave_index=4))
+
+        idle = model.step(requests=held_requests)
+        self.assertEqual(idle, [])
+        self.assertEqual(model.counters["request_accept_count"], 0)
+        self.assertEqual(model.counters["request_stall_cycles"], len(held_requests) * 2)
+        self.assertEqual(model.outstanding_response_occupancy, 0)
+        self.assertFalse(model.protocol_error)
 
 
 if __name__ == "__main__":

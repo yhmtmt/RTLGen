@@ -26,6 +26,8 @@ GQA8 path. It is not a router and it does not claim SRAM macro closure.
 - arbitration is per-bank round-robin across producer-stream lanes
 - requests to different banks may be accepted in the same cycle
 - same-bank contention serializes and increments `bank_conflict_count`
+- any cycle with `command_release_valid=1` suppresses all `value_read_req_ready` grants
+- a release only succeeds when the addressed active buffer matches and no response is outstanding
 - holding `valid` while `ready` is low is legal and does not itself raise a protocol error
 - each lane has exactly one outstanding response slot; FIFO depth is `1`
 

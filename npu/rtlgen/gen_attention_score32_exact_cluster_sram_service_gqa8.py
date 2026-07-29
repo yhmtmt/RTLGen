@@ -245,6 +245,9 @@ module {top_name} (
       resident_command_id_q[command_buffer_sel] == command_id &&
       resident_head_base_q[command_buffer_sel] == command_head_base &&
       resident_wave_index_q[command_buffer_sel] == command_wave_index;
+  wire command_release_ready = command_active_q &&
+      command_release_buffer_sel == command_buffer_q &&
+      !(|lane_resp_valid_q);
   assign command_ready = !command_active_q && command_metadata_valid && command_resident_match;
 
   assign value_response_valid = lane_resp_valid_q;
@@ -289,7 +292,7 @@ module {top_name} (
     for (bank = 0; bank < BANKS; bank = bank + 1) begin
       selected_lane_r[bank] = -1;
       bank_candidate_count_r[bank] = 0;
-      if (command_active_q) begin
+      if (command_active_q && !command_release_valid) begin
         for (offset = 0; offset < LANES; offset = offset + 1) begin
           candidate = bank_rr_q[bank] + offset;
           if (candidate >= LANES)
@@ -396,7 +399,7 @@ module {top_name} (
       end
 
       if (command_release_valid) begin
-        if (!command_active_q || command_release_buffer_sel != command_buffer_q || (|lane_resp_valid_q)) begin
+        if (!command_release_ready) begin
           protocol_error_command_q <= 1'b1;
         end else begin
           command_active_q <= 1'b0;

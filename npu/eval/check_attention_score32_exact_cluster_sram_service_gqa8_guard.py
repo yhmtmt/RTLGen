@@ -143,6 +143,9 @@ def main(argv: list[str] | None = None) -> int:
         "response_accept_count_q <= response_accept_count_q + response_accept_delta_r;",
         "response_stall_cycles_q <= response_stall_cycles_q + response_stall_delta_r;",
         "request_stall_cycles_q <= request_stall_cycles_q + request_stall_delta_r;",
+        "wire command_release_ready = command_active_q &&",
+        "if (command_active_q && !command_release_valid) begin",
+        "if (!command_release_ready) begin",
         "assign command_ready = !command_active_q && command_metadata_valid && command_resident_match;",
         "assign fill_ready = fill_target_active_q;",
     )

@@ -128,6 +128,10 @@ def cluster_sram_service_manifest(*, producers: int) -> JsonDict:
         "backpressure_contract": "all_ready_valid_inputs_may_hold_valid_without_protocol_error_until_handshake",
         "fill_contract": "target_declares_buffer_command_head_group_wave_then_2048_unique_stream_slot_slice_rows",
         "residence_contract": "command_accept_requires_exact_resident_buffer_command_head_group_wave_tuple",
+        "release_contract": (
+            "command_release_valid_blocks_same_cycle_request_grants_and_only_succeeds_when_the_"
+            "active_buffer_matches_with_no_outstanding_responses"
+        ),
         "schedule": schedule,
         "counters": [
             "cycle_count",
@@ -339,6 +343,9 @@ class ClusterSramServiceModel:
         self.counters["command_release_count"] += 1
         return True
 
+    def release_ready(self, *, buffer_sel: int) -> bool:
+        return self.active is not None and self.active[0] == int(buffer_sel) and not any(self.responses)
+
     def _decode(self, lane: int, address: int, slice_index: int) -> tuple[bool, int, int, int]:
         producer = lane // STREAMS
         stream = lane % STREAMS
@@ -394,8 +401,11 @@ class ClusterSramServiceModel:
         *,
         requests: Iterable[tuple[int, int, int]] = (),
         response_ready: Iterable[int] = (),
+        release_valid: bool = False,
+        release_buffer_sel: int = 0,
     ) -> list[Response]:
         self.counters["cycle_count"] += 1
+        release_ready = self.release_ready(buffer_sel=release_buffer_sel)
         ready_set = {int(lane) for lane in response_ready}
         accepted_responses: list[Response] = []
         for lane, response in enumerate(self.responses):
@@ -407,7 +417,15 @@ class ClusterSramServiceModel:
                 self.counters["response_stall_cycles"] += 1
 
         request_by_lane = {int(lane): (int(address), int(slice_index)) for lane, address, slice_index in requests}
-        if self.active is None:
+        if release_valid:
+            if not release_ready:
+                self.errors["command"] = True
+            else:
+                self.active = None
+                self.resident[int(release_buffer_sel)] = None
+                self.occupancy[int(release_buffer_sel)] = 0
+                self.counters["command_release_count"] += 1
+        if self.active is None or release_valid:
             self.counters["request_stall_cycles"] += len(request_by_lane)
             return accepted_responses
 
