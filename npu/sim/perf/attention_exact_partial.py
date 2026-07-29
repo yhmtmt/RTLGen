@@ -1222,8 +1222,8 @@ def exact_local16_global_tree_gqa8_service_manifest(
     producer_counts = tuple(int(count) for count in cluster_producers)
     if len(producer_counts) != 16:
         raise ValueError("cluster_producers must contain exactly 16 entries")
-    if producer_counts.count(54) != 8 or producer_counts.count(53) != 8:
-        raise ValueError("cluster_producers must contain exactly eight 54s and eight 53s")
+    if producer_counts != tuple([54] * 8 + [53] * 8):
+        raise ValueError("cluster_producers must be exactly eight 54s followed by eight 53s")
     if int(waves) != LOCAL_TEMPORAL_WAVES:
         raise ValueError(f"waves must be exactly {LOCAL_TEMPORAL_WAVES}")
     if int(head_groups) < 1 or int(head_groups) > 4:
@@ -1245,6 +1245,7 @@ def exact_local16_global_tree_gqa8_service_manifest(
         "clusters_with_54_producers": 8,
         "clusters_with_53_producers": 8,
         "total_local_producers": sum(producer_counts),
+        "total_value_memory_lanes": 2 * sum(producer_counts),
         "persistent_waves": LOCAL_TEMPORAL_WAVES,
         "query_head_groups": int(head_groups),
         "query_heads_per_group": 8,
@@ -1255,12 +1256,18 @@ def exact_local16_global_tree_gqa8_service_manifest(
         "partial_link_bits_per_beat": PARTIAL_LINK_BITS,
         "final_payload_bits_per_beat": FINAL_PAYLOAD_BITS,
         "final_link_bits_per_beat": FINAL_LINK_BITS,
-        "command_head_contract": "explicit_group_major_head_base_sequence_preserved_through_local_and_global_exact_merge",
+        "command_head_contract": "one_shared_atomic_wave_command_id_head_base_multiplier_shift_across_all_16_clusters",
+        "command_block_count_contract": (
+            "derived_internally_from_head_base_with_p54_ranges_0_9_10_19_20_29_30_39_"
+            "and_p53_ranges_0_10_11_21_22_32_33_43"
+        ),
+        "producer_input_contract": "independent_flattened_query_key_ready_valid_inputs_for_all_856_producers",
+        "value_memory_contract": "independent_flattened_request_response_interfaces_for_all_1712_stream_lanes",
         "local_reduction_contract": "per_cluster_staged_exact_merge_with_odd_leaf_carry_until_single_local_root_per_beat",
         "temporal_accumulation_contract": "per_cluster_merge_local_root_into_128_banked_persistent_exact_state_for_exactly_8_waves",
         "global_reduction_contract": "sixteen_cluster_radix2_exact_merge_then_ordered_banked_finalization",
-        "comparison_baseline_contract": "python_structured_local16_global_exact_gqa8_reference",
-        "comparison_cycle_origin": "cycle0_on_first_leaf_issue_of_cluster0_group0_wave0",
+        "comparison_baseline_contract": "python_structured_full_row_producer_local16_global_exact_gqa8_reference",
+        "comparison_cycle_origin": "cycle0_on_first_atomic_wave_command_issue_across_all_16_clusters",
         "diagnostic_only_baseline": "none",
         "producer_partial_protocol": {
             "command_id_bits": 16,
@@ -1289,8 +1296,8 @@ def exact_local16_global_tree_gqa8_service_manifest(
             "per_bank_accept_interval_cycles": global_service["per_bank_accept_interval_cycles"],
         },
         "remaining_abstractions": [
-            "producer_leaf_source_open",
-            "noc_sram_transport_open",
+            "external_query_key_source_open",
+            "external_value_memory_system_open",
             "physical_ppa_open",
         ],
     }

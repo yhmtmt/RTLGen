@@ -1,8 +1,6 @@
+import copy
 import json
 from pathlib import Path
-import re
-import shutil
-import subprocess
 import sys
 
 import pytest
@@ -11,22 +9,19 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from npu.eval.probe_attention_score32_exact_local16_global_tree_gqa8 import build_report
-from npu.rtlgen.gen_attention_score32_exact_local16_global_tree_gqa8 import generate
-
-
-def _rtl_tools_available() -> bool:
-    return bool(shutil.which("iverilog") and shutil.which("vvp") and shutil.which("verilator"))
-
-
-def _tool(name: str) -> str:
-    path = shutil.which(name)
-    if path:
-        return path
-    fallback = Path("/oss-cad-suite/bin") / name
-    if fallback.exists():
-        return str(fallback)
-    raise RuntimeError(f"required tool unavailable: {name}")
+from npu.eval.probe_attention_score32_exact_local16_global_tree_gqa8 import (
+    _default_config,
+    _expected_cluster_summary_counts,
+    _hierarchy_driver_data,
+    _logical_commands,
+    _resolve_workload,
+    _testbench,
+    _wave_command_schedule,
+    compare_compositional_rows,
+    compare_full_rows,
+)
+from npu.rtlgen.gen_attention_score32_exact_local16_global_tree_gqa8 import _validate
+from npu.sim.perf.attention_exact_partial import LOCAL_TEMPORAL_WAVES
 
 
 def _config_path() -> Path:
@@ -40,247 +35,167 @@ def _config_path() -> Path:
     )
 
 
-def _load_config() -> dict[str, object]:
-    return json.loads(_config_path().read_text(encoding="utf-8"))
-
-
-def _extract_module(text: str, module_name: str) -> str:
-    match = re.search(rf"module\s+{re.escape(module_name)}\b.*?endmodule\s*", text, flags=re.DOTALL)
-    assert match is not None
-    return match.group(0)
-
-
-def _local_reducer_stub(module_name: str, producers: int) -> str:
-    return f"""/* verilator lint_off UNUSEDSIGNAL */
-/* verilator lint_off UNDRIVEN */
-module {module_name} (
-    input  wire         clk,
-    input  wire         rst_n,
-    input  wire [{producers - 1}:0] leaf_valid,
-    output wire [{producers - 1}:0] leaf_ready,
-    input  wire [{producers * 16 - 1}:0] leaf_command_id,
-    input  wire [{producers * 5 - 1}:0] leaf_head_id,
-    input  wire [{producers * 32 - 1}:0] leaf_global_max,
-    input  wire [{producers * 33 - 1}:0] leaf_exp_sum,
-    input  wire [{producers * 4 - 1}:0] leaf_slice,
-    input  wire [{producers - 1}:0] leaf_last,
-    input  wire [{producers * 328 - 1}:0] leaf_value,
-    output wire         out_valid,
-    input  wire         out_ready,
-    output wire [15:0]  out_command_id,
-    output wire [4:0]   out_head_id,
-    output wire [31:0]  out_global_max,
-    output wire [32:0]  out_exp_sum,
-    output wire [3:0]   out_slice,
-    output wire         out_last,
-    output wire [327:0] out_value,
-    output wire [2:0]   active_wave_index,
-    output wire         emitting,
-    output wire [4:0]   active_head_base,
-    output wire [6:0]   collect_beat_index,
-    output wire [6:0]   emit_beat_index,
-    output wire [31:0]  cycle_count,
-    output wire [31:0]  local_root_completed_count,
-    output wire [31:0]  temporal_merge_completed_count,
-    output wire [31:0]  emitted_beat_count,
-    output wire [31:0]  completed_command_count,
-    output wire [31:0]  local_stall_cycles,
-    output wire [31:0]  output_stall_cycles,
-    output wire         group_contract_error,
-    output wire         local_tree_protocol_error,
-    output wire         temporal_merge_protocol_error,
-    output wire         protocol_error
-);
-endmodule
-/* verilator lint_on UNDRIVEN */
-/* verilator lint_on UNUSEDSIGNAL */
-"""
-
-
-def _global_tree_stub(module_name: str) -> str:
-    return f"""/* verilator lint_off UNUSEDSIGNAL */
-/* verilator lint_off UNDRIVEN */
-module {module_name} (
-    input  wire         clk,
-    input  wire         rst_n,
-    input  wire [15:0]  leaf_valid,
-    output wire [15:0]  leaf_ready,
-    input  wire [255:0] leaf_command_id,
-    input  wire [79:0]  leaf_head_id,
-    input  wire [511:0] leaf_global_max,
-    input  wire [527:0] leaf_exp_sum,
-    input  wire [63:0]  leaf_slice,
-    input  wire [15:0]  leaf_last,
-    input  wire [5247:0] leaf_value,
-    output wire         root_valid,
-    input  wire         root_ready,
-    output wire [15:0]  root_command_id,
-    output wire [4:0]   root_head_id,
-    output wire [3:0]   root_slice,
-    output wire         root_last,
-    output wire [319:0] root_value,
-    output wire [31:0]  cycle_count,
-    output wire [31:0]  root_completed_count,
-    output wire [31:0]  finalizer_accepted_count,
-    output wire [31:0]  tree_root_completed_count,
-    output wire [31:0]  order_fifo_occupancy,
-    output wire [31:0]  order_fifo_high_watermark,
-    output wire [31:0]  order_enqueued_count,
-    output wire [31:0]  order_dequeued_count,
-    output wire [31:0]  dispatch_stall_cycles,
-    output wire [31:0]  dispatch_bank_id,
-    output wire [31:0]  head_bank_id,
-    output wire [479:0] node_completed_count,
-    output wire [127:0] stage_completed_count,
-    output wire [14:0]  node_protocol_error,
-    output wire [3:0]   stage_protocol_error,
-    output wire [58:0]  bank_protocol_error,
-    output wire [58:0]  bank_outstanding,
-    output wire         tree_protocol_error,
-    output wire         order_protocol_error,
-    output wire         finalizer_protocol_error,
-    output wire         protocol_error
-);
-endmodule
-/* verilator lint_on UNDRIVEN */
-/* verilator lint_on UNUSEDSIGNAL */
-"""
-
-
-@pytest.mark.skipif(not _rtl_tools_available(), reason="RTL tools unavailable")
-def test_local16_global_tree_manifest_and_verilator_lint(tmp_path: Path) -> None:
-    config = _load_config()
-    generate(config, tmp_path / "rtl")
-
-    manifest = json.loads(
-        (tmp_path / "rtl" / "attention_score32_exact_local16_global_tree_gqa8_manifest.json").read_text(
-            encoding="utf-8"
-        )
-    )
-    top_text = (tmp_path / "rtl" / "top.v").read_text(encoding="utf-8")
-
-    assert manifest["clusters"] == 16
-    assert manifest["cluster_producers"] == [54] * 8 + [53] * 8
-    assert manifest["clusters_with_54_producers"] == 8
-    assert manifest["clusters_with_53_producers"] == 8
-    assert manifest["total_local_producers"] == 856
-    assert manifest["divider_lanes"] == 8
-    assert manifest["finalizer_banks"] == 59
-    assert manifest["result_interface"] == (
-        "packed_856_leaf_exact_partial_inputs_to_c16_ordered_banked_exact_finalized_root_stream"
-    )
-    assert manifest["interface_adaptation"] == {
-        "top_leaf_partitioning": "direct_flat_packed_leaf_buses_partitioned_by_cluster_leaf_base_indices",
-        "local_to_global_leaf_mapping": (
-            "direct_ready_valid_command_id_head_id_global_max_exp_sum_slice_last_value_mapping_without_field_remap"
-        ),
-        "finalized_output_semantics": (
-            "existing_c16_banked_tree_root_contract_consumes_global_max_and_exp_sum_and_emits_finalized_values_only"
-        ),
-    }
-    assert manifest["remaining_abstractions"] == [
-        "producer_leaf_source_open",
-        "noc_sram_transport_open",
-        "physical_ppa_open",
+def _sample_rows() -> list[dict[str, object]]:
+    return [
+        {
+            "command_id": 0x8200,
+            "head_id": 3,
+            "slice": 7,
+            "last": False,
+            "global_max": -11,
+            "exp_sum": 991,
+            "value": [3, -2, 7, 0, 19, -5, 4, 8],
+        },
+        {
+            "command_id": 0x8200,
+            "head_id": 3,
+            "slice": 8,
+            "last": False,
+            "global_max": -8,
+            "exp_sum": 1012,
+            "value": [4, -1, 8, 1, 20, -4, 5, 9],
+        },
     ]
-    assert manifest["service_model"]["query_head_groups"] == 1
-    assert manifest["linked_proposal_id"] == "prop_l1_decoder_attention_score32_exact_local16_global_tree_gqa8_v1"
-    assert manifest["linked_proposal_path"].endswith("/proposal.json")
-    assert manifest["submodule_manifests"]["cluster_instance_counts"] == {"p54": 8, "p53": 8}
-    assert manifest["submodule_manifests"]["local_temporal_reducer_p54"]["producers"] == 54
-    assert manifest["submodule_manifests"]["local_temporal_reducer_p53"]["producers"] == 53
-    assert manifest["submodule_manifests"]["banked_tree"]["clusters"] == 16
-    assert manifest["submodule_manifests"]["banked_tree"]["divider_lanes"] == 8
-    assert manifest["submodule_manifests"]["banked_tree"]["finalizer_banks"] == 59
 
-    for token in (
-        "input  wire [855:0] leaf_valid,",
-        "output wire [855:0] leaf_ready,",
-        "input  wire [13695:0] leaf_command_id,",
-        "input  wire [4279:0] leaf_head_id,",
-        "input  wire [27391:0] leaf_global_max,",
-        "input  wire [28247:0] leaf_exp_sum,",
-        "input  wire [3423:0] leaf_slice,",
-        "input  wire [280767:0] leaf_value,",
-        ".leaf_valid(leaf_valid[0 +: 54])",
-        ".leaf_valid(leaf_valid[803 +: 53])",
-        ".leaf_command_id(cluster_out_command_id_w)",
-        "assign protocol_error = (|cluster_protocol_error) || global_protocol_error;",
-    ):
-        assert token in top_text
 
-    wrapper_only = tmp_path / "wrapper_only.v"
-    wrapper_only.write_text(
-        _extract_module(top_text, str(config["top_name"]))
-        + "\n\n"
-        + _local_reducer_stub(f"{config['top_name']}__local_temporal_p54", 54)
-        + "\n\n"
-        + _local_reducer_stub(f"{config['top_name']}__local_temporal_p53", 53)
-        + "\n\n"
-        + _global_tree_stub(f"{config['top_name']}__global_tree"),
-        encoding="utf-8",
+def test_full_row_comparator_accepts_exact_rows_and_rejects_one_field_mismatch() -> None:
+    expected = _sample_rows()
+    exact = compare_full_rows(expected, copy.deepcopy(expected))
+    assert exact["passed"] is True
+    assert exact["first_mismatch"] is None
+
+    mismatched = copy.deepcopy(expected)
+    mismatched[1]["exp_sum"] = 1013
+    rejected = compare_full_rows(expected, mismatched)
+    assert rejected["passed"] is False
+    assert rejected["first_mismatch"] == {
+        "row": 1,
+        "field": "exp_sum",
+        "expected": 1012,
+        "observed": 1013,
+    }
+    assert rejected["expected_hash"] != rejected["observed_hash"]
+
+
+def test_compositional_comparator_requires_all_cluster_and_root_rows() -> None:
+    cluster_rows = [[{"cluster": cluster, "value": cluster}] for cluster in range(16)]
+    root_rows = [{"command_id": 1, "head_id": 0, "slice": 0, "last": True, "value": [1] * 16}]
+    exact = compare_compositional_rows(
+        expected_cluster_rows=cluster_rows,
+        observed_cluster_rows=copy.deepcopy(cluster_rows),
+        expected_root_rows=root_rows,
+        observed_root_rows=copy.deepcopy(root_rows),
     )
+    assert exact["passed"] is True
 
-    lint = subprocess.run(
-        [
-            _tool("verilator"),
-            "--lint-only",
-            "-Wno-WIDTHEXPAND",
-            "-Wno-WIDTHTRUNC",
-            "--top-module",
-            str(config["top_name"]),
-            str(wrapper_only),
-        ],
-        capture_output=True,
-        text=True,
-        timeout=240,
+    observed_clusters = copy.deepcopy(cluster_rows)
+    observed_clusters[9][0]["value"] = -1
+    rejected = compare_compositional_rows(
+        expected_cluster_rows=cluster_rows,
+        observed_cluster_rows=observed_clusters,
+        expected_root_rows=root_rows,
+        observed_root_rows=root_rows,
     )
-    assert lint.returncode == 0, lint.stderr
+    assert rejected["passed"] is False
+    assert rejected["clusters"][9]["first_mismatch"]["field"] == "value"
 
 
-def test_local16_global_tree_rejects_invalid_cluster_distribution(tmp_path: Path) -> None:
-    config = _load_config()
+def test_hierarchy_config_rejects_any_instance_count_drift() -> None:
+    config = json.loads(_config_path().read_text(encoding="utf-8"))
+    _validate(config)
     body = config["attention_score32_exact_local16_global_tree_gqa8"]
-    assert isinstance(body, dict)
-    body["cluster_producers"] = [54] * 9 + [53] * 7
-    with pytest.raises(SystemExit, match="cluster_producers must contain exactly eight 54s and eight 53s"):
-        generate(config, tmp_path / "rtl")
+    body["cluster_producers"] = [54] * 7 + [53] * 9
+    with pytest.raises(SystemExit, match="exactly eight 54s followed by eight 53s"):
+        _validate(config)
 
 
-@pytest.mark.skipif(not _rtl_tools_available(), reason="RTL tools unavailable")
-def test_local16_global_tree_bounded_probe_matches_reference() -> None:
-    report = build_report(config=_load_config(), timeout_sec=240)
-
-    assert report["passed"] is True
-    assert report["simulation_status"] == "ok"
-    assert report["outputs"] == 128
-    assert report["expected_outputs"] == 128
-    assert report["cluster_aggregate_outputs"] == 2048
-    assert report["expected_cluster_aggregate_outputs"] == 2048
-    assert report["observed_root_hash"] == "a8e78a3e4c551fec6aeb050b92fc08d2ece9a32a06d21b2789bc1b19c5416821"
-    assert report["expected_root_hash"] == "a8e78a3e4c551fec6aeb050b92fc08d2ece9a32a06d21b2789bc1b19c5416821"
-    assert report["observed_cluster_hashes"][0] == "e69137999fe4c2b05e5cbccc4f77fba8eb40c2c03b756bef9292f2c03ba503c3"
-    assert report["summary"]["drain_cycles"] == 3268
-    assert report["summary"]["first_root_cycle"] == 3139
-    assert report["summary"]["last_root_cycle"] == 3266
-    assert report["summary"]["global_dispatch_stall_cycles"] == 0
-    assert report["summary"]["protocol_error"] == 0
-    assert report["source_links"]["proposal_id"] == "prop_l1_decoder_attention_score32_exact_local16_global_tree_gqa8_v1"
+def _cluster_producers() -> tuple[int, ...]:
+    return tuple([54] * 8 + [53] * 8)
 
 
-@pytest.mark.skipif(not _rtl_tools_available(), reason="RTL tools unavailable")
-def test_local16_global_tree_root_backpressure_probe_matches_reference() -> None:
-    report = build_report(
-        config=_load_config(),
-        output_ready_pattern=(True, False, True, True, False, True, False, True),
-        timeout_sec=240,
+def _workload(*, head_bases: tuple[int, ...] = (0,), seed: int = 29) -> dict[str, object]:
+    config = _default_config()
+    return _resolve_workload(
+        config,
+        command_count=len(head_bases),
+        head_bases=head_bases,
+        seed=seed,
     )
 
-    assert report["passed"] is True
-    assert report["simulation_status"] == "ok"
-    assert report["outputs"] == 128
-    assert report["observed_root_hash"] == "a8e78a3e4c551fec6aeb050b92fc08d2ece9a32a06d21b2789bc1b19c5416821"
-    assert max(summary["output_stall_cycles"] for summary in report["cluster_summaries"]) > 0
-    assert report["summary"]["last_root_cycle"] > report["summary"]["first_root_cycle"]
-    assert report["summary"]["global_order_protocol_error"] == 0
-    assert report["summary"]["global_finalizer_protocol_error"] == 0
+
+def test_wave_schedule_expands_each_logical_head_group_into_eight_transactions() -> None:
+    workload = _workload(head_bases=(0, 8, 16, 24))
+    logical = _logical_commands(workload)
+    waves = _wave_command_schedule(workload)
+
+    assert [command["command_id"] for command in logical] == [0x8200, 0x8201, 0x8202, 0x8203]
+    assert len(waves) == len(logical) * LOCAL_TEMPORAL_WAVES
+    for logical_index, command in enumerate(logical):
+        group_waves = waves[logical_index * LOCAL_TEMPORAL_WAVES : (logical_index + 1) * LOCAL_TEMPORAL_WAVES]
+        assert [entry["wave_index"] for entry in group_waves] == list(range(LOCAL_TEMPORAL_WAVES))
+        assert all(entry["command_id"] == command["command_id"] for entry in group_waves)
+        assert all(entry["head_base"] == command["head_base"] for entry in group_waves)
+        assert all(entry["logical_index"] == logical_index for entry in group_waves)
+
+
+def test_hierarchy_driver_populates_all_producer_and_value_lanes() -> None:
+    driver = _hierarchy_driver_data(_cluster_producers(), _workload())
+
+    assert len(driver["query_mem"]) == 856
+    assert len(driver["key_mem"]) == 856
+    assert len(driver["last_mem"]) == 856
+    assert len(driver["value_mem"]) == 1712
+    assert driver["max_beats_per_producer"] == 16
+    assert driver["max_blocks_per_producer"] == 16
+    assert all(len(stream) > 0 for stream in driver["query_mem"])
+    assert all(len(stream) > 0 for stream in driver["value_mem"])
+    assert all(limit > 0 for limit in driver["beat_limits"][-1])
+
+
+def test_hierarchy_driver_rotates_p54_and_p53_extra_blocks_by_head_group() -> None:
+    driver = _hierarchy_driver_data(_cluster_producers(), _workload(head_bases=(0, 8, 16, 24)))
+    group0 = driver["command_block_counts"][0]
+    group1 = driver["command_block_counts"][8]
+    group2 = driver["command_block_counts"][16]
+    group3 = driver["command_block_counts"][24]
+    p53_base = 8 * 54
+
+    assert group0[:10] == [2] * 10
+    assert group0[10:54] == [1] * 44
+    assert group1[10:20] == [2] * 10
+    assert group2[20:30] == [2] * 10
+    assert group3[30:40] == [2] * 10
+
+    assert group0[p53_base : p53_base + 11] == [2] * 11
+    assert group0[p53_base + 11 : p53_base + 53] == [1] * 42
+    assert group1[p53_base + 11 : p53_base + 22] == [2] * 11
+    assert group2[p53_base + 22 : p53_base + 33] == [2] * 11
+    assert group3[p53_base + 33 : p53_base + 44] == [2] * 11
+
+
+def test_cluster_summary_counts_match_group_major_wave_schedule() -> None:
+    counts = _expected_cluster_summary_counts(_workload(head_bases=(0, 8, 16, 24)))
+    assert counts == {
+        "wave_command_accept_count": 32,
+        "emitted_beat_count": 512,
+        "completed_command_count": 4,
+    }
+
+
+def test_generated_testbench_drives_real_interfaces_and_wave_schedule() -> None:
+    config = _default_config()
+    workload = _workload()
+    tb = _testbench(
+        top_name=str(config["top_name"]),
+        cluster_producers=_cluster_producers(),
+        workload=workload,
+        output_ready_pattern=(True,),
+    )
+
+    assert "localparam integer WAVE_COMMANDS = 8;" in tb
+    assert "reg [31:0] cmd_beat_limit_mem [0:WAVE_COMMANDS-1][0:TOTAL_PRODUCERS-1];" in tb
+    assert "if (rst_n && (active_command_index >= 0) && (beat_issue[producer_index] < cmd_beat_limit_mem[active_command_index][producer_index])) begin" in tb
+    assert "input_valid[producer_index] = 1'b1;" in tb
+    assert "if (value_read_req_valid[lane_index] && value_read_req_ready[lane_index]) begin" in tb
+    assert "value_response_valid[lane_index] <= 1'b1;" in tb
+    assert 'COMMAND_ACCEPT idx=%0d cmd=%0d head_base=%0d logical=%0d wave=%0d cycle=%0d' in tb

@@ -361,14 +361,20 @@ def test_exact_local16_global_tree_gqa8_service_manifest_is_consistent() -> None
     assert manifest["clusters_with_54_producers"] == 8
     assert manifest["clusters_with_53_producers"] == 8
     assert manifest["total_local_producers"] == 856
+    assert manifest["total_value_memory_lanes"] == 1712
     assert manifest["local_aggregate_beats_per_group"] == 128
     assert manifest["global_finalized_beats_per_group"] == 128
-    assert manifest["comparison_baseline_contract"] == "python_structured_local16_global_exact_gqa8_reference"
+    assert (
+        manifest["command_block_count_contract"]
+        == "derived_internally_from_head_base_with_p54_ranges_0_9_10_19_20_29_30_39_"
+        "and_p53_ranges_0_10_11_21_22_32_33_43"
+    )
+    assert manifest["comparison_baseline_contract"] == "python_structured_full_row_producer_local16_global_exact_gqa8_reference"
     assert manifest["global_tree_contract"]["divider_lanes"] == 8
     assert manifest["global_tree_contract"]["finalizer_banks"] == 59
     assert manifest["remaining_abstractions"] == [
-        "producer_leaf_source_open",
-        "noc_sram_transport_open",
+        "external_query_key_source_open",
+        "external_value_memory_system_open",
         "physical_ppa_open",
     ]
 
