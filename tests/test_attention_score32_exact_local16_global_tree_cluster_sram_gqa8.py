@@ -30,6 +30,7 @@ from npu.eval.probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa
     _fill_rows_for_wave,
     _hierarchical_module_names,
     _icarus_compile_command,
+    _parse_stdout,
     _render_text,
     _testbench,
     _verilator_control_file_text,
@@ -53,11 +54,14 @@ from npu.eval.gqa8_fine_compositional_exact import (
     BACKEND as FINE_COMPOSITIONAL_RUNNER_BACKEND,
     _check_request_metadata,
     _check_sram_responses,
+    _parse_producer,
+    _parse_reducer,
     component_module_names,
     producer_testbench,
     sram_testbench,
 )
 from npu.rtlgen.gen_attention_score32_exact_local16_global_tree_cluster_sram_gqa8 import _validate
+from npu.sim.perf.attention_exact_partial import pack_final_values, pack_numerators
 
 
 def _design_dir() -> Path:
@@ -576,6 +580,82 @@ def test_fine_compositional_request_metadata_requires_every_block_and_slice() ->
     assert rejected["passed"] is False
     assert rejected["stream"] == 0
     assert rejected["command"] == 0
+
+
+def test_fine_compositional_producer_parser_decodes_hexadecimal_value() -> None:
+    numerators = [10, 11, 12, 13, 14, 15, 26, -1]
+    packed = pack_numerators(numerators)
+    stdout = (
+        "PRODUCER_RESULT cluster=2 producer=7 cmd=33280 head=3 slice=9 "
+        f"last=0 max=-11 sum=991 value={packed:082x}\n"
+    )
+    assert any(character in f"{packed:082x}" for character in "abcdef")
+
+    rows, requests, summary = _parse_producer(stdout)
+
+    assert rows == [
+        {
+            "command_id": 33280,
+            "head_id": 3,
+            "slice": 9,
+            "last": False,
+            "global_max": -11,
+            "exp_sum": 991,
+            "value": numerators,
+        }
+    ]
+    assert requests == [[], []]
+    assert summary is None
+
+
+def test_fine_compositional_reducer_parser_decodes_hexadecimal_value() -> None:
+    numerators = [15, 14, 13, 12, 11, 10, 31, -2]
+    packed = pack_numerators(numerators)
+    stdout = (
+        "RESULT idx=0 cmd=33280 head=3 slice=9 last=1 max=-8 sum=1012 "
+        f"value={packed:082x} cycle=77\n"
+    )
+
+    rows, summary = _parse_reducer(stdout, cluster=4)
+
+    assert rows == [
+        {
+            "cluster": 4,
+            "command_id": 33280,
+            "head_id": 3,
+            "slice": 9,
+            "last": True,
+            "global_max": -8,
+            "exp_sum": 1012,
+            "value": numerators,
+        }
+    ]
+    assert summary is None
+
+
+def test_composed_stdout_parser_decodes_hexadecimal_cluster_and_root_values() -> None:
+    cluster_values = [10, 11, 12, 13, 14, 15, 26, -1]
+    root_values = [15, 14, 13, 12, 11, 10, 31, -2]
+    stdout = "\n".join(
+        [
+            (
+                "CLUSTER_RESULT cluster=2 cmd=33280 head=3 slice=9 last=0 max=-11 sum=991 "
+                f"value={pack_numerators(cluster_values):082x} cycle=44"
+            ),
+            (
+                "ROOT_RESULT cmd=33280 head=3 slice=9 last=1 "
+                f"value={pack_final_values(root_values):016x} cycle=77"
+            ),
+        ]
+    )
+
+    summary, cluster_summaries, cluster_rows, root_rows, timeout_cycle = _parse_stdout(stdout)
+
+    assert summary == {}
+    assert cluster_summaries == []
+    assert cluster_rows[2][0]["value"] == cluster_values
+    assert root_rows[0]["value"] == root_values
+    assert timeout_cycle is None
 
 
 def test_fine_compositional_sram_audit_checks_metadata_data_and_tag() -> None:
