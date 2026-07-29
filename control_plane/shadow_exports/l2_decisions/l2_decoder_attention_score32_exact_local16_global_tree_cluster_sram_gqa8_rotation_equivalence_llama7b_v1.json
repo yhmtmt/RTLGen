@@ -1,0 +1,469 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-07-29T07:43:23.841576Z",
+  "item_id": "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1",
+  "run_key": "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1_run_0f84db5a230c6295",
+  "layer": "layer2",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l2_campaign",
+  "source_commit": "c2557fcbd4f09e6be70296988e6c28a0dbeeb38a",
+  "review_metadata_source_commit": "c2557fcbd4f09e6be70296988e6c28a0dbeeb38a",
+  "objective": "Run the bounded remote RTL/perf equivalence gate for the four-head-group rotation of the composed score32 GQA8 producer, cluster-SRAM, local-reducer, and finalized-tree path.",
+  "input_manifest": {
+    "decoder_contract": {
+      "attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence__l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1.json",
+      "attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_scope": "Run the bounded fine-grained concrete compositional four-head-group RTL equivalence probe under exclusive resources. Require the strict generated-top guard, serial exact single-producer replays, concrete p54/p53 SRAM endpoint and reducer/temporal-merge replays, and concrete global-tree simulation with exact producer/fill/SRAM/root counts, rotated 0/8/16/24 ownership, zero protocol errors, and full row audits.",
+      "attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_config": "runs/designs/npu_blocks/attention_score32_exact_local16_global_tree_cluster_sram_gqa8_p54x8_p53x8_c16_r2_l8_b59/config.json",
+      "attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence__l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1.md"
+    },
+    "worker_resources": {
+      "cpu_quota": "300%",
+      "tasks_max": 512,
+      "memory_max": "8G",
+      "memory_high": "6G",
+      "exclusive_worker": true,
+      "outer_timeout_seconds": 7200,
+      "stall_timeout_seconds": 1500
+    }
+  },
+  "recommendation": {
+    "source": "decoder_evidence",
+    "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence__l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1.json",
+    "arch_id": "decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence",
+    "macro_mode": "evidence_only",
+    "outcome": "decoder_evidence_recorded"
+  },
+  "objective_profiles": [],
+  "evaluation_record": {
+    "proposal_id": "prop_l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1",
+    "title": "Four-head-group rotation equivalence for composed score32 GQA8 cluster-SRAM hierarchy",
+    "primary_question": "Does the composed producer-to-SRAM-to-finalized-tree RTL path remain exact when the four logical head groups run sequentially for 32 wave commands with rotated command/head metadata and group-specific block ownership?",
+    "evaluation_mode": "frontier_detail",
+    "comparison_role": "equivalence_check",
+    "abstraction_layer": "decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence",
+    "expected_direction": "prove_four_group_rotation_equivalence_or_diagnose",
+    "expected_reason": "The full Llama7B score32 hierarchy should not be recosted from a single-head-group proof alone.",
+    "summary": "Decoder evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence__l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1.json: decision=decoder_evidence_recorded.",
+    "outcome": "decoder_evidence_recorded",
+    "expectation_status": "unspecified"
+  },
+  "proposal_assessment": {
+    "proposal_id": "prop_l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1",
+    "title": "Four-head-group rotation equivalence for composed score32 GQA8 cluster-SRAM hierarchy",
+    "kind": "architecture",
+    "primary_question": "Does the composed producer-to-SRAM-to-finalized-tree RTL path remain exact when the four logical head groups run sequentially for 32 wave commands with rotated command/head metadata and group-specific block ownership?",
+    "evaluation_mode": "frontier_detail",
+    "comparison_role": "equivalence_check",
+    "outcome": "decoder_evidence_recorded",
+    "summary": "Decoder evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence__l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1.json: decision=decoder_evidence_recorded.",
+    "baseline_ref": null,
+    "baseline_item_id": null,
+    "matched_row_count": 0,
+    "matched_rows": [],
+    "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence__l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1.json",
+    "decoder_quality": {
+      "diagnosis": {},
+      "passed": true,
+      "classification": "passed",
+      "counts_passed": true,
+      "summary": {
+        "cadence_command_accept_count": 32,
+        "cluster_row_count": 8192,
+        "command_accept_count": 32,
+        "drain_cycles": 745,
+        "fill_row_accept_count": 1048576,
+        "fill_target_accept_count": 512,
+        "first_root_cycle": 63,
+        "last_root_cycle": 744,
+        "producer_handshake_count": 32768,
+        "protocol_error": 0,
+        "root_row_count": 512,
+        "sram_request_accept_count": 1048576,
+        "sram_response_accept_count": 1048576
+      },
+      "compositional_components": {
+        "avoided_modules": [
+          "p54_cluster_wrapper",
+          "p53_cluster_wrapper"
+        ],
+        "compiled_modules": [
+          "p54_producer",
+          "p53_producer",
+          "p54_reducer",
+          "p53_reducer",
+          "p54_sram",
+          "p53_sram",
+          "global_tree"
+        ],
+        "global_counts": {
+          "counts_passed": true,
+          "finalizer_accepted_count": 512,
+          "root_completed_count": 512,
+          "tree_root_completed_count": 512
+        },
+        "global_sidecar": {
+          "global_row_words": 8192,
+          "numerator_bits": 41,
+          "numerator_lanes": 8,
+          "row_bits": 419,
+          "rows_per_cluster": 512,
+          "value_offset": 91,
+          "value_packing": "canonical_pack_numerators"
+        },
+        "global_tree_simulations": 1,
+        "producer_replay_parallelism": 1,
+        "producer_replays": 856,
+        "proof": "fine_grained_concrete_rtl_composition",
+        "reducer_replays": 16,
+        "sram_endpoint_replays": 16,
+        "strict_generated_top_guard": "passed"
+      },
+      "full_row_audit": {
+        "clusters": [
+          {
+            "expected_hash": "899e62d335276744daf65fa6a07762efc5a827b49a1c84fd5b8150279bf059be",
+            "expected_row_count": 512,
+            "first_mismatch": null,
+            "observed_hash": "899e62d335276744daf65fa6a07762efc5a827b49a1c84fd5b8150279bf059be",
+            "observed_row_count": 512,
+            "passed": true
+          },
+          {
+            "expected_hash": "4b9d2df00b19beac47d0b66a4995d39d685612fcd529e4c12a7c40fdc7b981da",
+            "expected_row_count": 512,
+            "first_mismatch": null,
+            "observed_hash": "4b9d2df00b19beac47d0b66a4995d39d685612fcd529e4c12a7c40fdc7b981da",
+            "observed_row_count": 512,
+            "passed": true
+          },
+          {
+            "expected_hash": "d3294c24eec3d58f231afa2c7f833d9ab017e1f3aed26699290bd1d0dfdaef95",
+            "expected_row_count": 512,
+            "first_mismatch": null,
+            "observed_hash": "d3294c24eec3d58f231afa2c7f833d9ab017e1f3aed26699290bd1d0dfdaef95",
+            "observed_row_count": 512,
+            "passed": true
+          },
+          {
+            "expected_hash": "394ad136c1260feef7fbc919d94ad14119bcb66104cd6bd6ef8d53826feb38b9",
+            "expected_row_count": 512,
+            "first_mismatch": null,
+            "observed_hash": "394ad136c1260feef7fbc919d94ad14119bcb66104cd6bd6ef8d53826feb38b9",
+            "observed_row_count": 512,
+            "passed": true
+          },
+          {
+            "expected_hash": "5cb56413cbef8a60ff1c3bec55ce7a2a5861c2124d0e0fcd6c824d96685f5752",
+            "expected_row_count": 512,
+            "first_mismatch": null,
+            "observed_hash": "5cb56413cbef8a60ff1c3bec55ce7a2a5861c2124d0e0fcd6c824d96685f5752",
+            "observed_row_count": 512,
+            "passed": true
+          },
+          {
+            "expected_hash": "a1271b3bb2ade3532399df67162fc698958271545771d8f450408071e125fe81",
+            "expected_row_count": 512,
+            "first_mismatch": null,
+            "observed_hash": "a1271b3bb2ade3532399df67162fc698958271545771d8f450408071e125fe81",
+            "observed_row_count": 512,
+            "passed": true
+          },
+          {
+            "expected_hash": "56c952b8052da077c26797ce4da6b29876410747ee43da6921d16c2c1ea695a9",
+            "expected_row_count": 512,
+            "first_mismatch": null,
+            "observed_hash": "56c952b8052da077c26797ce4da6b29876410747ee43da6921d16c2c1ea695a9",
+            "observed_row_count": 512,
+            "passed": true
+          },
+          {
+            "expected_hash": "a310e7f606027298866efaa1d9a943b0f7aa50682d039bc0028056afdf56f13b",
+            "expected_row_count": 512,
+            "first_mismatch": null,
+            "observed_hash": "a310e7f606027298866efaa1d9a943b0f7aa50682d039bc0028056afdf56f13b",
+            "observed_row_count": 512,
+            "passed": true
+          },
+          {
+            "expected_hash": "5878d126f8c809eb14e1dc2524bd3f709b2b1ddf78e96a9d2b3250e327336b42",
+            "expected_row_count": 512,
+            "first_mismatch": null,
+            "observed_hash": "5878d126f8c809eb14e1dc2524bd3f709b2b1ddf78e96a9d2b3250e327336b42",
+            "observed_row_count": 512,
+            "passed": true
+          },
+          {
+            "expected_hash": "1125c42dea5aebdf42f9c6d5e5d15a6dcac28d190d3e9741253cbbe56209f01b",
+            "expected_row_count": 512,
+            "first_mismatch": null,
+            "observed_hash": "1125c42dea5aebdf42f9c6d5e5d15a6dcac28d190d3e9741253cbbe56209f01b",
+            "observed_row_count": 512,
+            "passed": true
+          },
+          {
+            "expected_hash": "a31a96e313587c09155e18a2e905b4549a23d60f92928029b9502400022e7ded",
+            "expected_row_count": 512,
+            "first_mismatch": null,
+            "observed_hash": "a31a96e313587c09155e18a2e905b4549a23d60f92928029b9502400022e7ded",
+            "observed_row_count": 512,
+            "passed": true
+          },
+          {
+            "expected_hash": "9ff83278707e9584f66c37dec876bc2163b4e205a52580019f8217bac061d0a6",
+            "expected_row_count": 512,
+            "first_mismatch": null,
+            "observed_hash": "9ff83278707e9584f66c37dec876bc2163b4e205a52580019f8217bac061d0a6",
+            "observed_row_count": 512,
+            "passed": true
+          },
+          {
+            "expected_hash": "60ea2374cb37f4caad2d6c15f660bd8a02216794dae4d300a2c4b0b9ab72d801",
+            "expected_row_count": 512,
+            "first_mismatch": null,
+            "observed_hash": "60ea2374cb37f4caad2d6c15f660bd8a02216794dae4d300a2c4b0b9ab72d801",
+            "observed_row_count": 512,
+            "passed": true
+          },
+          {
+            "expected_hash": "564ad8e0d2510be6939daae4949ae36910568e7852c1d70495b78d2b023d8a86",
+            "expected_row_count": 512,
+            "first_mismatch": null,
+            "observed_hash": "564ad8e0d2510be6939daae4949ae36910568e7852c1d70495b78d2b023d8a86",
+            "observed_row_count": 512,
+            "passed": true
+          },
+          {
+            "expected_hash": "f5808f7bd122921de235b99e32f923010da2f49bd5ef79f86eabfd40815a8097",
+            "expected_row_count": 512,
+            "first_mismatch": null,
+            "observed_hash": "f5808f7bd122921de235b99e32f923010da2f49bd5ef79f86eabfd40815a8097",
+            "observed_row_count": 512,
+            "passed": true
+          },
+          {
+            "expected_hash": "7077325cca6e5232ac81f85235f3a6b712f7bd602372aac9438b4e84c618815e",
+            "expected_row_count": 512,
+            "first_mismatch": null,
+            "observed_hash": "7077325cca6e5232ac81f85235f3a6b712f7bd602372aac9438b4e84c618815e",
+            "observed_row_count": 512,
+            "passed": true
+          }
+        ],
+        "passed": true,
+        "root": {
+          "expected_hash": "3d06a05f0b93e18d3fb91191fc50205e2790af68f902228bf2c3a686bdc82700",
+          "expected_row_count": 512,
+          "first_mismatch": null,
+          "observed_hash": "3d06a05f0b93e18d3fb91191fc50205e2790af68f902228bf2c3a686bdc82700",
+          "observed_row_count": 512,
+          "passed": true
+        }
+      }
+    }
+  },
+  "source_refs": {
+    "decoder_evidence_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence__l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1.json",
+    "decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence__l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1.json",
+    "decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence__l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1.md"
+  },
+  "decoder_quality": {
+    "diagnosis": {},
+    "passed": true,
+    "classification": "passed",
+    "counts_passed": true,
+    "summary": {
+      "cadence_command_accept_count": 32,
+      "cluster_row_count": 8192,
+      "command_accept_count": 32,
+      "drain_cycles": 745,
+      "fill_row_accept_count": 1048576,
+      "fill_target_accept_count": 512,
+      "first_root_cycle": 63,
+      "last_root_cycle": 744,
+      "producer_handshake_count": 32768,
+      "protocol_error": 0,
+      "root_row_count": 512,
+      "sram_request_accept_count": 1048576,
+      "sram_response_accept_count": 1048576
+    },
+    "compositional_components": {
+      "avoided_modules": [
+        "p54_cluster_wrapper",
+        "p53_cluster_wrapper"
+      ],
+      "compiled_modules": [
+        "p54_producer",
+        "p53_producer",
+        "p54_reducer",
+        "p53_reducer",
+        "p54_sram",
+        "p53_sram",
+        "global_tree"
+      ],
+      "global_counts": {
+        "counts_passed": true,
+        "finalizer_accepted_count": 512,
+        "root_completed_count": 512,
+        "tree_root_completed_count": 512
+      },
+      "global_sidecar": {
+        "global_row_words": 8192,
+        "numerator_bits": 41,
+        "numerator_lanes": 8,
+        "row_bits": 419,
+        "rows_per_cluster": 512,
+        "value_offset": 91,
+        "value_packing": "canonical_pack_numerators"
+      },
+      "global_tree_simulations": 1,
+      "producer_replay_parallelism": 1,
+      "producer_replays": 856,
+      "proof": "fine_grained_concrete_rtl_composition",
+      "reducer_replays": 16,
+      "sram_endpoint_replays": 16,
+      "strict_generated_top_guard": "passed"
+    },
+    "full_row_audit": {
+      "clusters": [
+        {
+          "expected_hash": "899e62d335276744daf65fa6a07762efc5a827b49a1c84fd5b8150279bf059be",
+          "expected_row_count": 512,
+          "first_mismatch": null,
+          "observed_hash": "899e62d335276744daf65fa6a07762efc5a827b49a1c84fd5b8150279bf059be",
+          "observed_row_count": 512,
+          "passed": true
+        },
+        {
+          "expected_hash": "4b9d2df00b19beac47d0b66a4995d39d685612fcd529e4c12a7c40fdc7b981da",
+          "expected_row_count": 512,
+          "first_mismatch": null,
+          "observed_hash": "4b9d2df00b19beac47d0b66a4995d39d685612fcd529e4c12a7c40fdc7b981da",
+          "observed_row_count": 512,
+          "passed": true
+        },
+        {
+          "expected_hash": "d3294c24eec3d58f231afa2c7f833d9ab017e1f3aed26699290bd1d0dfdaef95",
+          "expected_row_count": 512,
+          "first_mismatch": null,
+          "observed_hash": "d3294c24eec3d58f231afa2c7f833d9ab017e1f3aed26699290bd1d0dfdaef95",
+          "observed_row_count": 512,
+          "passed": true
+        },
+        {
+          "expected_hash": "394ad136c1260feef7fbc919d94ad14119bcb66104cd6bd6ef8d53826feb38b9",
+          "expected_row_count": 512,
+          "first_mismatch": null,
+          "observed_hash": "394ad136c1260feef7fbc919d94ad14119bcb66104cd6bd6ef8d53826feb38b9",
+          "observed_row_count": 512,
+          "passed": true
+        },
+        {
+          "expected_hash": "5cb56413cbef8a60ff1c3bec55ce7a2a5861c2124d0e0fcd6c824d96685f5752",
+          "expected_row_count": 512,
+          "first_mismatch": null,
+          "observed_hash": "5cb56413cbef8a60ff1c3bec55ce7a2a5861c2124d0e0fcd6c824d96685f5752",
+          "observed_row_count": 512,
+          "passed": true
+        },
+        {
+          "expected_hash": "a1271b3bb2ade3532399df67162fc698958271545771d8f450408071e125fe81",
+          "expected_row_count": 512,
+          "first_mismatch": null,
+          "observed_hash": "a1271b3bb2ade3532399df67162fc698958271545771d8f450408071e125fe81",
+          "observed_row_count": 512,
+          "passed": true
+        },
+        {
+          "expected_hash": "56c952b8052da077c26797ce4da6b29876410747ee43da6921d16c2c1ea695a9",
+          "expected_row_count": 512,
+          "first_mismatch": null,
+          "observed_hash": "56c952b8052da077c26797ce4da6b29876410747ee43da6921d16c2c1ea695a9",
+          "observed_row_count": 512,
+          "passed": true
+        },
+        {
+          "expected_hash": "a310e7f606027298866efaa1d9a943b0f7aa50682d039bc0028056afdf56f13b",
+          "expected_row_count": 512,
+          "first_mismatch": null,
+          "observed_hash": "a310e7f606027298866efaa1d9a943b0f7aa50682d039bc0028056afdf56f13b",
+          "observed_row_count": 512,
+          "passed": true
+        },
+        {
+          "expected_hash": "5878d126f8c809eb14e1dc2524bd3f709b2b1ddf78e96a9d2b3250e327336b42",
+          "expected_row_count": 512,
+          "first_mismatch": null,
+          "observed_hash": "5878d126f8c809eb14e1dc2524bd3f709b2b1ddf78e96a9d2b3250e327336b42",
+          "observed_row_count": 512,
+          "passed": true
+        },
+        {
+          "expected_hash": "1125c42dea5aebdf42f9c6d5e5d15a6dcac28d190d3e9741253cbbe56209f01b",
+          "expected_row_count": 512,
+          "first_mismatch": null,
+          "observed_hash": "1125c42dea5aebdf42f9c6d5e5d15a6dcac28d190d3e9741253cbbe56209f01b",
+          "observed_row_count": 512,
+          "passed": true
+        },
+        {
+          "expected_hash": "a31a96e313587c09155e18a2e905b4549a23d60f92928029b9502400022e7ded",
+          "expected_row_count": 512,
+          "first_mismatch": null,
+          "observed_hash": "a31a96e313587c09155e18a2e905b4549a23d60f92928029b9502400022e7ded",
+          "observed_row_count": 512,
+          "passed": true
+        },
+        {
+          "expected_hash": "9ff83278707e9584f66c37dec876bc2163b4e205a52580019f8217bac061d0a6",
+          "expected_row_count": 512,
+          "first_mismatch": null,
+          "observed_hash": "9ff83278707e9584f66c37dec876bc2163b4e205a52580019f8217bac061d0a6",
+          "observed_row_count": 512,
+          "passed": true
+        },
+        {
+          "expected_hash": "60ea2374cb37f4caad2d6c15f660bd8a02216794dae4d300a2c4b0b9ab72d801",
+          "expected_row_count": 512,
+          "first_mismatch": null,
+          "observed_hash": "60ea2374cb37f4caad2d6c15f660bd8a02216794dae4d300a2c4b0b9ab72d801",
+          "observed_row_count": 512,
+          "passed": true
+        },
+        {
+          "expected_hash": "564ad8e0d2510be6939daae4949ae36910568e7852c1d70495b78d2b023d8a86",
+          "expected_row_count": 512,
+          "first_mismatch": null,
+          "observed_hash": "564ad8e0d2510be6939daae4949ae36910568e7852c1d70495b78d2b023d8a86",
+          "observed_row_count": 512,
+          "passed": true
+        },
+        {
+          "expected_hash": "f5808f7bd122921de235b99e32f923010da2f49bd5ef79f86eabfd40815a8097",
+          "expected_row_count": 512,
+          "first_mismatch": null,
+          "observed_hash": "f5808f7bd122921de235b99e32f923010da2f49bd5ef79f86eabfd40815a8097",
+          "observed_row_count": 512,
+          "passed": true
+        },
+        {
+          "expected_hash": "7077325cca6e5232ac81f85235f3a6b712f7bd602372aac9438b4e84c618815e",
+          "expected_row_count": 512,
+          "first_mismatch": null,
+          "observed_hash": "7077325cca6e5232ac81f85235f3a6b712f7bd602372aac9438b4e84c618815e",
+          "observed_row_count": 512,
+          "passed": true
+        }
+      ],
+      "passed": true,
+      "root": {
+        "expected_hash": "3d06a05f0b93e18d3fb91191fc50205e2790af68f902228bf2c3a686bdc82700",
+        "expected_row_count": 512,
+        "first_mismatch": null,
+        "observed_hash": "3d06a05f0b93e18d3fb91191fc50205e2790af68f902228bf2c3a686bdc82700",
+        "observed_row_count": 512,
+        "passed": true
+      }
+    }
+  }
+}
