@@ -10,7 +10,7 @@ import re
 import shlex
 import subprocess
 from pathlib import Path
-from typing import Any
+from typing import Any, Sequence
 
 from sqlalchemy.orm import Session
 
@@ -136,6 +136,31 @@ def _repo_rel(path_text: str, repo_root: Path) -> str:
 
 def _load_json(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _bounded_launcher_command(
+    *,
+    memory_high: str | None,
+    memory_max: str | None,
+    cpu_quota: str | None,
+    tasks_max: int | None,
+    runtime_max_sec: int | None,
+    child_command: Sequence[str],
+) -> str:
+    command = ["python3", "control_plane/scripts/run_bounded_command.py"]
+    if memory_high is not None:
+        command.extend(["--memory-high", memory_high])
+    if memory_max is not None:
+        command.extend(["--memory-max", memory_max])
+    if cpu_quota is not None:
+        command.extend(["--cpu-quota", cpu_quota])
+    if tasks_max is not None:
+        command.extend(["--tasks-max", str(tasks_max)])
+    if runtime_max_sec is not None:
+        command.extend(["--runtime-max-sec", str(runtime_max_sec)])
+    command.append("--")
+    command.extend(child_command)
+    return " ".join(shlex.quote(arg) for arg in command)
 
 
 def _retry_base(item_id: str) -> str:
@@ -10276,19 +10301,29 @@ def _decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equiv
         proposal_args.extend(["--proposal-id", str(proposal_id).strip()])
     if str(proposal_path or "").strip():
         proposal_args.extend(["--proposal-path", str(proposal_path).strip()])
-    proposal_arg_text = " ".join(shlex.quote(arg) for arg in proposal_args)
-    command = (
-        "systemd-run --user --scope "
-        "-p MemoryHigh=6G -p MemoryMax=8G -p CPUQuota=300% -p TasksMax=512 "
-        "-p RuntimeMaxSec=1200 "
-        "python3 npu/eval/probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8.py "
-        f"--config {config} "
-        "--timeout-sec 900 "
-        "--root-ready-pattern 1,1,0,1 "
-        f"--out {out} "
-        f"--out-md {report} "
-        f"{proposal_arg_text}"
-    ).strip()
+    child_command = [
+        "python3",
+        "npu/eval/probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8.py",
+        "--config",
+        config,
+        "--timeout-sec",
+        "900",
+        "--root-ready-pattern",
+        "1,1,0,1",
+        "--out",
+        out,
+        "--out-md",
+        report,
+        *proposal_args,
+    ]
+    command = _bounded_launcher_command(
+        memory_high="6G",
+        memory_max="8G",
+        cpu_quota="300%",
+        tasks_max=512,
+        runtime_max_sec=1200,
+        child_command=child_command,
+    )
     return {
         "inputs": {
             "attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_config": config,
@@ -10366,20 +10401,31 @@ def _decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotat
         proposal_args.extend(["--proposal-id", str(proposal_id).strip()])
     if str(proposal_path or "").strip():
         proposal_args.extend(["--proposal-path", str(proposal_path).strip()])
-    proposal_arg_text = " ".join(shlex.quote(arg) for arg in proposal_args)
-    command = (
-        "systemd-run --user --scope "
-        "-p MemoryHigh=6G -p MemoryMax=8G -p CPUQuota=300% -p TasksMax=512 "
-        "-p RuntimeMaxSec=4500 "
-        "python3 npu/eval/probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8.py "
-        f"--config {config} "
-        "--logical-head-groups 4 "
-        "--timeout-sec 3600 "
-        "--root-ready-pattern 1,1,0,1 "
-        f"--out {out} "
-        f"--out-md {report} "
-        f"{proposal_arg_text}"
-    ).strip()
+    child_command = [
+        "python3",
+        "npu/eval/probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8.py",
+        "--config",
+        config,
+        "--logical-head-groups",
+        "4",
+        "--timeout-sec",
+        "3600",
+        "--root-ready-pattern",
+        "1,1,0,1",
+        "--out",
+        out,
+        "--out-md",
+        report,
+        *proposal_args,
+    ]
+    command = _bounded_launcher_command(
+        memory_high="6G",
+        memory_max="8G",
+        cpu_quota="300%",
+        tasks_max=512,
+        runtime_max_sec=4500,
+        child_command=child_command,
+    )
     return {
         "inputs": {
             "attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_config": config,

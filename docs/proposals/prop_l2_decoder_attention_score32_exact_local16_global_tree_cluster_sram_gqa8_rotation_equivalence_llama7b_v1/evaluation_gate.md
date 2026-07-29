@@ -11,6 +11,16 @@
   - outer runtime `4500 s`
   - stall timeout `600 s`
   - probe timeout `3600 s`
+  - launcher `control_plane/scripts/run_bounded_command.py`
+
+If a usable user `systemd` manager exists, the launcher applies the contract
+with `systemd-run --user --scope`. In evaluator containers without a user bus,
+the launcher falls back to process-group timeout, `RLIMIT_AS` for
+`MemoryMax=8G`, `RLIMIT_NPROC` for `TasksMax=512`, and a CPU-affinity ceiling
+derived from the current allowed CPUs and the requested quota rounded to whole
+CPUs (`CPUQuota=300%` becomes at most three allowed CPUs). `MemoryHigh=6G`
+stays advisory in fallback mode and is reported that way instead of claimed as
+exact cgroup enforcement.
 
 Acceptance:
 

@@ -13786,8 +13786,9 @@ def test_generate_l2_campaign_task_adds_cluster_sram_gqa8_equivalence_evidence()
                 "validate_runs",
             ]
             assert (
-                "systemd-run --user --scope -p MemoryHigh=6G -p MemoryMax=8G "
-                "-p CPUQuota=300% -p TasksMax=512 -p RuntimeMaxSec=1200"
+                "python3 control_plane/scripts/run_bounded_command.py "
+                "--memory-high 6G --memory-max 8G --cpu-quota 300% "
+                "--tasks-max 512 --runtime-max-sec 1200 --"
             ) in run
             assert (
                 "python3 npu/eval/probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8.py"
@@ -13915,8 +13916,9 @@ def test_generate_l2_campaign_task_adds_cluster_sram_gqa8_rotation_equivalence_e
                 "validate_runs",
             ]
             assert (
-                "systemd-run --user --scope -p MemoryHigh=6G -p MemoryMax=8G "
-                "-p CPUQuota=300% -p TasksMax=512 -p RuntimeMaxSec=4500"
+                "python3 control_plane/scripts/run_bounded_command.py "
+                "--memory-high 6G --memory-max 8G --cpu-quota 300% "
+                "--tasks-max 512 --runtime-max-sec 4500 --"
             ) in run
             assert "--logical-head-groups 4" in run
             assert "--timeout-sec 3600" in run
