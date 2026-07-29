@@ -10251,6 +10251,77 @@ def _decoder_producer_ranker_ready_valid_equivalence_evidence(*, item_id: str) -
     }
 
 
+def _decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_evidence(
+    *,
+    item_id: str,
+) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    config = (
+        "runs/designs/npu_blocks/"
+        "attention_score32_exact_local16_global_tree_cluster_sram_gqa8_p54x8_p53x8_c16_r2_l8_b59/"
+        "config.json"
+    )
+    out = (
+        f"{base}/decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence__"
+        f"{item_id}.json"
+    )
+    report = (
+        f"{base}/decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence__"
+        f"{item_id}.md"
+    )
+    command = (
+        "systemd-run --user --scope "
+        "-p MemoryHigh=6G -p MemoryMax=8G -p CPUQuota=300% -p TasksMax=512 "
+        "python3 npu/eval/probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8.py "
+        f"--config {config} "
+        "--timeout-sec 900 "
+        "--root-ready-pattern 1,1,0,1 "
+        f"--out {out} "
+        f"--out-md {report}"
+    )
+    return {
+        "inputs": {
+            "attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_config": config,
+            "attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_out": out,
+            "attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_report": report,
+            "attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_scope": (
+                "Run the single composed GQA8 cluster-SRAM RTL equivalence probe under bounded "
+                "remote resources. Accept only a passed bounded report with exact producer/fill/"
+                "SRAM/root counts, zero protocol or sticky cluster errors, and a full structured "
+                "row audit pass across all 16 clusters plus the root stream."
+            ),
+        },
+        "commands": [
+            {
+                "name": "probe_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence",
+                "run": command,
+            },
+        ],
+        "expected_outputs": [out, report],
+        "evidence_only": True,
+        "acceptance": [
+            "Write exactly the bounded JSON and Markdown probe reports declared in expected_outputs",
+            "Require report passed=true, classification=passed, and counts_passed=true",
+            (
+                "Require exact totals in report.summary: producer_handshake_count=8192, "
+                "fill_target_accept_count=128, fill_row_accept_count=262144, "
+                "sram_request_accept_count=262144, sram_response_accept_count=262144, "
+                "cluster_row_count=2048, root_row_count=128, command_accept_count=8, "
+                "cadence_command_accept_count=8, protocol_error=0"
+            ),
+            (
+                "Require 16 cluster_summaries with errors=0 and exact per-cluster counts: "
+                "wave_command_accept_count=8, completed_command_count=1, emitted_beat_count=128, "
+                "fill_target_accept_count=8, fill_row_accept_count=16384, request_accept_count=16384, "
+                "response_accept_count=16384, command_accept_count=8, command_release_count=8"
+            ),
+            "Require full_row_audit.passed=true for every cluster stream and the root stream",
+            "Keep evidence artifact paths repo-portable",
+            "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing",
+        ],
+    }
+
+
 def _decoder_producer_ranker_physical_wrapper_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_producer_ranker_physical_wrapper__{item_id}.json"
@@ -11245,6 +11316,7 @@ def _build_payload(
     }
     abstraction_layer_name = str(abstraction_layer or "").strip()
     evidence_only = False
+    evidence_acceptance: list[str] | None = None
     if abstraction_layer_name in {
         "decoder_probability_path",
         "decoder_probability_sweep",
@@ -11368,6 +11440,7 @@ def _build_payload(
         "decoder_attention_score32_exact_reduction_recost",
         "decoder_attention_score32_compute_activity_energy",
         "decoder_attention_score32_separated_compute_recost",
+        "decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence",
         "decoder_attention_separated_cluster_equivalence",
         "decoder_attention_hierarchical_softmax_architecture",
         "decoder_attention_two_pass_global_max_equivalence",
@@ -11678,6 +11751,12 @@ def _build_payload(
                 item_id=item_id,
                 depends_on_item_ids=depends_on_item_ids,
             )
+        elif abstraction_layer_name == "decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence":
+            decoder_evidence = (
+                _decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_evidence(
+                    item_id=item_id
+                )
+            )
         elif abstraction_layer_name == "decoder_attention_separated_cluster_equivalence":
             decoder_evidence = _decoder_attention_separated_cluster_equivalence_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_hierarchical_softmax_architecture":
@@ -11897,6 +11976,9 @@ def _build_payload(
         else:
             decoder_evidence = _decoder_probability_path_evidence(item_id=item_id)
         evidence_only = bool(decoder_evidence.get("evidence_only"))
+        candidate_acceptance = decoder_evidence.get("acceptance")
+        if isinstance(candidate_acceptance, list) and candidate_acceptance:
+            evidence_acceptance = [str(value) for value in candidate_acceptance]
         if evidence_only:
             commands = [
                 *decoder_evidence["commands"],
@@ -11924,6 +12006,8 @@ def _build_payload(
             "Keep evidence artifact paths repo-portable",
             "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing",
         ]
+    if evidence_acceptance is not None:
+        acceptance = evidence_acceptance
 
     payload = {
         "version": 0.1,

@@ -22,6 +22,7 @@ from npu.eval.probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa
     compare_full_rows,
     expected_counts,
     expected_schedule_prefix,
+    main,
 )
 from npu.rtlgen.gen_attention_score32_exact_local16_global_tree_cluster_sram_gqa8 import _validate
 
@@ -359,3 +360,56 @@ def test_checked_in_top_removes_external_value_lanes_and_enforces_fill_window() 
     assert "fill_target_head_base[(gfill * 5) +: 5] == next_expected_head_base_w" in rtl
     assert ".fill_target_valid(fill_target_valid[0] && fill_target_schedule_allowed_w[0])" in rtl
     assert "fill_target_valid[0] && (!fill_target_metadata_valid_w[0] || !fill_target_schedule_allowed_w[0])" in rtl
+
+
+def test_main_writes_bounded_json_and_markdown_reports(
+    tmp_path: Path,
+    monkeypatch: Any,
+    capsys: Any,
+) -> None:
+    fake_report = {
+        "passed": True,
+        "classification": "passed",
+        "simulation_status": "ok",
+        "summary": dict(EXPECTED_TOTALS),
+        "cluster_summaries": [{"cluster": cluster, **EXPECTED_PER_CLUSTER, "errors": 0} for cluster in range(16)],
+        "counts_passed": True,
+        "full_row_audit": {"passed": True, "clusters": [], "root": {"passed": True}},
+        "observed_cluster_hashes": ["abc"] * 16,
+        "expected_cluster_hashes": ["abc"] * 16,
+        "observed_root_hash": "root",
+        "expected_root_hash": "root",
+    }
+    fake_config = {
+        "top_name": "fake_top",
+        "attention_score32_exact_local16_global_tree_cluster_sram_gqa8": {
+            "cluster_producers": [54] * 8 + [53] * 8
+        },
+    }
+
+    monkeypatch.setattr(
+        "npu.eval.probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8.build_default_config",
+        lambda: fake_config,
+    )
+    monkeypatch.setattr(
+        "npu.eval.probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8.build_report",
+        lambda **_: fake_report,
+    )
+
+    out = tmp_path / "nested" / "probe.json"
+    out_md = tmp_path / "nested" / "probe.md"
+    exit_code = main(["--json", "--out", str(out), "--out-md", str(out_md)])
+
+    assert exit_code == 0
+    payload = json.loads(out.read_text(encoding="utf-8"))
+    assert payload["passed"] is True
+    assert payload["classification"] == "passed"
+    assert "observed_cluster_rows" not in payload
+    assert "expected_cluster_rows" not in payload
+    assert "observed_root_rows" not in payload
+    assert "expected_root_rows" not in payload
+    markdown = out_md.read_text(encoding="utf-8")
+    assert "# attention_score32_exact_local16_global_tree_cluster_sram_gqa8_probe" in markdown
+    assert "- producer_handshakes: `8192`" in markdown
+    stdout = capsys.readouterr().out
+    assert json.loads(stdout) == payload
