@@ -1044,7 +1044,7 @@ def _parse_stdout(
                     "last": bool(int(match.group(5))),
                     "global_max": int(match.group(6)),
                     "exp_sum": int(match.group(7)),
-                    "value": list(unpack_numerators(int(match.group(8)))),
+                    "value": list(unpack_numerators(int(match.group(8), 16))),
                 }
             )
         elif match := _ROOT_RESULT_RE.search(line):
@@ -1054,7 +1054,7 @@ def _parse_stdout(
                     "head_id": int(match.group(2)),
                     "slice": int(match.group(3)),
                     "last": bool(int(match.group(4))),
-                    "value": list(unpack_final_values(int(match.group(5)))),
+                    "value": list(unpack_final_values(int(match.group(5), 16))),
                 }
             )
         elif match := _SUMMARY_RE.search(line):

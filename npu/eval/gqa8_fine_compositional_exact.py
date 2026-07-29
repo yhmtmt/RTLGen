@@ -318,7 +318,7 @@ def _parse_producer(stdout: str) -> tuple[list[JsonDict], list[list[JsonDict]], 
                 "last": bool(int(match.group(6))),
                 "global_max": int(match.group(7)),
                 "exp_sum": int(match.group(8)),
-                "value": list(unpack_numerators(int(match.group(9)))),
+                "value": list(unpack_numerators(int(match.group(9), 16))),
             }
         )
     for match in _PRODUCER_REQUEST_RE.finditer(stdout):
@@ -652,7 +652,7 @@ def _parse_reducer(stdout: str, *, cluster: int) -> tuple[list[JsonDict], JsonDi
             "last": bool(int(match.group(5))),
             "global_max": int(match.group(6)),
             "exp_sum": int(match.group(7)),
-            "value": list(unpack_numerators(int(match.group(8)))),
+            "value": list(unpack_numerators(int(match.group(8), 16))),
         }
         for match in reducer_probe._RESULT_RE.finditer(stdout)
     ]
