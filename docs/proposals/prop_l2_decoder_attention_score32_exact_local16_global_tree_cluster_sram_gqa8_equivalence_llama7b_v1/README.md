@@ -17,4 +17,15 @@ container without a user bus it falls back to process-group timeout, `RLIMIT_AS`
 CPUs and the requested quota rounded to whole CPUs. In both modes, timeout,
 OOM, or other resource termination remains inconclusive.
 
+The remote job now requests `--sim-backend verilator_hierarchical` so Verilator
+can use `--binary --timing --hierarchical` with exact control-file markings for
+the generated p54 cluster, p53 cluster, and global-tree modules. This keeps the
+generated top RTL, testbench, memh sidecars, stdout contract, and structured
+row oracle unchanged while avoiding Icarus monolithic elaboration blow-up.
+The probe also carries a distinct `--compile-timeout-sec 1200` while the
+simulation timeout remains `--timeout-sec 900`. The bounded launcher contract
+is widened to a 2400-second outer timeout and a 1500-second stall timeout so a
+quiet hierarchical compile is not misclassified as a failed simulation. Timeout,
+OOM, or other resource termination remains inconclusive.
+
 See `evaluation_gate.md` for the exact remote resource and acceptance contract.

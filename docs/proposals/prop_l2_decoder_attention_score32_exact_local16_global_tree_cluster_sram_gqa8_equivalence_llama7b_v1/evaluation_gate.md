@@ -5,13 +5,15 @@
 - Required machine: `eval-daemon-b7c2d9c80c1c`
 - Required source: the merge SHA containing this proposal and task mapping
 - Physical flow: disabled
-- Subprocess timeout: 900 seconds
-- Outer job timeout: 1200 seconds
-- Stall timeout: 300 seconds
+- Compile timeout: 1200 seconds
+- Simulation timeout: 900 seconds
+- Outer job timeout: 2400 seconds
+- Stall timeout: 1500 seconds
 - Memory: `MemoryHigh=6G`, `MemoryMax=8G`
 - CPU: `CPUQuota=300%`
 - Tasks: `TasksMax=512`
 - Launcher: `control_plane/scripts/run_bounded_command.py`
+- Simulation backend: `verilator_hierarchical`
 
 If a usable user `systemd` manager exists, the launcher applies the contract
 with `systemd-run --user --scope`. In evaluator containers without a user bus,
@@ -21,6 +23,13 @@ derived from the current allowed CPUs and the requested quota rounded to whole
 CPUs (`CPUQuota=300%` becomes at most three allowed CPUs). `MemoryHigh=6G` is
 advisory and reported as unavailable in fallback mode rather than claimed as
 exact cgroup enforcement.
+
+The probe backend should be `python3 npu/eval/probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8.py --sim-backend verilator_hierarchical --compile-timeout-sec 1200 --timeout-sec 900`.
+This backend uses Verilator `--binary --timing --hierarchical` with a generated
+control file that marks exactly the generated p54 cluster, p53 cluster, and
+global-tree modules as hierarchy blocks, adds `-Wno-fatal` so warnings do not
+become false compile failures, and records separate compile/simulation timeout
+metadata in the bounded JSON report.
 
 Do not run this probe in the devcontainer.
 

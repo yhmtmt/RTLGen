@@ -10306,6 +10306,10 @@ def _decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equiv
         "npu/eval/probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8.py",
         "--config",
         config,
+        "--sim-backend",
+        "verilator_hierarchical",
+        "--compile-timeout-sec",
+        "1200",
         "--timeout-sec",
         "900",
         "--root-ready-pattern",
@@ -10321,7 +10325,7 @@ def _decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equiv
         memory_max="8G",
         cpu_quota="300%",
         tasks_max=512,
-        runtime_max_sec=1200,
+        runtime_max_sec=2400,
         child_command=child_command,
     )
     return {
@@ -10350,8 +10354,8 @@ def _decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equiv
             "memory_max": "8G",
             "cpu_quota": "300%",
             "tasks_max": 512,
-            "outer_timeout_seconds": 1200,
-            "stall_timeout_seconds": 300,
+            "outer_timeout_seconds": 2400,
+            "stall_timeout_seconds": 1500,
         },
         "acceptance": [
             "Write exactly the bounded JSON and Markdown probe reports declared in expected_outputs",
@@ -10406,6 +10410,10 @@ def _decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotat
         "npu/eval/probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8.py",
         "--config",
         config,
+        "--sim-backend",
+        "verilator_hierarchical",
+        "--compile-timeout-sec",
+        "1200",
         "--logical-head-groups",
         "4",
         "--timeout-sec",
@@ -10423,7 +10431,7 @@ def _decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotat
         memory_max="8G",
         cpu_quota="300%",
         tasks_max=512,
-        runtime_max_sec=4500,
+        runtime_max_sec=5100,
         child_command=child_command,
     )
     return {
@@ -10453,8 +10461,8 @@ def _decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotat
             "memory_max": "8G",
             "cpu_quota": "300%",
             "tasks_max": 512,
-            "outer_timeout_seconds": 4500,
-            "stall_timeout_seconds": 600,
+            "outer_timeout_seconds": 5100,
+            "stall_timeout_seconds": 1500,
         },
         "acceptance": [
             "Write exactly the bounded JSON and Markdown probe reports declared in expected_outputs",

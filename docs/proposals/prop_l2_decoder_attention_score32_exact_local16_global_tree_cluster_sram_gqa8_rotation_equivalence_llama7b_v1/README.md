@@ -13,3 +13,14 @@ Dispatch uses `control_plane/scripts/run_bounded_command.py`. When a usable user
 `RLIMIT_AS` / `RLIMIT_NPROC`, and a CPU-affinity ceiling derived from the
 current allowed CPUs and the requested quota rounded to whole CPUs. Timeout,
 OOM, or other resource termination remains inconclusive in either backend.
+
+The remote job now requests `--sim-backend verilator_hierarchical` so Verilator
+can use `--binary --timing --hierarchical` with exact control-file markings for
+the generated p54 cluster, p53 cluster, and global-tree modules. This preserves
+the generated top RTL, testbench, memh sidecars, stdout contract, and
+structured row oracle while avoiding Icarus monolithic elaboration blow-up on
+the four-group rotation proof.
+The probe also carries a distinct `--compile-timeout-sec 1200` while the
+simulation timeout remains `--timeout-sec 3600`. The bounded launcher contract
+is widened to a 5100-second outer timeout and a 1500-second stall timeout so a
+quiet hierarchical compile is not misclassified as a failed simulation.
