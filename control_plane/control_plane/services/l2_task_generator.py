@@ -10438,7 +10438,7 @@ def _decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotat
         memory_max="8G",
         cpu_quota="300%",
         tasks_max=512,
-        runtime_max_sec=5100,
+        runtime_max_sec=7200,
         child_command=child_command,
     )
     return {
@@ -10468,7 +10468,7 @@ def _decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotat
             "memory_max": "8G",
             "cpu_quota": "300%",
             "tasks_max": 512,
-            "outer_timeout_seconds": 5100,
+            "outer_timeout_seconds": 7200,
             "stall_timeout_seconds": 1500,
         },
         "acceptance": [
