@@ -8,7 +8,7 @@
   - `MemoryMax=8G`
   - `CPUQuota=300%`
   - `TasksMax=512`
-  - outer runtime `5100 s`
+  - outer runtime `7200 s`
   - stall timeout `1500 s`
   - compile timeout `1200 s`
   - probe timeout `3600 s`
@@ -31,6 +31,12 @@ the SRAM request metadata, simulate the concrete p54/p53 SRAM endpoints and
 local reducer/temporal-merge modules, and simulate the concrete global tree
 from observed cluster streams. The bounded JSON report records each component
 phase, serial replay metadata, and separate compile/simulation timeouts.
+
+The outer runtime is measured rather than guessed. The successful one-group r7
+run took 1561.7 seconds with the same serial 856-producer backend. Four groups
+give a linear bound of 6246.8 seconds, and the 7200-second contract adds 953.2
+seconds (15.3 percent) for compile, cleanup, and evaluator variance. This does
+not change the 3600-second per-subprocess timeout or any resource ceiling.
 
 Acceptance:
 

@@ -13912,7 +13912,7 @@ def test_generate_l2_campaign_task_adds_cluster_sram_gqa8_rotation_equivalence_e
                 "memory_max": "8G",
                 "cpu_quota": "300%",
                 "tasks_max": 512,
-                "outer_timeout_seconds": 5100,
+                "outer_timeout_seconds": 7200,
                 "stall_timeout_seconds": 1500,
             }
 
@@ -13923,7 +13923,7 @@ def test_generate_l2_campaign_task_adds_cluster_sram_gqa8_rotation_equivalence_e
             assert (
                 "python3 control_plane/scripts/run_bounded_command.py "
                 "--memory-high 6G --memory-max 8G --cpu-quota 300% "
-                "--tasks-max 512 --runtime-max-sec 5100 --"
+                "--tasks-max 512 --runtime-max-sec 7200 --"
             ) in run
             assert "--sim-backend fine_compositional_icarus" in run
             assert "--compile-timeout-sec 1200" in run

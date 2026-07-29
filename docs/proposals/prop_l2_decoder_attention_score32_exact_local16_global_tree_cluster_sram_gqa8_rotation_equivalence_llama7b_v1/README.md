@@ -31,5 +31,9 @@ mismatch. An isolated flat-Verilator p54 compile under 8 GiB `RLIMIT_AS` also
 failed with return 255 and `std::bad_alloc` after 12.3 seconds, with no binary.
 The probe also carries a distinct `--compile-timeout-sec 1200` while the
 simulation timeout remains `--timeout-sec 3600`. The bounded launcher contract
-is widened to a 5100-second outer timeout and a 1500-second stall timeout so a
-quiet component compile is not misclassified as a failed simulation.
+uses a 7200-second outer timeout and a 1500-second stall timeout. The successful
+one-group r7 run measured 1561.7 seconds under the same serial 856-producer
+backend. A linear four-group bound is therefore 6246.8 seconds; 7200 seconds
+adds 953.2 seconds (15.3 percent) for compile, teardown, and runtime variance.
+The per-subprocess simulation timeout remains 3600 seconds. Any outer or
+subprocess timeout remains inconclusive rather than an RTL mismatch.
