@@ -1,6 +1,9 @@
 from argparse import Namespace
 import json
+import os
 from pathlib import Path
+import subprocess
+import sys
 
 import pytest
 
@@ -344,3 +347,25 @@ def test_exact_reduction_full_gqa8_rerank_rejects_source_link_identity_mismatch(
 
     with pytest.raises(ValueError, match="one-group source_links proposal_id must be"):
         build_report(args)
+
+
+def test_exact_reduction_full_gqa8_rerank_direct_script_reaches_argument_handling_without_pythonpath() -> None:
+    repo_root = Path(__file__).resolve().parents[1]
+    env = os.environ.copy()
+    env.pop("PYTHONPATH", None)
+
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "npu/eval/audit_llm_decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank.py",
+            "--help",
+        ],
+        cwd=repo_root,
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    assert "usage:" in completed.stdout

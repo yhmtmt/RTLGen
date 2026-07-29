@@ -1,6 +1,9 @@
 from argparse import Namespace
 import json
+import os
 from pathlib import Path
+import subprocess
+import sys
 
 import pytest
 
@@ -217,3 +220,36 @@ def test_exact_reduction_recost_rejects_non_finite_source_values(tmp_path: Path)
 
     with pytest.raises(ValueError, match="source replica_recost_clock_ns must be a finite number"):
         build_report(args)
+
+
+def test_exact_reduction_recost_direct_script_runs_without_pythonpath(tmp_path: Path) -> None:
+    args = _inputs(tmp_path)
+    repo_root = Path(__file__).resolve().parents[1]
+    env = os.environ.copy()
+    env.pop("PYTHONPATH", None)
+    out = tmp_path / "report.json"
+    out_md = tmp_path / "report.md"
+
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "npu/eval/audit_llm_decoder_attention_score32_exact_reduction_recost.py",
+            "--source-recost-json",
+            str(args.source_recost_json),
+            "--banked-config",
+            str(args.banked_config),
+            "--out",
+            str(out),
+            "--out-md",
+            str(out_md),
+        ],
+        cwd=repo_root,
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    payload = json.loads(out.read_text(encoding="utf-8"))
+    assert payload["model"] == "llm_decoder_attention_score32_exact_reduction_recost_v1"

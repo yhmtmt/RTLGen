@@ -7369,7 +7369,7 @@ def test_generate_l2_campaign_task_adds_attention_score32_exact_reduction_recost
                 Layer2CampaignGenerateRequest(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
-                    item_id="l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1",
+                    item_id="l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1_r2",
                     requested_by="@tester",
                     source_commit=source_commit,
                     proposal_id="prop_l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1",
@@ -7395,6 +7395,7 @@ def test_generate_l2_campaign_task_adds_attention_score32_exact_reduction_recost
             run = commands[0]["run"]
             decoder_inputs = work_item.input_manifest["decoder_contract"]
 
+            assert work_item.item_id == "l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1_r2"
             assert work_item.priority == 98
             assert [command["name"] for command in commands[:2]] == [
                 "audit_decoder_attention_score32_exact_reduction_recost",
@@ -7458,6 +7459,61 @@ def test_generate_l2_campaign_task_adds_attention_score32_exact_reduction_recost
                 "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
                 "decoder_attention_score32_exact_reduction_recost__"
                 "l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1.md",
+            ]
+
+
+def test_generate_l2_campaign_task_keeps_item_specific_outputs_for_score32_exact_reduction_recost_r3() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id="l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1_r3",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    proposal_id="prop_l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1",
+                    proposal_path="docs/proposals/prop_l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1/proposal.json",
+                    abstraction_layer="decoder_attention_score32_exact_reduction_recost",
+                    evaluation_mode="frontier_detail",
+                    comparison_role="score32_exact_reduction_recost",
+                    paired_baseline_item_id=(
+                        "l2_decoder_attention_composed_datapath_score32_exp_lut_div_schedule_wrapper_recost_llama7b_v1"
+                    ),
+                    depends_on_item_ids=[
+                        "l2_decoder_attention_composed_datapath_score32_exp_lut_div_schedule_wrapper_recost_llama7b_v1"
+                    ],
+                    requires_merged_inputs=True,
+                    requires_materialized_refs=True,
+                    priority=98,
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            decoder_inputs = work_item.input_manifest["decoder_contract"]
+
+            assert work_item.item_id == "l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1_r3"
+            assert decoder_inputs["attention_score32_exact_reduction_recost_out"] == (
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_score32_exact_reduction_recost__"
+                "l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1_r3.json"
+            )
+            assert work_item.task_request.request_payload["task"]["expected_outputs"] == [
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_score32_exact_reduction_recost__"
+                "l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1_r3.json",
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_score32_exact_reduction_recost__"
+                "l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1_r3.md",
             ]
 
 

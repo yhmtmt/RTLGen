@@ -28,6 +28,25 @@
     "preserves the obsolete 141-cycle contract explicitly so downstream consumers can be revised deliberately",
     "forces later score32 work to adopt the exact b59 reduction schedule before claiming tighter wrapper or frontier conclusions"
   ],
+  "revision_record": [
+    {
+      "revision": "v1",
+      "status": "inconclusive",
+      "reason": "cli_packaging_failure",
+      "item_id": "l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1",
+      "failure_signature": "ModuleNotFoundError: No module named 'npu'",
+      "historical_decision": "preserve_failed_run_history_without_output_rewrite",
+      "notes": "The direct script was dispatched from a disposable repo worktree without PYTHONPATH and failed before argument handling, so no output artifact was produced. Historical DB/run records remain intact and are not rewritten."
+    },
+    {
+      "revision": "r2",
+      "status": "pending",
+      "item_id": "l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1_r2",
+      "artifact_basename_item_id": "l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1",
+      "dispatch_requirement": "pin source_commit to the merge commit that contains the direct-script bootstrap fix before dispatch",
+      "notes": "Retry under a new DB item identity while preserving the canonical output basename already consumed by the merged downstream rerank."
+    }
+  ],
   "risks": [
     "this is still a schedule-only correction and does not close reducer area or activity energy",
     "the current score32 schedule-wrapper postroute activity-power v1 item remains pointed at the obsolete source recost until a follow-on r2 consumer is merged",
@@ -64,8 +83,43 @@
         "direction": "record_score32_exact_reduction_recost",
         "reason": "Preserve the merged schedule-wrapper source contract explicitly, emit the corrected reduction/layer/total/latency terms from the exact b59 service model, and keep the existing activity-power v1 item off the obsolete 141-cycle assumption until its own r2 consumer revision exists."
       },
+      "status": "inconclusive",
+      "superseded_by_item_id": "l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1_r2",
+      "notes": "Historical v1 dispatch failed before argument handling in a disposable repo worktree with `ModuleNotFoundError: No module named 'npu'`. Preserve the failed DB/run history and do not rewrite any historical run data."
+    },
+    {
+      "item_id": "l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1_r2",
+      "task_type": "l2_campaign",
+      "objective": "Correct the score32 schedule-wrapper Llama7B reduction schedule using the exact c16/r2/l8/b59 banked finalized-tree full-wave no-stall service contract.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_score32_exact_reduction_recost",
+      "comparison_role": "score32_exact_reduction_recost",
+      "paired_baseline_item_id": "l2_decoder_attention_composed_datapath_score32_exp_lut_div_schedule_wrapper_recost_llama7b_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_composed_datapath_score32_exp_lut_div_schedule_wrapper_recost_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "priority": 98,
+      "revision": {
+        "reason": "retry_after_direct_script_bootstrap_fix",
+        "preserve_failed_item_id": "l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1",
+        "canonical_output_item_id": "l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1",
+        "superseded_contract": {
+          "source_item_id": "l2_decoder_attention_composed_datapath_score32_exp_lut_div_schedule_wrapper_recost_llama7b_v1",
+          "obsolete_best_requested_cross_tile_reduction_cycles": 141,
+          "replacement_cross_tile_reduction_cycles": 574
+        },
+        "blocked_downstream_item_ids": [
+          "l2_decoder_attention_score32_schedule_wrapper_postroute_activity_power_llama7b_v1"
+        ]
+      },
+      "expected_result": {
+        "direction": "record_score32_exact_reduction_recost",
+        "reason": "Retry the exact-reduction recost with the direct-script bootstrap fix, preserve the canonical output basename already referenced by downstream rerank, and keep the existing activity-power v1 item off the obsolete 141-cycle assumption until its own r2 consumer revision exists."
+      },
       "status": "pending",
-      "notes": "Manual dispatch only. This item is evidence-only, depends on merged/materialized inputs, and should land before any downstream score32 wrapper activity-power or frontier consumer is revised to read the corrected reduction artifact."
+      "notes": "Manual dispatch only. Pin `source_commit` to the merge commit that contains the bootstrap fix before dispatch. This retry uses a fresh DB item identity but must emit the canonical `...__l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1.{json,md}` artifact names because the historical v1 run produced no outputs and the merged downstream rerank already expects that basename."
     }
   ],
   "baseline_refs": [
