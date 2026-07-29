@@ -1160,6 +1160,7 @@ def run_fine_compositional_exact(
             "sram_endpoint_replays": probe.CLUSTERS,
             "reducer_replays": probe.CLUSTERS,
             "global_tree_simulations": 1,
+            "global_sidecar": global_sidecar,
             "compiled_modules": list(component_keys),
             "avoided_modules": ["p54_cluster_wrapper", "p53_cluster_wrapper"],
             "global_counts": {

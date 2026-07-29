@@ -13807,6 +13807,7 @@ def test_generate_l2_campaign_task_adds_cluster_sram_gqa8_equivalence_evidence()
             assert "--out-md " in run
             assert any("strict_generated_top_guard=passed" in rule for rule in acceptance)
             assert any("producer_replay_parallelism=1" in rule for rule in acceptance)
+            assert any("global_sidecar.value_packing=canonical_pack_numerators" in rule for rule in acceptance)
             assert (
                 "--proposal-id "
                 "prop_l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_"
@@ -13947,6 +13948,7 @@ def test_generate_l2_campaign_task_adds_cluster_sram_gqa8_rotation_equivalence_e
             assert any("completed_command_count=4" in rule for rule in acceptance)
             assert any("strict_generated_top_guard=passed" in rule for rule in acceptance)
             assert any("producer_replay_parallelism=1" in rule for rule in acceptance)
+            assert any("global_sidecar.value_packing=canonical_pack_numerators" in rule for rule in acceptance)
             assert any("report.command_ids=[33280, 33281, 33282, 33283]" in rule for rule in acceptance)
             assert work_item.input_manifest["worker_resources"] == expected_worker_resources
             assert (
