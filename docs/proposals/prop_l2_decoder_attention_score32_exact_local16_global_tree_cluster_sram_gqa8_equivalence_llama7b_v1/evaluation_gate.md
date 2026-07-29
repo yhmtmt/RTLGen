@@ -11,6 +11,16 @@
 - Memory: `MemoryHigh=6G`, `MemoryMax=8G`
 - CPU: `CPUQuota=300%`
 - Tasks: `TasksMax=512`
+- Launcher: `control_plane/scripts/run_bounded_command.py`
+
+If a usable user `systemd` manager exists, the launcher applies the contract
+with `systemd-run --user --scope`. In evaluator containers without a user bus,
+the launcher falls back to process-group timeout, `RLIMIT_AS` for
+`MemoryMax=8G`, `RLIMIT_NPROC` for `TasksMax=512`, and a CPU-affinity ceiling
+derived from the current allowed CPUs and the requested quota rounded to whole
+CPUs (`CPUQuota=300%` becomes at most three allowed CPUs). `MemoryHigh=6G` is
+advisory and reported as unavailable in fallback mode rather than claimed as
+exact cgroup enforcement.
 
 Do not run this probe in the devcontainer.
 

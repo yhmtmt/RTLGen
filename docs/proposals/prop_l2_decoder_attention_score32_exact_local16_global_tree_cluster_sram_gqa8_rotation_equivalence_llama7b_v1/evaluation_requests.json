@@ -33,7 +33,7 @@
         "reason": "The full Llama7B score32 hierarchy should not be recosted from a single-head-group proof alone."
       },
       "status": "pending",
-      "notes": "Dispatch only to eval-daemon-b7c2d9c80c1c with the exclusive larger bounded resource contract in evaluation_gate.md."
+      "notes": "Dispatch only to eval-daemon-b7c2d9c80c1c with the exclusive larger bounded resource contract in evaluation_gate.md. The launcher may use user-systemd cgroups or the documented portable fallback; timeout, OOM, or resource kill remains inconclusive."
     }
   ]
 }

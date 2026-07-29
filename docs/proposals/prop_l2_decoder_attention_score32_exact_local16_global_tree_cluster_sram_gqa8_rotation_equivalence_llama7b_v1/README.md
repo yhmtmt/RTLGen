@@ -6,3 +6,10 @@ rotation. The purpose is to prove that distinct command IDs, rotated p54/p53
 extra-block ownership, bounded fill traffic, and finalized root rows remain
 exact before the measured Llama7B model consumes this hierarchy as a full
 attention score service.
+
+Dispatch uses `control_plane/scripts/run_bounded_command.py`. When a usable user
+`systemd` manager exists, the launcher applies the contract through
+`systemd-run --user --scope`; otherwise it falls back to process-group timeout,
+`RLIMIT_AS` / `RLIMIT_NPROC`, and a CPU-affinity ceiling derived from the
+current allowed CPUs and the requested quota rounded to whole CPUs. Timeout,
+OOM, or other resource termination remains inconclusive in either backend.

@@ -33,7 +33,7 @@
         "reason": "Only a complete structured-row and protocol pass can promote this composed path into the measured Llama7B architecture model."
       },
       "status": "pending",
-      "notes": "Dispatch only to eval-daemon-b7c2d9c80c1c with the bounded resource contract in evaluation_gate.md."
+      "notes": "Dispatch only to eval-daemon-b7c2d9c80c1c with the bounded resource contract in evaluation_gate.md. The launcher may use user-systemd cgroups or the documented portable fallback; timeout, OOM, or resource kill remains inconclusive."
     }
   ]
 }
