@@ -177,6 +177,7 @@
           "overwrite",
           "command"
         ],
+        "release_contract": "command_release_valid_blocks_same_cycle_request_grants_and_only_succeeds_when_the_active_buffer_matches_with_no_outstanding_responses",
         "remaining_abstractions": [
           "mesh_router_not_instantiated_here",
           "external_hbm_fill_stream_only",
@@ -695,6 +696,7 @@
           "overwrite",
           "command"
         ],
+        "release_contract": "command_release_valid_blocks_same_cycle_request_grants_and_only_succeeds_when_the_active_buffer_matches_with_no_outstanding_responses",
         "remaining_abstractions": [
           "mesh_router_not_instantiated_here",
           "external_hbm_fill_stream_only",
@@ -1762,6 +1764,7 @@
             "overwrite",
             "command"
           ],
+          "release_contract": "command_release_valid_blocks_same_cycle_request_grants_and_only_succeeds_when_the_active_buffer_matches_with_no_outstanding_responses",
           "remaining_abstractions": [
             "mesh_router_not_instantiated_here",
             "external_hbm_fill_stream_only",
@@ -3082,6 +3085,7 @@
               "overwrite",
               "command"
             ],
+            "release_contract": "command_release_valid_blocks_same_cycle_request_grants_and_only_succeeds_when_the_active_buffer_matches_with_no_outstanding_responses",
             "remaining_abstractions": [
               "mesh_router_not_instantiated_here",
               "external_hbm_fill_stream_only",
@@ -3987,6 +3991,7 @@
             "overwrite",
             "command"
           ],
+          "release_contract": "command_release_valid_blocks_same_cycle_request_grants_and_only_succeeds_when_the_active_buffer_matches_with_no_outstanding_responses",
           "remaining_abstractions": [
             "mesh_router_not_instantiated_here",
             "external_hbm_fill_stream_only",
@@ -5315,6 +5320,7 @@
               "overwrite",
               "command"
             ],
+            "release_contract": "command_release_valid_blocks_same_cycle_request_grants_and_only_succeeds_when_the_active_buffer_matches_with_no_outstanding_responses",
             "remaining_abstractions": [
               "mesh_router_not_instantiated_here",
               "external_hbm_fill_stream_only",
