@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import ctypes
 from dataclasses import dataclass
 import errno
 import json
@@ -21,6 +22,7 @@ from typing import Any, Sequence
 TIMEOUT_EXIT_CODE = 124
 _SYSTEMD_CHECK_TIMEOUT_SEC = 5.0
 _TERM_GRACE_SEC = 5.0
+_POLL_INTERVAL_SEC = 0.05
 _SIZE_SUFFIXES = {
     "": 1,
     "K": 1024,
@@ -28,6 +30,9 @@ _SIZE_SUFFIXES = {
     "G": 1024**3,
     "T": 1024**4,
 }
+_PR_SET_CHILD_SUBREAPER = 36
+_PR_GET_CHILD_SUBREAPER = 37
+_LIBC = ctypes.CDLL(None, use_errno=True) if sys.platform.startswith("linux") else None
 
 
 @dataclass(frozen=True)
@@ -43,6 +48,33 @@ class LimitSpec:
 class SystemdProbeResult:
     usable: bool
     reason: str
+
+
+@dataclass(frozen=True)
+class _ProcInfo:
+    pid: int
+    ppid: int
+    pgid: int
+    sid: int
+
+
+class _TerminationSignalState:
+    def __init__(self) -> None:
+        self.requested_signal: int | None = None
+        self._previous_handlers: dict[int, Any] = {}
+
+    def install(self, *signals_to_handle: int) -> None:
+        for signal_number in signals_to_handle:
+            self._previous_handlers[signal_number] = signal.getsignal(signal_number)
+            signal.signal(signal_number, self._handle_signal)
+
+    def restore(self) -> None:
+        for signal_number, previous in self._previous_handlers.items():
+            signal.signal(signal_number, previous)
+        self._previous_handlers.clear()
+
+    def _handle_signal(self, signal_number: int, _frame: Any) -> None:
+        self.requested_signal = signal_number
 
 
 def _parse_size(text: str) -> int:
@@ -288,20 +320,112 @@ def _shell_error_code(exc: OSError) -> int:
     return 126
 
 
-def _terminate_process_group(process: subprocess.Popen[Any], *, term_grace_sec: float) -> None:
-    try:
-        os.killpg(process.pid, signal.SIGTERM)
-    except ProcessLookupError:
+def _set_child_subreaper(enabled: bool) -> bool | None:
+    if _LIBC is None:
+        return None
+    current = ctypes.c_int()
+    if _LIBC.prctl(_PR_GET_CHILD_SUBREAPER, ctypes.byref(current), 0, 0, 0) != 0:
+        return None
+    previous = bool(current.value)
+    if _LIBC.prctl(_PR_SET_CHILD_SUBREAPER, int(enabled), 0, 0, 0) != 0:
+        return None
+    return previous
+
+
+def _restore_child_subreaper(previous: bool | None) -> None:
+    if previous is None or _LIBC is None:
         return
-    deadline = time.monotonic() + term_grace_sec
+    _LIBC.prctl(_PR_SET_CHILD_SUBREAPER, int(previous), 0, 0, 0)
+
+
+def _snapshot_process_table() -> dict[int, _ProcInfo]:
+    snapshot: dict[int, _ProcInfo] = {}
+    try:
+        proc_entries = Path("/proc").iterdir()
+    except OSError:
+        return snapshot
+    for proc_dir in proc_entries:
+        if not proc_dir.name.isdigit():
+            continue
+        try:
+            stat_text = (proc_dir / "stat").read_text(encoding="utf-8")
+            comm_end = stat_text.rfind(")")
+            if comm_end < 0:
+                continue
+            fields = stat_text[comm_end + 2 :].split()
+            if len(fields) < 4:
+                continue
+            pid = int(proc_dir.name)
+            snapshot[pid] = _ProcInfo(
+                pid=pid,
+                ppid=int(fields[1]),
+                pgid=int(fields[2]),
+                sid=int(fields[3]),
+            )
+        except (FileNotFoundError, OSError, ValueError):
+            continue
+    return snapshot
+
+
+def _collect_descendant_processes(owner_pid: int) -> dict[int, _ProcInfo]:
+    snapshot = _snapshot_process_table()
+    children_by_parent: dict[int, list[_ProcInfo]] = {}
+    for proc in snapshot.values():
+        children_by_parent.setdefault(proc.ppid, []).append(proc)
+    descendants: dict[int, _ProcInfo] = {}
+    pending = [owner_pid]
+    while pending:
+        parent_pid = pending.pop()
+        for child in children_by_parent.get(parent_pid, []):
+            if child.pid in descendants:
+                continue
+            descendants[child.pid] = child
+            pending.append(child.pid)
+    return descendants
+
+
+def _reap_descendant_processes(owner_pid: int, *, excluded_pid: int) -> None:
+    for proc in _collect_descendant_processes(owner_pid).values():
+        if proc.pid == excluded_pid:
+            continue
+        try:
+            os.waitpid(proc.pid, os.WNOHANG)
+        except (ChildProcessError, ProcessLookupError):
+            continue
+
+
+def _signal_descendant_tree(owner_pid: int, signal_number: int) -> None:
+    descendants = _collect_descendant_processes(owner_pid)
+    process_groups = sorted({proc.pgid for proc in descendants.values() if proc.pgid > 0})
+    for process_group in process_groups:
+        try:
+            os.killpg(process_group, signal_number)
+        except ProcessLookupError:
+            continue
+    for proc in descendants.values():
+        try:
+            os.kill(proc.pid, signal_number)
+        except ProcessLookupError:
+            continue
+
+
+def _wait_for_descendant_exit(owner_pid: int, process: subprocess.Popen[Any], deadline: float) -> bool:
     while time.monotonic() < deadline:
-        if process.poll() is not None:
-            return
-        time.sleep(0.05)
-    try:
-        os.killpg(process.pid, signal.SIGKILL)
-    except ProcessLookupError:
+        _reap_descendant_processes(owner_pid, excluded_pid=process.pid)
+        if process.poll() is not None and not _collect_descendant_processes(owner_pid):
+            return True
+        time.sleep(_POLL_INTERVAL_SEC)
+    _reap_descendant_processes(owner_pid, excluded_pid=process.pid)
+    return process.poll() is not None and not _collect_descendant_processes(owner_pid)
+
+
+def _terminate_process_tree(process: subprocess.Popen[Any], *, term_grace_sec: float) -> None:
+    owner_pid = os.getpid()
+    _signal_descendant_tree(owner_pid, signal.SIGTERM)
+    if _wait_for_descendant_exit(owner_pid, process, time.monotonic() + term_grace_sec):
         return
+    _signal_descendant_tree(owner_pid, signal.SIGKILL)
+    _wait_for_descendant_exit(owner_pid, process, time.monotonic() + term_grace_sec)
 
 
 def _run_systemd_command(spec: LimitSpec, child_command: Sequence[str]) -> int:
@@ -328,25 +452,42 @@ def _run_portable_fallback(
         os.setsid()
         _apply_fallback_limits(spec, allowed_cpus=allowed_cpus)
 
+    previous_subreaper = _set_child_subreaper(True)
+    signal_state = _TerminationSignalState()
+    signal_state.install(signal.SIGTERM, signal.SIGINT)
     try:
         process = subprocess.Popen(child_command, preexec_fn=preexec)
     except OSError as exc:
+        signal_state.restore()
+        _restore_child_subreaper(previous_subreaper)
         return _shell_error_code(exc)
     try:
-        returncode = process.wait(timeout=spec.runtime_max_sec)
-    except subprocess.TimeoutExpired:
-        _emit_diagnostic(
-            {
-                "event": "run_bounded_command_timeout",
-                "backend": "portable_fallback",
-                "runtime_max_sec": spec.runtime_max_sec,
-                "term_grace_sec": term_grace_sec,
-            }
-        )
-        _terminate_process_group(process, term_grace_sec=term_grace_sec)
-        process.wait()
-        return TIMEOUT_EXIT_CODE
-    return _normalize_exit_code(returncode)
+        started = time.monotonic()
+        while True:
+            returncode = process.poll()
+            if returncode is not None:
+                return _normalize_exit_code(returncode)
+            if signal_state.requested_signal is not None:
+                _terminate_process_tree(process, term_grace_sec=term_grace_sec)
+                process.wait()
+                return 128 + signal_state.requested_signal
+            if spec.runtime_max_sec is not None and time.monotonic() - started >= spec.runtime_max_sec:
+                _emit_diagnostic(
+                    {
+                        "event": "run_bounded_command_timeout",
+                        "backend": "portable_fallback",
+                        "runtime_max_sec": spec.runtime_max_sec,
+                        "term_grace_sec": term_grace_sec,
+                    }
+                )
+                _terminate_process_tree(process, term_grace_sec=term_grace_sec)
+                process.wait()
+                return TIMEOUT_EXIT_CODE
+            time.sleep(_POLL_INTERVAL_SEC)
+    finally:
+        _reap_descendant_processes(os.getpid(), excluded_pid=process.pid)
+        signal_state.restore()
+        _restore_child_subreaper(previous_subreaper)
 
 
 def main(argv: Sequence[str] | None = None) -> int:

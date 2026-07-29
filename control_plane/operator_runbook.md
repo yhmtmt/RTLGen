@@ -186,6 +186,15 @@ Request remote evaluator refresh after a control-plane merge:
 
 The command opens or updates a GitHub issue with the target commit, pull/update checklist, daemon restart checklist, and a machine-readable evaluator acknowledgement block. Use it instead of drafting ad hoc evaluator update issues.
 
+## Cancellation Semantics
+
+`cancel-run` is scoped to the leased command subtree only. The worker and the
+bounded launcher first terminate the original command process group, then any
+reparented descendants or descendants that created a new process group/session
+under that same command, and finally escalate to `SIGKILL` after the grace
+window. This stays descendant-scoped; it does not use broad name-based process
+matching on the evaluator host.
+
 ## Managed Daemon Paths
 
 Default managed-daemon diagnostics under the clean evaluator service checkout:

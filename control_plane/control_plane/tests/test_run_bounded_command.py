@@ -25,6 +25,59 @@ def _load_launcher_module():
     return module
 
 
+def _write_escaped_session_scripts(tmp_path: Path) -> tuple[Path, Path, Path, Path, Path]:
+    probe_pid_path = tmp_path / "probe.pid"
+    grandchild_pid_path = tmp_path / "grandchild.pid"
+    grandchild_script = tmp_path / "grandchild.py"
+    probe_script = tmp_path / "probe.py"
+    root_script = tmp_path / "root.py"
+    grandchild_script.write_text(
+        "import os, signal, sys, time\n"
+        "from pathlib import Path\n"
+        "signal.signal(signal.SIGTERM, signal.SIG_IGN)\n"
+        "Path(sys.argv[1]).write_text(str(os.getpid()), encoding='utf-8')\n"
+        "time.sleep(60)\n",
+        encoding="utf-8",
+    )
+    probe_script.write_text(
+        "import os, signal, subprocess, sys, time\n"
+        "from pathlib import Path\n"
+        "os.setsid()\n"
+        "signal.signal(signal.SIGTERM, signal.SIG_IGN)\n"
+        "Path(sys.argv[1]).write_text(str(os.getpid()), encoding='utf-8')\n"
+        "subprocess.Popen([sys.executable, sys.argv[2], sys.argv[3]])\n"
+        "time.sleep(60)\n",
+        encoding="utf-8",
+    )
+    root_script.write_text(
+        "import subprocess, sys, time\n"
+        "subprocess.Popen([sys.executable, sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]])\n"
+        "time.sleep(60)\n",
+        encoding="utf-8",
+    )
+    return root_script, probe_script, grandchild_script, probe_pid_path, grandchild_pid_path
+
+
+def _read_pid(path: Path, *, timeout_seconds: float = 5.0) -> int:
+    deadline = time.monotonic() + timeout_seconds
+    while time.monotonic() < deadline:
+        if path.exists():
+            return int(path.read_text(encoding="utf-8").strip())
+        time.sleep(0.05)
+    raise AssertionError(f"pid file was not written: {path}")
+
+
+def _assert_process_gone(pid: int, *, timeout_seconds: float = 5.0) -> None:
+    deadline = time.monotonic() + timeout_seconds
+    while time.monotonic() < deadline:
+        try:
+            os.kill(pid, 0)
+        except ProcessLookupError:
+            return
+        time.sleep(0.05)
+    raise AssertionError(f"process {pid} survived termination")
+
+
 def test_parse_cli_requires_separator_and_payload() -> None:
     module = _load_launcher_module()
 
@@ -249,3 +302,34 @@ def test_run_portable_fallback_times_out_and_kills_process_group(tmp_path: Path)
         time.sleep(0.05)
     else:
         pytest.fail(f"grandchild process {grandchild_pid} survived process-group timeout")
+
+
+def test_launcher_sigterm_kills_descendant_new_session_tree(tmp_path: Path) -> None:
+    launcher_path = Path(__file__).resolve().parents[2] / "scripts" / "run_bounded_command.py"
+    root_script, probe_script, grandchild_script, probe_pid_path, grandchild_pid_path = (
+        _write_escaped_session_scripts(tmp_path)
+    )
+
+    process = subprocess.Popen(
+        [
+            sys.executable,
+            str(launcher_path),
+            "--runtime-max-sec",
+            "30",
+            "--",
+            sys.executable,
+            str(root_script),
+            str(probe_script),
+            str(probe_pid_path),
+            str(grandchild_script),
+            str(grandchild_pid_path),
+        ]
+    )
+
+    probe_pid = _read_pid(probe_pid_path)
+    grandchild_pid = _read_pid(grandchild_pid_path)
+    os.kill(process.pid, signal.SIGTERM)
+
+    assert process.wait(timeout=10) == 128 + signal.SIGTERM
+    _assert_process_gone(probe_pid)
+    _assert_process_gone(grandchild_pid)
