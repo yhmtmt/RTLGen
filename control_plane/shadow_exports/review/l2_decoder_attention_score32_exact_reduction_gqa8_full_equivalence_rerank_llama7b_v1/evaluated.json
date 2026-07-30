@@ -1,0 +1,111 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "decoder_contract": {
+        "attention_score32_exact_reduction_recost_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_reduction_recost__l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1.json",
+        "attention_score32_quality_aware_frontier_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_integrated_frontier_ranking__l2_decoder_attention_score32_quality_aware_hbm_controller_replay_rtl_ppa_recost_frontier_llama7b_v1.json",
+        "attention_score32_one_group_gqa8_equivalence_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence__l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1_r7.json",
+        "attention_score32_four_group_gqa8_equivalence_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence__l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1.json",
+        "attention_score32_exact_reduction_gqa8_full_equivalence_rerank_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank__l2_decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank_llama7b_v1.json",
+        "attention_score32_exact_reduction_gqa8_full_equivalence_rerank_scope": "Rerank the quality-aware score32 HBM-controller-PPA frontier with the exact banked reduction latency correction only after both one-group and four-group full GQA8 composed equivalence have passed. Preserve throughput, energy, area, and precision dimensions, reject missing or mismatched evidence, and do not double-count the obsolete reduction term.",
+        "attention_score32_exact_reduction_gqa8_full_equivalence_rerank_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank__l2_decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank_llama7b_v1.md"
+      }
+    },
+    "commands": [
+      {
+        "run": "python3 npu/eval/audit_llm_decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank.py --exact-reduction-json runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_reduction_recost__l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1.json --quality-aware-frontier-json runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_integrated_frontier_ranking__l2_decoder_attention_score32_quality_aware_hbm_controller_replay_rtl_ppa_recost_frontier_llama7b_v1.json --one-group-equivalence-json runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence__l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1_r7.json --four-group-equivalence-json runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence__l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1.json --out runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank__l2_decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank_llama7b_v1.json --out-md runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank__l2_decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank_llama7b_v1.md",
+        "name": "audit_decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate_runs"
+      }
+    ],
+    "objective": "LLM-oriented attention-tail stress campaign for larger sequence lengths and more repeated non-terminal Softmax paths.",
+    "acceptance": [
+      "Write all declared decoder evidence artifacts",
+      "Keep evidence artifact paths repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "source_mode": "src_verilog",
+    "expected_outputs": [
+      "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank__l2_decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank_llama7b_v1.json",
+      "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank__l2_decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank_llama7b_v1.md"
+    ]
+  },
+  "layer": "layer2",
+  "state": "evaluated",
+  "title": "Layer2 campaign npu_e2e_eval_llm_attention_tail_stress_v1 on nangate45",
+  "result": {
+    "branch": "eval/l2_decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank_llama7b_v1/s20260730t112728z",
+    "completed_utc": "2026-07-30T11:27:26.570996Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "b7c2d9c80c1c",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260730t112728z][host:b7c2d9c80c1c][item:l2_decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank_llama7b_v1]",
+    "metrics_rows": [],
+    "metrics_exempt_reason": "evidence_only_decoder_evidence",
+    "queue_item_id": "l2_decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank_llama7b_v1",
+    "session_id": "s20260730t112728z",
+    "status": "ok",
+    "summary": "2/2 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l2_decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank_llama7b_v1/s20260730t112728z",
+    "pr_title": "eval: run layer2 campaign npu_e2e_eval_llm_attention_tail_stress_v1 on nangate45",
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Include metrics row references in result.metrics_rows",
+      "Keep committed result_path fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260730t112728z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l2_decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank_llama7b_v1"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l2_decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank_llama7b_v1",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 98,
+  "created_utc": "2026-07-30T11:27:08.561328Z",
+  "requested_by": "codex",
+  "developer_loop": {
+    "comparison": {
+      "role": "score32_exact_reduction_gqa8_full_equivalence_rerank",
+      "paired_baseline_item_id": "l2_decoder_attention_score32_quality_aware_hbm_controller_replay_rtl_ppa_recost_frontier_llama7b_v1"
+    },
+    "evaluation": {
+      "mode": "frontier_detail",
+      "expected_reason": "Apply exact reduction latency only after one-group and four-group full GQA8 equivalence; preserve throughput, bounded energy, area, and precision dimensions.",
+      "expected_direction": "rerank_quality_aware_score32_frontier_after_exact_reduction_and_full_gqa8_equivalence"
+    },
+    "abstraction": {
+      "layer": "decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank"
+    },
+    "proposal_id": "prop_l2_decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank_llama7b_v1",
+    "dependencies": {
+      "item_ids": [
+        "l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1_r2",
+        "l2_decoder_attention_score32_quality_aware_hbm_controller_replay_rtl_ppa_recost_frontier_llama7b_v1",
+        "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1_r7",
+        "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    },
+    "proposal_path": "docs/proposals/prop_l2_decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank_llama7b_v1/proposal.json"
+  },
+  "source_requirement": {
+    "repo": "",
+    "reason": "evaluator runtime must contain the queued job source commit",
+    "version": 1,
+    "required_ref": "origin/master",
+    "required_sha": "8cc94346b4b3f0bf6d7a9b52df47cb8f3329d64e",
+    "requires_daemon_restart": true
+  }
+}
