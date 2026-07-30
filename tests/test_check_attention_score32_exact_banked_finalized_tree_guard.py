@@ -22,11 +22,28 @@ def _config_path(banks: int) -> Path:
     )
 
 
-def _prepare_design_dir(tmp_path: Path, *, banks: int) -> Path:
+def _factored_config_path(banks: int) -> Path:
+    return (
+        REPO_ROOT
+        / "runs"
+        / "designs"
+        / "npu_blocks"
+        / f"attention_score32_exact_banked_finalized_tree_factored_c16_r2_l8_b{banks}"
+        / "config.json"
+    )
+
+
+def _prepare_design_dir(tmp_path: Path, *, banks: int, factored: bool = False) -> Path:
     tmp_path.mkdir(parents=True, exist_ok=True)
-    design_dir = tmp_path / f"attention_score32_exact_banked_finalized_tree_c16_r2_l8_b{banks}"
+    name = (
+        f"attention_score32_exact_banked_finalized_tree_factored_c16_r2_l8_b{banks}"
+        if factored
+        else f"attention_score32_exact_banked_finalized_tree_c16_r2_l8_b{banks}"
+    )
+    design_dir = tmp_path / name
     design_dir.mkdir()
-    config = json.loads(_config_path(banks).read_text(encoding="utf-8"))
+    source_config_path = _factored_config_path(banks) if factored else _config_path(banks)
+    config = json.loads(source_config_path.read_text(encoding="utf-8"))
     (design_dir / "config.json").write_text(json.dumps(config, indent=2) + "\n", encoding="utf-8")
     generate(config, design_dir / "verilog")
     return design_dir
@@ -66,6 +83,16 @@ def test_banked_exact_finalized_tree_guard_accepts_all_checked_in_configs(tmp_pa
         assert payload["clusters"] == 16
         assert payload["tree_nodes"] == 15
         assert payload["tree_stages"] == 4
+        assert payload["status"] == "ok"
+
+
+def test_banked_exact_finalized_tree_guard_accepts_factored_retry_configs(tmp_path: Path) -> None:
+    for banks in (59, 64):
+        design_dir = _prepare_design_dir(tmp_path / f"factored_case_{banks}", banks=banks, factored=True)
+        result = _run_guard(design_dir)
+        assert result.returncode == 0, result.stderr
+        payload = json.loads(result.stdout)
+        assert payload["finalizer_banks"] == banks
         assert payload["status"] == "ok"
 
 
@@ -163,6 +190,22 @@ def test_banked_exact_finalized_tree_guard_accepts_banked_ppa_sweep_membership(t
         assert result.returncode == 0, result.stderr
 
 
+def test_banked_exact_finalized_tree_guard_accepts_factored_retry_sweep_membership(tmp_path: Path) -> None:
+    sweep_path = (
+        REPO_ROOT
+        / "runs"
+        / "campaigns"
+        / "npu"
+        / "attention_score32_exact_banked_finalized_tree_factored_v2"
+        / "sweeps"
+        / "nangate45_attention_score32_exact_banked_finalized_tree_factored_c16_bank_retry_r2.json"
+    )
+    for banks in (59, 64):
+        design_dir = _prepare_design_dir(tmp_path / f"factored_ppa_case_{banks}", banks=banks, factored=True)
+        result = _run_guard_with_sweep(design_dir, sweep=sweep_path)
+        assert result.returncode == 0, result.stderr
+
+
 def test_banked_exact_finalized_tree_guard_rejects_non_ppa_bank_membership_when_sweep_is_supplied(tmp_path: Path) -> None:
     sweep_path = (
         REPO_ROOT
@@ -176,7 +219,23 @@ def test_banked_exact_finalized_tree_guard_rejects_non_ppa_bank_membership_when_
     design_dir = _prepare_design_dir(tmp_path, banks=57)
     result = _run_guard_with_sweep(design_dir, sweep=sweep_path)
     assert result.returncode != 0
-    assert "banked PPA sweep membership requires c16/r2/l8 with finalizer_banks in {16, 32, 59, 64}" in result.stderr
+    assert "banked PPA sweep membership requires c16/r2/l8 with finalizer_banks in [16, 32, 59, 64]" in result.stderr
+
+
+def test_banked_exact_finalized_tree_guard_rejects_factored_sweep_bank_mismatch(tmp_path: Path) -> None:
+    sweep_path = (
+        REPO_ROOT
+        / "runs"
+        / "campaigns"
+        / "npu"
+        / "attention_score32_exact_banked_finalized_tree_factored_v2"
+        / "sweeps"
+        / "nangate45_attention_score32_exact_banked_finalized_tree_factored_c16_bank_retry_r2.json"
+    )
+    design_dir = _prepare_design_dir(tmp_path, banks=57)
+    result = _run_guard_with_sweep(design_dir, sweep=sweep_path)
+    assert result.returncode != 0
+    assert "banked PPA sweep membership requires c16/r2/l8 with finalizer_banks in [59, 64]" in result.stderr
 
 
 def test_banked_exact_finalized_tree_guard_rejects_ppa_sweep_knob_drift(tmp_path: Path) -> None:

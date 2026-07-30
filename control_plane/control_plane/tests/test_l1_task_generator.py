@@ -4369,7 +4369,7 @@ def test_exact_finalized_tree_c16_lane_ppa_proposal_is_pending_merge_with_all_la
     assert "full decoder composition remain unclosed" in proposal_entry["notes"]
 
 
-def test_exact_banked_finalized_tree_c16_bank_ppa_proposal_is_pending_merge_with_four_bank_configs() -> None:
+def test_exact_banked_finalized_tree_c16_bank_ppa_proposal_preserves_v1_infeasibility_and_stages_r2() -> None:
     repo_root = Path(__file__).resolve().parents[3]
     proposal_dir = (
         repo_root
@@ -4380,31 +4380,41 @@ def test_exact_banked_finalized_tree_c16_bank_ppa_proposal_is_pending_merge_with
     proposal = json.loads((proposal_dir / "proposal.json").read_text(encoding="utf-8"))
     evaluation_requests = json.loads((proposal_dir / "evaluation_requests.json").read_text(encoding="utf-8"))
 
-    item_id = "l1_decoder_attention_score32_exact_banked_finalized_tree_c16_bank_ppa_v1"
-    expected_configs = [
-        "runs/designs/npu_blocks/attention_score32_exact_banked_finalized_tree_c16_r2_l8_b16/config.json",
-        "runs/designs/npu_blocks/attention_score32_exact_banked_finalized_tree_c16_r2_l8_b32/config.json",
-        "runs/designs/npu_blocks/attention_score32_exact_banked_finalized_tree_c16_r2_l8_b59/config.json",
-        "runs/designs/npu_blocks/attention_score32_exact_banked_finalized_tree_c16_r2_l8_b64/config.json",
+    v1_item_id = "l1_decoder_attention_score32_exact_banked_finalized_tree_c16_bank_ppa_v1"
+    r2_item_id = "l1_decoder_attention_score32_exact_banked_finalized_tree_c16_bank_ppa_v1_r2"
+    expected_r2_configs = [
+        "runs/designs/npu_blocks/attention_score32_exact_banked_finalized_tree_factored_c16_r2_l8_b59/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_banked_finalized_tree_factored_c16_r2_l8_b64/config.json",
     ]
     expected_sweep = (
-        "runs/campaigns/npu/attention_score32_exact_banked_finalized_tree_v1/sweeps/"
-        "nangate45_attention_score32_exact_banked_finalized_tree_c16_bank_firstpass.json"
+        "runs/campaigns/npu/attention_score32_exact_banked_finalized_tree_factored_v2/sweeps/"
+        "nangate45_attention_score32_exact_banked_finalized_tree_factored_c16_bank_retry_r2.json"
     )
-    proposal_entry = {entry["item_id"]: entry for entry in proposal["required_evaluations"]}[item_id]
-    request_entry = {entry["item_id"]: entry for entry in evaluation_requests["requested_items"]}[item_id]
+    proposal_entries = {entry["item_id"]: entry for entry in proposal["required_evaluations"]}
+    request_entries = {entry["item_id"]: entry for entry in evaluation_requests["requested_items"]}
+    proposal_v1 = proposal_entries[v1_item_id]
+    proposal_r2 = proposal_entries[r2_item_id]
+    request_v1 = request_entries[v1_item_id]
+    request_r2 = request_entries[r2_item_id]
+    revision_record = {entry["revision"]: entry for entry in proposal["revision_record"]}
 
     assert proposal["abstraction_layer"] == "architecture_block"
-    assert proposal_entry["priority"] == 94
-    assert request_entry["priority"] == 94
-    assert proposal_entry["status"] == "pending_implementation_merge"
-    assert request_entry["status"] == "pending_implementation_merge"
-    assert proposal_entry["configs"] == expected_configs
-    assert request_entry["configs"] == expected_configs
-    assert proposal_entry["sweep_path"] == expected_sweep
-    assert request_entry["sweep_path"] == expected_sweep
-    assert "b59 is the first measured one-result/cycle point" in proposal["hypothesis"]
-    assert "100 um perimeter keepout" in proposal_entry["notes"]
+    assert revision_record["v1"]["status"] == "conclusive"
+    assert revision_record["r2"]["status"] == "pending"
+    assert proposal_v1["status"] == "conclusive"
+    assert request_v1["status"] == "conclusive"
+    assert proposal_v1["superseded_by_item_id"] == r2_item_id
+    assert request_v1["superseded_by_item_id"] == r2_item_id
+    assert proposal_r2["priority"] == 94
+    assert request_r2["priority"] == 94
+    assert proposal_r2["status"] == "pending_implementation_merge"
+    assert request_r2["status"] == "pending_implementation_merge"
+    assert proposal_r2["configs"] == expected_r2_configs
+    assert request_r2["configs"] == expected_r2_configs
+    assert proposal_r2["sweep_path"] == expected_sweep
+    assert request_r2["sweep_path"] == expected_sweep
+    assert "legacy exact pair-merge exp-scale encoding is physically infeasible" in proposal["hypothesis"]
+    assert "100 um perimeter keepout" in proposal_r2["notes"]
 
 
 def test_generate_l1_sweep_task_checked_in_service_requests_gate_and_refresh_release() -> None:

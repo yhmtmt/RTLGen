@@ -105,6 +105,63 @@ def test_exact_partial_tree_guard_rejects_manifest_boundary_mismatch(tmp_path: P
     assert "generated manifest direct_328bit_links_unclosed must be True" in result.stderr
 
 
+def test_exact_partial_tree_guard_accepts_explicit_legacy_monolithic_pair_merge_impl(tmp_path: Path) -> None:
+    design_dir = tmp_path / "legacy_case"
+    design_dir.mkdir()
+    config = json.loads(_config_path(8).read_text(encoding="utf-8"))
+    config["attention_score32_exact_partial_tree"]["exp_scale_impl"] = "legacy_monolithic_lut_exact"
+    (design_dir / "config.json").write_text(json.dumps(config, indent=2) + "\n", encoding="utf-8")
+    generate(config, design_dir / "verilog")
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "npu/eval/check_attention_score32_exact_partial_tree_guard.py",
+            "--design-dir",
+            str(design_dir),
+            "--config",
+            str(design_dir / "config.json"),
+        ],
+        cwd=REPO_ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, result.stderr
+    payload = json.loads(result.stdout)
+    assert payload["status"] == "ok"
+
+
+def test_exact_partial_tree_guard_rejects_pair_merge_impl_manifest_mismatch(tmp_path: Path) -> None:
+    design_dir = tmp_path / "factored_mismatch_case"
+    design_dir.mkdir()
+    config = json.loads(_config_path(8).read_text(encoding="utf-8"))
+    config["attention_score32_exact_partial_tree"]["exp_scale_impl"] = "factored_h33_l64_mul_exact"
+    (design_dir / "config.json").write_text(json.dumps(config, indent=2) + "\n", encoding="utf-8")
+    generate(config, design_dir / "verilog")
+    manifest_path = design_dir / "verilog" / "attention_score32_exact_partial_tree_manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["submodule_manifests"]["pair_merge"]["exp_scale_impl"] = "legacy_monolithic_lut_exact"
+    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "npu/eval/check_attention_score32_exact_partial_tree_guard.py",
+            "--design-dir",
+            str(design_dir),
+            "--config",
+            str(design_dir / "config.json"),
+        ],
+        cwd=REPO_ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode != 0
+    assert "pair-merge submodule manifest exp_scale_impl must be factored_h33_l64_mul_exact" in result.stderr
+
+
 def test_exact_partial_tree_guard_rejects_top_level_internal_storage(tmp_path: Path) -> None:
     design_dir = _prepare_design_dir(tmp_path, clusters=16)
     top_path = design_dir / "verilog" / "top.v"

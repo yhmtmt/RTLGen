@@ -9,6 +9,10 @@ import math
 from pathlib import Path
 from typing import Any
 
+FACTORED_H33_L64_MUL_EXACT = "factored_h33_l64_mul_exact"
+LEGACY_MONOLITHIC_LUT_EXACT = "legacy_monolithic_lut_exact"
+SEGMENTED_LUT_9X256_EXACT = "segmented_lut_9x256_exact"
+
 MERGE_SCALE_BITS = 24
 MERGE_SCALE = (1 << MERGE_SCALE_BITS) - 1
 EXP_BUCKET_SHIFT = 20
@@ -16,6 +20,21 @@ PARTIAL_VALUE_BITS = 328
 NUMERATOR_BITS = 41
 EXP_SUM_BITS = 33
 MAX_EXP_BUCKET = 8 << (28 - EXP_BUCKET_SHIFT)
+EXP_SCALE_SEGMENT_SHIFT = 8
+EXP_SCALE_SEGMENT_SIZE = 1 << EXP_SCALE_SEGMENT_SHIFT
+EXP_SCALE_SEGMENT_COUNT = (MAX_EXP_BUCKET // EXP_SCALE_SEGMENT_SIZE) + 1
+_SUPPORTED_EXP_SCALE_IMPLS = {
+    LEGACY_MONOLITHIC_LUT_EXACT,
+    SEGMENTED_LUT_9X256_EXACT,
+    FACTORED_H33_L64_MUL_EXACT,
+}
+EXP_FACTOR_STEP = 64
+EXP_FACTOR_HIGH_BITS = 13
+EXP_FACTOR_LOW_BITS = 30
+EXP_FACTOR_ROUND_SHIFT = EXP_FACTOR_HIGH_BITS + EXP_FACTOR_LOW_BITS
+EXP_FACTOR_ROUND_BIAS = 1 << (EXP_FACTOR_ROUND_SHIFT - 1)
+EXP_FACTOR_HIGH_ENTRIES = (MAX_EXP_BUCKET // EXP_FACTOR_STEP) + 1
+EXP_FACTOR_LOW_ENTRIES = EXP_FACTOR_STEP
 
 
 def _load(path: Path) -> dict[str, Any]:
@@ -33,18 +52,162 @@ def _validate(config: dict[str, Any]) -> dict[str, int | str]:
         raise SystemExit("config requires top_name and attention_score32_online_state_merge")
     value_slices = int(body.get("value_slices", 16))
     head_id_bits = int(body.get("head_id_bits", 5))
+    exp_scale_impl = str(body.get("exp_scale_impl", LEGACY_MONOLITHIC_LUT_EXACT)).strip()
     if value_slices < 1 or value_slices > 16 or value_slices & (value_slices - 1):
         raise SystemExit("value_slices must be a power of two in [1, 16]")
     if head_id_bits < 1 or head_id_bits > 8:
         raise SystemExit("head_id_bits must be in [1, 8]")
-    body.update({"value_slices": value_slices, "head_id_bits": head_id_bits})
-    return {"top_name": top_name, "value_slices": value_slices, "head_id_bits": head_id_bits}
+    if exp_scale_impl not in _SUPPORTED_EXP_SCALE_IMPLS:
+        supported = ", ".join(sorted(_SUPPORTED_EXP_SCALE_IMPLS))
+        raise SystemExit(f"exp_scale_impl must be one of: {supported}")
+    body.update({"value_slices": value_slices, "head_id_bits": head_id_bits, "exp_scale_impl": exp_scale_impl})
+    return {
+        "top_name": top_name,
+        "value_slices": value_slices,
+        "head_id_bits": head_id_bits,
+        "exp_scale_impl": exp_scale_impl,
+    }
 
 
-def _merge_scale_cases() -> str:
+def exact_exp_scale_value(bucket: int) -> int:
+    if bucket < 0 or bucket > MAX_EXP_BUCKET:
+        return 0
+    return max(1, int(math.exp(-(bucket / 256.0)) * MERGE_SCALE + 0.5))
+
+
+def _merge_scale_cases(*, start: int, stop: int, assign_target: str) -> str:
     return "\n".join(
-        f"      33'd{bucket}: exp_lut = 24'd{max(1, int(math.exp(-(bucket / 256.0)) * MERGE_SCALE + 0.5))};"
-        for bucket in range(MAX_EXP_BUCKET + 1)
+        f"      8'd{bucket - start}: {assign_target} = 24'd{exact_exp_scale_value(bucket)};" for bucket in range(start, stop)
+    )
+
+
+def _exp_lut_functions() -> str:
+    if EXP_SCALE_SEGMENT_COUNT != 9:
+        raise AssertionError("segmented exact exp-scale implementation assumes 9 segments")
+    blocks: list[str] = []
+    for segment in range(EXP_SCALE_SEGMENT_COUNT):
+        start = segment * EXP_SCALE_SEGMENT_SIZE
+        stop = min(MAX_EXP_BUCKET + 1, start + EXP_SCALE_SEGMENT_SIZE)
+        blocks.append(
+            f"""  function automatic [23:0] exp_lut_segment_{segment};
+    input [7:0] offset;
+    begin
+      case (offset)
+{_merge_scale_cases(start=start, stop=stop, assign_target=f"exp_lut_segment_{segment}")}
+      default: exp_lut_segment_{segment} = 24'd0;
+      endcase
+    end
+  endfunction"""
+        )
+    return "\n\n".join(blocks)
+
+
+def _factored_high_value(index: int) -> int:
+    return int(math.exp(-((index * EXP_FACTOR_STEP) / 256.0)) * MERGE_SCALE * (1 << EXP_FACTOR_HIGH_BITS) + 0.5)
+
+
+def _factored_low_value(index: int) -> int:
+    return int(math.exp(-(index / 256.0)) * (1 << EXP_FACTOR_LOW_BITS) + 0.5)
+
+
+def _factored_high_cases() -> str:
+    return "\n".join(
+        f"      6'd{index}: exp_lut_high = 37'd{_factored_high_value(index)};" for index in range(EXP_FACTOR_HIGH_ENTRIES)
+    )
+
+
+def _factored_low_cases() -> str:
+    return "\n".join(
+        f"      6'd{index}: exp_lut_low = 31'd{_factored_low_value(index)};" for index in range(EXP_FACTOR_LOW_ENTRIES)
+    )
+
+
+def _exp_lut_function(*, exp_scale_impl: str) -> str:
+    if exp_scale_impl == LEGACY_MONOLITHIC_LUT_EXACT:
+        cases = "\n".join(
+            f"      33'd{bucket}: exp_lut = 24'd{exact_exp_scale_value(bucket)};" for bucket in range(MAX_EXP_BUCKET + 1)
+        )
+        return f"""  function automatic [23:0] exp_lut;
+    input [32:0] bucket;
+    begin
+      case (bucket)
+{cases}
+      default: exp_lut = 24'd0;
+      endcase
+    end
+  endfunction"""
+    if exp_scale_impl == FACTORED_H33_L64_MUL_EXACT:
+        return f"""  function automatic [36:0] exp_lut_high;
+    input [5:0] bucket_hi;
+    begin
+      case (bucket_hi)
+{_factored_high_cases()}
+      default: exp_lut_high = 37'd0;
+      endcase
+    end
+  endfunction
+
+  function automatic [30:0] exp_lut_low;
+    input [5:0] bucket_lo;
+    begin
+      case (bucket_lo)
+{_factored_low_cases()}
+      default: exp_lut_low = 31'd0;
+      endcase
+    end
+  endfunction
+
+  function automatic [23:0] exp_lut;
+    input [32:0] bucket;
+    reg [36:0] high_scale;
+    reg [30:0] low_scale;
+    reg [67:0] product;
+    reg [67:0] rounded_product;
+    begin
+      if (bucket > 33'd{MAX_EXP_BUCKET}) begin
+        exp_lut = 24'd0;
+      end else begin
+        if (bucket == 33'd{MAX_EXP_BUCKET}) begin
+          high_scale = exp_lut_high(6'd32);
+          low_scale = exp_lut_low(6'd0);
+        end else begin
+          high_scale = exp_lut_high(bucket[10:6]);
+          low_scale = exp_lut_low(bucket[5:0]);
+        end
+        product = high_scale * low_scale;
+        rounded_product = product + 68'd{EXP_FACTOR_ROUND_BIAS};
+        exp_lut = rounded_product >> {EXP_FACTOR_ROUND_SHIFT};
+      end
+    end
+  endfunction"""
+    if exp_scale_impl != SEGMENTED_LUT_9X256_EXACT:
+        raise AssertionError(f"unsupported exp_scale_impl: {exp_scale_impl}")
+    return (
+        _exp_lut_functions()
+        + f"""
+
+  function automatic [23:0] exp_lut;
+    input [32:0] bucket;
+    begin
+      if (bucket > 33'd{MAX_EXP_BUCKET}) begin
+        exp_lut = 24'd0;
+      end else if (bucket == 33'd{MAX_EXP_BUCKET}) begin
+        exp_lut = exp_lut_segment_8(8'd0);
+      end else begin
+        case (bucket[10:8])
+          3'd0: exp_lut = exp_lut_segment_0(bucket[7:0]);
+          3'd1: exp_lut = exp_lut_segment_1(bucket[7:0]);
+          3'd2: exp_lut = exp_lut_segment_2(bucket[7:0]);
+          3'd3: exp_lut = exp_lut_segment_3(bucket[7:0]);
+          3'd4: exp_lut = exp_lut_segment_4(bucket[7:0]);
+          3'd5: exp_lut = exp_lut_segment_5(bucket[7:0]);
+          3'd6: exp_lut = exp_lut_segment_6(bucket[7:0]);
+          3'd7: exp_lut = exp_lut_segment_7(bucket[7:0]);
+          default: exp_lut = 24'd0;
+        endcase
+      end
+    end
+  endfunction"""
     )
 
 
@@ -62,7 +225,7 @@ def _lane_merge_cases() -> str:
     return "\n".join(cases)
 
 
-def _top(*, top_name: str, value_slices: int, head_id_bits: int) -> str:
+def _top(*, top_name: str, value_slices: int, head_id_bits: int, exp_scale_impl: str) -> str:
     slice_bits = _clog2(value_slices)
     return f"""// Auto-generated by npu/rtlgen/gen_attention_score32_online_state_merge.py
 module {top_name} (
@@ -102,6 +265,10 @@ module {top_name} (
   localparam integer VALUE_SLICES = {value_slices};
   localparam integer HEAD_ID_BITS = {head_id_bits};
   localparam [{slice_bits - 1}:0] LAST_SLICE = {slice_bits}'d{value_slices - 1};
+  localparam integer EXP_SCALE_BUCKET_MAX = {MAX_EXP_BUCKET};
+  localparam integer EXP_SCALE_SEGMENT_SHIFT = {EXP_SCALE_SEGMENT_SHIFT};
+  localparam integer EXP_SCALE_SEGMENT_SIZE = {EXP_SCALE_SEGMENT_SIZE};
+  localparam integer EXP_SCALE_SEGMENT_COUNT = {EXP_SCALE_SEGMENT_COUNT};
 
   reg left_hold_valid_q;
   reg [15:0] left_command_id_hold_q;
@@ -162,15 +329,7 @@ module {top_name} (
   assign out_value = merged_value_r;
   assign protocol_error = protocol_error_q;
 
-  function automatic [23:0] exp_lut;
-    input [32:0] bucket;
-    begin
-      case (bucket)
-{_merge_scale_cases()}
-      default: exp_lut = 24'd0;
-      endcase
-    end
-  endfunction
+{_exp_lut_function(exp_scale_impl=exp_scale_impl)}
 
   function automatic [32:0] scale_unsigned33;
     input [32:0] value_in;
@@ -325,6 +484,7 @@ def generate(config: dict[str, Any], out_dir: Path) -> None:
             top_name=str(params["top_name"]),
             value_slices=int(params["value_slices"]),
             head_id_bits=int(params["head_id_bits"]),
+            exp_scale_impl=str(params["exp_scale_impl"]),
         ),
         encoding="utf-8",
     )
@@ -340,7 +500,28 @@ def generate(config: dict[str, Any], out_dir: Path) -> None:
         "result_interface": "ready_valid_exact_partial_slice_stream",
         "equivalence_hash": False,
         "merge_scale_bits": MERGE_SCALE_BITS,
+        "exp_scale_impl": str(params["exp_scale_impl"]),
+        "exp_scale_bucket_max": MAX_EXP_BUCKET,
     }
+    if str(params["exp_scale_impl"]) == SEGMENTED_LUT_9X256_EXACT:
+        manifest.update(
+            {
+                "exp_scale_segment_shift": EXP_SCALE_SEGMENT_SHIFT,
+                "exp_scale_segment_size": EXP_SCALE_SEGMENT_SIZE,
+                "exp_scale_segment_count": EXP_SCALE_SEGMENT_COUNT,
+            }
+        )
+    if str(params["exp_scale_impl"]) == FACTORED_H33_L64_MUL_EXACT:
+        manifest.update(
+            {
+                "exp_factor_step": EXP_FACTOR_STEP,
+                "exp_factor_high_entries": EXP_FACTOR_HIGH_ENTRIES,
+                "exp_factor_low_entries": EXP_FACTOR_LOW_ENTRIES,
+                "exp_factor_high_bits": EXP_FACTOR_HIGH_BITS,
+                "exp_factor_low_bits": EXP_FACTOR_LOW_BITS,
+                "exp_factor_round_shift": EXP_FACTOR_ROUND_SHIFT,
+            }
+        )
     (out_dir / "attention_score32_online_state_merge_manifest.json").write_text(
         json.dumps(manifest, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
