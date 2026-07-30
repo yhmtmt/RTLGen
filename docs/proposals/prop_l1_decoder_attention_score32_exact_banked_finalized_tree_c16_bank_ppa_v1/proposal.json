@@ -6,7 +6,7 @@
   "kind": "circuit",
   "title": "Score32 exact banked finalized-tree c16 bank PPA baseline",
   "abstraction_layer": "architecture_block",
-  "hypothesis": "A merged c16 exact-partial tree plus ordered banked exact finalizer sweep can expose the marginal PPA cost of root-throughput scaling before any transport or full-decoder closure claims are made; b59 is the first measured one-result/cycle point and b64 quantifies the power-of-two overhead above that boundary.",
+  "hypothesis": "The legacy exact pair-merge exp-scale encoding is physically infeasible in this banked-tree envelope because each of the 15 pair nodes infers an oversized dual-read exact exp LUT. Replacing only that exp-scale encoding with a strict exact factored implementation should preserve every bucket output bit while materially shrinking the inferred LUT/mux structure, making the c16 merged exact-partial tree plus ordered banked finalizer sweep synthesizable again; b59 remains the first measured one-result/cycle point and b64 quantifies the power-of-two overhead above that boundary.",
   "direct_comparison": {
     "primary_question": "What Nangate45 area and timing tradeoff comes from the merged c16/r2/l8 ordered banked exact finalized tree when finalizer banks vary across 16, 32, 59, and 64 under a fixed first-pass 8 ns, 2700 um die, and 2500 um square core envelope with a 100 um perimeter keepout?",
     "candidate": "l1_decoder_attention_score32_exact_banked_finalized_tree_c16_bank_ppa_v1",
@@ -34,11 +34,29 @@
     "NoC placement, SRAM placement, and macro-to-macro transport are still open physical risks outside this block-only measurement.",
     "Full decoder composition remains unclosed, so later integrated conclusions must treat this as a component anchor rather than path closure evidence."
   ],
+  "revision_record": [
+    {
+      "revision": "v1",
+      "status": "conclusive",
+      "reason": "legacy_exact_exp_lut_rom_physically_infeasible",
+      "item_id": "l1_decoder_attention_score32_exact_banked_finalized_tree_c16_bank_ppa_v1",
+      "failure_signature": "all requested b16/b32/b59/b64 points rejected at synthesis because each pair node inferred a dual-read 4096x24 exact exp ROM from the 2049-entry exp_lut",
+      "historical_decision": "preserve_all_flow_failed_history_without_rewrite",
+      "notes": "Treat the v1 result as conclusive physical infeasibility of the legacy monolithic exact exp-scale ROM encoding under the fixed banked-tree envelope. Preserve the historical failed run data and do not rewrite DB state or historical artifacts."
+    },
+    {
+      "revision": "r2",
+      "status": "pending",
+      "item_id": "l1_decoder_attention_score32_exact_banked_finalized_tree_c16_bank_ppa_v1_r2",
+      "dispatch_requirement": "pin source_commit to the merge commit that contains the exact factored exp-scale implementation before dispatch",
+      "notes": "Retry under a new DB item identity while preserving the v1 infeasibility record as the historical baseline for the legacy ROM encoding."
+    }
+  ],
   "required_evaluations": [
     {
       "item_id": "l1_decoder_attention_score32_exact_banked_finalized_tree_c16_bank_ppa_v1",
       "task_type": "l1_sweep",
-      "objective": "Measure Nangate45 PPA for the merged c16/r2/l8 score32 exact banked finalized tree at finalizer banks 16, 32, 59, and 64.",
+      "objective": "Record the legacy exact exp-scale ROM encoding as physically infeasible for the merged c16/r2/l8 score32 exact banked finalized tree under the fixed banked-tree envelope.",
       "evaluation_mode": "frontier_followup",
       "abstraction_layer": "architecture_block",
       "comparison_role": "exact_banked_finalized_tree_c16_bank_anchor",
@@ -62,11 +80,39 @@
         "runs/designs/npu_blocks/attention_score32_exact_banked_finalized_tree_c16_r2_l8_b64/timing_debug_report.md"
       ],
       "expected_result": {
+        "direction": "record_legacy_exact_banked_tree_rom_infeasibility",
+        "reason": "Preserve the all-flow-failed v1 history as conclusive evidence that the legacy monolithic exact exp-scale ROM encoding is not physically synthesizable in this c16 banked-tree envelope."
+      },
+      "status": "conclusive",
+      "superseded_by_item_id": "l1_decoder_attention_score32_exact_banked_finalized_tree_c16_bank_ppa_v1_r2",
+      "notes": "Historical v1 result only. Preserve the failed DB/run history and treat the outcome as conclusive physical infeasibility of the legacy monolithic exact exp-scale ROM encoding; do not rewrite historical run data or artifacts."
+    },
+    {
+      "item_id": "l1_decoder_attention_score32_exact_banked_finalized_tree_c16_bank_ppa_v1_r2",
+      "task_type": "l1_sweep",
+      "objective": "Measure Nangate45 PPA for the merged c16/r2/l8 score32 exact banked finalized tree with the exact factored exp-scale implementation at finalizer banks 59 and 64.",
+      "evaluation_mode": "frontier_followup",
+      "abstraction_layer": "architecture_block",
+      "comparison_role": "exact_banked_finalized_tree_c16_bank_anchor",
+      "priority": 94,
+      "configs": [
+        "runs/designs/npu_blocks/attention_score32_exact_banked_finalized_tree_factored_c16_r2_l8_b59/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_banked_finalized_tree_factored_c16_r2_l8_b64/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/attention_score32_exact_banked_finalized_tree_factored_v2/sweeps/nangate45_attention_score32_exact_banked_finalized_tree_factored_c16_bank_retry_r2.json",
+      "out_root": "runs/designs/npu_blocks",
+      "expected_outputs": [
+        "runs/designs/npu_blocks/attention_score32_exact_banked_finalized_tree_factored_c16_r2_l8_b59/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_banked_finalized_tree_factored_c16_r2_l8_b59/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_score32_exact_banked_finalized_tree_factored_c16_r2_l8_b64/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_banked_finalized_tree_factored_c16_r2_l8_b64/timing_debug_report.md"
+      ],
+      "expected_result": {
         "direction": "measure_exact_banked_finalized_tree_c16_bank_cost",
-        "reason": "This records the sub-wrap b16/b32 cost, the first wrap-free b59 point, and the b64 power-of-two overhead while keeping the same merged c16/r2/l8 architecture and fixed perimeter-aware envelope."
+        "reason": "This retry records the first wrap-free b59 point and the b64 power-of-two overhead using the exact factored exp-scale implementation while keeping the same merged c16/r2/l8 architecture and fixed perimeter-aware envelope."
       },
       "status": "pending_implementation_merge",
-      "notes": "Use the merged banked wrapper only. The fixed 2700 um die with 100 um perimeter keepout retains the earlier 2500 um core span while leaving more pin-perimeter headroom for the 16 exposed leaf streams plus bank-order monitors; no DB auto-dispatch or materialization is part of this patch."
+      "notes": "Use the merged banked wrapper only. The fixed 2700 um die with 100 um perimeter keepout retains the earlier 2500 um core span while leaving more pin-perimeter headroom for the 16 exposed leaf streams plus bank-order monitors; no DB auto-dispatch or materialization is part of this patch. Pin `source_commit` to the merge commit that contains the exact factored exp-scale implementation before dispatch."
     }
   ],
   "source_refs": [
@@ -74,9 +120,9 @@
     "npu/eval/check_attention_score32_exact_banked_finalized_tree_guard.py",
     "runs/designs/npu_blocks/attention_score32_exact_banked_finalized_tree_c16_r2_l8_b16/config.json",
     "runs/designs/npu_blocks/attention_score32_exact_banked_finalized_tree_c16_r2_l8_b32/config.json",
-    "runs/designs/npu_blocks/attention_score32_exact_banked_finalized_tree_c16_r2_l8_b59/config.json",
-    "runs/designs/npu_blocks/attention_score32_exact_banked_finalized_tree_c16_r2_l8_b64/config.json",
-    "runs/campaigns/npu/attention_score32_exact_banked_finalized_tree_v1/sweeps/nangate45_attention_score32_exact_banked_finalized_tree_c16_bank_firstpass.json"
+    "runs/designs/npu_blocks/attention_score32_exact_banked_finalized_tree_factored_c16_r2_l8_b59/config.json",
+    "runs/designs/npu_blocks/attention_score32_exact_banked_finalized_tree_factored_c16_r2_l8_b64/config.json",
+    "runs/campaigns/npu/attention_score32_exact_banked_finalized_tree_factored_v2/sweeps/nangate45_attention_score32_exact_banked_finalized_tree_factored_c16_bank_retry_r2.json"
   ],
   "knowledge_refs": [
     "npu/docs/attention_score32_exact_banked_finalized_tree_contract.md",

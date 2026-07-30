@@ -16,6 +16,10 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from npu.rtlgen.gen_attention_score32_exact_partial_tree import generate as generate_tree
+from npu.rtlgen.gen_attention_score32_online_state_merge import (
+    FACTORED_H33_L64_MUL_EXACT,
+    LEGACY_MONOLITHIC_LUT_EXACT,
+)
 from npu.rtlgen.gen_attention_score32_exact_root_finalizer import generate as generate_finalizer
 from npu.sim.perf.attention_exact_partial import (
     FINAL_LINK_BITS,
@@ -51,6 +55,7 @@ def _validate(config: JsonDict) -> JsonDict:
     head_id_bits = int(body.get("head_id_bits", 5))
     divider_lanes = int(body.get("divider_lanes", 8))
     finalizer_banks = int(body.get("finalizer_banks", 1))
+    exp_scale_impl = str(body.get("exp_scale_impl", LEGACY_MONOLITHIC_LUT_EXACT)).strip()
     if clusters < 2 or clusters > 16 or (clusters & (clusters - 1)):
         raise SystemExit("clusters must be a power of two in [2, 16]")
     if radix != 2:
@@ -71,6 +76,7 @@ def _validate(config: JsonDict) -> JsonDict:
         "head_id_bits": head_id_bits,
         "divider_lanes": divider_lanes,
         "finalizer_banks": finalizer_banks,
+        "exp_scale_impl": exp_scale_impl,
     }
 
 
@@ -542,6 +548,7 @@ def generate(config: JsonDict, out_dir: Path) -> None:
                     "radix": int(params["radix"]),
                     "value_slices": int(params["value_slices"]),
                     "head_id_bits": int(params["head_id_bits"]),
+                    "exp_scale_impl": str(params["exp_scale_impl"]),
                 },
             },
             temp_dir / "tree",
@@ -604,6 +611,7 @@ def generate(config: JsonDict, out_dir: Path) -> None:
         "head_id_bits": int(params["head_id_bits"]),
         "divider_lanes": int(params["divider_lanes"]),
         "finalizer_banks": banks,
+        "exp_scale_impl": str(params["exp_scale_impl"]),
         "tree_stages": stage_count,
         "tree_nodes": node_count,
         "result_interface": "clusters_ready_valid_exact_partial_leaf_streams_to_ordered_banked_exact_finalized_root_stream",

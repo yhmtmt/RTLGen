@@ -1,0 +1,12 @@
+{
+  "attention_score32_exact_banked_finalized_tree": {
+    "clusters": 16,
+    "divider_lanes": 8,
+    "finalizer_banks": 64,
+    "head_id_bits": 5,
+    "radix": 2,
+    "value_slices": 16,
+    "exp_scale_impl": "factored_h33_l64_mul_exact"
+  },
+  "top_name": "attention_score32_exact_banked_finalized_tree_factored_c16_r2_l8_b64"
+}

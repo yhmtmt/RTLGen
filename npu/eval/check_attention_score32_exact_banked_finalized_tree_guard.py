@@ -16,6 +16,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from npu.rtlgen.gen_attention_score32_exact_banked_finalized_tree import generate
+from npu.rtlgen.gen_attention_score32_online_state_merge import LEGACY_MONOLITHIC_LUT_EXACT
 from npu.sim.perf.attention_exact_partial import (
     FINAL_LINK_BITS,
     FINAL_PAYLOAD_BITS,
@@ -27,6 +28,7 @@ from npu.sim.perf.attention_exact_partial import (
 _SUPPORTED_CLUSTERS = {2, 4, 8, 16}
 _SUPPORTED_LANES = {1, 2, 4, 8}
 _PPA_SWEEP_TAG_PREFIX = "attention_score32_exact_banked_finalized_tree_c16_bank_firstpass_v1"
+_PPA_FACTORED_SWEEP_TAG_PREFIX = "attention_score32_exact_banked_finalized_tree_factored_c16_bank_retry_r2"
 _PPA_SWEEP_FLOW_PARAMS = {
     "CLOCK_PERIOD": [8.0],
     "DIE_AREA": ["0 0 2700 2700"],
@@ -106,8 +108,16 @@ def _validate_ppa_sweep(*, config: dict[str, object], sweep_path: Path) -> None:
     if not sweep_path.is_file():
         raise SystemExit(f"missing sweep: {sweep_path}")
     sweep = _load_json(sweep_path)
-    if sweep.get("tag_prefix") != _PPA_SWEEP_TAG_PREFIX:
-        raise SystemExit(f"banked PPA sweep tag_prefix must be {_PPA_SWEEP_TAG_PREFIX}")
+    tag_prefix = sweep.get("tag_prefix")
+    if tag_prefix == _PPA_SWEEP_TAG_PREFIX:
+        allowed_banks = _PPA_SWEEP_ALLOWED_BANKS
+    elif tag_prefix == _PPA_FACTORED_SWEEP_TAG_PREFIX:
+        allowed_banks = {59, 64}
+    else:
+        raise SystemExit(
+            "banked PPA sweep tag_prefix must be "
+            f"{_PPA_SWEEP_TAG_PREFIX} or {_PPA_FACTORED_SWEEP_TAG_PREFIX}"
+        )
     if sweep.get("flow_params") != _PPA_SWEEP_FLOW_PARAMS:
         raise SystemExit("banked PPA sweep flow_params do not match the checked-in banked-finalized-tree contract")
 
@@ -118,9 +128,11 @@ def _validate_ppa_sweep(*, config: dict[str, object], sweep_path: Path) -> None:
     radix = int(body.get("radix", 0))
     divider_lanes = int(body.get("divider_lanes", 0))
     finalizer_banks = int(body.get("finalizer_banks", 0))
-    if clusters != 16 or radix != 2 or divider_lanes != 8 or finalizer_banks not in _PPA_SWEEP_ALLOWED_BANKS:
+    exp_scale_impl = str(body.get("exp_scale_impl", LEGACY_MONOLITHIC_LUT_EXACT)).strip()
+    if clusters != 16 or radix != 2 or divider_lanes != 8 or finalizer_banks not in allowed_banks:
         raise SystemExit(
-            "banked PPA sweep membership requires c16/r2/l8 with finalizer_banks in {16, 32, 59, 64}"
+            "banked PPA sweep membership requires c16/r2/l8 with finalizer_banks in "
+            f"{sorted(allowed_banks)}"
         )
 
 
@@ -161,6 +173,7 @@ def main(argv: list[str] | None = None) -> int:
     head_id_bits = int(body.get("head_id_bits", 0))
     divider_lanes = int(body.get("divider_lanes", 0))
     finalizer_banks = int(body.get("finalizer_banks", 0))
+    exp_scale_impl = str(body.get("exp_scale_impl", LEGACY_MONOLITHIC_LUT_EXACT)).strip()
     if clusters not in _SUPPORTED_CLUSTERS:
         raise SystemExit("clusters must be one of 2, 4, 8, 16")
     if radix != 2:
@@ -198,6 +211,7 @@ def main(argv: list[str] | None = None) -> int:
         "head_id_bits": head_id_bits,
         "divider_lanes": divider_lanes,
         "finalizer_banks": finalizer_banks,
+        "exp_scale_impl": exp_scale_impl,
         "tree_stages": tree_stages,
         "tree_nodes": tree_nodes,
         "result_interface": "clusters_ready_valid_exact_partial_leaf_streams_to_ordered_banked_exact_finalized_root_stream",
@@ -253,6 +267,15 @@ def main(argv: list[str] | None = None) -> int:
     }
     for key, expected in expected_finalizer_manifest.items():
         _require(finalizer_manifest, key, expected, "root-finalizer submodule manifest")
+    pair_merge_manifest = tree_manifest.get("submodule_manifests", {}).get("pair_merge")
+    if not isinstance(pair_merge_manifest, dict):
+        raise SystemExit("partial-tree submodule manifest must contain pair_merge submodule manifest")
+    _require(
+        pair_merge_manifest,
+        "exp_scale_impl",
+        exp_scale_impl,
+        "pair-merge submodule manifest",
+    )
 
     rtl = top_path.read_text(encoding="utf-8", errors="replace")
     tree_module = _extract_module(rtl, tree_top_name)

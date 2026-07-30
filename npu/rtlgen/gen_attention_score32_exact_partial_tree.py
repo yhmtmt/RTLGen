@@ -15,7 +15,11 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from npu.rtlgen.gen_attention_score32_online_state_merge import generate as generate_merge
+from npu.rtlgen.gen_attention_score32_online_state_merge import (
+    FACTORED_H33_L64_MUL_EXACT,
+    LEGACY_MONOLITHIC_LUT_EXACT,
+    generate as generate_merge,
+)
 from npu.sim.perf.attention_exact_partial import (
     PARTIAL_LINK_BITS,
     PARTIAL_PAYLOAD_BITS,
@@ -46,6 +50,7 @@ def _validate(config: JsonDict) -> JsonDict:
     radix = int(body.get("radix", 2))
     value_slices = int(body.get("value_slices", 16))
     head_id_bits = int(body.get("head_id_bits", 5))
+    exp_scale_impl = str(body.get("exp_scale_impl", LEGACY_MONOLITHIC_LUT_EXACT)).strip()
     if clusters < 2 or clusters > 16 or (clusters & (clusters - 1)):
         raise SystemExit("clusters must be a power of two in [2, 16]")
     if radix != 2:
@@ -60,6 +65,7 @@ def _validate(config: JsonDict) -> JsonDict:
         "radix": radix,
         "value_slices": value_slices,
         "head_id_bits": head_id_bits,
+        "exp_scale_impl": exp_scale_impl,
     }
 
 
@@ -307,6 +313,7 @@ def generate(config: JsonDict, out_dir: Path) -> None:
                 "attention_score32_online_state_merge": {
                     "value_slices": int(params["value_slices"]),
                     "head_id_bits": int(params["head_id_bits"]),
+                    "exp_scale_impl": str(params["exp_scale_impl"]),
                 },
             },
             temp_dir,
@@ -341,6 +348,7 @@ def generate(config: JsonDict, out_dir: Path) -> None:
         "radix": int(params["radix"]),
         "value_slices": int(params["value_slices"]),
         "head_id_bits": int(params["head_id_bits"]),
+        "exp_scale_impl": str(params["exp_scale_impl"]),
         "tree_stages": stage_count,
         "tree_nodes": node_count,
         "result_interface": "clusters_ready_valid_exact_partial_leaf_streams_to_root_stream",

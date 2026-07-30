@@ -1,4 +1,5 @@
 import json
+import math
 import os
 from pathlib import Path
 import re
@@ -10,7 +11,12 @@ import pytest
 
 from npu.eval.probe_attention_score32_exact_partial import build_report
 from npu.rtlgen.gen_attention_decode_score_multivalue_cluster import generate as generate_cluster
-from npu.rtlgen.gen_attention_score32_online_state_merge import generate as generate_merge
+from npu.rtlgen.gen_attention_score32_online_state_merge import (
+    FACTORED_H33_L64_MUL_EXACT,
+    MAX_EXP_BUCKET,
+    exact_exp_scale_value,
+    generate as generate_merge,
+)
 from npu.rtlgen.gen_attention_two_pass_multivalue_stream import generate as generate_reducer
 from npu.sim.perf.attention_exact_partial import (
     ExactPartialBeat,
@@ -55,7 +61,11 @@ def _partial_reducer_config() -> dict:
 def _merge_config() -> dict:
     return {
         "top_name": "attention_score32_online_state_merge_exact_partial",
-        "attention_score32_online_state_merge": {"value_slices": 16, "head_id_bits": 5},
+        "attention_score32_online_state_merge": {
+            "value_slices": 16,
+            "head_id_bits": 5,
+            "exp_scale_impl": FACTORED_H33_L64_MUL_EXACT,
+        },
     }
 
 
@@ -403,9 +413,166 @@ def test_exact_partial_merge_manifest_and_ports(tmp_path: Path) -> None:
     assert manifest["semantic_profile"] == "score32_online_exact_partial_pair_merge_v1"
     assert manifest["partial_payload_bits_per_beat"] == 328
     assert manifest["equivalence_hash"] is False
+    assert manifest["exp_scale_impl"] == FACTORED_H33_L64_MUL_EXACT
+    assert manifest["exp_scale_bucket_max"] == MAX_EXP_BUCKET
+    assert manifest["exp_factor_step"] == 64
+    assert manifest["exp_factor_high_entries"] == 33
+    assert manifest["exp_factor_low_entries"] == 64
     assert "input  wire [4:0] left_head_id" in rtl
     assert "output wire [4:0] out_head_id" in rtl
     assert "output wire [327:0] out_value" in rtl
+    assert "function automatic [36:0] exp_lut_high;" in rtl
+    assert "function automatic [30:0] exp_lut_low;" in rtl
+    assert "product = high_scale * low_scale;" in rtl
+    assert "exp_lut = rounded_product >> 43;" in rtl
+    assert f"if (bucket > 33'd{MAX_EXP_BUCKET}) begin" in rtl
+
+
+def test_exact_partial_merge_python_exp_scale_matches_legacy_formula_exhaustively() -> None:
+    expected = [
+        max(1, int(math.exp(-(bucket / 256.0)) * ((1 << 24) - 1) + 0.5))
+        for bucket in range(MAX_EXP_BUCKET + 1)
+    ]
+    observed = [exact_exp_scale_value(bucket) for bucket in range(MAX_EXP_BUCKET + 1)]
+    assert observed == expected
+    assert exact_exp_scale_value(-1) == 0
+    assert exact_exp_scale_value(MAX_EXP_BUCKET + 1) == 0
+
+
+@pytest.mark.skipif(not _rtl_tools_available(), reason="iverilog/vvp/verilator unavailable")
+def test_exact_partial_merge_rtl_exp_scale_matches_python_exhaustively(tmp_path: Path) -> None:
+    generate_merge(_merge_config(), tmp_path / "rtl")
+    tb_path = tmp_path / "tb_exp_scale.sv"
+    expected_json = json.dumps({str(bucket): exact_exp_scale_value(bucket) for bucket in range(MAX_EXP_BUCKET + 1)}, sort_keys=True)
+    tb_path.write_text(
+        f"""`timescale 1ns/1ps
+module tb;
+  localparam integer MAX_BUCKET = {MAX_EXP_BUCKET};
+  localparam integer MERGE_SCALE = 24'hffffff;
+  reg clk = 0, rst_n = 0;
+  reg left_valid = 0, right_valid = 0, out_ready = 1;
+  reg [15:0] left_command_id = 16'h0021, right_command_id = 16'h0021;
+  reg [4:0] left_head_id = 5'd2, right_head_id = 5'd2;
+    reg signed [31:0] left_global_max = 32'sd0, right_global_max = 32'sd0;
+  reg [32:0] left_exp_sum = 33'd0, right_exp_sum = 33'd0;
+  reg [3:0] left_slice = 4'd0, right_slice = 4'd0;
+  reg left_last = 1'b0, right_last = 1'b0;
+  reg [327:0] left_value = 328'd0, right_value = 328'd0;
+  wire left_ready, right_ready, out_valid, out_last, protocol_error;
+  wire [15:0] out_command_id;
+  wire [4:0] out_head_id;
+  wire signed [31:0] out_global_max;
+  wire [32:0] out_exp_sum;
+  wire [3:0] out_slice;
+  wire [327:0] out_value;
+  wire [31:0] completed_count, cycle_count;
+    integer bucket;
+    localparam integer OUT_OF_RANGE_SENTINEL = 4096;
+
+  always #5 clk = ~clk;
+
+  attention_score32_online_state_merge_exact_partial dut (
+      .clk(clk), .rst_n(rst_n),
+      .left_valid(left_valid), .left_ready(left_ready), .left_command_id(left_command_id),
+      .left_head_id(left_head_id), .left_global_max(left_global_max), .left_exp_sum(left_exp_sum),
+      .left_slice(left_slice), .left_last(left_last), .left_value(left_value),
+      .right_valid(right_valid), .right_ready(right_ready), .right_command_id(right_command_id),
+      .right_head_id(right_head_id), .right_global_max(right_global_max), .right_exp_sum(right_exp_sum),
+      .right_slice(right_slice), .right_last(right_last), .right_value(right_value),
+      .out_valid(out_valid), .out_ready(out_ready), .out_command_id(out_command_id),
+      .out_head_id(out_head_id), .out_global_max(out_global_max), .out_exp_sum(out_exp_sum),
+      .out_slice(out_slice), .out_last(out_last), .out_value(out_value),
+      .completed_count(completed_count), .cycle_count(cycle_count), .protocol_error(protocol_error)
+  );
+
+  task automatic drive_case(input integer bucket_value);
+    begin
+      @(negedge clk);
+      left_global_max = -bucket_value * 32'sd1048576;
+      right_global_max = 32'sd0;
+      left_exp_sum = 33'd16777215;
+      right_exp_sum = 33'd0;
+      left_valid = 1'b1;
+      right_valid = 1'b1;
+      while (!(left_ready && right_ready)) begin
+        @(negedge clk);
+      end
+      @(negedge clk);
+      left_valid = 1'b0;
+      right_valid = 1'b0;
+      while (!out_valid) begin
+        @(posedge clk);
+      end
+      $display("BUCKET=%0d SCALE=%0d", bucket_value, out_exp_sum);
+      @(posedge clk);
+    end
+  endtask
+
+  initial begin
+    repeat (2) @(negedge clk);
+    rst_n = 1'b1;
+    for (bucket = 0; bucket <= MAX_BUCKET; bucket = bucket + 1) begin
+      drive_case(bucket);
+    end
+    @(negedge clk);
+    left_global_max = -32'sd2147483648;
+    right_global_max = 32'sd2147483647;
+    left_exp_sum = 33'd16777215;
+    right_exp_sum = 33'd0;
+    left_valid = 1'b1;
+    right_valid = 1'b1;
+    while (!(left_ready && right_ready)) begin
+      @(negedge clk);
+    end
+    @(negedge clk);
+    left_valid = 1'b0;
+    right_valid = 1'b0;
+    while (!out_valid) begin
+      @(posedge clk);
+    end
+    $display("BUCKET=%0d SCALE=%0d", OUT_OF_RANGE_SENTINEL, out_exp_sum);
+    $finish;
+  end
+endmodule
+""",
+        encoding="utf-8",
+    )
+
+    sim_out = tmp_path / "sim.out"
+    compile_run = subprocess.run(
+        [
+            _tool("iverilog"),
+            "-g2012",
+            "-o",
+            str(sim_out),
+            str(tb_path),
+            str(tmp_path / "rtl" / "top.v"),
+        ],
+        capture_output=True,
+        text=True,
+        cwd=REPO_ROOT,
+        timeout=120,
+    )
+    assert compile_run.returncode == 0, compile_run.stderr or compile_run.stdout
+    run = subprocess.run(
+        [_tool("vvp"), str(sim_out)],
+        capture_output=True,
+        text=True,
+        cwd=REPO_ROOT,
+        timeout=120,
+    )
+    assert run.returncode == 0, run.stderr or run.stdout
+
+    observed: dict[int, int] = {}
+    pattern = re.compile(r"BUCKET=(\d+) SCALE=(\d+)")
+    for line in run.stdout.splitlines():
+        match = pattern.search(line)
+        if match:
+            observed[int(match.group(1))] = int(match.group(2))
+
+    expected = {bucket: exact_exp_scale_value(bucket) for bucket in range(MAX_EXP_BUCKET + 1)}
+    expected[4096] = 0
+    assert observed == expected, json.dumps({"expected": expected_json, "observed": observed}, indent=2, sort_keys=True)
 
 
 @pytest.mark.skipif(not _rtl_tools_available(), reason="iverilog/vvp/verilator unavailable")

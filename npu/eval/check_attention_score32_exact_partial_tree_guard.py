@@ -16,6 +16,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from npu.rtlgen.gen_attention_score32_exact_partial_tree import generate
+from npu.rtlgen.gen_attention_score32_online_state_merge import LEGACY_MONOLITHIC_LUT_EXACT
 from npu.sim.perf.attention_exact_partial import PARTIAL_LINK_BITS, PARTIAL_PAYLOAD_BITS
 
 
@@ -108,6 +109,7 @@ def main(argv: list[str] | None = None) -> int:
     radix = int(body.get("radix", 0))
     value_slices = int(body.get("value_slices", 0))
     head_id_bits = int(body.get("head_id_bits", 0))
+    exp_scale_impl = str(body.get("exp_scale_impl", LEGACY_MONOLITHIC_LUT_EXACT)).strip()
     if clusters not in _SUPPORTED_CLUSTERS:
         raise SystemExit("clusters must be one of 2, 4, 8, 16")
     if clusters & (clusters - 1):
@@ -134,6 +136,7 @@ def main(argv: list[str] | None = None) -> int:
         "radix": radix,
         "value_slices": value_slices,
         "head_id_bits": head_id_bits,
+        "exp_scale_impl": exp_scale_impl,
         "tree_stages": tree_stages,
         "tree_nodes": tree_nodes,
         "result_interface": "clusters_ready_valid_exact_partial_leaf_streams_to_root_stream",
@@ -163,6 +166,12 @@ def main(argv: list[str] | None = None) -> int:
         pair_merge_manifest,
         "semantic_profile",
         "score32_online_exact_partial_pair_merge_v1",
+        "pair-merge submodule manifest",
+    )
+    _require(
+        pair_merge_manifest,
+        "exp_scale_impl",
+        exp_scale_impl,
         "pair-merge submodule manifest",
     )
 
