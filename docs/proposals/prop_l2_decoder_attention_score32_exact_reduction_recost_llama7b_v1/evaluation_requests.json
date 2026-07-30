@@ -66,8 +66,12 @@
         "direction": "record_score32_exact_reduction_recost",
         "reason": "Retry with the direct-script bootstrap fix under a fresh DB item identity while emitting the canonical exact-reduction artifact basename already expected by the merged downstream rerank."
       },
-      "status": "pending",
-      "notes": "Manual dispatch only. Pin `source_commit` to the bootstrap-fix merge commit at dispatch. Run only the exact-reduction recost audit, commit one JSON and one Markdown artifact named with the canonical `...__l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1` basename, and do not rewrite historical v1 DB/run records."
+      "status": "merged",
+      "notes": "Manual dispatch only. Pin `source_commit` to the bootstrap-fix merge commit at dispatch. Run only the exact-reduction recost audit, commit one JSON and one Markdown artifact named with the canonical `...__l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1` basename, and do not rewrite historical v1 DB/run records. Merged via PR #1505 and merge 3501720f2171a60d772ebe7d0e2d4e708a2d0e4f at 2026-07-30T11:22:33.470755Z.",
+      "merged_pr_number": 1505,
+      "merge_commit": "3501720f2171a60d772ebe7d0e2d4e708a2d0e4f",
+      "merged_utc": "2026-07-30T11:22:33.470755Z"
     }
-  ]
+  ],
+  "source_commit": "0cad19df6fc0e560657d53dd48dfedf7ecc70b05"
 }

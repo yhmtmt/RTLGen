@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1",
+  "decision": "iterate",
+  "pr_number": 1505,
+  "merge_commit": "3501720f2171a60d772ebe7d0e2d4e708a2d0e4f",
+  "merged_utc": "2026-07-30T11:22:33.470755Z"
+}
