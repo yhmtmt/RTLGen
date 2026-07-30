@@ -22,7 +22,12 @@
         "direction": "record_score32_exact_reduction_gqa8_full_equivalence_rerank",
         "reason": "The recost must fail closed unless exact reduction, quality-aware frontier, and both full GQA8 equivalence gates all agree."
       },
-      "status": "pending_implementation_merge"
+      "status": "merged",
+      "merged_pr_number": 1507,
+      "merge_commit": "f269213062847cf953a97fa45f60057c74f04769",
+      "merged_utc": "2026-07-30T11:30:39.611159Z",
+      "notes": "Merged via PR #1507 and merge f269213062847cf953a97fa45f60057c74f04769 at 2026-07-30T11:30:39.611159Z."
     }
-  ]
+  ],
+  "source_commit": "8cc94346b4b3f0bf6d7a9b52df47cb8f3329d64e"
 }
