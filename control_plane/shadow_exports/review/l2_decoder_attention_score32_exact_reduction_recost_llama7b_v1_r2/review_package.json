@@ -1,0 +1,213 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-07-30T11:20:22.538514Z",
+  "control_plane_source_commit": "772a47d1a85b9a68b8d50d367fd3febcbb7676ce",
+  "review_metadata_source_commit": "772a47d1a85b9a68b8d50d367fd3febcbb7676ce",
+  "item_id": "l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1_r2",
+  "run_key": "l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1_r2_run_0429ee4f44a4fdf0",
+  "layer": "layer2",
+  "flow": "openroad",
+  "task_type": "l2_campaign",
+  "source_commit": "0cad19df6fc0e560657d53dd48dfedf7ecc70b05",
+  "queue_snapshot": {
+    "path": "control_plane/shadow_exports/review/l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1_r2/evaluated.json",
+    "result": {
+      "branch": "eval/l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1_r2/s20260730t112020z",
+      "completed_utc": "2026-07-29T08:01:10.950956Z",
+      "evaluator_id": "control_plane",
+      "executor": "@control_plane",
+      "host": "b7c2d9c80c1c",
+      "identity_block": "[role:evaluator][account:control_plane][session:s20260730t112020z][host:b7c2d9c80c1c][item:l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1_r2]",
+      "metrics_rows": [],
+      "metrics_exempt_reason": "evidence_only_decoder_evidence",
+      "queue_item_id": "l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1_r2",
+      "session_id": "s20260730t112020z",
+      "status": "ok",
+      "summary": "2/2 commands succeeded"
+    }
+  },
+  "review_artifact": {
+    "kind": "decision_proposal",
+    "path": "control_plane/shadow_exports/l2_decisions/l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1_r2.json",
+    "storage_mode": "repo",
+    "sha256": "38426a45a602bad452d2019f27e297344855c89405abd3117a0c50fd8bdd14a8",
+    "payload": {
+      "version": 0.1,
+      "generated_utc": "2026-07-30T11:20:20.032423Z",
+      "item_id": "l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1_r2",
+      "run_key": "l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1_r2_run_0429ee4f44a4fdf0",
+      "layer": "layer2",
+      "flow": "openroad",
+      "platform": "nangate45",
+      "task_type": "l2_campaign",
+      "source_commit": "0cad19df6fc0e560657d53dd48dfedf7ecc70b05",
+      "review_metadata_source_commit": "772a47d1a85b9a68b8d50d367fd3febcbb7676ce",
+      "objective": "LLM-oriented attention-tail stress campaign for larger sequence lengths and more repeated non-terminal Softmax paths.",
+      "input_manifest": {
+        "decoder_contract": {
+          "attention_score32_exact_reduction_recost_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_reduction_recost__l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1.json",
+          "attention_score32_exact_reduction_recost_scope": "Correct the obsolete 141-cycle score32 schedule-wrapper reduction assumption with the exact ordered banked finalized-tree c16/r2/l8/b59 full-wave no-stall service contract while preserving the source recost values explicitly and keeping reducer PPA/activity plus 328-bit transport/NoC/SRAM closure out of scope.",
+          "attention_score32_exact_reduction_recost_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_reduction_recost__l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1.md",
+          "attention_score32_exact_reduction_recost_source_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_score32_exp_lut_div_schedule_wrapper_recost_llama7b_v1.json",
+          "attention_score32_exact_reduction_recost_banked_config": "runs/designs/npu_blocks/attention_score32_exact_banked_finalized_tree_c16_r2_l8_b59/config.json"
+        }
+      },
+      "recommendation": {
+        "source": "decoder_evidence",
+        "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_reduction_recost__l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1.json",
+        "arch_id": "decoder_attention_score32_exact_reduction_recost",
+        "macro_mode": "evidence_only",
+        "outcome": "decoder_evidence_recorded"
+      },
+      "objective_profiles": [],
+      "evaluation_record": {
+        "proposal_id": "prop_l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1",
+        "title": "Score32 exact reduction schedule recost for Llama7B",
+        "primary_question": "How does the score32 schedule-wrapper Llama7B row change when the obsolete 141-cycle reduction assumption is replaced by the exact c16/r2/l8/b59 full-wave banked-finalizer drain contract?",
+        "evaluation_mode": "frontier_detail",
+        "comparison_role": "score32_exact_reduction_recost",
+        "abstraction_layer": "decoder_attention_score32_exact_reduction_recost",
+        "expected_direction": "record_score32_exact_reduction_recost",
+        "expected_reason": "Retry exact-reduction recost after direct-script bootstrap fix; preserve failed v1 history and emit the canonical recost artifact.",
+        "summary": "Decoder evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_reduction_recost__l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1.json: decision=decoder_evidence_recorded.",
+        "outcome": "decoder_evidence_recorded",
+        "expectation_status": "unspecified"
+      },
+      "proposal_assessment": {
+        "proposal_id": "prop_l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1",
+        "title": "Score32 exact reduction schedule recost for Llama7B",
+        "kind": "architecture",
+        "primary_question": "How does the score32 schedule-wrapper Llama7B row change when the obsolete 141-cycle reduction assumption is replaced by the exact c16/r2/l8/b59 full-wave banked-finalizer drain contract?",
+        "evaluation_mode": "frontier_detail",
+        "comparison_role": "score32_exact_reduction_recost",
+        "outcome": "decoder_evidence_recorded",
+        "summary": "Decoder evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_reduction_recost__l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1.json: decision=decoder_evidence_recorded.",
+        "baseline_ref": null,
+        "baseline_item_id": null,
+        "matched_row_count": 0,
+        "matched_rows": [],
+        "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_reduction_recost__l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1.json",
+        "decoder_quality": {
+          "diagnosis": {},
+          "remaining_abstractions": [
+            "Exact reducer PPA remains unclosed; this recost changes schedule cycles only.",
+            "Exact reducer activity energy remains unclosed; no reduction toggle-energy closure is claimed here.",
+            "328-bit exact transport, NoC, and SRAM composition remain unclosed.",
+            "Producer arrival timing and overlap with the reducer are not embodied here; adding the 574-cycle drain after tile waves is a conservative serialized-stage schedule."
+          ],
+          "source_artifacts": {
+            "banked_config_json": {
+              "canonical_json_sha256": "d594f191d742423b3860c7ff129ac3c80972076e675f8404ec2909c7e7e19e7b",
+              "file_sha256": "532566d398f56ade86a6e50608d07253e424f071a3f1f3dc09789741b4cace2e",
+              "path": "runs/designs/npu_blocks/attention_score32_exact_banked_finalized_tree_c16_r2_l8_b59/config.json"
+            },
+            "schedule_wrapper_recost_json": {
+              "canonical_json_sha256": "497552e34ab153946bf5cbf792e6a1e8e4a5fe0e4976a9d63d2ed006ea699859",
+              "file_sha256": "34ab51abb4e3f30af0e827a8ea8fc1ec008039e2ddbdbce3de81713173fe08d6",
+              "path": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_score32_exp_lut_div_schedule_wrapper_recost_llama7b_v1.json"
+            }
+          },
+          "summary": {
+            "corrected_adjusted_latency_us_if_feasible": 13488.364723,
+            "corrected_adjusted_speedup_if_feasible": 0.158569359883,
+            "corrected_latency_us": 13488.364723,
+            "corrected_layer_cycles": 8664,
+            "corrected_reduction_cycles": 574,
+            "corrected_token_throughput_per_s": 74.137971543343,
+            "corrected_total_cycles": 277248,
+            "source_adjusted_latency_us_if_feasible": 12814.257853,
+            "source_adjusted_speedup_if_feasible": 0.16691105989405908,
+            "source_latency_us": 12814.257853,
+            "source_layer_cycles": 8231,
+            "source_reduction_cycles": 141,
+            "source_token_throughput_per_s": 78.038073798077,
+            "source_total_cycles": 263392
+          }
+        }
+      },
+      "source_refs": {
+        "decoder_evidence_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_reduction_recost__l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1.json",
+        "decoder_attention_score32_exact_reduction_recost_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_reduction_recost__l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1.json",
+        "decoder_attention_score32_exact_reduction_recost_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_reduction_recost__l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1.md"
+      },
+      "decoder_quality": {
+        "diagnosis": {},
+        "remaining_abstractions": [
+          "Exact reducer PPA remains unclosed; this recost changes schedule cycles only.",
+          "Exact reducer activity energy remains unclosed; no reduction toggle-energy closure is claimed here.",
+          "328-bit exact transport, NoC, and SRAM composition remain unclosed.",
+          "Producer arrival timing and overlap with the reducer are not embodied here; adding the 574-cycle drain after tile waves is a conservative serialized-stage schedule."
+        ],
+        "source_artifacts": {
+          "banked_config_json": {
+            "canonical_json_sha256": "d594f191d742423b3860c7ff129ac3c80972076e675f8404ec2909c7e7e19e7b",
+            "file_sha256": "532566d398f56ade86a6e50608d07253e424f071a3f1f3dc09789741b4cace2e",
+            "path": "runs/designs/npu_blocks/attention_score32_exact_banked_finalized_tree_c16_r2_l8_b59/config.json"
+          },
+          "schedule_wrapper_recost_json": {
+            "canonical_json_sha256": "497552e34ab153946bf5cbf792e6a1e8e4a5fe0e4976a9d63d2ed006ea699859",
+            "file_sha256": "34ab51abb4e3f30af0e827a8ea8fc1ec008039e2ddbdbce3de81713173fe08d6",
+            "path": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_score32_exp_lut_div_schedule_wrapper_recost_llama7b_v1.json"
+          }
+        },
+        "summary": {
+          "corrected_adjusted_latency_us_if_feasible": 13488.364723,
+          "corrected_adjusted_speedup_if_feasible": 0.158569359883,
+          "corrected_latency_us": 13488.364723,
+          "corrected_layer_cycles": 8664,
+          "corrected_reduction_cycles": 574,
+          "corrected_token_throughput_per_s": 74.137971543343,
+          "corrected_total_cycles": 277248,
+          "source_adjusted_latency_us_if_feasible": 12814.257853,
+          "source_adjusted_speedup_if_feasible": 0.16691105989405908,
+          "source_latency_us": 12814.257853,
+          "source_layer_cycles": 8231,
+          "source_reduction_cycles": 141,
+          "source_token_throughput_per_s": 78.038073798077,
+          "source_total_cycles": 263392
+        }
+      }
+    }
+  },
+  "developer_loop": {
+    "comparison": {
+      "role": "score32_exact_reduction_recost",
+      "paired_baseline_item_id": "l2_decoder_attention_composed_datapath_score32_exp_lut_div_schedule_wrapper_recost_llama7b_v1"
+    },
+    "evaluation": {
+      "mode": "frontier_detail",
+      "expected_reason": "Retry exact-reduction recost after direct-script bootstrap fix; preserve failed v1 history and emit the canonical recost artifact.",
+      "expected_direction": "record_score32_exact_reduction_recost"
+    },
+    "abstraction": {
+      "layer": "decoder_attention_score32_exact_reduction_recost"
+    },
+    "proposal_id": "prop_l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1",
+    "dependencies": {
+      "item_ids": [
+        "l2_decoder_attention_composed_datapath_score32_exp_lut_div_schedule_wrapper_recost_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    },
+    "proposal_path": "docs/proposals/prop_l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1/proposal.json"
+  },
+  "submission_history": null,
+  "pr_payload": {
+    "branch": "eval/l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1_r2/s20260730t112020z",
+    "title": "eval: run layer2 campaign npu_e2e_eval_llm_attention_tail_stress_v1 on nangate45",
+    "body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260730t112020z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1_r2"
+    },
+    "body_md": "## Summary\n- item_id: `l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1_r2`\n- run_key: `l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1_r2_run_0429ee4f44a4fdf0`\n- layer: `layer2`\n- task_type: `l2_campaign`\n- status: `ok`\n- summary: `2/2 commands succeeded`\n- queue_snapshot: `control_plane/shadow_exports/review/l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1_r2/evaluated.json`\n- metrics_rows_count: `0`\n- review_artifact: `decision_proposal` at `control_plane/shadow_exports/l2_decisions/l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1_r2.json`\n\n## Developer Context\n- proposal_id: `prop_l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1`\n- proposal_path: `docs/proposals/prop_l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1/proposal.json`\n- reviewer_first_read: `docs/proposals/prop_l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1/proposal.json` plus `docs/developer_agent_review.md`\n- execution_source_commit: `0cad19df6fc0e560657d53dd48dfedf7ecc70b05`\n- review_metadata_source_commit: `772a47d1a85b9a68b8d50d367fd3febcbb7676ce`\n\n## Evaluation Mode\n- evaluation_mode: `frontier_detail`\n- abstraction_layer: `decoder_attention_score32_exact_reduction_recost`\n- comparison_role: `score32_exact_reduction_recost`\n- expected_direction: `record_score32_exact_reduction_recost`\n- expected_reason: `Retry exact-reduction recost after direct-script bootstrap fix; preserve failed v1 history and emit the canonical recost artifact.`\n- expectation_status: `unspecified`\n- evaluation_summary: `Decoder evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_reduction_recost__l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1.json: decision=decoder_evidence_recorded.`\n\n## Focused Comparison\n- primary_question: `How does the score32 schedule-wrapper Llama7B row change when the obsolete 141-cycle reduction assumption is replaced by the exact c16/r2/l8/b59 full-wave banked-finalizer drain contract?`\n- comparison_role: `score32_exact_reduction_recost`\n- proposal_outcome: `decoder_evidence_recorded`\n- comparison_summary: `Decoder evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_reduction_recost__l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1.json: decision=decoder_evidence_recorded.`\n- baseline_ref: `None`\n- baseline_item_id: `None`\n\n## Checklist\n- [ ] Commit lightweight campaign artifacts only\n- [ ] Include metrics row references in result.metrics_rows\n- [ ] Keep committed result_path fields repo-portable\n- [ ] Run python3 scripts/validate_runs.py --skip_eval_queue before pushing\n",
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Include metrics row references in result.metrics_rows",
+      "Keep committed result_path fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ]
+  }
+}
