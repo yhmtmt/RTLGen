@@ -1,0 +1,84 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_score32_exact_partial_tree_factored_cluster_ppa_v1",
+  "created_utc": "2026-07-30T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit",
+  "title": "Score32 exact partial tree factored cluster PPA scaling",
+  "abstraction_layer": "architecture_block",
+  "hypothesis": "Replacing the exact-partial tree's pair-merge exp-scale implementation with the exhaustive-equal factored exact lookup should isolate whether c16 tree depth or the old LUT encoding dominated the physical boundary. Measuring c2/c4/c8/c16 under new revision-safe identities exposes tree scaling before any finalizer or direct-link composition is blamed.",
+  "direct_comparison": {
+    "primary_question": "What Nangate45 area and timing boundary is exposed by standalone factored-exact score32 partial trees at 2, 4, 8, and 16 clusters under the existing first-pass 8 ns, 2500 um die, 2400 um core envelope?",
+    "candidate": "l1_decoder_attention_score32_exact_partial_tree_factored_cluster_ppa_v1",
+    "include": [
+      "actual attention_score32_exact_partial_tree RTL generation with factored_h33_l64_mul_exact pair merges",
+      "strict config, manifest, regeneration, and PPA-sweep guard before synthesis",
+      "hierarchical OpenROAD block sweeps at place densities 0.30 and 0.50",
+      "timing-summary extraction for each checked-in factored cluster configuration"
+    ],
+    "exclude": [
+      "no direct 328-bit link, NoC, or SRAM placement closure claim",
+      "no root finalizer or ordered-bank control composition",
+      "no claim that the standalone tree closes the full decoder-attention macro"
+    ],
+    "metrics": [
+      "critical_path_ns",
+      "die_area",
+      "total_power_mw",
+      "stdcell_count",
+      "timing_debug_report"
+    ]
+  },
+  "remaining_abstractions": [
+    "This item measures only the standalone factored exact partial reduction tree; the direct 328-bit internal links remain unclosed.",
+    "NoC transport, SRAM placement, and cluster-to-memory physical composition remain separate sources of area and timing risk.",
+    "The ordered finalizer-bank control and arithmetic remain separate components and must be measured independently before any hierarchy-level composition claim."
+  ],
+  "required_evaluations": [
+    {
+      "item_id": "l1_decoder_attention_score32_exact_partial_tree_factored_cluster_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure Nangate45 PPA for standalone factored-exact score32 partial trees at 2, 4, 8, and 16 clusters.",
+      "evaluation_mode": "frontier_followup",
+      "abstraction_layer": "architecture_block",
+      "comparison_role": "exact_partial_tree_factored_cluster_anchor",
+      "priority": 95,
+      "configs": [
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_factored_c2_r2/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_factored_c4_r2/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_factored_c8_r2/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_factored_c16_r2/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/attention_score32_exact_partial_tree_factored_v2/sweeps/nangate45_attention_score32_exact_partial_tree_factored_cluster_retry_r2.json",
+      "out_root": "runs/designs/npu_blocks",
+      "expected_outputs": [
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_factored_c2_r2/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_factored_c2_r2/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_factored_c4_r2/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_factored_c4_r2/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_factored_c8_r2/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_factored_c8_r2/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_factored_c16_r2/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_factored_c16_r2/timing_debug_report.md"
+      ],
+      "expected_result": {
+        "direction": "measure_factored_exact_partial_tree_cluster_cost",
+        "reason": "This isolates tree-only scaling after the exact factorized lookup removed the old oversized ROM inference, making the c16 fan-in boundary interpretable without the flat finalized-root composition."
+      },
+      "status": "pending_implementation_merge",
+      "notes": "Revision-safe retry on new config/output identities only. Boundary evidence is valid here, especially for c16; direct 328-bit links, NoC/SRAM placement, and finalizer composition remain separate abstractions."
+    }
+  ],
+  "source_refs": [
+    "npu/rtlgen/gen_attention_score32_exact_partial_tree.py",
+    "npu/eval/check_attention_score32_exact_partial_tree_guard.py",
+    "runs/designs/npu_blocks/attention_score32_exact_partial_tree_factored_c2_r2/config.json",
+    "runs/designs/npu_blocks/attention_score32_exact_partial_tree_factored_c4_r2/config.json",
+    "runs/designs/npu_blocks/attention_score32_exact_partial_tree_factored_c8_r2/config.json",
+    "runs/designs/npu_blocks/attention_score32_exact_partial_tree_factored_c16_r2/config.json",
+    "runs/campaigns/npu/attention_score32_exact_partial_tree_factored_v2/sweeps/nangate45_attention_score32_exact_partial_tree_factored_cluster_retry_r2.json"
+  ],
+  "knowledge_refs": [
+    "npu/docs/attention_score32_exact_partial_tree_contract.md"
+  ]
+}

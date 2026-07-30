@@ -1,0 +1,93 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_score32_exact_finalizer_bank_control_ppa_v1",
+  "created_utc": "2026-07-30T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit",
+  "title": "Score32 exact ordered finalizer-bank control PPA scaling",
+  "abstraction_layer": "architecture_block",
+  "hypothesis": "The flat c16+b59 wrapper couples tree, dispatch, ordering, and arithmetic into a single resource-heavy netlist. Extracting the ordered bank-dispatch control as a standalone concrete RTL block should reveal the true control-only area and timing scaling across representative bank counts, allowing later composition with measured one-lane finalizer macro PPA and the checked-in exact service model.",
+  "direct_comparison": {
+    "primary_question": "What Nangate45 area and timing boundary is exposed by standalone exact ordered finalizer-bank control at b1, b4, b8, b16, b32, and b59 for lane-8 service under a bounded one-density first pass?",
+    "candidate": "l1_decoder_attention_score32_exact_finalizer_bank_control_ppa_v1",
+    "include": [
+      "actual attention_score32_exact_finalizer_bank_control RTL generation",
+      "strict config, manifest, regeneration, control-only probe/equivalence, and PPA-sweep guard before synthesis",
+      "hierarchical OpenROAD block sweeps at one bounded place density",
+      "timing-summary extraction for each checked-in bank-control configuration"
+    ],
+    "exclude": [
+      "no exact finalizer arithmetic in this block",
+      "no partial-tree logic in this block",
+      "no claim that the standalone control closes the full decoder attention path"
+    ],
+    "metrics": [
+      "critical_path_ns",
+      "die_area",
+      "total_power_mw",
+      "stdcell_count",
+      "timing_debug_report"
+    ]
+  },
+  "remaining_abstractions": [
+    "This item measures only dispatch, outstanding, ordering FIFO, root-order mux, and bank-side control interfaces; exact finalizer arithmetic remains a separate measured macro.",
+    "The upstream partial tree is excluded, so later composed conclusions must add measured tree cost rather than treat this as a whole finalized-root macro.",
+    "No NoC or SRAM placement closure claim is made here."
+  ],
+  "required_evaluations": [
+    {
+      "item_id": "l1_decoder_attention_score32_exact_finalizer_bank_control_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure Nangate45 PPA for standalone exact ordered finalizer-bank control at representative lane-8 bank counts.",
+      "evaluation_mode": "frontier_followup",
+      "abstraction_layer": "architecture_block",
+      "comparison_role": "exact_finalizer_bank_control_anchor",
+      "priority": 95,
+      "configs": [
+        "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b1/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b4/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b8/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b16/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b32/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b59/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/attention_score32_exact_finalizer_bank_control_v1/sweeps/nangate45_attention_score32_exact_finalizer_bank_control_lane8_firstpass.json",
+      "out_root": "runs/designs/npu_blocks",
+      "expected_outputs": [
+        "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b1/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b1/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b4/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b4/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b8/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b8/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b16/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b16/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b32/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b32/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b59/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b59/timing_debug_report.md"
+      ],
+      "expected_result": {
+        "direction": "measure_exact_finalizer_bank_control_cost",
+        "reason": "This isolates the dispatch/order control contribution so it can later be composed with measured finalizer arithmetic and exact service-model throughput at non-wrap-free and wrap-free bank counts."
+      },
+      "status": "pending_implementation_merge",
+      "notes": "Bound the job count with one 0.30 density first pass because the controller is a scaling study, not a closure search. Representative bank counts include low-throughput reuse points and the first wrap-free b59 point."
+    }
+  ],
+  "source_refs": [
+    "npu/rtlgen/gen_attention_score32_exact_finalizer_bank_control.py",
+    "npu/eval/check_attention_score32_exact_finalizer_bank_control_guard.py",
+    "npu/eval/probe_attention_score32_exact_finalizer_bank_control.py",
+    "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b1/config.json",
+    "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b4/config.json",
+    "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b8/config.json",
+    "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b16/config.json",
+    "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b32/config.json",
+    "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b59/config.json",
+    "runs/campaigns/npu/attention_score32_exact_finalizer_bank_control_v1/sweeps/nangate45_attention_score32_exact_finalizer_bank_control_lane8_firstpass.json"
+  ],
+  "knowledge_refs": [
+    "npu/docs/attention_score32_exact_banked_finalized_tree_contract.md"
+  ]
+}

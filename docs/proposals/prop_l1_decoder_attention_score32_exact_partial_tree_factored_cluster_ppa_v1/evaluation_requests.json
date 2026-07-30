@@ -1,0 +1,39 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_score32_exact_partial_tree_factored_cluster_ppa_v1",
+  "source_commit_note": "Replace with the merge commit that adds the factored exact partial-tree cluster sweep, guard updates, and proposal before dispatch.",
+  "requested_items": [
+    {
+      "item_id": "l1_decoder_attention_score32_exact_partial_tree_factored_cluster_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure Nangate45 PPA for standalone factored-exact score32 partial trees at 2, 4, 8, and 16 clusters.",
+      "evaluation_mode": "frontier_followup",
+      "abstraction_layer": "architecture_block",
+      "comparison_role": "exact_partial_tree_factored_cluster_anchor",
+      "priority": 95,
+      "configs": [
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_factored_c2_r2/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_factored_c4_r2/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_factored_c8_r2/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_factored_c16_r2/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/attention_score32_exact_partial_tree_factored_v2/sweeps/nangate45_attention_score32_exact_partial_tree_factored_cluster_retry_r2.json",
+      "out_root": "runs/designs/npu_blocks",
+      "expected_outputs": [
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_factored_c2_r2/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_factored_c2_r2/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_factored_c4_r2/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_factored_c4_r2/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_factored_c8_r2/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_factored_c8_r2/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_factored_c16_r2/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_factored_c16_r2/timing_debug_report.md"
+      ],
+      "expected_result": {
+        "direction": "measure_factored_exact_partial_tree_cluster_cost",
+        "reason": "This retry isolates tree-only scaling after the exact factorized lookup removed the old oversized ROM inference."
+      },
+      "status": "pending_implementation_merge",
+      "notes": "Standalone factored tree-only boundary baseline; finalizer control/arithmetic, direct 328-bit links, and NoC/SRAM placement remain separate abstractions."
+    }
+  ]
+}
