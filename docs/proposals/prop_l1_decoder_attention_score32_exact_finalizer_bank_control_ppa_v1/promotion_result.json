@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_score32_exact_finalizer_bank_control_ppa_v1",
+  "decision": "promote",
+  "pr_number": 1515,
+  "merge_commit": "7b9f59db86a7b5d5fed499d09609095e1d0b47a5",
+  "merged_utc": "2026-07-31T14:03:57.479325Z"
+}

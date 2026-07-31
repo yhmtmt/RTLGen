@@ -78,8 +78,12 @@
         "direction": "measure_exact_finalizer_bank_control_cost",
         "reason": "This exposes the control-only scaling contribution, excluding the wide bank payload fanout and root payload mux, for later composition with measured finalizer arithmetic and the existing exact service model."
       },
-      "status": "pending_implementation_merge",
-      "notes": "One-density first pass only. Tree logic, finalizer arithmetic, wide bank payload fanout, and wide root payload mux remain separate measured components for later hierarchical composition."
+      "status": "merged",
+      "notes": "One-density first pass only. Tree logic, finalizer arithmetic, wide bank payload fanout, and wide root payload mux remain separate measured components for later hierarchical composition. Merged via PR #1515 and merge 7b9f59db86a7b5d5fed499d09609095e1d0b47a5 at 2026-07-31T14:03:57.479325Z.",
+      "merged_pr_number": 1515,
+      "merge_commit": "7b9f59db86a7b5d5fed499d09609095e1d0b47a5",
+      "merged_utc": "2026-07-31T14:03:57.479325Z"
     }
-  ]
+  ],
+  "source_commit": "a55600893f2ba7c7db76fd5b1db1a77ae85875e9"
 }
