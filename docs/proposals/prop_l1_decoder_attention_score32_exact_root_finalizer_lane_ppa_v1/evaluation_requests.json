@@ -31,8 +31,12 @@
         "direction": "measure_exact_root_finalizer_lane_cost",
         "reason": "This isolates sequential divider-lane area and timing before any composed-tree or wide-link closure claim is attempted."
       },
-      "status": "pending_implementation_merge",
-      "notes": "Isolated finalizer-lane baseline only; tree, NoC, direct 328-bit links, and the composed macro remain separate abstractions."
+      "status": "merged",
+      "notes": "Isolated finalizer-lane baseline only; tree, NoC, direct 328-bit links, and the composed macro remain separate abstractions. Merged via PR #1510 and merge a7d5ea493c31291dd4e267c6edafa7c2c339cf67 at 2026-07-31T12:36:44.374920Z.",
+      "merged_pr_number": 1510,
+      "merge_commit": "a7d5ea493c31291dd4e267c6edafa7c2c339cf67",
+      "merged_utc": "2026-07-31T12:36:44.374920Z"
     }
-  ]
+  ],
+  "source_commit": "86d8d9aa30ad93a7e0e7b84fc2bdd894175862f0"
 }

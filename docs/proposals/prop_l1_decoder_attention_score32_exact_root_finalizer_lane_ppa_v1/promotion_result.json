@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_score32_exact_root_finalizer_lane_ppa_v1",
+  "decision": "promote",
+  "pr_number": 1510,
+  "merge_commit": "a7d5ea493c31291dd4e267c6edafa7c2c339cf67",
+  "merged_utc": "2026-07-31T12:36:44.374920Z"
+}
