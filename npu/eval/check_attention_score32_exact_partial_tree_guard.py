@@ -33,6 +33,12 @@ _PPA_SWEEP_FLOW_PARAMS = {
     "PLACE_DENSITY": [0.3, 0.5],
     "SYNTH_HIERARCHICAL": [1],
 }
+_PPA_FACTORED_SWEEP_FLOW_PARAMS = {
+    **_PPA_SWEEP_FLOW_PARAMS,
+    "IO_PLACER_H": ["metal3 metal5"],
+    "IO_PLACER_V": ["metal4 metal6"],
+    "PLACE_PINS_ARGS": ["-min_distance 1"],
+}
 
 
 def _load_json(path: Path) -> dict[str, object]:
@@ -101,11 +107,13 @@ def _validate_ppa_sweep(*, config: dict[str, object], sweep_path: Path) -> None:
     exp_scale_impl = str(body.get("exp_scale_impl", LEGACY_MONOLITHIC_LUT_EXACT)).strip()
     tag_prefix = sweep.get("tag_prefix")
     if tag_prefix == _PPA_SWEEP_TAG_PREFIX:
+        expected_flow_params = _PPA_SWEEP_FLOW_PARAMS
         if exp_scale_impl != LEGACY_MONOLITHIC_LUT_EXACT:
             raise SystemExit(
                 f"legacy partial-tree sweep requires exp_scale_impl {LEGACY_MONOLITHIC_LUT_EXACT}"
             )
     elif tag_prefix == _PPA_FACTORED_SWEEP_TAG_PREFIX:
+        expected_flow_params = _PPA_FACTORED_SWEEP_FLOW_PARAMS
         if exp_scale_impl != FACTORED_H33_L64_MUL_EXACT:
             raise SystemExit(
                 f"factored partial-tree sweep requires exp_scale_impl {FACTORED_H33_L64_MUL_EXACT}"
@@ -115,7 +123,7 @@ def _validate_ppa_sweep(*, config: dict[str, object], sweep_path: Path) -> None:
             "partial-tree PPA sweep tag_prefix must be "
             f"{_PPA_SWEEP_TAG_PREFIX} or {_PPA_FACTORED_SWEEP_TAG_PREFIX}"
         )
-    if sweep.get("flow_params") != _PPA_SWEEP_FLOW_PARAMS:
+    if sweep.get("flow_params") != expected_flow_params:
         raise SystemExit("partial-tree PPA sweep flow_params do not match the checked-in partial-tree contract")
     if clusters not in _SUPPORTED_CLUSTERS:
         raise SystemExit("partial-tree PPA sweep membership requires clusters in {2, 4, 8, 16}")

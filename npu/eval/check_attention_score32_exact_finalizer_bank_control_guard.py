@@ -28,7 +28,10 @@ _PPA_SWEEP_FLOW_PARAMS = {
     "CLOCK_PERIOD": [8.0],
     "DIE_AREA": ["0 0 1600 1600"],
     "CORE_AREA": ["50 50 1550 1550"],
+    "IO_PLACER_H": ["metal3 metal5"],
+    "IO_PLACER_V": ["metal4 metal6"],
     "PLACE_DENSITY": [0.3],
+    "PLACE_PINS_ARGS": ["-min_distance 1"],
     "SYNTH_HIERARCHICAL": [1],
 }
 _PPA_SWEEP_ALLOWED_BANKS = {1, 4, 8, 16, 32, 59}
