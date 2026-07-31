@@ -2189,6 +2189,43 @@ def _write_fourth_attention_score32_exact_banked_finalized_tree_repo(repo_root: 
     return str(config_path.relative_to(repo_root))
 
 
+def _copy_checked_in_attention_score32_exact_finalizer_bank_control_repo(
+    repo_root: Path,
+) -> tuple[list[str], str, str, str, str]:
+    checked_in_root = Path(__file__).resolve().parents[3]
+    config_paths = [
+        "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b1/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b4/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b8/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b16/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b32/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b59/config.json",
+    ]
+    sweep_path = (
+        "runs/campaigns/npu/attention_score32_exact_finalizer_bank_control_v1/sweeps/"
+        "nangate45_attention_score32_exact_finalizer_bank_control_lane8_firstpass.json"
+    )
+    proposal_dir = "docs/proposals/prop_l1_decoder_attention_score32_exact_finalizer_bank_control_ppa_v1"
+    copy_paths = [
+        *config_paths,
+        sweep_path,
+        f"{proposal_dir}/proposal.json",
+        f"{proposal_dir}/evaluation_requests.json",
+    ]
+    for relative_path in copy_paths:
+        source_path = checked_in_root / relative_path
+        dest_path = repo_root / relative_path
+        dest_path.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source_path, dest_path)
+    return (
+        config_paths,
+        sweep_path,
+        "prop_l1_decoder_attention_score32_exact_finalizer_bank_control_ppa_v1",
+        proposal_dir,
+        "l1_decoder_attention_score32_exact_finalizer_bank_control_ppa_v1",
+    )
+
+
 
 def test_generate_l1_sweep_task_creates_ready_work_item() -> None:
     with tempfile.TemporaryDirectory() as td:
@@ -5741,6 +5778,145 @@ def test_generate_l1_sweep_task_emits_commands_for_each_attention_score32_exact_
                 "runs/designs/npu_blocks/attention_score32_exact_banked_finalized_tree_smoke_c16_r2_l8_b64/metrics.csv",
                 "runs/designs/npu_blocks/attention_score32_exact_banked_finalized_tree_smoke_c16_r2_l8_b64/timing_debug_report.md",
             ]
+
+
+def test_generate_l1_sweep_task_supports_attention_score32_exact_finalizer_bank_control_configs() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        config_paths, sweep_path, proposal_id, proposal_path, item_id = (
+            _copy_checked_in_attention_score32_exact_finalizer_bank_control_repo(repo_root)
+        )
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l1_sweep_task(
+                session,
+                Layer1SweepGenerateRequest(
+                    repo_root=str(repo_root),
+                    sweep_path=sweep_path,
+                    config_paths=config_paths,
+                    platform="nangate45",
+                    out_root="runs/designs/npu_blocks",
+                    item_id=item_id,
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    proposal_id=proposal_id,
+                    proposal_path=proposal_path,
+                    update_proposal_files=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            assert result.status == "applied"
+            assert work_item.priority == 95
+            assert [command["name"] for command in work_item.command_manifest] == [
+                "generate_attention_score32_exact_finalizer_bank_control_rtl_attention_score32_exact_finalizer_bank_control_l8_b1",
+                "check_attention_score32_exact_finalizer_bank_control_guard_attention_score32_exact_finalizer_bank_control_l8_b1",
+                "run_block_sweep_attention_score32_exact_finalizer_bank_control_l8_b1",
+                "extract_attention_score32_exact_finalizer_bank_control_timing_paths_attention_score32_exact_finalizer_bank_control_l8_b1",
+                "generate_attention_score32_exact_finalizer_bank_control_rtl_attention_score32_exact_finalizer_bank_control_l8_b4",
+                "check_attention_score32_exact_finalizer_bank_control_guard_attention_score32_exact_finalizer_bank_control_l8_b4",
+                "run_block_sweep_attention_score32_exact_finalizer_bank_control_l8_b4",
+                "extract_attention_score32_exact_finalizer_bank_control_timing_paths_attention_score32_exact_finalizer_bank_control_l8_b4",
+                "generate_attention_score32_exact_finalizer_bank_control_rtl_attention_score32_exact_finalizer_bank_control_l8_b8",
+                "check_attention_score32_exact_finalizer_bank_control_guard_attention_score32_exact_finalizer_bank_control_l8_b8",
+                "run_block_sweep_attention_score32_exact_finalizer_bank_control_l8_b8",
+                "extract_attention_score32_exact_finalizer_bank_control_timing_paths_attention_score32_exact_finalizer_bank_control_l8_b8",
+                "generate_attention_score32_exact_finalizer_bank_control_rtl_attention_score32_exact_finalizer_bank_control_l8_b16",
+                "check_attention_score32_exact_finalizer_bank_control_guard_attention_score32_exact_finalizer_bank_control_l8_b16",
+                "run_block_sweep_attention_score32_exact_finalizer_bank_control_l8_b16",
+                "extract_attention_score32_exact_finalizer_bank_control_timing_paths_attention_score32_exact_finalizer_bank_control_l8_b16",
+                "generate_attention_score32_exact_finalizer_bank_control_rtl_attention_score32_exact_finalizer_bank_control_l8_b32",
+                "check_attention_score32_exact_finalizer_bank_control_guard_attention_score32_exact_finalizer_bank_control_l8_b32",
+                "run_block_sweep_attention_score32_exact_finalizer_bank_control_l8_b32",
+                "extract_attention_score32_exact_finalizer_bank_control_timing_paths_attention_score32_exact_finalizer_bank_control_l8_b32",
+                "generate_attention_score32_exact_finalizer_bank_control_rtl_attention_score32_exact_finalizer_bank_control_l8_b59",
+                "check_attention_score32_exact_finalizer_bank_control_guard_attention_score32_exact_finalizer_bank_control_l8_b59",
+                "run_block_sweep_attention_score32_exact_finalizer_bank_control_l8_b59",
+                "extract_attention_score32_exact_finalizer_bank_control_timing_paths_attention_score32_exact_finalizer_bank_control_l8_b59",
+                "build_runs_index",
+                "validate",
+            ]
+            assert work_item.command_manifest[0]["run"] == (
+                "export PATH=/oss-cad-suite/bin:$PATH && "
+                "python3 npu/rtlgen/gen_attention_score32_exact_finalizer_bank_control.py "
+                "--config runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b1/config.json "
+                "--out runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b1/verilog"
+            )
+            assert work_item.command_manifest[1]["run"] == (
+                "python3 npu/eval/check_attention_score32_exact_finalizer_bank_control_guard.py "
+                "--design-dir runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b1 "
+                "--config runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b1/config.json "
+                "--sweep runs/campaigns/npu/attention_score32_exact_finalizer_bank_control_v1/sweeps/"
+                "nangate45_attention_score32_exact_finalizer_bank_control_lane8_firstpass.json"
+            )
+            assert work_item.command_manifest[2]["run"] == (
+                "export PATH=/oss-cad-suite/bin:$PATH && "
+                "python3 npu/synth/run_block_sweep.py "
+                "--design_dir runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b1 "
+                "--platform nangate45 --top attention_score32_exact_finalizer_bank_control_l8_b1 "
+                "--sweep runs/campaigns/npu/attention_score32_exact_finalizer_bank_control_v1/sweeps/"
+                "nangate45_attention_score32_exact_finalizer_bank_control_lane8_firstpass.json "
+                "--out_root runs/designs/npu_blocks --skip_existing"
+            )
+            assert work_item.command_manifest[3]["run"] == (
+                "python3 npu/eval/extract_openroad_timing_summary.py "
+                "--design-dir runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b1 "
+                "--out runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b1/timing_debug_report.md "
+                "--max-paths 8"
+            )
+            assert work_item.command_manifest[20]["run"] == (
+                "export PATH=/oss-cad-suite/bin:$PATH && "
+                "python3 npu/rtlgen/gen_attention_score32_exact_finalizer_bank_control.py "
+                "--config runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b59/config.json "
+                "--out runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b59/verilog"
+            )
+            assert work_item.command_manifest[21]["run"] == (
+                "python3 npu/eval/check_attention_score32_exact_finalizer_bank_control_guard.py "
+                "--design-dir runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b59 "
+                "--config runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b59/config.json "
+                "--sweep runs/campaigns/npu/attention_score32_exact_finalizer_bank_control_v1/sweeps/"
+                "nangate45_attention_score32_exact_finalizer_bank_control_lane8_firstpass.json"
+            )
+            assert work_item.command_manifest[22]["run"] == (
+                "export PATH=/oss-cad-suite/bin:$PATH && "
+                "python3 npu/synth/run_block_sweep.py "
+                "--design_dir runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b59 "
+                "--platform nangate45 --top attention_score32_exact_finalizer_bank_control_l8_b59 "
+                "--sweep runs/campaigns/npu/attention_score32_exact_finalizer_bank_control_v1/sweeps/"
+                "nangate45_attention_score32_exact_finalizer_bank_control_lane8_firstpass.json "
+                "--out_root runs/designs/npu_blocks --skip_existing"
+            )
+            assert work_item.command_manifest[23]["run"] == (
+                "python3 npu/eval/extract_openroad_timing_summary.py "
+                "--design-dir runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b59 "
+                "--out runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b59/timing_debug_report.md "
+                "--max-paths 8"
+            )
+            assert work_item.command_manifest[24]["run"] == "python3 scripts/build_runs_index.py"
+            assert work_item.command_manifest[25]["run"] == "python3 scripts/validate_runs.py --skip_eval_queue"
+            assert work_item.expected_outputs == [
+                "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b1/metrics.csv",
+                "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b1/timing_debug_report.md",
+                "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b4/metrics.csv",
+                "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b4/timing_debug_report.md",
+                "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b8/metrics.csv",
+                "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b8/timing_debug_report.md",
+                "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b16/metrics.csv",
+                "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b16/timing_debug_report.md",
+                "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b32/metrics.csv",
+                "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b32/timing_debug_report.md",
+                "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b59/metrics.csv",
+                "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b59/timing_debug_report.md",
+            ]
+            dev_loop = work_item.task_request.request_payload["developer_loop"]
+            assert dev_loop["abstraction"] == {"layer": "architecture_block"}
+            assert dev_loop["proposal_id"] == proposal_id
+            assert dev_loop["proposal_path"] == proposal_path
+            assert work_item.task_request.request_payload["handoff"]["pr_body_fields"]["queue_item_id"] == item_id
 
 
 def test_generate_l1_sweep_task_emits_commands_for_each_integrated_block_config() -> None:
