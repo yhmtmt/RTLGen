@@ -17,9 +17,8 @@ if str(REPO_ROOT) not in sys.path:
 
 from npu.rtlgen.gen_attention_score32_exact_finalizer_bank_control import generate
 from npu.sim.perf.attention_exact_partial import (
-    FINAL_PAYLOAD_BITS,
+    FINALIZER_CONTROL_TRANSACTION_ID_BITS,
     HEAD_ID_BITS,
-    PARTIAL_PAYLOAD_BITS,
     exact_finalizer_bank_control_service_manifest,
 )
 
@@ -153,7 +152,6 @@ def main(argv: list[str] | None = None) -> int:
     if finalizer_banks < 1 or finalizer_banks > 64:
         raise SystemExit("finalizer_banks must be in [1, 64]")
 
-    slice_bits = _clog2(value_slices)
     bank_id_bits = _clog2(finalizer_banks)
     service_manifest = exact_finalizer_bank_control_service_manifest(
         heads=32,
@@ -169,18 +167,20 @@ def main(argv: list[str] | None = None) -> int:
         "head_id_bits": head_id_bits,
         "divider_lanes": divider_lanes,
         "finalizer_banks": finalizer_banks,
-        "result_interface": "tree_root_exact_partial_stream_to_ordered_banked_exact_finalized_stream",
-        "tree_input_payload_bits_per_beat": PARTIAL_PAYLOAD_BITS,
-        "final_payload_bits_per_beat": FINAL_PAYLOAD_BITS,
+        "result_interface": "tree_transaction_issue_to_ordered_banked_transaction_retire_stream",
+        "transaction_id_bits": FINALIZER_CONTROL_TRANSACTION_ID_BITS,
         "order_fifo_depth": finalizer_banks,
         "order_fifo_entry_bits": bank_id_bits,
         "order_fifo_storage_bits": finalizer_banks * bank_id_bits,
-        "ordering_contract": "single_bank_id_fifo_exact_issue_order_one_beat_per_entry",
+        "ordering_contract": "single_bank_id_fifo_exact_issue_order_one_transaction_per_entry",
         "dispatch_policy": "round_robin_no_alternate_ready_scan",
         "control_only_embodied": True,
         "bank_arithmetic_embodied": False,
+        "tree_payload_fanout_embodied": False,
+        "root_payload_mux_embodied": False,
         "equivalence_hash": False,
         "macro_eval_excludes_io_pads": True,
+        "exact_service_model_cycle_equivalence": True,
         "service_model": service_manifest,
     }
     for key, expected in expected_manifest.items():
@@ -189,20 +189,45 @@ def main(argv: list[str] | None = None) -> int:
     rtl = top_path.read_text(encoding="utf-8", errors="replace")
     top_module = _extract_module(rtl, top_name)
     for token in (
-        f"localparam integer HEAD_ID_BITS = {head_id_bits};",
-        f"localparam integer SLICE_BITS = {slice_bits};",
+        f"localparam integer TRANSACTION_ID_BITS = {FINALIZER_CONTROL_TRANSACTION_ID_BITS};",
         f"localparam integer FINALIZER_BANKS = {finalizer_banks};",
         f"localparam integer BANK_ID_BITS = {bank_id_bits};",
-        "wire order_fifo_dequeue_fire_w = root_valid_r && root_ready;",
+        "wire order_fifo_dequeue_fire_w = root_valid && root_ready;",
         "wire order_fifo_enqueue_ready_w = !order_fifo_full_w || order_fifo_dequeue_fire_w;",
         "wire tree_ready_w = dispatch_bank_in_ready_r && order_fifo_enqueue_ready_w;",
-        "order_fifo_mem[order_fifo_tail_q] <= dispatch_bank_q;",
+        "wire same_bank_replace_w =",
+        "order_fifo_bank_mem[order_fifo_tail_q] <= dispatch_bank_q;",
+        "order_fifo_tid_mem[order_fifo_tail_q] <= tree_transaction_id;",
         "bank_outstanding_q[dispatch_bank_q] <= 1'b1;",
-        "bank_outstanding_q[order_fifo_head_bank_id_w] <= 1'b0;",
+        "if (head_return_transaction_id_r != order_fifo_head_transaction_id_w) begin",
+        "if (!same_bank_replace_w) begin",
         "dispatch_stall_cycles_q <= dispatch_stall_cycles_q + 1'b1;",
+        "assign root_transaction_id = order_fifo_head_transaction_id_w;",
         "assign protocol_error = order_protocol_error_q;",
     ):
         _require_token(top_module, token, "generated RTL")
+    for forbidden in (
+        "tree_head_id",
+        "tree_exp_sum",
+        "tree_slice",
+        "tree_last",
+        "tree_value",
+        "bank_in_head_id",
+        "bank_in_exp_sum",
+        "bank_in_slice",
+        "bank_in_last",
+        "bank_in_value",
+        "bank_out_head_id",
+        "bank_out_slice",
+        "bank_out_last",
+        "bank_out_value",
+        "root_head_id",
+        "root_slice",
+        "root_last",
+        "root_value",
+    ):
+        if forbidden in top_module:
+            raise SystemExit(f"generated bank-control RTL must not expose payload/metadata signal: {forbidden}")
     if "DIVIDE_ITERATIONS" in top_module or "rounded_dividend" in top_module or "exp_lut" in top_module:
         raise SystemExit("generated bank-control RTL must not embed finalizer arithmetic or exp-scale logic")
     if re.search(r"(?<![*/])/(?![/*])", re.sub(r"//.*", "", top_module)):

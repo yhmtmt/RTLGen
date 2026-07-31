@@ -5,7 +5,7 @@
     {
       "item_id": "l1_decoder_attention_score32_exact_finalizer_bank_control_ppa_v1",
       "task_type": "l1_sweep",
-      "objective": "Measure Nangate45 PPA for standalone exact ordered finalizer-bank control at representative lane-8 bank counts.",
+      "objective": "Measure Nangate45 PPA for standalone exact ordered finalizer-bank control at representative lane-8 bank counts, excluding the wide payload fanout and root payload mux.",
       "evaluation_mode": "frontier_followup",
       "abstraction_layer": "architecture_block",
       "comparison_role": "exact_finalizer_bank_control_anchor",
@@ -36,10 +36,10 @@
       ],
       "expected_result": {
         "direction": "measure_exact_finalizer_bank_control_cost",
-        "reason": "This exposes the control-only scaling contribution for later composition with measured finalizer arithmetic and the existing exact service model."
+        "reason": "This exposes the control-only scaling contribution, excluding the wide bank payload fanout and root payload mux, for later composition with measured finalizer arithmetic and the existing exact service model."
       },
       "status": "pending_implementation_merge",
-      "notes": "One-density first pass only. Tree logic and finalizer arithmetic remain separate measured components."
+      "notes": "One-density first pass only. Tree logic, finalizer arithmetic, wide bank payload fanout, and wide root payload mux remain separate measured components for later hierarchical composition."
     }
   ]
 }
