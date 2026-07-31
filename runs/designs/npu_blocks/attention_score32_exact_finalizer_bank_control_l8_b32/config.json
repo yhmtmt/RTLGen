@@ -1,0 +1,9 @@
+{
+  "attention_score32_exact_finalizer_bank_control": {
+    "divider_lanes": 8,
+    "finalizer_banks": 32,
+    "head_id_bits": 5,
+    "value_slices": 16
+  },
+  "top_name": "attention_score32_exact_finalizer_bank_control_l8_b32"
+}

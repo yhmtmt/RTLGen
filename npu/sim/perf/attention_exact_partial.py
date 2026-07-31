@@ -38,6 +38,7 @@ EXACT_STATE_BYTES_PER_CLUSTER_32_HEADS = (EXACT_STATE_BITS_PER_HEAD * 32) // 8
 LEAF_STREAM_BYTES_PER_CLUSTER_32_HEADS = (PARTIAL_LINK_BITS * VALUE_SLICES * 32) // 8
 FINAL_PAYLOAD_BITS = SLICE_LANES * FINAL_VALUE_BITS
 FINAL_LINK_BITS = FINAL_PAYLOAD_BITS + 16 + HEAD_ID_BITS + SLICE_INDEX_BITS + 1
+FINALIZER_CONTROL_TRANSACTION_ID_BITS = 16
 MERGE_SCALE = (1 << MERGE_SCALE_BITS) - 1
 
 
@@ -845,6 +846,47 @@ def exact_banked_finalized_tree_service_manifest(
     return manifest
 
 
+def exact_finalizer_bank_control_service_manifest(
+    *,
+    heads: int = 32,
+    divider_lanes: int = 8,
+    finalizer_banks: int = 1,
+) -> dict[str, int | bool | str]:
+    banks = int(finalizer_banks)
+    head_count = int(heads)
+    lanes = int(divider_lanes)
+    if head_count < 1 or head_count > 32:
+        raise ValueError("heads must be in [1, 32]")
+    if lanes not in {1, 2, 4, 8}:
+        raise ValueError("divider_lanes must be one of 1, 2, 4, 8")
+    if banks < 1 or banks > 64:
+        raise ValueError("finalizer_banks must be in [1, 64]")
+    return {
+        "heads": head_count,
+        "value_slices": VALUE_SLICES,
+        "finalizer_banks": banks,
+        "divider_lanes": lanes,
+        "synthetic_transaction_id_bits": FINALIZER_CONTROL_TRANSACTION_ID_BITS,
+        "tree_issue_link_bits_per_beat": FINALIZER_CONTROL_TRANSACTION_ID_BITS,
+        "bank_issue_link_bits_per_beat": FINALIZER_CONTROL_TRANSACTION_ID_BITS,
+        "bank_return_link_bits_per_beat": FINALIZER_CONTROL_TRANSACTION_ID_BITS,
+        "root_retire_link_bits_per_beat": FINALIZER_CONTROL_TRANSACTION_ID_BITS,
+        "order_fifo_depth": banks,
+        "order_fifo_entry_bits": max(1, (banks - 1).bit_length()),
+        "order_fifo_storage_bits": banks * max(1, (banks - 1).bit_length()),
+        "ordering_contract": "round_robin_dispatch_fifo_retire",
+        "per_bank_output_latency_cycles": finalizer_output_latency_cycles(lanes),
+        "per_bank_accept_interval_cycles": finalizer_accept_interval_cycles(lanes),
+        "minimum_banks_for_wrap_free_lane8_service": finalizer_accept_interval_cycles(8),
+        "full_llama_wave_root_beats": head_count * VALUE_SLICES,
+        "control_only_embodied": True,
+        "bank_arithmetic_embodied": False,
+        "tree_payload_fanout_embodied": False,
+        "root_payload_mux_embodied": False,
+        "exact_service_model_cycle_equivalence": True,
+    }
+
+
 def exact_partial_producer_tree_service_manifest(
     *,
     producers: int = 2,
@@ -1401,6 +1443,7 @@ __all__ = [
     "ExactLocalGlobalGqa8Composition",
     "ExactLocalTemporalClusterComposition",
     "ExactPartialBeat",
+    "FINALIZER_CONTROL_TRANSACTION_ID_BITS",
     "FINAL_PAYLOAD_BITS",
     "FINAL_LINK_BITS",
     "HEAD_ID_BITS",
@@ -1420,6 +1463,7 @@ __all__ = [
     "exact_local16_global_tree_gqa8_service_manifest",
     "exact_finalized_tree_service_manifest",
     "exact_banked_finalized_tree_service_manifest",
+    "exact_finalizer_bank_control_service_manifest",
     "exact_local_temporal_reducer_service_manifest",
     "exact_local_temporal_reducer_gqa8_service_manifest",
     "exact_local_cluster_gqa8_extra_producers",

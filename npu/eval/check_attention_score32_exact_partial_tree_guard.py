@@ -16,11 +16,29 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from npu.rtlgen.gen_attention_score32_exact_partial_tree import generate
-from npu.rtlgen.gen_attention_score32_online_state_merge import LEGACY_MONOLITHIC_LUT_EXACT
+from npu.rtlgen.gen_attention_score32_online_state_merge import (
+    FACTORED_H33_L64_MUL_EXACT,
+    LEGACY_MONOLITHIC_LUT_EXACT,
+)
 from npu.sim.perf.attention_exact_partial import PARTIAL_LINK_BITS, PARTIAL_PAYLOAD_BITS
 
 
 _SUPPORTED_CLUSTERS = {2, 4, 8, 16}
+_PPA_SWEEP_TAG_PREFIX = "attention_score32_exact_partial_tree_cluster_firstpass_v1"
+_PPA_FACTORED_SWEEP_TAG_PREFIX = "attention_score32_exact_partial_tree_factored_cluster_retry_r2"
+_PPA_SWEEP_FLOW_PARAMS = {
+    "CLOCK_PERIOD": [8.0],
+    "DIE_AREA": ["0 0 2500 2500"],
+    "CORE_AREA": ["50 50 2450 2450"],
+    "PLACE_DENSITY": [0.3, 0.5],
+    "SYNTH_HIERARCHICAL": [1],
+}
+_PPA_FACTORED_SWEEP_FLOW_PARAMS = {
+    **_PPA_SWEEP_FLOW_PARAMS,
+    "IO_PLACER_H": ["metal3 metal5"],
+    "IO_PLACER_V": ["metal4 metal6"],
+    "PLACE_PINS_ARGS": ["-min_distance 1"],
+}
 
 
 def _load_json(path: Path) -> dict[str, object]:
@@ -78,10 +96,44 @@ def _compare_current_generation(*, config: dict[str, object], rtl_dir: Path) -> 
                 raise SystemExit(f"generated RTL artifacts do not match current generator output: {relative_name}")
 
 
+def _validate_ppa_sweep(*, config: dict[str, object], sweep_path: Path) -> None:
+    if not sweep_path.is_file():
+        raise SystemExit(f"missing sweep: {sweep_path}")
+    sweep = _load_json(sweep_path)
+    body = config.get("attention_score32_exact_partial_tree")
+    if not isinstance(body, dict):
+        raise SystemExit("config must contain attention_score32_exact_partial_tree object")
+    clusters = int(body.get("clusters", 0))
+    exp_scale_impl = str(body.get("exp_scale_impl", LEGACY_MONOLITHIC_LUT_EXACT)).strip()
+    tag_prefix = sweep.get("tag_prefix")
+    if tag_prefix == _PPA_SWEEP_TAG_PREFIX:
+        expected_flow_params = _PPA_SWEEP_FLOW_PARAMS
+        if exp_scale_impl != LEGACY_MONOLITHIC_LUT_EXACT:
+            raise SystemExit(
+                f"legacy partial-tree sweep requires exp_scale_impl {LEGACY_MONOLITHIC_LUT_EXACT}"
+            )
+    elif tag_prefix == _PPA_FACTORED_SWEEP_TAG_PREFIX:
+        expected_flow_params = _PPA_FACTORED_SWEEP_FLOW_PARAMS
+        if exp_scale_impl != FACTORED_H33_L64_MUL_EXACT:
+            raise SystemExit(
+                f"factored partial-tree sweep requires exp_scale_impl {FACTORED_H33_L64_MUL_EXACT}"
+            )
+    else:
+        raise SystemExit(
+            "partial-tree PPA sweep tag_prefix must be "
+            f"{_PPA_SWEEP_TAG_PREFIX} or {_PPA_FACTORED_SWEEP_TAG_PREFIX}"
+        )
+    if sweep.get("flow_params") != expected_flow_params:
+        raise SystemExit("partial-tree PPA sweep flow_params do not match the checked-in partial-tree contract")
+    if clusters not in _SUPPORTED_CLUSTERS:
+        raise SystemExit("partial-tree PPA sweep membership requires clusters in {2, 4, 8, 16}")
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--design-dir", type=Path, required=True)
     ap.add_argument("--config", type=Path, default=None)
+    ap.add_argument("--sweep", type=Path, default=None)
     args = ap.parse_args(argv)
 
     design_dir = args.design_dir.resolve()
@@ -98,6 +150,8 @@ def main(argv: list[str] | None = None) -> int:
     generated_config = _load_json(generated_config_path)
     if config != generated_config:
         raise SystemExit("generated config does not match source config")
+    if args.sweep is not None:
+        _validate_ppa_sweep(config=config, sweep_path=args.sweep.resolve())
 
     top_name = str(config.get("top_name") or "").strip()
     if not top_name:

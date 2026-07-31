@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l1_decoder_attention_score32_exact_banked_finalized_tree_c16_bank_ppa_v1",
-  "source_commit_note": "Replace with the merge commit that contains the exact factored exp-scale implementation and strict guard updates before dispatch. Preserve the historical v1 all-flow-failed result as conclusive physical infeasibility of the legacy monolithic exact exp-scale ROM encoding, and dispatch only the fresh _r2 item.",
+  "source_commit_note": "Historical record only: preserve the v1 legacy-ROM infeasibility result and the r2 flat-factored resource-envelope failure classification. Do not rewrite prior item identities or outputs; continue future hierarchy work through fresh component proposals and item IDs.",
   "requested_items": [
     {
       "item_id": "l1_decoder_attention_score32_exact_banked_finalized_tree_c16_bank_ppa_v1",
@@ -39,7 +39,7 @@
     {
       "item_id": "l1_decoder_attention_score32_exact_banked_finalized_tree_c16_bank_ppa_v1_r2",
       "task_type": "l1_sweep",
-      "objective": "Measure Nangate45 PPA for the merged c16/r2/l8 score32 exact banked finalized tree with the exact factored exp-scale implementation at finalizer banks 59 and 64.",
+      "objective": "Record the flat factored c16/r2/l8 score32 exact banked finalized tree retry as resource-infeasible for the current evaluator and synthesis tool envelope.",
       "evaluation_mode": "frontier_followup",
       "abstraction_layer": "architecture_block",
       "comparison_role": "exact_banked_finalized_tree_c16_bank_anchor",
@@ -57,11 +57,11 @@
         "runs/designs/npu_blocks/attention_score32_exact_banked_finalized_tree_factored_c16_r2_l8_b64/timing_debug_report.md"
       ],
       "expected_result": {
-        "direction": "measure_exact_banked_finalized_tree_c16_bank_cost",
-        "reason": "Retry with the exact factored exp-scale implementation to record the first wrap-free b59 point and the b64 power-of-two overhead under the same banked-tree envelope."
+        "direction": "record_flat_factored_tree_tool_envelope_infeasibility",
+        "reason": "The exact factored lookup removed the oversized ROM guard but the flat merged composition still exceeded the current evaluator synthesis envelope before reaching a PPA point."
       },
-      "status": "pending_implementation_merge",
-      "notes": "Merged banked wrapper PPA only; 16 external leaf streams, direct 328-bit transport, NoC and SRAM placement, and full decoder composition remain unclosed. Pin `source_commit` to the merge commit that contains the exact factored exp-scale implementation before dispatch."
+      "status": "conclusive",
+      "notes": "Historical r2 result only. Preserve the failed item/run history as a tool-envelope resource failure: exact factored lookup equivalence passed, but both b59 density points flow_failed in Yosys techmap at 12120396 KiB and 12237088 KiB resident memory, and b64 was canceled as redundant protective coverage. This is not a functional invalidity and not a usable PPA point."
     }
   ]
 }

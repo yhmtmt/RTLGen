@@ -4333,6 +4333,41 @@ def test_exact_partial_tree_cluster_ppa_proposal_is_pending_merge_with_all_clust
     assert "Boundary evidence is valid here" in proposal_entry["notes"]
 
 
+def test_exact_partial_tree_factored_cluster_ppa_proposal_is_pending_merge_with_all_cluster_configs() -> None:
+    repo_root = Path(__file__).resolve().parents[3]
+    proposal_dir = (
+        repo_root
+        / "docs"
+        / "proposals"
+        / "prop_l1_decoder_attention_score32_exact_partial_tree_factored_cluster_ppa_v1"
+    )
+    proposal = json.loads((proposal_dir / "proposal.json").read_text(encoding="utf-8"))
+    evaluation_requests = json.loads((proposal_dir / "evaluation_requests.json").read_text(encoding="utf-8"))
+
+    item_id = "l1_decoder_attention_score32_exact_partial_tree_factored_cluster_ppa_v1"
+    expected_configs = [
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_factored_c2_r2/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_factored_c4_r2/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_factored_c8_r2/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_factored_c16_r2/config.json",
+    ]
+    expected_sweep = (
+        "runs/campaigns/npu/attention_score32_exact_partial_tree_factored_v2/sweeps/"
+        "nangate45_attention_score32_exact_partial_tree_factored_cluster_retry_r2.json"
+    )
+    proposal_entry = {entry["item_id"]: entry for entry in proposal["required_evaluations"]}[item_id]
+    request_entry = {entry["item_id"]: entry for entry in evaluation_requests["requested_items"]}[item_id]
+
+    assert proposal["abstraction_layer"] == "architecture_block"
+    assert proposal_entry["status"] == "pending_implementation_merge"
+    assert request_entry["status"] == "pending_implementation_merge"
+    assert proposal_entry["configs"] == expected_configs
+    assert request_entry["configs"] == expected_configs
+    assert proposal_entry["sweep_path"] == expected_sweep
+    assert request_entry["sweep_path"] == expected_sweep
+    assert "Revision-safe retry on new config/output identities only" in proposal_entry["notes"]
+
+
 def test_exact_finalized_tree_c16_lane_ppa_proposal_is_pending_merge_with_all_lane_configs() -> None:
     repo_root = Path(__file__).resolve().parents[3]
     proposal_dir = (
@@ -4400,21 +4435,60 @@ def test_exact_banked_finalized_tree_c16_bank_ppa_proposal_preserves_v1_infeasib
 
     assert proposal["abstraction_layer"] == "architecture_block"
     assert revision_record["v1"]["status"] == "conclusive"
-    assert revision_record["r2"]["status"] == "pending"
+    assert revision_record["r2"]["status"] == "conclusive"
+    assert revision_record["r3"]["status"] == "pending"
     assert proposal_v1["status"] == "conclusive"
     assert request_v1["status"] == "conclusive"
     assert proposal_v1["superseded_by_item_id"] == r2_item_id
     assert request_v1["superseded_by_item_id"] == r2_item_id
     assert proposal_r2["priority"] == 94
     assert request_r2["priority"] == 94
-    assert proposal_r2["status"] == "pending_implementation_merge"
-    assert request_r2["status"] == "pending_implementation_merge"
+    assert proposal_r2["status"] == "conclusive"
+    assert request_r2["status"] == "conclusive"
     assert proposal_r2["configs"] == expected_r2_configs
     assert request_r2["configs"] == expected_r2_configs
     assert proposal_r2["sweep_path"] == expected_sweep
     assert request_r2["sweep_path"] == expected_sweep
-    assert "legacy exact pair-merge exp-scale encoding is physically infeasible" in proposal["hypothesis"]
-    assert "100 um perimeter keepout" in proposal_r2["notes"]
+    assert "flat c16 tree plus ordered banked finalizer composition still overran the evaluator tool envelope" in proposal["hypothesis"]
+    assert "12120396 KiB and 12237088 KiB" in proposal_r2["notes"]
+    assert "prop_l1_decoder_attention_score32_exact_finalizer_bank_control_ppa_v1" in revision_record["r3"]["notes"]
+
+
+def test_exact_finalizer_bank_control_ppa_proposal_is_pending_merge_with_all_bank_configs() -> None:
+    repo_root = Path(__file__).resolve().parents[3]
+    proposal_dir = (
+        repo_root
+        / "docs"
+        / "proposals"
+        / "prop_l1_decoder_attention_score32_exact_finalizer_bank_control_ppa_v1"
+    )
+    proposal = json.loads((proposal_dir / "proposal.json").read_text(encoding="utf-8"))
+    evaluation_requests = json.loads((proposal_dir / "evaluation_requests.json").read_text(encoding="utf-8"))
+
+    item_id = "l1_decoder_attention_score32_exact_finalizer_bank_control_ppa_v1"
+    expected_configs = [
+        "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b1/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b4/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b8/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b16/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b32/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b59/config.json",
+    ]
+    expected_sweep = (
+        "runs/campaigns/npu/attention_score32_exact_finalizer_bank_control_v1/sweeps/"
+        "nangate45_attention_score32_exact_finalizer_bank_control_lane8_firstpass.json"
+    )
+    proposal_entry = {entry["item_id"]: entry for entry in proposal["required_evaluations"]}[item_id]
+    request_entry = {entry["item_id"]: entry for entry in evaluation_requests["requested_items"]}[item_id]
+
+    assert proposal["abstraction_layer"] == "architecture_block"
+    assert proposal_entry["status"] == "pending_implementation_merge"
+    assert request_entry["status"] == "pending_implementation_merge"
+    assert proposal_entry["configs"] == expected_configs
+    assert request_entry["configs"] == expected_configs
+    assert proposal_entry["sweep_path"] == expected_sweep
+    assert request_entry["sweep_path"] == expected_sweep
+    assert "one 0.30 density first pass" in proposal_entry["notes"]
 
 
 def test_generate_l1_sweep_task_checked_in_service_requests_gate_and_refresh_release() -> None:

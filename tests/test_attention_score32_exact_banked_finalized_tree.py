@@ -36,6 +36,29 @@ def _tool(name: str) -> str:
     raise RuntimeError(f"required tool unavailable: {name}")
 
 
+def _compile_and_run(top_v: Path, tb_v: Path, *, timeout: int = 180) -> subprocess.CompletedProcess[str]:
+    simv = tb_v.with_suffix(".out")
+    compiled = subprocess.run(
+        [
+            _tool("iverilog"),
+            "-g2012",
+            "-s",
+            "tb",
+            "-o",
+            str(simv),
+            str(top_v),
+            str(tb_v),
+        ],
+        capture_output=True,
+        text=True,
+        timeout=timeout,
+    )
+    assert compiled.returncode == 0, compiled.stderr
+    run = subprocess.run([_tool("vvp"), str(simv)], capture_output=True, text=True, timeout=timeout)
+    assert run.returncode == 0, f"{run.stdout}\n{run.stderr}"
+    return run
+
+
 def _config(finalizer_banks: int, *, clusters: int = 16, divider_lanes: int = 8) -> dict[str, object]:
     return {
         "top_name": f"attention_score32_exact_banked_finalized_tree_c{clusters}_r2_l{divider_lanes}_b{finalizer_banks}",
@@ -265,6 +288,121 @@ def test_bank_wrap_boundary_full_wave_perf_model() -> None:
     assert bank58["result_events"][-1]["cycle"] - bank58["result_events"][0]["cycle"] == 519
     assert bank59["result_events"][-1]["cycle"] - bank59["result_events"][0]["cycle"] == 511
     assert bank64["result_events"][-1]["cycle"] - bank64["result_events"][0]["cycle"] == 511
+
+
+@pytest.mark.skipif(not _rtl_tools_available(), reason="RTL tools unavailable")
+def test_banked_finalized_tree_embedded_finalizer_rejects_same_cycle_replace_attempt(tmp_path: Path) -> None:
+    cfg = _config(1, clusters=2, divider_lanes=8)
+    rtl_dir = tmp_path / "rtl"
+    generate(cfg, rtl_dir)
+    finalizer_name = f"{cfg['top_name']}__root_finalizer"
+    tb_path = tmp_path / "tb.sv"
+    tb_path.write_text(
+        f"""`timescale 1ns/1ps
+module tb;
+  reg clk = 1'b0;
+  reg rst_n = 1'b0;
+  reg in_valid = 1'b0;
+  wire in_ready;
+  reg [15:0] in_command_id = 16'd0;
+  reg [4:0] in_head_id = 5'd0;
+  reg [32:0] in_exp_sum = 33'd1;
+  reg [3:0] in_slice = 4'd0;
+  reg in_last = 1'b0;
+  reg [327:0] in_value = 328'd0;
+  wire out_valid;
+  reg out_ready = 1'b0;
+  wire [15:0] out_command_id;
+  wire [4:0] out_head_id;
+  wire [3:0] out_slice;
+  wire out_last;
+  wire [319:0] out_value;
+  wire [31:0] accepted_count;
+  wire [31:0] completed_count;
+  wire [31:0] cycle_count;
+  wire protocol_error;
+  integer wait_cycles;
+
+  always #5 clk = ~clk;
+
+  {finalizer_name} dut (
+      .clk(clk),
+      .rst_n(rst_n),
+      .in_valid(in_valid),
+      .in_ready(in_ready),
+      .in_command_id(in_command_id),
+      .in_head_id(in_head_id),
+      .in_exp_sum(in_exp_sum),
+      .in_slice(in_slice),
+      .in_last(in_last),
+      .in_value(in_value),
+      .out_valid(out_valid),
+      .out_ready(out_ready),
+      .out_command_id(out_command_id),
+      .out_head_id(out_head_id),
+      .out_slice(out_slice),
+      .out_last(out_last),
+      .out_value(out_value),
+      .accepted_count(accepted_count),
+      .completed_count(completed_count),
+      .cycle_count(cycle_count),
+      .protocol_error(protocol_error)
+  );
+
+  initial begin
+    repeat (2) @(posedge clk);
+    @(negedge clk);
+    rst_n = 1'b1;
+    in_valid = 1'b1;
+    in_command_id = 16'h2001;
+    #1;
+    if (in_ready !== 1'b1) $fatal(1, "finalizer should accept first beat from idle");
+    @(posedge clk);
+    #1;
+    if (accepted_count !== 32'd1) $fatal(1, "first beat was not accepted");
+    @(negedge clk);
+    in_valid = 1'b0;
+
+    wait_cycles = 0;
+    while (out_valid !== 1'b1 && wait_cycles < 600) begin
+      @(negedge clk);
+      wait_cycles = wait_cycles + 1;
+    end
+    if (out_valid !== 1'b1) $fatal(1, "timed out waiting for finalizer output");
+
+    in_valid = 1'b1;
+    in_command_id = 16'h2002;
+    out_ready = 1'b1;
+    #1;
+    if (in_ready !== 1'b0) $fatal(1, "embedded finalizer must reject same-cycle replacement");
+    @(posedge clk);
+    #1;
+    if (accepted_count !== 32'd1) $fatal(1, "replacement should not be accepted");
+    if (completed_count !== 32'd1) $fatal(1, "output should retire exactly once");
+    if (protocol_error !== 1'b0) $fatal(1, "unexpected protocol error");
+    @(negedge clk);
+    in_valid = 1'b0;
+    out_ready = 1'b0;
+    #1;
+    if (out_valid !== 1'b0) $fatal(1, "output valid should clear after retirement");
+    $display("PASS embedded finalizer rejects same-cycle replace");
+    #1 $finish;
+  end
+endmodule
+""",
+        encoding="utf-8",
+    )
+    run = _compile_and_run(rtl_dir / "top.v", tb_path, timeout=240)
+    assert "PASS embedded finalizer rejects same-cycle replace" in run.stdout
+
+
+def test_banked_finalized_tree_does_not_emit_unreachable_same_bank_replace_guard(tmp_path: Path) -> None:
+    cfg = _config(1, clusters=2, divider_lanes=8)
+    generate(cfg, tmp_path / "rtl")
+    rtl_text = (tmp_path / "rtl" / "top.v").read_text(encoding="utf-8")
+    assert "wire same_bank_replace_w =" not in rtl_text
+    assert "if (bank_outstanding_q[dispatch_bank_q]) begin" in rtl_text
+    assert "bank_outstanding_q[order_fifo_head_bank_id_w] <= 1'b0;" in rtl_text
 
 
 def test_banked_finalized_tree_full_wave_saturated_service_matches_recorded_contract() -> None:

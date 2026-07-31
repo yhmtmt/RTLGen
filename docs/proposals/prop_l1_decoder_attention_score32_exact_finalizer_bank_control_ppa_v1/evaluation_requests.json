@@ -1,0 +1,45 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_score32_exact_finalizer_bank_control_ppa_v1",
+  "source_commit_note": "Replace with the merge commit that adds the standalone exact finalizer-bank control RTL, probe, guard, sweep, and proposal before dispatch.",
+  "requested_items": [
+    {
+      "item_id": "l1_decoder_attention_score32_exact_finalizer_bank_control_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure Nangate45 PPA for standalone exact ordered finalizer-bank control at representative lane-8 bank counts, excluding the wide payload fanout and root payload mux.",
+      "evaluation_mode": "frontier_followup",
+      "abstraction_layer": "architecture_block",
+      "comparison_role": "exact_finalizer_bank_control_anchor",
+      "priority": 95,
+      "configs": [
+        "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b1/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b4/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b8/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b16/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b32/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b59/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/attention_score32_exact_finalizer_bank_control_v1/sweeps/nangate45_attention_score32_exact_finalizer_bank_control_lane8_firstpass.json",
+      "out_root": "runs/designs/npu_blocks",
+      "expected_outputs": [
+        "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b1/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b1/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b4/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b4/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b8/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b8/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b16/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b16/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b32/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b32/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b59/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b59/timing_debug_report.md"
+      ],
+      "expected_result": {
+        "direction": "measure_exact_finalizer_bank_control_cost",
+        "reason": "This exposes the control-only scaling contribution, excluding the wide bank payload fanout and root payload mux, for later composition with measured finalizer arithmetic and the existing exact service model."
+      },
+      "status": "pending_implementation_merge",
+      "notes": "One-density first pass only. Tree logic, finalizer arithmetic, wide bank payload fanout, and wide root payload mux remain separate measured components for later hierarchical composition."
+    }
+  ]
+}
