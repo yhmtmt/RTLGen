@@ -1,0 +1,166 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-07-30T12:59:15.268617Z",
+  "item_id": "l1_decoder_attention_score32_exact_root_finalizer_lane_ppa_v1",
+  "run_key": "l1_decoder_attention_score32_exact_root_finalizer_lane_ppa_v1_run_2db447e07253665a",
+  "layer": "layer1",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l1_sweep",
+  "source_commit": "86d8d9aa30ad93a7e0e7b84fc2bdd894175862f0",
+  "objective": "Measure Nangate45 PPA for standalone score32 exact root finalizers at divider lanes 1, 2, 4, and 8.",
+  "input_manifest": {
+    "sweeps": [
+      "runs/campaigns/npu/attention_score32_exact_root_finalizer_v1/sweeps/nangate45_attention_score32_exact_root_finalizer_lane_firstpass.json"
+    ],
+    "configs": [
+      "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l1/config.json",
+      "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l2/config.json",
+      "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l4/config.json",
+      "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l8/config.json"
+    ],
+    "out_root": "runs/designs/npu_blocks",
+    "design_dirs": [],
+    "macro_manifests": [],
+    "candidate_manifests": [],
+    "required_submodules": []
+  },
+  "proposal_count": 4,
+  "evaluation_record": {
+    "evaluation_mode": "frontier_followup",
+    "abstraction_layer": "architecture_block",
+    "result_kind": "physical_metrics",
+    "physical_metrics_present": true,
+    "summary": "Physical metrics recorded from a completed, timing-feasible Layer 1 row.",
+    "timing_feasible": true,
+    "clock_period_ns": 8.0,
+    "timing_slack_ns": 4.6053999999999995
+  },
+  "proposal_assessment": null,
+  "proposals": [
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l1/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "7c17a985",
+        "tag": "attention_score32_exact_root_finalizer_lane_firstpass_v1_7c17a985",
+        "result_path": "/orfs/flow/reports/nangate45/attention_score32_exact_root_finalizer_l1/base/6_finish.rpt",
+        "work_result_json": "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l1/work/7c17a985/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 3.3946,
+        "die_area": 1000000.0,
+        "total_power_mw": 0.00185
+      }
+    },
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l2/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "16461852",
+        "tag": "attention_score32_exact_root_finalizer_lane_firstpass_v1_16461852",
+        "result_path": "/orfs/flow/reports/nangate45/attention_score32_exact_root_finalizer_l2/base/6_finish.rpt",
+        "work_result_json": "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l2/work/16461852/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 3.4594,
+        "die_area": 1000000.0,
+        "total_power_mw": 0.00218
+      }
+    },
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l4/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "7c17a985",
+        "tag": "attention_score32_exact_root_finalizer_lane_firstpass_v1_7c17a985",
+        "result_path": "/orfs/flow/reports/nangate45/attention_score32_exact_root_finalizer_l4/base/6_finish.rpt",
+        "work_result_json": "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l4/work/7c17a985/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 3.4669,
+        "die_area": 1000000.0,
+        "total_power_mw": 0.00282
+      }
+    },
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l8/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "7c17a985",
+        "tag": "attention_score32_exact_root_finalizer_lane_firstpass_v1_7c17a985",
+        "result_path": "/orfs/flow/reports/nangate45/attention_score32_exact_root_finalizer_l8/base/6_finish.rpt",
+        "work_result_json": "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l8/work/7c17a985/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 3.4278,
+        "die_area": 1000000.0,
+        "total_power_mw": 0.0129
+      }
+    }
+  ],
+  "trial_summary": {
+    "item_id": "l1_decoder_attention_score32_exact_root_finalizer_lane_ppa_v1",
+    "completed_trials": 1,
+    "success_count": 1,
+    "failure_count": 0,
+    "success_rate": 1.0,
+    "partial_metrics_count": 0,
+    "metrics": {
+      "critical_path_ns": {
+        "best": 3.3946,
+        "mean": 3.3946,
+        "median": 3.3946,
+        "max": 3.3946,
+        "range": 0.0,
+        "stddev": 0.0
+      },
+      "die_area": {
+        "best": 1000000.0,
+        "mean": 1000000.0,
+        "median": 1000000.0,
+        "max": 1000000.0,
+        "range": 0.0,
+        "stddev": 0.0
+      },
+      "total_power_mw": {
+        "best": 0.00185,
+        "mean": 0.00185,
+        "median": 0.00185,
+        "max": 0.00185,
+        "range": 0.0,
+        "stddev": 0.0
+      }
+    },
+    "aggregation_scope": "current_run_checkout_commit",
+    "aggregation_source_commit": "86d8d9aa30ad93a7e0e7b84fc2bdd894175862f0",
+    "aggregation_included_attempts": 1,
+    "aggregation_excluded_attempts": 0,
+    "aggregation_excluded_source_commits": {},
+    "aggregation_excluded_attempt_run_keys": [],
+    "aggregation_excluded_attempt_run_keys_truncated": false
+  },
+  "source_refs": {
+    "trial_metrics_csvs": [
+      "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l1/metrics.csv",
+      "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l2/metrics.csv",
+      "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l4/metrics.csv",
+      "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l8/metrics.csv"
+    ],
+    "summary_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_score32_exact_root_finalizer_lane_ppa_v1/summary_stats.json",
+    "failure_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_score32_exact_root_finalizer_lane_ppa_v1/failure_stats.json",
+    "trial_table_csv": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_score32_exact_root_finalizer_lane_ppa_v1/trial_table.csv"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "item_id": "l1_decoder_attention_score32_exact_root_finalizer_lane_ppa_v1",
+  "completed_trials": 1,
+  "success_count": 1,
+  "failure_count": 0,
+  "by_category": {},
+  "by_stage": {},
+  "aggregation_scope": "current_run_checkout_commit",
+  "aggregation_source_commit": "86d8d9aa30ad93a7e0e7b84fc2bdd894175862f0",
+  "aggregation_included_attempts": 1,
+  "aggregation_excluded_attempts": 0,
+  "aggregation_excluded_source_commits": {},
+  "aggregation_excluded_attempt_run_keys": [],
+  "aggregation_excluded_attempt_run_keys_truncated": false
+}

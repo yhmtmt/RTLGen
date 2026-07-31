@@ -1,0 +1,247 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "sweeps": [
+        "runs/campaigns/npu/attention_score32_exact_root_finalizer_v1/sweeps/nangate45_attention_score32_exact_root_finalizer_lane_firstpass.json"
+      ],
+      "configs": [
+        "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l1/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l2/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l4/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l8/config.json"
+      ],
+      "out_root": "runs/designs/npu_blocks",
+      "design_dirs": [],
+      "macro_manifests": [],
+      "candidate_manifests": [],
+      "required_submodules": []
+    },
+    "commands": [
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/rtlgen/gen_attention_score32_exact_root_finalizer.py --config runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l1/config.json --out runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l1/verilog",
+        "name": "generate_attention_score32_exact_root_finalizer_rtl_attention_score32_exact_root_finalizer_l1"
+      },
+      {
+        "run": "python3 npu/eval/check_attention_score32_exact_root_finalizer_guard.py --design-dir runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l1 --config runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l1/config.json",
+        "name": "check_attention_score32_exact_root_finalizer_guard_attention_score32_exact_root_finalizer_l1"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/synth/run_block_sweep.py --design_dir runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l1 --platform nangate45 --top attention_score32_exact_root_finalizer_l1 --sweep runs/campaigns/npu/attention_score32_exact_root_finalizer_v1/sweeps/nangate45_attention_score32_exact_root_finalizer_lane_firstpass.json --out_root runs/designs/npu_blocks --skip_existing",
+        "name": "run_block_sweep_attention_score32_exact_root_finalizer_l1"
+      },
+      {
+        "run": "python3 npu/eval/extract_openroad_timing_summary.py --design-dir runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l1 --out runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l1/timing_debug_report.md --max-paths 8",
+        "name": "extract_attention_score32_exact_root_finalizer_timing_paths_attention_score32_exact_root_finalizer_l1"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/rtlgen/gen_attention_score32_exact_root_finalizer.py --config runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l2/config.json --out runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l2/verilog",
+        "name": "generate_attention_score32_exact_root_finalizer_rtl_attention_score32_exact_root_finalizer_l2"
+      },
+      {
+        "run": "python3 npu/eval/check_attention_score32_exact_root_finalizer_guard.py --design-dir runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l2 --config runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l2/config.json",
+        "name": "check_attention_score32_exact_root_finalizer_guard_attention_score32_exact_root_finalizer_l2"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/synth/run_block_sweep.py --design_dir runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l2 --platform nangate45 --top attention_score32_exact_root_finalizer_l2 --sweep runs/campaigns/npu/attention_score32_exact_root_finalizer_v1/sweeps/nangate45_attention_score32_exact_root_finalizer_lane_firstpass.json --out_root runs/designs/npu_blocks --skip_existing",
+        "name": "run_block_sweep_attention_score32_exact_root_finalizer_l2"
+      },
+      {
+        "run": "python3 npu/eval/extract_openroad_timing_summary.py --design-dir runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l2 --out runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l2/timing_debug_report.md --max-paths 8",
+        "name": "extract_attention_score32_exact_root_finalizer_timing_paths_attention_score32_exact_root_finalizer_l2"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/rtlgen/gen_attention_score32_exact_root_finalizer.py --config runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l4/config.json --out runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l4/verilog",
+        "name": "generate_attention_score32_exact_root_finalizer_rtl_attention_score32_exact_root_finalizer_l4"
+      },
+      {
+        "run": "python3 npu/eval/check_attention_score32_exact_root_finalizer_guard.py --design-dir runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l4 --config runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l4/config.json",
+        "name": "check_attention_score32_exact_root_finalizer_guard_attention_score32_exact_root_finalizer_l4"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/synth/run_block_sweep.py --design_dir runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l4 --platform nangate45 --top attention_score32_exact_root_finalizer_l4 --sweep runs/campaigns/npu/attention_score32_exact_root_finalizer_v1/sweeps/nangate45_attention_score32_exact_root_finalizer_lane_firstpass.json --out_root runs/designs/npu_blocks --skip_existing",
+        "name": "run_block_sweep_attention_score32_exact_root_finalizer_l4"
+      },
+      {
+        "run": "python3 npu/eval/extract_openroad_timing_summary.py --design-dir runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l4 --out runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l4/timing_debug_report.md --max-paths 8",
+        "name": "extract_attention_score32_exact_root_finalizer_timing_paths_attention_score32_exact_root_finalizer_l4"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/rtlgen/gen_attention_score32_exact_root_finalizer.py --config runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l8/config.json --out runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l8/verilog",
+        "name": "generate_attention_score32_exact_root_finalizer_rtl_attention_score32_exact_root_finalizer_l8"
+      },
+      {
+        "run": "python3 npu/eval/check_attention_score32_exact_root_finalizer_guard.py --design-dir runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l8 --config runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l8/config.json",
+        "name": "check_attention_score32_exact_root_finalizer_guard_attention_score32_exact_root_finalizer_l8"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/synth/run_block_sweep.py --design_dir runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l8 --platform nangate45 --top attention_score32_exact_root_finalizer_l8 --sweep runs/campaigns/npu/attention_score32_exact_root_finalizer_v1/sweeps/nangate45_attention_score32_exact_root_finalizer_lane_firstpass.json --out_root runs/designs/npu_blocks --skip_existing",
+        "name": "run_block_sweep_attention_score32_exact_root_finalizer_l8"
+      },
+      {
+        "run": "python3 npu/eval/extract_openroad_timing_summary.py --design-dir runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l8 --out runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l8/timing_debug_report.md --max-paths 8",
+        "name": "extract_attention_score32_exact_root_finalizer_timing_paths_attention_score32_exact_root_finalizer_l8"
+      },
+      {
+        "run": "python3 scripts/build_runs_index.py",
+        "name": "build_runs_index"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate"
+      }
+    ],
+    "metadata": {
+      "acceptance_notes": "Require strict config/manifest/RTL guards and at least one status=ok row per requested lane design; retain explicit non-ok boundary rows."
+    },
+    "objective": "Measure Nangate45 PPA for standalone score32 exact root finalizers at divider lanes 1, 2, 4, and 8.",
+    "acceptance": [
+      "Each generated wrapper metrics.csv contains recorded rows with a status column; allow non-ok metrics such as flow_failed when the row is boundary evidence",
+      "Committed outputs stay lightweight (metrics.csv only; runs/index.csv is exported centrally after merge)",
+      "python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue pass"
+    ],
+    "source_mode": "config",
+    "expected_outputs": [
+      "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l1/metrics.csv",
+      "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l1/timing_debug_report.md",
+      "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l2/metrics.csv",
+      "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l2/timing_debug_report.md",
+      "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l4/metrics.csv",
+      "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l4/timing_debug_report.md",
+      "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l8/metrics.csv",
+      "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l8/timing_debug_report.md"
+    ]
+  },
+  "layer": "layer1",
+  "state": "evaluated",
+  "title": "Measure exact root finalizer lane PPA",
+  "result": {
+    "branch": "eval/l1_decoder_attention_score32_exact_root_finalizer_lane_ppa_v1/s20260730t125916z",
+    "completed_utc": "2026-07-30T12:59:13.434612Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "b7c2d9c80c1c",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260730t125916z][host:b7c2d9c80c1c][item:l1_decoder_attention_score32_exact_root_finalizer_lane_ppa_v1]",
+    "metrics_rows": [
+      {
+        "tag": "attention_score32_exact_root_finalizer_lane_firstpass_v1_7c17a985",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "7c17a985",
+        "metrics_csv": "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l1/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l1/work/7c17a985/result.json"
+      },
+      {
+        "tag": "attention_score32_exact_root_finalizer_lane_firstpass_v1_16461852",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "16461852",
+        "metrics_csv": "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l1/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l1/work/16461852/result.json"
+      },
+      {
+        "tag": "attention_score32_exact_root_finalizer_lane_firstpass_v1_7c17a985",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "7c17a985",
+        "metrics_csv": "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l2/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l2/work/7c17a985/result.json"
+      },
+      {
+        "tag": "attention_score32_exact_root_finalizer_lane_firstpass_v1_16461852",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "16461852",
+        "metrics_csv": "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l2/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l2/work/16461852/result.json"
+      },
+      {
+        "tag": "attention_score32_exact_root_finalizer_lane_firstpass_v1_7c17a985",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "7c17a985",
+        "metrics_csv": "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l4/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l4/work/7c17a985/result.json"
+      },
+      {
+        "tag": "attention_score32_exact_root_finalizer_lane_firstpass_v1_16461852",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "16461852",
+        "metrics_csv": "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l4/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l4/work/16461852/result.json"
+      },
+      {
+        "tag": "attention_score32_exact_root_finalizer_lane_firstpass_v1_7c17a985",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "7c17a985",
+        "metrics_csv": "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l8/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l8/work/7c17a985/result.json"
+      },
+      {
+        "tag": "attention_score32_exact_root_finalizer_lane_firstpass_v1_16461852",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "16461852",
+        "metrics_csv": "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l8/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l8/work/16461852/result.json"
+      }
+    ],
+    "queue_item_id": "l1_decoder_attention_score32_exact_root_finalizer_lane_ppa_v1",
+    "session_id": "s20260730t125916z",
+    "status": "ok",
+    "summary": "18/18 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l1_decoder_attention_score32_exact_root_finalizer_lane_ppa_v1/s20260730t125916z",
+    "pr_title": "eval: run measure exact root finalizer lane ppa",
+    "checklist": [
+      "Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge",
+      "Include metrics row references for each completed design",
+      "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260730t125916z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l1_decoder_attention_score32_exact_root_finalizer_lane_ppa_v1"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l1_decoder_attention_score32_exact_root_finalizer_lane_ppa_v1",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 93,
+  "created_utc": "2026-07-30T12:28:08.978756Z",
+  "requested_by": "developer_agent",
+  "developer_loop": {
+    "comparison": {
+      "role": "exact_root_finalizer_lane_anchor",
+      "paired_baseline_item_id": ""
+    },
+    "evaluation": {
+      "mode": "frontier_followup",
+      "trial_policy": {
+        "seed_start": 0,
+        "trial_count": 1,
+        "stop_after_failures": 1
+      },
+      "expected_reason": "Isolate sequential divider-lane PPA before physically hierarchical bank composition.",
+      "expected_direction": "measure_exact_root_finalizer_lane_cost"
+    },
+    "abstraction": {
+      "layer": "architecture_block"
+    },
+    "proposal_id": "prop_l1_decoder_attention_score32_exact_root_finalizer_lane_ppa_v1",
+    "proposal_path": "docs/proposals/prop_l1_decoder_attention_score32_exact_root_finalizer_lane_ppa_v1/proposal.json"
+  },
+  "source_requirement": {
+    "repo": "",
+    "reason": "evaluator runtime must contain the queued job source commit",
+    "version": 1,
+    "required_ref": "origin/master",
+    "required_sha": "86d8d9aa30ad93a7e0e7b84fc2bdd894175862f0",
+    "requires_daemon_restart": true
+  }
+}
