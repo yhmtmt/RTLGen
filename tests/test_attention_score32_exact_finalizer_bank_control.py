@@ -106,6 +106,48 @@ def test_finalizer_bank_control_rejects_invalid_bank_counts(tmp_path: Path) -> N
             generate(_config(banks), tmp_path / f"rtl_{banks}")
 
 
+def test_finalizer_bank_control_cli_runs_from_repo_root_with_checked_in_b1_config(tmp_path: Path) -> None:
+    config_path = (
+        REPO_ROOT
+        / "runs"
+        / "designs"
+        / "npu_blocks"
+        / "attention_score32_exact_finalizer_bank_control_l8_b1"
+        / "config.json"
+    )
+    out_dir = tmp_path / "rtl"
+    result = subprocess.run(
+        [
+            sys.executable,
+            "npu/rtlgen/gen_attention_score32_exact_finalizer_bank_control.py",
+            "--config",
+            str(config_path.relative_to(REPO_ROOT)),
+            "--out",
+            str(out_dir),
+        ],
+        cwd=REPO_ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=180,
+    )
+    assert result.returncode == 0, result.stderr
+
+    top_path = out_dir / "top.v"
+    manifest_path = out_dir / "attention_score32_exact_finalizer_bank_control_manifest.json"
+    config_copy_path = out_dir / "config.json"
+    assert top_path.exists()
+    assert manifest_path.exists()
+    assert config_copy_path.exists()
+
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    copied_config = json.loads(config_copy_path.read_text(encoding="utf-8"))
+    assert manifest["top_name"] == "attention_score32_exact_finalizer_bank_control_l8_b1"
+    assert manifest["finalizer_banks"] == 1
+    assert copied_config["top_name"] == "attention_score32_exact_finalizer_bank_control_l8_b1"
+    assert copied_config["attention_score32_exact_finalizer_bank_control"]["finalizer_banks"] == 1
+
+
 @pytest.mark.skipif(not _rtl_tools_available(), reason="RTL tools unavailable")
 @pytest.mark.parametrize("finalizer_banks", [1, 4, 8, 16, 32, 59])
 def test_finalizer_bank_control_probe_matches_service_model(finalizer_banks: int) -> None:
