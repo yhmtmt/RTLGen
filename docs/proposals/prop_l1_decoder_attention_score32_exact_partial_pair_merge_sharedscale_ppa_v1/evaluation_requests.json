@@ -1,0 +1,31 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_score32_exact_partial_pair_merge_sharedscale_ppa_v1",
+  "source_commit": "",
+  "source_commit_note": "Replace with the merge commit that adds the dedicated folded exact-partial pair-merge RTL, strict shared-operator guard, remote-ready sweep, and task-generator support before dispatch.",
+  "requested_items": [
+    {
+      "item_id": "l1_decoder_attention_score32_exact_partial_pair_merge_sharedscale_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure Nangate45 PPA for the standalone factored-exact shared-scale score32 partial pair merge.",
+      "evaluation_mode": "frontier_followup",
+      "abstraction_layer": "architecture_block",
+      "comparison_role": "exact_partial_pair_merge_sharedscale_anchor",
+      "priority": 95,
+      "configs": [
+        "runs/designs/npu_blocks/attention_score32_exact_partial_pair_merge_sharedscale_factored_l1/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/attention_score32_exact_partial_pair_merge_sharedscale_v1/sweeps/nangate45_attention_score32_exact_partial_pair_merge_sharedscale_factored_l1.json",
+      "out_root": "runs/designs/npu_blocks",
+      "expected_outputs": [
+        "runs/designs/npu_blocks/attention_score32_exact_partial_pair_merge_sharedscale_factored_l1/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_pair_merge_sharedscale_factored_l1/timing_debug_report.md"
+      ],
+      "expected_result": {
+        "direction": "measure_sharedscale_exact_pair_merge_cost",
+        "reason": "This provides the smallest exact folded arithmetic anchor before the tree is rebuilt around the new shared-scale microarchitecture."
+      },
+      "status": "pending_implementation_merge",
+      "notes": "Standalone one-pair anchor only. The item is ready for remote evaluation after merge but is not dispatched from this branch."
+    }
+  ]
+}

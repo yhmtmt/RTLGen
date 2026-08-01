@@ -40,6 +40,11 @@ FINAL_PAYLOAD_BITS = SLICE_LANES * FINAL_VALUE_BITS
 FINAL_LINK_BITS = FINAL_PAYLOAD_BITS + 16 + HEAD_ID_BITS + SLICE_INDEX_BITS + 1
 FINALIZER_CONTROL_TRANSACTION_ID_BITS = 16
 MERGE_SCALE = (1 << MERGE_SCALE_BITS) - 1
+FOLDED_PAIR_CAPTURE_TO_OUTPUT_LATENCY_CYCLES = 20
+FOLDED_PAIR_COMPUTE_LAUNCH_TO_OUTPUT_LATENCY_CYCLES = 19
+FOLDED_PAIR_COMPUTE_LAUNCH_INTERVAL_CYCLES = 20
+FOLDED_PAIR_EXP_SUM_SCALE_CYCLES = 2
+FOLDED_PAIR_NUMERATOR_SCALE_CYCLES = 16
 
 
 def _clamp_signed(value: int, bits: int) -> int:
@@ -273,6 +278,73 @@ def merge_partial_beats(left: ExactPartialBeat, right: ExactPartialBeat) -> Exac
         exp_sum=_clamp_unsigned(exp_sum, EXP_SUM_BITS),
         numerators=numerators,
     )
+
+
+def folded_exact_partial_pair_merge_capture_to_output_latency_cycles() -> int:
+    """Cycles from an input handshake to the first output handshake opportunity."""
+    return FOLDED_PAIR_CAPTURE_TO_OUTPUT_LATENCY_CYCLES
+
+
+def folded_exact_partial_pair_merge_compute_launch_to_output_latency_cycles() -> int:
+    """Cycles from internal pair launch to the first output handshake opportunity."""
+    return FOLDED_PAIR_COMPUTE_LAUNCH_TO_OUTPUT_LATENCY_CYCLES
+
+
+def folded_exact_partial_pair_merge_compute_launch_interval_cycles() -> int:
+    """Minimum launch-to-launch interval when output is continuously ready."""
+    return FOLDED_PAIR_COMPUTE_LAUNCH_INTERVAL_CYCLES
+
+
+def simulate_folded_exact_partial_pair_merge_service(
+    *,
+    pair_count: int,
+    output_ready_pattern: Iterable[bool] | None = None,
+) -> dict[str, object]:
+    count = _require_int_arg(pair_count, "pair_count")
+    if count < 0:
+        raise ValueError("pair_count must be non-negative")
+    ready_pattern = tuple(bool(value) for value in output_ready_pattern) if output_ready_pattern is not None else ()
+    if ready_pattern and not any(ready_pattern):
+        raise ValueError("output_ready_pattern must contain at least one ready cycle")
+    accept_cycles: list[int] = []
+    launch_cycles: list[int] = []
+    output_valid_cycles: list[int] = []
+    output_fire_cycles: list[int] = []
+    for pair_index in range(count):
+        if pair_index == 0:
+            accept_cycle = 0
+            launch_cycle = 1
+        elif pair_index == 1:
+            # The single input holding register per side prefetches one pair
+            # while pair zero is in the folded datapath.
+            accept_cycle = 2
+            launch_cycle = output_fire_cycles[-1] + 1
+        else:
+            accept_cycle = launch_cycles[-1] + 1
+            launch_cycle = output_fire_cycles[-1] + 1
+        accept_cycles.append(accept_cycle)
+        launch_cycles.append(launch_cycle)
+        output_valid_cycle = launch_cycle + FOLDED_PAIR_COMPUTE_LAUNCH_TO_OUTPUT_LATENCY_CYCLES
+        output_valid_cycles.append(output_valid_cycle)
+        output_fire_cycle = output_valid_cycle
+        if ready_pattern:
+            while not ready_pattern[output_fire_cycle % len(ready_pattern)]:
+                output_fire_cycle += 1
+        output_fire_cycles.append(output_fire_cycle)
+    return {
+        "pair_count": count,
+        "accept_cycles": accept_cycles,
+        "launch_cycles": launch_cycles,
+        "output_valid_cycles": output_valid_cycles,
+        "output_fire_cycles": output_fire_cycles,
+        "capture_to_output_latency_cycles": FOLDED_PAIR_CAPTURE_TO_OUTPUT_LATENCY_CYCLES,
+        "compute_launch_to_output_latency_cycles": FOLDED_PAIR_COMPUTE_LAUNCH_TO_OUTPUT_LATENCY_CYCLES,
+        "compute_launch_interval_cycles": FOLDED_PAIR_COMPUTE_LAUNCH_INTERVAL_CYCLES,
+        "exp_sum_scale_cycles": FOLDED_PAIR_EXP_SUM_SCALE_CYCLES,
+        "numerator_scale_cycles": FOLDED_PAIR_NUMERATOR_SCALE_CYCLES,
+        "service_cycle_definition": "active_edge_preupdate_handshake_v1",
+        "output_cycle_event": "first_out_valid_handshake_opportunity",
+    }
 
 
 def finalize_partial_stream(stream: Iterable[ExactPartialBeat]) -> tuple[tuple[int, ...], ...]:
@@ -1471,6 +1543,9 @@ __all__ = [
     "exact_local_cluster_gqa8_service_manifest",
     "exact_partial_producer_tree_service_manifest",
     "exact_partial_dual_stream_gqa8_producer_service_manifest",
+    "folded_exact_partial_pair_merge_capture_to_output_latency_cycles",
+    "folded_exact_partial_pair_merge_compute_launch_interval_cycles",
+    "folded_exact_partial_pair_merge_compute_launch_to_output_latency_cycles",
     "exact_banked_finalized_tree_full_wave_saturated_service",
     "finalizer_cycles_per_beat",
     "finalizer_output_latency_cycles",
@@ -1487,6 +1562,7 @@ __all__ = [
     "pack_numerators",
     "partial_stream_from_blocks",
     "pack_final_values",
+    "simulate_folded_exact_partial_pair_merge_service",
     "simulate_exact_finalizer",
     "simulate_exact_banked_finalizer",
     "reduce_local_temporal_partial_waves",
