@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l1_decoder_attention_score32_exact_partial_pair_merge_sharedscale_ppa_v1",
-  "source_commit": "",
+  "source_commit": "23dcda4fc523c0d467e71debdf45136fce6eaede",
   "source_commit_note": "Replace with the merge commit that adds the dedicated folded exact-partial pair-merge RTL, strict shared-operator guard, remote-ready sweep, and task-generator support before dispatch.",
   "requested_items": [
     {
@@ -24,8 +24,11 @@
         "direction": "measure_sharedscale_exact_pair_merge_cost",
         "reason": "This provides the smallest exact folded arithmetic anchor before the tree is rebuilt around the new shared-scale microarchitecture."
       },
-      "status": "pending_implementation_merge",
-      "notes": "Standalone one-pair anchor only. The item is ready for remote evaluation after merge but is not dispatched from this branch."
+      "status": "merged",
+      "notes": "Standalone one-pair anchor only. The item is ready for remote evaluation after merge but is not dispatched from this branch. Merged via PR #1518 and merge 3df45b32034920bfa0258b99074a8187a10d20b3 at 2026-08-01T13:20:08.393749Z.",
+      "merged_pr_number": 1518,
+      "merge_commit": "3df45b32034920bfa0258b99074a8187a10d20b3",
+      "merged_utc": "2026-08-01T13:20:08.393749Z"
     }
   ]
 }

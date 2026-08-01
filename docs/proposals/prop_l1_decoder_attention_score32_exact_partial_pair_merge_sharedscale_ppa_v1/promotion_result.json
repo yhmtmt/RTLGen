@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_score32_exact_partial_pair_merge_sharedscale_ppa_v1",
+  "decision": "iterate",
+  "pr_number": 1518,
+  "merge_commit": "3df45b32034920bfa0258b99074a8187a10d20b3",
+  "merged_utc": "2026-08-01T13:20:08.393749Z"
+}
