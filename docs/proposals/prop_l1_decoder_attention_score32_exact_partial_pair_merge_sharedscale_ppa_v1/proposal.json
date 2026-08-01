@@ -66,6 +66,7 @@
     "npu/eval/check_attention_score32_exact_partial_pair_merge_guard.py",
     "npu/eval/probe_attention_score32_exact_partial_pair_merge_folded.py",
     "control_plane/control_plane/services/l1_task_generator.py",
+    "docs/proposals/prop_l1_decoder_attention_score32_exact_partial_pair_merge_sharedscale_ppa_v1/evaluation_requests.json",
     "npu/docs/attention_score32_exact_partial_pair_merge_contract.md",
     "runs/designs/npu_blocks/attention_score32_exact_partial_pair_merge_sharedscale_factored_l1/config.json",
     "runs/campaigns/npu/attention_score32_exact_partial_pair_merge_sharedscale_v1/sweeps/nangate45_attention_score32_exact_partial_pair_merge_sharedscale_factored_l1.json"

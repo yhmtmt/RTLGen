@@ -3828,6 +3828,25 @@ def test_generate_l1_sweep_task_supports_attention_score32_exact_partial_pair_me
             ]
 
 
+def test_exact_partial_pair_merge_sharedscale_proposal_and_evaluation_requests_match() -> None:
+    repo_root = Path(__file__).resolve().parents[3]
+    proposal_dir = (
+        repo_root
+        / "docs"
+        / "proposals"
+        / "prop_l1_decoder_attention_score32_exact_partial_pair_merge_sharedscale_ppa_v1"
+    )
+    proposal = json.loads((proposal_dir / "proposal.json").read_text(encoding="utf-8"))
+    evaluation_requests = json.loads((proposal_dir / "evaluation_requests.json").read_text(encoding="utf-8"))
+
+    assert evaluation_requests["proposal_id"] == proposal["proposal_id"]
+    assert evaluation_requests["requested_items"] == proposal["required_evaluations"]
+    assert evaluation_requests["requested_items"][0]["priority"] == 95
+    assert evaluation_requests["requested_items"][0]["comparison_role"] == (
+        "exact_partial_pair_merge_sharedscale_anchor"
+    )
+
+
 def test_generate_l1_sweep_task_supports_attention_score32_exact_banked_finalized_tree_configs() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
