@@ -2000,6 +2000,65 @@ def _write_example_attention_score32_exact_partial_pair_merge_folded_repo(
     return str(config_path.relative_to(repo_root)), str(sweep_path.relative_to(repo_root))
 
 
+def _write_example_attention_score32_exact_partial_pair_merge_folded_mersenne_repo(
+    repo_root: Path,
+) -> tuple[str, str]:
+    design_dir = (
+        repo_root
+        / "runs"
+        / "designs"
+        / "npu_blocks"
+        / "attention_score32_exact_partial_pair_merge_sharedscale_factored_mersenne_l1"
+    )
+    design_dir.mkdir(parents=True, exist_ok=True)
+    config_path = design_dir / "config.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "top_name": "attention_score32_exact_partial_pair_merge_sharedscale_factored_mersenne_l1",
+                "attention_score32_exact_partial_pair_merge_folded": {
+                    "value_slices": 16,
+                    "head_id_bits": 5,
+                    "exp_scale_impl": "factored_h33_l64_mul_exact",
+                    "scale_divider_impl": "mersenne24_correction2_exact",
+                    "lane_parallelism": 1,
+                },
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    sweep_path = (
+        repo_root
+        / "runs"
+        / "campaigns"
+        / "npu"
+        / "attention_score32_exact_partial_pair_merge_sharedscale_mersenne_v1"
+        / "sweeps"
+        / "nangate45_attention_score32_exact_partial_pair_merge_sharedscale_factored_mersenne_l1.json"
+    )
+    sweep_path.parent.mkdir(parents=True, exist_ok=True)
+    sweep_path.write_text(
+        json.dumps(
+            {
+                "tag_prefix": "attention_score32_exact_partial_pair_merge_sharedscale_mersenne_v1",
+                "flow_params": {
+                    "CLOCK_PERIOD": [8.0],
+                    "DIE_AREA": ["0 0 1500 1500"],
+                    "CORE_AREA": ["50 50 1450 1450"],
+                    "PLACE_DENSITY": [0.3],
+                    "SYNTH_HIERARCHICAL": [1],
+                },
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    return str(config_path.relative_to(repo_root)), str(sweep_path.relative_to(repo_root))
+
+
 def _write_example_attention_score32_exact_finalized_tree_repo(repo_root: Path) -> tuple[str, str]:
     design_dir = repo_root / "runs" / "designs" / "npu_blocks" / "attention_score32_exact_finalized_tree_smoke_c16_r2_l4"
     design_dir.mkdir(parents=True, exist_ok=True)
@@ -3828,6 +3887,66 @@ def test_generate_l1_sweep_task_supports_attention_score32_exact_partial_pair_me
             ]
 
 
+def test_generate_l1_sweep_task_supports_attention_score32_exact_partial_pair_merge_folded_mersenne_configs() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        config_path, sweep_path = _write_example_attention_score32_exact_partial_pair_merge_folded_mersenne_repo(
+            repo_root
+        )
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            result = generate_l1_sweep_task(
+                session,
+                Layer1SweepGenerateRequest(
+                    repo_root=str(repo_root),
+                    sweep_path=sweep_path,
+                    config_paths=[config_path],
+                    platform="nangate45",
+                    out_root="runs/designs/npu_blocks",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    abstraction_layer="architecture_block",
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            assert work_item.command_manifest[0]["run"] == (
+                "export PATH=/oss-cad-suite/bin:$PATH && "
+                "python3 npu/rtlgen/gen_attention_score32_exact_partial_pair_merge_folded.py "
+                "--config "
+                "runs/designs/npu_blocks/attention_score32_exact_partial_pair_merge_sharedscale_factored_mersenne_l1/config.json "
+                "--out "
+                "runs/designs/npu_blocks/attention_score32_exact_partial_pair_merge_sharedscale_factored_mersenne_l1/verilog"
+            )
+            assert (
+                "--sweep runs/campaigns/npu/attention_score32_exact_partial_pair_merge_sharedscale_mersenne_v1/sweeps/"
+                "nangate45_attention_score32_exact_partial_pair_merge_sharedscale_factored_mersenne_l1.json"
+                in work_item.command_manifest[1]["run"]
+            )
+            assert "--top attention_score32_exact_partial_pair_merge_sharedscale_factored_mersenne_l1" in (
+                work_item.command_manifest[2]["run"]
+            )
+            assert work_item.expected_outputs == [
+                "runs/designs/npu_blocks/attention_score32_exact_partial_pair_merge_sharedscale_factored_mersenne_l1/metrics.csv",
+                "runs/designs/npu_blocks/attention_score32_exact_partial_pair_merge_sharedscale_factored_mersenne_l1/"
+                "timing_debug_report.md",
+            ]
+
+
+def _normalize_requested_item(item: dict[str, object]) -> dict[str, object]:
+    ignored = {
+        "status",
+        "notes",
+        "merged_pr_number",
+        "merge_commit",
+        "merged_utc",
+    }
+    return {key: value for key, value in item.items() if key not in ignored}
+
+
 def test_exact_partial_pair_merge_sharedscale_proposal_and_evaluation_requests_match() -> None:
     repo_root = Path(__file__).resolve().parents[3]
     proposal_dir = (
@@ -3840,10 +3959,33 @@ def test_exact_partial_pair_merge_sharedscale_proposal_and_evaluation_requests_m
     evaluation_requests = json.loads((proposal_dir / "evaluation_requests.json").read_text(encoding="utf-8"))
 
     assert evaluation_requests["proposal_id"] == proposal["proposal_id"]
-    assert evaluation_requests["requested_items"] == proposal["required_evaluations"]
+    assert [_normalize_requested_item(item) for item in evaluation_requests["requested_items"]] == [
+        _normalize_requested_item(item) for item in proposal["required_evaluations"]
+    ]
     assert evaluation_requests["requested_items"][0]["priority"] == 95
     assert evaluation_requests["requested_items"][0]["comparison_role"] == (
         "exact_partial_pair_merge_sharedscale_anchor"
+    )
+
+
+def test_exact_partial_pair_merge_sharedscale_mersenne_proposal_and_evaluation_requests_match() -> None:
+    repo_root = Path(__file__).resolve().parents[3]
+    proposal_dir = (
+        repo_root
+        / "docs"
+        / "proposals"
+        / "prop_l1_decoder_attention_score32_exact_partial_pair_merge_sharedscale_mersenne_ppa_v1"
+    )
+    proposal = json.loads((proposal_dir / "proposal.json").read_text(encoding="utf-8"))
+    evaluation_requests = json.loads((proposal_dir / "evaluation_requests.json").read_text(encoding="utf-8"))
+
+    assert evaluation_requests["proposal_id"] == proposal["proposal_id"]
+    assert [_normalize_requested_item(item) for item in evaluation_requests["requested_items"]] == [
+        _normalize_requested_item(item) for item in proposal["required_evaluations"]
+    ]
+    assert evaluation_requests["requested_items"][0]["priority"] == 96
+    assert evaluation_requests["requested_items"][0]["comparison_role"] == (
+        "exact_partial_pair_merge_sharedscale_mersenne_vs_generic"
     )
 
 
