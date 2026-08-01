@@ -1,0 +1,75 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_score32_exact_partial_pair_merge_sharedscale_ppa_v1",
+  "created_utc": "2026-08-01T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit",
+  "title": "Score32 exact partial pair merge shared-scale PPA anchor",
+  "abstraction_layer": "architecture_block",
+  "hypothesis": "Serializing exact score32 pair-merge scaling through one shared signed scale datapath per cycle should preserve bit-exact merge semantics while avoiding the fully parallel lane-scaling synthesis explosion. A standalone one-pair physical row should establish whether this folded arithmetic is a viable next tree primitive before wider reduction composition is retried.",
+  "direct_comparison": {
+    "primary_question": "What Nangate45 area and timing boundary is exposed by a standalone factored-exact score32 partial pair merge when the lane scaling is serialized through one shared signed scale datapath?",
+    "candidate": "l1_decoder_attention_score32_exact_partial_pair_merge_sharedscale_ppa_v1",
+    "include": [
+      "actual attention_score32_online_state_merge RTL generation",
+      "strict config, manifest, regeneration, and shared-scale guard before synthesis",
+      "focused RTL/software equivalence, randomized arithmetic regression, and cycle/backpressure schedule checks",
+      "one standalone hierarchical OpenROAD pair-merge sweep at 8 ns"
+    ],
+    "exclude": [
+      "no partial tree or multi-node reduction claim",
+      "no root finalizer or bank-control composition claim",
+      "no direct-link, NoC, SRAM, or decoder-wrapper closure claim"
+    ],
+    "metrics": [
+      "critical_path_ns",
+      "die_area",
+      "total_power_mw",
+      "stdcell_count",
+      "timing_debug_report"
+    ]
+  },
+  "remaining_abstractions": [
+    "This item measures only the standalone folded exact pair merge. Tree composition is still open.",
+    "Direct 328-bit inter-node links remain outside this item.",
+    "Finalizer arithmetic and bank control remain separate measured components.",
+    "NoC, SRAM, and HBM service remain outside this Layer 1 block."
+  ],
+  "required_evaluations": [
+    {
+      "item_id": "l1_decoder_attention_score32_exact_partial_pair_merge_sharedscale_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure Nangate45 PPA for the standalone factored-exact shared-scale score32 partial pair merge.",
+      "evaluation_mode": "frontier_followup",
+      "abstraction_layer": "architecture_block",
+      "comparison_role": "exact_partial_pair_merge_sharedscale_anchor",
+      "priority": 95,
+      "configs": [
+        "runs/designs/npu_blocks/attention_score32_exact_partial_pair_merge_sharedscale_factored_l1/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/attention_score32_exact_partial_pair_merge_sharedscale_v1/sweeps/nangate45_attention_score32_exact_partial_pair_merge_sharedscale_factored_l1.json",
+      "out_root": "runs/designs/npu_blocks",
+      "expected_outputs": [
+        "runs/designs/npu_blocks/attention_score32_exact_partial_pair_merge_sharedscale_factored_l1/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_pair_merge_sharedscale_factored_l1/timing_debug_report.md"
+      ],
+      "expected_result": {
+        "direction": "measure_sharedscale_exact_pair_merge_cost",
+        "reason": "This provides the smallest exact folded arithmetic anchor before the tree is rebuilt around the new shared-scale microarchitecture."
+      },
+      "status": "pending_implementation_merge",
+      "notes": "Standalone one-pair anchor only. The item is ready for remote evaluation after merge but is not dispatched from this branch."
+    }
+  ],
+  "source_refs": [
+    "npu/rtlgen/gen_attention_score32_online_state_merge.py",
+    "npu/eval/check_attention_score32_exact_partial_pair_merge_guard.py",
+    "npu/eval/probe_attention_score32_exact_partial.py",
+    "npu/docs/attention_score32_exact_partial_pair_merge_contract.md",
+    "runs/designs/npu_blocks/attention_score32_exact_partial_pair_merge_sharedscale_factored_l1/config.json",
+    "runs/campaigns/npu/attention_score32_exact_partial_pair_merge_sharedscale_v1/sweeps/nangate45_attention_score32_exact_partial_pair_merge_sharedscale_factored_l1.json"
+  ],
+  "knowledge_refs": [
+    "npu/docs/attention_score32_exact_partial_pair_merge_contract.md"
+  ]
+}

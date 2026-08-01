@@ -519,7 +519,11 @@ def build_report() -> JsonDict:
         generate_merge(
             {
                 "top_name": "exact_partial_merge",
-                "attention_score32_online_state_merge": {"value_slices": 16, "head_id_bits": 5},
+                "attention_score32_online_state_merge": {
+                    "value_slices": 16,
+                    "head_id_bits": 5,
+                    "lane_parallelism": 1,
+                },
             },
             merge_dir,
         )
@@ -653,6 +657,7 @@ def build_report() -> JsonDict:
         "decision": "pass" if passed else "fail",
         "equivalence_pass": passed,
         "semantic_profile": "score32_online_exact_partial_pair_merge_v1",
+        "pair_merge_lane_parallelism": 1,
         "command_count": len(_command_schedule()),
         "cluster_result_count": [len(rows) for rows in observed_clusters],
         "merge_result_count": len(observed_merge),

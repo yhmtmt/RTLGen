@@ -1,0 +1,9 @@
+{
+  "attention_score32_online_state_merge": {
+    "exp_scale_impl": "factored_h33_l64_mul_exact",
+    "head_id_bits": 5,
+    "lane_parallelism": 1,
+    "value_slices": 16
+  },
+  "top_name": "attention_score32_exact_partial_pair_merge_sharedscale_factored_l1"
+}

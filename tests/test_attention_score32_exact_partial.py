@@ -2,6 +2,7 @@ import json
 import math
 import os
 from pathlib import Path
+import random
 import re
 import shutil
 import subprocess
@@ -20,8 +21,12 @@ from npu.rtlgen.gen_attention_score32_online_state_merge import (
 from npu.rtlgen.gen_attention_two_pass_multivalue_stream import generate as generate_reducer
 from npu.sim.perf.attention_exact_partial import (
     ExactPartialBeat,
+    exact_partial_pair_merge_capture_to_output_latency_cycles,
+    exact_partial_pair_merge_compute_launch_interval_cycles,
+    exact_partial_pair_merge_compute_launch_to_output_latency_cycles,
     merge_partial_beats,
     pack_numerators,
+    simulate_exact_partial_pair_merge_service,
     unpack_numerators,
 )
 
@@ -65,6 +70,7 @@ def _merge_config() -> dict:
             "value_slices": 16,
             "head_id_bits": 5,
             "exp_scale_impl": FACTORED_H33_L64_MUL_EXACT,
+            "lane_parallelism": 1,
         },
     }
 
@@ -108,8 +114,8 @@ def _merge_beat(
     )
 
 
-def _run_direct_merge_rtl_vectors(tmp_path: Path) -> dict[str, object]:
-    valid_cases = [
+def _base_merge_cases() -> list[tuple[str, ExactPartialBeat, ExactPartialBeat, bool]]:
+    return [
         (
             "extreme_left",
             _merge_beat(
@@ -193,6 +199,39 @@ def _run_direct_merge_rtl_vectors(tmp_path: Path) -> dict[str, object]:
             True,
         ),
     ]
+
+
+def _random_merge_cases(seed: int, count: int) -> list[tuple[str, ExactPartialBeat, ExactPartialBeat, bool]]:
+    rng = random.Random(seed)
+    cases: list[tuple[str, ExactPartialBeat, ExactPartialBeat, bool]] = []
+    for index in range(count):
+        command_id = 0x5000 + index
+        head_id = rng.randrange(0, 32)
+        slice_index = rng.randrange(0, 16)
+        last = slice_index == 15
+        left = _merge_beat(
+            command_id=command_id,
+            head_id=head_id,
+            slice_index=slice_index,
+            last=last,
+            max_score=rng.randrange(INT_MIN, INT_MAX + 1),
+            exp_sum=rng.randrange(0, (1 << 33) - 1),
+            numerators=tuple(rng.randrange(-(1 << 40), 1 << 40) for _ in range(8)),
+        )
+        right = _merge_beat(
+            command_id=command_id,
+            head_id=head_id,
+            slice_index=slice_index,
+            last=last,
+            max_score=rng.randrange(INT_MIN, INT_MAX + 1),
+            exp_sum=rng.randrange(0, (1 << 33) - 1),
+            numerators=tuple(rng.randrange(-(1 << 40), 1 << 40) for _ in range(8)),
+        )
+        cases.append((f"random_{index}", left, right, False))
+    return cases
+
+
+def _run_merge_rtl_cases(tmp_path: Path, valid_cases: list[tuple[str, ExactPartialBeat, ExactPartialBeat, bool]]) -> dict[str, object]:
     expected_rows = []
     for index, (name, left, right, invalid_last) in enumerate(valid_cases):
         merged = merge_partial_beats(left, right)
@@ -290,8 +329,8 @@ module tb;
       cycle <= cycle + 1;
       if (left_valid && left_ready && right_valid && right_ready) issue <= issue + 1;
       if (out_valid && out_ready) begin
-        $display("RESULT idx=%0d cmd=%0d head=%0d slice=%0d last=%0d max=%0d sum=%0d value=%082x",
-                 seen, out_command_id, out_head_id, out_slice, out_last, $signed(out_global_max), out_exp_sum, out_value);
+        $display("RESULT idx=%0d cycle=%0d cmd=%0d head=%0d slice=%0d last=%0d max=%0d sum=%0d value=%082x",
+                 seen, cycle, out_command_id, out_head_id, out_slice, out_last, $signed(out_global_max), out_exp_sum, out_value);
         seen <= seen + 1;
         if (seen + 1 == CASE_COUNT) pending_summary <= 1;
       end
@@ -299,7 +338,7 @@ module tb;
         $display("SUMMARY completed=%0d cycle=%0d protocol_error=%0d", completed_count, cycle_count, protocol_error);
         #1 $finish;
       end
-      if (cycle > 200) $fatal(1, "timeout");
+      if (cycle > (CASE_COUNT * 32)) $fatal(1, "timeout");
     end
   end
 
@@ -335,7 +374,7 @@ endmodule
         raise RuntimeError(f"simulation failed:\\n{run.stdout}\\n{run.stderr}")
 
     result_re = re.compile(
-        r"RESULT idx=(\d+) cmd=(\d+) head=(\d+) slice=(\d+) last=(\d+) max=(-?\d+) sum=(\d+) value=([0-9a-fA-F]+)"
+        r"RESULT idx=(\d+) cycle=(\d+) cmd=(\d+) head=(\d+) slice=(\d+) last=(\d+) max=(-?\d+) sum=(\d+) value=([0-9a-fA-F]+)"
     )
     summary_re = re.compile(r"SUMMARY completed=(\d+) cycle=(\d+) protocol_error=(\d+)")
     observed_rows = []
@@ -345,13 +384,14 @@ endmodule
             observed_rows.append(
                 {
                     "index": int(match.group(1)),
-                    "command_id": int(match.group(2)),
-                    "head_id": int(match.group(3)),
-                    "slice": int(match.group(4)),
-                    "last": bool(int(match.group(5))),
-                    "global_max": int(match.group(6)),
-                    "exp_sum": int(match.group(7)),
-                    "value": list(unpack_numerators(int(match.group(8), 16))),
+                    "cycle": int(match.group(2)),
+                    "command_id": int(match.group(3)),
+                    "head_id": int(match.group(4)),
+                    "slice": int(match.group(5)),
+                    "last": bool(int(match.group(6))),
+                    "global_max": int(match.group(7)),
+                    "exp_sum": int(match.group(8)),
+                    "value": list(unpack_numerators(int(match.group(9), 16))),
                 }
             )
         elif match := summary_re.fullmatch(line.strip()):
@@ -363,6 +403,10 @@ endmodule
     if summary is None:
         raise RuntimeError("summary missing from direct merge RTL regression")
     return {"expected": expected_rows, "observed": observed_rows, "summary": summary}
+
+
+def _run_direct_merge_rtl_vectors(tmp_path: Path) -> dict[str, object]:
+    return _run_merge_rtl_cases(tmp_path, _base_merge_cases())
 
 
 def test_exact_partial_reducer_manifest_and_ports(tmp_path: Path) -> None:
@@ -415,6 +459,16 @@ def test_exact_partial_merge_manifest_and_ports(tmp_path: Path) -> None:
     assert manifest["equivalence_hash"] is False
     assert manifest["exp_scale_impl"] == FACTORED_H33_L64_MUL_EXACT
     assert manifest["exp_scale_bucket_max"] == MAX_EXP_BUCKET
+    assert manifest["lane_parallelism"] == 1
+    assert manifest["implementation_style"] == "shared_single_scale_folded_exact_v1"
+    assert manifest["shared_signed_scale_datapaths"] == 1
+    assert manifest["shared_unsigned_scale_datapaths"] == 1
+    assert manifest["pair_capture_to_output_latency_cycles"] == exact_partial_pair_merge_capture_to_output_latency_cycles()
+    assert (
+        manifest["pair_compute_launch_to_output_latency_cycles"]
+        == exact_partial_pair_merge_compute_launch_to_output_latency_cycles()
+    )
+    assert manifest["pair_compute_launch_interval_cycles"] == exact_partial_pair_merge_compute_launch_interval_cycles()
     assert manifest["exp_factor_step"] == 64
     assert manifest["exp_factor_high_entries"] == 33
     assert manifest["exp_factor_low_entries"] == 64
@@ -426,6 +480,10 @@ def test_exact_partial_merge_manifest_and_ports(tmp_path: Path) -> None:
     assert "product = high_scale * low_scale;" in rtl
     assert "exp_lut = rounded_product >> 43;" in rtl
     assert f"if (bucket > 33'd{MAX_EXP_BUCKET}) begin" in rtl
+    assert "localparam [2:0] PHASE_EXP_SUM_LEFT = 3'd1;" in rtl
+    assert "localparam [2:0] PHASE_LANE_RIGHT = 3'd4;" in rtl
+    assert "active_scaled_left_lane_q <= scale_signed41(" in rtl
+    assert "lane_merged_r = sat_add_signed41(active_scaled_left_lane_q, scale_signed41(lane_right_r, active_right_scale_q));" in rtl
 
 
 def test_exact_partial_merge_python_exp_scale_matches_legacy_formula_exhaustively() -> None:
@@ -579,7 +637,8 @@ endmodule
 def test_exact_partial_merge_rtl_handles_extreme_and_invalid_last_vectors(tmp_path: Path) -> None:
     report = _run_direct_merge_rtl_vectors(tmp_path)
 
-    assert report["observed"] == [
+    clean_observed = [{key: value for key, value in row.items() if key != "cycle"} for row in report["observed"]]
+    assert clean_observed == [
         {
             key: value
             for key, value in row.items()
@@ -589,6 +648,43 @@ def test_exact_partial_merge_rtl_handles_extreme_and_invalid_last_vectors(tmp_pa
     ]
     assert report["summary"]["completed"] == len(report["expected"])
     assert report["summary"]["protocol_error"] is True
+
+
+@pytest.mark.skipif(not _rtl_tools_available(), reason="iverilog/vvp/verilator unavailable")
+def test_exact_partial_merge_rtl_randomized_matches_python(tmp_path: Path) -> None:
+    cases = _random_merge_cases(seed=7, count=12)
+    report = _run_merge_rtl_cases(tmp_path, cases)
+
+    clean_observed = [{key: value for key, value in row.items() if key != "cycle"} for row in report["observed"]]
+    assert clean_observed == [
+        {
+            key: value
+            for key, value in row.items()
+            if key != "name" and key != "expect_protocol_error"
+        }
+        for row in report["expected"]
+    ]
+    assert report["summary"]["protocol_error"] is False
+
+
+@pytest.mark.skipif(not _rtl_tools_available(), reason="iverilog/vvp/verilator unavailable")
+def test_exact_partial_merge_service_contract_matches_rtl_backpressure(tmp_path: Path) -> None:
+    cases = _random_merge_cases(seed=11, count=6)
+    report = _run_merge_rtl_cases(tmp_path, cases)
+    schedule = simulate_exact_partial_pair_merge_service(pair_count=len(cases), output_ready_pattern=(True, True, False, True, True))
+
+    observed_cycles = [row["cycle"] for row in report["observed"]]
+    expected_cycles = schedule["output_fire_cycles"]
+    observed_deltas = [cycle - observed_cycles[0] for cycle in observed_cycles]
+    expected_deltas = [cycle - expected_cycles[0] for cycle in expected_cycles]
+
+    assert observed_deltas == expected_deltas
+    assert schedule["capture_to_output_latency_cycles"] == exact_partial_pair_merge_capture_to_output_latency_cycles()
+    assert (
+        schedule["compute_launch_to_output_latency_cycles"]
+        == exact_partial_pair_merge_compute_launch_to_output_latency_cycles()
+    )
+    assert schedule["compute_launch_interval_cycles"] == exact_partial_pair_merge_compute_launch_interval_cycles()
 
 
 @pytest.mark.skipif(not _rtl_tools_available(), reason="iverilog/vvp/verilator unavailable")
