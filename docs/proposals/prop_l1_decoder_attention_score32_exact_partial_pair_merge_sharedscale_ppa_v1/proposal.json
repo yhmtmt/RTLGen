@@ -11,7 +11,7 @@
     "primary_question": "What Nangate45 area and timing boundary is exposed by a standalone factored-exact score32 partial pair merge when the lane scaling is serialized through one shared signed scale datapath?",
     "candidate": "l1_decoder_attention_score32_exact_partial_pair_merge_sharedscale_ppa_v1",
     "include": [
-      "actual attention_score32_online_state_merge RTL generation",
+      "actual dedicated folded exact-partial pair-merge RTL generation",
       "strict config, manifest, regeneration, and shared-scale guard before synthesis",
       "focused RTL/software equivalence, randomized arithmetic regression, and cycle/backpressure schedule checks",
       "one standalone hierarchical OpenROAD pair-merge sweep at 8 ns"
@@ -62,9 +62,10 @@
     }
   ],
   "source_refs": [
-    "npu/rtlgen/gen_attention_score32_online_state_merge.py",
+    "npu/rtlgen/gen_attention_score32_exact_partial_pair_merge_folded.py",
     "npu/eval/check_attention_score32_exact_partial_pair_merge_guard.py",
-    "npu/eval/probe_attention_score32_exact_partial.py",
+    "npu/eval/probe_attention_score32_exact_partial_pair_merge_folded.py",
+    "control_plane/control_plane/services/l1_task_generator.py",
     "npu/docs/attention_score32_exact_partial_pair_merge_contract.md",
     "runs/designs/npu_blocks/attention_score32_exact_partial_pair_merge_sharedscale_factored_l1/config.json",
     "runs/campaigns/npu/attention_score32_exact_partial_pair_merge_sharedscale_v1/sweeps/nangate45_attention_score32_exact_partial_pair_merge_sharedscale_factored_l1.json"

@@ -4,13 +4,13 @@ from pathlib import Path
 import pytest
 
 from npu.eval.check_attention_score32_exact_partial_pair_merge_guard import main as guard_main
-from npu.rtlgen.gen_attention_score32_online_state_merge import FACTORED_H33_L64_MUL_EXACT, generate
+from npu.rtlgen.gen_attention_score32_exact_partial_pair_merge_folded import FACTORED_H33_L64_MUL_EXACT, generate
 
 
 def _config() -> dict:
     return {
         "top_name": "attention_score32_exact_partial_pair_merge_sharedscale_factored_l1",
-        "attention_score32_online_state_merge": {
+        "attention_score32_exact_partial_pair_merge_folded": {
             "value_slices": 16,
             "head_id_bits": 5,
             "exp_scale_impl": FACTORED_H33_L64_MUL_EXACT,
@@ -50,9 +50,30 @@ def test_pair_merge_guard_rejects_nonshared_parallelism(tmp_path: Path) -> None:
     rtl_dir.mkdir(parents=True)
     generate(_config(), rtl_dir)
     bad_config = _config()
-    bad_config["attention_score32_online_state_merge"]["lane_parallelism"] = 2
+    bad_config["attention_score32_exact_partial_pair_merge_folded"]["lane_parallelism"] = 2
     (design_dir / "config.json").write_text(json.dumps(bad_config, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     (rtl_dir / "config.json").write_text(json.dumps(bad_config, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
     with pytest.raises(SystemExit, match="lane_parallelism must be 1"):
+        guard_main(["--design-dir", str(design_dir)])
+
+
+def test_pair_merge_guard_rejects_second_signed_scale_invocation(tmp_path: Path) -> None:
+    design_dir = tmp_path / "design"
+    rtl_dir = design_dir / "verilog"
+    rtl_dir.mkdir(parents=True)
+    generate(_config(), rtl_dir)
+    (design_dir / "config.json").write_text(json.dumps(_config(), indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    top_path = rtl_dir / "top.v"
+    rtl = top_path.read_text(encoding="utf-8")
+    top_path.write_text(
+        rtl.replace(
+            "lane_merged_r = sat_add_signed41(active_scaled_left_lane_q, shared_signed_scaled_w);",
+            "lane_merged_r = sat_add_signed41(active_scaled_left_lane_q, shared_signed_scaled_w);\n"
+            "    lane_merged_r = scale_signed41(shared_signed_value_r, shared_signed_scale_r);",
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(SystemExit, match="exactly one scale_signed41 invocation; found 2"):
         guard_main(["--design-dir", str(design_dir)])

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Probe exact-partial score32 cluster egress and pairwise merge equivalence."""
+"""Probe folded exact-partial score32 pair-merge equivalence."""
 
 from __future__ import annotations
 
@@ -19,7 +19,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from npu.rtlgen.gen_attention_decode_score_multivalue_cluster import generate as generate_cluster
-from npu.rtlgen.gen_attention_score32_online_state_merge import generate as generate_merge
+from npu.rtlgen.gen_attention_score32_exact_partial_pair_merge_folded import generate as generate_merge
 from npu.sim.perf.attention_exact_partial import (
     merge_partial_streams,
     pack_numerators,
@@ -519,7 +519,11 @@ def build_report() -> JsonDict:
         generate_merge(
             {
                 "top_name": "exact_partial_merge",
-                "attention_score32_online_state_merge": {"value_slices": 16, "head_id_bits": 5},
+                "attention_score32_exact_partial_pair_merge_folded": {
+                    "value_slices": 16,
+                    "head_id_bits": 5,
+                    "lane_parallelism": 1,
+                },
             },
             merge_dir,
         )
@@ -652,7 +656,9 @@ def build_report() -> JsonDict:
         "model": "score32_exact_partial_pair_probe_v1",
         "decision": "pass" if passed else "fail",
         "equivalence_pass": passed,
-        "semantic_profile": "score32_online_exact_partial_pair_merge_v1",
+        "semantic_profile": "score32_online_exact_partial_pair_merge_folded_sharedscale_v1",
+        "numerical_semantics": "score32_online_exact_partial_pair_merge_v1",
+        "pair_merge_lane_parallelism": 1,
         "command_count": len(_command_schedule()),
         "cluster_result_count": [len(rows) for rows in observed_clusters],
         "merge_result_count": len(observed_merge),
