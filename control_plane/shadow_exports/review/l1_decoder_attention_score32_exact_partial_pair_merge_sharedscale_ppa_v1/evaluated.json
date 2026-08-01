@@ -1,0 +1,131 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "sweeps": [
+        "runs/campaigns/npu/attention_score32_exact_partial_pair_merge_sharedscale_v1/sweeps/nangate45_attention_score32_exact_partial_pair_merge_sharedscale_factored_l1.json"
+      ],
+      "configs": [
+        "runs/designs/npu_blocks/attention_score32_exact_partial_pair_merge_sharedscale_factored_l1/config.json"
+      ],
+      "out_root": "runs/designs/npu_blocks",
+      "design_dirs": [],
+      "macro_manifests": [],
+      "candidate_manifests": [],
+      "required_submodules": []
+    },
+    "commands": [
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/rtlgen/gen_attention_score32_exact_partial_pair_merge_folded.py --config runs/designs/npu_blocks/attention_score32_exact_partial_pair_merge_sharedscale_factored_l1/config.json --out runs/designs/npu_blocks/attention_score32_exact_partial_pair_merge_sharedscale_factored_l1/verilog",
+        "name": "generate_attention_score32_exact_partial_pair_merge_folded_rtl"
+      },
+      {
+        "run": "python3 npu/eval/check_attention_score32_exact_partial_pair_merge_guard.py --design-dir runs/designs/npu_blocks/attention_score32_exact_partial_pair_merge_sharedscale_factored_l1 --config runs/designs/npu_blocks/attention_score32_exact_partial_pair_merge_sharedscale_factored_l1/config.json --sweep runs/campaigns/npu/attention_score32_exact_partial_pair_merge_sharedscale_v1/sweeps/nangate45_attention_score32_exact_partial_pair_merge_sharedscale_factored_l1.json",
+        "name": "check_attention_score32_exact_partial_pair_merge_folded_guard"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/synth/run_block_sweep.py --design_dir runs/designs/npu_blocks/attention_score32_exact_partial_pair_merge_sharedscale_factored_l1 --platform nangate45 --top attention_score32_exact_partial_pair_merge_sharedscale_factored_l1 --sweep runs/campaigns/npu/attention_score32_exact_partial_pair_merge_sharedscale_v1/sweeps/nangate45_attention_score32_exact_partial_pair_merge_sharedscale_factored_l1.json --out_root runs/designs/npu_blocks --skip_existing",
+        "name": "run_block_sweep"
+      },
+      {
+        "run": "python3 npu/eval/extract_openroad_timing_summary.py --design-dir runs/designs/npu_blocks/attention_score32_exact_partial_pair_merge_sharedscale_factored_l1 --out runs/designs/npu_blocks/attention_score32_exact_partial_pair_merge_sharedscale_factored_l1/timing_debug_report.md --max-paths 8",
+        "name": "extract_attention_score32_exact_partial_pair_merge_folded_timing_paths"
+      },
+      {
+        "run": "python3 scripts/build_runs_index.py",
+        "name": "build_runs_index"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate"
+      }
+    ],
+    "objective": "Measure Nangate45 PPA for the standalone factored-exact shared-scale score32 partial pair merge.",
+    "acceptance": [
+      "Each generated wrapper metrics.csv contains at least one status=ok row for the queued sweep",
+      "Committed outputs stay lightweight (metrics.csv only; runs/index.csv is exported centrally after merge)",
+      "python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue pass"
+    ],
+    "source_mode": "config",
+    "expected_outputs": [
+      "runs/designs/npu_blocks/attention_score32_exact_partial_pair_merge_sharedscale_factored_l1/metrics.csv",
+      "runs/designs/npu_blocks/attention_score32_exact_partial_pair_merge_sharedscale_factored_l1/timing_debug_report.md"
+    ]
+  },
+  "layer": "layer1",
+  "state": "evaluated",
+  "title": "Score32 exact partial pair merge shared-scale PPA anchor",
+  "result": {
+    "branch": "eval/l1_decoder_attention_score32_exact_partial_pair_merge_sharedscale_ppa_v1/s20260801t131741z",
+    "completed_utc": "2026-08-01T13:17:38.700973Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "b7c2d9c80c1c",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260801t131741z][host:b7c2d9c80c1c][item:l1_decoder_attention_score32_exact_partial_pair_merge_sharedscale_ppa_v1]",
+    "metrics_rows": [
+      {
+        "tag": "attention_score32_exact_partial_pair_merge_sharedscale_v1_d7c66d0e",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "d7c66d0e",
+        "metrics_csv": "runs/designs/npu_blocks/attention_score32_exact_partial_pair_merge_sharedscale_factored_l1/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_score32_exact_partial_pair_merge_sharedscale_factored_l1/work/d7c66d0e/result.json"
+      }
+    ],
+    "queue_item_id": "l1_decoder_attention_score32_exact_partial_pair_merge_sharedscale_ppa_v1",
+    "session_id": "s20260801t131741z",
+    "status": "ok",
+    "summary": "6/6 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l1_decoder_attention_score32_exact_partial_pair_merge_sharedscale_ppa_v1/s20260801t131741z",
+    "pr_title": "eval: run score32 exact partial pair merge shared-scale ppa anchor",
+    "checklist": [
+      "Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge",
+      "Include metrics row references for each completed design",
+      "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260801t131741z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l1_decoder_attention_score32_exact_partial_pair_merge_sharedscale_ppa_v1"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l1_decoder_attention_score32_exact_partial_pair_merge_sharedscale_ppa_v1",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 95,
+  "created_utc": "2026-08-01T12:44:56.657865Z",
+  "requested_by": "developer_agent",
+  "developer_loop": {
+    "comparison": {
+      "role": "exact_partial_pair_merge_sharedscale_anchor",
+      "paired_baseline_item_id": ""
+    },
+    "evaluation": {
+      "mode": "frontier_followup",
+      "trial_policy": {
+        "seed_start": 0,
+        "trial_count": 1,
+        "stop_after_failures": 1
+      },
+      "expected_reason": "This provides the smallest exact folded arithmetic anchor before the tree is rebuilt around the new shared-scale microarchitecture.",
+      "expected_direction": "measure_sharedscale_exact_pair_merge_cost"
+    },
+    "abstraction": {
+      "layer": "architecture_block"
+    },
+    "proposal_id": "prop_l1_decoder_attention_score32_exact_partial_pair_merge_sharedscale_ppa_v1",
+    "proposal_path": "docs/proposals/prop_l1_decoder_attention_score32_exact_partial_pair_merge_sharedscale_ppa_v1"
+  },
+  "source_requirement": {
+    "repo": "",
+    "reason": "evaluator runtime must contain the queued job source commit",
+    "version": 1,
+    "required_ref": "origin/master",
+    "required_sha": "23dcda4fc523c0d467e71debdf45136fce6eaede",
+    "requires_daemon_restart": true
+  }
+}
