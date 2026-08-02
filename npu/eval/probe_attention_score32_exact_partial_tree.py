@@ -22,10 +22,13 @@ if str(REPO_ROOT) not in sys.path:
 from npu.rtlgen.gen_attention_score32_exact_partial_tree import generate as generate_tree
 from npu.sim.perf.attention_exact_partial import (
     ExactPartialBeat,
+    FOLDED_SHARED_SCALE_MERSENNE_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL,
+    LEGACY_PARALLEL_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL,
     exact_partial_tree_service_manifest,
     merge_balanced_partial_streams,
     pack_numerators,
     partial_stream_from_blocks,
+    simulate_exact_partial_tree_service,
     unpack_numerators,
 )
 
@@ -164,16 +167,23 @@ def _expected(clusters: int, *, heads: int) -> dict[str, object]:
     }
 
 
-def _config(clusters: int) -> dict[str, object]:
-    return {
-        "top_name": f"attention_score32_exact_partial_tree_c{clusters}_r2",
-        "attention_score32_exact_partial_tree": {
-            "clusters": clusters,
-            "radix": 2,
-            "value_slices": 16,
-            "head_id_bits": 5,
-        },
+def _config(
+    clusters: int,
+    *,
+    pair_node_impl: str = LEGACY_PARALLEL_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL,
+) -> dict[str, object]:
+    body: dict[str, object] = {
+        "clusters": clusters,
+        "radix": 2,
+        "value_slices": 16,
+        "head_id_bits": 5,
     }
+    top_name = f"attention_score32_exact_partial_tree_c{clusters}_r2"
+    if pair_node_impl == FOLDED_SHARED_SCALE_MERSENNE_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL:
+        body["exp_scale_impl"] = "factored_h33_l64_mul_exact"
+        body["pair_node_impl"] = pair_node_impl
+        top_name = f"attention_score32_exact_partial_tree_folded_mersenne_c{clusters}_r2"
+    return {"top_name": top_name, "attention_score32_exact_partial_tree": body}
 
 
 def _testbench(*, top_name: str, clusters: int, heads: int, expected: dict[str, object]) -> str:
@@ -397,13 +407,18 @@ endmodule
 """
 
 
-def build_report(clusters: int = 16, heads: int = 32) -> JsonDict:
+def build_report(
+    clusters: int = 16,
+    heads: int = 32,
+    *,
+    pair_node_impl: str = LEGACY_PARALLEL_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL,
+) -> JsonDict:
     expected = _expected(clusters, heads=heads)
     with tempfile.TemporaryDirectory(prefix=f"score32_exact_partial_tree_c{clusters}_") as temp_dir_name:
         temp_dir = Path(temp_dir_name)
-        generate_tree(_config(clusters), temp_dir / "rtl")
+        generate_tree(_config(clusters, pair_node_impl=pair_node_impl), temp_dir / "rtl")
         tb_path = temp_dir / "tb.sv"
-        top_name = str(_config(clusters)["top_name"])
+        top_name = str(_config(clusters, pair_node_impl=pair_node_impl)["top_name"])
         tb_path.write_text(
             _testbench(top_name=top_name, clusters=clusters, heads=heads, expected=expected),
             encoding="utf-8",
@@ -487,7 +502,11 @@ def build_report(clusters: int = 16, heads: int = 32) -> JsonDict:
     first_output_cycle = int(summary["first_output_cycle"])
     last_output_cycle = int(summary["last_output_cycle"])
     sustained_window = max(1, (last_output_cycle - first_output_cycle) + 1)
-    measured_workload_manifest = exact_partial_tree_service_manifest(clusters=clusters, heads=heads)
+    measured_workload_manifest = exact_partial_tree_service_manifest(
+        clusters=clusters,
+        heads=heads,
+        pair_node_impl=pair_node_impl,
+    )
     measured_workload_manifest.update(
         {
             "leaf_accepts_per_leaf": len(expected["root"]),
@@ -502,7 +521,20 @@ def build_report(clusters: int = 16, heads: int = 32) -> JsonDict:
             "protocol_error": bool(summary["protocol_error"]),
         }
     )
-    theoretical_full_llama_service_manifest = exact_partial_tree_service_manifest(clusters=clusters, heads=32)
+    theoretical_full_llama_service_manifest = exact_partial_tree_service_manifest(
+        clusters=clusters,
+        heads=32,
+        pair_node_impl=pair_node_impl,
+    )
+    service_simulation = None
+    if pair_node_impl == FOLDED_SHARED_SCALE_MERSENNE_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL:
+        service_simulation = simulate_exact_partial_tree_service(
+            (_leaf_stream(leaf, heads=heads) for leaf in range(clusters)),
+            output_ready_pattern=tuple(
+                ((cycle % 5) != 2) and ((cycle % 11) != 7) for cycle in range(55)
+            ),
+            pair_node_impl=pair_node_impl,
+        )
     passed = (
         observed_rows == expected["root"]
         and leaf_summary == expected["leaf_accept_count"]
@@ -518,6 +550,7 @@ def build_report(clusters: int = 16, heads: int = 32) -> JsonDict:
     return {
         "clusters": clusters,
         "heads": heads,
+        "pair_node_impl": pair_node_impl,
         "decision": "pass" if passed else "fail",
         "equivalence_pass": passed,
         "leaf_input_hash": expected["leaf_hash"],
@@ -533,6 +566,7 @@ def build_report(clusters: int = 16, heads: int = 32) -> JsonDict:
         "summary": summary,
         "measured_workload_manifest": measured_workload_manifest,
         "theoretical_full_llama_service_manifest": theoretical_full_llama_service_manifest,
+        "service_simulation": service_simulation,
         "expected": {
             "heads": expected["heads"],
             "leaf_accept_count": expected["leaf_accept_count"],
@@ -548,9 +582,17 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--clusters", type=int, choices=(2, 4, 8, 16), default=16)
     parser.add_argument("--heads", type=int, choices=tuple(range(1, 33)), default=32)
+    parser.add_argument(
+        "--pair-node-impl",
+        choices=(
+            LEGACY_PARALLEL_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL,
+            FOLDED_SHARED_SCALE_MERSENNE_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL,
+        ),
+        default=LEGACY_PARALLEL_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL,
+    )
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
-    payload = build_report(clusters=args.clusters, heads=args.heads)
+    payload = build_report(clusters=args.clusters, heads=args.heads, pair_node_impl=args.pair_node_impl)
     args.out.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     return 0 if payload["equivalence_pass"] else 1
 

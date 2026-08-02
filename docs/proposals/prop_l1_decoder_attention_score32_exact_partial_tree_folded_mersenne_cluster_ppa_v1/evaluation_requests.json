@@ -1,0 +1,39 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_score32_exact_partial_tree_folded_mersenne_cluster_ppa_v1",
+  "source_commit_note": "Replace with the merge commit that adds the folded-Mersenne exact partial tree selector, service model, guards, staged configs, and proposal before dispatch.",
+  "requested_items": [
+    {
+      "item_id": "l1_decoder_attention_score32_exact_partial_tree_folded_mersenne_cluster_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure Nangate45 PPA for standalone folded-Mersenne exact partial trees at 2, 4, 8, and 16 clusters.",
+      "evaluation_mode": "frontier_followup",
+      "abstraction_layer": "architecture_block",
+      "comparison_role": "exact_partial_tree_folded_mersenne_cluster_anchor",
+      "priority": 97,
+      "configs": [
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c2_r2/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c4_r2/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c8_r2/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c16_r2/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/attention_score32_exact_partial_tree_folded_mersenne_v1/sweeps/nangate45_attention_score32_exact_partial_tree_folded_mersenne_cluster_v1.json",
+      "out_root": "runs/designs/npu_blocks",
+      "expected_outputs": [
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c2_r2/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c2_r2/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c4_r2/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c4_r2/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c8_r2/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c8_r2/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c16_r2/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c16_r2/timing_debug_report.md"
+      ],
+      "expected_result": {
+        "direction": "measure_folded_mersenne_exact_partial_tree_cluster_cost",
+        "reason": "This keeps the folded node change isolated while preserving the explicit wide-pin tree boundary."
+      },
+      "status": "pending_implementation_merge",
+      "notes": "Standalone folded-tree boundary only. Direct 328-bit links remain exposed at the external macro boundary and are not claimed as routed or composed."
+    }
+  ]
+}

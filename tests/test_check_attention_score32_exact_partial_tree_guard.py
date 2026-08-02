@@ -32,16 +32,30 @@ def _factored_config_path(clusters: int) -> Path:
     )
 
 
-def _prepare_design_dir(tmp_path: Path, *, clusters: int, factored: bool = False) -> Path:
-    tmp_path.mkdir(parents=True, exist_ok=True)
-    name = (
-        f"attention_score32_exact_partial_tree_factored_c{clusters}_r2"
-        if factored
-        else f"attention_score32_exact_partial_tree_c{clusters}_r2"
+def _folded_mersenne_config_path(clusters: int) -> Path:
+    return (
+        REPO_ROOT
+        / "runs"
+        / "designs"
+        / "npu_blocks"
+        / f"attention_score32_exact_partial_tree_folded_mersenne_c{clusters}_r2"
+        / "config.json"
     )
+
+
+def _prepare_design_dir(tmp_path: Path, *, clusters: int, factored: bool = False, folded_mersenne: bool = False) -> Path:
+    tmp_path.mkdir(parents=True, exist_ok=True)
+    if folded_mersenne:
+        name = f"attention_score32_exact_partial_tree_folded_mersenne_c{clusters}_r2"
+        source_config = _folded_mersenne_config_path(clusters)
+    elif factored:
+        name = f"attention_score32_exact_partial_tree_factored_c{clusters}_r2"
+        source_config = _factored_config_path(clusters)
+    else:
+        name = f"attention_score32_exact_partial_tree_c{clusters}_r2"
+        source_config = _config_path(clusters)
     design_dir = tmp_path / name
     design_dir.mkdir()
-    source_config = _factored_config_path(clusters) if factored else _config_path(clusters)
     config = json.loads(source_config.read_text(encoding="utf-8"))
     (design_dir / "config.json").write_text(json.dumps(config, indent=2) + "\n", encoding="utf-8")
     generate(config, design_dir / "verilog")
@@ -290,3 +304,63 @@ def test_exact_partial_tree_guard_rejects_factored_sweep_for_legacy_impl(tmp_pat
     )
     assert result.returncode != 0
     assert "factored partial-tree sweep requires exp_scale_impl factored_h33_l64_mul_exact" in result.stderr
+
+
+def test_exact_partial_tree_guard_accepts_folded_mersenne_cluster_configs_and_sweep(tmp_path: Path) -> None:
+    sweep_path = (
+        REPO_ROOT
+        / "runs"
+        / "campaigns"
+        / "npu"
+        / "attention_score32_exact_partial_tree_folded_mersenne_v1"
+        / "sweeps"
+        / "nangate45_attention_score32_exact_partial_tree_folded_mersenne_cluster_v1.json"
+    )
+    for clusters in (2, 4, 8, 16):
+        design_dir = _prepare_design_dir(
+            tmp_path / f"folded_mersenne_{clusters}", clusters=clusters, folded_mersenne=True
+        )
+        result = subprocess.run(
+            [
+                sys.executable,
+                "npu/eval/check_attention_score32_exact_partial_tree_guard.py",
+                "--design-dir",
+                str(design_dir),
+                "--config",
+                str(design_dir / "config.json"),
+                "--sweep",
+                str(sweep_path),
+            ],
+            cwd=REPO_ROOT,
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        assert result.returncode == 0, result.stderr
+        payload = json.loads(result.stdout)
+        assert payload["pair_node_impl"] == "folded_sharedscale_mersenne_exact"
+
+
+def test_exact_partial_tree_guard_rejects_folded_manifest_divider_mismatch(tmp_path: Path) -> None:
+    design_dir = _prepare_design_dir(tmp_path, clusters=4, folded_mersenne=True)
+    manifest_path = design_dir / "verilog" / "attention_score32_exact_partial_tree_manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["submodule_manifests"]["pair_merge"]["scale_divider_impl"] = "generic_exact"
+    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "npu/eval/check_attention_score32_exact_partial_tree_guard.py",
+            "--design-dir",
+            str(design_dir),
+            "--config",
+            str(design_dir / "config.json"),
+        ],
+        cwd=REPO_ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode != 0
+    assert "pair-merge submodule manifest scale_divider_impl must be mersenne24_correction2_exact" in result.stderr

@@ -45,6 +45,8 @@ FOLDED_PAIR_COMPUTE_LAUNCH_TO_OUTPUT_LATENCY_CYCLES = 19
 FOLDED_PAIR_COMPUTE_LAUNCH_INTERVAL_CYCLES = 20
 FOLDED_PAIR_EXP_SUM_SCALE_CYCLES = 2
 FOLDED_PAIR_NUMERATOR_SCALE_CYCLES = 16
+LEGACY_PARALLEL_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL = "legacy_parallel_exact"
+FOLDED_SHARED_SCALE_MERSENNE_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL = "folded_sharedscale_mersenne_exact"
 
 
 def _clamp_signed(value: int, bits: int) -> int:
@@ -347,6 +349,264 @@ def simulate_folded_exact_partial_pair_merge_service(
     }
 
 
+@dataclass
+class _FoldedTreeNodeServiceState:
+    left_hold: ExactPartialBeat | None = None
+    right_hold: ExactPartialBeat | None = None
+    active_result: ExactPartialBeat | None = None
+    active_remaining: int = 0
+    out_beat: ExactPartialBeat | None = None
+    completed_count: int = 0
+
+
+def _build_exact_partial_tree_node_levels(clusters: int) -> tuple[tuple[dict[str, object], ...], ...]:
+    previous: list[tuple[str, int]] = [("leaf", index) for index in range(clusters)]
+    next_node_index = 0
+    levels: list[tuple[dict[str, object], ...]] = []
+    while len(previous) > 1:
+        level: list[dict[str, object]] = []
+        for slot in range(0, len(previous), 2):
+            level.append(
+                {
+                    "node_index": next_node_index,
+                    "left": previous[slot],
+                    "right": previous[slot + 1],
+                }
+            )
+            next_node_index += 1
+        levels.append(tuple(level))
+        previous = [("node", int(node["node_index"])) for node in level]
+    return tuple(levels)
+
+
+def _ready_pattern_value(pattern: tuple[bool, ...], cycle: int) -> bool:
+    if not pattern:
+        return True
+    return pattern[cycle % len(pattern)]
+
+
+def _service_leaf_streams(*, clusters: int, heads: int) -> tuple[tuple[ExactPartialBeat, ...], ...]:
+    if heads < 1:
+        raise ValueError("heads must be positive")
+    leaf_streams: list[tuple[ExactPartialBeat, ...]] = []
+    for leaf_index in range(clusters):
+        beats: list[ExactPartialBeat] = []
+        for head_id in range(heads):
+            command_id = 0x6000 + head_id
+            for slice_index in range(VALUE_SLICES):
+                numerators = tuple(
+                    _clamp_signed(
+                        ((leaf_index * 97) + (head_id * 31) + (slice_index * 17) + (lane * 7)) % 1024 - 512,
+                        WEIGHTED_NUMERATOR_BITS,
+                    )
+                    for lane in range(SLICE_LANES)
+                )
+                beats.append(
+                    ExactPartialBeat(
+                        command_id=command_id,
+                        head_id=head_id,
+                        slice_index=slice_index,
+                        last=slice_index == VALUE_SLICES - 1,
+                        max_score=((leaf_index * 19) + (head_id * 11) + (slice_index * 5)) % 255 - 127,
+                        exp_sum=1 + ((leaf_index * 41) + (head_id * 13) + (slice_index * 3)) % ((1 << EXP_SUM_BITS) - 1),
+                        numerators=numerators,
+                    )
+                )
+        leaf_streams.append(tuple(beats))
+    return tuple(leaf_streams)
+
+
+def simulate_exact_partial_tree_service(
+    streams: Iterable[Iterable[ExactPartialBeat]],
+    *,
+    output_ready_pattern: Iterable[bool] | None = None,
+    pair_node_impl: str = FOLDED_SHARED_SCALE_MERSENNE_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL,
+) -> dict[str, object]:
+    if pair_node_impl != FOLDED_SHARED_SCALE_MERSENNE_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL:
+        raise ValueError(f"unsupported exact partial tree pair_node_impl: {pair_node_impl}")
+    leaf_streams = tuple(tuple(stream) for stream in streams)
+    if not leaf_streams:
+        raise ValueError("expected at least one partial stream")
+    clusters = len(leaf_streams)
+    if clusters < 2 or clusters > 16 or (clusters & (clusters - 1)):
+        raise ValueError("stream count must be a power of two in [2, 16]")
+    beat_count = len(leaf_streams[0])
+    if beat_count == 0:
+        raise ValueError("partial streams must be non-empty")
+    if any(len(stream) != beat_count for stream in leaf_streams):
+        raise ValueError("all partial streams must contain the same beat count")
+    ready_pattern = tuple(bool(value) for value in output_ready_pattern) if output_ready_pattern is not None else ()
+    if ready_pattern and not any(ready_pattern):
+        raise ValueError("output_ready_pattern must contain at least one ready cycle")
+
+    levels = _build_exact_partial_tree_node_levels(clusters)
+    node_count = clusters - 1
+    root_index = node_count - 1
+    states = [_FoldedTreeNodeServiceState() for _ in range(node_count)]
+    node_descriptors = [node for level in levels for node in level]
+    node_descriptor_by_index = {int(node["node_index"]): node for node in node_descriptors}
+
+    source_to_sink: dict[tuple[str, int], tuple[int, str]] = {}
+    for node in node_descriptors:
+        node_index = int(node["node_index"])
+        for side in ("left", "right"):
+            source = node[side]
+            if not isinstance(source, tuple):
+                continue
+            source_to_sink[source] = (node_index, side)
+
+    leaf_positions = [0] * clusters
+    leaf_accept_cycles: list[list[int]] = [[] for _ in range(clusters)]
+    node_launch_cycles: list[list[int]] = [[] for _ in range(node_count)]
+    node_output_fire_cycles: list[list[int]] = [[] for _ in range(node_count)]
+    node_outputs: list[list[ExactPartialBeat]] = [[] for _ in range(node_count)]
+    root_output_fire_cycles: list[int] = []
+    cycle = 0
+    timeout_cycles = max(4096, clusters * beat_count * FOLDED_PAIR_CAPTURE_TO_OUTPUT_LATENCY_CYCLES * 4)
+    stage_node_indices = [[int(node["node_index"]) for node in level] for level in levels]
+    canonical_levels = merge_balanced_partial_stream_levels(leaf_streams)
+    launch_to_output_countdown = folded_exact_partial_pair_merge_compute_launch_to_output_latency_cycles() - 1
+
+    while True:
+        left_ready = [state.left_hold is None for state in states]
+        right_ready = [state.right_hold is None for state in states]
+        out_valid = [state.out_beat is not None for state in states]
+
+        root_ready = _ready_pattern_value(ready_pattern, cycle)
+        output_ready: list[bool] = [False] * node_count
+        for node_index in range(node_count):
+            if node_index == root_index:
+                output_ready[node_index] = root_ready
+                continue
+            parent_index, parent_side = source_to_sink[("node", node_index)]
+            output_ready[node_index] = left_ready[parent_index] if parent_side == "left" else right_ready[parent_index]
+
+        node_output_fires = [out_valid[node_index] and output_ready[node_index] for node_index in range(node_count)]
+
+        leaf_fires = [False] * clusters
+        leaf_beats: list[ExactPartialBeat | None] = [None] * clusters
+        for leaf_index in range(clusters):
+            sink_index, sink_side = source_to_sink[("leaf", leaf_index)]
+            ready = left_ready[sink_index] if sink_side == "left" else right_ready[sink_index]
+            if leaf_positions[leaf_index] < beat_count and ready:
+                leaf_fires[leaf_index] = True
+                leaf_beats[leaf_index] = leaf_streams[leaf_index][leaf_positions[leaf_index]]
+
+        next_states: list[_FoldedTreeNodeServiceState] = []
+        for node_index in range(node_count):
+            state = states[node_index]
+            descriptor = node_descriptor_by_index[node_index]
+            next_state = _FoldedTreeNodeServiceState(
+                left_hold=state.left_hold,
+                right_hold=state.right_hold,
+                active_result=state.active_result,
+                active_remaining=state.active_remaining,
+                out_beat=state.out_beat,
+                completed_count=state.completed_count,
+            )
+
+            if node_output_fires[node_index]:
+                assert state.out_beat is not None
+                node_outputs[node_index].append(state.out_beat)
+                node_output_fire_cycles[node_index].append(cycle)
+                if node_index == root_index:
+                    root_output_fire_cycles.append(cycle)
+                next_state.out_beat = None
+                next_state.completed_count += 1
+
+            for side in ("left", "right"):
+                source_kind, source_index = descriptor[side]
+                source_beat: ExactPartialBeat | None
+                if source_kind == "leaf":
+                    source_beat = leaf_beats[source_index] if leaf_fires[source_index] else None
+                else:
+                    source_beat = states[source_index].out_beat if node_output_fires[source_index] else None
+                if source_beat is None:
+                    continue
+                if side == "left":
+                    if next_state.left_hold is not None:
+                        raise RuntimeError("left hold overflow in exact partial tree service model")
+                    next_state.left_hold = source_beat
+                else:
+                    if next_state.right_hold is not None:
+                        raise RuntimeError("right hold overflow in exact partial tree service model")
+                    next_state.right_hold = source_beat
+
+            start_pair = (
+                state.active_remaining == 0
+                and state.out_beat is None
+                and state.left_hold is not None
+                and state.right_hold is not None
+            )
+
+            if state.active_remaining > 0:
+                next_state.active_remaining = state.active_remaining - 1
+                if next_state.active_remaining == 0:
+                    next_state.out_beat = state.active_result
+                    next_state.active_result = None
+
+            if start_pair:
+                next_state.left_hold = None
+                next_state.right_hold = None
+                next_state.active_result = merge_partial_beats(state.left_hold, state.right_hold)
+                next_state.active_remaining = launch_to_output_countdown
+                node_launch_cycles[node_index].append(cycle)
+
+            next_states.append(next_state)
+
+        for leaf_index, fired in enumerate(leaf_fires):
+            if fired:
+                leaf_accept_cycles[leaf_index].append(cycle)
+                leaf_positions[leaf_index] += 1
+
+        states = next_states
+        drained = (
+            all(position == beat_count for position in leaf_positions)
+            and all(
+                state.left_hold is None
+                and state.right_hold is None
+                and state.active_result is None
+                and state.active_remaining == 0
+                and state.out_beat is None
+                for state in states
+            )
+        )
+        if drained:
+            break
+        cycle += 1
+        if cycle > timeout_cycles:
+            raise RuntimeError("timeout while simulating exact partial tree service")
+
+    observed_levels: list[tuple[tuple[ExactPartialBeat, ...], ...]] = []
+    for indices in stage_node_indices:
+        observed_levels.append(tuple(tuple(node_outputs[index]) for index in indices))
+
+    return {
+        "pair_node_impl": pair_node_impl,
+        "clusters": clusters,
+        "beats_per_leaf": beat_count,
+        "leaf_accept_cycles": tuple(tuple(cycles) for cycles in leaf_accept_cycles),
+        "node_launch_cycles": tuple(tuple(cycles) for cycles in node_launch_cycles),
+        "node_output_fire_cycles": tuple(tuple(cycles) for cycles in node_output_fire_cycles),
+        "root_output_fire_cycles": tuple(root_output_fire_cycles),
+        "first_root_output_cycle": root_output_fire_cycles[0] if root_output_fire_cycles else None,
+        "last_root_output_cycle": root_output_fire_cycles[-1] if root_output_fire_cycles else None,
+        "drain_cycle": cycle,
+        "leaf_accept_count": tuple(len(cycles) for cycles in leaf_accept_cycles),
+        "node_completed_count": tuple(state.completed_count for state in states),
+        "stage_completed_count": tuple(sum(states[index].completed_count for index in indices) for indices in stage_node_indices),
+        "observed_stage_streams": tuple(observed_levels),
+        "canonical_stage_streams": canonical_levels,
+        "root_stream": tuple(node_outputs[root_index]),
+        "capture_to_output_latency_cycles": folded_exact_partial_pair_merge_capture_to_output_latency_cycles(),
+        "compute_launch_to_output_latency_cycles": folded_exact_partial_pair_merge_compute_launch_to_output_latency_cycles(),
+        "compute_launch_interval_cycles": folded_exact_partial_pair_merge_compute_launch_interval_cycles(),
+        "service_cycle_definition": "active_edge_preupdate_handshake_v1",
+        "stage_backpressure_mode": "parent_ready_propagated_to_child_output",
+        "slice_count": VALUE_SLICES,
+    }
+
+
 def finalize_partial_stream(stream: Iterable[ExactPartialBeat]) -> tuple[tuple[int, ...], ...]:
     return tuple(finalize_value(beat.as_stats()) for beat in stream)
 
@@ -500,7 +760,9 @@ def _merge_equal_partial_streams(
     return tuple(merge_partial_beats(left_beats[index], right_beats[index]) for index in range(len(left_beats)))
 
 
-def merge_balanced_partial_streams(streams: Iterable[Iterable[ExactPartialBeat]]) -> tuple[ExactPartialBeat, ...]:
+def merge_balanced_partial_stream_levels(
+    streams: Iterable[Iterable[ExactPartialBeat]],
+) -> tuple[tuple[tuple[ExactPartialBeat, ...], ...], ...]:
     level = [tuple(stream) for stream in streams]
     if not level:
         raise ValueError("expected at least one partial stream")
@@ -511,6 +773,7 @@ def merge_balanced_partial_streams(streams: Iterable[Iterable[ExactPartialBeat]]
         raise ValueError("partial streams must be non-empty")
     if any(len(stream) != expected_beats for stream in level):
         raise ValueError("all partial streams must contain the same beat count")
+    levels: list[tuple[tuple[ExactPartialBeat, ...], ...]] = []
     while len(level) > 1:
         next_level: list[tuple[ExactPartialBeat, ...]] = []
         for index in range(0, len(level), 2):
@@ -520,8 +783,18 @@ def merge_balanced_partial_streams(streams: Iterable[Iterable[ExactPartialBeat]]
                     for beat_index in range(expected_beats)
                 )
             )
+        levels.append(tuple(next_level))
         level = next_level
-    return level[0]
+    return tuple(levels)
+
+
+def merge_balanced_partial_streams(streams: Iterable[Iterable[ExactPartialBeat]]) -> tuple[ExactPartialBeat, ...]:
+    level = [tuple(stream) for stream in streams]
+    if not level:
+        raise ValueError("expected at least one partial stream")
+    if len(level) == 1:
+        return level[0]
+    return merge_balanced_partial_stream_levels(level)[-1][0]
 
 
 def merge_staged_partial_streams(streams: Iterable[Iterable[ExactPartialBeat]]) -> tuple[ExactPartialBeat, ...]:
@@ -695,7 +968,12 @@ def normalized_merge_guard_case() -> tuple[tuple[ExactPartialBeat, ...], tuple[E
     return left, right
 
 
-def exact_partial_tree_service_manifest(*, clusters: int, heads: int = 32) -> dict[str, int | bool | str]:
+def exact_partial_tree_service_manifest(
+    *,
+    clusters: int,
+    heads: int = 32,
+    pair_node_impl: str = LEGACY_PARALLEL_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL,
+) -> dict[str, int | bool | str]:
     cluster_count = int(clusters)
     head_count = int(heads)
     if cluster_count < 2 or cluster_count > 16 or (cluster_count & (cluster_count - 1)):
@@ -706,7 +984,7 @@ def exact_partial_tree_service_manifest(*, clusters: int, heads: int = 32) -> di
     nodes = cluster_count - 1
     exact_state_bytes_per_cluster = (EXACT_STATE_BITS_PER_HEAD * head_count) // 8
     leaf_stream_bytes_per_cluster = (PARTIAL_LINK_BITS * VALUE_SLICES * head_count) // 8
-    return {
+    manifest: dict[str, int | bool | str] = {
         "clusters": cluster_count,
         "heads": head_count,
         "radix": 2,
@@ -724,6 +1002,34 @@ def exact_partial_tree_service_manifest(*, clusters: int, heads: int = 32) -> di
         "finalizer_boundary": "next_phase",
         "future_area_sensitivity": "folded_or_radix4_tree",
     }
+    if pair_node_impl == LEGACY_PARALLEL_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL:
+        return manifest
+    if pair_node_impl != FOLDED_SHARED_SCALE_MERSENNE_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL:
+        raise ValueError(f"unsupported exact partial tree pair_node_impl: {pair_node_impl}")
+    service = simulate_exact_partial_tree_service(
+        _service_leaf_streams(clusters=cluster_count, heads=head_count),
+        pair_node_impl=pair_node_impl,
+    )
+    root_fire_cycles = tuple(int(value) for value in service["root_output_fire_cycles"])
+    manifest.update(
+        {
+            "pair_node_impl": pair_node_impl,
+            "pair_node_scale_divider_impl": "mersenne24_correction2_exact",
+            "pair_capture_to_output_latency_cycles": int(service["capture_to_output_latency_cycles"]),
+            "pair_compute_launch_to_output_latency_cycles": int(service["compute_launch_to_output_latency_cycles"]),
+            "pair_compute_launch_interval_cycles": int(service["compute_launch_interval_cycles"]),
+            "leaf_stream_beats_per_cluster": int(service["beats_per_leaf"]),
+            "total_leaf_stream_beats": cluster_count * int(service["beats_per_leaf"]),
+            "full_wave_root_outputs": len(root_fire_cycles),
+            "full_wave_first_root_output_cycle": int(service["first_root_output_cycle"]),
+            "full_wave_last_root_output_cycle": int(service["last_root_output_cycle"]),
+            "full_wave_drain_cycle": int(service["drain_cycle"]),
+            "service_model": "cycle_simulated_folded_sharedscale_mersenne_tree_v1",
+            "service_cycle_definition": str(service["service_cycle_definition"]),
+            "stage_backpressure_mode": str(service["stage_backpressure_mode"]),
+        }
+    )
+    return manifest
 
 
 def exact_partial_staged_tree_service_manifest(*, producers: int, heads: int = 32) -> dict[str, int | bool | str]:
@@ -1515,10 +1821,12 @@ __all__ = [
     "ExactLocalGlobalGqa8Composition",
     "ExactLocalTemporalClusterComposition",
     "ExactPartialBeat",
+    "FOLDED_SHARED_SCALE_MERSENNE_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL",
     "FINALIZER_CONTROL_TRANSACTION_ID_BITS",
     "FINAL_PAYLOAD_BITS",
     "FINAL_LINK_BITS",
     "HEAD_ID_BITS",
+    "LEGACY_PARALLEL_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL",
     "LOCAL_TEMPORAL_WAVES",
     "LOCAL_CLUSTER_GQA8_HEAD_BASES",
     "LEAF_STREAM_BYTES_PER_CLUSTER_32_HEADS",
@@ -1553,6 +1861,7 @@ __all__ = [
     "finalize_partial_beat",
     "finalize_partial_beats",
     "finalize_partial_stream",
+    "merge_balanced_partial_stream_levels",
     "merge_balanced_partial_streams",
     "merge_staged_partial_streams",
     "merge_partial_beats",
@@ -1563,6 +1872,7 @@ __all__ = [
     "partial_stream_from_blocks",
     "pack_final_values",
     "simulate_folded_exact_partial_pair_merge_service",
+    "simulate_exact_partial_tree_service",
     "simulate_exact_finalizer",
     "simulate_exact_banked_finalizer",
     "reduce_local_temporal_partial_waves",

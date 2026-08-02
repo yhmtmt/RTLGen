@@ -1,0 +1,87 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_score32_exact_partial_tree_folded_mersenne_cluster_ppa_v1",
+  "created_utc": "2026-08-02T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit",
+  "title": "Score32 exact partial tree folded-Mersenne cluster PPA frontier",
+  "abstraction_layer": "architecture_block",
+  "hypothesis": "Replacing the exact partial tree's fully parallel pair node with the timing-feasible folded shared-scale Mersenne pair node should preserve exact partial numerics while moving the multi-cluster tree back into a revision-safe physical search space. Measuring c2/c4/c8/c16 under the existing 8 ns, 2500 um macro envelope exposes the tree-only scaling boundary before any direct-link, NoC, SRAM, or finalizer composition is claimed.",
+  "direct_comparison": {
+    "primary_question": "What Nangate45 area and timing boundary is exposed by standalone folded-Mersenne exact partial trees at 2, 4, 8, and 16 clusters under the existing 8 ns, 2500 um macro envelope with explicit pin-placement settings?",
+    "candidate": "l1_decoder_attention_score32_exact_partial_tree_folded_mersenne_cluster_ppa_v1",
+    "include": [
+      "dedicated exact partial tree RTL with an explicit folded shared-scale Mersenne pair node selector",
+      "strict regeneration, manifest, structural, and sweep guard coverage for the new folded tree identities",
+      "cycle-accurate folded-tree service evidence and c2/c4 RTL equivalence/backpressure coverage before synthesis",
+      "hierarchical OpenROAD block sweeps at density 0.30 for c2/c4/c8/c16"
+    ],
+    "exclude": [
+      "no claim of direct 328-bit link physical closure across a composed decoder macro",
+      "no NoC, SRAM, HBM, or producer coupling closure claim",
+      "no root finalizer or bank-control composition claim"
+    ],
+    "metrics": [
+      "critical_path_ns",
+      "die_area",
+      "total_power_mw",
+      "stdcell_count",
+      "timing_debug_report"
+    ]
+  },
+  "remaining_abstractions": [
+    "This item still measures a standalone macro with direct 328-bit leaf/root links exposed at the top-level pin boundary. No pad ring or inter-macro transport closure is claimed.",
+    "The root still emits exact partial state rather than finalized normalized values.",
+    "NoC, SRAM, HBM, and decoder-wrapper composition remain separate architectural risks even if the folded tree itself becomes physically tractable."
+  ],
+  "required_evaluations": [
+    {
+      "item_id": "l1_decoder_attention_score32_exact_partial_tree_folded_mersenne_cluster_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure Nangate45 PPA for standalone folded-Mersenne exact partial trees at 2, 4, 8, and 16 clusters.",
+      "evaluation_mode": "frontier_followup",
+      "abstraction_layer": "architecture_block",
+      "comparison_role": "exact_partial_tree_folded_mersenne_cluster_anchor",
+      "priority": 97,
+      "configs": [
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c2_r2/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c4_r2/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c8_r2/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c16_r2/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/attention_score32_exact_partial_tree_folded_mersenne_v1/sweeps/nangate45_attention_score32_exact_partial_tree_folded_mersenne_cluster_v1.json",
+      "out_root": "runs/designs/npu_blocks",
+      "expected_outputs": [
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c2_r2/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c2_r2/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c4_r2/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c4_r2/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c8_r2/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c8_r2/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c16_r2/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c16_r2/timing_debug_report.md"
+      ],
+      "expected_result": {
+        "direction": "measure_folded_mersenne_exact_partial_tree_cluster_cost",
+        "reason": "This isolates the dedicated folded pair-node timing recovery inside the multi-node tree while keeping the wide external partial links explicit."
+      },
+      "status": "pending_implementation_merge",
+      "notes": "Standalone folded-tree boundary only. The macro still terminates at direct 328-bit leaf/root pins inside the 2500 um envelope, so any composed decoder result must add transport and finalizer costs separately."
+    }
+  ],
+  "source_refs": [
+    "npu/rtlgen/gen_attention_score32_exact_partial_tree.py",
+    "npu/eval/check_attention_score32_exact_partial_tree_guard.py",
+    "npu/eval/probe_attention_score32_exact_partial_tree.py",
+    "npu/sim/perf/attention_exact_partial.py",
+    "runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c2_r2/config.json",
+    "runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c4_r2/config.json",
+    "runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c8_r2/config.json",
+    "runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c16_r2/config.json",
+    "runs/campaigns/npu/attention_score32_exact_partial_tree_folded_mersenne_v1/sweeps/nangate45_attention_score32_exact_partial_tree_folded_mersenne_cluster_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/docs/attention_score32_exact_partial_tree_contract.md",
+    "npu/docs/attention_score32_exact_partial_pair_merge_contract.md"
+  ]
+}
