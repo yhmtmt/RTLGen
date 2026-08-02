@@ -1,0 +1,77 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_score32_exact_partial_pair_merge_sharedscale_mersenne_ppa_v1",
+  "created_utc": "2026-08-01T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit",
+  "title": "Score32 exact partial pair merge explicit-Mersenne divider PPA comparison",
+  "abstraction_layer": "architecture_block",
+  "hypothesis": "Replacing the folded pair merge's generic `/ (2^24 - 1)` divider with an explicit exact Mersenne-identity quotient should preserve bit-exact behavior and reduce the dominant timing pressure seen in the generic folded anchor, while keeping the same folded launch interval and latency contract.",
+  "direct_comparison": {
+    "primary_question": "How much timing and area movement does the explicit exact Mersenne-divider implementation produce relative to the measured generic-divider folded pair-merge anchor?",
+    "candidate": "l1_decoder_attention_score32_exact_partial_pair_merge_sharedscale_mersenne_ppa_v1",
+    "include": [
+      "dedicated folded exact-partial pair-merge RTL with explicit Mersenne quotient implementation",
+      "strict config, manifest, regeneration, and structural guard that forbids generic division in the Mersenne variant",
+      "boundary-vector arithmetic tests, deterministic random quotient regression, direct RTL helper checks, and full merge RTL/software equivalence",
+      "one standalone hierarchical OpenROAD sweep at 8 ns for direct comparison against the generic folded anchor"
+    ],
+    "exclude": [
+      "no partial tree or multi-node reduction claim",
+      "no root finalizer or bank-control composition claim",
+      "no direct-link, NoC, SRAM, or decoder-wrapper closure claim"
+    ],
+    "metrics": [
+      "critical_path_ns",
+      "die_area",
+      "total_power_mw",
+      "stdcell_count",
+      "timing_debug_report"
+    ]
+  },
+  "remaining_abstractions": [
+    "This item measures only the standalone folded exact pair merge under the explicit Mersenne divider implementation.",
+    "Tree composition is still open even if this divider variant improves the primitive timing boundary.",
+    "Finalizer arithmetic and bank control remain separate measured components.",
+    "NoC, SRAM, and HBM service remain outside this Layer 1 block."
+  ],
+  "required_evaluations": [
+    {
+      "item_id": "l1_decoder_attention_score32_exact_partial_pair_merge_sharedscale_mersenne_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure Nangate45 PPA for the standalone factored-exact shared-scale score32 partial pair merge using the explicit Mersenne divider implementation.",
+      "evaluation_mode": "frontier_followup",
+      "abstraction_layer": "architecture_block",
+      "comparison_role": "exact_partial_pair_merge_sharedscale_mersenne_vs_generic",
+      "priority": 96,
+      "configs": [
+        "runs/designs/npu_blocks/attention_score32_exact_partial_pair_merge_sharedscale_factored_mersenne_l1/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/attention_score32_exact_partial_pair_merge_sharedscale_mersenne_v1/sweeps/nangate45_attention_score32_exact_partial_pair_merge_sharedscale_factored_mersenne_l1.json",
+      "out_root": "runs/designs/npu_blocks",
+      "expected_outputs": [
+        "runs/designs/npu_blocks/attention_score32_exact_partial_pair_merge_sharedscale_factored_mersenne_l1/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_pair_merge_sharedscale_factored_mersenne_l1/timing_debug_report.md"
+      ],
+      "expected_result": {
+        "direction": "compare_explicit_mersenne_divider_against_generic_anchor",
+        "reason": "This isolates the divider implementation as the next exact-pair frontier and measures whether the explicit quotient removes the dominant generic-division timing cost."
+      },
+      "status": "pending_implementation_merge",
+      "notes": "Standalone one-pair comparison only. The item is prepared for remote evaluation after merge but is intentionally not dispatched from this branch."
+    }
+  ],
+  "source_refs": [
+    "npu/rtlgen/gen_attention_score32_exact_partial_pair_merge_folded.py",
+    "npu/eval/check_attention_score32_exact_partial_pair_merge_guard.py",
+    "npu/eval/probe_attention_score32_exact_partial_pair_merge_folded.py",
+    "control_plane/control_plane/services/l1_task_generator.py",
+    "docs/proposals/prop_l1_decoder_attention_score32_exact_partial_pair_merge_sharedscale_mersenne_ppa_v1/evaluation_requests.json",
+    "npu/docs/attention_score32_exact_partial_pair_merge_contract.md",
+    "runs/designs/npu_blocks/attention_score32_exact_partial_pair_merge_sharedscale_factored_mersenne_l1/config.json",
+    "runs/campaigns/npu/attention_score32_exact_partial_pair_merge_sharedscale_mersenne_v1/sweeps/nangate45_attention_score32_exact_partial_pair_merge_sharedscale_factored_mersenne_l1.json"
+  ],
+  "knowledge_refs": [
+    "npu/docs/attention_score32_exact_partial_pair_merge_contract.md"
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_score32_exact_partial_pair_merge_sharedscale_mersenne_ppa_v1",
+  "source_commit": "",
+  "source_commit_note": "Replace with the merge commit that adds the explicit Mersenne-divider folded exact-partial pair-merge RTL, strict structural guard, checked-in config and sweep, and task-generator coverage before dispatch.",
+  "requested_items": [
+    {
+      "item_id": "l1_decoder_attention_score32_exact_partial_pair_merge_sharedscale_mersenne_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure Nangate45 PPA for the standalone factored-exact shared-scale score32 partial pair merge using the explicit Mersenne divider implementation.",
+      "evaluation_mode": "frontier_followup",
+      "abstraction_layer": "architecture_block",
+      "comparison_role": "exact_partial_pair_merge_sharedscale_mersenne_vs_generic",
+      "priority": 96,
+      "configs": [
+        "runs/designs/npu_blocks/attention_score32_exact_partial_pair_merge_sharedscale_factored_mersenne_l1/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/attention_score32_exact_partial_pair_merge_sharedscale_mersenne_v1/sweeps/nangate45_attention_score32_exact_partial_pair_merge_sharedscale_factored_mersenne_l1.json",
+      "out_root": "runs/designs/npu_blocks",
+      "expected_outputs": [
+        "runs/designs/npu_blocks/attention_score32_exact_partial_pair_merge_sharedscale_factored_mersenne_l1/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_pair_merge_sharedscale_factored_mersenne_l1/timing_debug_report.md"
+      ],
+      "expected_result": {
+        "direction": "compare_explicit_mersenne_divider_against_generic_anchor",
+        "reason": "This isolates the divider implementation as the next exact-pair frontier and measures whether the explicit quotient removes the dominant generic-division timing cost."
+      },
+      "status": "pending_implementation_merge",
+      "notes": "Standalone one-pair comparison only. Ready for remote evaluation after merge and source-commit substitution."
+    }
+  ]
+}

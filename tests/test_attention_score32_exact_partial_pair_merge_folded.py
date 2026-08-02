@@ -14,7 +14,9 @@ from npu.eval.probe_attention_score32_exact_partial_pair_merge_folded import bui
 from npu.rtlgen.gen_attention_decode_score_multivalue_cluster import generate as generate_cluster
 from npu.rtlgen.gen_attention_score32_exact_partial_pair_merge_folded import (
     FACTORED_H33_L64_MUL_EXACT,
+    GENERIC_SCALE_DIVIDER_EXACT,
     MAX_EXP_BUCKET,
+    MERSENNE24_CORRECTION2_SCALE_DIVIDER_EXACT,
     exact_exp_scale_value,
     generate as generate_merge,
 )
@@ -32,6 +34,9 @@ from npu.sim.perf.attention_exact_partial import (
 
 INT_MAX = (1 << 31) - 1
 INT_MIN = -(1 << 31)
+MERGE_SCALE = (1 << 24) - 1
+SIGNED41_MIN = -(1 << 40)
+SIGNED41_MAX = (1 << 40) - 1
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -63,7 +68,20 @@ def _partial_reducer_config() -> dict:
     }
 
 
-def _merge_config() -> dict:
+def _merge_config(*, scale_divider_impl: str = GENERIC_SCALE_DIVIDER_EXACT) -> dict:
+    return {
+        "top_name": "attention_score32_online_state_merge_exact_partial",
+        "attention_score32_exact_partial_pair_merge_folded": {
+            "value_slices": 16,
+            "head_id_bits": 5,
+            "exp_scale_impl": FACTORED_H33_L64_MUL_EXACT,
+            "scale_divider_impl": scale_divider_impl,
+            "lane_parallelism": 1,
+        },
+    }
+
+
+def _legacy_merge_config_without_divider_impl() -> dict:
     return {
         "top_name": "attention_score32_online_state_merge_exact_partial",
         "attention_score32_exact_partial_pair_merge_folded": {
@@ -73,6 +91,94 @@ def _merge_config() -> dict:
             "lane_parallelism": 1,
         },
     }
+
+
+def _mersenne_divide_reference(numerator: int) -> int:
+    return int(numerator) // MERGE_SCALE
+
+
+def _mersenne_divide_identity(numerator: int) -> int:
+    numerator = int(numerator)
+    n0 = numerator & ((1 << 24) - 1)
+    n1 = (numerator >> 24) & ((1 << 24) - 1)
+    n2 = numerator >> 48
+    chunk_sum = n0 + n1 + n2
+    correction = 2 if chunk_sum >= (2 * MERGE_SCALE) else 1 if chunk_sum >= MERGE_SCALE else 0
+    return n1 + (((1 << 24) + 1) * n2) + correction
+
+
+def _scale_unsigned33_reference(value: int, scale: int) -> int:
+    if value == 0 or scale == 0:
+        return 0
+    product = (int(value) * int(scale)) + (MERGE_SCALE // 2)
+    return min((1 << 33) - 1, _mersenne_divide_reference(product))
+
+
+def _scale_signed41_reference(value: int, scale: int) -> int:
+    if value == 0 or scale == 0:
+        return 0
+    product = (abs(int(value)) * int(scale)) + (MERGE_SCALE // 2)
+    quotient = _mersenne_divide_reference(product)
+    if value < 0:
+        return SIGNED41_MIN if quotient >= (1 << 40) else -quotient
+    return min(SIGNED41_MAX, quotient)
+
+
+def _mersenne_boundary_numerators(width_bits: int) -> list[int]:
+    if width_bits == 57:
+        max_n2 = (1 << 9) - 1
+    elif width_bits == 65:
+        max_n2 = (1 << 17) - 1
+    else:
+        raise ValueError(f"unsupported width_bits: {width_bits}")
+    vectors = [
+        (0, 0, 0),
+        (1, 0, 0),
+        (MERGE_SCALE - 1, 0, 0),
+        (MERGE_SCALE, 0, 0),
+        (0, MERGE_SCALE - 1, 0),
+        (0, MERGE_SCALE, 0),
+        (MERGE_SCALE - 1, 1, 0),
+        (MERGE_SCALE, 1, 0),
+        (MERGE_SCALE, MERGE_SCALE - 1, 0),
+        (MERGE_SCALE, MERGE_SCALE, 0),
+        (MERGE_SCALE, MERGE_SCALE, 1),
+        (0, 0, 1),
+        (MERGE_SCALE, 0, 1),
+        (0, MERGE_SCALE, 1),
+        (MERGE_SCALE, MERGE_SCALE, max_n2),
+        (MERGE_SCALE - 3, MERGE_SCALE - 5, max_n2),
+    ]
+    numerators: list[int] = []
+    for n0, n1, n2 in vectors:
+        numerators.append(n0 + (n1 << 24) + (n2 << 48))
+    numerators.append((1 << width_bits) - 1)
+    return numerators
+
+
+def _direct_mersenne_scale_cases() -> list[tuple[int, int, int]]:
+    return [
+        (0, 0, 0),
+        (1, MERGE_SCALE, 1),
+        ((1 << 33) - 1, MERGE_SCALE, (1 << 33) - 1),
+        ((1 << 33) - 1, MERGE_SCALE - 1, _scale_unsigned33_reference((1 << 33) - 1, MERGE_SCALE - 1)),
+        (1 << 32, MERGE_SCALE // 2, _scale_unsigned33_reference(1 << 32, MERGE_SCALE // 2)),
+        (123456789, 16711935, _scale_unsigned33_reference(123456789, 16711935)),
+    ]
+
+
+def _direct_mersenne_signed_scale_cases() -> list[tuple[int, int, int]]:
+    return [
+        (0, 0, 0),
+        (1, MERGE_SCALE, 1),
+        (-1, MERGE_SCALE, -1),
+        (SIGNED41_MAX, MERGE_SCALE, SIGNED41_MAX),
+        (SIGNED41_MIN, MERGE_SCALE, SIGNED41_MIN),
+        (SIGNED41_MAX, MERGE_SCALE - 1, _scale_signed41_reference(SIGNED41_MAX, MERGE_SCALE - 1)),
+        (SIGNED41_MIN + 1, MERGE_SCALE - 1, _scale_signed41_reference(SIGNED41_MIN + 1, MERGE_SCALE - 1)),
+        (34567890123, 11337711, _scale_signed41_reference(34567890123, 11337711)),
+        (-34567890123, 11337711, _scale_signed41_reference(-34567890123, 11337711)),
+    ]
 
 
 def _rtl_tools_available() -> bool:
@@ -231,7 +337,12 @@ def _random_merge_cases(seed: int, count: int) -> list[tuple[str, ExactPartialBe
     return cases
 
 
-def _run_merge_rtl_cases(tmp_path: Path, valid_cases: list[tuple[str, ExactPartialBeat, ExactPartialBeat, bool]]) -> dict[str, object]:
+def _run_merge_rtl_cases(
+    tmp_path: Path,
+    valid_cases: list[tuple[str, ExactPartialBeat, ExactPartialBeat, bool]],
+    *,
+    scale_divider_impl: str = GENERIC_SCALE_DIVIDER_EXACT,
+) -> dict[str, object]:
     expected_rows = []
     for index, (name, left, right, invalid_last) in enumerate(valid_cases):
         merged = merge_partial_beats(left, right)
@@ -250,7 +361,7 @@ def _run_merge_rtl_cases(tmp_path: Path, valid_cases: list[tuple[str, ExactParti
             }
         )
 
-    generate_merge(_merge_config(), tmp_path / "rtl")
+    generate_merge(_merge_config(scale_divider_impl=scale_divider_impl), tmp_path / "rtl")
     tb_path = tmp_path / "tb.sv"
     left_init = []
     right_init = []
@@ -440,8 +551,10 @@ endmodule
     }
 
 
-def _run_direct_merge_rtl_vectors(tmp_path: Path) -> dict[str, object]:
-    return _run_merge_rtl_cases(tmp_path, _base_merge_cases())
+def _run_direct_merge_rtl_vectors(
+    tmp_path: Path, *, scale_divider_impl: str = GENERIC_SCALE_DIVIDER_EXACT
+) -> dict[str, object]:
+    return _run_merge_rtl_cases(tmp_path, _base_merge_cases(), scale_divider_impl=scale_divider_impl)
 
 
 def test_exact_partial_reducer_manifest_and_ports(tmp_path: Path) -> None:
@@ -494,6 +607,7 @@ def test_exact_partial_merge_manifest_and_ports(tmp_path: Path) -> None:
     assert manifest["partial_payload_bits_per_beat"] == 328
     assert manifest["equivalence_hash"] is False
     assert manifest["exp_scale_impl"] == FACTORED_H33_L64_MUL_EXACT
+    assert manifest["scale_divider_impl"] == GENERIC_SCALE_DIVIDER_EXACT
     assert manifest["exp_scale_bucket_max"] == MAX_EXP_BUCKET
     assert manifest["lane_parallelism"] == 1
     assert manifest["implementation_style"] == "shared_single_scale_folded_exact_v1"
@@ -528,6 +642,8 @@ def test_exact_partial_merge_manifest_and_ports(tmp_path: Path) -> None:
     assert "localparam [2:0] PHASE_LANE_RIGHT = 3'd4;" in rtl
     assert rtl.count("scale_signed41(shared_signed_value_r, shared_signed_scale_r)") == 1
     assert rtl.count("scale_unsigned33(shared_unsigned_value_r, shared_unsigned_scale_r)") == 1
+    assert "quotient = product / 57'd16777215;" in rtl
+    assert "quotient = product / 65'd16777215;" in rtl
     assert "active_scaled_left_lane_q <= shared_signed_scaled_w;" in rtl
     assert "active_scaled_left_exp_sum_q <= shared_unsigned_scaled_w;" in rtl
 
@@ -541,6 +657,51 @@ def test_exact_partial_merge_python_exp_scale_matches_legacy_formula_exhaustivel
     assert observed == expected
     assert exact_exp_scale_value(-1) == 0
     assert exact_exp_scale_value(MAX_EXP_BUCKET + 1) == 0
+
+
+def test_legacy_generic_absent_key_regenerates_origin_master_bytes(tmp_path: Path) -> None:
+    current_out = tmp_path / "current"
+    origin_out = tmp_path / "origin"
+    legacy_config = _legacy_merge_config_without_divider_impl()
+    generate_merge(legacy_config, current_out)
+    show = subprocess.run(
+        [
+            "git",
+            "show",
+            "origin/master:npu/rtlgen/gen_attention_score32_exact_partial_pair_merge_folded.py",
+        ],
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+        timeout=30,
+        check=True,
+    )
+    namespace: dict[str, object] = {
+        "__file__": str(REPO_ROOT / "npu" / "rtlgen" / "gen_attention_score32_exact_partial_pair_merge_folded.py"),
+        "__name__": "origin_master_folded_pair_merge",
+    }
+    exec(compile(show.stdout, namespace["__file__"], "exec"), namespace)
+    namespace["generate"](legacy_config, origin_out)
+    for relative_name in (
+        "top.v",
+        "config.json",
+        "attention_score32_exact_partial_pair_merge_folded_manifest.json",
+    ):
+        assert (current_out / relative_name).read_bytes() == (origin_out / relative_name).read_bytes()
+
+
+def test_mersenne_divide_identity_matches_reference_at_boundaries() -> None:
+    for width_bits in (57, 65):
+        for numerator in _mersenne_boundary_numerators(width_bits):
+            assert _mersenne_divide_identity(numerator) == _mersenne_divide_reference(numerator)
+
+
+def test_mersenne_divide_identity_matches_reference_for_high_volume_random_vectors() -> None:
+    rng = random.Random(20260801)
+    for width_bits in (57, 65):
+        for _ in range(4000):
+            numerator = rng.randrange(0, 1 << width_bits)
+            assert _mersenne_divide_identity(numerator) == _mersenne_divide_reference(numerator)
 
 
 @pytest.mark.skipif(not _rtl_tools_available(), reason="iverilog/vvp/verilator unavailable")
@@ -680,8 +841,159 @@ endmodule
 
 
 @pytest.mark.skipif(not _rtl_tools_available(), reason="iverilog/vvp/verilator unavailable")
-def test_exact_partial_merge_rtl_handles_extreme_and_invalid_last_vectors(tmp_path: Path) -> None:
-    report = _run_direct_merge_rtl_vectors(tmp_path)
+def test_mersenne_divider_rtl_helpers_match_reference(tmp_path: Path) -> None:
+    config = _merge_config(scale_divider_impl=MERSENNE24_CORRECTION2_SCALE_DIVIDER_EXACT)
+    generate_merge(config, tmp_path / "rtl")
+    u57_cases = _mersenne_boundary_numerators(57)
+    u65_cases = _mersenne_boundary_numerators(65)
+    u33_cases = _direct_mersenne_scale_cases()
+    s41_cases = _direct_mersenne_signed_scale_cases()
+    tb_path = tmp_path / "tb_mersenne_helpers.sv"
+
+    u57_lines = [
+        f"    u57_num[{index}] = 57'd{numerator}; u57_expected[{index}] = 34'd{_mersenne_divide_reference(numerator)};"
+        for index, numerator in enumerate(u57_cases)
+    ]
+    u65_lines = [
+        f"    u65_num[{index}] = 65'd{numerator}; u65_expected[{index}] = 42'd{_mersenne_divide_reference(numerator)};"
+        for index, numerator in enumerate(u65_cases)
+    ]
+    u33_lines = [
+        f"    u33_value[{index}] = 33'd{value}; u33_scale[{index}] = 24'd{scale}; u33_expected[{index}] = 33'd{expected};"
+        for index, (value, scale, expected) in enumerate(u33_cases)
+    ]
+    s41_lines = [
+        f"    s41_value[{index}] = {_signed_literal(value, 41)}; s41_scale[{index}] = 24'd{scale}; "
+        f"s41_expected[{index}] = {_signed_literal(expected, 41)};"
+        for index, (value, scale, expected) in enumerate(s41_cases)
+    ]
+    tb_path.write_text(
+        f"""`timescale 1ns/1ps
+module tb;
+  localparam integer U57_COUNT = {len(u57_cases)};
+  localparam integer U65_COUNT = {len(u65_cases)};
+  localparam integer U33_COUNT = {len(u33_cases)};
+  localparam integer S41_COUNT = {len(s41_cases)};
+  reg clk = 0, rst_n = 0;
+  reg left_valid = 0, right_valid = 0, out_ready = 1;
+  reg [15:0] left_command_id = 16'd0, right_command_id = 16'd0;
+  reg [4:0] left_head_id = 5'd0, right_head_id = 5'd0;
+  reg signed [31:0] left_global_max = 32'sd0, right_global_max = 32'sd0;
+  reg [32:0] left_exp_sum = 33'd0, right_exp_sum = 33'd0;
+  reg [3:0] left_slice = 4'd0, right_slice = 4'd0;
+  reg left_last = 1'b0, right_last = 1'b0;
+  reg [327:0] left_value = 328'd0, right_value = 328'd0;
+  wire left_ready, right_ready, out_valid, out_last, protocol_error;
+  wire [15:0] out_command_id;
+  wire [4:0] out_head_id;
+  wire signed [31:0] out_global_max;
+  wire [32:0] out_exp_sum;
+  wire [3:0] out_slice;
+  wire [327:0] out_value;
+  wire [31:0] completed_count, cycle_count;
+  reg [56:0] u57_num [0:U57_COUNT-1];
+  reg [33:0] u57_expected [0:U57_COUNT-1];
+  reg [64:0] u65_num [0:U65_COUNT-1];
+  reg [41:0] u65_expected [0:U65_COUNT-1];
+  reg [32:0] u33_value [0:U33_COUNT-1];
+  reg [23:0] u33_scale [0:U33_COUNT-1];
+  reg [32:0] u33_expected [0:U33_COUNT-1];
+  reg signed [40:0] s41_value [0:S41_COUNT-1];
+  reg [23:0] s41_scale [0:S41_COUNT-1];
+  reg signed [40:0] s41_expected [0:S41_COUNT-1];
+  integer idx;
+  reg [33:0] observed_u57;
+  reg [41:0] observed_u65;
+  reg [32:0] observed_u33;
+  reg signed [40:0] observed_s41;
+
+  always #5 clk = ~clk;
+
+  attention_score32_online_state_merge_exact_partial dut (
+      .clk(clk), .rst_n(rst_n),
+      .left_valid(left_valid), .left_ready(left_ready), .left_command_id(left_command_id),
+      .left_head_id(left_head_id), .left_global_max(left_global_max), .left_exp_sum(left_exp_sum),
+      .left_slice(left_slice), .left_last(left_last), .left_value(left_value),
+      .right_valid(right_valid), .right_ready(right_ready), .right_command_id(right_command_id),
+      .right_head_id(right_head_id), .right_global_max(right_global_max), .right_exp_sum(right_exp_sum),
+      .right_slice(right_slice), .right_last(right_last), .right_value(right_value),
+      .out_valid(out_valid), .out_ready(out_ready), .out_command_id(out_command_id), .out_head_id(out_head_id),
+      .out_global_max(out_global_max), .out_exp_sum(out_exp_sum), .out_slice(out_slice), .out_last(out_last),
+      .out_value(out_value), .completed_count(completed_count), .cycle_count(cycle_count), .protocol_error(protocol_error)
+  );
+
+  initial begin
+{chr(10).join(u57_lines)}
+{chr(10).join(u65_lines)}
+{chr(10).join(u33_lines)}
+{chr(10).join(s41_lines)}
+    #1;
+    for (idx = 0; idx < U57_COUNT; idx = idx + 1) begin
+      observed_u57 = dut.divide_mersenne24_u57(u57_num[idx]);
+      if (observed_u57 !== u57_expected[idx]) begin
+        $fatal(1, "u57 mismatch idx=%0d observed=%0d expected=%0d", idx, observed_u57, u57_expected[idx]);
+      end
+    end
+    for (idx = 0; idx < U65_COUNT; idx = idx + 1) begin
+      observed_u65 = dut.divide_mersenne24_u65(u65_num[idx]);
+      if (observed_u65 !== u65_expected[idx]) begin
+        $fatal(1, "u65 mismatch idx=%0d observed=%0d expected=%0d", idx, observed_u65, u65_expected[idx]);
+      end
+    end
+    for (idx = 0; idx < U33_COUNT; idx = idx + 1) begin
+      observed_u33 = dut.scale_unsigned33(u33_value[idx], u33_scale[idx]);
+      if (observed_u33 !== u33_expected[idx]) begin
+        $fatal(1, "u33 mismatch idx=%0d observed=%0d expected=%0d", idx, observed_u33, u33_expected[idx]);
+      end
+    end
+    for (idx = 0; idx < S41_COUNT; idx = idx + 1) begin
+      observed_s41 = dut.scale_signed41(s41_value[idx], s41_scale[idx]);
+      if (observed_s41 !== s41_expected[idx]) begin
+        $fatal(1, "s41 mismatch idx=%0d observed=%0d expected=%0d", idx, $signed(observed_s41), $signed(s41_expected[idx]));
+      end
+    end
+    $finish;
+  end
+endmodule
+""",
+        encoding="utf-8",
+    )
+
+    sim_out = tmp_path / "sim_helpers.out"
+    compile_run = subprocess.run(
+        [
+            _tool("iverilog"),
+            "-g2012",
+            "-o",
+            str(sim_out),
+            str(tb_path),
+            str(tmp_path / "rtl" / "top.v"),
+        ],
+        capture_output=True,
+        text=True,
+        cwd=REPO_ROOT,
+        timeout=120,
+    )
+    assert compile_run.returncode == 0, compile_run.stderr or compile_run.stdout
+    run = subprocess.run(
+        [_tool("vvp"), str(sim_out)],
+        capture_output=True,
+        text=True,
+        cwd=REPO_ROOT,
+        timeout=120,
+    )
+    assert run.returncode == 0, run.stderr or run.stdout
+
+
+@pytest.mark.parametrize(
+    "scale_divider_impl",
+    [GENERIC_SCALE_DIVIDER_EXACT, MERSENNE24_CORRECTION2_SCALE_DIVIDER_EXACT],
+)
+@pytest.mark.skipif(not _rtl_tools_available(), reason="iverilog/vvp/verilator unavailable")
+def test_exact_partial_merge_rtl_handles_extreme_and_invalid_last_vectors(
+    tmp_path: Path, scale_divider_impl: str
+) -> None:
+    report = _run_direct_merge_rtl_vectors(tmp_path, scale_divider_impl=scale_divider_impl)
 
     clean_observed = [{key: value for key, value in row.items() if key != "cycle"} for row in report["observed"]]
     assert clean_observed == [
@@ -696,10 +1008,14 @@ def test_exact_partial_merge_rtl_handles_extreme_and_invalid_last_vectors(tmp_pa
     assert report["summary"]["protocol_error"] is True
 
 
+@pytest.mark.parametrize(
+    "scale_divider_impl",
+    [GENERIC_SCALE_DIVIDER_EXACT, MERSENNE24_CORRECTION2_SCALE_DIVIDER_EXACT],
+)
 @pytest.mark.skipif(not _rtl_tools_available(), reason="iverilog/vvp/verilator unavailable")
-def test_exact_partial_merge_rtl_randomized_matches_python(tmp_path: Path) -> None:
+def test_exact_partial_merge_rtl_randomized_matches_python(tmp_path: Path, scale_divider_impl: str) -> None:
     cases = _random_merge_cases(seed=7, count=12)
-    report = _run_merge_rtl_cases(tmp_path, cases)
+    report = _run_merge_rtl_cases(tmp_path, cases, scale_divider_impl=scale_divider_impl)
 
     clean_observed = [{key: value for key, value in row.items() if key != "cycle"} for row in report["observed"]]
     assert clean_observed == [
@@ -713,10 +1029,16 @@ def test_exact_partial_merge_rtl_randomized_matches_python(tmp_path: Path) -> No
     assert report["summary"]["protocol_error"] is False
 
 
+@pytest.mark.parametrize(
+    "scale_divider_impl",
+    [GENERIC_SCALE_DIVIDER_EXACT, MERSENNE24_CORRECTION2_SCALE_DIVIDER_EXACT],
+)
 @pytest.mark.skipif(not _rtl_tools_available(), reason="iverilog/vvp/verilator unavailable")
-def test_exact_partial_merge_service_contract_matches_rtl_backpressure(tmp_path: Path) -> None:
+def test_exact_partial_merge_service_contract_matches_rtl_backpressure(
+    tmp_path: Path, scale_divider_impl: str
+) -> None:
     cases = _random_merge_cases(seed=11, count=6)
-    report = _run_merge_rtl_cases(tmp_path, cases)
+    report = _run_merge_rtl_cases(tmp_path, cases, scale_divider_impl=scale_divider_impl)
     schedule = simulate_folded_exact_partial_pair_merge_service(
         pair_count=len(cases),
         output_ready_pattern=(True, True, False, True, True),

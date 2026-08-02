@@ -16,13 +16,14 @@ if str(REPO_ROOT) not in sys.path:
 
 from npu.rtlgen.gen_attention_score32_exact_partial_pair_merge_folded import (
     FACTORED_H33_L64_MUL_EXACT,
+    GENERIC_SCALE_DIVIDER_EXACT,
+    MERSENNE24_CORRECTION2_SCALE_DIVIDER_EXACT,
     PAIR_CAPTURE_TO_OUTPUT_LATENCY_CYCLES,
     PAIR_COMPUTE_LAUNCH_INTERVAL_CYCLES,
     PAIR_COMPUTE_LAUNCH_TO_OUTPUT_LATENCY_CYCLES,
     generate,
 )
 
-_PPA_SWEEP_TAG_PREFIX = "attention_score32_exact_partial_pair_merge_sharedscale_v1"
 _PPA_SWEEP_FLOW_PARAMS = {
     "CLOCK_PERIOD": [8.0],
     "DIE_AREA": ["0 0 1500 1500"],
@@ -32,6 +33,10 @@ _PPA_SWEEP_FLOW_PARAMS = {
     "PLACE_DENSITY": [0.3],
     "PLACE_PINS_ARGS": ["-min_distance 1"],
     "SYNTH_HIERARCHICAL": [1],
+}
+_PPA_SWEEP_TAG_PREFIX_BY_DIVIDER_IMPL = {
+    GENERIC_SCALE_DIVIDER_EXACT: "attention_score32_exact_partial_pair_merge_sharedscale_v1",
+    MERSENNE24_CORRECTION2_SCALE_DIVIDER_EXACT: "attention_score32_exact_partial_pair_merge_sharedscale_mersenne_v1",
 }
 
 
@@ -59,10 +64,11 @@ def _compare_current_generation(*, config: dict[str, object], rtl_dir: Path) -> 
                 raise SystemExit(f"generated pair-merge artifacts do not match current generator output: {relative_name}")
 
 
-def _validate_sweep(*, sweep_path: Path) -> None:
+def _validate_sweep(*, sweep_path: Path, scale_divider_impl: str) -> None:
     sweep = _load_json(sweep_path)
-    if sweep.get("tag_prefix") != _PPA_SWEEP_TAG_PREFIX:
-        raise SystemExit(f"pair-merge PPA sweep tag_prefix must be {_PPA_SWEEP_TAG_PREFIX}")
+    expected_tag_prefix = _PPA_SWEEP_TAG_PREFIX_BY_DIVIDER_IMPL[scale_divider_impl]
+    if sweep.get("tag_prefix") != expected_tag_prefix:
+        raise SystemExit(f"pair-merge PPA sweep tag_prefix must be {expected_tag_prefix}")
     if sweep.get("flow_params") != _PPA_SWEEP_FLOW_PARAMS:
         raise SystemExit("pair-merge PPA sweep flow_params do not match the checked-in contract")
 
@@ -88,8 +94,6 @@ def main(argv: list[str] | None = None) -> int:
     generated_config = _load_json(generated_config_path)
     if config != generated_config:
         raise SystemExit("generated config does not match source config")
-    if args.sweep is not None:
-        _validate_sweep(sweep_path=args.sweep.resolve())
 
     top_name = str(config.get("top_name") or "").strip()
     if not top_name:
@@ -98,8 +102,15 @@ def main(argv: list[str] | None = None) -> int:
     if not isinstance(body, dict):
         raise SystemExit("config must contain attention_score32_exact_partial_pair_merge_folded object")
     lane_parallelism = int(body.get("lane_parallelism", 0))
+    scale_divider_impl_explicit = "scale_divider_impl" in body
+    scale_divider_impl = str(body.get("scale_divider_impl", GENERIC_SCALE_DIVIDER_EXACT))
     if lane_parallelism != 1:
         raise SystemExit("lane_parallelism must be 1 for the shared-scale exact pair merge")
+    if scale_divider_impl not in _PPA_SWEEP_TAG_PREFIX_BY_DIVIDER_IMPL:
+        supported = ", ".join(sorted(_PPA_SWEEP_TAG_PREFIX_BY_DIVIDER_IMPL))
+        raise SystemExit(f"scale_divider_impl must be one of: {supported}")
+    if args.sweep is not None:
+        _validate_sweep(sweep_path=args.sweep.resolve(), scale_divider_impl=scale_divider_impl)
 
     manifest = _load_json(manifest_path)
     expected_manifest = {
@@ -118,8 +129,12 @@ def main(argv: list[str] | None = None) -> int:
         "output_cycle_event": "first_out_valid_handshake_opportunity",
         "exp_scale_impl": FACTORED_H33_L64_MUL_EXACT,
     }
+    if scale_divider_impl_explicit:
+        expected_manifest["scale_divider_impl"] = scale_divider_impl
     for key, expected in expected_manifest.items():
         _require(manifest, key, expected, "generated manifest")
+    if not scale_divider_impl_explicit and "scale_divider_impl" in manifest:
+        raise SystemExit("legacy absent-key config must not gain manifest scale_divider_impl")
 
     rtl = top_path.read_text(encoding="utf-8", errors="replace")
     for token in (
@@ -141,6 +156,30 @@ def main(argv: list[str] | None = None) -> int:
             raise SystemExit(
                 f"generated RTL must contain exactly one {function_name} invocation; found {call_count}"
             )
+    if scale_divider_impl == GENERIC_SCALE_DIVIDER_EXACT:
+        for token in (
+            "quotient = product / 57'd16777215;",
+            "quotient = product / 65'd16777215;",
+        ):
+            if token not in rtl:
+                raise SystemExit(f"generated generic-divider RTL missing token: {token}")
+    elif scale_divider_impl == MERSENNE24_CORRECTION2_SCALE_DIVIDER_EXACT:
+        for token in (
+            "/ 57'd16777215",
+            "/ 65'd16777215",
+        ):
+            if token in rtl:
+                raise SystemExit(f"generated Mersenne-divider RTL must not contain generic division token: {token}")
+        for token in (
+            "function automatic [33:0] divide_mersenne24_u57;",
+            "function automatic [41:0] divide_mersenne24_u65;",
+            "if (chunk_sum >= 26'd33554430) correction = 2'd2;",
+            "else if (chunk_sum >= 26'd16777215) correction = 2'd1;",
+            "quotient = divide_mersenne24_u57(product);",
+            "quotient = divide_mersenne24_u65(product);",
+        ):
+            if token not in rtl:
+                raise SystemExit(f"generated Mersenne-divider RTL missing token: {token}")
 
     _compare_current_generation(config=config, rtl_dir=rtl_dir)
 

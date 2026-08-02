@@ -9,6 +9,11 @@ Contracted implementation points:
 
 - one shared signed `41x24` scale path is invoked per cycle
 - one separately shared unsigned `33x24` scale path handles exp-sum scaling
+- divider selection is explicit through `scale_divider_impl`
+- `generic_exact` preserves the original `/ (2^24 - 1)` implementation
+- `mersenne24_correction2_exact` replaces that divider with the exact
+  Mersenne-identity quotient using `0/1/2` correction and must not change
+  numerical behavior
 - pair capture to the first output handshake opportunity is `20` cycles
 - compute launch to the first output handshake opportunity is `19` cycles
 - compute-launch interval without output backpressure is `20` cycles
