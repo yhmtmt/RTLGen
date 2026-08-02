@@ -20,7 +20,13 @@ from npu.rtlgen.gen_attention_score32_online_state_merge import (
     LEGACY_MONOLITHIC_LUT_EXACT,
     generate as generate_merge,
 )
+from npu.rtlgen.gen_attention_score32_exact_partial_pair_merge_folded import (
+    MERSENNE24_CORRECTION2_SCALE_DIVIDER_EXACT,
+    generate as generate_folded_merge,
+)
 from npu.sim.perf.attention_exact_partial import (
+    FOLDED_SHARED_SCALE_MERSENNE_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL,
+    LEGACY_PARALLEL_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL,
     PARTIAL_LINK_BITS,
     PARTIAL_PAYLOAD_BITS,
     exact_partial_tree_service_manifest,
@@ -51,6 +57,8 @@ def _validate(config: JsonDict) -> JsonDict:
     value_slices = int(body.get("value_slices", 16))
     head_id_bits = int(body.get("head_id_bits", 5))
     exp_scale_impl = str(body.get("exp_scale_impl", LEGACY_MONOLITHIC_LUT_EXACT)).strip()
+    pair_node_impl_explicit = "pair_node_impl" in body
+    pair_node_impl = str(body.get("pair_node_impl", LEGACY_PARALLEL_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL)).strip()
     if clusters < 2 or clusters > 16 or (clusters & (clusters - 1)):
         raise SystemExit("clusters must be a power of two in [2, 16]")
     if radix != 2:
@@ -59,6 +67,22 @@ def _validate(config: JsonDict) -> JsonDict:
         raise SystemExit("value_slices must be a power of two in [1, 16]")
     if head_id_bits < 1 or head_id_bits > 8:
         raise SystemExit("head_id_bits must be in [1, 8]")
+    if pair_node_impl not in {
+        LEGACY_PARALLEL_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL,
+        FOLDED_SHARED_SCALE_MERSENNE_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL,
+    }:
+        raise SystemExit(
+            "pair_node_impl must be absent or one of "
+            f"{LEGACY_PARALLEL_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL}, "
+            f"{FOLDED_SHARED_SCALE_MERSENNE_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL}"
+        )
+    if (
+        pair_node_impl == FOLDED_SHARED_SCALE_MERSENNE_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL
+        and exp_scale_impl != FACTORED_H33_L64_MUL_EXACT
+    ):
+        raise SystemExit(
+            "folded_sharedscale_mersenne_exact requires exp_scale_impl factored_h33_l64_mul_exact"
+        )
     return {
         "top_name": top_name,
         "clusters": clusters,
@@ -66,6 +90,8 @@ def _validate(config: JsonDict) -> JsonDict:
         "value_slices": value_slices,
         "head_id_bits": head_id_bits,
         "exp_scale_impl": exp_scale_impl,
+        "pair_node_impl": pair_node_impl,
+        "pair_node_impl_explicit": pair_node_impl_explicit,
     }
 
 
@@ -307,21 +333,36 @@ def generate(config: JsonDict, out_dir: Path) -> None:
     pair_top_name = f"{params['top_name']}__pair_node"
     with tempfile.TemporaryDirectory(prefix="score32_exact_partial_tree_pair_") as temp_dir_name:
         temp_dir = Path(temp_dir_name)
-        generate_merge(
-            {
-                "top_name": pair_top_name,
-                "attention_score32_online_state_merge": {
-                    "value_slices": int(params["value_slices"]),
-                    "head_id_bits": int(params["head_id_bits"]),
-                    "exp_scale_impl": str(params["exp_scale_impl"]),
+        if params["pair_node_impl"] == LEGACY_PARALLEL_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL:
+            generate_merge(
+                {
+                    "top_name": pair_top_name,
+                    "attention_score32_online_state_merge": {
+                        "value_slices": int(params["value_slices"]),
+                        "head_id_bits": int(params["head_id_bits"]),
+                        "exp_scale_impl": str(params["exp_scale_impl"]),
+                    },
                 },
-            },
-            temp_dir,
-        )
+                temp_dir,
+            )
+            pair_manifest_name = "attention_score32_online_state_merge_manifest.json"
+        else:
+            generate_folded_merge(
+                {
+                    "top_name": pair_top_name,
+                    "attention_score32_exact_partial_pair_merge_folded": {
+                        "value_slices": int(params["value_slices"]),
+                        "head_id_bits": int(params["head_id_bits"]),
+                        "exp_scale_impl": str(params["exp_scale_impl"]),
+                        "scale_divider_impl": MERSENNE24_CORRECTION2_SCALE_DIVIDER_EXACT,
+                        "lane_parallelism": 1,
+                    },
+                },
+                temp_dir,
+            )
+            pair_manifest_name = "attention_score32_exact_partial_pair_merge_folded_manifest.json"
         pair_rtl = (temp_dir / "top.v").read_text(encoding="utf-8")
-        pair_manifest = json.loads(
-            (temp_dir / "attention_score32_online_state_merge_manifest.json").read_text(encoding="utf-8")
-        )
+        pair_manifest = json.loads((temp_dir / pair_manifest_name).read_text(encoding="utf-8"))
 
     top_text = _top(
         top_name=str(params["top_name"]),
@@ -336,6 +377,7 @@ def generate(config: JsonDict, out_dir: Path) -> None:
     theoretical_full_llama_service_manifest = exact_partial_tree_service_manifest(
         clusters=int(params["clusters"]),
         heads=32,
+        pair_node_impl=str(params["pair_node_impl"]),
     )
     node_count = int(params["clusters"]) - 1
     stage_count = int(math.log2(int(params["clusters"])))
@@ -368,6 +410,8 @@ def generate(config: JsonDict, out_dir: Path) -> None:
         "theoretical_full_llama_service_manifest": theoretical_full_llama_service_manifest,
         "submodule_manifests": {"pair_merge": pair_manifest},
     }
+    if bool(params["pair_node_impl_explicit"]):
+        manifest["pair_node_impl"] = str(params["pair_node_impl"])
     (out_dir / "attention_score32_exact_partial_tree_manifest.json").write_text(
         json.dumps(manifest, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",

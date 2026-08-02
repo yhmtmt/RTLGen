@@ -1,0 +1,11 @@
+{
+  "attention_score32_exact_partial_tree": {
+    "clusters": 16,
+    "exp_scale_impl": "factored_h33_l64_mul_exact",
+    "head_id_bits": 5,
+    "pair_node_impl": "folded_sharedscale_mersenne_exact",
+    "radix": 2,
+    "value_slices": 16
+  },
+  "top_name": "attention_score32_exact_partial_tree_folded_mersenne_c16_r2"
+}

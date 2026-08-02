@@ -16,16 +16,25 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from npu.rtlgen.gen_attention_score32_exact_partial_tree import generate
+from npu.rtlgen.gen_attention_score32_exact_partial_pair_merge_folded import (
+    MERSENNE24_CORRECTION2_SCALE_DIVIDER_EXACT,
+)
 from npu.rtlgen.gen_attention_score32_online_state_merge import (
     FACTORED_H33_L64_MUL_EXACT,
     LEGACY_MONOLITHIC_LUT_EXACT,
 )
-from npu.sim.perf.attention_exact_partial import PARTIAL_LINK_BITS, PARTIAL_PAYLOAD_BITS
+from npu.sim.perf.attention_exact_partial import (
+    FOLDED_SHARED_SCALE_MERSENNE_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL,
+    LEGACY_PARALLEL_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL,
+    PARTIAL_LINK_BITS,
+    PARTIAL_PAYLOAD_BITS,
+)
 
 
 _SUPPORTED_CLUSTERS = {2, 4, 8, 16}
 _PPA_SWEEP_TAG_PREFIX = "attention_score32_exact_partial_tree_cluster_firstpass_v1"
 _PPA_FACTORED_SWEEP_TAG_PREFIX = "attention_score32_exact_partial_tree_factored_cluster_retry_r2"
+_PPA_FOLDED_MERSENNE_SWEEP_TAG_PREFIX = "attention_score32_exact_partial_tree_folded_mersenne_cluster_v1"
 _PPA_SWEEP_FLOW_PARAMS = {
     "CLOCK_PERIOD": [8.0],
     "DIE_AREA": ["0 0 2500 2500"],
@@ -38,6 +47,16 @@ _PPA_FACTORED_SWEEP_FLOW_PARAMS = {
     "IO_PLACER_H": ["metal3 metal5"],
     "IO_PLACER_V": ["metal4 metal6"],
     "PLACE_PINS_ARGS": ["-min_distance 1"],
+}
+_PPA_FOLDED_MERSENNE_SWEEP_FLOW_PARAMS = {
+    "CLOCK_PERIOD": [8.0],
+    "DIE_AREA": ["0 0 2500 2500"],
+    "CORE_AREA": ["50 50 2450 2450"],
+    "IO_PLACER_H": ["metal3 metal5"],
+    "IO_PLACER_V": ["metal4 metal6"],
+    "PLACE_DENSITY": [0.3],
+    "PLACE_PINS_ARGS": ["-min_distance 1"],
+    "SYNTH_HIERARCHICAL": [1],
 }
 
 
@@ -105,6 +124,7 @@ def _validate_ppa_sweep(*, config: dict[str, object], sweep_path: Path) -> None:
         raise SystemExit("config must contain attention_score32_exact_partial_tree object")
     clusters = int(body.get("clusters", 0))
     exp_scale_impl = str(body.get("exp_scale_impl", LEGACY_MONOLITHIC_LUT_EXACT)).strip()
+    pair_node_impl = str(body.get("pair_node_impl", LEGACY_PARALLEL_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL)).strip()
     tag_prefix = sweep.get("tag_prefix")
     if tag_prefix == _PPA_SWEEP_TAG_PREFIX:
         expected_flow_params = _PPA_SWEEP_FLOW_PARAMS
@@ -112,16 +132,32 @@ def _validate_ppa_sweep(*, config: dict[str, object], sweep_path: Path) -> None:
             raise SystemExit(
                 f"legacy partial-tree sweep requires exp_scale_impl {LEGACY_MONOLITHIC_LUT_EXACT}"
             )
+        if pair_node_impl != LEGACY_PARALLEL_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL:
+            raise SystemExit("legacy partial-tree sweep requires the legacy parallel pair node")
     elif tag_prefix == _PPA_FACTORED_SWEEP_TAG_PREFIX:
         expected_flow_params = _PPA_FACTORED_SWEEP_FLOW_PARAMS
         if exp_scale_impl != FACTORED_H33_L64_MUL_EXACT:
             raise SystemExit(
                 f"factored partial-tree sweep requires exp_scale_impl {FACTORED_H33_L64_MUL_EXACT}"
             )
+        if pair_node_impl != LEGACY_PARALLEL_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL:
+            raise SystemExit("factored partial-tree retry sweep requires the legacy parallel pair node")
+    elif tag_prefix == _PPA_FOLDED_MERSENNE_SWEEP_TAG_PREFIX:
+        expected_flow_params = _PPA_FOLDED_MERSENNE_SWEEP_FLOW_PARAMS
+        if exp_scale_impl != FACTORED_H33_L64_MUL_EXACT:
+            raise SystemExit(
+                f"folded Mersenne partial-tree sweep requires exp_scale_impl {FACTORED_H33_L64_MUL_EXACT}"
+            )
+        if pair_node_impl != FOLDED_SHARED_SCALE_MERSENNE_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL:
+            raise SystemExit(
+                "folded Mersenne partial-tree sweep requires pair_node_impl "
+                f"{FOLDED_SHARED_SCALE_MERSENNE_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL}"
+            )
     else:
         raise SystemExit(
             "partial-tree PPA sweep tag_prefix must be "
-            f"{_PPA_SWEEP_TAG_PREFIX} or {_PPA_FACTORED_SWEEP_TAG_PREFIX}"
+            f"{_PPA_SWEEP_TAG_PREFIX}, {_PPA_FACTORED_SWEEP_TAG_PREFIX}, "
+            f"or {_PPA_FOLDED_MERSENNE_SWEEP_TAG_PREFIX}"
         )
     if sweep.get("flow_params") != expected_flow_params:
         raise SystemExit("partial-tree PPA sweep flow_params do not match the checked-in partial-tree contract")
@@ -164,6 +200,7 @@ def main(argv: list[str] | None = None) -> int:
     value_slices = int(body.get("value_slices", 0))
     head_id_bits = int(body.get("head_id_bits", 0))
     exp_scale_impl = str(body.get("exp_scale_impl", LEGACY_MONOLITHIC_LUT_EXACT)).strip()
+    pair_node_impl = str(body.get("pair_node_impl", LEGACY_PARALLEL_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL)).strip()
     if clusters not in _SUPPORTED_CLUSTERS:
         raise SystemExit("clusters must be one of 2, 4, 8, 16")
     if clusters & (clusters - 1):
@@ -174,6 +211,11 @@ def main(argv: list[str] | None = None) -> int:
         raise SystemExit("value_slices must be a power of two in [1, 16]")
     if head_id_bits < 1 or head_id_bits > 8:
         raise SystemExit("head_id_bits must be in [1, 8]")
+    if pair_node_impl not in {
+        LEGACY_PARALLEL_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL,
+        FOLDED_SHARED_SCALE_MERSENNE_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL,
+    }:
+        raise SystemExit("unsupported pair_node_impl for exact partial tree guard")
 
     tree_nodes = clusters - 1
     tree_stages = int(math.log2(clusters))
@@ -203,6 +245,23 @@ def main(argv: list[str] | None = None) -> int:
     }
     for key, expected in expected_manifest.items():
         _require(manifest, key, expected, "generated manifest")
+    if pair_node_impl == FOLDED_SHARED_SCALE_MERSENNE_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL:
+        _require(manifest, "pair_node_impl", pair_node_impl, "generated manifest")
+        _require(manifest["theoretical_full_llama_service_manifest"], "pair_node_impl", pair_node_impl, "service manifest")
+        _require(
+            manifest["theoretical_full_llama_service_manifest"],
+            "pair_node_scale_divider_impl",
+            MERSENNE24_CORRECTION2_SCALE_DIVIDER_EXACT,
+            "service manifest",
+        )
+        _require(manifest["theoretical_full_llama_service_manifest"], "service_model", "cycle_simulated_folded_sharedscale_mersenne_tree_v1", "service manifest")
+    elif "pair_node_impl" in manifest:
+        _require(
+            manifest,
+            "pair_node_impl",
+            LEGACY_PARALLEL_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL,
+            "generated manifest",
+        )
 
     pair_manifest = manifest.get("submodule_manifests")
     if not isinstance(pair_manifest, dict):
@@ -210,26 +269,53 @@ def main(argv: list[str] | None = None) -> int:
     pair_merge_manifest = pair_manifest.get("pair_merge")
     if not isinstance(pair_merge_manifest, dict):
         raise SystemExit("generated manifest must contain pair_merge submodule manifest")
-    _require(
-        pair_merge_manifest,
-        "generator",
-        "npu/rtlgen/gen_attention_score32_online_state_merge.py",
-        "pair-merge submodule manifest",
-    )
-    _require(
-        pair_merge_manifest,
-        "semantic_profile",
-        "score32_online_exact_partial_pair_merge_v1",
-        "pair-merge submodule manifest",
-    )
-    _require(
-        pair_merge_manifest,
-        "exp_scale_impl",
-        exp_scale_impl,
-        "pair-merge submodule manifest",
-    )
+    if pair_node_impl == LEGACY_PARALLEL_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL:
+        _require(
+            pair_merge_manifest,
+            "generator",
+            "npu/rtlgen/gen_attention_score32_online_state_merge.py",
+            "pair-merge submodule manifest",
+        )
+        _require(
+            pair_merge_manifest,
+            "semantic_profile",
+            "score32_online_exact_partial_pair_merge_v1",
+            "pair-merge submodule manifest",
+        )
+        _require(
+            pair_merge_manifest,
+            "exp_scale_impl",
+            exp_scale_impl,
+            "pair-merge submodule manifest",
+        )
+    else:
+        _require(
+            pair_merge_manifest,
+            "generator",
+            "npu/rtlgen/gen_attention_score32_exact_partial_pair_merge_folded.py",
+            "pair-merge submodule manifest",
+        )
+        _require(
+            pair_merge_manifest,
+            "semantic_profile",
+            "score32_online_exact_partial_pair_merge_folded_sharedscale_v1",
+            "pair-merge submodule manifest",
+        )
+        _require(
+            pair_merge_manifest,
+            "exp_scale_impl",
+            exp_scale_impl,
+            "pair-merge submodule manifest",
+        )
+        _require(
+            pair_merge_manifest,
+            "scale_divider_impl",
+            MERSENNE24_CORRECTION2_SCALE_DIVIDER_EXACT,
+            "pair-merge submodule manifest",
+        )
 
     rtl = top_path.read_text(encoding="utf-8", errors="replace")
+    pair_module = _extract_module(rtl, pair_top_name)
     top_module = _extract_module(rtl, top_name)
     top_module_body = top_module.split(");", 1)[1]
 
@@ -310,6 +396,18 @@ def main(argv: list[str] | None = None) -> int:
             "generated RTL",
         )
 
+    if pair_node_impl == FOLDED_SHARED_SCALE_MERSENNE_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL:
+        for token in (
+            "wire start_pair = (phase_q == PHASE_IDLE) && !out_valid_q && left_hold_valid_q && right_hold_valid_q;",
+            "function automatic [33:0] divide_mersenne24_u57;",
+            "function automatic [41:0] divide_mersenne24_u65;",
+            "scale_unsigned33(shared_unsigned_value_r, shared_unsigned_scale_r);",
+            "scale_signed41(shared_signed_value_r, shared_signed_scale_r);",
+        ):
+            _require_token(pair_module, token, "folded pair RTL")
+        if "/ 57'd16777215" in pair_module or "/ 65'd16777215" in pair_module:
+            raise SystemExit("folded pair RTL must not contain generic exact division operators")
+
     _compare_current_generation(config=config, rtl_dir=rtl_dir)
 
     print(
@@ -318,6 +416,7 @@ def main(argv: list[str] | None = None) -> int:
                 "design": top_name,
                 "guard": "attention_score32_exact_partial_tree_v1",
                 "clusters": clusters,
+                "pair_node_impl": pair_node_impl,
                 "tree_nodes": tree_nodes,
                 "tree_stages": tree_stages,
                 "status": "ok",
