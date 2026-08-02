@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l1_decoder_attention_score32_exact_partial_pair_merge_sharedscale_mersenne_ppa_v1",
-  "source_commit": "REPLACE_WITH_MERGE_COMMIT",
+  "source_commit": "",
   "source_commit_note": "Replace with the merge commit that adds the explicit Mersenne-divider folded exact-partial pair-merge RTL, strict structural guard, checked-in config and sweep, and task-generator coverage before dispatch.",
   "requested_items": [
     {
