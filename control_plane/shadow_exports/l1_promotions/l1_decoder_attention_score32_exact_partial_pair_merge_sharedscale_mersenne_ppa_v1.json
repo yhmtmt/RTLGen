@@ -1,0 +1,106 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-08-02T10:49:26.093649Z",
+  "item_id": "l1_decoder_attention_score32_exact_partial_pair_merge_sharedscale_mersenne_ppa_v1",
+  "run_key": "l1_decoder_attention_score32_exact_partial_pair_merge_sharedscale_mersenne_ppa_v1_run_4cd7bb3ddc66bd42",
+  "layer": "layer1",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l1_sweep",
+  "source_commit": "3d2985b66bec99db393b04222cccf23314d367fc",
+  "objective": "Measure Nangate45 PPA for the standalone factored-exact shared-scale score32 partial pair merge using the explicit Mersenne divider implementation.",
+  "input_manifest": {
+    "sweeps": [
+      "runs/campaigns/npu/attention_score32_exact_partial_pair_merge_sharedscale_mersenne_v1/sweeps/nangate45_attention_score32_exact_partial_pair_merge_sharedscale_factored_mersenne_l1.json"
+    ],
+    "configs": [
+      "runs/designs/npu_blocks/attention_score32_exact_partial_pair_merge_sharedscale_factored_mersenne_l1/config.json"
+    ],
+    "out_root": "runs/designs/npu_blocks",
+    "design_dirs": [],
+    "macro_manifests": [],
+    "candidate_manifests": [],
+    "required_submodules": []
+  },
+  "proposal_count": 1,
+  "evaluation_record": {
+    "evaluation_mode": "frontier_followup",
+    "abstraction_layer": "architecture_block",
+    "result_kind": "physical_metrics",
+    "physical_metrics_present": true,
+    "summary": "Physical metrics recorded from a completed, timing-feasible Layer 1 row.",
+    "timing_feasible": true,
+    "clock_period_ns": 8.0,
+    "timing_slack_ns": 0.7302999999999997
+  },
+  "proposal_assessment": null,
+  "proposals": [
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/npu_blocks/attention_score32_exact_partial_pair_merge_sharedscale_factored_mersenne_l1/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "7697f4c9",
+        "tag": "attention_score32_exact_partial_pair_merge_sharedscale_mersenne_v1_7697f4c9",
+        "result_path": "/orfs/flow/reports/nangate45/attention_score32_exact_partial_pair_merge_sharedscale_factored_mersenne_l1/base/6_finish.rpt",
+        "work_result_json": "runs/designs/npu_blocks/attention_score32_exact_partial_pair_merge_sharedscale_factored_mersenne_l1/work/7697f4c9/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 7.2697,
+        "die_area": 2250000.0,
+        "total_power_mw": 0.311
+      }
+    }
+  ],
+  "trial_summary": {
+    "item_id": "l1_decoder_attention_score32_exact_partial_pair_merge_sharedscale_mersenne_ppa_v1",
+    "completed_trials": 1,
+    "success_count": 1,
+    "failure_count": 0,
+    "success_rate": 1.0,
+    "partial_metrics_count": 0,
+    "metrics": {
+      "critical_path_ns": {
+        "best": 7.2697,
+        "mean": 7.2697,
+        "median": 7.2697,
+        "max": 7.2697,
+        "range": 0.0,
+        "stddev": 0.0
+      },
+      "die_area": {
+        "best": 2250000.0,
+        "mean": 2250000.0,
+        "median": 2250000.0,
+        "max": 2250000.0,
+        "range": 0.0,
+        "stddev": 0.0
+      },
+      "total_power_mw": {
+        "best": 0.311,
+        "mean": 0.311,
+        "median": 0.311,
+        "max": 0.311,
+        "range": 0.0,
+        "stddev": 0.0
+      }
+    },
+    "aggregation_scope": "current_run_checkout_commit",
+    "aggregation_source_commit": "3d2985b66bec99db393b04222cccf23314d367fc",
+    "aggregation_included_attempts": 1,
+    "aggregation_excluded_attempts": 0,
+    "aggregation_excluded_source_commits": {},
+    "aggregation_excluded_attempt_run_keys": [],
+    "aggregation_excluded_attempt_run_keys_truncated": false
+  },
+  "source_refs": {
+    "trial_metrics_csvs": [
+      "runs/designs/npu_blocks/attention_score32_exact_partial_pair_merge_sharedscale_factored_mersenne_l1/metrics.csv"
+    ],
+    "summary_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_score32_exact_partial_pair_merge_sharedscale_mersenne_ppa_v1/summary_stats.json",
+    "failure_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_score32_exact_partial_pair_merge_sharedscale_mersenne_ppa_v1/failure_stats.json",
+    "trial_table_csv": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_score32_exact_partial_pair_merge_sharedscale_mersenne_ppa_v1/trial_table.csv"
+  }
+}

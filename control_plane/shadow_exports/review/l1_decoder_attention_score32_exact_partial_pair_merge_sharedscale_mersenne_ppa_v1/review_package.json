@@ -1,0 +1,187 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-08-02T10:49:28.599777Z",
+  "control_plane_source_commit": "3d2985b66bec99db393b04222cccf23314d367fc",
+  "review_metadata_source_commit": "3d2985b66bec99db393b04222cccf23314d367fc",
+  "item_id": "l1_decoder_attention_score32_exact_partial_pair_merge_sharedscale_mersenne_ppa_v1",
+  "run_key": "l1_decoder_attention_score32_exact_partial_pair_merge_sharedscale_mersenne_ppa_v1_run_4cd7bb3ddc66bd42",
+  "layer": "layer1",
+  "flow": "openroad",
+  "task_type": "l1_sweep",
+  "source_commit": "3d2985b66bec99db393b04222cccf23314d367fc",
+  "queue_snapshot": {
+    "path": "control_plane/shadow_exports/review/l1_decoder_attention_score32_exact_partial_pair_merge_sharedscale_mersenne_ppa_v1/evaluated.json",
+    "result": {
+      "branch": "eval/l1_decoder_attention_score32_exact_partial_pair_merge_sharedscale_mersenne_ppa_v1/s20260802t104926z",
+      "completed_utc": "2026-08-02T10:49:23.827064Z",
+      "evaluator_id": "control_plane",
+      "executor": "@control_plane",
+      "host": "b7c2d9c80c1c",
+      "identity_block": "[role:evaluator][account:control_plane][session:s20260802t104926z][host:b7c2d9c80c1c][item:l1_decoder_attention_score32_exact_partial_pair_merge_sharedscale_mersenne_ppa_v1]",
+      "metrics_rows": [
+        {
+          "tag": "attention_score32_exact_partial_pair_merge_sharedscale_mersenne_v1_7697f4c9",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "7697f4c9",
+          "metrics_csv": "runs/designs/npu_blocks/attention_score32_exact_partial_pair_merge_sharedscale_factored_mersenne_l1/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/attention_score32_exact_partial_pair_merge_sharedscale_factored_mersenne_l1/work/7697f4c9/result.json"
+        }
+      ],
+      "queue_item_id": "l1_decoder_attention_score32_exact_partial_pair_merge_sharedscale_mersenne_ppa_v1",
+      "session_id": "s20260802t104926z",
+      "status": "ok",
+      "summary": "6/6 commands succeeded"
+    }
+  },
+  "review_artifact": {
+    "kind": "promotion_proposal",
+    "path": "control_plane/shadow_exports/l1_promotions/l1_decoder_attention_score32_exact_partial_pair_merge_sharedscale_mersenne_ppa_v1.json",
+    "storage_mode": "repo",
+    "sha256": "6a7b39cd9d7fbb6ece891f95eb48c5d143fcf12db66a897342b9cdbb878db1cd",
+    "payload": {
+      "version": 0.1,
+      "generated_utc": "2026-08-02T10:49:26.093649Z",
+      "item_id": "l1_decoder_attention_score32_exact_partial_pair_merge_sharedscale_mersenne_ppa_v1",
+      "run_key": "l1_decoder_attention_score32_exact_partial_pair_merge_sharedscale_mersenne_ppa_v1_run_4cd7bb3ddc66bd42",
+      "layer": "layer1",
+      "flow": "openroad",
+      "platform": "nangate45",
+      "task_type": "l1_sweep",
+      "source_commit": "3d2985b66bec99db393b04222cccf23314d367fc",
+      "objective": "Measure Nangate45 PPA for the standalone factored-exact shared-scale score32 partial pair merge using the explicit Mersenne divider implementation.",
+      "input_manifest": {
+        "sweeps": [
+          "runs/campaigns/npu/attention_score32_exact_partial_pair_merge_sharedscale_mersenne_v1/sweeps/nangate45_attention_score32_exact_partial_pair_merge_sharedscale_factored_mersenne_l1.json"
+        ],
+        "configs": [
+          "runs/designs/npu_blocks/attention_score32_exact_partial_pair_merge_sharedscale_factored_mersenne_l1/config.json"
+        ],
+        "out_root": "runs/designs/npu_blocks",
+        "design_dirs": [],
+        "macro_manifests": [],
+        "candidate_manifests": [],
+        "required_submodules": []
+      },
+      "proposal_count": 1,
+      "evaluation_record": {
+        "evaluation_mode": "frontier_followup",
+        "abstraction_layer": "architecture_block",
+        "result_kind": "physical_metrics",
+        "physical_metrics_present": true,
+        "summary": "Physical metrics recorded from a completed, timing-feasible Layer 1 row.",
+        "timing_feasible": true,
+        "clock_period_ns": 8.0,
+        "timing_slack_ns": 0.7302999999999997
+      },
+      "proposal_assessment": null,
+      "proposals": [
+        {
+          "metrics_ref": {
+            "metrics_csv": "runs/designs/npu_blocks/attention_score32_exact_partial_pair_merge_sharedscale_factored_mersenne_l1/metrics.csv",
+            "platform": "nangate45",
+            "status": "ok",
+            "result_kind": "physical_metrics",
+            "param_hash": "7697f4c9",
+            "tag": "attention_score32_exact_partial_pair_merge_sharedscale_mersenne_v1_7697f4c9",
+            "result_path": "/orfs/flow/reports/nangate45/attention_score32_exact_partial_pair_merge_sharedscale_factored_mersenne_l1/base/6_finish.rpt",
+            "work_result_json": "runs/designs/npu_blocks/attention_score32_exact_partial_pair_merge_sharedscale_factored_mersenne_l1/work/7697f4c9/result.json"
+          },
+          "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+          "metric_summary": {
+            "critical_path_ns": 7.2697,
+            "die_area": 2250000.0,
+            "total_power_mw": 0.311
+          }
+        }
+      ],
+      "trial_summary": {
+        "item_id": "l1_decoder_attention_score32_exact_partial_pair_merge_sharedscale_mersenne_ppa_v1",
+        "completed_trials": 1,
+        "success_count": 1,
+        "failure_count": 0,
+        "success_rate": 1.0,
+        "partial_metrics_count": 0,
+        "metrics": {
+          "critical_path_ns": {
+            "best": 7.2697,
+            "mean": 7.2697,
+            "median": 7.2697,
+            "max": 7.2697,
+            "range": 0.0,
+            "stddev": 0.0
+          },
+          "die_area": {
+            "best": 2250000.0,
+            "mean": 2250000.0,
+            "median": 2250000.0,
+            "max": 2250000.0,
+            "range": 0.0,
+            "stddev": 0.0
+          },
+          "total_power_mw": {
+            "best": 0.311,
+            "mean": 0.311,
+            "median": 0.311,
+            "max": 0.311,
+            "range": 0.0,
+            "stddev": 0.0
+          }
+        },
+        "aggregation_scope": "current_run_checkout_commit",
+        "aggregation_source_commit": "3d2985b66bec99db393b04222cccf23314d367fc",
+        "aggregation_included_attempts": 1,
+        "aggregation_excluded_attempts": 0,
+        "aggregation_excluded_source_commits": {},
+        "aggregation_excluded_attempt_run_keys": [],
+        "aggregation_excluded_attempt_run_keys_truncated": false
+      },
+      "source_refs": {
+        "trial_metrics_csvs": [
+          "runs/designs/npu_blocks/attention_score32_exact_partial_pair_merge_sharedscale_factored_mersenne_l1/metrics.csv"
+        ],
+        "summary_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_score32_exact_partial_pair_merge_sharedscale_mersenne_ppa_v1/summary_stats.json",
+        "failure_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_score32_exact_partial_pair_merge_sharedscale_mersenne_ppa_v1/failure_stats.json",
+        "trial_table_csv": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_score32_exact_partial_pair_merge_sharedscale_mersenne_ppa_v1/trial_table.csv"
+      }
+    }
+  },
+  "developer_loop": {
+    "comparison": {
+      "role": "exact_partial_pair_merge_sharedscale_mersenne_vs_generic",
+      "paired_baseline_item_id": "l1_decoder_attention_score32_exact_partial_pair_merge_sharedscale_ppa_v1"
+    },
+    "evaluation": {
+      "mode": "frontier_followup",
+      "trial_policy": {
+        "seed_start": 0,
+        "trial_count": 1,
+        "stop_after_failures": 1
+      },
+      "expected_reason": "This isolates the divider implementation as the next exact-pair frontier and measures whether the explicit quotient removes the dominant generic-division timing cost.",
+      "expected_direction": "compare_explicit_mersenne_divider_against_generic_anchor"
+    },
+    "abstraction": {
+      "layer": "architecture_block"
+    },
+    "proposal_id": "prop_l1_decoder_attention_score32_exact_partial_pair_merge_sharedscale_mersenne_ppa_v1",
+    "proposal_path": "docs/proposals/prop_l1_decoder_attention_score32_exact_partial_pair_merge_sharedscale_mersenne_ppa_v1"
+  },
+  "submission_history": null,
+  "pr_payload": {
+    "branch": "eval/l1_decoder_attention_score32_exact_partial_pair_merge_sharedscale_mersenne_ppa_v1/s20260802t104926z",
+    "title": "eval: run score32 exact partial pair merge explicit-mersenne divider ppa comparison",
+    "body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260802t104926z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l1_decoder_attention_score32_exact_partial_pair_merge_sharedscale_mersenne_ppa_v1"
+    },
+    "body_md": "## Summary\n- item_id: `l1_decoder_attention_score32_exact_partial_pair_merge_sharedscale_mersenne_ppa_v1`\n- run_key: `l1_decoder_attention_score32_exact_partial_pair_merge_sharedscale_mersenne_ppa_v1_run_4cd7bb3ddc66bd42`\n- layer: `layer1`\n- task_type: `l1_sweep`\n- status: `ok`\n- summary: `6/6 commands succeeded`\n- queue_snapshot: `control_plane/shadow_exports/review/l1_decoder_attention_score32_exact_partial_pair_merge_sharedscale_mersenne_ppa_v1/evaluated.json`\n- metrics_rows_count: `1`\n- review_artifact: `promotion_proposal` at `control_plane/shadow_exports/l1_promotions/l1_decoder_attention_score32_exact_partial_pair_merge_sharedscale_mersenne_ppa_v1.json`\n\n## Developer Context\n- proposal_id: `prop_l1_decoder_attention_score32_exact_partial_pair_merge_sharedscale_mersenne_ppa_v1`\n- proposal_path: `docs/proposals/prop_l1_decoder_attention_score32_exact_partial_pair_merge_sharedscale_mersenne_ppa_v1`\n- reviewer_first_read: `docs/proposals/prop_l1_decoder_attention_score32_exact_partial_pair_merge_sharedscale_mersenne_ppa_v1` plus `docs/developer_agent_review.md`\n- execution_source_commit: `3d2985b66bec99db393b04222cccf23314d367fc`\n- review_metadata_source_commit: `3d2985b66bec99db393b04222cccf23314d367fc`\n\n## Evaluation Mode\n- evaluation_mode: `frontier_followup`\n- abstraction_layer: `architecture_block`\n- evaluation_summary: `Physical metrics recorded from a completed, timing-feasible Layer 1 row.`\n\n## Checklist\n- [ ] Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge\n- [ ] Include metrics row references for each completed design\n- [ ] Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing\n",
+    "checklist": [
+      "Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge",
+      "Include metrics row references for each completed design",
+      "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ]
+  }
+}
