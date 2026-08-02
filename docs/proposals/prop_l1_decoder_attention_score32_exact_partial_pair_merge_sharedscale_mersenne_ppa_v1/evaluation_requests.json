@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l1_decoder_attention_score32_exact_partial_pair_merge_sharedscale_mersenne_ppa_v1",
-  "source_commit": "",
+  "source_commit": "3d2985b66bec99db393b04222cccf23314d367fc",
   "source_commit_note": "Replace with the merge commit that adds the explicit Mersenne-divider folded exact-partial pair-merge RTL, strict structural guard, checked-in config and sweep, and task-generator coverage before dispatch.",
   "requested_items": [
     {
@@ -24,8 +24,11 @@
         "direction": "compare_explicit_mersenne_divider_against_generic_anchor",
         "reason": "This isolates the divider implementation as the next exact-pair frontier and measures whether the explicit quotient removes the dominant generic-division timing cost."
       },
-      "status": "pending_implementation_merge",
-      "notes": "Standalone one-pair comparison only. Ready for remote evaluation after merge and source-commit substitution."
+      "status": "merged",
+      "notes": "Standalone one-pair comparison only. Ready for remote evaluation after merge and source-commit substitution. Merged via PR #1520 and merge ee3c47ecaa21e8f1db9cbd331c6328b78fdcf203 at 2026-08-02T10:53:58.098800Z.",
+      "merged_pr_number": 1520,
+      "merge_commit": "ee3c47ecaa21e8f1db9cbd331c6328b78fdcf203",
+      "merged_utc": "2026-08-02T10:53:58.098800Z"
     }
   ]
 }

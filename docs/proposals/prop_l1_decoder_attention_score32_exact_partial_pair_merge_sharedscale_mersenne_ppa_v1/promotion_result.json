@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_score32_exact_partial_pair_merge_sharedscale_mersenne_ppa_v1",
+  "decision": "promote",
+  "pr_number": 1520,
+  "merge_commit": "ee3c47ecaa21e8f1db9cbd331c6328b78fdcf203",
+  "merged_utc": "2026-08-02T10:53:58.098800Z"
+}
