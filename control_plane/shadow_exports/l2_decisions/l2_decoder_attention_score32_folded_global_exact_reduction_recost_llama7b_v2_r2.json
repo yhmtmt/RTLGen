@@ -1,0 +1,218 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-08-03T09:24:45.703634Z",
+  "item_id": "l2_decoder_attention_score32_folded_global_exact_reduction_recost_llama7b_v2_r2",
+  "run_key": "l2_decoder_attention_score32_folded_global_exact_reduction_recost_llama7b_v2_r2_run_536314512ca84a0d",
+  "layer": "layer2",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l2_campaign",
+  "source_commit": "04c539aaed4292785bfda00c6acfa3f6015aa55d",
+  "review_metadata_source_commit": "04c539aaed4292785bfda00c6acfa3f6015aa55d",
+  "objective": "LLM-oriented attention-tail stress campaign for larger sequence lengths and more repeated non-terminal Softmax paths.",
+  "input_manifest": {
+    "decoder_contract": {
+      "attention_score32_folded_global_exact_reduction_recost_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_folded_global_exact_reduction_recost__l2_decoder_attention_score32_folded_global_exact_reduction_recost_llama7b_v2_r2.json",
+      "attention_score32_folded_global_exact_reduction_recost_scope": "Replace the obsolete 574-on-986 global exact-reduction timing assumption with a bounded analysis that keeps the corrected 1536-cycle worst-loaded datapath wave distinct from the conservative 4224-cycle per-cluster group barrier, uses the measured folded c16 tree plus measured L8/b4 finalizer components, and leaves the local 53/54-way persistent reducer unresolved.",
+      "attention_score32_folded_global_exact_reduction_recost_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_folded_global_exact_reduction_recost__l2_decoder_attention_score32_folded_global_exact_reduction_recost_llama7b_v2_r2.md",
+      "attention_score32_folded_global_exact_reduction_recost_tree_config": "runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c16_r2/config.json",
+      "attention_score32_folded_global_exact_reduction_recost_tree_metrics": "runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c16_r2/metrics.csv",
+      "attention_score32_folded_global_exact_reduction_recost_producer_config": "runs/designs/npu_blocks/attention_score32_exact_partial_gqa8_dual_stream_producer_b8/config.json",
+      "attention_score32_folded_global_exact_reduction_recost_superseded_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_reduction_recost__l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1.json",
+      "attention_score32_folded_global_exact_reduction_recost_cadence_audit_json": "npu/docs/generated/llama7b_score32_exact_hierarchy_cadence_audit_v3.json",
+      "attention_score32_folded_global_exact_reduction_recost_bank_control_config": "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b4/config.json",
+      "attention_score32_folded_global_exact_reduction_recost_bank_control_metrics": "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b4/metrics.csv",
+      "attention_score32_folded_global_exact_reduction_recost_exact_partial_module": "npu/sim/perf/attention_exact_partial.py",
+      "attention_score32_folded_global_exact_reduction_recost_producer_probe_script": "npu/eval/probe_attention_score32_exact_partial_gqa8_dual_stream_producer.py",
+      "attention_score32_folded_global_exact_reduction_recost_root_finalizer_config": "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l8/config.json",
+      "attention_score32_folded_global_exact_reduction_recost_root_finalizer_metrics": "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l8/metrics.csv"
+    }
+  },
+  "recommendation": {
+    "source": "decoder_evidence",
+    "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_folded_global_exact_reduction_recost__l2_decoder_attention_score32_folded_global_exact_reduction_recost_llama7b_v2_r2.json",
+    "arch_id": "decoder_attention_score32_folded_global_exact_reduction_recost",
+    "macro_mode": "evidence_only",
+    "outcome": "decoder_evidence_recorded"
+  },
+  "objective_profiles": [],
+  "evaluation_record": {
+    "proposal_id": "prop_l2_decoder_attention_score32_folded_global_exact_reduction_recost_llama7b_v2",
+    "title": "Score32 folded global exact reduction bounded recost for Llama7B",
+    "primary_question": "What bounded global exact-reduction timing and measured-component PPA estimate remain once the 986-cycle producer assumption is withdrawn and the measured folded c16 tree plus measured L8/b4 finalizer components are composed conservatively?",
+    "evaluation_mode": "frontier_detail",
+    "comparison_role": "score32_folded_global_exact_reduction_recost",
+    "abstraction_layer": "decoder_attention_score32_folded_global_exact_reduction_recost",
+    "expected_direction": "record_bounded_folded_global_exact_reduction_recost",
+    "expected_reason": "Retry with item-specific evidence paths after preserving the successful no-diff r1 run.",
+    "summary": "Decoder evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_folded_global_exact_reduction_recost__l2_decoder_attention_score32_folded_global_exact_reduction_recost_llama7b_v2_r2.json: decision=decoder_evidence_recorded.",
+    "outcome": "decoder_evidence_recorded",
+    "expectation_status": "unspecified"
+  },
+  "proposal_assessment": {
+    "proposal_id": "prop_l2_decoder_attention_score32_folded_global_exact_reduction_recost_llama7b_v2",
+    "title": "Score32 folded global exact reduction bounded recost for Llama7B",
+    "kind": "architecture",
+    "primary_question": "What bounded global exact-reduction timing and measured-component PPA estimate remain once the 986-cycle producer assumption is withdrawn and the measured folded c16 tree plus measured L8/b4 finalizer components are composed conservatively?",
+    "evaluation_mode": "frontier_detail",
+    "comparison_role": "score32_folded_global_exact_reduction_recost",
+    "outcome": "decoder_evidence_recorded",
+    "summary": "Decoder evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_folded_global_exact_reduction_recost__l2_decoder_attention_score32_folded_global_exact_reduction_recost_llama7b_v2_r2.json: decision=decoder_evidence_recorded.",
+    "baseline_ref": null,
+    "baseline_item_id": null,
+    "matched_row_count": 0,
+    "matched_rows": [],
+    "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_folded_global_exact_reduction_recost__l2_decoder_attention_score32_folded_global_exact_reduction_recost_llama7b_v2_r2.json",
+    "decoder_quality": {
+      "diagnosis": {},
+      "remaining_abstractions": [
+        "The local 53/54-way exact reducer that emits one valid group aggregate per cluster is still unmeasured.",
+        "Safe overlap between successive groups is not established; the 1546-cycle margin is conditional only.",
+        "The composed PPA estimate is a vectorless sum of standalone component rows and not a routed composed macro.",
+        "No 328-bit transport, NoC, SRAM, or local-reducer activity-power closure is claimed here."
+      ],
+      "source_artifacts": {
+        "bank_control_config_json": {
+          "canonical_json_sha256": "852853bdef8c8f13f47e079eb494a78db0251ce086a7a574dc299eb621e4e0d7",
+          "file_sha256": "94186e20985c380c6a9765ffb8cd8c40a85108b461e532f2ce6f017cae0e7a7b",
+          "path": "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b4/config.json"
+        },
+        "bank_control_metrics_csv": {
+          "file_sha256": "4813e05be8bf4c920e718d7b3a6d4c3c9f1729a503698f69dc33a76409488ad0",
+          "path": "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b4/metrics.csv"
+        },
+        "cadence_audit_json": {
+          "canonical_json_sha256": "0fcd15ddb6fa2ee03a45fa473a235467bc43e1f36ee7310d4fe2e6223520a073",
+          "file_sha256": "cc3623bb6116f8bff3487d87f245a4a1e07fad70df0218df5a01c2433c8e39ec",
+          "path": "npu/docs/generated/llama7b_score32_exact_hierarchy_cadence_audit_v3.json"
+        },
+        "exact_partial_module": {
+          "file_sha256": "b9b0a3eafef2545e92e9fa15410cb3e416e854260c1bf936d475ceb797024fe1",
+          "path": "npu/sim/perf/attention_exact_partial.py"
+        },
+        "producer_config_json": {
+          "canonical_json_sha256": "97effaa378ede8627e6af34c83c2c30e1ed52bb4b429d82132a3ef5a2f674ac0",
+          "file_sha256": "4817284039fed97c8c32b850b421f38e3f8d3026603438a5a3e4b004772b82ea",
+          "path": "runs/designs/npu_blocks/attention_score32_exact_partial_gqa8_dual_stream_producer_b8/config.json"
+        },
+        "producer_probe_script": {
+          "file_sha256": "45e02560a0b5fb94a7832293bac3d95749f87e03d87c511fa967a0e26802a982",
+          "path": "npu/eval/probe_attention_score32_exact_partial_gqa8_dual_stream_producer.py"
+        },
+        "root_finalizer_config_json": {
+          "canonical_json_sha256": "6c8ba4f34a3853648ead1e972413a802cfe786796d9717c8acec3ef1ae9da780",
+          "file_sha256": "a3516949d1c85605a097e0a7d7743e0ab39f5dc541d3d87b1dde412653eee4fa",
+          "path": "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l8/config.json"
+        },
+        "root_finalizer_metrics_csv": {
+          "file_sha256": "a7b0c476c4e14d7fb91f878b35b4a75c1e36b151100af16871ac331c74d2bac4",
+          "path": "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l8/metrics.csv"
+        },
+        "superseded_recost_json": {
+          "canonical_json_sha256": "221fc8a1735b970cf3ba9485d5824b263e0bb4cc57ae027da1405b034f584867",
+          "file_sha256": "43d229c6eafa376b03e113a3529ee5d20d76e0fe87ace0823c9b58261f5850dc",
+          "path": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_reduction_recost__l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1.json"
+        },
+        "tree_config_json": {
+          "canonical_json_sha256": "c46ad9394e131edcfadda26641835b96276ba9bedfe079da4cae65cd01d06673",
+          "file_sha256": "3d883542968744813e2986d3ad2b55906e28184478b3dbd861ae1c01a4c23d24",
+          "path": "runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c16_r2/config.json"
+        },
+        "tree_metrics_csv": {
+          "file_sha256": "fafa87b356ecd33e00b554adc88e578829bc37dd3f717b4f288674f56e3ed7f3",
+          "path": "runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c16_r2/metrics.csv"
+        }
+      },
+      "summary": {
+        "conservative_cluster_barrier_per_group_cycles": 4224,
+        "corrected_single_datapath_worst_wave_cycles": 1536,
+        "estimated_component_area_um2": 892551.77,
+        "estimated_component_critical_path_ns": 7.9837,
+        "estimated_component_power_mw": 4.20296,
+        "global_final_output_drain_cycles": 2678,
+        "old_arithmetic_reference_cycles": 986,
+        "old_global_reduction_drain_cycles": 574,
+        "strict_serialized_bound_all_4_groups_cycles": 27608,
+        "strict_serialized_bound_per_group_cycles": 6902
+      }
+    }
+  },
+  "source_refs": {
+    "decoder_evidence_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_folded_global_exact_reduction_recost__l2_decoder_attention_score32_folded_global_exact_reduction_recost_llama7b_v2_r2.json",
+    "decoder_attention_score32_folded_global_exact_reduction_recost_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_folded_global_exact_reduction_recost__l2_decoder_attention_score32_folded_global_exact_reduction_recost_llama7b_v2_r2.json",
+    "decoder_attention_score32_folded_global_exact_reduction_recost_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_folded_global_exact_reduction_recost__l2_decoder_attention_score32_folded_global_exact_reduction_recost_llama7b_v2_r2.md"
+  },
+  "decoder_quality": {
+    "diagnosis": {},
+    "remaining_abstractions": [
+      "The local 53/54-way exact reducer that emits one valid group aggregate per cluster is still unmeasured.",
+      "Safe overlap between successive groups is not established; the 1546-cycle margin is conditional only.",
+      "The composed PPA estimate is a vectorless sum of standalone component rows and not a routed composed macro.",
+      "No 328-bit transport, NoC, SRAM, or local-reducer activity-power closure is claimed here."
+    ],
+    "source_artifacts": {
+      "bank_control_config_json": {
+        "canonical_json_sha256": "852853bdef8c8f13f47e079eb494a78db0251ce086a7a574dc299eb621e4e0d7",
+        "file_sha256": "94186e20985c380c6a9765ffb8cd8c40a85108b461e532f2ce6f017cae0e7a7b",
+        "path": "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b4/config.json"
+      },
+      "bank_control_metrics_csv": {
+        "file_sha256": "4813e05be8bf4c920e718d7b3a6d4c3c9f1729a503698f69dc33a76409488ad0",
+        "path": "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b4/metrics.csv"
+      },
+      "cadence_audit_json": {
+        "canonical_json_sha256": "0fcd15ddb6fa2ee03a45fa473a235467bc43e1f36ee7310d4fe2e6223520a073",
+        "file_sha256": "cc3623bb6116f8bff3487d87f245a4a1e07fad70df0218df5a01c2433c8e39ec",
+        "path": "npu/docs/generated/llama7b_score32_exact_hierarchy_cadence_audit_v3.json"
+      },
+      "exact_partial_module": {
+        "file_sha256": "b9b0a3eafef2545e92e9fa15410cb3e416e854260c1bf936d475ceb797024fe1",
+        "path": "npu/sim/perf/attention_exact_partial.py"
+      },
+      "producer_config_json": {
+        "canonical_json_sha256": "97effaa378ede8627e6af34c83c2c30e1ed52bb4b429d82132a3ef5a2f674ac0",
+        "file_sha256": "4817284039fed97c8c32b850b421f38e3f8d3026603438a5a3e4b004772b82ea",
+        "path": "runs/designs/npu_blocks/attention_score32_exact_partial_gqa8_dual_stream_producer_b8/config.json"
+      },
+      "producer_probe_script": {
+        "file_sha256": "45e02560a0b5fb94a7832293bac3d95749f87e03d87c511fa967a0e26802a982",
+        "path": "npu/eval/probe_attention_score32_exact_partial_gqa8_dual_stream_producer.py"
+      },
+      "root_finalizer_config_json": {
+        "canonical_json_sha256": "6c8ba4f34a3853648ead1e972413a802cfe786796d9717c8acec3ef1ae9da780",
+        "file_sha256": "a3516949d1c85605a097e0a7d7743e0ab39f5dc541d3d87b1dde412653eee4fa",
+        "path": "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l8/config.json"
+      },
+      "root_finalizer_metrics_csv": {
+        "file_sha256": "a7b0c476c4e14d7fb91f878b35b4a75c1e36b151100af16871ac331c74d2bac4",
+        "path": "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l8/metrics.csv"
+      },
+      "superseded_recost_json": {
+        "canonical_json_sha256": "221fc8a1735b970cf3ba9485d5824b263e0bb4cc57ae027da1405b034f584867",
+        "file_sha256": "43d229c6eafa376b03e113a3529ee5d20d76e0fe87ace0823c9b58261f5850dc",
+        "path": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_reduction_recost__l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1.json"
+      },
+      "tree_config_json": {
+        "canonical_json_sha256": "c46ad9394e131edcfadda26641835b96276ba9bedfe079da4cae65cd01d06673",
+        "file_sha256": "3d883542968744813e2986d3ad2b55906e28184478b3dbd861ae1c01a4c23d24",
+        "path": "runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c16_r2/config.json"
+      },
+      "tree_metrics_csv": {
+        "file_sha256": "fafa87b356ecd33e00b554adc88e578829bc37dd3f717b4f288674f56e3ed7f3",
+        "path": "runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c16_r2/metrics.csv"
+      }
+    },
+    "summary": {
+      "conservative_cluster_barrier_per_group_cycles": 4224,
+      "corrected_single_datapath_worst_wave_cycles": 1536,
+      "estimated_component_area_um2": 892551.77,
+      "estimated_component_critical_path_ns": 7.9837,
+      "estimated_component_power_mw": 4.20296,
+      "global_final_output_drain_cycles": 2678,
+      "old_arithmetic_reference_cycles": 986,
+      "old_global_reduction_drain_cycles": 574,
+      "strict_serialized_bound_all_4_groups_cycles": 27608,
+      "strict_serialized_bound_per_group_cycles": 6902
+    }
+  }
+}
