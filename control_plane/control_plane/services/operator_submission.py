@@ -36,7 +36,14 @@ from control_plane.services.review_publisher import (
 )
 from control_plane.services.submission_bridge import SubmissionPrepareError, SubmissionPrepareRequest, prepare_submission_branch
 from control_plane.services.submission_executor import SubmissionExecuteError, SubmissionExecuteRequest, execute_submission
-from control_plane.services.docs_paths import proposal_placeholder_reason, resolve_proposal_file
+from control_plane.services.docs_paths import (
+    git_ref_exists,
+    path_exists_at_ref,
+    proposal_placeholder_reason,
+    proposal_placeholder_reason_at_ref,
+    resolve_proposal_file,
+    resolve_proposal_file_at_ref,
+)
 
 
 class OperatorSubmissionError(RuntimeError):
@@ -380,8 +387,36 @@ def _proposal_linkage_reason(*, repo_root: Path, work_item: WorkItem) -> str | N
     proposal_path = str(developer_loop.get("proposal_path", "")).strip() or None
     if proposal_id is None and proposal_path is None:
         return "missing developer_loop proposal linkage"
+    proposal_ref = str(work_item.source_commit or "").strip()
+    if not proposal_ref and work_item.task_request is not None:
+        proposal_ref = str(work_item.task_request.source_commit or "").strip()
+
+    if proposal_ref and git_ref_exists(repo_root, proposal_ref):
+        proposal_rel = resolve_proposal_file_at_ref(
+            repo_root,
+            proposal_ref,
+            proposal_path=proposal_path,
+            proposal_id=proposal_id,
+        )
+        if proposal_rel is not None:
+            placeholder_reason = proposal_placeholder_reason_at_ref(
+                repo_root,
+                proposal_ref,
+                proposal_path=proposal_path,
+                proposal_id=proposal_id,
+            )
+            if placeholder_reason is not None:
+                return placeholder_reason
+            return None
+
     proposal_json = resolve_proposal_file(repo_root, proposal_path=proposal_path, proposal_id=proposal_id)
     if proposal_json is None or not proposal_json.exists():
+        return "developer_loop proposal linkage does not resolve to a proposal"
+    try:
+        proposal_rel = str(proposal_json.resolve().relative_to(repo_root.resolve()))
+    except ValueError:
+        proposal_rel = None
+    if proposal_ref and git_ref_exists(repo_root, proposal_ref) and proposal_rel and path_exists_at_ref(repo_root, "HEAD", proposal_rel):
         return "developer_loop proposal linkage does not resolve to a proposal"
     placeholder_reason = proposal_placeholder_reason(proposal_json)
     if placeholder_reason is not None:

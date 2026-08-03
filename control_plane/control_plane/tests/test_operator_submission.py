@@ -75,6 +75,23 @@ def _init_repo(repo_root: Path) -> None:
     )
 
 
+def _commit(repo_root: Path, message: str, *paths: str) -> None:
+    _git(repo_root, "add", *paths)
+    subprocess.run(
+        ["git", "-C", str(repo_root), "commit", "-m", message],
+        check=True,
+        capture_output=True,
+        text=True,
+        env={
+            **os.environ,
+            "GIT_AUTHOR_NAME": "Test",
+            "GIT_AUTHOR_EMAIL": "test@example.com",
+            "GIT_COMMITTER_NAME": "Test",
+            "GIT_COMMITTER_EMAIL": "test@example.com",
+        },
+    )
+
+
 def _seed_l2_reviewable(session: Session, repo_root: Path) -> tuple[str, str]:
     campaign_dir = repo_root / "control_plane" / "shadow_exports" / "campaigns" / "demo_l2"
     design_metrics_rel = "control_plane/shadow_exports/designs/demo_nm1/metrics.csv"
@@ -484,6 +501,130 @@ def test_assess_submission_eligibility_rejects_template_proposal_linkage() -> No
                 run=session.query(Run).filter_by(run_key=run_key).one(),
                 repo_root=repo_root,
             )
+            assert eligibility.eligible is False
+            assert eligibility.reason == "developer_loop proposal is still a template placeholder"
+
+
+def test_assess_submission_eligibility_uses_source_commit_proposal_when_repo_checkout_is_older() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        _init_repo(repo_root)
+
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            item_id, run_key = _seed_l1_reviewable(session, repo_root)
+            _commit(
+                repo_root,
+                "commit l1 evidence",
+                "runs/index.csv",
+                "runs/designs/activations/softmax_rowwise_int8_r4_wrapper/metrics.csv",
+            )
+            evidence_commit = _git(repo_root, "rev-parse", "HEAD")
+            _commit(repo_root, "commit l1 proposal", "docs/proposals/prop_l1_operate_demo")
+            source_commit = _git(repo_root, "rev-parse", "HEAD")
+
+            work_item = session.query(WorkItem).filter_by(item_id=item_id).one()
+            work_item.source_commit = source_commit
+            work_item.task_request.source_commit = source_commit
+            session.commit()
+
+            _git(repo_root, "checkout", evidence_commit)
+            metrics_path = repo_root / "runs/designs/activations/softmax_rowwise_int8_r4_wrapper/metrics.csv"
+            metrics_path.write_text(metrics_path.read_text(encoding="utf-8") + "\n", encoding="utf-8")
+
+            eligibility = assess_submission_eligibility(
+                session,
+                work_item=session.query(WorkItem).filter_by(item_id=item_id).one(),
+                run=session.query(Run).filter_by(run_key=run_key).one(),
+                repo_root=repo_root,
+            )
+
+            assert eligibility.eligible is True
+            assert eligibility.reason is None
+
+
+def test_assess_submission_eligibility_rejects_tracked_proposal_missing_at_source_commit() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        _init_repo(repo_root)
+
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            item_id, run_key = _seed_l1_reviewable(session, repo_root)
+            _commit(
+                repo_root,
+                "commit l1 evidence",
+                "runs/index.csv",
+                "runs/designs/activations/softmax_rowwise_int8_r4_wrapper/metrics.csv",
+            )
+            source_commit = _git(repo_root, "rev-parse", "HEAD")
+            _commit(repo_root, "commit l1 proposal", "docs/proposals/prop_l1_operate_demo")
+
+            work_item = session.query(WorkItem).filter_by(item_id=item_id).one()
+            work_item.source_commit = source_commit
+            work_item.task_request.source_commit = source_commit
+            session.commit()
+
+            metrics_path = repo_root / "runs/designs/activations/softmax_rowwise_int8_r4_wrapper/metrics.csv"
+            metrics_path.write_text(metrics_path.read_text(encoding="utf-8") + "\n", encoding="utf-8")
+
+            eligibility = assess_submission_eligibility(
+                session,
+                work_item=session.query(WorkItem).filter_by(item_id=item_id).one(),
+                run=session.query(Run).filter_by(run_key=run_key).one(),
+                repo_root=repo_root,
+            )
+
+            assert eligibility.eligible is False
+            assert eligibility.reason == "developer_loop proposal linkage does not resolve to a proposal"
+
+
+def test_assess_submission_eligibility_rejects_placeholder_proposal_at_source_commit() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        _init_repo(repo_root)
+
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            item_id, run_key = _seed_l1_reviewable(session, repo_root)
+            _commit(
+                repo_root,
+                "commit l1 evidence",
+                "runs/index.csv",
+                "runs/designs/activations/softmax_rowwise_int8_r4_wrapper/metrics.csv",
+            )
+            evidence_commit = _git(repo_root, "rev-parse", "HEAD")
+
+            proposal_json = repo_root / "docs/proposals/prop_l1_operate_demo/proposal.json"
+            payload = json.loads(proposal_json.read_text(encoding="utf-8"))
+            payload["title"] = "Example proposal title"
+            payload["hypothesis"] = "Replace this with a bounded engineering hypothesis."
+            proposal_json.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+            _commit(repo_root, "commit placeholder proposal", "docs/proposals/prop_l1_operate_demo")
+            source_commit = _git(repo_root, "rev-parse", "HEAD")
+
+            work_item = session.query(WorkItem).filter_by(item_id=item_id).one()
+            work_item.source_commit = source_commit
+            work_item.task_request.source_commit = source_commit
+            session.commit()
+
+            _git(repo_root, "checkout", evidence_commit)
+            metrics_path = repo_root / "runs/designs/activations/softmax_rowwise_int8_r4_wrapper/metrics.csv"
+            metrics_path.write_text(metrics_path.read_text(encoding="utf-8") + "\n", encoding="utf-8")
+
+            eligibility = assess_submission_eligibility(
+                session,
+                work_item=session.query(WorkItem).filter_by(item_id=item_id).one(),
+                run=session.query(Run).filter_by(run_key=run_key).one(),
+                repo_root=repo_root,
+            )
+
             assert eligibility.eligible is False
             assert eligibility.reason == "developer_loop proposal is still a template placeholder"
 
