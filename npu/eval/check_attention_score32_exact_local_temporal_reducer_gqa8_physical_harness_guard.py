@@ -16,6 +16,10 @@ if str(REPO_ROOT) not in sys.path:
 
 from npu.rtlgen.gen_attention_score32_exact_local_temporal_reducer_gqa8_physical_harness import generate
 from npu.rtlgen.gen_attention_score32_online_state_merge import LEGACY_MONOLITHIC_LUT_EXACT
+from npu.sim.perf.attention_exact_partial import (
+    FOLDED_SHARED_SCALE_MERSENNE_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL,
+    LEGACY_PARALLEL_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL,
+)
 
 _CONFIG_KEY = "attention_score32_exact_local_temporal_reducer_gqa8_physical_harness"
 _MANIFEST_NAME = "attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_manifest.json"
@@ -99,6 +103,8 @@ def main(argv: list[str] | None = None) -> int:
     mode = str(body.get("mode", "")).strip()
     waves = int(body.get("waves", 0))
     exp_scale_impl = str(body.get("exp_scale_impl", LEGACY_MONOLITHIC_LUT_EXACT)).strip()
+    pair_node_impl_explicit = "pair_node_impl" in body
+    pair_node_impl = str(body.get("pair_node_impl", LEGACY_PARALLEL_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL)).strip()
     keep_hierarchy = bool(body.get("keep_hierarchy", False))
     if producers not in {53, 54}:
         raise SystemExit("producers must remain exactly 53 or 54")
@@ -106,6 +112,13 @@ def main(argv: list[str] | None = None) -> int:
         raise SystemExit("mode must remain reducer or source_only")
     if waves != 8:
         raise SystemExit("waves must remain 8")
+    if pair_node_impl not in {
+        LEGACY_PARALLEL_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL,
+        FOLDED_SHARED_SCALE_MERSENNE_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL,
+    }:
+        raise SystemExit("pair_node_impl must be absent or a supported exact merge implementation")
+    if mode == "source_only" and pair_node_impl_explicit:
+        raise SystemExit("source_only mode must not specify pair_node_impl")
 
     manifest = _load_json(manifest_path)
     expected_manifest = {
@@ -138,6 +151,8 @@ def main(argv: list[str] | None = None) -> int:
     }
     for key, expected in expected_manifest.items():
         _require(manifest, key, expected, "generated manifest")
+    if pair_node_impl_explicit:
+        _require(manifest, "pair_node_impl", pair_node_impl, "generated manifest")
     _require(
         manifest,
         "caveats",
@@ -167,6 +182,8 @@ def main(argv: list[str] | None = None) -> int:
         _require(gqa8_reducer_manifest, "query_heads_per_group", 8, "gqa8 reducer submodule manifest")
         _require(gqa8_reducer_manifest, "exp_scale_impl", exp_scale_impl, "gqa8 reducer submodule manifest")
         _require(gqa8_reducer_manifest, "keep_hierarchy", keep_hierarchy, "gqa8 reducer submodule manifest")
+        if pair_node_impl_explicit:
+            _require(gqa8_reducer_manifest, "pair_node_impl", pair_node_impl, "gqa8 reducer submodule manifest")
         local_reducer_manifest = gqa8_reducer_manifest.get("submodule_manifests", {}).get("local_reducer")
         temporal_merge_manifest = gqa8_reducer_manifest.get("submodule_manifests", {}).get("temporal_merge")
         if not isinstance(local_reducer_manifest, dict):
@@ -182,6 +199,41 @@ def main(argv: list[str] | None = None) -> int:
         _require(pair_manifest, "keep_hierarchy", keep_hierarchy, "pair_merge submodule manifest")
         _require(temporal_merge_manifest, "exp_scale_impl", exp_scale_impl, "temporal_merge submodule manifest")
         _require(temporal_merge_manifest, "keep_hierarchy", keep_hierarchy, "temporal_merge submodule manifest")
+        if pair_node_impl == FOLDED_SHARED_SCALE_MERSENNE_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL:
+            _require(local_reducer_manifest, "pair_node_impl", pair_node_impl, "local reducer submodule manifest")
+            _require(pair_manifest, "generator", "npu/rtlgen/gen_attention_score32_exact_partial_pair_merge_folded.py", "pair_merge submodule manifest")
+            _require(pair_manifest, "scale_divider_impl", "mersenne24_correction2_exact", "pair_merge submodule manifest")
+            _require(
+                temporal_merge_manifest,
+                "generator",
+                "npu/rtlgen/gen_attention_score32_exact_partial_pair_merge_folded.py",
+                "temporal_merge submodule manifest",
+            )
+            _require(
+                temporal_merge_manifest,
+                "scale_divider_impl",
+                "mersenne24_correction2_exact",
+                "temporal_merge submodule manifest",
+            )
+            _require(manifest, "pair_node_scale_divider_impl", "mersenne24_correction2_exact", "generated manifest")
+            _require(
+                manifest,
+                "pair_capture_to_output_latency_cycles",
+                gqa8_reducer_manifest["pair_capture_to_output_latency_cycles"],
+                "generated manifest",
+            )
+            _require(
+                manifest,
+                "pair_compute_launch_to_output_latency_cycles",
+                gqa8_reducer_manifest["pair_compute_launch_to_output_latency_cycles"],
+                "generated manifest",
+            )
+            _require(
+                manifest,
+                "pair_compute_launch_interval_cycles",
+                gqa8_reducer_manifest["pair_compute_launch_interval_cycles"],
+                "generated manifest",
+            )
         if keep_hierarchy:
             if rtl.count("(* keep_hierarchy = 1 *)") < 2:
                 raise SystemExit("generated RTL must preserve both local pair and temporal merge hierarchy markers")
@@ -214,6 +266,9 @@ def main(argv: list[str] | None = None) -> int:
         _require_token(top_module, "(reducer_out_command_id_w == 16'h7b01)", "generated RTL")
         _require_token(top_module, "(reducer_out_head_id_w == 5'd15)", "generated RTL")
         _require_token(top_module, "(reducer_out_slice_w == 4'd15);", "generated RTL")
+        if pair_node_impl == FOLDED_SHARED_SCALE_MERSENNE_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL:
+            if "case (bucket)" in rtl:
+                raise SystemExit("folded exact merge RTL must not contain monolithic exp LUT case statements")
     else:
         if "__reducer" in top_module:
             raise SystemExit("source_only RTL must not instantiate the GQA8 reducer")

@@ -7,6 +7,9 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
+from npu.sim.perf.attention_exact_partial import (
+    FOLDED_SHARED_SCALE_MERSENNE_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL,
+)
 from npu.rtlgen.gen_attention_score32_exact_local_temporal_reducer_gqa8_physical_harness import generate
 
 
@@ -125,3 +128,60 @@ def test_gqa8_physical_harness_guard_accepts_keep_hierarchy(tmp_path: Path) -> N
     assert result.returncode == 0, result.stderr
     payload = json.loads(result.stdout)
     assert payload["status"] == "ok"
+
+
+def test_gqa8_physical_harness_guard_accepts_folded_pair_node_impl(tmp_path: Path) -> None:
+    design_dir = _prepare_design_dir(tmp_path, producers=53, mode="reducer")
+    for config_path in (design_dir / "config.json", design_dir / "verilog" / "config.json"):
+        config = json.loads(config_path.read_text(encoding="utf-8"))
+        body = config["attention_score32_exact_local_temporal_reducer_gqa8_physical_harness"]
+        body["exp_scale_impl"] = "factored_h33_l64_mul_exact"
+        body["pair_node_impl"] = FOLDED_SHARED_SCALE_MERSENNE_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL
+        body["keep_hierarchy"] = True
+        config_path.write_text(json.dumps(config, indent=2) + "\n", encoding="utf-8")
+    generate(
+        json.loads((design_dir / "config.json").read_text(encoding="utf-8")),
+        design_dir / "verilog",
+    )
+
+    result = _run_guard(design_dir)
+    assert result.returncode == 0, result.stderr
+    payload = json.loads(result.stdout)
+    assert payload["status"] == "ok"
+
+
+def test_gqa8_physical_harness_guard_rejects_source_only_pair_node_impl(tmp_path: Path) -> None:
+    design_dir = _prepare_design_dir(tmp_path, producers=53, mode="source_only")
+    for config_path in (design_dir / "config.json", design_dir / "verilog" / "config.json"):
+        config = json.loads(config_path.read_text(encoding="utf-8"))
+        config["attention_score32_exact_local_temporal_reducer_gqa8_physical_harness"][
+            "pair_node_impl"
+        ] = FOLDED_SHARED_SCALE_MERSENNE_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL
+        config_path.write_text(json.dumps(config, indent=2) + "\n", encoding="utf-8")
+
+    result = _run_guard(design_dir)
+    assert result.returncode != 0
+    assert "source_only mode must not specify pair_node_impl" in result.stderr
+
+
+def test_gqa8_physical_harness_guard_rejects_folded_temporal_merge_manifest_drift(tmp_path: Path) -> None:
+    design_dir = _prepare_design_dir(tmp_path, producers=53, mode="reducer")
+    config = json.loads((design_dir / "config.json").read_text(encoding="utf-8"))
+    body = config["attention_score32_exact_local_temporal_reducer_gqa8_physical_harness"]
+    body["exp_scale_impl"] = "factored_h33_l64_mul_exact"
+    body["pair_node_impl"] = FOLDED_SHARED_SCALE_MERSENNE_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL
+    body["keep_hierarchy"] = True
+    for config_path in (design_dir / "config.json", design_dir / "verilog" / "config.json"):
+        config_path.write_text(json.dumps(config, indent=2) + "\n", encoding="utf-8")
+    generate(config, design_dir / "verilog")
+
+    manifest_path = design_dir / "verilog" / "attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["submodule_manifests"]["gqa8_reducer"]["submodule_manifests"]["temporal_merge"][
+        "scale_divider_impl"
+    ] = "generic_exact"
+    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+
+    result = _run_guard(design_dir)
+    assert result.returncode != 0
+    assert "temporal_merge submodule manifest scale_divider_impl must be mersenne24_correction2_exact" in result.stderr

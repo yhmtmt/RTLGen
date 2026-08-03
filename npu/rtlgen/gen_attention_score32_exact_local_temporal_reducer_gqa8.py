@@ -15,6 +15,10 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from npu.rtlgen.gen_attention_score32_exact_local_reducer import generate as generate_local_reducer
+from npu.rtlgen.gen_attention_score32_exact_partial_pair_merge_folded import (
+    MERSENNE24_CORRECTION2_SCALE_DIVIDER_EXACT,
+    generate as generate_folded_merge,
+)
 from npu.rtlgen.gen_attention_score32_online_state_merge import (
     FACTORED_H33_L64_MUL_EXACT,
     LEGACY_MONOLITHIC_LUT_EXACT,
@@ -22,6 +26,8 @@ from npu.rtlgen.gen_attention_score32_online_state_merge import (
     generate as generate_merge,
 )
 from npu.sim.perf.attention_exact_partial import (
+    FOLDED_SHARED_SCALE_MERSENNE_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL,
+    LEGACY_PARALLEL_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL,
     LOCAL_TEMPORAL_WAVES,
     PARTIAL_LINK_BITS,
     PARTIAL_PAYLOAD_BITS,
@@ -63,6 +69,8 @@ def _validate(config: JsonDict) -> JsonDict:
     head_id_bits = int(body.get("head_id_bits", 5))
     persistent_waves = int(body.get("persistent_waves", LOCAL_TEMPORAL_WAVES))
     exp_scale_impl = str(body.get("exp_scale_impl", LEGACY_MONOLITHIC_LUT_EXACT)).strip()
+    pair_node_impl_explicit = "pair_node_impl" in body
+    pair_node_impl = str(body.get("pair_node_impl", LEGACY_PARALLEL_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL)).strip()
     keep_hierarchy = bool(body.get("keep_hierarchy", False))
     if producers not in {53, 54}:
         raise SystemExit("producers must be exactly 53 or 54")
@@ -75,6 +83,22 @@ def _validate(config: JsonDict) -> JsonDict:
     if exp_scale_impl not in _SUPPORTED_EXP_SCALE_IMPLS:
         supported = ", ".join(sorted(_SUPPORTED_EXP_SCALE_IMPLS))
         raise SystemExit(f"exp_scale_impl must be one of: {supported}")
+    if pair_node_impl not in {
+        LEGACY_PARALLEL_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL,
+        FOLDED_SHARED_SCALE_MERSENNE_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL,
+    }:
+        raise SystemExit(
+            "pair_node_impl must be absent or one of "
+            f"{LEGACY_PARALLEL_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL}, "
+            f"{FOLDED_SHARED_SCALE_MERSENNE_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL}"
+        )
+    if (
+        pair_node_impl == FOLDED_SHARED_SCALE_MERSENNE_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL
+        and exp_scale_impl != FACTORED_H33_L64_MUL_EXACT
+    ):
+        raise SystemExit(
+            "folded_sharedscale_mersenne_exact requires exp_scale_impl factored_h33_l64_mul_exact"
+        )
     return {
         "top_name": top_name,
         "producers": producers,
@@ -82,6 +106,8 @@ def _validate(config: JsonDict) -> JsonDict:
         "head_id_bits": head_id_bits,
         "persistent_waves": persistent_waves,
         "exp_scale_impl": exp_scale_impl,
+        "pair_node_impl": pair_node_impl,
+        "pair_node_impl_explicit": pair_node_impl_explicit,
         "keep_hierarchy": keep_hierarchy,
     }
 
@@ -461,39 +487,58 @@ def generate(config: JsonDict, out_dir: Path) -> None:
         temp_dir = Path(temp_dir_name)
         reducer_dir = temp_dir / "reducer"
         merge_dir = temp_dir / "merge"
+        local_reducer_body = {
+            "producers": int(params["producers"]),
+            "value_slices": int(params["value_slices"]),
+            "head_id_bits": int(params["head_id_bits"]),
+            "exp_scale_impl": str(params["exp_scale_impl"]),
+            "keep_hierarchy": bool(params["keep_hierarchy"]),
+        }
+        if bool(params["pair_node_impl_explicit"]):
+            local_reducer_body["pair_node_impl"] = str(params["pair_node_impl"])
         generate_local_reducer(
             {
                 "top_name": reducer_top,
-                "attention_score32_exact_local_reducer": {
-                    "producers": int(params["producers"]),
-                    "value_slices": int(params["value_slices"]),
-                    "head_id_bits": int(params["head_id_bits"]),
-                    "exp_scale_impl": str(params["exp_scale_impl"]),
-                    "keep_hierarchy": bool(params["keep_hierarchy"]),
-                },
+                "attention_score32_exact_local_reducer": local_reducer_body,
             },
             reducer_dir,
         )
-        generate_merge(
-            {
-                "top_name": merge_top,
-                "attention_score32_online_state_merge": {
-                    "value_slices": int(params["value_slices"]),
-                    "head_id_bits": int(params["head_id_bits"]),
-                    "exp_scale_impl": str(params["exp_scale_impl"]),
-                    "keep_hierarchy": bool(params["keep_hierarchy"]),
+        if params["pair_node_impl"] == LEGACY_PARALLEL_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL:
+            generate_merge(
+                {
+                    "top_name": merge_top,
+                    "attention_score32_online_state_merge": {
+                        "value_slices": int(params["value_slices"]),
+                        "head_id_bits": int(params["head_id_bits"]),
+                        "exp_scale_impl": str(params["exp_scale_impl"]),
+                        "keep_hierarchy": bool(params["keep_hierarchy"]),
+                    },
                 },
-            },
-            merge_dir,
-        )
+                merge_dir,
+            )
+            merge_manifest_name = "attention_score32_online_state_merge_manifest.json"
+        else:
+            generate_folded_merge(
+                {
+                    "top_name": merge_top,
+                    "attention_score32_exact_partial_pair_merge_folded": {
+                        "value_slices": int(params["value_slices"]),
+                        "head_id_bits": int(params["head_id_bits"]),
+                        "exp_scale_impl": str(params["exp_scale_impl"]),
+                        "scale_divider_impl": MERSENNE24_CORRECTION2_SCALE_DIVIDER_EXACT,
+                        "lane_parallelism": 1,
+                        "keep_hierarchy": bool(params["keep_hierarchy"]),
+                    },
+                },
+                merge_dir,
+            )
+            merge_manifest_name = "attention_score32_exact_partial_pair_merge_folded_manifest.json"
         reducer_rtl = (reducer_dir / "top.v").read_text(encoding="utf-8")
         merge_rtl = (merge_dir / "top.v").read_text(encoding="utf-8")
         reducer_manifest = json.loads(
             (reducer_dir / "attention_score32_exact_local_reducer_manifest.json").read_text(encoding="utf-8")
         )
-        merge_manifest = json.loads(
-            (merge_dir / "attention_score32_online_state_merge_manifest.json").read_text(encoding="utf-8")
-        )
+        merge_manifest = json.loads((merge_dir / merge_manifest_name).read_text(encoding="utf-8"))
 
     top_text = _top(
         top_name=top_name,
@@ -517,6 +562,7 @@ def generate(config: JsonDict, out_dir: Path) -> None:
         producers=int(params["producers"]),
         waves=int(params["persistent_waves"]),
         head_groups=resolved_group_count,
+        pair_node_impl=str(params["pair_node_impl"]),
     )
     manifest = {
         "version": 1,
@@ -552,6 +598,19 @@ def generate(config: JsonDict, out_dir: Path) -> None:
             "temporal_merge": merge_manifest,
         },
     }
+    if bool(params["pair_node_impl_explicit"]):
+        manifest["pair_node_impl"] = str(params["pair_node_impl"])
+    if params["pair_node_impl"] == FOLDED_SHARED_SCALE_MERSENNE_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL:
+        manifest.update(
+            {
+                "pair_node_scale_divider_impl": merge_manifest["scale_divider_impl"],
+                "pair_capture_to_output_latency_cycles": merge_manifest["pair_capture_to_output_latency_cycles"],
+                "pair_compute_launch_to_output_latency_cycles": (
+                    merge_manifest["pair_compute_launch_to_output_latency_cycles"]
+                ),
+                "pair_compute_launch_interval_cycles": merge_manifest["pair_compute_launch_interval_cycles"],
+            }
+        )
     if isinstance(config.get("probe_defaults"), dict):
         manifest["checked_in_probe_defaults"] = config["probe_defaults"]
     (out_dir / _MANIFEST_NAME).write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")

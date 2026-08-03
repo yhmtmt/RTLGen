@@ -20,7 +20,12 @@ from npu.rtlgen.gen_attention_score32_online_state_merge import (
     LEGACY_MONOLITHIC_LUT_EXACT,
     SEGMENTED_LUT_9X256_EXACT,
 )
-from npu.sim.perf.attention_exact_partial import LOCAL_TEMPORAL_WAVES, PARTIAL_PAYLOAD_BITS
+from npu.sim.perf.attention_exact_partial import (
+    FOLDED_SHARED_SCALE_MERSENNE_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL,
+    LEGACY_PARALLEL_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL,
+    LOCAL_TEMPORAL_WAVES,
+    PARTIAL_PAYLOAD_BITS,
+)
 
 JsonDict = dict[str, Any]
 _CONFIG_KEY = "attention_score32_exact_local_temporal_reducer_gqa8_physical_harness"
@@ -51,6 +56,8 @@ def _validate(config: JsonDict) -> JsonDict:
     mode = str(body.get("mode", "reducer")).strip()
     waves = int(body.get("waves", LOCAL_TEMPORAL_WAVES))
     exp_scale_impl = str(body.get("exp_scale_impl", LEGACY_MONOLITHIC_LUT_EXACT)).strip()
+    pair_node_impl_explicit = "pair_node_impl" in body
+    pair_node_impl = str(body.get("pair_node_impl", LEGACY_PARALLEL_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL)).strip()
     keep_hierarchy = bool(body.get("keep_hierarchy", False))
     if producers not in {53, 54}:
         raise SystemExit("producers must be exactly 53 or 54")
@@ -61,12 +68,32 @@ def _validate(config: JsonDict) -> JsonDict:
     if exp_scale_impl not in _SUPPORTED_EXP_SCALE_IMPLS:
         supported = ", ".join(sorted(_SUPPORTED_EXP_SCALE_IMPLS))
         raise SystemExit(f"exp_scale_impl must be one of: {supported}")
+    if pair_node_impl not in {
+        LEGACY_PARALLEL_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL,
+        FOLDED_SHARED_SCALE_MERSENNE_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL,
+    }:
+        raise SystemExit(
+            "pair_node_impl must be absent or one of "
+            f"{LEGACY_PARALLEL_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL}, "
+            f"{FOLDED_SHARED_SCALE_MERSENNE_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL}"
+        )
+    if mode == "source_only" and pair_node_impl_explicit:
+        raise SystemExit("source_only mode must not specify pair_node_impl")
+    if (
+        pair_node_impl == FOLDED_SHARED_SCALE_MERSENNE_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL
+        and exp_scale_impl != FACTORED_H33_L64_MUL_EXACT
+    ):
+        raise SystemExit(
+            "folded_sharedscale_mersenne_exact requires exp_scale_impl factored_h33_l64_mul_exact"
+        )
     return {
         "top_name": top_name,
         "producers": producers,
         "mode": mode,
         "waves": waves,
         "exp_scale_impl": exp_scale_impl,
+        "pair_node_impl": pair_node_impl,
+        "pair_node_impl_explicit": pair_node_impl_explicit,
         "keep_hierarchy": keep_hierarchy,
     }
 
@@ -422,19 +449,22 @@ def generate(config: JsonDict, out_dir: Path) -> None:
         with tempfile.TemporaryDirectory(prefix="score32_exact_local_temporal_gqa8_physical_") as temp_dir_name:
             temp_dir = Path(temp_dir_name)
             reducer_dir = temp_dir / "reducer"
+            reducer_body = {
+                "producers": int(params["producers"]),
+                "value_slices": 16,
+                "head_id_bits": 5,
+                "persistent_waves": int(params["waves"]),
+                "exp_scale_impl": str(params["exp_scale_impl"]),
+                "keep_hierarchy": bool(params["keep_hierarchy"]),
+            }
+            if bool(params["pair_node_impl_explicit"]):
+                reducer_body["pair_node_impl"] = str(params["pair_node_impl"])
             generate_reducer(
                 {
                     "top_name": reducer_top,
-                    "attention_score32_exact_local_temporal_reducer_gqa8": {
-                    "producers": int(params["producers"]),
-                    "value_slices": 16,
-                    "head_id_bits": 5,
-                    "persistent_waves": int(params["waves"]),
-                    "exp_scale_impl": str(params["exp_scale_impl"]),
-                    "keep_hierarchy": bool(params["keep_hierarchy"]),
-                },
-                "probe_defaults": {
-                    "heads": 16,
+                    "attention_score32_exact_local_temporal_reducer_gqa8": reducer_body,
+                    "probe_defaults": {
+                        "heads": 16,
                         "command_count": 2,
                         "head_bases": [0, 8],
                         "seed": 23,
@@ -496,6 +526,19 @@ def generate(config: JsonDict, out_dir: Path) -> None:
             "gqa8_reducer": reducer_manifest,
         },
     }
+    if bool(params["pair_node_impl_explicit"]):
+        manifest["pair_node_impl"] = str(params["pair_node_impl"])
+    if params["pair_node_impl"] == FOLDED_SHARED_SCALE_MERSENNE_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL:
+        manifest.update(
+            {
+                "pair_node_scale_divider_impl": "mersenne24_correction2_exact",
+                "pair_capture_to_output_latency_cycles": reducer_manifest["pair_capture_to_output_latency_cycles"],
+                "pair_compute_launch_to_output_latency_cycles": (
+                    reducer_manifest["pair_compute_launch_to_output_latency_cycles"]
+                ),
+                "pair_compute_launch_interval_cycles": reducer_manifest["pair_compute_launch_interval_cycles"],
+            }
+        )
     (out_dir / _MANIFEST_NAME).write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 

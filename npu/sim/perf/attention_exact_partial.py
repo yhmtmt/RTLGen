@@ -1032,7 +1032,12 @@ def exact_partial_tree_service_manifest(
     return manifest
 
 
-def exact_partial_staged_tree_service_manifest(*, producers: int, heads: int = 32) -> dict[str, int | bool | str]:
+def exact_partial_staged_tree_service_manifest(
+    *,
+    producers: int,
+    heads: int = 32,
+    pair_node_impl: str = LEGACY_PARALLEL_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL,
+) -> dict[str, int | bool | str]:
     producer_count = int(producers)
     head_count = int(heads)
     if producer_count < 2 or producer_count > 64:
@@ -1042,7 +1047,7 @@ def exact_partial_staged_tree_service_manifest(*, producers: int, heads: int = 3
     stages = int(math.ceil(math.log2(producer_count)))
     exact_state_bytes_per_producer = (EXACT_STATE_BITS_PER_HEAD * head_count) // 8
     leaf_stream_bytes_per_producer = (PARTIAL_LINK_BITS * VALUE_SLICES * head_count) // 8
-    return {
+    manifest: dict[str, int | bool | str] = {
         "producers": producer_count,
         "heads": head_count,
         "tree_stages": stages,
@@ -1058,6 +1063,24 @@ def exact_partial_staged_tree_service_manifest(*, producers: int, heads: int = 3
         "direct_328bit_links_unclosed": True,
         "final_divider_embodied": False,
     }
+    if pair_node_impl == LEGACY_PARALLEL_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL:
+        return manifest
+    if pair_node_impl != FOLDED_SHARED_SCALE_MERSENNE_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL:
+        raise ValueError(f"unsupported exact partial tree pair_node_impl: {pair_node_impl}")
+    manifest.update(
+        {
+            "pair_node_impl": pair_node_impl,
+            "pair_node_scale_divider_impl": "mersenne24_correction2_exact",
+            "pair_capture_to_output_latency_cycles": folded_exact_partial_pair_merge_capture_to_output_latency_cycles(),
+            "pair_compute_launch_to_output_latency_cycles": (
+                folded_exact_partial_pair_merge_compute_launch_to_output_latency_cycles()
+            ),
+            "pair_compute_launch_interval_cycles": folded_exact_partial_pair_merge_compute_launch_interval_cycles(),
+            "service_model": "staged_odd_leaf_carry_folded_sharedscale_mersenne_tree_v1",
+            "service_cycle_definition": "active_edge_preupdate_handshake_v1",
+        }
+    )
+    return manifest
 
 
 def exact_finalized_tree_service_manifest(
@@ -1492,6 +1515,7 @@ def exact_local_temporal_reducer_gqa8_service_manifest(
     producers: int,
     waves: int = LOCAL_TEMPORAL_WAVES,
     head_groups: int = 2,
+    pair_node_impl: str = LEGACY_PARALLEL_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL,
 ) -> dict[str, object]:
     producer_count = int(producers)
     wave_count = int(waves)
@@ -1502,8 +1526,12 @@ def exact_local_temporal_reducer_gqa8_service_manifest(
         raise ValueError(f"waves must be exactly {LOCAL_TEMPORAL_WAVES}")
     if group_count < 1 or group_count > 4:
         raise ValueError("head_groups must be in [1, 4]")
-    local_tree = exact_partial_staged_tree_service_manifest(producers=producer_count, heads=8 * group_count)
-    return {
+    local_tree = exact_partial_staged_tree_service_manifest(
+        producers=producer_count,
+        heads=8 * group_count,
+        pair_node_impl=pair_node_impl,
+    )
+    manifest = {
         "producers": producer_count,
         "persistent_waves": wave_count,
         "query_head_groups": group_count,
@@ -1537,6 +1565,20 @@ def exact_local_temporal_reducer_gqa8_service_manifest(
             "global_c16_exact_reduction_open",
         ],
     }
+    if pair_node_impl != LEGACY_PARALLEL_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL:
+        manifest.update(
+            {
+                "pair_node_impl": pair_node_impl,
+                "pair_node_scale_divider_impl": local_tree["pair_node_scale_divider_impl"],
+                "pair_capture_to_output_latency_cycles": local_tree["pair_capture_to_output_latency_cycles"],
+                "pair_compute_launch_to_output_latency_cycles": (
+                    local_tree["pair_compute_launch_to_output_latency_cycles"]
+                ),
+                "pair_compute_launch_interval_cycles": local_tree["pair_compute_launch_interval_cycles"],
+                "service_cycle_definition": local_tree["service_cycle_definition"],
+            }
+        )
+    return manifest
 
 
 def exact_local_cluster_gqa8_extra_producers(*, producers: int, group_index: int) -> tuple[int, ...]:
