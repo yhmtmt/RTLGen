@@ -7543,9 +7543,9 @@ def test_generate_l2_campaign_task_adds_folded_global_exact_reduction_recost_evi
                     abstraction_layer="decoder_attention_score32_folded_global_exact_reduction_recost",
                     evaluation_mode="frontier_detail",
                     comparison_role="score32_folded_global_exact_reduction_recost",
-                    paired_baseline_item_id="l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1",
+                    paired_baseline_item_id="l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1_r2",
                     depends_on_item_ids=[
-                        "l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1",
+                        "l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1_r2",
                     ],
                     requires_merged_inputs=True,
                     requires_materialized_refs=True,
@@ -7612,11 +7612,11 @@ def test_generate_l2_campaign_task_adds_folded_global_exact_reduction_recost_evi
                 },
                 "comparison": {
                     "role": "score32_folded_global_exact_reduction_recost",
-                    "paired_baseline_item_id": "l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1",
+                    "paired_baseline_item_id": "l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1_r2",
                 },
                 "dependencies": {
                     "item_ids": [
-                        "l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1",
+                        "l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1_r2",
                     ],
                     "requires_merged_inputs": True,
                     "requires_materialized_refs": True,
