@@ -7517,6 +7517,121 @@ def test_generate_l2_campaign_task_keeps_item_specific_outputs_for_score32_exact
             ]
 
 
+def test_generate_l2_campaign_task_adds_folded_global_exact_reduction_recost_evidence() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id="l2_decoder_attention_score32_folded_global_exact_reduction_recost_llama7b_v2_r1",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    proposal_id="prop_l2_decoder_attention_score32_folded_global_exact_reduction_recost_llama7b_v2",
+                    proposal_path=(
+                        "docs/proposals/"
+                        "prop_l2_decoder_attention_score32_folded_global_exact_reduction_recost_llama7b_v2/proposal.json"
+                    ),
+                    abstraction_layer="decoder_attention_score32_folded_global_exact_reduction_recost",
+                    evaluation_mode="frontier_detail",
+                    comparison_role="score32_folded_global_exact_reduction_recost",
+                    paired_baseline_item_id="l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1",
+                    depends_on_item_ids=[
+                        "l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1",
+                    ],
+                    requires_merged_inputs=True,
+                    requires_materialized_refs=True,
+                    priority=98,
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            commands = work_item.task_request.request_payload["task"]["commands"]
+            run = commands[0]["run"]
+            decoder_inputs = work_item.input_manifest["decoder_contract"]
+
+            assert work_item.item_id == "l2_decoder_attention_score32_folded_global_exact_reduction_recost_llama7b_v2_r1"
+            assert [command["name"] for command in commands[:2]] == [
+                "audit_decoder_attention_score32_folded_global_exact_reduction_recost",
+                "validate_runs",
+            ]
+            assert "audit_llm_decoder_attention_score32_folded_global_exact_reduction_recost.py" in run
+            assert (
+                "--superseded-recost-json runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_score32_exact_reduction_recost__"
+                "l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1.json"
+            ) in run
+            assert "--cadence-audit-json npu/docs/generated/llama7b_score32_exact_hierarchy_cadence_audit_v3.json" in run
+            assert (
+                "--tree-config runs/designs/npu_blocks/"
+                "attention_score32_exact_partial_tree_folded_mersenne_c16_r2/config.json"
+            ) in run
+            assert (
+                "--root-finalizer-config runs/designs/npu_blocks/"
+                "attention_score32_exact_root_finalizer_l8/config.json"
+            ) in run
+            assert (
+                "--bank-control-config runs/designs/npu_blocks/"
+                "attention_score32_exact_finalizer_bank_control_l8_b4/config.json"
+            ) in run
+            assert decoder_inputs["attention_score32_folded_global_exact_reduction_recost_superseded_json"] == (
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_score32_exact_reduction_recost__"
+                "l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1.json"
+            )
+            assert decoder_inputs["attention_score32_folded_global_exact_reduction_recost_out"] == (
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_score32_folded_global_exact_reduction_recost__"
+                "l2_decoder_attention_score32_folded_global_exact_reduction_recost_llama7b_v2_r1.json"
+            )
+            assert decoder_inputs["attention_score32_folded_global_exact_reduction_recost_scope"].startswith(
+                "Replace the obsolete 574-on-986 global exact-reduction timing assumption"
+            )
+            assert work_item.task_request.request_payload["developer_loop"] == {
+                "proposal_id": "prop_l2_decoder_attention_score32_folded_global_exact_reduction_recost_llama7b_v2",
+                "proposal_path": (
+                    "docs/proposals/"
+                    "prop_l2_decoder_attention_score32_folded_global_exact_reduction_recost_llama7b_v2/proposal.json"
+                ),
+                "evaluation": {
+                    "mode": "frontier_detail",
+                    "expected_direction": "",
+                    "expected_reason": "",
+                },
+                "abstraction": {
+                    "layer": "decoder_attention_score32_folded_global_exact_reduction_recost",
+                },
+                "comparison": {
+                    "role": "score32_folded_global_exact_reduction_recost",
+                    "paired_baseline_item_id": "l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1",
+                },
+                "dependencies": {
+                    "item_ids": [
+                        "l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1",
+                    ],
+                    "requires_merged_inputs": True,
+                    "requires_materialized_refs": True,
+                },
+            }
+            assert work_item.task_request.request_payload["task"]["expected_outputs"] == [
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_score32_folded_global_exact_reduction_recost__"
+                "l2_decoder_attention_score32_folded_global_exact_reduction_recost_llama7b_v2_r1.json",
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_score32_folded_global_exact_reduction_recost__"
+                "l2_decoder_attention_score32_folded_global_exact_reduction_recost_llama7b_v2_r1.md",
+            ]
+
+
 def test_generate_l2_campaign_task_adds_score32_exact_reduction_full_gqa8_rerank_evidence() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"

@@ -138,6 +138,25 @@ Reason:
 - they make it less likely that "campaign winner" is mistaken for
   "proposal outcome"
 
+## Cadence Scope Accounting
+
+When a Layer 2 proposal composes timing from multiple evidence scopes, keep the
+scopes explicit and named in the proposal and generated report.
+
+Required distinction:
+- arithmetic reconstruction or idealized wrapper window
+- single-datapath functional service evidence
+- per-cluster or per-group barrier
+- cross-cluster/global reduction drain
+
+Do not collapse these into one latency term unless the bridging scheduler and
+state assumptions are themselves checked in and cited.
+
+In particular, once a later audit shows that a historical arithmetic reference
+is not sustained, keep the old source artifact as evidence but stop reusing its
+timing interpretation in new recosts. Cite the exact source paths for both the
+preserved historical artifact and the newer corrective evidence.
+
 ## Existing Proposal Check
 
 Before choosing a new `proposal_id`, inspect:

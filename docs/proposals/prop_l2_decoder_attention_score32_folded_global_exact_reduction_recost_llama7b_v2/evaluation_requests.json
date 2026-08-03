@@ -1,0 +1,27 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_score32_folded_global_exact_reduction_recost_llama7b_v2",
+  "source_commit_note": "Replace with the merge commit that contains this bounded folded global exact-reduction recost implementation before dispatch. Until then this request remains pending implementation merge and must not be queued. Preserve the old v1 exact-reduction artifact as source evidence, but do not reuse its 574-on-986 timing interpretation after this v2 bounded recost exists.",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_score32_folded_global_exact_reduction_recost_llama7b_v2_r1",
+      "task_type": "l2_campaign",
+      "objective": "Record a revision-safe bounded recost for the measured folded global exact-reduction path in Llama7B score32 attention.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_score32_folded_global_exact_reduction_recost",
+      "comparison_role": "score32_folded_global_exact_reduction_recost",
+      "paired_baseline_item_id": "l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "priority": 98,
+      "expected_result": {
+        "direction": "record_bounded_folded_global_exact_reduction_recost",
+        "reason": "Use the corrected cadence audit plus measured folded c16, measured L8 finalizer, and measured b4 control to replace the obsolete 574-on-986 timing interpretation with a bounded schedule/PPA analysis that still leaves the local reducer and overlap scheduler unresolved."
+      },
+      "status": "pending_implementation_merge",
+      "notes": "Deterministic local audit only. Do not dispatch until the implementation merge exists. The report must keep the 1536-cycle worst-loaded datapath wave distinct from the 4224-cycle cluster barrier, treat the 1546-cycle overlap margin as conditional only, and skip quality reruns because exact precision semantics are unchanged."
+    }
+  ]
+}

@@ -6394,6 +6394,78 @@ def _decoder_attention_score32_exact_reduction_recost_evidence(*, item_id: str) 
     }
 
 
+def _decoder_attention_score32_folded_global_exact_reduction_recost_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    superseded_recost_json = (
+        f"{base}/decoder_attention_score32_exact_reduction_recost__"
+        "l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1.json"
+    )
+    cadence_audit_json = "npu/docs/generated/llama7b_score32_exact_hierarchy_cadence_audit_v3.json"
+    tree_config = "runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c16_r2/config.json"
+    tree_metrics = "runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c16_r2/metrics.csv"
+    root_finalizer_config = "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l8/config.json"
+    root_finalizer_metrics = "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l8/metrics.csv"
+    bank_control_config = (
+        "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b4/config.json"
+    )
+    bank_control_metrics = (
+        "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b4/metrics.csv"
+    )
+    producer_config = (
+        "runs/designs/npu_blocks/attention_score32_exact_partial_gqa8_dual_stream_producer_b8/config.json"
+    )
+    producer_probe_script = "npu/eval/probe_attention_score32_exact_partial_gqa8_dual_stream_producer.py"
+    exact_partial_module = "npu/sim/perf/attention_exact_partial.py"
+    out = f"{base}/decoder_attention_score32_folded_global_exact_reduction_recost__{item_id}.json"
+    report = f"{base}/decoder_attention_score32_folded_global_exact_reduction_recost__{item_id}.md"
+    return {
+        "inputs": {
+            "attention_score32_folded_global_exact_reduction_recost_superseded_json": superseded_recost_json,
+            "attention_score32_folded_global_exact_reduction_recost_cadence_audit_json": cadence_audit_json,
+            "attention_score32_folded_global_exact_reduction_recost_tree_config": tree_config,
+            "attention_score32_folded_global_exact_reduction_recost_tree_metrics": tree_metrics,
+            "attention_score32_folded_global_exact_reduction_recost_root_finalizer_config": root_finalizer_config,
+            "attention_score32_folded_global_exact_reduction_recost_root_finalizer_metrics": root_finalizer_metrics,
+            "attention_score32_folded_global_exact_reduction_recost_bank_control_config": bank_control_config,
+            "attention_score32_folded_global_exact_reduction_recost_bank_control_metrics": bank_control_metrics,
+            "attention_score32_folded_global_exact_reduction_recost_producer_config": producer_config,
+            "attention_score32_folded_global_exact_reduction_recost_producer_probe_script": producer_probe_script,
+            "attention_score32_folded_global_exact_reduction_recost_exact_partial_module": exact_partial_module,
+            "attention_score32_folded_global_exact_reduction_recost_out": out,
+            "attention_score32_folded_global_exact_reduction_recost_report": report,
+            "attention_score32_folded_global_exact_reduction_recost_scope": (
+                "Replace the obsolete 574-on-986 global exact-reduction timing assumption with a bounded analysis "
+                "that keeps the corrected 1536-cycle worst-loaded datapath wave distinct from the conservative "
+                "4224-cycle per-cluster group barrier, uses the measured folded c16 tree plus measured L8/b4 "
+                "finalizer components, and leaves the local 53/54-way persistent reducer unresolved."
+            ),
+        },
+        "commands": [
+            {
+                "name": "audit_decoder_attention_score32_folded_global_exact_reduction_recost",
+                "run": (
+                    "python3 npu/eval/audit_llm_decoder_attention_score32_folded_global_exact_reduction_recost.py "
+                    f"--superseded-recost-json {superseded_recost_json} "
+                    f"--cadence-audit-json {cadence_audit_json} "
+                    f"--tree-config {tree_config} "
+                    f"--tree-metrics {tree_metrics} "
+                    f"--root-finalizer-config {root_finalizer_config} "
+                    f"--root-finalizer-metrics {root_finalizer_metrics} "
+                    f"--bank-control-config {bank_control_config} "
+                    f"--bank-control-metrics {bank_control_metrics} "
+                    f"--producer-config {producer_config} "
+                    f"--producer-probe-script {producer_probe_script} "
+                    f"--exact-partial-module {exact_partial_module} "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            }
+        ],
+        "expected_outputs": [out, report],
+        "evidence_only": True,
+    }
+
+
 def _decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank_evidence(
     *,
     item_id: str,
@@ -11682,6 +11754,7 @@ def _build_payload(
         "decoder_attention_score32_integrated_frontier_ranking",
         "decoder_attention_score32_schedule_wrapper_postroute_activity_power",
         "decoder_attention_score32_exact_reduction_recost",
+        "decoder_attention_score32_folded_global_exact_reduction_recost",
         "decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank",
         "decoder_attention_score32_compute_activity_energy",
         "decoder_attention_score32_separated_compute_recost",
@@ -11990,6 +12063,10 @@ def _build_payload(
             )
         elif abstraction_layer_name == "decoder_attention_score32_exact_reduction_recost":
             decoder_evidence = _decoder_attention_score32_exact_reduction_recost_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_attention_score32_folded_global_exact_reduction_recost":
+            decoder_evidence = _decoder_attention_score32_folded_global_exact_reduction_recost_evidence(
+                item_id=item_id
+            )
         elif abstraction_layer_name == "decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank":
             decoder_evidence = _decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank_evidence(
                 item_id=item_id
