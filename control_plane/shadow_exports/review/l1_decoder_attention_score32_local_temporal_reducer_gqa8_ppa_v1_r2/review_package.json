@@ -1,0 +1,325 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-08-03T10:18:04.995883Z",
+  "control_plane_source_commit": "5ee47712c0586b02d1fb38e714b59c86082fe955",
+  "review_metadata_source_commit": "5ee47712c0586b02d1fb38e714b59c86082fe955",
+  "item_id": "l1_decoder_attention_score32_local_temporal_reducer_gqa8_ppa_v1_r2",
+  "run_key": "l1_decoder_attention_score32_local_temporal_reducer_gqa8_ppa_v1_r2_run_be58dc8eecb76da9",
+  "layer": "layer1",
+  "flow": "openroad",
+  "task_type": "l1_sweep",
+  "source_commit": "5ee47712c0586b02d1fb38e714b59c86082fe955",
+  "queue_snapshot": {
+    "path": "control_plane/shadow_exports/review/l1_decoder_attention_score32_local_temporal_reducer_gqa8_ppa_v1_r2/evaluated.json",
+    "result": {
+      "branch": "eval/l1_decoder_attention_score32_local_temporal_reducer_gqa8_ppa_v1_r2/s20260803t101801z",
+      "completed_utc": "2026-08-03T10:17:56.663001Z",
+      "evaluator_id": "control_plane",
+      "executor": "@control_plane",
+      "host": "b7c2d9c80c1c",
+      "identity_block": "[role:evaluator][account:control_plane][session:s20260803t101801z][host:b7c2d9c80c1c][item:l1_decoder_attention_score32_local_temporal_reducer_gqa8_ppa_v1_r2]",
+      "metrics_rows": [
+        {
+          "tag": "attention_score32_local_temporal_reducer_gqa8_physical_harness_boundary_noshare_v1_r2_6a375b03",
+          "status": "flow_failed",
+          "platform": "nangate45",
+          "param_hash": "6a375b03",
+          "metrics_csv": "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p53_reducer_w8/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p53_reducer_w8/work/6a375b03/result.json"
+        },
+        {
+          "tag": "attention_score32_local_temporal_reducer_gqa8_physical_harness_boundary_noshare_v1_r2_98397138",
+          "status": "flow_failed",
+          "platform": "nangate45",
+          "param_hash": "98397138",
+          "metrics_csv": "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p53_reducer_w8/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p53_reducer_w8/work/98397138/result.json"
+        },
+        {
+          "tag": "attention_score32_local_temporal_reducer_gqa8_physical_harness_boundary_noshare_v1_r2_6a375b03",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "6a375b03",
+          "metrics_csv": "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p53_source_only_w8/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p53_source_only_w8/work/6a375b03/result.json"
+        },
+        {
+          "tag": "attention_score32_local_temporal_reducer_gqa8_physical_harness_boundary_noshare_v1_r2_98397138",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "98397138",
+          "metrics_csv": "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p53_source_only_w8/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p53_source_only_w8/work/98397138/result.json"
+        },
+        {
+          "tag": "attention_score32_local_temporal_reducer_gqa8_physical_harness_boundary_noshare_v1_r2_6a375b03",
+          "status": "flow_failed",
+          "platform": "nangate45",
+          "param_hash": "6a375b03",
+          "metrics_csv": "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p54_reducer_w8/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p54_reducer_w8/work/6a375b03/result.json"
+        },
+        {
+          "tag": "attention_score32_local_temporal_reducer_gqa8_physical_harness_boundary_noshare_v1_r2_98397138",
+          "status": "flow_failed",
+          "platform": "nangate45",
+          "param_hash": "98397138",
+          "metrics_csv": "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p54_reducer_w8/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p54_reducer_w8/work/98397138/result.json"
+        },
+        {
+          "tag": "attention_score32_local_temporal_reducer_gqa8_physical_harness_boundary_noshare_v1_r2_6a375b03",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "6a375b03",
+          "metrics_csv": "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p54_source_only_w8/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p54_source_only_w8/work/6a375b03/result.json"
+        },
+        {
+          "tag": "attention_score32_local_temporal_reducer_gqa8_physical_harness_boundary_noshare_v1_r2_98397138",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "98397138",
+          "metrics_csv": "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p54_source_only_w8/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p54_source_only_w8/work/98397138/result.json"
+        }
+      ],
+      "queue_item_id": "l1_decoder_attention_score32_local_temporal_reducer_gqa8_ppa_v1_r2",
+      "session_id": "s20260803t101801z",
+      "status": "ok",
+      "summary": "18/18 commands succeeded"
+    }
+  },
+  "review_artifact": {
+    "kind": "promotion_proposal",
+    "path": "control_plane/shadow_exports/l1_promotions/l1_decoder_attention_score32_local_temporal_reducer_gqa8_ppa_v1_r2.json",
+    "storage_mode": "repo",
+    "sha256": "9f0be9ea8c1e832d74f4fc0560ceb37f1a93f932150736c0625cd2742de18c56",
+    "payload": {
+      "version": 0.1,
+      "generated_utc": "2026-08-03T10:17:59.643870Z",
+      "item_id": "l1_decoder_attention_score32_local_temporal_reducer_gqa8_ppa_v1_r2",
+      "run_key": "l1_decoder_attention_score32_local_temporal_reducer_gqa8_ppa_v1_r2_run_be58dc8eecb76da9",
+      "layer": "layer1",
+      "flow": "openroad",
+      "platform": "nangate45",
+      "task_type": "l1_sweep",
+      "source_commit": "5ee47712c0586b02d1fb38e714b59c86082fe955",
+      "objective": "Measure the corrected merged GQA8 score32 exact local temporal reducer physical boundary at p53/p54 in reducer and source_only modes while bypassing the pathological Yosys SAT SHARE pass; preserve RTL semantics and explicit staged sharing.",
+      "input_manifest": {
+        "sweeps": [
+          "runs/campaigns/npu/attention_score32_local_temporal_reducer_gqa8_v1/sweeps/nangate45_attention_score32_local_temporal_reducer_gqa8_physical_harness_boundary_noshare_r2.json"
+        ],
+        "configs": [
+          "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p53_reducer_w8/config.json",
+          "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p53_source_only_w8/config.json",
+          "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p54_reducer_w8/config.json",
+          "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p54_source_only_w8/config.json"
+        ],
+        "out_root": "runs/designs/npu_blocks",
+        "design_dirs": [],
+        "macro_manifests": [],
+        "candidate_manifests": [],
+        "required_submodules": []
+      },
+      "proposal_count": 2,
+      "evaluation_record": {
+        "evaluation_mode": "frontier_followup",
+        "abstraction_layer": "decoder_attention_score32_local_temporal_reducer_gqa8",
+        "result_kind": "physical_metrics",
+        "physical_metrics_present": true,
+        "summary": "Physical metrics recorded from a completed, timing-feasible Layer 1 row.",
+        "timing_feasible": true,
+        "clock_period_ns": 8.0,
+        "timing_slack_ns": 7.1483
+      },
+      "proposal_assessment": null,
+      "proposals": [
+        {
+          "metrics_ref": {
+            "metrics_csv": "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p53_source_only_w8/metrics.csv",
+            "platform": "nangate45",
+            "status": "ok",
+            "result_kind": "physical_metrics",
+            "param_hash": "6a375b03",
+            "tag": "attention_score32_local_temporal_reducer_gqa8_physical_harness_boundary_noshare_v1_r2_6a375b03",
+            "result_path": "/orfs/flow/reports/nangate45/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p53_source_only_w8/base/6_finish.rpt",
+            "work_result_json": "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p53_source_only_w8/work/6a375b03/result.json"
+          },
+          "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+          "metric_summary": {
+            "critical_path_ns": 0.8517,
+            "die_area": 4840000.0,
+            "total_power_mw": 0.00302
+          }
+        },
+        {
+          "metrics_ref": {
+            "metrics_csv": "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p54_source_only_w8/metrics.csv",
+            "platform": "nangate45",
+            "status": "ok",
+            "result_kind": "physical_metrics",
+            "param_hash": "6a375b03",
+            "tag": "attention_score32_local_temporal_reducer_gqa8_physical_harness_boundary_noshare_v1_r2_6a375b03",
+            "result_path": "/orfs/flow/reports/nangate45/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p54_source_only_w8/base/6_finish.rpt",
+            "work_result_json": "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p54_source_only_w8/work/6a375b03/result.json"
+          },
+          "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+          "metric_summary": {
+            "critical_path_ns": 0.8785,
+            "die_area": 4840000.0,
+            "total_power_mw": 0.00255
+          }
+        }
+      ],
+      "trial_summary": {
+        "item_id": "l1_decoder_attention_score32_local_temporal_reducer_gqa8_ppa_v1_r2",
+        "completed_trials": 1,
+        "success_count": 1,
+        "failure_count": 0,
+        "success_rate": 1.0,
+        "partial_metrics_count": 0,
+        "metrics": {
+          "critical_path_ns": {
+            "best": 0.8517,
+            "mean": 0.8517,
+            "median": 0.8517,
+            "max": 0.8517,
+            "range": 0.0,
+            "stddev": 0.0
+          },
+          "die_area": {
+            "best": 4840000.0,
+            "mean": 4840000.0,
+            "median": 4840000.0,
+            "max": 4840000.0,
+            "range": 0.0,
+            "stddev": 0.0
+          },
+          "total_power_mw": {
+            "best": 0.00302,
+            "mean": 0.00302,
+            "median": 0.00302,
+            "max": 0.00302,
+            "range": 0.0,
+            "stddev": 0.0
+          }
+        },
+        "aggregation_scope": "current_run_checkout_commit",
+        "aggregation_source_commit": "5ee47712c0586b02d1fb38e714b59c86082fe955",
+        "aggregation_included_attempts": 1,
+        "aggregation_excluded_attempts": 0,
+        "aggregation_excluded_source_commits": {},
+        "aggregation_excluded_attempt_run_keys": [],
+        "aggregation_excluded_attempt_run_keys_truncated": false
+      },
+      "source_refs": {
+        "trial_metrics_csvs": [
+          "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p53_reducer_w8/metrics.csv",
+          "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p53_source_only_w8/metrics.csv",
+          "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p54_reducer_w8/metrics.csv",
+          "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p54_source_only_w8/metrics.csv"
+        ],
+        "summary_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_score32_local_temporal_reducer_gqa8_ppa_v1_r2/summary_stats.json",
+        "failure_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_score32_local_temporal_reducer_gqa8_ppa_v1_r2/failure_stats.json",
+        "trial_table_csv": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_score32_local_temporal_reducer_gqa8_ppa_v1_r2/trial_table.csv"
+      },
+      "boundary_evidence": {
+        "row_count": 4,
+        "rows": [
+          {
+            "metrics_csv": "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p53_reducer_w8/metrics.csv",
+            "status": "flow_failed",
+            "design": "attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p53_reducer_w8",
+            "platform": "nangate45",
+            "config_hash": "9c5f2e173bca",
+            "param_hash": "6a375b03",
+            "tag": "attention_score32_local_temporal_reducer_gqa8_physical_harness_boundary_noshare_v1_r2_6a375b03",
+            "result_path": "/orfs/flow/logs/nangate45/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p53_reducer_w8/base",
+            "work_result_json": "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p53_reducer_w8/work/6a375b03/result.json",
+            "params_json": "{\"CLOCK_PERIOD\": 8.0, \"CORE_AREA\": \"80 80 2120 2120\", \"CORE_UTILIZATION\": \"\", \"DIE_AREA\": \"0 0 2200 2200\", \"PLACE_DENSITY\": 0.35, \"SYNTH_ARGS\": \"-noshare\", \"SYNTH_HIERARCHICAL\": 1, \"tag_prefix\": \"attention_score32_local_temporal_reducer_gqa8_physical_harness_boundary_noshare_v1_r2\"}"
+          },
+          {
+            "metrics_csv": "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p53_reducer_w8/metrics.csv",
+            "status": "flow_failed",
+            "design": "attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p53_reducer_w8",
+            "platform": "nangate45",
+            "config_hash": "9c5f2e173bca",
+            "param_hash": "98397138",
+            "tag": "attention_score32_local_temporal_reducer_gqa8_physical_harness_boundary_noshare_v1_r2_98397138",
+            "result_path": "/orfs/flow/logs/nangate45/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p53_reducer_w8/base",
+            "work_result_json": "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p53_reducer_w8/work/98397138/result.json",
+            "params_json": "{\"CLOCK_PERIOD\": 10.0, \"CORE_AREA\": \"80 80 2120 2120\", \"CORE_UTILIZATION\": \"\", \"DIE_AREA\": \"0 0 2200 2200\", \"PLACE_DENSITY\": 0.35, \"SYNTH_ARGS\": \"-noshare\", \"SYNTH_HIERARCHICAL\": 1, \"tag_prefix\": \"attention_score32_local_temporal_reducer_gqa8_physical_harness_boundary_noshare_v1_r2\"}"
+          },
+          {
+            "metrics_csv": "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p54_reducer_w8/metrics.csv",
+            "status": "flow_failed",
+            "design": "attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p54_reducer_w8",
+            "platform": "nangate45",
+            "config_hash": "2ff1b01b22d1",
+            "param_hash": "6a375b03",
+            "tag": "attention_score32_local_temporal_reducer_gqa8_physical_harness_boundary_noshare_v1_r2_6a375b03",
+            "result_path": "/orfs/flow/logs/nangate45/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p54_reducer_w8/base",
+            "work_result_json": "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p54_reducer_w8/work/6a375b03/result.json",
+            "params_json": "{\"CLOCK_PERIOD\": 8.0, \"CORE_AREA\": \"80 80 2120 2120\", \"CORE_UTILIZATION\": \"\", \"DIE_AREA\": \"0 0 2200 2200\", \"PLACE_DENSITY\": 0.35, \"SYNTH_ARGS\": \"-noshare\", \"SYNTH_HIERARCHICAL\": 1, \"tag_prefix\": \"attention_score32_local_temporal_reducer_gqa8_physical_harness_boundary_noshare_v1_r2\"}"
+          },
+          {
+            "metrics_csv": "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p54_reducer_w8/metrics.csv",
+            "status": "flow_failed",
+            "design": "attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p54_reducer_w8",
+            "platform": "nangate45",
+            "config_hash": "2ff1b01b22d1",
+            "param_hash": "98397138",
+            "tag": "attention_score32_local_temporal_reducer_gqa8_physical_harness_boundary_noshare_v1_r2_98397138",
+            "result_path": "/orfs/flow/logs/nangate45/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p54_reducer_w8/base",
+            "work_result_json": "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p54_reducer_w8/work/98397138/result.json",
+            "params_json": "{\"CLOCK_PERIOD\": 10.0, \"CORE_AREA\": \"80 80 2120 2120\", \"CORE_UTILIZATION\": \"\", \"DIE_AREA\": \"0 0 2200 2200\", \"PLACE_DENSITY\": 0.35, \"SYNTH_ARGS\": \"-noshare\", \"SYNTH_HIERARCHICAL\": 1, \"tag_prefix\": \"attention_score32_local_temporal_reducer_gqa8_physical_harness_boundary_noshare_v1_r2\"}"
+          }
+        ]
+      }
+    }
+  },
+  "developer_loop": {
+    "comparison": {
+      "role": "functional_gqa8_local_hierarchy_anchor",
+      "paired_baseline_item_id": "l1_decoder_attention_score32_exact_partial_gqa8_dual_stream_producer_ppa_v1"
+    },
+    "evaluation": {
+      "mode": "frontier_followup",
+      "trial_policy": {
+        "seed_start": 0,
+        "trial_count": 1,
+        "stop_after_failures": 1
+      },
+      "expected_reason": "Establish a physical local-reduction hierarchy anchor after removing only the synthesis optimization responsible for the bounded v1 runtime explosion.",
+      "expected_direction": "measure_gqa8_local_temporal_reducer_boundary_without_yosys_share"
+    },
+    "abstraction": {
+      "layer": "decoder_attention_score32_local_temporal_reducer_gqa8"
+    },
+    "proposal_id": "prop_l1_decoder_attention_score32_local_temporal_reducer_gqa8_v1",
+    "dependencies": {
+      "item_ids": [],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    },
+    "proposal_path": "docs/proposals/prop_l1_decoder_attention_score32_local_temporal_reducer_gqa8_v1/proposal.json"
+  },
+  "submission_history": null,
+  "pr_payload": {
+    "branch": "eval/l1_decoder_attention_score32_local_temporal_reducer_gqa8_ppa_v1_r2/s20260803t101801z",
+    "title": "eval: run layer 1 gqa8 score32 local temporal reducer physical harness boundary sweep no-share retry",
+    "body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260803t101801z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l1_decoder_attention_score32_local_temporal_reducer_gqa8_ppa_v1_r2"
+    },
+    "body_md": "## Summary\n- item_id: `l1_decoder_attention_score32_local_temporal_reducer_gqa8_ppa_v1_r2`\n- run_key: `l1_decoder_attention_score32_local_temporal_reducer_gqa8_ppa_v1_r2_run_be58dc8eecb76da9`\n- layer: `layer1`\n- task_type: `l1_sweep`\n- status: `ok`\n- summary: `18/18 commands succeeded`\n- queue_snapshot: `control_plane/shadow_exports/review/l1_decoder_attention_score32_local_temporal_reducer_gqa8_ppa_v1_r2/evaluated.json`\n- metrics_rows_count: `8`\n- review_artifact: `promotion_proposal` at `control_plane/shadow_exports/l1_promotions/l1_decoder_attention_score32_local_temporal_reducer_gqa8_ppa_v1_r2.json`\n\n## Developer Context\n- proposal_id: `prop_l1_decoder_attention_score32_local_temporal_reducer_gqa8_v1`\n- proposal_path: `docs/proposals/prop_l1_decoder_attention_score32_local_temporal_reducer_gqa8_v1/proposal.json`\n- reviewer_first_read: `docs/proposals/prop_l1_decoder_attention_score32_local_temporal_reducer_gqa8_v1/proposal.json` plus `docs/developer_agent_review.md`\n- execution_source_commit: `5ee47712c0586b02d1fb38e714b59c86082fe955`\n- review_metadata_source_commit: `5ee47712c0586b02d1fb38e714b59c86082fe955`\n\n## Evaluation Mode\n- evaluation_mode: `frontier_followup`\n- abstraction_layer: `decoder_attention_score32_local_temporal_reducer_gqa8`\n- evaluation_summary: `Physical metrics recorded from a completed, timing-feasible Layer 1 row.`\n\n## Checklist\n- [ ] Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge\n- [ ] Include metrics row references for each completed design\n- [ ] Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing\n",
+    "checklist": [
+      "Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge",
+      "Include metrics row references for each completed design",
+      "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ]
+  }
+}
