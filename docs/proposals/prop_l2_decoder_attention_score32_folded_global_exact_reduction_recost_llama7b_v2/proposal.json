@@ -1,0 +1,87 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_score32_folded_global_exact_reduction_recost_llama7b_v2",
+  "created_utc": "2026-08-03T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Score32 folded global exact reduction bounded recost for Llama7B",
+  "abstraction_layer": "decoder_attention_score32_folded_global_exact_reduction_recost",
+  "hypothesis": "The old score32 exact-reduction recost still invites an obsolete reading: a 574-cycle fully parallel c16/b59 exact tree drain sitting directly on a sustained 986-cycle producer. A revision-safe follow-on should preserve the old evidence, consume the corrected cadence audit plus measured folded c16 tree, measured L8 root finalizer, and measured b4 bank control, then emit only a bounded global exact-reduction schedule/PPA analysis that explicitly leaves the local 53/54-way group-major reducer and safe overlap scheduler unresolved.",
+  "direct_comparison": {
+    "primary_question": "What bounded global exact-reduction timing and measured-component PPA estimate remain once the 986-cycle producer assumption is withdrawn and the measured folded c16 tree plus measured L8/b4 finalizer components are composed conservatively?",
+    "candidate": "l2_decoder_attention_score32_folded_global_exact_reduction_recost_llama7b_v2_r1",
+    "include": [
+      "the merged v1 exact-reduction recost artifact as preserved superseded evidence",
+      "the corrected v3 cadence audit",
+      "the measured folded-Mersenne c16 tree metrics",
+      "the measured L8 root-finalizer metrics",
+      "the measured b4 finalizer-bank-control metrics",
+      "deterministic local producer-command probes for the 1-block and 2-block ideal service points",
+      "machine-readable JSON and concise Markdown only"
+    ],
+    "exclude": [
+      "no local 53/54-way persistent reducer closure",
+      "no safe next-group overlap proof",
+      "no composed-route OpenROAD run",
+      "no precision or quality rerun",
+      "no NoC, SRAM, or 328-bit transport closure claim"
+    ]
+  },
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_score32_folded_global_exact_reduction_recost_llama7b_v2_r1",
+      "task_type": "l2_campaign",
+      "objective": "Record a revision-safe bounded recost for the measured folded global exact-reduction path in Llama7B score32 attention.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_score32_folded_global_exact_reduction_recost",
+      "comparison_role": "score32_folded_global_exact_reduction_recost",
+      "paired_baseline_item_id": "l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "priority": 98,
+      "revision": {
+        "reason": "replace_obsolete_574_on_986_global_exact_reduction_assumption_with_bounded_folded_measured_analysis",
+        "supersedes_only_timing_assumptions": true,
+        "preserved_source_item_id": "l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1",
+        "authoritative_inputs": [
+          "npu/docs/generated/llama7b_score32_exact_hierarchy_cadence_audit_v3.json",
+          "runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c16_r2/metrics.csv",
+          "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l8/metrics.csv",
+          "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b4/metrics.csv"
+        ]
+      },
+      "expected_result": {
+        "direction": "record_bounded_folded_global_exact_reduction_recost",
+        "reason": "Preserve the old exact-reduction evidence, distinguish the corrected 1536-cycle single-datapath producer wave from the conservative 4224-cycle cluster barrier, use measured folded c16 plus measured L8/b4 components for the global path, and stop at the local-reducer/scheduler frontier without claiming overlap safety."
+      },
+      "status": "pending_implementation_merge",
+      "notes": "Deterministic local audit only. Do not dispatch until the implementation merge exists. This item must keep the local p53/p54 reducer unresolved, report the 1546-cycle overlap margin only as a conditional bound, and avoid any precision-quality rerun because exact semantics are unchanged."
+    }
+  ],
+  "remaining_abstractions_after_this_step": [
+    "The local 53/54-way exact reducer with 8-wave persistent group-major state remains unresolved.",
+    "Safe next-group overlap is not established.",
+    "The composed PPA estimate remains a vectorless sum of standalone component rows rather than a routed composed macro.",
+    "NoC, SRAM, and 328-bit transport closure remain open."
+  ],
+  "source_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_reduction_recost__l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1.json",
+    "npu/docs/generated/llama7b_score32_exact_hierarchy_cadence_audit_v3.json",
+    "runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c16_r2/config.json",
+    "runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c16_r2/metrics.csv",
+    "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l8/config.json",
+    "runs/designs/npu_blocks/attention_score32_exact_root_finalizer_l8/metrics.csv",
+    "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b4/config.json",
+    "runs/designs/npu_blocks/attention_score32_exact_finalizer_bank_control_l8_b4/metrics.csv",
+    "runs/designs/npu_blocks/attention_score32_exact_partial_gqa8_dual_stream_producer_b8/config.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/audit_llm_decoder_attention_score32_folded_global_exact_reduction_recost.py",
+    "npu/eval/probe_attention_score32_exact_partial_gqa8_dual_stream_producer.py",
+    "npu/sim/perf/attention_exact_partial.py",
+    "docs/developer_agent_first_read.md"
+  ]
+}
