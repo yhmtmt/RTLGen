@@ -10,7 +10,7 @@
       "proposal_id": "prop_l1_decoder_attention_score32_local_temporal_reducer_gqa8_v1",
       "proposal_path": "docs/proposals/prop_l1_decoder_attention_score32_local_temporal_reducer_gqa8_v1/proposal.json",
       "objective": "Measure Nangate45 PPA for the corrected merged GQA8 score32 exact local temporal reducer physical harness at p53/p54 in reducer and source_only modes using a bounded macro-style hierarchy sweep, accepting boundary-class flow outcomes as evidence.",
-      "status": "pending",
+      "status": "failed_before_pnr",
       "evaluation_mode": "frontier_followup",
       "abstraction_layer": "decoder_attention_score32_local_temporal_reducer_gqa8",
       "comparison_role": "functional_gqa8_local_hierarchy_anchor",
@@ -40,7 +40,6 @@
         "direction": "measure_gqa8_local_temporal_reducer_boundary",
         "reason": "The corrected merged GQA8 harness establishes whether the 53/54-way eight-wave local hierarchy remains physically explorable before producer fan-in and global c16 composition consume it."
       },
-      "status": "failed_before_pnr",
       "notes": "Historical bounded failure only. Preserve this v1 item and sweep as immutable evidence: the run was bounded-canceled after Yosys stayed in `6.13 SHARE (SAT-based resource sharing)` for more than 7 minutes at roughly full CPU. Do not dispatch or mutate this item again."
     },
     {
@@ -50,7 +49,7 @@
       "proposal_id": "prop_l1_decoder_attention_score32_local_temporal_reducer_gqa8_v1",
       "proposal_path": "docs/proposals/prop_l1_decoder_attention_score32_local_temporal_reducer_gqa8_v1/proposal.json",
       "objective": "Retry the Nangate45 PPA boundary sweep for the corrected merged GQA8 score32 exact local temporal reducer physical harness at p53/p54 in reducer and source_only modes using the same bounded macro-style hierarchy points, but with `SYNTH_ARGS=-noshare` to skip only Yosys's SAT-based resource-sharing pass while preserving the RTL architecture and explicit staged sharing already encoded in the design.",
-      "status": "pending",
+      "status": "merged",
       "evaluation_mode": "frontier_followup",
       "abstraction_layer": "decoder_attention_score32_local_temporal_reducer_gqa8",
       "comparison_role": "functional_gqa8_local_hierarchy_anchor",
@@ -80,7 +79,11 @@
         "direction": "measure_gqa8_local_temporal_reducer_boundary_without_yosys_share",
         "reason": "The retry preserves the exact bounded physical envelope while changing only synthesis flow identity to avoid a known Yosys SHARE-stage explosion that is orthogonal to the explicit reducer/source sharing already present in RTL."
       },
-      "notes": "Fresh immutable retry. Use the new no-share sweep identity, not the original v1 sweep, so `make_run_id` and the parameter hash differ and `--skip_existing` cannot reuse the bounded SHARE failure. The queued payload must carry exact developer_loop proposal linkage plus a queue-time source_requirement pin to the merged job-prep commit."
+      "notes": "Fresh immutable retry. Use the new no-share sweep identity, not the original v1 sweep, so `make_run_id` and the parameter hash differ and `--skip_existing` cannot reuse the bounded SHARE failure. The queued payload must carry exact developer_loop proposal linkage plus a queue-time source_requirement pin to the merged job-prep commit. Merged via PR #1531 and merge 3afd7e718343e7a84a4b3bf158b5a4a6128dcaf8 at 2026-08-03T10:22:05.177708Z.",
+      "merged_pr_number": 1531,
+      "merge_commit": "3afd7e718343e7a84a4b3bf158b5a4a6128dcaf8",
+      "merged_utc": "2026-08-03T10:22:05.177708Z"
     }
-  ]
+  ],
+  "source_commit": "5ee47712c0586b02d1fb38e714b59c86082fe955"
 }
