@@ -7645,6 +7645,192 @@ def test_consume_l2_result_score32_exact_reduction_recost_r2_uses_canonical_v1_e
             assert eligibility.reason is None
 
 
+def test_consume_l2_result_score32_folded_global_exact_reduction_recost_consumes_evidence_only_contract() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        _init_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            proposal_dir = (
+                repo_root
+                / "docs"
+                / "proposals"
+                / "prop_l2_decoder_attention_score32_folded_global_exact_reduction_recost_llama7b_v2"
+            )
+            _write(
+                proposal_dir / "proposal.json",
+                json.dumps(
+                    {
+                        "proposal_id": "prop_l2_decoder_attention_score32_folded_global_exact_reduction_recost_llama7b_v2",
+                        "kind": "architecture",
+                        "title": "Score32 folded global exact reduction bounded recost",
+                        "direct_comparison": {
+                            "primary_question": (
+                                "Does the bounded folded-global reducer recost supersede the earlier exact-reduction"
+                                " schedule estimate for llama7b?"
+                            )
+                        },
+                    },
+                    indent=2,
+                )
+                + "\n",
+            )
+            item_id = "l2_decoder_attention_score32_folded_global_exact_reduction_recost_llama7b_v2_r1"
+            evidence_rel = (
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_score32_folded_global_exact_reduction_recost__"
+                "l2_decoder_attention_score32_folded_global_exact_reduction_recost_llama7b_v2_r1.json"
+            )
+            report_rel = (
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_score32_folded_global_exact_reduction_recost__"
+                "l2_decoder_attention_score32_folded_global_exact_reduction_recost_llama7b_v2_r1.md"
+            )
+            _write(
+                repo_root / evidence_rel,
+                json.dumps(
+                    {
+                        "version": 2,
+                        "model": "llm_decoder_attention_score32_folded_global_exact_reduction_recost_v2",
+                        "decision": "folded_global_exact_reduction_bounded_recost_recorded",
+                        "summary": {
+                            "strict_serialized_bound_per_group_cycles": 6902,
+                            "strict_serialized_bound_all_4_groups_cycles": 27608,
+                        },
+                        "measured_component_ppa_estimate": {
+                            "composed_global_exact_reduction_path": {
+                                "estimated_critical_path_ns": 7.9837,
+                                "estimated_stdcell_area_um2": 892551.77,
+                                "estimated_total_power_mw": 4.20296,
+                            }
+                        },
+                        "decision_summary": {
+                            "global_folded_tree_finalizer_physically_plausible": True,
+                            "necessarily_throughput_dominant": False,
+                        },
+                        "remaining_abstractions": [
+                            "No overlap promotion until local aggregate availability is proven."
+                        ],
+                    },
+                    indent=2,
+                )
+                + "\n",
+            )
+            _write(repo_root / report_rel, "# score32 folded global exact reduction recost\n")
+
+            task_request = TaskRequest(
+                request_key=f"l2_campaign:{item_id}",
+                source="test",
+                requested_by="@tester",
+                title=f"Layer2 {item_id}",
+                description="score32 folded-global exact reduction bounded recost",
+                layer=LayerName.LAYER2,
+                flow=FlowName.OPENROAD,
+                priority=1,
+                request_payload={
+                    "item_id": item_id,
+                    "layer": "layer2",
+                    "flow": "openroad",
+                    "developer_loop": {
+                        "proposal_id": "prop_l2_decoder_attention_score32_folded_global_exact_reduction_recost_llama7b_v2",
+                        "proposal_path": (
+                            "docs/proposals/"
+                            "prop_l2_decoder_attention_score32_folded_global_exact_reduction_recost_llama7b_v2/"
+                            "proposal.json"
+                        ),
+                        "evaluation": {
+                            "mode": "frontier_detail",
+                            "expected_direction": "record_bounded_folded_global_exact_reduction_recost",
+                            "expected_reason": "Capture bounded folded-global exact-reduction recost evidence.",
+                        },
+                        "comparison": {"role": "score32_folded_global_exact_reduction_recost"},
+                        "abstraction": {"layer": "decoder_attention_score32_folded_global_exact_reduction_recost"},
+                    },
+                },
+                source_commit="deadbeef",
+            )
+            session.add(task_request)
+            session.flush()
+            work_item = WorkItem(
+                work_item_key=f"l2_campaign:{item_id}",
+                task_request_id=task_request.id,
+                item_id=item_id,
+                layer=LayerName.LAYER2,
+                flow=FlowName.OPENROAD,
+                platform="nangate45",
+                task_type="l2_campaign",
+                state=WorkItemState.ARTIFACT_SYNC,
+                priority=1,
+                source_mode="src_verilog",
+                input_manifest={
+                    "decoder_contract": {
+                        "attention_score32_folded_global_exact_reduction_recost_out": evidence_rel,
+                        "attention_score32_folded_global_exact_reduction_recost_report": report_rel,
+                    }
+                },
+                command_manifest=[],
+                expected_outputs=[evidence_rel, report_rel],
+                acceptance_rules=[],
+                source_commit="deadbeef",
+            )
+            session.add(work_item)
+            session.flush()
+            run = Run(
+                run_key=f"{item_id}_run_1",
+                work_item_id=work_item.id,
+                attempt=1,
+                executor_type=ExecutorType.INTERNAL_WORKER,
+                status=RunStatus.SUCCEEDED,
+                started_at=utcnow(),
+                completed_at=utcnow(),
+                checkout_commit="deadbeef",
+                result_summary="2/2 commands succeeded",
+                result_payload={"queue_result": {"status": "ok"}},
+            )
+            session.add(run)
+            session.commit()
+
+            result = consume_l2_result(
+                session,
+                Layer2ConsumeRequest(repo_root=str(repo_root), item_id=item_id),
+            )
+
+            assert result.recommended_arch_id == "decoder_attention_score32_folded_global_exact_reduction_recost"
+            assert result.recommended_macro_mode == "evidence_only"
+            assert result.profile_count == 0
+            assert result.work_item_state == "artifact_sync"
+
+            decision_path = repo_root / "control_plane" / "shadow_exports" / "l2_decisions" / f"{item_id}.json"
+            decision = json.loads(decision_path.read_text(encoding="utf-8"))
+            assert decision["recommendation"]["source"] == "decoder_evidence"
+            assert decision["proposal_assessment"]["decoder_evidence_ref"] == evidence_rel
+            assert decision["source_refs"]["decoder_evidence_json"] == evidence_rel
+            assert (
+                decision["source_refs"]["decoder_attention_score32_folded_global_exact_reduction_recost_out"]
+                == evidence_rel
+            )
+            assert (
+                decision["source_refs"]["decoder_attention_score32_folded_global_exact_reduction_recost_report"]
+                == report_rel
+            )
+            assert "best_point_json" not in decision["source_refs"]
+
+            artifact = session.query(Artifact).filter_by(kind="decision_proposal").one()
+            assert artifact.path == f"control_plane/shadow_exports/l2_decisions/{item_id}.json"
+
+            eligibility = assess_submission_eligibility(
+                session,
+                work_item=session.query(WorkItem).filter_by(item_id=item_id).one(),
+                run=session.query(Run).filter_by(run_key=f"{item_id}_run_1").one(),
+                repo_root=repo_root,
+            )
+            assert eligibility.eligible is True
+            assert eligibility.reason is None
+
+
 def test_consume_l2_result_attention_separated_cluster_equivalence_uses_decoder_evidence() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
