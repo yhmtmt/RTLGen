@@ -1,0 +1,215 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "sweeps": [
+        "runs/campaigns/npu/attention_score32_exact_partial_tree_folded_mersenne_v1/sweeps/nangate45_attention_score32_exact_partial_tree_folded_mersenne_cluster_v1.json"
+      ],
+      "configs": [
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c2_r2/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c4_r2/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c8_r2/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c16_r2/config.json"
+      ],
+      "out_root": "runs/designs/npu_blocks",
+      "design_dirs": [],
+      "macro_manifests": [],
+      "candidate_manifests": [],
+      "required_submodules": []
+    },
+    "commands": [
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/rtlgen/gen_attention_score32_exact_partial_tree.py --config runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c2_r2/config.json --out runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c2_r2/verilog",
+        "name": "generate_attention_score32_exact_partial_tree_rtl_attention_score32_exact_partial_tree_folded_mersenne_c2_r2"
+      },
+      {
+        "run": "python3 npu/eval/check_attention_score32_exact_partial_tree_guard.py --design-dir runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c2_r2 --config runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c2_r2/config.json --sweep runs/campaigns/npu/attention_score32_exact_partial_tree_folded_mersenne_v1/sweeps/nangate45_attention_score32_exact_partial_tree_folded_mersenne_cluster_v1.json",
+        "name": "check_attention_score32_exact_partial_tree_guard_attention_score32_exact_partial_tree_folded_mersenne_c2_r2"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/synth/run_block_sweep.py --design_dir runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c2_r2 --platform nangate45 --top attention_score32_exact_partial_tree_folded_mersenne_c2_r2 --sweep runs/campaigns/npu/attention_score32_exact_partial_tree_folded_mersenne_v1/sweeps/nangate45_attention_score32_exact_partial_tree_folded_mersenne_cluster_v1.json --out_root runs/designs/npu_blocks --skip_existing",
+        "name": "run_block_sweep_attention_score32_exact_partial_tree_folded_mersenne_c2_r2"
+      },
+      {
+        "run": "python3 npu/eval/extract_openroad_timing_summary.py --design-dir runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c2_r2 --out runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c2_r2/timing_debug_report.md --max-paths 8",
+        "name": "extract_attention_score32_exact_partial_tree_timing_paths_attention_score32_exact_partial_tree_folded_mersenne_c2_r2"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/rtlgen/gen_attention_score32_exact_partial_tree.py --config runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c4_r2/config.json --out runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c4_r2/verilog",
+        "name": "generate_attention_score32_exact_partial_tree_rtl_attention_score32_exact_partial_tree_folded_mersenne_c4_r2"
+      },
+      {
+        "run": "python3 npu/eval/check_attention_score32_exact_partial_tree_guard.py --design-dir runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c4_r2 --config runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c4_r2/config.json --sweep runs/campaigns/npu/attention_score32_exact_partial_tree_folded_mersenne_v1/sweeps/nangate45_attention_score32_exact_partial_tree_folded_mersenne_cluster_v1.json",
+        "name": "check_attention_score32_exact_partial_tree_guard_attention_score32_exact_partial_tree_folded_mersenne_c4_r2"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/synth/run_block_sweep.py --design_dir runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c4_r2 --platform nangate45 --top attention_score32_exact_partial_tree_folded_mersenne_c4_r2 --sweep runs/campaigns/npu/attention_score32_exact_partial_tree_folded_mersenne_v1/sweeps/nangate45_attention_score32_exact_partial_tree_folded_mersenne_cluster_v1.json --out_root runs/designs/npu_blocks --skip_existing",
+        "name": "run_block_sweep_attention_score32_exact_partial_tree_folded_mersenne_c4_r2"
+      },
+      {
+        "run": "python3 npu/eval/extract_openroad_timing_summary.py --design-dir runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c4_r2 --out runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c4_r2/timing_debug_report.md --max-paths 8",
+        "name": "extract_attention_score32_exact_partial_tree_timing_paths_attention_score32_exact_partial_tree_folded_mersenne_c4_r2"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/rtlgen/gen_attention_score32_exact_partial_tree.py --config runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c8_r2/config.json --out runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c8_r2/verilog",
+        "name": "generate_attention_score32_exact_partial_tree_rtl_attention_score32_exact_partial_tree_folded_mersenne_c8_r2"
+      },
+      {
+        "run": "python3 npu/eval/check_attention_score32_exact_partial_tree_guard.py --design-dir runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c8_r2 --config runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c8_r2/config.json --sweep runs/campaigns/npu/attention_score32_exact_partial_tree_folded_mersenne_v1/sweeps/nangate45_attention_score32_exact_partial_tree_folded_mersenne_cluster_v1.json",
+        "name": "check_attention_score32_exact_partial_tree_guard_attention_score32_exact_partial_tree_folded_mersenne_c8_r2"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/synth/run_block_sweep.py --design_dir runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c8_r2 --platform nangate45 --top attention_score32_exact_partial_tree_folded_mersenne_c8_r2 --sweep runs/campaigns/npu/attention_score32_exact_partial_tree_folded_mersenne_v1/sweeps/nangate45_attention_score32_exact_partial_tree_folded_mersenne_cluster_v1.json --out_root runs/designs/npu_blocks --skip_existing",
+        "name": "run_block_sweep_attention_score32_exact_partial_tree_folded_mersenne_c8_r2"
+      },
+      {
+        "run": "python3 npu/eval/extract_openroad_timing_summary.py --design-dir runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c8_r2 --out runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c8_r2/timing_debug_report.md --max-paths 8",
+        "name": "extract_attention_score32_exact_partial_tree_timing_paths_attention_score32_exact_partial_tree_folded_mersenne_c8_r2"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/rtlgen/gen_attention_score32_exact_partial_tree.py --config runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c16_r2/config.json --out runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c16_r2/verilog",
+        "name": "generate_attention_score32_exact_partial_tree_rtl_attention_score32_exact_partial_tree_folded_mersenne_c16_r2"
+      },
+      {
+        "run": "python3 npu/eval/check_attention_score32_exact_partial_tree_guard.py --design-dir runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c16_r2 --config runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c16_r2/config.json --sweep runs/campaigns/npu/attention_score32_exact_partial_tree_folded_mersenne_v1/sweeps/nangate45_attention_score32_exact_partial_tree_folded_mersenne_cluster_v1.json",
+        "name": "check_attention_score32_exact_partial_tree_guard_attention_score32_exact_partial_tree_folded_mersenne_c16_r2"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/synth/run_block_sweep.py --design_dir runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c16_r2 --platform nangate45 --top attention_score32_exact_partial_tree_folded_mersenne_c16_r2 --sweep runs/campaigns/npu/attention_score32_exact_partial_tree_folded_mersenne_v1/sweeps/nangate45_attention_score32_exact_partial_tree_folded_mersenne_cluster_v1.json --out_root runs/designs/npu_blocks --skip_existing",
+        "name": "run_block_sweep_attention_score32_exact_partial_tree_folded_mersenne_c16_r2"
+      },
+      {
+        "run": "python3 npu/eval/extract_openroad_timing_summary.py --design-dir runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c16_r2 --out runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c16_r2/timing_debug_report.md --max-paths 8",
+        "name": "extract_attention_score32_exact_partial_tree_timing_paths_attention_score32_exact_partial_tree_folded_mersenne_c16_r2"
+      },
+      {
+        "run": "python3 scripts/build_runs_index.py",
+        "name": "build_runs_index"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate"
+      }
+    ],
+    "metadata": {
+      "acceptance_notes": "Standalone tree boundary only; direct 328-bit leaf/root links remain external macro pins. Stop strict supersets after the first failed point."
+    },
+    "objective": "Measure Nangate45 PPA for standalone folded-Mersenne exact partial trees at 2, 4, 8, and 16 clusters.",
+    "acceptance": [
+      "Each generated wrapper metrics.csv contains recorded rows with a status column; allow non-ok metrics such as flow_failed when the row is boundary evidence",
+      "Committed outputs stay lightweight (metrics.csv only; runs/index.csv is exported centrally after merge)",
+      "python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue pass"
+    ],
+    "source_mode": "config",
+    "expected_outputs": [
+      "runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c2_r2/metrics.csv",
+      "runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c2_r2/timing_debug_report.md",
+      "runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c4_r2/metrics.csv",
+      "runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c4_r2/timing_debug_report.md",
+      "runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c8_r2/metrics.csv",
+      "runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c8_r2/timing_debug_report.md",
+      "runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c16_r2/metrics.csv",
+      "runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c16_r2/timing_debug_report.md"
+    ]
+  },
+  "layer": "layer1",
+  "state": "evaluated",
+  "title": "Score32 exact partial tree folded-Mersenne cluster PPA frontier",
+  "result": {
+    "branch": "eval/l1_decoder_attention_score32_exact_partial_tree_folded_mersenne_cluster_ppa_v1/s20260803t000000z",
+    "completed_utc": "2026-08-02T14:58:18.406726Z",
+    "evaluator_id": "evaluator_agent",
+    "executor": "@control_plane",
+    "host": "b7c2d9c80c1c",
+    "identity_block": "[role:evaluator][account:evaluator_agent][session:s20260803t000000z][host:b7c2d9c80c1c][item:l1_decoder_attention_score32_exact_partial_tree_folded_mersenne_cluster_ppa_v1]",
+    "metrics_rows": [
+      {
+        "tag": "attention_score32_exact_partial_tree_folded_mersenne_cluster_v1_401d35a8",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "401d35a8",
+        "metrics_csv": "runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c2_r2/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c2_r2/work/401d35a8/result.json"
+      },
+      {
+        "tag": "attention_score32_exact_partial_tree_folded_mersenne_cluster_v1_401d35a8",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "401d35a8",
+        "metrics_csv": "runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c4_r2/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c4_r2/work/401d35a8/result.json"
+      },
+      {
+        "tag": "attention_score32_exact_partial_tree_folded_mersenne_cluster_v1_401d35a8",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "401d35a8",
+        "metrics_csv": "runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c8_r2/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c8_r2/work/401d35a8/result.json"
+      },
+      {
+        "tag": "attention_score32_exact_partial_tree_folded_mersenne_cluster_v1_401d35a8",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "401d35a8",
+        "metrics_csv": "runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c16_r2/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c16_r2/work/401d35a8/result.json"
+      }
+    ],
+    "queue_item_id": "l1_decoder_attention_score32_exact_partial_tree_folded_mersenne_cluster_ppa_v1",
+    "session_id": "s20260803t000000z",
+    "status": "ok",
+    "summary": "18/18 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l1_decoder_attention_score32_exact_partial_tree_folded_mersenne_cluster_ppa_v1/s20260803t000000z",
+    "pr_title": "eval: run score32 exact partial tree folded-mersenne cluster ppa frontier",
+    "checklist": [
+      "Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge",
+      "Include metrics row references for each completed design",
+      "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260803t000000z",
+      "evaluator_id": "evaluator_agent",
+      "queue_item_id": "l1_decoder_attention_score32_exact_partial_tree_folded_mersenne_cluster_ppa_v1"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l1_decoder_attention_score32_exact_partial_tree_folded_mersenne_cluster_ppa_v1",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 97,
+  "created_utc": "2026-08-02T11:23:25.402235Z",
+  "requested_by": "developer_agent",
+  "developer_loop": {
+    "comparison": {
+      "role": "exact_partial_tree_folded_mersenne_cluster_anchor",
+      "paired_baseline_item_id": ""
+    },
+    "evaluation": {
+      "mode": "frontier_followup",
+      "trial_policy": {
+        "seed_start": 0,
+        "trial_count": 1,
+        "stop_after_failures": 1
+      },
+      "expected_reason": "This isolates the dedicated folded pair-node timing recovery inside the multi-node tree while keeping the wide external partial links explicit.",
+      "expected_direction": "measure_folded_mersenne_exact_partial_tree_cluster_cost"
+    },
+    "abstraction": {
+      "layer": "architecture_block"
+    },
+    "proposal_id": "prop_l1_decoder_attention_score32_exact_partial_tree_folded_mersenne_cluster_ppa_v1",
+    "proposal_path": "docs/proposals/prop_l1_decoder_attention_score32_exact_partial_tree_folded_mersenne_cluster_ppa_v1/proposal.json"
+  },
+  "source_requirement": {
+    "repo": "",
+    "reason": "evaluator runtime must contain the queued job source commit",
+    "version": 1,
+    "required_ref": "origin/master",
+    "required_sha": "4af1ce16ecae5907955efb76b7aa18cae2fbc42d",
+    "requires_daemon_restart": true
+  }
+}

@@ -1,0 +1,2 @@
+run_key,attempt,trial_index,seed,status,metrics_csv,critical_path_ns,die_area,total_power_mw,failure_category,failure_stage,failure_signature
+l1_decoder_attention_score32_exact_partial_tree_folded_mersenne_cluster_ppa_v1_run_e48337ab8cfc0ae6,1,1,0,succeeded,runs/designs/npu_blocks/attention_score32_exact_partial_tree_folded_mersenne_c4_r2/metrics.csv,7.728,6250000.0,0.75,none,,
