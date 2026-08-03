@@ -2,14 +2,16 @@
 
 - design_dir: `runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p54_source_only_w8`
 - metrics_path: `runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p54_source_only_w8/metrics.csv`
-- rows_considered: 2
+- rows_considered: 4
 
 ## Metrics Rows
 
 | param_hash | tag | status | critical_path_ns | density | result_path |
 | --- | --- | --- | ---: | ---: | --- |
 | 6a375b03 | attention_score32_local_temporal_reducer_gqa8_physical_harness_boundary_noshare_v1_r2_6a375b03 | ok | 0.8785 | 0.35 | `/orfs/flow/reports/nangate45/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p54_source_only_w8/base/6_finish.rpt` |
+| 7a59c40a | attention_score32_local_temporal_reducer_gqa8_physical_harness_boundary_noshare_memguard_v1_r3_7a59c40a | ok | 0.8785 | 0.35 | `/orfs/flow/reports/nangate45/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p54_source_only_w8/base/6_finish.rpt` |
 | 98397138 | attention_score32_local_temporal_reducer_gqa8_physical_harness_boundary_noshare_v1_r2_98397138 | ok | 0.9874 | 0.35 | `/orfs/flow/reports/nangate45/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p54_source_only_w8/base/6_finish.rpt` |
+| ef5cc20f | attention_score32_local_temporal_reducer_gqa8_physical_harness_boundary_noshare_memguard_v1_r3_ef5cc20f | ok | 0.9874 | 0.35 | `/orfs/flow/reports/nangate45/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p54_source_only_w8/base/6_finish.rpt` |
 
 ## Inspected Report Files
 
@@ -27,7 +29,7 @@
 
 ## Preferred Final-Stage Timing Paths
 
-- raw_path_block_count: 104
+- raw_path_block_count: 208
 - unique_path_block_count: 33
 - preferred_stage: `finish`
 

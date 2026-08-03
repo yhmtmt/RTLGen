@@ -1,0 +1,15 @@
+{
+  "item_id": "l1_decoder_attention_score32_local_temporal_reducer_gqa8_ppa_v1_r3",
+  "completed_trials": 1,
+  "success_count": 1,
+  "failure_count": 0,
+  "by_category": {},
+  "by_stage": {},
+  "aggregation_scope": "current_run_checkout_commit",
+  "aggregation_source_commit": "c733716b4756afe2eaf41e4feccb060a4de29f2c",
+  "aggregation_included_attempts": 1,
+  "aggregation_excluded_attempts": 0,
+  "aggregation_excluded_source_commits": {},
+  "aggregation_excluded_attempt_run_keys": [],
+  "aggregation_excluded_attempt_run_keys_truncated": false
+}
