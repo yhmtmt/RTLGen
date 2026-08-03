@@ -51,6 +51,7 @@ def _validate(config: JsonDict) -> JsonDict:
     mode = str(body.get("mode", "reducer")).strip()
     waves = int(body.get("waves", LOCAL_TEMPORAL_WAVES))
     exp_scale_impl = str(body.get("exp_scale_impl", LEGACY_MONOLITHIC_LUT_EXACT)).strip()
+    keep_hierarchy = bool(body.get("keep_hierarchy", False))
     if producers not in {53, 54}:
         raise SystemExit("producers must be exactly 53 or 54")
     if mode not in {"reducer", "source_only"}:
@@ -66,6 +67,7 @@ def _validate(config: JsonDict) -> JsonDict:
         "mode": mode,
         "waves": waves,
         "exp_scale_impl": exp_scale_impl,
+        "keep_hierarchy": keep_hierarchy,
     }
 
 
@@ -429,6 +431,7 @@ def generate(config: JsonDict, out_dir: Path) -> None:
                     "head_id_bits": 5,
                     "persistent_waves": int(params["waves"]),
                     "exp_scale_impl": str(params["exp_scale_impl"]),
+                    "keep_hierarchy": bool(params["keep_hierarchy"]),
                 },
                 "probe_defaults": {
                     "heads": 16,
@@ -466,6 +469,7 @@ def generate(config: JsonDict, out_dir: Path) -> None:
         "mode": mode,
         "waves": int(params["waves"]),
         "exp_scale_impl": str(params["exp_scale_impl"]),
+        "keep_hierarchy": bool(params["keep_hierarchy"]),
         "command_count": 2,
         "query_heads_per_group": 8,
         "head_group_bases": [0, 8],

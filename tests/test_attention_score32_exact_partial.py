@@ -414,6 +414,7 @@ def test_exact_partial_merge_manifest_and_ports(tmp_path: Path) -> None:
     assert manifest["partial_payload_bits_per_beat"] == 328
     assert manifest["equivalence_hash"] is False
     assert manifest["exp_scale_impl"] == FACTORED_H33_L64_MUL_EXACT
+    assert manifest["keep_hierarchy"] is False
     assert manifest["exp_scale_bucket_max"] == MAX_EXP_BUCKET
     assert manifest["exp_factor_step"] == 64
     assert manifest["exp_factor_high_entries"] == 33
@@ -421,11 +422,26 @@ def test_exact_partial_merge_manifest_and_ports(tmp_path: Path) -> None:
     assert "input  wire [4:0] left_head_id" in rtl
     assert "output wire [4:0] out_head_id" in rtl
     assert "output wire [327:0] out_value" in rtl
+    assert "(* keep_hierarchy = 1 *)" not in rtl
     assert "function automatic [36:0] exp_lut_high;" in rtl
     assert "function automatic [30:0] exp_lut_low;" in rtl
     assert "product = high_scale * low_scale;" in rtl
     assert "exp_lut = rounded_product >> 43;" in rtl
     assert f"if (bucket > 33'd{MAX_EXP_BUCKET}) begin" in rtl
+
+
+def test_exact_partial_merge_keep_hierarchy_adds_module_attribute(tmp_path: Path) -> None:
+    config = _merge_config()
+    config["attention_score32_online_state_merge"]["keep_hierarchy"] = True
+    generate_merge(config, tmp_path)
+
+    manifest = json.loads(
+        (tmp_path / "attention_score32_online_state_merge_manifest.json").read_text(encoding="utf-8")
+    )
+    rtl = (tmp_path / "top.v").read_text(encoding="utf-8")
+
+    assert manifest["keep_hierarchy"] is True
+    assert "(* keep_hierarchy = 1 *)\nmodule attention_score32_online_state_merge_exact_partial" in rtl
 
 
 def test_exact_partial_merge_python_exp_scale_matches_legacy_formula_exhaustively() -> None:
