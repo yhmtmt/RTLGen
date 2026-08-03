@@ -1,0 +1,45 @@
+{
+  "source_commit": "c2fbf8cac773dbec69b0fe91ab28ea3a96e877bd",
+  "checkout_commit": "c2fbf8cac773dbec69b0fe91ab28ea3a96e877bd",
+  "related_item_id": "l1_decoder_attention_score32_local_temporal_reducer_gqa8_factored_hier_ppa_v1",
+  "work_item_uuid": "c727d5ac-a971-43fe-b325-590e57c7bd5d",
+  "run_id": "758b01d0-c15f-48ef-973f-a145d18df3db",
+  "run_key": "l1_decoder_attention_score32_local_temporal_reducer_gqa8_factored_hier_ppa_v1_run_a3496c300f748aea",
+  "evaluator": "eval-daemon-b7c2d9c80c1c",
+  "run_status": "CANCELED",
+  "run_failure_category": "command_canceled",
+  "diagnostic_category": "techmap_oom_canceled",
+  "run_runtime_seconds": 166.18383,
+  "primary_point": {
+    "design": "attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p53_reducer_factored_hier_w8",
+    "clock_period_ns": 15.0,
+    "elapsed_seconds": 125.412839,
+    "event_id": 1173,
+    "stage": "yosys_techmap",
+    "rss_bytes": 12286513152,
+    "cgroup_events_before": {
+      "oom": 2,
+      "oom_kill": 1
+    },
+    "cgroup_events_after": {
+      "oom": 4,
+      "oom_kill": 2
+    },
+    "observation": "Hierarchy retention held through canonicalization, but TECHMAP expansion of the remaining arithmetic still exhausted the worker memory budget before mapping completed."
+  },
+  "cancellation": {
+    "event_id": 1174,
+    "kind": "bounded_cancel",
+    "reason": "The worker hit a repeated cgroup OOM during the first p53/15ns run, so the remaining sweep points were canceled instead of repeating the same clock-independent TECHMAP blow-up."
+  },
+  "canonical_hierarchy_evidence": {
+    "canonical_rtlil_path": "/orfs/flow/results/nangate45/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p53_reducer_factored_hier_w8/base/1_1_yosys_canonicalize.rtlil",
+    "yosys_log_path": "/orfs/flow/logs/nangate45/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p53_reducer_factored_hier_w8/base/1_2_yosys.log",
+    "topology": "top -> reducer -> local reducer with 52 pair instances plus one temporal merge",
+    "hierarchy_retained": true,
+    "aggregate_cells_before_mapping": 19135,
+    "aggregate_div_cells_before_mapping": 954,
+    "aggregate_mul_cells_before_mapping": 1060
+  },
+  "conclusion": "R5 proved that explicit hierarchy preservation was real and sufficient to stop premature flattening, but it did not remove the underlying wide generic-divider arithmetic cost. The next retry should replace those merge nodes with the folded Mersenne exact implementation rather than revisiting the same hierarchy-only point."
+}

@@ -10,10 +10,16 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
+from npu.rtlgen.gen_attention_score32_exact_partial_pair_merge_folded import (
+    MERSENNE24_CORRECTION2_SCALE_DIVIDER_EXACT,
+)
 from npu.rtlgen.gen_attention_score32_exact_local_temporal_reducer_gqa8_physical_harness import generate
 from npu.rtlgen.gen_attention_score32_online_state_merge import (
     FACTORED_H33_L64_MUL_EXACT,
     LEGACY_MONOLITHIC_LUT_EXACT,
+)
+from npu.sim.perf.attention_exact_partial import (
+    FOLDED_SHARED_SCALE_MERSENNE_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL,
 )
 
 
@@ -48,6 +54,20 @@ def _config_path(producers: int, mode: str) -> Path:
 
 def _load_config(producers: int, mode: str) -> dict[str, object]:
     return json.loads(_config_path(producers, mode).read_text(encoding="utf-8"))
+
+
+def _all_cell_types(design: dict[str, object]) -> set[str]:
+    cell_types: set[str] = set()
+    for module in design.get("modules", {}).values():
+        if not isinstance(module, dict):
+            continue
+        cells = module.get("cells", {})
+        if not isinstance(cells, dict):
+            continue
+        for cell in cells.values():
+            if isinstance(cell, dict) and isinstance(cell.get("type"), str):
+                cell_types.add(cell["type"])
+    return cell_types
 
 
 @pytest.mark.parametrize("producers", [53, 54])
@@ -215,6 +235,65 @@ def test_gqa8_physical_harness_keep_hierarchy_propagates_and_survives_flatten(tm
     cell_types = {cell["type"] for cell in design["modules"][str(config["top_name"])]["cells"].values()}
     assert f"{config['top_name']}__reducer__temporal_merge" in cell_types
     assert f"{config['top_name']}__reducer__local_reducer__pair_node" in cell_types
+
+
+@pytest.mark.skipif(not _yosys_available(), reason="yosys unavailable")
+def test_gqa8_physical_harness_folded_pair_nodes_propagate_without_div_cells(tmp_path: Path) -> None:
+    config = _load_config(53, "reducer")
+    body = config["attention_score32_exact_local_temporal_reducer_gqa8_physical_harness"]
+    body["exp_scale_impl"] = FACTORED_H33_L64_MUL_EXACT
+    body["pair_node_impl"] = FOLDED_SHARED_SCALE_MERSENNE_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL
+    body["keep_hierarchy"] = True
+    generate(config, tmp_path / "rtl")
+
+    manifest = json.loads(
+        (
+            tmp_path / "rtl" / "attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_manifest.json"
+        ).read_text(encoding="utf-8")
+    )
+    reducer_manifest = manifest["submodule_manifests"]["gqa8_reducer"]
+    assert manifest["pair_node_impl"] == FOLDED_SHARED_SCALE_MERSENNE_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL
+    assert manifest["pair_node_scale_divider_impl"] == MERSENNE24_CORRECTION2_SCALE_DIVIDER_EXACT
+    assert reducer_manifest["pair_node_impl"] == FOLDED_SHARED_SCALE_MERSENNE_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL
+    assert reducer_manifest["pair_node_scale_divider_impl"] == MERSENNE24_CORRECTION2_SCALE_DIVIDER_EXACT
+    assert reducer_manifest["submodule_manifests"]["local_reducer"]["pair_node_impl"] == (
+        FOLDED_SHARED_SCALE_MERSENNE_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL
+    )
+    assert (
+        reducer_manifest["submodule_manifests"]["local_reducer"]["submodule_manifests"]["pair_merge"]["generator"]
+        == "npu/rtlgen/gen_attention_score32_exact_partial_pair_merge_folded.py"
+    )
+    assert reducer_manifest["submodule_manifests"]["temporal_merge"]["generator"] == (
+        "npu/rtlgen/gen_attention_score32_exact_partial_pair_merge_folded.py"
+    )
+    assert (
+        reducer_manifest["submodule_manifests"]["temporal_merge"]["scale_divider_impl"]
+        == MERSENNE24_CORRECTION2_SCALE_DIVIDER_EXACT
+    )
+
+    flattened_json = tmp_path / "folded_flattened.json"
+    subprocess.run(
+        [
+            _tool("yosys"),
+            "-p",
+            (
+                f"read_verilog -sv {tmp_path / 'rtl' / 'top.v'}; "
+                f"hierarchy -check -top {config['top_name']}; "
+                "proc; "
+                "flatten; "
+                f"write_json {flattened_json}"
+            ),
+        ],
+        capture_output=True,
+        text=True,
+        check=True,
+        timeout=300,
+    )
+    design = json.loads(flattened_json.read_text(encoding="utf-8"))
+    assert "$div" not in _all_cell_types(design)
+    top_cell_types = {cell["type"] for cell in design["modules"][str(config["top_name"])]["cells"].values()}
+    assert f"{config['top_name']}__reducer__temporal_merge" in top_cell_types
+    assert f"{config['top_name']}__reducer__local_reducer__pair_node" in top_cell_types
 
 
 def test_gqa8_physical_harness_rejects_invalid_mode(tmp_path: Path) -> None:

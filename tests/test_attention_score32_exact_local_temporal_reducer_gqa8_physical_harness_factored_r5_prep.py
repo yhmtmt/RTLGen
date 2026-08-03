@@ -31,6 +31,13 @@ R4_DIAGNOSTIC_PATH = (
     / "prop_l1_decoder_attention_score32_local_temporal_reducer_gqa8_v1"
     / "factored_r4_oom_diagnostic.json"
 )
+R5_DIAGNOSTIC_PATH = (
+    REPO_ROOT
+    / "docs"
+    / "proposals"
+    / "prop_l1_decoder_attention_score32_local_temporal_reducer_gqa8_v1"
+    / "factored_hier_r5_oom_diagnostic.json"
+)
 R4_SWEEP_PATH = (
     REPO_ROOT
     / "runs"
@@ -103,7 +110,7 @@ def test_gqa8_factored_hier_r5_sweep_keeps_no_share_without_memory_override() ->
     assert "SYNTH_MEMORY_MAX_BITS" not in r4["flow_params"]
 
 
-def test_gqa8_factored_hier_r5_docs_link_new_job_and_preserve_r4_evidence() -> None:
+def test_gqa8_factored_hier_r5_docs_preserve_r4_and_r5_history() -> None:
     proposal = _load_json(PROPOSAL_PATH)
     requests = _load_json(REQUESTS_PATH)
 
@@ -120,8 +127,8 @@ def test_gqa8_factored_hier_r5_docs_link_new_job_and_preserve_r4_evidence() -> N
     assert "run_de60dd9a4d966235" in r4["notes"]
     assert "factored_r4_oom_diagnostic.json" in requested_r4["notes"]
 
-    assert r5["status"] == "pending"
-    assert requested_r5["status"] == "pending"
+    assert r5["status"] == "failed_oom_canceled"
+    assert requested_r5["status"] == "failed_oom_canceled"
     assert requested_r5["title"] == "Layer 1 GQA8 score32 local temporal reducer factorized-exp hierarchy-preserved boundary sweep"
     assert r5["configs"] == requested_r5["configs"] == [
         str(P53_CONFIG_PATH.relative_to(REPO_ROOT)),
@@ -136,11 +143,14 @@ def test_gqa8_factored_hier_r5_docs_link_new_job_and_preserve_r4_evidence() -> N
     ]
     assert "keep `SYNTH_HIERARCHICAL=1`" in r5["acceptance_notes"]
     assert "merge-level `keep_hierarchy`" in r5["objective"]
-    assert "Generate only the fresh r5 DB task" in requests["source_commit_note"]
+    assert "Generate only the fresh r6 DB task" in requests["source_commit_note"]
+    assert "factored_hier_r5_oom_diagnostic.json" in r5["notes"]
+    assert "TECHMAP" in requested_r5["notes"]
 
     for ref in (
         str(R3_DIAGNOSTIC_PATH.relative_to(REPO_ROOT)),
         str(R4_DIAGNOSTIC_PATH.relative_to(REPO_ROOT)),
+        str(R5_DIAGNOSTIC_PATH.relative_to(REPO_ROOT)),
         str(P53_CONFIG_PATH.relative_to(REPO_ROOT)),
         str(P54_CONFIG_PATH.relative_to(REPO_ROOT)),
         str(R5_SWEEP_PATH.relative_to(REPO_ROOT)),
