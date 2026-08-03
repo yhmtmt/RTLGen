@@ -1,0 +1,15 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_score32_folded_global_exact_reduction_recost_llama7b_v2",
+  "candidate_id": "l2_decoder_attention_score32_folded_global_exact_reduction_recost_llama7b_v2_r2",
+  "decision": "iterate",
+  "reason": "Decoder evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_folded_global_exact_reduction_recost__l2_decoder_attention_score32_folded_global_exact_reduction_recost_llama7b_v2_r2.json: decision=decoder_evidence_recorded.",
+  "evidence_refs": [
+    "item:l2_decoder_attention_score32_folded_global_exact_reduction_recost_llama7b_v2_r2",
+    "run:l2_decoder_attention_score32_folded_global_exact_reduction_recost_llama7b_v2_r2_run_536314512ca84a0d",
+    "artifact:control_plane/shadow_exports/l2_decisions/l2_decoder_attention_score32_folded_global_exact_reduction_recost_llama7b_v2_r2.json",
+    "pr:#1529",
+    "https://github.com/yhmtmt/RTLGen/pull/1529"
+  ],
+  "next_action": "inspect follow-on work after l2_decoder_attention_score32_folded_global_exact_reduction_recost_llama7b_v2_r2",
+  "requires_human_approval": false
+}

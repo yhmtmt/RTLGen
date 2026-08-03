@@ -3,7 +3,7 @@
   "source_commit_note": "Replace with the merge commit that contains this bounded folded global exact-reduction recost implementation before dispatch. Until then this request remains pending implementation merge and must not be queued. Preserve the old v1 exact-reduction artifact as source evidence, but do not reuse its 574-on-986 timing interpretation after this v2 bounded recost exists.",
   "requested_items": [
     {
-      "item_id": "l2_decoder_attention_score32_folded_global_exact_reduction_recost_llama7b_v2_r1",
+      "item_id": "l2_decoder_attention_score32_folded_global_exact_reduction_recost_llama7b_v2_r2",
       "task_type": "l2_campaign",
       "objective": "Record a revision-safe bounded recost for the measured folded global exact-reduction path in Llama7B score32 attention.",
       "evaluation_mode": "frontier_detail",
@@ -20,8 +20,15 @@
         "direction": "record_bounded_folded_global_exact_reduction_recost",
         "reason": "Use the corrected cadence audit plus measured folded c16, measured L8 finalizer, and measured b4 control to replace the obsolete 574-on-986 timing interpretation with a bounded schedule/PPA analysis that still leaves the local reducer and overlap scheduler unresolved."
       },
-      "status": "pending_implementation_merge",
-      "notes": "Deterministic local audit only. Do not dispatch until the implementation merge exists. The report must keep the 1536-cycle worst-loaded datapath wave distinct from the 4224-cycle cluster barrier, treat the 1546-cycle overlap margin as conditional only, and skip quality reruns because exact precision semantics are unchanged."
+      "status": "merged",
+      "notes": "Deterministic local audit only. Do not dispatch until the implementation merge exists. The report must keep the 1536-cycle worst-loaded datapath wave distinct from the 4224-cycle cluster barrier, treat the 1546-cycle overlap margin as conditional only, and skip quality reruns because exact precision semantics are unchanged. Merged via PR #1529 and merge 5bd49edafea5c0fd6bd2ed5d137af8afcef49247 at 2026-08-03T09:29:47.029277Z.",
+      "prior_item_ids": [
+        "l2_decoder_attention_score32_folded_global_exact_reduction_recost_llama7b_v2_r1"
+      ],
+      "merged_pr_number": 1529,
+      "merge_commit": "5bd49edafea5c0fd6bd2ed5d137af8afcef49247",
+      "merged_utc": "2026-08-03T09:29:47.029277Z"
     }
-  ]
+  ],
+  "source_commit": "04c539aaed4292785bfda00c6acfa3f6015aa55d"
 }
