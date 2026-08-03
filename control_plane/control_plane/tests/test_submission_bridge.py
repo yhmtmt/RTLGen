@@ -587,6 +587,152 @@ def test_prepare_submission_branch_preserves_newer_proposal_state_from_current_b
             assert not any(path.startswith("docs/proposals/prop_l2_submit_demo/") for path in changed_paths)
 
 
+def test_prepare_submission_branch_uses_proposal_from_current_base_when_repo_checkout_is_older() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        _init_repo(repo_root)
+
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            item_id, _run_key = _seed_l2_reviewable(session, repo_root)
+            proposal_dir = "docs/proposals/prop_l2_submit_demo"
+            _commit(
+                repo_root,
+                "commit l2 non-proposal state",
+                "runs/campaigns/demo_l2/artifacts/mapper/fp16_nm1_demo/demo_model/schedule.yml",
+                "runs/campaigns/demo_l2/artifacts/mapper/fp16_nm1_demo/relu_model/schedule.yml",
+            )
+            checkout_commit = _git(repo_root, "rev-parse", "HEAD")
+            _commit(repo_root, "commit l2 proposal", proposal_dir)
+            base_commit = _git(repo_root, "rev-parse", "HEAD")
+
+            _git(repo_root, "checkout", checkout_commit)
+            result = prepare_submission_branch(
+                session,
+                SubmissionPrepareRequest(
+                    repo_root=str(repo_root),
+                    item_id=item_id,
+                    evaluator_id="cpbot",
+                    session_id="s20260310t080014z",
+                    host="cp-host",
+                    worktree_root=str(repo_root / "tmp_submit"),
+                ),
+            )
+
+            manifest = json.loads(
+                (repo_root / "control_plane" / "shadow_exports" / "review" / item_id / "submission_manifest.json").read_text()
+            )
+            assert manifest["submission_base_commit"] == base_commit
+            assert "docs/proposals/prop_l2_submit_demo/proposal.json" in manifest["proposal_context_paths"]
+            assert "docs/proposals/prop_l2_submit_demo/evaluation_requests.json" in manifest["proposal_context_paths"]
+            assert (Path(result.worktree_path) / "docs/proposals/prop_l2_submit_demo/proposal.json").exists()
+            assert (Path(result.worktree_path) / "docs/proposals/prop_l2_submit_demo/evaluation_requests.json").exists()
+
+
+def test_prepare_submission_branch_rejects_placeholder_proposal_from_current_base() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        _init_repo(repo_root)
+
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            item_id, _run_key = _seed_l2_reviewable(session, repo_root)
+            proposal_dir = repo_root / "docs/proposals/prop_l2_submit_demo"
+            _commit(
+                repo_root,
+                "commit l2 non-proposal state",
+                "runs/campaigns/demo_l2/artifacts/mapper/fp16_nm1_demo/demo_model/schedule.yml",
+                "runs/campaigns/demo_l2/artifacts/mapper/fp16_nm1_demo/relu_model/schedule.yml",
+            )
+            checkout_commit = _git(repo_root, "rev-parse", "HEAD")
+
+            proposal_json = proposal_dir / "proposal.json"
+            payload = json.loads(proposal_json.read_text(encoding="utf-8"))
+            payload["title"] = "Example proposal title"
+            payload["direct_comparison"] = {
+                "primary_question": "What focused comparison directly tests this proposal?",
+            }
+            proposal_json.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+            _commit(repo_root, "commit placeholder proposal", "docs/proposals/prop_l2_submit_demo")
+
+            _git(repo_root, "checkout", checkout_commit)
+            try:
+                prepare_submission_branch(
+                    session,
+                    SubmissionPrepareRequest(
+                        repo_root=str(repo_root),
+                        item_id=item_id,
+                        evaluator_id="cpbot",
+                        session_id="s20260310t080015z",
+                        host="cp-host",
+                        worktree_root=str(repo_root / "tmp_submit"),
+                    ),
+                )
+            except SubmissionPrepareError as exc:
+                assert str(exc) == "developer_loop proposal is still a template placeholder"
+            else:
+                raise AssertionError("expected SubmissionPrepareError")
+
+
+def test_prepare_submission_branch_rejects_proposal_removed_from_current_base() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        _init_repo(repo_root)
+
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            item_id, _run_key = _seed_l2_reviewable(session, repo_root)
+            _commit(
+                repo_root,
+                "commit l2 state with proposal",
+                "runs/campaigns/demo_l2/artifacts/mapper/fp16_nm1_demo/demo_model/schedule.yml",
+                "runs/campaigns/demo_l2/artifacts/mapper/fp16_nm1_demo/relu_model/schedule.yml",
+                "docs/proposals/prop_l2_submit_demo",
+            )
+            checkout_commit = _git(repo_root, "rev-parse", "HEAD")
+            _git(repo_root, "rm", "-r", "docs/proposals/prop_l2_submit_demo")
+            subprocess.run(
+                ["git", "-C", str(repo_root), "commit", "-m", "remove proposal from base"],
+                check=True,
+                capture_output=True,
+                text=True,
+                env={
+                    **__import__("os").environ,
+                    "GIT_AUTHOR_NAME": "Test",
+                    "GIT_AUTHOR_EMAIL": "test@example.com",
+                    "GIT_COMMITTER_NAME": "Test",
+                    "GIT_COMMITTER_EMAIL": "test@example.com",
+                },
+            )
+
+            _git(repo_root, "checkout", checkout_commit)
+            try:
+                prepare_submission_branch(
+                    session,
+                    SubmissionPrepareRequest(
+                        repo_root=str(repo_root),
+                        item_id=item_id,
+                        evaluator_id="cpbot",
+                        session_id="s20260310t080016z",
+                        host="cp-host",
+                        worktree_root=str(repo_root / "tmp_submit"),
+                    ),
+                )
+            except SubmissionPrepareError as exc:
+                assert str(exc) == (
+                    "developer_loop proposal was removed from current submission base: "
+                    "docs/proposals/prop_l2_submit_demo/proposal.json"
+                )
+            else:
+                raise AssertionError("expected SubmissionPrepareError")
+
+
 def test_prepare_submission_branch_rejects_broad_proposal_path() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"

@@ -18,7 +18,14 @@ from control_plane.models.enums import ArtifactStorageMode
 from control_plane.models.run_events import RunEvent
 from control_plane.models.runs import Run
 from control_plane.models.work_items import WorkItem
-from control_plane.services.docs_paths import proposal_placeholder_reason, resolve_proposal_file
+from control_plane.services.docs_paths import (
+    path_exists_at_ref,
+    proposal_context_files_at_ref,
+    proposal_placeholder_reason,
+    proposal_placeholder_reason_at_ref,
+    resolve_proposal_file,
+    resolve_proposal_file_at_ref,
+)
 from control_plane.services.review_publisher import ReviewPublishRequest, publish_review_package
 from control_plane.workers.artifact_stage import collect_linked_results_artifacts
 
@@ -117,12 +124,34 @@ def _collect_existing_file_refs(*, repo_root: Path, value: Any, files: list[str]
     files.append(rel_path)
 
 
-def _proposal_file(*, repo_root: Path, package_payload: dict[str, Any]) -> Path | None:
+def _proposal_file(
+    *,
+    repo_root: Path,
+    package_payload: dict[str, Any],
+    proposal_ref: str | None = None,
+) -> Path | None:
     developer_loop = package_payload.get("developer_loop")
     if not isinstance(developer_loop, dict):
         return None
     proposal_id = str(developer_loop.get("proposal_id", "")).strip() or None
     proposal_path = str(developer_loop.get("proposal_path", "")).strip() or None
+    proposal_rel = resolve_proposal_file_at_ref(
+        repo_root,
+        proposal_ref,
+        proposal_path=proposal_path,
+        proposal_id=proposal_id,
+    )
+    if proposal_rel is not None:
+        placeholder_reason = proposal_placeholder_reason_at_ref(
+            repo_root,
+            proposal_ref,
+            proposal_path=proposal_path,
+            proposal_id=proposal_id,
+        )
+        if placeholder_reason is not None:
+            raise SubmissionPrepareError(placeholder_reason)
+        return repo_root / proposal_rel
+
     proposal_file = resolve_proposal_file(repo_root, proposal_path=proposal_path, proposal_id=proposal_id)
     if proposal_file is None or not proposal_file.exists() or proposal_file.name != "proposal.json":
         if proposal_id or proposal_path:
@@ -134,7 +163,36 @@ def _proposal_file(*, repo_root: Path, package_payload: dict[str, Any]) -> Path 
     return proposal_file
 
 
-def _proposal_context_files(*, repo_root: Path, package_payload: dict[str, Any]) -> list[str]:
+def _proposal_context_files(
+    *,
+    repo_root: Path,
+    package_payload: dict[str, Any],
+    proposal_ref: str | None = None,
+) -> list[str]:
+    developer_loop = package_payload.get("developer_loop")
+    proposal_id = None
+    proposal_path = None
+    if isinstance(developer_loop, dict):
+        proposal_id = str(developer_loop.get("proposal_id", "")).strip() or None
+        proposal_path = str(developer_loop.get("proposal_path", "")).strip() or None
+    if proposal_ref:
+        ref_files = proposal_context_files_at_ref(
+            repo_root,
+            proposal_ref,
+            proposal_path=proposal_path,
+            proposal_id=proposal_id,
+        )
+        if ref_files:
+            placeholder_reason = proposal_placeholder_reason_at_ref(
+                repo_root,
+                proposal_ref,
+                proposal_path=proposal_path,
+                proposal_id=proposal_id,
+            )
+            if placeholder_reason is not None:
+                raise SubmissionPrepareError(placeholder_reason)
+            return ref_files
+
     proposal_file = _proposal_file(repo_root=repo_root, package_payload=package_payload)
     if proposal_file is None:
         return []
@@ -147,24 +205,6 @@ def _proposal_context_files(*, repo_root: Path, package_payload: dict[str, Any])
             continue
         files.append(rel_path)
     return files
-
-
-def _path_exists_at_ref(repo_root: Path, ref: str, rel_path: str) -> bool:
-    result = subprocess.run(
-        ["git", "-C", str(repo_root), "cat-file", "-e", f"{ref}:{rel_path}"],
-        capture_output=True,
-        text=True,
-    )
-    return result.returncode == 0
-
-
-def _path_tracked_at_head(repo_root: Path, rel_path: str) -> bool:
-    result = subprocess.run(
-        ["git", "-C", str(repo_root), "ls-files", "--error-unmatch", rel_path],
-        capture_output=True,
-        text=True,
-    )
-    return result.returncode == 0
 
 
 def _review_linked_supporting_files(*, repo_root: Path, package_payload: dict[str, Any]) -> list[str]:
@@ -392,14 +432,22 @@ def prepare_submission_branch(session: Session, request: SubmissionPrepareReques
             existing=[*evidence_files, *supporting_files],
         )
     )
-    source_proposal_file = _proposal_file(repo_root=repo_root, package_payload=package_payload)
-    source_proposal_context = _proposal_context_files(repo_root=repo_root, package_payload=package_payload)
     submission_base_ref, submission_base_commit = _resolve_submission_base(repo_root, request.pr_base)
+    source_proposal_file = _proposal_file(
+        repo_root=repo_root,
+        package_payload=package_payload,
+        proposal_ref=submission_base_ref,
+    )
+    source_proposal_context = _proposal_context_files(
+        repo_root=repo_root,
+        package_payload=package_payload,
+        proposal_ref=submission_base_ref,
+    )
     proposal_files_to_copy: list[str] = []
     if source_proposal_file is not None:
         proposal_rel = str(source_proposal_file.resolve().relative_to(repo_root.resolve()))
-        if not _path_exists_at_ref(repo_root, submission_base_ref, proposal_rel):
-            if _path_tracked_at_head(repo_root, proposal_rel):
+        if not path_exists_at_ref(repo_root, submission_base_ref, proposal_rel):
+            if path_exists_at_ref(repo_root, "HEAD", proposal_rel):
                 raise SubmissionPrepareError(
                     f"developer_loop proposal was removed from current submission base: {proposal_rel}"
                 )
