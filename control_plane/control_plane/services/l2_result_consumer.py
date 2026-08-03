@@ -587,6 +587,10 @@ _DECODER_EVIDENCE_OUTPUT_KEYS: tuple[tuple[str, str], ...] = (
         "attention_score32_exact_reduction_recost_report",
     ),
     (
+        "attention_score32_folded_global_exact_reduction_recost_out",
+        "attention_score32_folded_global_exact_reduction_recost_report",
+    ),
+    (
         "attention_score32_exact_reduction_gqa8_full_equivalence_rerank_out",
         "attention_score32_exact_reduction_gqa8_full_equivalence_rerank_report",
     ),
