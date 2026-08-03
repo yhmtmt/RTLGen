@@ -12,6 +12,10 @@ if str(REPO_ROOT) not in sys.path:
 
 from npu.eval.probe_attention_score32_exact_local_temporal_reducer_gqa8 import build_report
 from npu.rtlgen.gen_attention_score32_exact_local_temporal_reducer_gqa8 import generate
+from npu.rtlgen.gen_attention_score32_online_state_merge import (
+    FACTORED_H33_L64_MUL_EXACT,
+    LEGACY_MONOLITHIC_LUT_EXACT,
+)
 
 
 def _rtl_tools_available() -> bool:
@@ -55,6 +59,7 @@ def test_local_temporal_reducer_gqa8_manifest_and_verilator_lint_p53(tmp_path: P
     )
     assert manifest["producers"] == 53
     assert manifest["persistent_waves"] == 8
+    assert manifest["exp_scale_impl"] == LEGACY_MONOLITHIC_LUT_EXACT
     assert manifest["query_heads_per_group"] == 8
     assert manifest["partial_payload_bits_per_beat"] == 328
     assert (
@@ -85,9 +90,17 @@ def test_local_temporal_reducer_gqa8_manifest_and_verilator_lint_p53(tmp_path: P
     assert manifest["service_model"]["beats_per_output_group"] == 128
     assert manifest["service_model"]["query_head_groups"] == 2
     assert manifest["submodule_manifests"]["local_reducer"]["producers"] == 53
+    assert manifest["submodule_manifests"]["local_reducer"]["exp_scale_impl"] == LEGACY_MONOLITHIC_LUT_EXACT
+    assert (
+        manifest["submodule_manifests"]["local_reducer"]["submodule_manifests"]["pair_merge"]["exp_scale_impl"]
+        == LEGACY_MONOLITHIC_LUT_EXACT
+    )
+    assert manifest["submodule_manifests"]["temporal_merge"]["exp_scale_impl"] == LEGACY_MONOLITHIC_LUT_EXACT
     assert manifest["submodule_manifests"]["temporal_merge"]["result_interface"] == (
         "ready_valid_exact_partial_slice_stream"
     )
+    rtl = (tmp_path / "rtl" / "top.v").read_text(encoding="utf-8")
+    assert "case (bucket)" in rtl
 
     lint = subprocess.run(
         [
@@ -104,6 +117,32 @@ def test_local_temporal_reducer_gqa8_manifest_and_verilator_lint_p53(tmp_path: P
         timeout=180,
     )
     assert lint.returncode == 0, lint.stderr
+
+
+@pytest.mark.skipif(not _rtl_tools_available(), reason="RTL tools unavailable")
+def test_local_temporal_reducer_gqa8_factored_exp_scale_propagates_and_removes_monolithic_lut(tmp_path: Path) -> None:
+    config = _load_config(53)
+    config["attention_score32_exact_local_temporal_reducer_gqa8"]["exp_scale_impl"] = FACTORED_H33_L64_MUL_EXACT
+    generate(config, tmp_path / "rtl")
+
+    manifest = json.loads(
+        (tmp_path / "rtl" / "attention_score32_exact_local_temporal_reducer_gqa8_manifest.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert manifest["exp_scale_impl"] == FACTORED_H33_L64_MUL_EXACT
+    assert manifest["submodule_manifests"]["local_reducer"]["exp_scale_impl"] == FACTORED_H33_L64_MUL_EXACT
+    assert (
+        manifest["submodule_manifests"]["local_reducer"]["submodule_manifests"]["pair_merge"]["exp_scale_impl"]
+        == FACTORED_H33_L64_MUL_EXACT
+    )
+    assert manifest["submodule_manifests"]["temporal_merge"]["exp_scale_impl"] == FACTORED_H33_L64_MUL_EXACT
+
+    rtl = (tmp_path / "rtl" / "top.v").read_text(encoding="utf-8")
+    assert "case (bucket)" not in rtl
+    assert rtl.count("case (bucket_hi)") == 2
+    assert rtl.count("case (bucket_lo)") == 2
+    assert "33'd4096: exp_lut = 24'd" not in rtl
 
 
 def test_local_temporal_reducer_gqa8_rejects_invalid_producer_count(tmp_path: Path) -> None:
@@ -178,4 +217,22 @@ def test_local_temporal_reducer_gqa8_probe_matches_reference_p54_ideal() -> None
     assert report["completed_command_count"] == 2
     assert report["protocol_error"] is False
     assert report["group_contract_error"] is False
+    assert report["observed_rows"] == report["expected_rows"]
+
+
+@pytest.mark.skipif(not _rtl_tools_available(), reason="RTL tools unavailable")
+def test_local_temporal_reducer_gqa8_probe_matches_reference_p53_factored_ideal() -> None:
+    config = _load_config(53)
+    config["attention_score32_exact_local_temporal_reducer_gqa8"]["exp_scale_impl"] = FACTORED_H33_L64_MUL_EXACT
+    report = build_report(config=config)
+
+    assert report["passed"] is True
+    assert report["producers"] == 53
+    assert report["outputs"] == 256
+    assert report["expected_outputs"] == 256
+    assert report["completed_command_count"] == 2
+    assert report["protocol_error"] is False
+    assert report["group_contract_error"] is False
+    assert report["local_tree_protocol_error"] is False
+    assert report["temporal_merge_protocol_error"] is False
     assert report["observed_rows"] == report["expected_rows"]

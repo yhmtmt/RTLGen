@@ -15,6 +15,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from npu.rtlgen.gen_attention_score32_exact_local_temporal_reducer_gqa8_physical_harness import generate
+from npu.rtlgen.gen_attention_score32_online_state_merge import LEGACY_MONOLITHIC_LUT_EXACT
 
 _CONFIG_KEY = "attention_score32_exact_local_temporal_reducer_gqa8_physical_harness"
 _MANIFEST_NAME = "attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_manifest.json"
@@ -97,6 +98,7 @@ def main(argv: list[str] | None = None) -> int:
     producers = int(body.get("producers", 0))
     mode = str(body.get("mode", "")).strip()
     waves = int(body.get("waves", 0))
+    exp_scale_impl = str(body.get("exp_scale_impl", LEGACY_MONOLITHIC_LUT_EXACT)).strip()
     if producers not in {53, 54}:
         raise SystemExit("producers must remain exactly 53 or 54")
     if mode not in {"reducer", "source_only"}:
@@ -112,6 +114,7 @@ def main(argv: list[str] | None = None) -> int:
         "producers": producers,
         "mode": mode,
         "waves": 8,
+        "exp_scale_impl": exp_scale_impl,
         "command_count": 2,
         "query_heads_per_group": 8,
         "head_group_bases": [0, 8],
@@ -159,6 +162,19 @@ def main(argv: list[str] | None = None) -> int:
             "gqa8 reducer submodule manifest",
         )
         _require(gqa8_reducer_manifest, "query_heads_per_group", 8, "gqa8 reducer submodule manifest")
+        _require(gqa8_reducer_manifest, "exp_scale_impl", exp_scale_impl, "gqa8 reducer submodule manifest")
+        local_reducer_manifest = gqa8_reducer_manifest.get("submodule_manifests", {}).get("local_reducer")
+        temporal_merge_manifest = gqa8_reducer_manifest.get("submodule_manifests", {}).get("temporal_merge")
+        if not isinstance(local_reducer_manifest, dict):
+            raise SystemExit("gqa8 reducer manifest must include local_reducer submodule manifest")
+        if not isinstance(temporal_merge_manifest, dict):
+            raise SystemExit("gqa8 reducer manifest must include temporal_merge submodule manifest")
+        _require(local_reducer_manifest, "exp_scale_impl", exp_scale_impl, "local reducer submodule manifest")
+        pair_manifest = local_reducer_manifest.get("submodule_manifests", {}).get("pair_merge")
+        if not isinstance(pair_manifest, dict):
+            raise SystemExit("local reducer manifest must include pair_merge submodule manifest")
+        _require(pair_manifest, "exp_scale_impl", exp_scale_impl, "pair_merge submodule manifest")
+        _require(temporal_merge_manifest, "exp_scale_impl", exp_scale_impl, "temporal_merge submodule manifest")
     elif gqa8_reducer_manifest is not None:
         raise SystemExit("source_only mode must not include gqa8 reducer manifest")
 

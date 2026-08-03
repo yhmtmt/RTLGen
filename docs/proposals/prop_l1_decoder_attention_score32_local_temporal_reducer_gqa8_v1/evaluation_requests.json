@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l1_decoder_attention_score32_local_temporal_reducer_gqa8_v1",
   "proposal_path": "docs/proposals/prop_l1_decoder_attention_score32_local_temporal_reducer_gqa8_v1/proposal.json",
-  "source_commit_note": "Preserve the original v1 bounded SHARE failure and the finalized r2 bounded memory-guard evidence as immutable history. Generate only the fresh r3 DB task after this job-prep change is merged, and pin source_requirement.required_sha to the then-current origin/master commit containing the no-share memory-guard retry sweep plus proposal/task-generator support.",
+  "source_commit_note": "Preserve the original v1 bounded SHARE failure and the finalized r2/r3 evidence as immutable history. Generate only the fresh r4 DB task after this job-prep change is merged, and pin source_requirement.required_sha to the then-current merged commit containing the factorized reducer configs, fresh no-share sweep, and legacy-LUT diagnostic. Interpret the r3 reducer abort as a legacy monolithic exp-LUT encoding boundary, not as a persistent-state-size requirement.",
   "requested_items": [
     {
       "item_id": "l1_decoder_attention_score32_local_temporal_reducer_gqa8_ppa_v1",
@@ -125,7 +125,40 @@
       "merged_pr_number": 1533,
       "merge_commit": "d96c3379c3af228606f9b266142529255fd12699",
       "merged_utc": "2026-08-03T10:58:06.037636Z"
+    },
+    {
+      "item_id": "l1_decoder_attention_score32_local_temporal_reducer_gqa8_factored_ppa_v1",
+      "task_type": "l1_sweep",
+      "title": "Layer 1 GQA8 score32 local temporal reducer factorized-exp boundary sweep",
+      "proposal_id": "prop_l1_decoder_attention_score32_local_temporal_reducer_gqa8_v1",
+      "proposal_path": "docs/proposals/prop_l1_decoder_attention_score32_local_temporal_reducer_gqa8_v1/proposal.json",
+      "objective": "Measure Nangate45 PPA for the factorized-exp-scale GQA8 score32 exact local temporal reducer physical harness at p53/p54 in reducer mode only, using a fresh bounded macro-style hierarchy sweep with `SYNTH_ARGS=-noshare` and no memory-guard override so the factorized implementation must clear the default synthesis guard on its own.",
+      "status": "pending",
+      "evaluation_mode": "frontier_followup",
+      "abstraction_layer": "decoder_attention_score32_local_temporal_reducer_gqa8",
+      "comparison_role": "functional_gqa8_local_hierarchy_anchor",
+      "paired_baseline_item_id": "l1_decoder_attention_score32_exact_partial_gqa8_dual_stream_producer_ppa_v1",
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "configs": [
+        "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p53_reducer_factored_w8/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p54_reducer_factored_w8/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/attention_score32_local_temporal_reducer_gqa8_v1/sweeps/nangate45_attention_score32_local_temporal_reducer_gqa8_physical_harness_boundary_factored_r4.json",
+      "out_root": "runs/designs/npu_blocks",
+      "expected_outputs": [
+        "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p53_reducer_factored_w8/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p53_reducer_factored_w8/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p54_reducer_factored_w8/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p54_reducer_factored_w8/timing_debug_report.md"
+      ],
+      "acceptance_notes": "Run the factorized GQA8 physical-harness generator, guard, run_block_sweep, and timing-summary commands for each config. Preserve the finalized r3 metadata exactly, but interpret r3 as a legacy-LUT encoding boundary revealed by evaluator mem.json and generator structure, not as a persistent-state requirement. Do not rerun source_only controls because `exp_scale_impl` is irrelevant there and r2/r3 already closed those controls. Keep the fresh sweep immutable, retain `-noshare`, and do not add `SYNTH_MEMORY_MAX_BITS`; if synthesis still trips a memory guard, treat that as a factored-regression signal rather than relaxing the guard again.",
+      "expected_result": {
+        "direction": "measure_factored_gqa8_local_temporal_reducer_boundary_without_memory_guard_override",
+        "reason": "The factorized exp-scale implementation should remove the legacy monolithic LUT replication identified in r3 and expose the next real physical boundary for the reducer itself."
+      },
+      "notes": "Fresh immutable r4 retry. This item isolates the factorized reducer-only datapath at p53/p54, keeps the historical v1/r2/r3 sweep identities untouched, and expects the default synthesis memory guard to remain in force. Generate the DB item only after this job-prep change is merged, with developer_loop proposal linkage and source_requirement.required_sha pinned at queue time to the merged origin/master commit that contains the factorized configs, sweep, and diagnostic evidence."
     }
   ],
-  "source_commit": "c733716b4756afe2eaf41e4feccb060a4de29f2c"
+  "source_commit": "379b4e723cb2a8ee61ce82bcb027b8bec9e7e0db"
 }
