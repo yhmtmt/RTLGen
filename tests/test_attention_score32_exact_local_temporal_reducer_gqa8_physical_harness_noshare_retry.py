@@ -69,11 +69,13 @@ def test_gqa8_physical_harness_noshare_retry_docs_preserve_v1_history() -> None:
     assert "Do not mutate or reuse this sweep identity for retries." in historical["notes"]
 
     assert retry["sweep_path"] == str(RETRY_SWEEP_PATH.relative_to(REPO_ROOT))
-    assert retry["status"] == "pending"
+    assert retry["status"] == "failed_before_pnr"
     assert request_items["l1_decoder_attention_score32_local_temporal_reducer_gqa8_ppa_v1"]["status"] == (
         "failed_before_pnr"
     )
+    assert request_items["l1_decoder_attention_score32_local_temporal_reducer_gqa8_ppa_v1_r2"]["status"] == "merged"
     assert requested_retry["sweep_path"] == retry["sweep_path"]
     assert "SAT-based resource-sharing pass" in retry["objective"]
     assert "`SYNTH_ARGS=-noshare`" in retry["objective"]
-    assert "make_run_id" in retry["notes"]
+    assert "Synthesized memory size 4096 exceeds SYNTH_MEMORY_MAX_BITS" in retry["notes"]
+    assert "Finalized via PR #1531" in requested_retry["notes"]
