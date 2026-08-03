@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_score32_exact_partial_tree_folded_mersenne_cluster_ppa_v1",
+  "decision": "promote",
+  "pr_number": 1523,
+  "merge_commit": "710f1c019e68c9031ba588ce5af15753f61d5d30",
+  "merged_utc": "2026-08-03T08:29:33.973828Z"
+}
