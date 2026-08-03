@@ -56,6 +56,7 @@ def _validate(config: JsonDict) -> JsonDict:
     value_slices = int(body.get("value_slices", 16))
     head_id_bits = int(body.get("head_id_bits", 5))
     exp_scale_impl = str(body.get("exp_scale_impl", LEGACY_MONOLITHIC_LUT_EXACT)).strip()
+    keep_hierarchy = bool(body.get("keep_hierarchy", False))
     if producers < 2 or producers > 64:
         raise SystemExit("producers must be in [2, 64]")
     if value_slices < 1 or value_slices > 16 or (value_slices & (value_slices - 1)):
@@ -71,6 +72,7 @@ def _validate(config: JsonDict) -> JsonDict:
         "value_slices": value_slices,
         "head_id_bits": head_id_bits,
         "exp_scale_impl": exp_scale_impl,
+        "keep_hierarchy": keep_hierarchy,
     }
 
 
@@ -329,6 +331,7 @@ def generate(config: JsonDict, out_dir: Path) -> None:
                     "value_slices": int(params["value_slices"]),
                     "head_id_bits": int(params["head_id_bits"]),
                     "exp_scale_impl": str(params["exp_scale_impl"]),
+                    "keep_hierarchy": bool(params["keep_hierarchy"]),
                 },
             },
             temp_dir,
@@ -363,6 +366,7 @@ def generate(config: JsonDict, out_dir: Path) -> None:
         "value_slices": int(params["value_slices"]),
         "head_id_bits": int(params["head_id_bits"]),
         "exp_scale_impl": str(params["exp_scale_impl"]),
+        "keep_hierarchy": bool(params["keep_hierarchy"]),
         "tree_stages": stage_count,
         "tree_nodes": node_count,
         "result_interface": "arbitrary_count_ready_valid_exact_partial_leaf_streams_to_root_stream",

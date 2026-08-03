@@ -1,0 +1,14 @@
+{
+  "top_name": "attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p54_reducer_factored_hier_w8",
+  "attention_score32_exact_local_temporal_reducer_gqa8_physical_harness": {
+    "producers": 54,
+    "mode": "reducer",
+    "waves": 8,
+    "exp_scale_impl": "factored_h33_l64_mul_exact",
+    "keep_hierarchy": true
+  },
+  "report_links": {
+    "proposal_id": "prop_l1_decoder_attention_score32_local_temporal_reducer_gqa8_v1",
+    "proposal_path": "docs/proposals/prop_l1_decoder_attention_score32_local_temporal_reducer_gqa8_v1/proposal.json"
+  }
+}

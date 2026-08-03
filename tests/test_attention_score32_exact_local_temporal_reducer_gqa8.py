@@ -22,6 +22,10 @@ def _rtl_tools_available() -> bool:
     return bool(shutil.which("iverilog") and shutil.which("vvp") and shutil.which("verilator"))
 
 
+def _yosys_available() -> bool:
+    return bool(shutil.which("yosys") or Path("/oss-cad-suite/bin/yosys").exists())
+
+
 def _tool(name: str) -> str:
     path = shutil.which(name)
     if path:
@@ -60,6 +64,7 @@ def test_local_temporal_reducer_gqa8_manifest_and_verilator_lint_p53(tmp_path: P
     assert manifest["producers"] == 53
     assert manifest["persistent_waves"] == 8
     assert manifest["exp_scale_impl"] == LEGACY_MONOLITHIC_LUT_EXACT
+    assert manifest["keep_hierarchy"] is False
     assert manifest["query_heads_per_group"] == 8
     assert manifest["partial_payload_bits_per_beat"] == 328
     assert (
@@ -91,11 +96,17 @@ def test_local_temporal_reducer_gqa8_manifest_and_verilator_lint_p53(tmp_path: P
     assert manifest["service_model"]["query_head_groups"] == 2
     assert manifest["submodule_manifests"]["local_reducer"]["producers"] == 53
     assert manifest["submodule_manifests"]["local_reducer"]["exp_scale_impl"] == LEGACY_MONOLITHIC_LUT_EXACT
+    assert manifest["submodule_manifests"]["local_reducer"]["keep_hierarchy"] is False
     assert (
         manifest["submodule_manifests"]["local_reducer"]["submodule_manifests"]["pair_merge"]["exp_scale_impl"]
         == LEGACY_MONOLITHIC_LUT_EXACT
     )
+    assert (
+        manifest["submodule_manifests"]["local_reducer"]["submodule_manifests"]["pair_merge"]["keep_hierarchy"]
+        is False
+    )
     assert manifest["submodule_manifests"]["temporal_merge"]["exp_scale_impl"] == LEGACY_MONOLITHIC_LUT_EXACT
+    assert manifest["submodule_manifests"]["temporal_merge"]["keep_hierarchy"] is False
     assert manifest["submodule_manifests"]["temporal_merge"]["result_interface"] == (
         "ready_valid_exact_partial_slice_stream"
     )
@@ -131,18 +142,69 @@ def test_local_temporal_reducer_gqa8_factored_exp_scale_propagates_and_removes_m
         )
     )
     assert manifest["exp_scale_impl"] == FACTORED_H33_L64_MUL_EXACT
+    assert manifest["keep_hierarchy"] is False
     assert manifest["submodule_manifests"]["local_reducer"]["exp_scale_impl"] == FACTORED_H33_L64_MUL_EXACT
+    assert manifest["submodule_manifests"]["local_reducer"]["keep_hierarchy"] is False
     assert (
         manifest["submodule_manifests"]["local_reducer"]["submodule_manifests"]["pair_merge"]["exp_scale_impl"]
         == FACTORED_H33_L64_MUL_EXACT
     )
+    assert (
+        manifest["submodule_manifests"]["local_reducer"]["submodule_manifests"]["pair_merge"]["keep_hierarchy"]
+        is False
+    )
     assert manifest["submodule_manifests"]["temporal_merge"]["exp_scale_impl"] == FACTORED_H33_L64_MUL_EXACT
+    assert manifest["submodule_manifests"]["temporal_merge"]["keep_hierarchy"] is False
 
     rtl = (tmp_path / "rtl" / "top.v").read_text(encoding="utf-8")
     assert "case (bucket)" not in rtl
     assert rtl.count("case (bucket_hi)") == 2
     assert rtl.count("case (bucket_lo)") == 2
     assert "33'd4096: exp_lut = 24'd" not in rtl
+
+
+@pytest.mark.skipif(not _yosys_available(), reason="yosys unavailable")
+def test_local_temporal_reducer_gqa8_keep_hierarchy_survives_yosys_flatten(tmp_path: Path) -> None:
+    config = _load_config(53)
+    config["attention_score32_exact_local_temporal_reducer_gqa8"]["exp_scale_impl"] = FACTORED_H33_L64_MUL_EXACT
+    config["attention_score32_exact_local_temporal_reducer_gqa8"]["keep_hierarchy"] = True
+    generate(config, tmp_path / "rtl")
+
+    manifest = json.loads(
+        (tmp_path / "rtl" / "attention_score32_exact_local_temporal_reducer_gqa8_manifest.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert manifest["keep_hierarchy"] is True
+    assert manifest["submodule_manifests"]["local_reducer"]["keep_hierarchy"] is True
+    assert manifest["submodule_manifests"]["local_reducer"]["submodule_manifests"]["pair_merge"]["keep_hierarchy"] is True
+    assert manifest["submodule_manifests"]["temporal_merge"]["keep_hierarchy"] is True
+
+    rtl = (tmp_path / "rtl" / "top.v").read_text(encoding="utf-8")
+    assert rtl.count("(* keep_hierarchy = 1 *)") >= 2
+
+    flattened_json = tmp_path / "flattened.json"
+    subprocess.run(
+        [
+            _tool("yosys"),
+            "-p",
+            (
+                f"read_verilog -sv {tmp_path / 'rtl' / 'top.v'}; "
+                f"hierarchy -check -top {config['top_name']}; "
+                "proc; "
+                "flatten; "
+                f"write_json {flattened_json}"
+            ),
+        ],
+        capture_output=True,
+        text=True,
+        check=True,
+        timeout=180,
+    )
+    design = json.loads(flattened_json.read_text(encoding="utf-8"))
+    cell_types = {cell["type"] for cell in design["modules"][str(config["top_name"])]["cells"].values()}
+    assert f"{config['top_name']}__temporal_merge" in cell_types
+    assert f"{config['top_name']}__local_reducer__pair_node" in cell_types
 
 
 def test_local_temporal_reducer_gqa8_rejects_invalid_producer_count(tmp_path: Path) -> None:
@@ -224,6 +286,7 @@ def test_local_temporal_reducer_gqa8_probe_matches_reference_p54_ideal() -> None
 def test_local_temporal_reducer_gqa8_probe_matches_reference_p53_factored_ideal() -> None:
     config = _load_config(53)
     config["attention_score32_exact_local_temporal_reducer_gqa8"]["exp_scale_impl"] = FACTORED_H33_L64_MUL_EXACT
+    config["attention_score32_exact_local_temporal_reducer_gqa8"]["keep_hierarchy"] = True
     report = build_report(config=config)
 
     assert report["passed"] is True

@@ -112,10 +112,11 @@ def test_gqa8_factored_r4_docs_link_job_and_preserve_r3_metadata() -> None:
     assert r3["merged_utc"] == "2026-08-03T10:58:06.037636Z"
 
     assert requests["source_commit"] == "379b4e723cb2a8ee61ce82bcb027b8bec9e7e0db"
-    assert "legacy monolithic exp-LUT encoding boundary" in requests["source_commit_note"]
+    assert "finalized r2/r3 evidence" in requests["source_commit_note"]
+    assert "canceled r4 OOM evidence as immutable history" in requests["source_commit_note"]
 
-    assert r4["status"] == "pending"
-    assert requested_r4["status"] == "pending"
+    assert r4["status"] == "failed_oom_canceled"
+    assert requested_r4["status"] == "failed_oom_canceled"
     assert r4["configs"] == requested_r4["configs"] == [
         str(P53_CONFIG_PATH.relative_to(REPO_ROOT)),
         str(P54_CONFIG_PATH.relative_to(REPO_ROOT)),
@@ -129,7 +130,8 @@ def test_gqa8_factored_r4_docs_link_job_and_preserve_r3_metadata() -> None:
     ]
     assert "do not add `SYNTH_MEMORY_MAX_BITS`" in r4["acceptance_notes"]
     assert "Do not rerun source_only controls" in r4["acceptance_notes"]
-    assert "factorized configs, sweep, and diagnostic evidence" in requested_r4["notes"]
+    assert "do not reuse it for retries" in requested_r4["notes"]
+    assert "factored_r4_oom_diagnostic.json" in requested_r4["notes"]
 
     for ref in (
         str(P53_CONFIG_PATH.relative_to(REPO_ROOT)),

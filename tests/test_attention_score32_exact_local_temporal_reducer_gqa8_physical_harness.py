@@ -21,6 +21,10 @@ def _rtl_tools_available() -> bool:
     return bool(shutil.which("verilator") or Path("/oss-cad-suite/bin/verilator").exists())
 
 
+def _yosys_available() -> bool:
+    return bool(shutil.which("yosys") or Path("/oss-cad-suite/bin/yosys").exists())
+
+
 def _tool(name: str) -> str:
     path = shutil.which(name)
     if path:
@@ -67,6 +71,7 @@ def test_gqa8_physical_harness_manifest_and_verilator_lint(tmp_path: Path, produ
     assert manifest["mode"] == mode
     assert manifest["waves"] == 8
     assert manifest["exp_scale_impl"] == LEGACY_MONOLITHIC_LUT_EXACT
+    assert manifest["keep_hierarchy"] is False
     assert manifest["command_count"] == 2
     assert manifest["query_heads_per_group"] == 8
     assert manifest["head_group_bases"] == [0, 8]
@@ -104,6 +109,7 @@ def test_gqa8_physical_harness_manifest_and_verilator_lint(tmp_path: Path, produ
     if mode == "reducer":
         assert manifest["submodule_manifests"]["gqa8_reducer"]["producers"] == producers
         assert manifest["submodule_manifests"]["gqa8_reducer"]["exp_scale_impl"] == LEGACY_MONOLITHIC_LUT_EXACT
+        assert manifest["submodule_manifests"]["gqa8_reducer"]["keep_hierarchy"] is False
         assert "u_reducer" in top_text
         assert "(reducer_out_command_id_w == 16'h7b01)" in harness_text
         assert "(reducer_out_head_id_w == 5'd15)" in harness_text
@@ -144,7 +150,9 @@ def test_gqa8_physical_harness_factored_exp_scale_propagates_to_reducer_and_temp
     )
     reducer_manifest = manifest["submodule_manifests"]["gqa8_reducer"]
     assert manifest["exp_scale_impl"] == FACTORED_H33_L64_MUL_EXACT
+    assert manifest["keep_hierarchy"] is False
     assert reducer_manifest["exp_scale_impl"] == FACTORED_H33_L64_MUL_EXACT
+    assert reducer_manifest["keep_hierarchy"] is False
     assert reducer_manifest["submodule_manifests"]["local_reducer"]["exp_scale_impl"] == FACTORED_H33_L64_MUL_EXACT
     assert (
         reducer_manifest["submodule_manifests"]["local_reducer"]["submodule_manifests"]["pair_merge"]["exp_scale_impl"]
@@ -157,6 +165,56 @@ def test_gqa8_physical_harness_factored_exp_scale_propagates_to_reducer_and_temp
     assert rtl.count("case (bucket_hi)") == 2
     assert rtl.count("case (bucket_lo)") == 2
     assert "33'd4096: exp_lut = 24'd" not in rtl
+
+
+@pytest.mark.skipif(not _yosys_available(), reason="yosys unavailable")
+def test_gqa8_physical_harness_keep_hierarchy_propagates_and_survives_flatten(tmp_path: Path) -> None:
+    config = _load_config(53, "reducer")
+    body = config["attention_score32_exact_local_temporal_reducer_gqa8_physical_harness"]
+    body["exp_scale_impl"] = FACTORED_H33_L64_MUL_EXACT
+    body["keep_hierarchy"] = True
+    generate(config, tmp_path / "rtl")
+
+    manifest = json.loads(
+        (
+            tmp_path / "rtl" / "attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_manifest.json"
+        ).read_text(encoding="utf-8")
+    )
+    reducer_manifest = manifest["submodule_manifests"]["gqa8_reducer"]
+    assert manifest["keep_hierarchy"] is True
+    assert reducer_manifest["keep_hierarchy"] is True
+    assert reducer_manifest["submodule_manifests"]["local_reducer"]["keep_hierarchy"] is True
+    assert (
+        reducer_manifest["submodule_manifests"]["local_reducer"]["submodule_manifests"]["pair_merge"]["keep_hierarchy"]
+        is True
+    )
+    assert reducer_manifest["submodule_manifests"]["temporal_merge"]["keep_hierarchy"] is True
+
+    rtl = (tmp_path / "rtl" / "top.v").read_text(encoding="utf-8")
+    assert rtl.count("(* keep_hierarchy = 1 *)") >= 2
+
+    flattened_json = tmp_path / "flattened.json"
+    subprocess.run(
+        [
+            _tool("yosys"),
+            "-p",
+            (
+                f"read_verilog -sv {tmp_path / 'rtl' / 'top.v'}; "
+                f"hierarchy -check -top {config['top_name']}; "
+                "proc; "
+                "flatten; "
+                f"write_json {flattened_json}"
+            ),
+        ],
+        capture_output=True,
+        text=True,
+        check=True,
+        timeout=300,
+    )
+    design = json.loads(flattened_json.read_text(encoding="utf-8"))
+    cell_types = {cell["type"] for cell in design["modules"][str(config["top_name"])]["cells"].values()}
+    assert f"{config['top_name']}__reducer__temporal_merge" in cell_types
+    assert f"{config['top_name']}__reducer__local_reducer__pair_node" in cell_types
 
 
 def test_gqa8_physical_harness_rejects_invalid_mode(tmp_path: Path) -> None:

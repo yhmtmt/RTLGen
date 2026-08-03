@@ -63,6 +63,7 @@ def _validate(config: JsonDict) -> JsonDict:
     head_id_bits = int(body.get("head_id_bits", 5))
     persistent_waves = int(body.get("persistent_waves", LOCAL_TEMPORAL_WAVES))
     exp_scale_impl = str(body.get("exp_scale_impl", LEGACY_MONOLITHIC_LUT_EXACT)).strip()
+    keep_hierarchy = bool(body.get("keep_hierarchy", False))
     if producers not in {53, 54}:
         raise SystemExit("producers must be exactly 53 or 54")
     if value_slices != 16:
@@ -81,6 +82,7 @@ def _validate(config: JsonDict) -> JsonDict:
         "head_id_bits": head_id_bits,
         "persistent_waves": persistent_waves,
         "exp_scale_impl": exp_scale_impl,
+        "keep_hierarchy": keep_hierarchy,
     }
 
 
@@ -467,6 +469,7 @@ def generate(config: JsonDict, out_dir: Path) -> None:
                     "value_slices": int(params["value_slices"]),
                     "head_id_bits": int(params["head_id_bits"]),
                     "exp_scale_impl": str(params["exp_scale_impl"]),
+                    "keep_hierarchy": bool(params["keep_hierarchy"]),
                 },
             },
             reducer_dir,
@@ -478,6 +481,7 @@ def generate(config: JsonDict, out_dir: Path) -> None:
                     "value_slices": int(params["value_slices"]),
                     "head_id_bits": int(params["head_id_bits"]),
                     "exp_scale_impl": str(params["exp_scale_impl"]),
+                    "keep_hierarchy": bool(params["keep_hierarchy"]),
                 },
             },
             merge_dir,
@@ -524,6 +528,7 @@ def generate(config: JsonDict, out_dir: Path) -> None:
         "head_id_bits": int(params["head_id_bits"]),
         "persistent_waves": int(params["persistent_waves"]),
         "exp_scale_impl": str(params["exp_scale_impl"]),
+        "keep_hierarchy": bool(params["keep_hierarchy"]),
         "query_heads_per_group": 8,
         "result_interface": "local_exact_partial_gqa8_group_streams_to_128_beat_aggregate_after_8_waves",
         "partial_payload_bits_per_beat": PARTIAL_PAYLOAD_BITS,

@@ -108,3 +108,20 @@ def test_gqa8_physical_harness_guard_rejects_exp_scale_impl_mismatch(tmp_path: P
     result = _run_guard(design_dir)
     assert result.returncode != 0
     assert "temporal_merge submodule manifest exp_scale_impl must be legacy_monolithic_lut_exact" in result.stderr
+
+
+def test_gqa8_physical_harness_guard_accepts_keep_hierarchy(tmp_path: Path) -> None:
+    design_dir = _prepare_design_dir(tmp_path, producers=53, mode="reducer")
+    for config_path in (design_dir / "config.json", design_dir / "verilog" / "config.json"):
+        config = json.loads(config_path.read_text(encoding="utf-8"))
+        config["attention_score32_exact_local_temporal_reducer_gqa8_physical_harness"]["keep_hierarchy"] = True
+        config_path.write_text(json.dumps(config, indent=2) + "\n", encoding="utf-8")
+    generate(
+        json.loads((design_dir / "config.json").read_text(encoding="utf-8")),
+        design_dir / "verilog",
+    )
+
+    result = _run_guard(design_dir)
+    assert result.returncode == 0, result.stderr
+    payload = json.loads(result.stdout)
+    assert payload["status"] == "ok"

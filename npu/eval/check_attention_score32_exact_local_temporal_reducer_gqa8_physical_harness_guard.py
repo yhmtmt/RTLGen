@@ -99,6 +99,7 @@ def main(argv: list[str] | None = None) -> int:
     mode = str(body.get("mode", "")).strip()
     waves = int(body.get("waves", 0))
     exp_scale_impl = str(body.get("exp_scale_impl", LEGACY_MONOLITHIC_LUT_EXACT)).strip()
+    keep_hierarchy = bool(body.get("keep_hierarchy", False))
     if producers not in {53, 54}:
         raise SystemExit("producers must remain exactly 53 or 54")
     if mode not in {"reducer", "source_only"}:
@@ -115,6 +116,7 @@ def main(argv: list[str] | None = None) -> int:
         "mode": mode,
         "waves": 8,
         "exp_scale_impl": exp_scale_impl,
+        "keep_hierarchy": keep_hierarchy,
         "command_count": 2,
         "query_heads_per_group": 8,
         "head_group_bases": [0, 8],
@@ -148,6 +150,7 @@ def main(argv: list[str] | None = None) -> int:
         raise SystemExit("config must include report_links for evaluator artifact linkage")
     _require(links, "proposal_id", _PROPOSAL_ID, "report_links")
 
+    rtl = top_path.read_text(encoding="utf-8", errors="replace")
     submodule_manifests = manifest.get("submodule_manifests")
     if not isinstance(submodule_manifests, dict):
         raise SystemExit("generated manifest must contain submodule_manifests")
@@ -163,6 +166,7 @@ def main(argv: list[str] | None = None) -> int:
         )
         _require(gqa8_reducer_manifest, "query_heads_per_group", 8, "gqa8 reducer submodule manifest")
         _require(gqa8_reducer_manifest, "exp_scale_impl", exp_scale_impl, "gqa8 reducer submodule manifest")
+        _require(gqa8_reducer_manifest, "keep_hierarchy", keep_hierarchy, "gqa8 reducer submodule manifest")
         local_reducer_manifest = gqa8_reducer_manifest.get("submodule_manifests", {}).get("local_reducer")
         temporal_merge_manifest = gqa8_reducer_manifest.get("submodule_manifests", {}).get("temporal_merge")
         if not isinstance(local_reducer_manifest, dict):
@@ -170,15 +174,20 @@ def main(argv: list[str] | None = None) -> int:
         if not isinstance(temporal_merge_manifest, dict):
             raise SystemExit("gqa8 reducer manifest must include temporal_merge submodule manifest")
         _require(local_reducer_manifest, "exp_scale_impl", exp_scale_impl, "local reducer submodule manifest")
+        _require(local_reducer_manifest, "keep_hierarchy", keep_hierarchy, "local reducer submodule manifest")
         pair_manifest = local_reducer_manifest.get("submodule_manifests", {}).get("pair_merge")
         if not isinstance(pair_manifest, dict):
             raise SystemExit("local reducer manifest must include pair_merge submodule manifest")
         _require(pair_manifest, "exp_scale_impl", exp_scale_impl, "pair_merge submodule manifest")
+        _require(pair_manifest, "keep_hierarchy", keep_hierarchy, "pair_merge submodule manifest")
         _require(temporal_merge_manifest, "exp_scale_impl", exp_scale_impl, "temporal_merge submodule manifest")
+        _require(temporal_merge_manifest, "keep_hierarchy", keep_hierarchy, "temporal_merge submodule manifest")
+        if keep_hierarchy:
+            if rtl.count("(* keep_hierarchy = 1 *)") < 2:
+                raise SystemExit("generated RTL must preserve both local pair and temporal merge hierarchy markers")
     elif gqa8_reducer_manifest is not None:
         raise SystemExit("source_only mode must not include gqa8 reducer manifest")
 
-    rtl = top_path.read_text(encoding="utf-8", errors="replace")
     top_module = _extract_module(rtl, top_name)
     _require_token(top_module, "localparam integer COMMANDS = 2;", "generated RTL")
     _require_token(top_module, "localparam integer GQA_HEADS = 8;", "generated RTL")

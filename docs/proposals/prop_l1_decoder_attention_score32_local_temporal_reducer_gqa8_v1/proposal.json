@@ -19,16 +19,17 @@
       "128-bank temporal exact state across 8 heads x 16 slices",
       "explicit head-base plus lane contract validation",
       "producer-compatible head-major slice-minor local-root ordering",
-        "ideal-interface service and separate stressed ready/valid evidence",
-        "structured RTL/perf equivalence for every emitted beat"
-      ],
-      "exclude": [
-        "producer-to-reducer physical fan-in closure",
-        "NoC and SRAM physical closure",
-        "global c16 integration PPA",
-        "frontier promotion from functional simulation alone",
-        "remote queue dispatch and physical execution in this change"
-      ],
+      "ideal-interface service and separate stressed ready/valid evidence",
+      "structured RTL/perf equivalence for every emitted beat",
+      "optional merge-level hierarchy preservation for physical closure retries"
+    ],
+    "exclude": [
+      "producer-to-reducer physical fan-in closure",
+      "NoC and SRAM physical closure",
+      "global c16 integration PPA",
+      "frontier promotion from functional simulation alone",
+      "remote queue dispatch and physical execution in this change"
+    ],
     "metrics": [
       "functional_exact_partial_protocol",
       "validated_gqa8_wave_terminal_contract",
@@ -43,7 +44,7 @@
     "Producer-to-local-reducer structural fan-in remains open.",
     "NoC and SRAM PPA remain open.",
     "The global c16 exact reducer is still uncomposed here.",
-    "The new GQA8 physical harness is structural-only, and its reducer-vs-source_only PPA delta is nonlinear until the producer fan-in and global c16 composition are closed."
+    "The GQA8 physical harness remains structural-only, and its reducer-vs-source_only PPA delta is nonlinear until the producer fan-in and global c16 composition are closed."
   ],
   "required_evaluations": [
     {
@@ -189,8 +190,40 @@
         "direction": "measure_factored_gqa8_local_temporal_reducer_boundary_without_memory_guard_override",
         "reason": "The factorized exp-scale implementation should remove the legacy monolithic LUT replication identified in r3 and expose the next real physical boundary for the reducer itself."
       },
+      "status": "failed_oom_canceled",
+      "notes": "Historical immutable r4 evidence only. The exact queued item `l1_decoder_attention_score32_local_temporal_reducer_gqa8_factored_ppa_v1_run_de60dd9a4d966235` reached the first p53 15ns factorized reducer point, cleared the default synthesis memory guard, then hit worker cgroup OOM during synthesis and was canceled by event 1161. Preserve this r4 identity and sweep as canceled evidence; do not reuse it for retries. See `factored_r4_oom_diagnostic.json` for the bound run key, work-item UUID, worker-log base, cgroup memory evidence, and the rationale for canceling the remaining point instead of repeating a clock-independent OOM."
+    },
+    {
+      "item_id": "l1_decoder_attention_score32_local_temporal_reducer_gqa8_factored_hier_ppa_v1",
+      "task_type": "l1_sweep",
+      "proposal_id": "prop_l1_decoder_attention_score32_local_temporal_reducer_gqa8_v1",
+      "proposal_path": "docs/proposals/prop_l1_decoder_attention_score32_local_temporal_reducer_gqa8_v1/proposal.json",
+      "objective": "Measure Nangate45 PPA for the factorized-exp-scale GQA8 score32 exact local temporal reducer physical harness at p53/p54 in reducer mode only, using a fresh bounded macro-style hierarchy-preserved sweep with `SYNTH_ARGS=-noshare`, `SYNTH_HIERARCHICAL=1`, and merge-level `keep_hierarchy` enabled so both every local pair merge and the temporal merge survive flattening pressure without reviving the removed memory-guard override.",
+      "evaluation_mode": "frontier_followup",
+      "abstraction_layer": "decoder_attention_score32_local_temporal_reducer_gqa8",
+      "comparison_role": "functional_gqa8_local_hierarchy_anchor",
+      "paired_baseline_item_id": "l1_decoder_attention_score32_exact_partial_gqa8_dual_stream_producer_ppa_v1",
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "configs": [
+        "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p53_reducer_factored_hier_w8/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p54_reducer_factored_hier_w8/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/attention_score32_local_temporal_reducer_gqa8_v1/sweeps/nangate45_attention_score32_local_temporal_reducer_gqa8_physical_harness_boundary_factored_hier_r5.json",
+      "out_root": "runs/designs/npu_blocks",
+      "expected_outputs": [
+        "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p53_reducer_factored_hier_w8/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p53_reducer_factored_hier_w8/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p54_reducer_factored_hier_w8/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p54_reducer_factored_hier_w8/timing_debug_report.md"
+      ],
+      "acceptance_notes": "Run the factorized GQA8 physical-harness generator, guard, run_block_sweep, and timing-summary commands for each config. Keep the sweep immutable, retain `-noshare`, keep `SYNTH_HIERARCHICAL=1`, and enable merge-level `keep_hierarchy` so both every local pair merge and the temporal merge are explicitly preserved under flattening pressure. Use clocks 15ns and 20ns, die `0 0 3000 3000`, core `80 80 2920 2920`, place density 0.55, and do not add `SYNTH_MEMORY_MAX_BITS`; if synthesis still fails, treat that as the next physical boundary rather than reviving the removed memory override.",
+      "expected_result": {
+        "direction": "measure_factored_gqa8_local_temporal_reducer_boundary_with_preserved_merge_hierarchy",
+        "reason": "R5 keeps the factorized datapath and no-share flow from r4, but preserves merge hierarchy explicitly so the retry tests whether flattening pressure was the remaining cause after the default memory guard had already been cleared."
+      },
       "status": "pending",
-      "notes": "Fresh immutable r4 retry. This item isolates the factorized reducer-only datapath at p53/p54, keeps the historical v1/r2/r3 sweep identities untouched, and expects the default synthesis memory guard to remain in force. Generate the DB item only after this job-prep change is merged, with developer_loop proposal linkage and source_requirement.required_sha pinned at queue time to the merged origin/master commit that contains the factorized configs, sweep, and diagnostic evidence."
+      "notes": "Fresh immutable r5 retry. This item preserves the r4 canceled evidence unchanged, introduces only merge-level hierarchy preservation plus fresh config/sweep identity, and must be the only new DB item generated after this job-prep change is merged. Carry exact developer_loop proposal linkage and pin source_requirement.required_sha at queue time to the merged commit that contains the hierarchy-preserved configs, sweep, and r4 OOM diagnostic."
     }
   ],
   "source_refs": [
@@ -212,7 +245,11 @@
     "runs/campaigns/npu/attention_score32_local_temporal_reducer_gqa8_v1/sweeps/nangate45_attention_score32_local_temporal_reducer_gqa8_physical_harness_boundary_noshare_memguard_r3.json",
     "runs/campaigns/npu/attention_score32_local_temporal_reducer_gqa8_v1/sweeps/nangate45_attention_score32_local_temporal_reducer_gqa8_physical_harness_boundary_factored_r4.json",
     "docs/proposals/prop_l1_decoder_attention_score32_local_temporal_reducer_gqa8_v1/legacy_lut_memory_boundary_r3_diagnostic.json",
-    "docs/proposals/prop_l1_decoder_attention_score32_local_temporal_reducer_gqa8_v1/evaluation_requests.json"
+    "docs/proposals/prop_l1_decoder_attention_score32_local_temporal_reducer_gqa8_v1/evaluation_requests.json",
+    "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p53_reducer_factored_hier_w8/config.json",
+    "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p54_reducer_factored_hier_w8/config.json",
+    "runs/campaigns/npu/attention_score32_local_temporal_reducer_gqa8_v1/sweeps/nangate45_attention_score32_local_temporal_reducer_gqa8_physical_harness_boundary_factored_hier_r5.json",
+    "docs/proposals/prop_l1_decoder_attention_score32_local_temporal_reducer_gqa8_v1/factored_r4_oom_diagnostic.json"
   ],
   "knowledge_refs": [
     "npu/docs/attention_score32_exact_local_temporal_reducer_gqa8_contract.md",

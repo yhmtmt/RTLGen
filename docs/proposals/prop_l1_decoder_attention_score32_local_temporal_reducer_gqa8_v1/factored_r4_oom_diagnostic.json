@@ -1,0 +1,56 @@
+{
+  "diagnostic_id": "factored_r4_oom_canceled",
+  "proposal_id": "prop_l1_decoder_attention_score32_local_temporal_reducer_gqa8_v1",
+  "related_item_id": "l1_decoder_attention_score32_local_temporal_reducer_gqa8_factored_ppa_v1",
+  "summary": "The r4 factorized reducer sweep cleared the prior synthesis memory guard at the first p53 15ns point, then hit cgroup OOM during synthesis. The sweep advanced into p53 20ns before the run was canceled to avoid repeating the clock-independent synthesis failure; p54 was not started.",
+  "source_commit": "f8cd7cdd11342b539b5afb60f8761a2757d8e5c5",
+  "checkout_commit": "f8cd7cdd11342b539b5afb60f8761a2757d8e5c5",
+  "work_item_uuid": "5f6c9288-362b-4b42-a932-ac0a4258747f",
+  "run_id": "e54d85c3-537a-4afd-9bfd-39a75837ab41",
+  "run_key": "l1_decoder_attention_score32_local_temporal_reducer_gqa8_factored_ppa_v1_run_de60dd9a4d966235",
+  "event_id": 1161,
+  "evaluator": "eval-daemon-b7c2d9c80c1c",
+  "run_status": "CANCELED",
+  "started_utc": "2026-08-03T11:23:54Z",
+  "completed_utc": "2026-08-03T11:28:48Z",
+  "run_runtime_seconds": 294.907201,
+  "failure_stage": "run_block_sweep_attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p53_reducer_factored_w8",
+  "failure_category": "command_canceled",
+  "first_point": {
+    "design": "attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p53_reducer_factored_w8",
+    "clock_period_ns": 15.0,
+    "elapsed_seconds": 186.92,
+    "peak_kb": 12238788,
+    "cgroup_memory_max_bytes": 12884901888,
+    "cgroup_memory_peak_bytes": 12884971520,
+    "memory_events": {
+      "oom": 2,
+      "oom_kill": 1
+    },
+    "observation": "The factorized implementation cleared the default synthesis memory-size guard and progressed into the real synthesis workload before the worker cgroup hit OOM."
+  },
+  "cancellation_rationale": {
+    "second_point_canceled": true,
+    "second_point": {
+      "design": "attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p53_reducer_factored_w8",
+      "clock_period_ns": 20.0
+    },
+    "p54_started": false,
+    "reason": "After the first p53 15ns point failed with cgroup OOM inside synthesis, the already-started p53 20ns point and all later p54 work were canceled to avoid repeating the same clock-independent OOM mode under the factorized r4 identity."
+  },
+  "worker_logs": {
+    "base": "/workspaces/rtlgen-eval-clean/control_plane/logs/l1_decoder_attention_score32_local_temporal_reducer_gqa8_factored_ppa_v1/l1_decoder_attention_score32_local_temporal_reducer_gqa8_factored_ppa_v1_run_de60dd9a4d966235/03_run_block_sweep_attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p53_reducer_factored_w8",
+    "stdout_log": "/workspaces/rtlgen-eval-clean/control_plane/logs/l1_decoder_attention_score32_local_temporal_reducer_gqa8_factored_ppa_v1/l1_decoder_attention_score32_local_temporal_reducer_gqa8_factored_ppa_v1_run_de60dd9a4d966235/03_run_block_sweep_attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p53_reducer_factored_w8.stdout.log",
+    "stderr_log": "/workspaces/rtlgen-eval-clean/control_plane/logs/l1_decoder_attention_score32_local_temporal_reducer_gqa8_factored_ppa_v1/l1_decoder_attention_score32_local_temporal_reducer_gqa8_factored_ppa_v1_run_de60dd9a4d966235/03_run_block_sweep_attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p53_reducer_factored_w8.stderr.log"
+  },
+  "known_orfs_path_patterns": {
+    "results": [
+      "/orfs/flow/results/nangate45/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p53_reducer_factored_w8/base/<artifact>",
+      "/orfs/flow/results/nangate45/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p54_reducer_factored_w8/base/<artifact>"
+    ],
+    "logs": [
+      "/orfs/flow/logs/nangate45/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p53_reducer_factored_w8/base/<step>.log",
+      "/orfs/flow/logs/nangate45/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p54_reducer_factored_w8/base/<step>.log"
+    ]
+  }
+}
