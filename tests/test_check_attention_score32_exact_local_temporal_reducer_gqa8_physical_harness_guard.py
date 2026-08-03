@@ -94,3 +94,17 @@ def test_gqa8_physical_harness_guard_rejects_missing_source_token(tmp_path: Path
     result = _run_guard(design_dir)
     assert result.returncode != 0
     assert "generated RTL missing semantic token: if (shared_beat_count_q == 12'd2047) begin" in result.stderr
+
+
+def test_gqa8_physical_harness_guard_rejects_exp_scale_impl_mismatch(tmp_path: Path) -> None:
+    design_dir = _prepare_design_dir(tmp_path, producers=53, mode="reducer")
+    manifest_path = design_dir / "verilog" / "attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["submodule_manifests"]["gqa8_reducer"]["submodule_manifests"]["temporal_merge"][
+        "exp_scale_impl"
+    ] = "factored_h33_l64_mul_exact"
+    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+
+    result = _run_guard(design_dir)
+    assert result.returncode != 0
+    assert "temporal_merge submodule manifest exp_scale_impl must be legacy_monolithic_lut_exact" in result.stderr

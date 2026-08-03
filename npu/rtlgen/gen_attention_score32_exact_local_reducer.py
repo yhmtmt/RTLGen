@@ -15,7 +15,12 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from npu.rtlgen.gen_attention_score32_online_state_merge import generate as generate_merge
+from npu.rtlgen.gen_attention_score32_online_state_merge import (
+    FACTORED_H33_L64_MUL_EXACT,
+    LEGACY_MONOLITHIC_LUT_EXACT,
+    SEGMENTED_LUT_9X256_EXACT,
+    generate as generate_merge,
+)
 from npu.sim.perf.attention_exact_partial import (
     PARTIAL_LINK_BITS,
     PARTIAL_PAYLOAD_BITS,
@@ -23,6 +28,11 @@ from npu.sim.perf.attention_exact_partial import (
 )
 
 JsonDict = dict[str, Any]
+_SUPPORTED_EXP_SCALE_IMPLS = {
+    LEGACY_MONOLITHIC_LUT_EXACT,
+    SEGMENTED_LUT_9X256_EXACT,
+    FACTORED_H33_L64_MUL_EXACT,
+}
 
 
 def _load(path: Path) -> JsonDict:
@@ -45,17 +55,22 @@ def _validate(config: JsonDict) -> JsonDict:
     producers = int(body.get("producers", 53))
     value_slices = int(body.get("value_slices", 16))
     head_id_bits = int(body.get("head_id_bits", 5))
+    exp_scale_impl = str(body.get("exp_scale_impl", LEGACY_MONOLITHIC_LUT_EXACT)).strip()
     if producers < 2 or producers > 64:
         raise SystemExit("producers must be in [2, 64]")
     if value_slices < 1 or value_slices > 16 or (value_slices & (value_slices - 1)):
         raise SystemExit("value_slices must be a power of two in [1, 16]")
     if head_id_bits < 1 or head_id_bits > 8:
         raise SystemExit("head_id_bits must be in [1, 8]")
+    if exp_scale_impl not in _SUPPORTED_EXP_SCALE_IMPLS:
+        supported = ", ".join(sorted(_SUPPORTED_EXP_SCALE_IMPLS))
+        raise SystemExit(f"exp_scale_impl must be one of: {supported}")
     return {
         "top_name": top_name,
         "producers": producers,
         "value_slices": value_slices,
         "head_id_bits": head_id_bits,
+        "exp_scale_impl": exp_scale_impl,
     }
 
 
@@ -313,6 +328,7 @@ def generate(config: JsonDict, out_dir: Path) -> None:
                 "attention_score32_online_state_merge": {
                     "value_slices": int(params["value_slices"]),
                     "head_id_bits": int(params["head_id_bits"]),
+                    "exp_scale_impl": str(params["exp_scale_impl"]),
                 },
             },
             temp_dir,
@@ -346,6 +362,7 @@ def generate(config: JsonDict, out_dir: Path) -> None:
         "producers": int(params["producers"]),
         "value_slices": int(params["value_slices"]),
         "head_id_bits": int(params["head_id_bits"]),
+        "exp_scale_impl": str(params["exp_scale_impl"]),
         "tree_stages": stage_count,
         "tree_nodes": node_count,
         "result_interface": "arbitrary_count_ready_valid_exact_partial_leaf_streams_to_root_stream",

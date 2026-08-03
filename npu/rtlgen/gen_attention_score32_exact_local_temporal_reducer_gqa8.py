@@ -15,7 +15,12 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from npu.rtlgen.gen_attention_score32_exact_local_reducer import generate as generate_local_reducer
-from npu.rtlgen.gen_attention_score32_online_state_merge import generate as generate_merge
+from npu.rtlgen.gen_attention_score32_online_state_merge import (
+    FACTORED_H33_L64_MUL_EXACT,
+    LEGACY_MONOLITHIC_LUT_EXACT,
+    SEGMENTED_LUT_9X256_EXACT,
+    generate as generate_merge,
+)
 from npu.sim.perf.attention_exact_partial import (
     LOCAL_TEMPORAL_WAVES,
     PARTIAL_LINK_BITS,
@@ -26,6 +31,11 @@ from npu.sim.perf.attention_exact_partial import (
 JsonDict = dict[str, Any]
 _CONFIG_KEY = "attention_score32_exact_local_temporal_reducer_gqa8"
 _MANIFEST_NAME = "attention_score32_exact_local_temporal_reducer_gqa8_manifest.json"
+_SUPPORTED_EXP_SCALE_IMPLS = {
+    LEGACY_MONOLITHIC_LUT_EXACT,
+    SEGMENTED_LUT_9X256_EXACT,
+    FACTORED_H33_L64_MUL_EXACT,
+}
 
 
 def _load(path: Path) -> JsonDict:
@@ -52,6 +62,7 @@ def _validate(config: JsonDict) -> JsonDict:
     value_slices = int(body.get("value_slices", 16))
     head_id_bits = int(body.get("head_id_bits", 5))
     persistent_waves = int(body.get("persistent_waves", LOCAL_TEMPORAL_WAVES))
+    exp_scale_impl = str(body.get("exp_scale_impl", LEGACY_MONOLITHIC_LUT_EXACT)).strip()
     if producers not in {53, 54}:
         raise SystemExit("producers must be exactly 53 or 54")
     if value_slices != 16:
@@ -60,12 +71,16 @@ def _validate(config: JsonDict) -> JsonDict:
         raise SystemExit("head_id_bits must remain fixed at 5")
     if persistent_waves != LOCAL_TEMPORAL_WAVES:
         raise SystemExit(f"persistent_waves must remain fixed at {LOCAL_TEMPORAL_WAVES}")
+    if exp_scale_impl not in _SUPPORTED_EXP_SCALE_IMPLS:
+        supported = ", ".join(sorted(_SUPPORTED_EXP_SCALE_IMPLS))
+        raise SystemExit(f"exp_scale_impl must be one of: {supported}")
     return {
         "top_name": top_name,
         "producers": producers,
         "value_slices": value_slices,
         "head_id_bits": head_id_bits,
         "persistent_waves": persistent_waves,
+        "exp_scale_impl": exp_scale_impl,
     }
 
 
@@ -451,6 +466,7 @@ def generate(config: JsonDict, out_dir: Path) -> None:
                     "producers": int(params["producers"]),
                     "value_slices": int(params["value_slices"]),
                     "head_id_bits": int(params["head_id_bits"]),
+                    "exp_scale_impl": str(params["exp_scale_impl"]),
                 },
             },
             reducer_dir,
@@ -461,6 +477,7 @@ def generate(config: JsonDict, out_dir: Path) -> None:
                 "attention_score32_online_state_merge": {
                     "value_slices": int(params["value_slices"]),
                     "head_id_bits": int(params["head_id_bits"]),
+                    "exp_scale_impl": str(params["exp_scale_impl"]),
                 },
             },
             merge_dir,
@@ -506,6 +523,7 @@ def generate(config: JsonDict, out_dir: Path) -> None:
         "value_slices": int(params["value_slices"]),
         "head_id_bits": int(params["head_id_bits"]),
         "persistent_waves": int(params["persistent_waves"]),
+        "exp_scale_impl": str(params["exp_scale_impl"]),
         "query_heads_per_group": 8,
         "result_interface": "local_exact_partial_gqa8_group_streams_to_128_beat_aggregate_after_8_waves",
         "partial_payload_bits_per_beat": PARTIAL_PAYLOAD_BITS,

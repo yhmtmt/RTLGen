@@ -15,6 +15,11 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from npu.rtlgen.gen_attention_score32_exact_local_temporal_reducer_gqa8 import generate as generate_reducer
+from npu.rtlgen.gen_attention_score32_online_state_merge import (
+    FACTORED_H33_L64_MUL_EXACT,
+    LEGACY_MONOLITHIC_LUT_EXACT,
+    SEGMENTED_LUT_9X256_EXACT,
+)
 from npu.sim.perf.attention_exact_partial import LOCAL_TEMPORAL_WAVES, PARTIAL_PAYLOAD_BITS
 
 JsonDict = dict[str, Any]
@@ -22,6 +27,11 @@ _CONFIG_KEY = "attention_score32_exact_local_temporal_reducer_gqa8_physical_harn
 _MANIFEST_NAME = "attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_manifest.json"
 _PROPOSAL_ID = "prop_l1_decoder_attention_score32_local_temporal_reducer_gqa8_v1"
 _PROPOSAL_PATH = "docs/proposals/prop_l1_decoder_attention_score32_local_temporal_reducer_gqa8_v1/proposal.json"
+_SUPPORTED_EXP_SCALE_IMPLS = {
+    LEGACY_MONOLITHIC_LUT_EXACT,
+    SEGMENTED_LUT_9X256_EXACT,
+    FACTORED_H33_L64_MUL_EXACT,
+}
 
 
 def _load(path: Path) -> JsonDict:
@@ -40,17 +50,22 @@ def _validate(config: JsonDict) -> JsonDict:
     producers = int(body.get("producers", 53))
     mode = str(body.get("mode", "reducer")).strip()
     waves = int(body.get("waves", LOCAL_TEMPORAL_WAVES))
+    exp_scale_impl = str(body.get("exp_scale_impl", LEGACY_MONOLITHIC_LUT_EXACT)).strip()
     if producers not in {53, 54}:
         raise SystemExit("producers must be exactly 53 or 54")
     if mode not in {"reducer", "source_only"}:
         raise SystemExit("mode must be reducer or source_only")
     if waves != LOCAL_TEMPORAL_WAVES:
         raise SystemExit(f"waves must remain fixed at {LOCAL_TEMPORAL_WAVES}")
+    if exp_scale_impl not in _SUPPORTED_EXP_SCALE_IMPLS:
+        supported = ", ".join(sorted(_SUPPORTED_EXP_SCALE_IMPLS))
+        raise SystemExit(f"exp_scale_impl must be one of: {supported}")
     return {
         "top_name": top_name,
         "producers": producers,
         "mode": mode,
         "waves": waves,
+        "exp_scale_impl": exp_scale_impl,
     }
 
 
@@ -409,13 +424,14 @@ def generate(config: JsonDict, out_dir: Path) -> None:
                 {
                     "top_name": reducer_top,
                     "attention_score32_exact_local_temporal_reducer_gqa8": {
-                        "producers": int(params["producers"]),
-                        "value_slices": 16,
-                        "head_id_bits": 5,
-                        "persistent_waves": int(params["waves"]),
-                    },
-                    "probe_defaults": {
-                        "heads": 16,
+                    "producers": int(params["producers"]),
+                    "value_slices": 16,
+                    "head_id_bits": 5,
+                    "persistent_waves": int(params["waves"]),
+                    "exp_scale_impl": str(params["exp_scale_impl"]),
+                },
+                "probe_defaults": {
+                    "heads": 16,
                         "command_count": 2,
                         "head_bases": [0, 8],
                         "seed": 23,
@@ -449,6 +465,7 @@ def generate(config: JsonDict, out_dir: Path) -> None:
         "producers": int(params["producers"]),
         "mode": mode,
         "waves": int(params["waves"]),
+        "exp_scale_impl": str(params["exp_scale_impl"]),
         "command_count": 2,
         "query_heads_per_group": 8,
         "head_group_bases": [0, 8],

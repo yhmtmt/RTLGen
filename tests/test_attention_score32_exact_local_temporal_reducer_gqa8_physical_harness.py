@@ -11,6 +11,10 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from npu.rtlgen.gen_attention_score32_exact_local_temporal_reducer_gqa8_physical_harness import generate
+from npu.rtlgen.gen_attention_score32_online_state_merge import (
+    FACTORED_H33_L64_MUL_EXACT,
+    LEGACY_MONOLITHIC_LUT_EXACT,
+)
 
 
 def _rtl_tools_available() -> bool:
@@ -62,6 +66,7 @@ def test_gqa8_physical_harness_manifest_and_verilator_lint(tmp_path: Path, produ
     assert manifest["producers"] == producers
     assert manifest["mode"] == mode
     assert manifest["waves"] == 8
+    assert manifest["exp_scale_impl"] == LEGACY_MONOLITHIC_LUT_EXACT
     assert manifest["command_count"] == 2
     assert manifest["query_heads_per_group"] == 8
     assert manifest["head_group_bases"] == [0, 8]
@@ -98,6 +103,7 @@ def test_gqa8_physical_harness_manifest_and_verilator_lint(tmp_path: Path, produ
         assert f"{{24'd0, leaf_value_w[{index * 328 + 320} +: 8]}}" in harness_text
     if mode == "reducer":
         assert manifest["submodule_manifests"]["gqa8_reducer"]["producers"] == producers
+        assert manifest["submodule_manifests"]["gqa8_reducer"]["exp_scale_impl"] == LEGACY_MONOLITHIC_LUT_EXACT
         assert "u_reducer" in top_text
         assert "(reducer_out_command_id_w == 16'h7b01)" in harness_text
         assert "(reducer_out_head_id_w == 5'd15)" in harness_text
@@ -121,6 +127,36 @@ def test_gqa8_physical_harness_manifest_and_verilator_lint(tmp_path: Path, produ
         timeout=300,
     )
     assert lint.returncode == 0, lint.stderr
+
+
+@pytest.mark.skipif(not _rtl_tools_available(), reason="RTL tools unavailable")
+def test_gqa8_physical_harness_factored_exp_scale_propagates_to_reducer_and_temporal_merge(tmp_path: Path) -> None:
+    config = _load_config(53, "reducer")
+    config["attention_score32_exact_local_temporal_reducer_gqa8_physical_harness"][
+        "exp_scale_impl"
+    ] = FACTORED_H33_L64_MUL_EXACT
+    generate(config, tmp_path / "rtl")
+
+    manifest = json.loads(
+        (
+            tmp_path / "rtl" / "attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_manifest.json"
+        ).read_text(encoding="utf-8")
+    )
+    reducer_manifest = manifest["submodule_manifests"]["gqa8_reducer"]
+    assert manifest["exp_scale_impl"] == FACTORED_H33_L64_MUL_EXACT
+    assert reducer_manifest["exp_scale_impl"] == FACTORED_H33_L64_MUL_EXACT
+    assert reducer_manifest["submodule_manifests"]["local_reducer"]["exp_scale_impl"] == FACTORED_H33_L64_MUL_EXACT
+    assert (
+        reducer_manifest["submodule_manifests"]["local_reducer"]["submodule_manifests"]["pair_merge"]["exp_scale_impl"]
+        == FACTORED_H33_L64_MUL_EXACT
+    )
+    assert reducer_manifest["submodule_manifests"]["temporal_merge"]["exp_scale_impl"] == FACTORED_H33_L64_MUL_EXACT
+
+    rtl = (tmp_path / "rtl" / "top.v").read_text(encoding="utf-8")
+    assert "case (bucket)" not in rtl
+    assert rtl.count("case (bucket_hi)") == 2
+    assert rtl.count("case (bucket_lo)") == 2
+    assert "33'd4096: exp_lut = 24'd" not in rtl
 
 
 def test_gqa8_physical_harness_rejects_invalid_mode(tmp_path: Path) -> None:

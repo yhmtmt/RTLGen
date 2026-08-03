@@ -1,0 +1,56 @@
+{
+  "diagnostic_id": "legacy_lut_memory_boundary_r3",
+  "proposal_id": "prop_l1_decoder_attention_score32_local_temporal_reducer_gqa8_v1",
+  "related_item_id": "l1_decoder_attention_score32_local_temporal_reducer_gqa8_ppa_v1_r3",
+  "merge_commit": "d96c3379c3af228606f9b266142529255fd12699",
+  "r3_source_commit": "c733716b4756afe2eaf41e4feccb060a4de29f2c",
+  "summary": "The r3 reducer abort was a legacy monolithic exp-LUT encoding boundary, not a persistent-state-size boundary.",
+  "legacy_monolithic_exp_lut": {
+    "per_memory_kind": "$mem_v2",
+    "depth": 4096,
+    "width_bits": 24,
+    "bits_per_memory": 98304
+  },
+  "cases": {
+    "p53": {
+      "producers": 53,
+      "local_merge_nodes": 52,
+      "temporal_merge_nodes": 1,
+      "exp_lut_evaluations_per_merge": 2,
+      "inferred_memories": 106,
+      "all_memories_match_4096x24": true,
+      "total_bits": 10420224
+    },
+    "p54": {
+      "producers": 54,
+      "local_merge_nodes": 53,
+      "temporal_merge_nodes": 1,
+      "exp_lut_evaluations_per_merge": 2,
+      "inferred_memories": 108,
+      "all_memories_match_4096x24": true,
+      "total_bits": 10616832
+    }
+  },
+  "derivation": {
+    "formula": "2 exp LUT evaluations x ((producers - 1) local merge nodes + 1 temporal merge)",
+    "source": [
+      "evaluator Yosys mem.json",
+      "npu/rtlgen/gen_attention_score32_exact_local_reducer.py",
+      "npu/rtlgen/gen_attention_score32_exact_local_temporal_reducer_gqa8.py",
+      "npu/rtlgen/gen_attention_score32_online_state_merge.py"
+    ]
+  },
+  "source_identification": {
+    "evaluator_machine_key": "eval-daemon-b7c2d9c80c1c",
+    "result_mem_json_paths": [
+      "/orfs/flow/results/nangate45/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p53_reducer_w8/base/mem.json",
+      "/orfs/flow/results/nangate45/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p54_reducer_w8/base/mem.json"
+    ]
+  },
+  "failure_text_observation": {
+    "text": "Error: Synthesized memory size 65536 exceeds SYNTH_MEMORY_MAX_BITS",
+    "actual_max_instance_bits": 98304,
+    "mem_dump_behavior": "ORFS mem_dump.py prints args.max_bits, the configured threshold, not the offending instance size.",
+    "meaning": "The emitted failure text reports the configured threshold comparison, not the aggregate replicated memory footprint or the offending instance multiplicity."
+  }
+}
