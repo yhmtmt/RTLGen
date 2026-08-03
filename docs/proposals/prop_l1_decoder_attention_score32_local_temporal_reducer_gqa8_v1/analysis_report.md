@@ -2,13 +2,13 @@
 
 ## Candidate
 - `proposal_id`: `prop_l1_decoder_attention_score32_local_temporal_reducer_gqa8_v1`
-- `candidate_id`: `l1_decoder_attention_score32_local_temporal_reducer_gqa8_ppa_v1_r2`
+- `candidate_id`: `l1_decoder_attention_score32_local_temporal_reducer_gqa8_ppa_v1_r3`
 
 ## Evaluations Consumed
-- `l1_decoder_attention_score32_local_temporal_reducer_gqa8_ppa_v1_r2`
-- `l1_decoder_attention_score32_local_temporal_reducer_gqa8_ppa_v1_r2_run_be58dc8eecb76da9`
-- source commit: `5ee47712c0586b02d1fb38e714b59c86082fe955`
-- review: PR #1531
+- `l1_decoder_attention_score32_local_temporal_reducer_gqa8_ppa_v1_r3`
+- `l1_decoder_attention_score32_local_temporal_reducer_gqa8_ppa_v1_r3_run_0438940c7a32e1c6`
+- source commit: `c733716b4756afe2eaf41e4feccb060a4de29f2c`
+- review: PR #1533
 
 ## Baseline Comparison
 - not applicable
@@ -25,5 +25,5 @@
 
 ## Recommendation
 - `promote`
-- reason: Accepted Layer 1 physical metrics were merged in PR #1531 for the current candidate.
+- reason: Accepted Layer 1 physical metrics were merged in PR #1533 for the current candidate.
 - next_action: inspect the next dependent item

@@ -91,7 +91,7 @@
       "proposal_id": "prop_l1_decoder_attention_score32_local_temporal_reducer_gqa8_v1",
       "proposal_path": "docs/proposals/prop_l1_decoder_attention_score32_local_temporal_reducer_gqa8_v1/proposal.json",
       "objective": "Retry the Nangate45 PPA boundary sweep for the corrected merged GQA8 score32 exact local temporal reducer physical harness at p53/p54 in reducer and source_only modes using the same bounded macro-style hierarchy points, retaining `SYNTH_ARGS=-noshare` and adding `SYNTH_MEMORY_MAX_BITS=65536` so synthesis can legalize the required 4096-bit persistent state. This changes only the synthesis memory guard and does not alter RTL semantics.",
-      "status": "pending",
+      "status": "merged",
       "evaluation_mode": "frontier_followup",
       "abstraction_layer": "decoder_attention_score32_local_temporal_reducer_gqa8",
       "comparison_role": "functional_gqa8_local_hierarchy_anchor",
@@ -121,8 +121,11 @@
         "direction": "measure_gqa8_local_temporal_reducer_boundary_without_yosys_share_or_memory_guard_abort",
         "reason": "The retry preserves the exact bounded physical envelope while changing only synthesis flow guard identity so the already-proven no-share path can continue past the 4096-bit persistent-state memory check and expose the next real physical boundary."
       },
-      "notes": "Fresh immutable retry. Use the new no-share memory-guard sweep identity, not the original v1 or r2 sweeps, so `make_run_id` and the parameter hash differ and `--skip_existing` cannot reuse either preserved failure. The queued payload must carry exact developer_loop proposal linkage plus a queue-time source_requirement pin to the merged job-prep commit."
+      "notes": "Fresh immutable retry. Use the new no-share memory-guard sweep identity, not the original v1 or r2 sweeps, so `make_run_id` and the parameter hash differ and `--skip_existing` cannot reuse either preserved failure. The queued payload must carry exact developer_loop proposal linkage plus a queue-time source_requirement pin to the merged job-prep commit. Merged via PR #1533 and merge d96c3379c3af228606f9b266142529255fd12699 at 2026-08-03T10:58:06.037636Z.",
+      "merged_pr_number": 1533,
+      "merge_commit": "d96c3379c3af228606f9b266142529255fd12699",
+      "merged_utc": "2026-08-03T10:58:06.037636Z"
     }
   ],
-  "source_commit": "5ee47712c0586b02d1fb38e714b59c86082fe955"
+  "source_commit": "c733716b4756afe2eaf41e4feccb060a4de29f2c"
 }
