@@ -1,0 +1,2 @@
+run_key,attempt,trial_index,seed,status,metrics_csv,critical_path_ns,die_area,total_power_mw,failure_category,failure_stage,failure_signature
+l1_decoder_attention_score32_local_temporal_reducer_gqa8_factored_hier_folded_mersenne_macro_ppa_v1_run_189c634d2b3ca788,1,1,0,succeeded,,,,,none,,

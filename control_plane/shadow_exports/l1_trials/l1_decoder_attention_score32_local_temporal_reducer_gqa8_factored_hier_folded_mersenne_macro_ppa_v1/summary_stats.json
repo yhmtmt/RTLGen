@@ -1,0 +1,16 @@
+{
+  "item_id": "l1_decoder_attention_score32_local_temporal_reducer_gqa8_factored_hier_folded_mersenne_macro_ppa_v1",
+  "completed_trials": 1,
+  "success_count": 0,
+  "failure_count": 1,
+  "success_rate": 0.0,
+  "partial_metrics_count": 0,
+  "metrics": {},
+  "aggregation_scope": "current_run_checkout_commit",
+  "aggregation_source_commit": "e796b6f6946d5f76257bcd8c30bc06fedf58d390",
+  "aggregation_included_attempts": 1,
+  "aggregation_excluded_attempts": 0,
+  "aggregation_excluded_source_commits": {},
+  "aggregation_excluded_attempt_run_keys": [],
+  "aggregation_excluded_attempt_run_keys_truncated": false
+}
