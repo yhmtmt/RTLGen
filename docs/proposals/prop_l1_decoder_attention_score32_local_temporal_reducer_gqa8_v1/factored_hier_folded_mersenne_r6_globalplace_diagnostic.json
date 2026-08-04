@@ -1,0 +1,92 @@
+{
+  "diagnostic_id": "factored_hier_folded_mersenne_r6_globalplace_oom_recovered",
+  "proposal_id": "prop_l1_decoder_attention_score32_local_temporal_reducer_gqa8_v1",
+  "related_item_id": "l1_decoder_attention_score32_local_temporal_reducer_gqa8_factored_hier_folded_mersenne_ppa_v1",
+  "summary": "Exact-source r6 at commit b41c0694737d69c26db9147d04f03bd0d531d802 cleared synthesis on p53 and recovered two global-placement failure rows from the first evaluator attempt. Both recovered p53 rows reached global placement and then failed with signal 9 under worker cgroup memory pressure; p54 was not measured. A second attempt was canceled to avoid duplicating the same boundary once the first attempt's artifacts had been rescued.",
+  "source_commit": "b41c0694737d69c26db9147d04f03bd0d531d802",
+  "checkout_commit": "b41c0694737d69c26db9147d04f03bd0d531d802",
+  "evaluator": "eval-daemon-b7c2d9c80c1c",
+  "run_failure_category": "flow_failed_signal_9",
+  "diagnostic_category": "globalplace_oom_artifacts_recovered",
+  "recovered_artifacts": {
+    "metrics_csv": {
+      "path": "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p53_reducer_factored_hier_folded_mersenne_w8/metrics.csv",
+      "sha256": "7437d394c0c66c8d318340b58c267dec30db98cf109e9c080e89bc3fe1424484"
+    },
+    "timing_debug_report": {
+      "path": "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p53_reducer_factored_hier_folded_mersenne_w8/timing_debug_report.md",
+      "sha256": "0253eb3e88265d49070128b35747d4f47a64d4585c7c3f3692ac13ddf25b2ae8"
+    },
+    "external_synth_stat": {
+      "path": "external evaluator artifact synth_stat.txt",
+      "sha256": "c4399c6128bea8d8b91a50f6897f7a2017d4b65ce4be4bfdf44e7dd367c224ec"
+    }
+  },
+  "recovered_points": [
+    {
+      "design": "attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p53_reducer_factored_hier_folded_mersenne_w8",
+      "clock_period_ns": 10.0,
+      "param_hash": "b3bca973",
+      "status": "flow_failed",
+      "failure_stage": "globalplace",
+      "failure_returncode": 2,
+      "flow_elapsed_seconds": 3461.85,
+      "failure_signature": "Elapsed time: 33:13.97[h:]min:sec. CPU time: user 3576.88 sys 338.07 (196%). Peak memory: 11827728KB."
+    },
+    {
+      "design": "attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p53_reducer_factored_hier_folded_mersenne_w8",
+      "clock_period_ns": 15.0,
+      "param_hash": "cf6bf533",
+      "status": "flow_failed",
+      "failure_stage": "globalplace",
+      "failure_returncode": 2,
+      "flow_elapsed_seconds": 3358.86,
+      "failure_signature": "Elapsed time: 32:11.58[h:]min:sec. CPU time: user 3460.73 sys 334.95 (196%). Peak memory: 11947620KB."
+    }
+  ],
+  "hierarchy_evidence": {
+    "synthesis_succeeded": true,
+    "measured_design_scope": "p53 only",
+    "p54_measured": false,
+    "top_logic_stdcell_count_excluding_submodules": 278859,
+    "top_logic_area_um2_excluding_submodules": 623623.168,
+    "local_pair_node_instances": 52,
+    "local_pair_node_stdcell_count_each": 25904,
+    "local_pair_node_area_um2_each": 50431.472,
+    "temporal_merge_instances": 1,
+    "temporal_merge_stdcell_count_each": 26331,
+    "temporal_merge_area_um2_each": 51053.114,
+    "total_hierarchy_stdcell_count": 1652145,
+    "total_hierarchy_area_um2": 3297112.826
+  },
+  "cgroup_memory_evidence": {
+    "events_before": {
+      "oom": 4,
+      "oom_kill": 2
+    },
+    "events_after": {
+      "oom": 8,
+      "oom_kill": 6
+    },
+    "observation": "The recovered p53 runs advanced beyond synthesis and reached global placement before repeated cgroup OOM pressure forced signal-9 termination."
+  },
+  "attempt_history": {
+    "attempt_1_artifacts_recovered": true,
+    "attempt_2_canceled": true,
+    "attempt_2_reason": "The first attempt already recovered both p53 boundary rows, and the second attempt was canceled to avoid duplicating the same global-placement OOM evidence while p54 remained unstarted."
+  },
+  "measured_service_evidence": {
+    "source_commit": "b41c0694737d69c26db9147d04f03bd0d531d802",
+    "scope": "p53 ideal one-group RTL/perf equivalence probe on current master",
+    "drain_cycles": 20730,
+    "first_output_cycle": 20602,
+    "last_output_cycle": 20729,
+    "local_root_completed_count": 1024,
+    "temporal_merge_completed_count": 896,
+    "output_count": 128,
+    "conservative_producer_barrier_cycles_per_group": 4224,
+    "slowdown_vs_conservative_barrier": 4.91,
+    "observation": "The fully instantiated folded reducer is both physically large and service-dominant: one group drains in 20730 cycles, 4.91x slower than the earlier 4224-cycle conservative producer barrier."
+  },
+  "conclusion": "R6 removed the generic-divider TECHMAP wall from r5 and proved that the folded-Mersenne hierarchy can be synthesized into a concrete 1.65M-cell structure, but the flat top remains too heavy to place as a monolith and the measured one-group service is now reducer-throughput-dominant. The next job should harden the pair-node and temporal-merge modules separately and rerun the top with macro abstraction rather than retrying another flat 1.65M-cell placement."
+}

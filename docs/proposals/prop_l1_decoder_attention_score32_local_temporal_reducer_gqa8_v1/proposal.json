@@ -44,7 +44,8 @@
     "Producer-to-local-reducer structural fan-in remains open.",
     "NoC and SRAM PPA remain open.",
     "The global c16 exact reducer is still uncomposed here.",
-    "The GQA8 physical harness remains structural-only, and its reducer-vs-source_only PPA delta is nonlinear until the producer fan-in and global c16 composition are closed."
+    "The GQA8 physical harness remains structural-only, and its reducer-vs-source_only PPA delta is nonlinear until the producer fan-in and global c16 composition are closed.",
+    "The fully instantiated folded p53 reducer now has measured one-group ideal service of 20730 drain cycles versus the earlier 4224-cycle conservative producer barrier, so reducer throughput and macro-composed placement must be treated as first-order constraints rather than hidden under producer overlap."
   ],
   "required_evaluations": [
     {
@@ -254,8 +255,39 @@
         "direction": "measure_factored_gqa8_local_temporal_reducer_boundary_with_folded_mersenne_exact_merge_nodes",
         "reason": "R6 keeps the verified hierarchy-preserved factorized reducer shape from r5, but replaces the remaining generic-divider merge arithmetic with the already-proven folded Mersenne exact implementation so the next retry tests the true post-TECHMAP physical boundary."
       },
+      "status": "failed_oom_canceled",
+      "notes": "Exact-source r6 evidence is now preserved at merged commit `b41c0694737d69c26db9147d04f03bd0d531d802`. The recovered first attempt produced only p53 rows: both 10ns and 15ns reached global placement after synthesis, then failed with signal 9 under repeated cgroup OOM pressure. Do not claim p54 as measured. Recovered hierarchy evidence shows top logic at 278859 cells / 623623.168 um2 excluding submodules, 52 local pair-node instances at 25904 cells / 50431.472 um2 each, one temporal node at 26331 cells / 51053.114 um2, and total hierarchy at 1652145 cells / 3297112.826 um2. Cgroup events increased from oom 4 -> 8 and oom_kill 2 -> 6. Attempt 1 artifacts were recovered and attempt 2 was canceled to avoid duplicating the same boundary. See `factored_hier_folded_mersenne_r6_globalplace_diagnostic.json`."
+    },
+    {
+      "item_id": "l1_decoder_attention_score32_local_temporal_reducer_gqa8_factored_hier_folded_mersenne_macro_ppa_v1",
+      "task_type": "l1_sweep",
+      "proposal_id": "prop_l1_decoder_attention_score32_local_temporal_reducer_gqa8_v1",
+      "proposal_path": "docs/proposals/prop_l1_decoder_attention_score32_local_temporal_reducer_gqa8_v1/proposal.json",
+      "objective": "Measure Nangate45 PPA for a physically faithful p53 folded-Mersenne GQA8 reducer hierarchy by hardening the generated pair-node and temporal-merge module types from the p53 folded top, composing them through one combined macro manifest, and rerunning the p53 top-level sweep with macro abstraction instead of flat placement.",
+      "evaluation_mode": "frontier_followup",
+      "abstraction_layer": "decoder_attention_score32_local_temporal_reducer_gqa8",
+      "comparison_role": "functional_gqa8_local_hierarchy_anchor",
+      "paired_baseline_item_id": "l1_decoder_attention_score32_exact_partial_gqa8_dual_stream_producer_ppa_v1",
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "configs": [
+        "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p53_reducer_factored_hier_folded_mersenne_macro_w8/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/attention_score32_local_temporal_reducer_gqa8_v1/sweeps/nangate45_attention_score32_local_temporal_reducer_gqa8_physical_harness_boundary_factored_hier_folded_mersenne_macro_r7.json",
+      "out_root": "runs/designs/npu_blocks",
+      "expected_outputs": [
+        "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p53_reducer_factored_hier_folded_mersenne_macro_w8/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p53_reducer_factored_hier_folded_mersenne_macro_w8/timing_debug_report.md",
+        "runs/designs/npu_macros/attention_score32_exact_local_temporal_reducer_gqa8_pair_node_ng45_r7/metrics.csv",
+        "runs/designs/npu_macros/attention_score32_exact_local_temporal_reducer_gqa8_temporal_merge_ng45_r7/metrics.csv"
+      ],
+      "acceptance_notes": "Run the folded-Mersenne GQA8 physical-harness generator and guard for the p53 reducer config, harden the generated `<top>__reducer__local_reducer__pair_node` and `<top>__reducer__temporal_merge` modules separately with `npu/synth/pre_synth_compute.py`, build one combined macro manifest, and rerun the p53 top-level sweep with `run_block_sweep.py --macro_manifest ...`. Keep the macro hardening opt-in config explicit, preserve legacy flat commands for configs that do not request it, use a 330um x 330um macro outline with a 310um x 310um core at 55% placement density so the measured 50-51k um2 module areas fit, and first establish feasibility with a 3.5mm die. Test the tighter 3.0mm downward bound only after the 3.5mm composition succeeds. Do not add p54 to this item.",
+      "expected_result": {
+        "direction": "measure_p53_folded_gqa8_reducer_with_hardened_pair_and_temporal_macros",
+        "reason": "R6 proved the folded hierarchy synthesizes but is too large to place flat, and the measured one-group p53 service now drains in 20730 cycles versus the earlier 4224-cycle conservative producer barrier. The next honest boundary is therefore macro-composed top-level placement of the already identified pair-node and temporal-merge modules."
+      },
       "status": "pending",
-      "notes": "Fresh immutable r6 retry. This item preserves the full r5 OOM evidence unchanged, changes only the merge-node implementation, and must be the only new DB item generated after this job-prep change is merged. Carry exact developer_loop proposal linkage and pin source_requirement.required_sha only after merge to the merged commit that contains the folded-Mersenne configs, sweep, guard, and the preserved r5 diagnostic."
+      "notes": "Fresh immutable r7 retry. This item reuses the recovered exact-source r6 evidence at `b41c0694737d69c26db9147d04f03bd0d531d802`, hardens the two generated module types instead of flattening the full 1.65M-cell reducer, and relies on the existing `pre_synth_compute.py` plus `run_block_sweep.py --macro_manifest` path. Generate only this fresh r7 DB task after the macro-opt-in job-prep change is merged, carry exact developer_loop proposal linkage, and pin `source_requirement.required_sha` only after merge to the commit containing the composite-manifest helper, the task-generator opt-in, the r7 config/sweep, and the preserved r6 diagnostic."
     }
   ],
   "source_refs": [
@@ -283,9 +315,14 @@
     "runs/campaigns/npu/attention_score32_local_temporal_reducer_gqa8_v1/sweeps/nangate45_attention_score32_local_temporal_reducer_gqa8_physical_harness_boundary_factored_hier_r5.json",
     "docs/proposals/prop_l1_decoder_attention_score32_local_temporal_reducer_gqa8_v1/factored_r4_oom_diagnostic.json",
     "docs/proposals/prop_l1_decoder_attention_score32_local_temporal_reducer_gqa8_v1/factored_hier_r5_oom_diagnostic.json",
+    "docs/proposals/prop_l1_decoder_attention_score32_local_temporal_reducer_gqa8_v1/factored_hier_folded_mersenne_r6_globalplace_diagnostic.json",
+    "npu/synth/build_composite_macro_manifest.py",
+    "control_plane/control_plane/services/l1_task_generator.py",
     "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p53_reducer_factored_hier_folded_mersenne_w8/config.json",
     "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p54_reducer_factored_hier_folded_mersenne_w8/config.json",
-    "runs/campaigns/npu/attention_score32_local_temporal_reducer_gqa8_v1/sweeps/nangate45_attention_score32_local_temporal_reducer_gqa8_physical_harness_boundary_factored_hier_folded_mersenne_r6.json"
+    "runs/campaigns/npu/attention_score32_local_temporal_reducer_gqa8_v1/sweeps/nangate45_attention_score32_local_temporal_reducer_gqa8_physical_harness_boundary_factored_hier_folded_mersenne_r6.json",
+    "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p53_reducer_factored_hier_folded_mersenne_macro_w8/config.json",
+    "runs/campaigns/npu/attention_score32_local_temporal_reducer_gqa8_v1/sweeps/nangate45_attention_score32_local_temporal_reducer_gqa8_physical_harness_boundary_factored_hier_folded_mersenne_macro_r7.json"
   ],
   "knowledge_refs": [
     "npu/docs/attention_score32_exact_local_temporal_reducer_gqa8_contract.md",

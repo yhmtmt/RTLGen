@@ -852,6 +852,100 @@ def _write_example_attention_score32_exact_local_temporal_reducer_gqa8_physical_
     )
 
 
+def _write_macro_attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_repo(
+    repo_root: Path,
+) -> tuple[str, str]:
+    design_name = (
+        "attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_"
+        "p53_reducer_factored_hier_folded_mersenne_macro_w8"
+    )
+    top_name = design_name
+    design_dir = repo_root / "runs" / "designs" / "npu_blocks" / design_name
+    design_dir.mkdir(parents=True, exist_ok=True)
+    config_path = design_dir / "config.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "top_name": top_name,
+                "attention_score32_exact_local_temporal_reducer_gqa8_physical_harness": {
+                    "producers": 53,
+                    "mode": "reducer",
+                    "waves": 8,
+                    "exp_scale_impl": "factored_h33_l64_mul_exact",
+                    "pair_node_impl": "folded_sharedscale_mersenne_exact",
+                    "keep_hierarchy": True,
+                },
+                "macro_hardening": {
+                    "enabled": True,
+                    "clock_period": 10.0,
+                    "clock_port": "clk",
+                    "place_density": 0.55,
+                    "flow_variant": "base",
+                    "die_area": "0 0 330 330",
+                    "core_area": "10 10 320 320",
+                    "pair_node_macro_id": "attention_score32_exact_local_temporal_reducer_gqa8_pair_node_ng45_r7",
+                    "temporal_merge_macro_id": (
+                        "attention_score32_exact_local_temporal_reducer_gqa8_temporal_merge_ng45_r7"
+                    ),
+                    "bundle_design_id": "attention_score32_exact_local_temporal_reducer_gqa8_macro_bundle_ng45_r7",
+                    "bundle_manifest_path": f"runs/designs/npu_blocks/{design_name}/macro_manifest.json",
+                    "pair_node_manifest_params": {
+                        "macro_role": "pair_node",
+                        "macro_eval_excludes_io_pads": True,
+                    },
+                    "temporal_merge_manifest_params": {
+                        "macro_role": "temporal_merge",
+                        "macro_eval_excludes_io_pads": True,
+                    },
+                    "bundle_manifest_params": {
+                        "pair_node_instance_count": 52,
+                        "temporal_merge_instance_count": 1,
+                    },
+                },
+                "report_links": {
+                    "proposal_id": "prop_l1_decoder_attention_score32_local_temporal_reducer_gqa8_v1",
+                    "proposal_path": "docs/proposals/prop_l1_decoder_attention_score32_local_temporal_reducer_gqa8_v1/proposal.json",
+                },
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    sweep_path = (
+        repo_root
+        / "runs"
+        / "campaigns"
+        / "npu"
+        / "attention_score32_local_temporal_reducer_gqa8_v1"
+        / "sweeps"
+        / "nangate45_attention_score32_local_temporal_reducer_gqa8_physical_harness_boundary_factored_hier_folded_mersenne_macro_r7.json"
+    )
+    sweep_path.parent.mkdir(parents=True, exist_ok=True)
+    sweep_path.write_text(
+        json.dumps(
+            {
+                "tag_prefix": (
+                    "attention_score32_local_temporal_reducer_gqa8_physical_harness_"
+                    "boundary_factored_hier_folded_mersenne_macro_v1_r7"
+                ),
+                "flow_params": {
+                    "CLOCK_PERIOD": [10.0, 15.0],
+                    "DIE_AREA": ["0 0 3500 3500"],
+                    "CORE_AREA": ["80 80 3420 3420"],
+                    "PLACE_DENSITY": [0.55],
+                    "SYNTH_HIERARCHICAL": [1],
+                    "SYNTH_ARGS": ["-noshare"],
+                },
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    return str(config_path.relative_to(repo_root)), str(sweep_path.relative_to(repo_root))
+
+
 def _write_example_attention_schedule_wrapper_repo(repo_root: Path) -> tuple[str, str]:
     design_dir = repo_root / "runs" / "designs" / "npu_blocks" / "attention_dual_stream_schedule_wrapper_smoke_c2"
     design_dir.mkdir(parents=True, exist_ok=True)
@@ -5995,6 +6089,82 @@ def test_generate_l1_sweep_task_supports_multi_attention_score32_exact_local_tem
                 "runs/designs/npu_blocks/"
                 "attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p54_source_only_w8/"
                 "timing_debug_report.md",
+            ]
+
+
+def test_generate_l1_sweep_task_adds_macro_hardening_for_gqa8_folded_mersenne_macro_config() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        config_path, sweep_path = _write_macro_attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_repo(
+            repo_root
+        )
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l1_sweep_task(
+                session,
+                Layer1SweepGenerateRequest(
+                    repo_root=str(repo_root),
+                    sweep_path=sweep_path,
+                    config_paths=[config_path],
+                    platform="nangate45",
+                    out_root="runs/designs/npu_blocks",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    abstraction_layer="decoder_attention_score32_local_temporal_reducer_gqa8",
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            assert [command["name"] for command in work_item.command_manifest] == [
+                "generate_attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_rtl",
+                "check_attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_guard",
+                "harden_attention_score32_exact_local_temporal_reducer_gqa8_pair_node_macro",
+                "harden_attention_score32_exact_local_temporal_reducer_gqa8_temporal_merge_macro",
+                "build_attention_score32_exact_local_temporal_reducer_gqa8_macro_manifest",
+                "run_block_sweep",
+                "extract_attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_timing_paths",
+                "build_runs_index",
+                "validate",
+            ]
+            assert "pre_synth_compute.py" in work_item.command_manifest[2]["run"]
+            assert (
+                "--module "
+                "attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_"
+                "p53_reducer_factored_hier_folded_mersenne_macro_w8__reducer__local_reducer__pair_node"
+                in work_item.command_manifest[2]["run"]
+            )
+            assert (
+                "--module "
+                "attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_"
+                "p53_reducer_factored_hier_folded_mersenne_macro_w8__reducer__temporal_merge"
+                in work_item.command_manifest[3]["run"]
+            )
+            assert "--manifest_param macro_eval_excludes_io_pads=true" in work_item.command_manifest[2]["run"]
+            assert "--manifest_param macro_eval_excludes_io_pads=true" in work_item.command_manifest[3]["run"]
+            assert "build_composite_macro_manifest.py" in work_item.command_manifest[4]["run"]
+            assert "--platform nangate45" in work_item.command_manifest[4]["run"]
+            assert "--manifest-param pair_node_instance_count=52" in work_item.command_manifest[4]["run"]
+            assert (
+                "--macro_manifest runs/designs/npu_blocks/"
+                "attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_"
+                "p53_reducer_factored_hier_folded_mersenne_macro_w8/macro_manifest.json"
+                in work_item.command_manifest[5]["run"]
+            )
+            assert work_item.expected_outputs == [
+                "runs/designs/npu_blocks/"
+                "attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_"
+                "p53_reducer_factored_hier_folded_mersenne_macro_w8/metrics.csv",
+                "runs/designs/npu_blocks/"
+                "attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_"
+                "p53_reducer_factored_hier_folded_mersenne_macro_w8/timing_debug_report.md",
+                "runs/designs/npu_macros/"
+                "attention_score32_exact_local_temporal_reducer_gqa8_pair_node_ng45_r7/metrics.csv",
+                "runs/designs/npu_macros/"
+                "attention_score32_exact_local_temporal_reducer_gqa8_temporal_merge_ng45_r7/metrics.csv",
             ]
 
 

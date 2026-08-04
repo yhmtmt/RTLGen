@@ -1,0 +1,47 @@
+{
+  "top_name": "attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p53_reducer_factored_hier_folded_mersenne_macro_w8",
+  "attention_score32_exact_local_temporal_reducer_gqa8_physical_harness": {
+    "producers": 53,
+    "mode": "reducer",
+    "waves": 8,
+    "exp_scale_impl": "factored_h33_l64_mul_exact",
+    "pair_node_impl": "folded_sharedscale_mersenne_exact",
+    "keep_hierarchy": true
+  },
+  "macro_hardening": {
+    "enabled": true,
+    "clock_period": 10.0,
+    "clock_port": "clk",
+    "place_density": 0.55,
+    "flow_variant": "base",
+    "die_area": "0 0 330 330",
+    "core_area": "10 10 320 320",
+    "pair_node_macro_id": "attention_score32_exact_local_temporal_reducer_gqa8_pair_node_ng45_r7",
+    "temporal_merge_macro_id": "attention_score32_exact_local_temporal_reducer_gqa8_temporal_merge_ng45_r7",
+    "bundle_design_id": "attention_score32_exact_local_temporal_reducer_gqa8_macro_bundle_ng45_r7",
+    "bundle_manifest_path": "runs/designs/npu_blocks/attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_p53_reducer_factored_hier_folded_mersenne_macro_w8/macro_manifest.json",
+    "pair_node_manifest_params": {
+      "macro_role": "pair_node",
+      "macro_eval_excludes_io_pads": true,
+      "measured_area_um2": "50431.472",
+      "measured_stdcell_count": "25904"
+    },
+    "temporal_merge_manifest_params": {
+      "macro_role": "temporal_merge",
+      "macro_eval_excludes_io_pads": true,
+      "measured_area_um2": "51053.114",
+      "measured_stdcell_count": "26331"
+    },
+    "bundle_manifest_params": {
+      "pair_node_instance_count": 52,
+      "temporal_merge_instance_count": 1,
+      "macro_eval_excludes_io_pads": true,
+      "top_logic_area_um2_excluding_submodules": "623623.168",
+      "top_logic_stdcell_count_excluding_submodules": "278859"
+    }
+  },
+  "report_links": {
+    "proposal_id": "prop_l1_decoder_attention_score32_local_temporal_reducer_gqa8_v1",
+    "proposal_path": "docs/proposals/prop_l1_decoder_attention_score32_local_temporal_reducer_gqa8_v1/proposal.json"
+  }
+}
