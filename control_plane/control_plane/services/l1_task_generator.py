@@ -76,10 +76,84 @@ class Layer1ConfigTarget:
     expected_metrics_path: str
     commands: list[dict[str, str]]
     expected_report_paths: list[str] = field(default_factory=list)
+    additional_expected_outputs: list[str] = field(default_factory=list)
 
 
 def _with_oss_cad_path(command: str) -> str:
     return f"export PATH=/oss-cad-suite/bin:$PATH && {command}"
+
+
+def _macro_manifest_param_args(
+    values: dict[str, Any] | None,
+    *,
+    option_name: str = "--manifest-param",
+) -> str:
+    if not isinstance(values, dict):
+        return ""
+    args: list[str] = []
+    for key in sorted(values.keys()):
+        key_text = str(key).strip()
+        if not key_text:
+            continue
+        value = values[key]
+        if value is None:
+            continue
+        if isinstance(value, bool):
+            value_text = "true" if value else "false"
+        else:
+            value_text = str(value)
+        args.append(f"{option_name} {shlex.quote(f'{key_text}={value_text}')}")
+    return (" " + " ".join(args)) if args else ""
+
+
+def _gqa8_physical_harness_macro_hardening(
+    cfg: dict[str, Any],
+    *,
+    top_name: str,
+    design_dir: str,
+) -> dict[str, Any] | None:
+    raw = cfg.get("macro_hardening")
+    if raw is None:
+        return None
+    if not isinstance(raw, dict):
+        raise Layer1TaskGenerationError("macro_hardening must be a JSON object when present")
+    if not bool(raw.get("enabled", False)):
+        return None
+
+    pair_node_macro_id = str(raw.get("pair_node_macro_id", "")).strip()
+    temporal_merge_macro_id = str(raw.get("temporal_merge_macro_id", "")).strip()
+    bundle_design_id = str(raw.get("bundle_design_id", "")).strip()
+    if not pair_node_macro_id or not temporal_merge_macro_id or not bundle_design_id:
+        raise Layer1TaskGenerationError(
+            "macro_hardening requires pair_node_macro_id, temporal_merge_macro_id, and bundle_design_id"
+        )
+
+    bundle_manifest_path = str(raw.get("bundle_manifest_path", f"{design_dir}/macro_manifest.json")).strip()
+    if not bundle_manifest_path:
+        raise Layer1TaskGenerationError("macro_hardening bundle_manifest_path must not be empty")
+
+    die_area = str(raw.get("die_area", "")).strip()
+    core_area = str(raw.get("core_area", "")).strip()
+    if not die_area or not core_area:
+        raise Layer1TaskGenerationError("macro_hardening requires die_area and core_area")
+
+    return {
+        "clock_period": float(raw.get("clock_period", 10.0)),
+        "clock_port": str(raw.get("clock_port", "clk")).strip(),
+        "place_density": float(raw.get("place_density", 0.55)),
+        "flow_variant": str(raw.get("flow_variant", "base")).strip() or "base",
+        "die_area": die_area,
+        "core_area": core_area,
+        "pair_node_module": f"{top_name}__reducer__local_reducer__pair_node",
+        "temporal_merge_module": f"{top_name}__reducer__temporal_merge",
+        "pair_node_macro_id": pair_node_macro_id,
+        "temporal_merge_macro_id": temporal_merge_macro_id,
+        "bundle_design_id": bundle_design_id,
+        "bundle_manifest_path": bundle_manifest_path,
+        "pair_node_manifest_params": raw.get("pair_node_manifest_params", {}),
+        "temporal_merge_manifest_params": raw.get("temporal_merge_manifest_params", {}),
+        "bundle_manifest_params": raw.get("bundle_manifest_params", {}),
+    }
 
 
 def _repo_rel(path_text: str, repo_root: Path) -> str:
@@ -1714,29 +1788,103 @@ def _read_config_target(
                 f"repo_root/runs/designs/...: {config_path}"
             ) from exc
         design_name = config_path.parent.name
-        return Layer1ConfigTarget(
-            design_kind="block",
-            design_name=design_name,
-            expected_metrics_path=block_metrics_path(design_name),
-            expected_report_paths=[f"{design_dir}/timing_debug_report.md"],
-            commands=[
-                {
-                    "name": "generate_attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_rtl",
-                    "run": _with_oss_cad_path(
-                        (
-                            "python3 npu/rtlgen/gen_attention_score32_exact_local_temporal_reducer_gqa8_physical_harness.py "
-                            f"--config {config_rel} "
-                            f"--out {design_dir}/verilog"
-                        )
-                    ),
-                },
-                {
-                    "name": "check_attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_guard",
-                    "run": (
-                        "python3 npu/eval/check_attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_guard.py "
-                        f"--design-dir {design_dir}"
-                    ),
-                },
+        macro_hardening = _gqa8_physical_harness_macro_hardening(
+            cfg,
+            top_name=top_name,
+            design_dir=design_dir,
+        )
+        commands = [
+            {
+                "name": "generate_attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_rtl",
+                "run": _with_oss_cad_path(
+                    (
+                        "python3 npu/rtlgen/gen_attention_score32_exact_local_temporal_reducer_gqa8_physical_harness.py "
+                        f"--config {config_rel} "
+                        f"--out {design_dir}/verilog"
+                    )
+                ),
+            },
+            {
+                "name": "check_attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_guard",
+                "run": (
+                    "python3 npu/eval/check_attention_score32_exact_local_temporal_reducer_gqa8_physical_harness_guard.py "
+                    f"--design-dir {design_dir}"
+                ),
+            },
+        ]
+        additional_expected_outputs: list[str] = []
+        macro_manifest_arg = ""
+        if macro_hardening is not None:
+            pair_metrics = f"runs/designs/npu_macros/{macro_hardening['pair_node_macro_id']}/metrics.csv"
+            temporal_metrics = f"runs/designs/npu_macros/{macro_hardening['temporal_merge_macro_id']}/metrics.csv"
+            additional_expected_outputs.extend([pair_metrics, temporal_metrics])
+            pair_manifest = f"runs/designs/npu_macros/{macro_hardening['pair_node_macro_id']}/macro_manifest.json"
+            temporal_manifest = (
+                f"runs/designs/npu_macros/{macro_hardening['temporal_merge_macro_id']}/macro_manifest.json"
+            )
+            harden_prefix = (
+                "python3 npu/synth/pre_synth_compute.py "
+                f"--src_verilog_dir {design_dir}/verilog "
+                "--src_module_file top.v "
+                "--platform {platform} "
+                f"--clock_period {macro_hardening['clock_period']} "
+                f"--clock_port {shlex.quote(str(macro_hardening['clock_port']))} "
+                f"--place_density {macro_hardening['place_density']} "
+                f"--die_area {shlex.quote(str(macro_hardening['die_area']))} "
+                f"--core_area {shlex.quote(str(macro_hardening['core_area']))} "
+                f"--flow_variant {shlex.quote(str(macro_hardening['flow_variant']))} "
+                "--make_target generate_abstract "
+            )
+            commands.extend(
+                [
+                    {
+                        "name": "harden_attention_score32_exact_local_temporal_reducer_gqa8_pair_node_macro",
+                        "run": _with_oss_cad_path(
+                            harden_prefix
+                            + f"--module {shlex.quote(str(macro_hardening['pair_node_module']))} "
+                            + f"--id {shlex.quote(str(macro_hardening['pair_node_macro_id']))} "
+                            + f"--tag_prefix {shlex.quote(str(macro_hardening['pair_node_macro_id']))}"
+                            + _macro_manifest_param_args(
+                                macro_hardening["pair_node_manifest_params"],
+                                option_name="--manifest_param",
+                            )
+                        ),
+                    },
+                    {
+                        "name": "harden_attention_score32_exact_local_temporal_reducer_gqa8_temporal_merge_macro",
+                        "run": _with_oss_cad_path(
+                            harden_prefix
+                            + f"--module {shlex.quote(str(macro_hardening['temporal_merge_module']))} "
+                            + f"--id {shlex.quote(str(macro_hardening['temporal_merge_macro_id']))} "
+                            + f"--tag_prefix {shlex.quote(str(macro_hardening['temporal_merge_macro_id']))}"
+                            + _macro_manifest_param_args(
+                                macro_hardening["temporal_merge_manifest_params"],
+                                option_name="--manifest_param",
+                            )
+                        ),
+                    },
+                    {
+                        "name": "build_attention_score32_exact_local_temporal_reducer_gqa8_macro_manifest",
+                        "run": (
+                            "python3 npu/synth/build_composite_macro_manifest.py "
+                            f"--out {shlex.quote(str(macro_hardening['bundle_manifest_path']))} "
+                            f"--design-id {shlex.quote(str(macro_hardening['bundle_design_id']))} "
+                            f"--module {shlex.quote(top_name)} "
+                            "--platform {platform} "
+                            f"--flow-variant {shlex.quote(str(macro_hardening['flow_variant']))} "
+                            f"--source-config {shlex.quote(config_rel)} "
+                            "--source-generator "
+                            "npu/rtlgen/gen_attention_score32_exact_local_temporal_reducer_gqa8_physical_harness.py "
+                            f"--component-manifest {shlex.quote(pair_manifest)} "
+                            f"--component-manifest {shlex.quote(temporal_manifest)}"
+                            + _macro_manifest_param_args(macro_hardening["bundle_manifest_params"])
+                        ),
+                    },
+                ]
+            )
+            macro_manifest_arg = f"--macro_manifest {shlex.quote(str(macro_hardening['bundle_manifest_path']))} "
+        commands.extend(
+            [
                 {
                     "name": "run_block_sweep",
                     "run": _with_oss_cad_path(
@@ -1747,6 +1895,7 @@ def _read_config_target(
                             f"--top {top_name} "
                             f"--sweep {{sweep_path}} "
                             f"--out_root {out_root} "
+                            + macro_manifest_arg
                             + (f"--make_target {make_target} " if make_target else "")
                             + "--skip_existing"
                         )
@@ -1761,7 +1910,15 @@ def _read_config_target(
                         "--max-paths 8"
                     ),
                 },
-            ],
+            ]
+        )
+        return Layer1ConfigTarget(
+            design_kind="block",
+            design_name=design_name,
+            expected_metrics_path=block_metrics_path(design_name),
+            expected_report_paths=[f"{design_dir}/timing_debug_report.md"],
+            additional_expected_outputs=additional_expected_outputs,
+            commands=commands,
         )
     elif "top_name" in cfg and "attention_hbm_replay_controller" in cfg:
         top_name = str(cfg["top_name"]).strip()
@@ -2394,6 +2551,7 @@ def generate_l1_sweep_task(session: Session, request: Layer1SweepGenerateRequest
     for target in targets:
         expected_outputs.append(target.expected_metrics_path)
         expected_outputs.extend(target.expected_report_paths)
+        expected_outputs.extend(target.additional_expected_outputs)
 
     if binary_fsm_diagnostic_path is not None:
         expected_outputs.append(binary_fsm_diagnostic_path)

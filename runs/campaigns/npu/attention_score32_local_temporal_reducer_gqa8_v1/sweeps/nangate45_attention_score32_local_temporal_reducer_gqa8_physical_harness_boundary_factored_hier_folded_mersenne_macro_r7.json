@@ -1,0 +1,24 @@
+{
+  "tag_prefix": "attention_score32_local_temporal_reducer_gqa8_physical_harness_boundary_factored_hier_folded_mersenne_macro_v1_r7",
+  "flow_params": {
+    "CLOCK_PERIOD": [
+      10.0,
+      15.0
+    ],
+    "DIE_AREA": [
+      "0 0 3500 3500"
+    ],
+    "CORE_AREA": [
+      "80 80 3420 3420"
+    ],
+    "PLACE_DENSITY": [
+      0.55
+    ],
+    "SYNTH_HIERARCHICAL": [
+      1
+    ],
+    "SYNTH_ARGS": [
+      "-noshare"
+    ]
+  }
+}
