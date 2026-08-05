@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l1_decoder_attention_decode_score_multivalue_service_pnr_v1",
-  "source_commit_note": "Replace with the merge commit that contains this corrected c1-first physical-prep patch before dispatch.",
+  "source_commit_note": "Replace with the merge commit that contains this corrected c1-first physical-prep patch before dispatch. Retry c1 only after the deterministic post-floorplan residual tie-root hook is present in generated design configs.",
   "requested_items": [
     {
       "item_id": "l1_decoder_attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_pnr_v1",
@@ -21,7 +21,7 @@
       "requires_materialized_refs": true,
       "expected_result": {
         "direction": "measure_composed_multivalue_service_c1_ppa",
-        "reason": "Record total composed PPA as the authoritative metric while using the single-cluster baseline only as implementation-context sensitivity, not intrinsic additive fabric PPA."
+        "reason": "Record total composed PPA as the authoritative metric while using the single-cluster baseline only as implementation-context sensitivity, not intrinsic additive fabric PPA. This retry is specifically to verify that the deterministic post-floorplan residual tie-root hook removes the floating zero_/one_ structural condition before global routing."
       },
       "status": "pending_implementation_merge"
     },
