@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1",
-  "source_commit": "7691291314ff3739164633f6e5f17a1b3eb15c84",
+  "source_commit": "b1451ded32b9dcaa800ed63b886c73a917ba2cb4",
   "source_commit_note": "Replace with the merge commit that contains this proposal and the compact-report evaluator update before dispatch. Do not dispatch from an unmerged local branch. PR #1436's original v1 evidence passed its functional gates but is superseded before merge on noncompact artifact shape only.",
   "requested_items": [
     {
@@ -47,8 +47,11 @@
         "direction": "record_decode_score_multivalue_integrated_service_probe",
         "reason": "Retain exact Python/baseline/integrated hash, protocol, and count gates while recording completion cycles, service penalty cycles, shared-result blocking/arbitration, router/service contention, occupancy maxima, and explicit exclusions over the same bounded 14-case matrix, while enforcing a deduplicated compact report size/shape gate of <=100000 pretty-printed JSON bytes and <=2500 lines; any selected scale point remains representative evidence, not an architectural or performance ranking."
       },
-      "status": "pending",
-      "notes": "The dependency item is already merged/materialized. This replacement request is ready for normal control-plane dispatch only after the proposal implementation itself is merged."
+      "status": "merged",
+      "notes": "The dependency item is already merged/materialized. This replacement request is ready for normal control-plane dispatch only after the proposal implementation itself is merged. Merged via PR #1539 and merge b82e814a02b2f309e76b3485e1a977c41a42f75a at 2026-08-05T07:57:52.796723Z.",
+      "merged_pr_number": 1539,
+      "merge_commit": "b82e814a02b2f309e76b3485e1a977c41a42f75a",
+      "merged_utc": "2026-08-05T07:57:52.796723Z"
     }
   ]
 }

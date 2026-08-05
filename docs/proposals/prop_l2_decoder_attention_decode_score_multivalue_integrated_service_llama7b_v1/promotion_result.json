@@ -3,5 +3,9 @@
   "candidate_id": "l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1",
   "result": "pending",
   "summary": "No remote evaluator result has been consumed yet for this proposal.",
-  "follow_on_items": []
+  "follow_on_items": [],
+  "decision": "iterate",
+  "pr_number": 1539,
+  "merge_commit": "b82e814a02b2f309e76b3485e1a977c41a42f75a",
+  "merged_utc": "2026-08-05T07:57:52.796723Z"
 }
