@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_decoder_attention_decode_score_multivalue_service_c1_activity_power_llama7b_v1",
-  "source_commit_note": "Replace with the merge commit that contains this strict c1 composed-service activity-power wiring before dispatch. As of July 25, 2026, this request remains dependency-gated because the integrated-service r1 JSON and the c1 composed-service metrics row are not materialized in the repository checkout; do not dispatch until all three dependency outputs are merged/materialized.",
+  "source_commit_note": "Replace with the merge commit that contains this strict c1 composed-service activity-power wiring before dispatch. As of August 5, 2026, this request remains dependency-gated; the current dependency pin is the c1 PNR retry candidate l1_decoder_attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_pnr_v1_r2, but this does not claim that r2 has passed, and later retries resolve dynamically from depends_on_item_ids after merge/materialization.",
   "requested_items": [
     {
       "item_id": "l2_decoder_attention_decode_score_multivalue_service_c1_activity_power_llama7b_v1",
@@ -9,20 +9,20 @@
       "evaluation_mode": "frontier_detail",
       "abstraction_layer": "decoder_attention_decode_score_multivalue_service_activity_power",
       "comparison_role": "strict_c1_service_activity_power_gate",
-      "paired_baseline_item_id": "l1_decoder_attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_pnr_v1",
+      "paired_baseline_item_id": "l1_decoder_attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_pnr_v1_r2",
       "depends_on_item_ids": [
         "l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1_r1",
-        "l1_decoder_attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_pnr_v1",
+        "l1_decoder_attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_pnr_v1_r2",
         "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1"
       ],
       "requires_merged_inputs": true,
       "requires_materialized_refs": true,
       "expected_result": {
         "direction": "record_strict_c1_composed_service_activity_power",
-        "reason": "Require merged/materialized integrated-service r1, composed c1 PNR, and shared-score multivalue cluster-equivalence evidence before dispatch; then measure only direct routed service-window energy at 10 ns, preserve exact inherited precision, leave bank3 inactivity unforced, and withhold total-token energy."
+        "reason": "Require merged/materialized integrated-service r1, the currently pinned c1 PNR retry candidate r2 or any later dynamically selected retry, and shared-score multivalue cluster-equivalence evidence before dispatch; then measure only direct routed service-window energy at 10 ns, preserve exact inherited precision, leave bank3 inactivity unforced, and withhold total-token energy."
       },
       "status": "pending_implementation_merge",
-      "notes": "This request remains dependency-gated and is not ready for normal dispatch. As of July 25, 2026, the integrated-service r1 JSON and the c1 composed-service metrics row are not materialized in the repository checkout, and both must merge/materialize before dispatch even though the shared-score multivalue cluster-equivalence JSON path is already the same repo path used by related audits."
+      "notes": "This request remains dependency-gated and is not ready for normal dispatch. As of August 5, 2026, the current dependency pin is the c1 PNR retry candidate l1_decoder_attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_pnr_v1_r2, but this request does not claim that r2 has passed; later retries resolve dynamically by the task generator once merged/materialized. The integrated-service r1 JSON and the selected c1 composed-service metrics row must still be materialized before dispatch even though the shared-score multivalue cluster-equivalence JSON path is already the same repo path used by related audits."
     }
   ]
 }

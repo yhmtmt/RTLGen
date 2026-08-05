@@ -20,6 +20,7 @@ from control_plane.services.l2_task_generator import (
     Layer2TaskGenerationError,
     _cluster_activity_power_item_for_consumer,
     _multivalue_integrated_service_item_for_consumer,
+    _multivalue_service_pnr_item_for_consumer,
     generate_l2_campaign_task,
 )
 
@@ -8818,6 +8819,28 @@ def test_multivalue_integrated_service_item_for_consumer_prefers_latest_retry() 
     ) == "l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1_r2"
 
 
+def test_multivalue_service_pnr_item_for_consumer_prefers_latest_retry() -> None:
+    assert _multivalue_service_pnr_item_for_consumer(
+        depends_on_item_ids=None,
+        cluster_count=1,
+    ) == "l1_decoder_attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_pnr_v1"
+    assert _multivalue_service_pnr_item_for_consumer(
+        depends_on_item_ids=[
+            "l1_decoder_attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_pnr_v1",
+            "l1_decoder_attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_pnr_v1_r2",
+            "l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1_r1",
+        ],
+        cluster_count=1,
+    ) == "l1_decoder_attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_pnr_v1_r2"
+    assert _multivalue_service_pnr_item_for_consumer(
+        depends_on_item_ids=[
+            "l1_decoder_attention_decode_score_multivalue_service_c2_p128_b4_q4_rl2_rr_pnr_v1_r1",
+            "l1_decoder_attention_decode_score_multivalue_service_c2_p128_b4_q4_rl2_rr_pnr_v1",
+        ],
+        cluster_count=2,
+    ) == "l1_decoder_attention_decode_score_multivalue_service_c2_p128_b4_q4_rl2_rr_pnr_v1_r1"
+
+
 def test_multivalue_cluster_frontier_request_manifests_remain_dependency_gated() -> None:
     repo_root = Path(__file__).resolve().parents[3]
     proposal_dir = (
@@ -8861,7 +8884,7 @@ def test_service_activity_power_request_manifests_remain_dependency_gated() -> N
     )
     expected_depends = {
         "l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1_r1",
-        "l1_decoder_attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_pnr_v1",
+        "l1_decoder_attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_pnr_v1_r2",
         "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1",
     }
 
@@ -8873,22 +8896,29 @@ def test_service_activity_power_request_manifests_remain_dependency_gated() -> N
         if manifest_name == "evaluation_requests.json":
             note = manifest["source_commit_note"]
             assert "Replace with the merge commit" in note
-            assert "July 25, 2026" in note
-            assert "not materialized in the repository checkout" in note
+            assert "August 5, 2026" in note
+            assert "does not claim that r2 has passed" in note
+            assert "later retries resolve dynamically" in note
         item = manifest[items_key][0]
         assert (
             item["item_id"]
             == "l2_decoder_attention_decode_score_multivalue_service_c1_activity_power_llama7b_v1"
         )
         assert set(item["depends_on_item_ids"]) == expected_depends
+        assert item["paired_baseline_item_id"] == (
+            "l1_decoder_attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_pnr_v1_r2"
+        )
         assert item["requires_merged_inputs"] is True
         assert item["requires_materialized_refs"] is True
         assert item["status"] == "pending_implementation_merge"
         assert "dependency-gated" in item["notes"]
         assert "not ready for normal dispatch" in item["notes"]
-        assert "July 25, 2026" in item["notes"]
+        assert "August 5, 2026" in item["notes"]
+        assert "does not claim that r2 has passed" in item["notes"]
+        assert "later retries" in item["notes"]
         assert "shared-score multivalue cluster-equivalence JSON path" in item["notes"]
         assert "direct routed service-window energy" in item["expected_result"]["reason"]
+        assert "dynamically selected retry" in item["expected_result"]["reason"]
         assert "bank3 inactivity unforced" in item["expected_result"]["reason"]
 
 
@@ -9639,6 +9669,7 @@ def test_generate_l2_campaign_task_adds_decode_score_multivalue_service_activity
                     depends_on_item_ids=[
                         "l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1_r1",
                         "l1_decoder_attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_pnr_v1",
+                        "l1_decoder_attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_pnr_v1_r2",
                         "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1",
                     ],
                     run_physical=False,
@@ -9688,8 +9719,11 @@ def test_generate_l2_campaign_task_adds_decode_score_multivalue_service_activity
             assert "--clock-period-ns 10" in run
             assert "--activity-dir /tmp/rtlgen_multivalue_service_c1_activity" in run
             assert decoder_inputs["decode_score_multivalue_service_c1_source_pnr_item_id"] == (
-                "l1_decoder_attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_pnr_v1"
+                "l1_decoder_attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_pnr_v1_r2"
             )
+            assert "c1 PNR (l1_decoder_attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_pnr_v1_r2)" in decoder_inputs[
+                "decode_score_multivalue_service_activity_power_scope"
+            ]
             assert decoder_inputs["decode_score_multivalue_service_activity_power_out"] == (
                 "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
                 "decoder_attention_decode_score_multivalue_service_activity_power__"
@@ -9741,6 +9775,7 @@ def test_generate_l2_campaign_task_adds_decode_score_multivalue_service_c2_activ
                     depends_on_item_ids=[
                         "l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1_r1",
                         "l1_decoder_attention_decode_score_multivalue_service_c2_p128_b4_q4_rl2_rr_pnr_v1",
+                        "l1_decoder_attention_decode_score_multivalue_service_c2_p128_b4_q4_rl2_rr_pnr_v1_r3",
                         "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1",
                     ],
                     run_physical=False,
@@ -9756,8 +9791,11 @@ def test_generate_l2_campaign_task_adds_decode_score_multivalue_service_c2_activ
             assert "--case-id c2_p128_b4_rr" in run
             assert "--activity-dir /tmp/rtlgen_multivalue_service_c2_activity" in run
             assert decoder_inputs["decode_score_multivalue_service_c2_source_pnr_item_id"] == (
-                "l1_decoder_attention_decode_score_multivalue_service_c2_p128_b4_q4_rl2_rr_pnr_v1"
+                "l1_decoder_attention_decode_score_multivalue_service_c2_p128_b4_q4_rl2_rr_pnr_v1_r3"
             )
+            assert "c2 PNR (l1_decoder_attention_decode_score_multivalue_service_c2_p128_b4_q4_rl2_rr_pnr_v1_r3)" in decoder_inputs[
+                "decode_score_multivalue_service_activity_power_scope"
+            ]
             assert "cycle count matches case c2_p128_b4_rr" in decoder_inputs[
                 "decode_score_multivalue_service_activity_power_promotion_gate"
             ]
