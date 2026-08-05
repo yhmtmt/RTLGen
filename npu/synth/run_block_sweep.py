@@ -858,7 +858,9 @@ def build_post_floorplan_tie_root_fix_tcl() -> str:
 # Repair residual floating POWER/GROUND roots that remain after floorplan tie
 # fanout repair and timing repair. This deliberately skips special nets and
 # named VDD/VSS rails, and only inserts one tie cell when a non-special
-# POWER/GROUND net has sinks but no output driver.
+# POWER/GROUND net has sinks but no output driver. Repaired nets are converted
+# back to ordinary SIGNAL nets so downstream routing does not keep treating
+# them as floating POWER/GROUND roots.
 
 proc rtlgen_parse_tie_cell_and_port {env_var} {
   if {![info exists ::env($env_var)]} {
@@ -966,6 +968,7 @@ proc rtlgen_insert_residual_tie_roots_for_sigtype {block sig_type env_var prefix
     puts "Residual tie-root fix: inserting $lib_name/$cell_name/$port_name on $sig_type net '$net_name' with $sink_count sinks and no output driver"
     make_instance $inst_name $lib_name/$cell_name
     connect_pin $net_name $inst_name/$port_name
+    $net setSigType SIGNAL
     incr inserted
   }
   return $inserted
