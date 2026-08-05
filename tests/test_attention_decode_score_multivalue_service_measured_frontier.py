@@ -449,12 +449,51 @@ def _service_activity_power_c2(tmp_path: Path) -> Path:
     )
 
 
+def _online_exact_measured_reducer(tmp_path: Path) -> Path:
+    return _write(
+        tmp_path / "online_exact_measured_reducer.json",
+        {
+            "model": "llm_decoder_attention_score32_local_reducer_measured_recost_v1",
+            "decision": "score32_local_reducer_measured_bounded_recost_recorded",
+            "summary": {
+                "single_clock_strict_latency_upper_bound_us": 172387.653024,
+                "single_clock_strict_throughput_lower_bound_per_s": 5.800879485614,
+                "dual_clock_strict_latency_upper_bound_us": 50588.450822,
+                "dual_clock_strict_throughput_lower_bound_per_s": 19.767357642925,
+            },
+            "best_requested": {
+                "replica_recost_clock_ns": 48.6509,
+                "replica_recost_clock_origin": "inherited_single_clock_composed_compute_bound",
+                "replica_recost_compute_power_mw": 25979.6,
+                "replica_recost_logic_area_required_um2": 297277823.9308,
+                "measured_shared_sram_used_area_um2": 50000000.0,
+                "measured_tile_local_sram_area_um2": 30000000.0,
+                "local_reducer_measured_recost_replaces_unresolved_local_reducer_timing": True,
+            },
+            "routed_component_ppa": {
+                "macro_only_sum_scaled_16_clusters": {
+                    "die_area_mm2": 92.3472,
+                    "total_power_mw": 203.52,
+                },
+                "synthesis_area_lower_bound_scaled_16_clusters": {
+                    "total_hierarchy_area_mm2": 52.753805,
+                },
+            },
+            "remaining_abstractions": [
+                "No total-token energy is claimed in this online-exact measured-reducer baseline.",
+            ],
+        },
+    )
+
+
 def test_build_report_success_recomputes_latency_area_and_component_energy(tmp_path: Path) -> None:
     prior = _prior_frontier(tmp_path)
     service = _service_activity_power(tmp_path)
+    online_exact = _online_exact_measured_reducer(tmp_path)
 
     payload = build_report(
         prior_cluster_frontier_json=prior,
+        online_exact_measured_reducer_json=online_exact,
         service_activity_power_json=service,
     )
 
@@ -481,10 +520,34 @@ def test_build_report_success_recomputes_latency_area_and_component_energy(tmp_p
     assert row["service_component_leakage_energy_mj_per_token"] == pytest.approx(0.2048)
     assert row["service_component_energy_mj_per_token"] == pytest.approx(2684.88704)
     assert row["direct_total_token_energy"] is False
+    assert row["authoritative_composed_service_total_power_mw"] == pytest.approx(12.75)
+    assert row["service_window_average_dynamic_plus_leakage_power_mw"] == pytest.approx(350.0)
     assert row["full_measured_window_count"] == 5462
     assert row["full_measured_window_count_exact"] == 5461
     assert row["final_partial_tokens"] == 8
     assert row["final_partial_window_conservatively_charged_as_full_measured_window"] is True
+    comparison = row["comparison_to_online_exact_measured_reducer"]
+    assert comparison["full_token_latency_directly_comparable"] is True
+    assert comparison["full_token_throughput_directly_comparable"] is True
+    assert comparison["energy_directly_comparable"] is False
+    assert comparison["latency_ratio_vs_online_exact_single_clock_strict_upper_bound"] == pytest.approx(
+        4263.68 / 172387.653024
+    )
+    assert comparison["latency_ratio_vs_online_exact_dual_clock_strict_upper_bound"] == pytest.approx(
+        4263.68 / 50588.450822
+    )
+    assert comparison["service_total_power_ratio_vs_online_exact_macro_only_power_scaled_16_clusters"] == pytest.approx(
+        12.75 / 203.52
+    )
+    baseline = payload["online_exact_measured_reducer_baseline"]
+    assert baseline["replica_recost_embodied_logic_plus_existing_shared_tile_sram_area_mm2"] == pytest.approx(
+        377.277823931
+    )
+    assert payload["online_exact_measured_reducer_comparison"]["dependency_job_sequence"] == [
+        "c1 PNR",
+        "c1 activity power",
+        "measured frontier",
+    ]
     assert (
         payload["selected_service_activity_candidate"]["integrated_service_hashes"]["score_hash"]
         == "integrated-c1-score-hash"
@@ -498,9 +561,11 @@ def test_build_report_success_recomputes_latency_area_and_component_energy(tmp_p
 def test_build_report_prevents_old_cluster_and_service_area_double_count(tmp_path: Path) -> None:
     prior = _prior_frontier(tmp_path)
     service = _service_activity_power(tmp_path)
+    online_exact = _online_exact_measured_reducer(tmp_path)
 
     payload = build_report(
         prior_cluster_frontier_json=prior,
+        online_exact_measured_reducer_json=online_exact,
         service_activity_power_json=service,
     )
 
@@ -513,9 +578,11 @@ def test_build_report_prevents_old_cluster_and_service_area_double_count(tmp_pat
 def test_build_report_accepts_distinct_integrated_hash_domain(tmp_path: Path) -> None:
     prior = _prior_frontier(tmp_path)
     service = _service_activity_power(tmp_path)
+    online_exact = _online_exact_measured_reducer(tmp_path)
 
     payload = build_report(
         prior_cluster_frontier_json=prior,
+        online_exact_measured_reducer_json=online_exact,
         service_activity_power_json=service,
     )
 
@@ -533,6 +600,7 @@ def test_build_report_accepts_distinct_integrated_hash_domain(tmp_path: Path) ->
 def test_build_report_rejects_cycle_mismatch(tmp_path: Path) -> None:
     prior = _prior_frontier(tmp_path)
     service = _service_activity_power(tmp_path)
+    online_exact = _online_exact_measured_reducer(tmp_path)
     payload = json.loads(service.read_text(encoding="utf-8"))
     payload["activity_contract"]["cycle_count"] = 161
     payload["best"]["component_service_window_energy"]["cycle_count"] = 161
@@ -542,6 +610,7 @@ def test_build_report_rejects_cycle_mismatch(tmp_path: Path) -> None:
     with pytest.raises(ValueError, match="microkernel cycle_count"):
         build_report(
             prior_cluster_frontier_json=prior,
+            online_exact_measured_reducer_json=online_exact,
             service_activity_power_json=service,
         )
 
@@ -549,6 +618,7 @@ def test_build_report_rejects_cycle_mismatch(tmp_path: Path) -> None:
 def test_build_report_rejects_structural_macro_gate_failure(tmp_path: Path) -> None:
     prior = _prior_frontier(tmp_path)
     service = _service_activity_power(tmp_path)
+    online_exact = _online_exact_measured_reducer(tmp_path)
     payload = json.loads(service.read_text(encoding="utf-8"))
     payload["macro_activity_contract"]["macro_classes"]["fakeram45_64x32"]["assignment_count"] = 4607
     service.write_text(json.dumps(payload), encoding="utf-8")
@@ -556,6 +626,7 @@ def test_build_report_rejects_structural_macro_gate_failure(tmp_path: Path) -> N
     with pytest.raises(ValueError, match="assignment_count mismatch"):
         build_report(
             prior_cluster_frontier_json=prior,
+            online_exact_measured_reducer_json=online_exact,
             service_activity_power_json=service,
         )
 
@@ -563,6 +634,7 @@ def test_build_report_rejects_structural_macro_gate_failure(tmp_path: Path) -> N
 def test_build_report_rejects_precision_gate_mismatch(tmp_path: Path) -> None:
     prior = _prior_frontier(tmp_path)
     service = _service_activity_power(tmp_path)
+    online_exact = _online_exact_measured_reducer(tmp_path)
     payload = json.loads(service.read_text(encoding="utf-8"))
     payload["dependency_contract"]["cluster_equivalence"]["final_tensor_hash"] = "wrong-hash"
     service.write_text(json.dumps(payload), encoding="utf-8")
@@ -570,6 +642,7 @@ def test_build_report_rejects_precision_gate_mismatch(tmp_path: Path) -> None:
     with pytest.raises(ValueError, match="final_tensor_hash mismatch"):
         build_report(
             prior_cluster_frontier_json=prior,
+            online_exact_measured_reducer_json=online_exact,
             service_activity_power_json=service,
         )
 
@@ -577,6 +650,7 @@ def test_build_report_rejects_precision_gate_mismatch(tmp_path: Path) -> None:
 def test_build_report_rejects_workload_contract_schema_drift(tmp_path: Path) -> None:
     prior = _prior_frontier(tmp_path)
     service = _service_activity_power(tmp_path)
+    online_exact = _online_exact_measured_reducer(tmp_path)
     payload = json.loads(service.read_text(encoding="utf-8"))
     payload["activity_contract"]["workload_contract"]["active_context_tokens"] = 25
     service.write_text(json.dumps(payload), encoding="utf-8")
@@ -584,6 +658,7 @@ def test_build_report_rejects_workload_contract_schema_drift(tmp_path: Path) -> 
     with pytest.raises(ValueError, match="workload_contract"):
         build_report(
             prior_cluster_frontier_json=prior,
+            online_exact_measured_reducer_json=online_exact,
             service_activity_power_json=service,
         )
 
@@ -591,9 +666,11 @@ def test_build_report_rejects_workload_contract_schema_drift(tmp_path: Path) -> 
 def test_build_report_uses_24_token_measured_window_ceil_and_partial_charge(tmp_path: Path) -> None:
     prior = _prior_frontier(tmp_path, sequence_length=131000)
     service = _service_activity_power(tmp_path)
+    online_exact = _online_exact_measured_reducer(tmp_path)
 
     payload = build_report(
         prior_cluster_frontier_json=prior,
+        online_exact_measured_reducer_json=online_exact,
         service_activity_power_json=service,
     )
 
@@ -615,10 +692,12 @@ def test_build_report_rejects_recomputed_infeasible_c1(tmp_path: Path) -> None:
     source_payload["source_schedule"]["compute_budget_um2"] = 3_500_000
     source.write_text(json.dumps(source_payload), encoding="utf-8")
     service = _service_activity_power(tmp_path)
+    online_exact = _online_exact_measured_reducer(tmp_path)
 
     with pytest.raises(ValueError, match="not feasible for promotion"):
         build_report(
             prior_cluster_frontier_json=prior,
+            online_exact_measured_reducer_json=online_exact,
             service_activity_power_json=service,
         )
 
@@ -626,9 +705,11 @@ def test_build_report_rejects_recomputed_infeasible_c1(tmp_path: Path) -> None:
 def test_build_report_keeps_c2_blocked_unpromoted(tmp_path: Path) -> None:
     prior = _prior_frontier(tmp_path)
     service = _service_activity_power(tmp_path)
+    online_exact = _online_exact_measured_reducer(tmp_path)
 
     payload = build_report(
         prior_cluster_frontier_json=prior,
+        online_exact_measured_reducer_json=online_exact,
         service_activity_power_json=service,
     )
 
@@ -647,9 +728,11 @@ def test_build_report_promotes_c2_with_whole_service_window_accounting(tmp_path:
     prior = _prior_frontier(tmp_path)
     service_c1 = _service_activity_power(tmp_path)
     service_c2 = _service_activity_power_c2(tmp_path)
+    online_exact = _online_exact_measured_reducer(tmp_path)
 
     payload = build_report(
         prior_cluster_frontier_json=prior,
+        online_exact_measured_reducer_json=online_exact,
         service_activity_power_jsons=[service_c1, service_c2],
     )
 
@@ -678,9 +761,11 @@ def test_build_report_c2_regression_guard_rejects_head_count_double_count(tmp_pa
     prior = _prior_frontier(tmp_path)
     service_c1 = _service_activity_power(tmp_path)
     service_c2 = _service_activity_power_c2(tmp_path)
+    online_exact = _online_exact_measured_reducer(tmp_path)
 
     payload = build_report(
         prior_cluster_frontier_json=prior,
+        online_exact_measured_reducer_json=online_exact,
         service_activity_power_jsons=[service_c1, service_c2],
     )
 
@@ -693,6 +778,7 @@ def test_build_report_rejects_c2_cycle_mismatch(tmp_path: Path) -> None:
     prior = _prior_frontier(tmp_path)
     service_c1 = _service_activity_power(tmp_path)
     service_c2 = _service_activity_power_c2(tmp_path)
+    online_exact = _online_exact_measured_reducer(tmp_path)
     payload = json.loads(service_c2.read_text(encoding="utf-8"))
     payload["activity_contract"]["cycle_count"] = 8864
     payload["best"]["component_service_window_energy"]["cycle_count"] = 8864
@@ -702,5 +788,6 @@ def test_build_report_rejects_c2_cycle_mismatch(tmp_path: Path) -> None:
     with pytest.raises(ValueError, match="service activity cycle_count"):
         build_report(
             prior_cluster_frontier_json=prior,
+            online_exact_measured_reducer_json=online_exact,
             service_activity_power_jsons=[service_c1, service_c2],
         )

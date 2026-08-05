@@ -34,6 +34,8 @@ _EXPECTED_HEADS = 32
 _EXPECTED_KV_HEADS = 4
 _EXPECTED_LAYERS = 32
 _EXPECTED_SERVICE_CLOCK_NS = 10.0
+_EXPECTED_ONLINE_EXACT_MODEL = "llm_decoder_attention_score32_local_reducer_measured_recost_v1"
+_EXPECTED_ONLINE_EXACT_DECISION = "score32_local_reducer_measured_bounded_recost_recorded"
 _EXPECTED_WORKLOAD_CONTRACT = {
     "command_block_count": 3,
     "context_tokens_per_block": 8,
@@ -185,6 +187,96 @@ def _service_case(case_id: str) -> JsonDict:
     if contract is None:
         raise ValueError(f"unsupported measured-service case_id: {case_id}")
     return {"case_id": str(case_id).strip(), **dict(contract)}
+
+
+def _validated_online_exact_measured_reducer(payload: JsonDict) -> JsonDict:
+    if _string(payload.get("model"), "online-exact measured-reducer model") != _EXPECTED_ONLINE_EXACT_MODEL:
+        raise ValueError("online-exact measured-reducer report has an unexpected model")
+    if _string(payload.get("decision"), "online-exact measured-reducer decision") != _EXPECTED_ONLINE_EXACT_DECISION:
+        raise ValueError("online-exact measured-reducer report has an unexpected decision")
+    summary = payload.get("summary")
+    if not isinstance(summary, dict):
+        raise ValueError("online-exact measured-reducer report lacks summary")
+    best_requested = payload.get("best_requested")
+    if not isinstance(best_requested, dict):
+        raise ValueError("online-exact measured-reducer report lacks best_requested")
+    routed_component_ppa = payload.get("routed_component_ppa")
+    if not isinstance(routed_component_ppa, dict):
+        raise ValueError("online-exact measured-reducer report lacks routed_component_ppa")
+    macro_only_scaled = routed_component_ppa.get("macro_only_sum_scaled_16_clusters")
+    if not isinstance(macro_only_scaled, dict):
+        raise ValueError("online-exact measured-reducer report lacks scaled macro-only PPA")
+    synthesis_scaled = routed_component_ppa.get("synthesis_area_lower_bound_scaled_16_clusters")
+    if not isinstance(synthesis_scaled, dict):
+        raise ValueError("online-exact measured-reducer report lacks scaled synthesis lower bound")
+    if best_requested.get("local_reducer_measured_recost_replaces_unresolved_local_reducer_timing") is not True:
+        raise ValueError("online-exact measured-reducer report must replace unresolved local-reducer timing")
+    embodied_area_um2 = (
+        _positive(
+            best_requested.get("replica_recost_logic_area_required_um2"),
+            "online-exact replica_recost_logic_area_required_um2",
+        )
+        + _nonnegative(
+            best_requested.get("measured_shared_sram_used_area_um2"),
+            "online-exact measured_shared_sram_used_area_um2",
+        )
+        + _nonnegative(
+            best_requested.get("measured_tile_local_sram_area_um2"),
+            "online-exact measured_tile_local_sram_area_um2",
+        )
+    )
+    return {
+        "model": _EXPECTED_ONLINE_EXACT_MODEL,
+        "decision": _EXPECTED_ONLINE_EXACT_DECISION,
+        "single_clock_strict_latency_upper_bound_us": _positive(
+            summary.get("single_clock_strict_latency_upper_bound_us"),
+            "online-exact single_clock_strict_latency_upper_bound_us",
+        ),
+        "single_clock_strict_throughput_lower_bound_per_s": _positive(
+            summary.get("single_clock_strict_throughput_lower_bound_per_s"),
+            "online-exact single_clock_strict_throughput_lower_bound_per_s",
+        ),
+        "dual_clock_strict_latency_upper_bound_us": _positive(
+            summary.get("dual_clock_strict_latency_upper_bound_us"),
+            "online-exact dual_clock_strict_latency_upper_bound_us",
+        ),
+        "dual_clock_strict_throughput_lower_bound_per_s": _positive(
+            summary.get("dual_clock_strict_throughput_lower_bound_per_s"),
+            "online-exact dual_clock_strict_throughput_lower_bound_per_s",
+        ),
+        "replica_recost_clock_ns": _positive(
+            best_requested.get("replica_recost_clock_ns"),
+            "online-exact replica_recost_clock_ns",
+        ),
+        "replica_recost_clock_origin": _string(
+            best_requested.get("replica_recost_clock_origin"),
+            "online-exact replica_recost_clock_origin",
+        ),
+        "replica_recost_compute_power_mw": _positive(
+            best_requested.get("replica_recost_compute_power_mw"),
+            "online-exact replica_recost_compute_power_mw",
+        ),
+        "replica_recost_embodied_logic_plus_existing_shared_tile_sram_area_mm2": round(
+            embodied_area_um2 / 1.0e6,
+            9,
+        ),
+        "macro_only_area_mm2_scaled_16_clusters": _positive(
+            macro_only_scaled.get("die_area_mm2"),
+            "online-exact macro_only_area_mm2_scaled_16_clusters",
+        ),
+        "macro_only_power_mw_scaled_16_clusters": _positive(
+            macro_only_scaled.get("total_power_mw"),
+            "online-exact macro_only_power_mw_scaled_16_clusters",
+        ),
+        "synthesis_area_lower_bound_mm2_scaled_16_clusters": _positive(
+            synthesis_scaled.get("total_hierarchy_area_mm2"),
+            "online-exact synthesis_area_lower_bound_mm2_scaled_16_clusters",
+        ),
+        "remaining_abstractions": [
+            _string(item, "online-exact remaining_abstractions item")
+            for item in payload.get("remaining_abstractions", [])
+        ],
+    }
 
 
 def _service_macro_profile(case_contract: JsonDict) -> str:
@@ -601,6 +693,7 @@ def _measured_row(
     dense_qkv_tile: JsonDict,
     prior_row: JsonDict,
     service_activity: JsonDict,
+    online_exact_baseline: JsonDict,
 ) -> JsonDict:
     case_id = str(service_activity["case_id"])
     cluster_count = int(service_activity["cluster_count"])
@@ -628,6 +721,18 @@ def _measured_row(
     service_area_um2 = _positive(
         service_activity["authoritative_service_ppa"].get("instance_area_um2"),
         "authoritative service area",
+    )
+    service_power_mw = _positive(
+        service_activity["authoritative_service_ppa"].get("total_power_mw"),
+        "authoritative service total_power_mw",
+    )
+    service_critical_path_ns = _positive(
+        service_activity["authoritative_service_ppa"].get("critical_path_ns"),
+        "authoritative service critical_path_ns",
+    )
+    service_die_area_um2 = _positive(
+        service_activity["authoritative_service_ppa"].get("die_area"),
+        "authoritative service die_area",
     )
     (
         dense_count,
@@ -695,6 +800,63 @@ def _measured_row(
     component_leakage_j = full_context_leakage_per_service_wave_j * full_service_wave_count
     component_total_j = full_context_component_per_service_wave_j * full_service_wave_count
     prior_cluster_area_mm2 = _positive(prior_row.get("cluster_area_mm2"), f"prior c{cluster_count} cluster_area_mm2")
+    token_throughput_per_s = round(1.0e6 / latency_us, 12) if latency_us else None
+    comparison = {
+        "baseline_model": online_exact_baseline["model"],
+        "baseline_decision": online_exact_baseline["decision"],
+        "full_token_latency_directly_comparable": latency_us is not None,
+        "full_token_throughput_directly_comparable": token_throughput_per_s is not None,
+        "energy_directly_comparable": False,
+        "power_scope_note": (
+            "This row carries composed-service routed total_power_mw and service-window average power, while the "
+            "online-exact baseline carries compute power and local-reducer macro-only power; no direct total-token "
+            "power comparison is claimed."
+        ),
+        "latency_ratio_vs_online_exact_single_clock_strict_upper_bound": (
+            round(latency_us / online_exact_baseline["single_clock_strict_latency_upper_bound_us"], 12)
+            if latency_us is not None
+            else None
+        ),
+        "throughput_ratio_vs_online_exact_single_clock_strict_lower_bound": (
+            round(
+                token_throughput_per_s / online_exact_baseline["single_clock_strict_throughput_lower_bound_per_s"],
+                12,
+            )
+            if token_throughput_per_s is not None
+            else None
+        ),
+        "latency_ratio_vs_online_exact_dual_clock_strict_upper_bound": (
+            round(latency_us / online_exact_baseline["dual_clock_strict_latency_upper_bound_us"], 12)
+            if latency_us is not None
+            else None
+        ),
+        "throughput_ratio_vs_online_exact_dual_clock_strict_lower_bound": (
+            round(
+                token_throughput_per_s / online_exact_baseline["dual_clock_strict_throughput_lower_bound_per_s"],
+                12,
+            )
+            if token_throughput_per_s is not None
+            else None
+        ),
+        "embodied_area_ratio_vs_online_exact_replica_recost_embodied_area": round(
+            ((logic_area_um2 + shared_sram_um2 + tile_sram_um2) / 1.0e6)
+            / online_exact_baseline["replica_recost_embodied_logic_plus_existing_shared_tile_sram_area_mm2"],
+            12,
+        ),
+        "service_instance_area_ratio_vs_online_exact_macro_only_area_scaled_16_clusters": round(
+            (service_area_um2 / 1.0e6) / online_exact_baseline["macro_only_area_mm2_scaled_16_clusters"],
+            12,
+        ),
+        "service_total_power_ratio_vs_online_exact_macro_only_power_scaled_16_clusters": round(
+            service_power_mw / online_exact_baseline["macro_only_power_mw_scaled_16_clusters"],
+            12,
+        ),
+        "service_total_power_ratio_vs_online_exact_replica_recost_compute_power": round(
+            service_power_mw / online_exact_baseline["replica_recost_compute_power_mw"],
+            12,
+        ),
+        "online_exact_energy_comparison_status": "not_available_no_total_token_energy_claim_in_online_exact_baseline",
+    }
 
     row = {
         "candidate_id": f"decode_score_multivalue_service_measured_c{cluster_count}",
@@ -729,9 +891,12 @@ def _measured_row(
         "measured_service_clock_ns": _EXPECTED_SERVICE_CLOCK_NS,
         "clock_ns": clock_ns,
         "latency_us": round(latency_us, 6) if latency_us is not None else None,
-        "token_throughput_per_s": round(1.0e6 / latency_us, 12) if latency_us else None,
+        "token_throughput_per_s": token_throughput_per_s,
         "prior_cluster_area_mm2": round(prior_cluster_area_mm2, 9),
         "authoritative_composed_service_area_mm2": round(service_area_um2 / 1.0e6, 9),
+        "authoritative_composed_service_die_area_mm2": round(service_die_area_um2 / 1.0e6, 9),
+        "authoritative_composed_service_total_power_mw": round(service_power_mw, 9),
+        "authoritative_composed_service_critical_path_ns": round(service_critical_path_ns, 9),
         "area_replacement_delta_mm2": round(service_area_um2 / 1.0e6 - prior_cluster_area_mm2, 9),
         "dense_qkv_area_mm2": round(
             dense_count * _positive(dense_qkv_tile.get("area_um2"), "dense_qkv_tile area_um2") / 1.0e6,
@@ -769,6 +934,11 @@ def _measured_row(
         "full_context_service_wave_count": full_service_wave_count,
         "service_window_dynamic_energy_j": dynamic_j,
         "service_window_leakage_energy_j": leakage_j,
+        "service_window_average_dynamic_power_mw": dynamic_j / microkernel_duration_s * 1.0e3,
+        "service_window_average_leakage_power_mw": leakage_j / microkernel_duration_s * 1.0e3,
+        "service_window_average_dynamic_plus_leakage_power_mw": (dynamic_j + leakage_j)
+        / microkernel_duration_s
+        * 1.0e3,
         "full_context_dynamic_energy_j_per_service_wave": full_context_dynamic_per_service_wave_j,
         "full_context_leakage_energy_j_per_service_wave": full_context_leakage_per_service_wave_j,
         "service_component_dynamic_energy_mj_per_token": component_dynamic_j * 1.0e3,
@@ -786,6 +956,7 @@ def _measured_row(
             "broader SRAM and NoC energy are excluded",
             "producer and dense QKV activity energy are excluded",
         ],
+        "comparison_to_online_exact_measured_reducer": comparison,
     }
     if cluster_count == 1:
         row["full_context_dynamic_energy_j_per_head_command"] = full_context_dynamic_per_service_wave_j
@@ -835,10 +1006,12 @@ def _blocked_row(row: JsonDict, *, blocker: str | None = None) -> JsonDict:
 def build_report(
     *,
     prior_cluster_frontier_json: Path,
+    online_exact_measured_reducer_json: Path,
     service_activity_power_json: Path | None = None,
     service_activity_power_jsons: list[Path] | None = None,
 ) -> JsonDict:
     prior = _load(prior_cluster_frontier_json)
+    online_exact_baseline = _validated_online_exact_measured_reducer(_load(online_exact_measured_reducer_json))
     selected_service_paths = list(service_activity_power_jsons or [])
     if service_activity_power_json is not None:
         selected_service_paths.append(service_activity_power_json)
@@ -877,6 +1050,7 @@ def build_report(
         dense_qkv_tile=dense_qkv_tile,
         prior_row=prior_rows_by_cluster[1],
         service_activity=validated_service_activities[1],
+        online_exact_baseline=online_exact_baseline,
     )
     if not c1_measured["compute_budget_area_fit"] or not c1_measured["timing_feasible"]:
         raise ValueError("recomputed c1 measured anchor is not feasible for promotion")
@@ -906,6 +1080,7 @@ def build_report(
             dense_qkv_tile=dense_qkv_tile,
             prior_row=prior_row,
             service_activity=service_activity,
+            online_exact_baseline=online_exact_baseline,
         )
         if measured_row["compute_budget_area_fit"] and measured_row["timing_feasible"]:
             rows.append(measured_row)
@@ -968,6 +1143,7 @@ def build_report(
         ),
         "inputs": {
             "prior_cluster_frontier_json": _portable_path(prior_cluster_frontier_json),
+            "online_exact_measured_reducer_json": _portable_path(online_exact_measured_reducer_json),
             "service_activity_power_json": portable_service_inputs[0],
             "service_activity_power_jsons": portable_service_inputs,
             "source_schedule_json": schedule_source,
@@ -1004,6 +1180,27 @@ def build_report(
         },
         "selected_service_activity_candidate": selected_candidates["c1"],
         "selected_service_activity_candidates": selected_candidates,
+        "online_exact_measured_reducer_baseline": online_exact_baseline,
+        "online_exact_measured_reducer_comparison": {
+            "dependency_job_sequence": [
+                "c1 PNR",
+                "c1 activity power",
+                "measured frontier",
+            ],
+            "baseline_scope": (
+                "merged online-exact measured-reducer recost with strict single-clock and dual-clock upper/lower "
+                "throughput bounds plus routed macro-only area/power."
+            ),
+            "full_token_latency_comparison_scope": "direct",
+            "full_token_throughput_comparison_scope": "direct",
+            "energy_comparison_scope": "not_directly_comparable",
+            "power_comparison_scope": "service_power_vs_baseline_component_power_only",
+            "preserved_measured_window_scaling": (
+                "The measured c1 service window is scaled with ceil(sequence_length / 24), while the 128-token context "
+                "capacity remains reported separately and is not used as the scaling divisor."
+            ),
+            "promoted_candidate_ids": [row["candidate_id"] for row in promoted_rows],
+        },
         "precision": {
             "status": _EXPECTED_SERVICE_PRECISION_STATUS,
             "decision": _EXPECTED_PRIOR_PRECISION_DECISION,
@@ -1034,6 +1231,8 @@ def build_report(
             ),
             "The activity-backed energy is a microkernel-scaled composed-service component estimate, not direct total-token energy.",
             "Measured whole-service window energy is scaled with ceil(sequence_length / 24) and then multiplied by cluster_waves_per_layer * layers; c2 must not be multiplied by heads * layers.",
+            "The 128-token measured window capacity remains a distinct capacity fact; it does not replace the explicit ceil(sequence_length / 24) scaling divisor.",
+            "Comparison against the merged online-exact measured-reducer recost is direct for full-token latency/throughput, but energy is not directly comparable because the online-exact baseline does not claim total-token energy.",
             "HBM/DRAM, broader SRAM/NoC, producer, and dense-QKV activity energy remain outside this report.",
             "The 16KiB service value store remains counted inside the service instance area, while broader schedule SRAM remains separately charged.",
             (
@@ -1056,10 +1255,18 @@ def _write_markdown(payload: JsonDict, path: Path) -> None:
         f"- clock ns: `{anchor['clock_ns']}`",
         f"- latency us: `{anchor['latency_us']}`",
         f"- dense QKV tiles: `{anchor['dense_qkv_tile_count']}`",
+        f"- service routed total power mW: `{anchor['authoritative_composed_service_total_power_mw']}`",
+        f"- service-window avg dynamic+leakage power mW: `{anchor['service_window_average_dynamic_plus_leakage_power_mw']}`",
         (
             "- area replacement: prior cluster `{prior}` mm2 -> composed service `{new}` mm2".format(
                 prior=anchor["prior_cluster_area_mm2"],
                 new=anchor["authoritative_composed_service_area_mm2"],
+            )
+        ),
+        (
+            "- online-exact dual-clock strict upper/lower baseline: `{lat}` us / `{thr}` token/s".format(
+                lat=payload["online_exact_measured_reducer_baseline"]["dual_clock_strict_latency_upper_bound_us"],
+                thr=payload["online_exact_measured_reducer_baseline"]["dual_clock_strict_throughput_lower_bound_per_s"],
             )
         ),
         (
@@ -1099,12 +1306,14 @@ def _write_markdown(payload: JsonDict, path: Path) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--prior-cluster-frontier-json", type=Path, required=True)
+    parser.add_argument("--online-exact-measured-reducer-json", type=Path, required=True)
     parser.add_argument("--service-activity-power-json", type=Path, action="append", required=True)
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--out-md", type=Path, required=True)
     args = parser.parse_args()
     payload = build_report(
         prior_cluster_frontier_json=args.prior_cluster_frontier_json,
+        online_exact_measured_reducer_json=args.online_exact_measured_reducer_json,
         service_activity_power_jsons=args.service_activity_power_json,
     )
     args.out.parent.mkdir(parents=True, exist_ok=True)

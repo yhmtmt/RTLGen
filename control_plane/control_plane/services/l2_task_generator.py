@@ -84,6 +84,12 @@ _MULTIVALUE_SERVICE_MEASURED_FRONTIER_C1_ONLY_DEFAULT_ITEM = (
 _MULTIVALUE_SERVICE_MEASURED_FRONTIER_C1_C2_DEFAULT_ITEM = (
     "l2_decoder_attention_decode_score_multivalue_service_measured_frontier_llama7b_v2"
 )
+_ONLINE_EXACT_MEASURED_REDUCER_BASE_ITEM = (
+    "l2_decoder_attention_score32_local_reducer_measured_recost_llama7b_v1"
+)
+_ONLINE_EXACT_MEASURED_REDUCER_DEFAULT_ITEM = (
+    "l2_decoder_attention_score32_local_reducer_measured_recost_llama7b_v1_r1"
+)
 
 
 @dataclass(frozen=True)
@@ -274,6 +280,20 @@ def _multivalue_service_activity_power_item_for_consumer(
             if cluster_count == 1
             else _MULTIVALUE_SERVICE_C2_ACTIVITY_POWER_DEFAULT_ITEM
         )
+    return max(candidate_item_ids, key=_item_version_retry_rank)
+
+
+def _online_exact_measured_reducer_item_for_consumer(
+    *, depends_on_item_ids: list[str] | None
+) -> str:
+    prefix = _ONLINE_EXACT_MEASURED_REDUCER_BASE_ITEM
+    candidate_item_ids = [
+        str(dep).strip()
+        for dep in (depends_on_item_ids or [])
+        if str(dep).strip() == prefix or str(dep).strip().startswith(f"{prefix}_r")
+    ]
+    if not candidate_item_ids:
+        return _ONLINE_EXACT_MEASURED_REDUCER_DEFAULT_ITEM
     return max(candidate_item_ids, key=_item_version_retry_rank)
 
 
@@ -7775,6 +7795,13 @@ def _decoder_attention_decode_score_multivalue_service_measured_frontier_evidenc
         f"{base}/decoder_attention_decode_score_multivalue_cluster_frontier__"
         f"{prior_cluster_frontier_item}.json"
     )
+    online_exact_measured_reducer_item = _online_exact_measured_reducer_item_for_consumer(
+        depends_on_item_ids=depends_on_item_ids
+    )
+    online_exact_measured_reducer = (
+        f"{base}/decoder_attention_score32_local_reducer_measured_recost__"
+        f"{online_exact_measured_reducer_item}.json"
+    )
     service_activity_power_item_c1 = _multivalue_service_activity_power_item_for_consumer(
         depends_on_item_ids=depends_on_item_ids,
         cluster_count=1,
@@ -7801,24 +7828,30 @@ def _decoder_attention_decode_score_multivalue_service_measured_frontier_evidenc
     report = f"{base}/decoder_attention_decode_score_multivalue_service_measured_frontier__{item_id}.md"
     scope = (
         "Replace the prior shared-score multivalue cluster frontier area/energy proxy with measured "
-        "composed-service c1 and c2 anchors only. Compare c1 and c2 using measured latency/area/dynamic/"
-        "leakage, scale whole-service measured windows with ceil(sequence_length / 24) and then "
-        "cluster_waves_per_layer * layers instead of heads * layers, preserve the exact integer "
-        "precision contract unchanged, do not claim total-token energy, and leave broader SRAM, "
-        "NoC, HBM, producer, and dense energy outside while c3+ remain blocked/unpromoted."
+        "composed-service c1 and c2 anchors only. Compare them against the merged online-exact "
+        "measured-reducer recost for full-token latency/throughput, keep energy explicitly "
+        "non-comparable across the two reports, scale whole-service measured windows with "
+        "ceil(sequence_length / 24) and then cluster_waves_per_layer * layers instead of heads * "
+        "layers, preserve the exact integer precision contract unchanged, do not claim total-token "
+        "energy, keep 128 tokens as capacity rather than the scaling divisor, and leave broader "
+        "SRAM, NoC, HBM, producer, and dense energy outside while c3+ remain blocked/unpromoted."
         if c2_enabled
         else (
             "Replace the prior shared-score multivalue cluster frontier area/energy proxy with the "
             "measured composed-service c1 anchor only. Keep c2+ service points blocked/unpromoted, "
-            "scale the direct routed microkernel service-window activity explicitly into the "
-            "Llama7B context, preserve the exact integer precision contract unchanged, do not claim "
-            "total-token energy, and leave broader SRAM, NoC, HBM, producer, and dense energy "
-            "outside this measured-service frontier."
+            "compare the c1 measured anchor against the merged online-exact measured-reducer recost "
+            "for full-token latency/throughput, scale the direct routed microkernel service-window "
+            "activity explicitly into the Llama7B context with ceil(sequence_length / 24) while "
+            "keeping 128 tokens as capacity rather than the scaling divisor, preserve the exact "
+            "integer precision contract unchanged, do not claim total-token energy, and leave "
+            "broader SRAM, NoC, HBM, producer, and dense energy outside this measured-service "
+            "frontier."
         )
     )
     command = (
         "python3 -m npu.eval.audit_attention_decode_score_multivalue_service_measured_frontier "
         f"--prior-cluster-frontier-json {prior_cluster_frontier} "
+        f"--online-exact-measured-reducer-json {online_exact_measured_reducer} "
         f"--service-activity-power-json {service_activity_power_c1} "
         + (
             f"--service-activity-power-json {service_activity_power_c2} "
@@ -7831,6 +7864,9 @@ def _decoder_attention_decode_score_multivalue_service_measured_frontier_evidenc
         "inputs": {
             "decode_score_multivalue_service_measured_frontier_prior_cluster_frontier": (
                 prior_cluster_frontier
+            ),
+            "decode_score_multivalue_service_measured_frontier_online_exact_measured_reducer": (
+                online_exact_measured_reducer
             ),
             "decode_score_multivalue_service_measured_frontier_service_activity_power": service_activity_power_c1,
             "decode_score_multivalue_service_measured_frontier_service_activity_powers": [

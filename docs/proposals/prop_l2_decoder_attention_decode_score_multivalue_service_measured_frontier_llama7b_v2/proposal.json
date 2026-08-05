@@ -6,7 +6,7 @@
   "kind": "architecture",
   "title": "Measured c1/c2 composed-service frontier replacement for multivalue Llama7B",
   "abstraction_layer": "decoder_attention_decode_score_multivalue_service_measured_frontier",
-  "hypothesis": "Once the service-aware shared-score multivalue cluster frontier r1 and the strict c1 and c2 composed-service activity-power audits are all merged/materialized, the Llama7B frontier can replace rather than add the old cluster area/energy proxy with measured composed-service c1 and c2 anchors while keeping c3+ blocked, preserving exact integer precision, and keeping broader system energy outside.",
+  "hypothesis": "Once the service-aware shared-score multivalue cluster frontier r1, the strict c1 and c2 composed-service activity-power audits, and the merged online-exact measured-reducer recost are all merged/materialized, the Llama7B frontier can replace rather than add the old cluster area/energy proxy with measured composed-service c1 and c2 anchors while keeping c3+ blocked, preserving exact integer precision, and keeping broader system energy outside.",
   "direct_comparison": {
     "primary_question": "How does the shared-score multivalue Llama7B frontier change when the prior cluster area/energy proxy is replaced with measured composed-service c1 and c2 anchors, scaling whole-service measured windows with ceil(sequence_length / 24) and cluster waves instead of multiplying c2 by heads?",
     "baseline": "l2_decoder_attention_decode_score_multivalue_cluster_frontier_llama7b_v1_r1",
@@ -15,6 +15,7 @@
       "the prior service-aware shared-score multivalue cluster frontier structure from l2_decoder_attention_decode_score_multivalue_cluster_frontier_llama7b_v1_r1",
       "strict c1 direct routed service-window activity from l2_decoder_attention_decode_score_multivalue_service_c1_activity_power_llama7b_v1",
       "strict c2 direct routed whole-service window activity from l2_decoder_attention_decode_score_multivalue_service_c2_activity_power_llama7b_v1",
+      "merged online-exact measured-reducer recost from l2_decoder_attention_score32_local_reducer_measured_recost_llama7b_v1_r1 as the comparison baseline for full-token latency/throughput only",
       "explicit ceil(sequence_length / 24) scaling from the routed 24-active-context-token microkernel measurement into the Llama7B context, with the final partial window conservatively charged",
       "whole-service energy accounting for c2 using cluster_waves_per_layer * layers rather than heads * layers",
       "exact integer precision unchanged from the inherited equivalence-backed frontier contract",
@@ -45,7 +46,8 @@
   "risks": [
     "the c2 measured anchor may still lose on area or timing relative to the prior proxy frontier",
     "c3 and higher service points remain blocked/unpromoted until they have their own measured anchors",
-    "this frontier replacement still excludes broader SRAM, NoC, HBM, producer, and dense energy, so it is not a total-token energy result"
+    "this frontier replacement still excludes broader SRAM, NoC, HBM, producer, and dense energy, so it is not a total-token energy result",
+    "the request remains pending implementation/dependency merge until the revised measured-service frontier CLI, the online-exact measured-reducer recost baseline, and all dependency artifacts are merged/materialized"
   ],
   "required_evaluations": [
     {
@@ -59,25 +61,28 @@
       "depends_on_item_ids": [
         "l2_decoder_attention_decode_score_multivalue_cluster_frontier_llama7b_v1_r1",
         "l2_decoder_attention_decode_score_multivalue_service_c1_activity_power_llama7b_v1",
-        "l2_decoder_attention_decode_score_multivalue_service_c2_activity_power_llama7b_v1"
+        "l2_decoder_attention_decode_score_multivalue_service_c2_activity_power_llama7b_v1",
+        "l2_decoder_attention_score32_local_reducer_measured_recost_llama7b_v1_r1"
       ],
       "requires_merged_inputs": true,
       "requires_materialized_refs": true,
       "expected_result": {
         "direction": "replace_multivalue_cluster_area_energy_with_measured_c1_c2_service_anchors",
-        "reason": "Replace rather than add the old cluster area/energy proxy, use measured composed-service c1 and c2 anchors only, scale the direct routed 24-active-context-token window with ceil(sequence_length / 24), conservatively charge the final partial window, keep 128 tokens labeled only as capacity, account c2 as a whole two-cluster service window scaled by cluster_waves_per_layer * layers instead of heads * layers, preserve exact integer precision unchanged, and withhold any total-token energy claim while broader SRAM/NoC/HBM/producer/dense energy remains outside."
+        "reason": "Replace rather than add the old cluster area/energy proxy, use measured composed-service c1 and c2 anchors only, compare full-token latency/throughput against the merged online-exact measured-reducer recost while keeping energy explicitly non-comparable across the two reports, scale the direct routed 24-active-context-token window with ceil(sequence_length / 24), conservatively charge the final partial window, keep 128 tokens labeled only as capacity, account c2 as a whole two-cluster service window scaled by cluster_waves_per_layer * layers instead of heads * layers, preserve exact integer precision unchanged, and withhold any total-token energy claim while broader SRAM/NoC/HBM/producer/dense energy remains outside."
       },
       "status": "pending_implementation_merge",
-      "notes": "This request remains dependency-gated and pending implementation/dependency merge. As of Sunday, July 26, 2026, the measured-service frontier revision, the strict c2 activity-power artifact, and the dependency artifacts must all merge/materialize before normal dispatch; c3+ blocked/unpromoted."
+      "notes": "This request remains dependency-gated and pending implementation/dependency merge. As of Sunday, July 26, 2026, the measured-service frontier revision, the merged online-exact measured-reducer recost baseline, the strict c2 activity-power artifact, and the dependency artifacts must all merge/materialize before normal dispatch; c3+ blocked/unpromoted."
     }
   ],
   "baseline_refs": [
     "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_cluster_frontier__l2_decoder_attention_decode_score_multivalue_cluster_frontier_llama7b_v1_r1.json",
     "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_service_activity_power__l2_decoder_attention_decode_score_multivalue_service_c1_activity_power_llama7b_v1.json",
     "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_service_activity_power__l2_decoder_attention_decode_score_multivalue_service_c2_activity_power_llama7b_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_local_reducer_measured_recost__l2_decoder_attention_score32_local_reducer_measured_recost_llama7b_v1_r1.json",
     "docs/proposals/prop_decoder_attention_decode_score_multivalue_cluster_frontier_llama7b_v1/proposal.json",
     "docs/proposals/prop_l2_decoder_attention_decode_score_multivalue_service_c1_activity_power_llama7b_v1/proposal.json",
-    "docs/proposals/prop_l2_decoder_attention_decode_score_multivalue_service_c2_activity_power_llama7b_v1/proposal.json"
+    "docs/proposals/prop_l2_decoder_attention_decode_score_multivalue_service_c2_activity_power_llama7b_v1/proposal.json",
+    "docs/proposals/prop_l2_decoder_attention_score32_local_reducer_measured_recost_llama7b_v1/proposal.json"
   ],
   "knowledge_refs": [
     "npu/eval/audit_attention_decode_score_multivalue_service_measured_frontier.py",
