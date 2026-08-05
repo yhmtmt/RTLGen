@@ -1,0 +1,30 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_score32_local_reducer_measured_recost_llama7b_v1",
+  "source_commit_note": "Replace with the merge commit that contains this local-reducer measured recost implementation before dispatch. Until then this request remains pending implementation merge and must not be queued.",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_score32_local_reducer_measured_recost_llama7b_v1_r1",
+      "task_type": "l2_campaign",
+      "objective": "Record a revision-safe bounded Llama7B score32 recost using measured local-reducer service plus merged r7 macro evidence.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_score32_local_reducer_measured_recost",
+      "comparison_role": "score32_local_reducer_measured_recost",
+      "paired_baseline_item_id": "l2_decoder_attention_score32_folded_global_exact_reduction_recost_llama7b_v2_r2",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1_r2",
+        "l2_decoder_attention_score32_folded_global_exact_reduction_recost_llama7b_v2_r2",
+        "l1_decoder_attention_score32_local_temporal_reducer_gqa8_factored_hier_folded_mersenne_macro_ppa_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "priority": 98,
+      "expected_result": {
+        "direction": "record_bounded_local_reducer_measured_recost",
+        "reason": "Use the merged r7 macro evidence and authoritative folded p53 reducer probe to replace the unresolved local-reducer timing across all 4 GQA8 groups per layer while keeping routed composed-top and quality claims out of scope."
+      },
+      "status": "pending_implementation_merge",
+      "notes": "Deterministic local audit only. Do not dispatch until the implementation merge exists. Keep the 10ns global-route boundary and 15ns macro-placer assertion distinct, state that the 20730-cycle service excludes producer compute/service, correct the full-layer schedule to 4 GQA8 groups without double-counting the inherited 986-cycle producer window, and mark any overlap or dual-clock schedule as conditional only."
+    }
+  ],
+  "source_commit": "pending"
+}
