@@ -19,12 +19,21 @@ enough to make the composed service physically dispatchable without dragging
 the same physical contract is proven cleanly on the current monolithic wrapper,
 and its requested item now depends explicitly on
 `l1_decoder_attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_pnr_v1`.
+The original `3.0 mm` c1 point remains the conservative baseline request, while
+an explicit `r4` retry at `3.6 mm` die / `3.5 mm` core exists only as
+conditional congestion-recovery sensitivity and must not be read as a
+replacement area frontier. Retry lineage is explicit: `r2` added the tie
+driver but still left the net typed as `GROUND`, `r3` is the corrected `3.0 mm`
+`SIGNAL`-net retry currently under evaluation, and `r4` is eligible only if
+`r3` cannot produce acceptable routed evidence.
 
 ## Scope
 - include:
   - L1 generator wiring for `gen_attention_decode_score_multivalue_service.py`
   - strict pre-PPA guard and post-sweep checker
   - checked-in c1/c2 configs and Nangate45 sweeps
+  - one explicit c1 retry sweep at `3.6 mm` die / `3.5 mm` core that preserves
+    the same exact macro-backed config, `10 ns`, and `PLACE_DENSITY=0.4`
   - exact `4 bank x 16 lane x 64 row fakeram45_64x32` physical value-memory
     contract for `max_blocks=16`, while keeping behavioral mode for functional
     simulation and macro/backend equivalence testing
@@ -41,6 +50,12 @@ and its requested item now depends explicitly on
   deterministic post-floorplan residual tie-root hook, because this fix is
   intended to eliminate the observed non-special floating `zero_`/`one_`
   structural condition before detailed routing.
+- Recovery sensitivity note:
+  the explicit `l1_decoder_attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_pnr_v1_r4`
+  request keeps the same exact config and backend contract but widens the
+  envelope to `3.6 mm` die / `3.5 mm` core only to test congestion recovery
+  after the `3.0 mm` point if `r3` cannot produce acceptable routed evidence.
+  It is not an area-frontier replacement.
 - `c2` remains conditional on the corrected c1 macro-backed implementation and
   evidence remaining clean after merge, with an explicit dependency on
   `l1_decoder_attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_pnr_v1`.

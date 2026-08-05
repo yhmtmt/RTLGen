@@ -4770,6 +4770,58 @@ def test_multivalue_service_pnr_proposal_keeps_c2_gated_on_c1_dependency() -> No
     assert c1_item_id in (proposal_dir / "design_brief.md").read_text(encoding="utf-8")
 
 
+def test_multivalue_service_pnr_proposal_adds_explicit_c1_route_recovery_retry() -> None:
+    repo_root = Path(__file__).resolve().parents[3]
+    proposal_dir = (
+        repo_root
+        / "docs"
+        / "proposals"
+        / "prop_l1_decoder_attention_decode_score_multivalue_service_pnr_v1"
+    )
+    proposal = json.loads((proposal_dir / "proposal.json").read_text(encoding="utf-8"))
+    evaluation_requests = json.loads((proposal_dir / "evaluation_requests.json").read_text(encoding="utf-8"))
+    design_brief = (proposal_dir / "design_brief.md").read_text(encoding="utf-8")
+
+    base_item_id = "l1_decoder_attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_pnr_v1"
+    retry_item_id = "l1_decoder_attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_pnr_v1_r4"
+    retry_sweep = (
+        "runs/campaigns/npu/decode_score_multivalue_service_v1/sweeps/"
+        "nangate45_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_3600.json"
+    )
+    base_sweep = (
+        "runs/campaigns/npu/decode_score_multivalue_service_v1/sweeps/"
+        "nangate45_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_3000.json"
+    )
+
+    proposal_by_id = {entry["item_id"]: entry for entry in proposal["required_evaluations"]}
+    request_by_id = {entry["item_id"]: entry for entry in evaluation_requests["requested_items"]}
+    base_proposal = proposal_by_id[base_item_id]
+    retry_proposal = proposal_by_id[retry_item_id]
+    base_request = request_by_id[base_item_id]
+    retry_request = request_by_id[retry_item_id]
+
+    assert base_proposal["sweep_path"] == base_sweep
+    assert base_request["sweep_path"] == base_sweep
+    assert retry_proposal["sweep_path"] == retry_sweep
+    assert retry_request["sweep_path"] == retry_sweep
+    assert retry_proposal["prior_item_ids"] == [base_item_id + "_r3"]
+    assert retry_request["prior_item_ids"] == [base_item_id + "_r3"]
+    assert "does not claim a new area frontier" in retry_proposal["expected_result"]["reason"]
+    assert "does not claim a new area frontier" in retry_request["expected_result"]["reason"]
+    assert "only eligible if r3 fails to produce acceptable routed evidence" in retry_proposal["expected_result"]["reason"]
+    assert "only eligible if r3 fails to produce acceptable routed evidence" in retry_request["expected_result"]["reason"]
+    assert "route_recovery_sensitivity" in retry_proposal["comparison_role"]
+    assert retry_proposal["status"] == "conditional_follow_on"
+    assert retry_request["status"] == "conditional_follow_on"
+    assert "3.6 mm" in design_brief
+    assert "3.5 mm" in design_brief
+    assert "not an area-frontier replacement" in design_brief
+    assert "r2" in design_brief
+    assert "r3" in design_brief
+    assert "r4" in design_brief
+    assert "acceptable routed evidence" in design_brief
+
+
 def test_exact_root_finalizer_lane_ppa_proposal_is_pending_merge_with_all_lane_configs() -> None:
     repo_root = Path(__file__).resolve().parents[3]
     proposal_dir = (
