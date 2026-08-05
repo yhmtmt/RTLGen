@@ -8901,6 +8901,7 @@ def test_service_measured_frontier_request_manifests_remain_dependency_gated() -
     expected_depends = {
         "l2_decoder_attention_decode_score_multivalue_cluster_frontier_llama7b_v1_r1",
         "l2_decoder_attention_decode_score_multivalue_service_c1_activity_power_llama7b_v1",
+        "l2_decoder_attention_score32_local_reducer_measured_recost_llama7b_v1_r1",
     }
 
     for manifest_name, items_key in (
@@ -8915,6 +8916,7 @@ def test_service_measured_frontier_request_manifests_remain_dependency_gated() -
             assert "pending implementation/dependency merge" in note
             assert "only c1 is a measured composed-service anchor" in note
             assert "c2+ remain blocked/unpromoted" in note
+            assert "online-exact measured-reducer recost" in note
         item = manifest[items_key][0]
         assert (
             item["item_id"]
@@ -8929,11 +8931,13 @@ def test_service_measured_frontier_request_manifests_remain_dependency_gated() -
         assert "July 25, 2026" in item["notes"]
         assert "only c1 is a measured composed-service anchor" in item["notes"]
         assert "c2+ remain blocked/unpromoted" in item["notes"]
+        assert "online-exact measured-reducer recost" in item["notes"]
         expected_reason = item["expected_result"]["reason"]
         assert "24-active-context-token" in expected_reason
         assert "ceil(sequence_length / 24)" in expected_reason
         assert "final partial window" in expected_reason
         assert "128 tokens labeled only as capacity" in expected_reason
+        assert "online-exact measured-reducer recost" in expected_reason
         assert "c2+ blocked/unpromoted" in item["expected_result"]["reason"]
         assert "exact integer precision unchanged" in item["expected_result"]["reason"]
         assert "broader SRAM/NoC/HBM/producer/dense energy remains outside" in item[
@@ -8987,6 +8991,7 @@ def test_service_measured_frontier_v2_request_manifests_remain_dependency_gated(
         "l2_decoder_attention_decode_score_multivalue_cluster_frontier_llama7b_v1_r1",
         "l2_decoder_attention_decode_score_multivalue_service_c1_activity_power_llama7b_v1",
         "l2_decoder_attention_decode_score_multivalue_service_c2_activity_power_llama7b_v1",
+        "l2_decoder_attention_score32_local_reducer_measured_recost_llama7b_v1_r1",
     }
 
     for manifest_name, items_key in (
@@ -8998,6 +9003,7 @@ def test_service_measured_frontier_v2_request_manifests_remain_dependency_gated(
             note = manifest["source_commit_note"]
             assert "Sunday, July 26, 2026" in note
             assert "c3+ remain blocked/unpromoted" in note
+            assert "online-exact measured-reducer recost" in note
         item = manifest[items_key][0]
         assert (
             item["item_id"]
@@ -9011,6 +9017,8 @@ def test_service_measured_frontier_v2_request_manifests_remain_dependency_gated(
         assert "cluster_waves_per_layer * layers" in item["expected_result"]["reason"]
         assert "instead of heads * layers" in item["expected_result"]["reason"]
         assert "c3+ blocked/unpromoted" in item["notes"]
+        assert "online-exact measured-reducer recost" in item["notes"]
+        assert "online-exact measured-reducer recost" in item["expected_result"]["reason"]
 
 
 def test_gqa_folded_activity_request_manifests_require_cluster_activity_power_v16() -> None:
@@ -9827,6 +9835,7 @@ def test_generate_l2_campaign_task_adds_decode_score_multivalue_service_measured
                     depends_on_item_ids=[
                         "l2_decoder_attention_decode_score_multivalue_cluster_frontier_llama7b_v1_r1",
                         "l2_decoder_attention_decode_score_multivalue_service_c1_activity_power_llama7b_v1",
+                        "l2_decoder_attention_score32_local_reducer_measured_recost_llama7b_v1_r1",
                     ],
                     run_physical=False,
                 ),
@@ -9857,10 +9866,21 @@ def test_generate_l2_campaign_task_adds_decode_score_multivalue_service_measured
                 "l2_decoder_attention_decode_score_multivalue_service_c1_activity_power_llama7b_v1.json"
                 in run
             )
+            assert (
+                "--online-exact-measured-reducer-json runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_score32_local_reducer_measured_recost__"
+                "l2_decoder_attention_score32_local_reducer_measured_recost_llama7b_v1_r1.json"
+                in run
+            )
             assert decoder_inputs[
                 "decode_score_multivalue_service_measured_frontier_prior_cluster_frontier"
             ].endswith(
                 "l2_decoder_attention_decode_score_multivalue_cluster_frontier_llama7b_v1_r1.json"
+            )
+            assert decoder_inputs[
+                "decode_score_multivalue_service_measured_frontier_online_exact_measured_reducer"
+            ].endswith(
+                "l2_decoder_attention_score32_local_reducer_measured_recost_llama7b_v1_r1.json"
             )
             assert decoder_inputs[
                 "decode_score_multivalue_service_measured_frontier_service_activity_power"
@@ -9871,6 +9891,15 @@ def test_generate_l2_campaign_task_adds_decode_score_multivalue_service_measured
                 decoder_inputs["decode_score_multivalue_service_measured_frontier_scope"]
             )
             assert "Keep c2+ service points blocked/unpromoted" in decoder_inputs[
+                "decode_score_multivalue_service_measured_frontier_scope"
+            ]
+            assert "online-exact measured-reducer recost" in decoder_inputs[
+                "decode_score_multivalue_service_measured_frontier_scope"
+            ]
+            assert "ceil(sequence_length / 24)" in decoder_inputs[
+                "decode_score_multivalue_service_measured_frontier_scope"
+            ]
+            assert "128 tokens as capacity rather than the scaling divisor" in decoder_inputs[
                 "decode_score_multivalue_service_measured_frontier_scope"
             ]
             assert "direct routed microkernel service-window activity explicitly into the Llama7B context" in (
@@ -9925,6 +9954,7 @@ def test_generate_l2_campaign_task_adds_decode_score_multivalue_service_measured
                         "l2_decoder_attention_decode_score_multivalue_cluster_frontier_llama7b_v1_r1",
                         "l2_decoder_attention_decode_score_multivalue_service_c1_activity_power_llama7b_v1",
                         "l2_decoder_attention_decode_score_multivalue_service_c2_activity_power_llama7b_v1",
+                        "l2_decoder_attention_score32_local_reducer_measured_recost_llama7b_v1_r1",
                     ],
                     run_physical=False,
                 ),
@@ -9943,6 +9973,19 @@ def test_generate_l2_campaign_task_adds_decode_score_multivalue_service_measured
                 "l2_decoder_attention_decode_score_multivalue_service_c2_activity_power_llama7b_v1.json"
                 in run
             )
+            assert (
+                "--online-exact-measured-reducer-json runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_score32_local_reducer_measured_recost__"
+                "l2_decoder_attention_score32_local_reducer_measured_recost_llama7b_v1_r1.json"
+                in run
+            )
+            assert decoder_inputs[
+                "decode_score_multivalue_service_measured_frontier_online_exact_measured_reducer"
+            ] == (
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_score32_local_reducer_measured_recost__"
+                "l2_decoder_attention_score32_local_reducer_measured_recost_llama7b_v1_r1.json"
+            )
             assert decoder_inputs[
                 "decode_score_multivalue_service_measured_frontier_service_activity_powers"
             ] == [
@@ -9952,6 +9995,12 @@ def test_generate_l2_campaign_task_adds_decode_score_multivalue_service_measured
                 "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
                 "decoder_attention_decode_score_multivalue_service_activity_power__"
                 "l2_decoder_attention_decode_score_multivalue_service_c2_activity_power_llama7b_v1.json",
+            ]
+            assert "online-exact measured-reducer recost" in decoder_inputs[
+                "decode_score_multivalue_service_measured_frontier_scope"
+            ]
+            assert "cluster_waves_per_layer * layers instead of heads * layers" in decoder_inputs[
+                "decode_score_multivalue_service_measured_frontier_scope"
             ]
             assert "cluster_waves_per_layer * layers" in decoder_inputs[
                 "decode_score_multivalue_service_measured_frontier_scope"
