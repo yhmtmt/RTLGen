@@ -283,6 +283,24 @@ def _multivalue_service_activity_power_item_for_consumer(
     return max(candidate_item_ids, key=_item_version_retry_rank)
 
 
+def _multivalue_service_pnr_item_for_consumer(
+    *, depends_on_item_ids: list[str] | None, cluster_count: int = 1
+) -> str:
+    prefix = (
+        _MULTIVALUE_SERVICE_C1_PNR_ITEM
+        if cluster_count == 1
+        else _MULTIVALUE_SERVICE_C2_PNR_ITEM
+    )
+    candidate_item_ids = [
+        str(dep).strip()
+        for dep in (depends_on_item_ids or [])
+        if str(dep).strip() == prefix or str(dep).strip().startswith(f"{prefix}_r")
+    ]
+    if not candidate_item_ids:
+        return prefix
+    return max(candidate_item_ids, key=_item_version_retry_rank)
+
+
 def _online_exact_measured_reducer_item_for_consumer(
     *, depends_on_item_ids: list[str] | None
 ) -> str:
@@ -7713,21 +7731,26 @@ def _decoder_attention_decode_score_multivalue_service_activity_power_evidence(
     activity_dir = f"/tmp/rtlgen_multivalue_service_{case_id.split('_', 1)[0]}_activity"
     out = f"{base}/decoder_attention_decode_score_multivalue_service_activity_power__{item_id}.json"
     report = f"{base}/decoder_attention_decode_score_multivalue_service_activity_power__{item_id}.md"
-    pnr_item = _MULTIVALUE_SERVICE_C2_PNR_ITEM if is_c2 else _MULTIVALUE_SERVICE_C1_PNR_ITEM
+    pnr_item = _multivalue_service_pnr_item_for_consumer(
+        depends_on_item_ids=depends_on_item_ids,
+        cluster_count=2 if is_c2 else 1,
+    )
     config_key_prefix = f"decode_score_multivalue_service_{case_id.split('_', 1)[0]}"
     scope = (
         "Audit strict c2 routed composed-service activity power after merged/materialized "
-        "integrated-service c2, c2 PNR, and shared-score multivalue cluster-equivalence evidence. "
-        "Measure only direct routed whole-service window energy, inherit the exact integer precision "
-        "contract from the merged equivalence proof, require complete relevant FakeRAM macro-class "
-        "annotation, keep VCD/ODB/SPEF evaluator-local, and do not claim total-token energy."
+        f"integrated-service c2, c2 PNR ({pnr_item}), and shared-score multivalue "
+        "cluster-equivalence evidence. Measure only direct routed whole-service window energy, "
+        "inherit the exact integer precision contract from the merged equivalence proof, require "
+        "complete relevant FakeRAM macro-class annotation, keep VCD/ODB/SPEF evaluator-local, and "
+        "do not claim total-token energy."
         if is_c2
         else (
             "Audit strict c1 routed composed-service activity power after merged/materialized "
-            "integrated-service, c1 PNR, and shared-score multivalue cluster-equivalence evidence. "
-            "Measure only direct routed component service-window energy, inherit the exact integer "
-            "precision contract from the merged equivalence proof, do not force bank3 activity, keep "
-            "VCD/ODB/SPEF evaluator-local, and do not claim total-token energy."
+            f"integrated-service, c1 PNR ({pnr_item}), and shared-score multivalue "
+            "cluster-equivalence evidence. Measure only direct routed component service-window "
+            "energy, inherit the exact integer precision contract from the merged equivalence "
+            "proof, do not force bank3 activity, keep VCD/ODB/SPEF evaluator-local, and do not "
+            "claim total-token energy."
         )
     )
     promotion_gate = (
