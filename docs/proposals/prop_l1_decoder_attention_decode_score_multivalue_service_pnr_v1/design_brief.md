@@ -36,6 +36,11 @@ and its requested item now depends explicitly on
   - OpenROAD execution in this patch
 
 ## Follow-On Gates
+- Retry note:
+  rerun the `c1` PNR point only after the generated design config includes the
+  deterministic post-floorplan residual tie-root hook, because this fix is
+  intended to eliminate the observed non-special floating `zero_`/`one_`
+  structural condition before detailed routing.
 - `c2` remains conditional on the corrected c1 macro-backed implementation and
   evidence remaining clean after merge, with an explicit dependency on
   `l1_decoder_attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_pnr_v1`.

@@ -115,6 +115,66 @@ class ModeCompareRegressionTest(unittest.TestCase):
             ),
         )
 
+    def test_post_floorplan_tie_root_fix_tcl_encodes_conservative_filtering(self):
+        text = self.run_block_sweep.build_post_floorplan_tie_root_fix_tcl()
+
+        self.assertIn("TIELO_CELL_AND_PORT", text)
+        self.assertIn("TIEHI_CELL_AND_PORT", text)
+        self.assertIn("if {[$net isSpecial]}", text)
+        self.assertIn('string equal -nocase $net_name "VDD"', text)
+        self.assertIn('string equal -nocase $net_name "VSS"', text)
+        self.assertIn('if {[string toupper [$net getSigType]] ne $sig_type}', text)
+        self.assertIn("if {$sink_count <= 0 || $output_driver_count > 0}", text)
+        self.assertIn('if {$io_type eq "INPUT"} {\n      incr output_driver_count', text)
+        self.assertIn('} elseif {$io_type eq "OUTPUT"} {\n      incr sink_count', text)
+        self.assertIn('} elseif {$io_type eq "INOUT" || $io_type eq "FEEDTHRU"} {\n      incr sink_count\n      incr output_driver_count', text)
+        self.assertIn("make_instance $inst_name $lib_name/$cell_name", text)
+        self.assertIn("connect_pin $net_name $inst_name/$port_name", text)
+        self.assertIn("rtlgen_unique_tie_instance_name", text)
+        self.assertIn("rtlgen_auto_tielo", text)
+        self.assertIn("rtlgen_auto_tiehi", text)
+
+    def test_ensure_design_assets_wires_generated_post_floorplan_tcl(self):
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            verilog_dir = tmp / "rtl"
+            verilog_dir.mkdir()
+            (verilog_dir / "toy.v").write_text(
+                "module toy(input clk, input a, output y); assign y = a; endmodule\n",
+                encoding="utf-8",
+            )
+            sdc = tmp / "constraint.sdc"
+            sdc.write_text("create_clock [get_ports clk] -period 10\n", encoding="utf-8")
+
+            old_dest = self.run_block_sweep.DEST_BASE
+            old_src = self.run_block_sweep.SRC_BASE
+            try:
+                self.run_block_sweep.DEST_BASE = tmp / "orfs" / "designs"
+                self.run_block_sweep.SRC_BASE = self.run_block_sweep.DEST_BASE / "src"
+                design_dir = self.run_block_sweep.ensure_design_assets(
+                    "toy_block",
+                    "nangate45",
+                    "toy",
+                    verilog_dir,
+                    sdc,
+                    True,
+                    None,
+                )
+            finally:
+                self.run_block_sweep.DEST_BASE = old_dest
+                self.run_block_sweep.SRC_BASE = old_src
+
+            config_text = (design_dir / "config.mk").read_text(encoding="utf-8")
+            self.assertIn(
+                "export POST_FLOORPLAN_TCL = $(DESIGN_HOME)/nangate45/toy_block/post_floorplan_tie_root_fix.tcl",
+                config_text,
+            )
+            hook_path = design_dir / self.run_block_sweep.POST_FLOORPLAN_TIE_ROOT_FIX_TCL_NAME
+            self.assertTrue(hook_path.exists())
+            hook_text = hook_path.read_text(encoding="utf-8")
+            self.assertIn("Residual tie-root fix complete", hook_text)
+            self.assertIn("only inserts one tie cell when a non-special", hook_text)
+
     def test_parse_mode_compare_custom_modes(self):
         raw = {
             "mode_compare": {
