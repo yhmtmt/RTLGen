@@ -6,7 +6,7 @@
   "kind": "physical_prep",
   "title": "First physical prep for multivalue composed service",
   "abstraction_layer": "decoder_attention_decode_score_multivalue_service",
-  "hypothesis": "After the compact integrated-service r1 probe is merged and materialized, c1 can become a dispatchable physical-prep point, with c2 held as a conditional follow-on, if the actual composed service generator emits exact macro evidence for both score banks and a shared 4-bank x 16-lane x 64-row fakeram45_64x32 value store, and if the sweeps respect macro/pin-derived die bounds.",
+  "hypothesis": "After the compact integrated-service r1 probe is merged and materialized, c1 can become a dispatchable physical-prep point, with c2 held as a conditional follow-on, if the actual composed service generator emits exact macro evidence for both score banks and a shared 4-bank x 16-lane x 64-row fakeram45_64x32 value store, and if the sweeps respect macro/pin-derived die bounds. The original 3.0 mm c1 point remains the conservative baseline request. Retry lineage is explicit: r2 was the tie-driver retry that still left the net typed as GROUND, r3 is the corrected 3.0 mm SIGNAL-net retry currently under evaluation as of August 5, 2026, and a later 3.6 mm / 3.5 mm c1 retry can be used only as conditional congestion-recovery sensitivity if r3 cannot produce acceptable routed evidence, not as an area-frontier replacement.",
   "direct_comparison": {
     "primary_question": "Can the actual composed multivalue service be hardened as c1/c2 physical-prep points without silently substituting registers for value memory or under-sizing the die for macro and perimeter demand?",
     "include": [
@@ -14,12 +14,14 @@
       "exact 4-bank x 16-lane fakeram45_64x32 value-memory physical contract for max_blocks=16",
       "behavioral generator mode retained for functional simulation only",
       "strict c1/c2 guard plus post-sweep checker",
-      "dependency on l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1_r1"
+      "dependency on l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1_r1",
+      "one explicit c1 route-recovery sensitivity retry at 3.6 mm die / 3.5 mm core after the 3.0 mm point, conditional only if r3 cannot produce acceptable routed evidence"
     ],
     "exclude": [
       "no c4/c8/activity implementation in this patch",
       "no c16/c32 dispatch in this patch",
-      "no OpenROAD execution in this patch"
+      "no OpenROAD execution in this patch",
+      "no claim that the 3.6 mm retry replaces the conservative 3.0 mm c1 baseline or defines a new area frontier"
     ]
   },
   "required_evaluations": [
@@ -47,6 +49,33 @@
       "status": "pending_implementation_merge"
     },
     {
+      "item_id": "l1_decoder_attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_pnr_v1_r4",
+      "task_type": "l1_sweep",
+      "objective": "Conditionally retry the composed multivalue service c1 route at the same exact macro-backed p128/b4/q4/rl2/round_robin configuration using a 3.6 mm die / 3.5 mm core envelope only if the corrected 3.0 mm SIGNAL-net r3 point cannot produce acceptable routed evidence.",
+      "evaluation_mode": "frontier_followup",
+      "abstraction_layer": "decoder_attention_decode_score_multivalue_service",
+      "comparison_role": "composed_service_c1_route_recovery_sensitivity",
+      "paired_baseline_item_id": "l1_decoder_attention_decode_score_multivalue_cluster_pnr_v1",
+      "config_paths": [
+        "runs/designs/npu_blocks/attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/decode_score_multivalue_service_v1/sweeps/nangate45_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_3600.json",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1_r1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "measure_composed_multivalue_service_c1_route_recovery",
+        "reason": "Preserve the 3.0 mm c1 request as the conservative baseline while adding one explicit 3.6 mm / 3.5 mm recovery sensitivity retry that keeps the same 10 ns hierarchical macro-backed implementation contract, does not claim a new area frontier, and is only eligible if r3 fails to produce acceptable routed evidence."
+      },
+      "status": "conditional_follow_on",
+      "prior_item_ids": [
+        "l1_decoder_attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_pnr_v1_r3"
+      ],
+      "notes": "This retry exists only to check congestion-recovery sensitivity after the 3.0 mm c1 point if r3 does not yield acceptable routed evidence. Retry lineage: r2 added the tie driver but still left the net typed as GROUND, r3 is the corrected 3.0 mm SIGNAL-net retry now under evaluation, and r4 keeps CLOCK_PERIOD=10, PLACE_DENSITY=0.4, SYNTH_HIERARCHICAL=1, the same exact config, and the same macro-backed memory contract while widening only the die/core envelope."
+    },
+    {
       "item_id": "l1_decoder_attention_decode_score_multivalue_service_c2_p128_b4_q4_rl2_rr_pnr_v1",
       "task_type": "l1_sweep",
       "objective": "Conditionally measure the composed multivalue service at c2 using the exact 4-bank x 16-lane fakeram45_64x32 value-memory macro contract and a 3.7 mm hierarchy comparison sweep only after the corrected c1 physical path is accepted.",
@@ -72,6 +101,7 @@
   ],
   "follow_on_gates": [
     "c2 remains conditional until the corrected c1 macro-backed implementation and evidence scope are accepted, and the requested item now depends explicitly on l1_decoder_attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_pnr_v1.",
+    "The explicit c1 r4 item is a 3.6 mm / 3.5 mm congestion-recovery sensitivity retry after the 3.0 mm point and is not an area-frontier replacement; it is conditional only if r3 cannot produce acceptable routed evidence.",
     "c8 remains a later-gated follow-up after c1/c2 runtime and physical feasibility are materialized.",
     "c16 and c32 remain later-gated follow-ups after c8 proves both runtime practicality and physical feasibility."
   ]
