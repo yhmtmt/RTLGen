@@ -232,7 +232,7 @@
       "proposal_id": "prop_l1_decoder_attention_score32_local_temporal_reducer_gqa8_v1",
       "proposal_path": "docs/proposals/prop_l1_decoder_attention_score32_local_temporal_reducer_gqa8_v1/proposal.json",
       "objective": "Measure Nangate45 PPA for a physically faithful p53 folded-Mersenne GQA8 reducer hierarchy by hardening the generated pair-node and temporal-merge module types from the p53 folded top, composing them through one combined macro manifest, and rerunning the p53 top-level sweep with macro abstraction instead of flat placement.",
-      "status": "pending",
+      "status": "merged",
       "evaluation_mode": "frontier_followup",
       "abstraction_layer": "decoder_attention_score32_local_temporal_reducer_gqa8",
       "comparison_role": "functional_gqa8_local_hierarchy_anchor",
@@ -255,8 +255,11 @@
         "direction": "measure_p53_folded_gqa8_reducer_with_hardened_pair_and_temporal_macros",
         "reason": "R6 proved the folded hierarchy synthesizes but is too large to place flat, and the measured one-group p53 service now drains in 20730 cycles versus the earlier 4224-cycle conservative producer barrier. The next honest boundary is therefore macro-composed top-level placement of the already identified pair-node and temporal-merge modules."
       },
-      "notes": "Fresh immutable r7 retry. This item reuses the recovered exact-source r6 evidence at `b41c0694737d69c26db9147d04f03bd0d531d802`, hardens the two generated module types instead of flattening the full 1.65M-cell reducer, and relies on the existing `pre_synth_compute.py` plus `run_block_sweep.py --macro_manifest` path. Generate only this fresh r7 DB task after the macro-opt-in job-prep change is merged, carry exact developer_loop proposal linkage, and pin `source_requirement.required_sha` only after merge to the commit containing the composite-manifest helper, the task-generator opt-in, the r7 config/sweep, and the preserved r6 diagnostic."
+      "notes": "Fresh immutable r7 retry. This item reuses the recovered exact-source r6 evidence at `b41c0694737d69c26db9147d04f03bd0d531d802`, hardens the two generated module types instead of flattening the full 1.65M-cell reducer, and relies on the existing `pre_synth_compute.py` plus `run_block_sweep.py --macro_manifest` path. Generate only this fresh r7 DB task after the macro-opt-in job-prep change is merged, carry exact developer_loop proposal linkage, and pin `source_requirement.required_sha` only after merge to the commit containing the composite-manifest helper, the task-generator opt-in, the r7 config/sweep, and the preserved r6 diagnostic. Merged via PR #1538 and merge b1451ded32b9dcaa800ed63b886c73a917ba2cb4 at 2026-08-05T07:42:13.434919Z.",
+      "merged_pr_number": 1538,
+      "merge_commit": "b1451ded32b9dcaa800ed63b886c73a917ba2cb4",
+      "merged_utc": "2026-08-05T07:42:13.434919Z"
     }
   ],
-  "source_commit": "b41c0694737d69c26db9147d04f03bd0d531d802"
+  "source_commit": "e796b6f6946d5f76257bcd8c30bc06fedf58d390"
 }

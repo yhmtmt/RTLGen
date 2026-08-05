@@ -1,14 +1,14 @@
 {
   "proposal_id": "prop_l1_decoder_attention_score32_local_temporal_reducer_gqa8_v1",
-  "candidate_id": "l1_decoder_attention_score32_local_temporal_reducer_gqa8_ppa_v1_r3",
-  "decision": "promote",
-  "reason": "Accepted Layer 1 physical metrics were merged in PR #1533 for the current candidate.",
+  "candidate_id": "l1_decoder_attention_score32_local_temporal_reducer_gqa8_factored_hier_folded_mersenne_macro_ppa_v1",
+  "decision": "iterate",
+  "reason": "Accepted Layer 1 evidence merged, but no concrete promotion proposal entries were present.",
   "evidence_refs": [
-    "item:l1_decoder_attention_score32_local_temporal_reducer_gqa8_ppa_v1_r3",
-    "run:l1_decoder_attention_score32_local_temporal_reducer_gqa8_ppa_v1_r3_run_0438940c7a32e1c6",
-    "artifact:control_plane/shadow_exports/l1_promotions/l1_decoder_attention_score32_local_temporal_reducer_gqa8_ppa_v1_r3.json",
-    "pr:#1533",
-    "https://github.com/yhmtmt/RTLGen/pull/1533"
+    "item:l1_decoder_attention_score32_local_temporal_reducer_gqa8_factored_hier_folded_mersenne_macro_ppa_v1",
+    "run:l1_decoder_attention_score32_local_temporal_reducer_gqa8_factored_hier_folded_mersenne_macro_ppa_v1_run_189c634d2b3ca788",
+    "artifact:control_plane/shadow_exports/l1_promotions/l1_decoder_attention_score32_local_temporal_reducer_gqa8_factored_hier_folded_mersenne_macro_ppa_v1.json",
+    "pr:#1538",
+    "https://github.com/yhmtmt/RTLGen/pull/1538"
   ],
   "next_action": "inspect the next dependent item",
   "requires_human_approval": false

@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l1_decoder_attention_score32_local_temporal_reducer_gqa8_v1",
-  "decision": "promote",
-  "pr_number": 1533,
-  "merge_commit": "d96c3379c3af228606f9b266142529255fd12699",
-  "merged_utc": "2026-08-03T10:58:06.037636Z"
+  "decision": "iterate",
+  "pr_number": 1538,
+  "merge_commit": "b1451ded32b9dcaa800ed63b886c73a917ba2cb4",
+  "merged_utc": "2026-08-05T07:42:13.434919Z"
 }
