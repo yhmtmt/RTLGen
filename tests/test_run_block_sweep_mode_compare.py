@@ -130,6 +130,7 @@ class ModeCompareRegressionTest(unittest.TestCase):
         self.assertIn('} elseif {$io_type eq "INOUT" || $io_type eq "FEEDTHRU"} {\n      incr sink_count\n      incr output_driver_count', text)
         self.assertIn("make_instance $inst_name $lib_name/$cell_name", text)
         self.assertIn("connect_pin $net_name $inst_name/$port_name", text)
+        self.assertIn("$net setSigType SIGNAL", text)
         self.assertIn("rtlgen_unique_tie_instance_name", text)
         self.assertIn("rtlgen_auto_tielo", text)
         self.assertIn("rtlgen_auto_tiehi", text)
@@ -174,6 +175,7 @@ class ModeCompareRegressionTest(unittest.TestCase):
             hook_text = hook_path.read_text(encoding="utf-8")
             self.assertIn("Residual tie-root fix complete", hook_text)
             self.assertIn("only inserts one tie cell when a non-special", hook_text)
+            self.assertIn("converted\n# back to ordinary SIGNAL nets", hook_text)
 
     def test_parse_mode_compare_custom_modes(self):
         raw = {
