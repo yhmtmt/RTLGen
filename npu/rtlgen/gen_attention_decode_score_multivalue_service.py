@@ -86,6 +86,8 @@ def _validate(config: JsonDict) -> JsonDict:
     locality_burst_max = int(body.get("locality_burst_max", 2))
     score_scale_lanes_per_cycle = int(body.get("score_scale_lanes_per_cycle", 1))
     fsm_encoding = str(body.get("fsm_encoding", "default")).strip().lower()
+    result_mode = str(body.get("result_mode", "normalized")).strip().lower()
+    head_id_bits = int(body.get("head_id_bits", 5))
     value_memory_backend = str(body.get("value_memory_backend", "behavioral")).strip().lower()
 
     if cluster_count < 1 or cluster_count > 32:
@@ -108,6 +110,10 @@ def _validate(config: JsonDict) -> JsonDict:
         raise SystemExit("score_scale_lanes_per_cycle must be one of 1,2,4,8")
     if fsm_encoding not in {"default", "binary"}:
         raise SystemExit("fsm_encoding must be default or binary")
+    if result_mode not in {"normalized", "exact_partial"}:
+        raise SystemExit("result_mode must be normalized or exact_partial")
+    if head_id_bits < 1 or head_id_bits > 8:
+        raise SystemExit("head_id_bits must be in [1, 8]")
     if value_memory_backend not in {"behavioral", "macro_banked_4x16x64x32"}:
         raise SystemExit("value_memory_backend must be behavioral or macro_banked_4x16x64x32")
     if value_memory_backend == "macro_banked_4x16x64x32":
@@ -132,6 +138,8 @@ def _validate(config: JsonDict) -> JsonDict:
         "locality_burst_max": locality_burst_max,
         "score_scale_lanes_per_cycle": score_scale_lanes_per_cycle,
         "fsm_encoding": fsm_encoding,
+        "result_mode": result_mode,
+        "head_id_bits": head_id_bits,
         "value_memory_backend": value_memory_backend,
     }
 
@@ -140,10 +148,25 @@ def _source_w(cluster_count: int) -> int:
     return _clog2(cluster_count)
 
 
-def _total_top_pin_bits(cluster_count: int) -> int:
+def _result_value_bits(params: JsonDict) -> int:
+    return 328 if str(params["result_mode"]) == "exact_partial" else 320
+
+
+def _service_semantic_profile(params: JsonDict) -> str:
+    if str(params["result_mode"]) == "exact_partial":
+        return "decode_m1x8_shared_score_16x8d_value_exact_partial_onchip_service_v1"
+    return "decode_m1x8_shared_score_16x8d_value_iterdiv_onchip_service_v1"
+
+
+def _total_top_pin_bits(params: JsonDict) -> int:
+    cluster_count = int(params["cluster_count"])
     source_w = _source_w(cluster_count)
     base_bits = 1487 + source_w
     per_cluster_bits = 687 + source_w
+    if str(params["result_mode"]) == "exact_partial":
+        head_id_bits = int(params["head_id_bits"])
+        base_bits += head_id_bits + (_result_value_bits(params) - 320)
+        per_cluster_bits += (2 * head_id_bits) + (_result_value_bits(params) - 320)
     return base_bits + (cluster_count * per_cluster_bits)
 
 
@@ -164,7 +187,7 @@ def _minimum_core_side_um(params: JsonDict) -> int:
         _value_memory_macro_count(params) * _VALUE_MEM_SIZE_UM[0] * _VALUE_MEM_SIZE_UM[1]
     )
     macro_bound_um = math.sqrt((score_bank_area + value_memory_area) / 0.4)
-    pin_bound_um = (_total_top_pin_bits(int(params["cluster_count"])) * _PIN_PITCH_UM) / 4.0
+    pin_bound_um = (_total_top_pin_bits(params) * _PIN_PITCH_UM) / 4.0
     return int(math.ceil(max(macro_bound_um, pin_bound_um)))
 
 
@@ -172,6 +195,8 @@ def _generated_macro_manifest(*, top_name: str, params: JsonDict) -> JsonDict:
     value_memory_backend = str(params["value_memory_backend"])
     score_bank_macro_count = int(params["cluster_count"]) * _SCORE_BANK_MACROS_PER_CLUSTER
     value_memory_macro_count = _value_memory_macro_count(params)
+    semantic_profile = _service_semantic_profile(params)
+    result_value_bits = _result_value_bits(params)
     blackboxes = [_SCORE_BANK_BLACKBOX]
     additional_lefs = [_SCORE_BANK_LEF]
     additional_libs = [_SCORE_BANK_LIB]
@@ -199,7 +224,7 @@ def _generated_macro_manifest(*, top_name: str, params: JsonDict) -> JsonDict:
             "config": f"runs/designs/npu_blocks/{top_name}/config.json",
         },
         "manifest_params": {
-            "semantic_profile": "decode_m1x8_shared_score_16x8d_value_iterdiv_onchip_service_v1",
+            "semantic_profile": semantic_profile,
             "cluster_count": int(params["cluster_count"]),
             "score_bank_macro_count": score_bank_macro_count,
             "value_memory_backend": value_memory_backend,
@@ -225,10 +250,13 @@ def _generated_macro_manifest(*, top_name: str, params: JsonDict) -> JsonDict:
             "arb_mode": str(params["arb_mode"]),
             "locality_burst_max": int(params["locality_burst_max"]),
             "score_scale_lanes_per_cycle": int(params["score_scale_lanes_per_cycle"]),
+            "result_mode": str(params["result_mode"]),
+            "head_id_bits": int(params["head_id_bits"]),
+            "result_value_bits_per_beat": result_value_bits,
             "score_passes_per_command": 1,
             "value_slices": 16,
             "shared_result_egress": "single_ready_valid_round_robin_hold_reg_v2",
-            "top_pin_bits": _total_top_pin_bits(int(params["cluster_count"])),
+            "top_pin_bits": _total_top_pin_bits(params),
             "minimum_core_side_um": minimum_core_side_um,
             "minimum_die_side_um": minimum_core_side_um + (2 * _TOP_LEVEL_CORE_MARGIN_UM),
             "macro_eval_excludes_io_pads": True,
@@ -249,6 +277,54 @@ def _wrapper(*, top_name: str, params: JsonDict, cluster_top: str) -> str:
     memory_impl = 1 if params["value_memory_backend"] == "macro_banked_4x16x64x32" else 0
     source_w = _clog2(cluster_count)
     frag_idx_w = _clog2(512 // packet_w)
+    partial_mode = str(params["result_mode"]) == "exact_partial"
+    head_id_bits = int(params["head_id_bits"])
+    result_value_bits = _result_value_bits(params)
+    cluster_command_head_port = (
+        f"\n    input  wire [{cluster_count * head_id_bits - 1}:0] cluster_command_head_id,"
+        if partial_mode
+        else ""
+    )
+    cluster_result_head_port = (
+        f"\n    output wire [{cluster_count * head_id_bits - 1}:0] cluster_result_head_id,"
+        if partial_mode
+        else ""
+    )
+    shared_result_head_port = (
+        f"\n    output wire [{head_id_bits - 1}:0] shared_result_head_id,"
+        if partial_mode
+        else ""
+    )
+    raw_cluster_result_head_wire = (
+        f"\n  wire [CLUSTERS*{head_id_bits}-1:0] raw_cluster_result_head_id;" if partial_mode else ""
+    )
+    shared_result_head_reg = (
+        f"\n  reg  [{head_id_bits - 1}:0] shared_result_head_id_q;" if partial_mode else ""
+    )
+    assign_cluster_result_head = (
+        "\n  assign cluster_result_head_id = raw_cluster_result_head_id;" if partial_mode else ""
+    )
+    assign_shared_result_head = (
+        "\n  assign shared_result_head_id = shared_result_head_id_q;" if partial_mode else ""
+    )
+    cluster_command_head_conn = (
+        f"\n          .command_head_id(cluster_command_head_id[(gi * {head_id_bits}) +: {head_id_bits}]),"
+        if partial_mode
+        else ""
+    )
+    cluster_result_head_conn = (
+        f"\n          .result_head_id(raw_cluster_result_head_id[(gi * {head_id_bits}) +: {head_id_bits}]),"
+        if partial_mode
+        else ""
+    )
+    reset_shared_result_head = (
+        f"\n      shared_result_head_id_q <= {head_id_bits}'d0;" if partial_mode else ""
+    )
+    capture_shared_result_head = (
+        f"\n        shared_result_head_id_q <=\n          raw_cluster_result_head_id[(candidate_idx_r * {head_id_bits}) +: {head_id_bits}];"
+        if partial_mode
+        else ""
+    )
     return f"""// Auto-generated by npu/rtlgen/gen_attention_decode_score_multivalue_service.py
 module {top_name} (
     input  wire         clk,
@@ -262,6 +338,7 @@ module {top_name} (
     output wire [{cluster_count - 1}:0] cluster_command_ready,
     input  wire [{cluster_count * 16 - 1}:0] cluster_command_id,
     input  wire [{cluster_count * 15 - 1}:0] cluster_command_block_count,
+{cluster_command_head_port}
     input  wire [{cluster_count * 32 - 1}:0] cluster_command_score_multiplier,
     input  wire [{cluster_count * 6 - 1}:0] cluster_command_score_shift,
     input  wire [{cluster_count - 1}:0] cluster_input_valid,
@@ -274,18 +351,20 @@ module {top_name} (
     output wire [{cluster_count * 16 - 1}:0] cluster_result_command_id,
     output wire [{cluster_count * 32 - 1}:0] cluster_result_global_max,
     output wire [{cluster_count * 33 - 1}:0] cluster_result_exp_sum,
+{cluster_result_head_port}
     output wire [{cluster_count * 4 - 1}:0] cluster_result_slice,
     output wire [{cluster_count - 1}:0] cluster_result_last,
-    output wire [{cluster_count * 320 - 1}:0] cluster_result_value,
+    output wire [{cluster_count * result_value_bits - 1}:0] cluster_result_value,
     output wire         shared_result_valid,
     input  wire         shared_result_ready,
     output wire [{source_w - 1}:0] shared_result_cluster,
     output wire [15:0]  shared_result_command_id,
     output wire [31:0]  shared_result_global_max,
     output wire [32:0]  shared_result_exp_sum,
+{shared_result_head_port}
     output wire [3:0]   shared_result_slice,
     output wire         shared_result_last,
-    output wire [319:0] shared_result_value,
+    output wire [{result_value_bits - 1}:0] shared_result_value,
     output wire [{cluster_count * 32 - 1}:0] cluster_accepted_count,
     output wire [{cluster_count * 32 - 1}:0] cluster_completed_count,
     output wire [{cluster_count * 32 - 1}:0] cluster_cycle_count,
@@ -368,9 +447,10 @@ module {top_name} (
   wire [CLUSTERS*16-1:0] raw_cluster_result_command_id;
   wire [CLUSTERS*32-1:0] raw_cluster_result_global_max;
   wire [CLUSTERS*33-1:0] raw_cluster_result_exp_sum;
+{raw_cluster_result_head_wire}
   wire [CLUSTERS*4-1:0] raw_cluster_result_slice;
   wire [CLUSTERS-1:0] raw_cluster_result_last;
-  wire [CLUSTERS*320-1:0] raw_cluster_result_value;
+  wire [CLUSTERS*{result_value_bits}-1:0] raw_cluster_result_value;
   reg  [TAG_W-1:0] request_tag_q [0:CLUSTERS-1];
   reg  [TAG_W-1:0] expected_tag_q [0:CLUSTERS-1];
   reg  [ADDR_W-1:0] expected_addr_q [0:CLUSTERS-1];
@@ -383,9 +463,10 @@ module {top_name} (
   reg  [15:0] shared_result_command_id_q;
   reg  [31:0] shared_result_global_max_q;
   reg  [32:0] shared_result_exp_sum_q;
+{shared_result_head_reg}
   reg  [3:0] shared_result_slice_q;
   reg  shared_result_last_q;
-  reg  [319:0] shared_result_value_q;
+  reg  [{result_value_bits - 1}:0] shared_result_value_q;
   reg  [SOURCE_W-1:0] result_rr_cursor_q;
   reg  candidate_valid_r;
   reg  [SOURCE_W-1:0] candidate_idx_r;
@@ -404,6 +485,7 @@ module {top_name} (
   assign cluster_result_command_id = raw_cluster_result_command_id;
   assign cluster_result_global_max = raw_cluster_result_global_max;
   assign cluster_result_exp_sum = raw_cluster_result_exp_sum;
+{assign_cluster_result_head}
   assign cluster_result_slice = raw_cluster_result_slice;
   assign cluster_result_last = raw_cluster_result_last;
   assign cluster_result_value = raw_cluster_result_value;
@@ -412,6 +494,7 @@ module {top_name} (
   assign shared_result_command_id = shared_result_command_id_q;
   assign shared_result_global_max = shared_result_global_max_q;
   assign shared_result_exp_sum = shared_result_exp_sum_q;
+{assign_shared_result_head}
   assign shared_result_slice = shared_result_slice_q;
   assign shared_result_last = shared_result_last_q;
   assign shared_result_value = shared_result_value_q;
@@ -432,6 +515,7 @@ module {top_name} (
           .command_ready(cluster_command_ready[gi]),
           .command_id(cluster_command_id[(gi * 16) +: 16]),
           .command_block_count(cluster_command_block_count[(gi * 15) +: 15]),
+{cluster_command_head_conn}
           .command_score_multiplier(cluster_command_score_multiplier[(gi * 32) +: 32]),
           .command_score_shift(cluster_command_score_shift[(gi * 6) +: 6]),
           .input_valid(cluster_input_valid[gi]),
@@ -453,9 +537,10 @@ module {top_name} (
           .result_command_id(raw_cluster_result_command_id[(gi * 16) +: 16]),
           .result_global_max(raw_cluster_result_global_max[(gi * 32) +: 32]),
           .result_exp_sum(raw_cluster_result_exp_sum[(gi * 33) +: 33]),
+{cluster_result_head_conn}
           .result_slice(raw_cluster_result_slice[(gi * 4) +: 4]),
           .result_last(raw_cluster_result_last[gi]),
-          .result_value(raw_cluster_result_value[(gi * 320) +: 320]),
+          .result_value(raw_cluster_result_value[(gi * {result_value_bits}) +: {result_value_bits}]),
           .accepted_count(cluster_accepted_count[(gi * 32) +: 32]),
           .completed_count(cluster_completed_count[(gi * 32) +: 32]),
           .cycle_count(cluster_cycle_count[(gi * 32) +: 32]),
@@ -627,9 +712,10 @@ module {top_name} (
       shared_result_command_id_q <= 16'd0;
       shared_result_global_max_q <= 32'd0;
       shared_result_exp_sum_q <= 33'd0;
+{reset_shared_result_head}
       shared_result_slice_q <= 4'd0;
       shared_result_last_q <= 1'b0;
-      shared_result_value_q <= 320'd0;
+      shared_result_value_q <= {result_value_bits}'d0;
       result_rr_cursor_q <= {{SOURCE_W{{1'b0}}}};
       result_arbitration_contention_cycles <= 32'd0;
       result_egress_block_cycles <= 32'd0;
@@ -655,12 +741,12 @@ module {top_name} (
         shared_result_global_max_q <=
           raw_cluster_result_global_max[(candidate_idx_r * 32) +: 32];
         shared_result_exp_sum_q <=
-          raw_cluster_result_exp_sum[(candidate_idx_r * 33) +: 33];
+          raw_cluster_result_exp_sum[(candidate_idx_r * 33) +: 33];{capture_shared_result_head}
         shared_result_slice_q <=
           raw_cluster_result_slice[(candidate_idx_r * 4) +: 4];
         shared_result_last_q <= raw_cluster_result_last[candidate_idx_r];
         shared_result_value_q <=
-          raw_cluster_result_value[(candidate_idx_r * 320) +: 320];
+          raw_cluster_result_value[(candidate_idx_r * {result_value_bits}) +: {result_value_bits}];
         if (candidate_idx_r == (CLUSTERS - 1)) begin
           result_rr_cursor_q <= {{SOURCE_W{{1'b0}}}};
         end else begin
@@ -718,6 +804,8 @@ def generate(config: JsonDict, out_dir: Path) -> None:
                     "divider_impl": "iterative_restoring",
                     "score_scale_lanes_per_cycle": params["score_scale_lanes_per_cycle"],
                     "fsm_encoding": params["fsm_encoding"],
+                    "result_mode": params["result_mode"],
+                    "head_id_bits": params["head_id_bits"],
                 },
             },
             cluster_dir,
@@ -758,11 +846,12 @@ def generate(config: JsonDict, out_dir: Path) -> None:
             }
         )
     macro_manifest = _generated_macro_manifest(top_name=top_name, params=params)
+    semantic_profile = _service_semantic_profile(params)
     manifest = {
         "version": 1,
         "generator": "npu/rtlgen/gen_attention_decode_score_multivalue_service.py",
         "top_name": top_name,
-        "semantic_profile": "decode_m1x8_shared_score_16x8d_value_iterdiv_onchip_service_v1",
+        "semantic_profile": semantic_profile,
         "cluster_count": params["cluster_count"],
         "max_blocks": params["max_blocks"],
         "packet_w": params["packet_w"],
@@ -777,12 +866,15 @@ def generate(config: JsonDict, out_dir: Path) -> None:
         "value_slices": 16,
         "score_scale_lanes_per_cycle": params["score_scale_lanes_per_cycle"],
         "fsm_encoding": params["fsm_encoding"],
+        "result_mode": params["result_mode"],
+        "head_id_bits": params["head_id_bits"],
+        "result_value_bits_per_beat": _result_value_bits(params),
         "value_memory_backend": params["value_memory_backend"],
         "value_memory_promotable": bool(_value_memory_macro_count(params)),
         "score_bank_macro_count": int(params["cluster_count"]) * _SCORE_BANK_MACROS_PER_CLUSTER,
         "value_memory_macro_count": _value_memory_macro_count(params),
         "total_macro_count": int(params["cluster_count"]) * _SCORE_BANK_MACROS_PER_CLUSTER + _value_memory_macro_count(params),
-        "top_pin_bits": _total_top_pin_bits(int(params["cluster_count"])),
+        "top_pin_bits": _total_top_pin_bits(params),
         "minimum_core_side_um": _minimum_core_side_um(params),
         "minimum_die_side_um": _minimum_core_side_um(params) + (2 * _TOP_LEVEL_CORE_MARGIN_UM),
         "shared_result_egress": "single_ready_valid_round_robin_hold_reg_v2",

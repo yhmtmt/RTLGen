@@ -6,8 +6,14 @@ import sys
 from npu.rtlgen.gen_attention_decode_score_multivalue_service import generate
 
 
-def _config(top_name: str, cluster_count: int) -> dict:
-    return {
+def _config(
+    top_name: str,
+    cluster_count: int,
+    *,
+    result_mode: str = "normalized",
+    head_id_bits: int = 5,
+) -> dict:
+    config = {
         "top_name": top_name,
         "attention_decode_score_multivalue_service": {
             "cluster_count": cluster_count,
@@ -24,12 +30,46 @@ def _config(top_name: str, cluster_count: int) -> dict:
             "value_memory_backend": "macro_banked_4x16x64x32",
         },
     }
+    if result_mode != "normalized":
+        config["attention_decode_score_multivalue_service"]["result_mode"] = result_mode
+        config["attention_decode_score_multivalue_service"]["head_id_bits"] = head_id_bits
+    return config
 
 
 def test_service_guard_accepts_c2_banked_4x16x64x32_macro_contract(tmp_path: Path) -> None:
     design_dir = tmp_path / "attention_decode_score_multivalue_service_c2_p128_b4_q4_rl2_rr"
     design_dir.mkdir()
     config = _config("attention_decode_score_multivalue_service_c2_p128_b4_q4_rl2_rr", 2)
+    (design_dir / "config.json").write_text(json.dumps(config, indent=2) + "\n", encoding="utf-8")
+    generate(config, design_dir / "verilog")
+    generated_macro_manifest = (design_dir / "verilog" / "macro_manifest.json").read_text(encoding="utf-8")
+    (design_dir / "macro_manifest.json").write_text(generated_macro_manifest, encoding="utf-8")
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "npu/eval/check_attention_decode_score_multivalue_service_guard.py",
+            "--design-dir",
+            str(design_dir),
+            "--config",
+            str(design_dir / "config.json"),
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, result.stderr
+
+
+def test_service_guard_accepts_exact_partial_banked_macro_contract(tmp_path: Path) -> None:
+    design_dir = tmp_path / "attention_decode_score_multivalue_service_exact_partial_c1_p128_b4_q4_rl2_rr"
+    design_dir.mkdir()
+    config = _config(
+        "attention_decode_score_multivalue_service_exact_partial_c1_p128_b4_q4_rl2_rr",
+        1,
+        result_mode="exact_partial",
+        head_id_bits=5,
+    )
     (design_dir / "config.json").write_text(json.dumps(config, indent=2) + "\n", encoding="utf-8")
     generate(config, design_dir / "verilog")
     generated_macro_manifest = (design_dir / "verilog" / "macro_manifest.json").read_text(encoding="utf-8")
