@@ -1,0 +1,21 @@
+{
+  "attention_score32_exact_partial_temporal_stream": {
+    "exp_scale_impl": "factored_h33_l64_mul_exact",
+    "fifo_depth": 4,
+    "head_id_bits": 5,
+    "heads": 32,
+    "keep_hierarchy": true,
+    "max_window_count": 16384,
+    "sequence_id_bits": 16,
+    "value_slices": 16,
+    "window_count_bits": 15,
+    "window_index_bits": 14
+  },
+  "probe_defaults": {
+    "heads": 2,
+    "sequence_id": 9,
+    "stress_fifo_depth": 4,
+    "windows": 3
+  },
+  "top_name": "attention_score32_exact_partial_temporal_stream_h32_f4"
+}
