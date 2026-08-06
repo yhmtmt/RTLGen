@@ -100,6 +100,23 @@ def _ok_metric(
     }
 
 
+def test_repo_c1_metric_contract_selects_merged_r3_row() -> None:
+    metrics = (
+        REPO_ROOT
+        / "runs/designs/npu_blocks/"
+        "attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr/metrics.csv"
+    )
+
+    row = audit._select_c1_metric(metrics, clock_period_ns=10.0)
+
+    assert row["param_hash"] == "696d01b6"
+    assert row["tag"] == (
+        "decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_3000_v1_"
+        "macro_conservative_c1_die_3000"
+    )
+    assert float(row["critical_path_ns"]) == 6.7148
+
+
 def _cluster_equivalence(path: Path, *, passed: bool = True) -> None:
     path.write_text(
         json.dumps(
