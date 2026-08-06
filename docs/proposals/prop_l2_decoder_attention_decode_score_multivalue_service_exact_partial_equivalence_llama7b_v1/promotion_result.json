@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_decode_score_multivalue_service_exact_partial_equivalence_llama7b_v1",
+  "decision": "iterate",
+  "pr_number": 1579,
+  "merge_commit": "e56d0948a0792eab53a3fa3a45ed4b8f0cd5f2e4",
+  "merged_utc": "2026-08-06T13:55:03.884205Z"
+}

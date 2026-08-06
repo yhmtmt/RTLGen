@@ -19,8 +19,12 @@
         "direction": "record_exact_partial_shared_service_equivalence",
         "reason": "Require exact global_max, exp_sum, head_id, slice/last, and all 8xS41 numerator lanes through the shared service while keeping normalized integrated-service evidence disjoint and making no full-context temporal-composition, PPA, activity, HBM, or NoC claim."
       },
-      "status": "pending_implementation_merge",
-      "notes": "The merged/materialized shared-score cluster-equivalence artifact is mandatory. Generate this item only after the exact-partial probe CLI and this task wiring merge; task generation must auto-pin source_requirement.required_sha to that origin/master merge and require evaluator daemon refresh."
+      "status": "merged",
+      "notes": "The merged/materialized shared-score cluster-equivalence artifact is mandatory. Generate this item only after the exact-partial probe CLI and this task wiring merge; task generation must auto-pin source_requirement.required_sha to that origin/master merge and require evaluator daemon refresh. Merged via PR #1579 and merge e56d0948a0792eab53a3fa3a45ed4b8f0cd5f2e4 at 2026-08-06T13:55:03.884205Z.",
+      "merged_pr_number": 1579,
+      "merge_commit": "e56d0948a0792eab53a3fa3a45ed4b8f0cd5f2e4",
+      "merged_utc": "2026-08-06T13:55:03.884205Z"
     }
-  ]
+  ],
+  "source_commit": "39f44cf83e48565a4a9b26a751f70f0e6f066d53"
 }
