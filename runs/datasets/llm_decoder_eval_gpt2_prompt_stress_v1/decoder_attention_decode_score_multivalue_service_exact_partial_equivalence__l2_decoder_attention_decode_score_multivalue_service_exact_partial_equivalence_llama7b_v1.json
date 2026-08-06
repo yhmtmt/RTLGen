@@ -1,0 +1,1743 @@
+{
+  "cases": [
+    {
+      "baseline_no_stall": {
+        "completion_cycle": 654,
+        "final_hash": "5585e21beaa92e1c08029e9c8b4bd8039f5a3f4cd394696534d3ed0e35381855",
+        "hash_gate_ok": true,
+        "score_hash": "fad57989bfee06905aa10f5e279104455d3c1b62a4a98d38d3c80d53f2e4483c"
+      },
+      "case_id": "c1_p128_b4_rr",
+      "config": {
+        "arb_mode": "round_robin",
+        "bank_queue_depth": 4,
+        "banks": 4,
+        "cluster_count": 1,
+        "head_id_bits": 5,
+        "locality_burst_max": 2,
+        "packet_w": 128,
+        "read_latency": 2,
+        "req_queue_depth": 4,
+        "resp_queue_depth": 4,
+        "result_mode": "exact_partial"
+      },
+      "decision": "pass",
+      "expected_hashes": {
+        "final_hash": "5585e21beaa92e1c08029e9c8b4bd8039f5a3f4cd394696534d3ed0e35381855",
+        "request_hash": "ea73916192b22f7ab3f6a618549d7ea39ec024f1e74fe8080ef97866ad85e38f",
+        "score_hash": "fad57989bfee06905aa10f5e279104455d3c1b62a4a98d38d3c80d53f2e4483c",
+        "wide_response_matrix_hash": "3366971e40bdc5eea1388be151b48bfacf108750da9f1e30e6b09f902df6c50e"
+      },
+      "gates": {
+        "count_gate_ok": true,
+        "hash_gate_ok": true,
+        "protocol_gate_ok": true
+      },
+      "integrated_service": {
+        "completion_cycle": 1039,
+        "counters": {
+          "arbitration_contention_cycles": 0,
+          "bank_conflict_count": 0,
+          "max_occupancy": {
+            "router_req": 1,
+            "router_resp": 1,
+            "service_req": 1,
+            "service_resp": 1
+          },
+          "request_injection_stall_cycles": 0,
+          "response_block_cycles": {
+            "router": 0,
+            "service": 0
+          },
+          "shared_result": {
+            "arbitration_contention_cycles": 0,
+            "egress_block_cycles": 0
+          }
+        },
+        "cycle_bound_ok": true,
+        "exact_match": true,
+        "final_hash": "5585e21beaa92e1c08029e9c8b4bd8039f5a3f4cd394696534d3ed0e35381855",
+        "hash_gate_ok": true,
+        "no_drop_duplicate_deadlock_timeout": true,
+        "no_protocol_errors": true,
+        "request_count": 48,
+        "request_hash": "ea73916192b22f7ab3f6a618549d7ea39ec024f1e74fe8080ef97866ad85e38f",
+        "result_count": 16,
+        "score_hash": "fad57989bfee06905aa10f5e279104455d3c1b62a4a98d38d3c80d53f2e4483c",
+        "service_counts": {
+          "accepted_req_count": 48,
+          "emitted_resp_count": 48
+        },
+        "service_penalty_cycles": 385,
+        "shared_result_egress": {
+          "architecture": "single_ready_valid_round_robin_hold_reg_v2",
+          "back_to_back_fire_seen": true,
+          "documented_initiation_interval": 1,
+          "stall_semantics": "stable_until_handshake"
+        },
+        "wide_response_count": 48,
+        "wide_response_matrix_hash": "3366971e40bdc5eea1388be151b48bfacf108750da9f1e30e6b09f902df6c50e"
+      },
+      "source_refs": {
+        "baseline_manifest": "baseline_manifest_924c5950eb53",
+        "baseline_top": "baseline_top_a15bca555e8b",
+        "integrated_manifest": "integrated_manifest_8524d333e22e",
+        "integrated_top": "integrated_top_b159a77005bd",
+        "shared_preload": "shared_preload_v1"
+      }
+    },
+    {
+      "baseline_no_stall": {
+        "completion_cycle": 654,
+        "final_hash": "dd54bcfdbe9506b7e8ce1b4e8650e397a3627e294f609d0f14abc6e34632615a",
+        "hash_gate_ok": true,
+        "score_hash": "63f21c4d05353e25b778a76f8f1fcd33506451748c9171ffe98d9a3cbb2387ee"
+      },
+      "case_id": "c2_p128_b4_rr",
+      "config": {
+        "arb_mode": "round_robin",
+        "bank_queue_depth": 4,
+        "banks": 4,
+        "cluster_count": 2,
+        "head_id_bits": 5,
+        "locality_burst_max": 2,
+        "packet_w": 128,
+        "read_latency": 2,
+        "req_queue_depth": 4,
+        "resp_queue_depth": 4,
+        "result_mode": "exact_partial"
+      },
+      "decision": "pass",
+      "expected_hashes": {
+        "final_hash": "dd54bcfdbe9506b7e8ce1b4e8650e397a3627e294f609d0f14abc6e34632615a",
+        "request_hash": "3f128c6180b32c17d2d3ee2fc838b22ea666f056081a710c832213a04ec46881",
+        "score_hash": "63f21c4d05353e25b778a76f8f1fcd33506451748c9171ffe98d9a3cbb2387ee",
+        "wide_response_matrix_hash": "de4d3337a1649ae567ea44d28bd9e3d50fc510696523e862655816858c23f683"
+      },
+      "gates": {
+        "count_gate_ok": true,
+        "hash_gate_ok": true,
+        "protocol_gate_ok": true
+      },
+      "integrated_service": {
+        "completion_cycle": 1198,
+        "counters": {
+          "arbitration_contention_cycles": 1,
+          "bank_conflict_count": 93,
+          "max_occupancy": {
+            "router_req": 2,
+            "router_resp": 1,
+            "service_req": 2,
+            "service_resp": 1
+          },
+          "request_injection_stall_cycles": 0,
+          "response_block_cycles": {
+            "router": 0,
+            "service": 0
+          },
+          "shared_result": {
+            "arbitration_contention_cycles": 30,
+            "egress_block_cycles": 8
+          }
+        },
+        "cycle_bound_ok": true,
+        "exact_match": true,
+        "final_hash": "dd54bcfdbe9506b7e8ce1b4e8650e397a3627e294f609d0f14abc6e34632615a",
+        "hash_gate_ok": true,
+        "no_drop_duplicate_deadlock_timeout": true,
+        "no_protocol_errors": true,
+        "request_count": 96,
+        "request_hash": "3f128c6180b32c17d2d3ee2fc838b22ea666f056081a710c832213a04ec46881",
+        "result_count": 32,
+        "score_hash": "63f21c4d05353e25b778a76f8f1fcd33506451748c9171ffe98d9a3cbb2387ee",
+        "service_counts": {
+          "accepted_req_count": 96,
+          "emitted_resp_count": 96
+        },
+        "service_penalty_cycles": 544,
+        "shared_result_egress": {
+          "architecture": "single_ready_valid_round_robin_hold_reg_v2",
+          "back_to_back_fire_seen": true,
+          "documented_initiation_interval": 1,
+          "stall_semantics": "stable_until_handshake"
+        },
+        "wide_response_count": 96,
+        "wide_response_matrix_hash": "de4d3337a1649ae567ea44d28bd9e3d50fc510696523e862655816858c23f683"
+      },
+      "source_refs": {
+        "baseline_manifest": "baseline_manifest_b6e639349e2c",
+        "baseline_top": "baseline_top_44b067991833",
+        "integrated_manifest": "integrated_manifest_ca60ab0bd781",
+        "integrated_top": "integrated_top_24f45b30ca77",
+        "shared_preload": "shared_preload_v1"
+      }
+    },
+    {
+      "baseline_no_stall": {
+        "completion_cycle": 654,
+        "final_hash": "f3a037c1fe9c2aa0b3c75603a288d38eb7c79e3b593e3f40e4308dc52fb21936",
+        "hash_gate_ok": true,
+        "score_hash": "7777e58ae2a13a35e3423181f1b567eac0edc1a83a81d0f7d8aedd0b2ab2a9bd"
+      },
+      "case_id": "c4_p128_b4_rr",
+      "config": {
+        "arb_mode": "round_robin",
+        "bank_queue_depth": 4,
+        "banks": 4,
+        "cluster_count": 4,
+        "head_id_bits": 5,
+        "locality_burst_max": 2,
+        "packet_w": 128,
+        "read_latency": 2,
+        "req_queue_depth": 4,
+        "resp_queue_depth": 4,
+        "result_mode": "exact_partial"
+      },
+      "decision": "pass",
+      "expected_hashes": {
+        "final_hash": "f3a037c1fe9c2aa0b3c75603a288d38eb7c79e3b593e3f40e4308dc52fb21936",
+        "request_hash": "1b23636fb88ba177ae978311c90a2ae754c4b40b1ac18f220ab26a556a803b5f",
+        "score_hash": "7777e58ae2a13a35e3423181f1b567eac0edc1a83a81d0f7d8aedd0b2ab2a9bd",
+        "wide_response_matrix_hash": "09b4fe7af74a0cb1886bcdb4f620ac0c1d7a1af9f423a9def8642aa29c99293e"
+      },
+      "gates": {
+        "count_gate_ok": true,
+        "hash_gate_ok": true,
+        "protocol_gate_ok": true
+      },
+      "integrated_service": {
+        "completion_cycle": 1848,
+        "counters": {
+          "arbitration_contention_cycles": 7,
+          "bank_conflict_count": 189,
+          "max_occupancy": {
+            "router_req": 4,
+            "router_resp": 1,
+            "service_req": 4,
+            "service_resp": 2
+          },
+          "request_injection_stall_cycles": 0,
+          "response_block_cycles": {
+            "router": 0,
+            "service": 0
+          },
+          "shared_result": {
+            "arbitration_contention_cycles": 60,
+            "egress_block_cycles": 8
+          }
+        },
+        "cycle_bound_ok": true,
+        "exact_match": true,
+        "final_hash": "f3a037c1fe9c2aa0b3c75603a288d38eb7c79e3b593e3f40e4308dc52fb21936",
+        "hash_gate_ok": true,
+        "no_drop_duplicate_deadlock_timeout": true,
+        "no_protocol_errors": true,
+        "request_count": 192,
+        "request_hash": "1b23636fb88ba177ae978311c90a2ae754c4b40b1ac18f220ab26a556a803b5f",
+        "result_count": 64,
+        "score_hash": "7777e58ae2a13a35e3423181f1b567eac0edc1a83a81d0f7d8aedd0b2ab2a9bd",
+        "service_counts": {
+          "accepted_req_count": 192,
+          "emitted_resp_count": 192
+        },
+        "service_penalty_cycles": 1194,
+        "shared_result_egress": {
+          "architecture": "single_ready_valid_round_robin_hold_reg_v2",
+          "back_to_back_fire_seen": true,
+          "documented_initiation_interval": 1,
+          "stall_semantics": "stable_until_handshake"
+        },
+        "wide_response_count": 192,
+        "wide_response_matrix_hash": "09b4fe7af74a0cb1886bcdb4f620ac0c1d7a1af9f423a9def8642aa29c99293e"
+      },
+      "source_refs": {
+        "baseline_manifest": "baseline_manifest_b68a5b9512ab",
+        "baseline_top": "baseline_top_58ab218b61df",
+        "integrated_manifest": "integrated_manifest_a0990ee79d3c",
+        "integrated_top": "integrated_top_b72e2cd9ccbb",
+        "shared_preload": "shared_preload_v1"
+      }
+    },
+    {
+      "baseline_no_stall": {
+        "completion_cycle": 654,
+        "final_hash": "bcf715b9b6222de197a6aa8313209dcf6d8110ada072960fdff05e59d4aed5ba",
+        "hash_gate_ok": true,
+        "score_hash": "5b857feb49667b4f97b8526262a47c016b5dfd8f6a72277b6e9c20f165a390b1"
+      },
+      "case_id": "c8_p128_b4_rr",
+      "config": {
+        "arb_mode": "round_robin",
+        "bank_queue_depth": 4,
+        "banks": 4,
+        "cluster_count": 8,
+        "head_id_bits": 5,
+        "locality_burst_max": 2,
+        "packet_w": 128,
+        "read_latency": 2,
+        "req_queue_depth": 4,
+        "resp_queue_depth": 4,
+        "result_mode": "exact_partial"
+      },
+      "decision": "pass",
+      "expected_hashes": {
+        "final_hash": "bcf715b9b6222de197a6aa8313209dcf6d8110ada072960fdff05e59d4aed5ba",
+        "request_hash": "2a5d93a0eaecdf0d184a3acdf4833e88031d764c7c3fa8cde3e3a4a54266a7d0",
+        "score_hash": "5b857feb49667b4f97b8526262a47c016b5dfd8f6a72277b6e9c20f165a390b1",
+        "wide_response_matrix_hash": "b08d488a78c040a9bca7c8ac45b991c7e98688f5b9591a2b294f9585cdf1e757"
+      },
+      "gates": {
+        "count_gate_ok": true,
+        "hash_gate_ok": true,
+        "protocol_gate_ok": true
+      },
+      "integrated_service": {
+        "completion_cycle": 3144,
+        "counters": {
+          "arbitration_contention_cycles": 2412,
+          "bank_conflict_count": 381,
+          "max_occupancy": {
+            "router_req": 8,
+            "router_resp": 1,
+            "service_req": 7,
+            "service_resp": 2
+          },
+          "request_injection_stall_cycles": 0,
+          "response_block_cycles": {
+            "router": 0,
+            "service": 0
+          },
+          "shared_result": {
+            "arbitration_contention_cycles": 114,
+            "egress_block_cycles": 8
+          }
+        },
+        "cycle_bound_ok": true,
+        "exact_match": true,
+        "final_hash": "bcf715b9b6222de197a6aa8313209dcf6d8110ada072960fdff05e59d4aed5ba",
+        "hash_gate_ok": true,
+        "no_drop_duplicate_deadlock_timeout": true,
+        "no_protocol_errors": true,
+        "request_count": 384,
+        "request_hash": "2a5d93a0eaecdf0d184a3acdf4833e88031d764c7c3fa8cde3e3a4a54266a7d0",
+        "result_count": 128,
+        "score_hash": "5b857feb49667b4f97b8526262a47c016b5dfd8f6a72277b6e9c20f165a390b1",
+        "service_counts": {
+          "accepted_req_count": 384,
+          "emitted_resp_count": 384
+        },
+        "service_penalty_cycles": 2490,
+        "shared_result_egress": {
+          "architecture": "single_ready_valid_round_robin_hold_reg_v2",
+          "back_to_back_fire_seen": true,
+          "documented_initiation_interval": 1,
+          "stall_semantics": "stable_until_handshake"
+        },
+        "wide_response_count": 384,
+        "wide_response_matrix_hash": "b08d488a78c040a9bca7c8ac45b991c7e98688f5b9591a2b294f9585cdf1e757"
+      },
+      "source_refs": {
+        "baseline_manifest": "baseline_manifest_e4259f1da955",
+        "baseline_top": "baseline_top_97636b1b60fc",
+        "integrated_manifest": "integrated_manifest_9406b9233a9d",
+        "integrated_top": "integrated_top_e7eea4c45129",
+        "shared_preload": "shared_preload_v1"
+      }
+    },
+    {
+      "baseline_no_stall": {
+        "completion_cycle": 654,
+        "final_hash": "85f0bb531e582429cba95262a1f45e616e9c4c305766df81874bdad702f3bcc7",
+        "hash_gate_ok": true,
+        "score_hash": "31bbcb3443ad6913dac1283e8d3716fd344f6a96c34886dc22b33ac5c61c1310"
+      },
+      "case_id": "c16_p128_b4_rr",
+      "config": {
+        "arb_mode": "round_robin",
+        "bank_queue_depth": 4,
+        "banks": 4,
+        "cluster_count": 16,
+        "head_id_bits": 5,
+        "locality_burst_max": 2,
+        "packet_w": 128,
+        "read_latency": 2,
+        "req_queue_depth": 4,
+        "resp_queue_depth": 4,
+        "result_mode": "exact_partial"
+      },
+      "decision": "pass",
+      "expected_hashes": {
+        "final_hash": "85f0bb531e582429cba95262a1f45e616e9c4c305766df81874bdad702f3bcc7",
+        "request_hash": "dd83ade6c1690cacf3dbcbba9bee06e4e3533e156f17886b6afea3baa47f32a2",
+        "score_hash": "31bbcb3443ad6913dac1283e8d3716fd344f6a96c34886dc22b33ac5c61c1310",
+        "wide_response_matrix_hash": "23173eac9ab382f7bdaa728483b4a44a235e597389e13f28143b5d25b8f6da7f"
+      },
+      "gates": {
+        "count_gate_ok": true,
+        "hash_gate_ok": true,
+        "protocol_gate_ok": true
+      },
+      "integrated_service": {
+        "completion_cycle": 5972,
+        "counters": {
+          "arbitration_contention_cycles": 5282,
+          "bank_conflict_count": 765,
+          "max_occupancy": {
+            "router_req": 16,
+            "router_resp": 1,
+            "service_req": 10,
+            "service_resp": 2
+          },
+          "request_injection_stall_cycles": 0,
+          "response_block_cycles": {
+            "router": 0,
+            "service": 0
+          },
+          "shared_result": {
+            "arbitration_contention_cycles": 253,
+            "egress_block_cycles": 8
+          }
+        },
+        "cycle_bound_ok": true,
+        "exact_match": true,
+        "final_hash": "85f0bb531e582429cba95262a1f45e616e9c4c305766df81874bdad702f3bcc7",
+        "hash_gate_ok": true,
+        "no_drop_duplicate_deadlock_timeout": true,
+        "no_protocol_errors": true,
+        "request_count": 768,
+        "request_hash": "dd83ade6c1690cacf3dbcbba9bee06e4e3533e156f17886b6afea3baa47f32a2",
+        "result_count": 256,
+        "score_hash": "31bbcb3443ad6913dac1283e8d3716fd344f6a96c34886dc22b33ac5c61c1310",
+        "service_counts": {
+          "accepted_req_count": 768,
+          "emitted_resp_count": 768
+        },
+        "service_penalty_cycles": 5318,
+        "shared_result_egress": {
+          "architecture": "single_ready_valid_round_robin_hold_reg_v2",
+          "back_to_back_fire_seen": true,
+          "documented_initiation_interval": 1,
+          "stall_semantics": "stable_until_handshake"
+        },
+        "wide_response_count": 768,
+        "wide_response_matrix_hash": "23173eac9ab382f7bdaa728483b4a44a235e597389e13f28143b5d25b8f6da7f"
+      },
+      "source_refs": {
+        "baseline_manifest": "baseline_manifest_c36e196447d2",
+        "baseline_top": "baseline_top_12b58ed0adb1",
+        "integrated_manifest": "integrated_manifest_2487e9bc6598",
+        "integrated_top": "integrated_top_62261842c66d",
+        "shared_preload": "shared_preload_v1"
+      }
+    },
+    {
+      "baseline_no_stall": {
+        "completion_cycle": 654,
+        "final_hash": "1f9f4907b66301300cba46627d17348ec31da5630f2a8cb88fe75d84c29f01d5",
+        "hash_gate_ok": true,
+        "score_hash": "a962b4d734711ee0f5163bcc246bba8a97f151d4327d0b76d87c45dada811eab"
+      },
+      "case_id": "c32_p128_b4_rr",
+      "config": {
+        "arb_mode": "round_robin",
+        "bank_queue_depth": 4,
+        "banks": 4,
+        "cluster_count": 32,
+        "head_id_bits": 5,
+        "locality_burst_max": 2,
+        "packet_w": 128,
+        "read_latency": 2,
+        "req_queue_depth": 4,
+        "resp_queue_depth": 4,
+        "result_mode": "exact_partial"
+      },
+      "decision": "pass",
+      "expected_hashes": {
+        "final_hash": "1f9f4907b66301300cba46627d17348ec31da5630f2a8cb88fe75d84c29f01d5",
+        "request_hash": "5f415555a17a6eebd46fdb80dbdacb4776e9e02ddf732f4c4fd5d489b4ff68d6",
+        "score_hash": "a962b4d734711ee0f5163bcc246bba8a97f151d4327d0b76d87c45dada811eab",
+        "wide_response_matrix_hash": "b219f6faa97f103c52339225c59f7e9c41d402ba6d041f2ffc977b3895e411b1"
+      },
+      "gates": {
+        "count_gate_ok": true,
+        "hash_gate_ok": true,
+        "protocol_gate_ok": true
+      },
+      "integrated_service": {
+        "completion_cycle": 11492,
+        "counters": {
+          "arbitration_contention_cycles": 10658,
+          "bank_conflict_count": 1533,
+          "max_occupancy": {
+            "router_req": 32,
+            "router_resp": 1,
+            "service_req": 10,
+            "service_resp": 2
+          },
+          "request_injection_stall_cycles": 0,
+          "response_block_cycles": {
+            "router": 0,
+            "service": 0
+          },
+          "shared_result": {
+            "arbitration_contention_cycles": 509,
+            "egress_block_cycles": 8
+          }
+        },
+        "cycle_bound_ok": true,
+        "exact_match": true,
+        "final_hash": "1f9f4907b66301300cba46627d17348ec31da5630f2a8cb88fe75d84c29f01d5",
+        "hash_gate_ok": true,
+        "no_drop_duplicate_deadlock_timeout": true,
+        "no_protocol_errors": true,
+        "request_count": 1536,
+        "request_hash": "5f415555a17a6eebd46fdb80dbdacb4776e9e02ddf732f4c4fd5d489b4ff68d6",
+        "result_count": 512,
+        "score_hash": "a962b4d734711ee0f5163bcc246bba8a97f151d4327d0b76d87c45dada811eab",
+        "service_counts": {
+          "accepted_req_count": 1536,
+          "emitted_resp_count": 1536
+        },
+        "service_penalty_cycles": 10838,
+        "shared_result_egress": {
+          "architecture": "single_ready_valid_round_robin_hold_reg_v2",
+          "back_to_back_fire_seen": true,
+          "documented_initiation_interval": 1,
+          "stall_semantics": "stable_until_handshake"
+        },
+        "wide_response_count": 1536,
+        "wide_response_matrix_hash": "b219f6faa97f103c52339225c59f7e9c41d402ba6d041f2ffc977b3895e411b1"
+      },
+      "source_refs": {
+        "baseline_manifest": "baseline_manifest_b13084bb3260",
+        "baseline_top": "baseline_top_2b649668d3ff",
+        "integrated_manifest": "integrated_manifest_da7a2d999639",
+        "integrated_top": "integrated_top_7256cc751b38",
+        "shared_preload": "shared_preload_v1"
+      }
+    },
+    {
+      "baseline_no_stall": {
+        "completion_cycle": 654,
+        "final_hash": "bcf715b9b6222de197a6aa8313209dcf6d8110ada072960fdff05e59d4aed5ba",
+        "hash_gate_ok": true,
+        "score_hash": "5b857feb49667b4f97b8526262a47c016b5dfd8f6a72277b6e9c20f165a390b1"
+      },
+      "case_id": "c8_p256_b8_rr",
+      "config": {
+        "arb_mode": "round_robin",
+        "bank_queue_depth": 4,
+        "banks": 8,
+        "cluster_count": 8,
+        "head_id_bits": 5,
+        "locality_burst_max": 2,
+        "packet_w": 256,
+        "read_latency": 2,
+        "req_queue_depth": 4,
+        "resp_queue_depth": 4,
+        "result_mode": "exact_partial"
+      },
+      "decision": "pass",
+      "expected_hashes": {
+        "final_hash": "bcf715b9b6222de197a6aa8313209dcf6d8110ada072960fdff05e59d4aed5ba",
+        "request_hash": "2a5d93a0eaecdf0d184a3acdf4833e88031d764c7c3fa8cde3e3a4a54266a7d0",
+        "score_hash": "5b857feb49667b4f97b8526262a47c016b5dfd8f6a72277b6e9c20f165a390b1",
+        "wide_response_matrix_hash": "b08d488a78c040a9bca7c8ac45b991c7e98688f5b9591a2b294f9585cdf1e757"
+      },
+      "gates": {
+        "count_gate_ok": true,
+        "hash_gate_ok": true,
+        "protocol_gate_ok": true
+      },
+      "integrated_service": {
+        "completion_cycle": 2400,
+        "counters": {
+          "arbitration_contention_cycles": 1674,
+          "bank_conflict_count": 381,
+          "max_occupancy": {
+            "router_req": 8,
+            "router_resp": 1,
+            "service_req": 7,
+            "service_resp": 1
+          },
+          "request_injection_stall_cycles": 0,
+          "response_block_cycles": {
+            "router": 0,
+            "service": 0
+          },
+          "shared_result": {
+            "arbitration_contention_cycles": 118,
+            "egress_block_cycles": 41
+          }
+        },
+        "cycle_bound_ok": true,
+        "exact_match": true,
+        "final_hash": "bcf715b9b6222de197a6aa8313209dcf6d8110ada072960fdff05e59d4aed5ba",
+        "hash_gate_ok": true,
+        "no_drop_duplicate_deadlock_timeout": true,
+        "no_protocol_errors": true,
+        "request_count": 384,
+        "request_hash": "2a5d93a0eaecdf0d184a3acdf4833e88031d764c7c3fa8cde3e3a4a54266a7d0",
+        "result_count": 128,
+        "score_hash": "5b857feb49667b4f97b8526262a47c016b5dfd8f6a72277b6e9c20f165a390b1",
+        "service_counts": {
+          "accepted_req_count": 384,
+          "emitted_resp_count": 384
+        },
+        "service_penalty_cycles": 1746,
+        "shared_result_egress": {
+          "architecture": "single_ready_valid_round_robin_hold_reg_v2",
+          "back_to_back_fire_seen": true,
+          "documented_initiation_interval": 1,
+          "stall_semantics": "stable_until_handshake"
+        },
+        "wide_response_count": 384,
+        "wide_response_matrix_hash": "b08d488a78c040a9bca7c8ac45b991c7e98688f5b9591a2b294f9585cdf1e757"
+      },
+      "source_refs": {
+        "baseline_manifest": "baseline_manifest_e4259f1da955",
+        "baseline_top": "baseline_top_97636b1b60fc",
+        "integrated_manifest": "integrated_manifest_835dc046f070",
+        "integrated_top": "integrated_top_df2fb637cc34",
+        "shared_preload": "shared_preload_v1"
+      }
+    },
+    {
+      "baseline_no_stall": {
+        "completion_cycle": 654,
+        "final_hash": "bcf715b9b6222de197a6aa8313209dcf6d8110ada072960fdff05e59d4aed5ba",
+        "hash_gate_ok": true,
+        "score_hash": "5b857feb49667b4f97b8526262a47c016b5dfd8f6a72277b6e9c20f165a390b1"
+      },
+      "case_id": "c8_p256_b8_locality",
+      "config": {
+        "arb_mode": "locality_first_bounded",
+        "bank_queue_depth": 4,
+        "banks": 8,
+        "cluster_count": 8,
+        "head_id_bits": 5,
+        "locality_burst_max": 4,
+        "packet_w": 256,
+        "read_latency": 2,
+        "req_queue_depth": 4,
+        "resp_queue_depth": 4,
+        "result_mode": "exact_partial"
+      },
+      "decision": "pass",
+      "expected_hashes": {
+        "final_hash": "bcf715b9b6222de197a6aa8313209dcf6d8110ada072960fdff05e59d4aed5ba",
+        "request_hash": "2a5d93a0eaecdf0d184a3acdf4833e88031d764c7c3fa8cde3e3a4a54266a7d0",
+        "score_hash": "5b857feb49667b4f97b8526262a47c016b5dfd8f6a72277b6e9c20f165a390b1",
+        "wide_response_matrix_hash": "b08d488a78c040a9bca7c8ac45b991c7e98688f5b9591a2b294f9585cdf1e757"
+      },
+      "gates": {
+        "count_gate_ok": true,
+        "hash_gate_ok": true,
+        "protocol_gate_ok": true
+      },
+      "integrated_service": {
+        "completion_cycle": 2366,
+        "counters": {
+          "arbitration_contention_cycles": 1615,
+          "bank_conflict_count": 378,
+          "max_occupancy": {
+            "router_req": 8,
+            "router_resp": 1,
+            "service_req": 7,
+            "service_resp": 1
+          },
+          "request_injection_stall_cycles": 0,
+          "response_block_cycles": {
+            "router": 0,
+            "service": 0
+          },
+          "shared_result": {
+            "arbitration_contention_cycles": 117,
+            "egress_block_cycles": 76
+          }
+        },
+        "cycle_bound_ok": true,
+        "exact_match": true,
+        "final_hash": "bcf715b9b6222de197a6aa8313209dcf6d8110ada072960fdff05e59d4aed5ba",
+        "hash_gate_ok": true,
+        "no_drop_duplicate_deadlock_timeout": true,
+        "no_protocol_errors": true,
+        "request_count": 384,
+        "request_hash": "2a5d93a0eaecdf0d184a3acdf4833e88031d764c7c3fa8cde3e3a4a54266a7d0",
+        "result_count": 128,
+        "score_hash": "5b857feb49667b4f97b8526262a47c016b5dfd8f6a72277b6e9c20f165a390b1",
+        "service_counts": {
+          "accepted_req_count": 384,
+          "emitted_resp_count": 384
+        },
+        "service_penalty_cycles": 1712,
+        "shared_result_egress": {
+          "architecture": "single_ready_valid_round_robin_hold_reg_v2",
+          "back_to_back_fire_seen": true,
+          "documented_initiation_interval": 1,
+          "stall_semantics": "stable_until_handshake"
+        },
+        "wide_response_count": 384,
+        "wide_response_matrix_hash": "b08d488a78c040a9bca7c8ac45b991c7e98688f5b9591a2b294f9585cdf1e757"
+      },
+      "source_refs": {
+        "baseline_manifest": "baseline_manifest_e4259f1da955",
+        "baseline_top": "baseline_top_97636b1b60fc",
+        "integrated_manifest": "integrated_manifest_cf38bb955da5",
+        "integrated_top": "integrated_top_73abee53102d",
+        "shared_preload": "shared_preload_v1"
+      }
+    },
+    {
+      "baseline_no_stall": {
+        "completion_cycle": 654,
+        "final_hash": "85f0bb531e582429cba95262a1f45e616e9c4c305766df81874bdad702f3bcc7",
+        "hash_gate_ok": true,
+        "score_hash": "31bbcb3443ad6913dac1283e8d3716fd344f6a96c34886dc22b33ac5c61c1310"
+      },
+      "case_id": "c16_p256_b16_rr",
+      "config": {
+        "arb_mode": "round_robin",
+        "bank_queue_depth": 4,
+        "banks": 16,
+        "cluster_count": 16,
+        "head_id_bits": 5,
+        "locality_burst_max": 2,
+        "packet_w": 256,
+        "read_latency": 2,
+        "req_queue_depth": 4,
+        "resp_queue_depth": 4,
+        "result_mode": "exact_partial"
+      },
+      "decision": "pass",
+      "expected_hashes": {
+        "final_hash": "85f0bb531e582429cba95262a1f45e616e9c4c305766df81874bdad702f3bcc7",
+        "request_hash": "dd83ade6c1690cacf3dbcbba9bee06e4e3533e156f17886b6afea3baa47f32a2",
+        "score_hash": "31bbcb3443ad6913dac1283e8d3716fd344f6a96c34886dc22b33ac5c61c1310",
+        "wide_response_matrix_hash": "23173eac9ab382f7bdaa728483b4a44a235e597389e13f28143b5d25b8f6da7f"
+      },
+      "gates": {
+        "count_gate_ok": true,
+        "hash_gate_ok": true,
+        "protocol_gate_ok": true
+      },
+      "integrated_service": {
+        "completion_cycle": 4472,
+        "counters": {
+          "arbitration_contention_cycles": 3766,
+          "bank_conflict_count": 765,
+          "max_occupancy": {
+            "router_req": 16,
+            "router_resp": 1,
+            "service_req": 9,
+            "service_resp": 1
+          },
+          "request_injection_stall_cycles": 0,
+          "response_block_cycles": {
+            "router": 0,
+            "service": 0
+          },
+          "shared_result": {
+            "arbitration_contention_cycles": 253,
+            "egress_block_cycles": 6
+          }
+        },
+        "cycle_bound_ok": true,
+        "exact_match": true,
+        "final_hash": "85f0bb531e582429cba95262a1f45e616e9c4c305766df81874bdad702f3bcc7",
+        "hash_gate_ok": true,
+        "no_drop_duplicate_deadlock_timeout": true,
+        "no_protocol_errors": true,
+        "request_count": 768,
+        "request_hash": "dd83ade6c1690cacf3dbcbba9bee06e4e3533e156f17886b6afea3baa47f32a2",
+        "result_count": 256,
+        "score_hash": "31bbcb3443ad6913dac1283e8d3716fd344f6a96c34886dc22b33ac5c61c1310",
+        "service_counts": {
+          "accepted_req_count": 768,
+          "emitted_resp_count": 768
+        },
+        "service_penalty_cycles": 3818,
+        "shared_result_egress": {
+          "architecture": "single_ready_valid_round_robin_hold_reg_v2",
+          "back_to_back_fire_seen": true,
+          "documented_initiation_interval": 1,
+          "stall_semantics": "stable_until_handshake"
+        },
+        "wide_response_count": 768,
+        "wide_response_matrix_hash": "23173eac9ab382f7bdaa728483b4a44a235e597389e13f28143b5d25b8f6da7f"
+      },
+      "source_refs": {
+        "baseline_manifest": "baseline_manifest_c36e196447d2",
+        "baseline_top": "baseline_top_12b58ed0adb1",
+        "integrated_manifest": "integrated_manifest_1ba82b73af76",
+        "integrated_top": "integrated_top_faa9277e343e",
+        "shared_preload": "shared_preload_v1"
+      }
+    },
+    {
+      "baseline_no_stall": {
+        "completion_cycle": 654,
+        "final_hash": "85f0bb531e582429cba95262a1f45e616e9c4c305766df81874bdad702f3bcc7",
+        "hash_gate_ok": true,
+        "score_hash": "31bbcb3443ad6913dac1283e8d3716fd344f6a96c34886dc22b33ac5c61c1310"
+      },
+      "case_id": "c16_p256_b16_locality",
+      "config": {
+        "arb_mode": "locality_first_bounded",
+        "bank_queue_depth": 4,
+        "banks": 16,
+        "cluster_count": 16,
+        "head_id_bits": 5,
+        "locality_burst_max": 4,
+        "packet_w": 256,
+        "read_latency": 2,
+        "req_queue_depth": 4,
+        "resp_queue_depth": 4,
+        "result_mode": "exact_partial"
+      },
+      "decision": "pass",
+      "expected_hashes": {
+        "final_hash": "85f0bb531e582429cba95262a1f45e616e9c4c305766df81874bdad702f3bcc7",
+        "request_hash": "dd83ade6c1690cacf3dbcbba9bee06e4e3533e156f17886b6afea3baa47f32a2",
+        "score_hash": "31bbcb3443ad6913dac1283e8d3716fd344f6a96c34886dc22b33ac5c61c1310",
+        "wide_response_matrix_hash": "23173eac9ab382f7bdaa728483b4a44a235e597389e13f28143b5d25b8f6da7f"
+      },
+      "gates": {
+        "count_gate_ok": true,
+        "hash_gate_ok": true,
+        "protocol_gate_ok": true
+      },
+      "integrated_service": {
+        "completion_cycle": 4201,
+        "counters": {
+          "arbitration_contention_cycles": 3577,
+          "bank_conflict_count": 760,
+          "max_occupancy": {
+            "router_req": 16,
+            "router_resp": 1,
+            "service_req": 10,
+            "service_resp": 1
+          },
+          "request_injection_stall_cycles": 0,
+          "response_block_cycles": {
+            "router": 0,
+            "service": 0
+          },
+          "shared_result": {
+            "arbitration_contention_cycles": 215,
+            "egress_block_cycles": 156
+          }
+        },
+        "cycle_bound_ok": true,
+        "exact_match": true,
+        "final_hash": "85f0bb531e582429cba95262a1f45e616e9c4c305766df81874bdad702f3bcc7",
+        "hash_gate_ok": true,
+        "no_drop_duplicate_deadlock_timeout": true,
+        "no_protocol_errors": true,
+        "request_count": 768,
+        "request_hash": "dd83ade6c1690cacf3dbcbba9bee06e4e3533e156f17886b6afea3baa47f32a2",
+        "result_count": 256,
+        "score_hash": "31bbcb3443ad6913dac1283e8d3716fd344f6a96c34886dc22b33ac5c61c1310",
+        "service_counts": {
+          "accepted_req_count": 768,
+          "emitted_resp_count": 768
+        },
+        "service_penalty_cycles": 3547,
+        "shared_result_egress": {
+          "architecture": "single_ready_valid_round_robin_hold_reg_v2",
+          "back_to_back_fire_seen": true,
+          "documented_initiation_interval": 1,
+          "stall_semantics": "stable_until_handshake"
+        },
+        "wide_response_count": 768,
+        "wide_response_matrix_hash": "23173eac9ab382f7bdaa728483b4a44a235e597389e13f28143b5d25b8f6da7f"
+      },
+      "source_refs": {
+        "baseline_manifest": "baseline_manifest_c36e196447d2",
+        "baseline_top": "baseline_top_12b58ed0adb1",
+        "integrated_manifest": "integrated_manifest_1a7229ded4e7",
+        "integrated_top": "integrated_top_18db7cf247d3",
+        "shared_preload": "shared_preload_v1"
+      }
+    },
+    {
+      "baseline_no_stall": {
+        "completion_cycle": 654,
+        "final_hash": "1f9f4907b66301300cba46627d17348ec31da5630f2a8cb88fe75d84c29f01d5",
+        "hash_gate_ok": true,
+        "score_hash": "a962b4d734711ee0f5163bcc246bba8a97f151d4327d0b76d87c45dada811eab"
+      },
+      "case_id": "c32_p256_b32_rr",
+      "config": {
+        "arb_mode": "round_robin",
+        "bank_queue_depth": 4,
+        "banks": 32,
+        "cluster_count": 32,
+        "head_id_bits": 5,
+        "locality_burst_max": 2,
+        "packet_w": 256,
+        "read_latency": 2,
+        "req_queue_depth": 4,
+        "resp_queue_depth": 4,
+        "result_mode": "exact_partial"
+      },
+      "decision": "pass",
+      "expected_hashes": {
+        "final_hash": "1f9f4907b66301300cba46627d17348ec31da5630f2a8cb88fe75d84c29f01d5",
+        "request_hash": "5f415555a17a6eebd46fdb80dbdacb4776e9e02ddf732f4c4fd5d489b4ff68d6",
+        "score_hash": "a962b4d734711ee0f5163bcc246bba8a97f151d4327d0b76d87c45dada811eab",
+        "wide_response_matrix_hash": "b219f6faa97f103c52339225c59f7e9c41d402ba6d041f2ffc977b3895e411b1"
+      },
+      "gates": {
+        "count_gate_ok": true,
+        "hash_gate_ok": true,
+        "protocol_gate_ok": true
+      },
+      "integrated_service": {
+        "completion_cycle": 8488,
+        "counters": {
+          "arbitration_contention_cycles": 7606,
+          "bank_conflict_count": 1533,
+          "max_occupancy": {
+            "router_req": 32,
+            "router_resp": 1,
+            "service_req": 9,
+            "service_resp": 1
+          },
+          "request_injection_stall_cycles": 0,
+          "response_block_cycles": {
+            "router": 0,
+            "service": 0
+          },
+          "shared_result": {
+            "arbitration_contention_cycles": 510,
+            "egress_block_cycles": 6
+          }
+        },
+        "cycle_bound_ok": true,
+        "exact_match": true,
+        "final_hash": "1f9f4907b66301300cba46627d17348ec31da5630f2a8cb88fe75d84c29f01d5",
+        "hash_gate_ok": true,
+        "no_drop_duplicate_deadlock_timeout": true,
+        "no_protocol_errors": true,
+        "request_count": 1536,
+        "request_hash": "5f415555a17a6eebd46fdb80dbdacb4776e9e02ddf732f4c4fd5d489b4ff68d6",
+        "result_count": 512,
+        "score_hash": "a962b4d734711ee0f5163bcc246bba8a97f151d4327d0b76d87c45dada811eab",
+        "service_counts": {
+          "accepted_req_count": 1536,
+          "emitted_resp_count": 1536
+        },
+        "service_penalty_cycles": 7834,
+        "shared_result_egress": {
+          "architecture": "single_ready_valid_round_robin_hold_reg_v2",
+          "back_to_back_fire_seen": true,
+          "documented_initiation_interval": 1,
+          "stall_semantics": "stable_until_handshake"
+        },
+        "wide_response_count": 1536,
+        "wide_response_matrix_hash": "b219f6faa97f103c52339225c59f7e9c41d402ba6d041f2ffc977b3895e411b1"
+      },
+      "source_refs": {
+        "baseline_manifest": "baseline_manifest_b13084bb3260",
+        "baseline_top": "baseline_top_2b649668d3ff",
+        "integrated_manifest": "integrated_manifest_b2f1502aaf70",
+        "integrated_top": "integrated_top_49077ccf9693",
+        "shared_preload": "shared_preload_v1"
+      }
+    },
+    {
+      "baseline_no_stall": {
+        "completion_cycle": 654,
+        "final_hash": "1f9f4907b66301300cba46627d17348ec31da5630f2a8cb88fe75d84c29f01d5",
+        "hash_gate_ok": true,
+        "score_hash": "a962b4d734711ee0f5163bcc246bba8a97f151d4327d0b76d87c45dada811eab"
+      },
+      "case_id": "c32_p256_b32_locality",
+      "config": {
+        "arb_mode": "locality_first_bounded",
+        "bank_queue_depth": 4,
+        "banks": 32,
+        "cluster_count": 32,
+        "head_id_bits": 5,
+        "locality_burst_max": 4,
+        "packet_w": 256,
+        "read_latency": 2,
+        "req_queue_depth": 4,
+        "resp_queue_depth": 4,
+        "result_mode": "exact_partial"
+      },
+      "decision": "pass",
+      "expected_hashes": {
+        "final_hash": "1f9f4907b66301300cba46627d17348ec31da5630f2a8cb88fe75d84c29f01d5",
+        "request_hash": "5f415555a17a6eebd46fdb80dbdacb4776e9e02ddf732f4c4fd5d489b4ff68d6",
+        "score_hash": "a962b4d734711ee0f5163bcc246bba8a97f151d4327d0b76d87c45dada811eab",
+        "wide_response_matrix_hash": "b219f6faa97f103c52339225c59f7e9c41d402ba6d041f2ffc977b3895e411b1"
+      },
+      "gates": {
+        "count_gate_ok": true,
+        "hash_gate_ok": true,
+        "protocol_gate_ok": true
+      },
+      "integrated_service": {
+        "completion_cycle": 7255,
+        "counters": {
+          "arbitration_contention_cycles": 6566,
+          "bank_conflict_count": 1522,
+          "max_occupancy": {
+            "router_req": 32,
+            "router_resp": 1,
+            "service_req": 10,
+            "service_resp": 1
+          },
+          "request_injection_stall_cycles": 0,
+          "response_block_cycles": {
+            "router": 0,
+            "service": 0
+          },
+          "shared_result": {
+            "arbitration_contention_cycles": 319,
+            "egress_block_cycles": 41
+          }
+        },
+        "cycle_bound_ok": true,
+        "exact_match": true,
+        "final_hash": "1f9f4907b66301300cba46627d17348ec31da5630f2a8cb88fe75d84c29f01d5",
+        "hash_gate_ok": true,
+        "no_drop_duplicate_deadlock_timeout": true,
+        "no_protocol_errors": true,
+        "request_count": 1536,
+        "request_hash": "5f415555a17a6eebd46fdb80dbdacb4776e9e02ddf732f4c4fd5d489b4ff68d6",
+        "result_count": 512,
+        "score_hash": "a962b4d734711ee0f5163bcc246bba8a97f151d4327d0b76d87c45dada811eab",
+        "service_counts": {
+          "accepted_req_count": 1536,
+          "emitted_resp_count": 1536
+        },
+        "service_penalty_cycles": 6601,
+        "shared_result_egress": {
+          "architecture": "single_ready_valid_round_robin_hold_reg_v2",
+          "back_to_back_fire_seen": true,
+          "documented_initiation_interval": 1,
+          "stall_semantics": "stable_until_handshake"
+        },
+        "wide_response_count": 1536,
+        "wide_response_matrix_hash": "b219f6faa97f103c52339225c59f7e9c41d402ba6d041f2ffc977b3895e411b1"
+      },
+      "source_refs": {
+        "baseline_manifest": "baseline_manifest_b13084bb3260",
+        "baseline_top": "baseline_top_2b649668d3ff",
+        "integrated_manifest": "integrated_manifest_0b5c6babf028",
+        "integrated_top": "integrated_top_2bb09d2a12d0",
+        "shared_preload": "shared_preload_v1"
+      }
+    },
+    {
+      "baseline_no_stall": {
+        "completion_cycle": 654,
+        "final_hash": "1f9f4907b66301300cba46627d17348ec31da5630f2a8cb88fe75d84c29f01d5",
+        "hash_gate_ok": true,
+        "score_hash": "a962b4d734711ee0f5163bcc246bba8a97f151d4327d0b76d87c45dada811eab"
+      },
+      "case_id": "c32_p256_b32_q1_rr",
+      "config": {
+        "arb_mode": "round_robin",
+        "bank_queue_depth": 1,
+        "banks": 32,
+        "cluster_count": 32,
+        "head_id_bits": 5,
+        "locality_burst_max": 2,
+        "packet_w": 256,
+        "read_latency": 2,
+        "req_queue_depth": 1,
+        "resp_queue_depth": 1,
+        "result_mode": "exact_partial"
+      },
+      "decision": "pass",
+      "expected_hashes": {
+        "final_hash": "1f9f4907b66301300cba46627d17348ec31da5630f2a8cb88fe75d84c29f01d5",
+        "request_hash": "5f415555a17a6eebd46fdb80dbdacb4776e9e02ddf732f4c4fd5d489b4ff68d6",
+        "score_hash": "a962b4d734711ee0f5163bcc246bba8a97f151d4327d0b76d87c45dada811eab",
+        "wide_response_matrix_hash": "b219f6faa97f103c52339225c59f7e9c41d402ba6d041f2ffc977b3895e411b1"
+      },
+      "gates": {
+        "count_gate_ok": true,
+        "hash_gate_ok": true,
+        "protocol_gate_ok": true
+      },
+      "integrated_service": {
+        "completion_cycle": 8518,
+        "counters": {
+          "arbitration_contention_cycles": 7651,
+          "bank_conflict_count": 1533,
+          "max_occupancy": {
+            "router_req": 32,
+            "router_resp": 1,
+            "service_req": 4,
+            "service_resp": 1
+          },
+          "request_injection_stall_cycles": 0,
+          "response_block_cycles": {
+            "router": 0,
+            "service": 0
+          },
+          "shared_result": {
+            "arbitration_contention_cycles": 510,
+            "egress_block_cycles": 6
+          }
+        },
+        "cycle_bound_ok": true,
+        "exact_match": true,
+        "final_hash": "1f9f4907b66301300cba46627d17348ec31da5630f2a8cb88fe75d84c29f01d5",
+        "hash_gate_ok": true,
+        "no_drop_duplicate_deadlock_timeout": true,
+        "no_protocol_errors": true,
+        "request_count": 1536,
+        "request_hash": "5f415555a17a6eebd46fdb80dbdacb4776e9e02ddf732f4c4fd5d489b4ff68d6",
+        "result_count": 512,
+        "score_hash": "a962b4d734711ee0f5163bcc246bba8a97f151d4327d0b76d87c45dada811eab",
+        "service_counts": {
+          "accepted_req_count": 1536,
+          "emitted_resp_count": 1536
+        },
+        "service_penalty_cycles": 7864,
+        "shared_result_egress": {
+          "architecture": "single_ready_valid_round_robin_hold_reg_v2",
+          "back_to_back_fire_seen": true,
+          "documented_initiation_interval": 1,
+          "stall_semantics": "stable_until_handshake"
+        },
+        "wide_response_count": 1536,
+        "wide_response_matrix_hash": "b219f6faa97f103c52339225c59f7e9c41d402ba6d041f2ffc977b3895e411b1"
+      },
+      "source_refs": {
+        "baseline_manifest": "baseline_manifest_b13084bb3260",
+        "baseline_top": "baseline_top_2b649668d3ff",
+        "integrated_manifest": "integrated_manifest_0d9ea382538b",
+        "integrated_top": "integrated_top_07cffd408a34",
+        "shared_preload": "shared_preload_v1"
+      }
+    },
+    {
+      "baseline_no_stall": {
+        "completion_cycle": 654,
+        "final_hash": "1f9f4907b66301300cba46627d17348ec31da5630f2a8cb88fe75d84c29f01d5",
+        "hash_gate_ok": true,
+        "score_hash": "a962b4d734711ee0f5163bcc246bba8a97f151d4327d0b76d87c45dada811eab"
+      },
+      "case_id": "c32_p256_b32_rl6_rr",
+      "config": {
+        "arb_mode": "round_robin",
+        "bank_queue_depth": 4,
+        "banks": 32,
+        "cluster_count": 32,
+        "head_id_bits": 5,
+        "locality_burst_max": 2,
+        "packet_w": 256,
+        "read_latency": 6,
+        "req_queue_depth": 4,
+        "resp_queue_depth": 4,
+        "result_mode": "exact_partial"
+      },
+      "decision": "pass",
+      "expected_hashes": {
+        "final_hash": "1f9f4907b66301300cba46627d17348ec31da5630f2a8cb88fe75d84c29f01d5",
+        "request_hash": "5f415555a17a6eebd46fdb80dbdacb4776e9e02ddf732f4c4fd5d489b4ff68d6",
+        "score_hash": "a962b4d734711ee0f5163bcc246bba8a97f151d4327d0b76d87c45dada811eab",
+        "wide_response_matrix_hash": "b219f6faa97f103c52339225c59f7e9c41d402ba6d041f2ffc977b3895e411b1"
+      },
+      "gates": {
+        "count_gate_ok": true,
+        "hash_gate_ok": true,
+        "protocol_gate_ok": true
+      },
+      "integrated_service": {
+        "completion_cycle": 14472,
+        "counters": {
+          "arbitration_contention_cycles": 13686,
+          "bank_conflict_count": 1533,
+          "max_occupancy": {
+            "router_req": 32,
+            "router_resp": 1,
+            "service_req": 10,
+            "service_resp": 1
+          },
+          "request_injection_stall_cycles": 0,
+          "response_block_cycles": {
+            "router": 0,
+            "service": 0
+          },
+          "shared_result": {
+            "arbitration_contention_cycles": 510,
+            "egress_block_cycles": 10
+          }
+        },
+        "cycle_bound_ok": true,
+        "exact_match": true,
+        "final_hash": "1f9f4907b66301300cba46627d17348ec31da5630f2a8cb88fe75d84c29f01d5",
+        "hash_gate_ok": true,
+        "no_drop_duplicate_deadlock_timeout": true,
+        "no_protocol_errors": true,
+        "request_count": 1536,
+        "request_hash": "5f415555a17a6eebd46fdb80dbdacb4776e9e02ddf732f4c4fd5d489b4ff68d6",
+        "result_count": 512,
+        "score_hash": "a962b4d734711ee0f5163bcc246bba8a97f151d4327d0b76d87c45dada811eab",
+        "service_counts": {
+          "accepted_req_count": 1536,
+          "emitted_resp_count": 1536
+        },
+        "service_penalty_cycles": 13818,
+        "shared_result_egress": {
+          "architecture": "single_ready_valid_round_robin_hold_reg_v2",
+          "back_to_back_fire_seen": true,
+          "documented_initiation_interval": 1,
+          "stall_semantics": "stable_until_handshake"
+        },
+        "wide_response_count": 1536,
+        "wide_response_matrix_hash": "b219f6faa97f103c52339225c59f7e9c41d402ba6d041f2ffc977b3895e411b1"
+      },
+      "source_refs": {
+        "baseline_manifest": "baseline_manifest_b13084bb3260",
+        "baseline_top": "baseline_top_2b649668d3ff",
+        "integrated_manifest": "integrated_manifest_23d7cfe3220e",
+        "integrated_top": "integrated_top_22d4e2744141",
+        "shared_preload": "shared_preload_v1"
+      }
+    }
+  ],
+  "decision": "pass",
+  "diagnosis": {
+    "decision": "multivalue_integrated_service_probe_passed",
+    "recommended_next_step": "Use this merged/materialized integrated-service probe as the shared-score on-chip service closure input before any NoC, HBM, physical PPA, SRAM macro timing, or token-energy claim."
+  },
+  "exclusions": [
+    "physical_ppa",
+    "hbm",
+    "total_token_energy",
+    "value_sram_macro_timing",
+    "score_bank_macro_timing"
+  ],
+  "model": "llm_decoder_attention_decode_score_multivalue_integrated_service_probe_v1",
+  "report_contract": {
+    "max_pretty_json_bytes": 100000,
+    "max_pretty_json_lines": 2500,
+    "shape": "deduplicated_shared_artifact_identities_v1"
+  },
+  "selected_scale_point": {
+    "arch_id": "decode_score_multivalue_integrated_service",
+    "bank_arbiter_policy": "round_robin",
+    "bank_conflict_count": 1533,
+    "bank_count": 32,
+    "case_id": "c32_p256_b32_rr",
+    "cluster_count": 32,
+    "completion_cycle": 8488,
+    "dominant_tile_resource": "onchip_shared_service",
+    "macro_mode": "rtl_probe",
+    "packet_payload_bytes": 32,
+    "router_arbitration_contention_cycles": 7606,
+    "schedule_policy": "shared_score_value_service_probe",
+    "selection_basis": "Largest tested cluster_count, then packet_w, then banks among q4/read_latency=2/round_robin cases; coverage representative only, not a performance or architectural ranking.",
+    "selection_role": "representative_largest_nominal_scale_point",
+    "service_penalty_cycles": 7834,
+    "shared_result_egress_block_cycles": 6
+  },
+  "source_identities": {
+    "files": [
+      {
+        "path": "npu/rtlgen/gen_attention_decode_score_multivalue_service.py",
+        "sha256": "b3995846828c719f756522ffd443dd91e269efbee2d28967e77813afeb010c64"
+      },
+      {
+        "path": "npu/eval/probe_attention_decode_score_multivalue_integrated_service.py",
+        "sha256": "1f08967d76c9e079140e7519ab365f2352dde4373cac4cec3cf34ac2fc003caf"
+      },
+      {
+        "path": "npu/rtlgen/gen_attention_decode_score_multivalue_cluster.py",
+        "sha256": "bf8a200beaf4ef5fdfd69326e6f08c70b890510965a1e529a877ee11a3490328"
+      },
+      {
+        "path": "npu/sim/rtl/noc_ready_valid_fifo.sv",
+        "sha256": "6229f91bac673c6f9728b9d1085c730ca31c93092b1a649a42b323724b61884c"
+      },
+      {
+        "path": "npu/sim/rtl/noc_ready_valid_router.sv",
+        "sha256": "f4ddfa569ec0f7a285d5322bd9fb5664a9c56fe52bdd9d138bd39bff27fb88df"
+      },
+      {
+        "path": "npu/sim/rtl/banked_value_memory_service.sv",
+        "sha256": "72fc777db1f500634a21468fd2239ffc7a0a21be2e14f4eba0e42d7939917a21"
+      },
+      {
+        "path": "npu/sim/rtl/noc_value_matrix_reassembler.sv",
+        "sha256": "1937b1f1ee9fcf50779ad0d24677af2ef1c8394e09fcb60aa9e72795b2089d9d"
+      },
+      {
+        "path": "npu/sim/perf/attention_exact_partial.py",
+        "sha256": "a39f28dd0a20ed350e9efb195c07297ef8e2fb83a65af7e07db3f3be22c49023"
+      }
+    ],
+    "generated_artifacts": {
+      "generated_manifests": [
+        {
+          "artifact_id": "baseline_manifest_924c5950eb53",
+          "artifact_kind": "baseline_manifest",
+          "manifest_sha256": "924c5950eb539e47bb865554608548e5e3d95cc633b1e03cffda7ba3e35ea15b",
+          "result_beats_per_command": 16,
+          "semantic_profile": "decode_m1x8_shared_score_16x8d_value_exact_partial_v1"
+        },
+        {
+          "artifact_id": "baseline_manifest_b13084bb3260",
+          "artifact_kind": "baseline_manifest",
+          "manifest_sha256": "b13084bb326052ff44c6664102d725ee270276c1e17955b11fe87e4f427c88e9",
+          "result_beats_per_command": 16,
+          "semantic_profile": "decode_m1x8_shared_score_16x8d_value_exact_partial_v1"
+        },
+        {
+          "artifact_id": "baseline_manifest_b68a5b9512ab",
+          "artifact_kind": "baseline_manifest",
+          "manifest_sha256": "b68a5b9512abb06e30d8ffcdc250fbe117e8697243b629c1fde568dba21fb72b",
+          "result_beats_per_command": 16,
+          "semantic_profile": "decode_m1x8_shared_score_16x8d_value_exact_partial_v1"
+        },
+        {
+          "artifact_id": "baseline_manifest_b6e639349e2c",
+          "artifact_kind": "baseline_manifest",
+          "manifest_sha256": "b6e639349e2c1c78935dd410927ca64f2b191ad0a5f1d37895be92e9234d6efc",
+          "result_beats_per_command": 16,
+          "semantic_profile": "decode_m1x8_shared_score_16x8d_value_exact_partial_v1"
+        },
+        {
+          "artifact_id": "baseline_manifest_c36e196447d2",
+          "artifact_kind": "baseline_manifest",
+          "manifest_sha256": "c36e196447d211b13267f4fb7bbd6d1937dcf4665e59add9cd5a1364ba5fa029",
+          "result_beats_per_command": 16,
+          "semantic_profile": "decode_m1x8_shared_score_16x8d_value_exact_partial_v1"
+        },
+        {
+          "artifact_id": "baseline_manifest_e4259f1da955",
+          "artifact_kind": "baseline_manifest",
+          "manifest_sha256": "e4259f1da9556c06ef360ad65b89ae6c5060bfce5b67af3b05f23bada8920ed2",
+          "result_beats_per_command": 16,
+          "semantic_profile": "decode_m1x8_shared_score_16x8d_value_exact_partial_v1"
+        },
+        {
+          "arb_mode": "locality_first_bounded",
+          "artifact_id": "integrated_manifest_0b5c6babf028",
+          "artifact_kind": "integrated_manifest",
+          "banks": 32,
+          "cluster_count": 32,
+          "manifest_sha256": "0b5c6babf028ac4db22e984880fc19c92323d4ef31e64cfcd495dc0acc4c29e3",
+          "packet_w": 256,
+          "response_metadata_guard": "single_outstanding_per_cluster_v1",
+          "result_beats_per_command": 16,
+          "semantic_profile": "decode_m1x8_shared_score_16x8d_value_exact_partial_onchip_service_v1",
+          "shared_result_egress": "single_ready_valid_round_robin_hold_reg_v2",
+          "shared_result_egress_initiation_interval": 1,
+          "shared_result_egress_stall_semantics": "stable_until_handshake"
+        },
+        {
+          "arb_mode": "round_robin",
+          "artifact_id": "integrated_manifest_0d9ea382538b",
+          "artifact_kind": "integrated_manifest",
+          "banks": 32,
+          "cluster_count": 32,
+          "manifest_sha256": "0d9ea382538b0e53e7cb99de05c64c3a2f3cd4599022095635b15fa493f33c7b",
+          "packet_w": 256,
+          "response_metadata_guard": "single_outstanding_per_cluster_v1",
+          "result_beats_per_command": 16,
+          "semantic_profile": "decode_m1x8_shared_score_16x8d_value_exact_partial_onchip_service_v1",
+          "shared_result_egress": "single_ready_valid_round_robin_hold_reg_v2",
+          "shared_result_egress_initiation_interval": 1,
+          "shared_result_egress_stall_semantics": "stable_until_handshake"
+        },
+        {
+          "arb_mode": "locality_first_bounded",
+          "artifact_id": "integrated_manifest_1a7229ded4e7",
+          "artifact_kind": "integrated_manifest",
+          "banks": 16,
+          "cluster_count": 16,
+          "manifest_sha256": "1a7229ded4e74005626b964d131e1219ea68284b5c134b522f25b19ed6a20e35",
+          "packet_w": 256,
+          "response_metadata_guard": "single_outstanding_per_cluster_v1",
+          "result_beats_per_command": 16,
+          "semantic_profile": "decode_m1x8_shared_score_16x8d_value_exact_partial_onchip_service_v1",
+          "shared_result_egress": "single_ready_valid_round_robin_hold_reg_v2",
+          "shared_result_egress_initiation_interval": 1,
+          "shared_result_egress_stall_semantics": "stable_until_handshake"
+        },
+        {
+          "arb_mode": "round_robin",
+          "artifact_id": "integrated_manifest_1ba82b73af76",
+          "artifact_kind": "integrated_manifest",
+          "banks": 16,
+          "cluster_count": 16,
+          "manifest_sha256": "1ba82b73af765daf82481a44600f5963d6a557c23c4e53f8f3d02e2dbbe7a042",
+          "packet_w": 256,
+          "response_metadata_guard": "single_outstanding_per_cluster_v1",
+          "result_beats_per_command": 16,
+          "semantic_profile": "decode_m1x8_shared_score_16x8d_value_exact_partial_onchip_service_v1",
+          "shared_result_egress": "single_ready_valid_round_robin_hold_reg_v2",
+          "shared_result_egress_initiation_interval": 1,
+          "shared_result_egress_stall_semantics": "stable_until_handshake"
+        },
+        {
+          "arb_mode": "round_robin",
+          "artifact_id": "integrated_manifest_23d7cfe3220e",
+          "artifact_kind": "integrated_manifest",
+          "banks": 32,
+          "cluster_count": 32,
+          "manifest_sha256": "23d7cfe3220e9d0d85e12ca5f44ea136d415d8178c1b8bbb94693acf305aef58",
+          "packet_w": 256,
+          "response_metadata_guard": "single_outstanding_per_cluster_v1",
+          "result_beats_per_command": 16,
+          "semantic_profile": "decode_m1x8_shared_score_16x8d_value_exact_partial_onchip_service_v1",
+          "shared_result_egress": "single_ready_valid_round_robin_hold_reg_v2",
+          "shared_result_egress_initiation_interval": 1,
+          "shared_result_egress_stall_semantics": "stable_until_handshake"
+        },
+        {
+          "arb_mode": "round_robin",
+          "artifact_id": "integrated_manifest_2487e9bc6598",
+          "artifact_kind": "integrated_manifest",
+          "banks": 4,
+          "cluster_count": 16,
+          "manifest_sha256": "2487e9bc6598090725e6a3d3843c9b6d053b922fc1182dbf3b28af8f639c09c4",
+          "packet_w": 128,
+          "response_metadata_guard": "single_outstanding_per_cluster_v1",
+          "result_beats_per_command": 16,
+          "semantic_profile": "decode_m1x8_shared_score_16x8d_value_exact_partial_onchip_service_v1",
+          "shared_result_egress": "single_ready_valid_round_robin_hold_reg_v2",
+          "shared_result_egress_initiation_interval": 1,
+          "shared_result_egress_stall_semantics": "stable_until_handshake"
+        },
+        {
+          "arb_mode": "round_robin",
+          "artifact_id": "integrated_manifest_835dc046f070",
+          "artifact_kind": "integrated_manifest",
+          "banks": 8,
+          "cluster_count": 8,
+          "manifest_sha256": "835dc046f07070118fd3528b030926dbe339bc69bde6728037fdf689825e6952",
+          "packet_w": 256,
+          "response_metadata_guard": "single_outstanding_per_cluster_v1",
+          "result_beats_per_command": 16,
+          "semantic_profile": "decode_m1x8_shared_score_16x8d_value_exact_partial_onchip_service_v1",
+          "shared_result_egress": "single_ready_valid_round_robin_hold_reg_v2",
+          "shared_result_egress_initiation_interval": 1,
+          "shared_result_egress_stall_semantics": "stable_until_handshake"
+        },
+        {
+          "arb_mode": "round_robin",
+          "artifact_id": "integrated_manifest_8524d333e22e",
+          "artifact_kind": "integrated_manifest",
+          "banks": 4,
+          "cluster_count": 1,
+          "manifest_sha256": "8524d333e22e6f4eb40d250f23ab747b7e0606f87cfe4932093e9b5089bb53c4",
+          "packet_w": 128,
+          "response_metadata_guard": "single_outstanding_per_cluster_v1",
+          "result_beats_per_command": 16,
+          "semantic_profile": "decode_m1x8_shared_score_16x8d_value_exact_partial_onchip_service_v1",
+          "shared_result_egress": "single_ready_valid_round_robin_hold_reg_v2",
+          "shared_result_egress_initiation_interval": 1,
+          "shared_result_egress_stall_semantics": "stable_until_handshake"
+        },
+        {
+          "arb_mode": "round_robin",
+          "artifact_id": "integrated_manifest_9406b9233a9d",
+          "artifact_kind": "integrated_manifest",
+          "banks": 4,
+          "cluster_count": 8,
+          "manifest_sha256": "9406b9233a9da290f379592b4c15a21fc305ff33444640bdc6519f3f71da93ef",
+          "packet_w": 128,
+          "response_metadata_guard": "single_outstanding_per_cluster_v1",
+          "result_beats_per_command": 16,
+          "semantic_profile": "decode_m1x8_shared_score_16x8d_value_exact_partial_onchip_service_v1",
+          "shared_result_egress": "single_ready_valid_round_robin_hold_reg_v2",
+          "shared_result_egress_initiation_interval": 1,
+          "shared_result_egress_stall_semantics": "stable_until_handshake"
+        },
+        {
+          "arb_mode": "round_robin",
+          "artifact_id": "integrated_manifest_a0990ee79d3c",
+          "artifact_kind": "integrated_manifest",
+          "banks": 4,
+          "cluster_count": 4,
+          "manifest_sha256": "a0990ee79d3c59d79d7ba9e850ea55edb6591e0db6206dec558309f26581290f",
+          "packet_w": 128,
+          "response_metadata_guard": "single_outstanding_per_cluster_v1",
+          "result_beats_per_command": 16,
+          "semantic_profile": "decode_m1x8_shared_score_16x8d_value_exact_partial_onchip_service_v1",
+          "shared_result_egress": "single_ready_valid_round_robin_hold_reg_v2",
+          "shared_result_egress_initiation_interval": 1,
+          "shared_result_egress_stall_semantics": "stable_until_handshake"
+        },
+        {
+          "arb_mode": "round_robin",
+          "artifact_id": "integrated_manifest_b2f1502aaf70",
+          "artifact_kind": "integrated_manifest",
+          "banks": 32,
+          "cluster_count": 32,
+          "manifest_sha256": "b2f1502aaf70af4f593eb529dfa4d6268f1fc40a1779909f3450b14c983debfd",
+          "packet_w": 256,
+          "response_metadata_guard": "single_outstanding_per_cluster_v1",
+          "result_beats_per_command": 16,
+          "semantic_profile": "decode_m1x8_shared_score_16x8d_value_exact_partial_onchip_service_v1",
+          "shared_result_egress": "single_ready_valid_round_robin_hold_reg_v2",
+          "shared_result_egress_initiation_interval": 1,
+          "shared_result_egress_stall_semantics": "stable_until_handshake"
+        },
+        {
+          "arb_mode": "round_robin",
+          "artifact_id": "integrated_manifest_ca60ab0bd781",
+          "artifact_kind": "integrated_manifest",
+          "banks": 4,
+          "cluster_count": 2,
+          "manifest_sha256": "ca60ab0bd781086f8ecb4d76e10a98bc67de86cf6173ed4b6dc8b74507d25ad2",
+          "packet_w": 128,
+          "response_metadata_guard": "single_outstanding_per_cluster_v1",
+          "result_beats_per_command": 16,
+          "semantic_profile": "decode_m1x8_shared_score_16x8d_value_exact_partial_onchip_service_v1",
+          "shared_result_egress": "single_ready_valid_round_robin_hold_reg_v2",
+          "shared_result_egress_initiation_interval": 1,
+          "shared_result_egress_stall_semantics": "stable_until_handshake"
+        },
+        {
+          "arb_mode": "locality_first_bounded",
+          "artifact_id": "integrated_manifest_cf38bb955da5",
+          "artifact_kind": "integrated_manifest",
+          "banks": 8,
+          "cluster_count": 8,
+          "manifest_sha256": "cf38bb955da518a3a0db9fb9711e7a732a356b2b7f2517b09fece23f5ca4465b",
+          "packet_w": 256,
+          "response_metadata_guard": "single_outstanding_per_cluster_v1",
+          "result_beats_per_command": 16,
+          "semantic_profile": "decode_m1x8_shared_score_16x8d_value_exact_partial_onchip_service_v1",
+          "shared_result_egress": "single_ready_valid_round_robin_hold_reg_v2",
+          "shared_result_egress_initiation_interval": 1,
+          "shared_result_egress_stall_semantics": "stable_until_handshake"
+        },
+        {
+          "arb_mode": "round_robin",
+          "artifact_id": "integrated_manifest_da7a2d999639",
+          "artifact_kind": "integrated_manifest",
+          "banks": 4,
+          "cluster_count": 32,
+          "manifest_sha256": "da7a2d999639d9be1707b5dfa04bbe5b2ceb9d9b0d6865684a38563ea6a54704",
+          "packet_w": 128,
+          "response_metadata_guard": "single_outstanding_per_cluster_v1",
+          "result_beats_per_command": 16,
+          "semantic_profile": "decode_m1x8_shared_score_16x8d_value_exact_partial_onchip_service_v1",
+          "shared_result_egress": "single_ready_valid_round_robin_hold_reg_v2",
+          "shared_result_egress_initiation_interval": 1,
+          "shared_result_egress_stall_semantics": "stable_until_handshake"
+        }
+      ],
+      "generated_tops": [
+        {
+          "artifact_id": "baseline_top_12b58ed0adb1",
+          "artifact_kind": "baseline_top",
+          "cluster_count": 16,
+          "sha256": "12b58ed0adb1677cf0dcf9505f9bcc4fd8bdc18da84c1cdfb3985050ba1f50b4"
+        },
+        {
+          "artifact_id": "baseline_top_2b649668d3ff",
+          "artifact_kind": "baseline_top",
+          "cluster_count": 32,
+          "sha256": "2b649668d3ff6e8c12e3aa250d18f5f4e01dccfc734170087f406590c7bc1460"
+        },
+        {
+          "artifact_id": "baseline_top_44b067991833",
+          "artifact_kind": "baseline_top",
+          "cluster_count": 2,
+          "sha256": "44b0679918333c955301919fd3429cb75843d561faf747107bf630f571fd28c3"
+        },
+        {
+          "artifact_id": "baseline_top_58ab218b61df",
+          "artifact_kind": "baseline_top",
+          "cluster_count": 4,
+          "sha256": "58ab218b61df52e00ac7dd08fb39330d89c34196a70dee741910856ea657bbfc"
+        },
+        {
+          "artifact_id": "baseline_top_97636b1b60fc",
+          "artifact_kind": "baseline_top",
+          "cluster_count": 8,
+          "sha256": "97636b1b60fca64cac06a58e90371c813bcf45e47757bcd0136f06925c741be6"
+        },
+        {
+          "artifact_id": "baseline_top_a15bca555e8b",
+          "artifact_kind": "baseline_top",
+          "cluster_count": 1,
+          "sha256": "a15bca555e8bbacf3009b147bb12d543ab410a777d75bb007f920e07157b36a8"
+        },
+        {
+          "arb_mode": "round_robin",
+          "artifact_id": "integrated_top_07cffd408a34",
+          "artifact_kind": "integrated_top",
+          "banks": 32,
+          "cluster_count": 32,
+          "packet_w": 256,
+          "sha256": "07cffd408a34b3283fa3a79bce144523490b3d1b87c7a86551cece129c0c2dbe"
+        },
+        {
+          "arb_mode": "locality_first_bounded",
+          "artifact_id": "integrated_top_18db7cf247d3",
+          "artifact_kind": "integrated_top",
+          "banks": 16,
+          "cluster_count": 16,
+          "packet_w": 256,
+          "sha256": "18db7cf247d3a4045c4e0a9cb58d48ab1c209cea93b6711b78673611fa808887"
+        },
+        {
+          "arb_mode": "round_robin",
+          "artifact_id": "integrated_top_22d4e2744141",
+          "artifact_kind": "integrated_top",
+          "banks": 32,
+          "cluster_count": 32,
+          "packet_w": 256,
+          "sha256": "22d4e2744141b1ab422ab5155fcc5ec15f0b4170147131c31d04739e9b7e0906"
+        },
+        {
+          "arb_mode": "round_robin",
+          "artifact_id": "integrated_top_24f45b30ca77",
+          "artifact_kind": "integrated_top",
+          "banks": 4,
+          "cluster_count": 2,
+          "packet_w": 128,
+          "sha256": "24f45b30ca776e9771ba8d684c153488e6c6c0096a8ea1a97e42ad49d4c51f73"
+        },
+        {
+          "arb_mode": "locality_first_bounded",
+          "artifact_id": "integrated_top_2bb09d2a12d0",
+          "artifact_kind": "integrated_top",
+          "banks": 32,
+          "cluster_count": 32,
+          "packet_w": 256,
+          "sha256": "2bb09d2a12d013cdf6a8c99ceccd68f4e0b12cf444d6333886f01056d68822c5"
+        },
+        {
+          "arb_mode": "round_robin",
+          "artifact_id": "integrated_top_49077ccf9693",
+          "artifact_kind": "integrated_top",
+          "banks": 32,
+          "cluster_count": 32,
+          "packet_w": 256,
+          "sha256": "49077ccf969354fa94d6c6739209db24847c2f154f129c5f47bae9eef612872b"
+        },
+        {
+          "arb_mode": "round_robin",
+          "artifact_id": "integrated_top_62261842c66d",
+          "artifact_kind": "integrated_top",
+          "banks": 4,
+          "cluster_count": 16,
+          "packet_w": 128,
+          "sha256": "62261842c66d6634c32f43f5b2f587c33a0d84df54ca7b9838214578ece71361"
+        },
+        {
+          "arb_mode": "round_robin",
+          "artifact_id": "integrated_top_7256cc751b38",
+          "artifact_kind": "integrated_top",
+          "banks": 4,
+          "cluster_count": 32,
+          "packet_w": 128,
+          "sha256": "7256cc751b386240c9a03f87f34261a49136088861dffe2148570508e19cd58f"
+        },
+        {
+          "arb_mode": "locality_first_bounded",
+          "artifact_id": "integrated_top_73abee53102d",
+          "artifact_kind": "integrated_top",
+          "banks": 8,
+          "cluster_count": 8,
+          "packet_w": 256,
+          "sha256": "73abee53102d6f2e0c46854cef2f8beb507381ed2b6d2acfeb286161b30a6a3f"
+        },
+        {
+          "arb_mode": "round_robin",
+          "artifact_id": "integrated_top_b159a77005bd",
+          "artifact_kind": "integrated_top",
+          "banks": 4,
+          "cluster_count": 1,
+          "packet_w": 128,
+          "sha256": "b159a77005bdcfee607d784c6edee5be351211934cc2156e6260e4d7ce632982"
+        },
+        {
+          "arb_mode": "round_robin",
+          "artifact_id": "integrated_top_b72e2cd9ccbb",
+          "artifact_kind": "integrated_top",
+          "banks": 4,
+          "cluster_count": 4,
+          "packet_w": 128,
+          "sha256": "b72e2cd9ccbb6d011f71faf5df8038ecbe06671499ad82e220844bbf4f315d38"
+        },
+        {
+          "arb_mode": "round_robin",
+          "artifact_id": "integrated_top_df2fb637cc34",
+          "artifact_kind": "integrated_top",
+          "banks": 8,
+          "cluster_count": 8,
+          "packet_w": 256,
+          "sha256": "df2fb637cc343cf68c37256027c4f07c87413eb93537e312e90c6f1ca8661031"
+        },
+        {
+          "arb_mode": "round_robin",
+          "artifact_id": "integrated_top_e7eea4c45129",
+          "artifact_kind": "integrated_top",
+          "banks": 4,
+          "cluster_count": 8,
+          "packet_w": 128,
+          "sha256": "e7eea4c45129ede2644cb9d7b84758cff86c609fdb132b56a092c9055628e43c"
+        },
+        {
+          "arb_mode": "round_robin",
+          "artifact_id": "integrated_top_faa9277e343e",
+          "artifact_kind": "integrated_top",
+          "banks": 16,
+          "cluster_count": 16,
+          "packet_w": 256,
+          "sha256": "faa9277e343e1f0c9c79978831bf6abd66fec81629c5ff96d577bb1b0835cfda"
+        }
+      ],
+      "shared_preload": {
+        "artifact_id": "shared_preload_v1",
+        "entries_hash": "64e161fe0eef50be426f268aa92157f0831a176837fdb6b60876c28d98a11d94",
+        "entry_count": 48,
+        "payload_elided": true,
+        "source": "shared_value_matrices_v1"
+      }
+    },
+    "repo_commit": "39f44cf83e48565a4a9b26a751f70f0e6f066d53",
+    "tool_versions": {
+      "iverilog": "Icarus Verilog version 13.0 (devel) (s20250103-56-gc7d37bcc2)",
+      "vvp": "Icarus Verilog runtime version 13.0 (devel) (s20250103-56-gc7d37bcc2)"
+    }
+  },
+  "source_links": {
+    "depends_on_item_ids": [
+      "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1"
+    ],
+    "proposal_id": "prop_l2_decoder_attention_decode_score_multivalue_service_exact_partial_equivalence_llama7b_v1",
+    "proposal_path": "docs/proposals/prop_l2_decoder_attention_decode_score_multivalue_service_exact_partial_equivalence_llama7b_v1/proposal.json"
+  },
+  "summary": {
+    "all_count_gates_passed": true,
+    "all_hash_gates_passed": true,
+    "all_protocol_gates_passed": true,
+    "max_bank_conflict_count": 1533,
+    "max_cluster_count": 32,
+    "max_completion_cycle": 14472,
+    "max_router_arbitration_contention_cycles": 13686,
+    "max_router_req_occupancy": 32,
+    "max_service_penalty_cycles": 13818,
+    "max_service_req_occupancy": 10,
+    "max_shared_result_egress_block_cycles": 156,
+    "stress_case_id": "c32_p256_b32_rl6_rr",
+    "validated_case_count": 14
+  },
+  "version": 1,
+  "workload_contract": {
+    "active_context_tokens": 24,
+    "command_block_count": 3,
+    "context_tokens_per_block": 8,
+    "max_blocks": 16,
+    "max_context_capacity_tokens": 128,
+    "value_dim": 128
+  }
+}
