@@ -531,7 +531,7 @@
       "label": "Producer-Service-Reducer Composition",
       "status": "rtl_unmeasured",
       "confidence": "low",
-      "summary": "There is meaningful composition evidence now: exact integrated service, bounded local-tree equivalence, and corrected producer cadence audits. But the full producer-service-reducer path is still only partially composed and has not yet been promoted as one measured end-to-end block.",
+      "summary": "The bounded exact hierarchy is now functionally composed across the producer, cluster-SRAM service, local reducer, and finalized global tree for the full four-group GQA8 rotation, and the corrected exact-reduction rerank already consumes that path. What remains open is a representative composed routed macro with measured activity, buffering/control overhead, and final system-level composition.",
       "dimensions": {
         "rtl": {
           "status": "closed",
@@ -539,7 +539,7 @@
         },
         "equivalence": {
           "status": "measured_component",
-          "summary": "One-group and bounded-wave equivalence gates exist, but they do not yet close the full rotated hierarchy."
+          "summary": "One-group and four-group rotation equivalence gates now close the bounded full-GQA8 rotated hierarchy at functional level; the remaining gap is full-array physical/activity signoff rather than rotated-wave correctness."
         },
         "routed_ppa": {
           "status": "open",
@@ -550,12 +550,12 @@
           "summary": "The full producer-service-reducer activity pattern is still inferred from sub-block evidence and cadence audits."
         },
         "composition": {
-          "status": "rtl_unmeasured",
-          "summary": "Composition exists in bounded RTL proofs, but the exact hierarchy still has an explicit unresolved gap at the local persistent-state and rotated-wave boundary."
+          "status": "measured_component",
+          "summary": "The exact producer-to-cluster-SRAM-to-finalized-tree composition is closed by the four-group rotated hierarchy proof and is already consumed by the exact-reduction rerank, but no representative routed composed macro is accepted yet."
         },
         "scale_validation": {
-          "status": "open",
-          "summary": "The current hierarchy cadence audit explicitly warns against promoting the full architecture from one-group proof alone."
+          "status": "measured_component",
+          "summary": "The Llama7B exact-reduction rerank now replaces the obsolete one-group latency term with the four-group corrected hierarchy, while full-array routed PPA, toggle power, HBM fill, and NoC composition remain open."
         }
       },
       "evidence": [
@@ -575,7 +575,16 @@
             "equivalence",
             "composition"
           ],
-          "note": "Closes the one-group producer-to-SRAM-to-finalized-tree path, but only for the bounded head-base case."
+          "note": "Historical one-group producer-to-SRAM-to-finalized-tree proof that the four-group rotated closure extends."
+        },
+        {
+          "path": "docs/proposals/prop_l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1/analysis_report.md",
+          "kind": "proposal_analysis",
+          "dimensions": [
+            "equivalence",
+            "composition"
+          ],
+          "note": "Promoted four-group rotation equivalence closes the bounded full-GQA8 rotated producer-to-SRAM-to-finalized-tree hierarchy."
         },
         {
           "path": "npu/docs/generated/attention_score32_exact_partial_gqa8_dual_stream_producer_llama_wave_worst4_group_major.md",
@@ -584,23 +593,23 @@
             "equivalence",
             "composition"
           ],
-          "note": "Captures the worst-loaded producer cadence and command-distribution proof used by the current hierarchy analysis."
+          "note": "Captures the worst-loaded producer cadence and command-distribution proof consumed by the bounded hierarchy analysis."
         },
         {
-          "path": "npu/docs/generated/llama7b_score32_exact_hierarchy_cadence_audit_v3.md",
-          "kind": "generated_audit",
+          "path": "docs/proposals/prop_l2_decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank_llama7b_v1/analysis_report.md",
+          "kind": "proposal_analysis",
           "dimensions": [
             "composition",
             "scale_validation"
           ],
-          "note": "States explicitly that the corrected producer mapping still leaves an exact hierarchy gap before throughput revision is valid."
+          "note": "Shows the corrected exact-reduction rerank consuming the one-/four-group hierarchy evidence while keeping measured power, routed composed-macro, HBM fill, and NoC gaps explicit."
         }
       ],
       "caveats": [
-        "Do not promote the producer-only arithmetic cadence as a final throughput claim.",
-        "The current exact hierarchy proof is intentionally bounded and does not yet cover the full rotated four-group path."
+        "Do not promote the bounded four-group RTL proof as representative composed-macro routed signoff.",
+        "Producer-service-reducer throughput and energy still depend on open activity, CDC/buffering, HBM fill, and NoC composition closures."
       ],
-      "next_gate": "Close the rotated exact hierarchy and then materialize a representative composed block with measured buffering/control overhead."
+      "next_gate": "Materialize a representative composed producer/service/reducer block with routed PPA and activity, then close the remaining CDC/buffering and memory-system composition gaps."
     },
     {
       "id": "noc",
