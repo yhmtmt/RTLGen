@@ -7,6 +7,7 @@ from hashlib import sha256
 import subprocess
 import json
 from pathlib import Path
+import re
 from typing import Any
 
 from sqlalchemy.orm import Session
@@ -69,6 +70,26 @@ def _json_sha256(payload: dict[str, Any]) -> str:
     return sha256(canonical).hexdigest()
 
 
+def _resolve_task_type(payload: dict[str, Any]) -> str:
+    explicit_task_type = str(payload.get("task_type") or "").strip()
+    if explicit_task_type:
+        if re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,63}", explicit_task_type) is None:
+            raise QueueImportError("task_type must be a portable identifier of at most 64 characters")
+        return explicit_task_type
+    task = payload.get("task") or {}
+    commands = task.get("commands") or []
+    command_names = [cmd.get("name") for cmd in commands if isinstance(cmd, dict)]
+    if payload.get("layer") == "layer1":
+        if "run_eval" in command_names:
+            return "l1_sweep"
+        return "layer1_queue_item"
+    if payload.get("layer") == "layer2":
+        if "run_campaign" in command_names:
+            return "l2_campaign"
+        return "layer2_queue_item"
+    return "queue_item"
+
+
 def _semantic_payload(payload: dict[str, Any]) -> dict[str, Any]:
     handoff = payload.get("handoff") or {}
     semantic_handoff = {
@@ -83,6 +104,7 @@ def _semantic_payload(payload: dict[str, Any]) -> dict[str, Any]:
         "title": payload.get("title"),
         "layer": payload.get("layer"),
         "flow": payload.get("flow"),
+        "task_type": _resolve_task_type(payload),
         "priority": payload.get("priority"),
         "created_utc": payload.get("created_utc"),
         "requested_by": payload.get("requested_by"),
@@ -169,21 +191,6 @@ def _merge_state(current: WorkItemState, imported: WorkItemState) -> WorkItemSta
     return imported if _STATE_RANK[imported] > _STATE_RANK[current] else current
 
 
-def _derive_task_type(payload: dict[str, Any]) -> str:
-    task = payload.get("task") or {}
-    commands = task.get("commands") or []
-    command_names = [cmd.get("name") for cmd in commands if isinstance(cmd, dict)]
-    if payload.get("layer") == "layer1":
-        if "run_eval" in command_names:
-            return "l1_sweep"
-        return "layer1_queue_item"
-    if payload.get("layer") == "layer2":
-        if "run_campaign" in command_names:
-            return "l2_campaign"
-        return "layer2_queue_item"
-    return "queue_item"
-
-
 def _record_reconciliation(
     session: Session,
     *,
@@ -252,7 +259,7 @@ def import_queue_item(session: Session, request: QueueImportRequest) -> QueueImp
             layer=LayerName(payload.get("layer")),
             flow=FlowName(payload.get("flow")),
             platform=payload.get("platform", "unknown"),
-            task_type=_derive_task_type(payload),
+            task_type=_resolve_task_type(payload),
             state=_queue_state_to_work_item_state(payload.get("state", "queued")),
             priority=int(payload.get("priority", 1)),
             source_mode=(payload.get("task") or {}).get("source_mode"),
@@ -324,6 +331,11 @@ def import_queue_item(session: Session, request: QueueImportRequest) -> QueueImp
 
     if resolved_source_commit and existing.source_commit != resolved_source_commit:
         existing.source_commit = resolved_source_commit
+        changed = True
+
+    imported_task_type = _resolve_task_type(payload)
+    if existing.task_type != imported_task_type:
+        existing.task_type = imported_task_type
         changed = True
 
     if changed:

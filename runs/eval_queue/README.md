@@ -52,6 +52,9 @@ Rules
 - Keep one item per file.
 - `item_id` must be globally unique across queued+evaluated.
 - `state` must match parent directory (`queued` or `evaluated`).
+- `task_type` is optional for legacy files. New control-plane exports include
+  it so an `l1_sweep` or `l2_campaign` retains its completion behavior when
+  exported and re-imported.
 - `task.source_mode` is required:
   - `config`: harden raw RTLGen modules via `--config`.
   - `src_verilog`: harden existing generated RTL/wrapper modules via

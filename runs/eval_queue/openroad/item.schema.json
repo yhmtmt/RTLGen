@@ -26,6 +26,10 @@
     "title": { "type": "string", "minLength": 1 },
     "layer": { "type": "string", "enum": ["layer1", "layer2"] },
     "flow": { "type": "string", "const": "openroad" },
+    "task_type": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"
+    },
     "state": { "type": "string", "enum": ["queued", "evaluated"] },
     "priority": { "type": "integer", "minimum": 0, "maximum": 5 },
     "created_utc": { "type": "string", "minLength": 1 },
