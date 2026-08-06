@@ -6505,6 +6505,115 @@ def test_consume_l2_result_decode_score_multivalue_integrated_service_uses_decod
             )
 
 
+def test_consume_l2_result_exact_partial_service_uses_decoder_evidence_without_best_point() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            proposal_id = (
+                "prop_l2_decoder_attention_decode_score_multivalue_service_"
+                "exact_partial_equivalence_llama7b_v1"
+            )
+            proposal_rel = f"docs/proposals/{proposal_id}"
+            _write(
+                repo_root / proposal_rel / "proposal.json",
+                json.dumps(
+                    {
+                        "proposal_id": proposal_id,
+                        "kind": "architecture",
+                        "title": "Exact-partial shared multivalue service equivalence",
+                        "direct_comparison": {
+                            "primary_question": "Does the shared service preserve exact partial state?"
+                        },
+                    },
+                    indent=2,
+                )
+                + "\n",
+            )
+            item_id = (
+                "l2_decoder_attention_decode_score_multivalue_service_"
+                "exact_partial_equivalence_llama7b_v1"
+            )
+            evidence_rel = (
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_decode_score_multivalue_service_exact_partial_equivalence__"
+                f"{item_id}.json"
+            )
+            report_rel = evidence_rel.removesuffix(".json") + ".md"
+            _write(
+                repo_root / evidence_rel,
+                json.dumps(
+                    {
+                        "model": "llm_decoder_attention_decode_score_multivalue_integrated_service_probe_v1",
+                        "decision": "pass",
+                        "diagnosis": {
+                            "decision": "multivalue_integrated_service_probe_passed",
+                        },
+                        "selected_scale_point": {
+                            "selection_role": "representative_largest_nominal_scale_point",
+                            "selection_basis": "Coverage representative only, not a performance or architectural ranking.",
+                            "case_id": "c32_p256_b32_rr",
+                        },
+                        "summary": {
+                            "validated_case_count": 14,
+                            "all_hash_gates_passed": True,
+                            "all_protocol_gates_passed": True,
+                            "all_count_gates_passed": True,
+                        },
+                    },
+                    indent=2,
+                )
+                + "\n",
+            )
+            _write(repo_root / report_rel, "# exact-partial service equivalence\n")
+            _seed_campaign_work_item(
+                session,
+                repo_root,
+                item_id=item_id,
+                campaign_dir_rel="runs/campaigns/npu/exact_partial_service_equivalence",
+                summary_rows="scope,arch_id,macro_mode,objective_rank\naggregate,unused,unused,1\n",
+                proposal_path=proposal_rel,
+            )
+            work_item = session.query(WorkItem).filter_by(item_id=item_id).one()
+            work_item.input_manifest = {
+                "decoder_contract": {
+                    "decode_score_multivalue_service_exact_partial_equivalence_out": evidence_rel,
+                    "decode_score_multivalue_service_exact_partial_equivalence_report": report_rel,
+                }
+            }
+            work_item.expected_outputs = [evidence_rel, report_rel]
+            request_payload = copy.deepcopy(work_item.task_request.request_payload or {})
+            request_payload["developer_loop"]["abstraction"] = {
+                "layer": "decoder_attention_decode_score_multivalue_service_exact_partial_equivalence",
+            }
+            work_item.task_request.request_payload = request_payload
+            session.commit()
+
+            result = consume_l2_result(
+                session,
+                Layer2ConsumeRequest(repo_root=str(repo_root), item_id=item_id),
+            )
+
+            assert result.recommended_arch_id == (
+                "decoder_attention_decode_score_multivalue_service_exact_partial_equivalence"
+            )
+            assert result.recommended_macro_mode == "evidence_only"
+            decision = json.loads(Path(result.target_path).read_text(encoding="utf-8"))
+            assert decision["proposal_assessment"]["outcome"] == (
+                "multivalue_integrated_service_probe_passed"
+            )
+            assert (
+                decision["source_refs"][
+                    "decoder_decode_score_multivalue_service_exact_partial_equivalence_out"
+                ]
+                == evidence_rel
+            )
+            assert "best_point_json" not in decision["source_refs"]
+
+
 def test_consume_l2_result_measured_compute_energy_closure_uses_decoder_evidence() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
