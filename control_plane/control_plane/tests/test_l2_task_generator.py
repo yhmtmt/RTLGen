@@ -9717,6 +9717,12 @@ def test_generate_l2_campaign_task_adds_decode_score_multivalue_service_activity
                 in run
             )
             assert "--clock-period-ns 10" in run
+            assert (
+                "--physical-signoff-json runs/designs/npu_blocks/"
+                "attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr/"
+                "physical_signoff.json"
+                in run
+            )
             assert "--activity-dir /tmp/rtlgen_multivalue_service_c1_activity" in run
             assert decoder_inputs["decode_score_multivalue_service_c1_source_pnr_item_id"] == (
                 "l1_decoder_attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_pnr_v1_r2"

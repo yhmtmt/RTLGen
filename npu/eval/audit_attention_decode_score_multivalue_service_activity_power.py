@@ -236,6 +236,39 @@ def _metric_provenance(row: JsonDict, metrics_csv: Path) -> JsonDict:
     }
 
 
+def _physical_signoff(path: Path | None, *, metric: JsonDict) -> JsonDict:
+    if path is None:
+        return {
+            "status": "not_supplied",
+            "architectural_use": "not_classified",
+            "route_checks": {},
+        }
+    payload = _load(path)
+    identity = payload.get("metric_identity")
+    if not isinstance(identity, dict):
+        raise ValueError("physical signoff evidence requires metric_identity")
+    for field in ("design", "platform", "param_hash", "tag"):
+        if str(identity.get(field) or "").strip() != str(metric.get(field) or "").strip():
+            raise ValueError(f"physical signoff {field} does not match selected PPA metric")
+    route_checks = payload.get("route_checks")
+    if not isinstance(route_checks, dict):
+        raise ValueError("physical signoff evidence requires route_checks")
+    max_cap_violations = int(route_checks.get("max_cap_violations", -1))
+    if max_cap_violations < 0:
+        raise ValueError("physical signoff max_cap_violations must be non-negative")
+    expected_status = (
+        "routed_with_electrical_caveat"
+        if max_cap_violations
+        else "routed_without_reported_electrical_caveat"
+    )
+    if str(payload.get("status") or "").strip() != expected_status:
+        raise ValueError("physical signoff status does not match max-cap violation count")
+    return {
+        **payload,
+        "evidence_path": _portable_path(path),
+    }
+
+
 def _select_metric(
     metrics_csv: Path,
     *,
@@ -798,6 +831,8 @@ def _write_markdown(payload: JsonDict, path: Path) -> None:
         else {}
     )
     selection_contract = payload.get("selection_contract", {})
+    physical_signoff = payload.get("physical_signoff", {})
+    route_checks = physical_signoff.get("route_checks", {})
     case_id = selection_contract.get("case_id", "service_case")
     lines = [
         f"# Strict {case_id} routed service power audit",
@@ -807,6 +842,10 @@ def _write_markdown(payload: JsonDict, path: Path) -> None:
         f"- required_flow_variant: `{selection_contract.get('required_flow_variant')}`",
         f"- bank3 dynamic inactivity: `{payload['bank3_dynamic_inactivity']['inactive_banks']}`",
         f"- bank3 note: {payload['bank3_dynamic_inactivity']['statement']}",
+        f"- physical status: `{physical_signoff.get('status')}`",
+        f"- maximum-capacitance violations: `{route_checks.get('max_cap_violations')}`",
+        f"- worst maximum-capacitance slack fF: `{route_checks.get('worst_max_cap_slack_ff')}`",
+        f"- architectural use: `{physical_signoff.get('architectural_use')}`",
         "",
         "| status | path ns | total power mW | service-window dynamic J | service-window leakage J | service-window total J |",
         "|---|---:|---:|---:|---:|---:|",
@@ -852,6 +891,7 @@ def build_report(
     activity_dir: Path,
     min_sequential_register_activity_coverage: float = 0.95,
     case_id: str | None = None,
+    physical_signoff_json: Path | None = None,
 ) -> JsonDict:
     if abs(clock_period_ns - 10.0) > 1e-9:
         raise ValueError("strict routed service power audit requires a 10 ns clock")
@@ -870,6 +910,7 @@ def build_report(
         case_contract=case_contract,
         clock_period_ns=clock_period_ns,
     )
+    physical_signoff = _physical_signoff(physical_signoff_json, metric=metric)
     activity_dir.mkdir(parents=True, exist_ok=True)
     activity_manifest = generate_activity(
         config_payload,
@@ -987,6 +1028,11 @@ def build_report(
         "source_dependencies": {
             "service_config": _portable_path(config),
             "metrics_csv": _portable_path(selected_metrics_csv),
+            "physical_signoff_json": (
+                _portable_path(physical_signoff_json)
+                if physical_signoff_json is not None
+                else None
+            ),
             "merged_cluster_equivalence_json": _portable_path(equivalence_json),
             "integrated_service_r1_json": _portable_path(integrated_service_json),
             "orfs_design_config": _portable_path(orfs_design_config),
@@ -1019,6 +1065,7 @@ def build_report(
         "precision_status": (
             "unchanged_integer_contract_from_merged_cluster_equivalence_and_integrated_service"
         ),
+        "physical_signoff": physical_signoff,
         "remaining_abstractions": [
             (
                 f"The service-window energy is direct routed component energy for this exact "
@@ -1026,6 +1073,15 @@ def build_report(
             ),
             "FakeRAM power uses proxy Nangate45 macro views rather than SRAM compiler signoff.",
             "Evaluator-local VCD, ODB, and SPEF paths remain redacted from the portable output.",
+            (
+                f"The source route has {physical_signoff['route_checks']['max_cap_violations']} "
+                "maximum-capacitance violations "
+                f"(worst slack {physical_signoff['route_checks']['worst_max_cap_slack_ff']} fF), "
+                "so this result is exploratory "
+                "routed PPA rather than electrical signoff."
+                if physical_signoff.get("status") == "routed_with_electrical_caveat"
+                else "No source-route maximum-capacitance caveat was supplied to this audit."
+            ),
         ],
     }
 
@@ -1043,6 +1099,7 @@ def main() -> int:
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--out-md", type=Path, required=True)
     parser.add_argument("--case-id", type=str)
+    parser.add_argument("--physical-signoff-json", type=Path)
     parser.add_argument(
         "--min-sequential-register-activity-coverage",
         type=float,
@@ -1060,6 +1117,7 @@ def main() -> int:
         activity_dir=args.activity_dir,
         min_sequential_register_activity_coverage=args.min_sequential_register_activity_coverage,
         case_id=args.case_id,
+        physical_signoff_json=args.physical_signoff_json,
     )
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
