@@ -1,0 +1,23 @@
+{
+  "architectural_use": "exploratory_routed_ppa_not_electrical_signoff",
+  "metric_identity": {
+    "design": "attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr",
+    "param_hash": "696d01b6",
+    "platform": "nangate45",
+    "tag": "decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_3000_v1_macro_conservative_c1_die_3000"
+  },
+  "route_checks": {
+    "drc_violations": 0,
+    "hold_violations": 0,
+    "max_cap_limit_ff": 60.65,
+    "max_cap_violations": 142,
+    "max_slew_violations": 0,
+    "setup_violations": 0,
+    "worst_max_cap_slack_ff": -17.81
+  },
+  "source_item_id": "l1_decoder_attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_pnr_v1_r3",
+  "source_pr": 1548,
+  "source_url": "https://github.com/yhmtmt/RTLGen/pull/1548#issuecomment-5203896106",
+  "status": "routed_with_electrical_caveat",
+  "version": 1
+}

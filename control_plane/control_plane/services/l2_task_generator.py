@@ -7716,6 +7716,7 @@ def _decoder_attention_decode_score_multivalue_service_activity_power_evidence(
     design = _MULTIVALUE_SERVICE_C2_DESIGN if is_c2 else _MULTIVALUE_SERVICE_C1_DESIGN
     config = f"runs/designs/npu_blocks/{design}/config.json"
     metrics_csv = f"runs/designs/npu_blocks/{design}/metrics.csv"
+    physical_signoff_json = f"runs/designs/npu_blocks/{design}/physical_signoff.json"
     equivalence_json = (
         f"{base}/decoder_attention_decode_score_multivalue_cluster_equivalence__"
         "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1.json"
@@ -7769,6 +7770,11 @@ def _decoder_attention_decode_score_multivalue_service_activity_power_evidence(
         "inputs": {
             f"{config_key_prefix}_config": config,
             f"{config_key_prefix}_pnr_metrics_csv": metrics_csv,
+            **(
+                {f"{config_key_prefix}_physical_signoff_json": physical_signoff_json}
+                if not is_c2
+                else {}
+            ),
             f"{config_key_prefix}_source_pnr_item_id": pnr_item,
             f"{config_key_prefix}_equivalence_json": equivalence_json,
             f"{config_key_prefix}_integrated_service_json": integrated_service_json,
@@ -7795,6 +7801,11 @@ def _decoder_attention_decode_score_multivalue_service_activity_power_evidence(
                     + f"--integrated-service-json {integrated_service_json} "
                     + f"--orfs-design-config {orfs_design_config} "
                     + "--clock-period-ns 10 "
+                    + (
+                        f"--physical-signoff-json {physical_signoff_json} "
+                        if not is_c2
+                        else ""
+                    )
                     + f"--activity-dir {activity_dir} "
                     + f"--out {out} "
                     + f"--out-md {report}"

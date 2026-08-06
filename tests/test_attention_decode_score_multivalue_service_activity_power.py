@@ -397,6 +397,35 @@ def test_build_report_success_keeps_paths_portable_and_writes_markdown(tmp_path:
     _cluster_equivalence(equivalence)
     integrated = tmp_path / "integrated.json"
     _integrated_service(integrated)
+    physical_signoff = tmp_path / "physical_signoff.json"
+    physical_signoff.write_text(
+        json.dumps(
+            {
+                "version": 1,
+                "status": "routed_with_electrical_caveat",
+                "source_item_id": "source-pnr-r3",
+                "source_pr": 1548,
+                "source_url": "https://github.com/yhmtmt/RTLGen/pull/1548",
+                "architectural_use": "exploratory_routed_ppa_not_electrical_signoff",
+                "metric_identity": {
+                    "design": audit._EXPECTED_DESIGN,
+                    "platform": audit._EXPECTED_PLATFORM,
+                    "param_hash": "p1",
+                    "tag": "die3000",
+                },
+                "route_checks": {
+                    "drc_violations": 0,
+                    "setup_violations": 0,
+                    "hold_violations": 0,
+                    "max_slew_violations": 0,
+                    "max_cap_violations": 142,
+                    "worst_max_cap_slack_ff": -17.81,
+                    "max_cap_limit_ff": 60.65,
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
     adapted_manifest, manifest_path, adapted_meta = _adapted_manifest(tmp_path)
 
     with mock.patch.object(audit, "generate_activity", return_value=_generated_activity_manifest()), mock.patch.object(
@@ -416,6 +445,7 @@ def test_build_report_success_keeps_paths_portable_and_writes_markdown(tmp_path:
             orfs_design_config=Path("/orfs/flow/designs/nangate45/service/config.mk"),
             clock_period_ns=10.0,
             activity_dir=tmp_path / "activity",
+            physical_signoff_json=physical_signoff,
         )
 
     assert payload["decision"] == "activity_backed_service_power_measured"
@@ -428,6 +458,12 @@ def test_build_report_success_keeps_paths_portable_and_writes_markdown(tmp_path:
     assert payload["bank3_dynamic_inactivity"]["inactive_banks"] == [3]
     assert payload["dependency_contract"]["integrated_service_c1"]["config"]["cluster_count"] == 1
     assert payload["activity_contract"]["workload_contract"] == _workload_contract()
+    assert payload["physical_signoff"]["status"] == "routed_with_electrical_caveat"
+    assert payload["physical_signoff"]["route_checks"]["max_cap_violations"] == 142
+    assert payload["physical_signoff"]["route_checks"]["worst_max_cap_slack_ff"] == -17.81
+    assert payload["physical_signoff"]["architectural_use"] == (
+        "exploratory_routed_ppa_not_electrical_signoff"
+    )
     assert "/tmp/" not in json.dumps(payload, sort_keys=True)
     assert "/orfs/" not in json.dumps(payload, sort_keys=True)
 
@@ -436,6 +472,8 @@ def test_build_report_success_keeps_paths_portable_and_writes_markdown(tmp_path:
     markdown = markdown_path.read_text(encoding="utf-8")
     assert "bank3 dynamic inactivity" in markdown
     assert "service-window dynamic J" in markdown
+    assert "maximum-capacitance violations: `142`" in markdown
+    assert "exploratory_routed_ppa_not_electrical_signoff" in markdown
 
 
 def test_build_report_marks_openroad_failure_as_measurement_failed(tmp_path: Path) -> None:
