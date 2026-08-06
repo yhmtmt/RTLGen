@@ -142,6 +142,15 @@ def _resolve_requested_entry(
         _rebind_requested_entry(entry, item_id=work_item.item_id)
         return entry
     if len(retry_matches) > 1:
+        base_matches = [
+            entry
+            for entry in retry_matches
+            if str(entry.get("item_id", "")).strip() == work_retry_base
+        ]
+        if len(base_matches) == 1:
+            entry = base_matches[0]
+            _rebind_requested_entry(entry, item_id=work_item.item_id)
+            return entry
         raise ProposalFinalizationError(
             f"item {work_item.item_id} has multiple retry-base matches in {evaluation_requests_path}"
         )

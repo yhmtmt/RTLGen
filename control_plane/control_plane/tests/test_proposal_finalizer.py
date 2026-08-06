@@ -1933,6 +1933,36 @@ def test_finalize_l1_retry_item_rebinds_requested_entry() -> None:
         assert current["merged_pr_number"] == 89
 
 
+def test_retry_resolution_prefers_exact_base_when_conditional_retry_also_exists() -> None:
+    requested_items = [
+        {
+            "item_id": "l1_service_pnr_v1",
+            "task_type": "l1_sweep",
+            "status": "pending",
+        },
+        {
+            "item_id": "l1_service_pnr_v1_r4",
+            "task_type": "l1_sweep",
+            "status": "conditional_follow_on",
+        },
+    ]
+    work_item = WorkItem(
+        item_id="l1_service_pnr_v1_r3",
+        task_type="l1_sweep",
+    )
+
+    selected = proposal_finalizer._resolve_requested_entry(
+        requested_items,
+        work_item=work_item,
+        evaluation_requests_path=Path("evaluation_requests.json"),
+    )
+
+    assert selected is requested_items[0]
+    assert selected["item_id"] == "l1_service_pnr_v1_r3"
+    assert selected["prior_item_ids"] == ["l1_service_pnr_v1"]
+    assert requested_items[1]["item_id"] == "l1_service_pnr_v1_r4"
+
+
 def test_finalize_after_merge_refreshes_github_link_finalization_metadata() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
