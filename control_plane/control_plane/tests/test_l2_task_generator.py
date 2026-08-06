@@ -9644,6 +9644,100 @@ def test_generate_l2_campaign_task_adds_decode_score_multivalue_integrated_servi
             )
 
 
+def test_generate_l2_campaign_task_adds_exact_partial_integrated_service_equivalence() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+        item_id = (
+            "l2_decoder_attention_decode_score_multivalue_service_"
+            "exact_partial_equivalence_llama7b_v1"
+        )
+        proposal_id = (
+            "prop_l2_decoder_attention_decode_score_multivalue_service_"
+            "exact_partial_equivalence_llama7b_v1"
+        )
+        proposal_path = f"docs/proposals/{proposal_id}/proposal.json"
+        dependency_item = (
+            "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1"
+        )
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id=item_id,
+                    proposal_id=proposal_id,
+                    proposal_path=proposal_path,
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    abstraction_layer=(
+                        "decoder_attention_decode_score_multivalue_service_"
+                        "exact_partial_equivalence"
+                    ),
+                    evaluation_mode="equivalence",
+                    depends_on_item_ids=[dependency_item],
+                    requires_merged_inputs=True,
+                    requires_materialized_refs=True,
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            payload = work_item.task_request.request_payload
+            commands = payload["task"]["commands"]
+            run = commands[0]["run"]
+            decoder_inputs = work_item.input_manifest["decoder_contract"]
+
+            assert [command["name"] for command in commands] == [
+                "probe_decode_score_multivalue_service_exact_partial_equivalence",
+                "validate_runs",
+            ]
+            assert "probe_attention_decode_score_multivalue_integrated_service.py" in run
+            assert "--result-mode exact_partial" in run
+            assert f"--depends-on-item-id {dependency_item}" in run
+            assert f"--proposal-id {proposal_id}" in run
+            assert f"--proposal-path {proposal_path}" in run
+            assert decoder_inputs[
+                "decode_score_multivalue_service_exact_partial_equivalence_source"
+            ].endswith(
+                "decoder_attention_decode_score_multivalue_cluster_equivalence__"
+                f"{dependency_item}.json"
+            )
+            assert "global_max, exp_sum, head_id, slice/last" in decoder_inputs[
+                "decode_score_multivalue_service_exact_partial_equivalence_scope"
+            ]
+            assert "8xS41 numerator lanes" in decoder_inputs[
+                "decode_score_multivalue_service_exact_partial_equivalence_scope"
+            ]
+            assert "full-context temporal composition" in decoder_inputs[
+                "decode_score_multivalue_service_exact_partial_equivalence_scope"
+            ]
+            assert decoder_inputs[
+                "decode_score_multivalue_service_exact_partial_equivalence_out"
+            ].endswith(f"__{item_id}.json")
+            assert payload["task"]["expected_outputs"] == [
+                decoder_inputs["decode_score_multivalue_service_exact_partial_equivalence_out"],
+                decoder_inputs["decode_score_multivalue_service_exact_partial_equivalence_report"],
+            ]
+            assert payload["developer_loop"]["proposal_id"] == proposal_id
+            assert payload["developer_loop"]["proposal_path"] == proposal_path
+            assert payload["developer_loop"]["dependencies"] == {
+                "item_ids": [dependency_item],
+                "requires_merged_inputs": True,
+                "requires_materialized_refs": True,
+            }
+            assert payload["source_requirement"]["required_sha"] == source_commit
+            assert payload["source_requirement"]["required_ref"] == "origin/master"
+            assert payload["source_requirement"]["requires_daemon_restart"] is True
+            assert work_item.state == WorkItemState.BLOCKED
+
+
 def test_generate_l2_campaign_task_adds_decode_score_multivalue_service_activity_power() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
