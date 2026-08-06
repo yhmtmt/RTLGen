@@ -40,6 +40,8 @@ _ABSOLUTE_PATH_RE = re.compile(r"/[^\s\"'`<>|&(){}\[\]]+")
 _MAX_FAILURE_DETAIL_LINES = 16
 _MAX_FAILURE_DETAIL_LINE_CHARS = 400
 _MAX_FAILURE_DETAIL_BYTES = 4096
+_POWER_COMPONENT_REL_TOL = 1e-6
+_POWER_COMPONENT_ABS_TOL_W = 1e-9
 
 _MODEL = "decoder_attention_decode_score_multivalue_service_activity_power_v1"
 _SCOPE = "tb/dut"
@@ -793,7 +795,13 @@ def _strict_service_window_measurement(
     switching_w = _finite_positive(power.get("switching_w"), "switching_w")
     leakage_w = _finite_positive(power.get("leakage_w"), "leakage_w")
     total_w = _finite_positive(power.get("total_w"), "total_w")
-    if abs((internal_w + switching_w + leakage_w) - total_w) > 1e-9:
+    component_sum_w = internal_w + switching_w + leakage_w
+    if not math.isclose(
+        component_sum_w,
+        total_w,
+        rel_tol=_POWER_COMPONENT_REL_TOL,
+        abs_tol=_POWER_COMPONENT_ABS_TOL_W,
+    ):
         raise ValueError("postroute power total_w does not match internal+switching+leakage")
     service_window_s = expected_cycle_count * expected_clock_period_ns * 1e-9
     dynamic_energy_j = (internal_w + switching_w) * service_window_s

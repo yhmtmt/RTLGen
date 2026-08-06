@@ -368,6 +368,42 @@ def _power_report(
     }
 
 
+def test_service_window_power_accepts_independent_report_rounding() -> None:
+    report = _power_report(manifest_sha256="manifest-hash", cycle_count=8719)
+    report["phases"][0]["power"] = {
+        "internal_w": 0.153530582786,
+        "switching_w": 0.0866372808814,
+        "leakage_w": 0.116741158068,
+        "total_w": 0.356909006834,
+    }
+
+    measured = audit._strict_service_window_measurement(
+        activity_power=report,
+        manifest_sha256="manifest-hash",
+        expected_vcd_sha256="vcd-hash",
+        expected_clock_period_ns=10.0,
+        expected_cycle_count=8719,
+        expected_macro_assignment_count=9704,
+    )
+
+    assert measured["power_w"]["total"] == pytest.approx(0.356909006834)
+
+
+def test_service_window_power_rejects_material_component_mismatch() -> None:
+    report = _power_report(manifest_sha256="manifest-hash")
+    report["phases"][0]["power"]["total_w"] = 0.349
+
+    with pytest.raises(ValueError, match="total_w does not match"):
+        audit._strict_service_window_measurement(
+            activity_power=report,
+            manifest_sha256="manifest-hash",
+            expected_vcd_sha256="vcd-hash",
+            expected_clock_period_ns=10.0,
+            expected_cycle_count=321,
+            expected_macro_assignment_count=9704,
+        )
+
+
 def test_select_c1_metric_rejects_ambiguity_and_flow_mismatch(tmp_path: Path) -> None:
     metrics = tmp_path / "metrics.csv"
     _write_metrics(metrics, [_ok_metric(flow_variant="wrong_variant")])

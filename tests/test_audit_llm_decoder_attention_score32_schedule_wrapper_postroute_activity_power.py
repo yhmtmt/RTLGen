@@ -180,6 +180,40 @@ def _power_report() -> dict:
     }
 
 
+def test_service_window_power_accepts_independent_report_rounding() -> None:
+    report = _power_report()
+    report["phases"][0]["power"] = {
+        "internal_w": 0.153530582786,
+        "switching_w": 0.0866372808814,
+        "leakage_w": 0.116741158068,
+        "total_w": 0.356909006834,
+    }
+
+    measured = audit._strict_service_window_measurement(
+        activity_power=report,
+        manifest_sha256="manifest-hash",
+        expected_vcd_sha256="vcd-hash",
+        expected_cycle_count=986,
+        authoritative_critical_path_ns=48.6509,
+    )
+
+    assert measured["power_w"]["total"] == pytest.approx(0.356909006834)
+
+
+def test_service_window_power_rejects_material_component_mismatch() -> None:
+    report = _power_report()
+    report["phases"][0]["power"]["total_w"] = 0.59
+
+    with pytest.raises(ValueError, match="total_w does not match"):
+        audit._strict_service_window_measurement(
+            activity_power=report,
+            manifest_sha256="manifest-hash",
+            expected_vcd_sha256="vcd-hash",
+            expected_cycle_count=986,
+            authoritative_critical_path_ns=48.6509,
+        )
+
+
 def test_build_report_rejects_accidental_4_cycle_scaling(tmp_path: Path) -> None:
     config = tmp_path / "config.json"
     metrics = tmp_path / "metrics.csv"

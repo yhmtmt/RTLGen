@@ -44,6 +44,8 @@ _EXPECTED_REDUCTION_CYCLES = 141
 _EXPECTED_KV_WRITE_CYCLES = 10
 _EXPECTED_LAYER_CYCLES = 8231
 _SCOPE = "tb/dut"
+_POWER_COMPONENT_REL_TOL = 1e-6
+_POWER_COMPONENT_ABS_TOL_W = 1e-9
 
 
 def _load(path: Path) -> JsonDict:
@@ -259,7 +261,12 @@ def _strict_service_window_measurement(
     switching_w = _require_positive(power.get("switching_w"), "switching_w")
     leakage_w = _require_positive(power.get("leakage_w"), "leakage_w")
     total_w = _require_positive(power.get("total_w"), "total_w")
-    if abs((internal_w + switching_w + leakage_w) - total_w) > 1e-9:
+    if not math.isclose(
+        internal_w + switching_w + leakage_w,
+        total_w,
+        rel_tol=_POWER_COMPONENT_REL_TOL,
+        abs_tol=_POWER_COMPONENT_ABS_TOL_W,
+    ):
         raise ValueError("postroute power total_w does not match internal+switching+leakage")
     annotation_clock_ns = _DEFAULT_CLOCK_PERIOD_NS
     promotion_clock_ns = max(annotation_clock_ns, authoritative_critical_path_ns)
