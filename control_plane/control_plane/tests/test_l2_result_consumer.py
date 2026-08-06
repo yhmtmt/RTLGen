@@ -304,6 +304,29 @@ def test_decoder_evidence_paths_recognizes_decode_score_multivalue_cluster_activ
     }
 
 
+def test_decoder_evidence_paths_recognizes_decode_score_multivalue_service_activity_power(tmp_path: Path) -> None:
+    evidence_rel = "runs/datasets/demo/decode_score_multivalue_service_activity_power.json"
+    report_rel = "runs/datasets/demo/decode_score_multivalue_service_activity_power.md"
+    _write(tmp_path / evidence_rel, "{}\n")
+    _write(tmp_path / report_rel, "# Decode score multivalue service activity power\n")
+    work_item = SimpleNamespace(
+        input_manifest={
+            "decoder_contract": {
+                "decode_score_multivalue_service_activity_power_out": evidence_rel,
+                "decode_score_multivalue_service_activity_power_report": report_rel,
+            }
+        }
+    )
+
+    evidence_ref, source_refs = _decoder_evidence_paths(repo_root=tmp_path, work_item=work_item)
+
+    assert evidence_ref == evidence_rel
+    assert source_refs == {
+        "decoder_decode_score_multivalue_service_activity_power_out": evidence_rel,
+        "decoder_decode_score_multivalue_service_activity_power_report": report_rel,
+    }
+
+
 @pytest.mark.parametrize(
     "prefix",
     [
@@ -758,6 +781,71 @@ def test_decoder_evidence_summary_uses_representative_rejected_cluster_activity_
     assert "best_flow_variant" not in summary
 
 
+def test_decoder_evidence_summary_preserves_rejected_multivalue_service_activity_power() -> None:
+    outcome, summary = _decoder_evidence_summary(
+        evidence_ref="runs/datasets/demo/service-activity-power.json",
+        evidence_payload={
+            "model": "decoder_attention_decode_score_multivalue_service_activity_power_v1",
+            "decision": "activity_power_rejected_no_gated_candidate",
+            "promotion_gate_pass": False,
+            "candidate_count": 1,
+            "promoted_candidate_count": 0,
+            "best_candidate_id": None,
+            "best": None,
+            "candidates": [
+                {
+                    "candidate_id": "multivalue_service_activity_c1",
+                    "flow_variant": "service_c1_die3000",
+                    "status": "rejected_gate",
+                    "activity_power": {
+                        "status": "rejected_annotation_gate",
+                        "promotion_gate_pass": False,
+                        "phases": [
+                            {
+                                "phase": "service_window",
+                                "full_context_energy_j": 2.2285286352341593e-05,
+                                "macro_activity_gate_pass": False,
+                                "structural_macro_activity_gate_pass": False,
+                                "sequential_register_activity_gate_pass": False,
+                                "sequential_register_activity_coverage": 0.05456487796860876,
+                                "trace_backed_vcd_annotation_coverage": 0.9273926815739241,
+                                "power": {"total_w": 0.255594521761},
+                            }
+                        ],
+                    },
+                    "ppa_metric": {
+                        "critical_path_ns": "6.7148",
+                        "instance_area_um2": "2921450.0",
+                        "die_area": "9000000.0",
+                        "total_power_mw": "0.26",
+                    },
+                }
+            ],
+            "physical_signoff": {
+                "status": "routed_with_electrical_caveat",
+                "architectural_use": "exploratory_routed_ppa_not_electrical_signoff",
+                "route_checks": {
+                    "max_cap_violations": 142,
+                    "worst_max_cap_slack_ff": -17.81,
+                },
+            },
+        },
+    )
+
+    assert outcome == "activity_power_rejected_no_gated_candidate"
+    assert "promotion_gate_pass=False" in summary
+    assert "representative_status=rejected_gate" in summary
+    assert "representative_activity_status=rejected_annotation_gate" in summary
+    assert "representative_service_window_energy_j=2.2285286352341593e-05" in summary
+    assert "representative_service_window_total_power_w=0.255594521761" in summary
+    assert "representative_macro_activity_gate_pass=False" in summary
+    assert "representative_sequential_register_activity_coverage=0.05456487796860876" in summary
+    assert "representative_ppa_critical_path_ns=6.7148" in summary
+    assert "physical_signoff_status=routed_with_electrical_caveat" in summary
+    assert "physical_signoff_max_cap_violations=142" in summary
+    assert "physical_signoff_worst_max_cap_slack_ff=-17.81" in summary
+
+
 def test_decoder_evidence_summary_includes_folded_lane_identity() -> None:
     _, activity_summary = _decoder_evidence_summary(
         evidence_ref="runs/datasets/demo/folded-activity.json",
@@ -994,6 +1082,124 @@ def test_consume_l2_result_uses_cluster_activity_evidence_without_best_point() -
                 ]
                 == report_rel
             )
+            assert "best_point_json" not in decision["source_refs"]
+
+
+def test_consume_l2_result_uses_service_activity_evidence_without_best_point() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            proposal_rel = "docs/proposals/prop_decoder_attention_decode_score_multivalue_service_activity_power_llama7b_v1"
+            _write(
+                repo_root / proposal_rel / "proposal.json",
+                json.dumps(
+                    {
+                        "proposal_id": "prop_l2_decoder_attention_decode_score_multivalue_service_activity_power_llama7b_v1",
+                        "kind": "architecture",
+                        "title": "Decode score multivalue service activity power",
+                        "direct_comparison": {
+                            "primary_question": "Is c1 routed activity power promotable?"
+                        },
+                    },
+                    indent=2,
+                )
+                + "\n",
+            )
+            item_id = "l2_decoder_attention_decode_score_multivalue_service_c1_activity_power_llama7b_v1_r3"
+            _seed_campaign_work_item(
+                session,
+                repo_root,
+                item_id=item_id,
+                campaign_dir_rel="runs/campaigns/npu/decode_score_multivalue_service_activity_power_v1",
+                summary_rows=(
+                    "scope,arch_id,macro_mode,objective_rank\n"
+                    "aggregate,unused,unused,1\n"
+                ),
+                proposal_path=proposal_rel,
+            )
+            evidence_rel = (
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_decode_score_multivalue_service_activity_power__"
+                f"{item_id}.json"
+            )
+            report_rel = (
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_decode_score_multivalue_service_activity_power__"
+                f"{item_id}.md"
+            )
+            _write(
+                repo_root / evidence_rel,
+                json.dumps(
+                    {
+                        "model": "decoder_attention_decode_score_multivalue_service_activity_power_v1",
+                        "decision": "activity_power_rejected_no_gated_candidate",
+                        "promotion_gate_pass": False,
+                        "candidate_count": 1,
+                        "promoted_candidate_count": 0,
+                        "best_candidate_id": None,
+                        "best": None,
+                        "candidates": [
+                            {
+                                "candidate_id": "multivalue_service_activity_c1",
+                                "status": "rejected_gate",
+                                "activity_power": {
+                                    "status": "rejected_annotation_gate",
+                                    "promotion_gate_pass": False,
+                                    "phases": [
+                                        {
+                                            "phase": "service_window",
+                                            "full_context_energy_j": 2.2285286352341593e-05,
+                                            "power": {"total_w": 0.255594521761},
+                                        }
+                                    ],
+                                },
+                            }
+                        ],
+                        "physical_signoff": {
+                            "status": "routed_with_electrical_caveat",
+                            "route_checks": {"max_cap_violations": 142},
+                        },
+                    },
+                    indent=2,
+                )
+                + "\n",
+            )
+            _write(repo_root / report_rel, "# Decode score multivalue service activity power\n")
+
+            work_item = session.query(WorkItem).filter_by(item_id=item_id).one()
+            work_item.input_manifest = {
+                "decoder_contract": {
+                    "decode_score_multivalue_service_activity_power_out": evidence_rel,
+                    "decode_score_multivalue_service_activity_power_report": report_rel,
+                }
+            }
+            work_item.expected_outputs = [evidence_rel, report_rel]
+            request_payload = copy.deepcopy(work_item.task_request.request_payload or {})
+            request_payload["developer_loop"]["abstraction"] = {
+                "layer": "decoder_attention_decode_score_multivalue_service_activity_power",
+            }
+            work_item.task_request.request_payload = request_payload
+            session.commit()
+
+            result = consume_l2_result(
+                session,
+                Layer2ConsumeRequest(repo_root=str(repo_root), item_id=item_id),
+            )
+
+            assert result.recommended_arch_id == "decoder_attention_decode_score_multivalue_service_activity_power"
+            assert result.recommended_macro_mode == "evidence_only"
+            decision = json.loads(Path(result.target_path).read_text(encoding="utf-8"))
+            assert decision["proposal_assessment"]["outcome"] == (
+                "activity_power_rejected_no_gated_candidate"
+            )
+            assert "representative_service_window_total_power_w=0.255594521761" in (
+                decision["evaluation_record"]["summary"]
+            )
+            assert decision["proposal_assessment"]["decoder_evidence_ref"] == evidence_rel
             assert "best_point_json" not in decision["source_refs"]
 
 
