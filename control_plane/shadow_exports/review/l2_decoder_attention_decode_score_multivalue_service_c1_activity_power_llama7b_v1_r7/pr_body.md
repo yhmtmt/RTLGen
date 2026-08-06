@@ -1,0 +1,40 @@
+## Summary
+- item_id: `l2_decoder_attention_decode_score_multivalue_service_c1_activity_power_llama7b_v1_r7`
+- run_key: `l2_decoder_attention_decode_score_multivalue_service_c1_activity_power_llama7b_v1_r7_run_23cdd4eb58860e80`
+- layer: `layer2`
+- task_type: `l2_campaign`
+- status: `ok`
+- summary: `2/2 commands succeeded`
+- queue_snapshot: `control_plane/shadow_exports/review/l2_decoder_attention_decode_score_multivalue_service_c1_activity_power_llama7b_v1_r7/evaluated.json`
+- metrics_rows_count: `0`
+- review_artifact: `decision_proposal` at `control_plane/shadow_exports/l2_decisions/l2_decoder_attention_decode_score_multivalue_service_c1_activity_power_llama7b_v1_r7.json`
+
+## Developer Context
+- proposal_id: `prop_l2_decoder_attention_decode_score_multivalue_service_c1_activity_power_llama7b_v1`
+- proposal_path: `docs/proposals/prop_l2_decoder_attention_decode_score_multivalue_service_c1_activity_power_llama7b_v1/proposal.json`
+- reviewer_first_read: `docs/proposals/prop_l2_decoder_attention_decode_score_multivalue_service_c1_activity_power_llama7b_v1/proposal.json` plus `docs/developer_agent_review.md`
+- execution_source_commit: `2e5a6ae97e351660abad0dcd13842edd389a1a87`
+- review_metadata_source_commit: `2e5a6ae97e351660abad0dcd13842edd389a1a87`
+
+## Evaluation Mode
+- evaluation_mode: `frontier_detail`
+- abstraction_layer: `decoder_attention_decode_score_multivalue_service_activity_power`
+- comparison_role: `strict_c1_service_activity_power_gate`
+- expected_direction: `record_strict_c1_composed_service_activity_power`
+- expected_reason: `Retry after exact comparison against the retained routed netlist showed that all 4608 unmatched assignments were value-SRAM generate-scope separator mismatches; retain all strict timing, equivalence, annotation, sequential, and electrical-caveat gates.`
+- expectation_status: `unspecified`
+- evaluation_summary: `Decoder multivalue-service activity-power evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_service_activity_power__l2_decoder_attention_decode_score_multivalue_service_c1_activity_power_llama7b_v1_r7.json: decision=activity_power_rejected_no_gated_candidate; promotion_gate_pass=False; candidate_count=1; promoted_candidate_count=0; best_candidate_id=None; representative_candidate_id=multivalue_service_activity_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_3000_v1_macro_conservative_c1_die_3000; representative_flow_variant=decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_3000_v1_macro_conservative_c1_die_3000; representative_status=rejected_gate; representative_activity_status=activity_backed; representative_activity_promotion_gate_pass=True; representative_service_window_energy_j=3.111889630585646e-05; representative_macro_activity_gate_pass=True; representative_structural_macro_activity_gate_pass=True; representative_sequential_register_activity_gate_pass=True; representative_sequential_register_activity_coverage=0.9990138877475553; representative_trace_backed_vcd_annotation_coverage=0.883535528045278; representative_service_window_total_power_w=0.356909006834; representative_ppa_critical_path_ns=6.7148; representative_ppa_instance_area_um2=2921450.0; representative_ppa_die_area=9000000.0; representative_ppa_total_power_mw=0.26; physical_signoff_status=routed_with_electrical_caveat; physical_signoff_architectural_use=exploratory_routed_ppa_not_electrical_signoff; physical_signoff_max_cap_violations=142; physical_signoff_worst_max_cap_slack_ff=-17.81.`
+
+## Focused Comparison
+- primary_question: `Does the routed c1 composed service remain physically interesting once the merged c1 PNR row is combined with strict integrated-service and cluster-equivalence gates plus evaluator-local switching evidence, while reporting only direct service-window energy?`
+- comparison_role: `strict_c1_service_activity_power_gate`
+- proposal_outcome: `activity_power_rejected_no_gated_candidate`
+- comparison_summary: `Decoder multivalue-service activity-power evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_service_activity_power__l2_decoder_attention_decode_score_multivalue_service_c1_activity_power_llama7b_v1_r7.json: decision=activity_power_rejected_no_gated_candidate; promotion_gate_pass=False; candidate_count=1; promoted_candidate_count=0; best_candidate_id=None; representative_candidate_id=multivalue_service_activity_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_3000_v1_macro_conservative_c1_die_3000; representative_flow_variant=decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_3000_v1_macro_conservative_c1_die_3000; representative_status=rejected_gate; representative_activity_status=activity_backed; representative_activity_promotion_gate_pass=True; representative_service_window_energy_j=3.111889630585646e-05; representative_macro_activity_gate_pass=True; representative_structural_macro_activity_gate_pass=True; representative_sequential_register_activity_gate_pass=True; representative_sequential_register_activity_coverage=0.9990138877475553; representative_trace_backed_vcd_annotation_coverage=0.883535528045278; representative_service_window_total_power_w=0.356909006834; representative_ppa_critical_path_ns=6.7148; representative_ppa_instance_area_um2=2921450.0; representative_ppa_die_area=9000000.0; representative_ppa_total_power_mw=0.26; physical_signoff_status=routed_with_electrical_caveat; physical_signoff_architectural_use=exploratory_routed_ppa_not_electrical_signoff; physical_signoff_max_cap_violations=142; physical_signoff_worst_max_cap_slack_ff=-17.81.`
+- baseline_ref: `None`
+- baseline_item_id: `None`
+
+## Checklist
+- [ ] Commit lightweight campaign artifacts only
+- [ ] Include metrics row references in result.metrics_rows
+- [ ] Keep committed result_path fields repo-portable
+- [ ] Run python3 scripts/validate_runs.py --skip_eval_queue before pushing
