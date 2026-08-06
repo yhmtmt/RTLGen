@@ -655,6 +655,10 @@ _DECODER_EVIDENCE_OUTPUT_KEYS: tuple[tuple[str, str], ...] = (
         "decode_score_multivalue_cluster_activity_power_report",
     ),
     (
+        "decode_score_multivalue_service_activity_power_out",
+        "decode_score_multivalue_service_activity_power_report",
+    ),
+    (
         "decode_score_multivalue_gqa_group_equivalence_out",
         "decode_score_multivalue_gqa_group_equivalence_report",
     ),
@@ -1920,6 +1924,83 @@ def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, 
         for key in ("critical_path_ns", "instance_area_um2", "total_power_mw"):
             if ppa_dict.get(key) is not None:
                 parts.append(f"{selected_label}_ppa_{key}={ppa_dict.get(key)}")
+        summary = "; ".join(parts)
+        return outcome, summary if summary.endswith(".") else summary + "."
+
+    if model == "decoder_attention_decode_score_multivalue_service_activity_power_v1":
+        outcome = str(evidence_payload.get("decision") or "service_activity_power_recorded")
+        best = evidence_payload.get("best")
+        best_dict = dict(best) if isinstance(best, dict) else {}
+        candidates = evidence_payload.get("candidates")
+        first_candidate = candidates[0] if isinstance(candidates, list) and candidates else None
+        representative_dict = dict(first_candidate) if isinstance(first_candidate, dict) else {}
+        selected = best_dict or representative_dict
+        selected_label = "best" if best_dict else "representative"
+        activity = selected.get("activity_power")
+        activity_dict = dict(activity) if isinstance(activity, dict) else {}
+        component_energy = selected.get("component_service_window_energy")
+        component_energy_dict = dict(component_energy) if isinstance(component_energy, dict) else {}
+        ppa = selected.get("authoritative_composed_total_ppa")
+        if not isinstance(ppa, dict):
+            ppa = selected.get("ppa_metric")
+        ppa_dict = dict(ppa) if isinstance(ppa, dict) else {}
+        phases = activity_dict.get("phases")
+        service_phase = (
+            next(
+                (
+                    dict(phase)
+                    for phase in phases
+                    if isinstance(phase, dict) and phase.get("phase") == "service_window"
+                ),
+                {},
+            )
+            if isinstance(phases, list)
+            else {}
+        )
+        phase_power = service_phase.get("power")
+        phase_power_dict = dict(phase_power) if isinstance(phase_power, dict) else {}
+        physical_signoff = evidence_payload.get("physical_signoff")
+        physical_signoff_dict = dict(physical_signoff) if isinstance(physical_signoff, dict) else {}
+        route_checks = physical_signoff_dict.get("route_checks")
+        route_checks_dict = dict(route_checks) if isinstance(route_checks, dict) else {}
+        parts = [
+            f"Decoder multivalue-service activity-power evidence recorded from {evidence_ref}: decision={outcome}",
+        ]
+        for key in ("promotion_gate_pass", "candidate_count", "promoted_candidate_count", "best_candidate_id"):
+            if key in evidence_payload:
+                parts.append(f"{key}={evidence_payload.get(key)}")
+        for key in ("candidate_id", "flow_variant", "status"):
+            if key in selected:
+                parts.append(f"{selected_label}_{key}={selected.get(key)}")
+        for key in ("status", "promotion_gate_pass"):
+            if key in activity_dict:
+                parts.append(f"{selected_label}_activity_{key}={activity_dict.get(key)}")
+        for key in ("dynamic_energy_j", "leakage_energy_j", "dynamic_plus_leakage_energy_j"):
+            if component_energy_dict.get(key) is not None:
+                parts.append(f"{selected_label}_service_window_{key}={component_energy_dict.get(key)}")
+        phase_energy = service_phase.get("full_context_energy_j")
+        if phase_energy is not None and not component_energy_dict:
+            parts.append(f"{selected_label}_service_window_energy_j={phase_energy}")
+        for key in (
+            "macro_activity_gate_pass",
+            "structural_macro_activity_gate_pass",
+            "sequential_register_activity_gate_pass",
+            "sequential_register_activity_coverage",
+            "trace_backed_vcd_annotation_coverage",
+        ):
+            if service_phase.get(key) is not None:
+                parts.append(f"{selected_label}_{key}={service_phase.get(key)}")
+        if phase_power_dict.get("total_w") is not None:
+            parts.append(f"{selected_label}_service_window_total_power_w={phase_power_dict.get('total_w')}")
+        for key in ("critical_path_ns", "instance_area_um2", "die_area", "total_power_mw"):
+            if ppa_dict.get(key) is not None:
+                parts.append(f"{selected_label}_ppa_{key}={ppa_dict.get(key)}")
+        for key in ("status", "architectural_use"):
+            if physical_signoff_dict.get(key) is not None:
+                parts.append(f"physical_signoff_{key}={physical_signoff_dict.get(key)}")
+        for key in ("max_cap_violations", "worst_max_cap_slack_ff"):
+            if route_checks_dict.get(key) is not None:
+                parts.append(f"physical_signoff_{key}={route_checks_dict.get(key)}")
         summary = "; ".join(parts)
         return outcome, summary if summary.endswith(".") else summary + "."
 
