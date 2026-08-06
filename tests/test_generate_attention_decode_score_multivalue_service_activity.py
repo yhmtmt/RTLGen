@@ -18,7 +18,11 @@ from npu.eval.generate_attention_decode_score_multivalue_service_activity import
     _REQUIRED_SERVICE_FIELDS,
     _load,
     _normalize_config,
+    _sequential_memory_dumpvars,
     generate_activity,
+)
+from npu.eval.extract_sequential_register_vcd_activity import (
+    extract_sequential_register_vcd_activity,
 )
 from npu.eval.probe_attention_decode_score_multivalue_integrated_service import _workload_contract
 
@@ -77,6 +81,27 @@ def test_activity_generator_source_has_no_artificial_macro_touch() -> None:
     assert "post-completion trace touch" not in source
 
 
+def test_sequential_memory_dumpvars_cover_c1_routed_state_arrays() -> None:
+    targets = _sequential_memory_dumpvars(
+        {
+            "cluster_count": 1,
+            "banks": 4,
+            "req_queue_depth": 4,
+            "resp_queue_depth": 4,
+            "bank_queue_depth": 4,
+        }
+    )
+
+    assert len(targets) == len(set(targets))
+    assert "dut.gen_cluster[0].u_cluster.reducer.numerator_accum[127]" in targets
+    assert "dut.gen_cluster[0].u_cluster.reducer.block_weight[7]" in targets
+    assert "dut.gen_cluster[0].u_cluster.score_tile.accum[7]" in targets
+    assert "dut.u_router.gen_resp_fifo[0].u_resp_fifo.mem[3]" in targets
+    assert "dut.u_service.active_matrix[3]" in targets
+    assert "dut.u_service.gen_bank_fifo[3].u_bank_fifo.mem[3]" in targets
+    assert "dut.expected_addr_q[0]" in targets
+
+
 @pytest.mark.skipif(not _iverilog_available(), reason="iverilog/vvp unavailable")
 def test_generate_service_activity_is_deterministic(tmp_path: Path) -> None:
     config_path = tmp_path / "config.json"
@@ -126,6 +151,16 @@ def test_generate_service_activity_is_deterministic(tmp_path: Path) -> None:
     vcd_b = (out_b / _OUTPUT_VCD_NAME).read_bytes()
     assert vcd_a == vcd_b
     assert manifest_a["hashes"]["vcd_sha256"] == manifest_b["hashes"]["vcd_sha256"]
+    sequential = extract_sequential_register_vcd_activity(
+        out_a / _OUTPUT_VCD_NAME,
+        source_vcd_sha256=manifest_a["hashes"]["vcd_sha256"],
+    )
+    register_names = {row["full_name"] for row in sequential["register_bits"]}
+    assert "gen_cluster[0]/u_cluster/reducer/numerator_accum[127][40]" in register_names
+    assert "gen_cluster[0]/u_cluster/score_tile/accum[7][31]" in register_names
+    assert "u_router/gen_resp_fifo[0]/u_resp_fifo/mem[3][157]" in register_names
+    assert "u_service/active_matrix[3][511]" in register_names
+    assert "u_service/gen_bank_fifo[3]/u_bank_fifo/mem[3][26]" in register_names
 
 
 @pytest.mark.skipif(not _iverilog_available(), reason="iverilog/vvp unavailable")
