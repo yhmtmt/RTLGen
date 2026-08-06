@@ -484,6 +484,34 @@ def _validate_generated_activity_manifest(
         raise ValueError("generated activity manifest workload contract mismatch")
     if float(activity_manifest.get("clock_period_ns", 0.0)) != 10.0:
         raise ValueError("generated activity manifest clock_period_ns mismatch")
+    validated_result_semantics = None
+    result_semantics = activity_manifest.get("result_semantics")
+    if result_semantics is not None:
+        if not isinstance(result_semantics, dict):
+            raise ValueError("generated activity manifest result_semantics must be an object when present")
+        result_mode = str(result_semantics.get("result_mode") or "").strip()
+        if result_mode not in {"normalized", "exact_partial"}:
+            raise ValueError("generated activity manifest result_semantics result_mode mismatch")
+        supports_sequence_window_composition = result_semantics.get("supports_sequence_window_composition")
+        if not isinstance(supports_sequence_window_composition, bool):
+            raise ValueError(
+                "generated activity manifest result_semantics supports_sequence_window_composition missing"
+            )
+        if supports_sequence_window_composition != (result_mode == "exact_partial"):
+            raise ValueError("generated activity manifest result_semantics composition flag mismatch")
+        composition_scope = str(result_semantics.get("composition_scope") or "").strip()
+        expected_composition_scope = (
+            "exact_partial_across_sequence_windows_before_finalization"
+            if result_mode == "exact_partial"
+            else "normalized_final_output_not_sequence_window_composable"
+        )
+        if composition_scope != expected_composition_scope:
+            raise ValueError("generated activity manifest result_semantics composition_scope mismatch")
+        validated_result_semantics = {
+            "result_mode": result_mode,
+            "supports_sequence_window_composition": supports_sequence_window_composition,
+            "composition_scope": composition_scope,
+        }
     cycle_count = int(activity_manifest.get("cycle_count", 0))
     if cycle_count <= 0:
         raise ValueError("generated activity manifest cycle_count must be positive")
@@ -526,6 +554,7 @@ def _validate_generated_activity_manifest(
         "generated_manifest_hashes": dict(activity_manifest.get("hashes") or {}),
         "bank_coverage": bank_coverage,
         "workload_contract": expected_workload,
+        "result_semantics": validated_result_semantics,
     }
 
 
@@ -734,6 +763,11 @@ def _prepare_postroute_power_manifest(
         "macro_counts": macro_counts,
         "macro_activity_contract": macro_activity_contract,
         "bank_coverage": generated_meta["bank_coverage"],
+        **(
+            {"result_semantics": generated_meta["result_semantics"]}
+            if generated_meta.get("result_semantics") is not None
+            else {}
+        ),
     }
 
 
@@ -991,6 +1025,8 @@ def build_report(
         else:
             candidate["status"] = "activity_backed"
             candidate["promotion_gate_pass"] = True
+            if activity_meta.get("result_semantics") is not None:
+                service_window_energy["result_semantics"] = dict(activity_meta["result_semantics"])
             candidate["component_service_window_energy"] = service_window_energy
             authoritative_ppa = {
                 "critical_path_ns": float(metric["critical_path_ns"]),
@@ -1057,6 +1093,11 @@ def build_report(
             "clock_period_ns": clock_period_ns,
             "cycle_count": int(activity_meta["cycle_count"]),
             "workload_contract": activity_meta["workload_contract"],
+            **(
+                {"result_semantics": activity_meta["result_semantics"]}
+                if activity_meta.get("result_semantics") is not None
+                else {}
+            ),
         },
         "macro_manifest_contract": {
             "counts": activity_meta["macro_counts"],

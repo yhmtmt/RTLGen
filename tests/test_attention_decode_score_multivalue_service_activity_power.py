@@ -234,9 +234,10 @@ def _generated_activity_manifest(
     final_hash: str = "final-hash",
     request_hash: str = "request-hash",
     wide_hash: str = "wide-hash",
+    result_mode: str | None = "normalized",
 ) -> dict:
     counts = _scaled_counts(cluster_count)
-    return {
+    payload = {
         "model": "attention_decode_score_multivalue_service_activity_v1",
         "case_id": case_id,
         "workload_contract": _workload_contract(),
@@ -261,6 +262,17 @@ def _generated_activity_manifest(
             "wide_response_matrix_hash": wide_hash,
         },
     }
+    if result_mode is not None:
+        payload["result_semantics"] = {
+            "result_mode": result_mode,
+            "supports_sequence_window_composition": result_mode == "exact_partial",
+            "composition_scope": (
+                "exact_partial_across_sequence_windows_before_finalization"
+                if result_mode == "exact_partial"
+                else "normalized_final_output_not_sequence_window_composable"
+            ),
+        }
+    return payload
 
 
 def _adapted_manifest(
@@ -308,6 +320,11 @@ def _adapted_manifest(
             "wide_response_matrix_hash": wide_hash,
         },
         "workload_contract": _workload_contract(),
+        "result_semantics": {
+            "result_mode": "normalized",
+            "supports_sequence_window_composition": False,
+            "composition_scope": "normalized_final_output_not_sequence_window_composable",
+        },
         "macro_counts": dict(macro_counts),
         "macro_activity_contract": {
             "profile": "multivalue_service_c1_v1",
@@ -480,6 +497,11 @@ def test_prepare_postroute_manifest_preserves_generated_contract(tmp_path: Path)
         "generated_manifest_hashes": generated_hashes,
         "bank_coverage": {"inactive_banks": [3]},
         "workload_contract": _workload_contract(),
+        "result_semantics": {
+            "result_mode": "normalized",
+            "supports_sequence_window_composition": False,
+            "composition_scope": "normalized_final_output_not_sequence_window_composable",
+        },
     }
 
     with mock.patch.object(
@@ -507,6 +529,7 @@ def test_prepare_postroute_manifest_preserves_generated_contract(tmp_path: Path)
 
     assert activity_meta["generated_manifest_hashes"] == generated_hashes
     assert activity_meta["workload_contract"] == _workload_contract()
+    assert activity_meta["result_semantics"]["result_mode"] == "normalized"
 
 
 def test_build_report_success_keeps_paths_portable_and_writes_markdown(tmp_path: Path) -> None:
@@ -579,6 +602,11 @@ def test_build_report_success_keeps_paths_portable_and_writes_markdown(tmp_path:
     assert payload["bank3_dynamic_inactivity"]["inactive_banks"] == [3]
     assert payload["dependency_contract"]["integrated_service_c1"]["config"]["cluster_count"] == 1
     assert payload["activity_contract"]["workload_contract"] == _workload_contract()
+    assert payload["activity_contract"]["result_semantics"]["result_mode"] == "normalized"
+    assert (
+        payload["best"]["component_service_window_energy"]["result_semantics"]["composition_scope"]
+        == "normalized_final_output_not_sequence_window_composable"
+    )
     assert payload["physical_signoff"]["status"] == "routed_with_electrical_caveat"
     assert payload["physical_signoff"]["route_checks"]["max_cap_violations"] == 142
     assert payload["physical_signoff"]["route_checks"]["worst_max_cap_slack_ff"] == -17.81
@@ -677,6 +705,18 @@ def test_validate_generated_activity_manifest_rejects_128_as_active_context(tmp_
 
     with pytest.raises(ValueError, match="workload contract mismatch"):
         audit._validate_generated_activity_manifest(payload, tmp_path)
+
+
+def test_validate_generated_activity_manifest_accepts_legacy_missing_result_semantics(tmp_path: Path) -> None:
+    payload = _generated_activity_manifest(result_mode=None)
+    (tmp_path / audit._OUTPUT_MANIFEST_NAME).write_text(
+        json.dumps(payload, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
+    validated = audit._validate_generated_activity_manifest(payload, tmp_path)
+
+    assert validated["result_semantics"] is None
 
 
 def test_build_report_rejects_generated_activity_hash_mismatch(tmp_path: Path) -> None:
