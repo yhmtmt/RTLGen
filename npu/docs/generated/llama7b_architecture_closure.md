@@ -21,7 +21,7 @@
 | Dense Compute | measured_component | medium | closed | closed | measured_component | open | measured_component | measured_component |
 | Norm | open | low | rtl_unmeasured | open | open | open | open | open |
 | Score/Softmax | measured_component | medium | closed | measured_component | measured_component | measured_component | measured_component | measured_component |
-| Multivalue Service | routed_with_caveat | medium | closed | closed | routed_with_caveat | open | measured_component | rtl_unmeasured |
+| Multivalue Service | routed_with_caveat | medium | closed | closed | routed_with_caveat | measured_component | measured_component | rtl_unmeasured |
 | Reducer | measured_component | medium | closed | closed | measured_component | open | measured_component | rtl_unmeasured |
 | Producer-Service-Reducer Composition | rtl_unmeasured | low | closed | measured_component | open | open | rtl_unmeasured | open |
 | NoC | open | low | measured_component | open | measured_component | measured_component | open | open |
@@ -137,8 +137,8 @@ Evidence:
 
 - status: `routed_with_caveat`
 - confidence: `medium`
-- summary: The c1 multivalue-service island now has an accepted routed result and exact integrated-service consumer, so this block has crossed from pure modeling into measured silicon-facing evidence. It remains exploratory routed PPA, not signoff, because the accepted row still carries max-cap violations.
-- next gate: Measure the dedicated c1 activity-power job and then clean the electrical max-cap issue before generalizing the service-island PPA.
+- summary: The c1 multivalue-service island now has accepted routed PPA, exact integrated-service composition, and promoted strict composed-service activity evidence. It remains exploratory routed component evidence rather than electrical signoff because the accepted row still carries max-cap violations, and the activity result measures only the direct service window instead of total-token energy.
+- next gate: Keep the c1 electrical caveat explicit, then extend the same strict composed-service activity gate beyond c1 and fold the promoted anchor into the next service-aware Llama7B rerank.
 - accepted c1 routed result:
   - tag: `decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_3000_v1_macro_conservative_c1_die_3000`
   - critical path: `6.7148 ns`
@@ -152,18 +152,21 @@ Evidence:
 | `rtl` | `closed` | The multivalue service island exists as the exact integrated-service RTL path used by the current frontier work. |
 | `equivalence` | `closed` | The c1 route is anchored to the merged exact integrated-service proof consumed by the Llama7B service model. |
 | `routed_ppa` | `routed_with_caveat` | PR1548 accepted the c1 route as exploratory routed PPA: timing and route health are clean except for max-cap violations. |
-| `activity` | `open` | A dedicated post-route activity-power closure for the accepted c1 service row is not yet merged. |
-| `composition` | `measured_component` | The exact integrated-service L2 consumer already uses this service family as a real measured island instead of a free service placeholder. |
+| `activity` | `measured_component` | The strict c1 routed composed-service activity-power audit is promoted for the accepted route, with macro/sequential gates passing and only direct service-window component energy claimed. |
+| `composition` | `measured_component` | The service family is now backed by exact integrated-service composition and a promoted c1 routed activity anchor instead of a free service placeholder. |
 | `scale_validation` | `rtl_unmeasured` | Only the c1 island is accepted at this routed level; wider service-island scaling and electrical cleanup remain open. |
 
 Caveats:
 - Treat the c1 result as exploratory routed PPA only. It is not a signoff-clean macro.
 - The accepted row is timing-feasible and route-clean for DRC/setup/hold/slew, but the remaining max-cap violations can still move buffer count, power, or timing once fixed.
+- The promoted activity result measures direct c1 service-window component energy only. It is not a full-token or full-subsystem energy signoff.
 
 Evidence:
 - `control_plane/shadow_exports/l1_promotions/l1_decoder_attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_pnr_v1_r3.json` (promotion_record; `equivalence`, `routed_ppa`): Promotion record for the accepted c1 routed row from merged PR1548.
 - `runs/designs/npu_blocks/attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr/metrics.csv` (metrics_csv; `routed_ppa`): Contains the accepted c1 metrics row with 6.7148 ns critical path and 0.26 mW vectorless power.
 - `runs/designs/npu_blocks/attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr/physical_signoff.json` (physical_signoff; `routed_ppa`): Canonical routed electrical review record: DRC/setup/hold/slew clean with 142 max-cap violations and worst slack -17.81 fF.
+- `runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_service_activity_power__l2_decoder_attention_decode_score_multivalue_service_c1_activity_power_llama7b_v1_r8.json` (activity_report; `activity`, `composition`): Promoted strict c1 composed-service activity-power evidence: macro and sequential activity gates pass, bank3 remains intentionally unforced, and only direct service-window component energy is claimed.
+- `control_plane/shadow_exports/l2_decisions/l2_decoder_attention_decode_score_multivalue_service_c1_activity_power_llama7b_v1_r8.json` (decision_record; `activity`, `composition`): Portable promotion/decision record for the accepted strict c1 composed-service activity result, preserving the routed_with_electrical_caveat qualifier and non-signoff scope.
 - `docs/proposals/prop_l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1/analysis_report.md` (proposal_analysis; `rtl`, `composition`): Documents the exact integrated-service consumer that makes the c1 service island meaningful in the Llama7B model.
 
 ## Reducer

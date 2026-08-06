@@ -4,7 +4,7 @@
   "model": "llama7b",
   "scope": "Decoder-attention architecture exploration with persistent closure tracking",
   "as_of": "2026-08-06",
-  "source_commit_floor": "6a5696448276c6c079dcfe13910c0a170f5f7663",
+  "source_commit_floor": "1e8cdd767e7767a9b07393ea9945eb7d5315b069",
   "generated_markdown": "npu/docs/generated/llama7b_architecture_closure.md",
   "component_order": [
     "precision",
@@ -358,7 +358,7 @@
       "label": "Multivalue Service",
       "status": "routed_with_caveat",
       "confidence": "medium",
-      "summary": "The c1 multivalue-service island now has an accepted routed result and exact integrated-service consumer, so this block has crossed from pure modeling into measured silicon-facing evidence. It remains exploratory routed PPA, not signoff, because the accepted row still carries max-cap violations.",
+      "summary": "The c1 multivalue-service island now has accepted routed PPA, exact integrated-service composition, and promoted strict composed-service activity evidence. It remains exploratory routed component evidence rather than electrical signoff because the accepted row still carries max-cap violations, and the activity result measures only the direct service window instead of total-token energy.",
       "dimensions": {
         "rtl": {
           "status": "closed",
@@ -373,12 +373,12 @@
           "summary": "PR1548 accepted the c1 route as exploratory routed PPA: timing and route health are clean except for max-cap violations."
         },
         "activity": {
-          "status": "open",
-          "summary": "A dedicated post-route activity-power closure for the accepted c1 service row is not yet merged."
+          "status": "measured_component",
+          "summary": "The strict c1 routed composed-service activity-power audit is promoted for the accepted route, with macro/sequential gates passing and only direct service-window component energy claimed."
         },
         "composition": {
           "status": "measured_component",
-          "summary": "The exact integrated-service L2 consumer already uses this service family as a real measured island instead of a free service placeholder."
+          "summary": "The service family is now backed by exact integrated-service composition and a promoted c1 routed activity anchor instead of a free service placeholder."
         },
         "scale_validation": {
           "status": "rtl_unmeasured",
@@ -426,6 +426,24 @@
           "note": "Canonical routed electrical review record: DRC/setup/hold/slew clean with 142 max-cap violations and worst slack -17.81 fF."
         },
         {
+          "path": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_service_activity_power__l2_decoder_attention_decode_score_multivalue_service_c1_activity_power_llama7b_v1_r8.json",
+          "kind": "activity_report",
+          "dimensions": [
+            "activity",
+            "composition"
+          ],
+          "note": "Promoted strict c1 composed-service activity-power evidence: macro and sequential activity gates pass, bank3 remains intentionally unforced, and only direct service-window component energy is claimed."
+        },
+        {
+          "path": "control_plane/shadow_exports/l2_decisions/l2_decoder_attention_decode_score_multivalue_service_c1_activity_power_llama7b_v1_r8.json",
+          "kind": "decision_record",
+          "dimensions": [
+            "activity",
+            "composition"
+          ],
+          "note": "Portable promotion/decision record for the accepted strict c1 composed-service activity result, preserving the routed_with_electrical_caveat qualifier and non-signoff scope."
+        },
+        {
           "path": "docs/proposals/prop_l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1/analysis_report.md",
           "kind": "proposal_analysis",
           "dimensions": [
@@ -437,9 +455,10 @@
       ],
       "caveats": [
         "Treat the c1 result as exploratory routed PPA only. It is not a signoff-clean macro.",
-        "The accepted row is timing-feasible and route-clean for DRC/setup/hold/slew, but the remaining max-cap violations can still move buffer count, power, or timing once fixed."
+        "The accepted row is timing-feasible and route-clean for DRC/setup/hold/slew, but the remaining max-cap violations can still move buffer count, power, or timing once fixed.",
+        "The promoted activity result measures direct c1 service-window component energy only. It is not a full-token or full-subsystem energy signoff."
       ],
-      "next_gate": "Measure the dedicated c1 activity-power job and then clean the electrical max-cap issue before generalizing the service-island PPA."
+      "next_gate": "Keep the c1 electrical caveat explicit, then extend the same strict composed-service activity gate beyond c1 and fold the promoted anchor into the next service-aware Llama7B rerank."
     },
     {
       "id": "reducer",
