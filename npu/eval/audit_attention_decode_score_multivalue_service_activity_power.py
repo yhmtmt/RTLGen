@@ -79,7 +79,10 @@ _SERVICE_CASES = {
         case_id="c1_p128_b4_rr",
         cluster_count=1,
         design="attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr",
-        flow_variant="decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_3000_v1",
+        flow_variant=(
+            "decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_3000_v1_"
+            "macro_conservative_c1_die_3000"
+        ),
         macro_counts={"fakeram45_2048x39": 56, "fakeram45_64x32": 64},
         dependency_key="integrated_service_c1",
         authoritative_ppa_key="authoritative_composed_c1_total_ppa",
