@@ -28,6 +28,7 @@ _ALLOWED_DATASET_PREFIXES = {
     "decoder_attention_decode_score_tile_",
     "decoder_attention_decode_score_local_cluster_",
     "decoder_attention_decode_score_multivalue_cluster_",
+    "decoder_attention_decode_score_multivalue_service_",
     "decoder_attention_decode_score_multivalue_gqa_group_",
     "decoder_attention_decode_score_multivalue_gqa_folded_lane_",
     "decoder_attention_mixed_int8_",

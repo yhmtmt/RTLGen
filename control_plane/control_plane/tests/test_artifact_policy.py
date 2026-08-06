@@ -177,6 +177,18 @@ def test_transportable_expected_output_allows_decode_score_multivalue_cluster_eq
     assert is_transportable_expected_output(f"{base}{stem}.md")
 
 
+def test_transportable_expected_output_allows_decode_score_multivalue_service_activity() -> None:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+    stem = (
+        "decoder_attention_decode_score_multivalue_service_activity_power__"
+        "l2_decoder_attention_decode_score_multivalue_service_c1_activity_power_"
+        "llama7b_v1_r3"
+    )
+
+    assert is_transportable_expected_output(f"{base}{stem}.json")
+    assert is_transportable_expected_output(f"{base}{stem}.md")
+
+
 def test_transportable_expected_output_allows_decode_score_multivalue_gqa_group_equivalence() -> None:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
     stem = (
