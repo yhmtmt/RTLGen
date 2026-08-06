@@ -1,0 +1,106 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-08-06T09:22:18.789890Z",
+  "item_id": "l1_decoder_attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_pnr_v1_r3",
+  "run_key": "l1_decoder_attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_pnr_v1_r3_run_5bf089fc8ab688a2",
+  "layer": "layer1",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l1_sweep",
+  "source_commit": "712fa5a05c388e944ace6003191dceeb995a4edc",
+  "objective": "Measure macro-backed c1 composed score/value/service fabric PPA at 10ns after exact integrated-service equivalence and conversion of repaired residual supply roots into routable SIGNAL nets.",
+  "input_manifest": {
+    "sweeps": [
+      "runs/campaigns/npu/decode_score_multivalue_service_v1/sweeps/nangate45_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_3000.json"
+    ],
+    "configs": [
+      "runs/designs/npu_blocks/attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr/config.json"
+    ],
+    "out_root": "runs/designs/npu_blocks",
+    "design_dirs": [],
+    "macro_manifests": [],
+    "candidate_manifests": [],
+    "required_submodules": []
+  },
+  "proposal_count": 1,
+  "evaluation_record": {
+    "evaluation_mode": "frontier_followup",
+    "abstraction_layer": "decoder_attention_decode_score_multivalue_service",
+    "result_kind": "physical_metrics",
+    "physical_metrics_present": true,
+    "summary": "Physical metrics recorded from a completed, timing-feasible Layer 1 row.",
+    "timing_feasible": true,
+    "clock_period_ns": 10.0,
+    "timing_slack_ns": 3.2851999999999997
+  },
+  "proposal_assessment": null,
+  "proposals": [
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/npu_blocks/attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "696d01b6",
+        "tag": "decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_3000_v1_macro_conservative_c1_die_3000",
+        "result_path": "/orfs/flow/reports/nangate45/attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr/decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_3000_v1_macro_conservative_c1_die_3000/6_finish.rpt",
+        "work_result_json": "runs/designs/npu_blocks/attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr/work/696d01b6/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 6.7148,
+        "die_area": 9000000.0,
+        "total_power_mw": 0.26
+      }
+    }
+  ],
+  "trial_summary": {
+    "item_id": "l1_decoder_attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_pnr_v1_r3",
+    "completed_trials": 1,
+    "success_count": 1,
+    "failure_count": 0,
+    "success_rate": 1.0,
+    "partial_metrics_count": 0,
+    "metrics": {
+      "critical_path_ns": {
+        "best": 6.7148,
+        "mean": 6.7148,
+        "median": 6.7148,
+        "max": 6.7148,
+        "range": 0.0,
+        "stddev": 0.0
+      },
+      "die_area": {
+        "best": 9000000.0,
+        "mean": 9000000.0,
+        "median": 9000000.0,
+        "max": 9000000.0,
+        "range": 0.0,
+        "stddev": 0.0
+      },
+      "total_power_mw": {
+        "best": 0.26,
+        "mean": 0.26,
+        "median": 0.26,
+        "max": 0.26,
+        "range": 0.0,
+        "stddev": 0.0
+      }
+    },
+    "aggregation_scope": "current_run_checkout_commit",
+    "aggregation_source_commit": "712fa5a05c388e944ace6003191dceeb995a4edc",
+    "aggregation_included_attempts": 1,
+    "aggregation_excluded_attempts": 0,
+    "aggregation_excluded_source_commits": {},
+    "aggregation_excluded_attempt_run_keys": [],
+    "aggregation_excluded_attempt_run_keys_truncated": false
+  },
+  "source_refs": {
+    "trial_metrics_csvs": [
+      "runs/designs/npu_blocks/attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr/metrics.csv"
+    ],
+    "summary_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_pnr_v1_r3/summary_stats.json",
+    "failure_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_pnr_v1_r3/failure_stats.json",
+    "trial_table_csv": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_pnr_v1_r3/trial_table.csv"
+  }
+}

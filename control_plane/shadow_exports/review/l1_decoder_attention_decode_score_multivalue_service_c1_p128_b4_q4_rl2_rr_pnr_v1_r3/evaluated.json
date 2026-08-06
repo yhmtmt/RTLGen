@@ -1,0 +1,145 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "sweeps": [
+        "runs/campaigns/npu/decode_score_multivalue_service_v1/sweeps/nangate45_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_3000.json"
+      ],
+      "configs": [
+        "runs/designs/npu_blocks/attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr/config.json"
+      ],
+      "out_root": "runs/designs/npu_blocks",
+      "design_dirs": [],
+      "macro_manifests": [],
+      "candidate_manifests": [],
+      "required_submodules": []
+    },
+    "commands": [
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/rtlgen/gen_attention_decode_score_multivalue_service.py --config runs/designs/npu_blocks/attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr/config.json --out runs/designs/npu_blocks/attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr/verilog",
+        "name": "generate_attention_decode_score_multivalue_service_rtl"
+      },
+      {
+        "run": "python3 npu/eval/check_attention_decode_score_multivalue_service_guard.py --design-dir runs/designs/npu_blocks/attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr --config runs/designs/npu_blocks/attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr/config.json",
+        "name": "check_attention_decode_score_multivalue_service_guard"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/synth/run_block_sweep.py --design_dir runs/designs/npu_blocks/attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr --platform nangate45 --top attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr --sweep runs/campaigns/npu/decode_score_multivalue_service_v1/sweeps/nangate45_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_3000.json --out_root runs/designs/npu_blocks --macro_manifest runs/designs/npu_blocks/attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr/macro_manifest.json --skip_existing",
+        "name": "run_block_sweep"
+      },
+      {
+        "run": "python3 npu/eval/check_attention_decode_score_multivalue_service_physical.py --design-dir runs/designs/npu_blocks/attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr --metrics-path runs/designs/npu_blocks/attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr/metrics.csv --sweep runs/campaigns/npu/decode_score_multivalue_service_v1/sweeps/nangate45_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_3000.json",
+        "name": "check_attention_decode_score_multivalue_service_physical"
+      },
+      {
+        "run": "python3 npu/eval/extract_openroad_timing_summary.py --design-dir runs/designs/npu_blocks/attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr --out runs/designs/npu_blocks/attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr/timing_debug_report.md --max-paths 8",
+        "name": "extract_attention_decode_score_multivalue_service_timing_paths"
+      },
+      {
+        "run": "python3 scripts/build_runs_index.py",
+        "name": "build_runs_index"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate"
+      }
+    ],
+    "metadata": {
+      "acceptance_notes": "Each generated wrapper metrics.csv contains at least one status=ok row for the queued sweep; committed outputs stay lightweight; build_runs_index and validate_runs pass."
+    },
+    "objective": "Measure macro-backed c1 composed score/value/service fabric PPA at 10ns after exact integrated-service equivalence and conversion of repaired residual supply roots into routable SIGNAL nets.",
+    "acceptance": [
+      "Each generated wrapper metrics.csv contains at least one status=ok row for the queued sweep",
+      "Committed outputs stay lightweight (metrics.csv only; runs/index.csv is exported centrally after merge)",
+      "python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue pass"
+    ],
+    "source_mode": "config",
+    "expected_outputs": [
+      "runs/designs/npu_blocks/attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr/metrics.csv",
+      "runs/designs/npu_blocks/attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr/timing_debug_report.md"
+    ]
+  },
+  "layer": "layer1",
+  "state": "evaluated",
+  "title": "Retry c1 decode-score multivalue composed service PNR after routable tie-net fix",
+  "result": {
+    "branch": "eval/l1_decoder_attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_pnr_v1_r3/s20260806t092219z",
+    "completed_utc": "2026-08-06T09:22:17.235086Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "b7c2d9c80c1c",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260806t092219z][host:b7c2d9c80c1c][item:l1_decoder_attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_pnr_v1_r3]",
+    "metrics_rows": [
+      {
+        "tag": "decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_3000_v1_macro_conservative_c1_die_3000",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "696d01b6",
+        "metrics_csv": "runs/designs/npu_blocks/attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr/work/696d01b6/result.json"
+      }
+    ],
+    "queue_item_id": "l1_decoder_attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_pnr_v1_r3",
+    "session_id": "s20260806t092219z",
+    "status": "ok",
+    "summary": "7/7 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l1_decoder_attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_pnr_v1_r3/s20260806t092219z",
+    "pr_title": "eval: run retry c1 decode-score multivalue composed service pnr after routable tie-net fix",
+    "checklist": [
+      "Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge",
+      "Include metrics row references for each completed design",
+      "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260806t092219z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l1_decoder_attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_pnr_v1_r3"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l1_decoder_attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_pnr_v1_r3",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 99,
+  "created_utc": "2026-08-05T09:42:44.362940Z",
+  "requested_by": "developer_agent",
+  "developer_loop": {
+    "comparison": {
+      "role": "composed_service_c1_physical_prep",
+      "paired_baseline_item_id": "l1_decoder_attention_decode_score_multivalue_cluster_pnr_v1"
+    },
+    "evaluation": {
+      "mode": "frontier_followup",
+      "trial_policy": {
+        "seed_start": 0,
+        "trial_count": 1,
+        "stop_after_failures": 1
+      },
+      "expected_reason": "Retry the same c1 point after OpenDB proof that the tie-driven residual constant net must be converted from GROUND to SIGNAL for TritonRoute.",
+      "expected_direction": "measure_composed_multivalue_service_c1_ppa"
+    },
+    "abstraction": {
+      "layer": "decoder_attention_decode_score_multivalue_service"
+    },
+    "proposal_id": "prop_l1_decoder_attention_decode_score_multivalue_service_pnr_v1",
+    "dependencies": {
+      "item_ids": [
+        "l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1_r1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    },
+    "proposal_path": "docs/proposals/prop_l1_decoder_attention_decode_score_multivalue_service_pnr_v1/proposal.json"
+  },
+  "source_requirement": {
+    "repo": "",
+    "reason": "evaluator runtime must contain the queued job source commit",
+    "version": 1,
+    "required_ref": "origin/master",
+    "required_sha": "712fa5a05c388e944ace6003191dceeb995a4edc",
+    "requires_daemon_restart": true
+  }
+}
