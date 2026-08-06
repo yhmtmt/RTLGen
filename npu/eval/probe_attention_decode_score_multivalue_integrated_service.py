@@ -20,6 +20,11 @@ if str(REPO_ROOT) not in sys.path:
 
 from npu.rtlgen.gen_attention_decode_score_multivalue_cluster import generate as generate_cluster
 from npu.rtlgen.gen_attention_decode_score_multivalue_service import generate as generate_service
+from npu.sim.perf.attention_exact_partial import (
+    HEAD_ID_BITS,
+    partial_stream_from_blocks,
+    unpack_numerators,
+)
 from npu.sim.perf.attention_online import finalize_value, requantize_score_row, two_pass_stats
 from npu.sim.perf.attention_separated import unpack_signed
 
@@ -234,6 +239,9 @@ _BASE_SCORE_RE = re.compile(r"BASE_SWRITE cluster=(\d+) addr=(\d+) row=([0-9a-fA
 _BASE_RESULT_RE = re.compile(
     r"BASE_RESULT cluster=(\d+) slice=(\d+) last=(\d+) id=(\d+) max=(-?\d+) sum=(\d+) value=([0-9a-fA-F]+) cycle=(\d+) error=(\d+)"
 )
+_BASE_RESULT_EXACT_RE = re.compile(
+    r"BASE_RESULT cluster=(\d+) slice=(\d+) last=(\d+) id=(\d+) head=(\d+) max=(-?\d+) sum=(\d+) value=([0-9a-fA-F]+) cycle=(\d+) error=(\d+)"
+)
 _BASE_DONE_RE = re.compile(r"BASE_DONE cluster=(\d+) cycle=(\d+) accepted=(\d+) completed=(\d+)")
 _BASE_SUMMARY_RE = re.compile(r"BASE_SUMMARY completion_cycle=(\d+) protocol_error=(\d+)")
 
@@ -244,6 +252,9 @@ _INT_WIDE_RE = re.compile(
 )
 _INT_RESULT_RE = re.compile(
     r"INT_RESULT cluster=(\d+) slice=(\d+) last=(\d+) id=(\d+) max=(-?\d+) sum=(\d+) value=([0-9a-fA-F]+) cycle=(\d+) error=(\d+)"
+)
+_INT_RESULT_EXACT_RE = re.compile(
+    r"INT_RESULT cluster=(\d+) slice=(\d+) last=(\d+) id=(\d+) head=(\d+) max=(-?\d+) sum=(\d+) value=([0-9a-fA-F]+) cycle=(\d+) error=(\d+)"
 )
 _INT_DONE_RE = re.compile(r"INT_DONE cluster=(\d+) cycle=(\d+) accepted=(\d+) completed=(\d+)")
 _INT_COUNTER_RE = re.compile(
@@ -417,25 +428,51 @@ def _raw_scores(block: list[tuple[int, list[int]]]) -> list[int]:
     return [sum(query * keys[lane] for query, keys in block) for lane in range(8)]
 
 
-def _cluster_expected(cluster_index: int, values: list[list[list[list[int]]]]) -> JsonDict:
+def _cluster_expected(
+    cluster_index: int, values: list[list[list[list[int]]]], *, case: JsonDict | None = None
+) -> JsonDict:
     workload = _workload_contract()
     expected_counts = _workload_expected_counts(workload)
     beats = _cluster_beats(cluster_index, head_dim=int(workload["value_dim"]))
     score_rows = [list(requantize_score_row(_raw_scores(block), multiplier=1, shift=0)) for block in beats]
     results: list[JsonDict] = []
-    for value_slice in range(int(expected_counts["result_count"])):
-        stats = two_pass_stats(score_rows, [values[block][value_slice] for block in range(len(values))])
-        results.append(
-            {
-                "cluster": cluster_index,
-                "slice": value_slice,
-                "last": value_slice == int(expected_counts["result_count"]) - 1,
-                "command_id": 0x4A21 + cluster_index,
-                "global_max": stats.max_score,
-                "exp_sum": stats.exp_sum,
-                "value": list(finalize_value(stats)),
-            }
+    case_payload = dict(case or {})
+    result_mode = _case_result_mode(case_payload)
+    head_id_bits = _case_head_id_bits(case_payload)
+    if result_mode == "exact_partial":
+        partials = partial_stream_from_blocks(
+            command_id=0x4A21 + cluster_index,
+            head_id=_command_head_id(cluster_index, head_id_bits=head_id_bits),
+            score_rows=score_rows,
+            value_blocks=values,
         )
+        for beat in partials:
+            results.append(
+                {
+                    "cluster": cluster_index,
+                    "slice": int(beat.slice_index),
+                    "last": bool(beat.last),
+                    "command_id": int(beat.command_id),
+                    "head_id": int(beat.head_id),
+                    "global_max": int(beat.max_score),
+                    "exp_sum": int(beat.exp_sum),
+                    "value": list(beat.numerators),
+                }
+            )
+    else:
+        for value_slice in range(int(expected_counts["result_count"])):
+            stats = two_pass_stats(score_rows, [values[block][value_slice] for block in range(len(values))])
+            results.append(
+                {
+                    "cluster": cluster_index,
+                    "slice": value_slice,
+                    "last": value_slice == int(expected_counts["result_count"]) - 1,
+                    "command_id": 0x4A21 + cluster_index,
+                    "global_max": stats.max_score,
+                    "exp_sum": stats.exp_sum,
+                    "value": list(finalize_value(stats)),
+                }
+            )
     request_records = []
     response_records = []
     tag = 0
@@ -487,16 +524,37 @@ def _preload_entries(values: list[list[list[list[int]]]]) -> list[JsonDict]:
     return entries
 
 
-def _cluster_config(top_name: str) -> JsonDict:
+def _case_result_mode(case: JsonDict) -> str:
+    return str(case.get("result_mode", "normalized")).strip().lower() or "normalized"
+
+
+def _case_head_id_bits(case: JsonDict) -> int:
+    return int(case.get("head_id_bits", HEAD_ID_BITS))
+
+
+def _command_head_id(cluster_index: int, *, head_id_bits: int = HEAD_ID_BITS) -> int:
+    return (3 + (cluster_index * 5)) & ((1 << head_id_bits) - 1)
+
+
+def _cluster_config(
+    top_name: str,
+    *,
+    result_mode: str = "normalized",
+    head_id_bits: int = HEAD_ID_BITS,
+) -> JsonDict:
+    body: JsonDict = {
+        "max_blocks": 16,
+        "array_n": 8,
+        "value_slices": 16,
+        "divider_impl": "iterative_restoring",
+        "score_scale_lanes_per_cycle": 1,
+    }
+    if result_mode == "exact_partial":
+        body["result_mode"] = "exact_partial"
+        body["head_id_bits"] = int(head_id_bits)
     return {
         "top_name": top_name,
-        "attention_decode_score_multivalue_cluster": {
-            "max_blocks": 16,
-            "array_n": 8,
-            "value_slices": 16,
-            "divider_impl": "iterative_restoring",
-            "score_scale_lanes_per_cycle": 1,
-        },
+        "attention_decode_score_multivalue_cluster": body,
     }
 
 
@@ -569,31 +627,40 @@ def _workload_expected_counts(contract: JsonDict | None = None) -> JsonDict:
 
 def _service_config(case: JsonDict, top_name: str) -> JsonDict:
     workload = _workload_contract()
+    body: JsonDict = {
+        "cluster_count": int(case["cluster_count"]),
+        "max_blocks": int(workload["max_blocks"]),
+        "packet_w": int(case["packet_w"]),
+        "banks": int(case["banks"]),
+        "req_queue_depth": int(case["req_queue_depth"]),
+        "resp_queue_depth": int(case["resp_queue_depth"]),
+        "bank_queue_depth": int(case["bank_queue_depth"]),
+        "read_latency": int(case["read_latency"]),
+        "arb_mode": str(case["arb_mode"]),
+        "locality_burst_max": int(case["locality_burst_max"]),
+        "score_scale_lanes_per_cycle": 1,
+    }
+    if _case_result_mode(case) == "exact_partial":
+        body["result_mode"] = "exact_partial"
+        body["head_id_bits"] = _case_head_id_bits(case)
     return {
         "top_name": top_name,
-        "attention_decode_score_multivalue_service": {
-            "cluster_count": int(case["cluster_count"]),
-            "max_blocks": int(workload["max_blocks"]),
-            "packet_w": int(case["packet_w"]),
-            "banks": int(case["banks"]),
-            "req_queue_depth": int(case["req_queue_depth"]),
-            "resp_queue_depth": int(case["resp_queue_depth"]),
-            "bank_queue_depth": int(case["bank_queue_depth"]),
-            "read_latency": int(case["read_latency"]),
-            "arb_mode": str(case["arb_mode"]),
-            "locality_burst_max": int(case["locality_burst_max"]),
-            "score_scale_lanes_per_cycle": 1,
-        },
+        "attention_decode_score_multivalue_service": body,
     }
 
 
-def _baseline_testbench(*, top_name: str, cluster_count: int, values: list[list[list[list[int]]]]) -> str:
+def _baseline_testbench(*, top_name: str, cluster_count: int, values: list[list[list[list[int]]]], case: JsonDict) -> str:
     workload = _workload_contract()
     expected_counts = _workload_expected_counts(workload)
     if len(values) != int(workload["command_block_count"]):
         raise ValueError("baseline workload values do not match command_block_count")
     total_beats = int(expected_counts["input_beat_count"])
     result_count = int(expected_counts["result_count"])
+    result_mode = _case_result_mode(case)
+    partial_mode = result_mode == "exact_partial"
+    head_id_bits = _case_head_id_bits(case)
+    result_value_bits = 328 if partial_mode else 320
+    value_hex_width = 82 if partial_mode else 80
     value_init = "\n".join(
         f"    value_mem[{addr * result_count + value_slice}] = 512'h{entry['matrix_hex']};"
         for addr in range(int(workload["command_block_count"]))
@@ -670,15 +737,17 @@ def _baseline_testbench(*, top_name: str, cluster_count: int, values: list[list[
       end
 """
         )
-        per_cluster_log.append(
-            f"""      if (u_cluster_{cluster}.score_write_valid && u_cluster_{cluster}.score_write_ready) begin
+        if partial_mode:
+            per_cluster_log.append(
+                f"""      if (u_cluster_{cluster}.score_write_valid && u_cluster_{cluster}.score_write_ready) begin
         $display("BASE_SWRITE cluster={cluster} addr=%0d row=%064x", u_cluster_{cluster}.score_write_addr, u_cluster_{cluster}.score_write_data);
       end
       if (cluster_result_valid[{cluster}] && cluster_result_ready[{cluster}]) begin
-        $display("BASE_RESULT cluster={cluster} slice=%0d last=%0d id=%0d max=%0d sum=%0d value=%080x cycle=%0d error=%0d",
+        $display("BASE_RESULT cluster={cluster} slice=%0d last=%0d id=%0d head=%0d max=%0d sum=%0d value=%0{value_hex_width}x cycle=%0d error=%0d",
                  cluster_result_slice[(4*{cluster}) +: 4], cluster_result_last[{cluster}],
-                 cluster_result_command_id[(16*{cluster}) +: 16], $signed(cluster_result_global_max[(32*{cluster}) +: 32]),
-                 cluster_result_exp_sum[(33*{cluster}) +: 33], cluster_result_value[(320*{cluster}) +: 320], cycle, cluster_protocol_error[{cluster}]);
+                 cluster_result_command_id[(16*{cluster}) +: 16], cluster_result_head_id[({head_id_bits}*{cluster}) +: {head_id_bits}],
+                 $signed(cluster_result_global_max[(32*{cluster}) +: 32]), cluster_result_exp_sum[(33*{cluster}) +: 33],
+                 cluster_result_value[({result_value_bits}*{cluster}) +: {result_value_bits}], cycle, cluster_protocol_error[{cluster}]);
         result_count[{cluster}] <= result_count[{cluster}] + 1;
         if (cluster_result_last[{cluster}]) begin
           done[{cluster}] <= 1'b1;
@@ -688,14 +757,41 @@ def _baseline_testbench(*, top_name: str, cluster_count: int, values: list[list[
         end
       end
 """
-        )
+            )
+        else:
+            per_cluster_log.append(
+                f"""      if (u_cluster_{cluster}.score_write_valid && u_cluster_{cluster}.score_write_ready) begin
+        $display("BASE_SWRITE cluster={cluster} addr=%0d row=%064x", u_cluster_{cluster}.score_write_addr, u_cluster_{cluster}.score_write_data);
+      end
+      if (cluster_result_valid[{cluster}] && cluster_result_ready[{cluster}]) begin
+        $display("BASE_RESULT cluster={cluster} slice=%0d last=%0d id=%0d max=%0d sum=%0d value=%0{value_hex_width}x cycle=%0d error=%0d",
+                 cluster_result_slice[(4*{cluster}) +: 4], cluster_result_last[{cluster}],
+                 cluster_result_command_id[(16*{cluster}) +: 16], $signed(cluster_result_global_max[(32*{cluster}) +: 32]),
+                 cluster_result_exp_sum[(33*{cluster}) +: 33], cluster_result_value[({result_value_bits}*{cluster}) +: {result_value_bits}], cycle, cluster_protocol_error[{cluster}]);
+        result_count[{cluster}] <= result_count[{cluster}] + 1;
+        if (cluster_result_last[{cluster}]) begin
+          done[{cluster}] <= 1'b1;
+          done_cycle[{cluster}] <= cycle;
+          $display("BASE_DONE cluster={cluster} cycle=%0d accepted=%0d completed=%0d", cycle,
+                   cluster_accepted_count[(32*{cluster}) +: 32], cluster_completed_count[(32*{cluster}) +: 32]);
+        end
+      end
+"""
+            )
         per_cluster_done.append(f"done[{cluster}]")
 
     instances = "\n".join(
         f"""  {top_name} u_cluster_{cluster} (
       .clk(clk), .rst_n(rst_n),
       .command_valid(cluster_command_valid[{cluster}]), .command_ready(cluster_command_ready[{cluster}]),
-      .command_id(cluster_command_id[(16*{cluster}) +: 16]), .command_block_count(cluster_command_block_count[(15*{cluster}) +: 15]),
+      .command_id(cluster_command_id[(16*{cluster}) +: 16]), .command_block_count(cluster_command_block_count[(15*{cluster}) +: 15]),"""
+        + (
+            f"""
+      .command_head_id(cluster_command_head_id[({head_id_bits}*{cluster}) +: {head_id_bits}]),"""
+            if partial_mode
+            else ""
+        )
+        + f"""
       .command_score_multiplier(cluster_command_score_multiplier[(32*{cluster}) +: 32]),
       .command_score_shift(cluster_command_score_shift[(6*{cluster}) +: 6]),
       .input_valid(cluster_input_valid[{cluster}]), .input_ready(cluster_input_ready[{cluster}]), .input_last(input_last[{cluster}]),
@@ -707,12 +803,39 @@ def _baseline_testbench(*, top_name: str, cluster_count: int, values: list[list[
       .value_response_matrix(value_response_matrix[(512*{cluster}) +: 512]),
       .result_valid(cluster_result_valid[{cluster}]), .result_ready(cluster_result_ready[{cluster}]),
       .result_command_id(cluster_result_command_id[(16*{cluster}) +: 16]), .result_global_max(cluster_result_global_max[(32*{cluster}) +: 32]),
-      .result_exp_sum(cluster_result_exp_sum[(33*{cluster}) +: 33]), .result_slice(cluster_result_slice[(4*{cluster}) +: 4]),
-      .result_last(cluster_result_last[{cluster}]), .result_value(cluster_result_value[(320*{cluster}) +: 320]),
+      .result_exp_sum(cluster_result_exp_sum[(33*{cluster}) +: 33]),"""
+        + (
+            f"""
+      .result_head_id(cluster_result_head_id[({head_id_bits}*{cluster}) +: {head_id_bits}]),"""
+            if partial_mode
+            else ""
+        )
+        + f"""
+      .result_slice(cluster_result_slice[(4*{cluster}) +: 4]),
+      .result_last(cluster_result_last[{cluster}]), .result_value(cluster_result_value[({result_value_bits}*{cluster}) +: {result_value_bits}]),
       .accepted_count(cluster_accepted_count[(32*{cluster}) +: 32]), .completed_count(cluster_completed_count[(32*{cluster}) +: 32]),
       .cycle_count(cluster_cycle_count[(32*{cluster}) +: 32]), .protocol_error(cluster_protocol_error[{cluster}])
   );"""
         for cluster in range(cluster_count)
+    )
+    command_head_decl = (
+        f"  reg [CLUSTERS*{head_id_bits}-1:0] cluster_command_head_id;\n" if partial_mode else ""
+    )
+    result_head_decl = (
+        f"  wire [CLUSTERS*{head_id_bits}-1:0] cluster_result_head_id;\n" if partial_mode else ""
+    )
+    command_head_init = (
+        "    cluster_command_head_id = {(CLUSTERS*" + str(head_id_bits) + "){1'b0}};\n"
+        if partial_mode
+        else ""
+    )
+    command_head_per_cluster = (
+        "\n".join(
+            f"    cluster_command_head_id[({head_id_bits}*{cluster}) +: {head_id_bits}] = {head_id_bits}'d{_command_head_id(cluster, head_id_bits=head_id_bits)};"
+            for cluster in range(cluster_count)
+        )
+        if partial_mode
+        else ""
     )
     return f"""`timescale 1ns/1ps
 {_FAKERAM_MODEL}
@@ -725,7 +848,7 @@ module tb;
   wire [CLUSTERS-1:0] cluster_command_ready;
   reg [CLUSTERS*16-1:0] cluster_command_id;
   reg [CLUSTERS*15-1:0] cluster_command_block_count;
-  reg [CLUSTERS*32-1:0] cluster_command_score_multiplier;
+{command_head_decl}  reg [CLUSTERS*32-1:0] cluster_command_score_multiplier;
   reg [CLUSTERS*6-1:0] cluster_command_score_shift;
   reg [CLUSTERS-1:0] cluster_input_valid;
   wire [CLUSTERS-1:0] cluster_input_ready;
@@ -746,9 +869,9 @@ module tb;
   wire [CLUSTERS*16-1:0] cluster_result_command_id;
   wire [CLUSTERS*32-1:0] cluster_result_global_max;
   wire [CLUSTERS*33-1:0] cluster_result_exp_sum;
-  wire [CLUSTERS*4-1:0] cluster_result_slice;
+{result_head_decl}  wire [CLUSTERS*4-1:0] cluster_result_slice;
   wire [CLUSTERS-1:0] cluster_result_last;
-  wire [CLUSTERS*320-1:0] cluster_result_value;
+  wire [CLUSTERS*{result_value_bits}-1:0] cluster_result_value;
   wire [CLUSTERS*32-1:0] cluster_accepted_count;
   wire [CLUSTERS*32-1:0] cluster_completed_count;
   wire [CLUSTERS*32-1:0] cluster_cycle_count;
@@ -810,7 +933,7 @@ module tb;
 {chr(10).join(per_cluster_mem_init)}
     cluster_command_id = {{(CLUSTERS*16){{1'b0}}}};
     cluster_command_block_count = {{(CLUSTERS*15){{1'b0}}}};
-    cluster_command_score_multiplier = {{(CLUSTERS*32){{1'b0}}}};
+{command_head_init}    cluster_command_score_multiplier = {{(CLUSTERS*32){{1'b0}}}};
     cluster_command_score_shift = {{(CLUSTERS*6){{1'b0}}}};
     for (idx = 0; idx < CLUSTERS; idx = idx + 1) begin
       cluster_command_id[(16*idx) +: 16] = 16'h4a21 + idx[15:0];
@@ -818,6 +941,7 @@ module tb;
       cluster_command_score_multiplier[(32*idx) +: 32] = 32'd1;
       cluster_command_score_shift[(6*idx) +: 6] = 6'd0;
     end
+{command_head_per_cluster}
     repeat (3) @(posedge clk);
     @(negedge clk);
     rst_n = 1'b1;
@@ -831,6 +955,7 @@ def _integrated_testbench(
     top_name: str,
     cluster_count: int,
     values: list[list[list[list[int]]]],
+    case: JsonDict,
     vcd_path: str | None = None,
     vcd_dumpvars: list[str] | None = None,
     clock_period_ns: float = 10.0,
@@ -843,6 +968,11 @@ def _integrated_testbench(
         raise ValueError("integrated workload values do not match command_block_count")
     total_beats = int(expected_counts["input_beat_count"])
     source_w = max(1, (cluster_count - 1).bit_length())
+    result_mode = _case_result_mode(case)
+    partial_mode = result_mode == "exact_partial"
+    head_id_bits = _case_head_id_bits(case)
+    result_value_bits = 328 if partial_mode else 320
+    value_hex_width = 82 if partial_mode else 80
     entries = _preload_entries(values)
     if len(entries) != int(expected_counts["preload_entry_count"]):
         raise ValueError("integrated workload preload entries do not match the derived contract")
@@ -931,6 +1061,55 @@ def _integrated_testbench(
         per_cluster_done.append(f"done[{cluster}]")
 
     clock_stmt = "  always #5 clk = ~clk;" if clock_period_ns == 10.0 else f"  always #{clock_period_ns / 2.0:g} clk = ~clk;"
+    command_head_decl = (
+        f"  reg [CLUSTERS*{head_id_bits}-1:0] cluster_command_head_id;\n" if partial_mode else ""
+    )
+    cluster_result_head_decl = (
+        f"  wire [CLUSTERS*{head_id_bits}-1:0] cluster_result_head_id;\n" if partial_mode else ""
+    )
+    shared_result_head_decl = (
+        f"  wire [{head_id_bits - 1}:0] shared_result_head_id;\n" if partial_mode else ""
+    )
+    blocked_head_decl = (
+        f"  reg [{head_id_bits - 1}:0] blocked_head_id_q;\n" if partial_mode else ""
+    )
+    command_head_init = (
+        "    cluster_command_head_id = {(CLUSTERS*" + str(head_id_bits) + "){1'b0}};\n"
+        if partial_mode
+        else ""
+    )
+    command_head_per_cluster = (
+        "\n".join(
+            f"    cluster_command_head_id[({head_id_bits}*{cluster}) +: {head_id_bits}] = {head_id_bits}'d{_command_head_id(cluster, head_id_bits=head_id_bits)};"
+            for cluster in range(cluster_count)
+        )
+        if partial_mode
+        else ""
+    )
+    blocked_head_reset = f"\n      blocked_head_id_q <= {head_id_bits}'d0;" if partial_mode else ""
+    blocked_head_capture = (
+        "\n          blocked_head_id_q <= shared_result_head_id;" if partial_mode else ""
+    )
+    blocked_head_compare = " ||\n                     (shared_result_head_id != blocked_head_id_q)" if partial_mode else ""
+    cluster_command_head_port_conn = (
+        "    .cluster_command_head_id(cluster_command_head_id),\n" if partial_mode else ""
+    )
+    cluster_result_head_port_conn = (
+        "    .cluster_result_head_id(cluster_result_head_id),\n" if partial_mode else ""
+    )
+    shared_result_head_port_conn = (
+        "    .shared_result_head_id(shared_result_head_id),\n" if partial_mode else ""
+    )
+    int_result_display = (
+        f"""        $display("INT_RESULT cluster=%0d slice=%0d last=%0d id=%0d head=%0d max=%0d sum=%0d value=%0{value_hex_width}x cycle=%0d error=%0d",
+                 shared_result_cluster, shared_result_slice, shared_result_last, shared_result_command_id,
+                 shared_result_head_id, $signed(shared_result_global_max), shared_result_exp_sum, shared_result_value, cycle, protocol_error);"""
+        if partial_mode
+        else
+        f"""        $display("INT_RESULT cluster=%0d slice=%0d last=%0d id=%0d max=%0d sum=%0d value=%0{value_hex_width}x cycle=%0d error=%0d",
+                 shared_result_cluster, shared_result_slice, shared_result_last, shared_result_command_id,
+                 $signed(shared_result_global_max), shared_result_exp_sum, shared_result_value, cycle, protocol_error);"""
+    )
     tb = f"""`timescale 1ns/1ps
 {_FAKERAM_MODEL}
 module tb;
@@ -953,7 +1132,7 @@ module tb;
   wire [CLUSTERS-1:0] cluster_command_ready;
   reg [CLUSTERS*16-1:0] cluster_command_id;
   reg [CLUSTERS*15-1:0] cluster_command_block_count;
-  reg [CLUSTERS*32-1:0] cluster_command_score_multiplier;
+{command_head_decl}  reg [CLUSTERS*32-1:0] cluster_command_score_multiplier;
   reg [CLUSTERS*6-1:0] cluster_command_score_shift;
   reg [CLUSTERS-1:0] cluster_input_valid;
   wire [CLUSTERS-1:0] cluster_input_ready;
@@ -965,18 +1144,18 @@ module tb;
   wire [CLUSTERS*16-1:0] cluster_result_command_id;
   wire [CLUSTERS*32-1:0] cluster_result_global_max;
   wire [CLUSTERS*33-1:0] cluster_result_exp_sum;
-  wire [CLUSTERS*4-1:0] cluster_result_slice;
+{cluster_result_head_decl}  wire [CLUSTERS*4-1:0] cluster_result_slice;
   wire [CLUSTERS-1:0] cluster_result_last;
-  wire [CLUSTERS*320-1:0] cluster_result_value;
+  wire [CLUSTERS*{result_value_bits}-1:0] cluster_result_value;
   wire shared_result_valid;
   reg  shared_result_ready;
   wire [{source_w - 1}:0] shared_result_cluster;
   wire [15:0] shared_result_command_id;
   wire [31:0] shared_result_global_max;
   wire [32:0] shared_result_exp_sum;
-  wire [3:0] shared_result_slice;
+{shared_result_head_decl}  wire [3:0] shared_result_slice;
   wire shared_result_last;
-  wire [319:0] shared_result_value;
+  wire [{result_value_bits - 1}:0] shared_result_value;
   wire [CLUSTERS*32-1:0] cluster_accepted_count;
   wire [CLUSTERS*32-1:0] cluster_completed_count;
   wire [CLUSTERS*32-1:0] cluster_cycle_count;
@@ -1026,9 +1205,9 @@ module tb;
   reg [15:0] blocked_command_id_q;
   reg [31:0] blocked_global_max_q;
   reg [32:0] blocked_exp_sum_q;
-  reg [3:0] blocked_slice_q;
+{blocked_head_decl}  reg [3:0] blocked_slice_q;
   reg blocked_last_q;
-  reg [319:0] blocked_value_q;
+  reg [{result_value_bits - 1}:0] blocked_value_q;
 {chr(10).join(per_cluster_decl)}
 
 {clock_stmt}
@@ -1045,7 +1224,7 @@ module tb;
     .cluster_command_ready(cluster_command_ready),
     .cluster_command_id(cluster_command_id),
     .cluster_command_block_count(cluster_command_block_count),
-    .cluster_command_score_multiplier(cluster_command_score_multiplier),
+{cluster_command_head_port_conn}    .cluster_command_score_multiplier(cluster_command_score_multiplier),
     .cluster_command_score_shift(cluster_command_score_shift),
     .cluster_input_valid(cluster_input_valid),
     .cluster_input_ready(cluster_input_ready),
@@ -1057,7 +1236,7 @@ module tb;
     .cluster_result_command_id(cluster_result_command_id),
     .cluster_result_global_max(cluster_result_global_max),
     .cluster_result_exp_sum(cluster_result_exp_sum),
-    .cluster_result_slice(cluster_result_slice),
+{cluster_result_head_port_conn}    .cluster_result_slice(cluster_result_slice),
     .cluster_result_last(cluster_result_last),
     .cluster_result_value(cluster_result_value),
     .shared_result_valid(shared_result_valid),
@@ -1066,7 +1245,7 @@ module tb;
     .shared_result_command_id(shared_result_command_id),
     .shared_result_global_max(shared_result_global_max),
     .shared_result_exp_sum(shared_result_exp_sum),
-    .shared_result_slice(shared_result_slice),
+{shared_result_head_port_conn}    .shared_result_slice(shared_result_slice),
     .shared_result_last(shared_result_last),
     .shared_result_value(shared_result_value),
     .cluster_accepted_count(cluster_accepted_count),
@@ -1134,9 +1313,10 @@ module tb;
       blocked_command_id_q <= 16'd0;
       blocked_global_max_q <= 32'd0;
       blocked_exp_sum_q <= 33'd0;
+{blocked_head_reset}
       blocked_slice_q <= 4'd0;
       blocked_last_q <= 1'b0;
-      blocked_value_q <= 320'd0;
+      blocked_value_q <= {result_value_bits}'d0;
       for (idx = 0; idx < CLUSTERS; idx = idx + 1) begin
         done_cycle[idx] <= 0;
         req_count[idx] <= 0;
@@ -1180,13 +1360,14 @@ module tb;
           blocked_command_id_q <= shared_result_command_id;
           blocked_global_max_q <= shared_result_global_max;
           blocked_exp_sum_q <= shared_result_exp_sum;
+{blocked_head_capture}
           blocked_slice_q <= shared_result_slice;
           blocked_last_q <= shared_result_last;
           blocked_value_q <= shared_result_value;
         end else if ((shared_result_cluster != blocked_cluster_q) ||
                      (shared_result_command_id != blocked_command_id_q) ||
                      (shared_result_global_max != blocked_global_max_q) ||
-                     (shared_result_exp_sum != blocked_exp_sum_q) ||
+                     (shared_result_exp_sum != blocked_exp_sum_q){blocked_head_compare} ||
                      (shared_result_slice != blocked_slice_q) ||
                      (shared_result_last != blocked_last_q) ||
                      (shared_result_value != blocked_value_q)) begin
@@ -1205,9 +1386,7 @@ module tb;
           shared_result_back_to_back_seen <= 1'b1;
         end
         shared_result_count[shared_result_cluster] <= shared_result_count[shared_result_cluster] + 1;
-        $display("INT_RESULT cluster=%0d slice=%0d last=%0d id=%0d max=%0d sum=%0d value=%080x cycle=%0d error=%0d",
-                 shared_result_cluster, shared_result_slice, shared_result_last, shared_result_command_id,
-                 $signed(shared_result_global_max), shared_result_exp_sum, shared_result_value, cycle, protocol_error);
+{int_result_display}
         if (shared_result_last) begin
           done[shared_result_cluster] <= 1'b1;
           done_cycle[shared_result_cluster] <= cycle;
@@ -1243,7 +1422,7 @@ module tb;
 {chr(10).join(per_cluster_mem_init)}
     cluster_command_id = {{(CLUSTERS*16){{1'b0}}}};
     cluster_command_block_count = {{(CLUSTERS*15){{1'b0}}}};
-    cluster_command_score_multiplier = {{(CLUSTERS*32){{1'b0}}}};
+{command_head_init}    cluster_command_score_multiplier = {{(CLUSTERS*32){{1'b0}}}};
     cluster_command_score_shift = {{(CLUSTERS*6){{1'b0}}}};
     for (idx = 0; idx < CLUSTERS; idx = idx + 1) begin
       cluster_command_id[(16*idx) +: 16] = 16'h4a21 + idx[15:0];
@@ -1251,6 +1430,7 @@ module tb;
       cluster_command_score_multiplier[(32*idx) +: 32] = 32'd1;
       cluster_command_score_shift[(6*idx) +: 6] = 6'd0;
     end
+{command_head_per_cluster}
     repeat (3) @(posedge clk);
     @(negedge clk);
     rst_n = 1'b1;
@@ -1309,36 +1489,56 @@ def _parse_score_lines(stdout: str, pattern: re.Pattern[str]) -> list[JsonDict]:
     return rows
 
 
-def _parse_result_lines(stdout: str, pattern: re.Pattern[str]) -> list[JsonDict]:
+def _parse_result_lines(stdout: str, pattern: re.Pattern[str], *, result_mode: str) -> list[JsonDict]:
     rows: list[JsonDict] = []
     for line in stdout.splitlines():
         if match := pattern.fullmatch(line.strip()):
-            rows.append(
-                {
-                    "cluster": int(match.group(1)),
-                    "slice": int(match.group(2)),
-                    "last": bool(int(match.group(3))),
-                    "command_id": int(match.group(4)),
-                    "global_max": int(match.group(5)),
-                    "exp_sum": int(match.group(6)),
-                    "value": unpack_signed(int(match.group(7), 16), lanes=8, bits=40),
-                    "cycle": int(match.group(8)),
-                    "protocol_error": bool(int(match.group(9))),
-                }
-            )
+            if result_mode == "exact_partial":
+                rows.append(
+                    {
+                        "cluster": int(match.group(1)),
+                        "slice": int(match.group(2)),
+                        "last": bool(int(match.group(3))),
+                        "command_id": int(match.group(4)),
+                        "head_id": int(match.group(5)),
+                        "global_max": int(match.group(6)),
+                        "exp_sum": int(match.group(7)),
+                        "value": list(unpack_numerators(int(match.group(8), 16))),
+                        "cycle": int(match.group(9)),
+                        "protocol_error": bool(int(match.group(10))),
+                    }
+                )
+            else:
+                rows.append(
+                    {
+                        "cluster": int(match.group(1)),
+                        "slice": int(match.group(2)),
+                        "last": bool(int(match.group(3))),
+                        "command_id": int(match.group(4)),
+                        "global_max": int(match.group(5)),
+                        "exp_sum": int(match.group(6)),
+                        "value": unpack_signed(int(match.group(7), 16), lanes=8, bits=40),
+                        "cycle": int(match.group(8)),
+                        "protocol_error": bool(int(match.group(9))),
+                    }
+                )
     return rows
 
 
 def _run_baseline(case: JsonDict, expected_clusters: list[JsonDict], values: list[list[list[list[int]]]]) -> JsonDict:
     cluster_count = int(case["cluster_count"])
+    result_mode = _case_result_mode(case)
+    head_id_bits = _case_head_id_bits(case)
     with tempfile.TemporaryDirectory(prefix="multivalue-baseline-") as tmp_text:
         tmp = Path(tmp_text)
         rtl_dir = tmp / "rtl"
         tb_path = tmp / "tb.sv"
         top_name = f"baseline_cluster_c{cluster_count}"
-        generate_cluster(_cluster_config(top_name), rtl_dir)
+        generate_cluster(
+            _cluster_config(top_name, result_mode=result_mode, head_id_bits=head_id_bits), rtl_dir
+        )
         tb_path.write_text(
-            _baseline_testbench(top_name=top_name, cluster_count=cluster_count, values=values),
+            _baseline_testbench(top_name=top_name, cluster_count=cluster_count, values=values, case=case),
             encoding="utf-8",
         )
         stdout = _compile_and_run(sources=[rtl_dir / "top.v", tb_path])
@@ -1348,7 +1548,11 @@ def _run_baseline(case: JsonDict, expected_clusters: list[JsonDict], values: lis
         top_sha = _sha256_file(rtl_dir / "top.v")
 
     scores = _parse_score_lines(stdout, _BASE_SCORE_RE)
-    results = _parse_result_lines(stdout, _BASE_RESULT_RE)
+    results = _parse_result_lines(
+        stdout,
+        _BASE_RESULT_EXACT_RE if result_mode == "exact_partial" else _BASE_RESULT_RE,
+        result_mode=result_mode,
+    )
     done_rows = {
         int(match.group(1)): {
             "cycle": int(match.group(2)),
@@ -1377,6 +1581,7 @@ def _run_baseline(case: JsonDict, expected_clusters: list[JsonDict], values: lis
 
 def _run_integrated(case: JsonDict, values: list[list[list[list[int]]]]) -> JsonDict:
     cluster_count = int(case["cluster_count"])
+    result_mode = _case_result_mode(case)
     with tempfile.TemporaryDirectory(prefix="multivalue-integrated-") as tmp_text:
         tmp = Path(tmp_text)
         rtl_dir = tmp / "rtl"
@@ -1384,7 +1589,7 @@ def _run_integrated(case: JsonDict, values: list[list[list[list[int]]]]) -> Json
         top_name = f"integrated_service_c{cluster_count}_p{case['packet_w']}_b{case['banks']}"
         generate_service(_service_config(case, top_name), rtl_dir)
         tb_path.write_text(
-            _integrated_testbench(top_name=top_name, cluster_count=cluster_count, values=values),
+            _integrated_testbench(top_name=top_name, cluster_count=cluster_count, values=values, case=case),
             encoding="utf-8",
         )
         stdout = _compile_and_run(sources=[rtl_dir / "top.v", tb_path], timeout=240)
@@ -1419,7 +1624,11 @@ def _run_integrated(case: JsonDict, values: list[list[list[list[int]]]]) -> Json
         for line in stdout.splitlines()
         if (match := _INT_WIDE_RE.fullmatch(line.strip()))
     ]
-    results = _parse_result_lines(stdout, _INT_RESULT_RE)
+    results = _parse_result_lines(
+        stdout,
+        _INT_RESULT_EXACT_RE if result_mode == "exact_partial" else _INT_RESULT_RE,
+        result_mode=result_mode,
+    )
     done_rows = {
         int(match.group(1)): {
             "cycle": int(match.group(2)),
@@ -1493,8 +1702,9 @@ def _canonical_scores(rows: list[JsonDict]) -> list[JsonDict]:
 
 
 def _canonical_results(rows: list[JsonDict]) -> list[JsonDict]:
-    return [
-        {
+    canonical_rows: list[JsonDict] = []
+    for row in sorted(rows, key=lambda item: (item["cluster"], item["slice"])):
+        payload = {
             "cluster": row["cluster"],
             "slice": row["slice"],
             "last": row["last"],
@@ -1503,8 +1713,10 @@ def _canonical_results(rows: list[JsonDict]) -> list[JsonDict]:
             "exp_sum": row["exp_sum"],
             "value": list(row["value"]),
         }
-        for row in sorted(rows, key=lambda item: (item["cluster"], item["slice"]))
-    ]
+        if "head_id" in row:
+            payload["head_id"] = row["head_id"]
+        canonical_rows.append(payload)
+    return canonical_rows
 
 
 def _canonical_requests(rows: list[JsonDict]) -> list[JsonDict]:
@@ -1537,7 +1749,7 @@ def _summarize_case(case: JsonDict, baseline: JsonDict, integrated: JsonDict, so
     cluster_count = int(case["cluster_count"])
     expected_counts = _workload_expected_counts()
     values = _shared_value_matrices()
-    expected_clusters = [_cluster_expected(cluster, values) for cluster in range(cluster_count)]
+    expected_clusters = [_cluster_expected(cluster, values, case=case) for cluster in range(cluster_count)]
     expected_scores = [
         {"cluster": cluster, "addr": addr, "row": rows}
         for cluster, payload in enumerate(expected_clusters)
@@ -1618,7 +1830,10 @@ def _summarize_case(case: JsonDict, baseline: JsonDict, integrated: JsonDict, so
                 "read_latency",
                 "arb_mode",
                 "locality_burst_max",
+                "result_mode",
+                "head_id_bits",
             )
+            if key in case
         },
         "baseline_no_stall": {
             "completion_cycle": baseline["completion_cycle"],
@@ -1787,6 +2002,8 @@ def _validate_case(case: JsonDict) -> JsonDict:
     read_latency = int(case.get("read_latency", -1))
     locality_burst_max = int(case.get("locality_burst_max", 0))
     arb_mode = str(case.get("arb_mode", "")).strip().lower()
+    result_mode = str(case.get("result_mode", "normalized")).strip().lower()
+    head_id_bits = int(case.get("head_id_bits", HEAD_ID_BITS))
     case_id = str(case.get("case_id") or "").strip()
     if not case_id:
         raise ValueError("case requires case_id")
@@ -1804,6 +2021,10 @@ def _validate_case(case: JsonDict) -> JsonDict:
         raise ValueError(f"{case_id}: arb_mode must be round_robin or locality_first_bounded")
     if locality_burst_max < 1:
         raise ValueError(f"{case_id}: locality_burst_max must be positive")
+    if result_mode not in {"normalized", "exact_partial"}:
+        raise ValueError(f"{case_id}: result_mode must be normalized or exact_partial")
+    if head_id_bits < 1 or head_id_bits > 8:
+        raise ValueError(f"{case_id}: head_id_bits must be in [1, 8]")
     return {
         "case_id": case_id,
         "cluster_count": cluster_count,
@@ -1815,7 +2036,29 @@ def _validate_case(case: JsonDict) -> JsonDict:
         "read_latency": read_latency,
         "arb_mode": arb_mode,
         "locality_burst_max": locality_burst_max,
+        "result_mode": result_mode,
+        "head_id_bits": head_id_bits,
     }
+
+
+def _config_with_result_mode(config: JsonDict | None, result_mode: str | None) -> JsonDict | None:
+    if result_mode is None:
+        return config
+    source = dict(config or {})
+    raw_cases = source.get("cases", DEFAULT_CASES)
+    if not isinstance(raw_cases, list) or not raw_cases:
+        raise ValueError("config cases must be a non-empty list")
+    cases: list[JsonDict] = []
+    for raw_case in raw_cases:
+        if not isinstance(raw_case, dict):
+            raise ValueError("config cases must contain objects")
+        case = dict(raw_case)
+        case["result_mode"] = result_mode
+        if result_mode == "exact_partial":
+            case.setdefault("head_id_bits", HEAD_ID_BITS)
+        cases.append(case)
+    source["cases"] = cases
+    return source
 
 
 def build_report(
@@ -1843,9 +2086,13 @@ def build_report(
     }
     manifest_catalog: dict[str, JsonDict] = {}
     top_catalog: dict[str, JsonDict] = {}
+    any_exact_partial = any(_case_result_mode(case) == "exact_partial" for case in cases)
     reports = []
     for case in cases:
-        expected_clusters = [_cluster_expected(cluster, values) for cluster in range(int(case["cluster_count"]))]
+        expected_clusters = [
+            _cluster_expected(cluster, values, case=case)
+            for cluster in range(int(case["cluster_count"]))
+        ]
         baseline = _run_baseline(case, expected_clusters, values)
         integrated = _run_integrated(case, values)
         source_refs = _record_case_source_refs(
@@ -1893,13 +2140,16 @@ def build_report(
                     "sha256": _sha256_file(REPO_ROOT / rel),
                 }
                 for rel in (
-                    "npu/rtlgen/gen_attention_decode_score_multivalue_service.py",
-                    "npu/eval/probe_attention_decode_score_multivalue_integrated_service.py",
-                    "npu/rtlgen/gen_attention_decode_score_multivalue_cluster.py",
-                    "npu/sim/rtl/noc_ready_valid_fifo.sv",
-                    "npu/sim/rtl/noc_ready_valid_router.sv",
-                    "npu/sim/rtl/banked_value_memory_service.sv",
-                    "npu/sim/rtl/noc_value_matrix_reassembler.sv",
+                    [
+                        "npu/rtlgen/gen_attention_decode_score_multivalue_service.py",
+                        "npu/eval/probe_attention_decode_score_multivalue_integrated_service.py",
+                        "npu/rtlgen/gen_attention_decode_score_multivalue_cluster.py",
+                        "npu/sim/rtl/noc_ready_valid_fifo.sv",
+                        "npu/sim/rtl/noc_ready_valid_router.sv",
+                        "npu/sim/rtl/banked_value_memory_service.sv",
+                        "npu/sim/rtl/noc_value_matrix_reassembler.sv",
+                    ]
+                    + (["npu/sim/perf/attention_exact_partial.py"] if any_exact_partial else [])
                 )
             ],
             "generated_artifacts": {
@@ -2174,6 +2424,7 @@ def _build_markdown(report: JsonDict) -> str:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", type=Path)
+    parser.add_argument("--result-mode", choices=("normalized", "exact_partial"))
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--out-md", type=Path)
     parser.add_argument("--proposal-id")
@@ -2186,6 +2437,7 @@ def main() -> int:
         if not isinstance(config_payload, dict):
             raise SystemExit("config must decode to a JSON object")
         config = config_payload
+    config = _config_with_result_mode(config, args.result_mode)
     report = build_report(
         config,
         proposal_id=str(args.proposal_id or "").strip() or None,
