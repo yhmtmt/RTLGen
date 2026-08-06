@@ -695,6 +695,10 @@ _DECODER_EVIDENCE_OUTPUT_KEYS: tuple[tuple[str, str], ...] = (
         "decode_score_multivalue_integrated_service_report",
     ),
     (
+        "decode_score_multivalue_service_exact_partial_equivalence_out",
+        "decode_score_multivalue_service_exact_partial_equivalence_report",
+    ),
+    (
         "score_bank_proxy_equivalence_out",
         "score_bank_proxy_equivalence_report",
     ),
