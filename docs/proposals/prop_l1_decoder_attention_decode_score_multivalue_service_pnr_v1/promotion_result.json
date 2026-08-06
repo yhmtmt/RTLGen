@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_decode_score_multivalue_service_pnr_v1",
+  "decision": "promote",
+  "pr_number": 1548,
+  "merge_commit": "cf2956c850e528fe84e632b27e42d126716ddc5f",
+  "merged_utc": "2026-08-06T11:14:03Z"
+}

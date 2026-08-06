@@ -1,0 +1,15 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_decode_score_multivalue_service_pnr_v1",
+  "candidate_id": "l1_decoder_attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_pnr_v1_r3",
+  "decision": "promote",
+  "reason": "Accepted Layer 1 physical metrics were merged in PR #1548 for the current candidate.",
+  "evidence_refs": [
+    "item:l1_decoder_attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_pnr_v1_r3",
+    "run:l1_decoder_attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_pnr_v1_r3_run_5bf089fc8ab688a2",
+    "artifact:control_plane/shadow_exports/l1_promotions/l1_decoder_attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_pnr_v1_r3.json",
+    "pr:#1548",
+    "https://github.com/yhmtmt/RTLGen/pull/1548"
+  ],
+  "next_action": "inspect the next dependent item",
+  "requires_human_approval": false
+}

@@ -3,7 +3,7 @@
   "source_commit_note": "Replace with the merge commit that contains this corrected c1-first physical-prep patch before dispatch. Keep the original 3.0 mm c1 point as the conservative baseline request. Distinguish the retry lineage explicitly: r2 was the tie-driver retry that still left the net typed as GROUND, r3 is the corrected 3.0 mm SIGNAL-net retry currently under evaluation as of August 5, 2026, and the 3.6 mm / 3.5 mm envelope below is r4, a conditional congestion-recovery follow-on only if r3 does not produce acceptable routed evidence.",
   "requested_items": [
     {
-      "item_id": "l1_decoder_attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_pnr_v1",
+      "item_id": "l1_decoder_attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_pnr_v1_r3",
       "task_type": "l1_sweep",
       "objective": "Measure the composed multivalue service at c1 using the exact 4-bank x 16-lane fakeram45_64x32 value-memory macro contract and a conservative 3.0 mm die envelope.",
       "evaluation_mode": "frontier_followup",
@@ -23,7 +23,14 @@
         "direction": "measure_composed_multivalue_service_c1_ppa",
         "reason": "Record total composed PPA as the authoritative metric while using the single-cluster baseline only as implementation-context sensitivity, not intrinsic additive fabric PPA. This retry is specifically to verify that the deterministic post-floorplan residual tie-root hook removes the floating zero_/one_ structural condition before global routing."
       },
-      "status": "pending_implementation_merge"
+      "status": "merged",
+      "prior_item_ids": [
+        "l1_decoder_attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_pnr_v1"
+      ],
+      "merged_pr_number": 1548,
+      "merge_commit": "cf2956c850e528fe84e632b27e42d126716ddc5f",
+      "merged_utc": "2026-08-06T11:14:03Z",
+      "notes": "Merged via PR #1548 and merge cf2956c850e528fe84e632b27e42d126716ddc5f at 2026-08-06T11:14:03Z."
     },
     {
       "item_id": "l1_decoder_attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_pnr_v1_r4",
@@ -82,5 +89,6 @@
     "The explicit c1 r4 item is a 3.6 mm / 3.5 mm congestion-recovery sensitivity retry after the 3.0 mm point and is not an area-frontier replacement; it is conditional only if r3 cannot produce acceptable routed evidence.",
     "c8 is intentionally deferred from this first patch and remains a later-gated follow-up after c1/c2 feasibility is materialized.",
     "c16 and c32 remain later-gated follow-ups after c8 runtime and physical feasibility are proven."
-  ]
+  ],
+  "source_commit": "712fa5a05c388e944ace6003191dceeb995a4edc"
 }
