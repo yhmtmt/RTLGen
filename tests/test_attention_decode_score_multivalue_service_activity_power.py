@@ -405,6 +405,54 @@ def test_validate_generated_activity_manifest_and_macro_counts(tmp_path: Path) -
         audit._validate_macro_manifest_counts(macro_manifest)
 
 
+def test_prepare_postroute_manifest_preserves_generated_contract(tmp_path: Path) -> None:
+    vcd_path = tmp_path / audit._OUTPUT_VCD_NAME
+    vcd_path.write_text("$enddefinitions $end\n", encoding="utf-8")
+    (tmp_path / audit._OUTPUT_MACRO_MANIFEST_NAME).write_text("{}\n", encoding="utf-8")
+    (tmp_path / audit._OUTPUT_SERVICE_MANIFEST_NAME).write_text("{}\n", encoding="utf-8")
+    generated_hashes = {
+        "vcd_sha256": audit._sha256_file(vcd_path),
+        "score_hash": "score-hash",
+        "final_hash": "final-hash",
+        "request_hash": "request-hash",
+        "wide_response_matrix_hash": "wide-hash",
+    }
+    generated_meta = {
+        "generated_manifest_sha256": "manifest-hash",
+        "vcd_sha256": generated_hashes["vcd_sha256"],
+        "cycle_count": 321,
+        "generated_manifest_hashes": generated_hashes,
+        "bank_coverage": {"inactive_banks": [3]},
+        "workload_contract": _workload_contract(),
+    }
+
+    with mock.patch.object(
+        audit, "_validate_generated_activity_manifest", return_value=generated_meta
+    ), mock.patch.object(
+        audit,
+        "_validate_macro_manifest_counts",
+        return_value={"fakeram45_2048x39": 56, "fakeram45_64x32": 64},
+    ), mock.patch.object(
+        audit,
+        "extract_multivalue_service_fakeram_vcd_activity",
+        return_value={"pins": [{"full_name": "placeholder"}]},
+    ), mock.patch.object(
+        audit,
+        "_validate_service_macro_activity_contract",
+        return_value={"total_assignment_count": 9704},
+    ), mock.patch.object(
+        audit, "extract_sequential_register_vcd_activity", return_value={"signals": []}
+    ):
+        _, _, activity_meta = audit._prepare_postroute_power_manifest(
+            activity_dir=tmp_path,
+            activity_manifest={"clock_period_ns": 10.0},
+            case_contract=audit._SERVICE_CASES["c1_p128_b4_rr"],
+        )
+
+    assert activity_meta["generated_manifest_hashes"] == generated_hashes
+    assert activity_meta["workload_contract"] == _workload_contract()
+
+
 def test_build_report_success_keeps_paths_portable_and_writes_markdown(tmp_path: Path) -> None:
     config = tmp_path / "config.json"
     _config(config)
