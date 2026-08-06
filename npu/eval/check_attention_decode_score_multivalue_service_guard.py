@@ -49,9 +49,30 @@ def _source_w(cluster_count: int) -> int:
     return max(1, (cluster_count - 1).bit_length())
 
 
-def _top_pin_bits(cluster_count: int) -> int:
+def _semantic_profile(result_mode: str) -> str:
+    if result_mode == "exact_partial":
+        return "decode_m1x8_shared_score_16x8d_value_exact_partial_onchip_service_v1"
+    return "decode_m1x8_shared_score_16x8d_value_iterdiv_onchip_service_v1"
+
+
+def _cluster_semantic_profile(result_mode: str) -> str:
+    if result_mode == "exact_partial":
+        return "decode_m1x8_shared_score_16x8d_value_exact_partial_v1"
+    return "decode_m1x8_shared_score_16x8d_value_iterdiv_v1"
+
+
+def _result_value_bits(result_mode: str) -> int:
+    return 328 if result_mode == "exact_partial" else 320
+
+
+def _top_pin_bits(cluster_count: int, *, result_mode: str, head_id_bits: int) -> int:
     source_w = _source_w(cluster_count)
-    return (1487 + source_w) + (cluster_count * (687 + source_w))
+    base_bits = 1487 + source_w
+    per_cluster_bits = 687 + source_w
+    if result_mode == "exact_partial":
+        base_bits += head_id_bits + (_result_value_bits(result_mode) - 320)
+        per_cluster_bits += (2 * head_id_bits) + (_result_value_bits(result_mode) - 320)
+    return base_bits + (cluster_count * per_cluster_bits)
 
 
 def main() -> int:
@@ -104,8 +125,19 @@ def main() -> int:
     for key, expected in expected_config.items():
         _require(body, key, expected, "service config")
     cluster_count = int(body.get("cluster_count", 0))
+    result_mode = str(body.get("result_mode", "normalized")).strip().lower()
+    head_id_bits = int(body.get("head_id_bits", 5))
     if cluster_count not in _SUPPORTED_CLUSTER_COUNTS:
         raise SystemExit("service config cluster_count must be exactly one of 1 or 2 for this first physical patch")
+    if result_mode not in {"normalized", "exact_partial"}:
+        raise SystemExit("service config result_mode must be normalized or exact_partial")
+    if head_id_bits < 1 or head_id_bits > 8:
+        raise SystemExit("service config head_id_bits must be in [1, 8]")
+    if result_mode == "exact_partial":
+        if body.get("result_mode") != "exact_partial":
+            raise SystemExit("service config must explicitly set result_mode=exact_partial")
+        if "head_id_bits" not in body:
+            raise SystemExit("service config exact_partial mode must explicitly set head_id_bits")
 
     top_name = str(config.get("top_name") or "")
     expected_suffix = f"_c{cluster_count}_p128_b4_q4_rl2_rr"
@@ -116,7 +148,7 @@ def main() -> int:
     expected_manifest = {
         "top_name": top_name,
         "generator": "npu/rtlgen/gen_attention_decode_score_multivalue_service.py",
-        "semantic_profile": "decode_m1x8_shared_score_16x8d_value_iterdiv_onchip_service_v1",
+        "semantic_profile": _semantic_profile(result_mode),
         "cluster_count": cluster_count,
         "max_blocks": 16,
         "packet_w": 128,
@@ -131,6 +163,9 @@ def main() -> int:
         "value_slices": 16,
         "score_scale_lanes_per_cycle": 1,
         "fsm_encoding": "default",
+        "result_mode": result_mode,
+        "head_id_bits": head_id_bits,
+        "result_value_bits_per_beat": _result_value_bits(result_mode),
         "value_memory_backend": "macro_banked_4x16x64x32",
         "value_memory_promotable": True,
         "score_bank_macro_count": 56 * cluster_count,
@@ -140,14 +175,28 @@ def main() -> int:
         "shared_result_egress_initiation_interval": 1,
         "shared_result_egress_stall_semantics": "stable_until_handshake",
         "response_metadata_guard": "single_outstanding_per_cluster_v1",
-        "top_pin_bits": _top_pin_bits(cluster_count),
+        "top_pin_bits": _top_pin_bits(cluster_count, result_mode=result_mode, head_id_bits=head_id_bits),
     }
     for key, expected in expected_manifest.items():
         _require(manifest, key, expected, "generated manifest")
 
     cluster_manifest = manifest.get("submodule_manifests", {}).get("multivalue_cluster", {})
-    _require(cluster_manifest, "semantic_profile", "decode_m1x8_shared_score_16x8d_value_iterdiv_v1", "embedded cluster manifest")
+    _require(
+        cluster_manifest,
+        "semantic_profile",
+        _cluster_semantic_profile(result_mode),
+        "embedded cluster manifest",
+    )
     _require(cluster_manifest, "score_bank_macro_count", 56, "embedded cluster manifest")
+    _require(cluster_manifest, "result_mode", result_mode, "embedded cluster manifest")
+    _require(
+        cluster_manifest,
+        "result_value_bits_per_beat",
+        _result_value_bits(result_mode),
+        "embedded cluster manifest",
+    )
+    if result_mode == "exact_partial":
+        _require(cluster_manifest, "head_id_bits", head_id_bits, "embedded cluster manifest")
 
     design_macro_manifest = _load_json(paths["design_macro_manifest"])
     generated_macro_manifest = _load_json(paths["generated_macro_manifest"])
@@ -185,7 +234,7 @@ def main() -> int:
 
     macro_params = design_macro_manifest.get("manifest_params", {})
     expected_macro_params = {
-        "semantic_profile": "decode_m1x8_shared_score_16x8d_value_iterdiv_onchip_service_v1",
+        "semantic_profile": _semantic_profile(result_mode),
         "cluster_count": cluster_count,
         "score_bank_macro_count": 56 * cluster_count,
         "value_memory_backend": "macro_banked_4x16x64x32",
@@ -207,10 +256,13 @@ def main() -> int:
         "arb_mode": "round_robin",
         "locality_burst_max": 2,
         "score_scale_lanes_per_cycle": 1,
+        "result_mode": result_mode,
+        "head_id_bits": head_id_bits,
+        "result_value_bits_per_beat": _result_value_bits(result_mode),
         "score_passes_per_command": 1,
         "value_slices": 16,
         "shared_result_egress": "single_ready_valid_round_robin_hold_reg_v2",
-        "top_pin_bits": _top_pin_bits(cluster_count),
+        "top_pin_bits": _top_pin_bits(cluster_count, result_mode=result_mode, head_id_bits=head_id_bits),
         "macro_eval_excludes_io_pads": True,
     }
     for key, expected in expected_macro_params.items():
@@ -243,6 +295,18 @@ def main() -> int:
     for token in required_tokens:
         if token not in rtl:
             raise SystemExit(f"service RTL missing semantic token: {token}")
+    if result_mode == "exact_partial":
+        for token in (
+            "cluster_command_head_id",
+            "cluster_result_head_id",
+            "shared_result_head_id",
+            "raw_cluster_result_head_id",
+            "shared_result_head_id_q",
+            ".command_head_id(",
+            ".result_head_id(",
+        ):
+            if token not in rtl:
+                raise SystemExit(f"service RTL missing exact_partial token: {token}")
     for forbidden in ("equivalence_hash", "result_hash", "sha256", "checksum"):
         if re.search(rf"\b{re.escape(forbidden)}\b", rtl, flags=re.IGNORECASE):
             raise SystemExit(f"service RTL contains forbidden abstraction token: {forbidden}")
@@ -255,7 +319,10 @@ def main() -> int:
                 "design": top_name,
                 "guard": "attention_decode_score_multivalue_service_v1",
                 "cluster_count": cluster_count,
-                "top_pin_bits": _top_pin_bits(cluster_count),
+                "result_mode": result_mode,
+                "top_pin_bits": _top_pin_bits(
+                    cluster_count, result_mode=result_mode, head_id_bits=head_id_bits
+                ),
                 "status": "ok",
             },
             sort_keys=True,

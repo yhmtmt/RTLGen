@@ -1,7 +1,9 @@
 import hashlib
 import json
 from pathlib import Path
+import re
 import shutil
+import subprocess
 import sys
 
 import pytest
@@ -23,10 +25,16 @@ from npu.eval.probe_attention_decode_score_multivalue_integrated_service import 
     validate_report,
 )
 from npu.rtlgen.gen_attention_decode_score_multivalue_service import generate
+from npu.sim.perf.attention_exact_partial import pack_numerators, partial_stream_from_blocks
 
 
 def _iverilog_available() -> bool:
     return bool(shutil.which("iverilog") and shutil.which("vvp"))
+
+
+_EXACT_RESULT_RE = re.compile(
+    r"RESULT cmd=(\d+) head=(\d+) slice=(\d+) last=(\d+) max=(-?\d+) sum=(\d+) value=([0-9a-fA-F]+)"
+)
 
 
 def _case(
@@ -80,6 +88,8 @@ def test_multivalue_service_generator_manifest(tmp_path: Path) -> None:
     )
     macro_manifest = json.loads((tmp_path / "macro_manifest.json").read_text(encoding="utf-8"))
     assert manifest["semantic_profile"] == "decode_m1x8_shared_score_16x8d_value_iterdiv_onchip_service_v1"
+    assert manifest["result_mode"] == "normalized"
+    assert manifest["result_value_bits_per_beat"] == 320
     assert manifest["cluster_count"] == 4
     assert manifest["packet_w"] == 256
     assert manifest["banks"] == 8
@@ -92,6 +102,58 @@ def test_multivalue_service_generator_manifest(tmp_path: Path) -> None:
     assert macro_manifest["manifest_params"]["score_bank_macro_count"] == 224
     assert macro_manifest["manifest_params"]["value_memory_backend"] == "behavioral"
     assert macro_manifest["manifest_params"]["value_memory_promotable"] is False
+
+
+def test_multivalue_service_generator_exact_partial_manifest_and_ports(tmp_path: Path) -> None:
+    config = {
+        "top_name": "attention_decode_score_multivalue_service_exact_partial_c1",
+        "attention_decode_score_multivalue_service": {
+            "cluster_count": 1,
+            "max_blocks": 16,
+            "packet_w": 128,
+            "banks": 4,
+            "req_queue_depth": 2,
+            "resp_queue_depth": 2,
+            "bank_queue_depth": 2,
+            "read_latency": 1,
+            "arb_mode": "round_robin",
+            "locality_burst_max": 2,
+            "score_scale_lanes_per_cycle": 1,
+            "result_mode": "exact_partial",
+            "head_id_bits": 5,
+            "value_memory_backend": "behavioral",
+        },
+    }
+    generate(config, tmp_path)
+
+    manifest = json.loads(
+        (tmp_path / "attention_decode_score_multivalue_service_manifest.json").read_text(encoding="utf-8")
+    )
+    macro_manifest = json.loads((tmp_path / "macro_manifest.json").read_text(encoding="utf-8"))
+    rtl = (tmp_path / "top.v").read_text(encoding="utf-8")
+
+    assert (
+        manifest["semantic_profile"]
+        == "decode_m1x8_shared_score_16x8d_value_exact_partial_onchip_service_v1"
+    )
+    assert manifest["result_mode"] == "exact_partial"
+    assert manifest["head_id_bits"] == 5
+    assert manifest["result_value_bits_per_beat"] == 328
+    assert (
+        manifest["submodule_manifests"]["multivalue_cluster"]["semantic_profile"]
+        == "decode_m1x8_shared_score_16x8d_value_exact_partial_v1"
+    )
+    assert manifest["submodule_manifests"]["multivalue_cluster"]["result_mode"] == "exact_partial"
+    assert (
+        manifest["submodule_manifests"]["multivalue_cluster"]["result_value_bits_per_beat"] == 328
+    )
+    assert macro_manifest["manifest_params"]["result_mode"] == "exact_partial"
+    assert macro_manifest["manifest_params"]["head_id_bits"] == 5
+    assert macro_manifest["manifest_params"]["result_value_bits_per_beat"] == 328
+    assert "input  wire [4:0] cluster_command_head_id" in rtl
+    assert "output wire [4:0] cluster_result_head_id" in rtl
+    assert "output wire [4:0] shared_result_head_id" in rtl
+    assert "output wire [327:0] shared_result_value" in rtl
 
 
 def test_multivalue_service_generator_banked_4x16x64x32_macro_contract(tmp_path: Path) -> None:
@@ -130,6 +192,370 @@ def test_multivalue_service_generator_banked_4x16x64x32_macro_contract(tmp_path:
         macro_manifest["manifest_params"]["value_memory_physical_contract"]
         == "banked_4x16x64x32_exact_capacity"
     )
+
+
+def _service_exact_partial_expected() -> list[dict[str, int]]:
+    workload = _workload_contract()
+    beats = probe_module._cluster_beats(0, head_dim=int(workload["value_dim"]))
+    score_rows = [[sum(query * keys[lane] for query, keys in block) for lane in range(8)] for block in beats]
+    partials = partial_stream_from_blocks(
+        command_id=0x4A21,
+        head_id=3,
+        score_rows=score_rows,
+        value_blocks=probe_module._shared_value_matrices(),
+    )
+    return [
+        {
+            "command_id": int(beat.command_id),
+            "head_id": int(beat.head_id),
+            "slice": int(beat.slice_index),
+            "last": int(bool(beat.last)),
+            "global_max": int(beat.max_score),
+            "exp_sum": int(beat.exp_sum),
+            "value": int(pack_numerators(beat.numerators)),
+        }
+        for beat in partials
+    ]
+
+
+def _service_exact_partial_testbench() -> str:
+    workload = _workload_contract()
+    value_dim = int(workload["value_dim"])
+    blocks = probe_module._cluster_beats(0, head_dim=value_dim)
+    flat_beats = [beat for block in blocks for beat in block]
+    values = probe_module._shared_value_matrices()
+    preload_entries = []
+    for block_index, block in enumerate(values):
+        for slice_index, matrix in enumerate(block):
+            preload_entries.append(
+                (
+                    block_index,
+                    slice_index,
+                    probe_module._pack([lane for row in matrix for lane in row], 8),
+                )
+            )
+    beat_init = "\n".join(
+        f"    q_mem[{idx}] = {probe_module._signed_literal(q, 8)}; "
+        f"k_mem[{idx}] = 64'h{probe_module._pack(keys, 8):016x}; "
+        f"last_mem[{idx}] = 1'b{1 if ((idx + 1) % value_dim == 0) else 0};"
+        for idx, (q, keys) in enumerate(flat_beats)
+    )
+    preload_init = "\n".join(
+        f"    preload_addr_mem[{idx}] = 14'd{addr}; "
+        f"preload_slice_mem[{idx}] = 4'd{value_slice}; "
+        f"preload_matrix_mem[{idx}] = 512'h{matrix:0128x};"
+        for idx, (addr, value_slice, matrix) in enumerate(preload_entries)
+    )
+    return f"""
+`timescale 1ns/1ps
+module tb;
+  localparam integer TOTAL_BEATS = {len(flat_beats)};
+  localparam integer TOTAL_PRELOAD = {len(preload_entries)};
+  localparam integer TOTAL_RESULTS = 16;
+
+  reg clk = 1'b0;
+  reg rst_n = 1'b0;
+  always #5 clk = ~clk;
+
+  reg preload_done = 1'b0;
+  reg [7:0] preload_index = 8'd0;
+  reg command_sent = 1'b0;
+  reg [15:0] beat_index = 16'd0;
+  reg [4:0] result_seen = 5'd0;
+  reg [31:0] cycle = 32'd0;
+
+  reg signed [7:0] q_mem [0:TOTAL_BEATS-1];
+  reg [63:0] k_mem [0:TOTAL_BEATS-1];
+  reg last_mem [0:TOTAL_BEATS-1];
+  reg [13:0] preload_addr_mem [0:TOTAL_PRELOAD-1];
+  reg [3:0] preload_slice_mem [0:TOTAL_PRELOAD-1];
+  reg [511:0] preload_matrix_mem [0:TOTAL_PRELOAD-1];
+
+  reg preload_valid;
+  wire preload_ready;
+  reg [13:0] preload_addr;
+  reg [3:0] preload_value_slice;
+  reg [511:0] preload_matrix;
+
+  reg [0:0] cluster_command_valid;
+  wire [0:0] cluster_command_ready;
+  reg [15:0] cluster_command_id;
+  reg [14:0] cluster_command_block_count;
+  reg [4:0] cluster_command_head_id;
+  reg [31:0] cluster_command_score_multiplier;
+  reg [5:0] cluster_command_score_shift;
+  reg [0:0] cluster_input_valid;
+  wire [0:0] cluster_input_ready;
+  reg [0:0] cluster_input_last;
+  reg [7:0] cluster_input_a;
+  reg [63:0] cluster_input_b;
+  wire [0:0] cluster_result_valid;
+  wire [0:0] cluster_result_ready;
+  wire [15:0] cluster_result_command_id;
+  wire [31:0] cluster_result_global_max;
+  wire [32:0] cluster_result_exp_sum;
+  wire [4:0] cluster_result_head_id;
+  wire [3:0] cluster_result_slice;
+  wire [0:0] cluster_result_last;
+  wire [327:0] cluster_result_value;
+  wire shared_result_valid;
+  reg shared_result_ready = 1'b1;
+  wire [0:0] shared_result_cluster;
+  wire [15:0] shared_result_command_id;
+  wire [31:0] shared_result_global_max;
+  wire [32:0] shared_result_exp_sum;
+  wire [4:0] shared_result_head_id;
+  wire [3:0] shared_result_slice;
+  wire shared_result_last;
+  wire [327:0] shared_result_value;
+  wire [31:0] cluster_accepted_count;
+  wire [31:0] cluster_completed_count;
+  wire [31:0] cluster_cycle_count;
+  wire [0:0] cluster_protocol_error;
+  wire [7:0] transport_req_tag;
+  wire [0:0] transport_wide_source;
+  wire [7:0] transport_wide_tag;
+  wire [13:0] transport_wide_addr;
+  wire [3:0] transport_wide_value_slice;
+  wire [0:0] transport_wide_valid;
+  wire [0:0] reassembler_protocol_error;
+  wire [31:0] router_injection_stall_cycles;
+  wire [31:0] router_arbitration_contention_cycles;
+  wire [31:0] router_response_block_cycles;
+  wire [31:0] router_req_current_occupancy;
+  wire [31:0] router_req_max_occupancy;
+  wire [31:0] router_resp_current_occupancy;
+  wire [31:0] router_resp_max_occupancy;
+  wire [31:0] service_accepted_req_count;
+  wire [31:0] service_emitted_resp_count;
+  wire [31:0] service_bank_conflict_count;
+  wire [31:0] service_response_block_cycles;
+  wire [31:0] service_req_current_occupancy;
+  wire [31:0] service_req_max_occupancy;
+  wire [31:0] service_resp_current_occupancy;
+  wire [31:0] service_resp_max_occupancy;
+  wire [31:0] result_arbitration_contention_cycles;
+  wire [31:0] result_egress_block_cycles;
+  wire protocol_error;
+
+  attention_decode_score_multivalue_service_exact_partial_probe dut (
+    .clk(clk),
+    .rst_n(rst_n),
+    .preload_valid(preload_valid),
+    .preload_ready(preload_ready),
+    .preload_addr(preload_addr),
+    .preload_value_slice(preload_value_slice),
+    .preload_matrix(preload_matrix),
+    .cluster_command_valid(cluster_command_valid),
+    .cluster_command_ready(cluster_command_ready),
+    .cluster_command_id(cluster_command_id),
+    .cluster_command_block_count(cluster_command_block_count),
+    .cluster_command_head_id(cluster_command_head_id),
+    .cluster_command_score_multiplier(cluster_command_score_multiplier),
+    .cluster_command_score_shift(cluster_command_score_shift),
+    .cluster_input_valid(cluster_input_valid),
+    .cluster_input_ready(cluster_input_ready),
+    .cluster_input_last(cluster_input_last),
+    .cluster_input_a(cluster_input_a),
+    .cluster_input_b(cluster_input_b),
+    .cluster_result_valid(cluster_result_valid),
+    .cluster_result_ready(cluster_result_ready),
+    .cluster_result_command_id(cluster_result_command_id),
+    .cluster_result_global_max(cluster_result_global_max),
+    .cluster_result_exp_sum(cluster_result_exp_sum),
+    .cluster_result_head_id(cluster_result_head_id),
+    .cluster_result_slice(cluster_result_slice),
+    .cluster_result_last(cluster_result_last),
+    .cluster_result_value(cluster_result_value),
+    .shared_result_valid(shared_result_valid),
+    .shared_result_ready(shared_result_ready),
+    .shared_result_cluster(shared_result_cluster),
+    .shared_result_command_id(shared_result_command_id),
+    .shared_result_global_max(shared_result_global_max),
+    .shared_result_exp_sum(shared_result_exp_sum),
+    .shared_result_head_id(shared_result_head_id),
+    .shared_result_slice(shared_result_slice),
+    .shared_result_last(shared_result_last),
+    .shared_result_value(shared_result_value),
+    .cluster_accepted_count(cluster_accepted_count),
+    .cluster_completed_count(cluster_completed_count),
+    .cluster_cycle_count(cluster_cycle_count),
+    .cluster_protocol_error(cluster_protocol_error),
+    .transport_req_tag(transport_req_tag),
+    .transport_wide_source(transport_wide_source),
+    .transport_wide_tag(transport_wide_tag),
+    .transport_wide_addr(transport_wide_addr),
+    .transport_wide_value_slice(transport_wide_value_slice),
+    .transport_wide_valid(transport_wide_valid),
+    .reassembler_protocol_error(reassembler_protocol_error),
+    .router_injection_stall_cycles(router_injection_stall_cycles),
+    .router_arbitration_contention_cycles(router_arbitration_contention_cycles),
+    .router_response_block_cycles(router_response_block_cycles),
+    .router_req_current_occupancy(router_req_current_occupancy),
+    .router_req_max_occupancy(router_req_max_occupancy),
+    .router_resp_current_occupancy(router_resp_current_occupancy),
+    .router_resp_max_occupancy(router_resp_max_occupancy),
+    .service_accepted_req_count(service_accepted_req_count),
+    .service_emitted_resp_count(service_emitted_resp_count),
+    .service_bank_conflict_count(service_bank_conflict_count),
+    .service_response_block_cycles(service_response_block_cycles),
+    .service_req_current_occupancy(service_req_current_occupancy),
+    .service_req_max_occupancy(service_req_max_occupancy),
+    .service_resp_current_occupancy(service_resp_current_occupancy),
+    .service_resp_max_occupancy(service_resp_max_occupancy),
+    .result_arbitration_contention_cycles(result_arbitration_contention_cycles),
+    .result_egress_block_cycles(result_egress_block_cycles),
+    .protocol_error(protocol_error)
+  );
+
+  initial begin
+{beat_init}
+{preload_init}
+    repeat (4) @(posedge clk);
+    rst_n = 1'b1;
+  end
+
+  always @(*) begin
+    preload_valid = rst_n && !preload_done;
+    preload_addr = preload_done ? 14'd0 : preload_addr_mem[preload_index];
+    preload_value_slice = preload_done ? 4'd0 : preload_slice_mem[preload_index];
+    preload_matrix = preload_done ? 512'd0 : preload_matrix_mem[preload_index];
+
+    cluster_command_valid = 1'b0;
+    cluster_command_id = 16'h4A21;
+    cluster_command_block_count = 15'd3;
+    cluster_command_head_id = 5'd3;
+    cluster_command_score_multiplier = 32'd1;
+    cluster_command_score_shift = 6'd0;
+    if (rst_n && preload_done && !command_sent) begin
+      cluster_command_valid[0] = 1'b1;
+    end
+
+    cluster_input_valid = 1'b0;
+    cluster_input_last = 1'b0;
+    cluster_input_a = 8'd0;
+    cluster_input_b = 64'd0;
+    if (rst_n && command_sent && (beat_index < TOTAL_BEATS)) begin
+      cluster_input_valid[0] = 1'b1;
+      cluster_input_last[0] = last_mem[beat_index];
+      cluster_input_a = q_mem[beat_index];
+      cluster_input_b = k_mem[beat_index];
+    end
+  end
+
+  always @(posedge clk) begin
+    if (!rst_n) begin
+      preload_done <= 1'b0;
+      preload_index <= 8'd0;
+      command_sent <= 1'b0;
+      beat_index <= 16'd0;
+      result_seen <= 5'd0;
+      cycle <= 32'd0;
+    end else begin
+      cycle <= cycle + 32'd1;
+      if (!preload_done && preload_valid && preload_ready) begin
+        if (preload_index + 1 == TOTAL_PRELOAD) begin
+          preload_done <= 1'b1;
+        end else begin
+          preload_index <= preload_index + 1'b1;
+        end
+      end
+      if (!command_sent && cluster_command_valid[0] && cluster_command_ready[0]) begin
+        command_sent <= 1'b1;
+      end
+      if (cluster_input_valid[0] && cluster_input_ready[0]) begin
+        beat_index <= beat_index + 1'b1;
+      end
+      if (shared_result_valid && shared_result_ready) begin
+        $display("RESULT cmd=%0d head=%0d slice=%0d last=%0d max=%0d sum=%0d value=%082x",
+          shared_result_command_id,
+          shared_result_head_id,
+          shared_result_slice,
+          shared_result_last,
+          $signed(shared_result_global_max),
+          shared_result_exp_sum,
+          shared_result_value);
+        result_seen <= result_seen + 1'b1;
+        if (result_seen + 1 == TOTAL_RESULTS) begin
+          $finish;
+        end
+      end
+      if (cycle > 32'd20000) begin
+        $display("TIMEOUT cycle=%0d", cycle);
+        $fatal(1);
+      end
+    end
+  end
+endmodule
+"""
+
+
+def test_multivalue_service_exact_partial_smoke_matches_reference(tmp_path: Path) -> None:
+    if not _iverilog_available():
+        pytest.skip("iverilog/vvp unavailable")
+
+    config = {
+        "top_name": "attention_decode_score_multivalue_service_exact_partial_probe",
+        "attention_decode_score_multivalue_service": {
+            "cluster_count": 1,
+            "max_blocks": 16,
+            "packet_w": 128,
+            "banks": 2,
+            "req_queue_depth": 2,
+            "resp_queue_depth": 2,
+            "bank_queue_depth": 2,
+            "read_latency": 1,
+            "arb_mode": "round_robin",
+            "locality_burst_max": 2,
+            "score_scale_lanes_per_cycle": 1,
+            "result_mode": "exact_partial",
+            "head_id_bits": 5,
+            "value_memory_backend": "behavioral",
+        },
+    }
+    generate(config, tmp_path)
+    (tmp_path / "fakeram45_2048x39.v").write_text(probe_module._FAKERAM_MODEL, encoding="utf-8")
+    (tmp_path / "tb.v").write_text(_service_exact_partial_testbench(), encoding="utf-8")
+
+    compile_run = subprocess.run(
+        [
+            probe_module._tool("iverilog"),
+            "-g2012",
+            "-o",
+            str(tmp_path / "simv"),
+            str(tmp_path / "tb.v"),
+            str(tmp_path / "fakeram45_2048x39.v"),
+            str(tmp_path / "top.v"),
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert compile_run.returncode == 0, compile_run.stderr
+
+    sim_run = subprocess.run(
+        [probe_module._tool("vvp"), str(tmp_path / "simv")],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert sim_run.returncode == 0, sim_run.stderr
+
+    observed = [
+        {
+            "command_id": int(match.group(1)),
+            "head_id": int(match.group(2)),
+            "slice": int(match.group(3)),
+            "last": int(match.group(4)),
+            "global_max": int(match.group(5)),
+            "exp_sum": int(match.group(6)),
+            "value": int(match.group(7), 16),
+        }
+        for line in sim_run.stdout.splitlines()
+        for match in [_EXACT_RESULT_RE.fullmatch(line.strip())]
+        if match is not None
+    ]
+    assert observed == _service_exact_partial_expected(), sim_run.stdout
 
 
 def test_integrated_service_default_cases_cover_requested_surface() -> None:
