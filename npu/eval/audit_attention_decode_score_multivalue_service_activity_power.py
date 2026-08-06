@@ -731,6 +731,8 @@ def _prepare_postroute_power_manifest(
         "adapted_activity_manifest_sha256": _sha256_file(adapted_manifest_path),
         "vcd_sha256": generated_meta["vcd_sha256"],
         "cycle_count": generated_meta["cycle_count"],
+        "generated_manifest_hashes": generated_meta["generated_manifest_hashes"],
+        "workload_contract": generated_meta["workload_contract"],
         "macro_counts": macro_counts,
         "macro_activity_contract": macro_activity_contract,
         "bank_coverage": generated_meta["bank_coverage"],
