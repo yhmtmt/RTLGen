@@ -58,7 +58,8 @@ _SCORE_ACTIVITY_RE = re.compile(
     r"(?:addr_in\[\d+\]|wd_in\[\d+\]|w_mask_in\[\d+\]|we_in|ce_in)$"
 )
 _VALUE_ACTIVITY_RE = re.compile(
-    r"^gen_value_macro_backend/gen_value_bank\[(\d+)\]/gen_value_lane\[(\d+)\]/u_value_mem_lane/"
+    r"^(?P<instance>(?:[^/]+/)*gen_value_macro_backend/"
+    r"gen_value_bank\[(\d+)\]/gen_value_lane\[(\d+)\]/u_value_mem_lane)/"
     r"(?:addr_in\[\d+\]|wd_in\[\d+\]|w_mask_in\[\d+\]|we_in|ce_in)$"
 )
 
@@ -580,12 +581,7 @@ def _validate_service_macro_activity_contract(
         value_match = _VALUE_ACTIVITY_RE.fullmatch(full_name)
         if value_match is not None:
             value_pin_count += 1
-            value_instances.add(
-                "gen_value_macro_backend/gen_value_bank[{bank}]/gen_value_lane[{lane}]/u_value_mem_lane".format(
-                    bank=value_match.group(1),
-                    lane=value_match.group(2),
-                )
-            )
+            value_instances.add(str(value_match.group("instance")))
             continue
         raise ValueError(f"service macro activity contains unsupported full_name: {full_name}")
 
