@@ -7707,6 +7707,63 @@ def _decoder_attention_decode_score_multivalue_integrated_service_evidence(
     }
 
 
+def _decoder_attention_decode_score_multivalue_service_exact_partial_equivalence_evidence(
+    *,
+    item_id: str,
+    proposal_id: str | None = None,
+    proposal_path: str | None = None,
+) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    dependency_item = "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1"
+    equivalence = (
+        f"{base}/decoder_attention_decode_score_multivalue_cluster_equivalence__"
+        f"{dependency_item}.json"
+    )
+    out = (
+        f"{base}/decoder_attention_decode_score_multivalue_service_exact_partial_equivalence__"
+        f"{item_id}.json"
+    )
+    report = (
+        f"{base}/decoder_attention_decode_score_multivalue_service_exact_partial_equivalence__"
+        f"{item_id}.md"
+    )
+    proposal_args: list[str] = []
+    proposal_id_text = str(proposal_id or "").strip()
+    proposal_path_text = str(proposal_path or "").strip()
+    if proposal_id_text:
+        proposal_args.extend(["--proposal-id", proposal_id_text])
+    if proposal_path_text:
+        proposal_args.extend(["--proposal-path", proposal_path_text])
+    proposal_arg_text = " ".join(shlex.quote(arg) for arg in proposal_args)
+    return {
+        "inputs": {
+            "decode_score_multivalue_service_exact_partial_equivalence_source": equivalence,
+            "decode_score_multivalue_service_exact_partial_equivalence_out": out,
+            "decode_score_multivalue_service_exact_partial_equivalence_report": report,
+            "decode_score_multivalue_service_exact_partial_equivalence_scope": (
+                "Prove exact global_max, exp_sum, head_id, slice/last, and 8xS41 numerator lanes "
+                "through the shared service in exact_partial result mode. Keep this evidence disjoint "
+                "from normalized integrated-service evidence. This does not claim full-context temporal "
+                "composition, physical PPA, activity power, HBM closure, or NoC closure."
+            ),
+        },
+        "commands": [
+            {
+                "name": "probe_decode_score_multivalue_service_exact_partial_equivalence",
+                "run": (
+                    "python3 npu/eval/probe_attention_decode_score_multivalue_integrated_service.py "
+                    "--result-mode exact_partial "
+                    f"--out {out} --out-md {report} "
+                    f"--depends-on-item-id {dependency_item} "
+                    f"{proposal_arg_text}".strip()
+                ),
+            }
+        ],
+        "expected_outputs": [out, report],
+        "evidence_only": True,
+    }
+
+
 def _decoder_attention_decode_score_multivalue_service_activity_power_evidence(
     *, item_id: str, depends_on_item_ids: list[str] | None = None
 ) -> dict[str, Any]:
@@ -11810,6 +11867,7 @@ def _build_payload(
         "decoder_attention_decode_score_multivalue_gqa_array_equivalence",
         "decoder_attention_decode_score_multivalue_cluster_activity_power",
         "decoder_attention_decode_score_multivalue_integrated_service",
+        "decoder_attention_decode_score_multivalue_service_exact_partial_equivalence",
         "decoder_attention_decode_score_multivalue_service_activity_power",
         "decoder_attention_decode_score_multivalue_service_measured_frontier",
         "decoder_attention_decode_score_multivalue_gqa_group_activity_power",
@@ -12083,6 +12141,17 @@ def _build_payload(
                 item_id=item_id,
                 proposal_id=proposal_id,
                 proposal_path=proposal_path,
+            )
+        elif (
+            abstraction_layer_name
+            == "decoder_attention_decode_score_multivalue_service_exact_partial_equivalence"
+        ):
+            decoder_evidence = (
+                _decoder_attention_decode_score_multivalue_service_exact_partial_equivalence_evidence(
+                    item_id=item_id,
+                    proposal_id=proposal_id,
+                    proposal_path=proposal_path,
+                )
             )
         elif abstraction_layer_name == "decoder_attention_decode_score_multivalue_service_activity_power":
             decoder_evidence = _decoder_attention_decode_score_multivalue_service_activity_power_evidence(

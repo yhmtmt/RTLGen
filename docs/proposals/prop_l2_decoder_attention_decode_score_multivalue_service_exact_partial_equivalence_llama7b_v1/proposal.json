@@ -1,0 +1,78 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_decode_score_multivalue_service_exact_partial_equivalence_llama7b_v1",
+  "created_utc": "2026-08-06T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Llama7B exact-partial shared multivalue service equivalence",
+  "abstraction_layer": "decoder_attention_decode_score_multivalue_service_exact_partial_equivalence",
+  "hypothesis": "After the shared-score multivalue cluster equivalence input is merged and materialized, the integrated shared service can preserve exact partial reduction state and all eight numerator lanes without reusing normalized integrated-service evidence.",
+  "direct_comparison": {
+    "primary_question": "Does the shared multivalue service preserve exact global_max, exp_sum, head_id, slice/last, and all 8xS41 numerator lanes in exact_partial result mode?",
+    "include": [
+      "depend on l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1 as a merged and materialized input",
+      "invoke the integrated-service probe with --result-mode exact_partial",
+      "preserve exact global_max and exp_sum",
+      "preserve exact head_id and slice/last protocol state",
+      "preserve all 8xS41 numerator lanes through the shared service",
+      "emit uniquely named repo-portable JSON and Markdown evidence",
+      "preserve proposal-id, proposal-path, dependency, and source-requirement linkage"
+    ],
+    "exclude": [
+      "do not overwrite or reinterpret normalized integrated-service evidence",
+      "do not claim full-context temporal composition",
+      "do not claim physical PPA",
+      "do not claim activity or energy closure",
+      "do not claim HBM closure",
+      "do not claim NoC closure"
+    ]
+  },
+  "expected_benefit": [
+    "establishes a disjoint exact-partial equivalence artifact suitable for later composability gates",
+    "keeps normalized service evidence valid for its original bounded service purpose",
+    "prevents exact-partial state-vector proof from being inferred from normalized outputs"
+  ],
+  "risks": [
+    "the exact-partial probe CLI may not be available until its source change merges",
+    "passing bounded exact-partial equivalence does not prove temporal composition across the full Llama7B context",
+    "this functional proof provides no PPA, activity, HBM, or NoC closure"
+  ],
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_decode_score_multivalue_service_exact_partial_equivalence_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Run the integrated shared-score multivalue service probe in exact_partial mode and prove exact global_max, exp_sum, head_id, slice/last, and 8xS41 numerator lanes.",
+      "evaluation_mode": "equivalence",
+      "abstraction_layer": "decoder_attention_decode_score_multivalue_service_exact_partial_equivalence",
+      "comparison_role": "exact_partial_functional_validation",
+      "paired_baseline_item_id": "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "record_exact_partial_shared_service_equivalence",
+        "reason": "Require exact global_max, exp_sum, head_id, slice/last, and all 8xS41 numerator lanes through the shared service while keeping normalized integrated-service evidence disjoint and making no full-context temporal-composition, PPA, activity, HBM, or NoC claim."
+      },
+      "status": "pending_implementation_merge",
+      "notes": "Generate only after this proposal/task wiring and the exact-partial probe CLI are merged to origin/master. Queue-time task generation must auto-pin source_requirement.required_sha to that merged commit and require evaluator daemon refresh."
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_cluster_equivalence__l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1.json",
+    "docs/proposals/prop_decoder_attention_decode_score_multivalue_cluster_llama7b_v1/proposal.json",
+    "docs/proposals/prop_l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1/proposal.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/probe_attention_decode_score_multivalue_integrated_service.py",
+    "control_plane/control_plane/services/l2_task_generator.py",
+    "control_plane/control_plane/tests/test_l2_task_generator.py"
+  ],
+  "remaining_abstractions_after_this_step": [
+    "Full-context temporal composition of exact partials remains unproven.",
+    "Physical PPA remains unmeasured.",
+    "Activity and energy remain unmeasured.",
+    "HBM and NoC closure remain outside this proof."
+  ]
+}

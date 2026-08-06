@@ -1,0 +1,26 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_decode_score_multivalue_service_exact_partial_equivalence_llama7b_v1",
+  "source_commit_note": "Do not dispatch from this development branch. At queue time, generate the task from merged origin/master so source_requirement.required_sha is automatically pinned to the merge commit containing both this disjoint task wiring and the exact-partial probe CLI, with evaluator daemon refresh required.",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_decode_score_multivalue_service_exact_partial_equivalence_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Run the integrated shared-score multivalue service probe in exact_partial mode and prove exact global_max, exp_sum, head_id, slice/last, and 8xS41 numerator lanes.",
+      "evaluation_mode": "equivalence",
+      "abstraction_layer": "decoder_attention_decode_score_multivalue_service_exact_partial_equivalence",
+      "comparison_role": "exact_partial_functional_validation",
+      "paired_baseline_item_id": "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "record_exact_partial_shared_service_equivalence",
+        "reason": "Require exact global_max, exp_sum, head_id, slice/last, and all 8xS41 numerator lanes through the shared service while keeping normalized integrated-service evidence disjoint and making no full-context temporal-composition, PPA, activity, HBM, or NoC claim."
+      },
+      "status": "pending_implementation_merge",
+      "notes": "The merged/materialized shared-score cluster-equivalence artifact is mandatory. Generate this item only after the exact-partial probe CLI and this task wiring merge; task generation must auto-pin source_requirement.required_sha to that origin/master merge and require evaluator daemon refresh."
+    }
+  ]
+}
