@@ -155,6 +155,48 @@ def _scaled_expected_counts(workload_contract: JsonDict, *, cluster_count: int) 
     return expected_counts
 
 
+def _sequential_memory_dumpvars(case: JsonDict) -> list[str]:
+    cluster_count = int(case["cluster_count"])
+    banks = int(case["banks"])
+    req_queue_depth = int(case["req_queue_depth"])
+    resp_queue_depth = int(case["resp_queue_depth"])
+    bank_queue_depth = int(case["bank_queue_depth"])
+    targets: list[str] = []
+    for cluster in range(cluster_count):
+        cluster_root = f"dut.gen_cluster[{cluster}].u_cluster"
+        targets.extend(
+            f"{cluster_root}.reducer.numerator_accum[{index}]"
+            for index in range(int(probe._workload_contract()["value_dim"]))
+        )
+        targets.extend(f"{cluster_root}.reducer.block_weight[{index}]" for index in range(8))
+        targets.extend(f"{cluster_root}.score_tile.accum[{index}]" for index in range(8))
+        targets.extend(
+            f"dut.u_router.gen_req_fifo[{cluster}].u_req_fifo.mem[{index}]"
+            for index in range(req_queue_depth)
+        )
+        targets.extend(
+            f"dut.u_router.gen_resp_fifo[{cluster}].u_resp_fifo.mem[{index}]"
+            for index in range(resp_queue_depth)
+        )
+        for name in ("request_tag_q", "expected_tag_q", "expected_addr_q", "expected_slice_q", "expected_source_q"):
+            targets.append(f"dut.{name}[{cluster}]")
+    for bank in range(banks):
+        for name in (
+            "active_tag",
+            "active_addr",
+            "active_slice",
+            "active_matrix",
+            "active_fragment",
+            "bank_latency",
+        ):
+            targets.append(f"dut.u_service.{name}[{bank}]")
+        targets.extend(
+            f"dut.u_service.gen_bank_fifo[{bank}].u_bank_fifo.mem[{index}]"
+            for index in range(bank_queue_depth)
+        )
+    return targets
+
+
 def _compile_and_run(*, sources: list[Path], timeout: int = 240) -> str:
     with tempfile.TemporaryDirectory(prefix="multivalue-service-activity-run-") as tmp_text:
         simv = Path(tmp_text) / "simv"
@@ -198,7 +240,7 @@ def _run_macro_integrated(
             cluster_count=int(case["cluster_count"]),
             values=values,
             vcd_path=str((out_dir / _OUTPUT_VCD_NAME).resolve()),
-            vcd_dumpvars=["dut"],
+            vcd_dumpvars=["dut", *_sequential_memory_dumpvars(case)],
             clock_period_ns=clock_period_ns,
         )
         tb_path.write_text(tb_text, encoding="utf-8")

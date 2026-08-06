@@ -129,6 +129,7 @@ def _score_scope_result(
     parts: list[str],
     *,
     cluster_count: int,
+    preserve_instance_prefix: bool,
     group_indices: tuple[int, ...],
     slice_indices: tuple[int, ...],
 ) -> tuple[str, _MacroClassSpec] | None:
@@ -147,7 +148,7 @@ def _score_scope_result(
             continue
         if index + 2 != len(parts):
             continue
-        if int(cluster_count) > 1 and index > 0:
+        if index > 0 and (preserve_instance_prefix or int(cluster_count) > 1):
             full_scope = "/".join([*parts[:index], "score_bank", group_scope])
         else:
             full_scope = f"score_bank/{group_scope}"
@@ -158,6 +159,7 @@ def _score_scope_result(
 def _value_scope_result(
     parts: list[str],
     *,
+    preserve_instance_prefix: bool,
     value_bank_indices: tuple[int, ...],
     value_lane_indices: tuple[int, ...],
 ) -> tuple[str, _MacroClassSpec] | None:
@@ -179,10 +181,10 @@ def _value_scope_result(
             continue
         if index + 4 != len(parts):
             continue
-        return (
-            f"gen_value_macro_backend/{bank_scope}/{lane_scope}/{leaf_scope}",
-            _VALUE_MACRO_SPEC,
-        )
+        macro_parts = ["gen_value_macro_backend", bank_scope, lane_scope, leaf_scope]
+        if index > 0 and preserve_instance_prefix:
+            macro_parts = [*parts[:index], *macro_parts]
+        return ("/".join(macro_parts), _VALUE_MACRO_SPEC)
     return None
 
 
@@ -191,6 +193,7 @@ def _parse_target_scope(
     *,
     root_scope: str,
     cluster_count: int,
+    preserve_instance_prefix: bool,
     group_indices: tuple[int, ...],
     slice_indices: tuple[int, ...],
     include_value_memory: bool,
@@ -208,6 +211,7 @@ def _parse_target_scope(
     score_result = _score_scope_result(
         parts,
         cluster_count=cluster_count,
+        preserve_instance_prefix=preserve_instance_prefix,
         group_indices=group_indices,
         slice_indices=slice_indices,
     )
@@ -217,6 +221,7 @@ def _parse_target_scope(
         return None
     return _value_scope_result(
         parts,
+        preserve_instance_prefix=preserve_instance_prefix,
         value_bank_indices=value_bank_indices,
         value_lane_indices=value_lane_indices,
     )
@@ -317,6 +322,7 @@ def _extract_macro_vcd_activity(
     source_vcd_sha256: str,
     scope: str,
     cluster_count: int,
+    preserve_instance_prefix: bool,
     group_indices: tuple[int, ...],
     slice_indices: tuple[int, ...],
     expected_pin_count: int | None,
@@ -386,6 +392,7 @@ def _extract_macro_vcd_activity(
             scope_path,
             root_scope=scope,
             cluster_count=cluster_count,
+            preserve_instance_prefix=preserve_instance_prefix,
             group_indices=group_indices,
             slice_indices=slice_indices,
             include_value_memory=include_value_memory,
@@ -629,6 +636,7 @@ def extract_fakeram_vcd_activity(
         source_vcd_sha256=source_vcd_sha256,
         scope=scope,
         cluster_count=1,
+        preserve_instance_prefix=False,
         group_indices=group_indices,
         slice_indices=slice_indices,
         expected_pin_count=expected_pin_count,
@@ -663,6 +671,7 @@ def extract_multivalue_service_fakeram_vcd_activity(
         source_vcd_sha256=source_vcd_sha256,
         scope=scope,
         cluster_count=cluster_count,
+        preserve_instance_prefix=True,
         group_indices=group_indices,
         slice_indices=slice_indices,
         expected_pin_count=expected_pin_count,

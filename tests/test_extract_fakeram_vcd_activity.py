@@ -369,8 +369,11 @@ def test_extract_multivalue_service_activity_tracks_both_macro_classes(tmp_path:
     assert payload["target_profile"] == "multivalue_service_c1_v1"
     assert len(payload["pins"]) == 163
     by_name = {row["full_name"]: row for row in payload["pins"]}
-    assert "score_bank/u_group_0_slice_0/we_in" in by_name
-    assert "gen_value_macro_backend/gen_value_bank[0]/gen_value_lane[0]/u_value_mem_lane/ce_in" in by_name
+    assert "wrapper/score_bank/u_group_0_slice_0/we_in" in by_name
+    assert (
+        "wrapper/gen_value_macro_backend/gen_value_bank[0]/gen_value_lane[0]/u_value_mem_lane/ce_in"
+        in by_name
+    )
     contract = payload["structural_macro_contract"]
     assert contract["total_assignment_count"] == 163
     classes = {row["macro_name"]: row for row in contract["macro_classes"]}
@@ -507,9 +510,9 @@ def test_extract_multivalue_service_activity_real_generated_vcd_sidecar(tmp_path
     assert classes["fakeram45_64x32"]["assignment_count"] == 4608
     assert payload["structural_macro_contract"]["total_assignment_count"] == 9704
     full_names = {row["full_name"] for row in payload["pins"]}
-    assert "score_bank/u_group_7_slice_6/ce_in" in full_names
+    assert "gen_cluster[0]/u_cluster/score_bank/u_group_7_slice_6/ce_in" in full_names
     assert (
-        "gen_value_macro_backend/gen_value_bank[3]/gen_value_lane[15]/u_value_mem_lane/ce_in"
+        "u_service/gen_value_macro_backend/gen_value_bank[3]/gen_value_lane[15]/u_value_mem_lane/ce_in"
         in full_names
     )
 
@@ -537,7 +540,9 @@ def test_extract_multivalue_service_activity_real_generated_c2_vcd_sidecar(tmp_p
     full_names = {row["full_name"] for row in payload["pins"]}
     score_instances = {name.rsplit("/", 1)[0] for name in full_names if "/score_bank/" in name}
     value_instances = {
-        name.rsplit("/", 1)[0] for name in full_names if name.startswith("gen_value_macro_backend/")
+        name.rsplit("/", 1)[0]
+        for name in full_names
+        if name.startswith("u_service/gen_value_macro_backend/")
     }
     assert len(score_instances) == 112
     assert len(value_instances) == 64
