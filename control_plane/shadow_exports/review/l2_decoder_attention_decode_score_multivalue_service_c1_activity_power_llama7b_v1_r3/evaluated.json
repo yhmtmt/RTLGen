@@ -1,0 +1,120 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "decoder_contract": {
+        "decode_score_multivalue_service_c1_config": "runs/designs/npu_blocks/attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr/config.json",
+        "decode_score_multivalue_service_c1_activity_dir": "/tmp/rtlgen_multivalue_service_c1_activity",
+        "decode_score_multivalue_service_activity_power_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_service_activity_power__l2_decoder_attention_decode_score_multivalue_service_c1_activity_power_llama7b_v1_r3.json",
+        "decode_score_multivalue_service_c1_pnr_metrics_csv": "runs/designs/npu_blocks/attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr/metrics.csv",
+        "decode_score_multivalue_service_c1_equivalence_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_cluster_equivalence__l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1.json",
+        "decode_score_multivalue_service_activity_power_scope": "Audit strict c1 routed composed-service activity power after merged/materialized integrated-service, c1 PNR (l1_decoder_attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_pnr_v1_r3), and shared-score multivalue cluster-equivalence evidence. Measure only direct routed component service-window energy, inherit the exact integer precision contract from the merged equivalence proof, do not force bank3 activity, keep VCD/ODB/SPEF evaluator-local, and do not claim total-token energy.",
+        "decode_score_multivalue_service_activity_power_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_service_activity_power__l2_decoder_attention_decode_score_multivalue_service_c1_activity_power_llama7b_v1_r3.md",
+        "decode_score_multivalue_service_c1_orfs_design_config": "/orfs/flow/designs/nangate45/attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr/config.mk",
+        "decode_score_multivalue_service_c1_source_pnr_item_id": "l1_decoder_attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_pnr_v1_r3",
+        "decode_score_multivalue_service_c1_physical_signoff_json": "runs/designs/npu_blocks/attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr/physical_signoff.json",
+        "decode_score_multivalue_service_c1_integrated_service_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_integrated_service__l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1_r1.json",
+        "decode_score_multivalue_service_activity_power_promotion_gate": "Promotion requires a timing-feasible 10 ns c1 routed row, exact integrated-service c1 hash/protocol/count gates, explicit annotation coverage, finite positive routed power, and a direct service-window measurement rather than compositional token-energy accounting.",
+        "decode_score_multivalue_service_activity_power_local_only_artifacts": [
+          "VCD",
+          "ODB",
+          "SPEF"
+        ]
+      }
+    },
+    "commands": [
+      {
+        "run": "python3 -m npu.eval.audit_attention_decode_score_multivalue_service_activity_power --config runs/designs/npu_blocks/attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr/config.json --c1-metrics-csv runs/designs/npu_blocks/attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr/metrics.csv --equivalence-json runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_cluster_equivalence__l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1.json --integrated-service-json runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_integrated_service__l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1_r1.json --orfs-design-config /orfs/flow/designs/nangate45/attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr/config.mk --clock-period-ns 10 --physical-signoff-json runs/designs/npu_blocks/attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr/physical_signoff.json --activity-dir /tmp/rtlgen_multivalue_service_c1_activity --out runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_service_activity_power__l2_decoder_attention_decode_score_multivalue_service_c1_activity_power_llama7b_v1_r3.json --out-md runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_service_activity_power__l2_decoder_attention_decode_score_multivalue_service_c1_activity_power_llama7b_v1_r3.md",
+        "name": "audit_decode_score_multivalue_service_activity_power"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate_runs"
+      }
+    ],
+    "objective": "Retry strict c1 routed composed-service activity power with remote transport enabled for the generated service JSON and Markdown.",
+    "acceptance": [
+      "Write all declared decoder evidence artifacts",
+      "Keep evidence artifact paths repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "source_mode": "src_verilog",
+    "expected_outputs": [
+      "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_service_activity_power__l2_decoder_attention_decode_score_multivalue_service_c1_activity_power_llama7b_v1_r3.json",
+      "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_service_activity_power__l2_decoder_attention_decode_score_multivalue_service_c1_activity_power_llama7b_v1_r3.md"
+    ]
+  },
+  "layer": "layer2",
+  "state": "evaluated",
+  "title": "Strict c1 composed-service activity power gate for Llama7B retry r3",
+  "result": {
+    "branch": "eval/l2_decoder_attention_decode_score_multivalue_service_c1_activity_power_llama7b_v1_r3/s20260806t115628z",
+    "completed_utc": "2026-08-06T11:47:25.610022Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "b7c2d9c80c1c",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260806t115628z][host:b7c2d9c80c1c][item:l2_decoder_attention_decode_score_multivalue_service_c1_activity_power_llama7b_v1_r3]",
+    "metrics_rows": [],
+    "metrics_exempt_reason": "evidence_only_decoder_evidence",
+    "queue_item_id": "l2_decoder_attention_decode_score_multivalue_service_c1_activity_power_llama7b_v1_r3",
+    "session_id": "s20260806t115628z",
+    "status": "ok",
+    "summary": "2/2 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l2_decoder_attention_decode_score_multivalue_service_c1_activity_power_llama7b_v1_r3/s20260806t115628z",
+    "pr_title": "eval: run strict c1 composed-service activity power gate for llama7b retry r3",
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Include metrics row references in result.metrics_rows",
+      "Keep committed result_path fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260806t115628z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l2_decoder_attention_decode_score_multivalue_service_c1_activity_power_llama7b_v1_r3"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l2_decoder_attention_decode_score_multivalue_service_c1_activity_power_llama7b_v1_r3",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 100,
+  "created_utc": "2026-08-06T11:44:59.985590Z",
+  "requested_by": "developer_agent",
+  "developer_loop": {
+    "comparison": {
+      "role": "strict_c1_service_activity_power_gate",
+      "paired_baseline_item_id": "l1_decoder_attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_pnr_v1_r3"
+    },
+    "evaluation": {
+      "mode": "frontier_detail",
+      "expected_reason": "Retry after correcting immutable flow selection, generated-contract projection, and remote service-evidence transport; measure only direct routed service-window energy, preserve inherited exact precision and the canonical 142 max-cap violation caveat, and withhold total-token energy.",
+      "expected_direction": "record_strict_c1_composed_service_activity_power"
+    },
+    "abstraction": {
+      "layer": "decoder_attention_decode_score_multivalue_service_activity_power"
+    },
+    "proposal_id": "prop_l2_decoder_attention_decode_score_multivalue_service_c1_activity_power_llama7b_v1",
+    "dependencies": {
+      "item_ids": [
+        "l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1_r1",
+        "l1_decoder_attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_pnr_v1_r3",
+        "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    },
+    "proposal_path": "docs/proposals/prop_l2_decoder_attention_decode_score_multivalue_service_c1_activity_power_llama7b_v1/proposal.json"
+  },
+  "source_requirement": {
+    "repo": "",
+    "reason": "evaluator runtime must contain the queued job source commit",
+    "version": 1,
+    "required_ref": "origin/master",
+    "required_sha": "330a2fb4c1539eae3e6874ed7c37c7a9ebc49e6e",
+    "requires_daemon_restart": true
+  }
+}

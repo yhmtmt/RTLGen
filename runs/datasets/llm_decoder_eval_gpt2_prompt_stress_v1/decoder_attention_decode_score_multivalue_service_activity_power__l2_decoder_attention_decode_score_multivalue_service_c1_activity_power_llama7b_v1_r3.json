@@ -1,0 +1,3798 @@
+{
+  "activity_contract": {
+    "adapted_activity_manifest_sha256": "fa7ae30fee8a3f0755462b4e3ccfc5300337006986508b1ce749e0a5acb6e9fc",
+    "clock_period_ns": 10.0,
+    "cycle_count": 8719,
+    "generated_activity_manifest_sha256": "1acafd2bf01efe504a33aebd47735b4dd5c0b601797134e5ef293599af849746",
+    "vcd_sha256": "4affd8dbcd44ebf5b7b4555e6fcd593f55b02f2c28ebc0bf7269b320a8a142e1",
+    "workload_contract": {
+      "active_context_tokens": 24,
+      "command_block_count": 3,
+      "context_tokens_per_block": 8,
+      "max_blocks": 16,
+      "max_context_capacity_tokens": 128,
+      "value_dim": 128
+    }
+  },
+  "bank3_dynamic_inactivity": {
+    "inactive_banks": [
+      3
+    ],
+    "statement": "No artificial activity was injected. Bank3 may remain dynamically inactive in this exact c1 workload; it is not required to toggle, while leakage remains part of routed power."
+  },
+  "best": null,
+  "best_candidate_id": null,
+  "candidate_count": 1,
+  "candidates": [
+    {
+      "activity_power": {
+        "clock_period_ns": 10.0,
+        "flow_variant": "decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_3000_v1_macro_conservative_c1_die_3000",
+        "full_context_cycles": 8719,
+        "full_context_energy_j": null,
+        "full_context_latency_s": 8.719000000000001e-05,
+        "min_macro_trace_active_coverage": 0.01,
+        "min_macro_trace_active_pins": 16,
+        "min_sequential_register_activity_coverage": 0.95,
+        "min_vcd_annotated_pins": 32,
+        "min_vcd_annotation_coverage": 0.05,
+        "model": "postroute_phase_vcd_power_v1",
+        "orfs_design_config": "designs/nangate45/attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr/config.mk",
+        "orfs_design_config_sha256": "ee5b19bf558d122d129dc2b720b4c3e3a5c372fc065041d08793a74a3958c4dd",
+        "phases": [
+          {
+            "annotation_gate_pass": true,
+            "clock_period_gate_pass": true,
+            "direct_vcd_annotation_coverage": 0.00342753782725146,
+            "direct_vcd_annotation_pin_gate_pass": true,
+            "full_context_cycles": 8719,
+            "full_context_energy_j": 2.2285286352341593e-05,
+            "macro_activity": "attention_decode_score_multivalue_service_fakeram_macro_pin_vcd_activity_v1.json",
+            "macro_activity_assignment_count": 9704,
+            "macro_activity_gate_pass": false,
+            "macro_activity_sha256": "d9b87bf59a8e37f5e292bb6a13fb8cba2cc16775a001bf3f2d59c7415da15e3a",
+            "macro_trace_active_coverage": 0.0,
+            "measured_cycles": 8719,
+            "phase": "service_window",
+            "phase_gate_pass": false,
+            "power": {
+              "activity_annotation_counts": {
+                "input": 5662,
+                "unannotated": 623531,
+                "vcd": 2164
+              },
+              "activity_value_diagnostics": {
+                "duty_greater_than_one_count": 0,
+                "duty_less_than_zero_count": 0,
+                "finite_extrema": {
+                  "max_duty": 1,
+                  "max_toggle": 2026890000,
+                  "min_duty": 0,
+                  "min_toggle": 0
+                },
+                "malformed_activity_tuple_count": 0,
+                "negative_toggle_count": 7212,
+                "non_finite_duty_count": 0,
+                "non_finite_toggle_count": 0,
+                "origin_counts": {
+                  "clock": 22267,
+                  "constant": 1878,
+                  "other": 21538,
+                  "propagated": 583496,
+                  "vcd": 0
+                },
+                "queried_pin_count": 629179,
+                "query_error_count": 0,
+                "samples": [
+                  {
+                    "duty": 1,
+                    "full_name": "gen_cluster[0].u_cluster/reducer/_246395_/A",
+                    "origin": "propagated",
+                    "reason": "negative_toggle",
+                    "toggle": -1.10879
+                  },
+                  {
+                    "duty": 1,
+                    "full_name": "gen_cluster[0].u_cluster/reducer/_218033_/ZN",
+                    "origin": "propagated",
+                    "reason": "negative_toggle",
+                    "toggle": -26.1468
+                  },
+                  {
+                    "duty": 1,
+                    "full_name": "gen_cluster[0].u_cluster/reducer/_246331_/S",
+                    "origin": "propagated",
+                    "reason": "negative_toggle",
+                    "toggle": -0.195834
+                  },
+                  {
+                    "duty": 0,
+                    "full_name": "gen_cluster[0].u_cluster/reducer/_255969_/CO",
+                    "origin": "propagated",
+                    "reason": "negative_toggle",
+                    "toggle": -3.69838
+                  },
+                  {
+                    "duty": 1,
+                    "full_name": "gen_cluster[0].u_cluster/reducer/_243863_/A",
+                    "origin": "propagated",
+                    "reason": "negative_toggle",
+                    "toggle": -1.10879
+                  },
+                  {
+                    "duty": 0,
+                    "full_name": "gen_cluster[0].u_cluster/reducer/_211076_/B2",
+                    "origin": "propagated",
+                    "reason": "negative_toggle",
+                    "toggle": -18725.7
+                  },
+                  {
+                    "duty": 0,
+                    "full_name": "gen_cluster[0].u_cluster/reducer/_211163_/ZN",
+                    "origin": "propagated",
+                    "reason": "negative_toggle",
+                    "toggle": -0.0049135
+                  },
+                  {
+                    "duty": 0,
+                    "full_name": "gen_cluster[0].u_cluster/reducer/_210116_/A2",
+                    "origin": "propagated",
+                    "reason": "negative_toggle",
+                    "toggle": -2353.95
+                  },
+                  {
+                    "duty": 0,
+                    "full_name": "gen_cluster[0].u_cluster/reducer/_203252_/A1",
+                    "origin": "propagated",
+                    "reason": "negative_toggle",
+                    "toggle": -1304.04
+                  },
+                  {
+                    "duty": 0,
+                    "full_name": "gen_cluster[0].u_cluster/reducer/_241265_/CI",
+                    "origin": "propagated",
+                    "reason": "negative_toggle",
+                    "toggle": -1.10879
+                  },
+                  {
+                    "duty": 0,
+                    "full_name": "gen_cluster[0].u_cluster/reducer/_217080_/A3",
+                    "origin": "propagated",
+                    "reason": "negative_toggle",
+                    "toggle": -259.599
+                  },
+                  {
+                    "duty": 1,
+                    "full_name": "gen_cluster[0].u_cluster/reducer/_217689_/A2",
+                    "origin": "propagated",
+                    "reason": "negative_toggle",
+                    "toggle": -81317.1
+                  },
+                  {
+                    "duty": 1,
+                    "full_name": "gen_cluster[0].u_cluster/reducer/_218039_/ZN",
+                    "origin": "propagated",
+                    "reason": "negative_toggle",
+                    "toggle": -7632.04
+                  },
+                  {
+                    "duty": 1,
+                    "full_name": "gen_cluster[0].u_cluster/reducer/_247051_/A",
+                    "origin": "propagated",
+                    "reason": "negative_toggle",
+                    "toggle": -1.10879
+                  },
+                  {
+                    "duty": 0,
+                    "full_name": "gen_cluster[0].u_cluster/reducer/_171405_/A",
+                    "origin": "propagated",
+                    "reason": "negative_toggle",
+                    "toggle": -5.19746
+                  },
+                  {
+                    "duty": 0,
+                    "full_name": "gen_cluster[0].u_cluster/reducer/_173209_/A",
+                    "origin": "propagated",
+                    "reason": "negative_toggle",
+                    "toggle": -0.195834
+                  }
+                ],
+                "valid_pin_count": 621967,
+                "valid_samples": [
+                  {
+                    "duty": 0,
+                    "full_name": "gen_cluster[0].u_cluster/reducer/_154070_/A",
+                    "origin": "propagated",
+                    "reason": "valid",
+                    "toggle": 0
+                  },
+                  {
+                    "duty": 0,
+                    "full_name": "gen_cluster[0].u_cluster/reducer/_245939_/S",
+                    "origin": "propagated",
+                    "reason": "valid",
+                    "toggle": 2771.83
+                  },
+                  {
+                    "duty": 1,
+                    "full_name": "gen_cluster[0].u_cluster/score_tile/_12233_/ZN",
+                    "origin": "propagated",
+                    "reason": "valid",
+                    "toggle": 0
+                  },
+                  {
+                    "duty": 0,
+                    "full_name": "gen_cluster[0].u_cluster/score_tile/_12486_/ZN",
+                    "origin": "propagated",
+                    "reason": "valid",
+                    "toggle": 0
+                  }
+                ]
+              },
+              "annotatable_pin_count": 629179,
+              "design_power_quartets": {
+                "clock": {
+                  "internal_w": 0.00411766581237,
+                  "leakage_w": 0.000139224954182,
+                  "switching_w": 0.0054671773687,
+                  "total_w": 0.0097240684554
+                },
+                "combinational": {
+                  "internal_w": 0.0125087117776,
+                  "leakage_w": 0.00517654325813,
+                  "switching_w": 0.0194392520934,
+                  "total_w": 0.0371245071292
+                },
+                "macro": {
+                  "internal_w": 0.0873126611114,
+                  "leakage_w": 0.110313825309,
+                  "switching_w": 0,
+                  "total_w": 0.197626486421
+                },
+                "pad": {
+                  "internal_w": 0,
+                  "leakage_w": 0,
+                  "switching_w": 0,
+                  "total_w": 0
+                },
+                "sequential": {
+                  "internal_w": 0.00942823477089,
+                  "leakage_w": 0.000997716910206,
+                  "switching_w": 0.000705373066012,
+                  "total_w": 0.0111313248053
+                },
+                "total": {
+                  "internal_w": 0.113355122507,
+                  "leakage_w": 0.116628177464,
+                  "switching_w": 0.025611218065,
+                  "total_w": 0.255594521761
+                }
+              },
+              "direct_annotatable_pin_count": 631357,
+              "direct_input_pin_count": 5662,
+              "direct_unannotated_pin_count": 623531,
+              "direct_vcd_pin_count": 2164,
+              "internal_w": 0.113355122507,
+              "leaf_activity_origin_counts": {
+                "clock": 22267,
+                "constant": 1878,
+                "other": 21538,
+                "propagated": 583496,
+                "vcd": 0
+              },
+              "leaf_annotatable_pin_count": 629179,
+              "leaf_direct_annotatable_pin_count": 631357,
+              "leaf_direct_vcd_pin_count": 2164,
+              "leaf_trace_backed_pin_count": 583496,
+              "leaf_vcd_annotated_pin_count": 2164,
+              "leakage_w": 0.116628177464,
+              "macro_activity_origin_counts": {
+                "clock": 56,
+                "constant": 1426,
+                "other": 2184,
+                "propagated": 0,
+                "transferred": 4334,
+                "vcd": 0
+              },
+              "macro_annotatable_pin_count": 8000,
+              "macro_pin_transfer": {
+                "active_count": 0,
+                "applied_count": 4334,
+                "apply_error_count": 0,
+                "candidate_count": 4334,
+                "connected_pin_count": 5152,
+                "driver_origin_counts": {
+                  "clock": 56,
+                  "constant": 762,
+                  "other": 0,
+                  "propagated": 4334,
+                  "vcd": 0
+                },
+                "driver_pin_count": 5152,
+                "input_pin_count": 5152,
+                "name_match_pin_count": 8000,
+                "no_driver_pin_count": 0,
+                "no_net_pin_count": 0,
+                "peer_eligible_count": 0,
+                "peer_origin_counts": {
+                  "clock": 175,
+                  "constant": 1350,
+                  "other": 0,
+                  "propagated": 0,
+                  "vcd": 0
+                },
+                "peer_pin_examined_count": 1525,
+                "query_error_count": 0,
+                "scan_samples": [
+                  {
+                    "driver_origin": "propagated",
+                    "full_name": "gen_cluster[0].u_cluster/score_bank/u_group_2_slice_4/w_mask_in[35]",
+                    "source_kind": "driver"
+                  },
+                  {
+                    "driver_origin": "constant",
+                    "full_name": "gen_cluster[0].u_cluster/score_bank/u_group_2_slice_0/addr_in[6]",
+                    "source_kind": "none"
+                  },
+                  {
+                    "driver_origin": "propagated",
+                    "full_name": "gen_cluster[0].u_cluster/score_bank/u_group_5_slice_3/addr_in[2]",
+                    "source_kind": "driver"
+                  },
+                  {
+                    "driver_origin": "propagated",
+                    "full_name": "gen_cluster[0].u_cluster/score_bank/u_group_7_slice_6/addr_in[1]",
+                    "source_kind": "driver"
+                  },
+                  {
+                    "driver_origin": "propagated",
+                    "full_name": "gen_cluster[0].u_cluster/score_bank/u_group_0_slice_4/wd_in[3]",
+                    "source_kind": "driver"
+                  },
+                  {
+                    "driver_origin": "propagated",
+                    "full_name": "gen_cluster[0].u_cluster/score_bank/u_group_6_slice_0/w_mask_in[31]",
+                    "source_kind": "driver"
+                  },
+                  {
+                    "driver_origin": "propagated",
+                    "full_name": "gen_cluster[0].u_cluster/score_bank/u_group_0_slice_1/w_mask_in[36]",
+                    "source_kind": "driver"
+                  },
+                  {
+                    "driver_origin": "propagated",
+                    "full_name": "gen_cluster[0].u_cluster/score_bank/u_group_0_slice_4/wd_in[35]",
+                    "source_kind": "driver"
+                  },
+                  {
+                    "driver_origin": "propagated",
+                    "full_name": "gen_cluster[0].u_cluster/score_bank/u_group_4_slice_0/wd_in[31]",
+                    "source_kind": "driver"
+                  },
+                  {
+                    "driver_origin": "propagated",
+                    "full_name": "gen_cluster[0].u_cluster/score_bank/u_group_2_slice_1/w_mask_in[22]",
+                    "source_kind": "driver"
+                  },
+                  {
+                    "driver_origin": "propagated",
+                    "full_name": "gen_cluster[0].u_cluster/score_bank/u_group_7_slice_3/wd_in[27]",
+                    "source_kind": "driver"
+                  },
+                  {
+                    "driver_origin": "propagated",
+                    "full_name": "gen_cluster[0].u_cluster/score_bank/u_group_5_slice_4/w_mask_in[18]",
+                    "source_kind": "driver"
+                  },
+                  {
+                    "driver_origin": "propagated",
+                    "full_name": "gen_cluster[0].u_cluster/score_bank/u_group_2_slice_4/wd_in[21]",
+                    "source_kind": "driver"
+                  },
+                  {
+                    "driver_origin": "propagated",
+                    "full_name": "gen_cluster[0].u_cluster/score_bank/u_group_4_slice_1/w_mask_in[8]",
+                    "source_kind": "driver"
+                  },
+                  {
+                    "driver_origin": "propagated",
+                    "full_name": "gen_cluster[0].u_cluster/score_bank/u_group_0_slice_5/w_mask_in[12]",
+                    "source_kind": "driver"
+                  },
+                  {
+                    "driver_origin": "propagated",
+                    "full_name": "gen_cluster[0].u_cluster/score_bank/u_group_6_slice_0/wd_in[17]",
+                    "source_kind": "driver"
+                  }
+                ],
+                "scanned_pin_count": 629179,
+                "source_propagated_count": 4334,
+                "source_vcd_count": 0,
+                "structural_applied_count": 0,
+                "structural_apply_error_count": 0,
+                "structural_assignment_count": 9704,
+                "structural_matched_count": 0,
+                "structural_query_error_count": 0,
+                "structural_unmatched_count": 9704,
+                "transferred": [
+                  {
+                    "full_name": "gen_cluster[0].u_cluster/score_bank/u_group_0_slice_0/addr_in[0]",
+                    "source": "propagated",
+                    "source_kind": "driver"
+                  },
+                  {
+                    "full_name": "gen_cluster[0].u_cluster/score_bank/u_group_0_slice_0/addr_in[1]",
+                    "source": "propagated",
+                    "source_kind": "driver"
+                  },
+                  {
+                    "full_name": "gen_cluster[0].u_cluster/score_bank/u_group_0_slice_0/addr_in[2]",
+                    "source": "propagated",
+                    "source_kind": "driver"
+                  },
+                  {
+                    "full_name": "gen_cluster[0].u_cluster/score_bank/u_group_0_slice_0/addr_in[3]",
+                    "source": "propagated",
+                    "source_kind": "driver"
+                  },
+                  {
+                    "full_name": "gen_cluster[0].u_cluster/score_bank/u_group_0_slice_0/ce_in",
+                    "source": "propagated",
+                    "source_kind": "driver"
+                  },
+                  {
+                    "full_name": "gen_cluster[0].u_cluster/score_bank/u_group_0_slice_0/w_mask_in[0]",
+                    "source": "propagated",
+                    "source_kind": "driver"
+                  },
+                  {
+                    "full_name": "gen_cluster[0].u_cluster/score_bank/u_group_0_slice_0/w_mask_in[1]",
+                    "source": "propagated",
+                    "source_kind": "driver"
+                  },
+                  {
+                    "full_name": "gen_cluster[0].u_cluster/score_bank/u_group_0_slice_0/w_mask_in[2]",
+                    "source": "propagated",
+                    "source_kind": "driver"
+                  },
+                  {
+                    "full_name": "gen_cluster[0].u_cluster/score_bank/u_group_0_slice_0/w_mask_in[3]",
+                    "source": "propagated",
+                    "source_kind": "driver"
+                  },
+                  {
+                    "full_name": "gen_cluster[0].u_cluster/score_bank/u_group_0_slice_0/w_mask_in[4]",
+                    "source": "propagated",
+                    "source_kind": "driver"
+                  },
+                  {
+                    "full_name": "gen_cluster[0].u_cluster/score_bank/u_group_0_slice_0/w_mask_in[5]",
+                    "source": "propagated",
+                    "source_kind": "driver"
+                  },
+                  {
+                    "full_name": "gen_cluster[0].u_cluster/score_bank/u_group_0_slice_0/w_mask_in[6]",
+                    "source": "propagated",
+                    "source_kind": "driver"
+                  },
+                  {
+                    "full_name": "gen_cluster[0].u_cluster/score_bank/u_group_0_slice_0/w_mask_in[7]",
+                    "source": "propagated",
+                    "source_kind": "driver"
+                  },
+                  {
+                    "full_name": "gen_cluster[0].u_cluster/score_bank/u_group_0_slice_0/w_mask_in[8]",
+                    "source": "propagated",
+                    "source_kind": "driver"
+                  },
+                  {
+                    "full_name": "gen_cluster[0].u_cluster/score_bank/u_group_0_slice_0/w_mask_in[9]",
+                    "source": "propagated",
+                    "source_kind": "driver"
+                  },
+                  {
+                    "full_name": "gen_cluster[0].u_cluster/score_bank/u_group_0_slice_0/w_mask_in[10]",
+                    "source": "propagated",
+                    "source_kind": "driver"
+                  }
+                ],
+                "zero_count": 4334
+              },
+              "macro_trace_active_pin_count": 0,
+              "macro_trace_backed_pin_count": 4334,
+              "macro_trace_backed_zero_toggle_pin_count": 4334,
+              "sdc_clock_period_ns": 10,
+              "sequential_register_activity": {
+                "applied_count": 1328,
+                "apply_error_count": 0,
+                "assignment_count": 13031,
+                "candidate_count": 24338,
+                "coverage": 0.0545648779686,
+                "matched_count": 1328,
+                "q_candidate_count": 12169,
+                "qn_candidate_count": 12169,
+                "query_error_count": 0,
+                "scan_samples": [
+                  {
+                    "full_name": "gen_cluster[0].u_cluster/score_tile/accum[0][31]$_DFFE_PN0N_/Q",
+                    "kind": "unmatched_output",
+                    "pin": "_01a0ba80b15c0000_p_Pin",
+                    "pin_duty": 0,
+                    "pin_type": "Q",
+                    "reason": "no_sequential_row",
+                    "register_full_name": "gen_cluster[0].u_cluster/score_tile/accum[0][31]"
+                  },
+                  {
+                    "full_name": "gen_cluster[0].u_cluster/score_tile/accum[6][6]$_DFFE_PN0N_/Q",
+                    "kind": "unmatched_output",
+                    "pin": "_01a2bc80b15c0000_p_Pin",
+                    "pin_duty": 0,
+                    "pin_type": "Q",
+                    "reason": "no_sequential_row",
+                    "register_full_name": "gen_cluster[0].u_cluster/score_tile/accum[6][6]"
+                  },
+                  {
+                    "full_name": "u_router/gen_resp_fifo[0].u_resp_fifo/mem[0][123]$_DFFE_PP_/QN",
+                    "kind": "unmatched_output",
+                    "pin": "_01a2f980b15c0000_p_Pin",
+                    "pin_duty": 0,
+                    "pin_type": "QN",
+                    "reason": "no_sequential_row",
+                    "register_full_name": "u_router/gen_resp_fifo[0].u_resp_fifo/mem[0][123]"
+                  },
+                  {
+                    "full_name": "gen_cluster[0].u_cluster/score_tile/result_score_row_q[244]$_DFFE_PN0P_/Q",
+                    "kind": "unmatched_output",
+                    "pin": "_01a4be80b15c0000_p_Pin",
+                    "pin_duty": 0,
+                    "pin_type": "Q",
+                    "reason": "no_sequential_row",
+                    "register_full_name": "gen_cluster[0].u_cluster/score_tile/result_score_row_q[244]"
+                  },
+                  {
+                    "full_name": "u_router/gen_resp_fifo[0].u_resp_fifo/mem[3][33]$_DFFE_PP_/QN",
+                    "kind": "unmatched_output",
+                    "pin": "_01a4fe80b15c0000_p_Pin",
+                    "pin_duty": 0,
+                    "pin_type": "QN",
+                    "reason": "no_sequential_row",
+                    "register_full_name": "u_router/gen_resp_fifo[0].u_resp_fifo/mem[3][33]"
+                  },
+                  {
+                    "full_name": "u_service/active_matrix[0][473]$_DFF_PN0_/QN",
+                    "kind": "unmatched_output",
+                    "pin": "_01a14a81b15c0000_p_Pin",
+                    "pin_duty": 0,
+                    "pin_type": "QN",
+                    "reason": "no_sequential_row",
+                    "register_full_name": "u_service/active_matrix[0][473]"
+                  },
+                  {
+                    "full_name": "gen_cluster[0].u_cluster/reducer/numerator_accum[107][14]$_DFFE_PP_/QN",
+                    "kind": "unmatched_output",
+                    "pin": "_01a72c80b15c0000_p_Pin",
+                    "pin_duty": 0,
+                    "pin_type": "QN",
+                    "reason": "no_sequential_row",
+                    "register_full_name": "gen_cluster[0].u_cluster/reducer/numerator_accum[107][14]"
+                  },
+                  {
+                    "full_name": "gen_cluster[0].u_cluster/reducer/numerator_accum[28][3]$_DFFE_PP_/QN",
+                    "kind": "unmatched_output",
+                    "pin": "_01a73c80b15c0000_p_Pin",
+                    "pin_duty": 0,
+                    "pin_type": "QN",
+                    "reason": "no_sequential_row",
+                    "register_full_name": "gen_cluster[0].u_cluster/reducer/numerator_accum[28][3]"
+                  },
+                  {
+                    "full_name": "u_service/active_matrix[0][73]$_DFF_PN0_/QN",
+                    "kind": "unmatched_output",
+                    "pin": "_01a74b81b15c0000_p_Pin",
+                    "pin_duty": 0,
+                    "pin_type": "QN",
+                    "reason": "no_sequential_row",
+                    "register_full_name": "u_service/active_matrix[0][73]"
+                  },
+                  {
+                    "full_name": "u_service/active_matrix[1][24]$_DFF_PN0_/QN",
+                    "kind": "unmatched_output",
+                    "pin": "_01a94d81b15c0000_p_Pin",
+                    "pin_duty": 0,
+                    "pin_type": "QN",
+                    "reason": "no_sequential_row",
+                    "register_full_name": "u_service/active_matrix[1][24]"
+                  },
+                  {
+                    "full_name": "gen_cluster[0].u_cluster/reducer/cycle_count[18]$_DFF_PN0_/Q",
+                    "kind": "unmatched_output",
+                    "pin": "_01a02680b15c0000_p_Pin",
+                    "pin_duty": 0,
+                    "pin_type": "Q",
+                    "reason": "no_sequential_row",
+                    "register_full_name": "gen_cluster[0].u_cluster/reducer/cycle_count[18]"
+                  },
+                  {
+                    "full_name": "u_service/active_matrix[2][195]$_DFF_PN0_/Q",
+                    "kind": "unmatched_output",
+                    "pin": "_01a15281b15c0000_p_Pin",
+                    "pin_duty": 0,
+                    "pin_type": "Q",
+                    "reason": "no_sequential_row",
+                    "register_full_name": "u_service/active_matrix[2][195]"
+                  },
+                  {
+                    "full_name": "gen_cluster[0].u_cluster/scaled_score_row_q[97]$_DFFE_PN0P_/QN",
+                    "kind": "unmatched_output",
+                    "pin": "_01a16380b15c0000_p_Pin",
+                    "pin_duty": 0,
+                    "pin_type": "QN",
+                    "reason": "no_sequential_row",
+                    "register_full_name": "gen_cluster[0].u_cluster/scaled_score_row_q[97]"
+                  },
+                  {
+                    "full_name": "gen_cluster[0].u_cluster/reducer/numerator_accum[1][28]$_DFFE_PP_/QN",
+                    "kind": "unmatched_output",
+                    "pin": "_01a23880b15c0000_p_Pin",
+                    "pin_duty": 0,
+                    "pin_type": "QN",
+                    "reason": "no_sequential_row",
+                    "register_full_name": "gen_cluster[0].u_cluster/reducer/numerator_accum[1][28]"
+                  },
+                  {
+                    "full_name": "gen_cluster[0].u_cluster/reducer/numerator_accum[38][40]$_DFFE_PP_/QN",
+                    "kind": "unmatched_output",
+                    "pin": "_01a24080b15c0000_p_Pin",
+                    "pin_duty": 0,
+                    "pin_type": "QN",
+                    "reason": "no_sequential_row",
+                    "register_full_name": "gen_cluster[0].u_cluster/reducer/numerator_accum[38][40]"
+                  },
+                  {
+                    "full_name": "gen_cluster[0].u_cluster/reducer/numerator_accum[57][16]$_DFFE_PP_/QN",
+                    "kind": "unmatched_output",
+                    "pin": "_01a24880b15c0000_p_Pin",
+                    "pin_duty": 0,
+                    "pin_type": "QN",
+                    "reason": "no_sequential_row",
+                    "register_full_name": "gen_cluster[0].u_cluster/reducer/numerator_accum[57][16]"
+                  }
+                ],
+                "scanned_pin_count": 629179,
+                "unmatched_output_count": 23010,
+                "unmatched_output_rows_by_prefix": [
+                  {
+                    "count": 1024,
+                    "register_prefix": "gen_cluster[0].u_reassembler/wide_matrix_r"
+                  },
+                  {
+                    "count": 1024,
+                    "register_prefix": "u_service/active_matrix[0]"
+                  },
+                  {
+                    "count": 1024,
+                    "register_prefix": "u_service/active_matrix[1]"
+                  },
+                  {
+                    "count": 1024,
+                    "register_prefix": "u_service/active_matrix[2]"
+                  },
+                  {
+                    "count": 1024,
+                    "register_prefix": "u_service/active_matrix[3]"
+                  },
+                  {
+                    "count": 640,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/result_value"
+                  },
+                  {
+                    "count": 512,
+                    "register_prefix": "gen_cluster[0].u_cluster/raw_score_row_q"
+                  },
+                  {
+                    "count": 512,
+                    "register_prefix": "gen_cluster[0].u_cluster/scaled_score_row_q"
+                  },
+                  {
+                    "count": 512,
+                    "register_prefix": "gen_cluster[0].u_cluster/score_response_data_q"
+                  },
+                  {
+                    "count": 512,
+                    "register_prefix": "gen_cluster[0].u_cluster/score_tile/result_score_row_q"
+                  },
+                  {
+                    "count": 316,
+                    "register_prefix": "u_router/gen_resp_fifo[0].u_resp_fifo/mem[0]"
+                  },
+                  {
+                    "count": 316,
+                    "register_prefix": "u_router/gen_resp_fifo[0].u_resp_fifo/mem[1]"
+                  },
+                  {
+                    "count": 316,
+                    "register_prefix": "u_router/gen_resp_fifo[0].u_resp_fifo/mem[2]"
+                  },
+                  {
+                    "count": 316,
+                    "register_prefix": "u_router/gen_resp_fifo[0].u_resp_fifo/mem[3]"
+                  },
+                  {
+                    "count": 116,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/final_magnitude"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[0]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[100]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[101]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[102]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[103]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[104]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[105]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[106]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[107]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[108]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[109]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[10]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[110]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[111]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[112]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[113]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[114]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[115]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[116]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[117]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[118]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[119]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[11]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[120]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[121]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[122]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[123]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[124]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[125]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[126]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[127]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[12]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[13]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[14]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[15]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[16]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[17]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[18]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[19]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[1]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[20]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[21]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[22]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[23]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[24]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[25]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[26]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[27]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[28]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[29]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[2]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[30]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[31]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[32]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[33]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[34]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[35]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[36]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[37]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[38]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[39]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[3]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[40]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[41]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[42]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[43]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[44]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[45]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[46]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[47]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[48]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[49]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[4]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[50]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[51]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[52]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[53]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[54]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[55]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[56]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[57]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[58]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[59]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[5]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[60]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[61]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[62]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[63]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[64]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[65]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[66]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[67]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[68]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[69]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[6]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[70]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[71]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[72]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[73]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[74]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[75]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[76]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[77]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[78]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[79]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[7]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[80]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[81]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[82]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[83]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[84]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[85]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[86]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[87]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[88]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[89]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[8]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[90]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[91]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[92]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[93]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[94]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[95]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[96]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[97]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[98]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[99]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_accum[9]"
+                  },
+                  {
+                    "count": 82,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/numerator_magnitude"
+                  },
+                  {
+                    "count": 78,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/div_quotient"
+                  },
+                  {
+                    "count": 66,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/div_remainder"
+                  },
+                  {
+                    "count": 66,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/exp_sum_accum"
+                  },
+                  {
+                    "count": 66,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/result_exp_sum"
+                  },
+                  {
+                    "count": 64,
+                    "register_prefix": "gen_cluster[0].u_cluster/active_multiplier_q"
+                  },
+                  {
+                    "count": 64,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/accepted_count"
+                  },
+                  {
+                    "count": 64,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/completed_count"
+                  },
+                  {
+                    "count": 64,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/cycle_count"
+                  },
+                  {
+                    "count": 64,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/global_max"
+                  },
+                  {
+                    "count": 64,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/result_global_max"
+                  },
+                  {
+                    "count": 64,
+                    "register_prefix": "gen_cluster[0].u_cluster/score_tile/accum[0]"
+                  },
+                  {
+                    "count": 64,
+                    "register_prefix": "gen_cluster[0].u_cluster/score_tile/accum[1]"
+                  },
+                  {
+                    "count": 64,
+                    "register_prefix": "gen_cluster[0].u_cluster/score_tile/accum[2]"
+                  },
+                  {
+                    "count": 64,
+                    "register_prefix": "gen_cluster[0].u_cluster/score_tile/accum[3]"
+                  },
+                  {
+                    "count": 64,
+                    "register_prefix": "gen_cluster[0].u_cluster/score_tile/accum[4]"
+                  },
+                  {
+                    "count": 64,
+                    "register_prefix": "gen_cluster[0].u_cluster/score_tile/accum[5]"
+                  },
+                  {
+                    "count": 64,
+                    "register_prefix": "gen_cluster[0].u_cluster/score_tile/accum[6]"
+                  },
+                  {
+                    "count": 64,
+                    "register_prefix": "gen_cluster[0].u_cluster/score_tile/accum[7]"
+                  },
+                  {
+                    "count": 54,
+                    "register_prefix": "u_router/gen_req_fifo[0].u_req_fifo/mem[0]"
+                  },
+                  {
+                    "count": 54,
+                    "register_prefix": "u_router/gen_req_fifo[0].u_req_fifo/mem[1]"
+                  },
+                  {
+                    "count": 54,
+                    "register_prefix": "u_router/gen_req_fifo[0].u_req_fifo/mem[2]"
+                  },
+                  {
+                    "count": 54,
+                    "register_prefix": "u_router/gen_req_fifo[0].u_req_fifo/mem[3]"
+                  },
+                  {
+                    "count": 54,
+                    "register_prefix": "u_service/gen_bank_fifo[0].u_bank_fifo/mem[0]"
+                  },
+                  {
+                    "count": 54,
+                    "register_prefix": "u_service/gen_bank_fifo[0].u_bank_fifo/mem[1]"
+                  },
+                  {
+                    "count": 54,
+                    "register_prefix": "u_service/gen_bank_fifo[0].u_bank_fifo/mem[2]"
+                  },
+                  {
+                    "count": 54,
+                    "register_prefix": "u_service/gen_bank_fifo[0].u_bank_fifo/mem[3]"
+                  },
+                  {
+                    "count": 54,
+                    "register_prefix": "u_service/gen_bank_fifo[1].u_bank_fifo/mem[0]"
+                  },
+                  {
+                    "count": 54,
+                    "register_prefix": "u_service/gen_bank_fifo[1].u_bank_fifo/mem[1]"
+                  },
+                  {
+                    "count": 54,
+                    "register_prefix": "u_service/gen_bank_fifo[1].u_bank_fifo/mem[2]"
+                  },
+                  {
+                    "count": 54,
+                    "register_prefix": "u_service/gen_bank_fifo[1].u_bank_fifo/mem[3]"
+                  },
+                  {
+                    "count": 54,
+                    "register_prefix": "u_service/gen_bank_fifo[2].u_bank_fifo/mem[0]"
+                  },
+                  {
+                    "count": 54,
+                    "register_prefix": "u_service/gen_bank_fifo[2].u_bank_fifo/mem[1]"
+                  },
+                  {
+                    "count": 54,
+                    "register_prefix": "u_service/gen_bank_fifo[2].u_bank_fifo/mem[2]"
+                  },
+                  {
+                    "count": 54,
+                    "register_prefix": "u_service/gen_bank_fifo[2].u_bank_fifo/mem[3]"
+                  },
+                  {
+                    "count": 54,
+                    "register_prefix": "u_service/gen_bank_fifo[3].u_bank_fifo/mem[0]"
+                  },
+                  {
+                    "count": 54,
+                    "register_prefix": "u_service/gen_bank_fifo[3].u_bank_fifo/mem[1]"
+                  },
+                  {
+                    "count": 54,
+                    "register_prefix": "u_service/gen_bank_fifo[3].u_bank_fifo/mem[2]"
+                  },
+                  {
+                    "count": 54,
+                    "register_prefix": "u_service/gen_bank_fifo[3].u_bank_fifo/mem[3]"
+                  },
+                  {
+                    "count": 38,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/block_sum"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/active_command_id"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/block_weight[0]"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/block_weight[1]"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/block_weight[2]"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/block_weight[3]"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/block_weight[4]"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/block_weight[5]"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/block_weight[6]"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/block_weight[7]"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/result_command_id"
+                  },
+                  {
+                    "count": 28,
+                    "register_prefix": "expected_addr_q[0]"
+                  },
+                  {
+                    "count": 28,
+                    "register_prefix": "gen_cluster[0].u_reassembler/wide_addr_r"
+                  },
+                  {
+                    "count": 28,
+                    "register_prefix": "u_service/active_addr[0]"
+                  },
+                  {
+                    "count": 28,
+                    "register_prefix": "u_service/active_addr[1]"
+                  },
+                  {
+                    "count": 28,
+                    "register_prefix": "u_service/active_addr[2]"
+                  },
+                  {
+                    "count": 28,
+                    "register_prefix": "u_service/active_addr[3]"
+                  },
+                  {
+                    "count": 22,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/state"
+                  },
+                  {
+                    "count": 16,
+                    "register_prefix": "expected_tag_q[0]"
+                  },
+                  {
+                    "count": 16,
+                    "register_prefix": "gen_cluster[0].u_reassembler/wide_tag_r"
+                  },
+                  {
+                    "count": 16,
+                    "register_prefix": "request_tag_q[0]"
+                  },
+                  {
+                    "count": 16,
+                    "register_prefix": "u_service/active_tag[0]"
+                  },
+                  {
+                    "count": 16,
+                    "register_prefix": "u_service/active_tag[1]"
+                  },
+                  {
+                    "count": 16,
+                    "register_prefix": "u_service/active_tag[2]"
+                  },
+                  {
+                    "count": 16,
+                    "register_prefix": "u_service/active_tag[3]"
+                  },
+                  {
+                    "count": 14,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/div_bit_count"
+                  },
+                  {
+                    "count": 14,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/div_index"
+                  },
+                  {
+                    "count": 12,
+                    "register_prefix": "gen_cluster[0].u_cluster/active_shift_q"
+                  },
+                  {
+                    "count": 10,
+                    "register_prefix": "gen_cluster[0].u_cluster/active_block_count_q"
+                  },
+                  {
+                    "count": 10,
+                    "register_prefix": "gen_cluster[0].u_cluster/block_index_q"
+                  },
+                  {
+                    "count": 10,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/active_block_count"
+                  },
+                  {
+                    "count": 10,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/fill_count"
+                  },
+                  {
+                    "count": 8,
+                    "register_prefix": "expected_slice_q[0]"
+                  },
+                  {
+                    "count": 8,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/clear_slice_index"
+                  },
+                  {
+                    "count": 8,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/read_index"
+                  },
+                  {
+                    "count": 8,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/result_slice"
+                  },
+                  {
+                    "count": 8,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/value_slice_index"
+                  },
+                  {
+                    "count": 8,
+                    "register_prefix": "gen_cluster[0].u_cluster/scale_lane_index_q"
+                  },
+                  {
+                    "count": 8,
+                    "register_prefix": "gen_cluster[0].u_reassembler/wide_value_slice_r"
+                  },
+                  {
+                    "count": 8,
+                    "register_prefix": "u_service/active_slice[0]"
+                  },
+                  {
+                    "count": 8,
+                    "register_prefix": "u_service/active_slice[1]"
+                  },
+                  {
+                    "count": 8,
+                    "register_prefix": "u_service/active_slice[2]"
+                  },
+                  {
+                    "count": 8,
+                    "register_prefix": "u_service/active_slice[3]"
+                  },
+                  {
+                    "count": 8,
+                    "register_prefix": "u_service/active_source"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "gen_cluster[0].u_cluster/score_bank/read_group_q"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "gen_cluster[0].u_cluster/score_bank/rsp_group_q"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "gen_cluster[0].u_cluster/score_tile/state"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "gen_cluster[0].u_cluster/state_q"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_router/gen_req_fifo[0].u_req_fifo/count"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_router/gen_req_fifo[0].u_req_fifo/max_occupancy"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_router/gen_resp_fifo[0].u_resp_fifo/count"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_router/gen_resp_fifo[0].u_resp_fifo/max_occupancy"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_service/gen_bank_fifo[0].u_bank_fifo/count"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_service/gen_bank_fifo[0].u_bank_fifo/max_occupancy"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_service/gen_bank_fifo[1].u_bank_fifo/count"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_service/gen_bank_fifo[1].u_bank_fifo/max_occupancy"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_service/gen_bank_fifo[2].u_bank_fifo/count"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_service/gen_bank_fifo[2].u_bank_fifo/max_occupancy"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_service/gen_bank_fifo[3].u_bank_fifo/count"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_service/gen_bank_fifo[3].u_bank_fifo/max_occupancy"
+                  },
+                  {
+                    "count": 4,
+                    "register_prefix": "gen_cluster[0].u_reassembler/expected_fragment_r"
+                  },
+                  {
+                    "count": 4,
+                    "register_prefix": "u_service/active_fragment[0]"
+                  },
+                  {
+                    "count": 4,
+                    "register_prefix": "u_service/active_fragment[1]"
+                  },
+                  {
+                    "count": 4,
+                    "register_prefix": "u_service/active_fragment[2]"
+                  },
+                  {
+                    "count": 4,
+                    "register_prefix": "u_service/active_fragment[3]"
+                  },
+                  {
+                    "count": 4,
+                    "register_prefix": "u_service/bank_latency[0]"
+                  },
+                  {
+                    "count": 4,
+                    "register_prefix": "u_service/bank_latency[1]"
+                  },
+                  {
+                    "count": 4,
+                    "register_prefix": "u_service/bank_latency[2]"
+                  },
+                  {
+                    "count": 4,
+                    "register_prefix": "u_service/bank_latency[3]"
+                  },
+                  {
+                    "count": 2,
+                    "register_prefix": "gen_cluster[0].u_cluster/outstanding_score_read_q"
+                  },
+                  {
+                    "count": 2,
+                    "register_prefix": "gen_cluster[0].u_cluster/protocol_error_q"
+                  },
+                  {
+                    "count": 2,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/div_negative"
+                  },
+                  {
+                    "count": 2,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/protocol_error"
+                  },
+                  {
+                    "count": 2,
+                    "register_prefix": "gen_cluster[0].u_cluster/reducer/result_valid"
+                  },
+                  {
+                    "count": 2,
+                    "register_prefix": "gen_cluster[0].u_cluster/score_bank/read_pending_q"
+                  },
+                  {
+                    "count": 2,
+                    "register_prefix": "gen_cluster[0].u_cluster/score_bank/rsp_valid_q"
+                  },
+                  {
+                    "count": 2,
+                    "register_prefix": "gen_cluster[0].u_cluster/score_response_valid_q"
+                  },
+                  {
+                    "count": 2,
+                    "register_prefix": "gen_cluster[0].u_reassembler/collecting"
+                  },
+                  {
+                    "count": 2,
+                    "register_prefix": "gen_cluster[0].u_reassembler/protocol_error"
+                  },
+                  {
+                    "count": 2,
+                    "register_prefix": "gen_cluster[0].u_reassembler/wide_source_r"
+                  },
+                  {
+                    "count": 2,
+                    "register_prefix": "gen_cluster[0].u_reassembler/wide_valid_r"
+                  }
+                ],
+                "unused_sidecar_row_count": 12367,
+                "unused_sidecar_rows_by_prefix": [
+                  {
+                    "count": 512,
+                    "register_prefix": "gen_cluster[0]/u_reassembler/wide_matrix_r"
+                  },
+                  {
+                    "count": 320,
+                    "register_prefix": "gen_cluster[0]/u_cluster/reducer/result_value"
+                  },
+                  {
+                    "count": 256,
+                    "register_prefix": "gen_cluster[0]/u_cluster/raw_score_row_q"
+                  },
+                  {
+                    "count": 256,
+                    "register_prefix": "gen_cluster[0]/u_cluster/scaled_score_row_q"
+                  },
+                  {
+                    "count": 256,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/rsp_rdata_mux"
+                  },
+                  {
+                    "count": 256,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_response_data_q"
+                  },
+                  {
+                    "count": 256,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_tile/result_score_row_q"
+                  },
+                  {
+                    "count": 158,
+                    "register_prefix": "u_router/resp_addr_from_meta/meta"
+                  },
+                  {
+                    "count": 158,
+                    "register_prefix": "u_router/resp_data_from_meta/meta"
+                  },
+                  {
+                    "count": 158,
+                    "register_prefix": "u_router/resp_fragment_from_meta/meta"
+                  },
+                  {
+                    "count": 158,
+                    "register_prefix": "u_router/resp_last_from_meta/meta"
+                  },
+                  {
+                    "count": 158,
+                    "register_prefix": "u_router/resp_slice_from_meta/meta"
+                  },
+                  {
+                    "count": 158,
+                    "register_prefix": "u_router/resp_source_from_meta/meta"
+                  },
+                  {
+                    "count": 158,
+                    "register_prefix": "u_router/resp_tag_from_meta/meta"
+                  },
+                  {
+                    "count": 128,
+                    "register_prefix": "u_router/pack_resp/data"
+                  },
+                  {
+                    "count": 64,
+                    "register_prefix": "u_service/generated_matrix/word_value"
+                  },
+                  {
+                    "count": 58,
+                    "register_prefix": "gen_cluster[0]/u_cluster/reducer/div_next_quotient"
+                  },
+                  {
+                    "count": 58,
+                    "register_prefix": "gen_cluster[0]/u_cluster/reducer/div_quotient"
+                  },
+                  {
+                    "count": 58,
+                    "register_prefix": "gen_cluster[0]/u_cluster/reducer/final_magnitude"
+                  },
+                  {
+                    "count": 41,
+                    "register_prefix": "gen_cluster[0]/u_cluster/reducer/numerator_magnitude"
+                  },
+                  {
+                    "count": 39,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_0_slice_0/rd_out_q"
+                  },
+                  {
+                    "count": 39,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_0_slice_1/rd_out_q"
+                  },
+                  {
+                    "count": 39,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_0_slice_2/rd_out_q"
+                  },
+                  {
+                    "count": 39,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_0_slice_3/rd_out_q"
+                  },
+                  {
+                    "count": 39,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_0_slice_4/rd_out_q"
+                  },
+                  {
+                    "count": 39,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_0_slice_5/rd_out_q"
+                  },
+                  {
+                    "count": 39,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_0_slice_6/rd_out_q"
+                  },
+                  {
+                    "count": 39,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_1_slice_0/rd_out_q"
+                  },
+                  {
+                    "count": 39,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_1_slice_1/rd_out_q"
+                  },
+                  {
+                    "count": 39,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_1_slice_2/rd_out_q"
+                  },
+                  {
+                    "count": 39,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_1_slice_3/rd_out_q"
+                  },
+                  {
+                    "count": 39,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_1_slice_4/rd_out_q"
+                  },
+                  {
+                    "count": 39,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_1_slice_5/rd_out_q"
+                  },
+                  {
+                    "count": 39,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_1_slice_6/rd_out_q"
+                  },
+                  {
+                    "count": 39,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_2_slice_0/rd_out_q"
+                  },
+                  {
+                    "count": 39,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_2_slice_1/rd_out_q"
+                  },
+                  {
+                    "count": 39,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_2_slice_2/rd_out_q"
+                  },
+                  {
+                    "count": 39,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_2_slice_3/rd_out_q"
+                  },
+                  {
+                    "count": 39,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_2_slice_4/rd_out_q"
+                  },
+                  {
+                    "count": 39,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_2_slice_5/rd_out_q"
+                  },
+                  {
+                    "count": 39,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_2_slice_6/rd_out_q"
+                  },
+                  {
+                    "count": 39,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_3_slice_0/rd_out_q"
+                  },
+                  {
+                    "count": 39,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_3_slice_1/rd_out_q"
+                  },
+                  {
+                    "count": 39,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_3_slice_2/rd_out_q"
+                  },
+                  {
+                    "count": 39,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_3_slice_3/rd_out_q"
+                  },
+                  {
+                    "count": 39,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_3_slice_4/rd_out_q"
+                  },
+                  {
+                    "count": 39,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_3_slice_5/rd_out_q"
+                  },
+                  {
+                    "count": 39,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_3_slice_6/rd_out_q"
+                  },
+                  {
+                    "count": 39,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_4_slice_0/rd_out_q"
+                  },
+                  {
+                    "count": 39,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_4_slice_1/rd_out_q"
+                  },
+                  {
+                    "count": 39,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_4_slice_2/rd_out_q"
+                  },
+                  {
+                    "count": 39,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_4_slice_3/rd_out_q"
+                  },
+                  {
+                    "count": 39,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_4_slice_4/rd_out_q"
+                  },
+                  {
+                    "count": 39,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_4_slice_5/rd_out_q"
+                  },
+                  {
+                    "count": 39,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_4_slice_6/rd_out_q"
+                  },
+                  {
+                    "count": 39,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_5_slice_0/rd_out_q"
+                  },
+                  {
+                    "count": 39,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_5_slice_1/rd_out_q"
+                  },
+                  {
+                    "count": 39,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_5_slice_2/rd_out_q"
+                  },
+                  {
+                    "count": 39,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_5_slice_3/rd_out_q"
+                  },
+                  {
+                    "count": 39,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_5_slice_4/rd_out_q"
+                  },
+                  {
+                    "count": 39,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_5_slice_5/rd_out_q"
+                  },
+                  {
+                    "count": 39,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_5_slice_6/rd_out_q"
+                  },
+                  {
+                    "count": 39,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_6_slice_0/rd_out_q"
+                  },
+                  {
+                    "count": 39,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_6_slice_1/rd_out_q"
+                  },
+                  {
+                    "count": 39,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_6_slice_2/rd_out_q"
+                  },
+                  {
+                    "count": 39,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_6_slice_3/rd_out_q"
+                  },
+                  {
+                    "count": 39,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_6_slice_4/rd_out_q"
+                  },
+                  {
+                    "count": 39,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_6_slice_5/rd_out_q"
+                  },
+                  {
+                    "count": 39,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_6_slice_6/rd_out_q"
+                  },
+                  {
+                    "count": 39,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_7_slice_0/rd_out_q"
+                  },
+                  {
+                    "count": 39,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_7_slice_1/rd_out_q"
+                  },
+                  {
+                    "count": 39,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_7_slice_2/rd_out_q"
+                  },
+                  {
+                    "count": 39,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_7_slice_3/rd_out_q"
+                  },
+                  {
+                    "count": 39,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_7_slice_4/rd_out_q"
+                  },
+                  {
+                    "count": 39,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_7_slice_5/rd_out_q"
+                  },
+                  {
+                    "count": 39,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_7_slice_6/rd_out_q"
+                  },
+                  {
+                    "count": 34,
+                    "register_prefix": "gen_cluster[0]/u_cluster/reducer/div_remainder"
+                  },
+                  {
+                    "count": 34,
+                    "register_prefix": "gen_cluster[0]/u_cluster/reducer/div_trial_remainder"
+                  },
+                  {
+                    "count": 33,
+                    "register_prefix": "gen_cluster[0]/u_cluster/reducer/delta_score"
+                  },
+                  {
+                    "count": 33,
+                    "register_prefix": "gen_cluster[0]/u_cluster/reducer/exp_bucket"
+                  },
+                  {
+                    "count": 33,
+                    "register_prefix": "gen_cluster[0]/u_cluster/reducer/exp_sum_accum"
+                  },
+                  {
+                    "count": 33,
+                    "register_prefix": "gen_cluster[0]/u_cluster/reducer/result_exp_sum"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "candidate_valid_count_r"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "gen_cluster[0]/u_cluster/active_multiplier_q"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "gen_cluster[0]/u_cluster/reducer/accepted_count"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "gen_cluster[0]/u_cluster/reducer/block_max"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "gen_cluster[0]/u_cluster/reducer/completed_count"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "gen_cluster[0]/u_cluster/reducer/cycle_count"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "gen_cluster[0]/u_cluster/reducer/global_max"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "gen_cluster[0]/u_cluster/reducer/result_global_max"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "gen_cluster[0]/u_cluster/reducer/score_lane"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "result_arbitration_contention_cycles"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_router/arbitration_contention_cycles"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[0]/gen_value_lane[0]/u_value_mem_lane/rd_out_q"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[0]/gen_value_lane[0]/u_value_mem_lane/write_word"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[0]/gen_value_lane[10]/u_value_mem_lane/rd_out_q"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[0]/gen_value_lane[10]/u_value_mem_lane/write_word"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[0]/gen_value_lane[11]/u_value_mem_lane/rd_out_q"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[0]/gen_value_lane[11]/u_value_mem_lane/write_word"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[0]/gen_value_lane[12]/u_value_mem_lane/rd_out_q"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[0]/gen_value_lane[12]/u_value_mem_lane/write_word"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[0]/gen_value_lane[13]/u_value_mem_lane/rd_out_q"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[0]/gen_value_lane[13]/u_value_mem_lane/write_word"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[0]/gen_value_lane[14]/u_value_mem_lane/rd_out_q"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[0]/gen_value_lane[14]/u_value_mem_lane/write_word"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[0]/gen_value_lane[15]/u_value_mem_lane/rd_out_q"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[0]/gen_value_lane[15]/u_value_mem_lane/write_word"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[0]/gen_value_lane[1]/u_value_mem_lane/rd_out_q"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[0]/gen_value_lane[1]/u_value_mem_lane/write_word"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[0]/gen_value_lane[2]/u_value_mem_lane/rd_out_q"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[0]/gen_value_lane[2]/u_value_mem_lane/write_word"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[0]/gen_value_lane[3]/u_value_mem_lane/rd_out_q"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[0]/gen_value_lane[3]/u_value_mem_lane/write_word"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[0]/gen_value_lane[4]/u_value_mem_lane/rd_out_q"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[0]/gen_value_lane[4]/u_value_mem_lane/write_word"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[0]/gen_value_lane[5]/u_value_mem_lane/rd_out_q"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[0]/gen_value_lane[5]/u_value_mem_lane/write_word"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[0]/gen_value_lane[6]/u_value_mem_lane/rd_out_q"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[0]/gen_value_lane[6]/u_value_mem_lane/write_word"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[0]/gen_value_lane[7]/u_value_mem_lane/rd_out_q"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[0]/gen_value_lane[7]/u_value_mem_lane/write_word"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[0]/gen_value_lane[8]/u_value_mem_lane/rd_out_q"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[0]/gen_value_lane[8]/u_value_mem_lane/write_word"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[0]/gen_value_lane[9]/u_value_mem_lane/rd_out_q"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[0]/gen_value_lane[9]/u_value_mem_lane/write_word"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[1]/gen_value_lane[0]/u_value_mem_lane/rd_out_q"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[1]/gen_value_lane[0]/u_value_mem_lane/write_word"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[1]/gen_value_lane[10]/u_value_mem_lane/rd_out_q"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[1]/gen_value_lane[10]/u_value_mem_lane/write_word"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[1]/gen_value_lane[11]/u_value_mem_lane/rd_out_q"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[1]/gen_value_lane[11]/u_value_mem_lane/write_word"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[1]/gen_value_lane[12]/u_value_mem_lane/rd_out_q"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[1]/gen_value_lane[12]/u_value_mem_lane/write_word"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[1]/gen_value_lane[13]/u_value_mem_lane/rd_out_q"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[1]/gen_value_lane[13]/u_value_mem_lane/write_word"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[1]/gen_value_lane[14]/u_value_mem_lane/rd_out_q"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[1]/gen_value_lane[14]/u_value_mem_lane/write_word"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[1]/gen_value_lane[15]/u_value_mem_lane/rd_out_q"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[1]/gen_value_lane[15]/u_value_mem_lane/write_word"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[1]/gen_value_lane[1]/u_value_mem_lane/rd_out_q"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[1]/gen_value_lane[1]/u_value_mem_lane/write_word"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[1]/gen_value_lane[2]/u_value_mem_lane/rd_out_q"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[1]/gen_value_lane[2]/u_value_mem_lane/write_word"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[1]/gen_value_lane[3]/u_value_mem_lane/rd_out_q"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[1]/gen_value_lane[3]/u_value_mem_lane/write_word"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[1]/gen_value_lane[4]/u_value_mem_lane/rd_out_q"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[1]/gen_value_lane[4]/u_value_mem_lane/write_word"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[1]/gen_value_lane[5]/u_value_mem_lane/rd_out_q"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[1]/gen_value_lane[5]/u_value_mem_lane/write_word"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[1]/gen_value_lane[6]/u_value_mem_lane/rd_out_q"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[1]/gen_value_lane[6]/u_value_mem_lane/write_word"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[1]/gen_value_lane[7]/u_value_mem_lane/rd_out_q"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[1]/gen_value_lane[7]/u_value_mem_lane/write_word"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[1]/gen_value_lane[8]/u_value_mem_lane/rd_out_q"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[1]/gen_value_lane[8]/u_value_mem_lane/write_word"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[1]/gen_value_lane[9]/u_value_mem_lane/rd_out_q"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[1]/gen_value_lane[9]/u_value_mem_lane/write_word"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[2]/gen_value_lane[0]/u_value_mem_lane/rd_out_q"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[2]/gen_value_lane[0]/u_value_mem_lane/write_word"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[2]/gen_value_lane[10]/u_value_mem_lane/rd_out_q"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[2]/gen_value_lane[10]/u_value_mem_lane/write_word"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[2]/gen_value_lane[11]/u_value_mem_lane/rd_out_q"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[2]/gen_value_lane[11]/u_value_mem_lane/write_word"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[2]/gen_value_lane[12]/u_value_mem_lane/rd_out_q"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[2]/gen_value_lane[12]/u_value_mem_lane/write_word"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[2]/gen_value_lane[13]/u_value_mem_lane/rd_out_q"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[2]/gen_value_lane[13]/u_value_mem_lane/write_word"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[2]/gen_value_lane[14]/u_value_mem_lane/rd_out_q"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[2]/gen_value_lane[14]/u_value_mem_lane/write_word"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[2]/gen_value_lane[15]/u_value_mem_lane/rd_out_q"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[2]/gen_value_lane[15]/u_value_mem_lane/write_word"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[2]/gen_value_lane[1]/u_value_mem_lane/rd_out_q"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[2]/gen_value_lane[1]/u_value_mem_lane/write_word"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[2]/gen_value_lane[2]/u_value_mem_lane/rd_out_q"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[2]/gen_value_lane[2]/u_value_mem_lane/write_word"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[2]/gen_value_lane[3]/u_value_mem_lane/rd_out_q"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[2]/gen_value_lane[3]/u_value_mem_lane/write_word"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[2]/gen_value_lane[4]/u_value_mem_lane/rd_out_q"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[2]/gen_value_lane[4]/u_value_mem_lane/write_word"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[2]/gen_value_lane[5]/u_value_mem_lane/rd_out_q"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[2]/gen_value_lane[5]/u_value_mem_lane/write_word"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[2]/gen_value_lane[6]/u_value_mem_lane/rd_out_q"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[2]/gen_value_lane[6]/u_value_mem_lane/write_word"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[2]/gen_value_lane[7]/u_value_mem_lane/rd_out_q"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[2]/gen_value_lane[7]/u_value_mem_lane/write_word"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[2]/gen_value_lane[8]/u_value_mem_lane/rd_out_q"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[2]/gen_value_lane[8]/u_value_mem_lane/write_word"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[2]/gen_value_lane[9]/u_value_mem_lane/rd_out_q"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[2]/gen_value_lane[9]/u_value_mem_lane/write_word"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[3]/gen_value_lane[0]/u_value_mem_lane/rd_out_q"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[3]/gen_value_lane[0]/u_value_mem_lane/write_word"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[3]/gen_value_lane[10]/u_value_mem_lane/rd_out_q"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[3]/gen_value_lane[10]/u_value_mem_lane/write_word"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[3]/gen_value_lane[11]/u_value_mem_lane/rd_out_q"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[3]/gen_value_lane[11]/u_value_mem_lane/write_word"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[3]/gen_value_lane[12]/u_value_mem_lane/rd_out_q"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[3]/gen_value_lane[12]/u_value_mem_lane/write_word"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[3]/gen_value_lane[13]/u_value_mem_lane/rd_out_q"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[3]/gen_value_lane[13]/u_value_mem_lane/write_word"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[3]/gen_value_lane[14]/u_value_mem_lane/rd_out_q"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[3]/gen_value_lane[14]/u_value_mem_lane/write_word"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[3]/gen_value_lane[15]/u_value_mem_lane/rd_out_q"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[3]/gen_value_lane[15]/u_value_mem_lane/write_word"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[3]/gen_value_lane[1]/u_value_mem_lane/rd_out_q"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[3]/gen_value_lane[1]/u_value_mem_lane/write_word"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[3]/gen_value_lane[2]/u_value_mem_lane/rd_out_q"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[3]/gen_value_lane[2]/u_value_mem_lane/write_word"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[3]/gen_value_lane[3]/u_value_mem_lane/rd_out_q"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[3]/gen_value_lane[3]/u_value_mem_lane/write_word"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[3]/gen_value_lane[4]/u_value_mem_lane/rd_out_q"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[3]/gen_value_lane[4]/u_value_mem_lane/write_word"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[3]/gen_value_lane[5]/u_value_mem_lane/rd_out_q"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[3]/gen_value_lane[5]/u_value_mem_lane/write_word"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[3]/gen_value_lane[6]/u_value_mem_lane/rd_out_q"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[3]/gen_value_lane[6]/u_value_mem_lane/write_word"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[3]/gen_value_lane[7]/u_value_mem_lane/rd_out_q"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[3]/gen_value_lane[7]/u_value_mem_lane/write_word"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[3]/gen_value_lane[8]/u_value_mem_lane/rd_out_q"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[3]/gen_value_lane[8]/u_value_mem_lane/write_word"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[3]/gen_value_lane[9]/u_value_mem_lane/rd_out_q"
+                  },
+                  {
+                    "count": 32,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[3]/gen_value_lane[9]/u_value_mem_lane/write_word"
+                  },
+                  {
+                    "count": 29,
+                    "register_prefix": "u_router/req_max_occupancy"
+                  },
+                  {
+                    "count": 29,
+                    "register_prefix": "u_router/resp_max_occupancy"
+                  },
+                  {
+                    "count": 29,
+                    "register_prefix": "u_service/resp_max_occupancy"
+                  },
+                  {
+                    "count": 27,
+                    "register_prefix": "u_router/alternate_req"
+                  },
+                  {
+                    "count": 27,
+                    "register_prefix": "u_router/fallback_req"
+                  },
+                  {
+                    "count": 27,
+                    "register_prefix": "u_router/grant_req_r"
+                  },
+                  {
+                    "count": 27,
+                    "register_prefix": "u_router/locality_req"
+                  },
+                  {
+                    "count": 27,
+                    "register_prefix": "u_router/req_addr_from_meta/meta"
+                  },
+                  {
+                    "count": 27,
+                    "register_prefix": "u_router/req_bank_from_meta/meta"
+                  },
+                  {
+                    "count": 27,
+                    "register_prefix": "u_router/req_slice_from_meta/meta"
+                  },
+                  {
+                    "count": 27,
+                    "register_prefix": "u_router/req_source_from_meta/meta"
+                  },
+                  {
+                    "count": 27,
+                    "register_prefix": "u_router/req_tag_from_meta/meta"
+                  },
+                  {
+                    "count": 27,
+                    "register_prefix": "u_service/meta_addr/meta"
+                  },
+                  {
+                    "count": 27,
+                    "register_prefix": "u_service/meta_slice/meta"
+                  },
+                  {
+                    "count": 27,
+                    "register_prefix": "u_service/meta_source/meta"
+                  },
+                  {
+                    "count": 27,
+                    "register_prefix": "u_service/meta_tag/meta"
+                  },
+                  {
+                    "count": 27,
+                    "register_prefix": "u_service/req_max_occupancy"
+                  },
+                  {
+                    "count": 20,
+                    "register_prefix": "gen_cluster[0]/u_cluster/reducer/block_sum"
+                  },
+                  {
+                    "count": 20,
+                    "register_prefix": "gen_cluster[0]/u_cluster/reducer/block_sum_next"
+                  },
+                  {
+                    "count": 16,
+                    "register_prefix": "gen_cluster[0]/u_cluster/reducer/active_command_id"
+                  },
+                  {
+                    "count": 16,
+                    "register_prefix": "gen_cluster[0]/u_cluster/reducer/exp_weight"
+                  },
+                  {
+                    "count": 16,
+                    "register_prefix": "gen_cluster[0]/u_cluster/reducer/result_command_id"
+                  },
+                  {
+                    "count": 14,
+                    "register_prefix": "gen_cluster[0]/u_cluster/outstanding_score_addr_q"
+                  },
+                  {
+                    "count": 14,
+                    "register_prefix": "gen_cluster[0]/u_reassembler/wide_addr_r"
+                  },
+                  {
+                    "count": 14,
+                    "register_prefix": "u_router/pack_req/addr"
+                  },
+                  {
+                    "count": 14,
+                    "register_prefix": "u_router/pack_resp/addr"
+                  },
+                  {
+                    "count": 14,
+                    "register_prefix": "u_service/bank_from_addr/addr"
+                  },
+                  {
+                    "count": 14,
+                    "register_prefix": "u_service/macro_bank_row/addr"
+                  },
+                  {
+                    "count": 14,
+                    "register_prefix": "u_service/pack_req/addr"
+                  },
+                  {
+                    "count": 14,
+                    "register_prefix": "u_service/store_index/addr"
+                  },
+                  {
+                    "count": 11,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_0_slice_0/addr_q"
+                  },
+                  {
+                    "count": 11,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_0_slice_1/addr_q"
+                  },
+                  {
+                    "count": 11,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_0_slice_2/addr_q"
+                  },
+                  {
+                    "count": 11,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_0_slice_3/addr_q"
+                  },
+                  {
+                    "count": 11,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_0_slice_4/addr_q"
+                  },
+                  {
+                    "count": 11,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_0_slice_5/addr_q"
+                  },
+                  {
+                    "count": 11,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_0_slice_6/addr_q"
+                  },
+                  {
+                    "count": 11,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_1_slice_0/addr_q"
+                  },
+                  {
+                    "count": 11,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_1_slice_1/addr_q"
+                  },
+                  {
+                    "count": 11,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_1_slice_2/addr_q"
+                  },
+                  {
+                    "count": 11,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_1_slice_3/addr_q"
+                  },
+                  {
+                    "count": 11,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_1_slice_4/addr_q"
+                  },
+                  {
+                    "count": 11,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_1_slice_5/addr_q"
+                  },
+                  {
+                    "count": 11,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_1_slice_6/addr_q"
+                  },
+                  {
+                    "count": 11,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_2_slice_0/addr_q"
+                  },
+                  {
+                    "count": 11,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_2_slice_1/addr_q"
+                  },
+                  {
+                    "count": 11,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_2_slice_2/addr_q"
+                  },
+                  {
+                    "count": 11,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_2_slice_3/addr_q"
+                  },
+                  {
+                    "count": 11,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_2_slice_4/addr_q"
+                  },
+                  {
+                    "count": 11,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_2_slice_5/addr_q"
+                  },
+                  {
+                    "count": 11,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_2_slice_6/addr_q"
+                  },
+                  {
+                    "count": 11,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_3_slice_0/addr_q"
+                  },
+                  {
+                    "count": 11,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_3_slice_1/addr_q"
+                  },
+                  {
+                    "count": 11,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_3_slice_2/addr_q"
+                  },
+                  {
+                    "count": 11,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_3_slice_3/addr_q"
+                  },
+                  {
+                    "count": 11,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_3_slice_4/addr_q"
+                  },
+                  {
+                    "count": 11,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_3_slice_5/addr_q"
+                  },
+                  {
+                    "count": 11,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_3_slice_6/addr_q"
+                  },
+                  {
+                    "count": 11,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_4_slice_0/addr_q"
+                  },
+                  {
+                    "count": 11,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_4_slice_1/addr_q"
+                  },
+                  {
+                    "count": 11,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_4_slice_2/addr_q"
+                  },
+                  {
+                    "count": 11,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_4_slice_3/addr_q"
+                  },
+                  {
+                    "count": 11,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_4_slice_4/addr_q"
+                  },
+                  {
+                    "count": 11,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_4_slice_5/addr_q"
+                  },
+                  {
+                    "count": 11,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_4_slice_6/addr_q"
+                  },
+                  {
+                    "count": 11,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_5_slice_0/addr_q"
+                  },
+                  {
+                    "count": 11,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_5_slice_1/addr_q"
+                  },
+                  {
+                    "count": 11,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_5_slice_2/addr_q"
+                  },
+                  {
+                    "count": 11,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_5_slice_3/addr_q"
+                  },
+                  {
+                    "count": 11,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_5_slice_4/addr_q"
+                  },
+                  {
+                    "count": 11,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_5_slice_5/addr_q"
+                  },
+                  {
+                    "count": 11,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_5_slice_6/addr_q"
+                  },
+                  {
+                    "count": 11,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_6_slice_0/addr_q"
+                  },
+                  {
+                    "count": 11,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_6_slice_1/addr_q"
+                  },
+                  {
+                    "count": 11,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_6_slice_2/addr_q"
+                  },
+                  {
+                    "count": 11,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_6_slice_3/addr_q"
+                  },
+                  {
+                    "count": 11,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_6_slice_4/addr_q"
+                  },
+                  {
+                    "count": 11,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_6_slice_5/addr_q"
+                  },
+                  {
+                    "count": 11,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_6_slice_6/addr_q"
+                  },
+                  {
+                    "count": 11,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_7_slice_0/addr_q"
+                  },
+                  {
+                    "count": 11,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_7_slice_1/addr_q"
+                  },
+                  {
+                    "count": 11,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_7_slice_2/addr_q"
+                  },
+                  {
+                    "count": 11,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_7_slice_3/addr_q"
+                  },
+                  {
+                    "count": 11,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_7_slice_4/addr_q"
+                  },
+                  {
+                    "count": 11,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_7_slice_5/addr_q"
+                  },
+                  {
+                    "count": 11,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/u_group_7_slice_6/addr_q"
+                  },
+                  {
+                    "count": 8,
+                    "register_prefix": "gen_cluster[0]/u_reassembler/wide_tag_r"
+                  },
+                  {
+                    "count": 8,
+                    "register_prefix": "u_router/pack_req/tag"
+                  },
+                  {
+                    "count": 8,
+                    "register_prefix": "u_router/pack_resp/tag"
+                  },
+                  {
+                    "count": 8,
+                    "register_prefix": "u_service/pack_req/tag"
+                  },
+                  {
+                    "count": 7,
+                    "register_prefix": "gen_cluster[0]/u_cluster/reducer/div_bit_count"
+                  },
+                  {
+                    "count": 7,
+                    "register_prefix": "gen_cluster[0]/u_cluster/reducer/div_index"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "gen_cluster[0]/u_cluster/active_shift_q"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[0]/gen_value_lane[0]/u_value_mem_lane/addr_q"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[0]/gen_value_lane[10]/u_value_mem_lane/addr_q"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[0]/gen_value_lane[11]/u_value_mem_lane/addr_q"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[0]/gen_value_lane[12]/u_value_mem_lane/addr_q"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[0]/gen_value_lane[13]/u_value_mem_lane/addr_q"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[0]/gen_value_lane[14]/u_value_mem_lane/addr_q"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[0]/gen_value_lane[15]/u_value_mem_lane/addr_q"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[0]/gen_value_lane[1]/u_value_mem_lane/addr_q"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[0]/gen_value_lane[2]/u_value_mem_lane/addr_q"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[0]/gen_value_lane[3]/u_value_mem_lane/addr_q"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[0]/gen_value_lane[4]/u_value_mem_lane/addr_q"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[0]/gen_value_lane[5]/u_value_mem_lane/addr_q"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[0]/gen_value_lane[6]/u_value_mem_lane/addr_q"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[0]/gen_value_lane[7]/u_value_mem_lane/addr_q"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[0]/gen_value_lane[8]/u_value_mem_lane/addr_q"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[0]/gen_value_lane[9]/u_value_mem_lane/addr_q"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[1]/gen_value_lane[0]/u_value_mem_lane/addr_q"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[1]/gen_value_lane[10]/u_value_mem_lane/addr_q"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[1]/gen_value_lane[11]/u_value_mem_lane/addr_q"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[1]/gen_value_lane[12]/u_value_mem_lane/addr_q"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[1]/gen_value_lane[13]/u_value_mem_lane/addr_q"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[1]/gen_value_lane[14]/u_value_mem_lane/addr_q"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[1]/gen_value_lane[15]/u_value_mem_lane/addr_q"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[1]/gen_value_lane[1]/u_value_mem_lane/addr_q"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[1]/gen_value_lane[2]/u_value_mem_lane/addr_q"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[1]/gen_value_lane[3]/u_value_mem_lane/addr_q"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[1]/gen_value_lane[4]/u_value_mem_lane/addr_q"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[1]/gen_value_lane[5]/u_value_mem_lane/addr_q"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[1]/gen_value_lane[6]/u_value_mem_lane/addr_q"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[1]/gen_value_lane[7]/u_value_mem_lane/addr_q"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[1]/gen_value_lane[8]/u_value_mem_lane/addr_q"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[1]/gen_value_lane[9]/u_value_mem_lane/addr_q"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[2]/gen_value_lane[0]/u_value_mem_lane/addr_q"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[2]/gen_value_lane[10]/u_value_mem_lane/addr_q"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[2]/gen_value_lane[11]/u_value_mem_lane/addr_q"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[2]/gen_value_lane[12]/u_value_mem_lane/addr_q"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[2]/gen_value_lane[13]/u_value_mem_lane/addr_q"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[2]/gen_value_lane[14]/u_value_mem_lane/addr_q"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[2]/gen_value_lane[15]/u_value_mem_lane/addr_q"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[2]/gen_value_lane[1]/u_value_mem_lane/addr_q"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[2]/gen_value_lane[2]/u_value_mem_lane/addr_q"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[2]/gen_value_lane[3]/u_value_mem_lane/addr_q"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[2]/gen_value_lane[4]/u_value_mem_lane/addr_q"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[2]/gen_value_lane[5]/u_value_mem_lane/addr_q"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[2]/gen_value_lane[6]/u_value_mem_lane/addr_q"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[2]/gen_value_lane[7]/u_value_mem_lane/addr_q"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[2]/gen_value_lane[8]/u_value_mem_lane/addr_q"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[2]/gen_value_lane[9]/u_value_mem_lane/addr_q"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[3]/gen_value_lane[0]/u_value_mem_lane/addr_q"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[3]/gen_value_lane[10]/u_value_mem_lane/addr_q"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[3]/gen_value_lane[11]/u_value_mem_lane/addr_q"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[3]/gen_value_lane[12]/u_value_mem_lane/addr_q"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[3]/gen_value_lane[13]/u_value_mem_lane/addr_q"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[3]/gen_value_lane[14]/u_value_mem_lane/addr_q"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[3]/gen_value_lane[15]/u_value_mem_lane/addr_q"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[3]/gen_value_lane[1]/u_value_mem_lane/addr_q"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[3]/gen_value_lane[2]/u_value_mem_lane/addr_q"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[3]/gen_value_lane[3]/u_value_mem_lane/addr_q"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[3]/gen_value_lane[4]/u_value_mem_lane/addr_q"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[3]/gen_value_lane[5]/u_value_mem_lane/addr_q"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[3]/gen_value_lane[6]/u_value_mem_lane/addr_q"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[3]/gen_value_lane[7]/u_value_mem_lane/addr_q"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[3]/gen_value_lane[8]/u_value_mem_lane/addr_q"
+                  },
+                  {
+                    "count": 6,
+                    "register_prefix": "u_service/gen_value_macro_backend/gen_value_bank[3]/gen_value_lane[9]/u_value_mem_lane/addr_q"
+                  },
+                  {
+                    "count": 5,
+                    "register_prefix": "gen_cluster[0]/u_cluster/active_block_count_q"
+                  },
+                  {
+                    "count": 5,
+                    "register_prefix": "gen_cluster[0]/u_cluster/block_index_q"
+                  },
+                  {
+                    "count": 5,
+                    "register_prefix": "gen_cluster[0]/u_cluster/reducer/active_block_count"
+                  },
+                  {
+                    "count": 5,
+                    "register_prefix": "gen_cluster[0]/u_cluster/reducer/fill_count"
+                  },
+                  {
+                    "count": 5,
+                    "register_prefix": "u_service/req_occupancy_sum_r"
+                  },
+                  {
+                    "count": 4,
+                    "register_prefix": "gen_cluster[0]/u_cluster/reducer/clear_slice_index"
+                  },
+                  {
+                    "count": 4,
+                    "register_prefix": "gen_cluster[0]/u_cluster/reducer/read_index"
+                  },
+                  {
+                    "count": 4,
+                    "register_prefix": "gen_cluster[0]/u_cluster/reducer/result_slice"
+                  },
+                  {
+                    "count": 4,
+                    "register_prefix": "gen_cluster[0]/u_cluster/reducer/state"
+                  },
+                  {
+                    "count": 4,
+                    "register_prefix": "gen_cluster[0]/u_cluster/reducer/value_slice_index"
+                  },
+                  {
+                    "count": 4,
+                    "register_prefix": "gen_cluster[0]/u_cluster/scale_lane_index_q"
+                  },
+                  {
+                    "count": 4,
+                    "register_prefix": "gen_cluster[0]/u_reassembler/wide_value_slice_r"
+                  },
+                  {
+                    "count": 4,
+                    "register_prefix": "u_router/pack_req/value_slice"
+                  },
+                  {
+                    "count": 4,
+                    "register_prefix": "u_router/pack_resp/value_slice"
+                  },
+                  {
+                    "count": 4,
+                    "register_prefix": "u_service/bank_ready_fragment_r"
+                  },
+                  {
+                    "count": 4,
+                    "register_prefix": "u_service/macro_bank_row/value_slice"
+                  },
+                  {
+                    "count": 4,
+                    "register_prefix": "u_service/pack_req/value_slice"
+                  },
+                  {
+                    "count": 4,
+                    "register_prefix": "u_service/store_index/value_slice"
+                  },
+                  {
+                    "count": 3,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/read_group_q"
+                  },
+                  {
+                    "count": 3,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/rsp_group_q"
+                  },
+                  {
+                    "count": 3,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_tile/result_col_q"
+                  },
+                  {
+                    "count": 3,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_tile/result_index_q"
+                  },
+                  {
+                    "count": 3,
+                    "register_prefix": "gen_cluster[0]/u_cluster/state_q"
+                  },
+                  {
+                    "count": 3,
+                    "register_prefix": "u_router/gen_req_fifo[0]/u_req_fifo/count"
+                  },
+                  {
+                    "count": 3,
+                    "register_prefix": "u_router/gen_req_fifo[0]/u_req_fifo/max_occupancy"
+                  },
+                  {
+                    "count": 3,
+                    "register_prefix": "u_router/gen_resp_fifo[0]/u_resp_fifo/count"
+                  },
+                  {
+                    "count": 3,
+                    "register_prefix": "u_router/gen_resp_fifo[0]/u_resp_fifo/max_occupancy"
+                  },
+                  {
+                    "count": 3,
+                    "register_prefix": "u_router/req_occupancy_sum_r"
+                  },
+                  {
+                    "count": 3,
+                    "register_prefix": "u_router/resp_occupancy_sum_r"
+                  },
+                  {
+                    "count": 3,
+                    "register_prefix": "u_service/gen_bank_fifo[0]/u_bank_fifo/count"
+                  },
+                  {
+                    "count": 3,
+                    "register_prefix": "u_service/gen_bank_fifo[0]/u_bank_fifo/max_occupancy"
+                  },
+                  {
+                    "count": 3,
+                    "register_prefix": "u_service/gen_bank_fifo[1]/u_bank_fifo/count"
+                  },
+                  {
+                    "count": 3,
+                    "register_prefix": "u_service/gen_bank_fifo[1]/u_bank_fifo/max_occupancy"
+                  },
+                  {
+                    "count": 3,
+                    "register_prefix": "u_service/gen_bank_fifo[2]/u_bank_fifo/count"
+                  },
+                  {
+                    "count": 3,
+                    "register_prefix": "u_service/gen_bank_fifo[2]/u_bank_fifo/max_occupancy"
+                  },
+                  {
+                    "count": 3,
+                    "register_prefix": "u_service/gen_bank_fifo[3]/u_bank_fifo/count"
+                  },
+                  {
+                    "count": 3,
+                    "register_prefix": "u_service/gen_bank_fifo[3]/u_bank_fifo/max_occupancy"
+                  },
+                  {
+                    "count": 3,
+                    "register_prefix": "u_service/resp_occupancy_sum_r"
+                  },
+                  {
+                    "count": 2,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_tile/state"
+                  },
+                  {
+                    "count": 2,
+                    "register_prefix": "gen_cluster[0]/u_reassembler/expected_fragment_r"
+                  },
+                  {
+                    "count": 2,
+                    "register_prefix": "u_router/locality_burst_count"
+                  },
+                  {
+                    "count": 2,
+                    "register_prefix": "u_router/pack_resp/fragment_idx"
+                  },
+                  {
+                    "count": 2,
+                    "register_prefix": "u_router/preferred_bank"
+                  },
+                  {
+                    "count": 2,
+                    "register_prefix": "u_service/resp_grant_bank_r"
+                  },
+                  {
+                    "count": 2,
+                    "register_prefix": "u_service/scan_bank"
+                  },
+                  {
+                    "count": 1,
+                    "register_prefix": "candidate_idx_r"
+                  },
+                  {
+                    "count": 1,
+                    "register_prefix": "candidate_valid_r"
+                  },
+                  {
+                    "count": 1,
+                    "register_prefix": "gen_cluster[0]/u_cluster/outstanding_score_read_q"
+                  },
+                  {
+                    "count": 1,
+                    "register_prefix": "gen_cluster[0]/u_cluster/protocol_error_q"
+                  },
+                  {
+                    "count": 1,
+                    "register_prefix": "gen_cluster[0]/u_cluster/reducer/div_negative"
+                  },
+                  {
+                    "count": 1,
+                    "register_prefix": "gen_cluster[0]/u_cluster/reducer/protocol_error"
+                  },
+                  {
+                    "count": 1,
+                    "register_prefix": "gen_cluster[0]/u_cluster/reducer/result_valid"
+                  },
+                  {
+                    "count": 1,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/read_pending_q"
+                  },
+                  {
+                    "count": 1,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_bank/rsp_valid_q"
+                  },
+                  {
+                    "count": 1,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_response_valid_q"
+                  },
+                  {
+                    "count": 1,
+                    "register_prefix": "gen_cluster[0]/u_cluster/score_tile/result_row_q"
+                  },
+                  {
+                    "count": 1,
+                    "register_prefix": "gen_cluster[0]/u_reassembler/collecting"
+                  },
+                  {
+                    "count": 1,
+                    "register_prefix": "gen_cluster[0]/u_reassembler/fragment_in_order"
+                  },
+                  {
+                    "count": 1,
+                    "register_prefix": "gen_cluster[0]/u_reassembler/last_consistent"
+                  },
+                  {
+                    "count": 1,
+                    "register_prefix": "gen_cluster[0]/u_reassembler/metadata_match"
+                  },
+                  {
+                    "count": 1,
+                    "register_prefix": "gen_cluster[0]/u_reassembler/protocol_error"
+                  },
+                  {
+                    "count": 1,
+                    "register_prefix": "gen_cluster[0]/u_reassembler/segment_valid_r"
+                  },
+                  {
+                    "count": 1,
+                    "register_prefix": "gen_cluster[0]/u_reassembler/wide_source_r"
+                  },
+                  {
+                    "count": 1,
+                    "register_prefix": "gen_cluster[0]/u_reassembler/wide_valid_r"
+                  },
+                  {
+                    "count": 1,
+                    "register_prefix": "result_rr_cursor_q"
+                  },
+                  {
+                    "count": 1,
+                    "register_prefix": "scan_cluster_r"
+                  },
+                  {
+                    "count": 1,
+                    "register_prefix": "shared_result_cluster_q"
+                  },
+                  {
+                    "count": 1,
+                    "register_prefix": "u_router/alternate_hit"
+                  },
+                  {
+                    "count": 1,
+                    "register_prefix": "u_router/alternate_idx"
+                  },
+                  {
+                    "count": 1,
+                    "register_prefix": "u_router/any_injection_stall_r"
+                  },
+                  {
+                    "count": 1,
+                    "register_prefix": "u_router/arbitration_contended_r"
+                  },
+                  {
+                    "count": 1,
+                    "register_prefix": "u_router/fallback_hit"
+                  },
+                  {
+                    "count": 1,
+                    "register_prefix": "u_router/fallback_idx"
+                  },
+                  {
+                    "count": 1,
+                    "register_prefix": "u_router/grant_idx_r"
+                  },
+                  {
+                    "count": 1,
+                    "register_prefix": "u_router/grant_valid_r"
+                  },
+                  {
+                    "count": 1,
+                    "register_prefix": "u_router/locality_hit"
+                  },
+                  {
+                    "count": 1,
+                    "register_prefix": "u_router/locality_idx"
+                  },
+                  {
+                    "count": 1,
+                    "register_prefix": "u_router/pack_req/source"
+                  },
+                  {
+                    "count": 1,
+                    "register_prefix": "u_router/pack_resp/last"
+                  },
+                  {
+                    "count": 1,
+                    "register_prefix": "u_router/pack_resp/source"
+                  },
+                  {
+                    "count": 1,
+                    "register_prefix": "u_router/req_fifo_out_ready_r"
+                  },
+                  {
+                    "count": 1,
+                    "register_prefix": "u_router/resp_target_idx_r"
+                  },
+                  {
+                    "count": 1,
+                    "register_prefix": "u_router/resp_target_valid_r"
+                  },
+                  {
+                    "count": 1,
+                    "register_prefix": "u_router/rr_cursor"
+                  },
+                  {
+                    "count": 1,
+                    "register_prefix": "u_router/scan_src"
+                  },
+                  {
+                    "count": 1,
+                    "register_prefix": "u_service/any_ready_response_r"
+                  },
+                  {
+                    "count": 1,
+                    "register_prefix": "u_service/pack_req/source"
+                  }
+                ]
+              },
+              "switching_w": 0.025611218065,
+              "total_w": 0.255594521761,
+              "trace_backed_pin_count": 583496,
+              "vcd_annotated_pin_count": 583496
+            },
+            "power_numeric_gate_pass": true,
+            "requires_macro_activity": true,
+            "sequential_register_activity": "attention_decode_score_multivalue_service_sequential_register_vcd_activity_v1.json",
+            "sequential_register_activity_applied_count": 1328,
+            "sequential_register_activity_assignment_count": 13031,
+            "sequential_register_activity_coverage": 0.05456487796860876,
+            "sequential_register_activity_gate_pass": false,
+            "sequential_register_activity_matched_count": 1328,
+            "sequential_register_activity_sha256": "8c3283a5429b71ac021a06820a57b6da676d5e13d146ec2637394ea0e984fb8e",
+            "structural_macro_activity_gate_pass": false,
+            "trace_backed_vcd_annotation_coverage": 0.9273926815739241,
+            "trace_coverage_gate_pass": true,
+            "vcd": "attention_decode_score_multivalue_service_activity.vcd",
+            "vcd_annotation_coverage": 0.9273926815739241,
+            "vcd_sha256": "4affd8dbcd44ebf5b7b4555e6fcd593f55b02f2c28ebc0bf7269b320a8a142e1"
+          }
+        ],
+        "promotion_gate_pass": false,
+        "remaining_abstractions": [
+          "FakeRAM power uses the Nangate45 proxy Liberty model, not SRAM compiler signoff.",
+          "RTL-generated VCD is mapped onto the post-route netlist; annotation coverage is explicit and gated.",
+          "Off-cluster value-memory, NoC, and HBM energy are outside this cluster power result."
+        ],
+        "scope": "tb/dut",
+        "source_activity_manifest": "attention_decode_score_multivalue_service_postroute_power_manifest.json",
+        "source_activity_manifest_sha256": "fa7ae30fee8a3f0755462b4e3ccfc5300337006986508b1ce749e0a5acb6e9fc",
+        "status": "rejected_annotation_gate",
+        "version": 1
+      },
+      "candidate_id": "multivalue_service_activity_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_3000_v1_macro_conservative_c1_die_3000",
+      "failure": {
+        "detail": [
+          "postroute power promotion_gate_pass failed"
+        ],
+        "error_summary": "postroute power promotion_gate_pass failed",
+        "error_type": "ValueError"
+      },
+      "flow_variant": "decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_3000_v1_macro_conservative_c1_die_3000",
+      "ppa_metric": {
+        "config_hash": "7f3bc1ef6c36",
+        "core_area_um2": "8410000.0",
+        "critical_path_ns": "6.7148",
+        "design": "attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr",
+        "die_area": "9000000.0",
+        "flow_elapsed_seconds": "4277.62",
+        "instance_area_um2": "2921450.0",
+        "metrics_csv": "runs/designs/npu_blocks/attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr/metrics.csv",
+        "param_hash": "696d01b6",
+        "params_json": "{\"CLOCK_PERIOD\": 10, \"CORE_AREA\": \"50 50 2950 2950\", \"DIE_AREA\": \"0 0 3000 3000\", \"FLOW_VARIANT\": \"decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_3000_v1_macro_conservative_c1_die_3000\", \"PLACE_DENSITY\": 0.4, \"SYNTH_HIERARCHICAL\": 1, \"SYNTH_MEMORY_MAX_BITS\": 65536, \"TAG\": \"decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_3000_v1_macro_conservative_c1_die_3000\", \"tag_prefix\": \"decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_3000_v1\"}",
+        "platform": "nangate45",
+        "status": "ok",
+        "stdcell_area_um2": "295235.0",
+        "stdcell_count": "225327.0",
+        "tag": "decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_3000_v1_macro_conservative_c1_die_3000",
+        "total_power_mw": "0.26",
+        "utilization_pct": "34.73781212841855"
+      },
+      "promotion_gate_pass": false,
+      "status": "rejected_gate"
+    }
+  ],
+  "decision": "activity_power_rejected_no_gated_candidate",
+  "dependency_contract": {
+    "cluster_equivalence": {
+      "decision": "decode_score_multivalue_cluster_equivalence_pass",
+      "equivalence_pass": true,
+      "final_tensor_hash": "fbbbe51bfe1d4ebf5f9910fdfdbf7e5eb322fe7633c9d523ac5a3587545cd457",
+      "score_tensor_hash": "dcdf04e9e1981a3447a532037c35bc10afc81c339014d09fc9bc039578c34387",
+      "semantic_profile": "decode_m1x8_shared_score_16x8d_value_iterdiv_v1"
+    },
+    "integrated_service_c1": {
+      "case_id": "c1_p128_b4_rr",
+      "config": {
+        "arb_mode": "round_robin",
+        "bank_queue_depth": 4,
+        "banks": 4,
+        "cluster_count": 1,
+        "locality_burst_max": 2,
+        "packet_w": 128,
+        "read_latency": 2,
+        "req_queue_depth": 4,
+        "resp_queue_depth": 4
+      },
+      "counters": {
+        "arbitration_contention_cycles": 0,
+        "bank_conflict_count": 0,
+        "max_occupancy": {
+          "router_req": 1,
+          "router_resp": 1,
+          "service_req": 1,
+          "service_resp": 1
+        },
+        "request_injection_stall_cycles": 0,
+        "response_block_cycles": {
+          "router": 0,
+          "service": 0
+        },
+        "shared_result": {
+          "arbitration_contention_cycles": 0,
+          "egress_block_cycles": 0
+        }
+      },
+      "cycle_bound_ok": true,
+      "decision": "pass",
+      "exact_match": true,
+      "gates": {
+        "count_gate_ok": true,
+        "hash_gate_ok": true,
+        "protocol_gate_ok": true
+      },
+      "hashes": {
+        "final_hash": "1b175b0c11434edf03e42a763439c5e232c561b4f60e4345768f542693f11a06",
+        "request_hash": "ea73916192b22f7ab3f6a618549d7ea39ec024f1e74fe8080ef97866ad85e38f",
+        "score_hash": "fad57989bfee06905aa10f5e279104455d3c1b62a4a98d38d3c80d53f2e4483c",
+        "wide_response_matrix_hash": "3366971e40bdc5eea1388be151b48bfacf108750da9f1e30e6b09f902df6c50e"
+      },
+      "no_drop_duplicate_deadlock_timeout": true,
+      "no_protocol_errors": true,
+      "request_count": 48,
+      "result_count": 16,
+      "shared_result_egress": {
+        "architecture": "single_ready_valid_round_robin_hold_reg_v2",
+        "back_to_back_fire_seen": false,
+        "documented_initiation_interval": 1,
+        "stall_semantics": "stable_until_handshake"
+      },
+      "wide_response_count": 48,
+      "workload_contract": {
+        "active_context_tokens": 24,
+        "command_block_count": 3,
+        "context_tokens_per_block": 8,
+        "max_blocks": 16,
+        "max_context_capacity_tokens": 128,
+        "value_dim": 128
+      }
+    }
+  },
+  "macro_activity_contract": {
+    "macro_classes": {
+      "fakeram45_2048x39": {
+        "assignment_count": 5096,
+        "instance_count": 56,
+        "instance_scope_prefix": "score_bank",
+        "pins_per_instance": 91
+      },
+      "fakeram45_64x32": {
+        "assignment_count": 4608,
+        "instance_count": 64,
+        "instance_scope_prefix": "gen_value_macro_backend",
+        "pins_per_instance": 72
+      }
+    },
+    "profile": "multivalue_service_c1_v1",
+    "total_assignment_count": 9704
+  },
+  "macro_manifest_contract": {
+    "counts": {
+      "fakeram45_2048x39": 56,
+      "fakeram45_64x32": 64
+    },
+    "statement": "Exact macro counts are required: 56 fakeram45_2048x39 score banks and 64 fakeram45_64x32 value-memory macros."
+  },
+  "model": "decoder_attention_decode_score_multivalue_service_activity_power_v1",
+  "physical_signoff": {
+    "architectural_use": "exploratory_routed_ppa_not_electrical_signoff",
+    "evidence_path": "runs/designs/npu_blocks/attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr/physical_signoff.json",
+    "metric_identity": {
+      "design": "attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr",
+      "param_hash": "696d01b6",
+      "platform": "nangate45",
+      "tag": "decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_3000_v1_macro_conservative_c1_die_3000"
+    },
+    "route_checks": {
+      "drc_violations": 0,
+      "hold_violations": 0,
+      "max_cap_limit_ff": 60.65,
+      "max_cap_violations": 142,
+      "max_slew_violations": 0,
+      "setup_violations": 0,
+      "worst_max_cap_slack_ff": -17.81
+    },
+    "source_item_id": "l1_decoder_attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_pnr_v1_r3",
+    "source_pr": 1548,
+    "source_url": "https://github.com/yhmtmt/RTLGen/pull/1548#issuecomment-5203896106",
+    "status": "routed_with_electrical_caveat",
+    "version": 1
+  },
+  "precision_status": "unchanged_integer_contract_from_merged_cluster_equivalence_and_integrated_service",
+  "promoted_candidate_count": 0,
+  "promotion_gate_pass": false,
+  "remaining_abstractions": [
+    "The service-window energy is direct routed component energy for this exact c1_p128_b4_rr workload, not total token energy.",
+    "FakeRAM power uses proxy Nangate45 macro views rather than SRAM compiler signoff.",
+    "Evaluator-local VCD, ODB, and SPEF paths remain redacted from the portable output.",
+    "The source route has 142 maximum-capacitance violations (worst slack -17.81 fF), so this result is exploratory routed PPA rather than electrical signoff."
+  ],
+  "selection_contract": {
+    "case_id": "c1_p128_b4_rr",
+    "clock_period_ns": 10.0,
+    "cluster_count": 1,
+    "required_flow_variant": "decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_3000_v1_macro_conservative_c1_die_3000",
+    "status": "exactly_one_status_ok_timing_feasible_row_required"
+  },
+  "source_dependencies": {
+    "integrated_service_r1_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_integrated_service__l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1_r1.json",
+    "merged_cluster_equivalence_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_cluster_equivalence__l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1.json",
+    "metrics_csv": "runs/designs/npu_blocks/attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr/metrics.csv",
+    "orfs_design_config": "<evaluator-local-path>/config.mk",
+    "physical_signoff_json": "runs/designs/npu_blocks/attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr/physical_signoff.json",
+    "service_config": "runs/designs/npu_blocks/attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr/config.json"
+  },
+  "version": 1
+}
