@@ -164,6 +164,63 @@ class ExactLocalGlobalGqa8Composition:
     finalized_beats: tuple[ExactFinalizedBeat, ...]
 
 
+@dataclass(frozen=True)
+class ExactPartialWindowRecord:
+    sequence_id: int
+    head_id: int
+    window_index: int
+    window_count: int
+    beats: tuple[ExactPartialBeat, ...]
+
+    def __post_init__(self) -> None:
+        sequence_id = _require_int_arg(self.sequence_id, "sequence_id")
+        head_id = _require_int_arg(self.head_id, "head_id")
+        window_index = _require_int_arg(self.window_index, "window_index")
+        window_count = _require_int_arg(self.window_count, "window_count")
+        if sequence_id < 0:
+            raise ValueError("sequence_id must be non-negative")
+        if not 0 <= head_id < (1 << HEAD_ID_BITS):
+            raise ValueError(f"head_id must fit unsigned {HEAD_ID_BITS} bits")
+        if not 1 <= window_count <= 16384:
+            raise ValueError("window_count must be in [1, 16384]")
+        if not 0 <= window_index < window_count:
+            raise ValueError("window_index must be in [0, window_count)")
+
+        beats = tuple(self.beats)
+        if len(beats) != VALUE_SLICES:
+            raise ValueError(f"each exact partial window must contain {VALUE_SLICES} beats")
+        command_id = beats[0].command_id
+        for slice_index, beat in enumerate(beats):
+            if not isinstance(beat, ExactPartialBeat):
+                raise ValueError("beats must contain ExactPartialBeat values")
+            if beat.command_id != command_id:
+                raise ValueError("command_id mismatch within exact partial window")
+            if beat.head_id != head_id:
+                raise ValueError("head_id mismatch between window metadata and beat")
+            if beat.slice_index != slice_index or beat.last != (slice_index == VALUE_SLICES - 1):
+                raise ValueError("slice sequencing mismatch within exact partial window")
+
+        object.__setattr__(self, "sequence_id", sequence_id)
+        object.__setattr__(self, "head_id", head_id)
+        object.__setattr__(self, "window_index", window_index)
+        object.__setattr__(self, "window_count", window_count)
+        object.__setattr__(self, "beats", beats)
+
+
+@dataclass(frozen=True)
+class ExactPartialTemporalHeadResult:
+    sequence_id: int
+    head_id: int
+    window_count: int
+    beats: tuple[ExactPartialBeat, ...]
+
+    def __post_init__(self) -> None:
+        beats = tuple(self.beats)
+        if len(beats) != VALUE_SLICES:
+            raise ValueError(f"temporal head result must contain {VALUE_SLICES} beats")
+        object.__setattr__(self, "beats", beats)
+
+
 def pack_numerators(values: Iterable[int]) -> int:
     mask = (1 << WEIGHTED_NUMERATOR_BITS) - 1
     lanes = tuple(int(value) for value in values)
@@ -758,6 +815,77 @@ def _merge_equal_partial_streams(
     if not left_beats or len(left_beats) != len(right_beats):
         raise ValueError("partial streams must be non-empty and contain the same beat count")
     return tuple(merge_partial_beats(left_beats[index], right_beats[index]) for index in range(len(left_beats)))
+
+
+def merge_ordered_exact_partial_temporal_stream(
+    records: Iterable[ExactPartialWindowRecord],
+) -> tuple[ExactPartialTemporalHeadResult, ...]:
+    """Merge ordered exact-partial windows into one final 16-beat stream per head."""
+
+    states: dict[tuple[int, int], tuple[int, int, tuple[ExactPartialBeat, ...]]] = {}
+    saw_record = False
+    for record in records:
+        saw_record = True
+        if not isinstance(record, ExactPartialWindowRecord):
+            raise ValueError("records must contain ExactPartialWindowRecord values")
+        key = (record.sequence_id, record.head_id)
+        state = states.get(key)
+        if state is None:
+            if record.window_index != 0:
+                raise ValueError(
+                    "window order mismatch for "
+                    f"sequence_id={record.sequence_id} head_id={record.head_id}: "
+                    f"expected window_index 0, got {record.window_index}"
+                )
+            states[key] = (record.window_count, 1, record.beats)
+            continue
+
+        window_count, next_window_index, aggregate = state
+        if record.window_count != window_count:
+            raise ValueError(
+                "window_count mismatch for "
+                f"sequence_id={record.sequence_id} head_id={record.head_id}: "
+                f"expected {window_count}, got {record.window_count}"
+            )
+        if record.window_index != next_window_index:
+            raise ValueError(
+                "window order mismatch for "
+                f"sequence_id={record.sequence_id} head_id={record.head_id}: "
+                f"expected window_index {next_window_index}, got {record.window_index}"
+            )
+        if next_window_index >= window_count:
+            raise ValueError(
+                "too many windows for "
+                f"sequence_id={record.sequence_id} head_id={record.head_id}: "
+                f"window_count is {window_count}"
+            )
+        states[key] = (
+            window_count,
+            next_window_index + 1,
+            _merge_equal_partial_streams(aggregate, record.beats),
+        )
+
+    if not saw_record:
+        raise ValueError("expected at least one exact partial window record")
+
+    results: list[ExactPartialTemporalHeadResult] = []
+    for sequence_id, head_id in sorted(states):
+        window_count, received, aggregate = states[(sequence_id, head_id)]
+        if received != window_count:
+            raise ValueError(
+                "incomplete window stream for "
+                f"sequence_id={sequence_id} head_id={head_id}: "
+                f"expected {window_count} windows, received {received}"
+            )
+        results.append(
+            ExactPartialTemporalHeadResult(
+                sequence_id=sequence_id,
+                head_id=head_id,
+                window_count=window_count,
+                beats=aggregate,
+            )
+        )
+    return tuple(results)
 
 
 def merge_balanced_partial_stream_levels(
@@ -1863,6 +1991,8 @@ __all__ = [
     "ExactLocalGlobalGqa8Composition",
     "ExactLocalTemporalClusterComposition",
     "ExactPartialBeat",
+    "ExactPartialTemporalHeadResult",
+    "ExactPartialWindowRecord",
     "FOLDED_SHARED_SCALE_MERSENNE_EXACT_PARTIAL_TREE_PAIR_NODE_IMPL",
     "FINALIZER_CONTROL_TRANSACTION_ID_BITS",
     "FINAL_PAYLOAD_BITS",
@@ -1907,6 +2037,7 @@ __all__ = [
     "merge_balanced_partial_streams",
     "merge_staged_partial_streams",
     "merge_partial_beats",
+    "merge_ordered_exact_partial_temporal_stream",
     "merge_partial_streams",
     "merge_partial_streams_via_local_normalization",
     "normalized_merge_guard_case",
