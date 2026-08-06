@@ -158,6 +158,7 @@ def export_queue_item(session: Session, request: QueueExportRequest) -> QueueExp
     export_payload["title"] = work_item.task_request.title
     export_payload["layer"] = work_item.layer.value
     export_payload["flow"] = work_item.flow.value
+    export_payload["task_type"] = work_item.task_type
     export_payload["priority"] = work_item.priority
     export_payload["requested_by"] = work_item.task_request.requested_by
     export_payload["platform"] = work_item.platform

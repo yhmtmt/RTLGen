@@ -15,7 +15,7 @@ from control_plane.models.task_requests import TaskRequest
 from control_plane.models.work_items import WorkItem
 from control_plane.services.queue_importer import QueueImportConflict, QueueImportError, QueueImportRequest, import_queue_item
 
-REPO_ROOT = Path("/workspaces/RTLGen")
+REPO_ROOT = Path(__file__).resolve().parents[3]
 REAL_QUEUE_ITEM = REPO_ROOT / "runs/eval_queue/openroad/queued/l2_e2e_softmax_macro_tail_v1.json"
 
 
@@ -107,6 +107,89 @@ def test_import_same_item_is_idempotent() -> None:
         assert session.query(WorkItem).count() == 1
         assert session.query(TaskRequest).count() == 1
         assert session.query(QueueReconciliation).count() == 2
+
+
+def test_import_preserves_explicit_task_type_on_export_roundtrip(tmp_path: Path) -> None:
+    repo_root, queue_file, source_commit = _make_queue_import_repo(tmp_path)
+    exported = tmp_path / "roundtrip.json"
+
+    with make_session() as session:
+        import_queue_item(
+            session,
+            QueueImportRequest(
+                repo_root=str(repo_root),
+                queue_path=str(queue_file),
+                source_commit=source_commit,
+            ),
+        )
+        from control_plane.services.queue_exporter import QueueExportRequest, export_queue_item
+
+        export_queue_item(
+            session,
+            QueueExportRequest(
+                repo_root=str(repo_root),
+                item_id="l2_e2e_softmax_macro_tail_v1",
+                target_state="queued",
+                target_path=str(exported),
+            ),
+        )
+
+    exported_payload = json.loads(exported.read_text(encoding="utf-8"))
+    assert exported_payload["task_type"] == "l2_campaign"
+
+    with make_session() as session:
+        result = import_queue_item(
+            session,
+            QueueImportRequest(
+                repo_root=str(repo_root),
+                queue_path=str(exported),
+                source_commit=source_commit,
+            ),
+        )
+        work_item = session.query(WorkItem).filter_by(item_id="l2_e2e_softmax_macro_tail_v1").one()
+        assert result.status == "applied"
+        assert work_item.task_type == "l2_campaign"
+
+
+def test_import_accepts_legacy_queue_then_explicit_task_type_without_conflict(tmp_path: Path) -> None:
+    payload = json.loads(REAL_QUEUE_ITEM.read_text(encoding="utf-8"))
+    queue_file = tmp_path / "item.json"
+    queue_file.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+
+    with make_session() as session:
+        first = import_queue_item(
+            session,
+            QueueImportRequest(repo_root=str(tmp_path), queue_path="item.json"),
+        )
+        payload["task_type"] = "l2_campaign"
+        queue_file.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+        second = import_queue_item(
+            session,
+            QueueImportRequest(repo_root=str(tmp_path), queue_path="item.json"),
+        )
+        work_item = session.query(WorkItem).filter_by(item_id="l2_e2e_softmax_macro_tail_v1").one()
+        assert first.status == "applied"
+        assert second.status == "applied"
+        assert work_item.task_type == "l2_campaign"
+        assert session.query(WorkItem).count() == 1
+
+
+def test_import_rejects_invalid_explicit_task_type(tmp_path: Path) -> None:
+    payload = json.loads(REAL_QUEUE_ITEM.read_text(encoding="utf-8"))
+    payload["task_type"] = "invalid task type"
+    queue_file = tmp_path / "item.json"
+    queue_file.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+
+    with make_session() as session:
+        try:
+            import_queue_item(
+                session,
+                QueueImportRequest(repo_root=str(tmp_path), queue_path="item.json"),
+            )
+        except QueueImportError as exc:
+            assert "task_type must be a portable identifier" in str(exc)
+        else:
+            raise AssertionError("invalid task_type should be rejected")
 
 
 def test_import_conflict_for_semantic_change(tmp_path: Path) -> None:

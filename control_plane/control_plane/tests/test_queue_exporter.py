@@ -116,6 +116,7 @@ def test_export_queued_snapshot() -> None:
             payload = json.loads(out.read_text(encoding="utf-8"))
             assert result.target_state == "queued"
             assert payload["state"] == "queued"
+            assert payload["task_type"] == "l2_campaign"
             assert payload["result"] is None
             assert payload["item_id"] == "l2_e2e_softmax_macro_tail_v1"
             assert session.query(QueueReconciliation).count() == 2
@@ -145,6 +146,7 @@ def test_export_evaluated_snapshot() -> None:
             payload = json.loads(out.read_text(encoding="utf-8"))
             assert result.target_state == "evaluated"
             assert payload["state"] == "evaluated"
+            assert payload["task_type"] == "l2_campaign"
             assert payload["result"]["status"] == "ok"
             assert payload["result"]["queue_item_id"] == "l2_e2e_softmax_macro_tail_v1"
             assert payload["result"]["metrics_rows"][0]["tag"] == "export_smoke"
