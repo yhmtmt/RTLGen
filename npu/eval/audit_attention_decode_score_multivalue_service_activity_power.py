@@ -58,8 +58,8 @@ _SCORE_ACTIVITY_RE = re.compile(
     r"(?:addr_in\[\d+\]|wd_in\[\d+\]|w_mask_in\[\d+\]|we_in|ce_in)$"
 )
 _VALUE_ACTIVITY_RE = re.compile(
-    r"^(?P<instance>(?:[^/]+/)*gen_value_macro_backend/"
-    r"gen_value_bank\[(\d+)\]/gen_value_lane\[(\d+)\]/u_value_mem_lane)/"
+    r"^(?P<instance>(?:[^/]+/)*gen_value_macro_backend\."
+    r"gen_value_bank\[(\d+)\]\.gen_value_lane\[(\d+)\]\.u_value_mem_lane)/"
     r"(?:addr_in\[\d+\]|wd_in\[\d+\]|w_mask_in\[\d+\]|we_in|ce_in)$"
 )
 

@@ -181,7 +181,18 @@ def _value_scope_result(
             continue
         if index + 4 != len(parts):
             continue
-        macro_parts = ["gen_value_macro_backend", bank_scope, lane_scope, leaf_scope]
+        # Yosys flattens these nested generate scopes into one escaped
+        # OpenDB instance name, while retaining module boundaries as "/".
+        macro_parts = [
+            ".".join(
+                [
+                    "gen_value_macro_backend",
+                    bank_scope,
+                    lane_scope,
+                    leaf_scope,
+                ]
+            )
+        ]
         if index > 0 and preserve_instance_prefix:
             macro_parts = [*parts[:index], *macro_parts]
         return ("/".join(macro_parts), _VALUE_MACRO_SPEC)

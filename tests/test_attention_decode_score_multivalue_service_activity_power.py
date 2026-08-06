@@ -21,8 +21,8 @@ def test_service_macro_activity_patterns_accept_full_routed_hierarchy() -> None:
         "gen_cluster[0]/u_cluster/score_bank/u_group_7_slice_6/wd_in[38]"
     )
     value = audit._VALUE_ACTIVITY_RE.fullmatch(
-        "u_service/gen_value_macro_backend/gen_value_bank[3]/"
-        "gen_value_lane[15]/u_value_mem_lane/w_mask_in[31]"
+        "u_service/gen_value_macro_backend.gen_value_bank[3]."
+        "gen_value_lane[15].u_value_mem_lane/w_mask_in[31]"
     )
 
     assert score is not None
@@ -31,8 +31,8 @@ def test_service_macro_activity_patterns_accept_full_routed_hierarchy() -> None:
     )
     assert value is not None
     assert value.group("instance") == (
-        "u_service/gen_value_macro_backend/gen_value_bank[3]/"
-        "gen_value_lane[15]/u_value_mem_lane"
+        "u_service/gen_value_macro_backend.gen_value_bank[3]."
+        "gen_value_lane[15].u_value_mem_lane"
     )
 
 
