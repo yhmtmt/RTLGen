@@ -534,6 +534,12 @@ proc rtlgen_strip_array_index_suffix {full_name} {
   return $full_name
 }
 
+proc rtlgen_canonical_activity_name {full_name} {
+  # Yosys/OpenDB prints generated hierarchy boundaries as "].", while
+  # RTL VCD scopes use "]/". Preserve dots in ordinary identifiers.
+  return [string map [list "]." "]/"] $full_name]
+}
+
 proc rtlgen_apply_macro_pin_activities {assignments} {
   set results {}
   if {[llength $assignments] == 0} {
@@ -583,6 +589,7 @@ set sequential_register_activity_scan_samples {}
 set sequential_register_activity_assignments {}
 set sequential_register_activity_updates {}
 set sequential_register_activity_assignment_rows_by_full_name {}
+set sequential_register_activity_original_name_by_canonical {}
 set sequential_register_activity_unmatched_rows_by_full_name {}
 set sequential_register_activity_unmatched_rows_by_prefix {}
 set sequential_register_activity_assignment_rows_seen {}
@@ -620,8 +627,18 @@ foreach macro_pin_transfer_structural_row $macro_pin_transfer_structural_assignm
     continue
   }
   lassign $macro_pin_transfer_structural_row macro_pin_transfer_structural_full_name macro_pin_transfer_structural_density macro_pin_transfer_structural_duty macro_pin_transfer_structural_transition_count
-  dict set macro_pin_transfer_structural_assignment_rows_by_full_name $macro_pin_transfer_structural_full_name [list $macro_pin_transfer_structural_density $macro_pin_transfer_structural_duty $macro_pin_transfer_structural_transition_count]
-  dict set macro_pin_transfer_structural_unmatched_rows_by_full_name $macro_pin_transfer_structural_full_name 1
+  set macro_pin_transfer_structural_canonical_name \
+    [rtlgen_canonical_activity_name $macro_pin_transfer_structural_full_name]
+  if {[dict exists $macro_pin_transfer_structural_assignment_rows_by_full_name \
+          $macro_pin_transfer_structural_canonical_name]} {
+    incr macro_pin_transfer_structural_query_error_count
+    continue
+  }
+  dict set macro_pin_transfer_structural_assignment_rows_by_full_name \
+    $macro_pin_transfer_structural_canonical_name \
+    [list $macro_pin_transfer_structural_density $macro_pin_transfer_structural_duty $macro_pin_transfer_structural_transition_count]
+  dict set macro_pin_transfer_structural_unmatched_rows_by_full_name \
+    $macro_pin_transfer_structural_canonical_name $macro_pin_transfer_structural_full_name
 }
 set sequential_register_activity_assignment_count [llength $sequential_register_activity_assignments]
 foreach sequential_register_activity_row $sequential_register_activity_assignments {
@@ -635,14 +652,23 @@ foreach sequential_register_activity_row $sequential_register_activity_assignmen
     sequential_register_activity_density \
     sequential_register_activity_duty \
     sequential_register_activity_transition_count
+  set sequential_register_activity_canonical_name \
+    [rtlgen_canonical_activity_name $sequential_register_activity_full_name]
+  if {[dict exists $sequential_register_activity_assignment_rows_by_full_name \
+          $sequential_register_activity_canonical_name]} {
+    incr sequential_register_activity_query_error_count
+    continue
+  }
   dict set sequential_register_activity_assignment_rows_by_full_name \
-    $sequential_register_activity_full_name \
+    $sequential_register_activity_canonical_name \
     [list \
       $sequential_register_activity_density \
       $sequential_register_activity_duty \
       $sequential_register_activity_transition_count]
+  dict set sequential_register_activity_original_name_by_canonical \
+    $sequential_register_activity_canonical_name $sequential_register_activity_full_name
   dict set sequential_register_activity_unmatched_rows_by_full_name \
-    $sequential_register_activity_full_name 1
+    $sequential_register_activity_canonical_name $sequential_register_activity_full_name
 }
 set macro_pin_transfer_structural_candidate_count $macro_pin_transfer_structural_assignment_count
 if {[catch {set all_design_pins_unsorted [get_pins -hierarchical *]}]} {
@@ -674,12 +700,15 @@ foreach sequential_register_activity_pin $all_design_pins {
           -> sequential_register_activity_register_full_name sequential_register_activity_pin_type]} {
     continue
   }
+  set sequential_register_activity_canonical_register_full_name \
+    [rtlgen_canonical_activity_name $sequential_register_activity_register_full_name]
   if {$sequential_register_activity_pin_type eq "Q"} {
     incr sequential_register_activity_candidate_q_count
   } else {
     incr sequential_register_activity_candidate_qn_count
   }
-  if {![dict exists $sequential_register_activity_assignment_rows_by_full_name $sequential_register_activity_register_full_name]} {
+  if {![dict exists $sequential_register_activity_assignment_rows_by_full_name \
+          $sequential_register_activity_canonical_register_full_name]} {
     incr sequential_register_activity_unmatched_output_count
     set sequential_register_activity_unmatched_prefix \
       [rtlgen_strip_array_index_suffix $sequential_register_activity_register_full_name]
@@ -698,7 +727,8 @@ foreach sequential_register_activity_pin $all_design_pins {
     continue
   }
   lassign \
-    [dict get $sequential_register_activity_assignment_rows_by_full_name $sequential_register_activity_register_full_name] \
+    [dict get $sequential_register_activity_assignment_rows_by_full_name \
+      $sequential_register_activity_canonical_register_full_name] \
     sequential_register_activity_density \
     sequential_register_activity_duty \
     sequential_register_activity_transition_count
@@ -716,7 +746,8 @@ foreach sequential_register_activity_pin $all_design_pins {
   dict set sequential_register_activity_pin_register_by_pin $sequential_register_activity_pin_full_name $sequential_register_activity_register_full_name
   dict set sequential_register_activity_pin_type_by_pin $sequential_register_activity_pin_full_name $sequential_register_activity_pin_type
   dict set sequential_register_activity_pin_duty_by_pin $sequential_register_activity_pin_full_name $sequential_register_activity_effective_duty
-  dict incr sequential_register_activity_assignment_rows_seen $sequential_register_activity_register_full_name
+  dict incr sequential_register_activity_assignment_rows_seen \
+    $sequential_register_activity_canonical_register_full_name
   incr sequential_register_activity_matched_count
 }
 if {[llength $sequential_register_activity_updates] > 0} {
@@ -756,11 +787,15 @@ if {[llength $sequential_register_activity_updates] > 0} {
   }
 }
 if {[dict size $sequential_register_activity_assignment_rows_by_full_name] > 0} {
-  dict for {sequential_register_activity_unused_row _} \
+  dict for {sequential_register_activity_unused_canonical_name _} \
     $sequential_register_activity_assignment_rows_by_full_name {
-    if {[dict exists $sequential_register_activity_assignment_rows_seen $sequential_register_activity_unused_row]} {
+    if {[dict exists $sequential_register_activity_assignment_rows_seen \
+            $sequential_register_activity_unused_canonical_name]} {
       continue
     }
+    set sequential_register_activity_unused_row \
+      [dict get $sequential_register_activity_original_name_by_canonical \
+        $sequential_register_activity_unused_canonical_name]
     lappend sequential_register_activity_unused_sidecar_rows $sequential_register_activity_unused_row
     incr sequential_register_activity_unused_sidecar_row_count
     set sequential_register_activity_unused_row_prefix \
@@ -862,10 +897,14 @@ foreach macro_pin $all_design_pins {
     }
     continue
   }
-  if {[dict exists $macro_pin_transfer_structural_assignment_rows_by_full_name $macro_pin_full_name]} {
+  set macro_pin_canonical_full_name [rtlgen_canonical_activity_name $macro_pin_full_name]
+  if {[dict exists $macro_pin_transfer_structural_assignment_rows_by_full_name \
+          $macro_pin_canonical_full_name]} {
     set macro_pin_transfer_structural_row \
-      [dict get $macro_pin_transfer_structural_assignment_rows_by_full_name $macro_pin_full_name]
-    dict unset macro_pin_transfer_structural_unmatched_rows_by_full_name $macro_pin_full_name
+      [dict get $macro_pin_transfer_structural_assignment_rows_by_full_name \
+        $macro_pin_canonical_full_name]
+    dict unset macro_pin_transfer_structural_unmatched_rows_by_full_name \
+      $macro_pin_canonical_full_name
     incr macro_pin_transfer_structural_matched_count
     lassign $macro_pin_transfer_structural_row macro_pin_structural_density macro_pin_structural_duty macro_pin_structural_transition_count
     lappend macro_pin_transfer_updates \
@@ -1068,7 +1107,7 @@ foreach macro_pin $all_design_pins {
 }
 set macro_pin_transfer_structural_unmatched_count [dict size $macro_pin_transfer_structural_unmatched_rows_by_full_name]
 if {$macro_pin_transfer_structural_unmatched_count > 0} {
-  dict for {macro_pin_transfer_structural_unmatched_full_name _} \
+  dict for {_ macro_pin_transfer_structural_unmatched_full_name} \
     $macro_pin_transfer_structural_unmatched_rows_by_full_name {
     lappend macro_pin_transfer_structural_unmatched_full_names $macro_pin_transfer_structural_unmatched_full_name
   }

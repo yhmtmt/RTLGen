@@ -915,9 +915,17 @@ class PostrouteVcdPowerTests(unittest.TestCase):
 
             result = root / "activity_power.json"
             macro_activity_tcl = root / "macro_activity.tcl"
+            sidecar_pin = (
+                "gen_cluster[0]/u_cluster/score_bank/"
+                "u_group_7_slice_3/dq[3]"
+            )
+            routed_pin = (
+                "gen_cluster[0].u_cluster/score_bank/"
+                "u_group_7_slice_3/dq[3]"
+            )
             macro_activity_tcl.write_text(
                 "set rtlgen_macro_activity_assignments {\n"
-                "  {pin_input_u_group[7]/dq[3] 1.234 0.5 8.9}\n"
+                f"  {{{sidecar_pin} 1.234 0.5 8.9}}\n"
                 "}\n",
                 encoding="utf-8",
             )
@@ -929,7 +937,7 @@ class PostrouteVcdPowerTests(unittest.TestCase):
                 macro_activity_tcl=macro_activity_tcl,
                 macro_transfer_pin_names=(
                     "pin_other_0",
-                    "pin_input_u_group[7]/dq[3]",
+                    routed_pin,
                     "pin_nonfinite_u_group",
                 ),
             )
@@ -986,7 +994,7 @@ class PostrouteVcdPowerTests(unittest.TestCase):
             self.assertEqual(transfer["peer_eligible_count"], 0)
             self.assertEqual(len(transfer["transferred"]), 1)
             self.assertEqual(
-                transfer["transferred"][0]["full_name"], "pin_input_u_group[7]/dq[3]"
+                transfer["transferred"][0]["full_name"], routed_pin
             )
             self.assertEqual(transfer["transferred"][0]["source"], "vcd")
             self.assertEqual(
@@ -995,7 +1003,7 @@ class PostrouteVcdPowerTests(unittest.TestCase):
             self.assertEqual(len(transfer["scan_samples"]), 1)
             self.assertEqual(
                 transfer["scan_samples"][0]["full_name"],
-                "pin_input_u_group[7]/dq[3]",
+                routed_pin,
             )
             self.assertEqual(
                 transfer["scan_samples"][0]["driver_origin"], "structural_vcd_sidecar"
@@ -1020,13 +1028,32 @@ class PostrouteVcdPowerTests(unittest.TestCase):
             sequential_activity_tcl = self._write_sequential_activity_tcl(
                 root=root,
                 assignments=(
-                    ("reducer/result_value[116]", 500.0, 0.25, 5.0),
-                    ("reducer/numerator_accum[56][24]", 300.0, 0.60, 3.0),
+                    (
+                        "gen_cluster[0]/u_cluster/reducer/result_value[116]",
+                        500.0,
+                        0.25,
+                        5.0,
+                    ),
+                    (
+                        "gen_cluster[0]/u_cluster/reducer/numerator_accum[56][24]",
+                        300.0,
+                        0.60,
+                        3.0,
+                    ),
                 ),
             )
-            q_pin = "reducer/numerator_accum[56][24]$_DFFE_PP_/Q"
-            qn_pin = "reducer/numerator_accum[56][24]$_DFFSR_X1_/QN"
-            second_pin = "reducer/result_value[116]$_DFFX1_/Q"
+            q_pin = (
+                "gen_cluster[0].u_cluster/reducer/"
+                "numerator_accum[56][24]$_DFFE_PP_/Q"
+            )
+            qn_pin = (
+                "gen_cluster[0].u_cluster/reducer/"
+                "numerator_accum[56][24]$_DFFSR_X1_/QN"
+            )
+            second_pin = (
+                "gen_cluster[0].u_cluster/reducer/"
+                "result_value[116]$_DFFX1_/Q"
+            )
             pin_properties = {
                 pin: {
                     "full_name": pin,
