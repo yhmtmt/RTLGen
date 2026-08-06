@@ -371,7 +371,7 @@ def test_extract_multivalue_service_activity_tracks_both_macro_classes(tmp_path:
     by_name = {row["full_name"]: row for row in payload["pins"]}
     assert "wrapper/score_bank/u_group_0_slice_0/we_in" in by_name
     assert (
-        "wrapper/gen_value_macro_backend/gen_value_bank[0]/gen_value_lane[0]/u_value_mem_lane/ce_in"
+        "wrapper/gen_value_macro_backend.gen_value_bank[0].gen_value_lane[0].u_value_mem_lane/ce_in"
         in by_name
     )
     contract = payload["structural_macro_contract"]
@@ -481,6 +481,10 @@ def test_extract_multivalue_service_activity_preserves_c2_cluster_identity(tmp_p
     by_name = {row["full_name"]: row for row in payload["pins"]}
     assert "gen_cluster[0]/u_cluster/score_bank/u_group_0_slice_0/we_in" in by_name
     assert "gen_cluster[1]/u_cluster/score_bank/u_group_0_slice_0/we_in" in by_name
+    assert (
+        "gen_value_macro_backend.gen_value_bank[0].gen_value_lane[0].u_value_mem_lane/ce_in"
+        in by_name
+    )
     contract = payload["structural_macro_contract"]
     classes = {row["macro_name"]: row for row in contract["macro_classes"]}
     assert classes["fakeram45_2048x39"]["instance_count"] == 2
@@ -512,7 +516,7 @@ def test_extract_multivalue_service_activity_real_generated_vcd_sidecar(tmp_path
     full_names = {row["full_name"] for row in payload["pins"]}
     assert "gen_cluster[0]/u_cluster/score_bank/u_group_7_slice_6/ce_in" in full_names
     assert (
-        "u_service/gen_value_macro_backend/gen_value_bank[3]/gen_value_lane[15]/u_value_mem_lane/ce_in"
+        "u_service/gen_value_macro_backend.gen_value_bank[3].gen_value_lane[15].u_value_mem_lane/ce_in"
         in full_names
     )
 
@@ -542,7 +546,7 @@ def test_extract_multivalue_service_activity_real_generated_c2_vcd_sidecar(tmp_p
     value_instances = {
         name.rsplit("/", 1)[0]
         for name in full_names
-        if name.startswith("u_service/gen_value_macro_backend/")
+        if name.startswith("u_service/gen_value_macro_backend.")
     }
     assert len(score_instances) == 112
     assert len(value_instances) == 64
