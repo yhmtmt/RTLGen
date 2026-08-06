@@ -67,6 +67,32 @@ class Llama7BArchitectureClosureTest(unittest.TestCase):
             evidence_paths,
         )
 
+    def test_producer_service_reducer_composition_reflects_four_group_closure(self) -> None:
+        component = next(
+            item for item in self.matrix["components"] if item["id"] == "producer_service_reducer_composition"
+        )
+        self.assertEqual(component["status"], "rtl_unmeasured")
+        self.assertEqual(component["dimensions"]["equivalence"]["status"], "measured_component")
+        self.assertEqual(component["dimensions"]["composition"]["status"], "measured_component")
+        self.assertEqual(component["dimensions"]["scale_validation"]["status"], "measured_component")
+        summary = component["summary"]
+        self.assertIn("four-group GQA8 rotation", summary)
+        self.assertIn("representative composed routed macro", summary)
+        self.assertNotIn("one-group proof alone", summary)
+        evidence_paths = {entry["path"] for entry in component["evidence"]}
+        self.assertIn(
+            "docs/proposals/"
+            "prop_l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_"
+            "llama7b_v1/analysis_report.md",
+            evidence_paths,
+        )
+        self.assertIn(
+            "docs/proposals/"
+            "prop_l2_decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank_llama7b_v1/"
+            "analysis_report.md",
+            evidence_paths,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
