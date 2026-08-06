@@ -557,6 +557,13 @@ def generate(config: JsonDict, out_dir: Path) -> None:
             "strict_per_head_ordered_windows_and_slices_one_active_sequence_per_head_emit_16_beats_on_completion"
         ),
         "fail_closed_protocol_error": True,
+        "remaining_abstractions": [
+            "upstream_service_command_metadata_binding",
+            "service_to_temporal_reducer_clock_domain_crossing",
+            "downstream_full_context_final_normalizer",
+            "physical_sram_macro_mapping_for_persistent_state",
+            "physical_ppa",
+        ],
         "top_pin_bits": _top_pin_bits(fifo_depth=int(params["fifo_depth"])),
         "submodule_manifests": {"pair_merge": merge_manifest},
     }

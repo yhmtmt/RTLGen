@@ -172,3 +172,8 @@ def test_temporal_stream_rejects_command_id_mismatch_across_windows() -> None:
 def test_temporal_stream_rejects_empty_input() -> None:
     with pytest.raises(ValueError, match="expected at least one exact partial window record"):
         merge_ordered_exact_partial_temporal_stream(())
+
+
+def test_window_record_rejects_sequence_id_wider_than_rtl() -> None:
+    with pytest.raises(ValueError, match="sequence_id must fit unsigned 16 bits"):
+        _record(sequence_id=1 << 16, window_index=0, window_count=1)

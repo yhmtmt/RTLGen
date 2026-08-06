@@ -437,9 +437,11 @@ def build_report(
         "summary": summary,
         "manifest": manifest,
         "remaining_abstractions": [
-            "upstream_exact_partial_service_source",
-            "downstream_final_normalizer",
+            "upstream_service_command_metadata_binding",
+            "service_to_temporal_reducer_clock_domain_crossing",
+            "downstream_full_context_final_normalizer",
             "physical_sram_macro_mapping_for_persistent_state",
+            "physical_ppa",
         ],
     }
 

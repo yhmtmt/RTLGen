@@ -177,8 +177,8 @@ class ExactPartialWindowRecord:
         head_id = _require_int_arg(self.head_id, "head_id")
         window_index = _require_int_arg(self.window_index, "window_index")
         window_count = _require_int_arg(self.window_count, "window_count")
-        if sequence_id < 0:
-            raise ValueError("sequence_id must be non-negative")
+        if not 0 <= sequence_id < (1 << 16):
+            raise ValueError("sequence_id must fit unsigned 16 bits")
         if not 0 <= head_id < (1 << HEAD_ID_BITS):
             raise ValueError(f"head_id must fit unsigned {HEAD_ID_BITS} bits")
         if not 1 <= window_count <= 16384:

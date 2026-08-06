@@ -48,6 +48,13 @@ def test_manifest_and_verilator_lint(tmp_path: Path) -> None:
     assert manifest["max_window_count"] == 16384
     assert manifest["fifo_depth"] == 4
     assert manifest["fail_closed_protocol_error"] is True
+    assert manifest["remaining_abstractions"] == [
+        "upstream_service_command_metadata_binding",
+        "service_to_temporal_reducer_clock_domain_crossing",
+        "downstream_full_context_final_normalizer",
+        "physical_sram_macro_mapping_for_persistent_state",
+        "physical_ppa",
+    ]
     assert manifest["submodule_manifests"]["pair_merge"]["exp_scale_impl"] == (
         "factored_h33_l64_mul_exact"
     )
