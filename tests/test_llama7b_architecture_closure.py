@@ -52,6 +52,21 @@ class Llama7BArchitectureClosureTest(unittest.TestCase):
         self.assertIn("evidence path does not exist", joined)
         self.assertIn("does_not_exist.md", joined)
 
+    def test_multivalue_service_activity_is_measured_but_not_signoff(self) -> None:
+        component = next(item for item in self.matrix["components"] if item["id"] == "multivalue_service")
+        self.assertEqual(component["status"], "routed_with_caveat")
+        self.assertEqual(component["dimensions"]["activity"]["status"], "measured_component")
+        joined_caveats = "\n".join(component["caveats"])
+        self.assertIn("exploratory routed PPA", joined_caveats)
+        self.assertIn("service-window component energy", joined_caveats)
+        evidence_paths = {entry["path"] for entry in component["evidence"]}
+        self.assertIn(
+            "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+            "decoder_attention_decode_score_multivalue_service_activity_power__"
+            "l2_decoder_attention_decode_score_multivalue_service_c1_activity_power_llama7b_v1_r8.json",
+            evidence_paths,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
