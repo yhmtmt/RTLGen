@@ -147,6 +147,32 @@ def _validated_workload_contract(payload: Any, label: str) -> JsonDict:
     return validated
 
 
+def _validated_result_semantics(payload: Any, label: str) -> JsonDict:
+    if not isinstance(payload, dict):
+        raise ValueError(f"{label} must be an object")
+    result_mode = _string(payload.get("result_mode"), f"{label} result_mode")
+    if result_mode not in {"normalized", "exact_partial"}:
+        raise ValueError(f"{label} result_mode must be normalized or exact_partial")
+    supports_sequence_window_composition = payload.get("supports_sequence_window_composition")
+    if not isinstance(supports_sequence_window_composition, bool):
+        raise ValueError(f"{label} supports_sequence_window_composition must be a boolean")
+    if supports_sequence_window_composition != (result_mode == "exact_partial"):
+        raise ValueError(f"{label} supports_sequence_window_composition mismatches result_mode")
+    composition_scope = _string(payload.get("composition_scope"), f"{label} composition_scope")
+    expected_scope = (
+        "exact_partial_across_sequence_windows_before_finalization"
+        if result_mode == "exact_partial"
+        else "normalized_final_output_not_sequence_window_composable"
+    )
+    if composition_scope != expected_scope:
+        raise ValueError(f"{label} composition_scope mismatch")
+    return {
+        "result_mode": result_mode,
+        "supports_sequence_window_composition": supports_sequence_window_composition,
+        "composition_scope": composition_scope,
+    }
+
+
 def _source_schedule(frontier: JsonDict, frontier_path: Path) -> tuple[JsonDict, str]:
     visited = {frontier_path.resolve()}
     current_payload = frontier
@@ -523,6 +549,14 @@ def _validated_service_activity(
         raise ValueError("service report lacks activity_contract")
     if abs(_positive(activity_contract.get("clock_period_ns"), "service activity_contract clock_period_ns") - _EXPECTED_SERVICE_CLOCK_NS) > 1e-9:
         raise ValueError("service activity clock_period_ns mismatch")
+    if "result_semantics" not in activity_contract:
+        raise ValueError(
+            "service activity_contract result_semantics missing; legacy or normalized-only evidence cannot anchor measured-frontier scaling"
+        )
+    activity_result_semantics = _validated_result_semantics(
+        activity_contract.get("result_semantics"),
+        "service activity_contract result_semantics",
+    )
     workload_contract = _validated_workload_contract(
         activity_contract.get("workload_contract"),
         "service activity_contract workload_contract",
@@ -544,6 +578,20 @@ def _validated_service_activity(
         raise ValueError("service component_service_window_energy label mismatch")
     if service_window.get("is_total_token_energy") is not False:
         raise ValueError("service component_service_window_energy must not be total-token energy")
+    if "result_semantics" not in service_window:
+        raise ValueError(
+            "service component_service_window_energy result_semantics missing; legacy or normalized-only evidence cannot anchor measured-frontier scaling"
+        )
+    service_window_result_semantics = _validated_result_semantics(
+        service_window.get("result_semantics"),
+        "service component_service_window_energy result_semantics",
+    )
+    if service_window_result_semantics != activity_result_semantics:
+        raise ValueError("service result_semantics mismatch between activity_contract and component_service_window_energy")
+    if activity_result_semantics["result_mode"] != "exact_partial":
+        raise ValueError(
+            "service measured-frontier promotion requires explicit exact_partial/composable result_semantics; normalized output evidence remains component-only"
+        )
     service_cycle_count = _positive_int(service_window.get("cycle_count"), "service window cycle_count")
     if service_cycle_count != _positive_int(activity_contract.get("cycle_count"), "service activity cycle_count"):
         raise ValueError("service window cycle_count does not match activity_contract cycle_count")
@@ -640,6 +688,7 @@ def _validated_service_activity(
         "integrated_hashes": integrated_hashes,
         "flow_variant": case_contract["flow_variant"],
         "design": case_contract["design"],
+        "result_semantics": activity_result_semantics,
     }
     return row
 

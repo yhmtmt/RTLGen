@@ -55,6 +55,18 @@ def _workload_contract() -> dict:
     }
 
 
+def _result_semantics(result_mode: str) -> dict:
+    return {
+        "result_mode": result_mode,
+        "supports_sequence_window_composition": result_mode == "exact_partial",
+        "composition_scope": (
+            "exact_partial_across_sequence_windows_before_finalization"
+            if result_mode == "exact_partial"
+            else "normalized_final_output_not_sequence_window_composable"
+        ),
+    }
+
+
 def _prior_frontier(tmp_path: Path, *, sequence_length: int = 131072) -> Path:
     source = _source_schedule(tmp_path, sequence_length=sequence_length)
     linked_prior = _write(
@@ -185,7 +197,7 @@ def _prior_frontier(tmp_path: Path, *, sequence_length: int = 131072) -> Path:
     )
 
 
-def _service_activity_power(tmp_path: Path) -> Path:
+def _service_activity_power(tmp_path: Path, *, result_mode: str | None = "exact_partial") -> Path:
     return _write(
         tmp_path / "service_activity_power.json",
         {
@@ -232,6 +244,7 @@ def _service_activity_power(tmp_path: Path) -> Path:
                         "leakage": 8.0e-8,
                         "dynamic_plus_leakage": 5.6e-7,
                     },
+                    **({"result_semantics": _result_semantics(result_mode)} if result_mode is not None else {}),
                 },
                 "authoritative_composed_c1_total_ppa": {
                     "critical_path_ns": 9.2,
@@ -284,6 +297,7 @@ def _service_activity_power(tmp_path: Path) -> Path:
                 "clock_period_ns": 10.0,
                 "cycle_count": 160,
                 "workload_contract": _workload_contract(),
+                **({"result_semantics": _result_semantics(result_mode)} if result_mode is not None else {}),
             },
             "macro_manifest_contract": {
                 "counts": {"fakeram45_2048x39": 56, "fakeram45_64x32": 64},
@@ -317,7 +331,7 @@ def _service_activity_power(tmp_path: Path) -> Path:
     )
 
 
-def _service_activity_power_c2(tmp_path: Path) -> Path:
+def _service_activity_power_c2(tmp_path: Path, *, result_mode: str | None = "exact_partial") -> Path:
     return _write(
         tmp_path / "service_activity_power_c2.json",
         {
@@ -364,6 +378,7 @@ def _service_activity_power_c2(tmp_path: Path) -> Path:
                         "leakage": 2.0e-7,
                         "dynamic_plus_leakage": 1.2e-6,
                     },
+                    **({"result_semantics": _result_semantics(result_mode)} if result_mode is not None else {}),
                 },
                 "authoritative_composed_c2_total_ppa": {
                     "critical_path_ns": 9.7,
@@ -416,6 +431,7 @@ def _service_activity_power_c2(tmp_path: Path) -> Path:
                 "clock_period_ns": 10.0,
                 "cycle_count": 8863,
                 "workload_contract": _workload_contract(),
+                **({"result_semantics": _result_semantics(result_mode)} if result_mode is not None else {}),
             },
             "macro_manifest_contract": {
                 "counts": {"fakeram45_2048x39": 112, "fakeram45_64x32": 64},
@@ -595,6 +611,32 @@ def test_build_report_accepts_distinct_integrated_hash_domain(tmp_path: Path) ->
         payload["selected_service_activity_candidate"]["integrated_service_hashes"]["final_hash"]
         == "integrated-c1-final-hash"
     )
+
+
+def test_build_report_rejects_normalized_service_result_semantics_for_frontier_scaling(tmp_path: Path) -> None:
+    prior = _prior_frontier(tmp_path)
+    service = _service_activity_power(tmp_path, result_mode="normalized")
+    online_exact = _online_exact_measured_reducer(tmp_path)
+
+    with pytest.raises(ValueError, match="explicit exact_partial/composable result_semantics"):
+        build_report(
+            prior_cluster_frontier_json=prior,
+            online_exact_measured_reducer_json=online_exact,
+            service_activity_power_json=service,
+        )
+
+
+def test_build_report_rejects_legacy_missing_service_result_semantics_for_frontier_scaling(tmp_path: Path) -> None:
+    prior = _prior_frontier(tmp_path)
+    service = _service_activity_power(tmp_path, result_mode=None)
+    online_exact = _online_exact_measured_reducer(tmp_path)
+
+    with pytest.raises(ValueError, match="result_semantics missing"):
+        build_report(
+            prior_cluster_frontier_json=prior,
+            online_exact_measured_reducer_json=online_exact,
+            service_activity_power_json=service,
+        )
 
 
 def test_build_report_rejects_cycle_mismatch(tmp_path: Path) -> None:

@@ -55,6 +55,18 @@ _REQUIRED_SERVICE_FIELDS = {
 }
 
 
+def _result_semantics_for_mode(result_mode: str) -> JsonDict:
+    return {
+        "result_mode": result_mode,
+        "supports_sequence_window_composition": result_mode == "exact_partial",
+        "composition_scope": (
+            "exact_partial_across_sequence_windows_before_finalization"
+            if result_mode == "exact_partial"
+            else "normalized_final_output_not_sequence_window_composable"
+        ),
+    }
+
+
 def _required_service_fields(case: JsonDict) -> JsonDict:
     return {
         "cluster_count": int(case["cluster_count"]),
@@ -140,6 +152,10 @@ def _normalize_config_with_case(
         if value != expected:
             raise ValueError(f"attention_decode_score_multivalue_service.{key} must be {expected!r}")
         normalized_body[key] = expected
+    result_mode = str(body.get("result_mode", "normalized")).strip().lower()
+    if result_mode not in {"normalized", "exact_partial"}:
+        raise ValueError("attention_decode_score_multivalue_service.result_mode must be normalized or exact_partial")
+    normalized_body["result_mode"] = result_mode
     return {"top_name": top_name, "attention_decode_score_multivalue_service": normalized_body}, case
 
 
@@ -451,6 +467,19 @@ def generate_activity(
             "shared": dict(macro["shared"]),
             "per_cluster": dict(macro["counter_rows"]),
         },
+        "result_semantics": dict(
+            macro["manifest"].get(
+                "result_semantics",
+                _result_semantics_for_mode(
+                    str(
+                        normalized_config["attention_decode_score_multivalue_service"].get(
+                            "result_mode",
+                            "normalized",
+                        )
+                    )
+                ),
+            )
+        ),
         "shared_result_egress": {
             "architecture": macro["manifest"]["shared_result_egress"],
             "documented_initiation_interval": macro["manifest"]["shared_result_egress_initiation_interval"],
