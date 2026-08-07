@@ -1,0 +1,22 @@
+{
+  "version": "0.1",
+  "design_id": "attention_score32_exact_partial_temporal_finalizer_physical_l1",
+  "module": "attention_score32_exact_partial_temporal_finalizer_physical_l1",
+  "platform": "nangate45",
+  "flow_variant": "exact_partial_temporal_finalizer_physical_harness_v1",
+  "blackboxes": ["fakeram45_64x32"],
+  "additional_lefs": ["/orfs/flow/platforms/nangate45/lef/fakeram45_64x32.lef"],
+  "additional_libs": ["/orfs/flow/platforms/nangate45/lib/fakeram45_64x32.lib"],
+  "additional_gds": [],
+  "blackbox_verilog": ["npu/rtl/fakeram45_64x32_blackbox.v"],
+  "source": {
+    "mode": "generated_physical_harness",
+    "generator": "npu/rtlgen/gen_attention_score32_exact_partial_temporal_finalizer_physical_harness.py"
+  },
+  "manifest_params": {
+    "macro_count": 104,
+    "macro_width_um": 20.14,
+    "macro_height_um": 61.6,
+    "total_macro_area_um2": 129024.896
+  }
+}

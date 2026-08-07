@@ -1,0 +1,21 @@
+{
+  "version": "0.1",
+  "design_id": "attention_exact_partial_async_fifo_d4_destination_domain_physical",
+  "module": "attention_exact_partial_async_fifo_d4_destination_domain_physical",
+  "platform": "nangate45",
+  "flow_variant": "exact_partial_async_fifo_selected_domain_diagnostic_v1",
+  "blackboxes": [],
+  "additional_lefs": [],
+  "additional_libs": [],
+  "additional_gds": [],
+  "blackbox_verilog": [],
+  "source": {
+    "mode": "generated_physical_harness",
+    "generator": "npu/rtlgen/gen_attention_exact_partial_async_fifo_physical_harness.py"
+  },
+  "manifest_params": {
+    "macro_count": 0,
+    "timed_domain": "destination",
+    "whole_dual_clock_common_delay_claim": false
+  }
+}

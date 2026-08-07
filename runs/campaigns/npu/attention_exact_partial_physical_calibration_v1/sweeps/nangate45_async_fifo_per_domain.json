@@ -1,0 +1,23 @@
+{
+  "tag_prefix": "attention_exact_partial_async_fifo_per_domain_v1",
+  "flow_params": {
+    "CLOCK_PERIOD": [
+      6.0,
+      8.0,
+      10.0,
+      12.0
+    ],
+    "DIE_AREA": [
+      "0 0 500 500"
+    ],
+    "CORE_AREA": [
+      "25 25 475 475"
+    ],
+    "PLACE_DENSITY": [
+      0.4
+    ],
+    "SYNTH_HIERARCHICAL": [
+      1
+    ]
+  }
+}

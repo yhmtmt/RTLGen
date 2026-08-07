@@ -1715,6 +1715,92 @@ def _read_config_target(
                 },
             ],
         )
+    elif "top_name" in cfg and (
+        "attention_score32_exact_partial_temporal_finalizer_physical_harness" in cfg
+        or "attention_exact_partial_async_fifo_physical_harness" in cfg
+    ):
+        top_name = str(cfg["top_name"]).strip()
+        if not top_name:
+            raise Layer1TaskGenerationError(f"top_name must not be empty in {config_path}")
+        try:
+            design_dir = str(config_path.parent.resolve().relative_to(repo_root.resolve()))
+        except ValueError as exc:
+            raise Layer1TaskGenerationError(
+                "exact-partial physical calibration config must live under "
+                f"repo_root/runs/designs/...: {config_path}"
+            ) from exc
+        design_name = config_path.parent.name
+        is_temporal_finalizer = (
+            "attention_score32_exact_partial_temporal_finalizer_physical_harness"
+            in cfg
+        )
+        generator = (
+            "npu/rtlgen/"
+            "gen_attention_score32_exact_partial_temporal_finalizer_physical_harness.py"
+            if is_temporal_finalizer
+            else "npu/rtlgen/gen_attention_exact_partial_async_fifo_physical_harness.py"
+        )
+        command_slug = (
+            "attention_score32_exact_partial_temporal_finalizer_physical_harness"
+            if is_temporal_finalizer
+            else "attention_exact_partial_async_fifo_physical_harness"
+        )
+        macro_arg = (
+            f" --macro_manifest {design_dir}/macro_manifest.json"
+            if is_temporal_finalizer
+            else ""
+        )
+        return Layer1ConfigTarget(
+            design_kind="block",
+            design_name=design_name,
+            expected_metrics_path=block_metrics_path(design_name),
+            expected_report_paths=[f"{design_dir}/timing_debug_report.md"],
+            commands=[
+                {
+                    "name": f"generate_{command_slug}_rtl",
+                    "run": _with_oss_cad_path(
+                        (
+                            f"python3 {generator} "
+                            f"--config {config_rel} "
+                            f"--out {design_dir}/verilog"
+                        )
+                    ),
+                },
+                {
+                    "name": "check_attention_exact_partial_physical_calibration_guard",
+                    "run": (
+                        "python3 npu/eval/"
+                        "check_attention_exact_partial_physical_calibration_guard.py "
+                        f"--design-dir {design_dir}"
+                    ),
+                },
+                {
+                    "name": "run_block_sweep",
+                    "run": _with_oss_cad_path(
+                        (
+                            "python3 npu/synth/run_block_sweep.py "
+                            f"--design_dir {design_dir} "
+                            "--platform {platform} "
+                            f"--top {top_name} "
+                            f"--sweep {{sweep_path}} "
+                            f"--out_root {out_root}"
+                            f"{macro_arg} "
+                            + (f"--make_target {make_target} " if make_target else "")
+                            + "--skip_existing"
+                        )
+                    ),
+                },
+                {
+                    "name": f"extract_{command_slug}_timing_paths",
+                    "run": (
+                        "python3 npu/eval/extract_openroad_timing_summary.py "
+                        f"--design-dir {design_dir} "
+                        f"--out {design_dir}/timing_debug_report.md "
+                        "--max-paths 8"
+                    ),
+                },
+            ],
+        )
     elif "top_name" in cfg and "attention_score32_exact_local_temporal_reducer_physical_harness" in cfg:
         top_name = str(cfg["top_name"]).strip()
         if not top_name:
