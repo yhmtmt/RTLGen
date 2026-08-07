@@ -1,0 +1,64 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_exact_partial_physical_calibration_v1",
+  "source_commit_note": "Do not dispatch this development branch. After merge, generate both tasks from merged origin/master so source_requirement.required_sha is pinned to the merge commit containing the harnesses, guards, configs, sweeps, proposal linkage, and task-generator support.",
+  "requested_items": [
+    {
+      "item_id": "l1_decoder_attention_exact_partial_temporal_finalizer_physical_calibration_v1",
+      "task_type": "l1_sweep",
+      "title": "Exact-partial SRAM temporal reducer plus root finalizer physical calibration",
+      "objective": "Run four separate divider-lane Nangate45 macro-mode sweeps on the single temporal clock island.",
+      "status": "pending",
+      "evaluation_mode": "physical_calibration",
+      "abstraction_layer": "decoder_attention_exact_partial_temporal_finalizer",
+      "comparison_role": "single_clock_island_physical_anchor",
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "configs": [
+        "runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l1/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l2/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l4/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l8/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/attention_exact_partial_physical_calibration_v1/sweeps/nangate45_temporal_finalizer_macro.json",
+      "out_root": "runs/designs/npu_blocks",
+      "expected_outputs": [
+        "runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l1/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l1/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l2/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l2/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l4/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l4/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l8/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l8/timing_debug_report.md"
+      ],
+      "acceptance_notes": "Use macro mode with exactly 104 fakeram45_64x32 instances, 1600um die, 1500um core, PLACE_DENSITY=0.4, SYNTH_HIERARCHICAL=1, and CLOCK_PERIOD 6/8/10/12ns. Keep divider variants as separate design points.",
+      "notes": "Queue only after merge with source_requirement.required_sha pinned to the merged origin/master commit. Do not dispatch during parent review."
+    },
+    {
+      "item_id": "l1_decoder_attention_exact_partial_async_fifo_domain_physical_calibration_v1",
+      "task_type": "l1_sweep",
+      "title": "Exact-partial depth-4 async FIFO per-domain physical diagnostics",
+      "objective": "Run separate source-domain and destination-domain Nangate45 diagnostics for the 464-bit FIFO.",
+      "status": "pending",
+      "evaluation_mode": "physical_calibration",
+      "abstraction_layer": "decoder_attention_exact_partial_async_fifo",
+      "comparison_role": "per_clock_domain_diagnostic",
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "configs": [
+        "runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_source_domain_physical/config.json",
+        "runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_destination_domain_physical/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/attention_exact_partial_physical_calibration_v1/sweeps/nangate45_async_fifo_per_domain.json",
+      "out_root": "runs/designs/npu_blocks",
+      "expected_outputs": [
+        "runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_source_domain_physical/metrics.csv",
+        "runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_source_domain_physical/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_destination_domain_physical/metrics.csv",
+        "runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_destination_domain_physical/timing_debug_report.md"
+      ],
+      "acceptance_notes": "Treat each result only as timing for the selected source or destination domain. Never report a whole dual-clock common delay, CDC MTBF, or cross-domain signoff result.",
+      "notes": "Queue only after merge with source_requirement.required_sha pinned to the merged origin/master commit. Do not dispatch during parent review."
+    }
+  ]
+}

@@ -1,0 +1,88 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_exact_partial_physical_calibration_v1",
+  "created_utc": "2026-08-07T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit",
+  "title": "Exact-partial temporal/finalizer and CDC clock-island physical calibration",
+  "abstraction_layer": "decoder_attention_exact_partial_physical_calibration",
+  "hypothesis": "Narrow-I/O self-traffic harnesses can measure the SRAM-backed temporal reducer plus exact root finalizer in its real temporal clock island and measure each async-FIFO clock domain diagnostically without inventing a false common-clock end-to-end path.",
+  "direct_comparison": {
+    "primary_question": "What Nangate45 timing, area, and power are physically supported by each divider-lane temporal/finalizer point and by each individual FIFO clock domain?",
+    "baselines": [
+      "attention_score32_exact_partial_temporal_stream_sram",
+      "attention_score32_exact_root_finalizer",
+      "attention_decode_score_multivalue_service_temporal_cdc"
+    ],
+    "candidate": [
+      "l1_decoder_attention_exact_partial_temporal_finalizer_physical_calibration_v1",
+      "l1_decoder_attention_exact_partial_async_fifo_domain_physical_calibration_v1"
+    ],
+    "include": [
+      "104 fakeram45_64x32 physical state macros",
+      "divider_lanes 1, 2, 4, and 8 as separate design points",
+      "protocol-valid two-head two-window self traffic",
+      "source-domain and destination-domain FIFO timing diagnostics"
+    ],
+    "exclude": [
+      "a common-clock timing claim across the async FIFO",
+      "CDC MTBF or synchronizer library-cell signoff",
+      "external HBM/DRAM and service score/value SRAM",
+      "promotion to a full service PPA point"
+    ],
+    "metrics": [
+      "critical_path_ns",
+      "stdcell_area_um2",
+      "total_power_mw",
+      "macro_count",
+      "flow_status",
+      "timed_domain"
+    ]
+  },
+  "required_evaluations": [
+    {
+      "item_id": "l1_decoder_attention_exact_partial_temporal_finalizer_physical_calibration_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure the single-temporal-clock SRAM reducer plus exact finalizer at divider_lanes 1/2/4/8 using the 104-macro floorplan.",
+      "status": "pending",
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "configs": [
+        "runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l1/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l2/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l4/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l8/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/attention_exact_partial_physical_calibration_v1/sweeps/nangate45_temporal_finalizer_macro.json",
+      "out_root": "runs/designs/npu_blocks",
+      "notes": "Generate only from merged origin/master and pin source_requirement.required_sha to the merge commit containing this proposal, both harness generators, guards, configs, sweeps, and L1 task-generator support."
+    },
+    {
+      "item_id": "l1_decoder_attention_exact_partial_async_fifo_domain_physical_calibration_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure source and destination clock-domain timing diagnostics for the 464-bit depth-4 async FIFO without a common-clock end-to-end claim.",
+      "status": "pending",
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "configs": [
+        "runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_source_domain_physical/config.json",
+        "runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_destination_domain_physical/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/attention_exact_partial_physical_calibration_v1/sweeps/nangate45_async_fifo_per_domain.json",
+      "out_root": "runs/designs/npu_blocks",
+      "notes": "Results are selected-domain diagnostics only. Generate only from merged origin/master and pin source_requirement.required_sha to that merge commit."
+    }
+  ],
+  "remaining_abstractions": [
+    "CDC metastability MTBF and synchronizer library-cell implementation remain open.",
+    "Macro placement will be selected by OpenROAD; this request fixes only die/core bounds and macro inventory.",
+    "The service clock island and external memory system are not part of these calibration points."
+  ],
+  "source_refs": [
+    "npu/rtlgen/gen_attention_score32_exact_partial_temporal_finalizer_physical_harness.py",
+    "npu/rtlgen/gen_attention_exact_partial_async_fifo_physical_harness.py",
+    "npu/eval/check_attention_exact_partial_physical_calibration_guard.py",
+    "runs/campaigns/npu/attention_exact_partial_physical_calibration_v1/sweeps/nangate45_temporal_finalizer_macro.json",
+    "runs/campaigns/npu/attention_exact_partial_physical_calibration_v1/sweeps/nangate45_async_fifo_per_domain.json"
+  ]
+}

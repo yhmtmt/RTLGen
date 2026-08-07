@@ -1,0 +1,12 @@
+{
+  "top_name": "attention_score32_exact_partial_temporal_finalizer_physical_l4",
+  "attention_score32_exact_partial_temporal_finalizer_physical_harness": {
+    "divider_lanes": 4,
+    "heads": 2,
+    "windows": 2
+  },
+  "report_links": {
+    "proposal_id": "prop_l1_decoder_attention_exact_partial_physical_calibration_v1",
+    "proposal_path": "docs/proposals/prop_l1_decoder_attention_exact_partial_physical_calibration_v1/proposal.json"
+  }
+}
