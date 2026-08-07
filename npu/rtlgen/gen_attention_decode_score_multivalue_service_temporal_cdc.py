@@ -22,6 +22,9 @@ from npu.rtlgen.gen_attention_decode_score_multivalue_service import (
 from npu.rtlgen.gen_attention_score32_exact_partial_temporal_stream import (
     generate as generate_temporal,
 )
+from npu.rtlgen.gen_attention_score32_exact_partial_temporal_stream_sram import (
+    generate as generate_temporal_sram,
+)
 from npu.sim.perf.attention_exact_partial import HEAD_ID_BITS, VALUE_SLICES
 
 JsonDict = dict[str, Any]
@@ -31,6 +34,9 @@ _GENERATOR = "npu/rtlgen/gen_attention_decode_score_multivalue_service_temporal_
 _MANIFEST = "attention_decode_score_multivalue_service_temporal_cdc_manifest.json"
 _SERVICE_MANIFEST = "attention_decode_score_multivalue_service_manifest.json"
 _TEMPORAL_MANIFEST = "attention_score32_exact_partial_temporal_stream_manifest.json"
+_TEMPORAL_SRAM_MANIFEST = (
+    "attention_score32_exact_partial_temporal_stream_sram_manifest.json"
+)
 _PAYLOAD_BITS = 464
 
 
@@ -51,6 +57,56 @@ def _sha256_text(text: str) -> str:
 
 def _clog2(value: int) -> int:
     return max(1, math.ceil(math.log2(max(2, value))))
+
+
+def _merge_macro_manifests(
+    *,
+    top_name: str,
+    service: JsonDict,
+    temporal: JsonDict | None,
+) -> JsonDict:
+    components = [service, *([temporal] if temporal is not None else [])]
+
+    def unique(key: str) -> list[str]:
+        return list(
+            dict.fromkeys(
+                str(item)
+                for component in components
+                for item in component.get(key, [])
+            )
+        )
+
+    service_count = int(service.get("manifest_params", {}).get("total_macro_count", 0))
+    temporal_count = (
+        int(temporal.get("manifest_params", {}).get("macro_count", 0))
+        if temporal is not None
+        else 0
+    )
+    return {
+        "version": "0.1",
+        "design_id": top_name,
+        "module": top_name,
+        "platform": "nangate45",
+        "flow_variant": "decode_service_temporal_cdc_composed_v1",
+        "blackboxes": unique("blackboxes"),
+        "additional_lefs": unique("additional_lefs"),
+        "additional_libs": unique("additional_libs"),
+        "additional_gds": unique("additional_gds"),
+        "blackbox_verilog": unique("blackbox_verilog"),
+        "source": {
+            "mode": "generated_decode_service_temporal_cdc",
+            "generator": _GENERATOR,
+        },
+        "manifest_params": {
+            "service_macro_count": service_count,
+            "temporal_state_macro_count": temporal_count,
+            "total_macro_count": service_count + temporal_count,
+            "component_macro_manifests": {
+                "service": service,
+                "temporal_state": temporal,
+            },
+        },
+    }
 
 
 def _validate(config: JsonDict) -> JsonDict:
@@ -78,6 +134,11 @@ def _validate(config: JsonDict) -> JsonDict:
     temporal_depth = int(temporal.get("fifo_depth", 4))
     if temporal_depth < 2 or temporal_depth > 16 or temporal_depth & (temporal_depth - 1):
         raise SystemExit("temporal_stream.fifo_depth must be a power of two in [2, 16]")
+    temporal_state_backend = str(
+        body.get("temporal_state_backend", "behavioral")
+    ).strip().lower()
+    if temporal_state_backend not in {"behavioral", "sram"}:
+        raise SystemExit("temporal_state_backend must be behavioral or sram")
     return {
         "top_name": top_name,
         "service": service_params,
@@ -89,6 +150,7 @@ def _validate(config: JsonDict) -> JsonDict:
             temporal.get("exp_scale_impl", "factored_h33_l64_mul_exact")
         ).strip(),
         "keep_hierarchy": bool(temporal.get("keep_hierarchy", True)),
+        "temporal_state_backend": temporal_state_backend,
     }
 
 
@@ -249,8 +311,29 @@ def _wrapper(
     clusters: int,
     source_w: int,
     temporal_depth: int,
+    temporal_state_backend: str,
 ) -> str:
     fifo_level_w = _clog2(temporal_depth) + 1
+    if temporal_state_backend == "sram":
+        temporal_memory_connections = """      .state_memory_request_count(temporal_state_memory_request_count),
+      .state_memory_read_request_count(temporal_state_memory_read_request_count),
+      .state_memory_read_response_count(temporal_state_memory_read_response_count),
+      .state_memory_write_count(temporal_state_memory_write_count),
+      .state_memory_request_stall_cycles(temporal_state_memory_request_stall_cycles),
+      .state_memory_response_stall_cycles(temporal_state_memory_response_stall_cycles),
+      .state_memory_protocol_error(temporal_state_memory_protocol_error),
+"""
+        temporal_memory_tieoffs = ""
+    else:
+        temporal_memory_connections = ""
+        temporal_memory_tieoffs = """  assign temporal_state_memory_request_count = 32'd0;
+  assign temporal_state_memory_read_request_count = 32'd0;
+  assign temporal_state_memory_read_response_count = 32'd0;
+  assign temporal_state_memory_write_count = 32'd0;
+  assign temporal_state_memory_request_stall_cycles = 32'd0;
+  assign temporal_state_memory_response_stall_cycles = 32'd0;
+  assign temporal_state_memory_protocol_error = 1'b0;
+"""
     return f"""module {top_name} (
     input  wire         service_clk,
     input  wire         service_rst_n,
@@ -307,6 +390,13 @@ def _wrapper(
     output wire [31:0]  temporal_completed_head_count,
     output wire [31:0]  temporal_output_stall_cycles,
     output wire [{fifo_level_w - 1}:0] temporal_fifo_level,
+    output wire [31:0]  temporal_state_memory_request_count,
+    output wire [31:0]  temporal_state_memory_read_request_count,
+    output wire [31:0]  temporal_state_memory_read_response_count,
+    output wire [31:0]  temporal_state_memory_write_count,
+    output wire [31:0]  temporal_state_memory_request_stall_cycles,
+    output wire [31:0]  temporal_state_memory_response_stall_cycles,
+    output wire         temporal_state_memory_protocol_error,
     output wire [31:0]  cdc_write_occupancy,
     output wire [31:0]  cdc_read_occupancy,
     output wire [31:0]  cdc_accepted_count,
@@ -428,6 +518,7 @@ def _wrapper(
       wrapper_protocol_error || service_protocol_error || temporal_protocol_error
       || cdc_overflow_error || cdc_underflow_error
       || cdc_write_protocol_error || cdc_read_protocol_error;
+{temporal_memory_tieoffs}
 
   integer metadata_i;
   always @(posedge service_clk or negedge service_rst_n) begin
@@ -555,7 +646,7 @@ def _wrapper(
       .completed_head_count(temporal_completed_head_count),
       .output_stall_cycles(temporal_output_stall_cycles),
       .fifo_level(temporal_fifo_level),
-      .protocol_error(temporal_protocol_error)
+{temporal_memory_connections}      .protocol_error(temporal_protocol_error)
   );
 endmodule
 """
@@ -572,34 +663,54 @@ def generate(config: JsonDict, out_dir: Path) -> None:
         "top_name": service_top,
         "attention_decode_score_multivalue_service": params["service"],
     }
-    temporal_config = {
-        "top_name": temporal_top,
-        "attention_score32_exact_partial_temporal_stream": {
-            "heads": 32,
-            "value_slices": VALUE_SLICES,
-            "head_id_bits": HEAD_ID_BITS,
-            "fifo_depth": int(params["temporal_depth"]),
-            "sequence_id_bits": 16,
-            "window_index_bits": 14,
-            "window_count_bits": 15,
-            "max_window_count": 16384,
-            "exp_scale_impl": str(params["exp_scale_impl"]),
-            "keep_hierarchy": bool(params["keep_hierarchy"]),
-        },
+    temporal_body = {
+        "heads": 32,
+        "value_slices": VALUE_SLICES,
+        "head_id_bits": HEAD_ID_BITS,
+        "fifo_depth": int(params["temporal_depth"]),
+        "sequence_id_bits": 16,
+        "window_index_bits": 14,
+        "window_count_bits": 15,
+        "max_window_count": 16384,
+        "exp_scale_impl": str(params["exp_scale_impl"]),
+        "keep_hierarchy": bool(params["keep_hierarchy"]),
     }
+    temporal_state_backend = str(params["temporal_state_backend"])
+    if temporal_state_backend == "sram":
+        temporal_config = {
+            "top_name": temporal_top,
+            "attention_score32_exact_partial_temporal_stream_sram": temporal_body,
+        }
+        temporal_generator = generate_temporal_sram
+        temporal_manifest_name = _TEMPORAL_SRAM_MANIFEST
+    else:
+        temporal_config = {
+            "top_name": temporal_top,
+            "attention_score32_exact_partial_temporal_stream": temporal_body,
+        }
+        temporal_generator = generate_temporal
+        temporal_manifest_name = _TEMPORAL_MANIFEST
     with tempfile.TemporaryDirectory(prefix="decode-service-temporal-cdc-gen-") as name:
         temp = Path(name)
         service_dir = temp / "service"
         temporal_dir = temp / "temporal"
         generate_service(service_config, service_dir)
-        generate_temporal(temporal_config, temporal_dir)
+        temporal_generator(temporal_config, temporal_dir)
         service_rtl = (service_dir / "top.v").read_text(encoding="utf-8")
         temporal_rtl = (temporal_dir / "top.v").read_text(encoding="utf-8")
         service_manifest = json.loads(
             (service_dir / _SERVICE_MANIFEST).read_text(encoding="utf-8")
         )
+        service_macro_manifest = json.loads(
+            (service_dir / "macro_manifest.json").read_text(encoding="utf-8")
+        )
         temporal_manifest = json.loads(
-            (temporal_dir / _TEMPORAL_MANIFEST).read_text(encoding="utf-8")
+            (temporal_dir / temporal_manifest_name).read_text(encoding="utf-8")
+        )
+        temporal_macro_manifest = (
+            json.loads((temporal_dir / "macro_manifest.json").read_text(encoding="utf-8"))
+            if temporal_state_backend == "sram"
+            else None
         )
 
     fifo_rtl = _async_fifo(module_name=fifo_top, depth=int(params["cdc_depth"]))
@@ -611,11 +722,17 @@ def generate(config: JsonDict, out_dir: Path) -> None:
         clusters=int(params["clusters"]),
         source_w=int(params["source_w"]),
         temporal_depth=int(params["temporal_depth"]),
+        temporal_state_backend=temporal_state_backend,
     )
     top_text = "\n\n".join((service_rtl, temporal_rtl, fifo_rtl, wrapper_rtl)) + "\n"
     (out_dir / "top.v").write_text(top_text, encoding="utf-8")
     (out_dir / "config.json").write_text(
         json.dumps(config, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
+    macro_manifest = _merge_macro_manifests(
+        top_name=top_name,
+        service=service_macro_manifest,
+        temporal=temporal_macro_manifest,
     )
     manifest = {
         "version": 1,
@@ -624,6 +741,7 @@ def generate(config: JsonDict, out_dir: Path) -> None:
         "semantic_profile": "decode_score_multivalue_service_temporal_async_fifo_v1",
         "result_mode": "exact_partial",
         "cluster_count": int(params["clusters"]),
+        "temporal_state_backend": temporal_state_backend,
         "cdc_contract": {
             "source_domain": "service_clk/service_rst_n",
             "destination_domain": "temporal_clk/temporal_rst_n",
@@ -657,10 +775,24 @@ def generate(config: JsonDict, out_dir: Path) -> None:
         },
         "remaining_abstractions": [
             "downstream_full_context_final_normalizer",
-            "persistent_state_sram_physical_mapping",
+            *(
+                ["persistent_state_sram_physical_mapping"]
+                if temporal_state_backend == "behavioral"
+                else []
+            ),
             "metastability_mtbf_and_library_cell_implementation",
             "physical_ppa",
         ],
+        "temporal_state_memory_monitors": {
+            "request_count": "temporal_state_memory_request_count",
+            "read_request_count": "temporal_state_memory_read_request_count",
+            "read_response_count": "temporal_state_memory_read_response_count",
+            "write_count": "temporal_state_memory_write_count",
+            "request_stall_cycles": "temporal_state_memory_request_stall_cycles",
+            "response_stall_cycles": "temporal_state_memory_response_stall_cycles",
+            "protocol_error": "temporal_state_memory_protocol_error",
+        },
+        "macro_counts": macro_manifest["manifest_params"],
         "submodule_manifests": {
             "service": service_manifest,
             "temporal_stream": temporal_manifest,
@@ -675,10 +807,18 @@ def generate(config: JsonDict, out_dir: Path) -> None:
                 ),
             },
             {
-                "path": "npu/rtlgen/gen_attention_score32_exact_partial_temporal_stream.py",
+                "path": (
+                    "npu/rtlgen/gen_attention_score32_exact_partial_temporal_stream_sram.py"
+                    if temporal_state_backend == "sram"
+                    else "npu/rtlgen/gen_attention_score32_exact_partial_temporal_stream.py"
+                ),
                 "sha256": _sha256_file(
                     REPO_ROOT
-                    / "npu/rtlgen/gen_attention_score32_exact_partial_temporal_stream.py"
+                    / (
+                        "npu/rtlgen/gen_attention_score32_exact_partial_temporal_stream_sram.py"
+                        if temporal_state_backend == "sram"
+                        else "npu/rtlgen/gen_attention_score32_exact_partial_temporal_stream.py"
+                    )
                 ),
             },
         ],
@@ -686,6 +826,10 @@ def generate(config: JsonDict, out_dir: Path) -> None:
     }
     (out_dir / _MANIFEST).write_text(
         json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
+    (out_dir / "macro_manifest.json").write_text(
+        json.dumps(macro_manifest, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
     )
 
 
