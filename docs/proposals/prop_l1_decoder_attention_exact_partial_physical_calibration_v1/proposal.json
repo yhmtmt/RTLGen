@@ -20,6 +20,7 @@
     ],
     "include": [
       "104 fakeram45_64x32 physical state macros",
+      "bit-exact mersenne24_correction2_exact temporal scale division",
       "divider_lanes 1, 2, 4, and 8 as separate design points",
       "protocol-valid two-head two-window self traffic",
       "source-domain and destination-domain FIFO timing diagnostics"

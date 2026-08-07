@@ -12,6 +12,8 @@ from typing import Any
 FACTORED_H33_L64_MUL_EXACT = "factored_h33_l64_mul_exact"
 LEGACY_MONOLITHIC_LUT_EXACT = "legacy_monolithic_lut_exact"
 SEGMENTED_LUT_9X256_EXACT = "segmented_lut_9x256_exact"
+GENERIC_SCALE_DIVIDER_EXACT = "generic_exact"
+MERSENNE24_CORRECTION2_SCALE_DIVIDER_EXACT = "mersenne24_correction2_exact"
 
 MERGE_SCALE_BITS = 24
 MERGE_SCALE = (1 << MERGE_SCALE_BITS) - 1
@@ -27,6 +29,10 @@ _SUPPORTED_EXP_SCALE_IMPLS = {
     LEGACY_MONOLITHIC_LUT_EXACT,
     SEGMENTED_LUT_9X256_EXACT,
     FACTORED_H33_L64_MUL_EXACT,
+}
+_SUPPORTED_SCALE_DIVIDER_IMPLS = {
+    GENERIC_SCALE_DIVIDER_EXACT,
+    MERSENNE24_CORRECTION2_SCALE_DIVIDER_EXACT,
 }
 EXP_FACTOR_STEP = 64
 EXP_FACTOR_HIGH_BITS = 13
@@ -53,6 +59,9 @@ def _validate(config: dict[str, Any]) -> dict[str, int | str]:
     value_slices = int(body.get("value_slices", 16))
     head_id_bits = int(body.get("head_id_bits", 5))
     exp_scale_impl = str(body.get("exp_scale_impl", LEGACY_MONOLITHIC_LUT_EXACT)).strip()
+    scale_divider_impl = str(
+        body.get("scale_divider_impl", GENERIC_SCALE_DIVIDER_EXACT)
+    ).strip()
     keep_hierarchy = bool(body.get("keep_hierarchy", False))
     if value_slices < 1 or value_slices > 16 or value_slices & (value_slices - 1):
         raise SystemExit("value_slices must be a power of two in [1, 16]")
@@ -61,11 +70,15 @@ def _validate(config: dict[str, Any]) -> dict[str, int | str]:
     if exp_scale_impl not in _SUPPORTED_EXP_SCALE_IMPLS:
         supported = ", ".join(sorted(_SUPPORTED_EXP_SCALE_IMPLS))
         raise SystemExit(f"exp_scale_impl must be one of: {supported}")
+    if scale_divider_impl not in _SUPPORTED_SCALE_DIVIDER_IMPLS:
+        supported = ", ".join(sorted(_SUPPORTED_SCALE_DIVIDER_IMPLS))
+        raise SystemExit(f"scale_divider_impl must be one of: {supported}")
     body.update(
         {
             "value_slices": value_slices,
             "head_id_bits": head_id_bits,
             "exp_scale_impl": exp_scale_impl,
+            "scale_divider_impl": scale_divider_impl,
             "keep_hierarchy": keep_hierarchy,
         }
     )
@@ -74,6 +87,7 @@ def _validate(config: dict[str, Any]) -> dict[str, int | str]:
         "value_slices": value_slices,
         "head_id_bits": head_id_bits,
         "exp_scale_impl": exp_scale_impl,
+        "scale_divider_impl": scale_divider_impl,
         "keep_hierarchy": keep_hierarchy,
     }
 
@@ -234,7 +248,145 @@ def _lane_merge_cases() -> str:
     return "\n".join(cases)
 
 
-def _top(*, top_name: str, value_slices: int, head_id_bits: int, exp_scale_impl: str, keep_hierarchy: bool) -> str:
+def _scale_divider_functions(*, scale_divider_impl: str) -> str:
+    if scale_divider_impl == GENERIC_SCALE_DIVIDER_EXACT:
+        return f"""  function automatic [32:0] scale_unsigned33;
+    input [32:0] value_in;
+    input [23:0] scale_in;
+    reg [56:0] product;
+    reg [56:0] quotient;
+    begin
+      if (scale_in == 0 || value_in == 0) begin
+        scale_unsigned33 = 33'd0;
+      end else begin
+        product = (value_in * scale_in) + 57'd{MERGE_SCALE // 2};
+        quotient = product / 57'd{MERGE_SCALE};
+        if (quotient > 57'd8589934591) scale_unsigned33 = 33'h1ffff_ffff;
+        else scale_unsigned33 = quotient[32:0];
+      end
+    end
+  endfunction
+
+  function automatic signed [40:0] scale_signed41;
+    input signed [40:0] value_in;
+    input [23:0] scale_in;
+    reg [40:0] magnitude;
+    reg [64:0] product;
+    reg [64:0] quotient;
+    begin
+      if (scale_in == 0 || value_in == 0) begin
+        scale_signed41 = 41'sd0;
+      end else begin
+        magnitude = value_in < 0 ? (~value_in) + 1'b1 : value_in[40:0];
+        product = (magnitude * scale_in) + 65'd{MERGE_SCALE // 2};
+        quotient = product / 65'd{MERGE_SCALE};
+        if (value_in < 0) begin
+          if (quotient >= 65'd1099511627776) scale_signed41 = -41'sd1099511627776;
+          else scale_signed41 = -$signed(quotient[40:0]);
+        end else begin
+          if (quotient > 65'd1099511627775) scale_signed41 = 41'sd1099511627775;
+          else scale_signed41 = $signed(quotient[40:0]);
+        end
+      end
+    end
+  endfunction"""
+    if scale_divider_impl != MERSENNE24_CORRECTION2_SCALE_DIVIDER_EXACT:
+        raise AssertionError(f"unsupported scale_divider_impl: {scale_divider_impl}")
+    return f"""  function automatic [33:0] divide_mersenne24_u57;
+    input [56:0] numerator;
+    reg [23:0] n0;
+    reg [23:0] n1;
+    reg [8:0] n2;
+    reg [25:0] chunk_sum;
+    reg [1:0] correction;
+    reg [33:0] quotient;
+    begin
+      n0 = numerator[23:0];
+      n1 = numerator[47:24];
+      n2 = numerator[56:48];
+      chunk_sum = {{2'b00, n0}} + {{2'b00, n1}} + {{17'b0, n2}};
+      if (chunk_sum >= 26'd33554430) correction = 2'd2;
+      else if (chunk_sum >= 26'd16777215) correction = 2'd1;
+      else correction = 2'd0;
+      quotient = {{10'b0, n1}} + ({{25'b0, n2}} << 24) + {{25'b0, n2}}
+          + {{32'b0, correction}};
+      divide_mersenne24_u57 = quotient;
+    end
+  endfunction
+
+  function automatic [41:0] divide_mersenne24_u65;
+    input [64:0] numerator;
+    reg [23:0] n0;
+    reg [23:0] n1;
+    reg [16:0] n2;
+    reg [25:0] chunk_sum;
+    reg [1:0] correction;
+    reg [41:0] quotient;
+    begin
+      n0 = numerator[23:0];
+      n1 = numerator[47:24];
+      n2 = numerator[64:48];
+      chunk_sum = {{2'b00, n0}} + {{2'b00, n1}} + {{9'b0, n2}};
+      if (chunk_sum >= 26'd33554430) correction = 2'd2;
+      else if (chunk_sum >= 26'd16777215) correction = 2'd1;
+      else correction = 2'd0;
+      quotient = {{18'b0, n1}} + ({{25'b0, n2}} << 24) + {{25'b0, n2}}
+          + {{40'b0, correction}};
+      divide_mersenne24_u65 = quotient;
+    end
+  endfunction
+
+  function automatic [32:0] scale_unsigned33;
+    input [32:0] value_in;
+    input [23:0] scale_in;
+    reg [56:0] product;
+    reg [33:0] quotient;
+    begin
+      if (scale_in == 0 || value_in == 0) begin
+        scale_unsigned33 = 33'd0;
+      end else begin
+        product = (value_in * scale_in) + 57'd{MERGE_SCALE // 2};
+        quotient = divide_mersenne24_u57(product);
+        if (quotient > 34'd8589934591) scale_unsigned33 = 33'h1ffff_ffff;
+        else scale_unsigned33 = quotient[32:0];
+      end
+    end
+  endfunction
+
+  function automatic signed [40:0] scale_signed41;
+    input signed [40:0] value_in;
+    input [23:0] scale_in;
+    reg [40:0] magnitude;
+    reg [64:0] product;
+    reg [41:0] quotient;
+    begin
+      if (scale_in == 0 || value_in == 0) begin
+        scale_signed41 = 41'sd0;
+      end else begin
+        magnitude = value_in < 0 ? (~value_in) + 1'b1 : value_in[40:0];
+        product = (magnitude * scale_in) + 65'd{MERGE_SCALE // 2};
+        quotient = divide_mersenne24_u65(product);
+        if (value_in < 0) begin
+          if (quotient >= 42'd1099511627776) scale_signed41 = -41'sd1099511627776;
+          else scale_signed41 = -$signed(quotient[40:0]);
+        end else begin
+          if (quotient > 42'd1099511627775) scale_signed41 = 41'sd1099511627775;
+          else scale_signed41 = $signed(quotient[40:0]);
+        end
+      end
+    end
+  endfunction"""
+
+
+def _top(
+    *,
+    top_name: str,
+    value_slices: int,
+    head_id_bits: int,
+    exp_scale_impl: str,
+    scale_divider_impl: str,
+    keep_hierarchy: bool,
+) -> str:
     slice_bits = _clog2(value_slices)
     hierarchy_attr = "(* keep_hierarchy = 1 *)\n" if keep_hierarchy else ""
     return f"""// Auto-generated by npu/rtlgen/gen_attention_score32_online_state_merge.py
@@ -341,46 +493,7 @@ def _top(*, top_name: str, value_slices: int, head_id_bits: int, exp_scale_impl:
 
 {_exp_lut_function(exp_scale_impl=exp_scale_impl)}
 
-  function automatic [32:0] scale_unsigned33;
-    input [32:0] value_in;
-    input [23:0] scale_in;
-    reg [56:0] product;
-    reg [56:0] quotient;
-    begin
-      if (scale_in == 0 || value_in == 0) begin
-        scale_unsigned33 = 33'd0;
-      end else begin
-        product = (value_in * scale_in) + 57'd{MERGE_SCALE // 2};
-        quotient = product / 57'd{MERGE_SCALE};
-        if (quotient > 57'd8589934591) scale_unsigned33 = 33'h1ffff_ffff;
-        else scale_unsigned33 = quotient[32:0];
-      end
-    end
-  endfunction
-
-  function automatic signed [40:0] scale_signed41;
-    input signed [40:0] value_in;
-    input [23:0] scale_in;
-    reg [40:0] magnitude;
-    reg [64:0] product;
-    reg [64:0] quotient;
-    begin
-      if (scale_in == 0 || value_in == 0) begin
-        scale_signed41 = 41'sd0;
-      end else begin
-        magnitude = value_in < 0 ? (~value_in) + 1'b1 : value_in[40:0];
-        product = (magnitude * scale_in) + 65'd{MERGE_SCALE // 2};
-        quotient = product / 65'd{MERGE_SCALE};
-        if (value_in < 0) begin
-          if (quotient >= 65'd1099511627776) scale_signed41 = -41'sd1099511627776;
-          else scale_signed41 = -$signed(quotient[40:0]);
-        end else begin
-          if (quotient > 65'd1099511627775) scale_signed41 = 41'sd1099511627775;
-          else scale_signed41 = $signed(quotient[40:0]);
-        end
-      end
-    end
-  endfunction
+{_scale_divider_functions(scale_divider_impl=scale_divider_impl)}
 
   function automatic signed [40:0] sat_add_signed41;
     input signed [40:0] lhs;
@@ -495,6 +608,7 @@ def generate(config: dict[str, Any], out_dir: Path) -> None:
             value_slices=int(params["value_slices"]),
             head_id_bits=int(params["head_id_bits"]),
             exp_scale_impl=str(params["exp_scale_impl"]),
+            scale_divider_impl=str(params["scale_divider_impl"]),
             keep_hierarchy=bool(params["keep_hierarchy"]),
         ),
         encoding="utf-8",
@@ -512,6 +626,7 @@ def generate(config: dict[str, Any], out_dir: Path) -> None:
         "equivalence_hash": False,
         "merge_scale_bits": MERGE_SCALE_BITS,
         "exp_scale_impl": str(params["exp_scale_impl"]),
+        "scale_divider_impl": str(params["scale_divider_impl"]),
         "exp_scale_bucket_max": MAX_EXP_BUCKET,
         "keep_hierarchy": bool(params["keep_hierarchy"]),
     }

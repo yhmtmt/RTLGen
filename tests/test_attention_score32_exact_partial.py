@@ -13,7 +13,9 @@ from npu.eval.probe_attention_score32_exact_partial import build_report
 from npu.rtlgen.gen_attention_decode_score_multivalue_cluster import generate as generate_cluster
 from npu.rtlgen.gen_attention_score32_online_state_merge import (
     FACTORED_H33_L64_MUL_EXACT,
+    GENERIC_SCALE_DIVIDER_EXACT,
     MAX_EXP_BUCKET,
+    MERSENNE24_CORRECTION2_SCALE_DIVIDER_EXACT,
     exact_exp_scale_value,
     generate as generate_merge,
 )
@@ -58,13 +60,16 @@ def _partial_reducer_config() -> dict:
     }
 
 
-def _merge_config() -> dict:
+def _merge_config(
+    scale_divider_impl: str = GENERIC_SCALE_DIVIDER_EXACT,
+) -> dict:
     return {
         "top_name": "attention_score32_online_state_merge_exact_partial",
         "attention_score32_online_state_merge": {
             "value_slices": 16,
             "head_id_bits": 5,
             "exp_scale_impl": FACTORED_H33_L64_MUL_EXACT,
+            "scale_divider_impl": scale_divider_impl,
         },
     }
 
@@ -108,7 +113,10 @@ def _merge_beat(
     )
 
 
-def _run_direct_merge_rtl_vectors(tmp_path: Path) -> dict[str, object]:
+def _run_direct_merge_rtl_vectors(
+    tmp_path: Path,
+    scale_divider_impl: str,
+) -> dict[str, object]:
     valid_cases = [
         (
             "extreme_left",
@@ -211,7 +219,7 @@ def _run_direct_merge_rtl_vectors(tmp_path: Path) -> dict[str, object]:
             }
         )
 
-    generate_merge(_merge_config(), tmp_path / "rtl")
+    generate_merge(_merge_config(scale_divider_impl), tmp_path / "rtl")
     tb_path = tmp_path / "tb.sv"
     left_init = []
     right_init = []
@@ -414,6 +422,7 @@ def test_exact_partial_merge_manifest_and_ports(tmp_path: Path) -> None:
     assert manifest["partial_payload_bits_per_beat"] == 328
     assert manifest["equivalence_hash"] is False
     assert manifest["exp_scale_impl"] == FACTORED_H33_L64_MUL_EXACT
+    assert manifest["scale_divider_impl"] == GENERIC_SCALE_DIVIDER_EXACT
     assert manifest["keep_hierarchy"] is False
     assert manifest["exp_scale_bucket_max"] == MAX_EXP_BUCKET
     assert manifest["exp_factor_step"] == 64
@@ -591,9 +600,16 @@ endmodule
     assert observed == expected, json.dumps({"expected": expected_json, "observed": observed}, indent=2, sort_keys=True)
 
 
+@pytest.mark.parametrize(
+    "scale_divider_impl",
+    [GENERIC_SCALE_DIVIDER_EXACT, MERSENNE24_CORRECTION2_SCALE_DIVIDER_EXACT],
+)
 @pytest.mark.skipif(not _rtl_tools_available(), reason="iverilog/vvp/verilator unavailable")
-def test_exact_partial_merge_rtl_handles_extreme_and_invalid_last_vectors(tmp_path: Path) -> None:
-    report = _run_direct_merge_rtl_vectors(tmp_path)
+def test_exact_partial_merge_rtl_handles_extreme_and_invalid_last_vectors(
+    tmp_path: Path,
+    scale_divider_impl: str,
+) -> None:
+    report = _run_direct_merge_rtl_vectors(tmp_path, scale_divider_impl)
 
     assert report["observed"] == [
         {

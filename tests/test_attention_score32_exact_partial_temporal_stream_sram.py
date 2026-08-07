@@ -96,3 +96,28 @@ def test_invalid_fifo_depth_rejected(tmp_path: Path) -> None:
     config["attention_score32_exact_partial_temporal_stream_sram"]["fifo_depth"] = 3
     with pytest.raises(SystemExit, match="power of two"):
         generate(config, tmp_path)
+
+
+def test_mersenne_scale_divider_is_propagated_to_pair_merge(tmp_path: Path) -> None:
+    config = _config()
+    body = config["attention_score32_exact_partial_temporal_stream_sram"]
+    body["scale_divider_impl"] = "mersenne24_correction2_exact"
+    generate(config, tmp_path)
+
+    manifest = json.loads(
+        (
+            tmp_path
+            / "attention_score32_exact_partial_temporal_stream_sram_manifest.json"
+        ).read_text(encoding="utf-8")
+    )
+    rtl = (tmp_path / "top.v").read_text(encoding="utf-8")
+
+    assert manifest["scale_divider_impl"] == "mersenne24_correction2_exact"
+    assert (
+        manifest["submodule_manifests"]["pair_merge"]["scale_divider_impl"]
+        == "mersenne24_correction2_exact"
+    )
+    assert "function automatic [33:0] divide_mersenne24_u57;" in rtl
+    assert "function automatic [41:0] divide_mersenne24_u65;" in rtl
+    assert "/ 57'd16777215" not in rtl
+    assert "/ 65'd16777215" not in rtl

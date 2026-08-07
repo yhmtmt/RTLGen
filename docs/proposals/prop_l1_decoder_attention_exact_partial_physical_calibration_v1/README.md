@@ -8,6 +8,11 @@ The temporal/finalizer item measures one real temporal clock island with 104
 The 1600 um die and 1500 um core are conservative relative to the calculated
 129,024.896 um2 raw macro area.
 
+The temporal pair merge must use `mersenne24_correction2_exact` for division by
+`2^24-1`. This is bit-exact with the generic constant divider and avoids the
+generic Yosys `TECHMAP` expansion. The calibration guard rejects generic
+`/ 16777215` operators in this path.
+
 The async-FIFO item contains source-domain and destination-domain variants.
 Each variant uses the external `clk` only for the selected timing domain and a
 protocol-safe generated helper clock for the inactive side. These are
