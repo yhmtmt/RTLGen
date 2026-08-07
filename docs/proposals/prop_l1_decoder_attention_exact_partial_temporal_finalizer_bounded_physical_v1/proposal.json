@@ -1,0 +1,69 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_exact_partial_temporal_finalizer_bounded_physical_v1",
+  "created_utc": "2026-08-07T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit",
+  "title": "Bounded exact-partial temporal/finalizer physical calibration",
+  "abstraction_layer": "decoder_attention_exact_partial_temporal_finalizer",
+  "hypothesis": "A single conservative 12 ns implementation point per divider-lane variant can establish timing-feasible physical anchors without repeating the hour-scale infeasible 6 ns and likely infeasible 8 ns flows.",
+  "direct_comparison": {
+    "primary_question": "Which divider-lane temporal/finalizer variants are physically feasible at 12 ns, and what timing, area, and generic OpenROAD power do they measure?",
+    "baselines": [
+      "l1_decoder_attention_exact_partial_temporal_finalizer_physical_calibration_v1_r1 lane1 6ns routed checkpoint"
+    ],
+    "candidate": [
+      "l1_decoder_attention_exact_partial_temporal_finalizer_bounded_12ns_physical_v1"
+    ],
+    "include": [
+      "divider_lanes 1, 2, 4, and 8 as separate design points",
+      "exactly 104 fakeram45_64x32 state macros per design",
+      "bit-exact mersenne24_correction2_exact scale division",
+      "one 12 ns clock request per design"
+    ],
+    "exclude": [
+      "repeating the infeasible 6 ns lane1 point",
+      "an exhaustive 6/8/10/12 ns sweep",
+      "activity-backed temporal/finalizer token energy",
+      "a common-clock timing claim across the async FIFO"
+    ],
+    "metrics": [
+      "critical_path_ns",
+      "instance_area_um2",
+      "stdcell_area_um2",
+      "total_power_mw",
+      "macro_count",
+      "flow_status"
+    ]
+  },
+  "required_evaluations": [
+    {
+      "item_id": "l1_decoder_attention_exact_partial_temporal_finalizer_bounded_12ns_physical_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure one conservative 12 ns Nangate45 macro-mode point for each exact-partial temporal/finalizer divider-lane variant.",
+      "status": "pending",
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "configs": [
+        "runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l1/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l2/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l4/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l8/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/attention_exact_partial_physical_calibration_v2/sweeps/nangate45_temporal_finalizer_12ns.json",
+      "out_root": "runs/designs/npu_blocks",
+      "notes": "Generate only after merge and pin source_requirement.required_sha to the merge commit containing this bounded request. Refine at 10 ns only for variants whose 12 ns routed critical path leaves meaningful margin."
+    }
+  ],
+  "remaining_abstractions": [
+    "Temporal/finalizer power is generic OpenROAD physical power, not workload-activity-backed token energy.",
+    "The independently measured service and async FIFO remain separate clock islands until bounded composition recost.",
+    "CDC MTBF and synchronizer library-cell signoff remain open."
+  ],
+  "source_refs": [
+    "docs/proposals/prop_l1_decoder_attention_exact_partial_physical_calibration_v1/proposal.json",
+    "npu/rtlgen/gen_attention_score32_exact_partial_temporal_finalizer_physical_harness.py",
+    "npu/eval/check_attention_exact_partial_physical_calibration_guard.py",
+    "runs/campaigns/npu/attention_exact_partial_physical_calibration_v2/sweeps/nangate45_temporal_finalizer_12ns.json"
+  ]
+}

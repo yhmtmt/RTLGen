@@ -1,0 +1,20 @@
+{
+  "tag_prefix": "attention_exact_partial_temporal_finalizer_12ns_v1",
+  "flow_params": {
+    "CLOCK_PERIOD": [
+      12.0
+    ],
+    "DIE_AREA": [
+      "0 0 1600 1600"
+    ],
+    "CORE_AREA": [
+      "50 50 1550 1550"
+    ],
+    "PLACE_DENSITY": [
+      0.4
+    ],
+    "SYNTH_HIERARCHICAL": [
+      1
+    ]
+  }
+}
