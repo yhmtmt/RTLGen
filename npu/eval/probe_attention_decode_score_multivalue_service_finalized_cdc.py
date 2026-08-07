@@ -49,7 +49,9 @@ _SUMMARY_RE = re.compile(
     r"service_accepted=(\d+) service_completed=(\d+) service_req=(\d+) "
     r"service_resp=(\d+) temporal_inputs=(\d+) temporal_merges=(\d+) "
     r"temporal_emitted=(\d+) temporal_heads=(\d+) finalizer_accepted=(\d+) "
-    r"finalizer_completed=(\d+) finalizer_cycles=(\d+)"
+    r"finalizer_completed=(\d+) finalizer_cycles=(\d+) state_requests=(\d+) "
+    r"state_reads=(\d+) state_responses=(\d+) state_writes=(\d+) "
+    r"state_req_stalls=(\d+) state_resp_stalls=(\d+) state_error=(\d+)"
 )
 
 
@@ -63,28 +65,36 @@ def _tool(name: str) -> str:
     raise RuntimeError(f"required tool unavailable: {name}")
 
 
-def _config(top_name: str, *, divider_lanes: int) -> JsonDict:
+def _config(
+    top_name: str,
+    *,
+    divider_lanes: int,
+    temporal_state_backend: str = "behavioral",
+    service_value_memory_backend: str = "behavioral",
+) -> JsonDict:
     workload = service_probe._workload_contract()
+    macro_value = service_value_memory_backend == "macro_banked_4x16x64x32"
     return {
         "top_name": top_name,
         "attention_decode_score_multivalue_service_finalized_cdc": {
             "cdc_fifo_depth": 4,
             "divider_lanes": divider_lanes,
+            "temporal_state_backend": temporal_state_backend,
             "service": {
                 "cluster_count": 1,
                 "max_blocks": int(workload["max_blocks"]),
                 "packet_w": 128,
-                "banks": 2,
+                "banks": 4 if macro_value else 2,
                 "req_queue_depth": 2,
                 "resp_queue_depth": 2,
                 "bank_queue_depth": 2,
-                "read_latency": 1,
+                "read_latency": 2 if macro_value else 1,
                 "arb_mode": "round_robin",
                 "locality_burst_max": 2,
                 "score_scale_lanes_per_cycle": 1,
                 "result_mode": "exact_partial",
                 "head_id_bits": 5,
-                "value_memory_backend": "behavioral",
+                "value_memory_backend": service_value_memory_backend,
             },
             "temporal_stream": {
                 "fifo_depth": 4,
@@ -243,6 +253,13 @@ module tb;
   wire [31:0] temporal_merge_completed_count;
   wire [31:0] temporal_emitted_beat_count;
   wire [31:0] temporal_completed_head_count;
+  wire [31:0] temporal_state_memory_request_count;
+  wire [31:0] temporal_state_memory_read_request_count;
+  wire [31:0] temporal_state_memory_read_response_count;
+  wire [31:0] temporal_state_memory_write_count;
+  wire [31:0] temporal_state_memory_request_stall_cycles;
+  wire [31:0] temporal_state_memory_response_stall_cycles;
+  wire temporal_state_memory_protocol_error;
   wire [31:0] cdc_accepted_count;
   wire [31:0] cdc_emitted_count;
   wire cdc_overflow_error;
@@ -327,6 +344,13 @@ module tb;
       .temporal_merge_completed_count(temporal_merge_completed_count),
       .temporal_emitted_beat_count(temporal_emitted_beat_count),
       .temporal_completed_head_count(temporal_completed_head_count),
+      .temporal_state_memory_request_count(temporal_state_memory_request_count),
+      .temporal_state_memory_read_request_count(temporal_state_memory_read_request_count),
+      .temporal_state_memory_read_response_count(temporal_state_memory_read_response_count),
+      .temporal_state_memory_write_count(temporal_state_memory_write_count),
+      .temporal_state_memory_request_stall_cycles(temporal_state_memory_request_stall_cycles),
+      .temporal_state_memory_response_stall_cycles(temporal_state_memory_response_stall_cycles),
+      .temporal_state_memory_protocol_error(temporal_state_memory_protocol_error),
       .cdc_accepted_count(cdc_accepted_count),
       .cdc_emitted_count(cdc_emitted_count),
       .cdc_overflow_error(cdc_overflow_error),
@@ -448,7 +472,7 @@ module tb;
       end
       if (!summary_done && output_count == 16) begin
         summary_done <= 1'b1;
-        $display("SUMMARY service_cycles=%0d temporal_cycles=%0d commands=%0d second_refused=%0d first_terminal=%0d second_accept=%0d outputs=%0d stable=%0d cdc_accepted=%0d cdc_emitted=%0d overflow=%0d underflow=%0d cdc_wr_error=%0d cdc_rd_error=%0d metadata_error=%0d cdc_wrapper_error=%0d service_error=%0d temporal_error=%0d finalizer_error=%0d protocol_error=%0d service_accepted=%0d service_completed=%0d service_req=%0d service_resp=%0d temporal_inputs=%0d temporal_merges=%0d temporal_emitted=%0d temporal_heads=%0d finalizer_accepted=%0d finalizer_completed=%0d finalizer_cycles=%0d",
+        $display("SUMMARY service_cycles=%0d temporal_cycles=%0d commands=%0d second_refused=%0d first_terminal=%0d second_accept=%0d outputs=%0d stable=%0d cdc_accepted=%0d cdc_emitted=%0d overflow=%0d underflow=%0d cdc_wr_error=%0d cdc_rd_error=%0d metadata_error=%0d cdc_wrapper_error=%0d service_error=%0d temporal_error=%0d finalizer_error=%0d protocol_error=%0d service_accepted=%0d service_completed=%0d service_req=%0d service_resp=%0d temporal_inputs=%0d temporal_merges=%0d temporal_emitted=%0d temporal_heads=%0d finalizer_accepted=%0d finalizer_completed=%0d finalizer_cycles=%0d state_requests=%0d state_reads=%0d state_responses=%0d state_writes=%0d state_req_stalls=%0d state_resp_stalls=%0d state_error=%0d",
                  service_cycle, temporal_cycle, command_count,
                  second_refused_cycles, first_terminal_cycle,
                  second_accept_cycle, output_count, stable_output_seen,
@@ -462,7 +486,14 @@ module tb;
                  service_emitted_resp_count, temporal_input_accepted_count,
                  temporal_merge_completed_count, temporal_emitted_beat_count,
                  temporal_completed_head_count, finalizer_accepted_count,
-                 finalizer_completed_count, finalizer_cycle_count);
+                 finalizer_completed_count, finalizer_cycle_count,
+                 temporal_state_memory_request_count,
+                 temporal_state_memory_read_request_count,
+                 temporal_state_memory_read_response_count,
+                 temporal_state_memory_write_count,
+                 temporal_state_memory_request_stall_cycles,
+                 temporal_state_memory_response_stall_cycles,
+                 temporal_state_memory_protocol_error);
         $finish;
       end
       if (temporal_cycle > 260000) $fatal(1, "temporal-side timeout");
@@ -531,6 +562,13 @@ def _parse(stdout: str) -> tuple[list[JsonDict], JsonDict]:
                 "finalizer_accepted",
                 "finalizer_completed",
                 "finalizer_cycles",
+                "state_requests",
+                "state_reads",
+                "state_responses",
+                "state_writes",
+                "state_req_stalls",
+                "state_resp_stalls",
+                "state_error",
             )
             summary = {
                 key: int(value)
@@ -546,9 +584,16 @@ def build_report(
     service_period_ns: float = 10.0,
     temporal_period_ns: float = 7.0,
     divider_lanes: int = 8,
+    temporal_state_backend: str = "behavioral",
+    service_value_memory_backend: str = "behavioral",
 ) -> JsonDict:
     top_name = "attention_decode_score_multivalue_service_finalized_cdc_probe"
-    config = _config(top_name, divider_lanes=divider_lanes)
+    config = _config(
+        top_name,
+        divider_lanes=divider_lanes,
+        temporal_state_backend=temporal_state_backend,
+        service_value_memory_backend=service_value_memory_backend,
+    )
     expected = _expected_rows()
     with tempfile.TemporaryDirectory(prefix="decode-service-finalized-cdc-probe-") as name:
         temp = Path(name)
@@ -573,6 +618,15 @@ def build_report(
                 "-o",
                 str(simv),
                 str(rtl_dir / "top.v"),
+                *(
+                    [str(REPO_ROOT / "npu/sim/rtl/fakeram45_64x32_model.sv")]
+                    if (
+                        temporal_state_backend == "sram"
+                        or service_value_memory_backend
+                        == "macro_banked_4x16x64x32"
+                    )
+                    else []
+                ),
                 str(tb_path),
             ],
             capture_output=True,
@@ -595,6 +649,9 @@ def build_report(
         manifest = json.loads(
             (rtl_dir / _MANIFEST).read_text(encoding="utf-8")
         )
+        macro_manifest = json.loads(
+            (rtl_dir / "macro_manifest.json").read_text(encoding="utf-8")
+        )
 
     errors = (
         "overflow",
@@ -607,6 +664,7 @@ def build_report(
         "temporal_error",
         "finalizer_error",
         "protocol_error",
+        "state_error",
     )
     passed = (
         observed == expected
@@ -627,6 +685,16 @@ def build_report(
         and summary["temporal_heads"] == 1
         and summary["finalizer_accepted"] == 16
         and summary["finalizer_completed"] == 16
+        and (
+            (
+                summary["state_requests"] == 64
+                and summary["state_reads"] == 32
+                and summary["state_responses"] == 32
+                and summary["state_writes"] == 32
+            )
+            if temporal_state_backend == "sram"
+            else summary["state_requests"] == 0
+        )
         and all(summary[key] == 0 for key in errors)
     )
     return {
@@ -635,10 +703,13 @@ def build_report(
         "service_period_ns": service_period_ns,
         "temporal_period_ns": temporal_period_ns,
         "divider_lanes": divider_lanes,
+        "temporal_state_backend": temporal_state_backend,
+        "service_value_memory_backend": service_value_memory_backend,
         "observed_rows": observed,
         "expected_rows": expected,
         "summary": summary,
         "manifest": manifest,
+        "macro_manifest": macro_manifest,
     }
 
 
@@ -647,12 +718,24 @@ def main() -> int:
     parser.add_argument("--service-period-ns", type=float, default=10.0)
     parser.add_argument("--temporal-period-ns", type=float, default=7.0)
     parser.add_argument("--divider-lanes", type=int, default=8)
+    parser.add_argument(
+        "--temporal-state-backend",
+        choices=("behavioral", "sram"),
+        default="behavioral",
+    )
+    parser.add_argument(
+        "--service-value-memory-backend",
+        choices=("behavioral", "macro_banked_4x16x64x32"),
+        default="behavioral",
+    )
     parser.add_argument("--out", type=Path)
     args = parser.parse_args()
     report = build_report(
         service_period_ns=args.service_period_ns,
         temporal_period_ns=args.temporal_period_ns,
         divider_lanes=args.divider_lanes,
+        temporal_state_backend=args.temporal_state_backend,
+        service_value_memory_backend=args.service_value_memory_backend,
     )
     rendered = json.dumps(report, indent=2, sort_keys=True) + "\n"
     if args.out:

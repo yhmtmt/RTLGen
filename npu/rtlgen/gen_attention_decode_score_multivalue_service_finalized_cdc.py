@@ -70,6 +70,11 @@ def _validate(config: JsonDict) -> JsonDict:
     divider_lanes = int(body.get("divider_lanes", 8))
     if divider_lanes not in {1, 2, 4, 8}:
         raise SystemExit("divider_lanes must be one of 1, 2, 4, or 8")
+    temporal_state_backend = str(
+        body.get("temporal_state_backend", "behavioral")
+    ).strip().lower()
+    if temporal_state_backend not in {"behavioral", "sram"}:
+        raise SystemExit("temporal_state_backend must be behavioral or sram")
     return {
         "top_name": top_name,
         "service": service_params,
@@ -78,6 +83,7 @@ def _validate(config: JsonDict) -> JsonDict:
         "source_w": max(1, (clusters - 1).bit_length()),
         "cdc_depth": cdc_depth,
         "divider_lanes": divider_lanes,
+        "temporal_state_backend": temporal_state_backend,
     }
 
 
@@ -139,6 +145,13 @@ def _wrapper(
     output wire [31:0]  temporal_emitted_beat_count,
     output wire [31:0]  temporal_completed_head_count,
     output wire [31:0]  temporal_output_stall_cycles,
+    output wire [31:0]  temporal_state_memory_request_count,
+    output wire [31:0]  temporal_state_memory_read_request_count,
+    output wire [31:0]  temporal_state_memory_read_response_count,
+    output wire [31:0]  temporal_state_memory_write_count,
+    output wire [31:0]  temporal_state_memory_request_stall_cycles,
+    output wire [31:0]  temporal_state_memory_response_stall_cycles,
+    output wire         temporal_state_memory_protocol_error,
     output wire [31:0]  cdc_write_occupancy,
     output wire [31:0]  cdc_read_occupancy,
     output wire [31:0]  cdc_accepted_count,
@@ -312,6 +325,13 @@ def _wrapper(
       .temporal_emitted_beat_count(temporal_emitted_beat_count),
       .temporal_completed_head_count(temporal_completed_head_count),
       .temporal_output_stall_cycles(temporal_output_stall_cycles),
+      .temporal_state_memory_request_count(temporal_state_memory_request_count),
+      .temporal_state_memory_read_request_count(temporal_state_memory_read_request_count),
+      .temporal_state_memory_read_response_count(temporal_state_memory_read_response_count),
+      .temporal_state_memory_write_count(temporal_state_memory_write_count),
+      .temporal_state_memory_request_stall_cycles(temporal_state_memory_request_stall_cycles),
+      .temporal_state_memory_response_stall_cycles(temporal_state_memory_response_stall_cycles),
+      .temporal_state_memory_protocol_error(temporal_state_memory_protocol_error),
       .cdc_write_occupancy(cdc_write_occupancy),
       .cdc_read_occupancy(cdc_read_occupancy),
       .cdc_accepted_count(cdc_accepted_count),
@@ -367,6 +387,7 @@ def generate(config: JsonDict, out_dir: Path) -> None:
             "service": params["service"],
             "temporal_stream": params["temporal"],
             "cdc_fifo_depth": int(params["cdc_depth"]),
+            "temporal_state_backend": str(params["temporal_state_backend"]),
         },
     }
     finalizer_config = {
@@ -388,6 +409,9 @@ def generate(config: JsonDict, out_dir: Path) -> None:
         cdc_manifest = json.loads(
             (cdc_dir / _CDC_MANIFEST).read_text(encoding="utf-8")
         )
+        cdc_macro_manifest = json.loads(
+            (cdc_dir / "macro_manifest.json").read_text(encoding="utf-8")
+        )
         finalizer_manifest = json.loads(
             (finalizer_dir / _FINALIZER_MANIFEST).read_text(encoding="utf-8")
         )
@@ -404,6 +428,14 @@ def generate(config: JsonDict, out_dir: Path) -> None:
     (out_dir / "config.json").write_text(
         json.dumps(config, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
+    macro_manifest = dict(cdc_macro_manifest)
+    macro_manifest["design_id"] = top_name
+    macro_manifest["module"] = top_name
+    macro_manifest["flow_variant"] = "decode_service_finalized_cdc_composed_v1"
+    macro_manifest["source"] = {
+        "mode": "generated_decode_service_finalized_cdc",
+        "generator": _GENERATOR,
+    }
     manifest = {
         "version": 1,
         "top_name": top_name,
@@ -412,6 +444,7 @@ def generate(config: JsonDict, out_dir: Path) -> None:
         "result_mode": "exact_partial_to_exact_finalized",
         "cluster_count": int(params["clusters"]),
         "divider_lanes": int(params["divider_lanes"]),
+        "temporal_state_backend": str(params["temporal_state_backend"]),
         "full_context_normalization_embodied": True,
         "output_interface": {
             "kind": "ready_valid_exact_finalized_slice_stream",
@@ -438,11 +471,25 @@ def generate(config: JsonDict, out_dir: Path) -> None:
             "single_inflight": True,
         },
         "remaining_abstractions": [
-            "persistent_state_sram_physical_mapping",
+            *(
+                ["persistent_state_sram_physical_mapping"]
+                if params["temporal_state_backend"] == "behavioral"
+                else []
+            ),
             "synchronizer_metastability_mtbf_and_library_cells",
             "external_hbm_dram",
             "physical_ppa",
         ],
+        "temporal_state_memory_monitors": {
+            "request_count": "temporal_state_memory_request_count",
+            "read_request_count": "temporal_state_memory_read_request_count",
+            "read_response_count": "temporal_state_memory_read_response_count",
+            "write_count": "temporal_state_memory_write_count",
+            "request_stall_cycles": "temporal_state_memory_request_stall_cycles",
+            "response_stall_cycles": "temporal_state_memory_response_stall_cycles",
+            "protocol_error": "temporal_state_memory_protocol_error",
+        },
+        "macro_counts": macro_manifest["manifest_params"],
         "submodule_manifests": {
             "service_temporal_cdc": cdc_manifest,
             "root_finalizer": finalizer_manifest,
@@ -468,6 +515,10 @@ def generate(config: JsonDict, out_dir: Path) -> None:
     }
     (out_dir / _MANIFEST).write_text(
         json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
+    (out_dir / "macro_manifest.json").write_text(
+        json.dumps(macro_manifest, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
     )
 
 
