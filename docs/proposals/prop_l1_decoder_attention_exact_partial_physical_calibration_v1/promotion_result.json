@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_exact_partial_physical_calibration_v1",
+  "decision": "promote",
+  "pr_number": 1588,
+  "merge_commit": "fd8ce975abbea9384ead58db292026d89a224026",
+  "merged_utc": "2026-08-07T13:20:14.801955Z"
+}

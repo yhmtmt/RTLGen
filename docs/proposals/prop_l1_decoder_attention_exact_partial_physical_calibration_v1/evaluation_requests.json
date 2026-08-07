@@ -7,7 +7,7 @@
       "task_type": "l1_sweep",
       "title": "Exact-partial SRAM temporal reducer plus root finalizer physical calibration",
       "objective": "Run four separate divider-lane Nangate45 macro-mode sweeps on the single temporal clock island.",
-      "status": "pending",
+      "status": "ready_to_queue",
       "evaluation_mode": "physical_calibration",
       "abstraction_layer": "decoder_attention_exact_partial_temporal_finalizer",
       "comparison_role": "single_clock_island_physical_anchor",
@@ -32,14 +32,14 @@
         "runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l8/timing_debug_report.md"
       ],
       "acceptance_notes": "Use macro mode with exactly 104 fakeram45_64x32 instances, the bit-exact mersenne24_correction2_exact temporal scale divider, 1600um die, 1500um core, PLACE_DENSITY=0.4, SYNTH_HIERARCHICAL=1, and CLOCK_PERIOD 6/8/10/12ns. Keep divider variants as separate design points; reject generic /16777215 operators.",
-      "notes": "Queue only after merge with source_requirement.required_sha pinned to the merged origin/master commit. Do not dispatch during parent review."
+      "notes": "Queue only after merge with source_requirement.required_sha pinned to the merged origin/master commit. Do not dispatch during parent review. Prerequisites are merged; item is ready to queue."
     },
     {
       "item_id": "l1_decoder_attention_exact_partial_async_fifo_domain_physical_calibration_v1",
       "task_type": "l1_sweep",
       "title": "Exact-partial depth-4 async FIFO per-domain physical diagnostics",
       "objective": "Run separate source-domain and destination-domain Nangate45 diagnostics for the 464-bit FIFO.",
-      "status": "pending",
+      "status": "merged",
       "evaluation_mode": "physical_calibration",
       "abstraction_layer": "decoder_attention_exact_partial_async_fifo",
       "comparison_role": "per_clock_domain_diagnostic",
@@ -58,7 +58,11 @@
         "runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_destination_domain_physical/timing_debug_report.md"
       ],
       "acceptance_notes": "Treat each result only as timing for the selected source or destination domain. Never report a whole dual-clock common delay, CDC MTBF, or cross-domain signoff result.",
-      "notes": "Queue only after merge with source_requirement.required_sha pinned to the merged origin/master commit. Do not dispatch during parent review."
+      "notes": "Queue only after merge with source_requirement.required_sha pinned to the merged origin/master commit. Do not dispatch during parent review. Merged via PR #1588 and merge fd8ce975abbea9384ead58db292026d89a224026 at 2026-08-07T13:20:14.801955Z.",
+      "merged_pr_number": 1588,
+      "merge_commit": "fd8ce975abbea9384ead58db292026d89a224026",
+      "merged_utc": "2026-08-07T13:20:14.801955Z"
     }
-  ]
+  ],
+  "source_commit": "139420683dfcfcd2585f6f8a885ae019f1c043c0"
 }

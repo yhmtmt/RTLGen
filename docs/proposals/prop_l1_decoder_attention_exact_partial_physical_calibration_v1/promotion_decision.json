@@ -1,0 +1,15 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_exact_partial_physical_calibration_v1",
+  "candidate_id": "l1_decoder_attention_exact_partial_async_fifo_domain_physical_calibration_v1",
+  "decision": "promote",
+  "reason": "Accepted Layer 1 physical metrics were merged in PR #1588 for the current candidate.",
+  "evidence_refs": [
+    "item:l1_decoder_attention_exact_partial_async_fifo_domain_physical_calibration_v1",
+    "run:l1_decoder_attention_exact_partial_async_fifo_domain_physical_calibration_v1_run_cc7495f6e85cdf00",
+    "artifact:control_plane/shadow_exports/l1_promotions/l1_decoder_attention_exact_partial_async_fifo_domain_physical_calibration_v1.json",
+    "pr:#1588",
+    "https://github.com/yhmtmt/RTLGen/pull/1588"
+  ],
+  "next_action": "queue l1_decoder_attention_exact_partial_temporal_finalizer_physical_calibration_v1",
+  "requires_human_approval": false
+}
