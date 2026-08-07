@@ -17,6 +17,8 @@ if str(REPO_ROOT) not in sys.path:
 
 from npu.rtlgen.gen_attention_score32_online_state_merge import (
     FACTORED_H33_L64_MUL_EXACT,
+    GENERIC_SCALE_DIVIDER_EXACT,
+    MERSENNE24_CORRECTION2_SCALE_DIVIDER_EXACT,
     generate as generate_merge,
 )
 from npu.sim.perf.attention_exact_partial import (
@@ -71,15 +73,27 @@ def _validate(config: JsonDict) -> JsonDict:
     exp_scale_impl = str(
         body.get("exp_scale_impl", FACTORED_H33_L64_MUL_EXACT)
     ).strip()
+    scale_divider_impl = str(
+        body.get("scale_divider_impl", GENERIC_SCALE_DIVIDER_EXACT)
+    ).strip()
     keep_hierarchy = bool(body.get("keep_hierarchy", True))
     if heads != 32 or value_slices != VALUE_SLICES or head_id_bits != HEAD_ID_BITS:
         raise SystemExit("heads/value_slices/head_id_bits must remain fixed at 32/16/5")
     if fifo_depth < 2 or fifo_depth > 16 or fifo_depth & (fifo_depth - 1):
         raise SystemExit("fifo_depth must be a power of two in [2, 16]")
+    if scale_divider_impl not in {
+        GENERIC_SCALE_DIVIDER_EXACT,
+        MERSENNE24_CORRECTION2_SCALE_DIVIDER_EXACT,
+    }:
+        raise SystemExit(
+            "scale_divider_impl must be generic_exact or "
+            "mersenne24_correction2_exact"
+        )
     return {
         "top_name": top_name,
         "fifo_depth": fifo_depth,
         "exp_scale_impl": exp_scale_impl,
+        "scale_divider_impl": scale_divider_impl,
         "keep_hierarchy": keep_hierarchy,
     }
 
@@ -722,6 +736,7 @@ def generate(config: JsonDict, out_dir: Path) -> None:
                     "value_slices": VALUE_SLICES,
                     "head_id_bits": HEAD_ID_BITS,
                     "exp_scale_impl": str(params["exp_scale_impl"]),
+                    "scale_divider_impl": str(params["scale_divider_impl"]),
                     "keep_hierarchy": bool(params["keep_hierarchy"]),
                 },
             },
@@ -778,6 +793,7 @@ def generate(config: JsonDict, out_dir: Path) -> None:
         "sequencing_metadata_storage": "per_head_registers",
         "persistent_state_inferred_as_flops": False,
         "fifo_depth": int(params["fifo_depth"]),
+        "scale_divider_impl": str(params["scale_divider_impl"]),
         "submodule_manifests": {"pair_merge": merge_manifest},
         "remaining_abstractions": [
             "upstream_service_and_clock_domain_crossing",

@@ -98,10 +98,15 @@ def test_temporal_finalizer_generator_is_narrow_and_macro_backed(
     assert manifest["divider_lanes"] == lanes
     assert manifest["top_pin_bits"] == 388
     assert manifest["macro_count"] == 104
+    assert manifest["temporal_scale_divider_impl"] == "mersenne24_correction2_exact"
     assert manifest["whole_dual_clock_common_delay_claim"] is False
     assert macros["blackboxes"] == ["fakeram45_64x32"]
     assert macros["manifest_params"]["macro_count"] == 104
     assert "fakeram45_64x32 u_state_mem" in rtl
+    assert "function automatic [33:0] divide_mersenne24_u57;" in rtl
+    assert "function automatic [41:0] divide_mersenne24_u65;" in rtl
+    assert "/ 57'd16777215" not in rtl
+    assert "/ 65'd16777215" not in rtl
     assert "state_global_max_q [0:" not in rtl
     assert "reg [393:0] state" not in rtl
     assert "localparam integer SOURCE_BEATS = 64;" in rtl

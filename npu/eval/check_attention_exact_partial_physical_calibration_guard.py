@@ -118,9 +118,28 @@ def main(argv: list[str] | None = None) -> int:
         _require(manifest.get("macro_count"), 104, "temporal macro count")
         _require(generated_params.get("macro_count"), 104, "generated macro count")
         _require(checked_params.get("macro_count"), 104, "checked macro count")
+        _require(
+            manifest.get("temporal_scale_divider_impl"),
+            "mersenne24_correction2_exact",
+            "temporal scale divider",
+        )
         _require(manifest.get("physical_timing_claim"), "single_temporal_clock_domain", "timing claim")
         if "fakeram45_64x32 u_state_mem" not in rtl:
             raise SystemExit("temporal harness must instantiate fakeram45_64x32 state macros")
+        for required in (
+            "function automatic [33:0] divide_mersenne24_u57;",
+            "function automatic [41:0] divide_mersenne24_u65;",
+            "quotient = divide_mersenne24_u57(product);",
+            "quotient = divide_mersenne24_u65(product);",
+        ):
+            if required not in rtl:
+                raise SystemExit(f"temporal harness lacks exact Mersenne divider: {required}")
+        for forbidden in (
+            "/ 57'd16777215",
+            "/ 65'd16777215",
+        ):
+            if forbidden in rtl:
+                raise SystemExit(f"generic constant divider is forbidden: {forbidden}")
         for forbidden in (
             "state_global_max_q [0:",
             "state_exp_sum_q [0:",
