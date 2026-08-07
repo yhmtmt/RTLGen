@@ -195,7 +195,7 @@ def test_checked_designs_guards_sweeps_and_task_commands(tmp_path: Path) -> None
 
 def test_normal_task_mechanism_attaches_required_source_commit() -> None:
     source_commit = subprocess.run(
-        ["git", "rev-parse", "HEAD"],
+        ["git", "rev-parse", "origin/master"],
         cwd=REPO_ROOT,
         capture_output=True,
         check=True,
