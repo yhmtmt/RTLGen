@@ -1,0 +1,126 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-08-07T13:16:12.841562Z",
+  "item_id": "l1_decoder_attention_exact_partial_async_fifo_domain_physical_calibration_v1",
+  "run_key": "l1_decoder_attention_exact_partial_async_fifo_domain_physical_calibration_v1_run_cc7495f6e85cdf00",
+  "layer": "layer1",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l1_sweep",
+  "source_commit": "139420683dfcfcd2585f6f8a885ae019f1c043c0",
+  "objective": "Run separate source-domain and destination-domain Nangate45 diagnostics for the 464-bit FIFO.",
+  "input_manifest": {
+    "sweeps": [
+      "runs/campaigns/npu/attention_exact_partial_physical_calibration_v1/sweeps/nangate45_async_fifo_per_domain.json"
+    ],
+    "configs": [
+      "runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_source_domain_physical/config.json",
+      "runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_destination_domain_physical/config.json"
+    ],
+    "out_root": "runs/designs/npu_blocks",
+    "design_dirs": [],
+    "macro_manifests": [],
+    "candidate_manifests": [],
+    "required_submodules": []
+  },
+  "proposal_count": 2,
+  "evaluation_record": {
+    "evaluation_mode": "physical_calibration",
+    "abstraction_layer": "decoder_attention_exact_partial_async_fifo",
+    "result_kind": "physical_metrics",
+    "physical_metrics_present": true,
+    "summary": "Physical metrics recorded from a completed, timing-feasible Layer 1 row.",
+    "timing_feasible": true,
+    "clock_period_ns": 8.0,
+    "timing_slack_ns": 7.3751
+  },
+  "proposal_assessment": null,
+  "proposals": [
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_source_domain_physical/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "6e0fc234",
+        "tag": "attention_exact_partial_async_fifo_per_domain_v1_6e0fc234",
+        "result_path": "/orfs/flow/reports/nangate45/attention_exact_partial_async_fifo_d4_source_domain_physical/base/6_finish.rpt",
+        "work_result_json": "runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_source_domain_physical/work/6e0fc234/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 0.6249,
+        "die_area": 250000.0,
+        "total_power_mw": 0.000607
+      }
+    },
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_destination_domain_physical/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "66cddd28",
+        "tag": "attention_exact_partial_async_fifo_per_domain_v1_66cddd28",
+        "result_path": "/orfs/flow/reports/nangate45/attention_exact_partial_async_fifo_d4_destination_domain_physical/base/6_finish.rpt",
+        "work_result_json": "runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_destination_domain_physical/work/66cddd28/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 0.6508,
+        "die_area": 250000.0,
+        "total_power_mw": 0.000354
+      }
+    }
+  ],
+  "trial_summary": {
+    "item_id": "l1_decoder_attention_exact_partial_async_fifo_domain_physical_calibration_v1",
+    "completed_trials": 1,
+    "success_count": 1,
+    "failure_count": 0,
+    "success_rate": 1.0,
+    "partial_metrics_count": 0,
+    "metrics": {
+      "critical_path_ns": {
+        "best": 0.6249,
+        "mean": 0.6249,
+        "median": 0.6249,
+        "max": 0.6249,
+        "range": 0.0,
+        "stddev": 0.0
+      },
+      "die_area": {
+        "best": 250000.0,
+        "mean": 250000.0,
+        "median": 250000.0,
+        "max": 250000.0,
+        "range": 0.0,
+        "stddev": 0.0
+      },
+      "total_power_mw": {
+        "best": 0.000607,
+        "mean": 0.000607,
+        "median": 0.000607,
+        "max": 0.000607,
+        "range": 0.0,
+        "stddev": 0.0
+      }
+    },
+    "aggregation_scope": "current_run_checkout_commit",
+    "aggregation_source_commit": "139420683dfcfcd2585f6f8a885ae019f1c043c0",
+    "aggregation_included_attempts": 1,
+    "aggregation_excluded_attempts": 0,
+    "aggregation_excluded_source_commits": {},
+    "aggregation_excluded_attempt_run_keys": [],
+    "aggregation_excluded_attempt_run_keys_truncated": false
+  },
+  "source_refs": {
+    "trial_metrics_csvs": [
+      "runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_source_domain_physical/metrics.csv",
+      "runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_destination_domain_physical/metrics.csv"
+    ],
+    "summary_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_exact_partial_async_fifo_domain_physical_calibration_v1/summary_stats.json",
+    "failure_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_exact_partial_async_fifo_domain_physical_calibration_v1/failure_stats.json",
+    "trial_table_csv": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_exact_partial_async_fifo_domain_physical_calibration_v1/trial_table.csv"
+  }
+}

@@ -1,0 +1,215 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "sweeps": [
+        "runs/campaigns/npu/attention_exact_partial_physical_calibration_v1/sweeps/nangate45_async_fifo_per_domain.json"
+      ],
+      "configs": [
+        "runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_source_domain_physical/config.json",
+        "runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_destination_domain_physical/config.json"
+      ],
+      "out_root": "runs/designs/npu_blocks",
+      "design_dirs": [],
+      "macro_manifests": [],
+      "candidate_manifests": [],
+      "required_submodules": []
+    },
+    "commands": [
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/rtlgen/gen_attention_exact_partial_async_fifo_physical_harness.py --config runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_source_domain_physical/config.json --out runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_source_domain_physical/verilog",
+        "name": "generate_attention_exact_partial_async_fifo_physical_harness_rtl_attention_exact_partial_async_fifo_d4_source_domain_physical"
+      },
+      {
+        "run": "python3 npu/eval/check_attention_exact_partial_physical_calibration_guard.py --design-dir runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_source_domain_physical",
+        "name": "check_attention_exact_partial_physical_calibration_guard_attention_exact_partial_async_fifo_d4_source_domain_physical"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/synth/run_block_sweep.py --design_dir runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_source_domain_physical --platform nangate45 --top attention_exact_partial_async_fifo_d4_source_domain_physical --sweep runs/campaigns/npu/attention_exact_partial_physical_calibration_v1/sweeps/nangate45_async_fifo_per_domain.json --out_root runs/designs/npu_blocks --skip_existing",
+        "name": "run_block_sweep_attention_exact_partial_async_fifo_d4_source_domain_physical"
+      },
+      {
+        "run": "python3 npu/eval/extract_openroad_timing_summary.py --design-dir runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_source_domain_physical --out runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_source_domain_physical/timing_debug_report.md --max-paths 8",
+        "name": "extract_attention_exact_partial_async_fifo_physical_harness_timing_paths_attention_exact_partial_async_fifo_d4_source_domain_physical"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/rtlgen/gen_attention_exact_partial_async_fifo_physical_harness.py --config runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_destination_domain_physical/config.json --out runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_destination_domain_physical/verilog",
+        "name": "generate_attention_exact_partial_async_fifo_physical_harness_rtl_attention_exact_partial_async_fifo_d4_destination_domain_physical"
+      },
+      {
+        "run": "python3 npu/eval/check_attention_exact_partial_physical_calibration_guard.py --design-dir runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_destination_domain_physical",
+        "name": "check_attention_exact_partial_physical_calibration_guard_attention_exact_partial_async_fifo_d4_destination_domain_physical"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/synth/run_block_sweep.py --design_dir runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_destination_domain_physical --platform nangate45 --top attention_exact_partial_async_fifo_d4_destination_domain_physical --sweep runs/campaigns/npu/attention_exact_partial_physical_calibration_v1/sweeps/nangate45_async_fifo_per_domain.json --out_root runs/designs/npu_blocks --skip_existing",
+        "name": "run_block_sweep_attention_exact_partial_async_fifo_d4_destination_domain_physical"
+      },
+      {
+        "run": "python3 npu/eval/extract_openroad_timing_summary.py --design-dir runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_destination_domain_physical --out runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_destination_domain_physical/timing_debug_report.md --max-paths 8",
+        "name": "extract_attention_exact_partial_async_fifo_physical_harness_timing_paths_attention_exact_partial_async_fifo_d4_destination_domain_physical"
+      },
+      {
+        "run": "python3 scripts/build_runs_index.py",
+        "name": "build_runs_index"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate"
+      }
+    ],
+    "metadata": {
+      "acceptance_notes": "Treat each result only as timing for the selected source or destination domain. Never report a whole dual-clock common delay, CDC MTBF, or cross-domain signoff result."
+    },
+    "objective": "Run separate source-domain and destination-domain Nangate45 diagnostics for the 464-bit FIFO.",
+    "acceptance": [
+      "Each generated wrapper metrics.csv contains at least one status=ok row for the queued sweep",
+      "Committed outputs stay lightweight (metrics.csv only; runs/index.csv is exported centrally after merge)",
+      "python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue pass"
+    ],
+    "source_mode": "config",
+    "expected_outputs": [
+      "runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_source_domain_physical/metrics.csv",
+      "runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_source_domain_physical/timing_debug_report.md",
+      "runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_destination_domain_physical/metrics.csv",
+      "runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_destination_domain_physical/timing_debug_report.md"
+    ]
+  },
+  "layer": "layer1",
+  "state": "evaluated",
+  "title": "Exact-partial depth-4 async FIFO per-domain physical diagnostics",
+  "result": {
+    "branch": "eval/l1_decoder_attention_exact_partial_async_fifo_domain_physical_calibration_v1/s20260807t131613z",
+    "completed_utc": "2026-08-07T13:16:10.130029Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "b7c2d9c80c1c",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260807t131613z][host:b7c2d9c80c1c][item:l1_decoder_attention_exact_partial_async_fifo_domain_physical_calibration_v1]",
+    "metrics_rows": [
+      {
+        "tag": "attention_exact_partial_async_fifo_per_domain_v1_099a0e9e",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "099a0e9e",
+        "metrics_csv": "runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_source_domain_physical/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_source_domain_physical/work/099a0e9e/result.json"
+      },
+      {
+        "tag": "attention_exact_partial_async_fifo_per_domain_v1_6e0fc234",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "6e0fc234",
+        "metrics_csv": "runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_source_domain_physical/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_source_domain_physical/work/6e0fc234/result.json"
+      },
+      {
+        "tag": "attention_exact_partial_async_fifo_per_domain_v1_47f786b2",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "47f786b2",
+        "metrics_csv": "runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_source_domain_physical/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_source_domain_physical/work/47f786b2/result.json"
+      },
+      {
+        "tag": "attention_exact_partial_async_fifo_per_domain_v1_66cddd28",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "66cddd28",
+        "metrics_csv": "runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_source_domain_physical/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_source_domain_physical/work/66cddd28/result.json"
+      },
+      {
+        "tag": "attention_exact_partial_async_fifo_per_domain_v1_099a0e9e",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "099a0e9e",
+        "metrics_csv": "runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_destination_domain_physical/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_destination_domain_physical/work/099a0e9e/result.json"
+      },
+      {
+        "tag": "attention_exact_partial_async_fifo_per_domain_v1_6e0fc234",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "6e0fc234",
+        "metrics_csv": "runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_destination_domain_physical/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_destination_domain_physical/work/6e0fc234/result.json"
+      },
+      {
+        "tag": "attention_exact_partial_async_fifo_per_domain_v1_47f786b2",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "47f786b2",
+        "metrics_csv": "runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_destination_domain_physical/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_destination_domain_physical/work/47f786b2/result.json"
+      },
+      {
+        "tag": "attention_exact_partial_async_fifo_per_domain_v1_66cddd28",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "66cddd28",
+        "metrics_csv": "runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_destination_domain_physical/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_destination_domain_physical/work/66cddd28/result.json"
+      }
+    ],
+    "queue_item_id": "l1_decoder_attention_exact_partial_async_fifo_domain_physical_calibration_v1",
+    "session_id": "s20260807t131613z",
+    "status": "ok",
+    "summary": "10/10 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l1_decoder_attention_exact_partial_async_fifo_domain_physical_calibration_v1/s20260807t131613z",
+    "pr_title": "eval: run exact-partial depth-4 async fifo per-domain physical diagnostics",
+    "checklist": [
+      "Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge",
+      "Include metrics row references for each completed design",
+      "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260807t131613z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l1_decoder_attention_exact_partial_async_fifo_domain_physical_calibration_v1"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l1_decoder_attention_exact_partial_async_fifo_domain_physical_calibration_v1",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 1,
+  "created_utc": "2026-08-07T12:54:40.948022Z",
+  "requested_by": "developer_agent",
+  "developer_loop": {
+    "comparison": {
+      "role": "per_clock_domain_diagnostic",
+      "paired_baseline_item_id": ""
+    },
+    "evaluation": {
+      "mode": "physical_calibration",
+      "trial_policy": {
+        "seed_start": 0,
+        "trial_count": 1,
+        "stop_after_failures": 1
+      },
+      "expected_reason": "",
+      "expected_direction": ""
+    },
+    "abstraction": {
+      "layer": "decoder_attention_exact_partial_async_fifo"
+    },
+    "proposal_id": "prop_l1_decoder_attention_exact_partial_physical_calibration_v1",
+    "dependencies": {
+      "item_ids": [],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    },
+    "proposal_path": "docs/proposals/prop_l1_decoder_attention_exact_partial_physical_calibration_v1/proposal.json"
+  },
+  "source_requirement": {
+    "repo": "",
+    "reason": "evaluator runtime must contain the queued job source commit",
+    "version": 1,
+    "required_ref": "origin/master",
+    "required_sha": "139420683dfcfcd2585f6f8a885ae019f1c043c0",
+    "requires_daemon_restart": true
+  },
+  "task_type": "l1_sweep"
+}

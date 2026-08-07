@@ -1,0 +1,2 @@
+run_key,attempt,trial_index,seed,status,metrics_csv,critical_path_ns,die_area,total_power_mw,failure_category,failure_stage,failure_signature
+l1_decoder_attention_exact_partial_async_fifo_domain_physical_calibration_v1_run_cc7495f6e85cdf00,1,1,0,succeeded,runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_source_domain_physical/metrics.csv,0.6249,250000.0,0.000607,none,,
