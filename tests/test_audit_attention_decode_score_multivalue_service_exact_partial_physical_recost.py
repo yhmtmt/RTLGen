@@ -40,6 +40,7 @@ def service_anchor_fixture() -> dict:
             },
             "ppa_metric": {
                 "design": "attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr",
+                "platform": "nangate45",
                 "status": "ok",
             },
             "authoritative_composed_c1_total_ppa": {
@@ -73,6 +74,7 @@ def functional_probe_fixture() -> dict:
     return {
         "model": "attention_decode_score_multivalue_service_finalized_cdc_probe_v1",
         "passed": True,
+        "divider_lanes": 8,
         "service_period_ns": 10.0,
         "temporal_period_ns": 7.0,
         "summary": {
@@ -145,10 +147,11 @@ def _metrics_row(
     config_hash: str = "cfg",
     param_hash: str = "param",
     tag: str = "tag",
+    platform: str = "nangate45",
 ) -> dict[str, object]:
     return {
         "design": design,
-        "platform": "nangate45",
+        "platform": platform,
         "config_hash": config_hash,
         "param_hash": param_hash,
         "tag": tag,
@@ -236,11 +239,13 @@ def _write_fifo_bundle(
     tmp_path: Path,
     *,
     timed_domain: str,
-    clock_period_ns: float = 8.0,
+    clock_period_ns: float | None = None,
     instance_area_um2: float = 4950.0,
     total_power_mw: float = 0.0005,
     die_area: float = 250000.0,
 ) -> dict[str, Path | str | float]:
+    if clock_period_ns is None:
+        clock_period_ns = 10.0 if timed_domain == "source" else 7.0
     design = f"attention_exact_partial_async_fifo_d4_{timed_domain}_domain_physical"
     metrics_csv = _write_metrics_csv(
         tmp_path / f"fifo_{timed_domain}_metrics.csv",
@@ -363,7 +368,18 @@ def test_build_report_accepts_actual_r8_shape_and_consumes_both_fifo_views_once(
     assert report["rows"][0]["fifo_source_design"] == "attention_exact_partial_async_fifo_d4_source_domain_physical"
     assert report["rows"][0]["fifo_destination_design"] == "attention_exact_partial_async_fifo_d4_destination_domain_physical"
     assert report["timing_bounds"]["service_domain"]["period_ns"] == pytest.approx(10.0)
-    assert report["timing_bounds"]["temporal_domain"]["period_ns"] == pytest.approx(8.0)
+    assert report["timing_bounds"]["temporal_domain"]["period_ns"] == pytest.approx(7.0)
+    assert fifo_pair["source_view"]["clock_period_ns"] == pytest.approx(10.0)
+    assert fifo_pair["destination_view"]["clock_period_ns"] == pytest.approx(7.0)
+    assert fifo_pair["domain_periods_may_differ"] is True
+    assert report["timing_bounds"]["temporal_domain"]["cycles"] == 36
+    assert report["timing_bounds"]["temporal_domain"]["time_ns"] == pytest.approx(252.0)
+    assert report["timing_bounds"]["temporal_domain"]["components"] == {
+        "elapsed_wall_clock_temporal_cycles": 36,
+        "finalizer_counter_cycles_diagnostic_only": 12,
+        "finalizer_counter_added_to_elapsed_cycles": False,
+    }
+    assert report["timing_bounds"]["serial_upper_bound_ns"] == pytest.approx(1452.0)
 
 
 def test_build_report_emits_csv_with_real_metrics_columns_and_provisional_energy_status(
@@ -401,6 +417,8 @@ def test_build_report_emits_csv_with_real_metrics_columns_and_provisional_energy
     assert float(rows[0]["service_generic_total_power_mw"]) == pytest.approx(0.26)
     assert float(rows[0]["generic_composed_total_power_mw"]) == pytest.approx(0.8105, abs=1e-4)
     assert float(rows[0]["service_activity_window_power_mw"]) == pytest.approx(356.909006834)
+    assert rows[0]["platform"] == "nangate45"
+    assert int(rows[0]["divider_lanes"]) == 8
 
 
 def test_build_report_rejects_duplicate_matching_temporal_rows(
@@ -560,4 +578,137 @@ def test_build_report_rejects_inconsistent_fifo_views_but_counts_one_when_consis
             temporal_bundle=temporal,
             fifo_source_bundle=fifo_source,
             fifo_destination_bundle=fifo_destination,
+        )
+
+
+def test_build_report_rejects_probe_lane_mismatch(
+    tmp_path: Path,
+    service_anchor_fixture: dict,
+    functional_probe_fixture: dict,
+) -> None:
+    functional_probe_fixture["divider_lanes"] = 4
+
+    with pytest.raises(ValueError, match="divider_lanes must match"):
+        _build_report(
+            tmp_path=tmp_path,
+            service_anchor=service_anchor_fixture,
+            functional_probe=functional_probe_fixture,
+            temporal_bundle=_write_temporal_bundle(tmp_path),
+            fifo_source_bundle=_write_fifo_bundle(tmp_path, timed_domain="source"),
+            fifo_destination_bundle=_write_fifo_bundle(tmp_path, timed_domain="destination"),
+        )
+
+
+@pytest.mark.parametrize(
+    ("period_field", "period_ns", "error"),
+    [
+        ("service_period_ns", 9.0, "service_period_ns must match"),
+        ("temporal_period_ns", 8.0, "temporal_period_ns must match"),
+    ],
+)
+def test_build_report_rejects_probe_period_mismatch(
+    tmp_path: Path,
+    service_anchor_fixture: dict,
+    functional_probe_fixture: dict,
+    period_field: str,
+    period_ns: float,
+    error: str,
+) -> None:
+    functional_probe_fixture[period_field] = period_ns
+
+    with pytest.raises(ValueError, match=error):
+        _build_report(
+            tmp_path=tmp_path,
+            service_anchor=service_anchor_fixture,
+            functional_probe=functional_probe_fixture,
+            temporal_bundle=_write_temporal_bundle(tmp_path),
+            fifo_source_bundle=_write_fifo_bundle(tmp_path, timed_domain="source"),
+            fifo_destination_bundle=_write_fifo_bundle(tmp_path, timed_domain="destination"),
+        )
+
+
+@pytest.mark.parametrize(
+    ("domain", "period_ns", "error"),
+    [
+        ("source", 11.0, "service anchor clock period must match"),
+        ("destination", 8.0, "temporal physical row clock period must match"),
+    ],
+)
+def test_build_report_rejects_incompatible_physical_domain_periods(
+    tmp_path: Path,
+    service_anchor_fixture: dict,
+    functional_probe_fixture: dict,
+    domain: str,
+    period_ns: float,
+    error: str,
+) -> None:
+    fifo_source = _write_fifo_bundle(tmp_path, timed_domain="source")
+    fifo_destination = _write_fifo_bundle(tmp_path, timed_domain="destination")
+    mismatched = _write_fifo_bundle(tmp_path, timed_domain=domain, clock_period_ns=period_ns)
+    if domain == "source":
+        fifo_source = mismatched
+    else:
+        fifo_destination = mismatched
+
+    with pytest.raises(ValueError, match=error):
+        _build_report(
+            tmp_path=tmp_path,
+            service_anchor=service_anchor_fixture,
+            functional_probe=functional_probe_fixture,
+            temporal_bundle=_write_temporal_bundle(tmp_path),
+            fifo_source_bundle=fifo_source,
+            fifo_destination_bundle=fifo_destination,
+        )
+
+
+@pytest.mark.parametrize("component", ["service", "temporal", "fifo_source", "fifo_destination"])
+def test_build_report_rejects_non_nangate45_physical_platform(
+    tmp_path: Path,
+    service_anchor_fixture: dict,
+    functional_probe_fixture: dict,
+    component: str,
+) -> None:
+    temporal = _write_temporal_bundle(tmp_path)
+    fifo_source = _write_fifo_bundle(tmp_path, timed_domain="source")
+    fifo_destination = _write_fifo_bundle(tmp_path, timed_domain="destination")
+    if component == "service":
+        service_anchor_fixture["best"]["ppa_metric"]["platform"] = "sky130hd"
+    else:
+        bundle = {
+            "temporal": temporal,
+            "fifo_source": fifo_source,
+            "fifo_destination": fifo_destination,
+        }[component]
+        metrics_path = Path(bundle["metrics_csv"])
+        metrics_path.write_text(
+            metrics_path.read_text(encoding="utf-8").replace("nangate45", "sky130hd", 1),
+            encoding="utf-8",
+        )
+
+    with pytest.raises(ValueError, match="platform must be"):
+        _build_report(
+            tmp_path=tmp_path,
+            service_anchor=service_anchor_fixture,
+            functional_probe=functional_probe_fixture,
+            temporal_bundle=temporal,
+            fifo_source_bundle=fifo_source,
+            fifo_destination_bundle=fifo_destination,
+        )
+
+
+def test_build_report_rejects_service_activity_cycle_count_mismatch(
+    tmp_path: Path,
+    service_anchor_fixture: dict,
+    functional_probe_fixture: dict,
+) -> None:
+    service_anchor_fixture["best"]["component_service_window_energy"]["cycle_count"] = 8718
+
+    with pytest.raises(ValueError, match="cycle_count must match activity_contract.cycle_count"):
+        _build_report(
+            tmp_path=tmp_path,
+            service_anchor=service_anchor_fixture,
+            functional_probe=functional_probe_fixture,
+            temporal_bundle=_write_temporal_bundle(tmp_path),
+            fifo_source_bundle=_write_fifo_bundle(tmp_path, timed_domain="source"),
+            fifo_destination_bundle=_write_fifo_bundle(tmp_path, timed_domain="destination"),
         )

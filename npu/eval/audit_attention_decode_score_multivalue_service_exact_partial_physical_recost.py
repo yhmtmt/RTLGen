@@ -30,10 +30,12 @@ _EXPECTED_FIFO_DESIGN_PREFIX = "attention_exact_partial_async_fifo_d4_"
 _EXPECTED_FIFO_PROPOSAL_ID = _EXPECTED_TEMPORAL_PROPOSAL_ID
 _EXPECTED_FIFO_PROPOSAL_PATH = _EXPECTED_TEMPORAL_PROPOSAL_PATH
 _EXPECTED_FUNCTIONAL_MODEL = "attention_decode_score_multivalue_service_finalized_cdc_probe_v1"
+_EXPECTED_PLATFORM = "nangate45"
 _FIFO_AREA_REL_TOL = 0.05
 _FIFO_POWER_REL_TOL = 0.5
 _CSV_FIELDS = (
     "candidate_id",
+    "platform",
     "service_case_id",
     "fifo_timed_domain",
     "fifo_canonical_rule",
@@ -43,6 +45,7 @@ _CSV_FIELDS = (
     "service_cycles",
     "temporal_cycles",
     "finalizer_cycles",
+    "divider_lanes",
     "service_domain_time_ns",
     "temporal_domain_time_ns",
     "overlap_lower_bound_ns",
@@ -276,6 +279,9 @@ def _validate_service_anchor(payload: JsonDict) -> JsonDict:
         raise ValueError("service anchor ppa metric status must be ok")
     if _string(ppa_metric.get("design"), "service anchor best.ppa_metric.design") != _EXPECTED_SERVICE_DESIGN:
         raise ValueError("service anchor design mismatch")
+    platform = _string(ppa_metric.get("platform"), "service anchor best.ppa_metric.platform")
+    if platform != _EXPECTED_PLATFORM:
+        raise ValueError(f"service anchor platform must be {_EXPECTED_PLATFORM}")
     activity_contract = payload.get("activity_contract")
     if not isinstance(activity_contract, dict):
         raise ValueError("service anchor requires activity_contract")
@@ -366,6 +372,10 @@ def _validate_service_anchor(payload: JsonDict) -> JsonDict:
         "service anchor component_service_window_energy.cycle_count",
         positive=True,
     )
+    if service_window_cycle_count != service_cycles:
+        raise ValueError(
+            "service anchor component_service_window_energy.cycle_count must match activity_contract.cycle_count"
+        )
     source_item_id = ""
     dependency = payload.get("dependency_contract")
     if isinstance(dependency, dict):
@@ -394,6 +404,7 @@ def _validate_service_anchor(payload: JsonDict) -> JsonDict:
     return {
         "case_id": _EXPECTED_SERVICE_CASE_ID,
         "design": _EXPECTED_SERVICE_DESIGN,
+        "platform": platform,
         "clock_period_ns": service_clock_ns,
         "activity_contract_cycle_count": service_cycles,
         "critical_path_ns": critical_path_ns,
@@ -444,6 +455,9 @@ def _validate_temporal_measurement(
     if f"_l{divider_lanes}" not in design:
         raise ValueError("temporal config divider_lanes must match design suffix")
     manifest = _load_macro_manifest(macro_manifest_json, label="temporal macro manifest", expected_module=design)
+    manifest_platform = _string(manifest.get("platform"), "temporal macro manifest platform")
+    if row["platform"] != _EXPECTED_PLATFORM or manifest_platform != row["platform"]:
+        raise ValueError(f"temporal physical platform must be {_EXPECTED_PLATFORM} across metrics and manifest")
     params = manifest.get("manifest_params")
     if not isinstance(params, dict):
         raise ValueError("temporal macro manifest requires manifest_params")
@@ -464,6 +478,7 @@ def _validate_temporal_measurement(
         raise ValueError("temporal config proposal lineage mismatches the expected source proposal")
     return {
         "design": design,
+        "platform": row["platform"],
         "clock_period_ns": row["requested_clock_period_ns"],
         "critical_path_ns": row["critical_path_ns"],
         "instance_area_um2": row["instance_area_um2"],
@@ -511,6 +526,9 @@ def _validate_fifo_measurement(
     if timed_domain not in {"source", "destination"}:
         raise ValueError("async fifo row timed_domain must be source or destination")
     manifest = _load_macro_manifest(macro_manifest_json, label="async fifo macro manifest", expected_module=design)
+    manifest_platform = _string(manifest.get("platform"), "async fifo macro manifest platform")
+    if row["platform"] != _EXPECTED_PLATFORM or manifest_platform != row["platform"]:
+        raise ValueError(f"async fifo physical platform must be {_EXPECTED_PLATFORM} across metrics and manifest")
     params = manifest.get("manifest_params")
     if not isinstance(params, dict):
         raise ValueError("async fifo macro manifest requires manifest_params")
@@ -531,6 +549,7 @@ def _validate_fifo_measurement(
         raise ValueError("async fifo config proposal lineage mismatches the expected source proposal")
     return {
         "design": design,
+        "platform": row["platform"],
         "timed_domain": timed_domain,
         "clock_period_ns": row["requested_clock_period_ns"],
         "critical_path_ns": row["critical_path_ns"],
@@ -591,8 +610,6 @@ def _validate_fifo_pair(
         raise ValueError("canonical FIFO timed domain must be source or destination")
     if source["proposal_ref"] != destination["proposal_ref"]:
         raise ValueError("async fifo source/destination proposal lineage mismatch")
-    if abs(source["clock_period_ns"] - destination["clock_period_ns"]) > 1.0e-9:
-        raise ValueError("async fifo source/destination requested clock periods must match")
     _require_close_rel(
         source["die_area_um2"],
         destination["die_area_um2"],
@@ -622,6 +639,7 @@ def _validate_fifo_pair(
         "diagnostic_view": diagnostic,
         "area_consistency_rel_tol": _FIFO_AREA_REL_TOL,
         "power_consistency_rel_tol": _FIFO_POWER_REL_TOL,
+        "domain_periods_may_differ": True,
     }
 
 
@@ -634,6 +652,7 @@ def _validate_functional_probe(payload: JsonDict) -> JsonDict:
     if not isinstance(summary, dict):
         raise ValueError("functional probe requires summary")
     return {
+        "divider_lanes": _int(payload.get("divider_lanes"), "functional probe divider_lanes", positive=True),
         "service_period_ns": _finite_float(payload.get("service_period_ns"), "functional probe service_period_ns", positive=True),
         "temporal_period_ns": _finite_float(payload.get("temporal_period_ns"), "functional probe temporal_period_ns", positive=True),
         "service_cycles": _int(summary.get("service_cycles"), "functional probe summary.service_cycles", positive=True),
@@ -709,12 +728,29 @@ def build_report(
     )
     probe = _validate_functional_probe(probe_payload)
 
-    service_domain_period_ns = service["clock_period_ns"]
-    temporal_domain_period_ns = temporal["clock_period_ns"]
-    service_domain_period_ns = max(service_domain_period_ns, fifo["source_view"]["clock_period_ns"])
-    temporal_domain_period_ns = max(temporal_domain_period_ns, fifo["destination_view"]["clock_period_ns"])
+    platforms = {
+        service["platform"],
+        temporal["platform"],
+        fifo["source_view"]["platform"],
+        fifo["destination_view"]["platform"],
+    }
+    if platforms != {_EXPECTED_PLATFORM}:
+        raise ValueError("all physical measurements must use the mutually compatible nangate45 platform")
+    if probe["divider_lanes"] != temporal["divider_lanes"]:
+        raise ValueError("functional probe divider_lanes must match the selected temporal harness")
 
-    temporal_domain_cycles = probe["temporal_cycles"] + probe["finalizer_cycles"]
+    service_domain_period_ns = fifo["source_view"]["clock_period_ns"]
+    temporal_domain_period_ns = fifo["destination_view"]["clock_period_ns"]
+    if abs(service["clock_period_ns"] - service_domain_period_ns) > 1.0e-9:
+        raise ValueError("service anchor clock period must match the source-domain FIFO physical period")
+    if abs(temporal["clock_period_ns"] - temporal_domain_period_ns) > 1.0e-9:
+        raise ValueError("temporal physical row clock period must match the destination-domain FIFO physical period")
+    if abs(probe["service_period_ns"] - service_domain_period_ns) > 1.0e-9:
+        raise ValueError("functional probe service_period_ns must match the effective service physical period")
+    if abs(probe["temporal_period_ns"] - temporal_domain_period_ns) > 1.0e-9:
+        raise ValueError("functional probe temporal_period_ns must match the effective temporal physical period")
+
+    temporal_domain_cycles = probe["temporal_cycles"]
     service_domain_time_ns = round(probe["service_cycles"] * service_domain_period_ns, 6)
     temporal_domain_time_ns = round(temporal_domain_cycles * temporal_domain_period_ns, 6)
     overlap_lower_bound_ns = round(max(service_domain_time_ns, temporal_domain_time_ns), 6)
@@ -741,6 +777,7 @@ def build_report(
 
     row = {
         "candidate_id": candidate_id,
+        "platform": _EXPECTED_PLATFORM,
         "service_case_id": service["case_id"],
         "fifo_timed_domain": fifo["canonical_timed_domain"],
         "fifo_canonical_rule": fifo["canonical_rule"],
@@ -750,6 +787,7 @@ def build_report(
         "service_cycles": probe["service_cycles"],
         "temporal_cycles": probe["temporal_cycles"],
         "finalizer_cycles": probe["finalizer_cycles"],
+        "divider_lanes": probe["divider_lanes"],
         "service_domain_time_ns": service_domain_time_ns,
         "temporal_domain_time_ns": temporal_domain_time_ns,
         "overlap_lower_bound_ns": overlap_lower_bound_ns,
@@ -880,8 +918,9 @@ def build_report(
                 "cycles": temporal_domain_cycles,
                 "time_ns": temporal_domain_time_ns,
                 "components": {
-                    "temporal_cycles": probe["temporal_cycles"],
-                    "finalizer_cycles": probe["finalizer_cycles"],
+                    "elapsed_wall_clock_temporal_cycles": probe["temporal_cycles"],
+                    "finalizer_counter_cycles_diagnostic_only": probe["finalizer_cycles"],
+                    "finalizer_counter_added_to_elapsed_cycles": False,
                 },
                 "clock_sources": ["temporal_finalizer_physical_row"]
                 + ["async_fifo_destination_domain"],
@@ -897,6 +936,9 @@ def build_report(
                 "openroad_critical_paths_not_used_as_cdc_latency": True,
                 "service_activity_window_cycles_not_assumed_equal_to_functional_service_cycles": True,
                 "combined_latency_not_derived_from_activity_window_cycles": True,
+                "functional_probe_periods_match_effective_physical_domains": True,
+                "temporal_cycles_are_elapsed_wall_clock": True,
+                "finalizer_cycles_are_diagnostic_only": True,
             },
         },
         "composed_physical": {
@@ -924,6 +966,8 @@ def build_report(
                 "both_fifo_domain_views_added": False,
                 "fifo_canonical_rule": fifo["canonical_rule"],
                 "service_activity_window_power_summed_with_generic_power": False,
+                "all_physical_platforms": _EXPECTED_PLATFORM,
+                "platforms_mutually_compatible": True,
             },
             "ignored_measurements": {
                 "service_die_area_um2": service["die_area_um2"],
