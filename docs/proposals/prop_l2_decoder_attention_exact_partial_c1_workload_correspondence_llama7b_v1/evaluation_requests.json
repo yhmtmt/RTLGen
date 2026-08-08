@@ -1,0 +1,26 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_exact_partial_c1_workload_correspondence_llama7b_v1",
+  "source_commit_note": "Do not dispatch from this development branch. Evaluate only after merge from current origin/master so the required SHA includes the probe, report, and tests.",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_exact_partial_c1_workload_correspondence_llama7b_v1",
+      "task_type": "l2_campaign",
+      "title": "Evaluate finalized c1 workload correspondence at Llama7B 131k",
+      "objective": "Re-run the bounded 1/2/3/4-window, tail, and state-reuse RTL matrix and verify the affine-only 5462-window/head projection.",
+      "status": "ready_to_queue_after_merge",
+      "evaluation_mode": "equivalence",
+      "abstraction_layer": "decoder_attention_exact_partial_c1_workload_correspondence",
+      "comparison_role": "workload_correspondence_prerequisite",
+      "cost_class": "bounded_medium",
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": false,
+      "run_physical": false,
+      "command": "python3 npu/eval/probe_attention_decode_score_multivalue_service_workload_correspondence.py --out runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_exact_partial_c1_workload_correspondence__l2_decoder_attention_exact_partial_c1_workload_correspondence_llama7b_v1.json",
+      "expected_outputs": [
+        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_exact_partial_c1_workload_correspondence__l2_decoder_attention_exact_partial_c1_workload_correspondence_llama7b_v1.json"
+      ],
+      "acceptance_notes": "Require exact software/RTL values, exact modeled counter matches, equal full-window service deltas at 1/2/3/4 windows for every divider width, 160 tail refills, one tail-head finalization, two-head same-slot state reuse, zero protocol errors, and projections derived only from the proven affine full-window recurrence.",
+      "notes": "Implementation/preparation only; no PR creation or dispatch from this branch."
+    }
+  ]
+}

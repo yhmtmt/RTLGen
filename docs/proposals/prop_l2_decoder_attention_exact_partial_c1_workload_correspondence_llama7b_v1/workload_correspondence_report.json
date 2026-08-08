@@ -1,0 +1,2155 @@
+{
+  "assumptions": [
+    "one c1 service instance schedules windows and heads serially",
+    "each full window is three 8-token blocks and the final partial is one 8-token block",
+    "value-memory refill traffic is serialized before each command and included in bounded RTL service spans",
+    "the bounded probe uses SRAM temporal state and the macro-banked 4x16x64x32 service value backend",
+    "the affine projection is used only after equal deltas are observed at window_count 1, 2, 3, and 4",
+    "temporal final drain is 16 slices times the RTL restoring-divider schedule of 57 cycles per lane group plus accept/output cycles",
+    "layer and 32-layer values are conservative serial bounds; no inter-head or inter-layer overlap is credited",
+    "elapsed testbench service/temporal/finalizer counters include CDC phase and overlap and are not projected"
+  ],
+  "clock_contract": {
+    "service_period_ns": 10.0,
+    "temporal_period_ns": 12.0
+  },
+  "fail_closed_guards": {
+    "missing_refill_traffic": true,
+    "missing_single_head_finalization": true,
+    "non_affine_counter_deltas": true,
+    "protocol_error": true,
+    "software_rtl_value_mismatch": true
+  },
+  "lane_reports": [
+    {
+      "affine_recurrence_proof": {
+        "bounded_window_counts": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "counter_deltas": [
+          1076,
+          1076,
+          1076
+        ],
+        "measured_service_span_cycles": [
+          1051,
+          2127,
+          3203,
+          4279
+        ],
+        "proven": true,
+        "recurrence": "service_cycles(N) = startup_cycles + (N - 1) * steady_state_cycles_per_additional_full_window",
+        "startup_cycles": 1051,
+        "steady_state_cycles_per_additional_full_window": 1076
+      },
+      "bounded_rtl_cases": [
+        {
+          "all_modeled_counters_match_rtl": true,
+          "block_counts": [
+            [
+              3
+            ]
+          ],
+          "command_cycles": [
+            {
+              "index": 0,
+              "start": 48,
+              "terminal": 1050
+            }
+          ],
+          "deterministic_counter_model": {
+            "commands": 1,
+            "finalizer_accepted": 16,
+            "finalizer_completed": 16,
+            "outputs": 16,
+            "protocol_error": 0,
+            "refills": 48,
+            "service_accepted": 1,
+            "service_completed": 1,
+            "service_req": 48,
+            "service_resp": 48,
+            "state_reads": 16,
+            "state_requests": 32,
+            "state_responses": 16,
+            "state_writes": 16,
+            "temporal_emitted": 16,
+            "temporal_heads": 1,
+            "temporal_inputs": 16,
+            "temporal_merges": 0
+          },
+          "distinct_window_refill_verified_by_exact_outputs": true,
+          "finalizer_busy_span_temporal_cycles": 7328,
+          "head_count": 1,
+          "modeled_service_span_cycles": 1051,
+          "name": "full_windows_1",
+          "passed": true,
+          "rows_sha256": "ef05ddc2e0ecdfa8846eeea53d444e123761490d08929b0e1751aaf39d116142",
+          "service_cycle_counter_matches_affine_model": true,
+          "service_span_cycles": 1051,
+          "summary": {
+            "commands": 1,
+            "finalizer_accepted": 16,
+            "finalizer_completed": 16,
+            "finalizer_cycles": 8212,
+            "finalizer_first_accept": 885,
+            "outputs": 16,
+            "protocol_error": 0,
+            "refills": 48,
+            "service_accepted": 1,
+            "service_completed": 1,
+            "service_cycles": 9856,
+            "service_req": 48,
+            "service_resp": 48,
+            "state_reads": 16,
+            "state_requests": 32,
+            "state_responses": 16,
+            "state_writes": 16,
+            "temporal_cycles": 8212,
+            "temporal_emitted": 16,
+            "temporal_heads": 1,
+            "temporal_inputs": 16,
+            "temporal_merges": 0
+          },
+          "window_count": 1
+        },
+        {
+          "all_modeled_counters_match_rtl": true,
+          "block_counts": [
+            [
+              3,
+              3
+            ]
+          ],
+          "command_cycles": [
+            {
+              "index": 0,
+              "start": 48,
+              "terminal": 1050
+            },
+            {
+              "index": 1,
+              "start": 1099,
+              "terminal": 2126
+            }
+          ],
+          "deterministic_counter_model": {
+            "commands": 2,
+            "finalizer_accepted": 16,
+            "finalizer_completed": 16,
+            "outputs": 16,
+            "protocol_error": 0,
+            "refills": 96,
+            "service_accepted": 2,
+            "service_completed": 2,
+            "service_req": 96,
+            "service_resp": 96,
+            "state_reads": 32,
+            "state_requests": 64,
+            "state_responses": 32,
+            "state_writes": 32,
+            "temporal_emitted": 16,
+            "temporal_heads": 1,
+            "temporal_inputs": 32,
+            "temporal_merges": 16
+          },
+          "distinct_window_refill_verified_by_exact_outputs": true,
+          "finalizer_busy_span_temporal_cycles": 7328,
+          "head_count": 1,
+          "modeled_service_span_cycles": 2127,
+          "name": "full_windows_2",
+          "passed": true,
+          "rows_sha256": "967baad16ab535b02d06dccd7a585854e680c2c7029edada90496fef6defa7e8",
+          "service_cycle_counter_matches_affine_model": true,
+          "service_span_cycles": 2127,
+          "summary": {
+            "commands": 2,
+            "finalizer_accepted": 16,
+            "finalizer_completed": 16,
+            "finalizer_cycles": 9144,
+            "finalizer_first_accept": 1817,
+            "outputs": 16,
+            "protocol_error": 0,
+            "refills": 96,
+            "service_accepted": 2,
+            "service_completed": 2,
+            "service_cycles": 10974,
+            "service_req": 96,
+            "service_resp": 96,
+            "state_reads": 32,
+            "state_requests": 64,
+            "state_responses": 32,
+            "state_writes": 32,
+            "temporal_cycles": 9144,
+            "temporal_emitted": 16,
+            "temporal_heads": 1,
+            "temporal_inputs": 32,
+            "temporal_merges": 16
+          },
+          "window_count": 2
+        },
+        {
+          "all_modeled_counters_match_rtl": true,
+          "block_counts": [
+            [
+              3,
+              3,
+              3
+            ]
+          ],
+          "command_cycles": [
+            {
+              "index": 0,
+              "start": 48,
+              "terminal": 1050
+            },
+            {
+              "index": 1,
+              "start": 1099,
+              "terminal": 2126
+            },
+            {
+              "index": 2,
+              "start": 2175,
+              "terminal": 3202
+            }
+          ],
+          "deterministic_counter_model": {
+            "commands": 3,
+            "finalizer_accepted": 16,
+            "finalizer_completed": 16,
+            "outputs": 16,
+            "protocol_error": 0,
+            "refills": 144,
+            "service_accepted": 3,
+            "service_completed": 3,
+            "service_req": 144,
+            "service_resp": 144,
+            "state_reads": 48,
+            "state_requests": 96,
+            "state_responses": 48,
+            "state_writes": 48,
+            "temporal_emitted": 16,
+            "temporal_heads": 1,
+            "temporal_inputs": 48,
+            "temporal_merges": 32
+          },
+          "distinct_window_refill_verified_by_exact_outputs": true,
+          "finalizer_busy_span_temporal_cycles": 7328,
+          "head_count": 1,
+          "modeled_service_span_cycles": 3203,
+          "name": "full_windows_3",
+          "passed": true,
+          "rows_sha256": "a19547cce627858a9ab471369ba039263fe3d22d6d7e304e6a33c970c4884881",
+          "service_cycle_counter_matches_affine_model": true,
+          "service_span_cycles": 3203,
+          "summary": {
+            "commands": 3,
+            "finalizer_accepted": 16,
+            "finalizer_completed": 16,
+            "finalizer_cycles": 10041,
+            "finalizer_first_accept": 2714,
+            "outputs": 16,
+            "protocol_error": 0,
+            "refills": 144,
+            "service_accepted": 3,
+            "service_completed": 3,
+            "service_cycles": 12051,
+            "service_req": 144,
+            "service_resp": 144,
+            "state_reads": 48,
+            "state_requests": 96,
+            "state_responses": 48,
+            "state_writes": 48,
+            "temporal_cycles": 10041,
+            "temporal_emitted": 16,
+            "temporal_heads": 1,
+            "temporal_inputs": 48,
+            "temporal_merges": 32
+          },
+          "window_count": 3
+        },
+        {
+          "all_modeled_counters_match_rtl": true,
+          "block_counts": [
+            [
+              3,
+              3,
+              3,
+              3
+            ]
+          ],
+          "command_cycles": [
+            {
+              "index": 0,
+              "start": 48,
+              "terminal": 1050
+            },
+            {
+              "index": 1,
+              "start": 1099,
+              "terminal": 2126
+            },
+            {
+              "index": 2,
+              "start": 2175,
+              "terminal": 3202
+            },
+            {
+              "index": 3,
+              "start": 3251,
+              "terminal": 4278
+            }
+          ],
+          "deterministic_counter_model": {
+            "commands": 4,
+            "finalizer_accepted": 16,
+            "finalizer_completed": 16,
+            "outputs": 16,
+            "protocol_error": 0,
+            "refills": 192,
+            "service_accepted": 4,
+            "service_completed": 4,
+            "service_req": 192,
+            "service_resp": 192,
+            "state_reads": 64,
+            "state_requests": 128,
+            "state_responses": 64,
+            "state_writes": 64,
+            "temporal_emitted": 16,
+            "temporal_heads": 1,
+            "temporal_inputs": 64,
+            "temporal_merges": 48
+          },
+          "distinct_window_refill_verified_by_exact_outputs": true,
+          "finalizer_busy_span_temporal_cycles": 7328,
+          "head_count": 1,
+          "modeled_service_span_cycles": 4279,
+          "name": "full_windows_4",
+          "passed": true,
+          "rows_sha256": "88e1c2450886dfa4a754f1b90829ad7bdc2d909ad8b8a6dab5ec9e67fca25029",
+          "service_cycle_counter_matches_affine_model": true,
+          "service_span_cycles": 4279,
+          "summary": {
+            "commands": 4,
+            "finalizer_accepted": 16,
+            "finalizer_completed": 16,
+            "finalizer_cycles": 10937,
+            "finalizer_first_accept": 3610,
+            "outputs": 16,
+            "protocol_error": 0,
+            "refills": 192,
+            "service_accepted": 4,
+            "service_completed": 4,
+            "service_cycles": 13126,
+            "service_req": 192,
+            "service_resp": 192,
+            "state_reads": 64,
+            "state_requests": 128,
+            "state_responses": 64,
+            "state_writes": 64,
+            "temporal_cycles": 10937,
+            "temporal_emitted": 16,
+            "temporal_heads": 1,
+            "temporal_inputs": 64,
+            "temporal_merges": 48
+          },
+          "window_count": 4
+        }
+      ],
+      "divider_lanes": 1,
+      "final_drain_temporal_cycles": 7328,
+      "projection": {
+        "final_partial_tokens": 8,
+        "full_windows_per_head": 5461,
+        "head_latency_ns_serial_upper_bound": 58858806.0,
+        "layer_latency_ns_serial_upper_bound": 1883481792.0,
+        "service_cycles_32_layer_serial_bound": 6018137088,
+        "service_cycles_per_head": 5877087,
+        "service_cycles_per_layer_serial_heads": 188066784,
+        "temporal_final_drain_cycles_32_layer_serial_bound": 7503872,
+        "temporal_final_drain_cycles_per_head": 7328,
+        "temporal_final_drain_cycles_per_layer_serial_heads": 234496,
+        "windows_per_head": 5462
+      },
+      "state_clear_reuse_rtl_case": {
+        "all_modeled_counters_match_rtl": true,
+        "block_counts": [
+          [
+            3,
+            3
+          ],
+          [
+            3,
+            3
+          ]
+        ],
+        "command_cycles": [
+          {
+            "index": 0,
+            "start": 48,
+            "terminal": 1050
+          },
+          {
+            "index": 1,
+            "start": 1099,
+            "terminal": 2126
+          },
+          {
+            "index": 2,
+            "start": 10474,
+            "terminal": 11476
+          },
+          {
+            "index": 3,
+            "start": 11525,
+            "terminal": 12552
+          }
+        ],
+        "deterministic_counter_model": {
+          "commands": 4,
+          "finalizer_accepted": 32,
+          "finalizer_completed": 32,
+          "outputs": 32,
+          "protocol_error": 0,
+          "refills": 192,
+          "service_accepted": 4,
+          "service_completed": 4,
+          "service_req": 192,
+          "service_resp": 192,
+          "state_reads": 64,
+          "state_requests": 128,
+          "state_responses": 64,
+          "state_writes": 64,
+          "temporal_emitted": 32,
+          "temporal_heads": 2,
+          "temporal_inputs": 64,
+          "temporal_merges": 32
+        },
+        "distinct_window_refill_verified_by_exact_outputs": true,
+        "finalizer_busy_span_temporal_cycles": 16016,
+        "head_count": 2,
+        "name": "two_head_state_clear_reuse",
+        "passed": true,
+        "rows_sha256": "5b08f0f26ca03d935ff6ee01e9f3d1d620ae1812e3a4b7bf66a69d70ce5d0014",
+        "service_span_cycles": 12553,
+        "summary": {
+          "commands": 4,
+          "finalizer_accepted": 32,
+          "finalizer_completed": 32,
+          "finalizer_cycles": 17832,
+          "finalizer_first_accept": 1817,
+          "outputs": 32,
+          "protocol_error": 0,
+          "refills": 192,
+          "service_accepted": 4,
+          "service_completed": 4,
+          "service_cycles": 21400,
+          "service_req": 192,
+          "service_resp": 192,
+          "state_reads": 64,
+          "state_requests": 128,
+          "state_responses": 64,
+          "state_writes": 64,
+          "temporal_cycles": 17832,
+          "temporal_emitted": 32,
+          "temporal_heads": 2,
+          "temporal_inputs": 64,
+          "temporal_merges": 32
+        },
+        "window_count": 4
+      },
+      "tail_adjustment_used_in_projection": false,
+      "tail_rtl_case": {
+        "all_modeled_counters_match_rtl": true,
+        "block_counts": [
+          [
+            3,
+            3,
+            3,
+            1
+          ]
+        ],
+        "command_cycles": [
+          {
+            "index": 0,
+            "start": 48,
+            "terminal": 1050
+          },
+          {
+            "index": 1,
+            "start": 1099,
+            "terminal": 2126
+          },
+          {
+            "index": 2,
+            "start": 2175,
+            "terminal": 3202
+          },
+          {
+            "index": 3,
+            "start": 3219,
+            "terminal": 3608
+          }
+        ],
+        "deterministic_counter_model": {
+          "commands": 4,
+          "finalizer_accepted": 16,
+          "finalizer_completed": 16,
+          "outputs": 16,
+          "protocol_error": 0,
+          "refills": 160,
+          "service_accepted": 4,
+          "service_completed": 4,
+          "service_req": 160,
+          "service_resp": 160,
+          "state_reads": 64,
+          "state_requests": 128,
+          "state_responses": 64,
+          "state_writes": 64,
+          "temporal_emitted": 16,
+          "temporal_heads": 1,
+          "temporal_inputs": 64,
+          "temporal_merges": 48
+        },
+        "distinct_window_refill_verified_by_exact_outputs": true,
+        "finalizer_busy_span_temporal_cycles": 7328,
+        "head_count": 1,
+        "name": "three_full_plus_8_token_tail",
+        "passed": true,
+        "rows_sha256": "98a2af6b6a8cf9814381fcafa459d7ba640bb68dc81d4ec1a24fd3fd63bba3b6",
+        "service_span_cycles": 3609,
+        "summary": {
+          "commands": 4,
+          "finalizer_accepted": 16,
+          "finalizer_completed": 16,
+          "finalizer_cycles": 10379,
+          "finalizer_first_accept": 3052,
+          "outputs": 16,
+          "protocol_error": 0,
+          "refills": 160,
+          "service_accepted": 4,
+          "service_completed": 4,
+          "service_cycles": 12456,
+          "service_req": 160,
+          "service_resp": 160,
+          "state_reads": 64,
+          "state_requests": 128,
+          "state_responses": 64,
+          "state_writes": 64,
+          "temporal_cycles": 10379,
+          "temporal_emitted": 16,
+          "temporal_heads": 1,
+          "temporal_inputs": 64,
+          "temporal_merges": 48
+        },
+        "window_count": 4
+      },
+      "tail_service_adjustment_cycles": -670
+    },
+    {
+      "affine_recurrence_proof": {
+        "bounded_window_counts": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "counter_deltas": [
+          1076,
+          1076,
+          1076
+        ],
+        "measured_service_span_cycles": [
+          1051,
+          2127,
+          3203,
+          4279
+        ],
+        "proven": true,
+        "recurrence": "service_cycles(N) = startup_cycles + (N - 1) * steady_state_cycles_per_additional_full_window",
+        "startup_cycles": 1051,
+        "steady_state_cycles_per_additional_full_window": 1076
+      },
+      "bounded_rtl_cases": [
+        {
+          "all_modeled_counters_match_rtl": true,
+          "block_counts": [
+            [
+              3
+            ]
+          ],
+          "command_cycles": [
+            {
+              "index": 0,
+              "start": 48,
+              "terminal": 1050
+            }
+          ],
+          "deterministic_counter_model": {
+            "commands": 1,
+            "finalizer_accepted": 16,
+            "finalizer_completed": 16,
+            "outputs": 16,
+            "protocol_error": 0,
+            "refills": 48,
+            "service_accepted": 1,
+            "service_completed": 1,
+            "service_req": 48,
+            "service_resp": 48,
+            "state_reads": 16,
+            "state_requests": 32,
+            "state_responses": 16,
+            "state_writes": 16,
+            "temporal_emitted": 16,
+            "temporal_heads": 1,
+            "temporal_inputs": 16,
+            "temporal_merges": 0
+          },
+          "distinct_window_refill_verified_by_exact_outputs": true,
+          "finalizer_busy_span_temporal_cycles": 3680,
+          "head_count": 1,
+          "modeled_service_span_cycles": 1051,
+          "name": "full_windows_1",
+          "passed": true,
+          "rows_sha256": "ef05ddc2e0ecdfa8846eeea53d444e123761490d08929b0e1751aaf39d116142",
+          "service_cycle_counter_matches_affine_model": true,
+          "service_span_cycles": 1051,
+          "summary": {
+            "commands": 1,
+            "finalizer_accepted": 16,
+            "finalizer_completed": 16,
+            "finalizer_cycles": 4564,
+            "finalizer_first_accept": 885,
+            "outputs": 16,
+            "protocol_error": 0,
+            "refills": 48,
+            "service_accepted": 1,
+            "service_completed": 1,
+            "service_cycles": 5478,
+            "service_req": 48,
+            "service_resp": 48,
+            "state_reads": 16,
+            "state_requests": 32,
+            "state_responses": 16,
+            "state_writes": 16,
+            "temporal_cycles": 4564,
+            "temporal_emitted": 16,
+            "temporal_heads": 1,
+            "temporal_inputs": 16,
+            "temporal_merges": 0
+          },
+          "window_count": 1
+        },
+        {
+          "all_modeled_counters_match_rtl": true,
+          "block_counts": [
+            [
+              3,
+              3
+            ]
+          ],
+          "command_cycles": [
+            {
+              "index": 0,
+              "start": 48,
+              "terminal": 1050
+            },
+            {
+              "index": 1,
+              "start": 1099,
+              "terminal": 2126
+            }
+          ],
+          "deterministic_counter_model": {
+            "commands": 2,
+            "finalizer_accepted": 16,
+            "finalizer_completed": 16,
+            "outputs": 16,
+            "protocol_error": 0,
+            "refills": 96,
+            "service_accepted": 2,
+            "service_completed": 2,
+            "service_req": 96,
+            "service_resp": 96,
+            "state_reads": 32,
+            "state_requests": 64,
+            "state_responses": 32,
+            "state_writes": 32,
+            "temporal_emitted": 16,
+            "temporal_heads": 1,
+            "temporal_inputs": 32,
+            "temporal_merges": 16
+          },
+          "distinct_window_refill_verified_by_exact_outputs": true,
+          "finalizer_busy_span_temporal_cycles": 3680,
+          "head_count": 1,
+          "modeled_service_span_cycles": 2127,
+          "name": "full_windows_2",
+          "passed": true,
+          "rows_sha256": "967baad16ab535b02d06dccd7a585854e680c2c7029edada90496fef6defa7e8",
+          "service_cycle_counter_matches_affine_model": true,
+          "service_span_cycles": 2127,
+          "summary": {
+            "commands": 2,
+            "finalizer_accepted": 16,
+            "finalizer_completed": 16,
+            "finalizer_cycles": 5496,
+            "finalizer_first_accept": 1817,
+            "outputs": 16,
+            "protocol_error": 0,
+            "refills": 96,
+            "service_accepted": 2,
+            "service_completed": 2,
+            "service_cycles": 6597,
+            "service_req": 96,
+            "service_resp": 96,
+            "state_reads": 32,
+            "state_requests": 64,
+            "state_responses": 32,
+            "state_writes": 32,
+            "temporal_cycles": 5496,
+            "temporal_emitted": 16,
+            "temporal_heads": 1,
+            "temporal_inputs": 32,
+            "temporal_merges": 16
+          },
+          "window_count": 2
+        },
+        {
+          "all_modeled_counters_match_rtl": true,
+          "block_counts": [
+            [
+              3,
+              3,
+              3
+            ]
+          ],
+          "command_cycles": [
+            {
+              "index": 0,
+              "start": 48,
+              "terminal": 1050
+            },
+            {
+              "index": 1,
+              "start": 1099,
+              "terminal": 2126
+            },
+            {
+              "index": 2,
+              "start": 2175,
+              "terminal": 3202
+            }
+          ],
+          "deterministic_counter_model": {
+            "commands": 3,
+            "finalizer_accepted": 16,
+            "finalizer_completed": 16,
+            "outputs": 16,
+            "protocol_error": 0,
+            "refills": 144,
+            "service_accepted": 3,
+            "service_completed": 3,
+            "service_req": 144,
+            "service_resp": 144,
+            "state_reads": 48,
+            "state_requests": 96,
+            "state_responses": 48,
+            "state_writes": 48,
+            "temporal_emitted": 16,
+            "temporal_heads": 1,
+            "temporal_inputs": 48,
+            "temporal_merges": 32
+          },
+          "distinct_window_refill_verified_by_exact_outputs": true,
+          "finalizer_busy_span_temporal_cycles": 3680,
+          "head_count": 1,
+          "modeled_service_span_cycles": 3203,
+          "name": "full_windows_3",
+          "passed": true,
+          "rows_sha256": "a19547cce627858a9ab471369ba039263fe3d22d6d7e304e6a33c970c4884881",
+          "service_cycle_counter_matches_affine_model": true,
+          "service_span_cycles": 3203,
+          "summary": {
+            "commands": 3,
+            "finalizer_accepted": 16,
+            "finalizer_completed": 16,
+            "finalizer_cycles": 6393,
+            "finalizer_first_accept": 2714,
+            "outputs": 16,
+            "protocol_error": 0,
+            "refills": 144,
+            "service_accepted": 3,
+            "service_completed": 3,
+            "service_cycles": 7673,
+            "service_req": 144,
+            "service_resp": 144,
+            "state_reads": 48,
+            "state_requests": 96,
+            "state_responses": 48,
+            "state_writes": 48,
+            "temporal_cycles": 6393,
+            "temporal_emitted": 16,
+            "temporal_heads": 1,
+            "temporal_inputs": 48,
+            "temporal_merges": 32
+          },
+          "window_count": 3
+        },
+        {
+          "all_modeled_counters_match_rtl": true,
+          "block_counts": [
+            [
+              3,
+              3,
+              3,
+              3
+            ]
+          ],
+          "command_cycles": [
+            {
+              "index": 0,
+              "start": 48,
+              "terminal": 1050
+            },
+            {
+              "index": 1,
+              "start": 1099,
+              "terminal": 2126
+            },
+            {
+              "index": 2,
+              "start": 2175,
+              "terminal": 3202
+            },
+            {
+              "index": 3,
+              "start": 3251,
+              "terminal": 4278
+            }
+          ],
+          "deterministic_counter_model": {
+            "commands": 4,
+            "finalizer_accepted": 16,
+            "finalizer_completed": 16,
+            "outputs": 16,
+            "protocol_error": 0,
+            "refills": 192,
+            "service_accepted": 4,
+            "service_completed": 4,
+            "service_req": 192,
+            "service_resp": 192,
+            "state_reads": 64,
+            "state_requests": 128,
+            "state_responses": 64,
+            "state_writes": 64,
+            "temporal_emitted": 16,
+            "temporal_heads": 1,
+            "temporal_inputs": 64,
+            "temporal_merges": 48
+          },
+          "distinct_window_refill_verified_by_exact_outputs": true,
+          "finalizer_busy_span_temporal_cycles": 3680,
+          "head_count": 1,
+          "modeled_service_span_cycles": 4279,
+          "name": "full_windows_4",
+          "passed": true,
+          "rows_sha256": "88e1c2450886dfa4a754f1b90829ad7bdc2d909ad8b8a6dab5ec9e67fca25029",
+          "service_cycle_counter_matches_affine_model": true,
+          "service_span_cycles": 4279,
+          "summary": {
+            "commands": 4,
+            "finalizer_accepted": 16,
+            "finalizer_completed": 16,
+            "finalizer_cycles": 7289,
+            "finalizer_first_accept": 3610,
+            "outputs": 16,
+            "protocol_error": 0,
+            "refills": 192,
+            "service_accepted": 4,
+            "service_completed": 4,
+            "service_cycles": 8748,
+            "service_req": 192,
+            "service_resp": 192,
+            "state_reads": 64,
+            "state_requests": 128,
+            "state_responses": 64,
+            "state_writes": 64,
+            "temporal_cycles": 7289,
+            "temporal_emitted": 16,
+            "temporal_heads": 1,
+            "temporal_inputs": 64,
+            "temporal_merges": 48
+          },
+          "window_count": 4
+        }
+      ],
+      "divider_lanes": 2,
+      "final_drain_temporal_cycles": 3680,
+      "projection": {
+        "final_partial_tokens": 8,
+        "full_windows_per_head": 5461,
+        "head_latency_ns_serial_upper_bound": 58815030.0,
+        "layer_latency_ns_serial_upper_bound": 1882080960.0,
+        "service_cycles_32_layer_serial_bound": 6018137088,
+        "service_cycles_per_head": 5877087,
+        "service_cycles_per_layer_serial_heads": 188066784,
+        "temporal_final_drain_cycles_32_layer_serial_bound": 3768320,
+        "temporal_final_drain_cycles_per_head": 3680,
+        "temporal_final_drain_cycles_per_layer_serial_heads": 117760,
+        "windows_per_head": 5462
+      },
+      "state_clear_reuse_rtl_case": {
+        "all_modeled_counters_match_rtl": true,
+        "block_counts": [
+          [
+            3,
+            3
+          ],
+          [
+            3,
+            3
+          ]
+        ],
+        "command_cycles": [
+          {
+            "index": 0,
+            "start": 48,
+            "terminal": 1050
+          },
+          {
+            "index": 1,
+            "start": 1099,
+            "terminal": 2126
+          },
+          {
+            "index": 2,
+            "start": 6370,
+            "terminal": 7372
+          },
+          {
+            "index": 3,
+            "start": 7421,
+            "terminal": 8448
+          }
+        ],
+        "deterministic_counter_model": {
+          "commands": 4,
+          "finalizer_accepted": 32,
+          "finalizer_completed": 32,
+          "outputs": 32,
+          "protocol_error": 0,
+          "refills": 192,
+          "service_accepted": 4,
+          "service_completed": 4,
+          "service_req": 192,
+          "service_resp": 192,
+          "state_reads": 64,
+          "state_requests": 128,
+          "state_responses": 64,
+          "state_writes": 64,
+          "temporal_emitted": 32,
+          "temporal_heads": 2,
+          "temporal_inputs": 64,
+          "temporal_merges": 32
+        },
+        "distinct_window_refill_verified_by_exact_outputs": true,
+        "finalizer_busy_span_temporal_cycles": 8948,
+        "head_count": 2,
+        "name": "two_head_state_clear_reuse",
+        "passed": true,
+        "rows_sha256": "5b08f0f26ca03d935ff6ee01e9f3d1d620ae1812e3a4b7bf66a69d70ce5d0014",
+        "service_span_cycles": 8449,
+        "summary": {
+          "commands": 4,
+          "finalizer_accepted": 32,
+          "finalizer_completed": 32,
+          "finalizer_cycles": 10764,
+          "finalizer_first_accept": 1817,
+          "outputs": 32,
+          "protocol_error": 0,
+          "refills": 192,
+          "service_accepted": 4,
+          "service_completed": 4,
+          "service_cycles": 12918,
+          "service_req": 192,
+          "service_resp": 192,
+          "state_reads": 64,
+          "state_requests": 128,
+          "state_responses": 64,
+          "state_writes": 64,
+          "temporal_cycles": 10764,
+          "temporal_emitted": 32,
+          "temporal_heads": 2,
+          "temporal_inputs": 64,
+          "temporal_merges": 32
+        },
+        "window_count": 4
+      },
+      "tail_adjustment_used_in_projection": false,
+      "tail_rtl_case": {
+        "all_modeled_counters_match_rtl": true,
+        "block_counts": [
+          [
+            3,
+            3,
+            3,
+            1
+          ]
+        ],
+        "command_cycles": [
+          {
+            "index": 0,
+            "start": 48,
+            "terminal": 1050
+          },
+          {
+            "index": 1,
+            "start": 1099,
+            "terminal": 2126
+          },
+          {
+            "index": 2,
+            "start": 2175,
+            "terminal": 3202
+          },
+          {
+            "index": 3,
+            "start": 3219,
+            "terminal": 3608
+          }
+        ],
+        "deterministic_counter_model": {
+          "commands": 4,
+          "finalizer_accepted": 16,
+          "finalizer_completed": 16,
+          "outputs": 16,
+          "protocol_error": 0,
+          "refills": 160,
+          "service_accepted": 4,
+          "service_completed": 4,
+          "service_req": 160,
+          "service_resp": 160,
+          "state_reads": 64,
+          "state_requests": 128,
+          "state_responses": 64,
+          "state_writes": 64,
+          "temporal_emitted": 16,
+          "temporal_heads": 1,
+          "temporal_inputs": 64,
+          "temporal_merges": 48
+        },
+        "distinct_window_refill_verified_by_exact_outputs": true,
+        "finalizer_busy_span_temporal_cycles": 3680,
+        "head_count": 1,
+        "name": "three_full_plus_8_token_tail",
+        "passed": true,
+        "rows_sha256": "98a2af6b6a8cf9814381fcafa459d7ba640bb68dc81d4ec1a24fd3fd63bba3b6",
+        "service_span_cycles": 3609,
+        "summary": {
+          "commands": 4,
+          "finalizer_accepted": 16,
+          "finalizer_completed": 16,
+          "finalizer_cycles": 6731,
+          "finalizer_first_accept": 3052,
+          "outputs": 16,
+          "protocol_error": 0,
+          "refills": 160,
+          "service_accepted": 4,
+          "service_completed": 4,
+          "service_cycles": 8079,
+          "service_req": 160,
+          "service_resp": 160,
+          "state_reads": 64,
+          "state_requests": 128,
+          "state_responses": 64,
+          "state_writes": 64,
+          "temporal_cycles": 6731,
+          "temporal_emitted": 16,
+          "temporal_heads": 1,
+          "temporal_inputs": 64,
+          "temporal_merges": 48
+        },
+        "window_count": 4
+      },
+      "tail_service_adjustment_cycles": -670
+    },
+    {
+      "affine_recurrence_proof": {
+        "bounded_window_counts": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "counter_deltas": [
+          1076,
+          1076,
+          1076
+        ],
+        "measured_service_span_cycles": [
+          1051,
+          2127,
+          3203,
+          4279
+        ],
+        "proven": true,
+        "recurrence": "service_cycles(N) = startup_cycles + (N - 1) * steady_state_cycles_per_additional_full_window",
+        "startup_cycles": 1051,
+        "steady_state_cycles_per_additional_full_window": 1076
+      },
+      "bounded_rtl_cases": [
+        {
+          "all_modeled_counters_match_rtl": true,
+          "block_counts": [
+            [
+              3
+            ]
+          ],
+          "command_cycles": [
+            {
+              "index": 0,
+              "start": 48,
+              "terminal": 1050
+            }
+          ],
+          "deterministic_counter_model": {
+            "commands": 1,
+            "finalizer_accepted": 16,
+            "finalizer_completed": 16,
+            "outputs": 16,
+            "protocol_error": 0,
+            "refills": 48,
+            "service_accepted": 1,
+            "service_completed": 1,
+            "service_req": 48,
+            "service_resp": 48,
+            "state_reads": 16,
+            "state_requests": 32,
+            "state_responses": 16,
+            "state_writes": 16,
+            "temporal_emitted": 16,
+            "temporal_heads": 1,
+            "temporal_inputs": 16,
+            "temporal_merges": 0
+          },
+          "distinct_window_refill_verified_by_exact_outputs": true,
+          "finalizer_busy_span_temporal_cycles": 1856,
+          "head_count": 1,
+          "modeled_service_span_cycles": 1051,
+          "name": "full_windows_1",
+          "passed": true,
+          "rows_sha256": "ef05ddc2e0ecdfa8846eeea53d444e123761490d08929b0e1751aaf39d116142",
+          "service_cycle_counter_matches_affine_model": true,
+          "service_span_cycles": 1051,
+          "summary": {
+            "commands": 1,
+            "finalizer_accepted": 16,
+            "finalizer_completed": 16,
+            "finalizer_cycles": 2740,
+            "finalizer_first_accept": 885,
+            "outputs": 16,
+            "protocol_error": 0,
+            "refills": 48,
+            "service_accepted": 1,
+            "service_completed": 1,
+            "service_cycles": 3289,
+            "service_req": 48,
+            "service_resp": 48,
+            "state_reads": 16,
+            "state_requests": 32,
+            "state_responses": 16,
+            "state_writes": 16,
+            "temporal_cycles": 2740,
+            "temporal_emitted": 16,
+            "temporal_heads": 1,
+            "temporal_inputs": 16,
+            "temporal_merges": 0
+          },
+          "window_count": 1
+        },
+        {
+          "all_modeled_counters_match_rtl": true,
+          "block_counts": [
+            [
+              3,
+              3
+            ]
+          ],
+          "command_cycles": [
+            {
+              "index": 0,
+              "start": 48,
+              "terminal": 1050
+            },
+            {
+              "index": 1,
+              "start": 1099,
+              "terminal": 2126
+            }
+          ],
+          "deterministic_counter_model": {
+            "commands": 2,
+            "finalizer_accepted": 16,
+            "finalizer_completed": 16,
+            "outputs": 16,
+            "protocol_error": 0,
+            "refills": 96,
+            "service_accepted": 2,
+            "service_completed": 2,
+            "service_req": 96,
+            "service_resp": 96,
+            "state_reads": 32,
+            "state_requests": 64,
+            "state_responses": 32,
+            "state_writes": 32,
+            "temporal_emitted": 16,
+            "temporal_heads": 1,
+            "temporal_inputs": 32,
+            "temporal_merges": 16
+          },
+          "distinct_window_refill_verified_by_exact_outputs": true,
+          "finalizer_busy_span_temporal_cycles": 1856,
+          "head_count": 1,
+          "modeled_service_span_cycles": 2127,
+          "name": "full_windows_2",
+          "passed": true,
+          "rows_sha256": "967baad16ab535b02d06dccd7a585854e680c2c7029edada90496fef6defa7e8",
+          "service_cycle_counter_matches_affine_model": true,
+          "service_span_cycles": 2127,
+          "summary": {
+            "commands": 2,
+            "finalizer_accepted": 16,
+            "finalizer_completed": 16,
+            "finalizer_cycles": 3672,
+            "finalizer_first_accept": 1817,
+            "outputs": 16,
+            "protocol_error": 0,
+            "refills": 96,
+            "service_accepted": 2,
+            "service_completed": 2,
+            "service_cycles": 4408,
+            "service_req": 96,
+            "service_resp": 96,
+            "state_reads": 32,
+            "state_requests": 64,
+            "state_responses": 32,
+            "state_writes": 32,
+            "temporal_cycles": 3672,
+            "temporal_emitted": 16,
+            "temporal_heads": 1,
+            "temporal_inputs": 32,
+            "temporal_merges": 16
+          },
+          "window_count": 2
+        },
+        {
+          "all_modeled_counters_match_rtl": true,
+          "block_counts": [
+            [
+              3,
+              3,
+              3
+            ]
+          ],
+          "command_cycles": [
+            {
+              "index": 0,
+              "start": 48,
+              "terminal": 1050
+            },
+            {
+              "index": 1,
+              "start": 1099,
+              "terminal": 2126
+            },
+            {
+              "index": 2,
+              "start": 2175,
+              "terminal": 3202
+            }
+          ],
+          "deterministic_counter_model": {
+            "commands": 3,
+            "finalizer_accepted": 16,
+            "finalizer_completed": 16,
+            "outputs": 16,
+            "protocol_error": 0,
+            "refills": 144,
+            "service_accepted": 3,
+            "service_completed": 3,
+            "service_req": 144,
+            "service_resp": 144,
+            "state_reads": 48,
+            "state_requests": 96,
+            "state_responses": 48,
+            "state_writes": 48,
+            "temporal_emitted": 16,
+            "temporal_heads": 1,
+            "temporal_inputs": 48,
+            "temporal_merges": 32
+          },
+          "distinct_window_refill_verified_by_exact_outputs": true,
+          "finalizer_busy_span_temporal_cycles": 1856,
+          "head_count": 1,
+          "modeled_service_span_cycles": 3203,
+          "name": "full_windows_3",
+          "passed": true,
+          "rows_sha256": "a19547cce627858a9ab471369ba039263fe3d22d6d7e304e6a33c970c4884881",
+          "service_cycle_counter_matches_affine_model": true,
+          "service_span_cycles": 3203,
+          "summary": {
+            "commands": 3,
+            "finalizer_accepted": 16,
+            "finalizer_completed": 16,
+            "finalizer_cycles": 4569,
+            "finalizer_first_accept": 2714,
+            "outputs": 16,
+            "protocol_error": 0,
+            "refills": 144,
+            "service_accepted": 3,
+            "service_completed": 3,
+            "service_cycles": 5484,
+            "service_req": 144,
+            "service_resp": 144,
+            "state_reads": 48,
+            "state_requests": 96,
+            "state_responses": 48,
+            "state_writes": 48,
+            "temporal_cycles": 4569,
+            "temporal_emitted": 16,
+            "temporal_heads": 1,
+            "temporal_inputs": 48,
+            "temporal_merges": 32
+          },
+          "window_count": 3
+        },
+        {
+          "all_modeled_counters_match_rtl": true,
+          "block_counts": [
+            [
+              3,
+              3,
+              3,
+              3
+            ]
+          ],
+          "command_cycles": [
+            {
+              "index": 0,
+              "start": 48,
+              "terminal": 1050
+            },
+            {
+              "index": 1,
+              "start": 1099,
+              "terminal": 2126
+            },
+            {
+              "index": 2,
+              "start": 2175,
+              "terminal": 3202
+            },
+            {
+              "index": 3,
+              "start": 3251,
+              "terminal": 4278
+            }
+          ],
+          "deterministic_counter_model": {
+            "commands": 4,
+            "finalizer_accepted": 16,
+            "finalizer_completed": 16,
+            "outputs": 16,
+            "protocol_error": 0,
+            "refills": 192,
+            "service_accepted": 4,
+            "service_completed": 4,
+            "service_req": 192,
+            "service_resp": 192,
+            "state_reads": 64,
+            "state_requests": 128,
+            "state_responses": 64,
+            "state_writes": 64,
+            "temporal_emitted": 16,
+            "temporal_heads": 1,
+            "temporal_inputs": 64,
+            "temporal_merges": 48
+          },
+          "distinct_window_refill_verified_by_exact_outputs": true,
+          "finalizer_busy_span_temporal_cycles": 1856,
+          "head_count": 1,
+          "modeled_service_span_cycles": 4279,
+          "name": "full_windows_4",
+          "passed": true,
+          "rows_sha256": "88e1c2450886dfa4a754f1b90829ad7bdc2d909ad8b8a6dab5ec9e67fca25029",
+          "service_cycle_counter_matches_affine_model": true,
+          "service_span_cycles": 4279,
+          "summary": {
+            "commands": 4,
+            "finalizer_accepted": 16,
+            "finalizer_completed": 16,
+            "finalizer_cycles": 5465,
+            "finalizer_first_accept": 3610,
+            "outputs": 16,
+            "protocol_error": 0,
+            "refills": 192,
+            "service_accepted": 4,
+            "service_completed": 4,
+            "service_cycles": 6559,
+            "service_req": 192,
+            "service_resp": 192,
+            "state_reads": 64,
+            "state_requests": 128,
+            "state_responses": 64,
+            "state_writes": 64,
+            "temporal_cycles": 5465,
+            "temporal_emitted": 16,
+            "temporal_heads": 1,
+            "temporal_inputs": 64,
+            "temporal_merges": 48
+          },
+          "window_count": 4
+        }
+      ],
+      "divider_lanes": 4,
+      "final_drain_temporal_cycles": 1856,
+      "projection": {
+        "final_partial_tokens": 8,
+        "full_windows_per_head": 5461,
+        "head_latency_ns_serial_upper_bound": 58793142.0,
+        "layer_latency_ns_serial_upper_bound": 1881380544.0,
+        "service_cycles_32_layer_serial_bound": 6018137088,
+        "service_cycles_per_head": 5877087,
+        "service_cycles_per_layer_serial_heads": 188066784,
+        "temporal_final_drain_cycles_32_layer_serial_bound": 1900544,
+        "temporal_final_drain_cycles_per_head": 1856,
+        "temporal_final_drain_cycles_per_layer_serial_heads": 59392,
+        "windows_per_head": 5462
+      },
+      "state_clear_reuse_rtl_case": {
+        "all_modeled_counters_match_rtl": true,
+        "block_counts": [
+          [
+            3,
+            3
+          ],
+          [
+            3,
+            3
+          ]
+        ],
+        "command_cycles": [
+          {
+            "index": 0,
+            "start": 48,
+            "terminal": 1050
+          },
+          {
+            "index": 1,
+            "start": 1099,
+            "terminal": 2126
+          },
+          {
+            "index": 2,
+            "start": 4318,
+            "terminal": 5320
+          },
+          {
+            "index": 3,
+            "start": 5369,
+            "terminal": 6396
+          }
+        ],
+        "deterministic_counter_model": {
+          "commands": 4,
+          "finalizer_accepted": 32,
+          "finalizer_completed": 32,
+          "outputs": 32,
+          "protocol_error": 0,
+          "refills": 192,
+          "service_accepted": 4,
+          "service_completed": 4,
+          "service_req": 192,
+          "service_resp": 192,
+          "state_reads": 64,
+          "state_requests": 128,
+          "state_responses": 64,
+          "state_writes": 64,
+          "temporal_emitted": 32,
+          "temporal_heads": 2,
+          "temporal_inputs": 64,
+          "temporal_merges": 32
+        },
+        "distinct_window_refill_verified_by_exact_outputs": true,
+        "finalizer_busy_span_temporal_cycles": 5414,
+        "head_count": 2,
+        "name": "two_head_state_clear_reuse",
+        "passed": true,
+        "rows_sha256": "5b08f0f26ca03d935ff6ee01e9f3d1d620ae1812e3a4b7bf66a69d70ce5d0014",
+        "service_span_cycles": 6397,
+        "summary": {
+          "commands": 4,
+          "finalizer_accepted": 32,
+          "finalizer_completed": 32,
+          "finalizer_cycles": 7230,
+          "finalizer_first_accept": 1817,
+          "outputs": 32,
+          "protocol_error": 0,
+          "refills": 192,
+          "service_accepted": 4,
+          "service_completed": 4,
+          "service_cycles": 8677,
+          "service_req": 192,
+          "service_resp": 192,
+          "state_reads": 64,
+          "state_requests": 128,
+          "state_responses": 64,
+          "state_writes": 64,
+          "temporal_cycles": 7230,
+          "temporal_emitted": 32,
+          "temporal_heads": 2,
+          "temporal_inputs": 64,
+          "temporal_merges": 32
+        },
+        "window_count": 4
+      },
+      "tail_adjustment_used_in_projection": false,
+      "tail_rtl_case": {
+        "all_modeled_counters_match_rtl": true,
+        "block_counts": [
+          [
+            3,
+            3,
+            3,
+            1
+          ]
+        ],
+        "command_cycles": [
+          {
+            "index": 0,
+            "start": 48,
+            "terminal": 1050
+          },
+          {
+            "index": 1,
+            "start": 1099,
+            "terminal": 2126
+          },
+          {
+            "index": 2,
+            "start": 2175,
+            "terminal": 3202
+          },
+          {
+            "index": 3,
+            "start": 3219,
+            "terminal": 3608
+          }
+        ],
+        "deterministic_counter_model": {
+          "commands": 4,
+          "finalizer_accepted": 16,
+          "finalizer_completed": 16,
+          "outputs": 16,
+          "protocol_error": 0,
+          "refills": 160,
+          "service_accepted": 4,
+          "service_completed": 4,
+          "service_req": 160,
+          "service_resp": 160,
+          "state_reads": 64,
+          "state_requests": 128,
+          "state_responses": 64,
+          "state_writes": 64,
+          "temporal_emitted": 16,
+          "temporal_heads": 1,
+          "temporal_inputs": 64,
+          "temporal_merges": 48
+        },
+        "distinct_window_refill_verified_by_exact_outputs": true,
+        "finalizer_busy_span_temporal_cycles": 1856,
+        "head_count": 1,
+        "name": "three_full_plus_8_token_tail",
+        "passed": true,
+        "rows_sha256": "98a2af6b6a8cf9814381fcafa459d7ba640bb68dc81d4ec1a24fd3fd63bba3b6",
+        "service_span_cycles": 3609,
+        "summary": {
+          "commands": 4,
+          "finalizer_accepted": 16,
+          "finalizer_completed": 16,
+          "finalizer_cycles": 4907,
+          "finalizer_first_accept": 3052,
+          "outputs": 16,
+          "protocol_error": 0,
+          "refills": 160,
+          "service_accepted": 4,
+          "service_completed": 4,
+          "service_cycles": 5890,
+          "service_req": 160,
+          "service_resp": 160,
+          "state_reads": 64,
+          "state_requests": 128,
+          "state_responses": 64,
+          "state_writes": 64,
+          "temporal_cycles": 4907,
+          "temporal_emitted": 16,
+          "temporal_heads": 1,
+          "temporal_inputs": 64,
+          "temporal_merges": 48
+        },
+        "window_count": 4
+      },
+      "tail_service_adjustment_cycles": -670
+    },
+    {
+      "affine_recurrence_proof": {
+        "bounded_window_counts": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "counter_deltas": [
+          1076,
+          1076,
+          1076
+        ],
+        "measured_service_span_cycles": [
+          1051,
+          2127,
+          3203,
+          4279
+        ],
+        "proven": true,
+        "recurrence": "service_cycles(N) = startup_cycles + (N - 1) * steady_state_cycles_per_additional_full_window",
+        "startup_cycles": 1051,
+        "steady_state_cycles_per_additional_full_window": 1076
+      },
+      "bounded_rtl_cases": [
+        {
+          "all_modeled_counters_match_rtl": true,
+          "block_counts": [
+            [
+              3
+            ]
+          ],
+          "command_cycles": [
+            {
+              "index": 0,
+              "start": 48,
+              "terminal": 1050
+            }
+          ],
+          "deterministic_counter_model": {
+            "commands": 1,
+            "finalizer_accepted": 16,
+            "finalizer_completed": 16,
+            "outputs": 16,
+            "protocol_error": 0,
+            "refills": 48,
+            "service_accepted": 1,
+            "service_completed": 1,
+            "service_req": 48,
+            "service_resp": 48,
+            "state_reads": 16,
+            "state_requests": 32,
+            "state_responses": 16,
+            "state_writes": 16,
+            "temporal_emitted": 16,
+            "temporal_heads": 1,
+            "temporal_inputs": 16,
+            "temporal_merges": 0
+          },
+          "distinct_window_refill_verified_by_exact_outputs": true,
+          "finalizer_busy_span_temporal_cycles": 944,
+          "head_count": 1,
+          "modeled_service_span_cycles": 1051,
+          "name": "full_windows_1",
+          "passed": true,
+          "rows_sha256": "ef05ddc2e0ecdfa8846eeea53d444e123761490d08929b0e1751aaf39d116142",
+          "service_cycle_counter_matches_affine_model": true,
+          "service_span_cycles": 1051,
+          "summary": {
+            "commands": 1,
+            "finalizer_accepted": 16,
+            "finalizer_completed": 16,
+            "finalizer_cycles": 1828,
+            "finalizer_first_accept": 885,
+            "outputs": 16,
+            "protocol_error": 0,
+            "refills": 48,
+            "service_accepted": 1,
+            "service_completed": 1,
+            "service_cycles": 2195,
+            "service_req": 48,
+            "service_resp": 48,
+            "state_reads": 16,
+            "state_requests": 32,
+            "state_responses": 16,
+            "state_writes": 16,
+            "temporal_cycles": 1828,
+            "temporal_emitted": 16,
+            "temporal_heads": 1,
+            "temporal_inputs": 16,
+            "temporal_merges": 0
+          },
+          "window_count": 1
+        },
+        {
+          "all_modeled_counters_match_rtl": true,
+          "block_counts": [
+            [
+              3,
+              3
+            ]
+          ],
+          "command_cycles": [
+            {
+              "index": 0,
+              "start": 48,
+              "terminal": 1050
+            },
+            {
+              "index": 1,
+              "start": 1099,
+              "terminal": 2126
+            }
+          ],
+          "deterministic_counter_model": {
+            "commands": 2,
+            "finalizer_accepted": 16,
+            "finalizer_completed": 16,
+            "outputs": 16,
+            "protocol_error": 0,
+            "refills": 96,
+            "service_accepted": 2,
+            "service_completed": 2,
+            "service_req": 96,
+            "service_resp": 96,
+            "state_reads": 32,
+            "state_requests": 64,
+            "state_responses": 32,
+            "state_writes": 32,
+            "temporal_emitted": 16,
+            "temporal_heads": 1,
+            "temporal_inputs": 32,
+            "temporal_merges": 16
+          },
+          "distinct_window_refill_verified_by_exact_outputs": true,
+          "finalizer_busy_span_temporal_cycles": 944,
+          "head_count": 1,
+          "modeled_service_span_cycles": 2127,
+          "name": "full_windows_2",
+          "passed": true,
+          "rows_sha256": "967baad16ab535b02d06dccd7a585854e680c2c7029edada90496fef6defa7e8",
+          "service_cycle_counter_matches_affine_model": true,
+          "service_span_cycles": 2127,
+          "summary": {
+            "commands": 2,
+            "finalizer_accepted": 16,
+            "finalizer_completed": 16,
+            "finalizer_cycles": 2760,
+            "finalizer_first_accept": 1817,
+            "outputs": 16,
+            "protocol_error": 0,
+            "refills": 96,
+            "service_accepted": 2,
+            "service_completed": 2,
+            "service_cycles": 3313,
+            "service_req": 96,
+            "service_resp": 96,
+            "state_reads": 32,
+            "state_requests": 64,
+            "state_responses": 32,
+            "state_writes": 32,
+            "temporal_cycles": 2760,
+            "temporal_emitted": 16,
+            "temporal_heads": 1,
+            "temporal_inputs": 32,
+            "temporal_merges": 16
+          },
+          "window_count": 2
+        },
+        {
+          "all_modeled_counters_match_rtl": true,
+          "block_counts": [
+            [
+              3,
+              3,
+              3
+            ]
+          ],
+          "command_cycles": [
+            {
+              "index": 0,
+              "start": 48,
+              "terminal": 1050
+            },
+            {
+              "index": 1,
+              "start": 1099,
+              "terminal": 2126
+            },
+            {
+              "index": 2,
+              "start": 2175,
+              "terminal": 3202
+            }
+          ],
+          "deterministic_counter_model": {
+            "commands": 3,
+            "finalizer_accepted": 16,
+            "finalizer_completed": 16,
+            "outputs": 16,
+            "protocol_error": 0,
+            "refills": 144,
+            "service_accepted": 3,
+            "service_completed": 3,
+            "service_req": 144,
+            "service_resp": 144,
+            "state_reads": 48,
+            "state_requests": 96,
+            "state_responses": 48,
+            "state_writes": 48,
+            "temporal_emitted": 16,
+            "temporal_heads": 1,
+            "temporal_inputs": 48,
+            "temporal_merges": 32
+          },
+          "distinct_window_refill_verified_by_exact_outputs": true,
+          "finalizer_busy_span_temporal_cycles": 944,
+          "head_count": 1,
+          "modeled_service_span_cycles": 3203,
+          "name": "full_windows_3",
+          "passed": true,
+          "rows_sha256": "a19547cce627858a9ab471369ba039263fe3d22d6d7e304e6a33c970c4884881",
+          "service_cycle_counter_matches_affine_model": true,
+          "service_span_cycles": 3203,
+          "summary": {
+            "commands": 3,
+            "finalizer_accepted": 16,
+            "finalizer_completed": 16,
+            "finalizer_cycles": 3657,
+            "finalizer_first_accept": 2714,
+            "outputs": 16,
+            "protocol_error": 0,
+            "refills": 144,
+            "service_accepted": 3,
+            "service_completed": 3,
+            "service_cycles": 4390,
+            "service_req": 144,
+            "service_resp": 144,
+            "state_reads": 48,
+            "state_requests": 96,
+            "state_responses": 48,
+            "state_writes": 48,
+            "temporal_cycles": 3657,
+            "temporal_emitted": 16,
+            "temporal_heads": 1,
+            "temporal_inputs": 48,
+            "temporal_merges": 32
+          },
+          "window_count": 3
+        },
+        {
+          "all_modeled_counters_match_rtl": true,
+          "block_counts": [
+            [
+              3,
+              3,
+              3,
+              3
+            ]
+          ],
+          "command_cycles": [
+            {
+              "index": 0,
+              "start": 48,
+              "terminal": 1050
+            },
+            {
+              "index": 1,
+              "start": 1099,
+              "terminal": 2126
+            },
+            {
+              "index": 2,
+              "start": 2175,
+              "terminal": 3202
+            },
+            {
+              "index": 3,
+              "start": 3251,
+              "terminal": 4278
+            }
+          ],
+          "deterministic_counter_model": {
+            "commands": 4,
+            "finalizer_accepted": 16,
+            "finalizer_completed": 16,
+            "outputs": 16,
+            "protocol_error": 0,
+            "refills": 192,
+            "service_accepted": 4,
+            "service_completed": 4,
+            "service_req": 192,
+            "service_resp": 192,
+            "state_reads": 64,
+            "state_requests": 128,
+            "state_responses": 64,
+            "state_writes": 64,
+            "temporal_emitted": 16,
+            "temporal_heads": 1,
+            "temporal_inputs": 64,
+            "temporal_merges": 48
+          },
+          "distinct_window_refill_verified_by_exact_outputs": true,
+          "finalizer_busy_span_temporal_cycles": 944,
+          "head_count": 1,
+          "modeled_service_span_cycles": 4279,
+          "name": "full_windows_4",
+          "passed": true,
+          "rows_sha256": "88e1c2450886dfa4a754f1b90829ad7bdc2d909ad8b8a6dab5ec9e67fca25029",
+          "service_cycle_counter_matches_affine_model": true,
+          "service_span_cycles": 4279,
+          "summary": {
+            "commands": 4,
+            "finalizer_accepted": 16,
+            "finalizer_completed": 16,
+            "finalizer_cycles": 4553,
+            "finalizer_first_accept": 3610,
+            "outputs": 16,
+            "protocol_error": 0,
+            "refills": 192,
+            "service_accepted": 4,
+            "service_completed": 4,
+            "service_cycles": 5465,
+            "service_req": 192,
+            "service_resp": 192,
+            "state_reads": 64,
+            "state_requests": 128,
+            "state_responses": 64,
+            "state_writes": 64,
+            "temporal_cycles": 4553,
+            "temporal_emitted": 16,
+            "temporal_heads": 1,
+            "temporal_inputs": 64,
+            "temporal_merges": 48
+          },
+          "window_count": 4
+        }
+      ],
+      "divider_lanes": 8,
+      "final_drain_temporal_cycles": 944,
+      "projection": {
+        "final_partial_tokens": 8,
+        "full_windows_per_head": 5461,
+        "head_latency_ns_serial_upper_bound": 58782198.0,
+        "layer_latency_ns_serial_upper_bound": 1881030336.0,
+        "service_cycles_32_layer_serial_bound": 6018137088,
+        "service_cycles_per_head": 5877087,
+        "service_cycles_per_layer_serial_heads": 188066784,
+        "temporal_final_drain_cycles_32_layer_serial_bound": 966656,
+        "temporal_final_drain_cycles_per_head": 944,
+        "temporal_final_drain_cycles_per_layer_serial_heads": 30208,
+        "windows_per_head": 5462
+      },
+      "state_clear_reuse_rtl_case": {
+        "all_modeled_counters_match_rtl": true,
+        "block_counts": [
+          [
+            3,
+            3
+          ],
+          [
+            3,
+            3
+          ]
+        ],
+        "command_cycles": [
+          {
+            "index": 0,
+            "start": 48,
+            "terminal": 1050
+          },
+          {
+            "index": 1,
+            "start": 1099,
+            "terminal": 2126
+          },
+          {
+            "index": 2,
+            "start": 3292,
+            "terminal": 4294
+          },
+          {
+            "index": 3,
+            "start": 4343,
+            "terminal": 5370
+          }
+        ],
+        "deterministic_counter_model": {
+          "commands": 4,
+          "finalizer_accepted": 32,
+          "finalizer_completed": 32,
+          "outputs": 32,
+          "protocol_error": 0,
+          "refills": 192,
+          "service_accepted": 4,
+          "service_completed": 4,
+          "service_req": 192,
+          "service_resp": 192,
+          "state_reads": 64,
+          "state_requests": 128,
+          "state_responses": 64,
+          "state_writes": 64,
+          "temporal_emitted": 32,
+          "temporal_heads": 2,
+          "temporal_inputs": 64,
+          "temporal_merges": 32
+        },
+        "distinct_window_refill_verified_by_exact_outputs": true,
+        "finalizer_busy_span_temporal_cycles": 3647,
+        "head_count": 2,
+        "name": "two_head_state_clear_reuse",
+        "passed": true,
+        "rows_sha256": "5b08f0f26ca03d935ff6ee01e9f3d1d620ae1812e3a4b7bf66a69d70ce5d0014",
+        "service_span_cycles": 5371,
+        "summary": {
+          "commands": 4,
+          "finalizer_accepted": 32,
+          "finalizer_completed": 32,
+          "finalizer_cycles": 5463,
+          "finalizer_first_accept": 1817,
+          "outputs": 32,
+          "protocol_error": 0,
+          "refills": 192,
+          "service_accepted": 4,
+          "service_completed": 4,
+          "service_cycles": 6557,
+          "service_req": 192,
+          "service_resp": 192,
+          "state_reads": 64,
+          "state_requests": 128,
+          "state_responses": 64,
+          "state_writes": 64,
+          "temporal_cycles": 5463,
+          "temporal_emitted": 32,
+          "temporal_heads": 2,
+          "temporal_inputs": 64,
+          "temporal_merges": 32
+        },
+        "window_count": 4
+      },
+      "tail_adjustment_used_in_projection": false,
+      "tail_rtl_case": {
+        "all_modeled_counters_match_rtl": true,
+        "block_counts": [
+          [
+            3,
+            3,
+            3,
+            1
+          ]
+        ],
+        "command_cycles": [
+          {
+            "index": 0,
+            "start": 48,
+            "terminal": 1050
+          },
+          {
+            "index": 1,
+            "start": 1099,
+            "terminal": 2126
+          },
+          {
+            "index": 2,
+            "start": 2175,
+            "terminal": 3202
+          },
+          {
+            "index": 3,
+            "start": 3219,
+            "terminal": 3608
+          }
+        ],
+        "deterministic_counter_model": {
+          "commands": 4,
+          "finalizer_accepted": 16,
+          "finalizer_completed": 16,
+          "outputs": 16,
+          "protocol_error": 0,
+          "refills": 160,
+          "service_accepted": 4,
+          "service_completed": 4,
+          "service_req": 160,
+          "service_resp": 160,
+          "state_reads": 64,
+          "state_requests": 128,
+          "state_responses": 64,
+          "state_writes": 64,
+          "temporal_emitted": 16,
+          "temporal_heads": 1,
+          "temporal_inputs": 64,
+          "temporal_merges": 48
+        },
+        "distinct_window_refill_verified_by_exact_outputs": true,
+        "finalizer_busy_span_temporal_cycles": 944,
+        "head_count": 1,
+        "name": "three_full_plus_8_token_tail",
+        "passed": true,
+        "rows_sha256": "98a2af6b6a8cf9814381fcafa459d7ba640bb68dc81d4ec1a24fd3fd63bba3b6",
+        "service_span_cycles": 3609,
+        "summary": {
+          "commands": 4,
+          "finalizer_accepted": 16,
+          "finalizer_completed": 16,
+          "finalizer_cycles": 3995,
+          "finalizer_first_accept": 3052,
+          "outputs": 16,
+          "protocol_error": 0,
+          "refills": 160,
+          "service_accepted": 4,
+          "service_completed": 4,
+          "service_cycles": 4795,
+          "service_req": 160,
+          "service_resp": 160,
+          "state_reads": 64,
+          "state_requests": 128,
+          "state_responses": 64,
+          "state_writes": 64,
+          "temporal_cycles": 3995,
+          "temporal_emitted": 16,
+          "temporal_heads": 1,
+          "temporal_inputs": 64,
+          "temporal_merges": 48
+        },
+        "window_count": 4
+      },
+      "tail_service_adjustment_cycles": -670
+    }
+  ],
+  "model": "attention_decode_score_multivalue_service_workload_correspondence_v1",
+  "passed": true,
+  "projection_counter_contract": {
+    "counter": "reset_release_to_last_service_terminal_cycles",
+    "elapsed_testbench_clock_counters_are_diagnostic_only": true,
+    "includes_first_refill": true,
+    "requires_exact_affine_deltas": true
+  },
+  "workload": {
+    "final_partial_tokens": 8,
+    "full_windows_per_head": 5461,
+    "heads_per_layer": 32,
+    "layers": 32,
+    "model": "Llama7B",
+    "sequence_length": 131072,
+    "tokens_per_full_window": 24,
+    "windows_per_head": 5462
+  }
+}
