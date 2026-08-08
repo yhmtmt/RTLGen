@@ -9738,6 +9738,92 @@ def test_generate_l2_campaign_task_adds_exact_partial_integrated_service_equival
             assert work_item.state == WorkItemState.BLOCKED
 
 
+def test_generate_l2_campaign_task_adds_finalized_cdc_lane_probe_campaign() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+        item_id = (
+            "l2_decoder_attention_decode_score_multivalue_service_"
+            "finalized_cdc_lane_probe_10ns_12ns_v1"
+        )
+        proposal_id = (
+            "prop_l2_decoder_attention_decode_score_multivalue_service_"
+            "finalized_cdc_lane_probe_v1"
+        )
+        proposal_path = f"docs/proposals/{proposal_id}/proposal.json"
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id=item_id,
+                    proposal_id=proposal_id,
+                    proposal_path=proposal_path,
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    abstraction_layer=(
+                        "decoder_attention_decode_score_multivalue_service_"
+                        "finalized_cdc_lane_probe"
+                    ),
+                    evaluation_mode="equivalence",
+                    requires_merged_inputs=True,
+                    requires_materialized_refs=False,
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            payload = work_item.task_request.request_payload
+            commands = payload["task"]["commands"]
+            run = commands[0]["run"]
+            decoder_inputs = work_item.input_manifest["decoder_contract"]
+
+            assert [command["name"] for command in commands] == [
+                "probe_decode_score_multivalue_service_finalized_cdc_lanes_10ns_12ns",
+                "validate_runs",
+            ]
+            assert "control_plane/scripts/run_bounded_command.py" in run
+            assert "--memory-max 8G" in run
+            assert "--runtime-max-sec 2400" in run
+            assert (
+                "run_attention_decode_score_multivalue_service_finalized_cdc_lane_campaign.py"
+                in run
+            )
+            assert "attention_decode_score_multivalue_service_finalized_cdc_lane_probe_v1/campaign.json" in run
+            assert decoder_inputs[
+                "decode_score_multivalue_service_finalized_cdc_lane_probe_out"
+            ].endswith("campaign_summary.json")
+            expected_outputs = payload["task"]["expected_outputs"]
+            assert len(expected_outputs) == 5
+            assert [Path(path).name for path in expected_outputs] == [
+                "lane1.json",
+                "lane2.json",
+                "lane4.json",
+                "lane8.json",
+                "campaign_summary.json",
+            ]
+            expected_worker_resources = {
+                "exclusive_worker": True,
+                "memory_high": "6G",
+                "memory_max": "8G",
+                "cpu_quota": "300%",
+                "tasks_max": 256,
+                "outer_timeout_seconds": 2400,
+                "stall_timeout_seconds": 600,
+            }
+            assert work_item.input_manifest["worker_resources"] == expected_worker_resources
+            assert payload["task"]["inputs"]["worker_resources"] == expected_worker_resources
+            assert payload["source_requirement"]["required_sha"] == source_commit
+            assert payload["source_requirement"]["required_ref"] == "origin/master"
+            assert payload["source_requirement"]["requires_daemon_restart"] is True
+
+
 def test_generate_l2_campaign_task_adds_decode_score_multivalue_service_activity_power() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
