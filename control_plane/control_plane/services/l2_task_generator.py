@@ -7869,6 +7869,7 @@ def _decoder_attention_decode_score_multivalue_service_exact_partial_physical_re
             "l2_decoder_attention_decode_score_multivalue_service_"
             "finalized_cdc_lane_probe_10ns_12ns_v1"
         ),
+        "l2_decoder_attention_exact_partial_c1_workload_correspondence_llama7b_v1",
     ]
     normalized_dependencies = [
         str(dependency).strip()
@@ -7877,7 +7878,7 @@ def _decoder_attention_decode_score_multivalue_service_exact_partial_physical_re
     ]
     if normalized_dependencies != required_dependencies:
         raise Layer2TaskGenerationError(
-            "exact-partial physical recost requires the exact physical and functional dependency items"
+            "exact-partial physical recost requires the exact physical, functional, and workload dependency items"
         )
 
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
@@ -7921,13 +7922,17 @@ def _decoder_attention_decode_score_multivalue_service_exact_partial_physical_re
             "decode_score_multivalue_service_exact_partial_physical_recost_functional_dependency_item_id": (
                 required_dependencies[1]
             ),
+            "decode_score_multivalue_service_exact_partial_physical_recost_workload_dependency_item_id": (
+                required_dependencies[2]
+            ),
             "decode_score_multivalue_service_exact_partial_physical_recost_out": out,
             "decode_score_multivalue_service_exact_partial_physical_recost_csv_out": csv_out,
             "decode_score_multivalue_service_exact_partial_physical_recost_scope": (
                 "Compose divider_lanes 1, 2, 4, and 8 from the promoted c1 r8 activity anchor, "
                 "lane-matched 12 ns temporal/finalizer rows, 10 ns source and 12 ns destination FIFO "
-                "views, and hashed finalized-CDC summaries. Preserve overlap/serial timing bounds and "
-                "provisional energy provenance; emit one aggregate JSON and one four-row CSV only."
+                "views, hashed finalized-CDC summaries, and the proven 131k Llama7B workload recurrence. "
+                "Preserve conservative workload timing bounds and provisional energy provenance; emit "
+                "one aggregate JSON and one four-row CSV only."
             ),
         },
         "commands": [
@@ -7939,9 +7944,10 @@ def _decoder_attention_decode_score_multivalue_service_exact_partial_physical_re
         "expected_outputs": [out, csv_out],
         "evidence_only": True,
         "acceptance": [
-            "Require both exact dependency items to be merged and materialized",
+            "Require all three exact dependency items to be merged and materialized",
             "Require four lane-matched rows ordered [1,2,4,8]",
             "Preserve overlap lower bounds and serial upper bounds from functional elapsed cycles",
+            "Preserve the fail-closed affine 131k Llama7B workload projection for every lane",
             "Preserve bounded provisional energy provenance and do not claim exact token energy",
             "Count one canonical source-domain FIFO while validating both FIFO domain views",
             "Write exactly one aggregate JSON report and one four-row CSV",

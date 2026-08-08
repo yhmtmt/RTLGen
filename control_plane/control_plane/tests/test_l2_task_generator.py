@@ -9878,6 +9878,7 @@ def test_generate_l2_campaign_task_adds_exact_partial_physical_recost_consumer()
                 "l2_decoder_attention_decode_score_multivalue_service_"
                 "finalized_cdc_lane_probe_10ns_12ns_v1"
             ),
+            "l2_decoder_attention_exact_partial_c1_workload_correspondence_llama7b_v1",
         ]
 
         with Session(engine) as session:
@@ -9945,7 +9946,8 @@ def test_exact_partial_physical_recost_consumer_rejects_missing_dependency() -> 
         create_all(engine)
 
         with Session(engine) as session, pytest.raises(
-            Layer2TaskGenerationError, match="requires the exact physical and functional dependency"
+            Layer2TaskGenerationError,
+            match="requires the exact physical, functional, and workload dependency",
         ):
             generate_l2_campaign_task(
                 session,

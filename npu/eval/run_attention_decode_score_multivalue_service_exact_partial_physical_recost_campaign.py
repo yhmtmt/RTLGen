@@ -34,7 +34,10 @@ _PHYSICAL_DEPENDENCY = "l1_decoder_attention_exact_partial_temporal_finalizer_bo
 _FUNCTIONAL_DEPENDENCY = (
     "l2_decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe_10ns_12ns_v1"
 )
-_DEPENDENCIES = (_PHYSICAL_DEPENDENCY, _FUNCTIONAL_DEPENDENCY)
+_WORKLOAD_DEPENDENCY = (
+    "l2_decoder_attention_exact_partial_c1_workload_correspondence_llama7b_v1"
+)
+_DEPENDENCIES = (_PHYSICAL_DEPENDENCY, _FUNCTIONAL_DEPENDENCY, _WORKLOAD_DEPENDENCY)
 _LANES = (1, 2, 4, 8)
 _SERVICE_PERIOD_NS = 10.0
 _TEMPORAL_PERIOD_NS = 12.0
@@ -53,6 +56,12 @@ _FUNCTIONAL_SUMMARY_MODEL = (
 )
 _FUNCTIONAL_CAMPAIGN_ID = (
     "attention_decode_score_multivalue_service_finalized_cdc_lane_probe_10ns_12ns_v1"
+)
+_WORKLOAD_MODEL = "attention_decode_score_multivalue_service_workload_correspondence_v1"
+_WORKLOAD_JSON = (
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+    "decoder_attention_exact_partial_c1_workload_correspondence__"
+    f"{_WORKLOAD_DEPENDENCY}.json"
 )
 
 
@@ -109,7 +118,9 @@ def _validate_campaign(payload: JsonDict) -> JsonDict:
         raise ValueError("campaign proposal_ref mismatch")
     dependencies = payload.get("depends_on_item_ids")
     if dependencies != list(_DEPENDENCIES):
-        raise ValueError("campaign must require exactly the physical and functional dependency items")
+        raise ValueError(
+            "campaign must require exactly the physical, functional, and workload dependency items"
+        )
 
     fixed = payload.get("fixed_inputs")
     if not isinstance(fixed, dict):
@@ -125,6 +136,10 @@ def _validate_campaign(payload: JsonDict) -> JsonDict:
     expected_summary = f"{_FUNCTIONAL_ROOT}/campaign_summary.json"
     if fixed.get("functional_probe_summary_json") != expected_summary:
         raise ValueError("campaign functional probe summary must come from the required functional item")
+    if fixed.get("workload_correspondence_json") != _WORKLOAD_JSON:
+        raise ValueError(
+            "campaign workload correspondence must come from the required workload item"
+        )
 
     for domain in ("source", "destination"):
         fifo = fixed.get(f"async_fifo_{domain}")
@@ -186,6 +201,65 @@ def _validate_functional_summary(
             raise ValueError(f"functional dependency output path mismatch for divider_lanes={lane}")
         if point.get("sha256") != _sha256(probe_path):
             raise ValueError(f"functional dependency hash mismatch for divider_lanes={lane}")
+
+
+def _validate_workload_correspondence(path: Path) -> dict[int, JsonDict]:
+    payload = _load_json(path)
+    if payload.get("model") != _WORKLOAD_MODEL or payload.get("passed") is not True:
+        raise ValueError("workload correspondence dependency must be passing")
+    workload = payload.get("workload")
+    if not isinstance(workload, dict):
+        raise ValueError("workload correspondence requires workload metadata")
+    if workload.get("sequence_length") != 131072 or workload.get("windows_per_head") != 5462:
+        raise ValueError("workload correspondence must describe the selected Llama7B 131k workload")
+    lane_reports = payload.get("lane_reports")
+    if not isinstance(lane_reports, list) or len(lane_reports) != len(_LANES):
+        raise ValueError("workload correspondence lane set mismatch")
+    by_lane: dict[int, JsonDict] = {}
+    for report, lane in zip(lane_reports, _LANES, strict=True):
+        if not isinstance(report, dict) or report.get("divider_lanes") != lane:
+            raise ValueError(f"workload correspondence lane mismatch for divider_lanes={lane}")
+        proof = report.get("affine_recurrence_proof")
+        projection = report.get("projection")
+        if not isinstance(proof, dict) or proof.get("proven") is not True:
+            raise ValueError(f"workload affine proof missing for divider_lanes={lane}")
+        if proof.get("bounded_window_counts") != [1, 2, 3, 4]:
+            raise ValueError(f"workload affine proof bounds mismatch for divider_lanes={lane}")
+        if not isinstance(projection, dict) or projection.get("windows_per_head") != 5462:
+            raise ValueError(f"workload projection missing for divider_lanes={lane}")
+        startup = proof.get("startup_cycles")
+        steady = proof.get("steady_state_cycles_per_additional_full_window")
+        measured = proof.get("measured_service_span_cycles")
+        deltas = proof.get("counter_deltas")
+        if (
+            not isinstance(startup, int)
+            or isinstance(startup, bool)
+            or startup <= 0
+            or not isinstance(steady, int)
+            or isinstance(steady, bool)
+            or steady <= 0
+        ):
+            raise ValueError(f"workload affine coefficients invalid for divider_lanes={lane}")
+        if measured != [startup + index * steady for index in range(4)]:
+            raise ValueError(f"workload affine measurements mismatch for divider_lanes={lane}")
+        if deltas != [steady, steady, steady]:
+            raise ValueError(f"workload affine deltas mismatch for divider_lanes={lane}")
+        service_cycles = projection.get("service_cycles_per_head")
+        final_drain = projection.get("temporal_final_drain_cycles_per_head")
+        expected_service_cycles = startup + (5462 - 1) * steady
+        if service_cycles != expected_service_cycles:
+            raise ValueError(f"workload service projection mismatch for divider_lanes={lane}")
+        if not isinstance(final_drain, int) or isinstance(final_drain, bool) or final_drain <= 0:
+            raise ValueError(f"workload final drain invalid for divider_lanes={lane}")
+        expected_head_ns = service_cycles * _SERVICE_PERIOD_NS + final_drain * _TEMPORAL_PERIOD_NS
+        if projection.get("head_latency_ns_serial_upper_bound") != expected_head_ns:
+            raise ValueError(f"workload head latency mismatch for divider_lanes={lane}")
+        if projection.get("layer_latency_ns_serial_upper_bound") != expected_head_ns * 32:
+            raise ValueError(f"workload layer latency mismatch for divider_lanes={lane}")
+        if report.get("tail_adjustment_used_in_projection") is not False:
+            raise ValueError(f"workload projection must conservatively omit tail saving for lane={lane}")
+        by_lane[lane] = report
+    return by_lane
 
 
 def _audit_kwargs(*, campaign: JsonDict, point: JsonDict, repo_root: Path) -> JsonDict:
@@ -283,6 +357,15 @@ def run_campaign(
         "functional dependency campaign summary",
     )
     _validate_functional_summary(summary_path=summary_path, campaign=campaign, repo_root=repo_root)
+    workload_path = _require_file(
+        _repo_path(
+            repo_root,
+            campaign["fixed_inputs"]["workload_correspondence_json"],
+            "workload_correspondence_json",
+        ),
+        "workload correspondence dependency",
+    )
+    workload_by_lane = _validate_workload_correspondence(workload_path)
 
     rows: list[JsonDict] = []
     point_summaries: list[JsonDict] = []
@@ -291,7 +374,37 @@ def run_campaign(
         print(f"recosting exact-partial composed service divider_lanes={lane}", flush=True)
         report = audit_runner(**_audit_kwargs(campaign=campaign, point=point, repo_root=repo_root))
         point_summary = _lightweight_point(report, lane=lane)
-        rows.append(report["rows"][0])
+        workload = workload_by_lane[lane]
+        proof = workload["affine_recurrence_proof"]
+        projection = workload["projection"]
+        row = dict(report["rows"][0])
+        row.update(
+            {
+                "workload_windows_per_head": projection["windows_per_head"],
+                "workload_service_startup_cycles": proof["startup_cycles"],
+                "workload_service_steady_cycles_per_window": proof[
+                    "steady_state_cycles_per_additional_full_window"
+                ],
+                "workload_service_cycles_per_head": projection["service_cycles_per_head"],
+                "workload_temporal_final_drain_cycles_per_head": projection[
+                    "temporal_final_drain_cycles_per_head"
+                ],
+                "workload_head_latency_ns_serial_upper_bound": projection[
+                    "head_latency_ns_serial_upper_bound"
+                ],
+                "workload_layer_latency_ns_serial_upper_bound": projection[
+                    "layer_latency_ns_serial_upper_bound"
+                ],
+            }
+        )
+        rows.append(row)
+        point_summary["workload_correspondence"] = {
+            "affine_recurrence_proof": proof,
+            "projection": projection,
+            "tail_adjustment_used_in_projection": workload[
+                "tail_adjustment_used_in_projection"
+            ],
+        }
         point_summaries.append(point_summary)
 
     fieldnames = list(rows[0])
@@ -305,12 +418,13 @@ def run_campaign(
         "proposal_ref": campaign["proposal_ref"],
         "dependency_contract": {
             "depends_on_item_ids": list(_DEPENDENCIES),
-            "both_dependencies_required": True,
-            "both_dependencies_materialized": True,
+            "all_dependencies_required": True,
+            "all_dependencies_materialized": True,
         },
         "campaign_path": campaign_path.relative_to(repo_root).as_posix(),
         "campaign_sha256": _sha256(campaign_path),
         "functional_dependency_summary_sha256": _sha256(summary_path),
+        "workload_correspondence_sha256": _sha256(workload_path),
         "divider_lanes": list(_LANES),
         "point_count": len(rows),
         "points": point_summaries,
@@ -321,6 +435,7 @@ def run_campaign(
             "per_lane_recost_reports_omitted": True,
             "overlap_and_serial_bounds_preserved": True,
             "provisional_energy_provenance_preserved": True,
+            "llama7b_workload_projection_preserved": True,
         },
     }
 

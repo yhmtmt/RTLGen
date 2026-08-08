@@ -14,7 +14,8 @@
       "cost_class": "lightweight",
       "depends_on_item_ids": [
         "l1_decoder_attention_exact_partial_temporal_finalizer_bounded_12ns_physical_v1_r1",
-        "l2_decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe_10ns_12ns_v1"
+        "l2_decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe_10ns_12ns_v1",
+        "l2_decoder_attention_exact_partial_c1_workload_correspondence_llama7b_v1"
       ],
       "requires_merged_inputs": true,
       "requires_materialized_refs": true,
@@ -24,7 +25,7 @@
         "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost__l2_decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost_10ns_12ns_v1.json",
         "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost__l2_decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost_10ns_12ns_v1.csv"
       ],
-      "acceptance_notes": "Fail closed unless both exact dependency items are satisfied and all four lane-matched 12 ns temporal bundles plus hashed finalized-CDC probe summaries are materialized. Require four rows ordered [1,2,4,8], source-domain single-FIFO accounting from the 10 ns row, the 12 ns destination diagnostic row, preserved overlap/serial timing bounds, and bounded provisional energy provenance. Emit no per-lane recost files.",
+      "acceptance_notes": "Fail closed unless all three exact dependency items are satisfied and all four lane-matched 12 ns temporal bundles, hashed finalized-CDC probe summaries, and the passing 131k Llama7B workload-correspondence report are materialized. Require four rows ordered [1,2,4,8], source-domain single-FIFO accounting from the 10 ns row, the 12 ns destination diagnostic row, preserved overlap/serial timing bounds, conservative affine workload projections, and bounded provisional energy provenance. Emit no per-lane recost files.",
       "notes": "Queue only from merged origin/master after dependency materialization. This preparation request must not be dispatched."
     }
   ]

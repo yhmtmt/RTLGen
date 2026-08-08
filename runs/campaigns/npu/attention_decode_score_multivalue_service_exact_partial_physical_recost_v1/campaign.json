@@ -7,7 +7,8 @@
   },
   "depends_on_item_ids": [
     "l1_decoder_attention_exact_partial_temporal_finalizer_bounded_12ns_physical_v1_r1",
-    "l2_decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe_10ns_12ns_v1"
+    "l2_decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe_10ns_12ns_v1",
+    "l2_decoder_attention_exact_partial_c1_workload_correspondence_llama7b_v1"
   ],
   "fixed_inputs": {
     "service_activity_power_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_service_activity_power__l2_decoder_attention_decode_score_multivalue_service_c1_activity_power_llama7b_v1_r8.json",
@@ -26,7 +27,8 @@
       "config_json": "runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_destination_domain_physical/config.json",
       "macro_manifest_json": "runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_destination_domain_physical/macro_manifest.json"
     },
-    "functional_probe_summary_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe__l2_decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe_10ns_12ns_v1/campaign_summary.json"
+    "functional_probe_summary_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe__l2_decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe_10ns_12ns_v1/campaign_summary.json",
+    "workload_correspondence_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_exact_partial_c1_workload_correspondence__l2_decoder_attention_exact_partial_c1_workload_correspondence_llama7b_v1.json"
   },
   "points": [
     {
