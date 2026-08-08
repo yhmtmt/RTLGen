@@ -15,6 +15,7 @@
       "requires_merged_inputs": true,
       "requires_materialized_refs": false,
       "run_physical": false,
+      "campaign_path": "runs/campaigns/npu/attention_exact_partial_c1_workload_correspondence_v1/campaign.json",
       "command": "python3 npu/eval/probe_attention_decode_score_multivalue_service_workload_correspondence.py --out runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_exact_partial_c1_workload_correspondence__l2_decoder_attention_exact_partial_c1_workload_correspondence_llama7b_v1.json",
       "expected_outputs": [
         "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_exact_partial_c1_workload_correspondence__l2_decoder_attention_exact_partial_c1_workload_correspondence_llama7b_v1.json"

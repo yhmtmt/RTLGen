@@ -1,0 +1,23 @@
+{
+  "model": "attention_decode_score_multivalue_service_workload_correspondence_campaign_v1",
+  "campaign_id": "attention_exact_partial_c1_workload_correspondence_llama7b_131k_v1",
+  "proposal_ref": {
+    "proposal_id": "prop_l2_decoder_attention_exact_partial_c1_workload_correspondence_llama7b_v1",
+    "proposal_path": "docs/proposals/prop_l2_decoder_attention_exact_partial_c1_workload_correspondence_llama7b_v1/proposal.json"
+  },
+  "fixed_parameters": {
+    "sequence_length": 131072,
+    "tokens_per_full_window": 24,
+    "windows_per_head": 5462,
+    "service_period_ns": 10.0,
+    "temporal_period_ns": 12.0,
+    "divider_lanes": [1, 2, 4, 8],
+    "temporal_state_backend": "sram",
+    "service_value_memory_backend": "macro_banked_4x16x64x32"
+  },
+  "outputs": {
+    "campaign_dir": "runs/campaigns/npu/attention_exact_partial_c1_workload_correspondence_v1/results",
+    "results_csv": "runs/campaigns/npu/attention_exact_partial_c1_workload_correspondence_v1/results/results.csv",
+    "report_md": "runs/campaigns/npu/attention_exact_partial_c1_workload_correspondence_v1/results/report.md"
+  }
+}
