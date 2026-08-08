@@ -1,0 +1,64 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_exact_partial_c1_workload_correspondence_llama7b_v1",
+  "created_utc": "2026-08-08T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Exact-partial c1 bounded RTL workload correspondence for Llama7B 131k",
+  "abstraction_layer": "decoder_attention_exact_partial_c1_workload_correspondence",
+  "hypothesis": "Bounded finalized-CDC RTL at window_count 1 through 4 can prove an affine startup and steady-state service recurrence, while explicit final-drain, tail, refill, persistent-state, and state-reuse checks make a 5462-window/head projection fail closed without brute-force full-layer RTL.",
+  "direct_comparison": {
+    "primary_question": "Do deterministic schedule counters and exact values match bounded real RTL for every divider width at 10 ns / 12 ns, and are the full-window service deltas affine before projection to 5462 windows/head and 32 heads/layer?",
+    "include": [
+      "window_count 1, 2, 3, and 4",
+      "three full 24-token windows followed by one 8-token tail",
+      "distinct per-window macro value-store refills",
+      "persistent SRAM temporal state",
+      "exactly one 16-slice finalization per head",
+      "two sequential heads reusing one temporal-state slot without reset",
+      "divider_lanes 1, 2, 4, and 8 at service_period_ns=10 and temporal_period_ns=12",
+      "affine-only projection to 5462 windows/head and serial 32-head/layer bounds"
+    ],
+    "exclude": [
+      "brute-force 5462-window or full-layer RTL simulation",
+      "physical synthesis, place-and-route, or activity power",
+      "inter-head or inter-layer overlap credit",
+      "tail-cycle savings in the affine full-window projection"
+    ],
+    "metrics": [
+      "service startup cycles",
+      "steady-state service cycles per additional full window",
+      "temporal final-drain cycles by divider lanes",
+      "refill/request/response counts",
+      "temporal state read/write counts",
+      "finalizer accepted/completed counts",
+      "serial per-head, per-layer, and 32-layer bounds"
+    ]
+  },
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_exact_partial_c1_workload_correspondence_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Evaluate the checked-in bounded RTL correspondence report and its affine-only Llama7B projection.",
+      "evaluation_mode": "equivalence",
+      "abstraction_layer": "decoder_attention_exact_partial_c1_workload_correspondence",
+      "comparison_role": "workload_correspondence_prerequisite",
+      "status": "ready_to_queue_after_merge",
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": false,
+      "run_physical": false,
+      "notes": "Preparation only. Queue from merged origin/master; do not dispatch this branch."
+    }
+  ],
+  "source_refs": [
+    "npu/eval/probe_attention_decode_score_multivalue_service_workload_correspondence.py",
+    "npu/eval/probe_attention_decode_score_multivalue_service_finalized_cdc.py",
+    "docs/proposals/prop_l2_decoder_attention_exact_partial_c1_workload_correspondence_llama7b_v1/workload_correspondence_report.md",
+    "docs/proposals/prop_l2_decoder_attention_exact_partial_c1_workload_correspondence_llama7b_v1/workload_correspondence_report.json"
+  ],
+  "remaining_abstractions_after_this_step": [
+    "The recurrence proves bounded scheduling correspondence, not physical timing closure.",
+    "The serial layer bounds intentionally credit no head or layer overlap.",
+    "CDC MTBF and activity-backed energy remain separate signoff requirements."
+  ]
+}
