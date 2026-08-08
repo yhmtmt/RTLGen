@@ -9,6 +9,7 @@
   "additional_libs": ["/orfs/flow/platforms/nangate45/lib/fakeram45_64x32.lib"],
   "additional_gds": [],
   "blackbox_verilog": ["npu/rtl/fakeram45_64x32_blackbox.v"],
+  "macro_placement_tcl": "../../../campaigns/npu/attention_exact_partial_physical_calibration_v2/macro_placement/nangate45_temporal_finalizer_l1_12ns_seed.tcl",
   "source": {
     "mode": "generated_physical_harness",
     "generator": "npu/rtlgen/gen_attention_score32_exact_partial_temporal_finalizer_physical_harness.py"

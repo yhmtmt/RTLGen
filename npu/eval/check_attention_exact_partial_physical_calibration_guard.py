@@ -24,6 +24,17 @@ from npu.rtlgen.gen_attention_score32_exact_partial_temporal_finalizer_physical_
 _TEMPORAL_KEY = "attention_score32_exact_partial_temporal_finalizer_physical_harness"
 _CDC_KEY = "attention_exact_partial_async_fifo_physical_harness"
 _PROPOSAL_ID = "prop_l1_decoder_attention_exact_partial_physical_calibration_v1"
+_MACRO_WIDTH_UM = 20.14
+_MACRO_HEIGHT_UM = 61.6
+_CORE_LX_UM = 50.0
+_CORE_LY_UM = 50.0
+_CORE_UX_UM = 1550.0
+_CORE_UY_UM = 1550.0
+_PLACEMENT_RE = re.compile(
+    r"^place_macro\s+-macro_name\s+\{([^}]+)\}\s+"
+    r"-location\s+\{([0-9.]+)\s+([0-9.]+)\}\s+"
+    r"-orientation\s+(R0|MY)$"
+)
 
 
 def _json(path: Path) -> dict[str, object]:
@@ -47,6 +58,63 @@ def _top_module(rtl: str, top_name: str) -> str:
 def _require(value: object, expected: object, label: str) -> None:
     if value != expected:
         raise SystemExit(f"{label}: expected {expected!r}, got {value!r}")
+
+
+def _validate_temporal_macro_placement(
+    *, design_dir: Path, checked_macro: dict[str, object]
+) -> Path:
+    raw_path = str(checked_macro.get("macro_placement_tcl") or "").strip()
+    if not raw_path:
+        raise SystemExit("temporal macro manifest requires macro_placement_tcl")
+    placement_path = Path(raw_path)
+    if not placement_path.is_absolute():
+        placement_path = (design_dir / placement_path).resolve()
+    if not placement_path.is_file():
+        raise SystemExit(f"missing temporal macro placement: {placement_path}")
+
+    placements: dict[str, tuple[float, float, str]] = {}
+    for line_number, raw_line in enumerate(
+        placement_path.read_text(encoding="utf-8").splitlines(), start=1
+    ):
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+        match = _PLACEMENT_RE.fullmatch(line)
+        if match is None:
+            raise SystemExit(
+                f"unsupported temporal macro placement line {line_number}: {line}"
+            )
+        name, x_text, y_text, orientation = match.groups()
+        if name in placements:
+            raise SystemExit(f"duplicate temporal macro placement: {name}")
+        x_um = float(x_text)
+        y_um = float(y_text)
+        if not (
+            _CORE_LX_UM <= x_um
+            and _CORE_LY_UM <= y_um
+            and x_um + _MACRO_WIDTH_UM <= _CORE_UX_UM
+            and y_um + _MACRO_HEIGHT_UM <= _CORE_UY_UM
+        ):
+            raise SystemExit(f"temporal macro placement lies outside the core: {name}")
+        placements[name] = (x_um, y_um, orientation)
+
+    expected = {
+        (
+            "u_temporal/u_state_memory/"
+            f"gen_bank\\[{bank}\\].gen_lane\\[{lane}\\].u_state_mem"
+        )
+        for bank in range(8)
+        for lane in range(13)
+    }
+    actual = set(placements)
+    if actual != expected:
+        missing = sorted(expected - actual)
+        unexpected = sorted(actual - expected)
+        raise SystemExit(
+            "temporal macro placement inventory mismatch: "
+            f"missing={missing[:4]} unexpected={unexpected[:4]}"
+        )
+    return placement_path
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -118,6 +186,10 @@ def main(argv: list[str] | None = None) -> int:
         _require(manifest.get("macro_count"), 104, "temporal macro count")
         _require(generated_params.get("macro_count"), 104, "generated macro count")
         _require(checked_params.get("macro_count"), 104, "checked macro count")
+        placement_path = _validate_temporal_macro_placement(
+            design_dir=design_dir,
+            checked_macro=checked_macro,
+        )
         _require(
             manifest.get("temporal_scale_divider_impl"),
             "mersenne24_correction2_exact",
@@ -172,6 +244,9 @@ def main(argv: list[str] | None = None) -> int:
                 "design": top_name,
                 "kind": kind,
                 "top_pin_bits": manifest["top_pin_bits"],
+                "macro_placement_tcl": (
+                    str(placement_path) if kind == "temporal_finalizer" else None
+                ),
                 "status": "ok",
             },
             indent=2,
