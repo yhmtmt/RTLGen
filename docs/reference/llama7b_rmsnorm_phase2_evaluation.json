@@ -1,0 +1,88 @@
+{
+  "candidates": [
+    {
+      "categories": {
+        "adversarial": {
+          "exact": 118740,
+          "exact_rate": 0.9996295797413793,
+          "max_ulp": 1,
+          "outputs": 118784,
+          "rows": 29,
+          "within_1_ulp": 118784,
+          "within_1_ulp_rate": 1.0,
+          "within_2_ulp": 118784,
+          "within_2_ulp_rate": 1.0,
+          "worst_case": "broad_exponent_00"
+        },
+        "representative": {
+          "exact": 114572,
+          "exact_rate": 0.9989885602678571,
+          "max_ulp": 1,
+          "outputs": 114688,
+          "rows": 28,
+          "within_1_ulp": 114688,
+          "within_1_ulp_rate": 1.0,
+          "within_2_ulp": 114688,
+          "within_2_ulp_rate": 1.0,
+          "worst_case": "llama_like_00"
+        }
+      },
+      "iterations": 1,
+      "output_signed_ulp_mean": -8.566337719298245e-06,
+      "rsqrt_relative_error": {
+        "max_abs": 1.9527170783018022e-05,
+        "mean": -1.4647807878133e-07,
+        "negative_rows": 23,
+        "positive_rows": 34,
+        "zero_rows": 0
+      }
+    },
+    {
+      "categories": {
+        "adversarial": {
+          "exact": 118784,
+          "exact_rate": 1.0,
+          "max_ulp": 0,
+          "outputs": 118784,
+          "rows": 29,
+          "within_1_ulp": 118784,
+          "within_1_ulp_rate": 1.0,
+          "within_2_ulp": 118784,
+          "within_2_ulp_rate": 1.0,
+          "worst_case": ""
+        },
+        "representative": {
+          "exact": 114667,
+          "exact_rate": 0.99981689453125,
+          "max_ulp": 1,
+          "outputs": 114688,
+          "rows": 28,
+          "within_1_ulp": 114688,
+          "within_1_ulp_rate": 1.0,
+          "within_2_ulp": 114688,
+          "within_2_ulp_rate": 1.0,
+          "worst_case": "llama_like_02"
+        }
+      },
+      "iterations": 2,
+      "output_signed_ulp_mean": 3.85485197368421e-05,
+      "rsqrt_relative_error": {
+        "max_abs": 1.9562982380705307e-06,
+        "mean": 2.3596277286872798e-07,
+        "negative_rows": 17,
+        "positive_rows": 32,
+        "zero_rows": 8
+      }
+    }
+  ],
+  "chosen_iterations": 1,
+  "configured_iterations": 1,
+  "contract": "llama7b_rmsnorm_bf16_phase2_v1",
+  "formats": {
+    "epsilon": "1099512 * 2^-40",
+    "one_iteration_bias_q20": 4,
+    "seed_and_rsqrt": "Q1.20",
+    "seed_rom_entries": 192,
+    "variance_mantissa": "Q2.24"
+  }
+}
