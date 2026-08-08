@@ -1,0 +1,9 @@
+{
+  "item_id": "l1_decoder_attention_decode_score_multivalue_gqa8_folded_lanes2_pnr_v1",
+  "completed_trials": 1,
+  "success_count": 0,
+  "failure_count": 1,
+  "success_rate": 0.0,
+  "partial_metrics_count": 0,
+  "metrics": {}
+}
