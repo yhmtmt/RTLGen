@@ -90,6 +90,20 @@ def _write_committed_finalized_cdc_lane_campaign(repo_root: Path) -> str:
     return relative_path.as_posix()
 
 
+def _write_committed_workload_correspondence_campaign(repo_root: Path) -> str:
+    relative_path = Path(
+        "runs/campaigns/npu/"
+        "attention_exact_partial_c1_workload_correspondence_v1/campaign.json"
+    )
+    source_path = Path(__file__).resolve().parents[3] / relative_path
+    destination_path = repo_root / relative_path
+    destination_path.parent.mkdir(parents=True, exist_ok=True)
+    destination_path.write_text(
+        source_path.read_text(encoding="utf-8"), encoding="utf-8"
+    )
+    return relative_path.as_posix()
+
+
 def _write_committed_exact_partial_physical_recost_campaign(repo_root: Path) -> str:
     relative_path = Path(
         "runs/campaigns/npu/"
@@ -9853,6 +9867,80 @@ def test_generate_l2_campaign_task_adds_finalized_cdc_lane_probe_campaign() -> N
             assert payload["source_requirement"]["required_sha"] == source_commit
             assert payload["source_requirement"]["required_ref"] == "origin/master"
             assert payload["source_requirement"]["requires_daemon_restart"] is True
+
+
+def test_generate_l2_campaign_task_adds_workload_correspondence_campaign() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_committed_workload_correspondence_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+        item_id = "l2_decoder_attention_exact_partial_c1_workload_correspondence_llama7b_v1"
+        proposal_id = (
+            "prop_l2_decoder_attention_exact_partial_c1_workload_correspondence_llama7b_v1"
+        )
+        proposal_path = f"docs/proposals/{proposal_id}/proposal.json"
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id=item_id,
+                    proposal_id=proposal_id,
+                    proposal_path=proposal_path,
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    abstraction_layer="decoder_attention_exact_partial_c1_workload_correspondence",
+                    evaluation_mode="equivalence",
+                    requires_merged_inputs=True,
+                    requires_materialized_refs=False,
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            payload = work_item.task_request.request_payload
+            commands = payload["task"]["commands"]
+            run = commands[0]["run"]
+            decoder_inputs = work_item.input_manifest["decoder_contract"]
+
+            assert [command["name"] for command in commands] == [
+                "probe_exact_partial_c1_workload_correspondence_llama7b_131k",
+                "validate_runs",
+            ]
+            assert "control_plane/scripts/run_bounded_command.py" in run
+            assert "--memory-max 6G" in run
+            assert "--runtime-max-sec 600" in run
+            assert (
+                "probe_attention_decode_score_multivalue_service_workload_correspondence.py"
+                in run
+            )
+            assert payload["task"]["expected_outputs"] == [
+                decoder_inputs["exact_partial_c1_workload_correspondence_out"]
+            ]
+            assert payload["developer_loop"]["dependencies"] == {
+                "item_ids": [],
+                "requires_merged_inputs": True,
+                "requires_materialized_refs": False,
+            }
+            expected_worker_resources = {
+                "exclusive_worker": True,
+                "memory_high": "4G",
+                "memory_max": "6G",
+                "cpu_quota": "200%",
+                "tasks_max": 192,
+                "outer_timeout_seconds": 600,
+                "stall_timeout_seconds": 300,
+            }
+            assert work_item.input_manifest["worker_resources"] == expected_worker_resources
+            assert payload["source_requirement"]["required_sha"] == source_commit
+            assert payload["source_requirement"]["required_ref"] == "origin/master"
+            assert payload["source_requirement"]["requires_daemon_restart"] is True
+            assert work_item.state == WorkItemState.DISPATCH_PENDING
 
 
 def test_generate_l2_campaign_task_adds_exact_partial_physical_recost_consumer() -> None:

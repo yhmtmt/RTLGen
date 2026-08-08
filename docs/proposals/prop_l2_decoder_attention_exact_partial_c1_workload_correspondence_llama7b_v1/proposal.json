@@ -51,6 +51,7 @@
     }
   ],
   "source_refs": [
+    "runs/campaigns/npu/attention_exact_partial_c1_workload_correspondence_v1/campaign.json",
     "npu/eval/probe_attention_decode_score_multivalue_service_workload_correspondence.py",
     "npu/eval/probe_attention_decode_score_multivalue_service_finalized_cdc.py",
     "docs/proposals/prop_l2_decoder_attention_exact_partial_c1_workload_correspondence_llama7b_v1/workload_correspondence_report.md",

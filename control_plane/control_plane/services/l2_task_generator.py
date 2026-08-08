@@ -7848,6 +7848,83 @@ def _decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe_
     }
 
 
+def _decoder_attention_exact_partial_c1_workload_correspondence_evidence(
+    *,
+    item_id: str,
+    proposal_id: str | None = None,
+    proposal_path: str | None = None,
+) -> dict[str, Any]:
+    expected_proposal_id = (
+        "prop_l2_decoder_attention_exact_partial_c1_workload_correspondence_llama7b_v1"
+    )
+    expected_proposal_path = f"docs/proposals/{expected_proposal_id}/proposal.json"
+    if str(proposal_id or "").strip() != expected_proposal_id:
+        raise Layer2TaskGenerationError("workload correspondence proposal_id mismatch")
+    if str(proposal_path or "").strip() != expected_proposal_path:
+        raise Layer2TaskGenerationError("workload correspondence proposal_path mismatch")
+    campaign = (
+        "runs/campaigns/npu/"
+        "attention_exact_partial_c1_workload_correspondence_v1/campaign.json"
+    )
+    out = (
+        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+        "decoder_attention_exact_partial_c1_workload_correspondence__"
+        f"{item_id}.json"
+    )
+    command = _bounded_launcher_command(
+        memory_high="4G",
+        memory_max="6G",
+        cpu_quota="200%",
+        tasks_max=192,
+        runtime_max_sec=600,
+        child_command=[
+            "python3",
+            "npu/eval/probe_attention_decode_score_multivalue_service_workload_correspondence.py",
+            "--out",
+            out,
+        ],
+    )
+    return {
+        "inputs": {
+            "exact_partial_c1_workload_correspondence_campaign": campaign,
+            "exact_partial_c1_workload_correspondence_out": out,
+            "exact_partial_c1_workload_correspondence_scope": (
+                "Run the bounded finalized-CDC RTL matrix for divider lanes 1, 2, 4, and 8 over "
+                "one through four full windows, one eight-token tail, and same-slot two-head reuse. "
+                "Require exact software values and counters, then project 5,462 windows per head "
+                "only from equal measured affine deltas."
+            ),
+        },
+        "commands": [
+            {
+                "name": "probe_exact_partial_c1_workload_correspondence_llama7b_131k",
+                "run": command,
+            }
+        ],
+        "expected_outputs": [out],
+        "evidence_only": True,
+        "worker_resources": {
+            "exclusive_worker": True,
+            "memory_high": "4G",
+            "memory_max": "6G",
+            "cpu_quota": "200%",
+            "tasks_max": 192,
+            "outer_timeout_seconds": 600,
+            "stall_timeout_seconds": 300,
+        },
+        "acceptance": [
+            "Require divider_lanes [1,2,4,8] at service_period_ns=10 and temporal_period_ns=12",
+            "Require exact software/RTL outputs and every modeled counter for all bounded cases",
+            "Require equal service deltas for full-window counts 1, 2, 3, and 4",
+            "Require a real 8-token tail refill/finalization and two-head same-slot state reuse",
+            "Project 5,462 windows per head only from the proven affine recurrence",
+            "Keep the measured tail saving uncredited in the conservative projection",
+            "Write exactly one workload correspondence JSON artifact",
+            "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing",
+        ],
+    }
+
+
 def _decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost_evidence(
     *,
     item_id: str,
@@ -12061,6 +12138,7 @@ def _build_payload(
         "decoder_attention_decode_score_multivalue_integrated_service",
         "decoder_attention_decode_score_multivalue_service_exact_partial_equivalence",
         "decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe",
+        "decoder_attention_exact_partial_c1_workload_correspondence",
         "decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost",
         "decoder_attention_decode_score_multivalue_service_activity_power",
         "decoder_attention_decode_score_multivalue_service_measured_frontier",
@@ -12369,6 +12447,12 @@ def _build_payload(
                     proposal_id=proposal_id,
                     proposal_path=proposal_path,
                 )
+            )
+        elif abstraction_layer_name == "decoder_attention_exact_partial_c1_workload_correspondence":
+            decoder_evidence = _decoder_attention_exact_partial_c1_workload_correspondence_evidence(
+                item_id=item_id,
+                proposal_id=proposal_id,
+                proposal_path=proposal_path,
             )
         elif abstraction_layer_name == "decoder_attention_decode_score_multivalue_service_activity_power":
             decoder_evidence = _decoder_attention_decode_score_multivalue_service_activity_power_evidence(
