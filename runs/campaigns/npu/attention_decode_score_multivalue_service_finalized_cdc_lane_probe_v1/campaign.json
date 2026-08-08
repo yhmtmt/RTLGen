@@ -16,5 +16,10 @@
     2,
     4,
     8
-  ]
+  ],
+  "outputs": {
+    "campaign_dir": "runs/campaigns/npu/attention_decode_score_multivalue_service_finalized_cdc_lane_probe_v1/results",
+    "results_csv": "runs/campaigns/npu/attention_decode_score_multivalue_service_finalized_cdc_lane_probe_v1/results/results.csv",
+    "report_md": "runs/campaigns/npu/attention_decode_score_multivalue_service_finalized_cdc_lane_probe_v1/results/report.md"
+  }
 }

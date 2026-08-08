@@ -74,6 +74,21 @@ def _write_campaign(repo_root: Path) -> str:
     return str(campaign_path.relative_to(repo_root))
 
 
+def _write_committed_finalized_cdc_lane_campaign(repo_root: Path) -> str:
+    relative_path = Path(
+        "runs/campaigns/npu/"
+        "attention_decode_score_multivalue_service_finalized_cdc_lane_probe_v1/"
+        "campaign.json"
+    )
+    source_path = Path(__file__).resolve().parents[3] / relative_path
+    destination_path = repo_root / relative_path
+    destination_path.parent.mkdir(parents=True, exist_ok=True)
+    destination_path.write_text(
+        source_path.read_text(encoding="utf-8"), encoding="utf-8"
+    )
+    return relative_path.as_posix()
+
+
 def _init_git_repo(repo_root: Path) -> str:
     origin_root = repo_root.parent / "origin.git"
     subprocess.run(["git", "init", "--bare", str(origin_root)], check=True, capture_output=True, text=True)
@@ -9742,7 +9757,7 @@ def test_generate_l2_campaign_task_adds_finalized_cdc_lane_probe_campaign() -> N
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
         repo_root.mkdir()
-        campaign_path = _write_campaign(repo_root)
+        campaign_path = _write_committed_finalized_cdc_lane_campaign(repo_root)
         source_commit = _init_git_repo(repo_root)
         engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
         create_all(engine)
