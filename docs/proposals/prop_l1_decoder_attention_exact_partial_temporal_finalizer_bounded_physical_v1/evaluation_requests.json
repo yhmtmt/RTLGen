@@ -31,8 +31,8 @@
         "runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l8/metrics.csv",
         "runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l8/timing_debug_report.md"
       ],
-      "acceptance_notes": "Require exactly one status=ok row per design, CLOCK_PERIOD=12ns, critical_path_ns<=12ns, exactly 104 fakeram45_64x32 instances, no missing blackboxes, and no generic /16777215 operator. Treat total_power_mw as generic OpenROAD physical power only.",
-      "notes": "The prior lane1 6ns routed checkpoint measured critical_path_ns=9.3036, instance_area_um2=394956, total_power_mw=0.0605, and 104 macros after 3769.82 seconds. It is retained as explicit timing-infeasible boundary evidence and is not repeated."
+      "acceptance_notes": "Require exactly one status=ok row per design, CLOCK_PERIOD=12ns, critical_path_ns<=12ns, exactly 104 fakeram45_64x32 instances, no missing blackboxes, the checked deterministic 104-SRAM placement, and no generic /16777215 operator. Treat total_power_mw as generic OpenROAD physical power only.",
+      "notes": "The prior lane1 6ns routed checkpoint measured critical_path_ns=9.3036, instance_area_um2=394956, total_power_mw=0.0605, and 104 macros after 3769.82 seconds. The first bounded run then measured a timing-feasible lane1 12ns row (critical_path_ns=11.6726, instance_area_um2=378084, total_power_mw=0.0364) while lanes2/4/8 failed in RTLMP macro clustering. The retry reuses the successful lane1 104-SRAM placement across all lane variants so only lane-specific logic changes."
     }
   ]
 }

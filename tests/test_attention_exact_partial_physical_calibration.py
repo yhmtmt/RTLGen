@@ -27,6 +27,10 @@ from npu.rtlgen.gen_attention_score32_exact_partial_temporal_finalizer_physical_
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 PROPOSAL_ID = "prop_l1_decoder_attention_exact_partial_physical_calibration_v1"
+PLACEMENT_REL = Path(
+    "runs/campaigns/npu/attention_exact_partial_physical_calibration_v2/"
+    "macro_placement/nangate45_temporal_finalizer_l1_12ns_seed.tcl"
+)
 TEMPORAL_DESIGNS = [
     f"attention_score32_exact_partial_temporal_finalizer_physical_l{lanes}"
     for lanes in (1, 2, 4, 8)
@@ -155,6 +159,10 @@ def test_checked_designs_guards_sweeps_and_task_commands(tmp_path: Path) -> None
         copied.mkdir(parents=True)
         shutil.copy2(source_dir / "config.json", copied / "config.json")
         shutil.copy2(source_dir / "macro_manifest.json", copied / "macro_manifest.json")
+        if design in TEMPORAL_DESIGNS:
+            copied_placement = tmp_path / PLACEMENT_REL
+            copied_placement.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(REPO_ROOT / PLACEMENT_REL, copied_placement)
         generator = (
             generate_temporal_finalizer if design in TEMPORAL_DESIGNS else generate_cdc
         )
@@ -173,6 +181,9 @@ def test_checked_designs_guards_sweeps_and_task_commands(tmp_path: Path) -> None
         assert "run_block_sweep" == names[2]
         if design in TEMPORAL_DESIGNS:
             assert "--macro_manifest" in target.commands[2]["run"]
+            assert macro["macro_placement_tcl"].endswith(
+                "nangate45_temporal_finalizer_l1_12ns_seed.tcl"
+            )
         else:
             assert "--macro_manifest" not in target.commands[2]["run"]
 
@@ -187,6 +198,14 @@ def test_checked_designs_guards_sweeps_and_task_commands(tmp_path: Path) -> None
     assert temporal_sweep["PLACE_DENSITY"] == [0.4]
     assert temporal_sweep["SYNTH_HIERARCHICAL"] == [1]
 
+    placement_lines = [
+        line
+        for line in (REPO_ROOT / PLACEMENT_REL).read_text(encoding="utf-8").splitlines()
+        if line.startswith("place_macro ")
+    ]
+    assert len(placement_lines) == 104
+    assert len(set(placement_lines)) == 104
+
     request = _load(
         REPO_ROOT
         / f"docs/proposals/{PROPOSAL_ID}/evaluation_requests.json"
@@ -196,6 +215,33 @@ def test_checked_designs_guards_sweeps_and_task_commands(tmp_path: Path) -> None
         "l1_decoder_attention_exact_partial_async_fifo_domain_physical_calibration_v1",
     ]
     assert "source_requirement.required_sha" in request["source_commit_note"]
+
+
+def test_guard_rejects_incomplete_temporal_macro_placement(tmp_path: Path) -> None:
+    design = TEMPORAL_DESIGNS[0]
+    source_dir = REPO_ROOT / "runs/designs/npu_blocks" / design
+    copied = tmp_path / "runs/designs/npu_blocks" / design
+    copied.mkdir(parents=True)
+    shutil.copy2(source_dir / "config.json", copied / "config.json")
+    shutil.copy2(source_dir / "macro_manifest.json", copied / "macro_manifest.json")
+    generate_temporal_finalizer(_load(source_dir / "config.json"), copied / "verilog")
+    copied_placement = tmp_path / PLACEMENT_REL
+    copied_placement.parent.mkdir(parents=True, exist_ok=True)
+    lines = (REPO_ROOT / PLACEMENT_REL).read_text(encoding="utf-8").splitlines()
+    removed = False
+    incomplete_lines = []
+    for line in lines:
+        if line.startswith("place_macro ") and not removed:
+            removed = True
+            continue
+        incomplete_lines.append(line)
+    assert removed
+    copied_placement.write_text(
+        "\n".join(incomplete_lines) + "\n", encoding="utf-8"
+    )
+
+    with pytest.raises(SystemExit, match="placement inventory mismatch"):
+        guard_main(["--design-dir", str(copied)])
 
 
 def test_normal_task_mechanism_attaches_required_source_commit() -> None:

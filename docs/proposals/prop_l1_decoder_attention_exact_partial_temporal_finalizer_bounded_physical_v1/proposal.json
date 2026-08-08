@@ -19,6 +19,7 @@
       "divider_lanes 1, 2, 4, and 8 as separate design points",
       "exactly 104 fakeram45_64x32 state macros per design",
       "bit-exact mersenne24_correction2_exact scale division",
+      "one deterministic 104-SRAM placement recovered from the timing-feasible lane-1 12 ns route",
       "one 12 ns clock request per design"
     ],
     "exclude": [
@@ -64,6 +65,7 @@
     "docs/proposals/prop_l1_decoder_attention_exact_partial_physical_calibration_v1/proposal.json",
     "npu/rtlgen/gen_attention_score32_exact_partial_temporal_finalizer_physical_harness.py",
     "npu/eval/check_attention_exact_partial_physical_calibration_guard.py",
-    "runs/campaigns/npu/attention_exact_partial_physical_calibration_v2/sweeps/nangate45_temporal_finalizer_12ns.json"
+    "runs/campaigns/npu/attention_exact_partial_physical_calibration_v2/sweeps/nangate45_temporal_finalizer_12ns.json",
+    "runs/campaigns/npu/attention_exact_partial_physical_calibration_v2/macro_placement/nangate45_temporal_finalizer_l1_12ns_seed.tcl"
   ]
 }
