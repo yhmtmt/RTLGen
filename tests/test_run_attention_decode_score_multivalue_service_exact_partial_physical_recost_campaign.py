@@ -50,6 +50,46 @@ def _materialize_committed_campaign(tmp_path: Path) -> tuple[Path, dict]:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(f"fixture for {relative}\n", encoding="utf-8")
 
+    workload_path = repo_root / fixed["workload_correspondence_json"]
+    workload_path.parent.mkdir(parents=True, exist_ok=True)
+    workload_path.write_text(
+        json.dumps(
+            {
+                "model": "attention_decode_score_multivalue_service_workload_correspondence_v1",
+                "passed": True,
+                "workload": {"sequence_length": 131072, "windows_per_head": 5462},
+                "lane_reports": [
+                    {
+                        "divider_lanes": lane,
+                        "affine_recurrence_proof": {
+                            "proven": True,
+                            "bounded_window_counts": [1, 2, 3, 4],
+                            "startup_cycles": 1051,
+                            "steady_state_cycles_per_additional_full_window": 1076,
+                            "measured_service_span_cycles": [1051, 2127, 3203, 4279],
+                            "counter_deltas": [1076, 1076, 1076],
+                        },
+                        "tail_adjustment_used_in_projection": False,
+                        "projection": {
+                            "windows_per_head": 5462,
+                            "service_cycles_per_head": 5_877_087,
+                            "temporal_final_drain_cycles_per_head": 16 * (57 * (8 // lane) + 2),
+                            "head_latency_ns_serial_upper_bound": (
+                                5_877_087 * 10.0 + 16 * (57 * (8 // lane) + 2) * 12.0
+                            ),
+                            "layer_latency_ns_serial_upper_bound": (
+                                (5_877_087 * 10.0 + 16 * (57 * (8 // lane) + 2) * 12.0)
+                                * 32
+                            ),
+                        },
+                    }
+                    for lane in (1, 2, 4, 8)
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
     summary_path = repo_root / fixed["functional_probe_summary_json"]
     summary_path.parent.mkdir(parents=True, exist_ok=True)
     summary = {
@@ -117,6 +157,7 @@ def test_committed_campaign_contract_requires_exact_dependencies() -> None:
     assert validated["depends_on_item_ids"] == [
         "l1_decoder_attention_exact_partial_temporal_finalizer_bounded_12ns_physical_v1_r1",
         "l2_decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe_10ns_12ns_v1",
+        "l2_decoder_attention_exact_partial_c1_workload_correspondence_llama7b_v1",
     ]
 
     campaign["depends_on_item_ids"].pop()
@@ -140,10 +181,15 @@ def test_run_campaign_writes_one_lightweight_report_and_four_row_csv(tmp_path: P
     assert summary["passed"] is True
     assert summary["divider_lanes"] == [1, 2, 4, 8]
     assert summary["point_count"] == 4
-    assert summary["dependency_contract"]["both_dependencies_materialized"] is True
+    assert summary["dependency_contract"]["all_dependencies_materialized"] is True
     assert summary["artifact_contract"]["per_lane_recost_reports_omitted"] is True
     assert summary["artifact_contract"]["overlap_and_serial_bounds_preserved"] is True
     assert summary["artifact_contract"]["provisional_energy_provenance_preserved"] is True
+    assert summary["artifact_contract"]["llama7b_workload_projection_preserved"] is True
+    assert summary["rows"][0]["workload_service_cycles_per_head"] == 5_877_087
+    assert summary["points"][3]["workload_correspondence"]["projection"][
+        "temporal_final_drain_cycles_per_head"
+    ] == 944
     assert all(point["energy_contract"]["exact_token_energy_claimed"] is False for point in summary["points"])
     with csv_out.open("r", encoding="utf-8", newline="") as handle:
         rows = list(csv.DictReader(handle))
@@ -178,6 +224,27 @@ def test_run_campaign_fails_closed_on_functional_probe_hash_mismatch(tmp_path: P
     csv_out = repo_root / "outputs" / "recost.csv"
 
     with pytest.raises(ValueError, match="hash mismatch"):
+        run_campaign(
+            campaign_path=repo_root / CAMPAIGN_REL,
+            out=out,
+            csv_out=csv_out,
+            repo_root=repo_root,
+            audit_runner=_fake_audit,
+        )
+    assert not out.exists()
+    assert not csv_out.exists()
+
+
+def test_run_campaign_fails_closed_on_invalid_workload_projection(tmp_path: Path) -> None:
+    repo_root, campaign = _materialize_committed_campaign(tmp_path)
+    workload = repo_root / campaign["fixed_inputs"]["workload_correspondence_json"]
+    payload = json.loads(workload.read_text(encoding="utf-8"))
+    payload["lane_reports"][0]["affine_recurrence_proof"]["proven"] = False
+    workload.write_text(json.dumps(payload), encoding="utf-8")
+    out = repo_root / "outputs" / "recost.json"
+    csv_out = repo_root / "outputs" / "recost.csv"
+
+    with pytest.raises(ValueError, match="affine proof missing"):
         run_campaign(
             campaign_path=repo_root / CAMPAIGN_REL,
             out=out,
