@@ -7764,6 +7764,90 @@ def _decoder_attention_decode_score_multivalue_service_exact_partial_equivalence
     }
 
 
+def _decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe_evidence(
+    *,
+    item_id: str,
+    proposal_id: str | None = None,
+    proposal_path: str | None = None,
+) -> dict[str, Any]:
+    expected_proposal_id = (
+        "prop_l2_decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe_v1"
+    )
+    expected_proposal_path = f"docs/proposals/{expected_proposal_id}/proposal.json"
+    if str(proposal_id or "").strip() != expected_proposal_id:
+        raise Layer2TaskGenerationError("finalized-CDC lane probe proposal_id mismatch")
+    if str(proposal_path or "").strip() != expected_proposal_path:
+        raise Layer2TaskGenerationError("finalized-CDC lane probe proposal_path mismatch")
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    campaign = (
+        "runs/campaigns/npu/"
+        "attention_decode_score_multivalue_service_finalized_cdc_lane_probe_v1/campaign.json"
+    )
+    out_root = (
+        f"{base}/decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe__"
+        f"{item_id}"
+    )
+    lane_outputs = [f"{out_root}/lane{lane}.json" for lane in (1, 2, 4, 8)]
+    campaign_summary = f"{out_root}/campaign_summary.json"
+    command = _bounded_launcher_command(
+        memory_high="6G",
+        memory_max="8G",
+        cpu_quota="300%",
+        tasks_max=256,
+        runtime_max_sec=2400,
+        child_command=[
+            "python3",
+            "npu/eval/run_attention_decode_score_multivalue_service_finalized_cdc_lane_campaign.py",
+            "--campaign",
+            campaign,
+            "--out-root",
+            out_root,
+        ],
+    )
+    return {
+        "inputs": {
+            "decode_score_multivalue_service_finalized_cdc_lane_probe_campaign": campaign,
+            "decode_score_multivalue_service_finalized_cdc_lane_probe_out": campaign_summary,
+            "decode_score_multivalue_service_finalized_cdc_lane_probe_lane1_json": lane_outputs[0],
+            "decode_score_multivalue_service_finalized_cdc_lane_probe_lane2_json": lane_outputs[1],
+            "decode_score_multivalue_service_finalized_cdc_lane_probe_lane4_json": lane_outputs[2],
+            "decode_score_multivalue_service_finalized_cdc_lane_probe_lane8_json": lane_outputs[3],
+            "decode_score_multivalue_service_finalized_cdc_lane_probe_scope": (
+                "Run exactly four lane-matched finalized-CDC functional probes at service_period_ns=10 "
+                "and temporal_period_ns=12 with SRAM temporal state and macro-banked service value memory. "
+                "Emit only recost-compatible per-lane summaries plus one aggregate manifest; do not emit "
+                "row histories, generated RTL manifests, physical PPA, or activity-energy claims."
+            ),
+        },
+        "commands": [
+            {
+                "name": "probe_decode_score_multivalue_service_finalized_cdc_lanes_10ns_12ns",
+                "run": command,
+            }
+        ],
+        "expected_outputs": [*lane_outputs, campaign_summary],
+        "evidence_only": True,
+        "worker_resources": {
+            "exclusive_worker": True,
+            "memory_high": "6G",
+            "memory_max": "8G",
+            "cpu_quota": "300%",
+            "tasks_max": 256,
+            "outer_timeout_seconds": 2400,
+            "stall_timeout_seconds": 600,
+        },
+        "acceptance": [
+            "Write exactly four per-lane JSON summaries and one campaign_summary.json",
+            "Require divider_lanes [1,2,4,8], service_period_ns=10, and temporal_period_ns=12",
+            "Require temporal_state_backend=sram and service_value_memory_backend=macro_banked_4x16x64x32",
+            "Require every lane passed=true with zero protocol, state, and CDC errors",
+            "Require every lane summary to be directly consumable by the exact-partial physical recost audit",
+            "Do not include observed_rows, expected_rows, generated RTL manifests, or macro manifests",
+            "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing",
+        ],
+    }
+
+
 def _decoder_attention_decode_score_multivalue_service_activity_power_evidence(
     *, item_id: str, depends_on_item_ids: list[str] | None = None
 ) -> dict[str, Any]:
@@ -11868,6 +11952,7 @@ def _build_payload(
         "decoder_attention_decode_score_multivalue_cluster_activity_power",
         "decoder_attention_decode_score_multivalue_integrated_service",
         "decoder_attention_decode_score_multivalue_service_exact_partial_equivalence",
+        "decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe",
         "decoder_attention_decode_score_multivalue_service_activity_power",
         "decoder_attention_decode_score_multivalue_service_measured_frontier",
         "decoder_attention_decode_score_multivalue_gqa_group_activity_power",
@@ -12148,6 +12233,17 @@ def _build_payload(
         ):
             decoder_evidence = (
                 _decoder_attention_decode_score_multivalue_service_exact_partial_equivalence_evidence(
+                    item_id=item_id,
+                    proposal_id=proposal_id,
+                    proposal_path=proposal_path,
+                )
+            )
+        elif (
+            abstraction_layer_name
+            == "decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe"
+        ):
+            decoder_evidence = (
+                _decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe_evidence(
                     item_id=item_id,
                     proposal_id=proposal_id,
                     proposal_path=proposal_path,

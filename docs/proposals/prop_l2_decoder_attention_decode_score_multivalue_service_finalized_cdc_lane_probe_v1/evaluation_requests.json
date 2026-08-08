@@ -1,0 +1,30 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe_v1",
+  "source_commit_note": "Do not dispatch from this development branch. After merge, generate the task from current origin/master so source_requirement.required_sha pins the merged bounded campaign and requires evaluator refresh.",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe_10ns_12ns_v1",
+      "task_type": "l2_campaign",
+      "title": "Finalized-CDC lane-matched 10 ns / 12 ns functional probes",
+      "objective": "Run divider_lanes 1, 2, 4, and 8 at service_period_ns=10 and temporal_period_ns=12 with SRAM temporal state and macro-banked service value memory.",
+      "status": "ready_to_queue_after_merge",
+      "evaluation_mode": "equivalence",
+      "abstraction_layer": "decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe",
+      "comparison_role": "lane_matched_functional_cycle_calibration",
+      "cost_class": "bounded_medium",
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": false,
+      "run_physical": false,
+      "campaign_path": "runs/campaigns/npu/attention_decode_score_multivalue_service_finalized_cdc_lane_probe_v1/campaign.json",
+      "expected_outputs": [
+        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe__l2_decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe_10ns_12ns_v1/lane1.json",
+        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe__l2_decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe_10ns_12ns_v1/lane2.json",
+        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe__l2_decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe_10ns_12ns_v1/lane4.json",
+        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe__l2_decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe_10ns_12ns_v1/lane8.json",
+        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe__l2_decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe_10ns_12ns_v1/campaign_summary.json"
+      ],
+      "acceptance_notes": "Require exactly four passing summaries with divider_lanes [1,2,4,8], service_period_ns=10, temporal_period_ns=12, temporal_state_backend=sram, service_value_memory_backend=macro_banked_4x16x64x32, zero protocol/state/CDC errors, and no bulky observed_rows, expected_rows, generated RTL manifest, or macro manifest fields. Each lane JSON must be accepted directly by the exact-partial physical recost functional-probe validator.",
+      "notes": "The driver runs points sequentially under the control-plane bounded launcher. Queue only after merge from origin/master; do not dispatch this preparation branch."
+    }
+  ]
+}

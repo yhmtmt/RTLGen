@@ -1,0 +1,67 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe_v1",
+  "created_utc": "2026-08-08T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Lane-matched finalized-CDC functional probes at the bounded 10 ns / 12 ns clock pair",
+  "abstraction_layer": "decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe",
+  "hypothesis": "Running the SRAM/macro-backed finalized dual-clock service at the exact selected service and temporal periods for divider_lanes 1, 2, 4, and 8 will provide cycle evidence that can be paired without clock-ratio or lane-count substitution in exact-partial physical recosting.",
+  "direct_comparison": {
+    "primary_question": "Do all four divider-lane variants preserve finalized exact-partial functional behavior at service_period_ns=10 and temporal_period_ns=12 with the physical-memory backends enabled, and what elapsed service/temporal cycle counts do they report?",
+    "include": [
+      "service_period_ns=10",
+      "temporal_period_ns=12",
+      "divider_lanes 1, 2, 4, and 8",
+      "temporal_state_backend=sram",
+      "service_value_memory_backend=macro_banked_4x16x64x32",
+      "one lightweight recost-compatible JSON summary per lane",
+      "one aggregate campaign summary with hashes and output paths"
+    ],
+    "exclude": [
+      "physical synthesis or place-and-route",
+      "OpenROAD critical-path composition across CDC",
+      "activity-backed token energy",
+      "observed/expected row histories in committed outputs",
+      "generated RTL and macro manifests in committed outputs",
+      "clock pairs or lane values outside the fixed four-point campaign"
+    ],
+    "metrics": [
+      "passed",
+      "service_cycles",
+      "temporal_cycles elapsed wall-clock",
+      "finalizer_cycles diagnostic counter",
+      "CDC accepted/emitted counts",
+      "finalizer completed count",
+      "protocol and state error counters"
+    ]
+  },
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe_10ns_12ns_v1",
+      "task_type": "l2_campaign",
+      "objective": "Run the fixed four-point finalized-CDC functional probe campaign and emit lightweight lane-matched recost inputs.",
+      "evaluation_mode": "equivalence",
+      "abstraction_layer": "decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe",
+      "comparison_role": "lane_matched_functional_cycle_calibration",
+      "status": "pending_implementation_merge",
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": false,
+      "run_physical": false,
+      "notes": "Generate and dispatch only from merged origin/master so source_requirement.required_sha includes the bounded driver, campaign contract, task wiring, and tests. This development branch must not be dispatched."
+    }
+  ],
+  "source_refs": [
+    "npu/eval/probe_attention_decode_score_multivalue_service_finalized_cdc.py",
+    "npu/eval/run_attention_decode_score_multivalue_service_finalized_cdc_lane_campaign.py",
+    "runs/campaigns/npu/attention_decode_score_multivalue_service_finalized_cdc_lane_probe_v1/campaign.json",
+    "npu/eval/audit_attention_decode_score_multivalue_service_exact_partial_physical_recost.py",
+    "docs/proposals/prop_l1_decoder_attention_exact_partial_temporal_finalizer_bounded_physical_v1/proposal.json"
+  ],
+  "remaining_abstractions_after_this_step": [
+    "The functional probe does not establish physical timing; it only supplies cycle counts for independently selected physical periods.",
+    "The finalizer counter overlaps the elapsed temporal counter and remains diagnostic rather than an added latency phase.",
+    "CDC MTBF and synchronizer library-cell signoff remain open.",
+    "Composed activity-backed token energy remains open."
+  ]
+}

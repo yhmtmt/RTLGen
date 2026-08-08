@@ -1,0 +1,20 @@
+{
+  "model": "attention_decode_score_multivalue_service_finalized_cdc_lane_campaign_v1",
+  "campaign_id": "attention_decode_score_multivalue_service_finalized_cdc_lane_probe_10ns_12ns_v1",
+  "proposal_ref": {
+    "proposal_id": "prop_l2_decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe_v1",
+    "proposal_path": "docs/proposals/prop_l2_decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe_v1/proposal.json"
+  },
+  "fixed_parameters": {
+    "service_period_ns": 10.0,
+    "temporal_period_ns": 12.0,
+    "temporal_state_backend": "sram",
+    "service_value_memory_backend": "macro_banked_4x16x64x32"
+  },
+  "divider_lanes": [
+    1,
+    2,
+    4,
+    8
+  ]
+}
