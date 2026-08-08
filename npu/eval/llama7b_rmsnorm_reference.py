@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Bit-exact BF16-boundary reference for Llama-7B transformer RMSNorm."""
+"""Phase-1 BF16-boundary reference for Llama-7B transformer RMSNorm."""
 
 from __future__ import annotations
 
@@ -11,22 +11,23 @@ from typing import Sequence
 
 HIDDEN_SIZE = 4096
 EPSILON = 1.0e-6
+ACCUMULATOR_WIDTH = 48
+ACCUMULATOR_TERM_MSB = 34
 CANONICAL_PROTOCOL_ERROR_BF16 = 0x7FC0
 
 _BF16_EXPONENT_MASK = 0x7F80
-_FP32_ONE_BITS = 0x3F800000
-_FP32_EPSILON_BITS = 0x358637BD
 
 
 @dataclass(frozen=True)
 class RMSNormResult:
-    """One completed row and the arithmetic state exposed for RTL checking."""
+    """Completed row, bit-exact accumulation state, and provisional finalization."""
 
     output: tuple[int, ...]
     protocol_error: bool
-    sum_squares_fp32_bits: int
-    mean_square_fp32_bits: int
-    inv_rms_fp32_bits: int
+    accumulator_mantissa_48: int
+    accumulator_lsb_exponent: int
+    max_square_exponent: int
+    provisional_inv_rms: float
 
 
 def _bits_to_fp32(bits: int) -> float:
@@ -40,26 +41,6 @@ def _fp32_to_bits(value: float) -> int:
         return 0xFF800000 if math.copysign(1.0, value) < 0.0 else 0x7F800000
 
 
-def _round_fp32(value: float) -> float:
-    return _bits_to_fp32(_fp32_to_bits(value))
-
-
-def _add_fp32(lhs: float, rhs: float) -> float:
-    return _round_fp32(lhs + rhs)
-
-
-def _mul_fp32(lhs: float, rhs: float) -> float:
-    return _round_fp32(lhs * rhs)
-
-
-def _div_fp32(lhs: float, rhs: float) -> float:
-    return _round_fp32(lhs / rhs)
-
-
-def _sqrt_fp32(value: float) -> float:
-    return _round_fp32(math.sqrt(value))
-
-
 def bf16_to_fp32(word: int) -> float:
     """Decode one validated BF16 bit pattern exactly into an FP32 value."""
 
@@ -67,22 +48,57 @@ def bf16_to_fp32(word: int) -> float:
     return _bits_to_fp32(word << 16)
 
 
+def _round_ratio_pow2(numerator: int, denominator: int, shift: int) -> int:
+    if shift >= 0:
+        numerator <<= shift
+    else:
+        denominator <<= -shift
+    quotient, remainder = divmod(numerator, denominator)
+    twice_remainder = remainder << 1
+    if twice_remainder > denominator or (twice_remainder == denominator and (quotient & 1)):
+        quotient += 1
+    return quotient
+
+
+def _float64_to_bf16(value: float) -> int:
+    """Round binary64 directly to BF16 RNE without an FP32 double-round."""
+
+    sign = 0x8000 if math.copysign(1.0, value) < 0.0 else 0
+    magnitude = abs(value)
+    if math.isnan(magnitude):
+        return CANONICAL_PROTOCOL_ERROR_BF16
+    if math.isinf(magnitude):
+        return sign | 0x7F80
+    if magnitude == 0.0:
+        return sign
+
+    numerator, denominator = magnitude.as_integer_ratio()
+    exponent = numerator.bit_length() - denominator.bit_length()
+    if exponent >= 0:
+        if numerator < (denominator << exponent):
+            exponent -= 1
+    elif (numerator << -exponent) < denominator:
+        exponent -= 1
+
+    if exponent < -126:
+        significand = _round_ratio_pow2(numerator, denominator, 133)
+        if significand < 128:
+            return sign | significand
+        return sign | 0x0080
+
+    significand = _round_ratio_pow2(numerator, denominator, 7 - exponent)
+    if significand == 256:
+        significand = 128
+        exponent += 1
+    if exponent > 127:
+        return sign | 0x7F80
+    return sign | ((exponent + 127) << 7) | (significand - 128)
+
+
 def fp32_to_bf16(value: float) -> int:
-    """Round an FP32 value to BF16 using round-to-nearest, ties-to-even."""
+    """Round an FP32 value to BF16 RNE, canonicalizing an FP32 NaN."""
 
-    bits = _fp32_to_bits(value)
-    exponent = (bits >> 23) & 0xFF
-    fraction = bits & 0x7FFFFF
-    if exponent == 0xFF:
-        if fraction:
-            return CANONICAL_PROTOCOL_ERROR_BF16
-        return bits >> 16
-
-    upper = bits >> 16
-    discarded = bits & 0xFFFF
-    if discarded > 0x8000 or (discarded == 0x8000 and (upper & 1)):
-        upper += 1
-    return upper & 0xFFFF
+    return _float64_to_bf16(_bits_to_fp32(_fp32_to_bits(value)))
 
 
 def _validate_word(word: int, *, name: str, index: int | None) -> None:
@@ -110,6 +126,48 @@ def _has_exponent_255(words: Sequence[int]) -> bool:
     return any((word & _BF16_EXPONENT_MASK) == _BF16_EXPONENT_MASK for word in words)
 
 
+def _square_components(word: int) -> tuple[int, int]:
+    """Return exact square as ``coefficient * 2**exponent``."""
+
+    exponent_field = (word >> 7) & 0xFF
+    fraction = word & 0x7F
+    if exponent_field == 0:
+        significand = fraction
+        value_exponent = -133
+    else:
+        significand = 128 + fraction
+        value_exponent = exponent_field - 134
+    return significand * significand, 2 * value_exponent
+
+
+def _round_shift_right(value: int, shift: int) -> int:
+    if shift <= 0:
+        return value << -shift
+    quotient = value >> shift
+    remainder = value - (quotient << shift)
+    halfway = 1 << (shift - 1)
+    if remainder > halfway or (remainder == halfway and (quotient & 1)):
+        quotient += 1
+    return quotient
+
+
+def _accumulate_squares(row: Sequence[int]) -> tuple[int, int, int]:
+    terms = [_square_components(word) for word in row]
+    nonzero_terms = [(coefficient, exponent) for coefficient, exponent in terms if coefficient]
+    if not nonzero_terms:
+        return 0, 0, 0
+
+    max_square_exponent = max(coefficient.bit_length() - 1 + exponent for coefficient, exponent in nonzero_terms)
+    accumulator_lsb_exponent = max_square_exponent - ACCUMULATOR_TERM_MSB
+    accumulator = 0
+    for coefficient, exponent in terms:
+        accumulator += _round_shift_right(coefficient, accumulator_lsb_exponent - exponent)
+
+    if accumulator >= (1 << ACCUMULATOR_WIDTH):
+        raise AssertionError("48-bit RMSNorm accumulator bound violated")
+    return accumulator, accumulator_lsb_exponent, max_square_exponent
+
+
 def rmsnorm_bf16(
     row: Sequence[int],
     gamma: Sequence[int],
@@ -118,9 +176,9 @@ def rmsnorm_bf16(
 ) -> RMSNormResult:
     """Evaluate one fixed-size transformer RMSNorm row.
 
-    ``lanes`` defines streaming beat width. Arithmetic always follows ascending
-    logical element order, making the result invariant across legal lane counts.
-    Inputs and outputs are raw BF16 words; all internal primitives are FP32 RNE.
+    The block-floating accumulation fields are bit-exact Phase-1 contract state.
+    Reciprocal square root, multiplication, and BF16 output are provisional
+    correctly-scaled software semantics pending a Phase-2 approximation freeze.
     """
 
     _validate_inputs(row, gamma, lanes)
@@ -128,35 +186,25 @@ def rmsnorm_bf16(
         return RMSNormResult(
             output=(CANONICAL_PROTOCOL_ERROR_BF16,) * HIDDEN_SIZE,
             protocol_error=True,
-            sum_squares_fp32_bits=0,
-            mean_square_fp32_bits=0,
-            inv_rms_fp32_bits=0,
+            accumulator_mantissa_48=0,
+            accumulator_lsb_exponent=0,
+            max_square_exponent=0,
+            provisional_inv_rms=0.0,
         )
 
-    row_fp32 = tuple(_bits_to_fp32(word << 16) for word in row)
-    gamma_fp32 = tuple(_bits_to_fp32(word << 16) for word in gamma)
+    accumulator, lsb_exponent, max_square_exponent = _accumulate_squares(row)
+    mean_square = math.ldexp(float(accumulator), lsb_exponent - 12)
+    provisional_inv_rms = 1.0 / math.sqrt(mean_square + EPSILON)
 
-    sum_squares = 0.0
-    for beat_base in range(0, HIDDEN_SIZE, lanes):
-        for lane in range(lanes):
-            value = row_fp32[beat_base + lane]
-            square = _mul_fp32(value, value)
-            sum_squares = _add_fp32(sum_squares, square)
-
-    # Division by 4096 is exact in binary before the explicit FP32 boundary.
-    mean_square = _mul_fp32(sum_squares, _bits_to_fp32(0x39800000))
-    variance_with_epsilon = _add_fp32(mean_square, _bits_to_fp32(_FP32_EPSILON_BITS))
-    inv_rms = _div_fp32(_bits_to_fp32(_FP32_ONE_BITS), _sqrt_fp32(variance_with_epsilon))
-
-    output = []
-    for value, weight in zip(row_fp32, gamma_fp32):
-        normalized = _mul_fp32(value, inv_rms)
-        output.append(fp32_to_bf16(_mul_fp32(normalized, weight)))
-
+    output = tuple(
+        _float64_to_bf16(bf16_to_fp32(value) * provisional_inv_rms * bf16_to_fp32(weight))
+        for value, weight in zip(row, gamma)
+    )
     return RMSNormResult(
-        output=tuple(output),
+        output=output,
         protocol_error=False,
-        sum_squares_fp32_bits=_fp32_to_bits(sum_squares),
-        mean_square_fp32_bits=_fp32_to_bits(mean_square),
-        inv_rms_fp32_bits=_fp32_to_bits(inv_rms),
+        accumulator_mantissa_48=accumulator,
+        accumulator_lsb_exponent=lsb_exponent,
+        max_square_exponent=max_square_exponent,
+        provisional_inv_rms=provisional_inv_rms,
     )
