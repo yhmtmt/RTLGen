@@ -327,6 +327,33 @@ def test_decoder_evidence_paths_recognizes_decode_score_multivalue_service_activ
     }
 
 
+def test_decoder_evidence_paths_recognizes_exact_partial_physical_recost(
+    tmp_path: Path,
+) -> None:
+    evidence_rel = "runs/datasets/demo/exact_partial_physical_recost.json"
+    _write(tmp_path / evidence_rel, "{}\n")
+    work_item = SimpleNamespace(
+        input_manifest={
+            "decoder_contract": {
+                "decode_score_multivalue_service_exact_partial_physical_recost_out": (
+                    evidence_rel
+                )
+            }
+        }
+    )
+
+    evidence_ref, source_refs = _decoder_evidence_paths(
+        repo_root=tmp_path, work_item=work_item
+    )
+
+    assert evidence_ref == evidence_rel
+    assert source_refs == {
+        "decoder_decode_score_multivalue_service_exact_partial_physical_recost_out": (
+            evidence_rel
+        )
+    }
+
+
 @pytest.mark.parametrize(
     "prefix",
     [

@@ -703,6 +703,10 @@ _DECODER_EVIDENCE_OUTPUT_KEYS: tuple[tuple[str, str], ...] = (
         "decode_score_multivalue_service_finalized_cdc_lane_probe_report",
     ),
     (
+        "decode_score_multivalue_service_exact_partial_physical_recost_out",
+        "decode_score_multivalue_service_exact_partial_physical_recost_report",
+    ),
+    (
         "score_bank_proxy_equivalence_out",
         "score_bank_proxy_equivalence_report",
     ),

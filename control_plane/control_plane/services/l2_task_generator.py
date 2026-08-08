@@ -7848,6 +7848,108 @@ def _decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe_
     }
 
 
+def _decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost_evidence(
+    *,
+    item_id: str,
+    depends_on_item_ids: list[str] | None = None,
+    proposal_id: str | None = None,
+    proposal_path: str | None = None,
+) -> dict[str, Any]:
+    expected_proposal_id = (
+        "prop_l2_decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost_v1"
+    )
+    expected_proposal_path = f"docs/proposals/{expected_proposal_id}/proposal.json"
+    if str(proposal_id or "").strip() != expected_proposal_id:
+        raise Layer2TaskGenerationError("exact-partial physical recost proposal_id mismatch")
+    if str(proposal_path or "").strip() != expected_proposal_path:
+        raise Layer2TaskGenerationError("exact-partial physical recost proposal_path mismatch")
+    required_dependencies = [
+        "l1_decoder_attention_exact_partial_temporal_finalizer_bounded_12ns_physical_v1_r1",
+        (
+            "l2_decoder_attention_decode_score_multivalue_service_"
+            "finalized_cdc_lane_probe_10ns_12ns_v1"
+        ),
+    ]
+    normalized_dependencies = [
+        str(dependency).strip()
+        for dependency in (depends_on_item_ids or [])
+        if str(dependency).strip()
+    ]
+    if normalized_dependencies != required_dependencies:
+        raise Layer2TaskGenerationError(
+            "exact-partial physical recost requires the exact physical and functional dependency items"
+        )
+
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    campaign = (
+        "runs/campaigns/npu/"
+        "attention_decode_score_multivalue_service_exact_partial_physical_recost_v1/campaign.json"
+    )
+    output_prefix = (
+        f"{base}/decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost__"
+        f"{item_id}"
+    )
+    out = f"{output_prefix}.json"
+    csv_out = f"{output_prefix}.csv"
+    command = _bounded_launcher_command(
+        memory_high="2G",
+        memory_max="4G",
+        cpu_quota="200%",
+        tasks_max=128,
+        runtime_max_sec=300,
+        child_command=[
+            "python3",
+            "npu/eval/run_attention_decode_score_multivalue_service_exact_partial_physical_recost_campaign.py",
+            "--campaign",
+            campaign,
+            "--out",
+            out,
+            "--csv-out",
+            csv_out,
+        ],
+    )
+    return {
+        "inputs": {
+            "decode_score_multivalue_service_exact_partial_physical_recost_campaign": campaign,
+            "decode_score_multivalue_service_exact_partial_physical_recost_service_anchor": (
+                f"{base}/decoder_attention_decode_score_multivalue_service_activity_power__"
+                "l2_decoder_attention_decode_score_multivalue_service_c1_activity_power_llama7b_v1_r8.json"
+            ),
+            "decode_score_multivalue_service_exact_partial_physical_recost_physical_dependency_item_id": (
+                required_dependencies[0]
+            ),
+            "decode_score_multivalue_service_exact_partial_physical_recost_functional_dependency_item_id": (
+                required_dependencies[1]
+            ),
+            "decode_score_multivalue_service_exact_partial_physical_recost_out": out,
+            "decode_score_multivalue_service_exact_partial_physical_recost_csv_out": csv_out,
+            "decode_score_multivalue_service_exact_partial_physical_recost_scope": (
+                "Compose divider_lanes 1, 2, 4, and 8 from the promoted c1 r8 activity anchor, "
+                "lane-matched 12 ns temporal/finalizer rows, 10 ns source and 12 ns destination FIFO "
+                "views, and hashed finalized-CDC summaries. Preserve overlap/serial timing bounds and "
+                "provisional energy provenance; emit one aggregate JSON and one four-row CSV only."
+            ),
+        },
+        "commands": [
+            {
+                "name": "audit_decode_score_multivalue_service_exact_partial_physical_recost_10ns_12ns",
+                "run": command,
+            }
+        ],
+        "expected_outputs": [out, csv_out],
+        "evidence_only": True,
+        "acceptance": [
+            "Require both exact dependency items to be merged and materialized",
+            "Require four lane-matched rows ordered [1,2,4,8]",
+            "Preserve overlap lower bounds and serial upper bounds from functional elapsed cycles",
+            "Preserve bounded provisional energy provenance and do not claim exact token energy",
+            "Count one canonical source-domain FIFO while validating both FIFO domain views",
+            "Write exactly one aggregate JSON report and one four-row CSV",
+            "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing",
+        ],
+    }
+
+
 def _decoder_attention_decode_score_multivalue_service_activity_power_evidence(
     *, item_id: str, depends_on_item_ids: list[str] | None = None
 ) -> dict[str, Any]:
@@ -11953,6 +12055,7 @@ def _build_payload(
         "decoder_attention_decode_score_multivalue_integrated_service",
         "decoder_attention_decode_score_multivalue_service_exact_partial_equivalence",
         "decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe",
+        "decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost",
         "decoder_attention_decode_score_multivalue_service_activity_power",
         "decoder_attention_decode_score_multivalue_service_measured_frontier",
         "decoder_attention_decode_score_multivalue_gqa_group_activity_power",
@@ -12245,6 +12348,18 @@ def _build_payload(
             decoder_evidence = (
                 _decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe_evidence(
                     item_id=item_id,
+                    proposal_id=proposal_id,
+                    proposal_path=proposal_path,
+                )
+            )
+        elif (
+            abstraction_layer_name
+            == "decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost"
+        ):
+            decoder_evidence = (
+                _decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost_evidence(
+                    item_id=item_id,
+                    depends_on_item_ids=depends_on_item_ids,
                     proposal_id=proposal_id,
                     proposal_path=proposal_path,
                 )
