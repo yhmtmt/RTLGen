@@ -8,6 +8,7 @@ import subprocess
 import tempfile
 from unittest.mock import patch
 
+import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
@@ -78,6 +79,21 @@ def _write_committed_finalized_cdc_lane_campaign(repo_root: Path) -> str:
     relative_path = Path(
         "runs/campaigns/npu/"
         "attention_decode_score_multivalue_service_finalized_cdc_lane_probe_v1/"
+        "campaign.json"
+    )
+    source_path = Path(__file__).resolve().parents[3] / relative_path
+    destination_path = repo_root / relative_path
+    destination_path.parent.mkdir(parents=True, exist_ok=True)
+    destination_path.write_text(
+        source_path.read_text(encoding="utf-8"), encoding="utf-8"
+    )
+    return relative_path.as_posix()
+
+
+def _write_committed_exact_partial_physical_recost_campaign(repo_root: Path) -> str:
+    relative_path = Path(
+        "runs/campaigns/npu/"
+        "attention_decode_score_multivalue_service_exact_partial_physical_recost_v1/"
         "campaign.json"
     )
     source_path = Path(__file__).resolve().parents[3] / relative_path
@@ -9837,6 +9853,131 @@ def test_generate_l2_campaign_task_adds_finalized_cdc_lane_probe_campaign() -> N
             assert payload["source_requirement"]["required_sha"] == source_commit
             assert payload["source_requirement"]["required_ref"] == "origin/master"
             assert payload["source_requirement"]["requires_daemon_restart"] is True
+
+
+def test_generate_l2_campaign_task_adds_exact_partial_physical_recost_consumer() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_committed_exact_partial_physical_recost_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+        item_id = (
+            "l2_decoder_attention_decode_score_multivalue_service_"
+            "exact_partial_physical_recost_10ns_12ns_v1"
+        )
+        proposal_id = (
+            "prop_l2_decoder_attention_decode_score_multivalue_service_"
+            "exact_partial_physical_recost_v1"
+        )
+        proposal_path = f"docs/proposals/{proposal_id}/proposal.json"
+        dependencies = [
+            "l1_decoder_attention_exact_partial_temporal_finalizer_bounded_12ns_physical_v1_r1",
+            (
+                "l2_decoder_attention_decode_score_multivalue_service_"
+                "finalized_cdc_lane_probe_10ns_12ns_v1"
+            ),
+        ]
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id=item_id,
+                    proposal_id=proposal_id,
+                    proposal_path=proposal_path,
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    abstraction_layer=(
+                        "decoder_attention_decode_score_multivalue_service_"
+                        "exact_partial_physical_recost"
+                    ),
+                    evaluation_mode="frontier_detail",
+                    depends_on_item_ids=dependencies,
+                    requires_merged_inputs=True,
+                    requires_materialized_refs=True,
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            payload = work_item.task_request.request_payload
+            commands = payload["task"]["commands"]
+            run = commands[0]["run"]
+            decoder_inputs = work_item.input_manifest["decoder_contract"]
+
+            assert [command["name"] for command in commands] == [
+                "audit_decode_score_multivalue_service_exact_partial_physical_recost_10ns_12ns",
+                "validate_runs",
+            ]
+            assert "control_plane/scripts/run_bounded_command.py" in run
+            assert "--memory-max 4G" in run
+            assert "--runtime-max-sec 300" in run
+            assert (
+                "run_attention_decode_score_multivalue_service_exact_partial_physical_recost_campaign.py"
+                in run
+            )
+            assert "--csv-out" in run
+            assert payload["task"]["expected_outputs"] == [
+                decoder_inputs["decode_score_multivalue_service_exact_partial_physical_recost_out"],
+                decoder_inputs["decode_score_multivalue_service_exact_partial_physical_recost_csv_out"],
+            ]
+            assert payload["developer_loop"]["dependencies"] == {
+                "item_ids": dependencies,
+                "requires_merged_inputs": True,
+                "requires_materialized_refs": True,
+            }
+            assert payload["source_requirement"]["required_sha"] == source_commit
+            assert payload["source_requirement"]["required_ref"] == "origin/master"
+            assert work_item.state == WorkItemState.BLOCKED
+
+
+def test_exact_partial_physical_recost_consumer_rejects_missing_dependency() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_committed_exact_partial_physical_recost_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session, pytest.raises(
+            Layer2TaskGenerationError, match="requires the exact physical and functional dependency"
+        ):
+            generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id=(
+                        "l2_decoder_attention_decode_score_multivalue_service_"
+                        "exact_partial_physical_recost_10ns_12ns_v1"
+                    ),
+                    proposal_id=(
+                        "prop_l2_decoder_attention_decode_score_multivalue_service_"
+                        "exact_partial_physical_recost_v1"
+                    ),
+                    proposal_path=(
+                        "docs/proposals/prop_l2_decoder_attention_decode_score_multivalue_service_"
+                        "exact_partial_physical_recost_v1/proposal.json"
+                    ),
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    abstraction_layer=(
+                        "decoder_attention_decode_score_multivalue_service_"
+                        "exact_partial_physical_recost"
+                    ),
+                    depends_on_item_ids=[
+                        "l1_decoder_attention_exact_partial_temporal_finalizer_bounded_12ns_physical_v1_r1"
+                    ],
+                    requires_merged_inputs=True,
+                    requires_materialized_refs=True,
+                    run_physical=False,
+                ),
+            )
 
 
 def test_generate_l2_campaign_task_adds_decode_score_multivalue_service_activity_power() -> None:

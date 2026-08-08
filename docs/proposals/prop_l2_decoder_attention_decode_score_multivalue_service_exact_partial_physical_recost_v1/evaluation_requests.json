@@ -1,0 +1,31 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost_v1",
+  "source_commit_note": "After merge and after both dependency outputs are materialized, generate from current origin/master so source_requirement.required_sha pins the merged aggregate driver and consumer wiring. Do not dispatch this preparation branch.",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost_10ns_12ns_v1",
+      "task_type": "l2_campaign",
+      "title": "Exact-partial composed-service 10 ns / 12 ns physical recost",
+      "objective": "Record one fail-closed aggregate report and four-row CSV for divider_lanes 1, 2, 4, and 8.",
+      "status": "ready_to_queue_after_merge_and_dependencies",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost",
+      "comparison_role": "lane_matched_composed_physical_recost",
+      "cost_class": "lightweight",
+      "depends_on_item_ids": [
+        "l1_decoder_attention_exact_partial_temporal_finalizer_bounded_12ns_physical_v1_r1",
+        "l2_decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe_10ns_12ns_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "run_physical": false,
+      "campaign_path": "runs/campaigns/npu/attention_decode_score_multivalue_service_exact_partial_physical_recost_v1/campaign.json",
+      "expected_outputs": [
+        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost__l2_decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost_10ns_12ns_v1.json",
+        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost__l2_decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost_10ns_12ns_v1.csv"
+      ],
+      "acceptance_notes": "Fail closed unless both exact dependency items are satisfied and all four lane-matched 12 ns temporal bundles plus hashed finalized-CDC probe summaries are materialized. Require four rows ordered [1,2,4,8], source-domain single-FIFO accounting from the 10 ns row, the 12 ns destination diagnostic row, preserved overlap/serial timing bounds, and bounded provisional energy provenance. Emit no per-lane recost files.",
+      "notes": "Queue only from merged origin/master after dependency materialization. This preparation request must not be dispatched."
+    }
+  ]
+}
