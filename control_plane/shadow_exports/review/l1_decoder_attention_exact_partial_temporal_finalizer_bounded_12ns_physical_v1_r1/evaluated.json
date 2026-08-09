@@ -1,0 +1,218 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "sweeps": [
+        "runs/campaigns/npu/attention_exact_partial_physical_calibration_v2/sweeps/nangate45_temporal_finalizer_12ns.json"
+      ],
+      "configs": [
+        "runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l1/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l2/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l4/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l8/config.json"
+      ],
+      "out_root": "runs/designs/npu_blocks",
+      "design_dirs": [],
+      "macro_manifests": [],
+      "candidate_manifests": [],
+      "required_submodules": []
+    },
+    "commands": [
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/rtlgen/gen_attention_score32_exact_partial_temporal_finalizer_physical_harness.py --config runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l1/config.json --out runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l1/verilog",
+        "name": "generate_attention_score32_exact_partial_temporal_finalizer_physical_harness_rtl_attention_score32_exact_partial_temporal_finalizer_physical_l1"
+      },
+      {
+        "run": "python3 npu/eval/check_attention_exact_partial_physical_calibration_guard.py --design-dir runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l1",
+        "name": "check_attention_exact_partial_physical_calibration_guard_attention_score32_exact_partial_temporal_finalizer_physical_l1"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/synth/run_block_sweep.py --design_dir runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l1 --platform nangate45 --top attention_score32_exact_partial_temporal_finalizer_physical_l1 --sweep runs/campaigns/npu/attention_exact_partial_physical_calibration_v2/sweeps/nangate45_temporal_finalizer_12ns.json --out_root runs/designs/npu_blocks --macro_manifest runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l1/macro_manifest.json --skip_existing",
+        "name": "run_block_sweep_attention_score32_exact_partial_temporal_finalizer_physical_l1"
+      },
+      {
+        "run": "python3 npu/eval/extract_openroad_timing_summary.py --design-dir runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l1 --out runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l1/timing_debug_report.md --max-paths 8",
+        "name": "extract_attention_score32_exact_partial_temporal_finalizer_physical_harness_timing_paths_attention_score32_exact_partial_temporal_finalizer_physical_l1"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/rtlgen/gen_attention_score32_exact_partial_temporal_finalizer_physical_harness.py --config runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l2/config.json --out runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l2/verilog",
+        "name": "generate_attention_score32_exact_partial_temporal_finalizer_physical_harness_rtl_attention_score32_exact_partial_temporal_finalizer_physical_l2"
+      },
+      {
+        "run": "python3 npu/eval/check_attention_exact_partial_physical_calibration_guard.py --design-dir runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l2",
+        "name": "check_attention_exact_partial_physical_calibration_guard_attention_score32_exact_partial_temporal_finalizer_physical_l2"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/synth/run_block_sweep.py --design_dir runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l2 --platform nangate45 --top attention_score32_exact_partial_temporal_finalizer_physical_l2 --sweep runs/campaigns/npu/attention_exact_partial_physical_calibration_v2/sweeps/nangate45_temporal_finalizer_12ns.json --out_root runs/designs/npu_blocks --macro_manifest runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l2/macro_manifest.json --skip_existing",
+        "name": "run_block_sweep_attention_score32_exact_partial_temporal_finalizer_physical_l2"
+      },
+      {
+        "run": "python3 npu/eval/extract_openroad_timing_summary.py --design-dir runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l2 --out runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l2/timing_debug_report.md --max-paths 8",
+        "name": "extract_attention_score32_exact_partial_temporal_finalizer_physical_harness_timing_paths_attention_score32_exact_partial_temporal_finalizer_physical_l2"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/rtlgen/gen_attention_score32_exact_partial_temporal_finalizer_physical_harness.py --config runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l4/config.json --out runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l4/verilog",
+        "name": "generate_attention_score32_exact_partial_temporal_finalizer_physical_harness_rtl_attention_score32_exact_partial_temporal_finalizer_physical_l4"
+      },
+      {
+        "run": "python3 npu/eval/check_attention_exact_partial_physical_calibration_guard.py --design-dir runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l4",
+        "name": "check_attention_exact_partial_physical_calibration_guard_attention_score32_exact_partial_temporal_finalizer_physical_l4"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/synth/run_block_sweep.py --design_dir runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l4 --platform nangate45 --top attention_score32_exact_partial_temporal_finalizer_physical_l4 --sweep runs/campaigns/npu/attention_exact_partial_physical_calibration_v2/sweeps/nangate45_temporal_finalizer_12ns.json --out_root runs/designs/npu_blocks --macro_manifest runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l4/macro_manifest.json --skip_existing",
+        "name": "run_block_sweep_attention_score32_exact_partial_temporal_finalizer_physical_l4"
+      },
+      {
+        "run": "python3 npu/eval/extract_openroad_timing_summary.py --design-dir runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l4 --out runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l4/timing_debug_report.md --max-paths 8",
+        "name": "extract_attention_score32_exact_partial_temporal_finalizer_physical_harness_timing_paths_attention_score32_exact_partial_temporal_finalizer_physical_l4"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/rtlgen/gen_attention_score32_exact_partial_temporal_finalizer_physical_harness.py --config runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l8/config.json --out runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l8/verilog",
+        "name": "generate_attention_score32_exact_partial_temporal_finalizer_physical_harness_rtl_attention_score32_exact_partial_temporal_finalizer_physical_l8"
+      },
+      {
+        "run": "python3 npu/eval/check_attention_exact_partial_physical_calibration_guard.py --design-dir runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l8",
+        "name": "check_attention_exact_partial_physical_calibration_guard_attention_score32_exact_partial_temporal_finalizer_physical_l8"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/synth/run_block_sweep.py --design_dir runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l8 --platform nangate45 --top attention_score32_exact_partial_temporal_finalizer_physical_l8 --sweep runs/campaigns/npu/attention_exact_partial_physical_calibration_v2/sweeps/nangate45_temporal_finalizer_12ns.json --out_root runs/designs/npu_blocks --macro_manifest runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l8/macro_manifest.json --skip_existing",
+        "name": "run_block_sweep_attention_score32_exact_partial_temporal_finalizer_physical_l8"
+      },
+      {
+        "run": "python3 npu/eval/extract_openroad_timing_summary.py --design-dir runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l8 --out runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l8/timing_debug_report.md --max-paths 8",
+        "name": "extract_attention_score32_exact_partial_temporal_finalizer_physical_harness_timing_paths_attention_score32_exact_partial_temporal_finalizer_physical_l8"
+      },
+      {
+        "run": "python3 scripts/build_runs_index.py",
+        "name": "build_runs_index"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate"
+      }
+    ],
+    "objective": "Run a Layer1 nangate45 OpenROAD sweep for 4 configs using nangate45_temporal_finalizer_12ns.json and record lightweight design metrics for comparison.",
+    "acceptance": [
+      "Each generated wrapper metrics.csv contains at least one status=ok row for the queued sweep",
+      "Committed outputs stay lightweight (metrics.csv only; runs/index.csv is exported centrally after merge)",
+      "python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue pass"
+    ],
+    "source_mode": "config",
+    "expected_outputs": [
+      "runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l1/metrics.csv",
+      "runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l1/timing_debug_report.md",
+      "runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l2/metrics.csv",
+      "runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l2/timing_debug_report.md",
+      "runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l4/metrics.csv",
+      "runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l4/timing_debug_report.md",
+      "runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l8/metrics.csv",
+      "runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l8/timing_debug_report.md"
+    ]
+  },
+  "layer": "layer1",
+  "state": "evaluated",
+  "title": "Layer1 sweep from nangate45_temporal_finalizer_12ns on nangate45",
+  "result": {
+    "branch": "eval/l1_decoder_attention_exact_partial_temporal_finalizer_bounded_12ns_physical_v1_r1/s20260809t044526z",
+    "completed_utc": "2026-08-09T04:45:21.375484Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "b7c2d9c80c1c",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260809t044526z][host:b7c2d9c80c1c][item:l1_decoder_attention_exact_partial_temporal_finalizer_bounded_12ns_physical_v1_r1]",
+    "metrics_rows": [
+      {
+        "tag": "attention_exact_partial_temporal_finalizer_12ns_v1_7d5d9129",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "7d5d9129",
+        "metrics_csv": "runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l1/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l1/work/7d5d9129/result.json"
+      },
+      {
+        "tag": "attention_exact_partial_temporal_finalizer_12ns_v1_7d5d9129",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "7d5d9129",
+        "metrics_csv": "runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l2/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l2/work/7d5d9129/result.json"
+      },
+      {
+        "tag": "attention_exact_partial_temporal_finalizer_12ns_v1_7d5d9129",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "7d5d9129",
+        "metrics_csv": "runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l4/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l4/work/7d5d9129/result.json"
+      },
+      {
+        "tag": "attention_exact_partial_temporal_finalizer_12ns_v1_7d5d9129",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "7d5d9129",
+        "metrics_csv": "runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l8/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l8/work/7d5d9129/result.json"
+      }
+    ],
+    "queue_item_id": "l1_decoder_attention_exact_partial_temporal_finalizer_bounded_12ns_physical_v1_r1",
+    "session_id": "s20260809t044526z",
+    "status": "ok",
+    "summary": "18/18 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l1_decoder_attention_exact_partial_temporal_finalizer_bounded_12ns_physical_v1_r1/s20260809t044526z",
+    "pr_title": "eval: run layer1 sweep from nangate45_temporal_finalizer_12ns on nangate45",
+    "checklist": [
+      "Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge",
+      "Include metrics row references for each completed design",
+      "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260809t044526z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l1_decoder_attention_exact_partial_temporal_finalizer_bounded_12ns_physical_v1_r1"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l1_decoder_attention_exact_partial_temporal_finalizer_bounded_12ns_physical_v1_r1",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 1,
+  "created_utc": "2026-08-08T12:27:38.886571Z",
+  "requested_by": "@codex",
+  "developer_loop": {
+    "comparison": {
+      "role": "bounded_single_clock_island_physical_anchor",
+      "paired_baseline_item_id": ""
+    },
+    "evaluation": {
+      "mode": "physical_calibration",
+      "trial_policy": {
+        "seed_start": 0,
+        "trial_count": 1,
+        "stop_after_failures": 1
+      },
+      "expected_reason": "",
+      "expected_direction": ""
+    },
+    "abstraction": {
+      "layer": "decoder_attention_exact_partial_temporal_finalizer"
+    },
+    "proposal_id": "prop_l1_decoder_attention_exact_partial_temporal_finalizer_bounded_physical_v1",
+    "dependencies": {
+      "item_ids": [],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    },
+    "proposal_path": "docs/proposals/prop_l1_decoder_attention_exact_partial_temporal_finalizer_bounded_physical_v1"
+  },
+  "source_requirement": {
+    "repo": "",
+    "reason": "evaluator runtime must contain the queued job source commit",
+    "version": 1,
+    "required_ref": "origin/master",
+    "required_sha": "e27482f94d94ba45de684f7e9a3d5c5727161dd9",
+    "requires_daemon_restart": true
+  },
+  "task_type": "l1_sweep"
+}
