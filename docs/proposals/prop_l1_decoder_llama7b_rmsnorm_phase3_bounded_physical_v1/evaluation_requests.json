@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l1_decoder_llama7b_rmsnorm_phase3_bounded_physical_v1",
-  "source_commit": "",
+  "source_commit": "82bf1765c4873b3756aed47fa03ce52ecfa8f540",
   "source_commit_note": "After merge, generate the DB item from a clean worktree at the exact merge commit with proposal updates disabled; do not dispatch from a pre-merge branch SHA.",
   "requested_items": [
     {
@@ -28,7 +28,9 @@
         "direction": "measure_phase3_rmsnorm_physical_anchor",
         "reason": "This request establishes the first physical anchor for the exact Phase-3 Llama7B RMSNorm RTL while preserving the storage-model caveat."
       },
-      "notes": "Start with LANES=16 only. The sweep is intentionally conservative because the current implementation keeps full 4096-element row and gamma state in inferred register arrays. Do not create or consume SRAM macro evidence from this run."
+      "notes": "Start with LANES=16 only. The sweep is intentionally conservative because the current implementation keeps full 4096-element row and gamma state in inferred register arrays. Do not create or consume SRAM macro evidence from this run.",
+      "paired_baseline_item_id": "",
+      "depends_on_item_ids": []
     }
   ]
 }
