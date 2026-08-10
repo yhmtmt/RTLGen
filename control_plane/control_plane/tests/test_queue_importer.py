@@ -13,6 +13,7 @@ from control_plane.db import create_all
 from control_plane.models.queue_reconciliations import QueueReconciliation
 from control_plane.models.task_requests import TaskRequest
 from control_plane.models.work_items import WorkItem
+from control_plane.services.generation_source_identity import GENERATION_SOURCE_IDENTITY_VERSION
 from control_plane.services.queue_importer import QueueImportConflict, QueueImportError, QueueImportRequest, import_queue_item
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -45,8 +46,31 @@ def make_session() -> Session:
     return Session(engine)
 
 
+def _stamp_generation_identity(payload: dict[str, object], source_commit: str) -> dict[str, object]:
+    payload["source_requirement"] = {
+        "version": 1,
+        "required_ref": "origin/master",
+        "required_sha": source_commit,
+        "requires_daemon_restart": True,
+    }
+    payload["generation_source_identity"] = {
+        "version": GENERATION_SOURCE_IDENTITY_VERSION,
+        "declared_source_commit": source_commit,
+        "repo_head_sha": source_commit,
+        "relation": "exact",
+        "proof": "generator_worktree_head_exact",
+        "clean": True,
+    }
+    return payload
+
+
 def test_import_real_queue_item(tmp_path: Path) -> None:
     repo_root, queue_file, source_commit = _make_queue_import_repo(tmp_path)
+    payload = json.loads(queue_file.read_text(encoding="utf-8"))
+    queue_file.write_text(
+        json.dumps(_stamp_generation_identity(payload, source_commit), indent=2) + "\n",
+        encoding="utf-8",
+    )
     with make_session() as session:
         result = import_queue_item(
             session,
@@ -69,13 +93,10 @@ def test_import_real_queue_item(tmp_path: Path) -> None:
 def test_import_uses_payload_source_requirement(tmp_path: Path) -> None:
     repo_root, queue_file, source_commit = _make_queue_import_repo(tmp_path)
     payload = json.loads(queue_file.read_text(encoding="utf-8"))
-    payload["source_requirement"] = {
-        "version": 1,
-        "required_ref": "origin/master",
-        "required_sha": source_commit,
-        "requires_daemon_restart": True,
-    }
-    queue_file.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    queue_file.write_text(
+        json.dumps(_stamp_generation_identity(payload, source_commit), indent=2) + "\n",
+        encoding="utf-8",
+    )
 
     with make_session() as session:
         import_queue_item(
@@ -111,6 +132,11 @@ def test_import_same_item_is_idempotent() -> None:
 
 def test_import_preserves_explicit_task_type_on_export_roundtrip(tmp_path: Path) -> None:
     repo_root, queue_file, source_commit = _make_queue_import_repo(tmp_path)
+    payload = json.loads(queue_file.read_text(encoding="utf-8"))
+    queue_file.write_text(
+        json.dumps(_stamp_generation_identity(payload, source_commit), indent=2) + "\n",
+        encoding="utf-8",
+    )
     exported = tmp_path / "roundtrip.json"
 
     with make_session() as session:
@@ -218,6 +244,11 @@ def test_import_route_accepts_post_with_sqlite_file(tmp_path: Path) -> None:
     from control_plane.api.app import create_app
 
     repo_root, queue_file, source_commit = _make_queue_import_repo(tmp_path)
+    payload = json.loads(queue_file.read_text(encoding="utf-8"))
+    queue_file.write_text(
+        json.dumps(_stamp_generation_identity(payload, source_commit), indent=2) + "\n",
+        encoding="utf-8",
+    )
     db_file = tmp_path / "cp.db"
     payload = {
         "repo_root": str(repo_root),
@@ -260,6 +291,153 @@ def test_import_rejects_invalid_source_commit() -> None:
             )
         except QueueImportError as exc:
             assert "provided source_commit does not resolve to a commit" in str(exc)
+        else:
+            raise AssertionError("expected QueueImportError")
+
+
+def test_import_rejects_declared_source_without_generation_identity(tmp_path: Path) -> None:
+    repo_root, queue_file, source_commit = _make_queue_import_repo(tmp_path)
+
+    with make_session() as session:
+        try:
+            import_queue_item(
+                session,
+                QueueImportRequest(
+                    repo_root=str(repo_root),
+                    queue_path=str(queue_file),
+                    source_commit=source_commit,
+                ),
+            )
+        except QueueImportError as exc:
+            message = str(exc)
+            assert "missing generation_source_identity" in message
+            assert source_commit in message
+            assert "Regenerate the queue item from a worktree whose HEAD exactly matches the declared source commit." in message
+        else:
+            raise AssertionError("expected QueueImportError")
+
+
+def test_import_rejects_declared_source_with_nonclean_generation_identity(tmp_path: Path) -> None:
+    repo_root, queue_file, source_commit = _make_queue_import_repo(tmp_path)
+    payload = json.loads(queue_file.read_text(encoding="utf-8"))
+    stamped = _stamp_generation_identity(payload, source_commit)
+    stamped["generation_source_identity"]["clean"] = False
+    queue_file.write_text(json.dumps(stamped, indent=2) + "\n", encoding="utf-8")
+
+    with make_session() as session:
+        try:
+            import_queue_item(
+                session,
+                QueueImportRequest(
+                    repo_root=str(repo_root),
+                    queue_path=str(queue_file),
+                    source_commit=source_commit,
+                ),
+            )
+        except QueueImportError as exc:
+            message = str(exc)
+            assert "does not prove a clean generation worktree" in message
+            assert "clean=False" in message
+            assert "Regenerate the queue item from a clean checkout whose HEAD exactly matches the declared source commit." in message
+        else:
+            raise AssertionError("expected QueueImportError")
+
+
+def test_import_rejects_declared_source_with_missing_generation_identity_version(tmp_path: Path) -> None:
+    repo_root, queue_file, source_commit = _make_queue_import_repo(tmp_path)
+    payload = json.loads(queue_file.read_text(encoding="utf-8"))
+    stamped = _stamp_generation_identity(payload, source_commit)
+    stamped["generation_source_identity"].pop("version")
+    queue_file.write_text(json.dumps(stamped, indent=2) + "\n", encoding="utf-8")
+
+    with make_session() as session:
+        try:
+            import_queue_item(
+                session,
+                QueueImportRequest(
+                    repo_root=str(repo_root),
+                    queue_path=str(queue_file),
+                    source_commit=source_commit,
+                ),
+            )
+        except QueueImportError as exc:
+            message = str(exc)
+            assert f"unsupported version=None; expected version={GENERATION_SOURCE_IDENTITY_VERSION}" in message
+        else:
+            raise AssertionError("expected QueueImportError")
+
+
+def test_import_rejects_declared_source_with_wrong_generation_identity_version(tmp_path: Path) -> None:
+    repo_root, queue_file, source_commit = _make_queue_import_repo(tmp_path)
+    payload = json.loads(queue_file.read_text(encoding="utf-8"))
+    stamped = _stamp_generation_identity(payload, source_commit)
+    stamped["generation_source_identity"]["version"] = GENERATION_SOURCE_IDENTITY_VERSION + 1
+    queue_file.write_text(json.dumps(stamped, indent=2) + "\n", encoding="utf-8")
+
+    with make_session() as session:
+        try:
+            import_queue_item(
+                session,
+                QueueImportRequest(
+                    repo_root=str(repo_root),
+                    queue_path=str(queue_file),
+                    source_commit=source_commit,
+                ),
+            )
+        except QueueImportError as exc:
+            message = str(exc)
+            assert (
+                f"unsupported version={GENERATION_SOURCE_IDENTITY_VERSION + 1}; expected version={GENERATION_SOURCE_IDENTITY_VERSION}"
+                in message
+            )
+        else:
+            raise AssertionError("expected QueueImportError")
+
+
+def test_import_rejects_declared_source_with_missing_generation_identity_proof(tmp_path: Path) -> None:
+    repo_root, queue_file, source_commit = _make_queue_import_repo(tmp_path)
+    payload = json.loads(queue_file.read_text(encoding="utf-8"))
+    stamped = _stamp_generation_identity(payload, source_commit)
+    stamped["generation_source_identity"].pop("proof")
+    queue_file.write_text(json.dumps(stamped, indent=2) + "\n", encoding="utf-8")
+
+    with make_session() as session:
+        try:
+            import_queue_item(
+                session,
+                QueueImportRequest(
+                    repo_root=str(repo_root),
+                    queue_path=str(queue_file),
+                    source_commit=source_commit,
+                ),
+            )
+        except QueueImportError as exc:
+            message = str(exc)
+            assert "unsupported generation_source_identity proof=<missing>" in message
+        else:
+            raise AssertionError("expected QueueImportError")
+
+
+def test_import_rejects_declared_source_with_wrong_generation_identity_proof(tmp_path: Path) -> None:
+    repo_root, queue_file, source_commit = _make_queue_import_repo(tmp_path)
+    payload = json.loads(queue_file.read_text(encoding="utf-8"))
+    stamped = _stamp_generation_identity(payload, source_commit)
+    stamped["generation_source_identity"]["proof"] = "different_proof"
+    queue_file.write_text(json.dumps(stamped, indent=2) + "\n", encoding="utf-8")
+
+    with make_session() as session:
+        try:
+            import_queue_item(
+                session,
+                QueueImportRequest(
+                    repo_root=str(repo_root),
+                    queue_path=str(queue_file),
+                    source_commit=source_commit,
+                ),
+            )
+        except QueueImportError as exc:
+            message = str(exc)
+            assert "unsupported generation_source_identity proof=different_proof" in message
         else:
             raise AssertionError("expected QueueImportError")
 

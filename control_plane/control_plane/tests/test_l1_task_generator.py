@@ -318,6 +318,19 @@ def _init_git_repo(repo_root: Path) -> str:
     return result.stdout.strip()
 
 
+def _commit_repo_changes(repo_root: Path, message: str) -> str:
+    subprocess.run(["git", "-C", str(repo_root), "add", "-A"], check=True, capture_output=True, text=True)
+    subprocess.run(["git", "-C", str(repo_root), "commit", "-m", message], check=True, capture_output=True, text=True)
+    subprocess.run(["git", "-C", str(repo_root), "push", "origin", "HEAD:master"], check=True, capture_output=True, text=True)
+    result = subprocess.run(["git", "-C", str(repo_root), "rev-parse", "HEAD"], check=True, capture_output=True, text=True)
+    return result.stdout.strip()
+
+
+def _make_l1_request(**kwargs: object) -> Layer1SweepGenerateRequest:
+    kwargs.setdefault("update_proposal_files", False)
+    return Layer1SweepGenerateRequest(**kwargs)
+
+
 def _copy_fixture_file(*, src_repo_root: Path, dst_repo_root: Path, rel_path: str) -> None:
     src = src_repo_root / rel_path
     dst = dst_repo_root / rel_path
@@ -2515,7 +2528,7 @@ def test_generate_l1_sweep_task_creates_ready_work_item() -> None:
             ):
                 result = generate_l1_sweep_task(
                     session,
-                    Layer1SweepGenerateRequest(
+                    _make_l1_request(
                         repo_root=str(repo_root),
                         sweep_path=sweep_path,
                         config_paths=[config_path],
@@ -2556,6 +2569,14 @@ def test_generate_l1_sweep_task_creates_ready_work_item() -> None:
             assert payload["source_requirement"]["required_sha"] == source_commit
             assert payload["source_requirement"]["required_ref"] == "origin/master"
             assert payload["source_requirement"]["requires_daemon_restart"] is True
+            assert payload["generation_source_identity"] == {
+                "version": 1,
+                "declared_source_commit": source_commit,
+                "repo_head_sha": source_commit,
+                "relation": "exact",
+                "proof": "generator_worktree_head_exact",
+                "clean": True,
+            }
             assert payload["task"]["inputs"]["sweeps"] == [sweep_path]
             assert payload["task"]["acceptance"][0] == (
                 "Each generated wrapper metrics.csv contains at least one status=ok row for the queued sweep"
@@ -2566,6 +2587,124 @@ def test_generate_l1_sweep_task_creates_ready_work_item() -> None:
             ]
             assert payload["developer_loop"]["abstraction"] == {"layer": "circuit_block"}
             assert payload["handoff"]["pr_body_fields"]["queue_item_id"] == result.item_id
+
+
+def test_generate_l1_sweep_task_rejects_mismatched_generation_worktree() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        config_path, sweep_path = _write_example_repo(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        mismatch_file = repo_root / "HEAD_ONLY.txt"
+        mismatch_file.write_text("mismatch\n", encoding="utf-8")
+        subprocess.run(["git", "-C", str(repo_root), "add", "HEAD_ONLY.txt"], check=True, capture_output=True, text=True)
+        subprocess.run(
+            ["git", "-C", str(repo_root), "commit", "-m", "local head drift"],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        head_commit = subprocess.run(
+            ["git", "-C", str(repo_root), "rev-parse", "HEAD"],
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            try:
+                generate_l1_sweep_task(
+                    session,
+                    _make_l1_request(
+                        repo_root=str(repo_root),
+                        sweep_path=sweep_path,
+                        config_paths=[config_path],
+                        platform="nangate45",
+                        out_root="runs/designs/activations",
+                        requested_by="@tester",
+                        source_commit=source_commit,
+                    ),
+                )
+            except Layer1TaskGenerationError as exc:
+                message = str(exc)
+                assert "exact-generation worktree" in message
+                assert source_commit in message
+                assert head_commit in message
+                assert "Regenerate the item from a checkout whose HEAD exactly matches the declared source commit." in message
+            else:
+                raise AssertionError("expected Layer1TaskGenerationError for mismatched generation worktree")
+
+
+def test_generate_l1_sweep_task_rejects_tracked_dirty_generation_worktree() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        config_path, sweep_path = _write_example_repo(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        tracked_file = repo_root / config_path
+        tracked_file.write_text(tracked_file.read_text(encoding="utf-8") + "\n", encoding="utf-8")
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            try:
+                generate_l1_sweep_task(
+                    session,
+                    _make_l1_request(
+                        repo_root=str(repo_root),
+                        sweep_path=sweep_path,
+                        config_paths=[config_path],
+                        platform="nangate45",
+                        out_root="runs/designs/activations",
+                        requested_by="@tester",
+                        source_commit=source_commit,
+                    ),
+                )
+            except Layer1TaskGenerationError as exc:
+                message = str(exc)
+                assert "clean exact-generation worktree" in message
+                assert "git status --porcelain is not empty" in message
+                assert f" M {config_path}" in message or f"M {config_path}" in message
+                assert "Commit, stash, or remove tracked and untracked changes" in message
+            else:
+                raise AssertionError("expected Layer1TaskGenerationError for tracked dirty generation worktree")
+
+
+def test_generate_l1_sweep_task_rejects_untracked_generation_worktree() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        config_path, sweep_path = _write_example_repo(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        untracked_rel = "examples/untracked_probe.json"
+        (repo_root / untracked_rel).write_text('{"probe": true}\n', encoding="utf-8")
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            try:
+                generate_l1_sweep_task(
+                    session,
+                    _make_l1_request(
+                        repo_root=str(repo_root),
+                        sweep_path=sweep_path,
+                        config_paths=[config_path],
+                        platform="nangate45",
+                        out_root="runs/designs/activations",
+                        requested_by="@tester",
+                        source_commit=source_commit,
+                    ),
+                )
+            except Layer1TaskGenerationError as exc:
+                message = str(exc)
+                assert "clean exact-generation worktree" in message
+                assert "git status --porcelain is not empty" in message
+                assert f"?? {untracked_rel}" in message
+                assert "Commit, stash, or remove tracked and untracked changes" in message
+            else:
+                raise AssertionError("expected Layer1TaskGenerationError for untracked generation worktree")
 
 
 def test_generate_l1_sweep_task_uses_boundary_metrics_acceptance() -> None:
@@ -2584,7 +2723,7 @@ def test_generate_l1_sweep_task_uses_boundary_metrics_acceptance() -> None:
             ):
                 result = generate_l1_sweep_task(
                     session,
-                    Layer1SweepGenerateRequest(
+                    _make_l1_request(
                         repo_root=str(repo_root),
                         sweep_path=sweep_path,
                         config_paths=[config_path],
@@ -2618,7 +2757,7 @@ def test_generate_l1_sweep_task_uses_acceptance_notes_for_boundary_evidence() ->
             ):
                 result = generate_l1_sweep_task(
                     session,
-                    Layer1SweepGenerateRequest(
+                    _make_l1_request(
                         repo_root=str(repo_root),
                         sweep_path=sweep_path,
                         config_paths=[config_path],
@@ -2656,7 +2795,7 @@ def test_generate_l1_sweep_task_requeues_failed_item_on_upsert() -> None:
         with Session(engine) as session:
             result = generate_l1_sweep_task(
                 session,
-                Layer1SweepGenerateRequest(
+                _make_l1_request(
                     repo_root=str(repo_root),
                     sweep_path=sweep_path,
                     config_paths=[config_path],
@@ -2675,7 +2814,7 @@ def test_generate_l1_sweep_task_requeues_failed_item_on_upsert() -> None:
 
             generate_l1_sweep_task(
                 session,
-                Layer1SweepGenerateRequest(
+                _make_l1_request(
                     repo_root=str(repo_root),
                     sweep_path=sweep_path,
                     config_paths=[config_path],
@@ -2705,7 +2844,7 @@ def test_generate_l1_sweep_task_expands_expected_outputs_for_multi_trial_items()
         with Session(engine) as session:
             result = generate_l1_sweep_task(
                 session,
-                Layer1SweepGenerateRequest(
+                _make_l1_request(
                     repo_root=str(repo_root),
                     sweep_path=sweep_path,
                     config_paths=[config_path],
@@ -2742,7 +2881,7 @@ def test_generate_l1_sweep_task_run_sweep_command_includes_all_wrapper_configs()
         with Session(engine) as session:
             result = generate_l1_sweep_task(
                 session,
-                Layer1SweepGenerateRequest(
+                _make_l1_request(
                     repo_root=str(repo_root),
                     sweep_path=sweep_path,
                     config_paths=[config_path, second_config_path],
@@ -2777,7 +2916,7 @@ def test_generate_l1_sweep_task_supports_bf16_recip_norm_wrapper_config() -> Non
         with Session(engine) as session:
             result = generate_l1_sweep_task(
                 session,
-                Layer1SweepGenerateRequest(
+                _make_l1_request(
                     repo_root=str(repo_root),
                     sweep_path=sweep_path,
                     config_paths=[config_path],
@@ -2810,7 +2949,7 @@ def test_generate_l1_sweep_task_supports_score_tie_rank_wrapper_config() -> None
         with Session(engine) as session:
             result = generate_l1_sweep_task(
                 session,
-                Layer1SweepGenerateRequest(
+                _make_l1_request(
                     repo_root=str(repo_root),
                     sweep_path=sweep_path,
                     config_paths=[config_path],
@@ -2843,7 +2982,7 @@ def test_generate_l1_sweep_task_supports_logit_rank_wrapper_config() -> None:
         with Session(engine) as session:
             result = generate_l1_sweep_task(
                 session,
-                Layer1SweepGenerateRequest(
+                _make_l1_request(
                     repo_root=str(repo_root),
                     sweep_path=sweep_path,
                     config_paths=[config_path],
@@ -2876,7 +3015,7 @@ def test_generate_l1_sweep_task_supports_candidate_stream_merge_fifo_wrapper_con
         with Session(engine) as session:
             result = generate_l1_sweep_task(
                 session,
-                Layer1SweepGenerateRequest(
+                _make_l1_request(
                     repo_root=str(repo_root),
                     sweep_path=sweep_path,
                     config_paths=[config_path],
@@ -2909,7 +3048,7 @@ def test_generate_l1_sweep_task_supports_attention_kv_tile_wrapper_config() -> N
         with Session(engine) as session:
             result = generate_l1_sweep_task(
                 session,
-                Layer1SweepGenerateRequest(
+                _make_l1_request(
                     repo_root=str(repo_root),
                     sweep_path=sweep_path,
                     config_paths=[config_path],
@@ -2949,9 +3088,37 @@ def test_generate_l1_sweep_task_records_requested_item_in_proposal_evaluation_re
         create_all(engine)
 
         with Session(engine) as session:
+            try:
+                generate_l1_sweep_task(
+                    session,
+                    _make_l1_request(
+                        repo_root=str(repo_root),
+                        sweep_path=sweep_path,
+                        config_paths=[config_path],
+                        platform="nangate45",
+                        out_root="runs/designs/activations",
+                        item_id="l1_demo_softmax_proposal_r1",
+                        requested_by="@tester",
+                        source_commit=source_commit,
+                        proposal_id="prop_l1_demo_v1",
+                        proposal_path="docs/proposals/prop_l1_demo_v1",
+                        abstraction_layer="circuit_block",
+                        acceptance_notes="Accept flow_failed rows as explicit boundary evidence.",
+                        update_proposal_files=True,
+                    ),
+                )
+            except Layer1TaskGenerationError as exc:
+                assert "clean exact-generation worktree" in str(exc)
+            else:
+                raise AssertionError("expected Layer1TaskGenerationError")
+
+            assert session.query(WorkItem).count() == 0
+            assert session.query(TaskRequest).count() == 0
+
+            clean_commit = _commit_repo_changes(repo_root, "commit l1 proposal metadata fixture")
             result = generate_l1_sweep_task(
                 session,
-                Layer1SweepGenerateRequest(
+                _make_l1_request(
                     repo_root=str(repo_root),
                     sweep_path=sweep_path,
                     config_paths=[config_path],
@@ -2959,11 +3126,12 @@ def test_generate_l1_sweep_task_records_requested_item_in_proposal_evaluation_re
                     out_root="runs/designs/activations",
                     item_id="l1_demo_softmax_proposal_r1",
                     requested_by="@tester",
-                    source_commit=source_commit,
+                    source_commit=clean_commit,
                     proposal_id="prop_l1_demo_v1",
                     proposal_path="docs/proposals/prop_l1_demo_v1",
                     abstraction_layer="circuit_block",
                     acceptance_notes="Accept flow_failed rows as explicit boundary evidence.",
+                    update_proposal_files=False,
                 ),
             )
 
@@ -3032,7 +3200,7 @@ def test_generate_l1_sweep_task_can_refresh_db_without_updating_proposal_files()
         with Session(engine) as session:
             result = generate_l1_sweep_task(
                 session,
-                Layer1SweepGenerateRequest(
+                _make_l1_request(
                     repo_root=str(repo_root),
                     sweep_path=sweep_path,
                     config_paths=[config_path],
@@ -3055,6 +3223,121 @@ def test_generate_l1_sweep_task_can_refresh_db_without_updating_proposal_files()
             assert work_item.task_request.request_payload["developer_loop"]["proposal_id"] == "prop_l1_demo_v1"
 
         assert evaluation_requests_path.read_text(encoding="utf-8") == before
+
+
+def test_generate_l1_sweep_task_rejects_db_creation_when_proposal_upsert_dirties_worktree() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        config_path, sweep_path = _write_example_repo(repo_root)
+        proposal_dir = repo_root / "docs" / "proposals" / "prop_l1_dirty_generation_guard_v1"
+        proposal_dir.mkdir(parents=True, exist_ok=True)
+        (proposal_dir / "proposal.json").write_text(
+            json.dumps({"proposal_id": "prop_l1_dirty_generation_guard_v1", "abstraction_layer": "circuit_block"}, indent=2) + "\n",
+            encoding="utf-8",
+        )
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            try:
+                generate_l1_sweep_task(
+                    session,
+                    _make_l1_request(
+                        repo_root=str(repo_root),
+                        sweep_path=sweep_path,
+                        config_paths=[config_path],
+                        platform="nangate45",
+                        out_root="runs/designs/activations",
+                        item_id="l1_demo_dirty_generation_guard_r1",
+                        requested_by="@tester",
+                        source_commit=source_commit,
+                        proposal_id="prop_l1_dirty_generation_guard_v1",
+                        proposal_path="docs/proposals/prop_l1_dirty_generation_guard_v1",
+                        update_proposal_files=True,
+                    ),
+                )
+            except Layer1TaskGenerationError as exc:
+                message = str(exc)
+                assert "clean exact-generation worktree" in message
+                assert "git status --porcelain is not empty" in message
+                assert "docs/proposals/prop_l1_dirty_generation_guard_v1/" in message
+            else:
+                raise AssertionError("expected Layer1TaskGenerationError")
+
+            assert session.query(WorkItem).count() == 0
+            assert session.query(TaskRequest).count() == 0
+            assert (proposal_dir / "evaluation_requests.json").exists()
+
+
+def test_generate_l1_sweep_task_succeeds_after_committed_rerun_without_proposal_updates() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        config_path, sweep_path = _write_example_repo(repo_root)
+        proposal_dir = repo_root / "docs" / "proposals" / "prop_l1_dirty_generation_guard_v1"
+        proposal_dir.mkdir(parents=True, exist_ok=True)
+        (proposal_dir / "proposal.json").write_text(
+            json.dumps({"proposal_id": "prop_l1_dirty_generation_guard_v1", "abstraction_layer": "circuit_block"}, indent=2) + "\n",
+            encoding="utf-8",
+        )
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            try:
+                generate_l1_sweep_task(
+                    session,
+                    _make_l1_request(
+                        repo_root=str(repo_root),
+                        sweep_path=sweep_path,
+                        config_paths=[config_path],
+                        platform="nangate45",
+                        out_root="runs/designs/activations",
+                        item_id="l1_demo_dirty_generation_guard_r1",
+                        requested_by="@tester",
+                        source_commit=source_commit,
+                        proposal_id="prop_l1_dirty_generation_guard_v1",
+                        proposal_path="docs/proposals/prop_l1_dirty_generation_guard_v1",
+                        update_proposal_files=True,
+                    ),
+                )
+            except Layer1TaskGenerationError:
+                pass
+            else:
+                raise AssertionError("expected initial Layer1TaskGenerationError")
+
+            clean_commit = _commit_repo_changes(repo_root, "commit l1 proposal upsert artifacts")
+            result = generate_l1_sweep_task(
+                session,
+                _make_l1_request(
+                    repo_root=str(repo_root),
+                    sweep_path=sweep_path,
+                    config_paths=[config_path],
+                    platform="nangate45",
+                    out_root="runs/designs/activations",
+                    item_id="l1_demo_dirty_generation_guard_r1",
+                    requested_by="@tester",
+                    source_commit=clean_commit,
+                    proposal_id="prop_l1_dirty_generation_guard_v1",
+                    proposal_path="docs/proposals/prop_l1_dirty_generation_guard_v1",
+                    update_proposal_files=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            assert result.status == "applied"
+            assert work_item.source_commit == clean_commit
+            assert work_item.task_request.request_payload["generation_source_identity"] == {
+                "version": 1,
+                "declared_source_commit": clean_commit,
+                "repo_head_sha": clean_commit,
+                "relation": "exact",
+                "proof": "generator_worktree_head_exact",
+                "clean": True,
+            }
 
 
 def test_generate_l1_sweep_task_inherits_proposal_dependencies_and_starts_blocked() -> None:
@@ -3108,7 +3391,7 @@ def test_generate_l1_sweep_task_inherits_proposal_dependencies_and_starts_blocke
         with Session(engine) as session:
             result = generate_l1_sweep_task(
                 session,
-                Layer1SweepGenerateRequest(
+                _make_l1_request(
                     repo_root=str(repo_root),
                     sweep_path=sweep_path,
                     config_paths=[config_path],
@@ -3155,7 +3438,7 @@ def test_generate_l1_sweep_task_explicit_dependencies_create_blocked_item_withou
         with Session(engine) as session:
             result = generate_l1_sweep_task(
                 session,
-                Layer1SweepGenerateRequest(
+                _make_l1_request(
                     repo_root=str(repo_root),
                     sweep_path=sweep_path,
                     config_paths=[config_path],
@@ -3200,10 +3483,11 @@ def test_generate_l1_sweep_task_starts_dispatch_pending_when_dependency_is_merge
                 expected_output_rel="runs/campaigns/l2_demo_equivalence_v1/summary.csv",
             )
             session.commit()
+            source_commit = _commit_repo_changes(repo_root, "commit seeded dependency artifacts")
 
             result = generate_l1_sweep_task(
                 session,
-                Layer1SweepGenerateRequest(
+                _make_l1_request(
                     repo_root=str(repo_root),
                     sweep_path=sweep_path,
                     config_paths=[config_path],
@@ -3287,7 +3571,7 @@ def test_generate_l1_sweep_task_auto_discovers_proposal_for_existing_item() -> N
         with Session(engine) as session:
             result = generate_l1_sweep_task(
                 session,
-                Layer1SweepGenerateRequest(
+                _make_l1_request(
                     repo_root=str(repo_root),
                     sweep_path=sweep_path,
                     config_paths=[config_path],
@@ -3356,9 +3640,36 @@ def test_generate_l1_sweep_task_strips_placeholder_requested_items_from_template
         create_all(engine)
 
         with Session(engine) as session:
+            try:
+                generate_l1_sweep_task(
+                    session,
+                    _make_l1_request(
+                        repo_root=str(repo_root),
+                        sweep_path=sweep_path,
+                        config_paths=[config_path],
+                        platform="nangate45",
+                        out_root="runs/designs/activations",
+                        item_id="l1_demo_softmax_template_r1",
+                        requested_by="@tester",
+                        source_commit=source_commit,
+                        proposal_id="prop_l1_template_v1",
+                        proposal_path="docs/proposals/prop_l1_template_v1",
+                        abstraction_layer="circuit_block",
+                        update_proposal_files=True,
+                    ),
+                )
+            except Layer1TaskGenerationError as exc:
+                assert "clean exact-generation worktree" in str(exc)
+            else:
+                raise AssertionError("expected Layer1TaskGenerationError")
+
+            assert session.query(WorkItem).count() == 0
+            assert session.query(TaskRequest).count() == 0
+
+            clean_commit = _commit_repo_changes(repo_root, "commit l1 template proposal fixture")
             result = generate_l1_sweep_task(
                 session,
-                Layer1SweepGenerateRequest(
+                _make_l1_request(
                     repo_root=str(repo_root),
                     sweep_path=sweep_path,
                     config_paths=[config_path],
@@ -3366,10 +3677,11 @@ def test_generate_l1_sweep_task_strips_placeholder_requested_items_from_template
                     out_root="runs/designs/activations",
                     item_id="l1_demo_softmax_template_r1",
                     requested_by="@tester",
-                    source_commit=source_commit,
+                    source_commit=clean_commit,
                     proposal_id="prop_l1_template_v1",
                     proposal_path="docs/proposals/prop_l1_template_v1",
                     abstraction_layer="circuit_block",
+                    update_proposal_files=False,
                 ),
             )
 
@@ -3412,7 +3724,7 @@ def test_generate_l1_sweep_task_omits_runtime_submodules_when_image_provides_dep
             ):
                 result = generate_l1_sweep_task(
                     session,
-                    Layer1SweepGenerateRequest(
+                    _make_l1_request(
                         repo_root=str(repo_root),
                         sweep_path=sweep_path,
                         config_paths=[config_path],
@@ -3444,7 +3756,7 @@ def test_generate_l1_sweep_task_upserts_existing_item() -> None:
         with Session(engine) as session:
             first = generate_l1_sweep_task(
                 session,
-                Layer1SweepGenerateRequest(
+                _make_l1_request(
                     repo_root=str(repo_root),
                     sweep_path=sweep_path,
                     config_paths=[config_path],
@@ -3458,7 +3770,7 @@ def test_generate_l1_sweep_task_upserts_existing_item() -> None:
             )
             second = generate_l1_sweep_task(
                 session,
-                Layer1SweepGenerateRequest(
+                _make_l1_request(
                     repo_root=str(repo_root),
                     sweep_path=sweep_path,
                     config_paths=[config_path],
@@ -3490,7 +3802,7 @@ def test_generate_l1_sweep_task_preserves_running_item_on_upsert_even_when_new_d
         with Session(engine) as session:
             result = generate_l1_sweep_task(
                 session,
-                Layer1SweepGenerateRequest(
+                _make_l1_request(
                     repo_root=str(repo_root),
                     sweep_path=sweep_path,
                     config_paths=[config_path],
@@ -3508,7 +3820,7 @@ def test_generate_l1_sweep_task_preserves_running_item_on_upsert_even_when_new_d
 
             generate_l1_sweep_task(
                 session,
-                Layer1SweepGenerateRequest(
+                _make_l1_request(
                     repo_root=str(repo_root),
                     sweep_path=sweep_path,
                     config_paths=[config_path],
@@ -3544,7 +3856,7 @@ def test_generate_l1_sweep_task_preserves_merged_item_on_upsert() -> None:
         with Session(engine) as session:
             result = generate_l1_sweep_task(
                 session,
-                Layer1SweepGenerateRequest(
+                _make_l1_request(
                     repo_root=str(repo_root),
                     sweep_path=sweep_path,
                     config_paths=[config_path],
@@ -3561,7 +3873,7 @@ def test_generate_l1_sweep_task_preserves_merged_item_on_upsert() -> None:
 
             generate_l1_sweep_task(
                 session,
-                Layer1SweepGenerateRequest(
+                _make_l1_request(
                     repo_root=str(repo_root),
                     sweep_path=sweep_path,
                     config_paths=[config_path],
@@ -3598,13 +3910,14 @@ def test_generate_l1_sweep_task_supports_integrated_npu_block_configs() -> None:
             json.dumps({"proposal_id": "prop_l1_npu_nm1_sigmoid_vec_enable_v1", "abstraction_layer": "architecture_block"}, indent=2) + "\n",
             encoding="utf-8",
         )
+        source_commit = _commit_repo_changes(repo_root, "commit proposal metadata fixture")
         engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
         create_all(engine)
 
         with Session(engine) as session:
             result = generate_l1_sweep_task(
                 session,
-                Layer1SweepGenerateRequest(
+                _make_l1_request(
                     repo_root=str(repo_root),
                     sweep_path=sweep_path,
                     config_paths=[config_path],
@@ -3663,7 +3976,7 @@ def test_generate_l1_sweep_task_supports_dense_gemm_tile_configs() -> None:
         with Session(engine) as session:
             result = generate_l1_sweep_task(
                 session,
-                Layer1SweepGenerateRequest(
+                _make_l1_request(
                     repo_root=str(repo_root),
                     sweep_path=sweep_path,
                     config_paths=[config_path],
@@ -3717,7 +4030,7 @@ def test_generate_l1_sweep_task_supports_dense_gemm_tile_stream_configs() -> Non
         with Session(engine) as session:
             result = generate_l1_sweep_task(
                 session,
-                Layer1SweepGenerateRequest(
+                _make_l1_request(
                     repo_root=str(repo_root),
                     sweep_path=sweep_path,
                     config_paths=[config_path],
@@ -3757,7 +4070,7 @@ def test_generate_l1_sweep_task_supports_attention_dual_stream_composed_configs(
         with Session(engine) as session:
             result = generate_l1_sweep_task(
                 session,
-                Layer1SweepGenerateRequest(
+                _make_l1_request(
                     repo_root=str(repo_root),
                     sweep_path=sweep_path,
                     config_paths=[config_path],
@@ -3818,7 +4131,7 @@ def test_generate_l1_sweep_task_supports_attention_command_dispatch_configs() ->
         with Session(engine) as session:
             result = generate_l1_sweep_task(
                 session,
-                Layer1SweepGenerateRequest(
+                _make_l1_request(
                     repo_root=str(repo_root),
                     sweep_path=sweep_path,
                     config_paths=[config_path],
@@ -3878,7 +4191,7 @@ def test_generate_l1_sweep_task_supports_attention_score32_exact_root_finalizer_
         with Session(engine) as session:
             result = generate_l1_sweep_task(
                 session,
-                Layer1SweepGenerateRequest(
+                _make_l1_request(
                     repo_root=str(repo_root),
                     sweep_path=sweep_path,
                     config_paths=[config_path],
@@ -3938,7 +4251,7 @@ def test_generate_l1_sweep_task_supports_attention_score32_exact_partial_tree_co
         with Session(engine) as session:
             result = generate_l1_sweep_task(
                 session,
-                Layer1SweepGenerateRequest(
+                _make_l1_request(
                     repo_root=str(repo_root),
                     sweep_path=sweep_path,
                     config_paths=[config_path],
@@ -4000,7 +4313,7 @@ def test_generate_l1_sweep_task_supports_attention_score32_exact_partial_tree_fo
         with Session(engine) as session:
             result = generate_l1_sweep_task(
                 session,
-                Layer1SweepGenerateRequest(
+                _make_l1_request(
                     repo_root=str(repo_root),
                     sweep_path=sweep_path,
                     config_paths=[config_path],
@@ -4038,7 +4351,7 @@ def test_generate_l1_sweep_task_supports_attention_score32_exact_partial_pair_me
         with Session(engine) as session:
             result = generate_l1_sweep_task(
                 session,
-                Layer1SweepGenerateRequest(
+                _make_l1_request(
                     repo_root=str(repo_root),
                     sweep_path=sweep_path,
                     config_paths=[config_path],
@@ -4095,7 +4408,7 @@ def test_generate_l1_sweep_task_supports_attention_score32_exact_partial_pair_me
         with Session(engine) as session:
             result = generate_l1_sweep_task(
                 session,
-                Layer1SweepGenerateRequest(
+                _make_l1_request(
                     repo_root=str(repo_root),
                     sweep_path=sweep_path,
                     config_paths=[config_path],
@@ -4239,7 +4552,7 @@ def test_generate_l1_sweep_task_supports_attention_score32_exact_banked_finalize
         with Session(engine) as session:
             result = generate_l1_sweep_task(
                 session,
-                Layer1SweepGenerateRequest(
+                _make_l1_request(
                     repo_root=str(repo_root),
                     sweep_path=sweep_path,
                     config_paths=[config_path],
@@ -4305,7 +4618,7 @@ def test_generate_l1_sweep_task_supports_attention_hbm_replay_controller_configs
         with Session(engine) as session:
             result = generate_l1_sweep_task(
                 session,
-                Layer1SweepGenerateRequest(
+                _make_l1_request(
                     repo_root=str(repo_root),
                     sweep_path=sweep_path,
                     config_paths=[config_path],
@@ -4368,7 +4681,7 @@ def test_generate_l1_sweep_task_supports_multi_attention_hbm_replay_controller_c
         with Session(engine) as session:
             result = generate_l1_sweep_task(
                 session,
-                Layer1SweepGenerateRequest(
+                _make_l1_request(
                     repo_root=str(repo_root),
                     sweep_path=sweep_path,
                     config_paths=[config_path, second_config_path],
@@ -4417,7 +4730,7 @@ def test_generate_l1_sweep_task_supports_attention_schedule_wrapper_configs() ->
         with Session(engine) as session:
             result = generate_l1_sweep_task(
                 session,
-                Layer1SweepGenerateRequest(
+                _make_l1_request(
                     repo_root=str(repo_root),
                     sweep_path=sweep_path,
                     config_paths=[config_path],
@@ -4477,7 +4790,7 @@ def test_generate_l1_sweep_task_supports_attention_separated_cluster_configs() -
         with Session(engine) as session:
             result = generate_l1_sweep_task(
                 session,
-                Layer1SweepGenerateRequest(
+                _make_l1_request(
                     repo_root=str(repo_root),
                     sweep_path=sweep_path,
                     config_paths=[config_path],
@@ -4520,7 +4833,7 @@ def test_generate_l1_sweep_task_supports_attention_two_pass_stream_configs() -> 
         with Session(engine) as session:
             result = generate_l1_sweep_task(
                 session,
-                Layer1SweepGenerateRequest(
+                _make_l1_request(
                     repo_root=str(repo_root),
                     sweep_path=sweep_path,
                     config_paths=[config_path],
@@ -4562,7 +4875,7 @@ def test_generate_l1_sweep_task_supports_attention_score_bank_proxy_configs() ->
         with Session(engine) as session:
             result = generate_l1_sweep_task(
                 session,
-                Layer1SweepGenerateRequest(
+                _make_l1_request(
                     repo_root=str(repo_root),
                     sweep_path=sweep_path,
                     config_paths=[config_path],
@@ -4603,7 +4916,7 @@ def test_generate_l1_sweep_task_supports_attention_decode_score_local_cluster_co
         with Session(engine) as session:
             result = generate_l1_sweep_task(
                 session,
-                Layer1SweepGenerateRequest(
+                _make_l1_request(
                     repo_root=str(repo_root),
                     sweep_path=sweep_path,
                     config_paths=[config_path],
@@ -4650,7 +4963,7 @@ def test_generate_l1_sweep_task_supports_attention_decode_score_multivalue_clust
         with Session(engine) as session:
             result = generate_l1_sweep_task(
                 session,
-                Layer1SweepGenerateRequest(
+                _make_l1_request(
                     repo_root=str(repo_root),
                     sweep_path=sweep_path,
                     config_paths=[config_path],
@@ -4702,7 +5015,7 @@ def test_generate_l1_sweep_task_supports_attention_decode_score_multivalue_servi
         with Session(engine) as session:
             result = generate_l1_sweep_task(
                 session,
-                Layer1SweepGenerateRequest(
+                _make_l1_request(
                     repo_root=str(repo_root),
                     sweep_path=sweep_path,
                     config_paths=[config_path],
@@ -5116,7 +5429,7 @@ def test_generate_l1_sweep_task_checked_in_service_requests_gate_and_refresh_rel
         with Session(engine) as session:
             c1_result = generate_l1_sweep_task(
                 session,
-                Layer1SweepGenerateRequest(
+                _make_l1_request(
                     repo_root=str(repo_root),
                     sweep_path=c1_sweep_path,
                     config_paths=[c1_config_path],
@@ -5149,7 +5462,7 @@ def test_generate_l1_sweep_task_checked_in_service_requests_gate_and_refresh_rel
 
             c2_result = generate_l1_sweep_task(
                 session,
-                Layer1SweepGenerateRequest(
+                _make_l1_request(
                     repo_root=str(repo_root),
                     sweep_path=c2_sweep_path,
                     config_paths=[c2_config_path],
@@ -5244,7 +5557,7 @@ def test_generate_l1_sweep_task_adds_bridge_checker_for_exact_8ns_multivalue_clu
         with Session(engine) as session:
             result = generate_l1_sweep_task(
                 session,
-                Layer1SweepGenerateRequest(
+                _make_l1_request(
                     repo_root=str(repo_root),
                     sweep_path=sweep_path,
                     config_paths=[config_path],
@@ -5281,7 +5594,7 @@ def test_generate_l1_sweep_task_does_not_apply_v4_checker_to_legacy_v3_identity(
         with Session(engine) as session:
             result = generate_l1_sweep_task(
                 session,
-                Layer1SweepGenerateRequest(
+                _make_l1_request(
                     repo_root=str(repo_root),
                     sweep_path=sweep_path,
                     config_paths=[config_path],
@@ -5313,7 +5626,7 @@ def test_generate_l1_sweep_task_adds_binary_fsm_checker_for_retry_8ns_multivalue
         with Session(engine) as session:
             result = generate_l1_sweep_task(
                 session,
-                Layer1SweepGenerateRequest(
+                _make_l1_request(
                     repo_root=str(repo_root),
                     sweep_path=sweep_path,
                     config_paths=[config_path],
@@ -5363,7 +5676,7 @@ def test_generate_l1_sweep_task_adds_targeted_binary_fsm_retry_profile_and_diagn
         with Session(engine) as session:
             result = generate_l1_sweep_task(
                 session,
-                Layer1SweepGenerateRequest(
+                _make_l1_request(
                     repo_root=str(repo_root),
                     sweep_path=sweep_path,
                     config_paths=[config_path],
@@ -5418,7 +5731,7 @@ def test_generate_l1_sweep_task_adds_explicit_onehot_retry_profile_and_diagnosti
         with Session(engine) as session:
             result = generate_l1_sweep_task(
                 session,
-                Layer1SweepGenerateRequest(
+                _make_l1_request(
                     repo_root=str(repo_root),
                     sweep_path=sweep_path,
                     config_paths=[config_path],
@@ -5713,7 +6026,7 @@ def test_generate_l1_sweep_task_adds_lanes2_macro_hier_placement_checker() -> No
 
             result = generate_l1_sweep_task(
                 session,
-                Layer1SweepGenerateRequest(
+                _make_l1_request(
                     repo_root=str(repo_root),
                     sweep_path=sweep_path,
                     config_paths=[config_path],
@@ -5785,7 +6098,7 @@ def test_generate_l1_sweep_task_supports_attention_decode_score_multivalue_gqa_g
         with Session(engine) as session:
             result = generate_l1_sweep_task(
                 session,
-                Layer1SweepGenerateRequest(
+                _make_l1_request(
                     repo_root=str(repo_root),
                     sweep_path=sweep_path,
                     config_paths=[config_path],
@@ -5846,7 +6159,7 @@ def test_generate_l1_sweep_task_supports_attention_decode_score_multivalue_gqa_a
         with Session(engine) as session:
             result = generate_l1_sweep_task(
                 session,
-                Layer1SweepGenerateRequest(
+                _make_l1_request(
                     repo_root=str(repo_root),
                     sweep_path=sweep_path,
                     config_paths=[config_path],
@@ -5905,7 +6218,7 @@ def test_generate_l1_sweep_task_supports_multi_attention_command_dispatch_config
         with Session(engine) as session:
             result = generate_l1_sweep_task(
                 session,
-                Layer1SweepGenerateRequest(
+                _make_l1_request(
                     repo_root=str(repo_root),
                     sweep_path=sweep_path,
                     config_paths=[config_path, second_config_path],
@@ -5957,7 +6270,7 @@ def test_generate_l1_sweep_task_supports_multi_attention_score32_exact_local_tem
         with Session(engine) as session:
             result = generate_l1_sweep_task(
                 session,
-                Layer1SweepGenerateRequest(
+                _make_l1_request(
                     repo_root=str(repo_root),
                     sweep_path=sweep_path,
                     config_paths=[config_path, second_config_path],
@@ -6059,7 +6372,7 @@ def test_generate_l1_sweep_task_supports_multi_attention_score32_exact_local_tem
         with Session(engine) as session:
             result = generate_l1_sweep_task(
                 session,
-                Layer1SweepGenerateRequest(
+                _make_l1_request(
                     repo_root=str(repo_root),
                     sweep_path=sweep_path,
                     config_paths=[config_path, second_config_path],
@@ -6158,7 +6471,7 @@ def test_generate_l1_sweep_task_adds_macro_hardening_for_gqa8_folded_mersenne_ma
         with Session(engine) as session:
             result = generate_l1_sweep_task(
                 session,
-                Layer1SweepGenerateRequest(
+                _make_l1_request(
                     repo_root=str(repo_root),
                     sweep_path=sweep_path,
                     config_paths=[config_path],
@@ -6233,7 +6546,7 @@ def test_generate_l1_sweep_task_supports_multi_attention_score32_exact_root_fina
         with Session(engine) as session:
             result = generate_l1_sweep_task(
                 session,
-                Layer1SweepGenerateRequest(
+                _make_l1_request(
                     repo_root=str(repo_root),
                     sweep_path=sweep_path,
                     config_paths=[config_path, second_config_path],
@@ -6281,7 +6594,7 @@ def test_generate_l1_sweep_task_emits_commands_for_each_attention_score32_exact_
         with Session(engine) as session:
             result = generate_l1_sweep_task(
                 session,
-                Layer1SweepGenerateRequest(
+                _make_l1_request(
                     repo_root=str(repo_root),
                     sweep_path=sweep_path,
                     config_paths=[config_path, second_config_path],
@@ -6329,7 +6642,7 @@ def test_generate_l1_sweep_task_emits_commands_for_each_attention_score32_exact_
         with Session(engine) as session:
             result = generate_l1_sweep_task(
                 session,
-                Layer1SweepGenerateRequest(
+                _make_l1_request(
                     repo_root=str(repo_root),
                     sweep_path=sweep_path,
                     config_paths=[config_path, second_config_path],
@@ -6379,7 +6692,7 @@ def test_generate_l1_sweep_task_emits_commands_for_each_attention_score32_exact_
         with Session(engine) as session:
             result = generate_l1_sweep_task(
                 session,
-                Layer1SweepGenerateRequest(
+                _make_l1_request(
                     repo_root=str(repo_root),
                     sweep_path=sweep_path,
                     config_paths=[config_path, second_config_path, third_config_path, fourth_config_path],
@@ -6442,7 +6755,7 @@ def test_generate_l1_sweep_task_supports_attention_score32_exact_finalizer_bank_
         with Session(engine) as session:
             result = generate_l1_sweep_task(
                 session,
-                Layer1SweepGenerateRequest(
+                _make_l1_request(
                     repo_root=str(repo_root),
                     sweep_path=sweep_path,
                     config_paths=config_paths,
@@ -6604,7 +6917,7 @@ def test_generate_l1_sweep_task_emits_commands_for_each_integrated_block_config(
         with Session(engine) as session:
             result = generate_l1_sweep_task(
                 session,
-                Layer1SweepGenerateRequest(
+                _make_l1_request(
                     repo_root=str(repo_root),
                     sweep_path=sweep_path,
                     config_paths=[config_path, second_config_rel],
@@ -6651,7 +6964,7 @@ def test_generate_l1_sweep_task_rejects_flattened_architecture_block_sweeps() ->
             try:
                 generate_l1_sweep_task(
                     session,
-                    Layer1SweepGenerateRequest(
+                    _make_l1_request(
                         repo_root=str(repo_root),
                         sweep_path=sweep_path,
                         config_paths=[config_path],
@@ -6679,7 +6992,7 @@ def test_generate_l1_sweep_task_supports_make_target_for_integrated_blocks() -> 
         with Session(engine) as session:
             result = generate_l1_sweep_task(
                 session,
-                Layer1SweepGenerateRequest(
+                _make_l1_request(
                     repo_root=str(repo_root),
                     sweep_path=sweep_path,
                     config_paths=[config_path],
@@ -6717,7 +7030,7 @@ def test_generate_l1_sweep_task_accepts_hierarchical_architecture_block_sweeps()
         with Session(engine) as session:
             result = generate_l1_sweep_task(
                 session,
-                Layer1SweepGenerateRequest(
+                _make_l1_request(
                     repo_root=str(repo_root),
                     sweep_path=sweep_path,
                     config_paths=[config_path],
@@ -6746,30 +7059,36 @@ def test_generate_l1_sweep_task_defaults_source_commit_from_repo_head() -> None:
         engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
         create_all(engine)
 
-        with patch("control_plane.services.l1_task_generator.subprocess.run") as mock_run:
-            mock_run.return_value = subprocess.CompletedProcess(
-                args=["git", "-C", str(repo_root), "rev-parse", "HEAD"],
-                returncode=0,
-                stdout="deadbeefcafefeed\n",
-                stderr="",
-            )
-            with Session(engine) as session:
-                result = generate_l1_sweep_task(
-                    session,
-                    Layer1SweepGenerateRequest(
-                        repo_root=str(repo_root),
-                        sweep_path=sweep_path,
-                        config_paths=[config_path],
-                        platform="nangate45",
-                        out_root="runs/designs/activations",
-                        requested_by="@tester",
-                    ),
-                )
+        with patch("control_plane.services.l1_task_generator._resolve_source_commit", return_value="deadbeefcafefeed") as mock_resolve:
+            with patch(
+                "control_plane.services.l1_task_generator.build_generation_source_identity",
+                return_value={
+                    "version": 1,
+                    "declared_source_commit": "deadbeefcafefeed",
+                    "repo_head_sha": "deadbeefcafefeed",
+                    "relation": "exact",
+                    "proof": "generator_worktree_head_exact",
+                    "clean": True,
+                },
+            ) as mock_identity:
+                with Session(engine) as session:
+                    result = generate_l1_sweep_task(
+                        session,
+                        _make_l1_request(
+                            repo_root=str(repo_root),
+                            sweep_path=sweep_path,
+                            config_paths=[config_path],
+                            platform="nangate45",
+                            out_root="runs/designs/activations",
+                            requested_by="@tester",
+                        ),
+                    )
 
-                work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
-                assert work_item.source_commit == "deadbeefcafefeed"
-                assert work_item.task_request.source_commit == "deadbeefcafefeed"
-                mock_run.assert_called_once()
+                    work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+                    assert work_item.source_commit == "deadbeefcafefeed"
+                    assert work_item.task_request.source_commit == "deadbeefcafefeed"
+                    mock_resolve.assert_called_once()
+                    mock_identity.assert_called_once()
 
 
 def test_generate_l1_sweep_task_accepts_explicit_hierarchical_architecture_block_sweeps() -> None:
@@ -6784,7 +7103,7 @@ def test_generate_l1_sweep_task_accepts_explicit_hierarchical_architecture_block
         with Session(engine) as session:
             result = generate_l1_sweep_task(
                 session,
-                Layer1SweepGenerateRequest(
+                _make_l1_request(
                     repo_root=str(repo_root),
                     sweep_path=sweep_path,
                     config_paths=[config_path],
@@ -6835,7 +7154,7 @@ def test_generate_l1_sweep_task_rejects_disabled_hierarchy_in_explicit_param_set
             try:
                 generate_l1_sweep_task(
                     session,
-                    Layer1SweepGenerateRequest(
+                    _make_l1_request(
                         repo_root=str(repo_root),
                         sweep_path=sweep_path,
                         config_paths=[config_path],
@@ -6864,7 +7183,7 @@ def test_generate_l1_sweep_task_rejects_invalid_explicit_source_commit() -> None
             try:
                 generate_l1_sweep_task(
                     session,
-                    Layer1SweepGenerateRequest(
+                    _make_l1_request(
                         repo_root=str(repo_root),
                         sweep_path=sweep_path,
                         config_paths=[config_path],
@@ -6898,7 +7217,7 @@ def test_generate_l1_sweep_task_rejects_source_commit_not_pushed_to_origin() -> 
             try:
                 generate_l1_sweep_task(
                     session,
-                    Layer1SweepGenerateRequest(
+                    _make_l1_request(
                         repo_root=str(repo_root),
                         sweep_path=sweep_path,
                         config_paths=[config_path],
@@ -6912,3 +7231,74 @@ def test_generate_l1_sweep_task_rejects_source_commit_not_pushed_to_origin() -> 
                 assert "not reachable from origin" in str(exc)
             else:
                 raise AssertionError("expected Layer1TaskGenerationError")
+
+
+def test_generate_l1_sweep_task_rejects_implicit_source_commit_when_head_not_pushed_to_origin() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        config_path, sweep_path = _write_example_repo(repo_root)
+        _init_git_repo(repo_root)
+        extra = repo_root / "LOCAL_ONLY.txt"
+        extra.write_text("local only\n", encoding="utf-8")
+        subprocess.run(["git", "-C", str(repo_root), "add", "LOCAL_ONLY.txt"], check=True, capture_output=True, text=True)
+        subprocess.run(["git", "-C", str(repo_root), "commit", "-m", "local only"], check=True, capture_output=True, text=True)
+        local_only_commit = subprocess.run(["git", "-C", str(repo_root), "rev-parse", "HEAD"], check=True, capture_output=True, text=True).stdout.strip()
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            try:
+                generate_l1_sweep_task(
+                    session,
+                    _make_l1_request(
+                        repo_root=str(repo_root),
+                        sweep_path=sweep_path,
+                        config_paths=[config_path],
+                        platform="nangate45",
+                        out_root="runs/designs/activations",
+                        requested_by="@tester",
+                    ),
+                )
+            except Layer1TaskGenerationError as exc:
+                message = str(exc)
+                assert "resolved repo HEAD source_commit is not reachable from origin" in message
+                assert local_only_commit in message
+            else:
+                raise AssertionError("expected Layer1TaskGenerationError")
+
+
+def test_generate_l1_sweep_task_accepts_implicit_source_commit_from_pushed_head() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        config_path, sweep_path = _write_example_repo(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l1_sweep_task(
+                session,
+                _make_l1_request(
+                    repo_root=str(repo_root),
+                    sweep_path=sweep_path,
+                    config_paths=[config_path],
+                    platform="nangate45",
+                    out_root="runs/designs/activations",
+                    requested_by="@tester",
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            assert result.status == "applied"
+            assert work_item.source_commit == source_commit
+            assert work_item.task_request.source_commit == source_commit
+            assert work_item.task_request.request_payload["generation_source_identity"] == {
+                "version": 1,
+                "declared_source_commit": source_commit,
+                "repo_head_sha": source_commit,
+                "relation": "exact",
+                "proof": "generator_worktree_head_exact",
+                "clean": True,
+            }

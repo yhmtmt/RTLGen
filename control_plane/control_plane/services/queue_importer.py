@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from hashlib import sha256
-import subprocess
 import json
 from pathlib import Path
 import re
@@ -16,6 +15,10 @@ from control_plane.models.enums import FlowName, LayerName, QueueReconciliationD
 from control_plane.models.queue_reconciliations import QueueReconciliation
 from control_plane.models.task_requests import TaskRequest
 from control_plane.models.work_items import WorkItem
+from control_plane.services.generation_source_identity import (
+    resolve_source_commit as resolve_generation_source_commit,
+    validate_generation_source_identity,
+)
 
 
 _STATE_RANK = {
@@ -134,57 +137,11 @@ def _resolve_source_commit(repo_root: Path, source_commit: str | None) -> str | 
     resolved = str(source_commit or "").strip()
     if not resolved:
         return None
-    try:
-        subprocess.run(
-            ["git", "-C", str(repo_root), "cat-file", "-e", f"{resolved}^{{commit}}"],
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-        result = subprocess.run(
-            ["git", "-C", str(repo_root), "rev-parse", f"{resolved}^{{commit}}"],
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-    except subprocess.CalledProcessError as exc:
-        stderr = (exc.stderr or "").strip()
-        detail = f": {stderr}" if stderr else ""
-        raise QueueImportError(
-            f"provided source_commit does not resolve to a commit in repo_root {repo_root}: {resolved}{detail}"
-        ) from exc
-    normalized = result.stdout.strip()
-    if not normalized:
-        raise QueueImportError(
-            f"provided source_commit resolved to empty git rev-parse output in repo_root {repo_root}: {resolved}"
-        )
-    try:
-        subprocess.run(
-            ["git", "-C", str(repo_root), "fetch", "--quiet", "origin"],
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-        refs = subprocess.run(
-            [
-                "git", "-C", str(repo_root), "for-each-ref", "refs/remotes/origin",
-                "--contains", normalized, "--format=%(refname)",
-            ],
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-    except subprocess.CalledProcessError as exc:
-        stderr = (exc.stderr or "").strip()
-        detail = f": {stderr}" if stderr else ""
-        raise QueueImportError(
-            f"failed to verify source_commit against origin for repo_root {repo_root}: {normalized}{detail}"
-        ) from exc
-    if not refs.stdout.strip():
-        raise QueueImportError(
-            f"provided source_commit is not reachable from origin in repo_root {repo_root}: {normalized}"
-        )
-    return normalized
+    return resolve_generation_source_commit(
+        repo_root,
+        resolved,
+        error_factory=QueueImportError,
+    )
 
 
 def _merge_state(current: WorkItemState, imported: WorkItemState) -> WorkItemState:
@@ -226,6 +183,12 @@ def import_queue_item(session: Session, request: QueueImportRequest) -> QueueImp
     resolved_source_commit = _resolve_source_commit(
         repo_root,
         request.source_commit or _payload_source_commit(payload),
+    )
+    validate_generation_source_identity(
+        payload,
+        declared_source_commit=resolved_source_commit,
+        error_factory=QueueImportError,
+        context=f"queue import {queue_file}",
     )
     item_id = payload.get("item_id")
     if not item_id:

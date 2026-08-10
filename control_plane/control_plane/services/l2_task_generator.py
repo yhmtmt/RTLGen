@@ -20,6 +20,10 @@ from control_plane.models.task_requests import TaskRequest
 from control_plane.models.work_items import WorkItem
 from control_plane.services.dependency_gate import evaluate_work_item_dependencies
 from control_plane.services.docs_paths import canonicalize_proposal_path, resolve_proposal_dir
+from control_plane.services.generation_source_identity import (
+    build_generation_source_identity,
+    resolve_source_commit as resolve_generation_source_commit,
+)
 from control_plane.services.proposal_scaffold import ensure_proposal_scaffold
 from control_plane.services.source_requirement import build_source_requirement
 
@@ -551,74 +555,11 @@ def _upsert_requested_item_entry(
 
 
 def _resolve_source_commit(repo_root: Path, source_commit: str | None) -> str:
-    resolved = str(source_commit or "").strip()
-    if resolved:
-        try:
-            subprocess.run(
-                ["git", "-C", str(repo_root), "cat-file", "-e", f"{resolved}^{{commit}}"],
-                check=True,
-                capture_output=True,
-                text=True,
-            )
-            result = subprocess.run(
-                ["git", "-C", str(repo_root), "rev-parse", f"{resolved}^{{commit}}"],
-                check=True,
-                capture_output=True,
-                text=True,
-            )
-        except subprocess.CalledProcessError as exc:
-            stderr = (exc.stderr or "").strip()
-            detail = f": {stderr}" if stderr else ""
-            raise Layer2TaskGenerationError(
-                f"provided source_commit does not resolve to a commit in repo_root {repo_root}: {resolved}{detail}"
-            ) from exc
-        normalized = result.stdout.strip()
-        if not normalized:
-            raise Layer2TaskGenerationError(
-                f"provided source_commit resolved to empty git rev-parse output in repo_root {repo_root}: {resolved}"
-            )
-        try:
-            subprocess.run(
-                ["git", "-C", str(repo_root), "fetch", "--quiet", "origin"],
-                check=True,
-                capture_output=True,
-                text=True,
-            )
-            refs = subprocess.run(
-                [
-                    "git", "-C", str(repo_root), "for-each-ref", "refs/remotes/origin",
-                    "--contains", normalized, "--format=%(refname)",
-                ],
-                check=True,
-                capture_output=True,
-                text=True,
-            )
-        except subprocess.CalledProcessError as exc:
-            stderr = (exc.stderr or "").strip()
-            detail = f": {stderr}" if stderr else ""
-            raise Layer2TaskGenerationError(
-                f"failed to verify source_commit against origin for repo_root {repo_root}: {normalized}{detail}"
-            ) from exc
-        if not refs.stdout.strip():
-            raise Layer2TaskGenerationError(
-                f"provided source_commit is not reachable from origin in repo_root {repo_root}: {normalized}"
-            )
-        return normalized
-    try:
-        result = subprocess.run(
-            ["git", "-C", str(repo_root), "rev-parse", "HEAD"],
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-    except subprocess.CalledProcessError as exc:
-        stderr = (exc.stderr or "").strip()
-        detail = f": {stderr}" if stderr else ""
-        raise Layer2TaskGenerationError(f"failed to resolve source commit from repo_root {repo_root}{detail}") from exc
-    resolved = result.stdout.strip()
-    if not resolved:
-        raise Layer2TaskGenerationError(f"failed to resolve source commit from repo_root {repo_root}: empty git rev-parse output")
-    return resolved
+    return resolve_generation_source_commit(
+        repo_root,
+        source_commit,
+        error_factory=Layer2TaskGenerationError,
+    )
 
 
 def _uniq(items: list[str]) -> list[str]:
@@ -12864,6 +12805,7 @@ def _build_payload(
 
 def generate_l2_campaign_task(session: Session, request: Layer2CampaignGenerateRequest) -> Layer2TaskGenerateResult:
     repo_root = Path(request.repo_root).resolve()
+    source_commit = _resolve_source_commit(repo_root, request.source_commit)
     campaign_path = _repo_rel(request.campaign_path, repo_root)
     base_campaign = _load_json((repo_root / campaign_path).resolve())
 
@@ -12939,7 +12881,6 @@ def generate_l2_campaign_task(session: Session, request: Layer2CampaignGenerateR
         key="reason",
         explicit=request.expected_reason,
     )
-    source_commit = _resolve_source_commit(repo_root, request.source_commit)
     if request.update_proposal_files:
         _upsert_requested_item_entry(
             repo_root=repo_root,
@@ -12997,6 +12938,12 @@ def generate_l2_campaign_task(session: Session, request: Layer2CampaignGenerateR
     payload["source_requirement"] = build_source_requirement(
         repo_root=repo_root,
         required_sha=source_commit,
+    )
+    payload["generation_source_identity"] = build_generation_source_identity(
+        repo_root,
+        declared_source_commit=source_commit,
+        error_factory=Layer2TaskGenerationError,
+        context=f"Layer2 task generation for {item_id}",
     )
     initial_state = WorkItemState.DISPATCH_PENDING
     transient_work_item = WorkItem(
