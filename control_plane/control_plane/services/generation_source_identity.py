@@ -63,7 +63,6 @@ def resolve_source_commit(
     source_commit: str | None,
     *,
     error_factory: Callable[[str], Exception],
-    subject: str,
 ) -> str:
     resolved = str(source_commit or "").strip()
     if resolved:
@@ -202,11 +201,21 @@ def validate_generation_source_identity(
             ),
         )
     identity = raw_identity
+    version = identity.get("version")
     identity_source = str(identity.get("declared_source_commit") or "").strip()
     repo_head = str(identity.get("repo_head_sha") or "").strip()
     relation = str(identity.get("relation") or "").strip()
     proof = str(identity.get("proof") or "").strip()
     clean = identity.get("clean")
+    if version != GENERATION_SOURCE_IDENTITY_VERSION:
+        _raise(
+            error_factory,
+            (
+                f"{context} has generation_source_identity with unsupported version={version!r}; "
+                f"expected version={GENERATION_SOURCE_IDENTITY_VERSION}. "
+                "Regenerate the queue item with the exact-generation worktree contract."
+            ),
+        )
     if identity_source != required_sha or repo_head != required_sha or relation != "exact":
         _raise(
             error_factory,
@@ -226,11 +235,11 @@ def validate_generation_source_identity(
                 "Regenerate the queue item from a clean checkout whose HEAD exactly matches the declared source commit."
             ),
         )
-    if proof and proof != "generator_worktree_head_exact":
+    if proof != "generator_worktree_head_exact":
         _raise(
             error_factory,
             (
-                f"{context} has unsupported generation_source_identity proof={proof}. "
+                f"{context} has unsupported generation_source_identity proof={proof or '<missing>'}. "
                 "Regenerate the queue item with the exact-generation worktree contract."
             ),
         )

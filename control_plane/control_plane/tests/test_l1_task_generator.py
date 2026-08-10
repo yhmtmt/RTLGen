@@ -3191,6 +3191,119 @@ def test_generate_l1_sweep_task_can_refresh_db_without_updating_proposal_files()
         assert evaluation_requests_path.read_text(encoding="utf-8") == before
 
 
+def test_generate_l1_sweep_task_rejects_db_creation_when_proposal_upsert_dirties_worktree() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        config_path, sweep_path = _write_example_repo(repo_root)
+        proposal_dir = repo_root / "docs" / "proposals" / "prop_l1_dirty_generation_guard_v1"
+        proposal_dir.mkdir(parents=True, exist_ok=True)
+        (proposal_dir / "proposal.json").write_text(
+            json.dumps({"proposal_id": "prop_l1_dirty_generation_guard_v1", "abstraction_layer": "circuit_block"}, indent=2) + "\n",
+            encoding="utf-8",
+        )
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            try:
+                generate_l1_sweep_task(
+                    session,
+                    Layer1SweepGenerateRequest(
+                        repo_root=str(repo_root),
+                        sweep_path=sweep_path,
+                        config_paths=[config_path],
+                        platform="nangate45",
+                        out_root="runs/designs/activations",
+                        item_id="l1_demo_dirty_generation_guard_r1",
+                        requested_by="@tester",
+                        source_commit=source_commit,
+                        proposal_id="prop_l1_dirty_generation_guard_v1",
+                        proposal_path="docs/proposals/prop_l1_dirty_generation_guard_v1",
+                    ),
+                )
+            except Layer1TaskGenerationError as exc:
+                message = str(exc)
+                assert "clean exact-generation worktree" in message
+                assert "git status --porcelain is not empty" in message
+                assert "docs/proposals/prop_l1_dirty_generation_guard_v1/" in message
+            else:
+                raise AssertionError("expected Layer1TaskGenerationError")
+
+            assert session.query(WorkItem).count() == 0
+            assert session.query(TaskRequest).count() == 0
+            assert (proposal_dir / "evaluation_requests.json").exists()
+
+
+def test_generate_l1_sweep_task_succeeds_after_committed_rerun_without_proposal_updates() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        config_path, sweep_path = _write_example_repo(repo_root)
+        proposal_dir = repo_root / "docs" / "proposals" / "prop_l1_dirty_generation_guard_v1"
+        proposal_dir.mkdir(parents=True, exist_ok=True)
+        (proposal_dir / "proposal.json").write_text(
+            json.dumps({"proposal_id": "prop_l1_dirty_generation_guard_v1", "abstraction_layer": "circuit_block"}, indent=2) + "\n",
+            encoding="utf-8",
+        )
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            try:
+                generate_l1_sweep_task(
+                    session,
+                    Layer1SweepGenerateRequest(
+                        repo_root=str(repo_root),
+                        sweep_path=sweep_path,
+                        config_paths=[config_path],
+                        platform="nangate45",
+                        out_root="runs/designs/activations",
+                        item_id="l1_demo_dirty_generation_guard_r1",
+                        requested_by="@tester",
+                        source_commit=source_commit,
+                        proposal_id="prop_l1_dirty_generation_guard_v1",
+                        proposal_path="docs/proposals/prop_l1_dirty_generation_guard_v1",
+                    ),
+                )
+            except Layer1TaskGenerationError:
+                pass
+            else:
+                raise AssertionError("expected initial Layer1TaskGenerationError")
+
+            clean_commit = _commit_repo_changes(repo_root, "commit l1 proposal upsert artifacts")
+            result = generate_l1_sweep_task(
+                session,
+                Layer1SweepGenerateRequest(
+                    repo_root=str(repo_root),
+                    sweep_path=sweep_path,
+                    config_paths=[config_path],
+                    platform="nangate45",
+                    out_root="runs/designs/activations",
+                    item_id="l1_demo_dirty_generation_guard_r1",
+                    requested_by="@tester",
+                    source_commit=clean_commit,
+                    proposal_id="prop_l1_dirty_generation_guard_v1",
+                    proposal_path="docs/proposals/prop_l1_dirty_generation_guard_v1",
+                    update_proposal_files=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            assert result.status == "applied"
+            assert work_item.source_commit == clean_commit
+            assert work_item.task_request.request_payload["generation_source_identity"] == {
+                "version": 1,
+                "declared_source_commit": clean_commit,
+                "repo_head_sha": clean_commit,
+                "relation": "exact",
+                "proof": "generator_worktree_head_exact",
+                "clean": True,
+            }
+
+
 def test_generate_l1_sweep_task_inherits_proposal_dependencies_and_starts_blocked() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"

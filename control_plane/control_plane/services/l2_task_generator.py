@@ -559,7 +559,6 @@ def _resolve_source_commit(repo_root: Path, source_commit: str | None) -> str:
         repo_root,
         source_commit,
         error_factory=Layer2TaskGenerationError,
-        subject="Layer2 task generation source_commit",
     )
 
 
@@ -12807,12 +12806,6 @@ def _build_payload(
 def generate_l2_campaign_task(session: Session, request: Layer2CampaignGenerateRequest) -> Layer2TaskGenerateResult:
     repo_root = Path(request.repo_root).resolve()
     source_commit = _resolve_source_commit(repo_root, request.source_commit)
-    generation_source_identity = build_generation_source_identity(
-        repo_root,
-        declared_source_commit=source_commit,
-        error_factory=Layer2TaskGenerationError,
-        context=f"Layer2 task generation for {request.item_id or request.campaign_path}",
-    )
     campaign_path = _repo_rel(request.campaign_path, repo_root)
     base_campaign = _load_json((repo_root / campaign_path).resolve())
 
@@ -12946,7 +12939,12 @@ def generate_l2_campaign_task(session: Session, request: Layer2CampaignGenerateR
         repo_root=repo_root,
         required_sha=source_commit,
     )
-    payload["generation_source_identity"] = generation_source_identity
+    payload["generation_source_identity"] = build_generation_source_identity(
+        repo_root,
+        declared_source_commit=source_commit,
+        error_factory=Layer2TaskGenerationError,
+        context=f"Layer2 task generation for {item_id}",
+    )
     initial_state = WorkItemState.DISPATCH_PENDING
     transient_work_item = WorkItem(
         work_item_key=f"l2_campaign:{item_id}",

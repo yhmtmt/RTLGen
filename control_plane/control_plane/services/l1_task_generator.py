@@ -481,7 +481,6 @@ def _resolve_source_commit(repo_root: Path, source_commit: str | None) -> str:
         repo_root,
         source_commit,
         error_factory=Layer1TaskGenerationError,
-        subject="Layer1 task generation source_commit",
     )
 
 
@@ -2403,12 +2402,6 @@ def generate_l1_sweep_task(session: Session, request: Layer1SweepGenerateRequest
 
     repo_root = Path(request.repo_root).resolve()
     source_commit = _resolve_source_commit(repo_root, request.source_commit)
-    generation_source_identity = build_generation_source_identity(
-        repo_root,
-        declared_source_commit=source_commit,
-        error_factory=Layer1TaskGenerationError,
-        context=f"Layer1 task generation for {request.item_id or request.sweep_path}",
-    )
     sweep_path = _repo_rel(request.sweep_path, repo_root)
     config_paths = [_repo_rel(path, repo_root) for path in request.config_paths]
     out_root = _repo_rel(request.out_root, repo_root)
@@ -2643,7 +2636,6 @@ def generate_l1_sweep_task(session: Session, request: Layer1SweepGenerateRequest
         repo_root=repo_root,
         required_sha=source_commit,
     )
-    payload["generation_source_identity"] = generation_source_identity
     if request.update_proposal_files:
         _upsert_evaluation_request_entry(
             repo_root=repo_root,
@@ -2664,6 +2656,12 @@ def generate_l1_sweep_task(session: Session, request: Layer1SweepGenerateRequest
             acceptance_notes=request.acceptance_notes,
             source_commit=source_commit,
         )
+    payload["generation_source_identity"] = build_generation_source_identity(
+        repo_root,
+        declared_source_commit=source_commit,
+        error_factory=Layer1TaskGenerationError,
+        context=f"Layer1 task generation for {item_id}",
+    )
 
     initial_state = WorkItemState.DISPATCH_PENDING
     transient_work_item = WorkItem(

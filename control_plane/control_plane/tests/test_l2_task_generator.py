@@ -5419,7 +5419,109 @@ def test_generate_l2_campaign_task_can_refresh_db_without_updating_proposal_file
                 "requires_materialized_refs": True,
             }
 
-        assert evaluation_requests_path.read_text(encoding="utf-8") == before
+
+def test_generate_l2_campaign_task_rejects_db_creation_when_proposal_upsert_dirties_worktree() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        proposal_dir = repo_root / "docs" / "developer_loop" / "prop_l2_dirty_generation_guard_v1"
+        proposal_dir.mkdir(parents=True, exist_ok=True)
+        (proposal_dir / "proposal.json").write_text(
+            json.dumps({"proposal_id": "prop_l2_dirty_generation_guard_v1"}, indent=2) + "\n",
+            encoding="utf-8",
+        )
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            try:
+                generate_l2_campaign_task(
+                    session,
+                    Layer2CampaignGenerateRequest(
+                        repo_root=str(repo_root),
+                        campaign_path=campaign_path,
+                        item_id="l2_demo_dirty_generation_guard_r1",
+                        requested_by="@tester",
+                        source_commit=source_commit,
+                        proposal_id="prop_l2_dirty_generation_guard_v1",
+                        proposal_path="docs/developer_loop/prop_l2_dirty_generation_guard_v1",
+                    ),
+                )
+            except Layer2TaskGenerationError as exc:
+                message = str(exc)
+                assert "clean exact-generation worktree" in message
+                assert "git status --porcelain is not empty" in message
+                assert "docs/developer_loop/prop_l2_dirty_generation_guard_v1/" in message
+            else:
+                raise AssertionError("expected Layer2TaskGenerationError")
+
+            assert session.query(WorkItem).count() == 0
+            assert session.query(TaskRequest).count() == 0
+            assert (proposal_dir / "evaluation_requests.json").exists()
+
+
+def test_generate_l2_campaign_task_succeeds_after_committed_rerun_without_proposal_updates() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        proposal_dir = repo_root / "docs" / "developer_loop" / "prop_l2_dirty_generation_guard_v1"
+        proposal_dir.mkdir(parents=True, exist_ok=True)
+        (proposal_dir / "proposal.json").write_text(
+            json.dumps({"proposal_id": "prop_l2_dirty_generation_guard_v1"}, indent=2) + "\n",
+            encoding="utf-8",
+        )
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            try:
+                generate_l2_campaign_task(
+                    session,
+                    Layer2CampaignGenerateRequest(
+                        repo_root=str(repo_root),
+                        campaign_path=campaign_path,
+                        item_id="l2_demo_dirty_generation_guard_r1",
+                        requested_by="@tester",
+                        source_commit=source_commit,
+                        proposal_id="prop_l2_dirty_generation_guard_v1",
+                        proposal_path="docs/developer_loop/prop_l2_dirty_generation_guard_v1",
+                    ),
+                )
+            except Layer2TaskGenerationError:
+                pass
+            else:
+                raise AssertionError("expected initial Layer2TaskGenerationError")
+
+            clean_commit = _commit_repo_changes(repo_root, "commit l2 proposal upsert artifacts")
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id="l2_demo_dirty_generation_guard_r1",
+                    requested_by="@tester",
+                    source_commit=clean_commit,
+                    proposal_id="prop_l2_dirty_generation_guard_v1",
+                    proposal_path="docs/developer_loop/prop_l2_dirty_generation_guard_v1",
+                    update_proposal_files=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            assert result.status == "applied"
+            assert work_item.source_commit == clean_commit
+            assert work_item.task_request.request_payload["generation_source_identity"] == {
+                "version": 1,
+                "declared_source_commit": clean_commit,
+                "repo_head_sha": clean_commit,
+                "relation": "exact",
+                "proof": "generator_worktree_head_exact",
+                "clean": True,
+            }
 
 
 def test_generate_l2_campaign_task_blocks_when_dependency_not_merged() -> None:

@@ -141,7 +141,6 @@ def _resolve_source_commit(repo_root: Path, source_commit: str | None) -> str | 
         repo_root,
         resolved,
         error_factory=QueueImportError,
-        subject="queue import source_commit",
     )
 
 
