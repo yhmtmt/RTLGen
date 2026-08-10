@@ -141,6 +141,11 @@ def _commit_repo_changes(repo_root: Path, message: str) -> str:
     return result.stdout.strip()
 
 
+def _make_l2_request(**kwargs: object) -> Layer2CampaignGenerateRequest:
+    kwargs.setdefault("update_proposal_files", False)
+    return Layer2CampaignGenerateRequest(**kwargs)
+
+
 def _write_q20_pwl_recip_div_recost_proposal(repo_root: Path) -> None:
     proposal_dir = (
         repo_root
@@ -208,13 +213,42 @@ def test_generate_l2_campaign_task_creates_ready_work_item() -> None:
         create_all(engine)
 
         with Session(engine) as session:
+            try:
+                generate_l2_campaign_task(
+                    session,
+                    _make_l2_request(
+                        repo_root=str(repo_root),
+                        campaign_path=campaign_path,
+                        requested_by="@tester",
+                        source_commit=source_commit,
+                        objective_profiles_json="runs/campaigns/npu/base/objective_profiles.json",
+                        proposal_id="prop_l2_demo_v1",
+                        proposal_path="docs/developer_loop/prop_l2_demo_v1",
+                        evaluation_mode="paired_comparison",
+                        abstraction_layer="full_architecture",
+                        expected_direction="better_than_historical",
+                        expected_reason="Candidate should improve the measured baseline.",
+                        comparison_role="candidate",
+                        paired_baseline_item_id="l2_demo_baseline",
+                        update_proposal_files=True,
+                    ),
+                )
+            except Layer2TaskGenerationError as exc:
+                assert "clean exact-generation worktree" in str(exc)
+            else:
+                raise AssertionError("expected Layer2TaskGenerationError")
+
+            assert session.query(WorkItem).count() == 0
+            assert session.query(TaskRequest).count() == 0
+
+            clean_commit = _commit_repo_changes(repo_root, "commit l2 proposal metadata fixture")
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
-                    source_commit=source_commit,
+                    source_commit=clean_commit,
                     objective_profiles_json="runs/campaigns/npu/base/objective_profiles.json",
                     proposal_id="prop_l2_demo_v1",
                     proposal_path="docs/developer_loop/prop_l2_demo_v1",
@@ -224,6 +258,7 @@ def test_generate_l2_campaign_task_creates_ready_work_item() -> None:
                     expected_reason="Candidate should improve the measured baseline.",
                     comparison_role="candidate",
                     paired_baseline_item_id="l2_demo_baseline",
+                    update_proposal_files=False,
                 ),
             )
 
@@ -288,13 +323,13 @@ def test_generate_l2_campaign_task_creates_ready_work_item() -> None:
             ]
             payload = work_item.task_request.request_payload
             assert payload["layer"] == "layer2"
-            assert payload["source_requirement"]["required_sha"] == source_commit
+            assert payload["source_requirement"]["required_sha"] == clean_commit
             assert payload["source_requirement"]["required_ref"] == "origin/master"
             assert payload["source_requirement"]["requires_daemon_restart"] is True
             assert payload["generation_source_identity"] == {
                 "version": 1,
-                "declared_source_commit": source_commit,
-                "repo_head_sha": source_commit,
+                "declared_source_commit": clean_commit,
+                "repo_head_sha": clean_commit,
                 "relation": "exact",
                 "proof": "generator_worktree_head_exact",
                 "clean": True,
@@ -360,7 +395,7 @@ def test_generate_l2_campaign_task_rejects_mismatched_generation_worktree() -> N
             try:
                 generate_l2_campaign_task(
                     session,
-                    Layer2CampaignGenerateRequest(
+                    _make_l2_request(
                         repo_root=str(repo_root),
                         campaign_path=campaign_path,
                         requested_by="@tester",
@@ -392,7 +427,7 @@ def test_generate_l2_campaign_task_rejects_tracked_dirty_generation_worktree() -
             try:
                 generate_l2_campaign_task(
                     session,
-                    Layer2CampaignGenerateRequest(
+                    _make_l2_request(
                         repo_root=str(repo_root),
                         campaign_path=campaign_path,
                         requested_by="@tester",
@@ -425,7 +460,7 @@ def test_generate_l2_campaign_task_rejects_untracked_generation_worktree() -> No
             try:
                 generate_l2_campaign_task(
                     session,
-                    Layer2CampaignGenerateRequest(
+                    _make_l2_request(
                         repo_root=str(repo_root),
                         campaign_path=campaign_path,
                         requested_by="@tester",
@@ -454,7 +489,7 @@ def test_generate_l2_campaign_task_adds_decoder_probability_path_evidence() -> N
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -520,7 +555,7 @@ def test_generate_l2_campaign_task_adds_decoder_probability_sweep_evidence() -> 
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -576,7 +611,7 @@ def test_generate_l2_campaign_task_adds_decoder_probability_sensitivity_evidence
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -630,7 +665,7 @@ def test_generate_l2_campaign_task_adds_decoder_probability_fp_sensitivity_evide
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -684,7 +719,7 @@ def test_generate_l2_campaign_task_adds_decoder_distribution_robustness_evidence
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -732,7 +767,7 @@ def test_generate_l2_campaign_task_adds_decoder_survivor_prompt_stress_evidence(
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -780,7 +815,7 @@ def test_generate_l2_campaign_task_adds_decoder_survivor_cost_proxy_evidence() -
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -825,7 +860,7 @@ def test_generate_l2_campaign_task_adds_decoder_pwl_frontier_detail_evidence() -
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -874,7 +909,7 @@ def test_generate_l2_campaign_task_adds_decoder_q8_normalization_frontier_eviden
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -948,7 +983,7 @@ def test_generate_l2_campaign_task_adds_decoder_q8_normalization_distribution_ev
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -1009,7 +1044,7 @@ def test_generate_l2_campaign_task_adds_decoder_q8_normalization_distribution_br
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -1070,7 +1105,7 @@ def test_generate_l2_campaign_task_adds_decoder_quantization_outline_evidence() 
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -1114,7 +1149,7 @@ def test_generate_l2_campaign_task_adds_decoder_pwl_failure_diagnosis_evidence()
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -1166,7 +1201,7 @@ def test_generate_l2_campaign_task_adds_decoder_bf16_pwl_recoverability_evidence
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -1215,7 +1250,7 @@ def test_generate_l2_campaign_task_adds_decoder_bf16_pwl_recovery_evidence() -> 
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -1275,7 +1310,7 @@ def test_generate_l2_campaign_task_adds_decoder_bf16_pwl_scale_probe_evidence() 
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -1335,7 +1370,7 @@ def test_generate_l2_campaign_task_adds_decoder_trained_tiny_quality_evidence() 
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -1391,7 +1426,7 @@ def test_generate_l2_campaign_task_adds_decoder_distilgpt2_quality_evidence() ->
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -1453,7 +1488,7 @@ def test_generate_l2_campaign_task_adds_decoder_distilgpt2_prompt_stress_evidenc
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -1515,7 +1550,7 @@ def test_generate_l2_campaign_task_adds_decoder_gpt2_quality_evidence() -> None:
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -1580,7 +1615,7 @@ def test_generate_l2_campaign_task_adds_decoder_gpt2_prompt_stress_evidence() ->
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -1645,7 +1680,7 @@ def test_generate_l2_campaign_task_adds_decoder_gpt2_tie_rank_frontier_evidence(
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -1698,7 +1733,7 @@ def test_generate_l2_campaign_task_adds_decoder_gpt2_logit_rank_bypass_evidence(
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -1757,7 +1792,7 @@ def test_generate_l2_campaign_task_adds_decoder_logit_rank_streaming_hierarchy_e
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -1829,7 +1864,7 @@ def test_generate_l2_campaign_task_adds_decoder_logit_rank_streaming_overlap_evi
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -1912,7 +1947,7 @@ def test_generate_l2_campaign_task_adds_decoder_logit_rank_streaming_producer_in
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -1966,7 +2001,7 @@ def test_generate_l2_campaign_task_adds_decoder_output_projection_service_eviden
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -2009,7 +2044,7 @@ def test_generate_l2_campaign_task_adds_decoder_producer_ranker_coupled_noc_evid
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -2070,7 +2105,7 @@ def test_generate_l2_campaign_task_adds_decoder_producer_ranker_service_compatib
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -2128,7 +2163,7 @@ def test_generate_l2_campaign_task_adds_decoder_serial_ranker_producer_replay() 
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -2187,7 +2222,7 @@ def test_generate_l2_campaign_task_adds_decoder_serial_lpc1_producer_coupled_wra
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -2245,7 +2280,7 @@ def test_generate_l2_campaign_task_adds_decoder_output_projection_cadence_sensit
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -2301,7 +2336,7 @@ def test_generate_l2_campaign_task_adds_decoder_resident_weight_ranker_fallback(
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -2360,7 +2395,7 @@ def test_generate_l2_campaign_task_adds_decoder_resident_ranktree_fallback_promo
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -2418,7 +2453,7 @@ def test_generate_l2_campaign_task_adds_decoder_output_projection_ranker_policy(
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -2476,7 +2511,7 @@ def test_generate_l2_campaign_task_adds_decoder_output_projection_ranker_wrapper
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -2535,7 +2570,7 @@ def test_generate_l2_campaign_task_adds_decoder_output_projection_ranker_wrapper
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -2593,7 +2628,7 @@ def test_generate_l2_campaign_task_adds_decoder_output_projection_producer_ranke
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -2649,7 +2684,7 @@ def test_generate_l2_campaign_task_adds_decoder_producer_ranker_policy_calibrati
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -2703,7 +2738,7 @@ def test_generate_l2_campaign_task_adds_decoder_stage_breakdown_evidence() -> No
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -2748,7 +2783,7 @@ def test_generate_l2_campaign_task_adds_decoder_attention_kv_memory_evidence() -
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -2803,7 +2838,7 @@ def test_generate_l2_campaign_task_adds_decoder_frontier_synthesis_evidence() ->
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -2856,7 +2891,7 @@ def test_generate_l2_campaign_task_adds_decoder_frontier_synthesis_integrated_ev
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -2907,7 +2942,7 @@ def test_generate_l2_campaign_task_adds_decoder_frontier_synthesis_policy_calibr
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -2959,7 +2994,7 @@ def test_generate_l2_campaign_task_adds_decoder_output_projection_producer_memor
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -3011,7 +3046,7 @@ def test_generate_l2_campaign_task_adds_decoder_attention_kv_capacity_noc() -> N
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -3063,7 +3098,7 @@ def test_generate_l2_campaign_task_adds_decoder_attention_kv_noc_scheduler() -> 
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -3115,7 +3150,7 @@ def test_generate_l2_campaign_task_adds_decoder_attention_kv_spill_scheduler() -
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -3167,7 +3202,7 @@ def test_generate_l2_campaign_task_adds_decoder_attention_kv_hbm_controller() ->
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -3219,7 +3254,7 @@ def test_generate_l2_campaign_task_adds_decoder_attention_kv_physical_hbm_fronti
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -3274,7 +3309,7 @@ def test_generate_l2_campaign_task_adds_decoder_attention_kv_physical_hbm_qualit
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -3338,7 +3373,7 @@ def test_generate_l2_campaign_task_adds_decoder_attention_kv_physical_hbm_qualit
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -3411,7 +3446,7 @@ def test_generate_l2_campaign_task_adds_decoder_attention_kv_physical_hbm_qualit
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -3464,7 +3499,7 @@ def test_generate_l2_campaign_task_adds_decoder_attention_kv_physical_hbm_memory
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -3526,7 +3561,7 @@ def test_generate_l2_campaign_task_adds_decoder_attention_kv_physical_hbm_comput
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -3591,7 +3626,7 @@ def test_generate_l2_campaign_task_adds_decoder_attention_kv_compute_floor_gap()
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -3650,7 +3685,7 @@ def test_generate_l2_campaign_task_adds_decoder_attention_kv_compute_ceiling_env
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -3711,7 +3746,7 @@ def test_generate_l2_campaign_task_adds_decoder_attention_kv_quality_gate() -> N
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -3763,7 +3798,7 @@ def test_generate_l2_campaign_task_adds_decoder_attention_kv_clustered_schedule_
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -3816,7 +3851,7 @@ def test_generate_l2_campaign_task_adds_decoder_attention_kv_quality_proxy() -> 
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -3867,7 +3902,7 @@ def test_generate_l2_campaign_task_adds_decoder_attention_kv_native_gqa_proxy() 
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -3921,7 +3956,7 @@ def test_generate_l2_campaign_task_adds_decoder_attention_kv_trace_calibration()
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -3972,7 +4007,7 @@ def test_generate_l2_campaign_task_adds_decoder_attention_kv_model_native_qualit
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -4027,7 +4062,7 @@ def test_generate_l2_campaign_task_adds_decoder_attention_kv_model_native_qualit
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -4109,7 +4144,7 @@ def test_generate_l2_campaign_task_adds_decoder_attention_kv_model_native_recove
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -4166,7 +4201,7 @@ def test_generate_l2_campaign_task_adds_decoder_output_projection_weight_store_f
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -4218,7 +4253,7 @@ def test_generate_l2_campaign_task_adds_decoder_output_projection_weight_store_i
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -4275,7 +4310,7 @@ def test_generate_l2_campaign_task_adds_decoder_output_projection_weight_fetch_w
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -4331,7 +4366,7 @@ def test_generate_l2_campaign_task_adds_decoder_producer_ranker_memory_integrati
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -4383,7 +4418,7 @@ def test_generate_l2_campaign_task_adds_decoder_producer_ranker_ready_valid_equi
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -4438,7 +4473,7 @@ def test_generate_l2_campaign_task_adds_decoder_producer_ranker_physical_wrapper
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -4491,7 +4526,7 @@ def test_generate_l2_campaign_task_adds_decoder_pipelined_ranker_architecture() 
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -4541,7 +4576,7 @@ def test_generate_l2_campaign_task_adds_decoder_rank_tree_architecture() -> None
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -4591,7 +4626,7 @@ def test_generate_l2_campaign_task_adds_decoder_serial_ranker_architecture() -> 
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -4641,7 +4676,7 @@ def test_generate_l2_campaign_task_adds_decoder_producer_synth_boundary_evidence
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -4696,7 +4731,7 @@ def test_generate_l2_campaign_task_adds_decoder_producer_extended_synth_boundary
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -4736,7 +4771,7 @@ def test_generate_l2_campaign_task_adds_decoder_producer_pnr_feasibility_evidenc
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -4789,7 +4824,7 @@ def test_generate_l2_campaign_task_adds_decoder_producer_nm16_pnr_feasibility_ev
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -4833,7 +4868,7 @@ def test_generate_l2_campaign_task_adds_decoder_producer_isolated_synth_evidence
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -4891,7 +4926,7 @@ def test_generate_l2_campaign_task_adds_decoder_producer_top_ablation_evidence()
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -4943,7 +4978,7 @@ def test_generate_l2_campaign_task_adds_decoder_producer_cq_ablation_evidence() 
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -4994,7 +5029,7 @@ def test_generate_l2_campaign_task_adds_decoder_producer_softmax_event_ablation_
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -5045,7 +5080,7 @@ def test_generate_l2_campaign_task_adds_decoder_pwl_logit_sensitivity_ladder_evi
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -5104,7 +5139,7 @@ def test_generate_l2_campaign_task_adds_decoder_pwl_survivor_distribution_eviden
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -5164,7 +5199,7 @@ def test_generate_l2_campaign_task_adds_decoder_pwl_bitwidth_boundary_evidence()
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
@@ -5249,7 +5284,7 @@ def test_generate_l2_campaign_task_recovers_metadata_from_evaluation_requests() 
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_demo_candidate_r1",
@@ -5321,7 +5356,7 @@ def test_generate_l2_campaign_task_preserves_revision_metadata_on_materializatio
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id=requested_item_id,
@@ -5394,7 +5429,7 @@ def test_generate_l2_campaign_task_can_refresh_db_without_updating_proposal_file
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_demo_candidate_r1",
@@ -5439,7 +5474,7 @@ def test_generate_l2_campaign_task_rejects_db_creation_when_proposal_upsert_dirt
             try:
                 generate_l2_campaign_task(
                     session,
-                    Layer2CampaignGenerateRequest(
+                    _make_l2_request(
                         repo_root=str(repo_root),
                         campaign_path=campaign_path,
                         item_id="l2_demo_dirty_generation_guard_r1",
@@ -5447,6 +5482,7 @@ def test_generate_l2_campaign_task_rejects_db_creation_when_proposal_upsert_dirt
                         source_commit=source_commit,
                         proposal_id="prop_l2_dirty_generation_guard_v1",
                         proposal_path="docs/developer_loop/prop_l2_dirty_generation_guard_v1",
+                        update_proposal_files=True,
                     ),
                 )
             except Layer2TaskGenerationError as exc:
@@ -5481,7 +5517,7 @@ def test_generate_l2_campaign_task_succeeds_after_committed_rerun_without_propos
             try:
                 generate_l2_campaign_task(
                     session,
-                    Layer2CampaignGenerateRequest(
+                    _make_l2_request(
                         repo_root=str(repo_root),
                         campaign_path=campaign_path,
                         item_id="l2_demo_dirty_generation_guard_r1",
@@ -5489,6 +5525,7 @@ def test_generate_l2_campaign_task_succeeds_after_committed_rerun_without_propos
                         source_commit=source_commit,
                         proposal_id="prop_l2_dirty_generation_guard_v1",
                         proposal_path="docs/developer_loop/prop_l2_dirty_generation_guard_v1",
+                        update_proposal_files=True,
                     ),
                 )
             except Layer2TaskGenerationError:
@@ -5499,7 +5536,7 @@ def test_generate_l2_campaign_task_succeeds_after_committed_rerun_without_propos
             clean_commit = _commit_repo_changes(repo_root, "commit l2 proposal upsert artifacts")
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_demo_dirty_generation_guard_r1",
@@ -5569,7 +5606,7 @@ def test_generate_l2_campaign_task_blocks_when_dependency_not_merged() -> None:
 
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_demo_candidate",
@@ -5606,7 +5643,7 @@ def test_generate_l2_campaign_task_upserts_existing_item() -> None:
         with Session(engine) as session:
             first = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_demo_campaign",
@@ -5616,7 +5653,7 @@ def test_generate_l2_campaign_task_upserts_existing_item() -> None:
             )
             second = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_demo_campaign",
@@ -5653,7 +5690,7 @@ def test_generate_l2_campaign_task_requeues_failed_item_on_upsert() -> None:
         with Session(engine) as session:
             generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_demo_campaign",
@@ -5667,7 +5704,7 @@ def test_generate_l2_campaign_task_requeues_failed_item_on_upsert() -> None:
 
             generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_demo_campaign",
@@ -5704,7 +5741,7 @@ def test_generate_l2_campaign_task_defaults_source_commit_from_repo_head() -> No
                 with Session(engine) as session:
                     result = generate_l2_campaign_task(
                         session,
-                        Layer2CampaignGenerateRequest(
+                        _make_l2_request(
                             repo_root=str(repo_root),
                             campaign_path=campaign_path,
                             requested_by="@tester",
@@ -5731,7 +5768,7 @@ def test_generate_l2_campaign_task_rejects_invalid_explicit_source_commit() -> N
             try:
                 generate_l2_campaign_task(
                     session,
-                    Layer2CampaignGenerateRequest(
+                    _make_l2_request(
                         repo_root=str(repo_root),
                         campaign_path=campaign_path,
                         requested_by="@tester",
@@ -5762,7 +5799,7 @@ def test_generate_l2_campaign_task_rejects_source_commit_not_pushed_to_origin() 
             try:
                 generate_l2_campaign_task(
                     session,
-                    Layer2CampaignGenerateRequest(
+                    _make_l2_request(
                         repo_root=str(repo_root),
                         campaign_path=campaign_path,
                         requested_by="@tester",
@@ -5787,7 +5824,7 @@ def test_generate_l2_campaign_task_adds_attention_sram_profile_evidence() -> Non
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_sram_profile_v1",
@@ -5826,7 +5863,7 @@ def test_generate_l2_campaign_task_adds_attention_local_sram_capacity_evidence()
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_local_sram_capacity_llama7b_v1",
@@ -5875,7 +5912,7 @@ def test_generate_l2_campaign_task_adds_attention_measured_sram_rebalance_eviden
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_kv_measured_sram_rebalance_llama7b_v1",
@@ -5938,7 +5975,7 @@ def test_generate_l2_campaign_task_adds_softmax_recip_lut_measured_sram_rebalanc
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_kv_measured_sram_rebalance_softmax_recip_lut_llama7b_v1",
@@ -5992,7 +6029,7 @@ def test_generate_l2_campaign_task_adds_attention_measured_hbm_service_evidence(
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_kv_measured_hbm_service_llama7b_v1",
@@ -6038,7 +6075,7 @@ def test_generate_l2_campaign_task_adds_softmax_recip_lut_measured_hbm_service_e
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_kv_measured_hbm_service_softmax_recip_lut_llama7b_v1",
@@ -6091,7 +6128,7 @@ def test_generate_l2_campaign_task_adds_attention_hbm_closed_onchip_schedule_evi
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_kv_hbm_closed_onchip_schedule_llama7b_v1",
@@ -6137,7 +6174,7 @@ def test_generate_l2_campaign_task_adds_softmax_recip_lut_hbm_closed_onchip_sche
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_kv_hbm_closed_onchip_schedule_softmax_recip_lut_llama7b_v1",
@@ -6195,7 +6232,7 @@ def test_generate_l2_campaign_task_adds_attention_subtile_pipeline_schedule_evid
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_kv_subtile_pipeline_schedule_llama7b_v1",
@@ -6241,7 +6278,7 @@ def test_generate_l2_campaign_task_adds_softmax_recip_lut_subtile_pipeline_sched
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_kv_subtile_pipeline_schedule_softmax_recip_lut_llama7b_v1",
@@ -6299,7 +6336,7 @@ def test_generate_l2_campaign_task_adds_attention_dual_stream_physical_feasibili
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_kv_dual_stream_physical_feasibility_llama7b_v1",
@@ -6348,7 +6385,7 @@ def test_generate_l2_campaign_task_adds_softmax_recip_lut_dual_stream_physical_f
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_kv_dual_stream_physical_feasibility_softmax_recip_lut_llama7b_v1",
@@ -6409,7 +6446,7 @@ def test_generate_l2_campaign_task_adds_attention_composed_datapath_physical_fea
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_composed_datapath_physical_feasibility_softmax_recip_lut_llama7b_v1",
@@ -6463,7 +6500,7 @@ def test_generate_l2_campaign_task_adds_attention_composed_datapath_variant_fron
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_composed_datapath_recip_lut_variant_frontier_llama7b_v1",
@@ -6525,7 +6562,7 @@ def test_generate_l2_campaign_task_adds_attention_composed_datapath_q12_pwl_fron
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_composed_datapath_q12_pwl_softmax_frontier_llama7b_v1",
@@ -6579,7 +6616,7 @@ def test_generate_l2_campaign_task_adds_attention_composed_datapath_q20_pwl_reci
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_composed_datapath_q20_pwl_recip_div_reduced_replica_llama7b_v1",
@@ -6651,7 +6688,7 @@ def test_generate_l2_campaign_task_adds_attention_composed_datapath_score32_fron
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_composed_datapath_score32_w16_exact_div_frontier_llama7b_v1",
@@ -6704,7 +6741,7 @@ def test_generate_l2_campaign_task_adds_attention_composed_datapath_score32_redu
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_composed_datapath_score32_w16_exact_div_reduced_replica_llama7b_v1",
@@ -6752,7 +6789,7 @@ def test_generate_l2_campaign_task_adds_attention_composed_datapath_exp_lut_comm
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id=(
@@ -6833,7 +6870,7 @@ def test_generate_l2_campaign_task_adds_attention_composed_datapath_exp_lut_meas
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id=(
@@ -6910,7 +6947,7 @@ def test_generate_l2_campaign_task_adds_attention_composed_datapath_exp_lut_sche
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id=(
@@ -6978,7 +7015,7 @@ def test_generate_l2_campaign_task_adds_attention_score32_exp_lut_measured_wrapp
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_score32_exp_lut_measured_wrapper_promotion_llama7b_v1",
@@ -7075,7 +7112,7 @@ def test_generate_l2_campaign_task_adds_attention_score32_exp_lut_service_closur
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_score32_exp_lut_service_closure_llama7b_v1",
@@ -7138,7 +7175,7 @@ def test_generate_l2_campaign_task_adds_attention_score32_exp_lut_hbm_dram_servi
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1",
@@ -7213,7 +7250,7 @@ def test_generate_l2_campaign_task_adds_attention_score32_hbm_controller_replay_
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_score32_hbm_controller_replay_llama7b_v1",
@@ -7272,7 +7309,7 @@ def test_generate_l2_campaign_task_adds_attention_score32_integrated_frontier_ra
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_score32_integrated_frontier_ranking_llama7b_v1",
@@ -7339,7 +7376,7 @@ def test_generate_l2_campaign_task_adds_schedule_wrapper_integrated_frontier_ran
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_score32_schedule_wrapper_integrated_frontier_ranking_llama7b_v1",
@@ -7386,7 +7423,7 @@ def test_generate_l2_campaign_task_adds_schedule_wrapper_postroute_activity_powe
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_score32_schedule_wrapper_postroute_activity_power_llama7b_v1",
@@ -7426,7 +7463,7 @@ def test_generate_l2_campaign_task_adds_schedule_wrapper_activity_integrated_fro
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_score32_schedule_wrapper_activity_integrated_frontier_ranking_llama7b_v1",
@@ -7466,7 +7503,7 @@ def test_generate_l2_campaign_task_adds_attention_score32_hbm_controller_replay_
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_score32_hbm_controller_replay_integrated_frontier_ranking_llama7b_v1",
@@ -7537,7 +7574,7 @@ def test_generate_l2_campaign_task_adds_attention_score32_hbm_controller_replay_
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_score32_hbm_controller_replay_integrated_frontier_ranking_llama7b_v1",
@@ -7590,7 +7627,7 @@ def test_generate_l2_campaign_task_adds_attention_score32_compute_activity_energ
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_score32_compute_activity_energy_llama7b_v1",
@@ -7649,7 +7686,7 @@ def test_generate_l2_campaign_task_adds_attention_score32_exact_reduction_recost
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1_r2",
@@ -7757,7 +7794,7 @@ def test_generate_l2_campaign_task_keeps_item_specific_outputs_for_score32_exact
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1_r3",
@@ -7812,7 +7849,7 @@ def test_generate_l2_campaign_task_adds_folded_global_exact_reduction_recost_evi
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_score32_folded_global_exact_reduction_recost_llama7b_v2_r1",
@@ -7927,7 +7964,7 @@ def test_generate_l2_campaign_task_adds_score32_exact_reduction_full_gqa8_rerank
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank_llama7b_v1",
@@ -8021,7 +8058,7 @@ def test_generate_l2_campaign_task_adds_attention_score32_separated_compute_reco
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_score32_separated_compute_recost_llama7b_v1",
@@ -8094,7 +8131,7 @@ def test_generate_l2_campaign_task_adds_attention_separated_cluster_equivalence(
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_separated_cluster_equivalence_llama7b_v1",
@@ -8137,7 +8174,7 @@ def test_generate_l2_campaign_task_adds_attention_hierarchical_softmax_architect
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_hierarchical_softmax_architecture_llama7b_v1",
@@ -8179,7 +8216,7 @@ def test_generate_l2_campaign_task_adds_attention_two_pass_global_max_equivalenc
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_two_pass_global_max_rtl_equivalence_llama7b_v1",
@@ -8217,7 +8254,7 @@ def test_generate_l2_campaign_task_adds_attention_two_pass_stream_equivalence() 
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_two_pass_stream_rtl_equivalence_llama7b_v1",
@@ -8255,7 +8292,7 @@ def test_generate_l2_campaign_task_adds_attention_two_pass_stream_iterdiv_equiva
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_two_pass_stream_iterdiv_rtl_equivalence_llama7b_v1",
@@ -8294,7 +8331,7 @@ def test_generate_l2_campaign_task_adds_attention_score32_exp_lut_sram_hierarchy
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_score32_exp_lut_sram_hierarchy_envelope_llama7b_v1",
@@ -8354,7 +8391,7 @@ def test_generate_l2_campaign_task_adds_two_pass_score_sram_reservation() -> Non
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_two_pass_score_sram_reservation_llama7b_v1",
@@ -8395,7 +8432,7 @@ def test_generate_l2_campaign_task_adds_two_pass_integrated_frontier_ranking() -
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_two_pass_integrated_frontier_ranking_llama7b_v1",
@@ -8435,7 +8472,7 @@ def test_generate_l2_campaign_task_adds_separated_two_pass_frontier() -> None:
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_separated_two_pass_frontier_llama7b_v1",
@@ -8478,7 +8515,7 @@ def test_generate_l2_campaign_task_adds_operational_component_frontier() -> None
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_operational_component_frontier_llama7b_v1",
@@ -8521,7 +8558,7 @@ def test_generate_l2_campaign_task_adds_operational_dense_tile_equivalence() -> 
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_operational_dense_tile_equivalence_llama7b_v1",
@@ -8557,7 +8594,7 @@ def test_generate_l2_campaign_task_adds_decode_score_tile_equivalence() -> None:
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_decode_score_tile_m1x8_equivalence_llama7b_v1",
@@ -8593,7 +8630,7 @@ def test_generate_l2_campaign_task_adds_decode_score_local_cluster_equivalence()
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_decode_score_local_cluster_equivalence_llama7b_v1",
@@ -8629,7 +8666,7 @@ def test_generate_l2_campaign_task_adds_decode_score_multivalue_cluster_equivale
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1",
@@ -8665,7 +8702,7 @@ def test_generate_l2_campaign_task_adds_decode_score_multivalue_gqa_group_equiva
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_decode_score_multivalue_gqa_group_equivalence_llama7b_v1",
@@ -8716,7 +8753,7 @@ def test_generate_l2_campaign_task_adds_decode_score_multivalue_gqa_folded_lane_
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id=(
@@ -8763,7 +8800,7 @@ def test_generate_l2_campaign_task_adds_decode_score_multivalue_gqa_array_equiva
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id=(
@@ -8834,7 +8871,7 @@ def test_generate_l2_campaign_task_uses_direct_gqa_group_equivalence_for_v2_cons
             for item_id, abstraction_layer, input_key in cases:
                 result = generate_l2_campaign_task(
                     session,
-                    Layer2CampaignGenerateRequest(
+                    _make_l2_request(
                         repo_root=str(repo_root),
                         campaign_path=campaign_path,
                         item_id=item_id,
@@ -8866,7 +8903,7 @@ def test_generate_l2_campaign_task_adds_decode_score_multivalue_cluster_activity
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1",
@@ -8946,7 +8983,7 @@ def test_generate_l2_campaign_task_adds_decode_score_multivalue_cluster_activity
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v2",
@@ -8992,7 +9029,7 @@ def test_generate_l2_campaign_task_adds_decode_score_multivalue_cluster_activity
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v16",
@@ -9381,7 +9418,7 @@ def test_generate_l2_campaign_task_adds_decode_score_multivalue_gqa_group_activi
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_decode_score_multivalue_gqa8_group_activity_power_llama7b_v1",
@@ -9471,7 +9508,7 @@ def test_generate_l2_campaign_task_adds_decode_score_multivalue_gqa_group_activi
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_decode_score_multivalue_gqa8_group_activity_power_llama7b_v1",
@@ -9532,7 +9569,7 @@ def test_generate_l2_campaign_task_adds_folded_gqa_lane_activity_power() -> None
                 )
                 result = generate_l2_campaign_task(
                     session,
-                    Layer2CampaignGenerateRequest(
+                    _make_l2_request(
                         repo_root=str(repo_root),
                         campaign_path=campaign_path,
                         item_id=item_id,
@@ -9594,7 +9631,7 @@ def test_generate_l2_campaign_task_folded_lane_activity_reads_revisioned_cluster
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id=item_id,
@@ -9639,7 +9676,7 @@ def test_generate_l2_campaign_task_cluster_frontier_uses_cluster_activity_v2_dep
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_decode_score_multivalue_cluster_frontier_llama7b_v1",
@@ -9696,7 +9733,7 @@ def test_generate_l2_campaign_task_adds_decode_score_tile_frontier() -> None:
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_decode_score_tile_frontier_llama7b_v1",
@@ -9733,7 +9770,7 @@ def test_generate_l2_campaign_task_adds_decode_score_local_cluster_frontier() ->
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_decode_score_local_cluster_frontier_llama7b_v1",
@@ -9768,7 +9805,7 @@ def test_generate_l2_campaign_task_adds_decode_score_multivalue_cluster_frontier
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_decode_score_multivalue_cluster_frontier_llama7b_v1_r1",
@@ -9865,7 +9902,7 @@ def test_generate_l2_campaign_task_adds_decode_score_multivalue_integrated_servi
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1",
@@ -9950,7 +9987,7 @@ def test_generate_l2_campaign_task_adds_exact_partial_integrated_service_equival
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id=item_id,
@@ -10041,7 +10078,7 @@ def test_generate_l2_campaign_task_adds_finalized_cdc_lane_probe_campaign() -> N
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id=item_id,
@@ -10123,7 +10160,7 @@ def test_generate_l2_campaign_task_adds_workload_correspondence_campaign() -> No
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id=item_id,
@@ -10209,7 +10246,7 @@ def test_generate_l2_campaign_task_adds_exact_partial_physical_recost_consumer()
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id=item_id,
@@ -10276,7 +10313,7 @@ def test_exact_partial_physical_recost_consumer_rejects_missing_dependency() -> 
         ):
             generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id=(
@@ -10319,7 +10356,7 @@ def test_generate_l2_campaign_task_adds_decode_score_multivalue_service_activity
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id=(
@@ -10431,7 +10468,7 @@ def test_generate_l2_campaign_task_adds_decode_score_multivalue_service_c2_activ
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id=(
@@ -10490,7 +10527,7 @@ def test_generate_l2_campaign_task_cluster_frontier_uses_cluster_activity_v1_dep
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_decode_score_multivalue_cluster_frontier_llama7b_v1",
@@ -10529,7 +10566,7 @@ def test_generate_l2_campaign_task_adds_decode_score_multivalue_service_measured
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id=(
@@ -10647,7 +10684,7 @@ def test_generate_l2_campaign_task_adds_decode_score_multivalue_service_measured
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id=(
@@ -10729,7 +10766,7 @@ def test_generate_l2_campaign_task_adds_decode_score_multivalue_gqa_group_fronti
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_decode_score_multivalue_gqa8_group_frontier_llama7b_v1",
@@ -10787,7 +10824,7 @@ def test_generate_l2_campaign_task_adds_folded_gqa_frontier() -> None:
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id=(
@@ -10836,7 +10873,7 @@ def test_generate_l2_campaign_task_adds_decode_score_multivalue_gqa_array_fronti
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id=(
@@ -10895,7 +10932,7 @@ def test_generate_l2_campaign_task_uses_v2_gqa_evidence_for_v2_frontiers() -> No
         with Session(engine) as session:
             group_result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id=(
@@ -10916,7 +10953,7 @@ def test_generate_l2_campaign_task_uses_v2_gqa_evidence_for_v2_frontiers() -> No
 
             array_result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id=(
@@ -10950,7 +10987,7 @@ def test_generate_l2_campaign_task_adds_score_bank_proxy_equivalence() -> None:
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_score_bank_proxy_equivalence_llama7b_v1",
@@ -10986,7 +11023,7 @@ def test_generate_l2_campaign_task_adds_attention_composed_datapath_score24_redu
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_composed_datapath_score24_w16_exact_div_reduced_replica_llama7b_v1",
@@ -11039,7 +11076,7 @@ def test_generate_l2_campaign_task_adds_attention_composed_datapath_score32_reci
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_composed_datapath_score32_w16_recip_lut_q16_reduced_replica_llama7b_v1",
@@ -11094,7 +11131,7 @@ def test_generate_l2_campaign_task_adds_attention_composed_datapath_score32_exp_
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_llama7b_v1",
@@ -11181,7 +11218,7 @@ def test_generate_l2_campaign_task_adds_attention_composed_datapath_score32_exp_
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_composed_datapath_score32_exp_lut_div_parallelism_recost_llama7b_v1",
@@ -11244,7 +11281,7 @@ def test_generate_l2_campaign_task_adds_attention_composed_datapath_score32_spli
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_composed_datapath_score32_w16_exact_div_split2_reduced_replica_llama7b_v1",
@@ -11297,7 +11334,7 @@ def test_generate_l2_campaign_task_adds_attention_integrated_abstraction_closure
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_integrated_abstraction_closure_llama7b_v1",
@@ -11372,7 +11409,7 @@ def test_generate_l2_campaign_task_adds_attention_integrated_energy_closure_evid
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_integrated_energy_closure_llama7b_v1",
@@ -11440,7 +11477,7 @@ def test_generate_l2_campaign_task_adds_attention_hbm_energy_sensitivity_evidenc
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_hbm_energy_sensitivity_llama7b_v1",
@@ -11508,7 +11545,7 @@ def test_generate_l2_campaign_task_adds_attention_hbm_dram_service_energy_eviden
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_hbm_dram_service_energy_llama7b_v1",
@@ -11581,7 +11618,7 @@ def test_generate_l2_campaign_task_adds_attention_hbm_energy_calibration_evidenc
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_hbm_energy_calibration_llama7b_v1",
@@ -11650,7 +11687,7 @@ def test_generate_l2_campaign_task_adds_attention_hbm_command_calibrated_service
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_hbm_command_calibrated_service_llama7b_v1",
@@ -11723,7 +11760,7 @@ def test_generate_l2_campaign_task_adds_attention_measured_compute_energy_closur
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_measured_compute_energy_closure_llama7b_v1",
@@ -11796,7 +11833,7 @@ def test_generate_l2_campaign_task_adds_dense_gemm_v3_measured_compute_closure_e
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_dense_gemm_v3_measured_compute_closure_llama7b_v1",
@@ -11869,7 +11906,7 @@ def test_generate_l2_campaign_task_adds_mixed_int8_energy_closure_evidence() -> 
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_mixed_int8_energy_closure_llama7b_v1",
@@ -11925,7 +11962,7 @@ def test_generate_l2_campaign_task_adds_mixed_int8_native_quality_evidence() -> 
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_mixed_int8_native_quality_llama7b_v1",
@@ -11989,7 +12026,7 @@ def test_generate_l2_campaign_task_adds_mixed_int8_native_quality_ablation_evide
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_mixed_int8_native_quality_ablation_llama7b_v1",
@@ -12053,7 +12090,7 @@ def test_generate_l2_campaign_task_adds_mixed_int8_score_boundary_evidence() -> 
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_mixed_int8_score_boundary_llama7b_v1",
@@ -12116,7 +12153,7 @@ def test_generate_l2_campaign_task_adds_mixed_int8_high_score_boundary_evidence(
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_mixed_int8_high_score_boundary_llama7b_v1",
@@ -12184,7 +12221,7 @@ def test_generate_l2_campaign_task_adds_mixed_int8_broad_native_quality_evidence
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_mixed_int8_broad_native_quality_llama7b_v1",
@@ -12256,7 +12293,7 @@ def test_generate_l2_campaign_task_adds_mixed_int8_q12_pwl_native_quality_eviden
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_mixed_int8_q12_pwl_native_quality_llama7b_v1",
@@ -12329,7 +12366,7 @@ def test_generate_l2_campaign_task_adds_mixed_int8_q24_pwl_native_quality_eviden
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_mixed_int8_q24_pwl_native_quality_llama7b_v1",
@@ -12406,7 +12443,7 @@ def test_generate_l2_campaign_task_adds_mixed_int8_q12_pwl_proxy_audit_evidence(
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_mixed_int8_q12_pwl_proxy_audit_llama7b_v1",
@@ -12486,7 +12523,7 @@ def test_generate_l2_campaign_task_adds_mixed_int8_score_precision_recovery_evid
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_mixed_int8_score_precision_recovery_llama7b_v1",
@@ -12578,7 +12615,7 @@ def test_generate_l2_campaign_task_adds_mixed_int8_score_margin_audit_evidence()
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_mixed_int8_score_margin_audit_llama7b_v1",
@@ -12642,7 +12679,7 @@ def test_generate_l2_campaign_task_adds_mixed_int8_generation_quality_evidence()
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_mixed_int8_generation_quality_llama7b_v1",
@@ -12708,7 +12745,7 @@ def test_generate_l2_campaign_task_adds_score32_w16_recip_lut_q16_generation_qua
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id=(
@@ -12790,7 +12827,7 @@ def test_generate_l2_campaign_task_adds_score32_w16_rtl_exact_generation_quality
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_mixed_int8_score32_w16_rtl_exact_generation_quality_llama7b_v1",
@@ -12860,7 +12897,7 @@ def test_generate_l2_campaign_task_adds_score32_exp_lut_div_generation_quality_e
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality_llama7b_v1",
@@ -12941,7 +12978,7 @@ def test_generate_l2_campaign_task_adds_score32_zero_tail_generation_quality_evi
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_score32_zero_tail_two_pass_generation_quality_llama7b_v1",
@@ -12983,7 +13020,7 @@ def test_generate_l2_campaign_task_adds_score24_w16_rtl_exact_generation_quality
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_mixed_int8_score24_w16_rtl_exact_generation_quality_llama7b_v1",
@@ -13053,7 +13090,7 @@ def test_generate_l2_campaign_task_adds_score32_w16_rtl_recip_precision_generati
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id=(
@@ -13136,7 +13173,7 @@ def test_generate_l2_campaign_task_adds_softmax_replacement_generation_quality_e
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_mixed_int8_softmax_replacement_generation_quality_llama7b_v1",
@@ -13204,7 +13241,7 @@ def test_generate_l2_campaign_task_adds_mixed_int8_quality_backed_frontier_evide
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_mixed_int8_quality_backed_frontier_llama7b_v1",
@@ -13285,7 +13322,7 @@ def test_generate_l2_campaign_task_adds_mixed_int8_quality_energy_frontier_evide
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_mixed_int8_quality_energy_frontier_llama7b_v1",
@@ -13364,7 +13401,7 @@ def test_generate_l2_campaign_task_adds_attention_mixed_precision_quality_eviden
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_mixed_precision_quality_llama7b_v1",
@@ -13411,7 +13448,7 @@ def test_generate_l2_campaign_task_adds_attention_softmax_pow2sum_quality_eviden
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_softmax_pow2sum_quality_llama7b_v1",
@@ -13458,7 +13495,7 @@ def test_generate_l2_campaign_task_adds_attention_softmax_recip_lut_quality_evid
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_softmax_recip_lut_quality_llama7b_v1",
@@ -13505,7 +13542,7 @@ def test_generate_l2_campaign_task_adds_attention_mixed_precision_physical_feasi
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_mixed_precision_physical_feasibility_llama7b_v1",
@@ -13555,7 +13592,7 @@ def test_generate_l2_campaign_task_adds_attention_mixed_precision_int8_compute_p
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_mixed_precision_int8_compute_physical_feasibility_llama7b_v1",
@@ -13610,7 +13647,7 @@ def test_generate_l2_campaign_task_adds_attention_mixed_precision_int8_compute_p
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_mixed_precision_int8_compute_physical_feasibility_softmax_recip_lut_llama7b_v1",
@@ -13687,7 +13724,7 @@ def test_generate_l2_campaign_task_adds_attention_noc_profile_evidence() -> None
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_noc_profile_v1",
@@ -13725,7 +13762,7 @@ def test_generate_l2_campaign_task_adds_all_measured_l1_attention_evidence() -> 
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_kv_all_measured_l1_clustered_schedule_v1",
@@ -13771,7 +13808,7 @@ def test_generate_l2_campaign_task_adds_dense_tile_all_measured_l1_attention_evi
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule_v1",
@@ -13818,7 +13855,7 @@ def test_generate_l2_campaign_task_adds_dense_tile_endpoint_measured_l1_attentio
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_kv_dense_tile_endpoint_measured_l1_clustered_schedule_v1",
@@ -13865,7 +13902,7 @@ def test_generate_l2_campaign_task_adds_dense_tile_reduction_noc_frontier_eviden
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_kv_dense_tile_reduction_noc_frontier_llama7b_v1",
@@ -13914,7 +13951,7 @@ def test_generate_l2_campaign_task_adds_dense_tile_topology_scheduler_pairs_evid
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_kv_dense_tile_topology_scheduler_pairs_llama7b_v1",
@@ -13962,7 +13999,7 @@ def test_generate_l2_campaign_task_adds_dense_tile_endpoint_topology_scheduler_p
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_kv_dense_tile_endpoint_topology_scheduler_pairs_llama7b_v1",
@@ -14009,7 +14046,7 @@ def test_generate_l2_campaign_task_adds_dense_tile_topology_derived_schedule_evi
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_kv_dense_tile_topology_derived_schedule_llama7b_v1",
@@ -14057,7 +14094,7 @@ def test_generate_l2_campaign_task_adds_dense_tile_endpoint_topology_derived_sch
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_kv_dense_tile_endpoint_topology_derived_schedule_llama7b_v1",
@@ -14106,7 +14143,7 @@ def test_generate_l2_campaign_task_adds_sram_noc_constrained_schedule_evidence()
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_kv_sram_noc_constrained_schedule_llama7b_v1",
@@ -14156,7 +14193,7 @@ def test_generate_l2_campaign_task_adds_endpoint_sram_noc_constrained_schedule_e
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_kv_endpoint_sram_noc_constrained_schedule_llama7b_v1",
@@ -14208,7 +14245,7 @@ def test_generate_l2_campaign_task_adds_endpoint_sram_noc_full_search_schedule_e
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_kv_endpoint_sram_noc_full_search_schedule_llama7b_v1",
@@ -14266,7 +14303,7 @@ def test_generate_l2_campaign_task_adds_endpoint_sram_noc_full_search_softmax_re
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_kv_endpoint_sram_noc_full_search_softmax_recip_lut_llama7b_v1",
@@ -14340,7 +14377,7 @@ def test_generate_l2_campaign_task_adds_onchip_service_schedule_evidence() -> No
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_kv_onchip_service_schedule_llama7b_v1",
@@ -14390,7 +14427,7 @@ def test_generate_l2_campaign_task_adds_endpoint_full_onchip_service_schedule_ev
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_llama7b_v1",
@@ -14443,7 +14480,7 @@ def test_generate_l2_campaign_task_adds_softmax_recip_lut_endpoint_full_onchip_s
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_softmax_recip_lut_llama7b_v1",
@@ -14489,7 +14526,7 @@ def test_generate_l2_campaign_task_adds_endpoint_ready_valid_service_evidence() 
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_kv_endpoint_ready_valid_service_llama7b_v1",
@@ -14539,7 +14576,7 @@ def test_generate_l2_campaign_task_adds_softmax_recip_lut_endpoint_ready_valid_s
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_kv_endpoint_ready_valid_service_softmax_recip_lut_llama7b_v1",
@@ -14585,7 +14622,7 @@ def test_generate_l2_campaign_task_adds_endpoint_router_sram_composition_evidenc
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_kv_endpoint_router_sram_composition_llama7b_v1",
@@ -14649,7 +14686,7 @@ def test_generate_l2_campaign_task_adds_softmax_recip_lut_endpoint_router_sram_s
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_kv_endpoint_router_sram_composition_softmax_recip_lut_llama7b_v1",
@@ -14708,7 +14745,7 @@ def test_generate_l2_campaign_task_adds_attention_pwl_recip_lut_boundary_evidenc
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id="l2_decoder_attention_pwl_recip_lut_boundary_llama7b_v1",
@@ -14759,7 +14796,7 @@ def test_generate_l2_campaign_task_adds_cluster_sram_gqa8_equivalence_evidence()
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id=(
@@ -14893,7 +14930,7 @@ def test_generate_l2_campaign_task_adds_cluster_sram_gqa8_rotation_equivalence_e
         with Session(engine) as session:
             result = generate_l2_campaign_task(
                 session,
-                Layer2CampaignGenerateRequest(
+                _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     item_id=(
