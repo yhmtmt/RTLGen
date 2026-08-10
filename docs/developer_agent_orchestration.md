@@ -237,6 +237,8 @@ PYTHONPATH="$repo_root/control_plane" \
 Exact-generation-worktree rule:
 - when `source_commit` is declared for an L1/L2 item, generate the DB item from
   a worktree whose `HEAD` exactly equals that commit
+- require `git status --porcelain` to be empty in that worktree, including
+  untracked files
 - use the same worktree for both repo content reads and control-plane Python
   imports
 - do not generate from checkout A while declaring `source_commit` from checkout

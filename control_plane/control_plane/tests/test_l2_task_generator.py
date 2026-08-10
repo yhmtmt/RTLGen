@@ -133,6 +133,14 @@ def _init_git_repo(repo_root: Path) -> str:
     return result.stdout.strip()
 
 
+def _commit_repo_changes(repo_root: Path, message: str) -> str:
+    subprocess.run(["git", "-C", str(repo_root), "add", "-A"], check=True, capture_output=True, text=True)
+    subprocess.run(["git", "-C", str(repo_root), "commit", "-m", message], check=True, capture_output=True, text=True)
+    subprocess.run(["git", "-C", str(repo_root), "push", "origin", "HEAD:master"], check=True, capture_output=True, text=True)
+    result = subprocess.run(["git", "-C", str(repo_root), "rev-parse", "HEAD"], check=True, capture_output=True, text=True)
+    return result.stdout.strip()
+
+
 def _write_q20_pwl_recip_div_recost_proposal(repo_root: Path) -> None:
     proposal_dir = (
         repo_root
@@ -289,6 +297,7 @@ def test_generate_l2_campaign_task_creates_ready_work_item() -> None:
                 "repo_head_sha": source_commit,
                 "relation": "exact",
                 "proof": "generator_worktree_head_exact",
+                "clean": True,
             }
             assert payload["task"]["inputs"]["candidate_manifests"] == [
                 "runs/candidates/nangate45/module_candidates.json"
@@ -366,6 +375,71 @@ def test_generate_l2_campaign_task_rejects_mismatched_generation_worktree() -> N
                 assert "Regenerate the item from a checkout whose HEAD exactly matches the declared source commit." in message
             else:
                 raise AssertionError("expected Layer2TaskGenerationError for mismatched generation worktree")
+
+
+def test_generate_l2_campaign_task_rejects_tracked_dirty_generation_worktree() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        tracked_file = repo_root / campaign_path
+        tracked_file.write_text(tracked_file.read_text(encoding="utf-8") + "\n", encoding="utf-8")
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            try:
+                generate_l2_campaign_task(
+                    session,
+                    Layer2CampaignGenerateRequest(
+                        repo_root=str(repo_root),
+                        campaign_path=campaign_path,
+                        requested_by="@tester",
+                        source_commit=source_commit,
+                    ),
+                )
+            except Layer2TaskGenerationError as exc:
+                message = str(exc)
+                assert "clean exact-generation worktree" in message
+                assert "git status --porcelain is not empty" in message
+                assert f" M {campaign_path}" in message or f"M {campaign_path}" in message
+                assert "Commit, stash, or remove tracked and untracked changes" in message
+            else:
+                raise AssertionError("expected Layer2TaskGenerationError for tracked dirty generation worktree")
+
+
+def test_generate_l2_campaign_task_rejects_untracked_generation_worktree() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        untracked_rel = "runs/campaigns/npu/demo_campaign/local_override.py"
+        (repo_root / untracked_rel).parent.mkdir(parents=True, exist_ok=True)
+        (repo_root / untracked_rel).write_text("OVERRIDE = True\n", encoding="utf-8")
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            try:
+                generate_l2_campaign_task(
+                    session,
+                    Layer2CampaignGenerateRequest(
+                        repo_root=str(repo_root),
+                        campaign_path=campaign_path,
+                        requested_by="@tester",
+                        source_commit=source_commit,
+                    ),
+                )
+            except Layer2TaskGenerationError as exc:
+                message = str(exc)
+                assert "clean exact-generation worktree" in message
+                assert "git status --porcelain is not empty" in message
+                assert f"?? {untracked_rel}" in message
+                assert "Commit, stash, or remove tracked and untracked changes" in message
+            else:
+                raise AssertionError("expected Layer2TaskGenerationError for untracked generation worktree")
 
 
 def test_generate_l2_campaign_task_adds_decoder_probability_path_evidence() -> None:
@@ -5168,6 +5242,7 @@ def test_generate_l2_campaign_task_recovers_metadata_from_evaluation_requests() 
             + "\n",
             encoding="utf-8",
         )
+        _commit_repo_changes(repo_root, "commit evaluation request metadata fixture")
         engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
         create_all(engine)
 
@@ -5239,6 +5314,7 @@ def test_generate_l2_campaign_task_preserves_revision_metadata_on_materializatio
             + "\n",
             encoding="utf-8",
         )
+        source_commit = _commit_repo_changes(repo_root, "commit revision metadata fixture")
         engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
         create_all(engine)
 
@@ -5310,6 +5386,7 @@ def test_generate_l2_campaign_task_can_refresh_db_without_updating_proposal_file
             + "\n",
             encoding="utf-8",
         )
+        source_commit = _commit_repo_changes(repo_root, "commit refresh metadata fixture")
         before = evaluation_requests_path.read_text(encoding="utf-8")
         engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
         create_all(engine)
@@ -5510,27 +5587,33 @@ def test_generate_l2_campaign_task_defaults_source_commit_from_repo_head() -> No
         engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
         create_all(engine)
 
-        with patch("control_plane.services.l2_task_generator.subprocess.run") as mock_run:
-            mock_run.return_value = subprocess.CompletedProcess(
-                args=["git", "-C", str(repo_root), "rev-parse", "HEAD"],
-                returncode=0,
-                stdout="feedface12345678\n",
-                stderr="",
-            )
-            with Session(engine) as session:
-                result = generate_l2_campaign_task(
-                    session,
-                    Layer2CampaignGenerateRequest(
-                        repo_root=str(repo_root),
-                        campaign_path=campaign_path,
-                        requested_by="@tester",
-                    ),
-                )
+        with patch("control_plane.services.l2_task_generator._resolve_source_commit", return_value="feedface12345678") as mock_resolve:
+            with patch(
+                "control_plane.services.l2_task_generator.build_generation_source_identity",
+                return_value={
+                    "version": 1,
+                    "declared_source_commit": "feedface12345678",
+                    "repo_head_sha": "feedface12345678",
+                    "relation": "exact",
+                    "proof": "generator_worktree_head_exact",
+                    "clean": True,
+                },
+            ) as mock_identity:
+                with Session(engine) as session:
+                    result = generate_l2_campaign_task(
+                        session,
+                        Layer2CampaignGenerateRequest(
+                            repo_root=str(repo_root),
+                            campaign_path=campaign_path,
+                            requested_by="@tester",
+                        ),
+                    )
 
-                work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
-                assert work_item.source_commit == "feedface12345678"
-                assert work_item.task_request.source_commit == "feedface12345678"
-                mock_run.assert_called_once()
+                    work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+                    assert work_item.source_commit == "feedface12345678"
+                    assert work_item.task_request.source_commit == "feedface12345678"
+                    mock_resolve.assert_called_once()
+                    mock_identity.assert_called_once()
 
 
 def test_generate_l2_campaign_task_rejects_invalid_explicit_source_commit() -> None:

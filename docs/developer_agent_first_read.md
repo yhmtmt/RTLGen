@@ -74,12 +74,15 @@ This set is the default startup context.
 
 When a proposal or evaluation request declares a `source_commit`, the developer
 agent must generate Layer 1 / Layer 2 queue manifests from a worktree whose
-`HEAD` exactly matches that commit.
+`HEAD` exactly matches that commit and whose `git status --porcelain` output is
+empty.
 
 Practical implications:
 - the repo content being read for generation must come from that exact checkout
 - the imported control-plane Python package must also come from that exact
   checkout
+- tracked or untracked local edits are not allowed during generation because the
+  manifest would no longer be provable from the declared tree
 - if `HEAD` drifts after the commit is recorded, regenerate the item from a
   matching worktree instead of reusing the old process or queue JSON
 

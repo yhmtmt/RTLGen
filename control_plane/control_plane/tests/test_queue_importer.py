@@ -58,6 +58,7 @@ def _stamp_generation_identity(payload: dict[str, object], source_commit: str) -
         "repo_head_sha": source_commit,
         "relation": "exact",
         "proof": "generator_worktree_head_exact",
+        "clean": True,
     }
     return payload
 
@@ -311,6 +312,32 @@ def test_import_rejects_declared_source_without_generation_identity(tmp_path: Pa
             assert "missing generation_source_identity" in message
             assert source_commit in message
             assert "Regenerate the queue item from a worktree whose HEAD exactly matches the declared source commit." in message
+        else:
+            raise AssertionError("expected QueueImportError")
+
+
+def test_import_rejects_declared_source_with_nonclean_generation_identity(tmp_path: Path) -> None:
+    repo_root, queue_file, source_commit = _make_queue_import_repo(tmp_path)
+    payload = json.loads(queue_file.read_text(encoding="utf-8"))
+    stamped = _stamp_generation_identity(payload, source_commit)
+    stamped["generation_source_identity"]["clean"] = False
+    queue_file.write_text(json.dumps(stamped, indent=2) + "\n", encoding="utf-8")
+
+    with make_session() as session:
+        try:
+            import_queue_item(
+                session,
+                QueueImportRequest(
+                    repo_root=str(repo_root),
+                    queue_path=str(queue_file),
+                    source_commit=source_commit,
+                ),
+            )
+        except QueueImportError as exc:
+            message = str(exc)
+            assert "does not prove a clean generation worktree" in message
+            assert "clean=False" in message
+            assert "Regenerate the queue item from a clean checkout whose HEAD exactly matches the declared source commit." in message
         else:
             raise AssertionError("expected QueueImportError")
 

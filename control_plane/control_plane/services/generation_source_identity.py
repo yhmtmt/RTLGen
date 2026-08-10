@@ -38,6 +38,26 @@ def _git_stdout(
     return stdout
 
 
+def _git_status_porcelain(
+    repo_root: Path,
+    *,
+    error_factory: Callable[[str], Exception],
+    failure_message: str,
+) -> str:
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(repo_root), "status", "--porcelain"],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except subprocess.CalledProcessError as exc:
+        stderr = (exc.stderr or "").strip()
+        detail = f": {stderr}" if stderr else ""
+        _raise(error_factory, f"{failure_message}{detail}")
+    return result.stdout
+
+
 def resolve_source_commit(
     repo_root: Path,
     source_commit: str | None,
@@ -134,12 +154,31 @@ def build_generation_source_identity(
                 "source commit."
             ),
         )
+    porcelain = _git_status_porcelain(
+        repo_root,
+        error_factory=error_factory,
+        failure_message=f"failed to resolve git status for {context} in repo_root {repo_root}",
+    )
+    if porcelain:
+        status_lines = [line.rstrip() for line in porcelain.splitlines() if line.strip()]
+        preview = "; ".join(status_lines[:5])
+        if len(status_lines) > 5:
+            preview += "; ..."
+        _raise(
+            error_factory,
+            (
+                f"{context} requires a clean exact-generation worktree: declared source_commit={declared_source_commit}, "
+                f"repo HEAD={repo_head}, git status --porcelain is not empty ({preview}). "
+                "Commit, stash, or remove tracked and untracked changes, then regenerate the item from the declared source commit."
+            ),
+        )
     return {
         "version": GENERATION_SOURCE_IDENTITY_VERSION,
         "declared_source_commit": declared_source_commit,
         "repo_head_sha": repo_head,
         "relation": "exact",
         "proof": "generator_worktree_head_exact",
+        "clean": True,
     }
 
 
@@ -167,6 +206,7 @@ def validate_generation_source_identity(
     repo_head = str(identity.get("repo_head_sha") or "").strip()
     relation = str(identity.get("relation") or "").strip()
     proof = str(identity.get("proof") or "").strip()
+    clean = identity.get("clean")
     if identity_source != required_sha or repo_head != required_sha or relation != "exact":
         _raise(
             error_factory,
@@ -175,6 +215,15 @@ def validate_generation_source_identity(
                 f"source_commit={required_sha}: declared_source_commit={identity_source or '<missing>'}, "
                 f"repo_head_sha={repo_head or '<missing>'}, relation={relation or '<missing>'}. "
                 "Regenerate the queue item from the declared source commit."
+            ),
+        )
+    if clean is not True:
+        _raise(
+            error_factory,
+            (
+                f"{context} has generation_source_identity that does not prove a clean generation worktree for "
+                f"declared source_commit={required_sha}: clean={clean!r}. "
+                "Regenerate the queue item from a clean checkout whose HEAD exactly matches the declared source commit."
             ),
         )
     if proof and proof != "generator_worktree_head_exact":
