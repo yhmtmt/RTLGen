@@ -456,7 +456,10 @@ def packetize_traffic_flow(flow: TrafficFlow) -> tuple[ScheduledFlit, ...]:
             raise ValueError(
                 "traffic flow packetization exceeds the eight-fragment tagged packet envelope"
             )
-        tag = (flow.tag_base + packet_index) & 0xFF
+        # The performance model keeps a wide synthetic packet sequence tag so
+        # packet ordering cannot be perturbed by 8-bit wraparound. Concrete
+        # 8-bit tag reuse is audited separately by higher-level reports.
+        tag = flow.tag_base + packet_index
         for fragment in range(flit_count):
             scheduled.append(
                 ScheduledFlit(

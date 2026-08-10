@@ -6,7 +6,7 @@
   "kind": "architecture",
   "abstraction_layer": "decoder_attention_score32_noc_phase2_schedule",
   "title": "Score32 segmented-mesh Phase 2 scheduling closure",
-  "hypothesis": "The existing Llama7B score32 producer/SRAM/local-reducer/root traffic artifacts can be restated as an explicit static 4x4 mesh schedule and simulated cycle by cycle, replacing the old one-flow NoC helper with a bounded routed service proof that still makes no HBM/DRAM claim.",
+  "hypothesis": "The existing Llama7B score32 producer/SRAM/local-reducer/root traffic artifacts can be restated as an explicit static 4x4 mesh schedule and simulated cycle by cycle, replacing the old one-flow NoC helper with a full-workload default routed service proof that still makes no HBM/DRAM claim.",
   "direct_comparison": {
     "primary_question": "When the checked-in score32 recost traffic quantities are mapped onto an explicit static 4x4 segmented mesh with 4 VCs and deterministic XY routing, what routed drain time, contention, and link pressure appear for the bounded one-wave schedule?",
     "include": [
@@ -36,7 +36,7 @@
     {
       "item_id": "l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1",
       "task_type": "l2_campaign",
-      "objective": "Run the bounded one-wave score32 segmented-mesh Phase 2 schedule materializer and record routed drain cycles, contention, and explicit assumptions.",
+      "objective": "Run the score32 segmented-mesh Phase 2 schedule materializer and record routed drain cycles, contention, and explicit assumptions, defaulting to the full declared workload unless a bounded wave limit is passed explicitly.",
       "evaluation_mode": "frontier_detail",
       "abstraction_layer": "decoder_attention_score32_noc_phase2_schedule",
       "cost_class": "low",
@@ -45,7 +45,7 @@
       "requires_materialized_refs": false,
       "expected_result": {
         "direction": "iterate",
-        "reason": "Use the bounded routed service summary to decide whether the next score32 composed rerank can replace the old NoC scalar or still needs a tighter SRAM-placement adapter."
+        "reason": "Use the routed service summary to decide whether the next score32 composed rerank can replace the old NoC scalar or still needs a tighter SRAM-placement adapter."
       }
     }
   ],
