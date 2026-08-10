@@ -1,0 +1,60 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_score32_noc_phase2_schedule_v1",
+  "created_utc": "2026-08-10T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_attention_score32_noc_phase2_schedule",
+  "title": "Score32 segmented-mesh Phase 2 scheduling closure",
+  "hypothesis": "The existing Llama7B score32 producer/SRAM/local-reducer/root traffic artifacts can be restated as an explicit static 4x4 mesh schedule and simulated cycle by cycle, replacing the old one-flow NoC helper with a bounded routed service proof that still makes no HBM/DRAM claim.",
+  "direct_comparison": {
+    "primary_question": "When the checked-in score32 recost traffic quantities are mapped onto an explicit static 4x4 segmented mesh with 4 VCs and deterministic XY routing, what routed drain time, contention, and link pressure appear for the bounded one-wave schedule?",
+    "include": [
+      "existing score32 exact-reduction recost artifact quantities",
+      "measured L1 local datapath and on-chip endpoint profile selection from the repo",
+      "static shared-SRAM home mapping and fixed root endpoint",
+      "cycle-by-cycle multi-flow 4x4 segmented mesh simulation"
+    ],
+    "exclude": [
+      "HBM/DRAM timing or controller behavior",
+      "dynamic routing or adaptive scheduling",
+      "new router RTL changes unless a proven bug is found"
+    ]
+  },
+  "expected_benefit": [
+    "removes the remaining one-flow NoC shortcut from the score32 path",
+    "makes every routed traffic assumption explicit and reviewable",
+    "creates a lightweight L2 closure point before wider composed score32 reranking"
+  ],
+  "risks": [
+    "the static shared-SRAM home mapping is still an adapter, not a measured SRAM placement",
+    "bounded one-wave schedule evidence should not be promoted into a full HBM-backed latency claim",
+    "command/control cadence remains inherited from the checked-in recost artifact"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Run the bounded one-wave score32 segmented-mesh Phase 2 schedule materializer and record routed drain cycles, contention, and explicit assumptions.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_score32_noc_phase2_schedule",
+      "cost_class": "low",
+      "comparison_role": "closure_detail",
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": false,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "Use the bounded routed service summary to decide whether the next score32 composed rerank can replace the old NoC scalar or still needs a tighter SRAM-placement adapter."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_reduction_recost__l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1.json",
+    "runs/campaigns/npu/l1_measured_costs/llama7b_attention_local_costs_all_measured_endpoint_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/sim/perf/noc_segmented_mesh.py",
+    "npu/eval/measure_llm_decoder_attention_score32_noc_phase2_schedule.py"
+  ]
+}

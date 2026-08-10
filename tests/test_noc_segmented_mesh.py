@@ -14,6 +14,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from npu.sim.perf.noc_segmented_mesh import (
+    MeshDelivery,
     ModelFlit,
     PORT_EAST,
     PORT_LOCAL,
@@ -23,9 +24,12 @@ from npu.sim.perf.noc_segmented_mesh import (
     PORT_WEST,
     PORTS,
     RouterCycleInput,
+    TrafficFlow,
+    packetize_traffic_flow,
     segmented_transfer,
     simulate_mesh,
     simulate_router,
+    simulate_scheduled_flits,
 )
 ROUTER_CONFIG = (
     REPO_ROOT
@@ -426,6 +430,242 @@ endmodule
 """
 
 
+def _multiflow_mesh_flows() -> list[TrafficFlow]:
+    return [
+        TrafficFlow(
+            name="shared_a",
+            source=0,
+            destination=15,
+            payload_bytes=256,
+            vc=0,
+            release_cycle=0,
+            packet_payload_bytes=256,
+            tag_base=7,
+            data_seed=1,
+        ),
+        TrafficFlow(
+            name="shared_b",
+            source=1,
+            destination=15,
+            payload_bytes=256,
+            vc=1,
+            release_cycle=0,
+            packet_payload_bytes=256,
+            tag_base=17,
+            data_seed=2,
+        ),
+        TrafficFlow(
+            name="reduction_c",
+            source=4,
+            destination=15,
+            payload_bytes=256,
+            vc=0,
+            release_cycle=0,
+            packet_payload_bytes=256,
+            tag_base=27,
+            data_seed=3,
+        ),
+    ]
+
+
+def _multiflow_mesh_ready() -> list[list[bool]]:
+    ready = [[False for _ in range(16)] for _ in range(64)]
+    for cycle in range(64):
+        ready[cycle][15] = cycle not in {14, 15}
+    return ready
+
+
+def _multiflow_mesh_tb() -> str:
+    return """
+`timescale 1ns/1ps
+module tb_noc_segmented_mesh4x4_multiflow;
+  reg clk;
+  reg rst_n;
+  reg [15:0] endpoint_in_valid;
+  wire [15:0] endpoint_in_ready;
+  reg [63:0] endpoint_in_dest;
+  reg [63:0] endpoint_in_source;
+  reg [127:0] endpoint_in_tag;
+  reg [47:0] endpoint_in_fragment;
+  reg [15:0] endpoint_in_last;
+  reg [31:0] endpoint_in_vc;
+  reg [4095:0] endpoint_in_data;
+  wire [15:0] endpoint_out_valid;
+  reg [15:0] endpoint_out_ready;
+  wire [63:0] endpoint_out_dest;
+  wire [63:0] endpoint_out_source;
+  wire [127:0] endpoint_out_tag;
+  wire [47:0] endpoint_out_fragment;
+  wire [15:0] endpoint_out_last;
+  wire [31:0] endpoint_out_vc;
+  wire [4095:0] endpoint_out_data;
+  wire [511:0] router_accepted_flit_count;
+  wire [511:0] router_forwarded_flit_count;
+  wire [511:0] router_input_stall_cycles;
+  wire [511:0] router_output_stall_cycles;
+  wire [511:0] router_contention_cycles;
+  wire [511:0] router_current_input_occupancy;
+  wire [511:0] router_max_input_occupancy;
+  wire [2559:0] router_route_flit_count;
+  integer cycle_count;
+  integer drive_i;
+  integer idx0;
+  integer idx1;
+  integer idx4;
+  integer delivered_count;
+  integer router_i;
+
+  noc_segmented_mesh4x4 dut (
+    .clk(clk),
+    .rst_n(rst_n),
+    .endpoint_in_valid(endpoint_in_valid),
+    .endpoint_in_ready(endpoint_in_ready),
+    .endpoint_in_dest(endpoint_in_dest),
+    .endpoint_in_source(endpoint_in_source),
+    .endpoint_in_tag(endpoint_in_tag),
+    .endpoint_in_fragment(endpoint_in_fragment),
+    .endpoint_in_last(endpoint_in_last),
+    .endpoint_in_vc(endpoint_in_vc),
+    .endpoint_in_data(endpoint_in_data),
+    .endpoint_out_valid(endpoint_out_valid),
+    .endpoint_out_ready(endpoint_out_ready),
+    .endpoint_out_dest(endpoint_out_dest),
+    .endpoint_out_source(endpoint_out_source),
+    .endpoint_out_tag(endpoint_out_tag),
+    .endpoint_out_fragment(endpoint_out_fragment),
+    .endpoint_out_last(endpoint_out_last),
+    .endpoint_out_vc(endpoint_out_vc),
+    .endpoint_out_data(endpoint_out_data),
+    .router_accepted_flit_count(router_accepted_flit_count),
+    .router_forwarded_flit_count(router_forwarded_flit_count),
+    .router_input_stall_cycles(router_input_stall_cycles),
+    .router_output_stall_cycles(router_output_stall_cycles),
+    .router_contention_cycles(router_contention_cycles),
+    .router_current_input_occupancy(router_current_input_occupancy),
+    .router_max_input_occupancy(router_max_input_occupancy),
+    .router_route_flit_count(router_route_flit_count)
+  );
+
+  initial clk = 1'b0;
+  always #5 clk = ~clk;
+
+  task automatic drive_sources;
+    begin
+      endpoint_in_valid = 16'h0000;
+      endpoint_in_dest = 64'h0;
+      endpoint_in_source = 64'h0;
+      endpoint_in_tag = 128'h0;
+      endpoint_in_fragment = 48'h0;
+      endpoint_in_last = 16'h0000;
+      endpoint_in_vc = 32'h0;
+      endpoint_in_data = 4096'h0;
+      if (idx0 < 8) begin
+        endpoint_in_valid[0] = 1'b1;
+        endpoint_in_dest[3:0] = 4'd15;
+        endpoint_in_source[3:0] = 4'd0;
+        endpoint_in_tag[7:0] = 8'd7;
+        endpoint_in_fragment[2:0] = idx0[2:0];
+        endpoint_in_last[0] = (idx0 == 7);
+        endpoint_in_vc[1:0] = 2'd0;
+        endpoint_in_data[255:0] = 256'h1000 + idx0;
+      end
+      if (idx1 < 8) begin
+        endpoint_in_valid[1] = 1'b1;
+        endpoint_in_dest[7:4] = 4'd15;
+        endpoint_in_source[7:4] = 4'd1;
+        endpoint_in_tag[15:8] = 8'd17;
+        endpoint_in_fragment[5:3] = idx1[2:0];
+        endpoint_in_last[1] = (idx1 == 7);
+        endpoint_in_vc[3:2] = 2'd1;
+        endpoint_in_data[511:256] = 256'h2000 + idx1;
+      end
+      if (idx4 < 8) begin
+        endpoint_in_valid[4] = 1'b1;
+        endpoint_in_dest[19:16] = 4'd15;
+        endpoint_in_source[19:16] = 4'd4;
+        endpoint_in_tag[39:32] = 8'd27;
+        endpoint_in_fragment[14:12] = idx4[2:0];
+        endpoint_in_last[4] = (idx4 == 7);
+        endpoint_in_vc[9:8] = 2'd0;
+        endpoint_in_data[1279:1024] = 256'h3000 + idx4;
+      end
+    end
+  endtask
+
+  task automatic drive_ready(input integer cycle);
+    begin
+      endpoint_out_ready = 16'h0000;
+      endpoint_out_ready[15] = (cycle != 14) && (cycle != 15);
+    end
+  endtask
+
+  initial begin
+    rst_n = 1'b0;
+    cycle_count = -1;
+    idx0 = 0;
+    idx1 = 0;
+    idx4 = 0;
+    delivered_count = 0;
+    drive_ready(-1);
+    drive_sources();
+    repeat (2) @(posedge clk);
+    @(negedge clk);
+    rst_n = 1'b1;
+    drive_ready(0);
+    drive_sources();
+    for (drive_i = 1; drive_i < 64; drive_i = drive_i + 1) begin
+      @(posedge clk);
+      @(negedge clk);
+      drive_ready(drive_i);
+      drive_sources();
+    end
+    $display("SUMMARY delivered=%0d", delivered_count);
+    for (router_i = 0; router_i < 16; router_i = router_i + 1) begin
+      $display(
+        "ROUTER node=%0d accepted=%0d forwarded=%0d istall=%0d ostall=%0d contention=%0d maxocc=%0d local=%0d east=%0d south=%0d",
+        router_i,
+        router_accepted_flit_count[(router_i * 32) +: 32],
+        router_forwarded_flit_count[(router_i * 32) +: 32],
+        router_input_stall_cycles[(router_i * 32) +: 32],
+        router_output_stall_cycles[(router_i * 32) +: 32],
+        router_contention_cycles[(router_i * 32) +: 32],
+        router_max_input_occupancy[(router_i * 32) +: 32],
+        router_route_flit_count[((router_i * 5 * 32) + (4 * 32)) +: 32],
+        router_route_flit_count[((router_i * 5 * 32) + (2 * 32)) +: 32],
+        router_route_flit_count[((router_i * 5 * 32) + (1 * 32)) +: 32]
+      );
+    end
+    $finish;
+  end
+
+  always @(posedge clk) begin
+    if (rst_n) begin
+      cycle_count = cycle_count + 1;
+      if (endpoint_in_valid[0] && endpoint_in_ready[0])
+        idx0 = idx0 + 1;
+      if (endpoint_in_valid[1] && endpoint_in_ready[1])
+        idx1 = idx1 + 1;
+      if (endpoint_in_valid[4] && endpoint_in_ready[4])
+        idx4 = idx4 + 1;
+      if (endpoint_out_valid[15] && endpoint_out_ready[15]) begin
+        delivered_count = delivered_count + 1;
+        $display(
+          "DELIVER cycle=%0d source=%0d dest=%0d tag=%0d fragment=%0d vc=%0d last=%0d",
+          cycle_count,
+          endpoint_out_source[63:60],
+          endpoint_out_dest[63:60],
+          endpoint_out_tag[127:120],
+          endpoint_out_fragment[47:45],
+          endpoint_out_vc[31:30],
+          endpoint_out_last[15]
+        );
+      end
+    end
+  end
+endmodule
+"""
+
+
 def test_segmented_router_wrapper_generates_and_compiles() -> None:
     subprocess.run(
         ["python3", "scripts/generate_design.py", str(ROUTER_CONFIG), "nangate45", "--force_gen", "True"],
@@ -577,3 +817,99 @@ def test_mesh_route_model_matches_rtl(tmp_path: Path) -> None:
         for item in expected["delivered"]
     ]
     assert observed == expected_deliveries
+
+
+@pytest.mark.skipif(_iverilog() is None or _vvp() is None, reason="iverilog/vvp unavailable")
+def test_multiflow_mesh_cycle_model_matches_rtl(tmp_path: Path) -> None:
+    flows = _multiflow_mesh_flows()
+    ready = _multiflow_mesh_ready()
+    scheduled = [scheduled for flow in flows for scheduled in packetize_traffic_flow(flow)]
+    expected = simulate_scheduled_flits(scheduled, endpoint_out_ready_schedule=ready, max_cycles=256)
+    output = _compile_and_run(
+        tmp_path,
+        top="tb_noc_segmented_mesh4x4_multiflow",
+        sources=[
+            REPO_ROOT / "npu/sim/rtl/noc_ready_valid_fifo.sv",
+            REPO_ROOT / "npu/sim/rtl/noc_segmented_mesh_router.sv",
+            REPO_ROOT / "npu/sim/rtl/noc_segmented_mesh4x4.sv",
+        ],
+        tb_text=_multiflow_mesh_tb(),
+    )
+
+    delivery_pattern = re.compile(
+        r"DELIVER cycle=(?P<cycle>\d+) source=(?P<source>\d+) dest=(?P<dest>\d+) "
+        r"tag=(?P<tag>\d+) fragment=(?P<fragment>\d+) vc=(?P<vc>\d+) last=(?P<last>\d+)"
+    )
+    summary_pattern = re.compile(r"SUMMARY delivered=(?P<delivered>\d+)")
+    router_pattern = re.compile(
+        r"ROUTER node=(?P<node>\d+) accepted=(?P<accepted>\d+) forwarded=(?P<forwarded>\d+) "
+        r"istall=(?P<istall>\d+) ostall=(?P<ostall>\d+) contention=(?P<contention>\d+) "
+        r"maxocc=(?P<maxocc>\d+) local=(?P<local>\d+) east=(?P<east>\d+) south=(?P<south>\d+)"
+    )
+
+    observed_deliveries = []
+    summary_match = None
+    observed_routers: dict[int, dict[str, int]] = {}
+    for line in output.splitlines():
+        stripped = line.strip()
+        match = delivery_pattern.match(stripped)
+        if match:
+            observed_deliveries.append({key: int(value) for key, value in match.groupdict().items()})
+            continue
+        summary_match = summary_match or summary_pattern.match(stripped)
+        router_match = router_pattern.match(stripped)
+        if router_match:
+            values = {key: int(value) for key, value in router_match.groupdict().items()}
+            observed_routers[values["node"]] = values
+
+    assert summary_match is not None, output
+    assert int(summary_match.group("delivered")) == len(expected.deliveries)
+
+    expected_deliveries = [
+        {
+            "cycle": delivery.cycle,
+            "source": delivery.flit.source,
+            "dest": delivery.flit.destination,
+            "tag": delivery.flit.tag,
+            "fragment": delivery.flit.fragment,
+            "vc": delivery.flit.vc,
+            "last": 1 if delivery.flit.last else 0,
+        }
+        for delivery in expected.deliveries
+    ]
+    assert observed_deliveries == expected_deliveries
+
+    assert len(observed_routers) == 16
+    for node, summary in enumerate(expected.router_summaries):
+        observed = observed_routers[node]
+        assert observed["accepted"] == summary.accepted_flit_count
+        assert observed["forwarded"] == summary.forwarded_flit_count
+        assert observed["istall"] == summary.input_stall_cycles
+        assert observed["ostall"] == summary.output_stall_cycles
+        assert observed["contention"] == summary.arbitration_contention_cycles
+        assert observed["maxocc"] == summary.max_input_occupancy
+        assert observed["local"] == summary.route_flit_count[PORT_LOCAL]
+        assert observed["east"] == summary.route_flit_count[PORT_EAST]
+        assert observed["south"] == summary.route_flit_count[PORT_SOUTH]
+
+
+def test_multiflow_mesh_preserves_conservation_order_and_fairness() -> None:
+    flows = _multiflow_mesh_flows()
+    ready = _multiflow_mesh_ready()
+    scheduled = [scheduled for flow in flows for scheduled in packetize_traffic_flow(flow)]
+    result = simulate_scheduled_flits(scheduled, endpoint_out_ready_schedule=ready, max_cycles=256)
+
+    assert result.endpoint_injected_flit_count == len(scheduled)
+    assert len(result.deliveries) == len(scheduled)
+
+    by_label: dict[str, list[MeshDelivery]] = {}
+    for delivery in result.deliveries:
+        by_label.setdefault(delivery.flit.label, []).append(delivery)
+
+    assert set(by_label) == {flow.name for flow in flows}
+    for deliveries in by_label.values():
+        assert [delivery.flit.fragment for delivery in deliveries] == list(range(8))
+
+    first_sixteen_tags = {delivery.flit.tag for delivery in result.deliveries[:16]}
+    assert len(first_sixteen_tags) >= 2
+    assert any(summary.arbitration_contention_cycles > 0 for summary in result.router_summaries)

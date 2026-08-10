@@ -1,0 +1,22 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_score32_noc_phase2_schedule_v1",
+  "source_commit_note": "Replace with the merged commit that adds the Phase 2 multi-flow segmented-mesh simulator, the score32 schedule materializer, focused tests, and this proposal before dispatch.",
+  "items": [
+    {
+      "item_id": "l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Run the bounded one-wave score32 segmented-mesh Phase 2 schedule materializer and record routed drain cycles, contention, and explicit assumptions.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_score32_noc_phase2_schedule",
+      "cost_class": "low",
+      "comparison_role": "closure_detail",
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": false,
+      "acceptance_notes": "Do not insert a DB task from this patch. This request is checked in only so the evaluator can dispatch it later from a merged source. The intended command is the bounded one-wave invocation of npu/eval/measure_llm_decoder_attention_score32_noc_phase2_schedule.py and it must preserve the no-HBM/DRAM claim.",
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "Use the bounded routed service summary to decide whether the next score32 composed rerank can replace the old NoC scalar or still needs a tighter SRAM-placement adapter."
+      }
+    }
+  ]
+}
