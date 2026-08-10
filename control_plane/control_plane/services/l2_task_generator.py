@@ -7885,9 +7885,9 @@ def _decoder_attention_decode_score_multivalue_service_exact_partial_physical_re
         "l1_decoder_attention_exact_partial_temporal_finalizer_bounded_12ns_physical_v1_r1",
         (
             "l2_decoder_attention_decode_score_multivalue_service_"
-            "finalized_cdc_lane_probe_10ns_12ns_v1"
+            "finalized_cdc_lane_probe_10ns_12ns_v1_r1"
         ),
-        "l2_decoder_attention_exact_partial_c1_workload_correspondence_llama7b_v1",
+        "l2_decoder_attention_exact_partial_c1_workload_correspondence_llama7b_v1_r1",
     ]
     normalized_dependencies = [
         str(dependency).strip()

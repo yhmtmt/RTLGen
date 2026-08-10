@@ -27,15 +27,15 @@ AuditRunner = Callable[..., JsonDict]
 _CAMPAIGN_MODEL = "attention_decode_score_multivalue_service_exact_partial_physical_recost_campaign_v1"
 _SUMMARY_MODEL = "attention_decode_score_multivalue_service_exact_partial_physical_recost_campaign_summary_v1"
 _AUDIT_MODEL = "decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost_v1"
-_CAMPAIGN_ID = "attention_decode_score_multivalue_service_exact_partial_physical_recost_10ns_12ns_v1"
+_CAMPAIGN_ID = "attention_decode_score_multivalue_service_exact_partial_physical_recost_10ns_12ns_v1_r1"
 _PROPOSAL_ID = "prop_l2_decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost_v1"
 _PROPOSAL_PATH = f"docs/proposals/{_PROPOSAL_ID}/proposal.json"
 _PHYSICAL_DEPENDENCY = "l1_decoder_attention_exact_partial_temporal_finalizer_bounded_12ns_physical_v1_r1"
 _FUNCTIONAL_DEPENDENCY = (
-    "l2_decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe_10ns_12ns_v1"
+    "l2_decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe_10ns_12ns_v1_r1"
 )
 _WORKLOAD_DEPENDENCY = (
-    "l2_decoder_attention_exact_partial_c1_workload_correspondence_llama7b_v1"
+    "l2_decoder_attention_exact_partial_c1_workload_correspondence_llama7b_v1_r1"
 )
 _DEPENDENCIES = (_PHYSICAL_DEPENDENCY, _FUNCTIONAL_DEPENDENCY, _WORKLOAD_DEPENDENCY)
 _LANES = (1, 2, 4, 8)

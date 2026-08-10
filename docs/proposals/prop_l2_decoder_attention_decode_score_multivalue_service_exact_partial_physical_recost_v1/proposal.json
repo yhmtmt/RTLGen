@@ -37,26 +37,35 @@
   },
   "required_evaluations": [
     {
-      "item_id": "l2_decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost_10ns_12ns_v1",
+      "item_id": "l2_decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost_10ns_12ns_v1_r1",
       "task_type": "l2_campaign",
-      "objective": "Record the fail-closed four-lane exact-partial composed-service physical recost at the selected 10 ns / 12 ns domain pair.",
+      "objective": "Record the fail-closed four-lane exact-partial composed-service physical recost retry at the selected 10 ns / 12 ns domain pair using the corrected functional and workload materializations.",
       "evaluation_mode": "frontier_detail",
       "abstraction_layer": "decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost",
       "comparison_role": "lane_matched_composed_physical_recost",
       "depends_on_item_ids": [
         "l1_decoder_attention_exact_partial_temporal_finalizer_bounded_12ns_physical_v1_r1",
-        "l2_decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe_10ns_12ns_v1",
-        "l2_decoder_attention_exact_partial_c1_workload_correspondence_llama7b_v1"
+        "l2_decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe_10ns_12ns_v1_r1",
+        "l2_decoder_attention_exact_partial_c1_workload_correspondence_llama7b_v1_r1"
       ],
       "requires_merged_inputs": true,
       "requires_materialized_refs": true,
       "run_physical": false,
-      "status": "pending_implementation_merge",
+      "revision": {
+        "reason": "replace_blocked_original_dependency_ids_with_materialized_retry_dependencies",
+        "preserve_blocked_item_id": "l2_decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost_10ns_12ns_v1",
+        "corrected_dependency_item_ids": [
+          "l1_decoder_attention_exact_partial_temporal_finalizer_bounded_12ns_physical_v1_r1",
+          "l2_decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe_10ns_12ns_v1_r1",
+          "l2_decoder_attention_exact_partial_c1_workload_correspondence_llama7b_v1_r1"
+        ]
+      },
       "expected_result": {
         "direction": "record_bounded_exact_partial_composed_service_physical_recost",
-        "reason": "Preserve lane-matched functional cycle counts, conservative 131k Llama7B affine projections, single-FIFO accounting, additive standalone physical measurements, and bounded provisional energy provenance across all four divider-lane points."
+        "reason": "Preserve lane-matched functional cycle counts, conservative 131k Llama7B affine projections, single-FIFO accounting, additive standalone physical measurements, and bounded provisional energy provenance across all four divider-lane points while consuming the corrected finalized-CDC and workload retry artifacts only."
       },
-      "notes": "Generate only after this implementation and all three dependency outputs are merged/materialized on current origin/master. Do not dispatch, open a PR, or queue from this preparation branch."
+      "status": "pending_implementation_merge",
+      "notes": "Historical blocked v1 DB/run history remains authoritative for the obsolete request and must not be mutated or requeued. After this implementation merges, generate the fresh _r1 DB item only from a clean exact-source worktree at the merge commit with proposal updates disabled, and queue only after all three corrected dependency outputs are merged/materialized on current origin/master."
     }
   ],
   "source_refs": [

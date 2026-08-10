@@ -153,12 +153,27 @@ def test_committed_campaign_contract_requires_exact_dependencies() -> None:
     campaign = json.loads((REPO_ROOT / CAMPAIGN_REL).read_text(encoding="utf-8"))
     validated = _validate_campaign(campaign)
 
+    assert validated["campaign_id"] == (
+        "attention_decode_score_multivalue_service_exact_partial_physical_recost_10ns_12ns_v1_r1"
+    )
     assert [point["divider_lanes"] for point in validated["points"]] == [1, 2, 4, 8]
     assert validated["depends_on_item_ids"] == [
         "l1_decoder_attention_exact_partial_temporal_finalizer_bounded_12ns_physical_v1_r1",
-        "l2_decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe_10ns_12ns_v1",
-        "l2_decoder_attention_exact_partial_c1_workload_correspondence_llama7b_v1",
+        "l2_decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe_10ns_12ns_v1_r1",
+        "l2_decoder_attention_exact_partial_c1_workload_correspondence_llama7b_v1_r1",
     ]
+    assert validated["fixed_inputs"]["functional_probe_summary_json"].endswith(
+        "_finalized_cdc_lane_probe_10ns_12ns_v1_r1/campaign_summary.json"
+    )
+    assert validated["fixed_inputs"]["workload_correspondence_json"].endswith(
+        "_exact_partial_c1_workload_correspondence_llama7b_v1_r1.json"
+    )
+    assert validated["outputs"]["report_json"].endswith(
+        "_exact_partial_physical_recost_10ns_12ns_v1_r1.json"
+    )
+    assert validated["outputs"]["rows_csv"].endswith(
+        "_exact_partial_physical_recost_10ns_12ns_v1_r1.csv"
+    )
 
     campaign["depends_on_item_ids"].pop()
     with pytest.raises(ValueError, match="must require exactly"):
