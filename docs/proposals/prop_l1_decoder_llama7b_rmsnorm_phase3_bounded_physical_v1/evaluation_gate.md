@@ -9,4 +9,3 @@
   - run the bounded Nangate45 OpenROAD sweep defined in the proposal
   - extract `timing_debug_report.md`
 - note: Do not run OpenROAD locally and do not insert a DB item from this branch.
-

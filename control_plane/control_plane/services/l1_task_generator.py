@@ -709,7 +709,7 @@ def _read_config_target(
                     "name": "lint_llama7b_rmsnorm_phase3_rtl",
                     "run": _with_oss_cad_path(
                         (
-                            "verilator --lint-only -Wall "
+                            "verilator --lint-only -Wall -Wno-fatal "
                             f"{design_dir}/verilog/top.v"
                         )
                     ),

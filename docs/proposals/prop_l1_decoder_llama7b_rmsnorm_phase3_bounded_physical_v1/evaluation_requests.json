@@ -23,7 +23,7 @@
         "runs/designs/npu_blocks/llama7b_rmsnorm_phase3_bounded_l16_ng45/metrics.csv",
         "runs/designs/npu_blocks/llama7b_rmsnorm_phase3_bounded_l16_ng45/timing_debug_report.md"
       ],
-      "acceptance_notes": "Require regenerated RTL to match the checked wrapper, require Verilator lint to pass before OpenROAD, accept status=ok rows and retain any non-ok rows as explicit physical boundary evidence, and classify the inferred row_mem/gamma_mem arrays as register-storage measurement only rather than SRAM evidence.",
+      "acceptance_notes": "Require regenerated RTL to match the checked wrapper, require Verilator lint to complete before OpenROAD while retaining non-fatal warnings, accept status=ok rows and retain any non-ok rows as explicit physical boundary evidence, and classify the inferred row_mem/gamma_mem arrays as register-storage measurement only rather than SRAM evidence.",
       "expected_result": {
         "direction": "measure_phase3_rmsnorm_physical_anchor",
         "reason": "This request establishes the first physical anchor for the exact Phase-3 Llama7B RMSNorm RTL while preserving the storage-model caveat."

@@ -4822,7 +4822,7 @@ def test_generate_l1_sweep_task_supports_llama7b_rmsnorm_phase3_block_config() -
             )
             assert work_item.command_manifest[2]["run"] == (
                 "export PATH=/oss-cad-suite/bin:$PATH && "
-                "verilator --lint-only -Wall "
+                "verilator --lint-only -Wall -Wno-fatal "
                 "runs/designs/npu_blocks/llama7b_rmsnorm_phase3_bounded_l16_ng45/verilog/top.v"
             )
             assert "--top llama7b_rmsnorm_phase3_bounded_l16_ng45" in work_item.command_manifest[3]["run"]

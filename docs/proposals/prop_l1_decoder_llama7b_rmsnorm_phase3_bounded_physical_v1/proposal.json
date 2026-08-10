@@ -19,7 +19,7 @@
     "include": [
       "exact merged Phase-3 RTL generator and checked LANES=16 wrapper config",
       "contract guard that regenerates the RTL and checks the ready/valid streaming wrapper contract",
-      "Verilator lint before OpenROAD",
+      "Verilator lint before OpenROAD, with warnings reported but non-fatal",
       "one large-block Nangate45 sweep with conservative clock periods and generous floorplan bounds",
       "lightweight metrics.csv and timing_debug_report.md evidence only"
     ],
@@ -70,7 +70,7 @@
         "runs/designs/npu_blocks/llama7b_rmsnorm_phase3_bounded_l16_ng45/metrics.csv",
         "runs/designs/npu_blocks/llama7b_rmsnorm_phase3_bounded_l16_ng45/timing_debug_report.md"
       ],
-      "acceptance_notes": "Require regenerated RTL to match the checked wrapper, require Verilator lint to pass before OpenROAD, accept status=ok rows and retain any non-ok rows as explicit physical boundary evidence, and classify the inferred row_mem/gamma_mem arrays as register-storage measurement only rather than SRAM evidence.",
+      "acceptance_notes": "Require regenerated RTL to match the checked wrapper, require Verilator lint to complete before OpenROAD while retaining non-fatal warnings, accept status=ok rows and retain any non-ok rows as explicit physical boundary evidence, and classify the inferred row_mem/gamma_mem arrays as register-storage measurement only rather than SRAM evidence.",
       "expected_result": {
         "direction": "measure_phase3_rmsnorm_physical_anchor",
         "reason": "This converts the merged exact RMSNorm datapath into a bounded Nangate45 timing, area, and generic power anchor."

@@ -13,4 +13,3 @@ Measurement limitation:
 - `row_mem` and `gamma_mem` remain inferred register arrays in the generated RTL.
 - This package is intentionally not SRAM-backed and must not be used as SRAM
   evidence in later architecture summaries.
-

@@ -53,4 +53,3 @@
 - approved_by: developer_agent
 - approved_utc: 2026-08-10T00:00:00Z
 - note: Narrow physical anchor only. No local OpenROAD and no DB insertion.
-
