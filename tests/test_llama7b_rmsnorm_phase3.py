@@ -393,3 +393,32 @@ def test_llama7b_rmsnorm_phase3_protocol_error_cases(tmp_path: Path, case_fn) ->
         wrong_last=wrong_last,
         stall_output=False,
     )
+
+
+def test_llama7b_rmsnorm_phase3_physical_guard_passes_for_generated_design(tmp_path: Path) -> None:
+    design_dir = tmp_path / "llama7b_rmsnorm_phase3_bounded_l16_ng45"
+    rtl_dir = design_dir / "verilog"
+    design_dir.mkdir(parents=True, exist_ok=True)
+    config = _config(top_name="llama7b_rmsnorm_phase3_bounded_l16_ng45")
+    config["report_links"] = {
+        "proposal_id": "prop_l1_decoder_llama7b_rmsnorm_phase3_bounded_physical_v1",
+        "proposal_path": (
+            "docs/proposals/prop_l1_decoder_llama7b_rmsnorm_phase3_bounded_physical_v1/proposal.json"
+        ),
+    }
+    (design_dir / "config.json").write_text(json.dumps(config, indent=2) + "\n", encoding="utf-8")
+    generate(config, rtl_dir)
+
+    subprocess.run(
+        [
+            sys.executable,
+            str(REPO_ROOT / "npu" / "eval" / "check_llama7b_rmsnorm_phase3_physical_guard.py"),
+            "--design-dir",
+            str(design_dir),
+        ],
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+        check=True,
+        timeout=30,
+    )

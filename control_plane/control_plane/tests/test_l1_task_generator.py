@@ -1861,6 +1861,63 @@ def _write_second_attention_hbm_replay_controller_repo(repo_root: Path) -> str:
     return str(config_path.relative_to(repo_root))
 
 
+def _write_example_llama7b_rmsnorm_phase3_physical_repo(repo_root: Path) -> tuple[str, str]:
+    design_dir = repo_root / "runs" / "designs" / "npu_blocks" / "llama7b_rmsnorm_phase3_bounded_l16_ng45"
+    design_dir.mkdir(parents=True, exist_ok=True)
+    config_path = design_dir / "config.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "top_name": "llama7b_rmsnorm_phase3_bounded_l16_ng45",
+                "llama7b_rmsnorm": {
+                    "lanes": 16,
+                },
+                "report_links": {
+                    "proposal_id": "prop_l1_decoder_llama7b_rmsnorm_phase3_bounded_physical_v1",
+                    "proposal_path": (
+                        "docs/proposals/"
+                        "prop_l1_decoder_llama7b_rmsnorm_phase3_bounded_physical_v1/proposal.json"
+                    ),
+                },
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    sweep_path = (
+        repo_root
+        / "runs"
+        / "campaigns"
+        / "npu"
+        / "llama7b_rmsnorm_phase3_physical_v1"
+        / "sweeps"
+        / "nangate45_llama7b_rmsnorm_phase3_bounded_l16.json"
+    )
+    sweep_path.parent.mkdir(parents=True, exist_ok=True)
+    sweep_path.write_text(
+        json.dumps(
+            {
+                "tag_prefix": "llama7b_rmsnorm_phase3_bounded_l16_ng45_v1",
+                "flow_params": {
+                    "CLOCK_PERIOD": [16.0, 20.0],
+                    "DIE_AREA": ["0 0 5200 5200"],
+                    "CORE_AREA": ["120 120 5080 5080"],
+                    "PLACE_DENSITY": [0.3],
+                    "SYNTH_HIERARCHICAL": [1],
+                },
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    return (
+        str(config_path.relative_to(repo_root)),
+        str(sweep_path.relative_to(repo_root)),
+    )
+
+
 def _write_second_attention_command_dispatch_repo(repo_root: Path) -> str:
     design_dir = repo_root / "runs" / "designs" / "npu_blocks" / "attention_command_dispatch_c16_q32"
     design_dir.mkdir(parents=True, exist_ok=True)
@@ -4716,6 +4773,72 @@ def test_generate_l1_sweep_task_supports_multi_attention_hbm_replay_controller_c
             ]
             assert "allow non-ok metrics" in work_item.acceptance_rules[0]
             assert "flow_failed" in work_item.acceptance_rules[0]
+
+
+def test_generate_l1_sweep_task_supports_llama7b_rmsnorm_phase3_block_config() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        config_path, sweep_path = _write_example_llama7b_rmsnorm_phase3_physical_repo(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l1_sweep_task(
+                session,
+                Layer1SweepGenerateRequest(
+                    repo_root=str(repo_root),
+                    sweep_path=sweep_path,
+                    config_paths=[config_path],
+                    platform="nangate45",
+                    out_root="runs/designs/npu_blocks",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    abstraction_layer="llama7b_rmsnorm_phase3",
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            assert result.status == "applied"
+            assert [command["name"] for command in work_item.command_manifest] == [
+                "generate_llama7b_rmsnorm_rtl",
+                "check_llama7b_rmsnorm_phase3_physical_guard",
+                "lint_llama7b_rmsnorm_phase3_rtl",
+                "run_block_sweep",
+                "extract_llama7b_rmsnorm_phase3_timing_paths",
+                "build_runs_index",
+                "validate",
+            ]
+            assert work_item.command_manifest[0]["run"] == (
+                "export PATH=/oss-cad-suite/bin:$PATH && "
+                "python3 npu/rtlgen/gen_llama7b_rmsnorm.py "
+                "--config runs/designs/npu_blocks/llama7b_rmsnorm_phase3_bounded_l16_ng45/config.json "
+                "--out runs/designs/npu_blocks/llama7b_rmsnorm_phase3_bounded_l16_ng45/verilog"
+            )
+            assert work_item.command_manifest[1]["run"] == (
+                "python3 npu/eval/check_llama7b_rmsnorm_phase3_physical_guard.py "
+                "--design-dir runs/designs/npu_blocks/llama7b_rmsnorm_phase3_bounded_l16_ng45"
+            )
+            assert work_item.command_manifest[2]["run"] == (
+                "export PATH=/oss-cad-suite/bin:$PATH && "
+                "verilator --lint-only -Wall -Wno-fatal "
+                "runs/designs/npu_blocks/llama7b_rmsnorm_phase3_bounded_l16_ng45/verilog/top.v"
+            )
+            assert "--top llama7b_rmsnorm_phase3_bounded_l16_ng45" in work_item.command_manifest[3]["run"]
+            assert work_item.command_manifest[4]["run"] == (
+                "python3 npu/eval/extract_openroad_timing_summary.py "
+                "--design-dir runs/designs/npu_blocks/llama7b_rmsnorm_phase3_bounded_l16_ng45 "
+                "--out runs/designs/npu_blocks/llama7b_rmsnorm_phase3_bounded_l16_ng45/timing_debug_report.md "
+                "--max-paths 8"
+            )
+            assert work_item.expected_outputs == [
+                "runs/designs/npu_blocks/llama7b_rmsnorm_phase3_bounded_l16_ng45/metrics.csv",
+                "runs/designs/npu_blocks/llama7b_rmsnorm_phase3_bounded_l16_ng45/timing_debug_report.md",
+            ]
+            assert work_item.task_request.request_payload["developer_loop"]["abstraction"] == {
+                "layer": "llama7b_rmsnorm_phase3"
+            }
 
 
 def test_generate_l1_sweep_task_supports_attention_schedule_wrapper_configs() -> None:

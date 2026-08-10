@@ -1,0 +1,100 @@
+{
+  "proposal_id": "prop_l1_decoder_llama7b_rmsnorm_phase3_bounded_physical_v1",
+  "created_utc": "2026-08-10T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit",
+  "title": "Bounded Llama7B RMSNorm Phase-3 physical anchor",
+  "abstraction_layer": "llama7b_rmsnorm_phase3",
+  "hypothesis": "The merged Phase-3 Llama7B RMSNorm RTL is now exact enough to replace the arithmetic abstraction, but its physical cost is still unknown. A single LANES=16 bounded Nangate45 block evaluation with a conservative clock sweep can establish timing, area, and generic power anchors without over-claiming SRAM evidence for the inferred row/gamma storage arrays.",
+  "direct_comparison": {
+    "primary_question": "What timing-feasible Nangate45 anchor can be established for the LANES=16 Phase-3 RMSNorm block when the evaluator generates the RTL, runs contract and lint guards, and then hardens the wrapper with a conservative clock sweep?",
+    "baselines": [
+      "prop_l1_decoder_llama7b_rmsnorm_phase3_v1 implementation summary",
+      "docs/reference/llama7b_rmsnorm_phase2_contract.md"
+    ],
+    "candidate": [
+      "l1_decoder_llama7b_rmsnorm_phase3_bounded_physical_v1_r1"
+    ],
+    "include": [
+      "exact merged Phase-3 RTL generator and checked LANES=16 wrapper config",
+      "contract guard that regenerates the RTL and checks the ready/valid streaming wrapper contract",
+      "Verilator lint before OpenROAD, with warnings reported but non-fatal",
+      "one large-block Nangate45 sweep with conservative clock periods and generous floorplan bounds",
+      "lightweight metrics.csv and timing_debug_report.md evidence only"
+    ],
+    "exclude": [
+      "local OpenROAD execution in the devcontainer",
+      "SRAM macro substitution for the inferred row/gamma storage arrays",
+      "activity-backed energy calibration or token-level throughput claims",
+      "database insertion before merge and remote dispatch approval"
+    ],
+    "metrics": [
+      "critical_path_ns",
+      "instance_area_um2",
+      "stdcell_area_um2",
+      "total_power_mw",
+      "flow_status",
+      "timing_debug_report"
+    ]
+  },
+  "expected_benefit": [
+    "Replace the remaining RMSNorm arithmetic cost abstraction with a measured Nangate45 physical anchor.",
+    "Bound evaluation risk by proving the generated RTL and wrapper contract before OpenROAD starts.",
+    "Make the storage-model caveat explicit so later L2 recost cannot misread the result as SRAM evidence."
+  ],
+  "risks": [
+    "The large inferred register arrays may still cause congestion or route failure even under a generous floorplan.",
+    "Generic OpenROAD power will remain only a physical estimate, not a workload-activity-backed energy measurement.",
+    "A single LANES=16 point does not yet establish scaling across wider or narrower RMSNorm service variants."
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l1_decoder_llama7b_rmsnorm_phase3_bounded_physical_v1",
+      "task_type": "l1_sweep",
+      "evaluation_mode": "physical_calibration",
+      "objective": "Measure a conservative Nangate45 physical anchor for the LANES=16 Llama7B RMSNorm Phase-3 block.",
+      "cost_class": "medium",
+      "abstraction_layer": "llama7b_rmsnorm_phase3",
+      "comparison_role": "rmsnorm_phase3_rtl_physical_anchor",
+      "depends_on_item_ids": [],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "configs": [
+        "runs/designs/npu_blocks/llama7b_rmsnorm_phase3_bounded_l16_ng45/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/llama7b_rmsnorm_phase3_physical_v1/sweeps/nangate45_llama7b_rmsnorm_phase3_bounded_l16.json",
+      "out_root": "runs/designs/npu_blocks",
+      "expected_outputs": [
+        "runs/designs/npu_blocks/llama7b_rmsnorm_phase3_bounded_l16_ng45/metrics.csv",
+        "runs/designs/npu_blocks/llama7b_rmsnorm_phase3_bounded_l16_ng45/timing_debug_report.md"
+      ],
+      "acceptance_notes": "Require regenerated RTL to match the checked wrapper, require Verilator lint to complete before OpenROAD while retaining non-fatal warnings, accept status=ok rows and retain any non-ok rows as explicit physical boundary evidence, and classify the inferred row_mem/gamma_mem arrays as register-storage measurement only rather than SRAM evidence.",
+      "expected_result": {
+        "direction": "measure_phase3_rmsnorm_physical_anchor",
+        "reason": "This converts the merged exact RMSNorm datapath into a bounded Nangate45 timing, area, and generic power anchor."
+      },
+      "status": "pending"
+    }
+  ],
+  "remaining_abstractions": [
+    "The Phase-3 block still stores row and gamma state in inferred register arrays; this physical run measures that implementation choice and must not be interpreted as SRAM evidence.",
+    "Power remains generic OpenROAD physical power rather than activity-backed token energy.",
+    "Only the LANES=16 wrapper is covered by this first bounded physical anchor."
+  ],
+  "source_refs": [
+    "npu/rtlgen/gen_llama7b_rmsnorm.py",
+    "npu/eval/check_llama7b_rmsnorm_phase3_physical_guard.py",
+    "runs/designs/npu_blocks/llama7b_rmsnorm_phase3_bounded_l16_ng45/config.json",
+    "runs/campaigns/npu/llama7b_rmsnorm_phase3_physical_v1/sweeps/nangate45_llama7b_rmsnorm_phase3_bounded_l16.json"
+  ],
+  "baseline_refs": [
+    "docs/proposals/prop_l1_decoder_llama7b_rmsnorm_phase3_v1/implementation_summary.md"
+  ],
+  "knowledge_refs": [
+    "docs/reference/llama7b_rmsnorm_bf16_contract.md",
+    "docs/reference/llama7b_rmsnorm_phase2_contract.md",
+    "docs/reference/llama7b_rmsnorm_phase2_evaluation.json"
+  ]
+}
