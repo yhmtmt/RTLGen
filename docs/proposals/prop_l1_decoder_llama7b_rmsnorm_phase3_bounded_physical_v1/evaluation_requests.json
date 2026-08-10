@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l1_decoder_llama7b_rmsnorm_phase3_bounded_physical_v1",
-  "source_commit": "",
-  "source_commit_note": "Pin source_requirement.required_sha to the merge commit containing this request before dispatch. The code path to evaluate is the branch commit that adds the RMSNorm Phase-3 bounded physical package and task-generator support.",
+  "source_commit": "f79b9cc11f80278a2ecc7a2b043923154962eb58",
+  "source_commit_note": "Pin source_requirement.required_sha to the merge commit containing this request before dispatch. Until merge, the concrete branch source for review and pre-dispatch validation is f79b9cc11f80278a2ecc7a2b043923154962eb58.",
   "requested_items": [
     {
       "item_id": "l1_decoder_llama7b_rmsnorm_phase3_bounded_physical_v1_r1",
@@ -32,4 +32,3 @@
     }
   ]
 }
-
