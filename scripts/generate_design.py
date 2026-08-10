@@ -430,8 +430,17 @@ def identify_design(config):
         endpoint_depth = int(options.get("endpoint_depth", max(depth, banks * depth)))
         bank_queue_depth = int(options.get("bank_queue_depth", depth))
         counter_bits = int(options.get("counter_bits", 32))
-        if primitive not in ("fifo", "router", "endpoint"):
-            raise ValueError("l1_memory_noc_primitive primitive must be fifo, router, or endpoint")
+        vc_count = int(options.get("vc_count", 4))
+        dest_bits = int(options.get("dest_bits", 4))
+        source_bits = int(options.get("source_bits", 4))
+        tag_bits = int(options.get("tag_bits", 8))
+        fragment_bits = int(options.get("fragment_bits", 3))
+        x_coord = int(options.get("x_coord", 1))
+        y_coord = int(options.get("y_coord", 1))
+        if primitive not in ("fifo", "router", "endpoint", "segmented_router"):
+            raise ValueError(
+                "l1_memory_noc_primitive primitive must be fifo, router, endpoint, or segmented_router"
+            )
         if flit_bits <= 0:
             raise ValueError("l1_memory_noc_primitive flit_bits must be positive")
         if depth <= 1:
@@ -446,6 +455,12 @@ def identify_design(config):
             raise ValueError("l1_memory_noc_primitive bank_queue_depth must be greater than one")
         if counter_bits <= 0:
             raise ValueError("l1_memory_noc_primitive counter_bits must be positive")
+        if vc_count <= 0:
+            raise ValueError("l1_memory_noc_primitive vc_count must be positive")
+        if dest_bits <= 0 or source_bits <= 0 or tag_bits <= 0 or fragment_bits <= 0:
+            raise ValueError("l1_memory_noc_primitive metadata widths must be positive")
+        if primitive == "segmented_router" and ports != 5:
+            raise ValueError("l1_memory_noc_primitive segmented_router requires five ports")
         return {
             "kind": "l1_memory_noc_primitive",
             "module_name": module_name,
@@ -458,6 +473,13 @@ def identify_design(config):
             "endpoint_depth": endpoint_depth,
             "bank_queue_depth": bank_queue_depth,
             "counter_bits": counter_bits,
+            "vc_count": vc_count,
+            "dest_bits": dest_bits,
+            "source_bits": source_bits,
+            "tag_bits": tag_bits,
+            "fragment_bits": fragment_bits,
+            "x_coord": x_coord,
+            "y_coord": y_coord,
             "include_mg_cpa": False,
         }
     raise ValueError(f"generate_design.py does not support operation type: {op_type}")
@@ -855,6 +877,14 @@ def generate_l1_memory_noc_design(src_dir, design):
         text = _emit_l1_fifo(module_name, design)
     elif design["primitive"] == "router":
         text = _emit_l1_router(module_name, design)
+    elif design["primitive"] == "segmented_router":
+        text = _emit_l1_segmented_router(module_name, design)
+        for filename in ("noc_ready_valid_fifo.sv", "noc_segmented_mesh_router.sv"):
+            rtl_path = repo_root / "npu" / "sim" / "rtl" / filename
+            Path(src_dir, Path(filename).with_suffix(".v")).write_text(
+                rtl_path.read_text(encoding="utf-8"),
+                encoding="utf-8",
+            )
     else:
         text = _emit_l1_endpoint(module_name, design)
     Path(src_dir, f"{module_name}.v").write_text(text, encoding="utf-8")
@@ -1005,6 +1035,185 @@ module {module_name}(
         )
     body += f"      observed <= {observe_terms};\n      routed_count <= routed_count + {counter_bits}'d{ports};\n    end\n  end\nendmodule\n"
     return header + body
+
+
+def _emit_l1_segmented_router(module_name, design):
+    flit_bits = design["flit_bits"]
+    counter_bits = design["counter_bits"]
+    dest_bits = design["dest_bits"]
+    source_bits = design["source_bits"]
+    tag_bits = design["tag_bits"]
+    fragment_bits = design["fragment_bits"]
+    vc_count = design["vc_count"]
+    vc_width = _ceil_log2_at_least_one(vc_count)
+    x_coord = design["x_coord"]
+    y_coord = design["y_coord"]
+    local_dest = (y_coord << 2) | x_coord
+    north_dest = (max(y_coord - 1, 0) << 2) | x_coord
+    south_dest = (min(y_coord + 1, 3) << 2) | x_coord
+    east_dest = (y_coord << 2) | min(x_coord + 1, 3)
+    west_dest = (y_coord << 2) | max(x_coord - 1, 0)
+    return f"""
+`timescale 1ns/1ps
+
+module {module_name}(
+  input clk,
+  input rst_n,
+  output [{counter_bits-1}:0] accepted_flit_count,
+  output [{counter_bits-1}:0] forwarded_flit_count,
+  output [{counter_bits-1}:0] input_stall_cycles,
+  output [{counter_bits-1}:0] output_stall_cycles,
+  output [{counter_bits-1}:0] arbitration_contention_cycles,
+  output [{counter_bits-1}:0] current_input_occupancy,
+  output [{counter_bits-1}:0] max_input_occupancy,
+  output [{counter_bits-1}:0] east_route_flit_count,
+  output [{flit_bits-1}:0] observed_flit
+);
+  localparam integer DATA_W = {flit_bits};
+  localparam integer DEST_W = {dest_bits};
+  localparam integer SOURCE_W = {source_bits};
+  localparam integer TAG_W = {tag_bits};
+  localparam integer FRAGMENT_W = {fragment_bits};
+  localparam integer VC_COUNT = {vc_count};
+  localparam integer VC_W = {vc_width};
+  localparam integer FIFO_DEPTH = {design['depth']};
+  localparam integer COUNT_W = {counter_bits};
+  localparam integer PORTS = 5;
+  localparam integer DEST_NORTH = {north_dest};
+  localparam integer DEST_SOUTH = {south_dest};
+  localparam integer DEST_EAST = {east_dest};
+  localparam integer DEST_WEST = {west_dest};
+  localparam integer DEST_LOCAL = {local_dest};
+
+  reg [PORTS-1:0] in_valid;
+  wire [PORTS-1:0] in_ready;
+  reg [PORTS*DEST_W-1:0] in_dest;
+  reg [PORTS*SOURCE_W-1:0] in_source;
+  reg [PORTS*TAG_W-1:0] in_tag;
+  reg [PORTS*FRAGMENT_W-1:0] in_fragment;
+  reg [PORTS-1:0] in_last;
+  reg [PORTS*VC_W-1:0] in_vc;
+  reg [PORTS*DATA_W-1:0] in_data;
+  wire [PORTS-1:0] out_valid;
+  reg [PORTS-1:0] out_ready;
+  wire [PORTS*DEST_W-1:0] out_dest;
+  wire [PORTS*SOURCE_W-1:0] out_source;
+  wire [PORTS*TAG_W-1:0] out_tag;
+  wire [PORTS*FRAGMENT_W-1:0] out_fragment;
+  wire [PORTS-1:0] out_last;
+  wire [PORTS*VC_W-1:0] out_vc;
+  wire [PORTS*DATA_W-1:0] out_data;
+  wire [PORTS*COUNT_W-1:0] route_flit_count;
+
+  reg [COUNT_W-1:0] flit_seed [0:PORTS-1];
+  reg [TAG_W-1:0] tag_seed [0:PORTS-1];
+  reg [FRAGMENT_W-1:0] fragment_seed [0:PORTS-1];
+  reg [VC_W-1:0] vc_seed [0:PORTS-1];
+  reg [DEST_W-1:0] dest_seed [0:PORTS-1];
+  reg [DATA_W-1:0] observed;
+  integer port_i;
+
+  assign observed_flit =
+      observed
+      ^ out_data[(2 * DATA_W) +: DATA_W]
+      ^ out_tag[(2 * TAG_W) +: TAG_W]
+      ^ out_fragment[(2 * FRAGMENT_W) +: FRAGMENT_W];
+  assign east_route_flit_count = route_flit_count[(2 * COUNT_W) +: COUNT_W];
+
+  noc_segmented_mesh_router #(
+    .DATA_W(DATA_W),
+    .DEST_W(DEST_W),
+    .SOURCE_W(SOURCE_W),
+    .TAG_W(TAG_W),
+    .FRAGMENT_W(FRAGMENT_W),
+    .VC_W(VC_W),
+    .VC_COUNT(VC_COUNT),
+    .FIFO_DEPTH(FIFO_DEPTH),
+    .X_COORD({x_coord}),
+    .Y_COORD({y_coord}),
+    .COUNTER_W(COUNT_W)
+  ) dut (
+    .clk(clk),
+    .rst_n(rst_n),
+    .in_valid(in_valid),
+    .in_ready(in_ready),
+    .in_dest(in_dest),
+    .in_source(in_source),
+    .in_tag(in_tag),
+    .in_fragment(in_fragment),
+    .in_last(in_last),
+    .in_vc(in_vc),
+    .in_data(in_data),
+    .out_valid(out_valid),
+    .out_ready(out_ready),
+    .out_dest(out_dest),
+    .out_source(out_source),
+    .out_tag(out_tag),
+    .out_fragment(out_fragment),
+    .out_last(out_last),
+    .out_vc(out_vc),
+    .out_data(out_data),
+    .accepted_flit_count(accepted_flit_count),
+    .forwarded_flit_count(forwarded_flit_count),
+    .input_stall_cycles(input_stall_cycles),
+    .output_stall_cycles(output_stall_cycles),
+    .arbitration_contention_cycles(arbitration_contention_cycles),
+    .current_input_occupancy(current_input_occupancy),
+    .max_input_occupancy(max_input_occupancy),
+    .route_flit_count(route_flit_count)
+  );
+
+  always @(posedge clk or negedge rst_n) begin
+    if (!rst_n) begin
+      in_valid <= '0;
+      in_dest <= '0;
+      in_source <= '0;
+      in_tag <= '0;
+      in_fragment <= '0;
+      in_last <= '0;
+      in_vc <= '0;
+      in_data <= '0;
+      out_ready <= '1;
+      observed <= '0;
+      for (port_i = 0; port_i < PORTS; port_i = port_i + 1) begin
+        flit_seed[port_i] <= port_i + 1;
+        tag_seed[port_i] <= port_i + 1;
+        fragment_seed[port_i] <= '0;
+        vc_seed[port_i] <= port_i % VC_COUNT;
+      end
+      dest_seed[0] <= DEST_EAST;
+      dest_seed[1] <= DEST_EAST;
+      dest_seed[2] <= DEST_EAST;
+      dest_seed[3] <= DEST_LOCAL;
+      dest_seed[4] <= DEST_EAST;
+    end else begin
+      out_ready[0] <= 1'b1;
+      out_ready[1] <= 1'b1;
+      out_ready[2] <= !(tag_seed[4][1:0] == 2'b11);
+      out_ready[3] <= 1'b1;
+      out_ready[4] <= !(tag_seed[3][2:0] == 3'b101);
+      observed <= out_data[(4 * DATA_W) +: DATA_W];
+      for (port_i = 0; port_i < PORTS; port_i = port_i + 1) begin
+        in_valid[port_i] <= 1'b1;
+        in_dest[(port_i * DEST_W) +: DEST_W] <= dest_seed[port_i];
+        in_source[(port_i * SOURCE_W) +: SOURCE_W] <= port_i[SOURCE_W-1:0];
+        in_tag[(port_i * TAG_W) +: TAG_W] <= tag_seed[port_i];
+        in_fragment[(port_i * FRAGMENT_W) +: FRAGMENT_W] <= fragment_seed[port_i];
+        in_last[port_i] <= (fragment_seed[port_i] == {fragment_bits}'d7);
+        in_vc[(port_i * VC_W) +: VC_W] <= vc_seed[port_i];
+        in_data[(port_i * DATA_W) +: DATA_W] <= flit_seed[port_i];
+        if (in_ready[port_i]) begin
+          flit_seed[port_i] <= flit_seed[port_i] + 1'b1;
+          tag_seed[port_i] <= tag_seed[port_i] + 1'b1;
+          fragment_seed[port_i] <= fragment_seed[port_i] + 1'b1;
+          if (port_i == 3)
+            dest_seed[port_i] <= (dest_seed[port_i] == DEST_LOCAL) ? DEST_WEST : DEST_LOCAL;
+        end
+      end
+    end
+  end
+endmodule
+"""
 
 
 def _emit_l1_endpoint(module_name, design):
@@ -1766,6 +1975,38 @@ module {wrapper_name}(
     .rst_n(rst_n),
     .routed_flit_count(routed_flit_count),
     .arbitration_cycle_count(arbitration_cycle_count),
+    .observed_flit(observed_flit)
+  );
+
+endmodule
+"""
+        elif design["primitive"] == "segmented_router":
+            wrapper_content = f"""
+module {wrapper_name}(
+  input clk,
+  input rst_n,
+  output [{counter_bits-1}:0] accepted_flit_count,
+  output [{counter_bits-1}:0] forwarded_flit_count,
+  output [{counter_bits-1}:0] input_stall_cycles,
+  output [{counter_bits-1}:0] output_stall_cycles,
+  output [{counter_bits-1}:0] arbitration_contention_cycles,
+  output [{counter_bits-1}:0] current_input_occupancy,
+  output [{counter_bits-1}:0] max_input_occupancy,
+  output [{counter_bits-1}:0] east_route_flit_count,
+  output [{flit_bits-1}:0] observed_flit
+);
+
+  {module_name} dut (
+    .clk(clk),
+    .rst_n(rst_n),
+    .accepted_flit_count(accepted_flit_count),
+    .forwarded_flit_count(forwarded_flit_count),
+    .input_stall_cycles(input_stall_cycles),
+    .output_stall_cycles(output_stall_cycles),
+    .arbitration_contention_cycles(arbitration_contention_cycles),
+    .current_input_occupancy(current_input_occupancy),
+    .max_input_occupancy(max_input_occupancy),
+    .east_route_flit_count(east_route_flit_count),
     .observed_flit(observed_flit)
   );
 
