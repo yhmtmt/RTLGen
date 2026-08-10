@@ -1,0 +1,6 @@
+{
+  "top_name": "llama7b_rmsnorm_bf16_l16_wrapper",
+  "llama7b_rmsnorm": {
+    "lanes": 16
+  }
+}
