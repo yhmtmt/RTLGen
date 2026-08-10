@@ -283,6 +283,13 @@ def test_generate_l2_campaign_task_creates_ready_work_item() -> None:
             assert payload["source_requirement"]["required_sha"] == source_commit
             assert payload["source_requirement"]["required_ref"] == "origin/master"
             assert payload["source_requirement"]["requires_daemon_restart"] is True
+            assert payload["generation_source_identity"] == {
+                "version": 1,
+                "declared_source_commit": source_commit,
+                "repo_head_sha": source_commit,
+                "relation": "exact",
+                "proof": "generator_worktree_head_exact",
+            }
             assert payload["task"]["inputs"]["candidate_manifests"] == [
                 "runs/candidates/nangate45/module_candidates.json"
             ]
@@ -314,6 +321,51 @@ def test_generate_l2_campaign_task_creates_ready_work_item() -> None:
             }
             assert payload["task"]["commands"][0]["name"] == "fetch_models"
             assert "--run_physical" in payload["task"]["commands"][2]["run"]
+
+
+def test_generate_l2_campaign_task_rejects_mismatched_generation_worktree() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        mismatch_file = repo_root / "HEAD_ONLY.txt"
+        mismatch_file.write_text("mismatch\n", encoding="utf-8")
+        subprocess.run(["git", "-C", str(repo_root), "add", "HEAD_ONLY.txt"], check=True, capture_output=True, text=True)
+        subprocess.run(
+            ["git", "-C", str(repo_root), "commit", "-m", "local head drift"],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        head_commit = subprocess.run(
+            ["git", "-C", str(repo_root), "rev-parse", "HEAD"],
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            try:
+                generate_l2_campaign_task(
+                    session,
+                    Layer2CampaignGenerateRequest(
+                        repo_root=str(repo_root),
+                        campaign_path=campaign_path,
+                        requested_by="@tester",
+                        source_commit=source_commit,
+                    ),
+                )
+            except Layer2TaskGenerationError as exc:
+                message = str(exc)
+                assert "exact-generation worktree" in message
+                assert source_commit in message
+                assert head_commit in message
+                assert "Regenerate the item from a checkout whose HEAD exactly matches the declared source commit." in message
+            else:
+                raise AssertionError("expected Layer2TaskGenerationError for mismatched generation worktree")
 
 
 def test_generate_l2_campaign_task_adds_decoder_probability_path_evidence() -> None:

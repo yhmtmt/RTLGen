@@ -2556,6 +2556,13 @@ def test_generate_l1_sweep_task_creates_ready_work_item() -> None:
             assert payload["source_requirement"]["required_sha"] == source_commit
             assert payload["source_requirement"]["required_ref"] == "origin/master"
             assert payload["source_requirement"]["requires_daemon_restart"] is True
+            assert payload["generation_source_identity"] == {
+                "version": 1,
+                "declared_source_commit": source_commit,
+                "repo_head_sha": source_commit,
+                "relation": "exact",
+                "proof": "generator_worktree_head_exact",
+            }
             assert payload["task"]["inputs"]["sweeps"] == [sweep_path]
             assert payload["task"]["acceptance"][0] == (
                 "Each generated wrapper metrics.csv contains at least one status=ok row for the queued sweep"
@@ -2566,6 +2573,54 @@ def test_generate_l1_sweep_task_creates_ready_work_item() -> None:
             ]
             assert payload["developer_loop"]["abstraction"] == {"layer": "circuit_block"}
             assert payload["handoff"]["pr_body_fields"]["queue_item_id"] == result.item_id
+
+
+def test_generate_l1_sweep_task_rejects_mismatched_generation_worktree() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        config_path, sweep_path = _write_example_repo(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        mismatch_file = repo_root / "HEAD_ONLY.txt"
+        mismatch_file.write_text("mismatch\n", encoding="utf-8")
+        subprocess.run(["git", "-C", str(repo_root), "add", "HEAD_ONLY.txt"], check=True, capture_output=True, text=True)
+        subprocess.run(
+            ["git", "-C", str(repo_root), "commit", "-m", "local head drift"],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        head_commit = subprocess.run(
+            ["git", "-C", str(repo_root), "rev-parse", "HEAD"],
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            try:
+                generate_l1_sweep_task(
+                    session,
+                    Layer1SweepGenerateRequest(
+                        repo_root=str(repo_root),
+                        sweep_path=sweep_path,
+                        config_paths=[config_path],
+                        platform="nangate45",
+                        out_root="runs/designs/activations",
+                        requested_by="@tester",
+                        source_commit=source_commit,
+                    ),
+                )
+            except Layer1TaskGenerationError as exc:
+                message = str(exc)
+                assert "exact-generation worktree" in message
+                assert source_commit in message
+                assert head_commit in message
+                assert "Regenerate the item from a checkout whose HEAD exactly matches the declared source commit." in message
+            else:
+                raise AssertionError("expected Layer1TaskGenerationError for mismatched generation worktree")
 
 
 def test_generate_l1_sweep_task_uses_boundary_metrics_acceptance() -> None:

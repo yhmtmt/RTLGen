@@ -234,9 +234,15 @@ PYTHONPATH="$repo_root/control_plane" \
   --repo-root "$repo_root" ...
 ```
 
-`source_commit` in proposal metadata only constrains the evaluator checkout; it
-does not constrain which control-plane Python package imports are used when
-generating local DB manifests.
+Exact-generation-worktree rule:
+- when `source_commit` is declared for an L1/L2 item, generate the DB item from
+  a worktree whose `HEAD` exactly equals that commit
+- use the same worktree for both repo content reads and control-plane Python
+  imports
+- do not generate from checkout A while declaring `source_commit` from checkout
+  B
+- queue JSON import is only legitimate when the manifest carries proof that it
+  was generated from that exact declared tree
 
 After proposal metadata is committed, always rerun generation with
 `--no-update-proposal-files` so only evaluation requests are regenerated.

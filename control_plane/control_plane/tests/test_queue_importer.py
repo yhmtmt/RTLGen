@@ -45,8 +45,30 @@ def make_session() -> Session:
     return Session(engine)
 
 
+def _stamp_generation_identity(payload: dict[str, object], source_commit: str) -> dict[str, object]:
+    payload["source_requirement"] = {
+        "version": 1,
+        "required_ref": "origin/master",
+        "required_sha": source_commit,
+        "requires_daemon_restart": True,
+    }
+    payload["generation_source_identity"] = {
+        "version": 1,
+        "declared_source_commit": source_commit,
+        "repo_head_sha": source_commit,
+        "relation": "exact",
+        "proof": "generator_worktree_head_exact",
+    }
+    return payload
+
+
 def test_import_real_queue_item(tmp_path: Path) -> None:
     repo_root, queue_file, source_commit = _make_queue_import_repo(tmp_path)
+    payload = json.loads(queue_file.read_text(encoding="utf-8"))
+    queue_file.write_text(
+        json.dumps(_stamp_generation_identity(payload, source_commit), indent=2) + "\n",
+        encoding="utf-8",
+    )
     with make_session() as session:
         result = import_queue_item(
             session,
@@ -69,13 +91,10 @@ def test_import_real_queue_item(tmp_path: Path) -> None:
 def test_import_uses_payload_source_requirement(tmp_path: Path) -> None:
     repo_root, queue_file, source_commit = _make_queue_import_repo(tmp_path)
     payload = json.loads(queue_file.read_text(encoding="utf-8"))
-    payload["source_requirement"] = {
-        "version": 1,
-        "required_ref": "origin/master",
-        "required_sha": source_commit,
-        "requires_daemon_restart": True,
-    }
-    queue_file.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    queue_file.write_text(
+        json.dumps(_stamp_generation_identity(payload, source_commit), indent=2) + "\n",
+        encoding="utf-8",
+    )
 
     with make_session() as session:
         import_queue_item(
@@ -111,6 +130,11 @@ def test_import_same_item_is_idempotent() -> None:
 
 def test_import_preserves_explicit_task_type_on_export_roundtrip(tmp_path: Path) -> None:
     repo_root, queue_file, source_commit = _make_queue_import_repo(tmp_path)
+    payload = json.loads(queue_file.read_text(encoding="utf-8"))
+    queue_file.write_text(
+        json.dumps(_stamp_generation_identity(payload, source_commit), indent=2) + "\n",
+        encoding="utf-8",
+    )
     exported = tmp_path / "roundtrip.json"
 
     with make_session() as session:
@@ -218,6 +242,11 @@ def test_import_route_accepts_post_with_sqlite_file(tmp_path: Path) -> None:
     from control_plane.api.app import create_app
 
     repo_root, queue_file, source_commit = _make_queue_import_repo(tmp_path)
+    payload = json.loads(queue_file.read_text(encoding="utf-8"))
+    queue_file.write_text(
+        json.dumps(_stamp_generation_identity(payload, source_commit), indent=2) + "\n",
+        encoding="utf-8",
+    )
     db_file = tmp_path / "cp.db"
     payload = {
         "repo_root": str(repo_root),
@@ -260,6 +289,28 @@ def test_import_rejects_invalid_source_commit() -> None:
             )
         except QueueImportError as exc:
             assert "provided source_commit does not resolve to a commit" in str(exc)
+        else:
+            raise AssertionError("expected QueueImportError")
+
+
+def test_import_rejects_declared_source_without_generation_identity(tmp_path: Path) -> None:
+    repo_root, queue_file, source_commit = _make_queue_import_repo(tmp_path)
+
+    with make_session() as session:
+        try:
+            import_queue_item(
+                session,
+                QueueImportRequest(
+                    repo_root=str(repo_root),
+                    queue_path=str(queue_file),
+                    source_commit=source_commit,
+                ),
+            )
+        except QueueImportError as exc:
+            message = str(exc)
+            assert "missing generation_source_identity" in message
+            assert source_commit in message
+            assert "Regenerate the queue item from a worktree whose HEAD exactly matches the declared source commit." in message
         else:
             raise AssertionError("expected QueueImportError")
 

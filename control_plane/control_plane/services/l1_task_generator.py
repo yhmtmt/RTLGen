@@ -8,7 +8,6 @@ from hashlib import sha256
 import json
 import os
 import shlex
-import subprocess
 from pathlib import Path
 from typing import Any
 
@@ -20,6 +19,10 @@ from control_plane.models.task_requests import TaskRequest
 from control_plane.models.work_items import WorkItem
 from control_plane.services.dependency_gate import evaluate_work_item_dependencies
 from control_plane.services.docs_paths import canonicalize_proposal_path, resolve_proposal_dir, resolve_proposal_file
+from control_plane.services.generation_source_identity import (
+    build_generation_source_identity,
+    resolve_source_commit as resolve_generation_source_commit,
+)
 from control_plane.services.proposal_scaffold import ensure_proposal_scaffold
 from control_plane.services.source_requirement import build_source_requirement
 
@@ -474,74 +477,12 @@ def _required_l1_runtime_submodules() -> list[str]:
 
 
 def _resolve_source_commit(repo_root: Path, source_commit: str | None) -> str:
-    resolved = str(source_commit or "").strip()
-    if resolved:
-        try:
-            subprocess.run(
-                ["git", "-C", str(repo_root), "cat-file", "-e", f"{resolved}^{{commit}}"],
-                check=True,
-                capture_output=True,
-                text=True,
-            )
-            result = subprocess.run(
-                ["git", "-C", str(repo_root), "rev-parse", f"{resolved}^{{commit}}"],
-                check=True,
-                capture_output=True,
-                text=True,
-            )
-        except subprocess.CalledProcessError as exc:
-            stderr = (exc.stderr or "").strip()
-            detail = f": {stderr}" if stderr else ""
-            raise Layer1TaskGenerationError(
-                f"provided source_commit does not resolve to a commit in repo_root {repo_root}: {resolved}{detail}"
-            ) from exc
-        normalized = result.stdout.strip()
-        if not normalized:
-            raise Layer1TaskGenerationError(
-                f"provided source_commit resolved to empty git rev-parse output in repo_root {repo_root}: {resolved}"
-            )
-        try:
-            subprocess.run(
-                ["git", "-C", str(repo_root), "fetch", "--quiet", "origin"],
-                check=True,
-                capture_output=True,
-                text=True,
-            )
-            refs = subprocess.run(
-                [
-                    "git", "-C", str(repo_root), "for-each-ref", "refs/remotes/origin",
-                    "--contains", normalized, "--format=%(refname)",
-                ],
-                check=True,
-                capture_output=True,
-                text=True,
-            )
-        except subprocess.CalledProcessError as exc:
-            stderr = (exc.stderr or "").strip()
-            detail = f": {stderr}" if stderr else ""
-            raise Layer1TaskGenerationError(
-                f"failed to verify source_commit against origin for repo_root {repo_root}: {normalized}{detail}"
-            ) from exc
-        if not refs.stdout.strip():
-            raise Layer1TaskGenerationError(
-                f"provided source_commit is not reachable from origin in repo_root {repo_root}: {normalized}"
-            )
-        return normalized
-    try:
-        result = subprocess.run(
-            ["git", "-C", str(repo_root), "rev-parse", "HEAD"],
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-    except subprocess.CalledProcessError as exc:
-        stderr = (exc.stderr or "").strip()
-        detail = f": {stderr}" if stderr else ""
-        raise Layer1TaskGenerationError(f"failed to resolve source commit from repo_root {repo_root}{detail}") from exc
-    resolved = result.stdout.strip()
-    if not resolved:
-        raise Layer1TaskGenerationError(f"failed to resolve source commit from repo_root {repo_root}: empty git rev-parse output")
-    return resolved
+    return resolve_generation_source_commit(
+        repo_root,
+        source_commit,
+        error_factory=Layer1TaskGenerationError,
+        subject="Layer1 task generation source_commit",
+    )
 
 
 def _contains_disabled_hierarchy(value: object) -> bool:
@@ -2461,6 +2402,13 @@ def generate_l1_sweep_task(session: Session, request: Layer1SweepGenerateRequest
         raise Layer1TaskGenerationError("config_paths must not be empty")
 
     repo_root = Path(request.repo_root).resolve()
+    source_commit = _resolve_source_commit(repo_root, request.source_commit)
+    generation_source_identity = build_generation_source_identity(
+        repo_root,
+        declared_source_commit=source_commit,
+        error_factory=Layer1TaskGenerationError,
+        context=f"Layer1 task generation for {request.item_id or request.sweep_path}",
+    )
     sweep_path = _repo_rel(request.sweep_path, repo_root)
     config_paths = [_repo_rel(path, repo_root) for path in request.config_paths]
     out_root = _repo_rel(request.out_root, repo_root)
@@ -2536,7 +2484,6 @@ def generate_l1_sweep_task(session: Session, request: Layer1SweepGenerateRequest
         sweep_path=(repo_root / sweep_path).resolve(),
         abstraction_layer=effective_abstraction_layer,
     )
-    source_commit = _resolve_source_commit(repo_root, request.source_commit)
 
     effective_make_target = request.make_target
     if not effective_make_target and _is_gqa_lanes2_macro_hier_placement_sweep(
@@ -2696,6 +2643,7 @@ def generate_l1_sweep_task(session: Session, request: Layer1SweepGenerateRequest
         repo_root=repo_root,
         required_sha=source_commit,
     )
+    payload["generation_source_identity"] = generation_source_identity
     if request.update_proposal_files:
         _upsert_evaluation_request_entry(
             repo_root=repo_root,

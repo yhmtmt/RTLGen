@@ -70,6 +70,19 @@ Read these in order for every new developer-agent session:
 
 This set is the default startup context.
 
+## Exact Generation Rule
+
+When a proposal or evaluation request declares a `source_commit`, the developer
+agent must generate Layer 1 / Layer 2 queue manifests from a worktree whose
+`HEAD` exactly matches that commit.
+
+Practical implications:
+- the repo content being read for generation must come from that exact checkout
+- the imported control-plane Python package must also come from that exact
+  checkout
+- if `HEAD` drifts after the commit is recorded, regenerate the item from a
+  matching worktree instead of reusing the old process or queue JSON
+
 ## Topic-Specific Baseline Read
 
 After the mandatory set, read only the baselines relevant to the current topic.
