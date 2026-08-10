@@ -479,12 +479,17 @@ The `l1_memory_noc_primitive` operation emits small measured interconnect
 building blocks for early memory/NoC exploration. `primitive: "fifo"` emits a
 registered flit FIFO with an internal source/sink. `primitive: "router"` emits
 a fixed-port flit crossbar/router with internal registered traffic.
+`primitive: "segmented_router"` emits the synthesizable five-port
+deterministic-XY segmented router used by the 4x4 mesh, including per-input
+per-VC buffering and synthetic internal traffic for direct PPA measurement.
 `primitive: "endpoint"` emits a ready/valid on-chip service endpoint with
 finite endpoint buffering, finite per-bank queues, locality-first bank
 draining, and synthetic producer/consumer backpressure.
 
 Supported common options are `primitive`, `flit_bits`, `depth`, `ports`, and
-`counter_bits`. Endpoint-specific options are `banks`, `endpoint_depth`, and
+`counter_bits`. Segmented-router-specific options are `vc_count`, `dest_bits`,
+`source_bits`, `tag_bits`, `fragment_bits`, `x_coord`, and `y_coord`.
+Endpoint-specific options are `banks`, `endpoint_depth`, and
 `bank_queue_depth`.
 
 See `examples/config_l1_memory_noc_primitive.json` for a FIFO smoke

@@ -1,0 +1,18 @@
+{
+  "proposal_id": "prop_l1_segmented_xy_mesh_noc_phase1_v1",
+  "source_commit": "",
+  "requested_items": [
+    {
+      "item_id": "l1_segmented_xy_mesh_noc_phase1_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure the concrete segmented five-port router primitive for the Phase 1 NoC embodiment.",
+      "evaluation_mode": "ppa",
+      "abstraction_layer": "architecture_block",
+      "config_paths": [
+        "runs/designs/noc/l1_noc_segmented_xy_router_p5_w256_vc4_d4_wrapper/config_l1_noc_segmented_xy_router_p5_w256_vc4_d4.json"
+      ],
+      "sweep_path": "runs/campaigns/noc/l1_segmented_xy_mesh_router/sweeps/nangate45_macro_frontier.json",
+      "status": "proposed"
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "proposal_id": "prop_l1_segmented_xy_mesh_noc_phase1_v1",
+  "title": "Materialize segmented deterministic-XY NoC Phase 1 router and cycle model",
+  "status": "implemented",
+  "layer": "layer1",
+  "kind": "circuit_block",
+  "abstraction_layer": "architecture_block",
+  "motivation": "Earlier NoC closure work only had synthetic fixed-port primitive anchors and analytic schedule penalties. The architecture search now needs a concrete segmented router datapath and a route/stall model checked against RTL before larger clustered schedules can treat the NoC as materially embodied.",
+  "hypothesis": "A bounded first phase centered on a single 256-bit five-port router and a 4x4 deterministic-XY composition is enough to close the immediate route/control abstraction without taking on full workload scheduling or aggregate mesh PPA in one step.",
+  "expected_behavior": {
+    "functional": "The router preserves explicit flit metadata, deterministic XY routing, virtual-channel separation, fair arbitration, and ready/valid backpressure.",
+    "timing_model": "The cycle model matches the routed flit order and stall behavior of the RTL for focused contention and end-to-end path scenarios.",
+    "physical_model": "A dedicated single-router wrapper can be pushed through the existing Nangate45 macro flow to measure the real segmented router primitive without flattening the full 4x4 mesh."
+  },
+  "comparison_points": [
+    "l1_noc_router_p4_w256_wrapper",
+    "l1_noc_segmented_xy_router_p5_w256_vc4_d4_wrapper"
+  ],
+  "expected_benefit": [
+    "Replace the abstract segmented-router placeholder with synthesizable RTL and an RTL-checked cycle model.",
+    "Provide a PPA-ready primitive for future mesh cost composition.",
+    "Bound the next NoC exploration step to scheduler and aggregate-mesh placement rather than basic router semantics."
+  ],
+  "risks": [
+    "The Phase 1 PPA artifact is a single-router wrapper, not the physical aggregate 4x4 mesh.",
+    "The mesh model remains deterministic XY and does not include adaptive routing or workload-specific traffic shaping.",
+    "End-to-end Llama7B scheduling over the mesh still needs explicit producer/consumer traffic mapping."
+  ]
+}
