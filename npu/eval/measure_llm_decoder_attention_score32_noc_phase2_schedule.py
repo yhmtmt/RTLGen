@@ -120,6 +120,10 @@ def _packetize_specs_with_wide_tags(specs: list[PacketSpec]) -> list[TrafficFlow
     return flows
 
 
+def _packet_flit_count(payload_bytes: int) -> int:
+    return _ceil_div(payload_bytes, 32)
+
+
 def _prove_ordered_tuple_stream(
     *,
     packet_specs: list[PacketSpec],
@@ -131,6 +135,11 @@ def _prove_ordered_tuple_stream(
     for specs in expected_by_tuple.values():
         specs.sort(key=lambda spec: (spec.release_cycle, spec.packet_index, spec.label))
 
+    injected_by_label: dict[str, list[tuple[int, Any]]] = {}
+    for trace in mesh_result.traces:
+        for _, flit in trace.injected:
+            injected_by_label.setdefault(flit.label, []).append((trace.cycle, flit))
+
     deliveries_by_label: dict[str, list[Any]] = {}
     tuple_delivery_labels: dict[tuple[int, int, int], list[str]] = {}
     for delivery in mesh_result.deliveries:
@@ -140,6 +149,7 @@ def _prove_ordered_tuple_stream(
         if not labels or labels[-1] != delivery.flit.label:
             labels.append(delivery.flit.label)
 
+    packet_windows: dict[str, JsonDict] = {}
     tuple_summaries: list[JsonDict] = []
     max_packet_flits = 0
     for key, specs in sorted(expected_by_tuple.items()):
@@ -147,15 +157,25 @@ def _prove_ordered_tuple_stream(
         observed_labels = tuple_delivery_labels.get(key, [])
         last_release = -1
         for spec in specs:
+            injections = injected_by_label.get(spec.label)
             deliveries = deliveries_by_label.get(spec.label)
+            if not injections:
+                raise ValueError(f"missing injection record for packet {spec.label}")
             if not deliveries:
                 raise ValueError(f"missing delivery record for packet {spec.label}")
-            expected_fragments = list(range(len(deliveries)))
-            fragments = [delivery.flit.fragment for delivery in deliveries]
-            if fragments != expected_fragments:
+            expected_flits = _packet_flit_count(spec.payload_bytes)
+            expected_fragments = list(range(expected_flits))
+            injected_fragments = [flit.fragment for _, flit in injections]
+            if injected_fragments != expected_fragments:
+                raise ValueError(
+                    f"tuple stream injection fragment order violated for packet {spec.label}: "
+                    f"expected {expected_fragments}, observed {injected_fragments}"
+                )
+            delivered_fragments = [delivery.flit.fragment for delivery in deliveries]
+            if delivered_fragments != expected_fragments:
                 raise ValueError(
                     f"tuple stream fragment order violated for packet {spec.label}: "
-                    f"expected {expected_fragments}, observed {fragments}"
+                    f"expected {expected_fragments}, observed {delivered_fragments}"
                 )
             if [bool(delivery.flit.last) for delivery in deliveries[:-1]] != [False] * max(0, len(deliveries) - 1):
                 raise ValueError(f"packet {spec.label} asserted last before its final fragment")
@@ -165,6 +185,16 @@ def _prove_ordered_tuple_stream(
                 raise ValueError(f"packet release order is not monotonic for tuple {key}")
             last_release = spec.release_cycle
             max_packet_flits = max(max_packet_flits, len(deliveries))
+            packet_windows[spec.label] = {
+                "source": spec.source,
+                "destination": spec.destination,
+                "vc": spec.vc,
+                "injection_first_cycle": injections[0][0],
+                "injection_last_cycle": injections[-1][0],
+                "delivery_first_cycle": deliveries[0].cycle,
+                "delivery_last_cycle": deliveries[-1].cycle,
+                "flit_count": expected_flits,
+            }
         if observed_labels != expected_labels:
             raise ValueError(
                 f"tuple packet order violated for source={key[0]} destination={key[1]} vc={key[2]}: "
@@ -181,12 +211,13 @@ def _prove_ordered_tuple_stream(
             }
         )
     return {
+        "packet_windows": packet_windows,
         "tuple_summaries": tuple_summaries,
         "max_packet_flits": max_packet_flits,
     }
 
 
-def _audit_8bit_tag_reuse(packet_specs: list[PacketSpec]) -> JsonDict:
+def _audit_8bit_tag_reuse(*, packet_specs: list[PacketSpec], packet_windows: dict[str, JsonDict]) -> JsonDict:
     by_tuple: dict[tuple[int, int, int], list[PacketSpec]] = {}
     for spec in packet_specs:
         by_tuple.setdefault((spec.source, spec.destination, spec.vc), []).append(spec)
@@ -199,6 +230,30 @@ def _audit_8bit_tag_reuse(packet_specs: list[PacketSpec]) -> JsonDict:
         packet_count = len(ordered)
         unique_tags_used = min(256, packet_count)
         tag_reuse_count = max(0, packet_count - unique_tags_used)
+        overlap_checked_count = 0
+        min_nonoverlap_gap_cycles: int | None = None
+        prior_by_tag: dict[int, JsonDict] = {}
+        for tuple_packet_sequence_index, spec in enumerate(ordered):
+            low_tag = tuple_packet_sequence_index % 256
+            window = packet_windows.get(spec.label)
+            if window is None:
+                raise ValueError(f"missing packet timing window for packet {spec.label}")
+            prior = prior_by_tag.get(low_tag)
+            if prior is not None:
+                overlap_checked_count += 1
+                if window["injection_first_cycle"] <= prior["delivery_last_cycle"]:
+                    raise ValueError(
+                        "8-bit tag reuse lifetime overlap for "
+                        f"source={key[0]} destination={key[1]} vc={key[2]} tag={low_tag}: "
+                        f"prior delivery_last_cycle={prior['delivery_last_cycle']}, "
+                        f"next injection_first_cycle={window['injection_first_cycle']}"
+                    )
+                gap_cycles = int(window["injection_first_cycle"] - prior["delivery_last_cycle"])
+                if min_nonoverlap_gap_cycles is None or gap_cycles < min_nonoverlap_gap_cycles:
+                    min_nonoverlap_gap_cycles = gap_cycles
+            prior_by_tag[low_tag] = {
+                "delivery_last_cycle": int(window["delivery_last_cycle"]),
+            }
         if packet_count > max_packets_per_tuple:
             max_packets_per_tuple = packet_count
             max_packets_tuple = key
@@ -210,6 +265,8 @@ def _audit_8bit_tag_reuse(packet_specs: list[PacketSpec]) -> JsonDict:
                 "packet_count": packet_count,
                 "unique_tags_used": unique_tags_used,
                 "tag_reuse_count": tag_reuse_count,
+                "overlap_checked_count": overlap_checked_count,
+                "min_nonoverlap_gap_cycles": min_nonoverlap_gap_cycles,
                 "concrete_tag_policy": "packet_sequence_index mod 256",
             }
         )
@@ -458,7 +515,10 @@ def build_report(args: argparse.Namespace) -> JsonDict:
     if not flow_names:
         raise ValueError("Phase 2 schedule produced no remote NoC traffic")
     tuple_stream_proof = _prove_ordered_tuple_stream(packet_specs=packet_specs, mesh_result=mesh_result)
-    tag_audit = _audit_8bit_tag_reuse(packet_specs)
+    tag_audit = _audit_8bit_tag_reuse(
+        packet_specs=packet_specs,
+        packet_windows=tuple_stream_proof["packet_windows"],
+    )
 
     delivery_by_prefix = Counter()
     last_delivery_cycle_by_prefix: dict[str, int] = {}
@@ -588,8 +648,9 @@ def build_report(args: argparse.Namespace) -> JsonDict:
         "tag_semantics": {
             "tag_width_bits": 8,
             "assignment_scope": "per (source, destination, vc) ordered packet stream",
-            "collision_free_reuse_invariant": "Packet identity is proven by ordered (source, destination, vc) stream boundaries plus the last bit; concrete 8-bit tags may therefore be reused within a tuple without introducing ambiguity in the modeled stream.",
-            "packet_identity_modeled_by_simulator": "source, destination, vc, label, packet-local fragment index, and last bit; 8-bit wire tags are audited after routing because the performance model does not perform packet reassembly.",
+            "collision_free_reuse_proven": True,
+            "collision_free_reuse_invariant": "Concrete low_tag = tuple packet sequence index mod 256. For every reused (source, destination, vc, low_tag), the next packet's first injection cycle is strictly greater than the prior packet's last delivery cycle; same-cycle reuse is treated as ambiguous and rejected.",
+            "packet_identity_modeled_by_simulator": "source, destination, vc, label, packet-local fragment index, and last bit; 8-bit wire tags are audited after routing because the performance model does not perform packet reassembly or claim standalone reassembly correctness.",
             "ordered_tuple_stream_proven": True,
             "ordered_tuple_stream_summary": tuple_stream_proof["tuple_summaries"],
             "ordered_tuple_stream_max_packet_flits": tuple_stream_proof["max_packet_flits"],
@@ -668,6 +729,7 @@ def write_report(payload: JsonDict, report: Path) -> None:
         "",
         "## Tag Semantics",
         "",
+        f"- collision-free reuse proven: `{payload['tag_semantics']['collision_free_reuse_proven']}`",
         f"- 8-bit tag reuse invariant: `{payload['tag_semantics']['collision_free_reuse_invariant']}`",
         f"- ordered tuple stream proven: `{payload['tag_semantics']['ordered_tuple_stream_proven']}`",
         f"- max packets per tuple: `{payload['tag_semantics']['max_packets_per_tuple']}`",

@@ -42,10 +42,19 @@ def test_score32_noc_phase2_default_report_covers_full_declared_workload() -> No
     assert report["flow_summary"]["remote_reduction_flow_count"] > 0
     assert report["simulation"]["delivered_flit_count"] == report["simulation"]["scheduled_flit_count"]
     assert report["simulation"]["router_contention_cycles"] > 0
+    assert report["tag_semantics"]["collision_free_reuse_proven"] is True
     assert report["tag_semantics"]["ordered_tuple_stream_proven"] is True
     assert report["tag_semantics"]["max_packets_per_tuple"] > 256
     assert any(
         summary["tag_reuse_count"] > 0
+        for summary in report["tag_semantics"]["tuple_summaries"]
+    )
+    assert any(
+        summary["overlap_checked_count"] > 0
+        for summary in report["tag_semantics"]["tuple_summaries"]
+    )
+    assert all(
+        summary["min_nonoverlap_gap_cycles"] is None or summary["min_nonoverlap_gap_cycles"] > 0
         for summary in report["tag_semantics"]["tuple_summaries"]
     )
     assert any(
@@ -67,10 +76,15 @@ def test_score32_noc_phase2_proves_nonoverlapping_8bit_tag_reuse() -> None:
     report = build_report(_args(wave_limit=1))
 
     assert report["tag_semantics"]["tag_width_bits"] == 8
+    assert report["tag_semantics"]["collision_free_reuse_proven"] is True
     assert report["tag_semantics"]["tuple_summaries"]
     assert report["tag_semantics"]["ordered_tuple_stream_proven"] is True
     assert all(
         summary["tag_reuse_count"] == 0
+        for summary in report["tag_semantics"]["tuple_summaries"]
+    )
+    assert all(
+        summary["overlap_checked_count"] == 0
         for summary in report["tag_semantics"]["tuple_summaries"]
     )
 
