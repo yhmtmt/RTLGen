@@ -7231,3 +7231,74 @@ def test_generate_l1_sweep_task_rejects_source_commit_not_pushed_to_origin() -> 
                 assert "not reachable from origin" in str(exc)
             else:
                 raise AssertionError("expected Layer1TaskGenerationError")
+
+
+def test_generate_l1_sweep_task_rejects_implicit_source_commit_when_head_not_pushed_to_origin() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        config_path, sweep_path = _write_example_repo(repo_root)
+        _init_git_repo(repo_root)
+        extra = repo_root / "LOCAL_ONLY.txt"
+        extra.write_text("local only\n", encoding="utf-8")
+        subprocess.run(["git", "-C", str(repo_root), "add", "LOCAL_ONLY.txt"], check=True, capture_output=True, text=True)
+        subprocess.run(["git", "-C", str(repo_root), "commit", "-m", "local only"], check=True, capture_output=True, text=True)
+        local_only_commit = subprocess.run(["git", "-C", str(repo_root), "rev-parse", "HEAD"], check=True, capture_output=True, text=True).stdout.strip()
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            try:
+                generate_l1_sweep_task(
+                    session,
+                    _make_l1_request(
+                        repo_root=str(repo_root),
+                        sweep_path=sweep_path,
+                        config_paths=[config_path],
+                        platform="nangate45",
+                        out_root="runs/designs/activations",
+                        requested_by="@tester",
+                    ),
+                )
+            except Layer1TaskGenerationError as exc:
+                message = str(exc)
+                assert "resolved repo HEAD source_commit is not reachable from origin" in message
+                assert local_only_commit in message
+            else:
+                raise AssertionError("expected Layer1TaskGenerationError")
+
+
+def test_generate_l1_sweep_task_accepts_implicit_source_commit_from_pushed_head() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        config_path, sweep_path = _write_example_repo(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l1_sweep_task(
+                session,
+                _make_l1_request(
+                    repo_root=str(repo_root),
+                    sweep_path=sweep_path,
+                    config_paths=[config_path],
+                    platform="nangate45",
+                    out_root="runs/designs/activations",
+                    requested_by="@tester",
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            assert result.status == "applied"
+            assert work_item.source_commit == source_commit
+            assert work_item.task_request.source_commit == source_commit
+            assert work_item.task_request.request_payload["generation_source_identity"] == {
+                "version": 1,
+                "declared_source_commit": source_commit,
+                "repo_head_sha": source_commit,
+                "relation": "exact",
+                "proof": "generator_worktree_head_exact",
+                "clean": True,
+            }

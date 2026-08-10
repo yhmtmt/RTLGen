@@ -58,6 +58,49 @@ def _git_status_porcelain(
     return result.stdout
 
 
+def _verify_commit_reachable_from_origin(
+    repo_root: Path,
+    commit_sha: str,
+    *,
+    commit_label: str,
+    error_factory: Callable[[str], Exception],
+) -> None:
+    try:
+        subprocess.run(
+            ["git", "-C", str(repo_root), "fetch", "--quiet", "origin"],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        refs = subprocess.run(
+            [
+                "git",
+                "-C",
+                str(repo_root),
+                "for-each-ref",
+                "refs/remotes/origin",
+                "--contains",
+                commit_sha,
+                "--format=%(refname)",
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except subprocess.CalledProcessError as exc:
+        stderr = (exc.stderr or "").strip()
+        detail = f": {stderr}" if stderr else ""
+        _raise(
+            error_factory,
+            f"failed to verify {commit_label} against origin for repo_root {repo_root}: {commit_sha}{detail}",
+        )
+    if not refs.stdout.strip():
+        _raise(
+            error_factory,
+            f"{commit_label} is not reachable from origin in repo_root {repo_root}: {commit_sha}",
+        )
+
+
 def resolve_source_commit(
     repo_root: Path,
     source_commit: str | None,
@@ -88,47 +131,26 @@ def resolve_source_commit(
                 f"provided source_commit resolved to empty git rev-parse output in repo_root {repo_root}: {resolved}"
             ),
         )
-        try:
-            subprocess.run(
-                ["git", "-C", str(repo_root), "fetch", "--quiet", "origin"],
-                check=True,
-                capture_output=True,
-                text=True,
-            )
-            refs = subprocess.run(
-                [
-                    "git",
-                    "-C",
-                    str(repo_root),
-                    "for-each-ref",
-                    "refs/remotes/origin",
-                    "--contains",
-                    normalized,
-                    "--format=%(refname)",
-                ],
-                check=True,
-                capture_output=True,
-                text=True,
-            )
-        except subprocess.CalledProcessError as exc:
-            stderr = (exc.stderr or "").strip()
-            detail = f": {stderr}" if stderr else ""
-            _raise(
-                error_factory,
-                f"failed to verify source_commit against origin for repo_root {repo_root}: {normalized}{detail}",
-            )
-        if not refs.stdout.strip():
-            _raise(
-                error_factory,
-                f"provided source_commit is not reachable from origin in repo_root {repo_root}: {normalized}",
-            )
+        _verify_commit_reachable_from_origin(
+            repo_root,
+            normalized,
+            commit_label="provided source_commit",
+            error_factory=error_factory,
+        )
         return normalized
-    return _git_stdout(
+    normalized = _git_stdout(
         repo_root,
         ["rev-parse", "HEAD"],
         error_factory=error_factory,
         failure_message=f"failed to resolve source commit from repo_root {repo_root}",
     )
+    _verify_commit_reachable_from_origin(
+        repo_root,
+        normalized,
+        commit_label="resolved repo HEAD source_commit",
+        error_factory=error_factory,
+    )
+    return normalized
 
 
 def build_generation_source_identity(
