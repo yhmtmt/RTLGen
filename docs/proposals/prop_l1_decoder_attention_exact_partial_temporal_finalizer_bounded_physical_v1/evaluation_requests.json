@@ -3,11 +3,11 @@
   "source_commit_note": "Dispatch only after this proposal is merged. Pin source_requirement.required_sha to the merge commit containing the bounded 12 ns sweep and proposal linkage.",
   "requested_items": [
     {
-      "item_id": "l1_decoder_attention_exact_partial_temporal_finalizer_bounded_12ns_physical_v1",
+      "item_id": "l1_decoder_attention_exact_partial_temporal_finalizer_bounded_12ns_physical_v1_r1",
       "task_type": "l1_sweep",
       "title": "Exact-partial temporal/finalizer bounded 12 ns physical calibration",
       "objective": "Run one 12 ns Nangate45 macro-mode point for divider_lanes 1, 2, 4, and 8.",
-      "status": "ready_to_queue",
+      "status": "merged",
       "evaluation_mode": "physical_calibration",
       "abstraction_layer": "decoder_attention_exact_partial_temporal_finalizer",
       "comparison_role": "bounded_single_clock_island_physical_anchor",
@@ -32,7 +32,14 @@
         "runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l8/timing_debug_report.md"
       ],
       "acceptance_notes": "Require exactly one status=ok row per design, CLOCK_PERIOD=12ns, critical_path_ns<=12ns, exactly 104 fakeram45_64x32 instances, no missing blackboxes, the checked deterministic 104-SRAM placement, and no generic /16777215 operator. Treat total_power_mw as generic OpenROAD physical power only.",
-      "notes": "The prior lane1 6ns routed checkpoint measured critical_path_ns=9.3036, instance_area_um2=394956, total_power_mw=0.0605, and 104 macros after 3769.82 seconds. The first bounded run then measured a timing-feasible lane1 12ns row (critical_path_ns=11.6726, instance_area_um2=378084, total_power_mw=0.0364) while lanes2/4/8 failed in RTLMP macro clustering. The retry reuses the successful lane1 104-SRAM placement across all lane variants so only lane-specific logic changes."
+      "notes": "The prior lane1 6ns routed checkpoint measured critical_path_ns=9.3036, instance_area_um2=394956, total_power_mw=0.0605, and 104 macros after 3769.82 seconds. The first bounded run then measured a timing-feasible lane1 12ns row (critical_path_ns=11.6726, instance_area_um2=378084, total_power_mw=0.0364) while lanes2/4/8 failed in RTLMP macro clustering. The retry reuses the successful lane1 104-SRAM placement across all lane variants so only lane-specific logic changes. Merged via PR #1604 and merge dcc319c63d3a08d74feb907b94b2b6fb97a3e93d at 2026-08-10T11:01:40.687179Z.",
+      "prior_item_ids": [
+        "l1_decoder_attention_exact_partial_temporal_finalizer_bounded_12ns_physical_v1"
+      ],
+      "merged_pr_number": 1604,
+      "merge_commit": "dcc319c63d3a08d74feb907b94b2b6fb97a3e93d",
+      "merged_utc": "2026-08-10T11:01:40.687179Z"
     }
-  ]
+  ],
+  "source_commit": "e27482f94d94ba45de684f7e9a3d5c5727161dd9"
 }
