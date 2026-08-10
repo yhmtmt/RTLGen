@@ -1,0 +1,21 @@
+{
+  "tag_prefix": "llama7b_rmsnorm_phase3_bounded_l16_ng45_v1",
+  "flow_params": {
+    "CLOCK_PERIOD": [
+      16.0,
+      20.0
+    ],
+    "DIE_AREA": [
+      "0 0 5200 5200"
+    ],
+    "CORE_AREA": [
+      "120 120 5080 5080"
+    ],
+    "PLACE_DENSITY": [
+      0.3
+    ],
+    "SYNTH_HIERARCHICAL": [
+      1
+    ]
+  }
+}

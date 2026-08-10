@@ -1,0 +1,35 @@
+{
+  "proposal_id": "prop_l1_decoder_llama7b_rmsnorm_phase3_bounded_physical_v1",
+  "source_commit": "",
+  "source_commit_note": "Pin source_requirement.required_sha to the merge commit containing this request before dispatch. The code path to evaluate is the branch commit that adds the RMSNorm Phase-3 bounded physical package and task-generator support.",
+  "requested_items": [
+    {
+      "item_id": "l1_decoder_llama7b_rmsnorm_phase3_bounded_physical_v1_r1",
+      "task_type": "l1_sweep",
+      "title": "Llama7B RMSNorm Phase-3 bounded physical anchor",
+      "objective": "Generate the LANES=16 Phase-3 RTL, run contract and lint guards, then run a conservative Nangate45 block sweep and record lightweight PPA/timing evidence.",
+      "status": "pending",
+      "evaluation_mode": "physical_calibration",
+      "abstraction_layer": "llama7b_rmsnorm_phase3",
+      "comparison_role": "rmsnorm_phase3_rtl_physical_anchor",
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "configs": [
+        "runs/designs/npu_blocks/llama7b_rmsnorm_phase3_bounded_l16_ng45/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/llama7b_rmsnorm_phase3_physical_v1/sweeps/nangate45_llama7b_rmsnorm_phase3_bounded_l16.json",
+      "out_root": "runs/designs/npu_blocks",
+      "expected_outputs": [
+        "runs/designs/npu_blocks/llama7b_rmsnorm_phase3_bounded_l16_ng45/metrics.csv",
+        "runs/designs/npu_blocks/llama7b_rmsnorm_phase3_bounded_l16_ng45/timing_debug_report.md"
+      ],
+      "acceptance_notes": "Require regenerated RTL to match the checked wrapper, require Verilator lint to pass before OpenROAD, accept status=ok rows and retain any non-ok rows as explicit physical boundary evidence, and classify the inferred row_mem/gamma_mem arrays as register-storage measurement only rather than SRAM evidence.",
+      "expected_result": {
+        "direction": "measure_phase3_rmsnorm_physical_anchor",
+        "reason": "This request establishes the first physical anchor for the exact Phase-3 Llama7B RMSNorm RTL while preserving the storage-model caveat."
+      },
+      "notes": "Start with LANES=16 only. The sweep is intentionally conservative because the current implementation keeps full 4096-element row and gamma state in inferred register arrays. Do not create or consume SRAM macro evidence from this run."
+    }
+  ]
+}
+
