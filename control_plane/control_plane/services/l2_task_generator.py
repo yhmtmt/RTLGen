@@ -5278,6 +5278,185 @@ def _decoder_attention_score32_noc_phase2_schedule_evidence(
     }
 
 
+def _validate_score32_noc_closure_request(
+    *,
+    item_id: str,
+    expected_item_id: str,
+    proposal_id: str | None,
+    expected_proposal_id: str,
+    proposal_path: str | None,
+    depends_on_item_ids: list[str] | None,
+) -> None:
+    if item_id != expected_item_id:
+        raise Layer2TaskGenerationError("score32 NoC closure only permits the exact item")
+    if str(proposal_id or "").strip() != expected_proposal_id:
+        raise Layer2TaskGenerationError("score32 NoC closure proposal_id mismatch")
+    if str(proposal_path or "").strip() != f"docs/proposals/{expected_proposal_id}/proposal.json":
+        raise Layer2TaskGenerationError("score32 NoC closure proposal_path mismatch")
+    expected_dependencies = [
+        "l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1",
+        "l1_segmented_xy_mesh_noc_phase1_v1",
+    ]
+    if list(depends_on_item_ids or []) != expected_dependencies:
+        raise Layer2TaskGenerationError(
+            "score32 NoC closure requires the exact corrected schedule and router dependencies"
+        )
+
+
+def _decoder_attention_score32_noc_phase2_measured_router_closure_evidence(
+    *,
+    item_id: str,
+    depends_on_item_ids: list[str] | None,
+    proposal_id: str | None,
+    proposal_path: str | None,
+) -> dict[str, Any]:
+    expected_proposal_id = "prop_l2_decoder_attention_score32_noc_phase2_measured_router_closure_v1"
+    _validate_score32_noc_closure_request(
+        item_id=item_id,
+        expected_item_id="l2_decoder_attention_score32_noc_phase2_measured_router_closure_llama7b_v1",
+        proposal_id=proposal_id,
+        expected_proposal_id=expected_proposal_id,
+        proposal_path=proposal_path,
+        depends_on_item_ids=depends_on_item_ids,
+    )
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    schedule = (
+        f"{base}/decoder_attention_score32_noc_phase2_schedule__"
+        "l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1.json"
+    )
+    router = "control_plane/shadow_exports/l1_promotions/l1_segmented_xy_mesh_noc_phase1_v1.json"
+    out = f"{base}/decoder_attention_score32_noc_phase2_measured_router_closure__{item_id}.json"
+    report = f"{base}/decoder_attention_score32_noc_phase2_measured_router_closure__{item_id}.md"
+    command = _bounded_launcher_command(
+        memory_high="1G",
+        memory_max="2G",
+        cpu_quota="100%",
+        tasks_max=64,
+        runtime_max_sec=120,
+        child_command=[
+            "python3",
+            "npu/eval/audit_llm_decoder_attention_score32_noc_phase2_measured_router_closure.py",
+            "--repo-root",
+            ".",
+            "--phase2-schedule-json",
+            schedule,
+            "--phase1-router-promotion-json",
+            router,
+            "--json-out",
+            out,
+            "--report-out",
+            report,
+        ],
+    )
+    return {
+        "inputs": {
+            "attention_score32_noc_phase2_corrected_schedule": schedule,
+            "attention_score32_noc_phase1_router_promotion": router,
+            "attention_score32_noc_measured_router_closure_out": out,
+            "attention_score32_noc_measured_router_closure_report": report,
+        },
+        "commands": [{"name": "audit_attention_score32_noc_measured_router_closure", "run": command}],
+        "expected_outputs": [out, report],
+        "evidence_only": True,
+        "acceptance": [
+            "Require the exact corrected 8-wave/128-tile Phase 2 v2 schedule dependency",
+            "Require the exact timing-feasible p5/w256/vc4/d4 segmented-router promotion dependency",
+            "Label timing as a conservative no-reroute upper bound, area as a lower bound, and power as an activity-dependent estimate",
+            "Do not claim aggregate mesh, SRAM, HBM/DRAM, or root-finalizer closure",
+            "Write exactly one JSON and one Markdown report",
+        ],
+    }
+
+
+def _decoder_attention_score32_noc_phase2_measured_router_clock_reroute_evidence(
+    *,
+    item_id: str,
+    depends_on_item_ids: list[str] | None,
+    proposal_id: str | None,
+    proposal_path: str | None,
+) -> dict[str, Any]:
+    expected_proposal_id = "prop_l2_decoder_attention_score32_noc_phase2_measured_router_clock_reroute_v1"
+    _validate_score32_noc_closure_request(
+        item_id=item_id,
+        expected_item_id="l2_decoder_attention_score32_noc_phase2_measured_router_clock_reroute_llama7b_v1",
+        proposal_id=proposal_id,
+        expected_proposal_id=expected_proposal_id,
+        proposal_path=proposal_path,
+        depends_on_item_ids=depends_on_item_ids,
+    )
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    source = (
+        f"{base}/decoder_attention_score32_exact_reduction_recost__"
+        "l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1.json"
+    )
+    measured_costs = (
+        "runs/campaigns/npu/l1_measured_costs/"
+        "llama7b_attention_local_costs_all_measured_endpoint_v1.json"
+    )
+    schedule = (
+        f"{base}/decoder_attention_score32_noc_phase2_schedule__"
+        "l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1.json"
+    )
+    router = "control_plane/shadow_exports/l1_promotions/l1_segmented_xy_mesh_noc_phase1_v1.json"
+    out = f"{base}/decoder_attention_score32_noc_phase2_measured_router_clock_reroute__{item_id}.json"
+    report = f"{base}/decoder_attention_score32_noc_phase2_measured_router_clock_reroute__{item_id}.md"
+    command = _bounded_launcher_command(
+        memory_high="2G",
+        memory_max="4G",
+        cpu_quota="200%",
+        tasks_max=128,
+        runtime_max_sec=600,
+        child_command=[
+            "python3",
+            "npu/eval/reroute_llm_decoder_attention_score32_noc_phase2_measured_router_clock.py",
+            "--repo-root",
+            ".",
+            "--source-json",
+            source,
+            "--measured-l1-costs",
+            measured_costs,
+            "--baseline-schedule-json",
+            schedule,
+            "--router-promotion-json",
+            router,
+            "--out",
+            out,
+            "--report",
+            report,
+        ],
+    )
+    return {
+        "inputs": {
+            "attention_score32_noc_phase2_source_recost": source,
+            "attention_score32_noc_phase2_measured_l1_costs": measured_costs,
+            "attention_score32_noc_phase2_corrected_schedule": schedule,
+            "attention_score32_noc_phase1_router_promotion": router,
+            "attention_score32_noc_measured_router_clock_reroute_out": out,
+            "attention_score32_noc_measured_router_clock_reroute_report": report,
+        },
+        "commands": [{"name": "reroute_attention_score32_noc_at_measured_router_clock", "run": command}],
+        "expected_outputs": [out, report],
+        "evidence_only": True,
+        "worker_resources": {
+            "exclusive_worker": True,
+            "memory_high": "2G",
+            "memory_max": "4G",
+            "cpu_quota": "200%",
+            "tasks_max": 128,
+            "outer_timeout_seconds": 600,
+            "stall_timeout_seconds": 300,
+        },
+        "acceptance": [
+            "Rerun release conversion and mesh routing for all eight waves and 128 tiles",
+            "Require delivered_flit_count=scheduled_flit_count in every unique clock case",
+            "Require primitive-critical-path diagnostic and conservative max(1ns, critical_path_ns) cases",
+            "Do not reuse the old absolute 1ns cycle timeline",
+            "Do not claim aggregate mesh PPA, workload-matched router power, SRAM, HBM/DRAM, or root-finalizer closure",
+            "Write exactly one JSON and one Markdown report",
+        ],
+    }
+
+
 def _decoder_attention_kv_endpoint_full_onchip_service_schedule_evidence(
     *,
     item_id: str,
@@ -12152,6 +12331,8 @@ def _build_payload(
         "decoder_attention_kv_endpoint_sram_noc_full_search_softmax_recip_lut_schedule",
         "decoder_attention_kv_onchip_service_schedule",
         "decoder_attention_score32_noc_phase2_schedule",
+        "decoder_attention_score32_noc_phase2_measured_router_closure",
+        "decoder_attention_score32_noc_phase2_measured_router_clock_reroute",
         "decoder_attention_kv_endpoint_full_onchip_service_schedule",
         "decoder_attention_kv_endpoint_ready_valid_service",
         "decoder_attention_kv_endpoint_router_sram_composition",
@@ -12376,6 +12557,20 @@ def _build_payload(
         elif abstraction_layer_name == "decoder_attention_score32_noc_phase2_schedule":
             decoder_evidence = _decoder_attention_score32_noc_phase2_schedule_evidence(
                 item_id=item_id,
+                proposal_id=proposal_id,
+                proposal_path=proposal_path,
+            )
+        elif abstraction_layer_name == "decoder_attention_score32_noc_phase2_measured_router_closure":
+            decoder_evidence = _decoder_attention_score32_noc_phase2_measured_router_closure_evidence(
+                item_id=item_id,
+                depends_on_item_ids=depends_on_item_ids,
+                proposal_id=proposal_id,
+                proposal_path=proposal_path,
+            )
+        elif abstraction_layer_name == "decoder_attention_score32_noc_phase2_measured_router_clock_reroute":
+            decoder_evidence = _decoder_attention_score32_noc_phase2_measured_router_clock_reroute_evidence(
+                item_id=item_id,
+                depends_on_item_ids=depends_on_item_ids,
                 proposal_id=proposal_id,
                 proposal_path=proposal_path,
             )
