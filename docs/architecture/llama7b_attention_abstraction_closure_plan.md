@@ -213,6 +213,65 @@ than free or heuristic assumptions.
 - New evaluations should continue to dispatch only to the remote evaluator
   `eval-daemon-b7c2d9c80c1c`, not the devcontainer.
 
+## Active Closure Tranche (2026-08-11)
+
+The historical ordering below records how the score32 frontier was reached, but
+it is not the current queue. The active work is now limited to the following
+evidence gaps:
+
+- Exact-partial service correspondence: the immutable workload-correspondence
+  retry and CDC lane-probe retry are queued. Their outputs are required before
+  replacing the current service estimate with corrected exact-partial
+  workload and lane evidence.
+- RMSNorm: Phase 3 now has a reusable full-row BF16 RTL/performance-model
+  equivalence gate, including ready/valid backpressure and protocol-error
+  replay. The bounded physical wrapper job remains queued; its register-array
+  storage must not be described as SRAM-macro evidence.
+- NoC: the concrete five-port, 256-bit, four-VC segmented-router primitive PPA
+  job is queued as `l1_segmented_xy_mesh_noc_phase1_v1`. The complete 8-wave,
+  128-tile schedule retry is queued as
+  `l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1`.
+- The original NoC Phase 2 item is superseded without a usable result. It
+  interpreted compute-wrapper cycles as NoC cycles. The retry converts every
+  release timestamp with
+  `ceil(compute_cycles * compute_clock_ns / noc_clock_ns)` and records both
+  clocks explicitly.
+- The single-router PPA row may provide a measured router clock and a component
+  area/power anchor. Summing router instances is only a component lower bound;
+  it is not a placed 4x4 mesh result. Aggregate links, wiring, congestion,
+  endpoint SRAM placement, and clock distribution remain explicit until an
+  aggregate physical slice is measured.
+- HBM/DRAM controller RTL and vendor current signoff remain outside the RTLGen
+  chip boundary. They stay as source-backed service and energy envelopes, not
+  as free components and not as claims of RTL closure.
+
+### Promotion Standard
+
+The final report must classify every candidate by evidence level instead of
+mixing all rows in one ranking:
+
+1. `functional_rtl`: every on-chip arithmetic, storage-control, scheduler, and
+   communication slice used by the candidate exists as RTL and passes focused
+   protocol/arithmetic tests.
+2. `workload_equivalent`: composed RTL and the performance model agree on the
+   complete declared workload, including outputs, ordering, traffic counts,
+   release/completion cycles, and error behavior.
+3. `physically_anchored`: each repeated primitive has measured PPA at an
+   applicable clock/utilization point. Unmeasured aggregate wiring and
+   placement terms are stated as bounds.
+4. `composition_bounded`: the full Llama7B schedule uses only compatible
+   measured rows or disclosed conservative envelopes. It must not infer
+   full-array signoff from a primitive measurement.
+5. `precision_backed`: the arithmetic/quantization profile has the applicable
+   Llama7B quality result and is not promoted from a diagnostic proxy.
+
+The project may conclude a **confidence-bounded best architecture** when one
+candidate satisfies all five levels and remains best over the disclosed NoC,
+SRAM-placement, and HBM/DRAM envelopes. Full monolithic RTL PPA is not required
+when it is computationally infeasible, but representative composed slices and
+utilization-matched physical anchors are required. A candidate that lacks any
+level remains a planning frontier, not the final best architecture.
+
 ## Remaining Quantities
 
 1. Full integrated energy closure
