@@ -109,6 +109,44 @@ def test_acquire_next_lease_selects_matching_highest_priority_item() -> None:
         assert lease.status == LeaseStatus.ACTIVE
 
 
+def test_acquire_next_lease_accepts_assigned_unknown_planning_platform() -> None:
+    with make_session() as session:
+        _, item_b = seed_ready_items(session)
+        from control_plane.services.lease_service import upsert_worker_machine
+
+        item_b.platform = "unknown"
+        session.commit()
+        upsert_worker_machine(session, machine_key="machine-1")
+        assign_work_item(session, item_id=item_b.item_id, machine_key="machine-1")
+
+        result = acquire_next_lease(
+            session,
+            machine_key="machine-1",
+            capabilities={"platform": "nangate45", "flow": "openroad"},
+            lease_seconds=900,
+        )
+
+        assert result.item_id == item_b.item_id
+        assert item_b.state == WorkItemState.LEASED
+
+
+def test_acquire_next_lease_rejects_assigned_concrete_platform_mismatch() -> None:
+    with make_session() as session:
+        item_a, _ = seed_ready_items(session)
+        from control_plane.services.lease_service import upsert_worker_machine
+
+        upsert_worker_machine(session, machine_key="machine-1")
+        assign_work_item(session, item_id=item_a.item_id, machine_key="machine-1")
+
+        with pytest.raises(NoEligibleWorkItem, match="no eligible work item"):
+            acquire_next_lease(
+                session,
+                machine_key="machine-1",
+                capabilities={"platform": "nangate45", "flow": "openroad"},
+                lease_seconds=900,
+            )
+
+
 def test_acquire_next_lease_blocks_parallel_work_behind_exclusive_block_sweep() -> None:
     with make_session() as session:
         _, item_b = seed_ready_items(session)

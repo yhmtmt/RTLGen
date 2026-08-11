@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from sqlalchemy import case
+from sqlalchemy import case, or_
 from sqlalchemy.orm import Session
 
 from control_plane.models.enums import FlowName, LeaseStatus, WorkItemState
@@ -132,7 +132,17 @@ def select_next_work_item(
     if machine_key:
         query = query.filter(WorkItem.assigned_machine_key == machine_key)
     if effective.get("platform"):
-        query = query.filter(WorkItem.platform == effective["platform"])
+        if machine_key:
+            # An explicit dispatcher assignment is authoritative for Layer-2
+            # planning items whose platform is intentionally unresolved.
+            query = query.filter(
+                or_(
+                    WorkItem.platform == effective["platform"],
+                    WorkItem.platform == "unknown",
+                )
+            )
+        else:
+            query = query.filter(WorkItem.platform == effective["platform"])
     if effective.get("flow"):
         query = query.filter(WorkItem.flow == FlowName(effective["flow"]))
 
