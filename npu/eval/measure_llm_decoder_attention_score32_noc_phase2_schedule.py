@@ -679,9 +679,11 @@ def build_report(args: argparse.Namespace) -> JsonDict:
             "HBM/DRAM timing is intentionally excluded; no remote traffic or timing claim is made for HBM service.",
             "Each packet carries up to packet_payload_bytes of payload and is segmented into 256-bit flits with no extra header flit modeled.",
             "The performance model does not perform packet reassembly; the checked artifact therefore fails closed unless 8-bit tag reuse is provably non-overlapping for each (source, destination, vc) tuple over packet lifetime intervals.",
+            "Per-endpoint release queues are logical zero-copy descriptors over payloads retained in source SRAM or reducer state, not physically costed flit FIFOs; endpoint packetizer/control storage remains outside this result.",
         ],
         "remaining_abstractions": [
             "The schedule uses static wave timing from checked-in recost quantities and does not yet prove end-to-end command/control RTL cadence.",
+            "The source-descriptor queues and producer backpressure/control needed to retain payloads until injection are not yet embodied or physically measured.",
             "Shared SRAM home placement is deterministic and explicit, but still a topology adapter rather than a measured SRAM floorplan.",
             "HBM/DRAM service and controller timing remain intentionally out of scope.",
             "Root-finalizer internal compute is not rerouted here; the mesh model stops at root ingress.",
