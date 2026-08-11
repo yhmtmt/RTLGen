@@ -1,0 +1,60 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_score32_noc_phase2_measured_router_closure_v1",
+  "created_utc": "2026-08-11T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Measured-router closure for the corrected score32 NoC Phase 2 schedule",
+  "hypothesis": "A bounded closure consumer can use the measured single-router clock to form a conservative no-reroute timing upper bound and quantify router-only component accounting without over-claiming full 4x4 mesh PPA.",
+  "direct_comparison": {
+    "primary_question": "What changes when the corrected score32 Phase 2 schedule is recosted with the measured segmented-router primitive, and which physical gaps still remain explicit?",
+    "include": [
+      "Use only l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1 as the schedule source.",
+      "Use only l1_segmented_xy_mesh_noc_phase1_v1 as the router primitive source.",
+      "Use the measured router critical path to form a conservative no-reroute NoC drain-time upper bound.",
+      "Report router area only as a lower bound and router power only as an activity-dependent component estimate."
+    ],
+    "exclude": [
+      "Do not linearly claim aggregate 4x4 placed-mesh PPA from a single-router measurement.",
+      "Do not hide wiring, congestion, endpoint SRAM, HBM/DRAM, or root-finalizer compute gaps.",
+      "Do not update architecture rankings in this bounded sidecar."
+    ]
+  },
+  "expected_benefit": [
+    "Closes the immediate router-clock abstraction on the corrected Phase 2 schedule.",
+    "Makes the remaining full-mesh, SRAM, and HBM gaps explicit before any rerank.",
+    "Provides a stable closure artifact that downstream ranking work can consume only after real outputs merge."
+  ],
+  "risks": [
+    "The no-reroute timing result is intentionally conservative and cannot replace a release-conversion and mesh rerun at the measured clock.",
+    "The router area lower bound and power estimate are component accounting only and are not substitutes for full-fabric PPA."
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "task_type": "l2_campaign",
+      "evaluation_mode": "frontier_detail",
+      "objective": "score32_noc_phase2_measured_router_closure",
+      "cost_class": "small",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1",
+        "l1_segmented_xy_mesh_noc_phase1_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "record_measured_router_closure_without_overclaiming_full_mesh_ppa",
+        "reason": "The result should quantify a conservative no-reroute drain-time upper bound, router-area lower bound, and activity-dependent router-power estimate while keeping remaining physical gaps explicit."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_schedule__l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1.json",
+    "control_plane/shadow_exports/l1_promotions/l1_segmented_xy_mesh_noc_phase1_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/audit_llm_decoder_attention_score32_noc_phase2_measured_router_closure.py",
+    "npu/eval/measure_llm_decoder_attention_score32_noc_phase2_schedule.py",
+    "docs/proposals/prop_l1_segmented_xy_mesh_noc_phase1_v1/proposal.json"
+  ]
+}
