@@ -103,6 +103,59 @@ def test_next_source_required_item_persists_capability_filter() -> None:
         assert machine.capabilities["flow"] == "openroad"
 
 
+def test_next_source_required_item_honors_assignment_when_l2_platform_is_unknown() -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    create_all(engine)
+    with Session(engine) as session:
+        task = TaskRequest(
+            request_key="queue:assigned_l2_unknown_platform",
+            source="test",
+            requested_by="tester",
+            title="assigned L2 source item",
+            description="requires newer source",
+            layer="layer2",
+            flow="openroad",
+            priority=1,
+            request_payload={"item_id": "assigned_l2_unknown_platform"},
+        )
+        session.add(task)
+        session.flush()
+        session.add(
+            WorkItem(
+                work_item_key="queue:assigned_l2_unknown_platform",
+                task_request_id=task.id,
+                item_id="assigned_l2_unknown_platform",
+                layer="layer2",
+                flow="openroad",
+                platform="unknown",
+                task_type="l2_campaign",
+                state=WorkItemState.READY,
+                priority=1,
+                source_commit="1" * 40,
+                assigned_machine_key="machine-1",
+                input_manifest={},
+                command_manifest=[],
+                expected_outputs=[],
+                acceptance_rules=[],
+            )
+        )
+        session.commit()
+
+        selected = next_source_required_item(
+            session,
+            machine_key="machine-1",
+            hostname=None,
+            executor_kind="docker",
+            machine_role="evaluator",
+            slot_capacity=1,
+            capabilities=None,
+            capability_filter={"platform": "nangate45", "flow": "openroad"},
+        )
+
+        assert selected is not None
+        assert selected.item_id == "assigned_l2_unknown_platform"
+
+
 def test_reconcile_service_repo_recovers_stale_git_index_lock(tmp_path: Path) -> None:
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
