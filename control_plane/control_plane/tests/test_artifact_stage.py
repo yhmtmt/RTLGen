@@ -104,6 +104,29 @@ def test_collect_expected_output_artifacts_includes_attention_kv_dataset(tmp_pat
     assert all("inline_utf8" in artifact.metadata for artifact in artifacts)
 
 
+def test_collect_expected_output_artifacts_includes_exact_partial_workload_correspondence(
+    tmp_path: Path,
+) -> None:
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+    json_rel = (
+        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+        "decoder_attention_exact_partial_c1_workload_correspondence__"
+        "l2_decoder_attention_exact_partial_c1_workload_correspondence_llama7b_v1_r1.json"
+    )
+    _write_json(repo_root / json_rel, {"passed": True})
+
+    artifacts = collect_expected_output_artifacts(
+        repo_root=str(repo_root),
+        expected_outputs=[json_rel],
+    )
+
+    assert [artifact.path for artifact in artifacts] == [json_rel]
+    assert artifacts[0].kind == "expected_output"
+    assert artifacts[0].metadata["transport_policy"] == "inline_text_evidence"
+    assert "inline_utf8" in artifacts[0].metadata
+
+
 def test_collect_expected_output_artifacts_includes_operational_component_frontier(
     tmp_path: Path,
 ) -> None:
