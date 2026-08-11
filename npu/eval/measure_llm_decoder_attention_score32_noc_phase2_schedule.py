@@ -62,6 +62,14 @@ def _ceil_div(numerator: int | float, denominator: int | float) -> int:
     return int(math.ceil(float(numerator) / float(denominator)))
 
 
+def _cycles_between_domains(cycles: int, *, source_clock_ns: float, destination_clock_ns: float) -> int:
+    if cycles < 0:
+        raise ValueError("cycle count must be non-negative")
+    if source_clock_ns <= 0.0 or destination_clock_ns <= 0.0:
+        raise ValueError("clock periods must be positive")
+    return _ceil_div(cycles * source_clock_ns, destination_clock_ns)
+
+
 def _int_list(value: str) -> list[int]:
     items = [int(item.strip()) for item in value.split(",") if item.strip()]
     if not items:
@@ -393,6 +401,8 @@ def build_report(args: argparse.Namespace) -> JsonDict:
             "cross_tile_reduction_payload_bytes",
             "tile_attention_cycles",
             "qkv_cycles",
+            "layer_cycles",
+            "measured_dual_stream_composed_clock_ns",
             "noc_hops",
             "measured_l1_profile",
         ],
@@ -451,6 +461,17 @@ def build_report(args: argparse.Namespace) -> JsonDict:
 
     qkv_cycles = int(source_row["qkv_cycles"])
     tile_attention_cycles = int(source_row["tile_attention_cycles"])
+    compute_layer_cycles = int(source_row["layer_cycles"])
+    compute_clock_ns = float(
+        args.compute_clock_ns
+        if args.compute_clock_ns is not None
+        else source_row["measured_dual_stream_composed_clock_ns"]
+    )
+    noc_clock_ns = float(args.noc_clock_ns)
+    if compute_clock_ns <= 0.0:
+        raise ValueError("compute_clock_ns must be positive")
+    if noc_clock_ns <= 0.0:
+        raise ValueError("noc_clock_ns must be positive")
     reduction_payload_bytes = int(source_row["partial_reduction_payload_bytes"])
 
     packet_specs: list[PacketSpec] = []
@@ -459,11 +480,29 @@ def build_report(args: argparse.Namespace) -> JsonDict:
     remote_shared_hops: list[int] = []
     remote_reduction_hops: list[int] = []
     packet_seed_counter = 0
+    wave_start_compute_cycles: list[int] = []
+    wave_start_noc_cycles: list[int] = []
+    reduction_release_compute_cycles: list[int] = []
+    reduction_release_noc_cycles: list[int] = []
 
     for wave in range(wave_count):
         wave_tiles = min(active_clusters, max(0, tile_count - wave * active_clusters))
-        wave_start = qkv_cycles + (wave * tile_attention_cycles)
-        reduction_release = wave_start + tile_attention_cycles
+        wave_start_compute = qkv_cycles + (wave * tile_attention_cycles)
+        reduction_release_compute = wave_start_compute + tile_attention_cycles
+        wave_start = _cycles_between_domains(
+            wave_start_compute,
+            source_clock_ns=compute_clock_ns,
+            destination_clock_ns=noc_clock_ns,
+        )
+        reduction_release = _cycles_between_domains(
+            reduction_release_compute,
+            source_clock_ns=compute_clock_ns,
+            destination_clock_ns=noc_clock_ns,
+        )
+        wave_start_compute_cycles.append(wave_start_compute)
+        wave_start_noc_cycles.append(wave_start)
+        reduction_release_compute_cycles.append(reduction_release_compute)
+        reduction_release_noc_cycles.append(reduction_release)
         for cluster_index in range(wave_tiles):
             compute_endpoint = cluster_endpoints[cluster_index]
             home_endpoint = _home_endpoint(
@@ -510,7 +549,11 @@ def build_report(args: argparse.Namespace) -> JsonDict:
 
     traffic_flows = _packetize_specs_with_wide_tags(packet_specs)
     scheduled_flits = [scheduled for flow in traffic_flows for scheduled in packetize_traffic_flow(flow)]
-    mesh_result = simulate_scheduled_flits(scheduled_flits, max_cycles=args.max_cycles)
+    mesh_result = simulate_scheduled_flits(
+        scheduled_flits,
+        max_cycles=args.max_cycles,
+        fast_forward_idle=True,
+    )
     flow_names = {spec.flow_name for spec in packet_specs}
     if not flow_names:
         raise ValueError("Phase 2 schedule produced no remote NoC traffic")
@@ -548,9 +591,11 @@ def build_report(args: argparse.Namespace) -> JsonDict:
     total_reduction_remote_bytes = sum(
         spec.payload_bytes for spec in packet_specs if spec.flow_name.startswith("reduction_")
     )
+    compute_layer_time_ns = compute_layer_cycles * compute_clock_ns
+    noc_drain_time_ns = mesh_result.cycles * noc_clock_ns
 
     payload = {
-        "version": 1,
+        "version": 2,
         "model": "llama7b_proxy",
         "profile": "decoder_attention_score32_noc_phase2_schedule",
         "source_artifacts": {
@@ -573,6 +618,10 @@ def build_report(args: argparse.Namespace) -> JsonDict:
             "shared_byte_share": float(source_row["shared_byte_share"]),
             "declared_cross_tile_reduction_cycles": int(source_row["cross_tile_reduction_cycles"]),
             "declared_noc_hops": int(source_row["noc_hops"]),
+            "compute_clock_ns": compute_clock_ns,
+            "noc_clock_ns": noc_clock_ns,
+            "compute_layer_cycles": compute_layer_cycles,
+            "compute_layer_time_ns": compute_layer_time_ns,
             "topology": source_row.get("topology"),
             "scheduler_policy": source_row.get("scheduler_policy"),
             "reduction_strategy": source_row.get("reduction_strategy"),
@@ -602,12 +651,23 @@ def build_report(args: argparse.Namespace) -> JsonDict:
             "shared_vc": int(args.shared_vc),
             "reduction_vc": int(args.reduction_vc),
             "requested_wave_limit": requested_wave_limit,
-            "qkv_cycles_before_wave0": qkv_cycles,
-            "tile_attention_cycles_per_wave": tile_attention_cycles,
-            "reduction_release_offset_cycles": tile_attention_cycles,
+            "compute_qkv_cycles_before_wave0": qkv_cycles,
+            "compute_tile_attention_cycles_per_wave": tile_attention_cycles,
+            "compute_reduction_release_offset_cycles": tile_attention_cycles,
+            "compute_clock_ns": compute_clock_ns,
+            "noc_clock_ns": noc_clock_ns,
+            "compute_to_noc_clock_ratio": compute_clock_ns / noc_clock_ns,
+            "wave_start_compute_cycles": wave_start_compute_cycles,
+            "wave_start_noc_cycles": wave_start_noc_cycles,
+            "reduction_release_compute_cycles": reduction_release_compute_cycles,
+            "reduction_release_noc_cycles": reduction_release_noc_cycles,
+            "release_conversion": "ceil(compute_cycles * compute_clock_ns / noc_clock_ns)",
         },
         "simulation": {
             "cycles_to_drain": mesh_result.cycles,
+            "drain_time_ns": noc_drain_time_ns,
+            "drain_minus_compute_layer_time_ns": noc_drain_time_ns - compute_layer_time_ns,
+            "drain_within_source_compute_layer_envelope": noc_drain_time_ns <= compute_layer_time_ns,
             "scheduled_flit_count": len(scheduled_flits),
             "scheduled_packet_count": len(packet_specs),
             "endpoint_injected_flit_count": mesh_result.endpoint_injected_flit_count,
@@ -675,14 +735,15 @@ def build_report(args: argparse.Namespace) -> JsonDict:
             "Tile-to-cluster assignment is static wave-major round robin over the named cluster endpoints.",
             "Shared SRAM homes use a deterministic rotating stride/offset mapping chosen only from explicit 4x4 permutations to approximate the declared hop envelope while keeping load balanced.",
             "The root endpoint is explicit and fixed; root-finalizer output remains local to that endpoint.",
-            "Wave start and reduction release times are derived from the checked-in score32 recost quantities qkv_cycles and tile_attention_cycles only.",
+            "Wave start and reduction release times are derived from checked-in score32 compute cycles and converted to absolute NoC cycles using the explicit compute and NoC clock periods.",
             "HBM/DRAM timing is intentionally excluded; no remote traffic or timing claim is made for HBM service.",
             "Each packet carries up to packet_payload_bytes of payload and is segmented into 256-bit flits with no extra header flit modeled.",
             "The performance model does not perform packet reassembly; the checked artifact therefore fails closed unless 8-bit tag reuse is provably non-overlapping for each (source, destination, vc) tuple over packet lifetime intervals.",
             "Per-endpoint release queues are logical zero-copy descriptors over payloads retained in source SRAM or reducer state, not physically costed flit FIFOs; endpoint packetizer/control storage remains outside this result.",
         ],
         "remaining_abstractions": [
-            "The schedule uses static wave timing from checked-in recost quantities and does not yet prove end-to-end command/control RTL cadence.",
+            "The schedule uses clock-corrected static wave timing from checked-in recost quantities and does not yet prove end-to-end command/control RTL cadence.",
+            "The NoC clock is an explicit evaluation assumption until the exact five-port segmented-router physical result is merged and substituted.",
             "The source-descriptor queues and producer backpressure/control needed to retain payloads until injection are not yet embodied or physically measured.",
             "Shared SRAM home placement is deterministic and explicit, but still a topology adapter rather than a measured SRAM floorplan.",
             "HBM/DRAM service and controller timing remain intentionally out of scope.",
@@ -704,6 +765,8 @@ def write_report(payload: JsonDict, report: Path) -> None:
         f"- coverage: `{payload['source_contract']['coverage']}`",
         f"- declared waves: `{payload['source_contract']['declared_tile_waves']}`",
         f"- simulated waves: `{payload['source_contract']['simulated_wave_count']}`",
+        f"- compute clock: `{payload['source_contract']['compute_clock_ns']} ns`",
+        f"- NoC clock: `{payload['source_contract']['noc_clock_ns']} ns`",
         "",
         "## Mapping",
         "",
@@ -723,6 +786,9 @@ def write_report(payload: JsonDict, report: Path) -> None:
         "## Routed Result",
         "",
         f"- drain cycles: `{payload['simulation']['cycles_to_drain']}`",
+        f"- drain time: `{payload['simulation']['drain_time_ns']} ns`",
+        f"- source compute-layer envelope: `{payload['source_contract']['compute_layer_time_ns']} ns`",
+        f"- drain within source compute-layer envelope: `{payload['simulation']['drain_within_source_compute_layer_envelope']}`",
         f"- scheduled packets: `{payload['simulation']['scheduled_packet_count']}`",
         f"- scheduled flits: `{payload['simulation']['scheduled_flit_count']}`",
         f"- contention cycles: `{payload['simulation']['router_contention_cycles']}`",
@@ -767,7 +833,9 @@ def main() -> int:
     parser.add_argument("--root-endpoint", type=int, default=15)
     parser.add_argument("--shared-vc", type=int, default=0)
     parser.add_argument("--reduction-vc", type=int, default=1)
-    parser.add_argument("--max-cycles", type=int, default=200000)
+    parser.add_argument("--compute-clock-ns", type=float, default=None)
+    parser.add_argument("--noc-clock-ns", type=float, default=1.0)
+    parser.add_argument("--max-cycles", type=int, default=1000000)
     args = parser.parse_args()
 
     payload = build_report(args)

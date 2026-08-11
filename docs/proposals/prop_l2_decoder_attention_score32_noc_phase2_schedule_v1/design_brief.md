@@ -17,6 +17,9 @@ flit conservation, or 8-bit tag lifetime safety.
 - One evidence-only item covering all 128 tiles in all eight declared waves.
 - Deterministic XY routing, four VCs, finite router FIFOs, and endpoint stalls.
 - Checked-in exact-reduction traffic and measured L1 endpoint-cost inputs.
+- Explicit conversion from the measured `48.6509 ns` compute-wrapper domain to
+  a 1ns target NoC domain; the measured five-port router clock remains a
+  follow-on substitution.
 - No dependency on the historically failed recost DB record; materialized repo
   references are required instead.
 - HBM/DRAM, measured SRAM placement, root-finalizer timing, and producer

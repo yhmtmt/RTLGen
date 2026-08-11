@@ -14565,7 +14565,7 @@ def test_generate_l2_campaign_task_adds_score32_noc_phase2_full_schedule_evidenc
                 _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
-                    item_id="l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1",
+                    item_id="l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1",
                     requested_by="@tester",
                     source_commit=source_commit,
                     proposal_id="prop_l2_decoder_attention_score32_noc_phase2_schedule_v1",
@@ -14599,18 +14599,19 @@ def test_generate_l2_campaign_task_adds_score32_noc_phase2_full_schedule_evidenc
             assert "measure_llm_decoder_attention_score32_noc_phase2_schedule.py" in run
             assert "decoder_attention_score32_exact_reduction_recost__" in run
             assert "llama7b_attention_local_costs_all_measured_endpoint_v1.json" in run
+            assert "--noc-clock-ns 1.0" in run
             assert "--wave-limit" not in run
             assert work_item.task_request.request_payload["task"]["inputs"]["decoder_contract"] == decoder_inputs
             assert expected_outputs == [
                 (
                     "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
                     "decoder_attention_score32_noc_phase2_schedule__"
-                    "l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1.json"
+                    "l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1.json"
                 ),
                 (
                     "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
                     "decoder_attention_score32_noc_phase2_schedule__"
-                    "l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1.md"
+                    "l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1.md"
                 ),
             ]
             expected_worker_resources = {
@@ -14631,6 +14632,7 @@ def test_generate_l2_campaign_task_adds_score32_noc_phase2_full_schedule_evidenc
             assert any("declared_tile_waves=8" in entry for entry in acceptance)
             assert any("simulated_tiles=tile_count=128" in entry for entry in acceptance)
             assert any("collision_free_reuse_proven=true" in entry for entry in acceptance)
+            assert any("compute_clock_ns/noc_clock_ns" in entry for entry in acceptance)
 
 
 def test_generate_l2_campaign_task_rejects_noncanonical_score32_noc_phase2_item() -> None:
@@ -14651,7 +14653,7 @@ def test_generate_l2_campaign_task_rejects_noncanonical_score32_noc_phase2_item(
                 _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
-                    item_id="l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r2",
+                    item_id="l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1",
                     requested_by="@tester",
                     source_commit=source_commit,
                     proposal_id="prop_l2_decoder_attention_score32_noc_phase2_schedule_v1",
