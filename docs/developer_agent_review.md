@@ -187,6 +187,34 @@ Do not use relaxed boundary acceptance for ordinary winner-selection sweeps.
 Those should continue to require at least one completed, timing-feasible row for
 each expected metrics file.
 
+## Physical Composition And Clock-Domain Rule
+
+When a recost composes evidence from different clock domains, convert cycles
+through wall time. For a source event at cycle `C`, source period `Ts`, and
+destination period `Td`, the destination release cycle is
+`ceil(C * Ts / Td)`. Do not copy a cycle count directly between domains.
+
+If measured physical evidence changes `Td`, rerun release conversion and the
+dependent contention/scheduling model. Multiplying every absolute cycle index
+from the old schedule by the new period is only a conservative no-reroute
+upper bound; label it that way and do not promote it as exact timing.
+
+Keep primitive and aggregate physical claims separate:
+
+- repeated primitive area can be reported as a component lower bound when all
+  instances are required, but it excludes links, clock trees, placement
+  adapters, congestion, and shared control
+- repeated primitive power is not automatically a lower or upper bound;
+  report it as a component estimate unless activity and clock assumptions are
+  workload matched
+- a primitive `critical_path_ns` does not close an aggregate hierarchy clock,
+  especially when the selected row comes from a low-utilization placement
+  point
+
+Require the proposal and generated report to state which quantities are exact,
+which are conservative bounds, and which remain activity- or placement-dependent
+estimates before those quantities enter an architecture ranking.
+
 ## Semantic Equivalence And Proxy Rule
 
 Do not treat generator syntax checks, a folded result hash, or agreement on
