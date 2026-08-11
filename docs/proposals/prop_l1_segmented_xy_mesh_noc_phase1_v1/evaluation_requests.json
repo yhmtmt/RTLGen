@@ -1,18 +1,31 @@
 {
   "proposal_id": "prop_l1_segmented_xy_mesh_noc_phase1_v1",
-  "source_commit": "",
+  "source_commit": "b61e9afcdb7a5da2c7c72200e6483eb9aebeb349",
   "requested_items": [
     {
       "item_id": "l1_segmented_xy_mesh_noc_phase1_v1",
       "task_type": "l1_sweep",
-      "objective": "Measure the concrete segmented five-port router primitive for the Phase 1 NoC embodiment.",
+      "objective": "Measure Nangate45 PPA for the concrete 256-bit, 4-VC, depth-4 five-port router used by the 4x4 Phase 2 mesh model.",
       "evaluation_mode": "ppa",
       "abstraction_layer": "architecture_block",
       "config_paths": [
         "runs/designs/noc/l1_noc_segmented_xy_router_p5_w256_vc4_d4_wrapper/config_l1_noc_segmented_xy_router_p5_w256_vc4_d4.json"
       ],
       "sweep_path": "runs/campaigns/noc/l1_segmented_xy_mesh_router/sweeps/nangate45_macro_frontier.json",
-      "status": "proposed"
+      "expected_outputs": [
+        "runs/designs/noc/l1_noc_segmented_xy_router_p5_w256_vc4_d4_wrapper/metrics.csv"
+      ],
+      "status": "pending",
+      "comparison_role": "segmented_xy_router_primitive_anchor",
+      "paired_baseline_item_id": "",
+      "depends_on_item_ids": [],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "measure_segmented_xy_router_primitive",
+        "reason": "Replace scaled legacy router/FIFO cost with the exact five-port Phase 1 router primitive before aggregate mesh recost."
+      },
+      "acceptance_notes": "Accept only physically completed hierarchical rows. Record this as a single-router primitive anchor, not aggregate 4x4 mesh PPA or SRAM/HBM evidence."
     }
   ]
 }

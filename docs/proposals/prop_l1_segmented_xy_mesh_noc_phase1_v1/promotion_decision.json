@@ -1,0 +1,9 @@
+{
+  "proposal_id": "prop_l1_segmented_xy_mesh_noc_phase1_v1",
+  "candidate_id": "",
+  "decision": "pending",
+  "reason": "The dedicated segmented-router physical result has not materialized yet.",
+  "evidence_refs": [],
+  "next_action": "Run and merge l1_segmented_xy_mesh_noc_phase1_v1, then recost the full-workload Phase 2 schedule with the measured primitive.",
+  "requires_human_approval": true
+}
