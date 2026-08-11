@@ -16,7 +16,7 @@ from typing import NoReturn
 
 from sqlalchemy.orm import Session
 
-from control_plane.models.enums import FlowName, LeaseStatus, WorkItemState
+from control_plane.models.enums import LeaseStatus, WorkItemState
 from control_plane.models.worker_leases import WorkerLease
 from control_plane.models.work_items import WorkItem
 from control_plane.services.lease_service import upsert_worker_machine, worker_capabilities_for_filter
@@ -375,17 +375,6 @@ def _source_relation(repo_root: Path, required_sha: str, head_sha: str | None = 
     return "mismatch"
 
 
-def _machine_matches_item(*, capability_filter: dict[str, object] | None, work_item: WorkItem) -> bool:
-    effective = dict(capability_filter or {})
-    platform = str(effective.get("platform") or "").strip()
-    flow = str(effective.get("flow") or "").strip()
-    if platform and work_item.platform != platform:
-        return False
-    if flow and work_item.flow != FlowName(flow):
-        return False
-    return True
-
-
 def next_source_required_item(
     session: Session,
     *,
@@ -408,8 +397,6 @@ def next_source_required_item(
         role=machine_role,
         slot_capacity=slot_capacity,
     )
-    effective_filter = dict(machine.capabilities or {})
-    effective_filter.update(capability_filter or {})
     query = (
         session.query(WorkItem)
         .filter(WorkItem.state == WorkItemState.READY)
@@ -418,10 +405,11 @@ def next_source_required_item(
         .order_by(WorkItem.priority.desc(), WorkItem.created_at.asc(), WorkItem.item_id.asc())
     )
     for item in query.all():
-        if str(item.source_commit or "").strip() and _machine_matches_item(
-            capability_filter=effective_filter,
-            work_item=item,
-        ):
+        # Dispatcher assignment is authoritative. Reapplying the worker's
+        # platform/flow filter here can hide assigned Layer-2 items whose
+        # planning platform is intentionally "unknown", preventing the source
+        # update required before either execution or a later eligibility check.
+        if str(item.source_commit or "").strip():
             session.commit()
             return item
     session.commit()
