@@ -1,0 +1,97 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-08-11T12:02:35.820327Z",
+  "item_id": "l2_decoder_attention_exact_partial_c1_workload_correspondence_llama7b_v1_r1",
+  "run_key": "l2_decoder_attention_exact_partial_c1_workload_correspondence_llama7b_v1_r1_run_ad6e7c8adcd71d63",
+  "layer": "layer2",
+  "flow": "openroad",
+  "platform": "unknown",
+  "task_type": "l2_campaign",
+  "source_commit": "34cdb1ff66afc838d081156877c7dc2c00a3c076",
+  "review_metadata_source_commit": "844c86ab1107409ec97518b7896aab5d66a40df9",
+  "objective": "Execute Layer2 campaign attention_exact_partial_c1_workload_correspondence_llama7b_131k_v1.",
+  "input_manifest": {
+    "decoder_contract": {
+      "exact_partial_c1_workload_correspondence_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_exact_partial_c1_workload_correspondence__l2_decoder_attention_exact_partial_c1_workload_correspondence_llama7b_v1_r1.json",
+      "exact_partial_c1_workload_correspondence_scope": "Run the bounded finalized-CDC RTL matrix for divider lanes 1, 2, 4, and 8 over one through four full windows, one eight-token tail, and same-slot two-head reuse. Require exact software values and counters, then project 5,462 windows per head only from equal measured affine deltas.",
+      "exact_partial_c1_workload_correspondence_campaign": "runs/campaigns/npu/attention_exact_partial_c1_workload_correspondence_v1/campaign.json"
+    },
+    "worker_resources": {
+      "cpu_quota": "200%",
+      "tasks_max": 192,
+      "memory_max": "6G",
+      "memory_high": "4G",
+      "exclusive_worker": true,
+      "outer_timeout_seconds": 600,
+      "stall_timeout_seconds": 300
+    }
+  },
+  "recommendation": {
+    "source": "decoder_evidence",
+    "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_exact_partial_c1_workload_correspondence__l2_decoder_attention_exact_partial_c1_workload_correspondence_llama7b_v1_r1.json",
+    "arch_id": "decoder_attention_exact_partial_c1_workload_correspondence",
+    "macro_mode": "evidence_only",
+    "outcome": "decoder_evidence_recorded"
+  },
+  "objective_profiles": [],
+  "evaluation_record": {
+    "proposal_id": "prop_l2_decoder_attention_exact_partial_c1_workload_correspondence_llama7b_v1",
+    "title": "Exact-partial c1 bounded RTL workload correspondence for Llama7B 131k",
+    "primary_question": "Do deterministic schedule counters and exact values match bounded real RTL for every divider width at 10 ns / 12 ns, and are the full-window service deltas affine before projection to 5462 windows/head and 32 heads/layer?",
+    "evaluation_mode": "equivalence",
+    "comparison_role": "workload_correspondence_prerequisite",
+    "abstraction_layer": "decoder_attention_exact_partial_c1_workload_correspondence",
+    "expected_direction": "unknown",
+    "expected_reason": "",
+    "summary": "Decoder evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_exact_partial_c1_workload_correspondence__l2_decoder_attention_exact_partial_c1_workload_correspondence_llama7b_v1_r1.json: decision=decoder_evidence_recorded.",
+    "outcome": "decoder_evidence_recorded",
+    "expectation_status": "unspecified"
+  },
+  "proposal_assessment": {
+    "proposal_id": "prop_l2_decoder_attention_exact_partial_c1_workload_correspondence_llama7b_v1",
+    "title": "Exact-partial c1 bounded RTL workload correspondence for Llama7B 131k",
+    "kind": "architecture",
+    "primary_question": "Do deterministic schedule counters and exact values match bounded real RTL for every divider width at 10 ns / 12 ns, and are the full-window service deltas affine before projection to 5462 windows/head and 32 heads/layer?",
+    "evaluation_mode": "equivalence",
+    "comparison_role": "workload_correspondence_prerequisite",
+    "outcome": "decoder_evidence_recorded",
+    "summary": "Decoder evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_exact_partial_c1_workload_correspondence__l2_decoder_attention_exact_partial_c1_workload_correspondence_llama7b_v1_r1.json: decision=decoder_evidence_recorded.",
+    "baseline_ref": null,
+    "baseline_item_id": null,
+    "matched_row_count": 0,
+    "matched_rows": [],
+    "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_exact_partial_c1_workload_correspondence__l2_decoder_attention_exact_partial_c1_workload_correspondence_llama7b_v1_r1.json",
+    "decoder_quality": {
+      "diagnosis": {},
+      "assumptions": [
+        "one c1 service instance schedules windows and heads serially",
+        "each full window is three 8-token blocks and the final partial is one 8-token block",
+        "value-memory refill traffic is serialized before each command and included in bounded RTL service spans",
+        "the bounded probe uses SRAM temporal state and the macro-banked 4x16x64x32 service value backend",
+        "the affine projection is used only after equal deltas are observed at window_count 1, 2, 3, and 4",
+        "temporal final drain is 16 slices times the RTL restoring-divider schedule of 57 cycles per lane group plus accept/output cycles",
+        "layer and 32-layer values are conservative serial bounds; no inter-head or inter-layer overlap is credited",
+        "elapsed testbench service/temporal/finalizer counters include CDC phase and overlap and are not projected"
+      ],
+      "passed": true
+    }
+  },
+  "source_refs": {
+    "decoder_evidence_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_exact_partial_c1_workload_correspondence__l2_decoder_attention_exact_partial_c1_workload_correspondence_llama7b_v1_r1.json",
+    "decoder_exact_partial_c1_workload_correspondence_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_exact_partial_c1_workload_correspondence__l2_decoder_attention_exact_partial_c1_workload_correspondence_llama7b_v1_r1.json"
+  },
+  "decoder_quality": {
+    "diagnosis": {},
+    "assumptions": [
+      "one c1 service instance schedules windows and heads serially",
+      "each full window is three 8-token blocks and the final partial is one 8-token block",
+      "value-memory refill traffic is serialized before each command and included in bounded RTL service spans",
+      "the bounded probe uses SRAM temporal state and the macro-banked 4x16x64x32 service value backend",
+      "the affine projection is used only after equal deltas are observed at window_count 1, 2, 3, and 4",
+      "temporal final drain is 16 slices times the RTL restoring-divider schedule of 57 cycles per lane group plus accept/output cycles",
+      "layer and 32-layer values are conservative serial bounds; no inter-head or inter-layer overlap is credited",
+      "elapsed testbench service/temporal/finalizer counters include CDC phase and overlap and are not projected"
+    ],
+    "passed": true
+  }
+}
