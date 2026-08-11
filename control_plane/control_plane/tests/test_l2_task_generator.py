@@ -14550,6 +14550,122 @@ def test_generate_l2_campaign_task_adds_onchip_service_schedule_evidence() -> No
             )
 
 
+def test_generate_l2_campaign_task_adds_score32_noc_phase2_full_schedule_evidence() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                _make_l2_request(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id="l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    proposal_id="prop_l2_decoder_attention_score32_noc_phase2_schedule_v1",
+                    proposal_path=(
+                        "docs/proposals/prop_l2_decoder_attention_score32_noc_phase2_schedule_v1/"
+                        "proposal.json"
+                    ),
+                    abstraction_layer="decoder_attention_score32_noc_phase2_schedule",
+                    evaluation_mode="frontier_detail",
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            commands = work_item.task_request.request_payload["task"]["commands"]
+            command_names = [command["name"] for command in commands]
+            decoder_inputs = work_item.input_manifest["decoder_contract"]
+            expected_outputs = work_item.expected_outputs
+            run = commands[0]["run"]
+
+            assert command_names == [
+                "measure_attention_score32_noc_phase2_full_schedule",
+                "validate_runs",
+            ]
+            assert "control_plane/scripts/run_bounded_command.py" in run
+            assert "--memory-high 2G" in run
+            assert "--memory-max 4G" in run
+            assert "--cpu-quota 200%" in run
+            assert "--tasks-max 128" in run
+            assert "--runtime-max-sec 300" in run
+            assert "measure_llm_decoder_attention_score32_noc_phase2_schedule.py" in run
+            assert "decoder_attention_score32_exact_reduction_recost__" in run
+            assert "llama7b_attention_local_costs_all_measured_endpoint_v1.json" in run
+            assert "--wave-limit" not in run
+            assert work_item.task_request.request_payload["task"]["inputs"]["decoder_contract"] == decoder_inputs
+            assert expected_outputs == [
+                (
+                    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                    "decoder_attention_score32_noc_phase2_schedule__"
+                    "l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1.json"
+                ),
+                (
+                    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                    "decoder_attention_score32_noc_phase2_schedule__"
+                    "l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1.md"
+                ),
+            ]
+            expected_worker_resources = {
+                "exclusive_worker": True,
+                "memory_high": "2G",
+                "memory_max": "4G",
+                "cpu_quota": "200%",
+                "tasks_max": 128,
+                "outer_timeout_seconds": 300,
+                "stall_timeout_seconds": 180,
+            }
+            assert work_item.input_manifest["worker_resources"] == expected_worker_resources
+            assert (
+                work_item.task_request.request_payload["task"]["inputs"]["worker_resources"]
+                == expected_worker_resources
+            )
+            acceptance = work_item.task_request.request_payload["task"]["acceptance"]
+            assert any("declared_tile_waves=8" in entry for entry in acceptance)
+            assert any("simulated_tiles=tile_count=128" in entry for entry in acceptance)
+            assert any("collision_free_reuse_proven=true" in entry for entry in acceptance)
+
+
+def test_generate_l2_campaign_task_rejects_noncanonical_score32_noc_phase2_item() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session, pytest.raises(
+            Layer2TaskGenerationError,
+            match="only permits the exact workload-complete item",
+        ):
+            generate_l2_campaign_task(
+                session,
+                _make_l2_request(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id="l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r2",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    proposal_id="prop_l2_decoder_attention_score32_noc_phase2_schedule_v1",
+                    proposal_path=(
+                        "docs/proposals/prop_l2_decoder_attention_score32_noc_phase2_schedule_v1/"
+                        "proposal.json"
+                    ),
+                    abstraction_layer="decoder_attention_score32_noc_phase2_schedule",
+                    evaluation_mode="frontier_detail",
+                    run_physical=False,
+                ),
+            )
+
+
 def test_generate_l2_campaign_task_adds_endpoint_full_onchip_service_schedule_evidence() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
