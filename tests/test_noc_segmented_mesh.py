@@ -913,3 +913,21 @@ def test_multiflow_mesh_preserves_conservation_order_and_fairness() -> None:
     first_sixteen_tags = {delivery.flit.tag for delivery in result.deliveries[:16]}
     assert len(first_sixteen_tags) >= 2
     assert any(summary.arbitration_contention_cycles > 0 for summary in result.router_summaries)
+
+
+def test_mesh_idle_fast_forward_preserves_absolute_delivery_cycles() -> None:
+    flows = [
+        TrafficFlow(name="early", source=0, destination=1, payload_bytes=32, vc=0, release_cycle=0),
+        TrafficFlow(name="late", source=0, destination=1, payload_bytes=32, vc=0, release_cycle=1000),
+    ]
+    scheduled = [item for flow in flows for item in packetize_traffic_flow(flow)]
+
+    normal = simulate_scheduled_flits(scheduled, max_cycles=1100)
+    accelerated = simulate_scheduled_flits(scheduled, max_cycles=1100, fast_forward_idle=True)
+
+    assert accelerated.cycles == normal.cycles
+    assert [delivery.cycle for delivery in accelerated.deliveries] == [
+        delivery.cycle for delivery in normal.deliveries
+    ]
+    assert len(accelerated.traces) < len(normal.traces)
+    assert accelerated.endpoint_injected_flit_count == normal.endpoint_injected_flit_count

@@ -24,7 +24,34 @@
       },
       "paired_baseline_item_id": "",
       "depends_on_item_ids": [],
-      "status": "pending"
+      "status": "superseded",
+      "superseded_by_item_id": "l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1",
+      "notes": "Superseded before dispatch: compute-wrapper cycles were incorrectly interpreted as NoC cycles. No result from this item may be used for recost or ranking."
+    },
+    {
+      "item_id": "l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1",
+      "task_type": "l2_campaign",
+      "objective": "Materialize the clock-corrected complete 8-wave, 128-tile score32 schedule through the concrete 4x4 segmented mesh model.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_score32_noc_phase2_schedule",
+      "cost_class": "low",
+      "comparison_role": "closure_detail",
+      "campaign_path": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1/campaign.json",
+      "expected_outputs": [
+        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_schedule__l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1.json",
+        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_schedule__l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1.md"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "acceptance_notes": "Generate only after merge using the strict two-pass source-identity workflow. Run all eight waves and 128 tiles with no --wave-limit. Require version=2, explicit compute/NoC clocks, exact release-cycle conversion, and all remaining abstraction disclosures.",
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "Use clock-corrected routed service evidence to replace the old NoC scalar or identify the next measured-clock/SRAM-placement adapter."
+      },
+      "paired_baseline_item_id": "",
+      "depends_on_item_ids": [],
+      "status": "pending",
+      "supersedes_item_id": "l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1"
     }
   ],
   "source_commit": "8657c26f8c3ba3d6aa361a0a74d12d665cb13113"

@@ -30,29 +30,37 @@
     "the static shared-SRAM home mapping is still an adapter, not a measured SRAM placement",
     "full on-chip routed schedule evidence must not be promoted into a full HBM-backed latency claim",
     "release queues are logical zero-copy source descriptors backed by retained SRAM data; their control/storage implementation is not measured here",
-    "command/control cadence remains inherited from the checked-in recost artifact"
+    "command/control cadence remains inherited from the checked-in recost artifact",
+    "the explicit 1ns NoC target must be replaced by the measured five-port router clock before final recost"
   ],
   "needs_mapper_change": false,
   "required_evaluations": [
     {
-      "item_id": "l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1",
+      "item_id": "l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1",
       "task_type": "l2_campaign",
-      "objective": "Run the score32 segmented-mesh Phase 2 schedule materializer and record routed drain cycles, contention, and explicit assumptions, defaulting to the full declared workload unless a bounded wave limit is passed explicitly.",
+      "objective": "Run the clock-corrected score32 segmented-mesh Phase 2 schedule materializer and record routed drain time, contention, and explicit assumptions for the full workload.",
       "evaluation_mode": "frontier_detail",
       "abstraction_layer": "decoder_attention_score32_noc_phase2_schedule",
       "cost_class": "low",
       "comparison_role": "closure_detail",
       "campaign_path": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1/campaign.json",
       "expected_outputs": [
-        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_schedule__l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1.json",
-        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_schedule__l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1.md"
+        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_schedule__l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1.json",
+        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_schedule__l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1.md"
       ],
       "requires_merged_inputs": true,
       "requires_materialized_refs": true,
       "expected_result": {
         "direction": "iterate",
-        "reason": "Use the routed service summary to decide whether the next score32 composed rerank can replace the old NoC scalar or still needs a tighter SRAM-placement adapter."
-      }
+        "reason": "Use clock-corrected routed service evidence to decide whether the next score32 composed rerank can replace the old NoC scalar or still needs a measured-clock/SRAM-placement adapter."
+      },
+      "supersedes_item_id": "l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1"
+    }
+  ],
+  "superseded_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1",
+      "reason": "Compute-wrapper cycles were interpreted directly as NoC cycles; the unrun item is invalid for physical schedule conclusions."
     }
   ],
   "baseline_refs": [

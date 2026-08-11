@@ -5190,7 +5190,7 @@ def _decoder_attention_score32_noc_phase2_schedule_evidence(
     proposal_id: str | None,
     proposal_path: str | None,
 ) -> dict[str, Any]:
-    expected_item_id = "l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1"
+    expected_item_id = "l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1"
     expected_proposal_id = "prop_l2_decoder_attention_score32_noc_phase2_schedule_v1"
     expected_proposal_path = f"docs/proposals/{expected_proposal_id}/proposal.json"
     if item_id != expected_item_id:
@@ -5226,6 +5226,8 @@ def _decoder_attention_score32_noc_phase2_schedule_evidence(
             source,
             "--measured-l1-costs",
             measured_costs,
+            "--noc-clock-ns",
+            "1.0",
             "--out",
             out,
             "--report",
@@ -5242,8 +5244,10 @@ def _decoder_attention_score32_noc_phase2_schedule_evidence(
                 "Route all eight declared waves and all 128 Llama7B score32 tiles through the "
                 "cycle-level 4x4 segmented mesh model. Require finite router FIFOs, endpoint "
                 "backpressure, deterministic XY routing, four VCs, and collision-free 8-bit tag "
-                "reuse. Keep HBM/DRAM, SRAM floorplanning, root-finalizer compute, and source "
-                "descriptor/control storage explicit as remaining abstractions."
+                "reuse. Convert source compute cycles to an explicit 1ns NoC target clock before "
+                "routing. Keep measured NoC-clock substitution, HBM/DRAM, SRAM floorplanning, "
+                "root-finalizer compute, and source descriptor/control storage explicit as "
+                "remaining abstractions."
             ),
         },
         "commands": [{"name": "measure_attention_score32_noc_phase2_full_schedule", "run": command}],
@@ -5262,6 +5266,9 @@ def _decoder_attention_score32_noc_phase2_schedule_evidence(
             "Require coverage=workload_complete with simulated_wave_count=declared_tile_waves=8",
             "Require simulated_tiles=tile_count=128 and delivered_flit_count=scheduled_flit_count",
             "Require collision_free_reuse_proven=true for concrete 8-bit tags",
+            "Require version=2 and explicit compute_clock_ns/noc_clock_ns release conversion",
+            "Require every NoC release cycle to equal ceil(compute_cycles * compute_clock_ns / noc_clock_ns)",
+            "Record NoC drain time against the source compute-layer wall-time envelope without claiming root-finalizer closure",
             "Require routed contention, endpoint stall, and top-link counts in the output",
             "Do not pass --wave-limit in the workload-complete command",
             "Preserve all on-chip and HBM/DRAM remaining-abstraction disclosures",

@@ -25,7 +25,9 @@ def _args(**overrides: object) -> argparse.Namespace:
         "root_endpoint": 15,
         "shared_vc": 0,
         "reduction_vc": 1,
-        "max_cycles": 200000,
+        "compute_clock_ns": None,
+        "noc_clock_ns": 1.0,
+        "max_cycles": 1000000,
     }
     values.update(overrides)
     return argparse.Namespace(**values)
@@ -35,12 +37,24 @@ def test_score32_noc_phase2_default_report_covers_full_declared_workload() -> No
     report = build_report(_args())
 
     assert report["profile"] == "decoder_attention_score32_noc_phase2_schedule"
+    assert report["version"] == 2
     assert report["source_contract"]["coverage"] == "workload_complete"
     assert report["source_contract"]["simulated_wave_count"] == report["source_contract"]["declared_tile_waves"]
     assert report["traffic_quantities"]["simulated_tiles"] == report["traffic_quantities"]["tile_count"]
     assert report["flow_summary"]["remote_shared_flow_count"] > 0
     assert report["flow_summary"]["remote_reduction_flow_count"] > 0
     assert report["simulation"]["delivered_flit_count"] == report["simulation"]["scheduled_flit_count"]
+    assert report["source_contract"]["compute_clock_ns"] == pytest.approx(48.6509)
+    assert report["source_contract"]["noc_clock_ns"] == pytest.approx(1.0)
+    assert report["schedule_parameters"]["wave_start_compute_cycles"][0] == 192
+    assert report["schedule_parameters"]["wave_start_noc_cycles"][0] == 9341
+    assert report["schedule_parameters"]["wave_start_noc_cycles"][1] == 57311
+    assert report["simulation"]["drain_time_ns"] == pytest.approx(
+        report["simulation"]["cycles_to_drain"]
+    )
+    assert report["source_contract"]["compute_layer_time_ns"] == pytest.approx(8664 * 48.6509)
+    assert report["simulation"]["drain_within_source_compute_layer_envelope"] is True
+    assert report["simulation"]["drain_minus_compute_layer_time_ns"] < 0.0
     assert report["simulation"]["router_contention_cycles"] > 0
     assert report["tag_semantics"]["collision_free_reuse_proven"] is True
     assert report["tag_semantics"]["ordered_tuple_stream_proven"] is True
@@ -70,6 +84,18 @@ def test_score32_noc_phase2_explicit_wave_limit_is_bounded() -> None:
     assert report["source_contract"]["simulated_wave_count"] == 1
     assert report["traffic_quantities"]["simulated_tiles"] == report["source_contract"]["active_clusters"]
     assert report["schedule_parameters"]["requested_wave_limit"] == 1
+
+
+def test_score32_noc_phase2_converts_absolute_release_times_between_clock_domains() -> None:
+    report = build_report(_args(wave_limit=1, compute_clock_ns=10.0, noc_clock_ns=4.0))
+
+    schedule = report["schedule_parameters"]
+    assert schedule["compute_to_noc_clock_ratio"] == pytest.approx(2.5)
+    assert schedule["wave_start_compute_cycles"] == [192]
+    assert schedule["wave_start_noc_cycles"] == [480]
+    assert schedule["reduction_release_compute_cycles"] == [1178]
+    assert schedule["reduction_release_noc_cycles"] == [2945]
+    assert schedule["release_conversion"] == "ceil(compute_cycles * compute_clock_ns / noc_clock_ns)"
 
 
 def test_score32_noc_phase2_proves_nonoverlapping_8bit_tag_reuse() -> None:

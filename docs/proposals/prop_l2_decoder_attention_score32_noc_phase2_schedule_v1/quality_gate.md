@@ -15,6 +15,10 @@ The result will replace a scalar NoC assumption in later architecture costing.
 - coverage: `workload_complete`, 8 waves, and 128 tiles
 - conservation: delivered flits equal scheduled flits
 - tag safety: collision-free 8-bit reuse is proven
+- clock domains: compute releases are converted to absolute NoC cycles with
+  `ceil(compute_cycles * compute_clock_ns / noc_clock_ns)`
+- fast-forward: accelerated and unaccelerated simulations preserve absolute
+  delivery cycles
 - disclosure: all remaining storage, finalizer, and HBM abstractions are listed
 
 ## Local Commands

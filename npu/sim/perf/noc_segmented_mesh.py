@@ -499,6 +499,7 @@ def simulate_scheduled_flits(
     fifo_depth: int = DEFAULT_FIFO_DEPTH,
     vc_count: int = VIRTUAL_CHANNELS,
     max_cycles: int = 100000,
+    fast_forward_idle: bool = False,
 ) -> MeshSimulationResult:
     ordered = sorted(scheduled_flits, key=lambda item: (item.release_cycle, item.flit.source, item.flit.tag, item.flit.fragment))
     release_queues: list[deque[ScheduledFlit]] = [deque() for _ in range(ENDPOINTS)]
@@ -520,7 +521,17 @@ def simulate_scheduled_flits(
     endpoint_input_stall_cycles = [0] * ENDPOINTS
     endpoint_injected_flit_count = 0
 
-    for cycle in range(max_cycles):
+    cycle = 0
+    while cycle < max_cycles:
+        if (
+            fast_forward_idle
+            and future
+            and future[0].release_cycle > cycle
+            and all(not queue for queue in release_queues)
+            and all(state.idle() for state in states)
+        ):
+            cycle = future[0].release_cycle
+
         while future and future[0].release_cycle <= cycle:
             released = future.popleft()
             release_queues[released.flit.source].append(released)
@@ -634,6 +645,8 @@ def simulate_scheduled_flits(
                 endpoint_injected_flit_count=endpoint_injected_flit_count,
                 endpoint_input_stall_cycles=tuple(endpoint_input_stall_cycles),
             )
+
+        cycle += 1
 
     raise RuntimeError("mesh model did not drain within max_cycles")
 
