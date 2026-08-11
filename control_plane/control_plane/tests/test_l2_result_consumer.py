@@ -354,6 +354,29 @@ def test_decoder_evidence_paths_recognizes_exact_partial_physical_recost(
     }
 
 
+def test_decoder_evidence_paths_recognizes_exact_partial_c1_workload_correspondence(
+    tmp_path: Path,
+) -> None:
+    evidence_rel = "runs/datasets/demo/exact_partial_c1_workload_correspondence.json"
+    _write(tmp_path / evidence_rel, "{}\n")
+    work_item = SimpleNamespace(
+        input_manifest={
+            "decoder_contract": {
+                "exact_partial_c1_workload_correspondence_out": evidence_rel,
+            }
+        }
+    )
+
+    evidence_ref, source_refs = _decoder_evidence_paths(
+        repo_root=tmp_path, work_item=work_item
+    )
+
+    assert evidence_ref == evidence_rel
+    assert source_refs == {
+        "decoder_exact_partial_c1_workload_correspondence_out": evidence_rel,
+    }
+
+
 @pytest.mark.parametrize(
     "prefix",
     [
