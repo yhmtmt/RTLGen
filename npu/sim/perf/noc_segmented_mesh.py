@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from collections import defaultdict, deque
 from dataclasses import dataclass, field
 from typing import Iterable
@@ -90,6 +91,7 @@ class ModelFlit:
     vc: int
     data: int = 0
     path: tuple[int, ...] = ()
+    label: str = ""
 
 
 @dataclass(frozen=True)
@@ -99,6 +101,26 @@ class Flow:
     flits: int
     tag: int
     vc: int
+    release_cycle: int = 0
+
+
+@dataclass(frozen=True)
+class ScheduledFlit:
+    release_cycle: int
+    flit: ModelFlit
+
+
+@dataclass(frozen=True)
+class TrafficFlow:
+    name: str
+    source: int
+    destination: int
+    payload_bytes: int
+    vc: int
+    release_cycle: int = 0
+    packet_payload_bytes: int = CONCEPTUAL_LINK_BITS // 8
+    tag_base: int = 0
+    data_seed: int = 0
 
 
 @dataclass(frozen=True)
@@ -131,6 +153,57 @@ class RouterSimulationResult:
     current_input_occupancy: int
     max_input_occupancy: int
     route_flit_count: tuple[int, ...]
+
+
+@dataclass(frozen=True)
+class RouterPlan:
+    grants: tuple[tuple[int, ModelFlit] | None, ...]
+    grant_indices: tuple[int | None, ...]
+    will_pop: tuple[int, ...]
+    ready: tuple[bool, ...]
+    input_stall: bool
+    output_stall: bool
+    contention: bool
+
+
+@dataclass(frozen=True)
+class MeshLinkTransfer:
+    cycle: int
+    source_node: int
+    source_port: int
+    destination_node: int
+    destination_port: int
+    flit: ModelFlit
+
+
+@dataclass(frozen=True)
+class MeshDelivery:
+    cycle: int
+    endpoint: int
+    flit: ModelFlit
+
+
+@dataclass(frozen=True)
+class MeshCycleTrace:
+    cycle: int
+    router_traces: tuple[RouterCycleTrace, ...]
+    injected: tuple[tuple[int, ModelFlit], ...]
+    deliveries: tuple[MeshDelivery, ...]
+    link_transfers: tuple[MeshLinkTransfer, ...]
+    endpoint_in_ready: tuple[bool, ...]
+    endpoint_out_ready: tuple[bool, ...]
+    endpoint_input_stall: tuple[int, ...]
+
+
+@dataclass(frozen=True)
+class MeshSimulationResult:
+    cycles: int
+    traces: tuple[MeshCycleTrace, ...]
+    deliveries: tuple[MeshDelivery, ...]
+    link_transfers: tuple[MeshLinkTransfer, ...]
+    router_summaries: tuple[RouterSimulationResult, ...]
+    endpoint_injected_flit_count: int
+    endpoint_input_stall_cycles: tuple[int, ...]
 
 
 @dataclass
@@ -166,12 +239,14 @@ class _RouterState:
             return True
         return self._input_index(port, vc) in will_pop
 
-    def cycle(
+    def idle(self) -> bool:
+        return self._occupancy() == 0 and all(flit is None for flit in self.out_holding)
+
+    def compute_plan(
         self,
-        cycle: int,
         inputs: list[RouterCycleInput],
         out_ready: list[bool],
-    ) -> RouterCycleTrace:
+    ) -> RouterPlan:
         candidate_counts = [0] * PORTS
         grants: list[tuple[int, ModelFlit] | None] = [None] * PORTS
         grant_indices: list[int | None] = [None] * PORTS
@@ -189,11 +264,8 @@ class _RouterState:
                     grants[output_port] = (index, flit)
                     grant_indices[output_port] = index
 
-        input_stall = False
         output_stall = any(self.out_holding[port] is not None and not out_ready[port] for port in range(PORTS))
         contention = any(count > 1 for count in candidate_counts)
-        if output_stall:
-            self.output_stall_cycles += 1
 
         will_pop: set[int] = set()
         for output_port in range(PORTS):
@@ -201,7 +273,7 @@ class _RouterState:
                 will_pop.add(int(grant_indices[output_port]))
 
         ready = []
-        accepted_ports: list[int] = []
+        input_stall = False
         for port in range(PORTS):
             item = inputs[port]
             vc = 0 if item.flit is None else item.flit.vc
@@ -209,12 +281,31 @@ class _RouterState:
             ready.append(port_ready)
             if item.valid and not port_ready:
                 input_stall = True
-            if item.valid and port_ready and item.flit is not None:
+
+        return RouterPlan(
+            grants=tuple(grants),
+            grant_indices=tuple(grant_indices),
+            will_pop=tuple(sorted(will_pop)),
+            ready=tuple(ready),
+            input_stall=input_stall,
+            output_stall=output_stall,
+            contention=contention,
+        )
+
+    def apply_plan(
+        self,
+        cycle: int,
+        inputs: list[RouterCycleInput],
+        out_ready: list[bool],
+        plan: RouterPlan,
+    ) -> RouterCycleTrace:
+        accepted_ports: list[int] = []
+        for port in range(PORTS):
+            item = inputs[port]
+            if item.valid and plan.ready[port] and item.flit is not None:
                 self.queues[self._input_index(port, item.flit.vc)].append(item.flit)
                 self.accepted_flit_count += 1
                 accepted_ports.append(port)
-        if input_stall:
-            self.input_stall_cycles += 1
 
         forwarded: list[tuple[int, ModelFlit]] = []
         for output_port in range(PORTS):
@@ -228,7 +319,7 @@ class _RouterState:
             can_replace = self.out_holding[output_port] is None or out_ready[output_port]
             if not can_replace:
                 continue
-            grant = grants[output_port]
+            grant = plan.grants[output_port]
             if grant is None:
                 self.out_holding[output_port] = None
                 continue
@@ -239,21 +330,35 @@ class _RouterState:
             self.out_holding[output_port] = flit
             self.rr_cursor[output_port] = (queue_index + 1) % (PORTS * self.vc_count)
 
+        if plan.input_stall:
+            self.input_stall_cycles += 1
+        if plan.output_stall:
+            self.output_stall_cycles += 1
+        if plan.contention:
+            self.arbitration_contention_cycles += 1
+
         occupancy = self._occupancy()
         self.max_input_occupancy = max(self.max_input_occupancy, occupancy)
-        if contention:
-            self.arbitration_contention_cycles += 1
 
         return RouterCycleTrace(
             cycle=cycle,
             accepted=tuple(accepted_ports),
             forwarded=tuple(forwarded),
-            input_stall=input_stall,
-            output_stall=output_stall,
-            contention=contention,
+            input_stall=plan.input_stall,
+            output_stall=plan.output_stall,
+            contention=plan.contention,
             occupancy=occupancy,
-            ready=tuple(ready),
+            ready=plan.ready,
         )
+
+    def cycle(
+        self,
+        cycle: int,
+        inputs: list[RouterCycleInput],
+        out_ready: list[bool],
+    ) -> RouterCycleTrace:
+        plan = self.compute_plan(inputs, out_ready)
+        return self.apply_plan(cycle, inputs, out_ready, plan)
 
     def snapshot(self, traces: list[RouterCycleTrace], delivered: list[tuple[int, ModelFlit]]) -> RouterSimulationResult:
         return RouterSimulationResult(
@@ -293,6 +398,246 @@ def simulate_router(
     return state.snapshot(traces, delivered)
 
 
+def _opposite_port(port: int) -> int:
+    if port == PORT_NORTH:
+        return PORT_SOUTH
+    if port == PORT_SOUTH:
+        return PORT_NORTH
+    if port == PORT_EAST:
+        return PORT_WEST
+    if port == PORT_WEST:
+        return PORT_EAST
+    return PORT_LOCAL
+
+
+def _neighbor(endpoint_id: int, port: int) -> tuple[int, int] | None:
+    x_coord, y_coord = coordinates(endpoint_id)
+    if port == PORT_NORTH and y_coord > 0:
+        node = endpoint(x_coord, y_coord - 1)
+    elif port == PORT_SOUTH and y_coord < MESH_Y - 1:
+        node = endpoint(x_coord, y_coord + 1)
+    elif port == PORT_EAST and x_coord < MESH_X - 1:
+        node = endpoint(x_coord + 1, y_coord)
+    elif port == PORT_WEST and x_coord > 0:
+        node = endpoint(x_coord - 1, y_coord)
+    elif port == PORT_LOCAL:
+        node = endpoint_id
+    else:
+        return None
+    return node, _opposite_port(port)
+
+
+def _conceptual_payload_bytes() -> int:
+    return CONCEPTUAL_LINK_BITS // 8
+
+
+def _flit_payload_bytes() -> int:
+    return PHYSICAL_FLIT_BITS // 8
+
+
+def packetize_traffic_flow(flow: TrafficFlow) -> tuple[ScheduledFlit, ...]:
+    if flow.payload_bytes <= 0:
+        raise ValueError("traffic flow payload_bytes must be positive")
+    if not 0 <= flow.vc < VIRTUAL_CHANNELS:
+        raise ValueError("traffic flow vc must be in [0, 3]")
+    if flow.packet_payload_bytes <= 0 or flow.packet_payload_bytes > _conceptual_payload_bytes():
+        raise ValueError(
+            f"traffic flow packet_payload_bytes must be in [1, {_conceptual_payload_bytes()}]"
+        )
+    packet_count = int(math.ceil(flow.payload_bytes / flow.packet_payload_bytes))
+    remainder = flow.payload_bytes
+    scheduled: list[ScheduledFlit] = []
+    path = deterministic_xy_path(flow.source, flow.destination)
+    for packet_index in range(packet_count):
+        packet_bytes = min(flow.packet_payload_bytes, remainder)
+        remainder -= packet_bytes
+        flit_count = int(math.ceil(packet_bytes / _flit_payload_bytes()))
+        if flit_count > FLITS_PER_CONCEPTUAL_TRANSFER:
+            raise ValueError(
+                "traffic flow packetization exceeds the eight-fragment tagged packet envelope"
+            )
+        # The performance model keeps a wide synthetic packet sequence tag so
+        # packet ordering cannot be perturbed by 8-bit wraparound. Concrete
+        # 8-bit tag reuse is audited separately by higher-level reports.
+        tag = flow.tag_base + packet_index
+        for fragment in range(flit_count):
+            scheduled.append(
+                ScheduledFlit(
+                    release_cycle=flow.release_cycle,
+                    flit=ModelFlit(
+                        source=flow.source,
+                        destination=flow.destination,
+                        tag=tag,
+                        fragment=fragment,
+                        last=fragment == flit_count - 1,
+                        vc=flow.vc,
+                        data=(flow.data_seed << 16) | (packet_index << 8) | fragment,
+                        path=path,
+                        label=flow.name,
+                    ),
+                )
+            )
+    return tuple(scheduled)
+
+
+def _resolve_endpoint_out_ready(
+    endpoint_out_ready_schedule: list[list[bool]] | None,
+    cycle: int,
+) -> list[bool]:
+    if endpoint_out_ready_schedule is None or cycle >= len(endpoint_out_ready_schedule):
+        return [True] * ENDPOINTS
+    ready = endpoint_out_ready_schedule[cycle]
+    if len(ready) != ENDPOINTS:
+        raise ValueError("endpoint_out_ready_schedule rows must have 16 ready bits")
+    return list(ready)
+
+
+def simulate_scheduled_flits(
+    scheduled_flits: Iterable[ScheduledFlit],
+    *,
+    endpoint_out_ready_schedule: list[list[bool]] | None = None,
+    fifo_depth: int = DEFAULT_FIFO_DEPTH,
+    vc_count: int = VIRTUAL_CHANNELS,
+    max_cycles: int = 100000,
+) -> MeshSimulationResult:
+    ordered = sorted(scheduled_flits, key=lambda item: (item.release_cycle, item.flit.source, item.flit.tag, item.flit.fragment))
+    release_queues: list[deque[ScheduledFlit]] = [deque() for _ in range(ENDPOINTS)]
+    future = deque(ordered)
+    states = [
+        _RouterState(
+            x_coord=coordinates(node)[0],
+            y_coord=coordinates(node)[1],
+            fifo_depth=fifo_depth,
+            vc_count=vc_count,
+        )
+        for node in range(ENDPOINTS)
+    ]
+    router_traces: list[list[RouterCycleTrace]] = [[] for _ in range(ENDPOINTS)]
+    router_forwarded: list[list[tuple[int, ModelFlit]]] = [[] for _ in range(ENDPOINTS)]
+    deliveries: list[MeshDelivery] = []
+    link_transfers: list[MeshLinkTransfer] = []
+    cycle_traces: list[MeshCycleTrace] = []
+    endpoint_input_stall_cycles = [0] * ENDPOINTS
+    endpoint_injected_flit_count = 0
+
+    for cycle in range(max_cycles):
+        while future and future[0].release_cycle <= cycle:
+            released = future.popleft()
+            release_queues[released.flit.source].append(released)
+
+        router_inputs: list[list[RouterCycleInput]] = []
+        for node in range(ENDPOINTS):
+            inputs = [RouterCycleInput(False, None) for _ in range(PORTS)]
+            local_queue = release_queues[node]
+            if local_queue:
+                inputs[PORT_LOCAL] = RouterCycleInput(True, local_queue[0].flit)
+            for port in (PORT_NORTH, PORT_SOUTH, PORT_EAST, PORT_WEST):
+                neighbor = _neighbor(node, port)
+                if neighbor is None:
+                    continue
+                upstream_node, upstream_port = neighbor
+                flit = states[upstream_node].out_holding[upstream_port]
+                if flit is not None:
+                    inputs[port] = RouterCycleInput(True, flit)
+            router_inputs.append(inputs)
+
+        endpoint_out_ready = _resolve_endpoint_out_ready(endpoint_out_ready_schedule, cycle)
+        out_ready = [[False] * PORTS for _ in range(ENDPOINTS)]
+        for node in range(ENDPOINTS):
+            out_ready[node][PORT_LOCAL] = endpoint_out_ready[node]
+
+        plans: list[RouterPlan] = []
+        for _ in range(ENDPOINTS * PORTS * 2):
+            plans = []
+            for node in range(ENDPOINTS):
+                plans.append(states[node].compute_plan(router_inputs[node], out_ready[node]))
+            updated = [[False] * PORTS for _ in range(ENDPOINTS)]
+            for node in range(ENDPOINTS):
+                updated[node][PORT_LOCAL] = endpoint_out_ready[node]
+                for port in (PORT_NORTH, PORT_SOUTH, PORT_EAST, PORT_WEST):
+                    neighbor = _neighbor(node, port)
+                    if neighbor is None:
+                        updated[node][port] = True
+                        continue
+                    downstream_node, downstream_port = neighbor
+                    updated[node][port] = plans[downstream_node].ready[downstream_port]
+            if updated == out_ready:
+                break
+            out_ready = updated
+        else:
+            raise RuntimeError("mesh ready/valid fixpoint did not converge")
+
+        cycle_router_traces: list[RouterCycleTrace] = []
+        cycle_injected: list[tuple[int, ModelFlit]] = []
+        cycle_deliveries: list[MeshDelivery] = []
+        cycle_links: list[MeshLinkTransfer] = []
+        cycle_endpoint_stall: list[int] = []
+
+        for node in range(ENDPOINTS):
+            trace = states[node].apply_plan(cycle, router_inputs[node], out_ready[node], plans[node])
+            cycle_router_traces.append(trace)
+            router_traces[node].append(trace)
+            router_forwarded[node].extend(trace.forwarded)
+            local_queue = release_queues[node]
+            if local_queue and trace.ready[PORT_LOCAL]:
+                cycle_injected.append((node, local_queue.popleft().flit))
+                endpoint_injected_flit_count += 1
+                cycle_endpoint_stall.append(0)
+            else:
+                stalled = 1 if local_queue else 0
+                cycle_endpoint_stall.append(stalled)
+                endpoint_input_stall_cycles[node] += stalled
+            for port, flit in trace.forwarded:
+                if port == PORT_LOCAL:
+                    delivery = MeshDelivery(cycle=cycle, endpoint=node, flit=flit)
+                    deliveries.append(delivery)
+                    cycle_deliveries.append(delivery)
+                    continue
+                neighbor = _neighbor(node, port)
+                if neighbor is None:
+                    continue
+                destination_node, destination_port = neighbor
+                transfer = MeshLinkTransfer(
+                    cycle=cycle,
+                    source_node=node,
+                    source_port=port,
+                    destination_node=destination_node,
+                    destination_port=destination_port,
+                    flit=flit,
+                )
+                link_transfers.append(transfer)
+                cycle_links.append(transfer)
+
+        cycle_traces.append(
+            MeshCycleTrace(
+                cycle=cycle,
+                router_traces=tuple(cycle_router_traces),
+                injected=tuple(cycle_injected),
+                deliveries=tuple(cycle_deliveries),
+                link_transfers=tuple(cycle_links),
+                endpoint_in_ready=tuple(trace.ready[PORT_LOCAL] for trace in cycle_router_traces),
+                endpoint_out_ready=tuple(endpoint_out_ready),
+                endpoint_input_stall=tuple(cycle_endpoint_stall),
+            )
+        )
+
+        if not future and all(not queue for queue in release_queues) and all(state.idle() for state in states):
+            return MeshSimulationResult(
+                cycles=cycle + 1,
+                traces=tuple(cycle_traces),
+                deliveries=tuple(deliveries),
+                link_transfers=tuple(link_transfers),
+                router_summaries=tuple(
+                    state.snapshot(router_traces[node], router_forwarded[node])
+                    for node, state in enumerate(states)
+                ),
+                endpoint_injected_flit_count=endpoint_injected_flit_count,
+                endpoint_input_stall_cycles=tuple(endpoint_input_stall_cycles),
+            )
+
+    raise RuntimeError("mesh model did not drain within max_cycles")
+
+
 def simulate_mesh(
     *,
     source: int,
@@ -302,55 +647,99 @@ def simulate_mesh(
     max_cycles: int = 256,
 ) -> dict[str, object]:
     path = deterministic_xy_path(source, destination)
-    hops = len(path) - 1
-    transfers = segmented_transfer(source=source, destination=destination, tag=tag, vc=vc)
-    delivered = []
-    for fragment, flit in enumerate(transfers):
-        delivery_cycle = 2 * hops + 2 + fragment
-        delivered.append(
-            {
-                "cycle": delivery_cycle,
-                "source": flit.source,
-                "destination": flit.destination,
-                "tag": flit.tag,
-                "fragment": flit.fragment,
-                "last": flit.last,
-                "vc": flit.vc,
-                "path": path,
-            }
-        )
-    total_cycles = delivered[-1]["cycle"] + 1 if delivered else 0
-    if total_cycles > max_cycles:
-        raise RuntimeError("mesh model did not drain within max_cycles")
+    scheduled = [
+        ScheduledFlit(release_cycle=0, flit=flit)
+        for flit in segmented_transfer(source=source, destination=destination, tag=tag, vc=vc)
+    ]
+    result = simulate_scheduled_flits(scheduled, max_cycles=max_cycles)
+    delivered = [
+        {
+            "cycle": delivery.cycle,
+            "source": delivery.flit.source,
+            "destination": delivery.flit.destination,
+            "tag": delivery.flit.tag,
+            "fragment": delivery.flit.fragment,
+            "last": delivery.flit.last,
+            "vc": delivery.flit.vc,
+            "path": path,
+        }
+        for delivery in result.deliveries
+    ]
     link_flits: dict[tuple[int, int], int] = defaultdict(int)
-    for left, right in zip(path[:-1], path[1:]):
-        link_flits[(left, right)] = FLITS_PER_CONCEPTUAL_TRANSFER
+    for transfer in result.link_transfers:
+        link_flits[(transfer.source_node, transfer.destination_node)] += 1
     return {
-        "cycles": total_cycles,
+        "cycles": result.cycles,
         "path": path,
         "delivered": tuple(delivered),
         "directed_link_flits": dict(link_flits),
-        "contention_cycles": 0,
+        "contention_cycles": sum(
+            1
+            for trace in result.traces
+            if any(router_trace.contention for router_trace in trace.router_traces)
+        ),
         "serialization_flits": FLITS_PER_CONCEPTUAL_TRANSFER,
     }
 
 
 def simulate(flows: Iterable[Flow], *, max_cycles: int = 10000) -> dict[str, object]:
     flow_list = list(flows)
-    if len(flow_list) != 1:
-        raise ValueError("simulate currently models one routed flow at a time")
-    flow = flow_list[0]
-    if flow.flits != FLITS_PER_CONCEPTUAL_TRANSFER:
-        raise ValueError(
-            f"simulate expects {FLITS_PER_CONCEPTUAL_TRANSFER} serialized flits per conceptual transfer"
-        )
-    return simulate_mesh(
-        source=flow.source,
-        destination=flow.destination,
-        tag=flow.tag,
-        vc=flow.vc,
-        max_cycles=max_cycles,
-    )
+    scheduled: list[ScheduledFlit] = []
+    for flow in flow_list:
+        if flow.flits <= 0:
+            raise ValueError("flow flits must be positive")
+        if flow.flits % FLITS_PER_CONCEPTUAL_TRANSFER != 0:
+            raise ValueError(
+                f"flow flits must be a multiple of {FLITS_PER_CONCEPTUAL_TRANSFER}"
+            )
+        path = deterministic_xy_path(flow.source, flow.destination)
+        packet_count = flow.flits // FLITS_PER_CONCEPTUAL_TRANSFER
+        for packet_index in range(packet_count):
+            tag = (flow.tag + packet_index) & 0xFF
+            for fragment in range(FLITS_PER_CONCEPTUAL_TRANSFER):
+                scheduled.append(
+                    ScheduledFlit(
+                        release_cycle=flow.release_cycle,
+                        flit=ModelFlit(
+                            source=flow.source,
+                            destination=flow.destination,
+                            tag=tag,
+                            fragment=fragment,
+                            last=fragment == FLITS_PER_CONCEPTUAL_TRANSFER - 1,
+                            vc=flow.vc,
+                            data=(packet_index << 8) | fragment,
+                            path=path,
+                        ),
+                    )
+                )
+    result = simulate_scheduled_flits(scheduled, max_cycles=max_cycles)
+    link_flits: dict[tuple[int, int], int] = defaultdict(int)
+    for transfer in result.link_transfers:
+        link_flits[(transfer.source_node, transfer.destination_node)] += 1
+    return {
+        "cycles": result.cycles,
+        "delivered": tuple(
+            {
+                "cycle": delivery.cycle,
+                "source": delivery.flit.source,
+                "destination": delivery.flit.destination,
+                "tag": delivery.flit.tag,
+                "fragment": delivery.flit.fragment,
+                "last": delivery.flit.last,
+                "vc": delivery.flit.vc,
+                "path": delivery.flit.path,
+                "label": delivery.flit.label,
+            }
+            for delivery in result.deliveries
+        ),
+        "directed_link_flits": dict(link_flits),
+        "contention_cycles": sum(
+            1
+            for trace in result.traces
+            if any(router_trace.contention for router_trace in trace.router_traces)
+        ),
+        "serialization_flits": len(scheduled),
+    }
 
 
 def mapping_report() -> dict[str, int | str]:
