@@ -1,0 +1,9 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_score32_noc_phase2_schedule_v1",
+  "candidate_id": "",
+  "decision": "pending",
+  "reason": "The workload-complete remote result has not materialized yet.",
+  "evidence_refs": [],
+  "next_action": "Run and merge l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1, then rerank or add the SRAM-placement adapter.",
+  "requires_human_approval": true
+}

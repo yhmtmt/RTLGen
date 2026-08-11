@@ -5,7 +5,7 @@
     {
       "item_id": "l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1",
       "task_type": "l2_campaign",
-      "objective": "Run the score32 segmented-mesh Phase 2 schedule materializer and record routed drain cycles, contention, and explicit assumptions, defaulting to the full declared workload unless a bounded wave limit is passed explicitly.",
+      "objective": "Materialize the complete 8-wave, 128-tile score32 schedule through the concrete 4x4 segmented mesh model.",
       "evaluation_mode": "frontier_detail",
       "abstraction_layer": "decoder_attention_score32_noc_phase2_schedule",
       "cost_class": "low",
@@ -20,8 +20,12 @@
       "acceptance_notes": "Do not insert a DB task from this patch. Generate it only after merge using the strict two-pass source-identity workflow. The canonical command must run all eight waves and 128 tiles and must not pass --wave-limit. Every invocation must preserve the explicit HBM/DRAM and on-chip storage abstraction disclosures.",
       "expected_result": {
         "direction": "iterate",
-        "reason": "Use the routed service summary to decide whether the next score32 composed rerank can replace the old NoC scalar or still needs a tighter SRAM-placement adapter."
-      }
+        "reason": "Use routed service evidence to replace the old NoC scalar or identify the next SRAM-placement adapter."
+      },
+      "paired_baseline_item_id": "",
+      "depends_on_item_ids": [],
+      "status": "pending"
     }
-  ]
+  ],
+  "source_commit": "8657c26f8c3ba3d6aa361a0a74d12d665cb13113"
 }
