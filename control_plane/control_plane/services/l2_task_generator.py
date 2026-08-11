@@ -5184,6 +5184,93 @@ def _decoder_attention_kv_onchip_service_schedule_evidence(
     }
 
 
+def _decoder_attention_score32_noc_phase2_schedule_evidence(
+    *,
+    item_id: str,
+    proposal_id: str | None,
+    proposal_path: str | None,
+) -> dict[str, Any]:
+    expected_item_id = "l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1"
+    expected_proposal_id = "prop_l2_decoder_attention_score32_noc_phase2_schedule_v1"
+    expected_proposal_path = f"docs/proposals/{expected_proposal_id}/proposal.json"
+    if item_id != expected_item_id:
+        raise Layer2TaskGenerationError("score32 NoC Phase 2 only permits the exact workload-complete item")
+    if str(proposal_id or "").strip() != expected_proposal_id:
+        raise Layer2TaskGenerationError("score32 NoC Phase 2 proposal_id mismatch")
+    if str(proposal_path or "").strip() != expected_proposal_path:
+        raise Layer2TaskGenerationError("score32 NoC Phase 2 proposal_path mismatch")
+
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    source = (
+        f"{base}/decoder_attention_score32_exact_reduction_recost__"
+        "l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1.json"
+    )
+    measured_costs = (
+        "runs/campaigns/npu/l1_measured_costs/"
+        "llama7b_attention_local_costs_all_measured_endpoint_v1.json"
+    )
+    out = f"{base}/decoder_attention_score32_noc_phase2_schedule__{item_id}.json"
+    report = f"{base}/decoder_attention_score32_noc_phase2_schedule__{item_id}.md"
+    command = _bounded_launcher_command(
+        memory_high="2G",
+        memory_max="4G",
+        cpu_quota="200%",
+        tasks_max=128,
+        runtime_max_sec=300,
+        child_command=[
+            "python3",
+            "npu/eval/measure_llm_decoder_attention_score32_noc_phase2_schedule.py",
+            "--repo-root",
+            ".",
+            "--source-json",
+            source,
+            "--measured-l1-costs",
+            measured_costs,
+            "--out",
+            out,
+            "--report",
+            report,
+        ],
+    )
+    return {
+        "inputs": {
+            "attention_score32_noc_phase2_source_recost": source,
+            "attention_score32_noc_phase2_measured_l1_costs": measured_costs,
+            "attention_score32_noc_phase2_schedule_out": out,
+            "attention_score32_noc_phase2_schedule_report": report,
+            "attention_score32_noc_phase2_scope": (
+                "Route all eight declared waves and all 128 Llama7B score32 tiles through the "
+                "cycle-level 4x4 segmented mesh model. Require finite router FIFOs, endpoint "
+                "backpressure, deterministic XY routing, four VCs, and collision-free 8-bit tag "
+                "reuse. Keep HBM/DRAM, SRAM floorplanning, root-finalizer compute, and source "
+                "descriptor/control storage explicit as remaining abstractions."
+            ),
+        },
+        "commands": [{"name": "measure_attention_score32_noc_phase2_full_schedule", "run": command}],
+        "expected_outputs": [out, report],
+        "evidence_only": True,
+        "worker_resources": {
+            "exclusive_worker": True,
+            "memory_high": "2G",
+            "memory_max": "4G",
+            "cpu_quota": "200%",
+            "tasks_max": 128,
+            "outer_timeout_seconds": 300,
+            "stall_timeout_seconds": 180,
+        },
+        "acceptance": [
+            "Require coverage=workload_complete with simulated_wave_count=declared_tile_waves=8",
+            "Require simulated_tiles=tile_count=128 and delivered_flit_count=scheduled_flit_count",
+            "Require collision_free_reuse_proven=true for concrete 8-bit tags",
+            "Require routed contention, endpoint stall, and top-link counts in the output",
+            "Do not pass --wave-limit in the workload-complete command",
+            "Preserve all on-chip and HBM/DRAM remaining-abstraction disclosures",
+            "Write exactly one JSON and one Markdown report",
+            "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing",
+        ],
+    }
+
+
 def _decoder_attention_kv_endpoint_full_onchip_service_schedule_evidence(
     *,
     item_id: str,
@@ -12057,6 +12144,7 @@ def _build_payload(
         "decoder_attention_kv_endpoint_sram_noc_full_search_schedule",
         "decoder_attention_kv_endpoint_sram_noc_full_search_softmax_recip_lut_schedule",
         "decoder_attention_kv_onchip_service_schedule",
+        "decoder_attention_score32_noc_phase2_schedule",
         "decoder_attention_kv_endpoint_full_onchip_service_schedule",
         "decoder_attention_kv_endpoint_ready_valid_service",
         "decoder_attention_kv_endpoint_router_sram_composition",
@@ -12278,6 +12366,12 @@ def _build_payload(
             )
         elif abstraction_layer_name == "decoder_attention_kv_onchip_service_schedule":
             decoder_evidence = _decoder_attention_kv_onchip_service_schedule_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_attention_score32_noc_phase2_schedule":
+            decoder_evidence = _decoder_attention_score32_noc_phase2_schedule_evidence(
+                item_id=item_id,
+                proposal_id=proposal_id,
+                proposal_path=proposal_path,
+            )
         elif abstraction_layer_name == "decoder_attention_kv_endpoint_full_onchip_service_schedule":
             decoder_evidence = _decoder_attention_kv_endpoint_full_onchip_service_schedule_evidence(
                 item_id=item_id,

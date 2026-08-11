@@ -42,8 +42,13 @@
       "abstraction_layer": "decoder_attention_score32_noc_phase2_schedule",
       "cost_class": "low",
       "comparison_role": "closure_detail",
+      "campaign_path": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1/campaign.json",
+      "expected_outputs": [
+        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_schedule__l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1.json",
+        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_schedule__l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1.md"
+      ],
       "requires_merged_inputs": true,
-      "requires_materialized_refs": false,
+      "requires_materialized_refs": true,
       "expected_result": {
         "direction": "iterate",
         "reason": "Use the routed service summary to decide whether the next score32 composed rerank can replace the old NoC scalar or still needs a tighter SRAM-placement adapter."
