@@ -1,0 +1,63 @@
+{
+  "artifact_contract": {
+    "generated_rtl_manifests_omitted": true,
+    "observed_and_expected_rows_omitted": true,
+    "per_lane_outputs_are_direct_recost_functional_probe_inputs": true
+  },
+  "campaign_id": "attention_decode_score_multivalue_service_finalized_cdc_lane_probe_10ns_12ns_v1",
+  "campaign_path": "runs/campaigns/npu/attention_decode_score_multivalue_service_finalized_cdc_lane_probe_v1/campaign.json",
+  "campaign_sha256": "a8cb062c5589a0a496630ac7de1c1a653867d29b061b679a586769e63e69a18a",
+  "divider_lanes": [
+    1,
+    2,
+    4,
+    8
+  ],
+  "fixed_parameters": {
+    "service_period_ns": 10.0,
+    "service_value_memory_backend": "macro_banked_4x16x64x32",
+    "temporal_period_ns": 12.0,
+    "temporal_state_backend": "sram"
+  },
+  "model": "attention_decode_score_multivalue_service_finalized_cdc_lane_campaign_summary_v1",
+  "passed": true,
+  "point_count": 4,
+  "points": [
+    {
+      "divider_lanes": 1,
+      "finalizer_cycles_diagnostic": 9107,
+      "output": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe__l2_decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe_10ns_12ns_v1_r2/lane1.json",
+      "service_cycles": 10930,
+      "sha256": "c22b766df50daeb0096a83987a00f7cfaff7333e8835cd7e30254ab01242dffe",
+      "temporal_cycles": 9107
+    },
+    {
+      "divider_lanes": 2,
+      "finalizer_cycles_diagnostic": 5459,
+      "output": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe__l2_decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe_10ns_12ns_v1_r2/lane2.json",
+      "service_cycles": 6552,
+      "sha256": "9d1abf623d9156fe013817c70c3d445814a9315574f6d9aca664fa083507760c",
+      "temporal_cycles": 5459
+    },
+    {
+      "divider_lanes": 4,
+      "finalizer_cycles_diagnostic": 3635,
+      "output": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe__l2_decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe_10ns_12ns_v1_r2/lane4.json",
+      "service_cycles": 4363,
+      "sha256": "ae5db4bf854d46f36b70f9d4b83ed22e4cdc0bed49043f4aef908c8c1a14f851",
+      "temporal_cycles": 3635
+    },
+    {
+      "divider_lanes": 8,
+      "finalizer_cycles_diagnostic": 2723,
+      "output": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe__l2_decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe_10ns_12ns_v1_r2/lane8.json",
+      "service_cycles": 3269,
+      "sha256": "fc316fa21f7f7e364cdc51291a212ece888c7d8265e86f1480912509161642bb",
+      "temporal_cycles": 2723
+    }
+  ],
+  "proposal_ref": {
+    "proposal_id": "prop_l2_decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe_v1",
+    "proposal_path": "docs/proposals/prop_l2_decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe_v1/proposal.json"
+  }
+}

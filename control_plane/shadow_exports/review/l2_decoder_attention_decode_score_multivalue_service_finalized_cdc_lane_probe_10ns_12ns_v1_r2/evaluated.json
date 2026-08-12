@@ -1,0 +1,131 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "decoder_contract": {
+        "decode_score_multivalue_service_finalized_cdc_lane_probe_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe__l2_decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe_10ns_12ns_v1_r2/campaign_summary.json",
+        "decode_score_multivalue_service_finalized_cdc_lane_probe_scope": "Run exactly four lane-matched finalized-CDC functional probes at service_period_ns=10 and temporal_period_ns=12 with SRAM temporal state and macro-banked service value memory. Emit only recost-compatible per-lane summaries plus one aggregate manifest; do not emit row histories, generated RTL manifests, physical PPA, or activity-energy claims.",
+        "decode_score_multivalue_service_finalized_cdc_lane_probe_campaign": "runs/campaigns/npu/attention_decode_score_multivalue_service_finalized_cdc_lane_probe_v1/campaign.json",
+        "decode_score_multivalue_service_finalized_cdc_lane_probe_lane1_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe__l2_decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe_10ns_12ns_v1_r2/lane1.json",
+        "decode_score_multivalue_service_finalized_cdc_lane_probe_lane2_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe__l2_decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe_10ns_12ns_v1_r2/lane2.json",
+        "decode_score_multivalue_service_finalized_cdc_lane_probe_lane4_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe__l2_decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe_10ns_12ns_v1_r2/lane4.json",
+        "decode_score_multivalue_service_finalized_cdc_lane_probe_lane8_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe__l2_decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe_10ns_12ns_v1_r2/lane8.json"
+      },
+      "worker_resources": {
+        "cpu_quota": "300%",
+        "tasks_max": 256,
+        "memory_max": "8G",
+        "memory_high": "6G",
+        "exclusive_worker": true,
+        "outer_timeout_seconds": 2400,
+        "stall_timeout_seconds": 600
+      }
+    },
+    "commands": [
+      {
+        "run": "python3 control_plane/scripts/run_bounded_command.py --memory-high 6G --memory-max 8G --cpu-quota 300% --tasks-max 256 --runtime-max-sec 2400 -- python3 npu/eval/run_attention_decode_score_multivalue_service_finalized_cdc_lane_campaign.py --campaign runs/campaigns/npu/attention_decode_score_multivalue_service_finalized_cdc_lane_probe_v1/campaign.json --out-root runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe__l2_decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe_10ns_12ns_v1_r2",
+        "name": "probe_decode_score_multivalue_service_finalized_cdc_lanes_10ns_12ns"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate_runs"
+      }
+    ],
+    "objective": "Run the exact four-lane finalized-CDC functional probe after replacing phase-dependent backpressure coverage with a directed stability check.",
+    "acceptance": [
+      "Write exactly four per-lane JSON summaries and one campaign_summary.json",
+      "Require divider_lanes [1,2,4,8], service_period_ns=10, and temporal_period_ns=12",
+      "Require temporal_state_backend=sram and service_value_memory_backend=macro_banked_4x16x64x32",
+      "Require every lane passed=true with zero protocol, state, and CDC errors",
+      "Require every lane summary to be directly consumable by the exact-partial physical recost audit",
+      "Do not include observed_rows, expected_rows, generated RTL manifests, or macro manifests",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "source_mode": "src_verilog",
+    "expected_outputs": [
+      "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe__l2_decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe_10ns_12ns_v1_r2/lane1.json",
+      "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe__l2_decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe_10ns_12ns_v1_r2/lane2.json",
+      "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe__l2_decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe_10ns_12ns_v1_r2/lane4.json",
+      "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe__l2_decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe_10ns_12ns_v1_r2/lane8.json",
+      "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe__l2_decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe_10ns_12ns_v1_r2/campaign_summary.json"
+    ]
+  },
+  "layer": "layer2",
+  "state": "evaluated",
+  "title": "Retry finalized CDC lane probe with directed backpressure",
+  "result": {
+    "branch": "eval/l2_decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe_10ns_12ns_v1_r2/s20260812t121053z",
+    "completed_utc": "2026-08-12T12:10:50.735983Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "b7c2d9c80c1c",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260812t121053z][host:b7c2d9c80c1c][item:l2_decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe_10ns_12ns_v1_r2]",
+    "metrics_rows": [],
+    "metrics_exempt_reason": "evidence_only_decoder_evidence",
+    "queue_item_id": "l2_decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe_10ns_12ns_v1_r2",
+    "session_id": "s20260812t121053z",
+    "status": "ok",
+    "summary": "2/2 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l2_decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe_10ns_12ns_v1_r2/s20260812t121053z",
+    "pr_title": "eval: run retry finalized cdc lane probe with directed backpressure",
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Include metrics row references in result.metrics_rows",
+      "Keep committed result_path fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260812t121053z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l2_decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe_10ns_12ns_v1_r2"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l2_decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe_10ns_12ns_v1_r2",
+  "version": 0.1,
+  "platform": "unknown",
+  "priority": 90,
+  "created_utc": "2026-08-12T12:10:19.306603Z",
+  "requested_by": "developer_agent",
+  "developer_loop": {
+    "comparison": {
+      "role": "functional_prerequisite",
+      "paired_baseline_item_id": ""
+    },
+    "evaluation": {
+      "mode": "equivalence",
+      "expected_reason": "All lane outputs and counters should remain exact while directed backpressure guarantees stability coverage independent of lane timing.",
+      "expected_direction": "pass"
+    },
+    "abstraction": {
+      "layer": "decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe"
+    },
+    "proposal_id": "prop_l2_decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe_v1",
+    "dependencies": {
+      "item_ids": [],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": false
+    },
+    "proposal_path": "docs/proposals/prop_l2_decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe_v1/proposal.json"
+  },
+  "source_requirement": {
+    "repo": "",
+    "reason": "evaluator runtime must contain the queued job source commit",
+    "version": 1,
+    "required_ref": "origin/master",
+    "required_sha": "8305ec1b4c066aea15830a701784fe2f9bfe3914",
+    "requires_daemon_restart": true
+  },
+  "generation_source_identity": {
+    "clean": true,
+    "proof": "generator_worktree_head_exact",
+    "version": 1,
+    "relation": "exact",
+    "repo_head_sha": "8305ec1b4c066aea15830a701784fe2f9bfe3914",
+    "declared_source_commit": "8305ec1b4c066aea15830a701784fe2f9bfe3914"
+  },
+  "task_type": "l2_campaign"
+}
