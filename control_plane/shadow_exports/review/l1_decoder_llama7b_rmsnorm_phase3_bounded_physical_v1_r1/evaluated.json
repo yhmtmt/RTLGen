@@ -1,0 +1,160 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "sweeps": [
+        "runs/campaigns/npu/llama7b_rmsnorm_phase3_physical_v1/sweeps/nangate45_llama7b_rmsnorm_phase3_bounded_l16.json"
+      ],
+      "configs": [
+        "runs/designs/npu_blocks/llama7b_rmsnorm_phase3_bounded_l16_ng45/config.json"
+      ],
+      "out_root": "runs/designs/npu_blocks",
+      "design_dirs": [],
+      "macro_manifests": [],
+      "candidate_manifests": [],
+      "required_submodules": []
+    },
+    "commands": [
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/rtlgen/gen_llama7b_rmsnorm.py --config runs/designs/npu_blocks/llama7b_rmsnorm_phase3_bounded_l16_ng45/config.json --out runs/designs/npu_blocks/llama7b_rmsnorm_phase3_bounded_l16_ng45/verilog",
+        "name": "generate_llama7b_rmsnorm_rtl"
+      },
+      {
+        "run": "python3 npu/eval/check_llama7b_rmsnorm_phase3_physical_guard.py --design-dir runs/designs/npu_blocks/llama7b_rmsnorm_phase3_bounded_l16_ng45",
+        "name": "check_llama7b_rmsnorm_phase3_physical_guard"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && verilator --lint-only -Wall -Wno-fatal runs/designs/npu_blocks/llama7b_rmsnorm_phase3_bounded_l16_ng45/verilog/top.v",
+        "name": "lint_llama7b_rmsnorm_phase3_rtl"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/synth/run_block_sweep.py --design_dir runs/designs/npu_blocks/llama7b_rmsnorm_phase3_bounded_l16_ng45 --platform nangate45 --top llama7b_rmsnorm_phase3_bounded_l16_ng45 --sweep runs/campaigns/npu/llama7b_rmsnorm_phase3_physical_v1/sweeps/nangate45_llama7b_rmsnorm_phase3_bounded_l16.json --out_root runs/designs/npu_blocks --skip_existing",
+        "name": "run_block_sweep"
+      },
+      {
+        "run": "python3 npu/eval/extract_openroad_timing_summary.py --design-dir runs/designs/npu_blocks/llama7b_rmsnorm_phase3_bounded_l16_ng45 --out runs/designs/npu_blocks/llama7b_rmsnorm_phase3_bounded_l16_ng45/timing_debug_report.md --max-paths 8",
+        "name": "extract_llama7b_rmsnorm_phase3_timing_paths"
+      },
+      {
+        "run": "python3 scripts/build_runs_index.py",
+        "name": "build_runs_index"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate"
+      }
+    ],
+    "metadata": {
+      "acceptance_notes": "Require regenerated RTL to match the checked wrapper, require Verilator lint to complete before OpenROAD while retaining non-fatal warnings, accept status=ok rows and retain any non-ok rows as explicit physical boundary evidence, and classify the inferred row_mem/gamma_mem arrays as register-storage measurement only rather than SRAM evidence."
+    },
+    "objective": "Generate the LANES=16 Phase-3 RTL, run contract and lint guards, then run a conservative Nangate45 block sweep and record lightweight PPA/timing evidence.",
+    "acceptance": [
+      "Each generated wrapper metrics.csv contains recorded rows with a status column; allow non-ok metrics such as flow_failed when the row is boundary evidence",
+      "Committed outputs stay lightweight (metrics.csv only; runs/index.csv is exported centrally after merge)",
+      "python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue pass"
+    ],
+    "source_mode": "config",
+    "expected_outputs": [
+      "runs/designs/npu_blocks/llama7b_rmsnorm_phase3_bounded_l16_ng45/metrics.csv",
+      "runs/designs/npu_blocks/llama7b_rmsnorm_phase3_bounded_l16_ng45/timing_debug_report.md"
+    ]
+  },
+  "layer": "layer1",
+  "state": "evaluated",
+  "title": "Llama7B RMSNorm Phase-3 bounded physical anchor",
+  "result": {
+    "branch": "eval/l1_decoder_llama7b_rmsnorm_phase3_bounded_physical_v1_r1/s20260812t125739z",
+    "completed_utc": "2026-08-12T12:57:36.911162Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "b7c2d9c80c1c",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260812t125739z][host:b7c2d9c80c1c][item:l1_decoder_llama7b_rmsnorm_phase3_bounded_physical_v1_r1]",
+    "metrics_rows": [
+      {
+        "tag": "llama7b_rmsnorm_phase3_bounded_l16_ng45_v1_49e3843d",
+        "status": "flow_failed",
+        "platform": "nangate45",
+        "param_hash": "49e3843d",
+        "metrics_csv": "runs/designs/npu_blocks/llama7b_rmsnorm_phase3_bounded_l16_ng45/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/llama7b_rmsnorm_phase3_bounded_l16_ng45/work/49e3843d/result.json"
+      },
+      {
+        "tag": "llama7b_rmsnorm_phase3_bounded_l16_ng45_v1_e0f11ce5",
+        "status": "flow_failed",
+        "platform": "nangate45",
+        "param_hash": "e0f11ce5",
+        "metrics_csv": "runs/designs/npu_blocks/llama7b_rmsnorm_phase3_bounded_l16_ng45/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/llama7b_rmsnorm_phase3_bounded_l16_ng45/work/e0f11ce5/result.json"
+      }
+    ],
+    "queue_item_id": "l1_decoder_llama7b_rmsnorm_phase3_bounded_physical_v1_r1",
+    "session_id": "s20260812t125739z",
+    "status": "ok",
+    "summary": "7/7 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l1_decoder_llama7b_rmsnorm_phase3_bounded_physical_v1_r1/s20260812t125739z",
+    "pr_title": "eval: run llama7b rmsnorm phase-3 bounded physical anchor",
+    "checklist": [
+      "Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge",
+      "Include metrics row references for each completed design",
+      "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260812t125739z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l1_decoder_llama7b_rmsnorm_phase3_bounded_physical_v1_r1"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l1_decoder_llama7b_rmsnorm_phase3_bounded_physical_v1_r1",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 1,
+  "created_utc": "2026-08-10T11:45:08.065301Z",
+  "requested_by": "developer_agent",
+  "developer_loop": {
+    "comparison": {
+      "role": "rmsnorm_phase3_rtl_physical_anchor",
+      "paired_baseline_item_id": ""
+    },
+    "evaluation": {
+      "mode": "physical_calibration",
+      "trial_policy": {
+        "seed_start": 0,
+        "trial_count": 1,
+        "stop_after_failures": 1
+      },
+      "expected_reason": "This request establishes the first physical anchor for the exact Phase-3 Llama7B RMSNorm RTL while preserving the storage-model caveat.",
+      "expected_direction": "measure_phase3_rmsnorm_physical_anchor"
+    },
+    "abstraction": {
+      "layer": "llama7b_rmsnorm_phase3"
+    },
+    "proposal_id": "prop_l1_decoder_llama7b_rmsnorm_phase3_bounded_physical_v1",
+    "dependencies": {
+      "item_ids": [],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    },
+    "proposal_path": "docs/proposals/prop_l1_decoder_llama7b_rmsnorm_phase3_bounded_physical_v1"
+  },
+  "source_requirement": {
+    "repo": "",
+    "reason": "evaluator runtime must contain the queued job source commit",
+    "version": 1,
+    "required_ref": "origin/master",
+    "required_sha": "aa752025f0742fe4496ef0940eea3a2ea96a488b",
+    "requires_daemon_restart": true
+  },
+  "generation_source_identity": {
+    "clean": true,
+    "proof": "generator_worktree_head_exact",
+    "version": 1,
+    "relation": "exact",
+    "repo_head_sha": "aa752025f0742fe4496ef0940eea3a2ea96a488b",
+    "declared_source_commit": "aa752025f0742fe4496ef0940eea3a2ea96a488b"
+  },
+  "task_type": "l1_sweep"
+}
