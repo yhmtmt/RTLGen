@@ -1,0 +1,116 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "decoder_contract": {
+        "exact_partial_c1_workload_correspondence_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_exact_partial_c1_workload_correspondence__l2_decoder_attention_exact_partial_c1_workload_correspondence_llama7b_v1_r1.json",
+        "exact_partial_c1_workload_correspondence_scope": "Run the bounded finalized-CDC RTL matrix for divider lanes 1, 2, 4, and 8 over one through four full windows, one eight-token tail, and same-slot two-head reuse. Require exact software values and counters, then project 5,462 windows per head only from equal measured affine deltas.",
+        "exact_partial_c1_workload_correspondence_campaign": "runs/campaigns/npu/attention_exact_partial_c1_workload_correspondence_v1/campaign.json"
+      },
+      "worker_resources": {
+        "cpu_quota": "200%",
+        "tasks_max": 192,
+        "memory_max": "6G",
+        "memory_high": "4G",
+        "exclusive_worker": true,
+        "outer_timeout_seconds": 600,
+        "stall_timeout_seconds": 300
+      }
+    },
+    "commands": [
+      {
+        "run": "python3 control_plane/scripts/run_bounded_command.py --memory-high 4G --memory-max 6G --cpu-quota 200% --tasks-max 192 --runtime-max-sec 600 -- python3 npu/eval/probe_attention_decode_score_multivalue_service_workload_correspondence.py --out runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_exact_partial_c1_workload_correspondence__l2_decoder_attention_exact_partial_c1_workload_correspondence_llama7b_v1_r1.json",
+        "name": "probe_exact_partial_c1_workload_correspondence_llama7b_131k"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate_runs"
+      }
+    ],
+    "objective": "Execute Layer2 campaign attention_exact_partial_c1_workload_correspondence_llama7b_131k_v1.",
+    "acceptance": [
+      "Require divider_lanes [1,2,4,8] at service_period_ns=10 and temporal_period_ns=12",
+      "Require exact software/RTL outputs and every modeled counter for all bounded cases",
+      "Require equal service deltas for full-window counts 1, 2, 3, and 4",
+      "Require a real 8-token tail refill/finalization and two-head same-slot state reuse",
+      "Project 5,462 windows per head only from the proven affine recurrence",
+      "Keep the measured tail saving uncredited in the conservative projection",
+      "Write exactly one workload correspondence JSON artifact",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "source_mode": "src_verilog",
+    "expected_outputs": [
+      "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_exact_partial_c1_workload_correspondence__l2_decoder_attention_exact_partial_c1_workload_correspondence_llama7b_v1_r1.json"
+    ]
+  },
+  "layer": "layer2",
+  "state": "evaluated",
+  "title": "Layer2 campaign attention_exact_partial_c1_workload_correspondence_llama7b_131k_v1 on unknown",
+  "result": {
+    "branch": "eval/l2_decoder_attention_exact_partial_c1_workload_correspondence_llama7b_v1_r1/s20260811t120236z",
+    "completed_utc": "2026-08-11T11:42:53.159345Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "b7c2d9c80c1c",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260811t120236z][host:b7c2d9c80c1c][item:l2_decoder_attention_exact_partial_c1_workload_correspondence_llama7b_v1_r1]",
+    "metrics_rows": [],
+    "metrics_exempt_reason": "evidence_only_decoder_evidence",
+    "queue_item_id": "l2_decoder_attention_exact_partial_c1_workload_correspondence_llama7b_v1_r1",
+    "session_id": "s20260811t120236z",
+    "status": "ok",
+    "summary": "2/2 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l2_decoder_attention_exact_partial_c1_workload_correspondence_llama7b_v1_r1/s20260811t120236z",
+    "pr_title": "eval: run layer2 campaign attention_exact_partial_c1_workload_correspondence_llama7b_131k_v1 on unknown",
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Include metrics row references in result.metrics_rows",
+      "Keep committed result_path fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260811t120236z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l2_decoder_attention_exact_partial_c1_workload_correspondence_llama7b_v1_r1"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l2_decoder_attention_exact_partial_c1_workload_correspondence_llama7b_v1_r1",
+  "version": 0.1,
+  "platform": "unknown",
+  "priority": 1,
+  "created_utc": "2026-08-10T11:09:27.550769Z",
+  "requested_by": "@codex",
+  "developer_loop": {
+    "comparison": {
+      "role": "workload_correspondence_prerequisite",
+      "paired_baseline_item_id": ""
+    },
+    "evaluation": {
+      "mode": "equivalence",
+      "expected_reason": "",
+      "expected_direction": ""
+    },
+    "abstraction": {
+      "layer": "decoder_attention_exact_partial_c1_workload_correspondence"
+    },
+    "proposal_id": "prop_l2_decoder_attention_exact_partial_c1_workload_correspondence_llama7b_v1",
+    "dependencies": {
+      "item_ids": [],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": false
+    },
+    "proposal_path": "docs/proposals/prop_l2_decoder_attention_exact_partial_c1_workload_correspondence_llama7b_v1/proposal.json"
+  },
+  "source_requirement": {
+    "repo": "",
+    "reason": "evaluator runtime must contain the queued job source commit",
+    "version": 1,
+    "required_ref": "origin/master",
+    "required_sha": "34cdb1ff66afc838d081156877c7dc2c00a3c076",
+    "requires_daemon_restart": true
+  },
+  "task_type": "l2_campaign"
+}
