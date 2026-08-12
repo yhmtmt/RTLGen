@@ -27,3 +27,24 @@ def test_real_c1_two_window_full_context_finalization() -> None:
     assert report["summary"]["finalizer_accepted"] == 16
     assert report["summary"]["finalizer_completed"] == 16
     assert report["summary"]["protocol_error"] == 0
+
+
+@pytest.mark.parametrize("divider_lanes", [1, 2, 4, 8])
+def test_finalized_cdc_campaign_configuration_exercises_directed_backpressure(
+    divider_lanes: int,
+) -> None:
+    if not (shutil.which("iverilog") and shutil.which("vvp")):
+        pytest.skip("iverilog/vvp unavailable")
+
+    report = build_report(
+        service_period_ns=10.0,
+        temporal_period_ns=12.0,
+        divider_lanes=divider_lanes,
+        temporal_state_backend="sram",
+        service_value_memory_backend="macro_banked_4x16x64x32",
+    )
+
+    assert report["passed"] is True
+    assert report["observed_rows"] == report["expected_rows"]
+    assert report["summary"]["stable"] == 1
+    assert report["summary"]["protocol_error"] == 0
