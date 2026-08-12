@@ -1,0 +1,96 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-08-12T12:57:38.275944Z",
+  "item_id": "l1_decoder_llama7b_rmsnorm_phase3_bounded_physical_v1_r1",
+  "run_key": "l1_decoder_llama7b_rmsnorm_phase3_bounded_physical_v1_r1_run_ac8b6daeb1245602",
+  "layer": "layer1",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l1_sweep",
+  "source_commit": "aa752025f0742fe4496ef0940eea3a2ea96a488b",
+  "objective": "Generate the LANES=16 Phase-3 RTL, run contract and lint guards, then run a conservative Nangate45 block sweep and record lightweight PPA/timing evidence.",
+  "input_manifest": {
+    "sweeps": [
+      "runs/campaigns/npu/llama7b_rmsnorm_phase3_physical_v1/sweeps/nangate45_llama7b_rmsnorm_phase3_bounded_l16.json"
+    ],
+    "configs": [
+      "runs/designs/npu_blocks/llama7b_rmsnorm_phase3_bounded_l16_ng45/config.json"
+    ],
+    "out_root": "runs/designs/npu_blocks",
+    "design_dirs": [],
+    "macro_manifests": [],
+    "candidate_manifests": [],
+    "required_submodules": []
+  },
+  "proposal_count": 0,
+  "evaluation_record": {
+    "evaluation_mode": "physical_calibration",
+    "abstraction_layer": "llama7b_rmsnorm_phase3",
+    "result_kind": "boundary_evidence",
+    "physical_metrics_present": false,
+    "timing_feasible": null,
+    "summary": "No status=ok Layer 1 rows were produced; non-ok metrics rows are recorded as explicit boundary evidence.",
+    "boundary_status_counts": {
+      "flow_failed": 2
+    }
+  },
+  "proposal_assessment": {
+    "outcome": "boundary_no_feasible_points",
+    "summary": "All current Layer 1 metrics rows are non-ok; this is accepted as frontier boundary evidence, not a promotable design point.",
+    "failure_row_count": 2
+  },
+  "proposals": [],
+  "trial_summary": {
+    "item_id": "l1_decoder_llama7b_rmsnorm_phase3_bounded_physical_v1_r1",
+    "completed_trials": 1,
+    "success_count": 0,
+    "failure_count": 1,
+    "success_rate": 0.0,
+    "partial_metrics_count": 0,
+    "metrics": {},
+    "aggregation_scope": "current_run_checkout_commit",
+    "aggregation_source_commit": "aa752025f0742fe4496ef0940eea3a2ea96a488b",
+    "aggregation_included_attempts": 1,
+    "aggregation_excluded_attempts": 0,
+    "aggregation_excluded_source_commits": {},
+    "aggregation_excluded_attempt_run_keys": [],
+    "aggregation_excluded_attempt_run_keys_truncated": false
+  },
+  "source_refs": {
+    "trial_metrics_csvs": [
+      "runs/designs/npu_blocks/llama7b_rmsnorm_phase3_bounded_l16_ng45/metrics.csv"
+    ],
+    "summary_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_llama7b_rmsnorm_phase3_bounded_physical_v1_r1/summary_stats.json",
+    "failure_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_llama7b_rmsnorm_phase3_bounded_physical_v1_r1/failure_stats.json",
+    "trial_table_csv": "control_plane/shadow_exports/l1_trials/l1_decoder_llama7b_rmsnorm_phase3_bounded_physical_v1_r1/trial_table.csv"
+  },
+  "boundary_evidence": {
+    "row_count": 2,
+    "rows": [
+      {
+        "metrics_csv": "runs/designs/npu_blocks/llama7b_rmsnorm_phase3_bounded_l16_ng45/metrics.csv",
+        "status": "flow_failed",
+        "design": "llama7b_rmsnorm_phase3_bounded_l16_ng45",
+        "platform": "nangate45",
+        "config_hash": "ddf5de2e9f3f",
+        "param_hash": "49e3843d",
+        "tag": "llama7b_rmsnorm_phase3_bounded_l16_ng45_v1_49e3843d",
+        "result_path": "/orfs/flow/logs/nangate45/llama7b_rmsnorm_phase3_bounded_l16_ng45/base",
+        "work_result_json": "runs/designs/npu_blocks/llama7b_rmsnorm_phase3_bounded_l16_ng45/work/49e3843d/result.json",
+        "params_json": "{\"CLOCK_PERIOD\": 16.0, \"CORE_AREA\": \"120 120 5080 5080\", \"CORE_UTILIZATION\": \"\", \"DIE_AREA\": \"0 0 5200 5200\", \"PLACE_DENSITY\": 0.3, \"SYNTH_HIERARCHICAL\": 1, \"tag_prefix\": \"llama7b_rmsnorm_phase3_bounded_l16_ng45_v1\"}"
+      },
+      {
+        "metrics_csv": "runs/designs/npu_blocks/llama7b_rmsnorm_phase3_bounded_l16_ng45/metrics.csv",
+        "status": "flow_failed",
+        "design": "llama7b_rmsnorm_phase3_bounded_l16_ng45",
+        "platform": "nangate45",
+        "config_hash": "ddf5de2e9f3f",
+        "param_hash": "e0f11ce5",
+        "tag": "llama7b_rmsnorm_phase3_bounded_l16_ng45_v1_e0f11ce5",
+        "result_path": "/orfs/flow/logs/nangate45/llama7b_rmsnorm_phase3_bounded_l16_ng45/base",
+        "work_result_json": "runs/designs/npu_blocks/llama7b_rmsnorm_phase3_bounded_l16_ng45/work/e0f11ce5/result.json",
+        "params_json": "{\"CLOCK_PERIOD\": 20.0, \"CORE_AREA\": \"120 120 5080 5080\", \"CORE_UTILIZATION\": \"\", \"DIE_AREA\": \"0 0 5200 5200\", \"PLACE_DENSITY\": 0.3, \"SYNTH_HIERARCHICAL\": 1, \"tag_prefix\": \"llama7b_rmsnorm_phase3_bounded_l16_ng45_v1\"}"
+      }
+    ]
+  }
+}

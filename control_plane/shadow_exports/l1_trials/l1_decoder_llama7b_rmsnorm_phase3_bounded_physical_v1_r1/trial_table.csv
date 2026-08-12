@@ -1,0 +1,2 @@
+run_key,attempt,trial_index,seed,status,metrics_csv,critical_path_ns,die_area,total_power_mw,failure_category,failure_stage,failure_signature
+l1_decoder_llama7b_rmsnorm_phase3_bounded_physical_v1_r1_run_ac8b6daeb1245602,1,1,0,succeeded,,,,,none,,
