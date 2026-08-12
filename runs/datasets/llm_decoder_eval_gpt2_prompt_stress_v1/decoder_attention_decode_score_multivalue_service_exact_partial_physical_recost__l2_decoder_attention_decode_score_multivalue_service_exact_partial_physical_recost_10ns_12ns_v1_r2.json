@@ -1,0 +1,1022 @@
+{
+  "artifact_contract": {
+    "llama7b_workload_projection_preserved": true,
+    "one_aggregate_json": true,
+    "one_four_row_csv": true,
+    "overlap_and_serial_bounds_preserved": true,
+    "per_lane_recost_reports_omitted": true,
+    "provisional_energy_provenance_preserved": true
+  },
+  "campaign_id": "attention_decode_score_multivalue_service_exact_partial_physical_recost_10ns_12ns_v1_r2",
+  "campaign_path": "runs/campaigns/npu/attention_decode_score_multivalue_service_exact_partial_physical_recost_v1/campaign.json",
+  "campaign_sha256": "02cac2bc63e75475e00de9dcd0ec0007ad8fd7f5badbbd8f788f6a4239907509",
+  "decision": "exact_partial_composed_service_physical_recost_campaign_recorded",
+  "dependency_contract": {
+    "all_dependencies_materialized": true,
+    "all_dependencies_required": true,
+    "depends_on_item_ids": [
+      "l1_decoder_attention_exact_partial_temporal_finalizer_bounded_12ns_physical_v1_r1",
+      "l2_decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe_10ns_12ns_v1_r2",
+      "l2_decoder_attention_exact_partial_c1_workload_correspondence_llama7b_v1_r1"
+    ]
+  },
+  "divider_lanes": [
+    1,
+    2,
+    4,
+    8
+  ],
+  "functional_dependency_summary_sha256": "f948b97f1d3a8c17603233696d7c34e1f975ec419df0fd5bcf27267c84648d38",
+  "model": "attention_decode_score_multivalue_service_exact_partial_physical_recost_campaign_summary_v1",
+  "passed": true,
+  "point_count": 4,
+  "points": [
+    {
+      "candidate_id": "exact_partial_service_c1_source_fifo_l1",
+      "composed_physical": {
+        "composition_contract": {
+          "all_physical_platforms": "nangate45",
+          "both_fifo_domain_views_added": false,
+          "both_fifo_domain_views_consumed_for_validation": true,
+          "die_area_added": false,
+          "fifo_canonical_rule": "source_domain_preferred_single_fifo_accounting",
+          "fifo_instance_area_added_once": true,
+          "platforms_mutually_compatible": true,
+          "raw_macro_area_added": false,
+          "service_activity_window_power_summed_with_generic_power": false,
+          "service_instance_area_added_once": true,
+          "temporal_instance_area_added_once": true
+        },
+        "generic_composed_total_power_mw": 0.297001,
+        "instance_area_mm2": 3.30489452,
+        "instance_area_um2": 3304894.52,
+        "power_provenance": {
+          "async_fifo_generic_total_power_mw": "openroad_physical_estimate_only_not_activity_backed_counted_once_via_canonical_fifo_view",
+          "generic_composed_total_power_mw": "homogeneous_generic_openroad_power_sum_only",
+          "service_activity_window_power_mw": "activity_backed_service_window_power_from_component_service_window_energy",
+          "service_generic_total_power_mw": "generic_openroad_routed_ppa_not_activity_backed",
+          "temporal_generic_total_power_mw": "openroad_physical_estimate_only_not_activity_backed"
+        },
+        "service_activity_window_energy_j": 3.111889760510953e-05,
+        "service_activity_window_power_mw": 356.909006834
+      },
+      "divider_lanes": 1,
+      "energy_contract": {
+        "exact_token_energy_claimed": false,
+        "exact_total_token_energy_from_composed_components": false,
+        "reason": "The service c1 anchor carries both generic OpenROAD PPA power and a separate activity-backed service-window power measurement. The temporal/finalizer and FIFO rows carry only standalone OpenROAD physical power estimates. The report therefore preserves separate power views and remains a bounded/provisional energy input rather than an exact token-energy ranking.",
+        "service_activity_window_cycles_not_proven_same_as_functional_probe_service_cycles": true,
+        "status": "bounded_provisional_activity_plus_openroad_physical_power_not_exact_token_energy"
+      },
+      "functional_contract": {
+        "cdc_accepted": 32,
+        "cdc_emitted": 32,
+        "divider_lanes": 1,
+        "finalizer_completed": 16,
+        "finalizer_cycles": 9107,
+        "service_cycles": 10930,
+        "service_period_ns": 10.0,
+        "temporal_cycles": 9107,
+        "temporal_period_ns": 12.0
+      },
+      "input_hashes": {
+        "async_fifo_destination_config_json": {
+          "canonical_json_sha256": "9fa4e8592643e56053b5c953586d1c8c8d3fa650e9170773f2d83a12bbf38173",
+          "file_sha256": "32ccf651764dd36c9d74995b6454803bfe8735e960082e5cadc1a9e91f62827d"
+        },
+        "async_fifo_destination_macro_manifest_json": {
+          "canonical_json_sha256": "312033b1426405f89f0034da54312aa8ce76ea1293d4a91aa773d623f7cf8405",
+          "file_sha256": "72dabcd57bf8f6c9cf656bd192f25df1581b08e6c00445cf19197d918278f26f"
+        },
+        "async_fifo_destination_metrics_csv": {
+          "file_sha256": "1050e2620fd03a703e69c904253482de7343daab267a14cce8106176f0069f68",
+          "selected_row_sha256": "cfe1c89155b67c553e09d968967e5e292dc11ddfc00ae32f3d46ec4cba6aed09"
+        },
+        "async_fifo_source_config_json": {
+          "canonical_json_sha256": "dd095f096973415ea093ab14a34cdc0bcfd0d3ff41d9aff24cc7cc4c99a36d2c",
+          "file_sha256": "58392c5907ec2fd11b29812a5ea3b620fd0afd27ff73849aaf2dc94156360bf7"
+        },
+        "async_fifo_source_macro_manifest_json": {
+          "canonical_json_sha256": "29dcb993bf2afdac0d7bf5744ec99289b9b413d9104996c50e029e2f1e7fb220",
+          "file_sha256": "8abc66b32c1132026193ff5f8c0182d3bfd52336529d6001ca31349b630c4731"
+        },
+        "async_fifo_source_metrics_csv": {
+          "file_sha256": "744a12216193d1ce8d7a12d676adb242e6c1be9b9bd1c0eae2ec65f573cec77d",
+          "selected_row_sha256": "a80a910d915bb112c70f2dbdcf04696b0db9fd8a75042d7a399a9884e5b7c6c9"
+        },
+        "functional_probe_json": {
+          "canonical_json_sha256": "56254098d4bb36d8c6150a4e5e33e188c3b64af8fc76d879b1532783d3ddd3e4",
+          "file_sha256": "c22b766df50daeb0096a83987a00f7cfaff7333e8835cd7e30254ab01242dffe"
+        },
+        "service_activity_power_json": {
+          "canonical_json_sha256": "4ac8f455651588e301b5d9f7f46f984ade950826ccf439d05ad03798bc6d0f76",
+          "file_sha256": "b0efb32f528ea2335a0ab83683f860b2de1a167d88ddb9ba9c5bffd9558381ee"
+        },
+        "temporal_config_json": {
+          "canonical_json_sha256": "70850b3fd4a722882a5489ffa66b14456044eb5a314f5a1bbe4ade7afd94d3fb",
+          "file_sha256": "c9495d7c11a097553a036af7e2d04bf229bce8b3d78d453d3963bc39a5344694"
+        },
+        "temporal_macro_manifest_json": {
+          "canonical_json_sha256": "9e57cb4dc57866cc2cb7d9362f4430cae7a584137e43aeb69465bcabe080bef4",
+          "file_sha256": "7071cd1ec4f85da780bb3c87ee0dd347f6e98eb2f1449fa4a358339f56035e1c"
+        },
+        "temporal_metrics_csv": {
+          "file_sha256": "9ef7ea3f3b4af5279658f6663f4418fbe4b889724326996fd1c059529944f694",
+          "selected_row_sha256": "1152de35fc6265e40f5dee9da8540c83b20db7b41711c493c12db5a01d58d60e"
+        }
+      },
+      "inputs": {
+        "async_fifo_destination_clock_period_ns": 12.0,
+        "async_fifo_destination_config_json": "runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_destination_domain_physical/config.json",
+        "async_fifo_destination_design": "attention_exact_partial_async_fifo_d4_destination_domain_physical",
+        "async_fifo_destination_macro_manifest_json": "runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_destination_domain_physical/macro_manifest.json",
+        "async_fifo_destination_metrics_csv": "runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_destination_domain_physical/metrics.csv",
+        "async_fifo_source_clock_period_ns": 10.0,
+        "async_fifo_source_config_json": "runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_source_domain_physical/config.json",
+        "async_fifo_source_design": "attention_exact_partial_async_fifo_d4_source_domain_physical",
+        "async_fifo_source_macro_manifest_json": "runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_source_domain_physical/macro_manifest.json",
+        "async_fifo_source_metrics_csv": "runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_source_domain_physical/metrics.csv",
+        "fifo_canonical_timed_domain": "source",
+        "functional_probe_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe__l2_decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe_10ns_12ns_v1_r2/lane1.json",
+        "service_activity_power_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_service_activity_power__l2_decoder_attention_decode_score_multivalue_service_c1_activity_power_llama7b_v1_r8.json",
+        "temporal_clock_period_ns": 12.0,
+        "temporal_config_json": "runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l1/config.json",
+        "temporal_design": "attention_score32_exact_partial_temporal_finalizer_physical_l1",
+        "temporal_macro_manifest_json": "runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l1/macro_manifest.json",
+        "temporal_metrics_csv": "runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l1/metrics.csv"
+      },
+      "timing_bounds": {
+        "latency_contract": {
+          "combined_latency_not_derived_from_activity_window_cycles": true,
+          "derived_from_functional_cycles_and_domain_periods": true,
+          "finalizer_cycles_are_diagnostic_only": true,
+          "functional_probe_periods_match_effective_physical_domains": true,
+          "openroad_critical_paths_not_used_as_cdc_latency": true,
+          "service_activity_window_cycles_not_assumed_equal_to_functional_service_cycles": true,
+          "temporal_cycles_are_elapsed_wall_clock": true
+        },
+        "overlap_lower_bound_ns": 109300.0,
+        "overlap_lower_bound_us": 109.3,
+        "serial_upper_bound_ns": 218584.0,
+        "serial_upper_bound_us": 218.584,
+        "service_domain": {
+          "activity_window_cycle_count_not_assumed_equal": 8719,
+          "clock_sources": [
+            "service_activity_anchor",
+            "async_fifo_source_domain"
+          ],
+          "cycles": 10930,
+          "period_ns": 10.0,
+          "time_ns": 109300.0
+        },
+        "temporal_domain": {
+          "clock_sources": [
+            "temporal_finalizer_physical_row",
+            "async_fifo_destination_domain"
+          ],
+          "components": {
+            "elapsed_wall_clock_temporal_cycles": 9107,
+            "finalizer_counter_added_to_elapsed_cycles": false,
+            "finalizer_counter_cycles_diagnostic_only": 9107
+          },
+          "cycles": 9107,
+          "period_ns": 12.0,
+          "time_ns": 109284.0
+        },
+        "throughput_lower_bound_per_s": 4574.900267174175,
+        "throughput_upper_bound_per_s": 9149.130832570905
+      },
+      "workload_correspondence": {
+        "affine_recurrence_proof": {
+          "bounded_window_counts": [
+            1,
+            2,
+            3,
+            4
+          ],
+          "counter_deltas": [
+            1076,
+            1076,
+            1076
+          ],
+          "measured_service_span_cycles": [
+            1051,
+            2127,
+            3203,
+            4279
+          ],
+          "proven": true,
+          "recurrence": "service_cycles(N) = startup_cycles + (N - 1) * steady_state_cycles_per_additional_full_window",
+          "startup_cycles": 1051,
+          "steady_state_cycles_per_additional_full_window": 1076
+        },
+        "projection": {
+          "final_partial_tokens": 8,
+          "full_windows_per_head": 5461,
+          "head_latency_ns_serial_upper_bound": 58858806.0,
+          "layer_latency_ns_serial_upper_bound": 1883481792.0,
+          "service_cycles_32_layer_serial_bound": 6018137088,
+          "service_cycles_per_head": 5877087,
+          "service_cycles_per_layer_serial_heads": 188066784,
+          "temporal_final_drain_cycles_32_layer_serial_bound": 7503872,
+          "temporal_final_drain_cycles_per_head": 7328,
+          "temporal_final_drain_cycles_per_layer_serial_heads": 234496,
+          "windows_per_head": 5462
+        },
+        "tail_adjustment_used_in_projection": false
+      }
+    },
+    {
+      "candidate_id": "exact_partial_service_c1_source_fifo_l2",
+      "composed_physical": {
+        "composition_contract": {
+          "all_physical_platforms": "nangate45",
+          "both_fifo_domain_views_added": false,
+          "both_fifo_domain_views_consumed_for_validation": true,
+          "die_area_added": false,
+          "fifo_canonical_rule": "source_domain_preferred_single_fifo_accounting",
+          "fifo_instance_area_added_once": true,
+          "platforms_mutually_compatible": true,
+          "raw_macro_area_added": false,
+          "service_activity_window_power_summed_with_generic_power": false,
+          "service_instance_area_added_once": true,
+          "temporal_instance_area_added_once": true
+        },
+        "generic_composed_total_power_mw": 0.297101,
+        "instance_area_mm2": 3.30759252,
+        "instance_area_um2": 3307592.52,
+        "power_provenance": {
+          "async_fifo_generic_total_power_mw": "openroad_physical_estimate_only_not_activity_backed_counted_once_via_canonical_fifo_view",
+          "generic_composed_total_power_mw": "homogeneous_generic_openroad_power_sum_only",
+          "service_activity_window_power_mw": "activity_backed_service_window_power_from_component_service_window_energy",
+          "service_generic_total_power_mw": "generic_openroad_routed_ppa_not_activity_backed",
+          "temporal_generic_total_power_mw": "openroad_physical_estimate_only_not_activity_backed"
+        },
+        "service_activity_window_energy_j": 3.111889760510953e-05,
+        "service_activity_window_power_mw": 356.909006834
+      },
+      "divider_lanes": 2,
+      "energy_contract": {
+        "exact_token_energy_claimed": false,
+        "exact_total_token_energy_from_composed_components": false,
+        "reason": "The service c1 anchor carries both generic OpenROAD PPA power and a separate activity-backed service-window power measurement. The temporal/finalizer and FIFO rows carry only standalone OpenROAD physical power estimates. The report therefore preserves separate power views and remains a bounded/provisional energy input rather than an exact token-energy ranking.",
+        "service_activity_window_cycles_not_proven_same_as_functional_probe_service_cycles": true,
+        "status": "bounded_provisional_activity_plus_openroad_physical_power_not_exact_token_energy"
+      },
+      "functional_contract": {
+        "cdc_accepted": 32,
+        "cdc_emitted": 32,
+        "divider_lanes": 2,
+        "finalizer_completed": 16,
+        "finalizer_cycles": 5459,
+        "service_cycles": 6552,
+        "service_period_ns": 10.0,
+        "temporal_cycles": 5459,
+        "temporal_period_ns": 12.0
+      },
+      "input_hashes": {
+        "async_fifo_destination_config_json": {
+          "canonical_json_sha256": "9fa4e8592643e56053b5c953586d1c8c8d3fa650e9170773f2d83a12bbf38173",
+          "file_sha256": "32ccf651764dd36c9d74995b6454803bfe8735e960082e5cadc1a9e91f62827d"
+        },
+        "async_fifo_destination_macro_manifest_json": {
+          "canonical_json_sha256": "312033b1426405f89f0034da54312aa8ce76ea1293d4a91aa773d623f7cf8405",
+          "file_sha256": "72dabcd57bf8f6c9cf656bd192f25df1581b08e6c00445cf19197d918278f26f"
+        },
+        "async_fifo_destination_metrics_csv": {
+          "file_sha256": "1050e2620fd03a703e69c904253482de7343daab267a14cce8106176f0069f68",
+          "selected_row_sha256": "cfe1c89155b67c553e09d968967e5e292dc11ddfc00ae32f3d46ec4cba6aed09"
+        },
+        "async_fifo_source_config_json": {
+          "canonical_json_sha256": "dd095f096973415ea093ab14a34cdc0bcfd0d3ff41d9aff24cc7cc4c99a36d2c",
+          "file_sha256": "58392c5907ec2fd11b29812a5ea3b620fd0afd27ff73849aaf2dc94156360bf7"
+        },
+        "async_fifo_source_macro_manifest_json": {
+          "canonical_json_sha256": "29dcb993bf2afdac0d7bf5744ec99289b9b413d9104996c50e029e2f1e7fb220",
+          "file_sha256": "8abc66b32c1132026193ff5f8c0182d3bfd52336529d6001ca31349b630c4731"
+        },
+        "async_fifo_source_metrics_csv": {
+          "file_sha256": "744a12216193d1ce8d7a12d676adb242e6c1be9b9bd1c0eae2ec65f573cec77d",
+          "selected_row_sha256": "a80a910d915bb112c70f2dbdcf04696b0db9fd8a75042d7a399a9884e5b7c6c9"
+        },
+        "functional_probe_json": {
+          "canonical_json_sha256": "d1ebdfaa52de971a972449d254ecbf24fd89f689344c46092d58a33ef6c72f52",
+          "file_sha256": "9d1abf623d9156fe013817c70c3d445814a9315574f6d9aca664fa083507760c"
+        },
+        "service_activity_power_json": {
+          "canonical_json_sha256": "4ac8f455651588e301b5d9f7f46f984ade950826ccf439d05ad03798bc6d0f76",
+          "file_sha256": "b0efb32f528ea2335a0ab83683f860b2de1a167d88ddb9ba9c5bffd9558381ee"
+        },
+        "temporal_config_json": {
+          "canonical_json_sha256": "ec05f09409138b0764abd012571fef308bbc071beff0f1dd1621b5283ce4fe71",
+          "file_sha256": "e582313e011338cd1a31aa1bef4faf949509e26e0499a2e6d9fe5448d4186bd3"
+        },
+        "temporal_macro_manifest_json": {
+          "canonical_json_sha256": "9d016e25aeca3c18c8238f3759bbd425bea3f420b4db3bc4df6ec43fbe20003e",
+          "file_sha256": "b914e08d15828d1a3c7baa6bb3d95a957e48a2710dec2530d4188782a0858f87"
+        },
+        "temporal_metrics_csv": {
+          "file_sha256": "5c694f4befc11d32febfa7098018637b3771dcd6011ebb31bdc80cfe7d26431f",
+          "selected_row_sha256": "1c210fef7d5fac36038e657794bb9f901e07870f48ae4299683f6a4c77801636"
+        }
+      },
+      "inputs": {
+        "async_fifo_destination_clock_period_ns": 12.0,
+        "async_fifo_destination_config_json": "runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_destination_domain_physical/config.json",
+        "async_fifo_destination_design": "attention_exact_partial_async_fifo_d4_destination_domain_physical",
+        "async_fifo_destination_macro_manifest_json": "runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_destination_domain_physical/macro_manifest.json",
+        "async_fifo_destination_metrics_csv": "runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_destination_domain_physical/metrics.csv",
+        "async_fifo_source_clock_period_ns": 10.0,
+        "async_fifo_source_config_json": "runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_source_domain_physical/config.json",
+        "async_fifo_source_design": "attention_exact_partial_async_fifo_d4_source_domain_physical",
+        "async_fifo_source_macro_manifest_json": "runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_source_domain_physical/macro_manifest.json",
+        "async_fifo_source_metrics_csv": "runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_source_domain_physical/metrics.csv",
+        "fifo_canonical_timed_domain": "source",
+        "functional_probe_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe__l2_decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe_10ns_12ns_v1_r2/lane2.json",
+        "service_activity_power_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_service_activity_power__l2_decoder_attention_decode_score_multivalue_service_c1_activity_power_llama7b_v1_r8.json",
+        "temporal_clock_period_ns": 12.0,
+        "temporal_config_json": "runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l2/config.json",
+        "temporal_design": "attention_score32_exact_partial_temporal_finalizer_physical_l2",
+        "temporal_macro_manifest_json": "runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l2/macro_manifest.json",
+        "temporal_metrics_csv": "runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l2/metrics.csv"
+      },
+      "timing_bounds": {
+        "latency_contract": {
+          "combined_latency_not_derived_from_activity_window_cycles": true,
+          "derived_from_functional_cycles_and_domain_periods": true,
+          "finalizer_cycles_are_diagnostic_only": true,
+          "functional_probe_periods_match_effective_physical_domains": true,
+          "openroad_critical_paths_not_used_as_cdc_latency": true,
+          "service_activity_window_cycles_not_assumed_equal_to_functional_service_cycles": true,
+          "temporal_cycles_are_elapsed_wall_clock": true
+        },
+        "overlap_lower_bound_ns": 65520.0,
+        "overlap_lower_bound_us": 65.52,
+        "serial_upper_bound_ns": 131028.0,
+        "serial_upper_bound_us": 131.028,
+        "service_domain": {
+          "activity_window_cycle_count_not_assumed_equal": 8719,
+          "clock_sources": [
+            "service_activity_anchor",
+            "async_fifo_source_domain"
+          ],
+          "cycles": 6552,
+          "period_ns": 10.0,
+          "time_ns": 65520.0
+        },
+        "temporal_domain": {
+          "clock_sources": [
+            "temporal_finalizer_physical_row",
+            "async_fifo_destination_domain"
+          ],
+          "components": {
+            "elapsed_wall_clock_temporal_cycles": 5459,
+            "finalizer_counter_added_to_elapsed_cycles": false,
+            "finalizer_counter_cycles_diagnostic_only": 5459
+          },
+          "cycles": 5459,
+          "period_ns": 12.0,
+          "time_ns": 65508.0
+        },
+        "throughput_lower_bound_per_s": 7631.956528375615,
+        "throughput_upper_bound_per_s": 15262.515262515264
+      },
+      "workload_correspondence": {
+        "affine_recurrence_proof": {
+          "bounded_window_counts": [
+            1,
+            2,
+            3,
+            4
+          ],
+          "counter_deltas": [
+            1076,
+            1076,
+            1076
+          ],
+          "measured_service_span_cycles": [
+            1051,
+            2127,
+            3203,
+            4279
+          ],
+          "proven": true,
+          "recurrence": "service_cycles(N) = startup_cycles + (N - 1) * steady_state_cycles_per_additional_full_window",
+          "startup_cycles": 1051,
+          "steady_state_cycles_per_additional_full_window": 1076
+        },
+        "projection": {
+          "final_partial_tokens": 8,
+          "full_windows_per_head": 5461,
+          "head_latency_ns_serial_upper_bound": 58815030.0,
+          "layer_latency_ns_serial_upper_bound": 1882080960.0,
+          "service_cycles_32_layer_serial_bound": 6018137088,
+          "service_cycles_per_head": 5877087,
+          "service_cycles_per_layer_serial_heads": 188066784,
+          "temporal_final_drain_cycles_32_layer_serial_bound": 3768320,
+          "temporal_final_drain_cycles_per_head": 3680,
+          "temporal_final_drain_cycles_per_layer_serial_heads": 117760,
+          "windows_per_head": 5462
+        },
+        "tail_adjustment_used_in_projection": false
+      }
+    },
+    {
+      "candidate_id": "exact_partial_service_c1_source_fifo_l4",
+      "composed_physical": {
+        "composition_contract": {
+          "all_physical_platforms": "nangate45",
+          "both_fifo_domain_views_added": false,
+          "both_fifo_domain_views_consumed_for_validation": true,
+          "die_area_added": false,
+          "fifo_canonical_rule": "source_domain_preferred_single_fifo_accounting",
+          "fifo_instance_area_added_once": true,
+          "platforms_mutually_compatible": true,
+          "raw_macro_area_added": false,
+          "service_activity_window_power_summed_with_generic_power": false,
+          "service_instance_area_added_once": true,
+          "temporal_instance_area_added_once": true
+        },
+        "generic_composed_total_power_mw": 0.297501,
+        "instance_area_mm2": 3.31272052,
+        "instance_area_um2": 3312720.52,
+        "power_provenance": {
+          "async_fifo_generic_total_power_mw": "openroad_physical_estimate_only_not_activity_backed_counted_once_via_canonical_fifo_view",
+          "generic_composed_total_power_mw": "homogeneous_generic_openroad_power_sum_only",
+          "service_activity_window_power_mw": "activity_backed_service_window_power_from_component_service_window_energy",
+          "service_generic_total_power_mw": "generic_openroad_routed_ppa_not_activity_backed",
+          "temporal_generic_total_power_mw": "openroad_physical_estimate_only_not_activity_backed"
+        },
+        "service_activity_window_energy_j": 3.111889760510953e-05,
+        "service_activity_window_power_mw": 356.909006834
+      },
+      "divider_lanes": 4,
+      "energy_contract": {
+        "exact_token_energy_claimed": false,
+        "exact_total_token_energy_from_composed_components": false,
+        "reason": "The service c1 anchor carries both generic OpenROAD PPA power and a separate activity-backed service-window power measurement. The temporal/finalizer and FIFO rows carry only standalone OpenROAD physical power estimates. The report therefore preserves separate power views and remains a bounded/provisional energy input rather than an exact token-energy ranking.",
+        "service_activity_window_cycles_not_proven_same_as_functional_probe_service_cycles": true,
+        "status": "bounded_provisional_activity_plus_openroad_physical_power_not_exact_token_energy"
+      },
+      "functional_contract": {
+        "cdc_accepted": 32,
+        "cdc_emitted": 32,
+        "divider_lanes": 4,
+        "finalizer_completed": 16,
+        "finalizer_cycles": 3635,
+        "service_cycles": 4363,
+        "service_period_ns": 10.0,
+        "temporal_cycles": 3635,
+        "temporal_period_ns": 12.0
+      },
+      "input_hashes": {
+        "async_fifo_destination_config_json": {
+          "canonical_json_sha256": "9fa4e8592643e56053b5c953586d1c8c8d3fa650e9170773f2d83a12bbf38173",
+          "file_sha256": "32ccf651764dd36c9d74995b6454803bfe8735e960082e5cadc1a9e91f62827d"
+        },
+        "async_fifo_destination_macro_manifest_json": {
+          "canonical_json_sha256": "312033b1426405f89f0034da54312aa8ce76ea1293d4a91aa773d623f7cf8405",
+          "file_sha256": "72dabcd57bf8f6c9cf656bd192f25df1581b08e6c00445cf19197d918278f26f"
+        },
+        "async_fifo_destination_metrics_csv": {
+          "file_sha256": "1050e2620fd03a703e69c904253482de7343daab267a14cce8106176f0069f68",
+          "selected_row_sha256": "cfe1c89155b67c553e09d968967e5e292dc11ddfc00ae32f3d46ec4cba6aed09"
+        },
+        "async_fifo_source_config_json": {
+          "canonical_json_sha256": "dd095f096973415ea093ab14a34cdc0bcfd0d3ff41d9aff24cc7cc4c99a36d2c",
+          "file_sha256": "58392c5907ec2fd11b29812a5ea3b620fd0afd27ff73849aaf2dc94156360bf7"
+        },
+        "async_fifo_source_macro_manifest_json": {
+          "canonical_json_sha256": "29dcb993bf2afdac0d7bf5744ec99289b9b413d9104996c50e029e2f1e7fb220",
+          "file_sha256": "8abc66b32c1132026193ff5f8c0182d3bfd52336529d6001ca31349b630c4731"
+        },
+        "async_fifo_source_metrics_csv": {
+          "file_sha256": "744a12216193d1ce8d7a12d676adb242e6c1be9b9bd1c0eae2ec65f573cec77d",
+          "selected_row_sha256": "a80a910d915bb112c70f2dbdcf04696b0db9fd8a75042d7a399a9884e5b7c6c9"
+        },
+        "functional_probe_json": {
+          "canonical_json_sha256": "3beab8619643b30f9a68e5a0f2443fa1c7c6f597d133cd48ec1a2e17796d6383",
+          "file_sha256": "ae5db4bf854d46f36b70f9d4b83ed22e4cdc0bed49043f4aef908c8c1a14f851"
+        },
+        "service_activity_power_json": {
+          "canonical_json_sha256": "4ac8f455651588e301b5d9f7f46f984ade950826ccf439d05ad03798bc6d0f76",
+          "file_sha256": "b0efb32f528ea2335a0ab83683f860b2de1a167d88ddb9ba9c5bffd9558381ee"
+        },
+        "temporal_config_json": {
+          "canonical_json_sha256": "9b8876930aa2588a5b2992020cd8a5e0c1b521ba99f0392d37fec5d97478a355",
+          "file_sha256": "859474608523be554dcbea109e751cf44cfc6d82a2c9a8389f72896551348a90"
+        },
+        "temporal_macro_manifest_json": {
+          "canonical_json_sha256": "ff82173f61a5cc08ab0515dd0b661d0b4aa0ba1cae2ee4df925926e95dfcae8e",
+          "file_sha256": "78ec4b66979e6c0a05dd91c62c8afc40046254923d65851a4fdb8a25c177bdcf"
+        },
+        "temporal_metrics_csv": {
+          "file_sha256": "f0d97eec7f08164ffe4578fb56ed895dd677d3e31e829e8e6f96c953334dfd50",
+          "selected_row_sha256": "83e539eb4acfce5df7cb1e68ab581dfeaae90483aa80b7437dc6b6754e17a8cf"
+        }
+      },
+      "inputs": {
+        "async_fifo_destination_clock_period_ns": 12.0,
+        "async_fifo_destination_config_json": "runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_destination_domain_physical/config.json",
+        "async_fifo_destination_design": "attention_exact_partial_async_fifo_d4_destination_domain_physical",
+        "async_fifo_destination_macro_manifest_json": "runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_destination_domain_physical/macro_manifest.json",
+        "async_fifo_destination_metrics_csv": "runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_destination_domain_physical/metrics.csv",
+        "async_fifo_source_clock_period_ns": 10.0,
+        "async_fifo_source_config_json": "runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_source_domain_physical/config.json",
+        "async_fifo_source_design": "attention_exact_partial_async_fifo_d4_source_domain_physical",
+        "async_fifo_source_macro_manifest_json": "runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_source_domain_physical/macro_manifest.json",
+        "async_fifo_source_metrics_csv": "runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_source_domain_physical/metrics.csv",
+        "fifo_canonical_timed_domain": "source",
+        "functional_probe_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe__l2_decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe_10ns_12ns_v1_r2/lane4.json",
+        "service_activity_power_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_service_activity_power__l2_decoder_attention_decode_score_multivalue_service_c1_activity_power_llama7b_v1_r8.json",
+        "temporal_clock_period_ns": 12.0,
+        "temporal_config_json": "runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l4/config.json",
+        "temporal_design": "attention_score32_exact_partial_temporal_finalizer_physical_l4",
+        "temporal_macro_manifest_json": "runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l4/macro_manifest.json",
+        "temporal_metrics_csv": "runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l4/metrics.csv"
+      },
+      "timing_bounds": {
+        "latency_contract": {
+          "combined_latency_not_derived_from_activity_window_cycles": true,
+          "derived_from_functional_cycles_and_domain_periods": true,
+          "finalizer_cycles_are_diagnostic_only": true,
+          "functional_probe_periods_match_effective_physical_domains": true,
+          "openroad_critical_paths_not_used_as_cdc_latency": true,
+          "service_activity_window_cycles_not_assumed_equal_to_functional_service_cycles": true,
+          "temporal_cycles_are_elapsed_wall_clock": true
+        },
+        "overlap_lower_bound_ns": 43630.0,
+        "overlap_lower_bound_us": 43.63,
+        "serial_upper_bound_ns": 87250.0,
+        "serial_upper_bound_us": 87.25,
+        "service_domain": {
+          "activity_window_cycle_count_not_assumed_equal": 8719,
+          "clock_sources": [
+            "service_activity_anchor",
+            "async_fifo_source_domain"
+          ],
+          "cycles": 4363,
+          "period_ns": 10.0,
+          "time_ns": 43630.0
+        },
+        "temporal_domain": {
+          "clock_sources": [
+            "temporal_finalizer_physical_row",
+            "async_fifo_destination_domain"
+          ],
+          "components": {
+            "elapsed_wall_clock_temporal_cycles": 3635,
+            "finalizer_counter_added_to_elapsed_cycles": false,
+            "finalizer_counter_cycles_diagnostic_only": 3635
+          },
+          "cycles": 3635,
+          "period_ns": 12.0,
+          "time_ns": 43620.0
+        },
+        "throughput_lower_bound_per_s": 11461.31805157593,
+        "throughput_upper_bound_per_s": 22920.009168003668
+      },
+      "workload_correspondence": {
+        "affine_recurrence_proof": {
+          "bounded_window_counts": [
+            1,
+            2,
+            3,
+            4
+          ],
+          "counter_deltas": [
+            1076,
+            1076,
+            1076
+          ],
+          "measured_service_span_cycles": [
+            1051,
+            2127,
+            3203,
+            4279
+          ],
+          "proven": true,
+          "recurrence": "service_cycles(N) = startup_cycles + (N - 1) * steady_state_cycles_per_additional_full_window",
+          "startup_cycles": 1051,
+          "steady_state_cycles_per_additional_full_window": 1076
+        },
+        "projection": {
+          "final_partial_tokens": 8,
+          "full_windows_per_head": 5461,
+          "head_latency_ns_serial_upper_bound": 58793142.0,
+          "layer_latency_ns_serial_upper_bound": 1881380544.0,
+          "service_cycles_32_layer_serial_bound": 6018137088,
+          "service_cycles_per_head": 5877087,
+          "service_cycles_per_layer_serial_heads": 188066784,
+          "temporal_final_drain_cycles_32_layer_serial_bound": 1900544,
+          "temporal_final_drain_cycles_per_head": 1856,
+          "temporal_final_drain_cycles_per_layer_serial_heads": 59392,
+          "windows_per_head": 5462
+        },
+        "tail_adjustment_used_in_projection": false
+      }
+    },
+    {
+      "candidate_id": "exact_partial_service_c1_source_fifo_l8",
+      "composed_physical": {
+        "composition_contract": {
+          "all_physical_platforms": "nangate45",
+          "both_fifo_domain_views_added": false,
+          "both_fifo_domain_views_consumed_for_validation": true,
+          "die_area_added": false,
+          "fifo_canonical_rule": "source_domain_preferred_single_fifo_accounting",
+          "fifo_instance_area_added_once": true,
+          "platforms_mutually_compatible": true,
+          "raw_macro_area_added": false,
+          "service_activity_window_power_summed_with_generic_power": false,
+          "service_instance_area_added_once": true,
+          "temporal_instance_area_added_once": true
+        },
+        "generic_composed_total_power_mw": 0.297701,
+        "instance_area_mm2": 3.31645452,
+        "instance_area_um2": 3316454.52,
+        "power_provenance": {
+          "async_fifo_generic_total_power_mw": "openroad_physical_estimate_only_not_activity_backed_counted_once_via_canonical_fifo_view",
+          "generic_composed_total_power_mw": "homogeneous_generic_openroad_power_sum_only",
+          "service_activity_window_power_mw": "activity_backed_service_window_power_from_component_service_window_energy",
+          "service_generic_total_power_mw": "generic_openroad_routed_ppa_not_activity_backed",
+          "temporal_generic_total_power_mw": "openroad_physical_estimate_only_not_activity_backed"
+        },
+        "service_activity_window_energy_j": 3.111889760510953e-05,
+        "service_activity_window_power_mw": 356.909006834
+      },
+      "divider_lanes": 8,
+      "energy_contract": {
+        "exact_token_energy_claimed": false,
+        "exact_total_token_energy_from_composed_components": false,
+        "reason": "The service c1 anchor carries both generic OpenROAD PPA power and a separate activity-backed service-window power measurement. The temporal/finalizer and FIFO rows carry only standalone OpenROAD physical power estimates. The report therefore preserves separate power views and remains a bounded/provisional energy input rather than an exact token-energy ranking.",
+        "service_activity_window_cycles_not_proven_same_as_functional_probe_service_cycles": true,
+        "status": "bounded_provisional_activity_plus_openroad_physical_power_not_exact_token_energy"
+      },
+      "functional_contract": {
+        "cdc_accepted": 32,
+        "cdc_emitted": 32,
+        "divider_lanes": 8,
+        "finalizer_completed": 16,
+        "finalizer_cycles": 2723,
+        "service_cycles": 3269,
+        "service_period_ns": 10.0,
+        "temporal_cycles": 2723,
+        "temporal_period_ns": 12.0
+      },
+      "input_hashes": {
+        "async_fifo_destination_config_json": {
+          "canonical_json_sha256": "9fa4e8592643e56053b5c953586d1c8c8d3fa650e9170773f2d83a12bbf38173",
+          "file_sha256": "32ccf651764dd36c9d74995b6454803bfe8735e960082e5cadc1a9e91f62827d"
+        },
+        "async_fifo_destination_macro_manifest_json": {
+          "canonical_json_sha256": "312033b1426405f89f0034da54312aa8ce76ea1293d4a91aa773d623f7cf8405",
+          "file_sha256": "72dabcd57bf8f6c9cf656bd192f25df1581b08e6c00445cf19197d918278f26f"
+        },
+        "async_fifo_destination_metrics_csv": {
+          "file_sha256": "1050e2620fd03a703e69c904253482de7343daab267a14cce8106176f0069f68",
+          "selected_row_sha256": "cfe1c89155b67c553e09d968967e5e292dc11ddfc00ae32f3d46ec4cba6aed09"
+        },
+        "async_fifo_source_config_json": {
+          "canonical_json_sha256": "dd095f096973415ea093ab14a34cdc0bcfd0d3ff41d9aff24cc7cc4c99a36d2c",
+          "file_sha256": "58392c5907ec2fd11b29812a5ea3b620fd0afd27ff73849aaf2dc94156360bf7"
+        },
+        "async_fifo_source_macro_manifest_json": {
+          "canonical_json_sha256": "29dcb993bf2afdac0d7bf5744ec99289b9b413d9104996c50e029e2f1e7fb220",
+          "file_sha256": "8abc66b32c1132026193ff5f8c0182d3bfd52336529d6001ca31349b630c4731"
+        },
+        "async_fifo_source_metrics_csv": {
+          "file_sha256": "744a12216193d1ce8d7a12d676adb242e6c1be9b9bd1c0eae2ec65f573cec77d",
+          "selected_row_sha256": "a80a910d915bb112c70f2dbdcf04696b0db9fd8a75042d7a399a9884e5b7c6c9"
+        },
+        "functional_probe_json": {
+          "canonical_json_sha256": "5f1e5cb2a7ceb4f69ae7dfd43b69c3000d140de218d08f295a597d2805e8c8c3",
+          "file_sha256": "fc316fa21f7f7e364cdc51291a212ece888c7d8265e86f1480912509161642bb"
+        },
+        "service_activity_power_json": {
+          "canonical_json_sha256": "4ac8f455651588e301b5d9f7f46f984ade950826ccf439d05ad03798bc6d0f76",
+          "file_sha256": "b0efb32f528ea2335a0ab83683f860b2de1a167d88ddb9ba9c5bffd9558381ee"
+        },
+        "temporal_config_json": {
+          "canonical_json_sha256": "4d32904d843fb456c25b06ed3d22535a0553d5b216f1d593a06ba054afd6a756",
+          "file_sha256": "08662889262c0967a82b9bfc76cef66e9bd150bffad2b321b34a92fefc381558"
+        },
+        "temporal_macro_manifest_json": {
+          "canonical_json_sha256": "d0beceb6206fb242cd3607812d080b5833e708ae1379d6652155eced01944c9c",
+          "file_sha256": "20793bd4e92c54ef4e61d31b4aa4dc24888620e2a7177c3e31bb12e1ba1a955c"
+        },
+        "temporal_metrics_csv": {
+          "file_sha256": "a062f68aea4f59704f3db0af8d2a01b2dcdd3715e766ab35e9d4aeebad38f01c",
+          "selected_row_sha256": "f8158aa86263c29d49debfd477fb87be80b3a06eff36b170ab04e617fd2d2d98"
+        }
+      },
+      "inputs": {
+        "async_fifo_destination_clock_period_ns": 12.0,
+        "async_fifo_destination_config_json": "runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_destination_domain_physical/config.json",
+        "async_fifo_destination_design": "attention_exact_partial_async_fifo_d4_destination_domain_physical",
+        "async_fifo_destination_macro_manifest_json": "runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_destination_domain_physical/macro_manifest.json",
+        "async_fifo_destination_metrics_csv": "runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_destination_domain_physical/metrics.csv",
+        "async_fifo_source_clock_period_ns": 10.0,
+        "async_fifo_source_config_json": "runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_source_domain_physical/config.json",
+        "async_fifo_source_design": "attention_exact_partial_async_fifo_d4_source_domain_physical",
+        "async_fifo_source_macro_manifest_json": "runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_source_domain_physical/macro_manifest.json",
+        "async_fifo_source_metrics_csv": "runs/designs/npu_blocks/attention_exact_partial_async_fifo_d4_source_domain_physical/metrics.csv",
+        "fifo_canonical_timed_domain": "source",
+        "functional_probe_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe__l2_decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe_10ns_12ns_v1_r2/lane8.json",
+        "service_activity_power_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_service_activity_power__l2_decoder_attention_decode_score_multivalue_service_c1_activity_power_llama7b_v1_r8.json",
+        "temporal_clock_period_ns": 12.0,
+        "temporal_config_json": "runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l8/config.json",
+        "temporal_design": "attention_score32_exact_partial_temporal_finalizer_physical_l8",
+        "temporal_macro_manifest_json": "runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l8/macro_manifest.json",
+        "temporal_metrics_csv": "runs/designs/npu_blocks/attention_score32_exact_partial_temporal_finalizer_physical_l8/metrics.csv"
+      },
+      "timing_bounds": {
+        "latency_contract": {
+          "combined_latency_not_derived_from_activity_window_cycles": true,
+          "derived_from_functional_cycles_and_domain_periods": true,
+          "finalizer_cycles_are_diagnostic_only": true,
+          "functional_probe_periods_match_effective_physical_domains": true,
+          "openroad_critical_paths_not_used_as_cdc_latency": true,
+          "service_activity_window_cycles_not_assumed_equal_to_functional_service_cycles": true,
+          "temporal_cycles_are_elapsed_wall_clock": true
+        },
+        "overlap_lower_bound_ns": 32690.0,
+        "overlap_lower_bound_us": 32.69,
+        "serial_upper_bound_ns": 65366.0,
+        "serial_upper_bound_us": 65.366,
+        "service_domain": {
+          "activity_window_cycle_count_not_assumed_equal": 8719,
+          "clock_sources": [
+            "service_activity_anchor",
+            "async_fifo_source_domain"
+          ],
+          "cycles": 3269,
+          "period_ns": 10.0,
+          "time_ns": 32690.0
+        },
+        "temporal_domain": {
+          "clock_sources": [
+            "temporal_finalizer_physical_row",
+            "async_fifo_destination_domain"
+          ],
+          "components": {
+            "elapsed_wall_clock_temporal_cycles": 2723,
+            "finalizer_counter_added_to_elapsed_cycles": false,
+            "finalizer_counter_cycles_diagnostic_only": 2723
+          },
+          "cycles": 2723,
+          "period_ns": 12.0,
+          "time_ns": 32676.0
+        },
+        "throughput_lower_bound_per_s": 15298.473212373405,
+        "throughput_upper_bound_per_s": 30590.39461609055
+      },
+      "workload_correspondence": {
+        "affine_recurrence_proof": {
+          "bounded_window_counts": [
+            1,
+            2,
+            3,
+            4
+          ],
+          "counter_deltas": [
+            1076,
+            1076,
+            1076
+          ],
+          "measured_service_span_cycles": [
+            1051,
+            2127,
+            3203,
+            4279
+          ],
+          "proven": true,
+          "recurrence": "service_cycles(N) = startup_cycles + (N - 1) * steady_state_cycles_per_additional_full_window",
+          "startup_cycles": 1051,
+          "steady_state_cycles_per_additional_full_window": 1076
+        },
+        "projection": {
+          "final_partial_tokens": 8,
+          "full_windows_per_head": 5461,
+          "head_latency_ns_serial_upper_bound": 58782198.0,
+          "layer_latency_ns_serial_upper_bound": 1881030336.0,
+          "service_cycles_32_layer_serial_bound": 6018137088,
+          "service_cycles_per_head": 5877087,
+          "service_cycles_per_layer_serial_heads": 188066784,
+          "temporal_final_drain_cycles_32_layer_serial_bound": 966656,
+          "temporal_final_drain_cycles_per_head": 944,
+          "temporal_final_drain_cycles_per_layer_serial_heads": 30208,
+          "windows_per_head": 5462
+        },
+        "tail_adjustment_used_in_projection": false
+      }
+    }
+  ],
+  "proposal_ref": {
+    "proposal_id": "prop_l2_decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost_v1",
+    "proposal_path": "docs/proposals/prop_l2_decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost_v1/proposal.json"
+  },
+  "rows": [
+    {
+      "candidate_id": "exact_partial_service_c1_source_fifo_l1",
+      "composed_instance_area_um2": 3304894.52,
+      "divider_lanes": 1,
+      "energy_status": "bounded_provisional_activity_plus_openroad_physical_power_not_exact_token_energy",
+      "fifo_canonical_design": "attention_exact_partial_async_fifo_d4_source_domain_physical",
+      "fifo_canonical_rule": "source_domain_preferred_single_fifo_accounting",
+      "fifo_destination_design": "attention_exact_partial_async_fifo_d4_destination_domain_physical",
+      "fifo_generic_total_power_mw": 0.000501,
+      "fifo_instance_area_um2": 4954.52,
+      "fifo_proposal_id": "prop_l1_decoder_attention_exact_partial_physical_calibration_v1",
+      "fifo_source_design": "attention_exact_partial_async_fifo_d4_source_domain_physical",
+      "fifo_timed_domain": "source",
+      "finalizer_cycles": 9107,
+      "generic_composed_total_power_mw": 0.297001,
+      "overlap_lower_bound_ns": 109300.0,
+      "overlap_lower_bound_us": 109.3,
+      "platform": "nangate45",
+      "serial_upper_bound_ns": 218584.0,
+      "serial_upper_bound_us": 218.584,
+      "service_activity_window_cycle_count": 8719,
+      "service_activity_window_dynamic_power_mw": 240.1678636674,
+      "service_activity_window_energy_j": 3.111889760510953e-05,
+      "service_activity_window_leakage_power_mw": 116.741158068,
+      "service_activity_window_power_mw": 356.909006834,
+      "service_case_id": "c1_p128_b4_rr",
+      "service_cycles": 10930,
+      "service_design": "attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr",
+      "service_domain_period_ns": 10.0,
+      "service_domain_time_ns": 109300.0,
+      "service_generic_total_power_mw": 0.26,
+      "service_instance_area_um2": 2921450.0,
+      "service_source_item_id": "",
+      "temporal_cycles": 9107,
+      "temporal_design": "attention_score32_exact_partial_temporal_finalizer_physical_l1",
+      "temporal_domain_period_ns": 12.0,
+      "temporal_domain_time_ns": 109284.0,
+      "temporal_generic_total_power_mw": 0.0365,
+      "temporal_instance_area_um2": 378490.0,
+      "temporal_proposal_id": "prop_l1_decoder_attention_exact_partial_physical_calibration_v1",
+      "throughput_lower_bound_per_s": 4574.900267174175,
+      "throughput_upper_bound_per_s": 9149.130832570905,
+      "workload_head_latency_ns_serial_upper_bound": 58858806.0,
+      "workload_layer_latency_ns_serial_upper_bound": 1883481792.0,
+      "workload_service_cycles_per_head": 5877087,
+      "workload_service_startup_cycles": 1051,
+      "workload_service_steady_cycles_per_window": 1076,
+      "workload_temporal_final_drain_cycles_per_head": 7328,
+      "workload_windows_per_head": 5462
+    },
+    {
+      "candidate_id": "exact_partial_service_c1_source_fifo_l2",
+      "composed_instance_area_um2": 3307592.52,
+      "divider_lanes": 2,
+      "energy_status": "bounded_provisional_activity_plus_openroad_physical_power_not_exact_token_energy",
+      "fifo_canonical_design": "attention_exact_partial_async_fifo_d4_source_domain_physical",
+      "fifo_canonical_rule": "source_domain_preferred_single_fifo_accounting",
+      "fifo_destination_design": "attention_exact_partial_async_fifo_d4_destination_domain_physical",
+      "fifo_generic_total_power_mw": 0.000501,
+      "fifo_instance_area_um2": 4954.52,
+      "fifo_proposal_id": "prop_l1_decoder_attention_exact_partial_physical_calibration_v1",
+      "fifo_source_design": "attention_exact_partial_async_fifo_d4_source_domain_physical",
+      "fifo_timed_domain": "source",
+      "finalizer_cycles": 5459,
+      "generic_composed_total_power_mw": 0.297101,
+      "overlap_lower_bound_ns": 65520.0,
+      "overlap_lower_bound_us": 65.52,
+      "platform": "nangate45",
+      "serial_upper_bound_ns": 131028.0,
+      "serial_upper_bound_us": 131.028,
+      "service_activity_window_cycle_count": 8719,
+      "service_activity_window_dynamic_power_mw": 240.1678636674,
+      "service_activity_window_energy_j": 3.111889760510953e-05,
+      "service_activity_window_leakage_power_mw": 116.741158068,
+      "service_activity_window_power_mw": 356.909006834,
+      "service_case_id": "c1_p128_b4_rr",
+      "service_cycles": 6552,
+      "service_design": "attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr",
+      "service_domain_period_ns": 10.0,
+      "service_domain_time_ns": 65520.0,
+      "service_generic_total_power_mw": 0.26,
+      "service_instance_area_um2": 2921450.0,
+      "service_source_item_id": "",
+      "temporal_cycles": 5459,
+      "temporal_design": "attention_score32_exact_partial_temporal_finalizer_physical_l2",
+      "temporal_domain_period_ns": 12.0,
+      "temporal_domain_time_ns": 65508.0,
+      "temporal_generic_total_power_mw": 0.0366,
+      "temporal_instance_area_um2": 381188.0,
+      "temporal_proposal_id": "prop_l1_decoder_attention_exact_partial_physical_calibration_v1",
+      "throughput_lower_bound_per_s": 7631.956528375615,
+      "throughput_upper_bound_per_s": 15262.515262515264,
+      "workload_head_latency_ns_serial_upper_bound": 58815030.0,
+      "workload_layer_latency_ns_serial_upper_bound": 1882080960.0,
+      "workload_service_cycles_per_head": 5877087,
+      "workload_service_startup_cycles": 1051,
+      "workload_service_steady_cycles_per_window": 1076,
+      "workload_temporal_final_drain_cycles_per_head": 3680,
+      "workload_windows_per_head": 5462
+    },
+    {
+      "candidate_id": "exact_partial_service_c1_source_fifo_l4",
+      "composed_instance_area_um2": 3312720.52,
+      "divider_lanes": 4,
+      "energy_status": "bounded_provisional_activity_plus_openroad_physical_power_not_exact_token_energy",
+      "fifo_canonical_design": "attention_exact_partial_async_fifo_d4_source_domain_physical",
+      "fifo_canonical_rule": "source_domain_preferred_single_fifo_accounting",
+      "fifo_destination_design": "attention_exact_partial_async_fifo_d4_destination_domain_physical",
+      "fifo_generic_total_power_mw": 0.000501,
+      "fifo_instance_area_um2": 4954.52,
+      "fifo_proposal_id": "prop_l1_decoder_attention_exact_partial_physical_calibration_v1",
+      "fifo_source_design": "attention_exact_partial_async_fifo_d4_source_domain_physical",
+      "fifo_timed_domain": "source",
+      "finalizer_cycles": 3635,
+      "generic_composed_total_power_mw": 0.297501,
+      "overlap_lower_bound_ns": 43630.0,
+      "overlap_lower_bound_us": 43.63,
+      "platform": "nangate45",
+      "serial_upper_bound_ns": 87250.0,
+      "serial_upper_bound_us": 87.25,
+      "service_activity_window_cycle_count": 8719,
+      "service_activity_window_dynamic_power_mw": 240.1678636674,
+      "service_activity_window_energy_j": 3.111889760510953e-05,
+      "service_activity_window_leakage_power_mw": 116.741158068,
+      "service_activity_window_power_mw": 356.909006834,
+      "service_case_id": "c1_p128_b4_rr",
+      "service_cycles": 4363,
+      "service_design": "attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr",
+      "service_domain_period_ns": 10.0,
+      "service_domain_time_ns": 43630.0,
+      "service_generic_total_power_mw": 0.26,
+      "service_instance_area_um2": 2921450.0,
+      "service_source_item_id": "",
+      "temporal_cycles": 3635,
+      "temporal_design": "attention_score32_exact_partial_temporal_finalizer_physical_l4",
+      "temporal_domain_period_ns": 12.0,
+      "temporal_domain_time_ns": 43620.0,
+      "temporal_generic_total_power_mw": 0.037,
+      "temporal_instance_area_um2": 386316.0,
+      "temporal_proposal_id": "prop_l1_decoder_attention_exact_partial_physical_calibration_v1",
+      "throughput_lower_bound_per_s": 11461.31805157593,
+      "throughput_upper_bound_per_s": 22920.009168003668,
+      "workload_head_latency_ns_serial_upper_bound": 58793142.0,
+      "workload_layer_latency_ns_serial_upper_bound": 1881380544.0,
+      "workload_service_cycles_per_head": 5877087,
+      "workload_service_startup_cycles": 1051,
+      "workload_service_steady_cycles_per_window": 1076,
+      "workload_temporal_final_drain_cycles_per_head": 1856,
+      "workload_windows_per_head": 5462
+    },
+    {
+      "candidate_id": "exact_partial_service_c1_source_fifo_l8",
+      "composed_instance_area_um2": 3316454.52,
+      "divider_lanes": 8,
+      "energy_status": "bounded_provisional_activity_plus_openroad_physical_power_not_exact_token_energy",
+      "fifo_canonical_design": "attention_exact_partial_async_fifo_d4_source_domain_physical",
+      "fifo_canonical_rule": "source_domain_preferred_single_fifo_accounting",
+      "fifo_destination_design": "attention_exact_partial_async_fifo_d4_destination_domain_physical",
+      "fifo_generic_total_power_mw": 0.000501,
+      "fifo_instance_area_um2": 4954.52,
+      "fifo_proposal_id": "prop_l1_decoder_attention_exact_partial_physical_calibration_v1",
+      "fifo_source_design": "attention_exact_partial_async_fifo_d4_source_domain_physical",
+      "fifo_timed_domain": "source",
+      "finalizer_cycles": 2723,
+      "generic_composed_total_power_mw": 0.297701,
+      "overlap_lower_bound_ns": 32690.0,
+      "overlap_lower_bound_us": 32.69,
+      "platform": "nangate45",
+      "serial_upper_bound_ns": 65366.0,
+      "serial_upper_bound_us": 65.366,
+      "service_activity_window_cycle_count": 8719,
+      "service_activity_window_dynamic_power_mw": 240.1678636674,
+      "service_activity_window_energy_j": 3.111889760510953e-05,
+      "service_activity_window_leakage_power_mw": 116.741158068,
+      "service_activity_window_power_mw": 356.909006834,
+      "service_case_id": "c1_p128_b4_rr",
+      "service_cycles": 3269,
+      "service_design": "attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr",
+      "service_domain_period_ns": 10.0,
+      "service_domain_time_ns": 32690.0,
+      "service_generic_total_power_mw": 0.26,
+      "service_instance_area_um2": 2921450.0,
+      "service_source_item_id": "",
+      "temporal_cycles": 2723,
+      "temporal_design": "attention_score32_exact_partial_temporal_finalizer_physical_l8",
+      "temporal_domain_period_ns": 12.0,
+      "temporal_domain_time_ns": 32676.0,
+      "temporal_generic_total_power_mw": 0.0372,
+      "temporal_instance_area_um2": 390050.0,
+      "temporal_proposal_id": "prop_l1_decoder_attention_exact_partial_physical_calibration_v1",
+      "throughput_lower_bound_per_s": 15298.473212373405,
+      "throughput_upper_bound_per_s": 30590.39461609055,
+      "workload_head_latency_ns_serial_upper_bound": 58782198.0,
+      "workload_layer_latency_ns_serial_upper_bound": 1881030336.0,
+      "workload_service_cycles_per_head": 5877087,
+      "workload_service_startup_cycles": 1051,
+      "workload_service_steady_cycles_per_window": 1076,
+      "workload_temporal_final_drain_cycles_per_head": 944,
+      "workload_windows_per_head": 5462
+    }
+  ],
+  "workload_correspondence_sha256": "7ce32a42fe60e53cf500b76a714248e252d809e89ad2c8834636a6e39b1baba9"
+}
