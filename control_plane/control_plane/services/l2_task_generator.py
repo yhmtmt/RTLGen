@@ -8148,12 +8148,12 @@ def _decoder_attention_decode_score_multivalue_service_exact_partial_physical_re
 ) -> dict[str, Any]:
     expected_item_id = (
         "l2_decoder_attention_decode_score_multivalue_service_"
-        "exact_partial_physical_recost_10ns_12ns_v1_r1"
+        "exact_partial_physical_recost_10ns_12ns_v1_r2"
     )
     if str(item_id).strip() != expected_item_id:
         raise Layer2TaskGenerationError(
-            "exact-partial physical recost only permits the immutable _r1 retry item; "
-            "the blocked v1 item must remain untouched"
+            "exact-partial physical recost only permits the immutable _r2 retry item; "
+            "the blocked v1 and failed-dependency r1 items must remain untouched"
         )
     expected_proposal_id = (
         "prop_l2_decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost_v1"
@@ -8167,7 +8167,7 @@ def _decoder_attention_decode_score_multivalue_service_exact_partial_physical_re
         "l1_decoder_attention_exact_partial_temporal_finalizer_bounded_12ns_physical_v1_r1",
         (
             "l2_decoder_attention_decode_score_multivalue_service_"
-            "finalized_cdc_lane_probe_10ns_12ns_v1_r1"
+            "finalized_cdc_lane_probe_10ns_12ns_v1_r2"
         ),
         "l2_decoder_attention_exact_partial_c1_workload_correspondence_llama7b_v1_r1",
     ]

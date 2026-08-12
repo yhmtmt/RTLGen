@@ -37,7 +37,7 @@
   },
   "required_evaluations": [
     {
-      "item_id": "l2_decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost_10ns_12ns_v1_r1",
+      "item_id": "l2_decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost_10ns_12ns_v1_r2",
       "task_type": "l2_campaign",
       "objective": "Record the fail-closed four-lane exact-partial composed-service physical recost retry at the selected 10 ns / 12 ns domain pair using the corrected functional and workload materializations.",
       "evaluation_mode": "frontier_detail",
@@ -45,7 +45,7 @@
       "comparison_role": "lane_matched_composed_physical_recost",
       "depends_on_item_ids": [
         "l1_decoder_attention_exact_partial_temporal_finalizer_bounded_12ns_physical_v1_r1",
-        "l2_decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe_10ns_12ns_v1_r1",
+        "l2_decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe_10ns_12ns_v1_r2",
         "l2_decoder_attention_exact_partial_c1_workload_correspondence_llama7b_v1_r1"
       ],
       "requires_merged_inputs": true,
@@ -56,7 +56,7 @@
         "preserve_blocked_item_id": "l2_decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost_10ns_12ns_v1",
         "corrected_dependency_item_ids": [
           "l1_decoder_attention_exact_partial_temporal_finalizer_bounded_12ns_physical_v1_r1",
-          "l2_decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe_10ns_12ns_v1_r1",
+          "l2_decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe_10ns_12ns_v1_r2",
           "l2_decoder_attention_exact_partial_c1_workload_correspondence_llama7b_v1_r1"
         ]
       },

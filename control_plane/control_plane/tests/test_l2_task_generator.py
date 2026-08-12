@@ -10292,7 +10292,7 @@ def test_generate_l2_campaign_task_adds_exact_partial_physical_recost_consumer()
         create_all(engine)
         item_id = (
             "l2_decoder_attention_decode_score_multivalue_service_"
-            "exact_partial_physical_recost_10ns_12ns_v1_r1"
+            "exact_partial_physical_recost_10ns_12ns_v1_r2"
         )
         proposal_id = (
             "prop_l2_decoder_attention_decode_score_multivalue_service_"
@@ -10303,7 +10303,7 @@ def test_generate_l2_campaign_task_adds_exact_partial_physical_recost_consumer()
             "l1_decoder_attention_exact_partial_temporal_finalizer_bounded_12ns_physical_v1_r1",
             (
                 "l2_decoder_attention_decode_score_multivalue_service_"
-                "finalized_cdc_lane_probe_10ns_12ns_v1_r1"
+                "finalized_cdc_lane_probe_10ns_12ns_v1_r2"
             ),
             "l2_decoder_attention_exact_partial_c1_workload_correspondence_llama7b_v1_r1",
         ]
@@ -10360,17 +10360,17 @@ def test_generate_l2_campaign_task_adds_exact_partial_physical_recost_consumer()
                 "decode_score_multivalue_service_exact_partial_physical_recost_functional_dependency_item_id"
             ] == (
                 "l2_decoder_attention_decode_score_multivalue_service_"
-                "finalized_cdc_lane_probe_10ns_12ns_v1_r1"
+                "finalized_cdc_lane_probe_10ns_12ns_v1_r2"
             )
             assert decoder_inputs[
                 "decode_score_multivalue_service_exact_partial_physical_recost_workload_dependency_item_id"
             ] == "l2_decoder_attention_exact_partial_c1_workload_correspondence_llama7b_v1_r1"
             assert decoder_inputs[
                 "decode_score_multivalue_service_exact_partial_physical_recost_out"
-            ].endswith("_v1_r1.json")
+            ].endswith("_v1_r2.json")
             assert decoder_inputs[
                 "decode_score_multivalue_service_exact_partial_physical_recost_csv_out"
-            ].endswith("_v1_r1.csv")
+            ].endswith("_v1_r2.csv")
             assert payload["developer_loop"]["dependencies"] == {
                 "item_ids": dependencies,
                 "requires_merged_inputs": True,
@@ -10401,7 +10401,7 @@ def test_exact_partial_physical_recost_consumer_rejects_missing_dependency() -> 
                     campaign_path=campaign_path,
                     item_id=(
                         "l2_decoder_attention_decode_score_multivalue_service_"
-                        "exact_partial_physical_recost_10ns_12ns_v1_r1"
+                        "exact_partial_physical_recost_10ns_12ns_v1_r2"
                     ),
                     proposal_id=(
                         "prop_l2_decoder_attention_decode_score_multivalue_service_"
@@ -10439,14 +10439,14 @@ def test_exact_partial_physical_recost_consumer_rejects_obsolete_v1_item_id() ->
             "l1_decoder_attention_exact_partial_temporal_finalizer_bounded_12ns_physical_v1_r1",
             (
                 "l2_decoder_attention_decode_score_multivalue_service_"
-                "finalized_cdc_lane_probe_10ns_12ns_v1_r1"
+                "finalized_cdc_lane_probe_10ns_12ns_v1_r2"
             ),
             "l2_decoder_attention_exact_partial_c1_workload_correspondence_llama7b_v1_r1",
         ]
 
         with Session(engine) as session, pytest.raises(
             Layer2TaskGenerationError,
-            match="blocked v1 item must remain untouched",
+            match="blocked v1 and failed-dependency r1 items must remain untouched",
         ):
             generate_l2_campaign_task(
                 session,
