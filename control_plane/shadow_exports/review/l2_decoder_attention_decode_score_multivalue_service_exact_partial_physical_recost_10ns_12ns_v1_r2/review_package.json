@@ -1,0 +1,151 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-08-12T12:16:47.096849Z",
+  "control_plane_source_commit": "a9c5a0c5afd8e673dc1d423c172271ca1dcb8499",
+  "review_metadata_source_commit": "a9c5a0c5afd8e673dc1d423c172271ca1dcb8499",
+  "item_id": "l2_decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost_10ns_12ns_v1_r2",
+  "run_key": "l2_decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost_10ns_12ns_v1_r2_run_a9ecfec4f2868b61",
+  "layer": "layer2",
+  "flow": "openroad",
+  "task_type": "l2_campaign",
+  "source_commit": "a9c5a0c5afd8e673dc1d423c172271ca1dcb8499",
+  "queue_snapshot": {
+    "path": "control_plane/shadow_exports/review/l2_decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost_10ns_12ns_v1_r2/evaluated.json",
+    "result": {
+      "branch": "eval/l2_decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost_10ns_12ns_v1_r2/s20260812t121644z",
+      "completed_utc": "2026-08-12T12:16:41.974207Z",
+      "evaluator_id": "control_plane",
+      "executor": "@control_plane",
+      "host": "b7c2d9c80c1c",
+      "identity_block": "[role:evaluator][account:control_plane][session:s20260812t121644z][host:b7c2d9c80c1c][item:l2_decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost_10ns_12ns_v1_r2]",
+      "metrics_rows": [],
+      "metrics_exempt_reason": "evidence_only_decoder_evidence",
+      "queue_item_id": "l2_decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost_10ns_12ns_v1_r2",
+      "session_id": "s20260812t121644z",
+      "status": "ok",
+      "summary": "2/2 commands succeeded"
+    }
+  },
+  "review_artifact": {
+    "kind": "decision_proposal",
+    "path": "control_plane/shadow_exports/l2_decisions/l2_decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost_10ns_12ns_v1_r2.json",
+    "storage_mode": "repo",
+    "sha256": "6cf629185103ac36f32f6f6278b78489f192d4d1caeddbcd59d577e5492fa243",
+    "payload": {
+      "version": 0.1,
+      "generated_utc": "2026-08-12T12:16:43.146503Z",
+      "item_id": "l2_decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost_10ns_12ns_v1_r2",
+      "run_key": "l2_decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost_10ns_12ns_v1_r2_run_a9ecfec4f2868b61",
+      "layer": "layer2",
+      "flow": "openroad",
+      "platform": "unknown",
+      "task_type": "l2_campaign",
+      "source_commit": "a9c5a0c5afd8e673dc1d423c172271ca1dcb8499",
+      "review_metadata_source_commit": "a9c5a0c5afd8e673dc1d423c172271ca1dcb8499",
+      "objective": "Compose measured service, lane-matched temporal/finalizer, FIFO, corrected finalized-CDC, and bounded 131k workload evidence into four recost points.",
+      "input_manifest": {
+        "decoder_contract": {
+          "decode_score_multivalue_service_exact_partial_physical_recost_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost__l2_decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost_10ns_12ns_v1_r2.json",
+          "decode_score_multivalue_service_exact_partial_physical_recost_scope": "Compose divider_lanes 1, 2, 4, and 8 from the promoted c1 r8 activity anchor, lane-matched 12 ns temporal/finalizer rows, 10 ns source and 12 ns destination FIFO views, hashed finalized-CDC summaries, and the proven 131k Llama7B workload recurrence. Preserve conservative workload timing bounds and provisional energy provenance; emit one aggregate JSON and one four-row CSV only.",
+          "decode_score_multivalue_service_exact_partial_physical_recost_csv_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost__l2_decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost_10ns_12ns_v1_r2.csv",
+          "decode_score_multivalue_service_exact_partial_physical_recost_campaign": "runs/campaigns/npu/attention_decode_score_multivalue_service_exact_partial_physical_recost_v1/campaign.json",
+          "decode_score_multivalue_service_exact_partial_physical_recost_service_anchor": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_service_activity_power__l2_decoder_attention_decode_score_multivalue_service_c1_activity_power_llama7b_v1_r8.json",
+          "decode_score_multivalue_service_exact_partial_physical_recost_physical_dependency_item_id": "l1_decoder_attention_exact_partial_temporal_finalizer_bounded_12ns_physical_v1_r1",
+          "decode_score_multivalue_service_exact_partial_physical_recost_workload_dependency_item_id": "l2_decoder_attention_exact_partial_c1_workload_correspondence_llama7b_v1_r1",
+          "decode_score_multivalue_service_exact_partial_physical_recost_functional_dependency_item_id": "l2_decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe_10ns_12ns_v1_r2"
+        }
+      },
+      "recommendation": {
+        "source": "decoder_evidence",
+        "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost__l2_decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost_10ns_12ns_v1_r2.json",
+        "arch_id": "decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost",
+        "macro_mode": "evidence_only",
+        "outcome": "decoder_evidence_recorded"
+      },
+      "objective_profiles": [],
+      "evaluation_record": {
+        "proposal_id": "prop_l2_decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost_v1",
+        "title": "Lane-matched exact-partial composed-service physical recost",
+        "primary_question": "What four-point physical recost is obtained when every divider lane uses its matching temporal measurement and finalized-CDC probe at the selected 10 ns / 12 ns domain periods?",
+        "evaluation_mode": "frontier_detail",
+        "comparison_role": "frontier_closure",
+        "abstraction_layer": "decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost",
+        "expected_direction": "record_corrected_recost",
+        "expected_reason": "Use only merged corrected physical, functional, and workload dependencies and preserve conservative timing and energy provenance.",
+        "summary": "Decoder evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost__l2_decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost_10ns_12ns_v1_r2.json: decision=decoder_evidence_recorded.",
+        "outcome": "decoder_evidence_recorded",
+        "expectation_status": "unspecified"
+      },
+      "proposal_assessment": {
+        "proposal_id": "prop_l2_decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost_v1",
+        "title": "Lane-matched exact-partial composed-service physical recost",
+        "kind": "architecture",
+        "primary_question": "What four-point physical recost is obtained when every divider lane uses its matching temporal measurement and finalized-CDC probe at the selected 10 ns / 12 ns domain periods?",
+        "evaluation_mode": "frontier_detail",
+        "comparison_role": "frontier_closure",
+        "outcome": "decoder_evidence_recorded",
+        "summary": "Decoder evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost__l2_decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost_10ns_12ns_v1_r2.json: decision=decoder_evidence_recorded.",
+        "baseline_ref": null,
+        "baseline_item_id": null,
+        "matched_row_count": 0,
+        "matched_rows": [],
+        "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost__l2_decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost_10ns_12ns_v1_r2.json",
+        "decoder_quality": {
+          "diagnosis": {},
+          "passed": true
+        }
+      },
+      "source_refs": {
+        "decoder_evidence_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost__l2_decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost_10ns_12ns_v1_r2.json",
+        "decoder_decode_score_multivalue_service_exact_partial_physical_recost_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost__l2_decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost_10ns_12ns_v1_r2.json"
+      },
+      "decoder_quality": {
+        "diagnosis": {},
+        "passed": true
+      }
+    }
+  },
+  "developer_loop": {
+    "comparison": {
+      "role": "frontier_closure",
+      "paired_baseline_item_id": ""
+    },
+    "evaluation": {
+      "mode": "frontier_detail",
+      "expected_reason": "Use only merged corrected physical, functional, and workload dependencies and preserve conservative timing and energy provenance.",
+      "expected_direction": "record_corrected_recost"
+    },
+    "abstraction": {
+      "layer": "decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost"
+    },
+    "proposal_id": "prop_l2_decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost_v1",
+    "dependencies": {
+      "item_ids": [
+        "l1_decoder_attention_exact_partial_temporal_finalizer_bounded_12ns_physical_v1_r1",
+        "l2_decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe_10ns_12ns_v1_r2",
+        "l2_decoder_attention_exact_partial_c1_workload_correspondence_llama7b_v1_r1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    },
+    "proposal_path": "docs/proposals/prop_l2_decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost_v1/proposal.json"
+  },
+  "submission_history": null,
+  "pr_payload": {
+    "branch": "eval/l2_decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost_10ns_12ns_v1_r2/s20260812t121644z",
+    "title": "eval: run revised exact-partial service physical recost",
+    "body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260812t121644z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l2_decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost_10ns_12ns_v1_r2"
+    },
+    "body_md": "## Summary\n- item_id: `l2_decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost_10ns_12ns_v1_r2`\n- run_key: `l2_decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost_10ns_12ns_v1_r2_run_a9ecfec4f2868b61`\n- layer: `layer2`\n- task_type: `l2_campaign`\n- status: `ok`\n- summary: `2/2 commands succeeded`\n- queue_snapshot: `control_plane/shadow_exports/review/l2_decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost_10ns_12ns_v1_r2/evaluated.json`\n- metrics_rows_count: `0`\n- review_artifact: `decision_proposal` at `control_plane/shadow_exports/l2_decisions/l2_decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost_10ns_12ns_v1_r2.json`\n\n## Developer Context\n- proposal_id: `prop_l2_decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost_v1`\n- proposal_path: `docs/proposals/prop_l2_decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost_v1/proposal.json`\n- reviewer_first_read: `docs/proposals/prop_l2_decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost_v1/proposal.json` plus `docs/developer_agent_review.md`\n- execution_source_commit: `a9c5a0c5afd8e673dc1d423c172271ca1dcb8499`\n- review_metadata_source_commit: `a9c5a0c5afd8e673dc1d423c172271ca1dcb8499`\n\n## Evaluation Mode\n- evaluation_mode: `frontier_detail`\n- abstraction_layer: `decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost`\n- comparison_role: `frontier_closure`\n- expected_direction: `record_corrected_recost`\n- expected_reason: `Use only merged corrected physical, functional, and workload dependencies and preserve conservative timing and energy provenance.`\n- expectation_status: `unspecified`\n- evaluation_summary: `Decoder evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost__l2_decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost_10ns_12ns_v1_r2.json: decision=decoder_evidence_recorded.`\n\n## Focused Comparison\n- primary_question: `What four-point physical recost is obtained when every divider lane uses its matching temporal measurement and finalized-CDC probe at the selected 10 ns / 12 ns domain periods?`\n- comparison_role: `frontier_closure`\n- proposal_outcome: `decoder_evidence_recorded`\n- comparison_summary: `Decoder evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost__l2_decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost_10ns_12ns_v1_r2.json: decision=decoder_evidence_recorded.`\n- baseline_ref: `None`\n- baseline_item_id: `None`\n\n## Checklist\n- [ ] Commit lightweight campaign artifacts only\n- [ ] Include metrics row references in result.metrics_rows\n- [ ] Keep committed result_path fields repo-portable\n- [ ] Run python3 scripts/validate_runs.py --skip_eval_queue before pushing\n",
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Include metrics row references in result.metrics_rows",
+      "Keep committed result_path fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ]
+  }
+}
