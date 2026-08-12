@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_decode_score_multivalue_service_exact_partial_physical_recost_v1",
+  "decision": "iterate",
+  "pr_number": 1649,
+  "merge_commit": "cdc0c36f37aae2c1c48babe4aa7bea21e46c8ecb",
+  "merged_utc": "2026-08-12T12:18:03.484020Z"
+}
