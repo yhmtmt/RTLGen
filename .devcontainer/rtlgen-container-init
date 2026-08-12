@@ -1,0 +1,94 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ "$(id -u)" != "0" ]]; then
+  echo "rtlgen-container-init must run as root through sudo" >&2
+  exit 1
+fi
+
+RTLGEN_USER=rtlgen
+RTLGEN_GROUP=rtlgen
+
+require_value() {
+  local value="$1"
+  local pattern="$2"
+  local label="$3"
+  if [[ ! "${value}" =~ ${pattern} ]]; then
+    echo "Invalid ${label}: ${value}" >&2
+    exit 2
+  fi
+}
+
+prepare_paths() {
+  local path
+  for path in /tmp/rtlgen-control-plane /workspaces/rtlgen-eval-clean; do
+    if [[ -L "${path}" ]]; then
+      echo "Refusing symlink at privileged directory: ${path}" >&2
+      exit 2
+    fi
+    install -d -o "${RTLGEN_USER}" -g "${RTLGEN_GROUP}" -m 0755 "${path}"
+    chown "${RTLGEN_USER}:${RTLGEN_GROUP}" "${path}"
+  done
+}
+
+initialize_postgres() {
+  local role=""
+  local password=""
+  local database=""
+  local version=""
+  local allowed_cidr=""
+
+  while (($#)); do
+    case "$1" in
+      --role) role="${2:-}"; shift 2 ;;
+      --password) password="${2:-}"; shift 2 ;;
+      --database) database="${2:-}"; shift 2 ;;
+      --version) version="${2:-}"; shift 2 ;;
+      --allowed-cidr) allowed_cidr="${2:-}"; shift 2 ;;
+      *) echo "Unknown postgres argument: $1" >&2; exit 2 ;;
+    esac
+  done
+
+  require_value "${role}" '^[A-Za-z_][A-Za-z0-9_]*$' "PostgreSQL role"
+  require_value "${password}" '^[A-Za-z0-9_.-]+$' "PostgreSQL password"
+  require_value "${database}" '^[A-Za-z_][A-Za-z0-9_]*$' "PostgreSQL database"
+  require_value "${version}" '^[0-9]+$' "PostgreSQL version"
+  require_value "${allowed_cidr}" '^[0-9A-Fa-f:.]+/[0-9]+$' "PostgreSQL allowed CIDR"
+
+  local conf_dir="/etc/postgresql/${version}/main"
+  local postgres_conf="${conf_dir}/postgresql.conf"
+  local pg_hba_conf="${conf_dir}/pg_hba.conf"
+  local hba_line="host    ${database}    ${role}    ${allowed_cidr}    scram-sha-256"
+
+  service postgresql start
+  if [[ -f "${postgres_conf}" ]]; then
+    sed -i "s/^#\\?listen_addresses\\s*=.*/listen_addresses = '*'/" "${postgres_conf}"
+  fi
+  if [[ -f "${pg_hba_conf}" ]] && ! grep -Fq "${hba_line}" "${pg_hba_conf}"; then
+    printf '%s\n' "${hba_line}" >>"${pg_hba_conf}"
+  fi
+  service postgresql restart
+
+  if ! runuser -u postgres -- psql -tAc "SELECT 1 FROM pg_roles WHERE rolname='${role}'" | grep -q 1; then
+    runuser -u postgres -- psql -v ON_ERROR_STOP=1 \
+      -c "CREATE ROLE ${role} LOGIN PASSWORD '${password}'"
+  fi
+  if ! runuser -u postgres -- psql -tAc "SELECT 1 FROM pg_database WHERE datname='${database}'" | grep -q 1; then
+    runuser -u postgres -- createdb -O "${role}" "${database}"
+  fi
+}
+
+case "${1:-}" in
+  prepare)
+    [[ $# == 1 ]] || { echo "prepare takes no arguments" >&2; exit 2; }
+    prepare_paths
+    ;;
+  postgres)
+    shift
+    initialize_postgres "$@"
+    ;;
+  *)
+    echo "Usage: rtlgen-container-init <prepare|postgres ...>" >&2
+    exit 2
+    ;;
+esac
