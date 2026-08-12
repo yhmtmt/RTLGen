@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_exact_partial_c1_workload_correspondence_llama7b_v1",
+  "decision": "iterate",
+  "pr_number": 1643,
+  "merge_commit": "ab42f313a0f0dc87a873ae80ad03f1ba22e703fe",
+  "merged_utc": "2026-08-12T12:03:35.014464Z"
+}
