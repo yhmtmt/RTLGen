@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_decode_score_multivalue_service_finalized_cdc_lane_probe_v1",
+  "decision": "iterate",
+  "pr_number": 1647,
+  "merge_commit": "8bd0ff3cdaf3540af37690da41096ec582cc0cf8",
+  "merged_utc": "2026-08-12T12:12:11.796192Z"
+}
