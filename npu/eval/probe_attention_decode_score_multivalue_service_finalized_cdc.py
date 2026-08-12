@@ -291,11 +291,11 @@ module tb;
   reg blocked_output_valid;
   reg stable_output_seen;
   reg summary_done;
+  reg directed_stall_armed;
+  reg [1:0] directed_stall_remaining;
   reg [376:0] blocked_output;
 
-  assign out_ready = temporal_rst_n &&
-      (((temporal_cycle % 13) != 2) && ((temporal_cycle % 13) != 3) &&
-       ((temporal_cycle % 13) != 4) && ((temporal_cycle % 13) != 9));
+  assign out_ready = temporal_rst_n && (directed_stall_remaining == 0);
 
   {top_name} dut (
       .service_clk(service_clk),
@@ -446,8 +446,17 @@ module tb;
       stable_output_seen <= 1'b0;
       blocked_output <= 377'd0;
       summary_done <= 1'b0;
+      directed_stall_armed <= 1'b1;
+      directed_stall_remaining <= 2'd0;
     end else begin
       temporal_cycle <= temporal_cycle + 1;
+      if (directed_stall_remaining != 0) begin
+        if (out_valid)
+          directed_stall_remaining <= directed_stall_remaining - 1'b1;
+      end else if (directed_stall_armed && out_valid && out_ready) begin
+        directed_stall_armed <= 1'b0;
+        directed_stall_remaining <= 2'd3;
+      end
       if (out_valid && !out_ready) begin
         if (!blocked_output_valid) begin
           blocked_output_valid <= 1'b1;
