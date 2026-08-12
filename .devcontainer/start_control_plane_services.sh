@@ -35,7 +35,12 @@ fi
 
 case "${DB_MODE}" in
   local)
-    /workspaces/RTLGen/.devcontainer/start_postgres.sh
+    sudo -n /usr/local/sbin/rtlgen-container-init postgres \
+      --role "${RTLCP_DB_ROLE:-rtlgen}" \
+      --password "${RTLCP_DB_PASSWORD:-rtlgen}" \
+      --database "${RTLCP_DB_NAME:-rtlgen_control_plane}" \
+      --version "${RTLCP_PG_VERSION:-14}" \
+      --allowed-cidr "${RTLCP_PG_ALLOWED_CIDR:-172.16.0.0/12}"
     echo "Using local PostgreSQL for control-plane DB"
     ;;
   remote)

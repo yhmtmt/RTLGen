@@ -195,5 +195,27 @@ RUN ${RTLGEN_HF_MATERIALIZER_PYTHON} -m pip install --no-cache-dir \
     onnx==1.17.0 && \
     ${RTLGEN_HF_MATERIALIZER_PYTHON} -c 'import importlib.util; missing = [name for name in ("torch", "transformers", "onnx") if importlib.util.find_spec(name) is None]; assert not missing, "missing HF materializer dependencies after Dockerfile install: " + ", ".join(missing)'
 
+# Keep user provisioning late so UID/GID and container-start changes do not
+# invalidate the expensive OpenROAD and ORFS build layers above.
+ARG USERNAME=rtlgen
+ARG USER_UID=1000
+ARG USER_GID=${USER_UID}
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends sudo && \
+    groupadd --gid "${USER_GID}" "${USERNAME}" && \
+    useradd --uid "${USER_UID}" --gid "${USER_GID}" --create-home --shell /bin/bash "${USERNAME}" && \
+    rm -rf /var/lib/apt/lists/*
+
+COPY .devcontainer/rtlgen-container-init /usr/local/sbin/rtlgen-container-init
+RUN chown root:root /usr/local/sbin/rtlgen-container-init && \
+    chmod 0755 /usr/local/sbin/rtlgen-container-init && \
+    printf '%s ALL=(root) NOPASSWD: /usr/local/sbin/rtlgen-container-init\n' "${USERNAME}" \
+      >/etc/sudoers.d/rtlgen-container-init && \
+    chmod 0440 /etc/sudoers.d/rtlgen-container-init && \
+    visudo -cf /etc/sudoers.d/rtlgen-container-init
+
+ENV HOME=/home/${USERNAME}
+USER ${USERNAME}
+
 # Set the working directory
 #WORKDIR /orfs
