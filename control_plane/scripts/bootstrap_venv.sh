@@ -20,5 +20,5 @@ activate with:
   source "$VENV_DIR/bin/activate"
 
 next recommended step:
-  "$ROOT_DIR/scripts/migrate_smoke.sh"
+  VENV_PATH="$VENV_DIR" "$ROOT_DIR/scripts/migrate_smoke.sh"
 EOF

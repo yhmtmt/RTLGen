@@ -29,15 +29,15 @@ work_item_state_enum = sa.Enum(
 
 
 def upgrade() -> None:
-    op.alter_column(
-        "work_items",
-        "state",
-        existing_type=sa.String(length=15),
-        type_=work_item_state_enum,
-        existing_nullable=False,
-        existing_server_default="draft",
-        postgresql_using="state::varchar(32)",
-    )
+    with op.batch_alter_table("work_items") as batch_op:
+        batch_op.alter_column(
+            "state",
+            existing_type=sa.String(length=15),
+            type_=work_item_state_enum,
+            existing_nullable=False,
+            existing_server_default="draft",
+            postgresql_using="state::varchar(32)",
+        )
 
 
 def downgrade() -> None:
@@ -57,12 +57,12 @@ def downgrade() -> None:
         length=15,
     )
     op.execute("UPDATE work_items SET state = 'ready' WHERE state = 'dispatch_pending'")
-    op.alter_column(
-        "work_items",
-        "state",
-        existing_type=work_item_state_enum,
-        type_=legacy_state_enum,
-        existing_nullable=False,
-        existing_server_default="draft",
-        postgresql_using="state::varchar(15)",
-    )
+    with op.batch_alter_table("work_items") as batch_op:
+        batch_op.alter_column(
+            "state",
+            existing_type=work_item_state_enum,
+            type_=legacy_state_enum,
+            existing_nullable=False,
+            existing_server_default="draft",
+            postgresql_using="state::varchar(15)",
+        )

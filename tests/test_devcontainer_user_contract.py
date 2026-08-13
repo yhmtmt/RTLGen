@@ -88,3 +88,18 @@ def test_server_starts_api_before_resolver() -> None:
 
     assert '${AUTOSTART_API:-1}' in server_case
     assert server_case.index("start api") < server_case.index("start resolver")
+
+
+def test_migration_scripts_honor_external_devcontainer_venv() -> None:
+    scripts = REPO_ROOT / "control_plane" / "scripts"
+
+    for script_name in (
+        "migrate_smoke.sh",
+        "migrate_postgres.sh",
+        "ensure_postgres_db.sh",
+    ):
+        script = (scripts / script_name).read_text(encoding="utf-8")
+        assert 'VENV_DIR=${RTLCP_VENV_DIR:-${VENV_PATH:-"$ROOT_DIR/.venv"}}' in script
+
+    bootstrap = (scripts / "bootstrap_venv.sh").read_text(encoding="utf-8")
+    assert 'VENV_PATH="$VENV_DIR" "$ROOT_DIR/scripts/migrate_smoke.sh"' in bootstrap
