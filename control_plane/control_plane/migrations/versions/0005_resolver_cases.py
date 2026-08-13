@@ -14,6 +14,12 @@ depends_on = None
 json_type = sa.JSON().with_variant(postgresql.JSONB(astext_type=sa.Text()), "postgresql")
 
 
+def _json_object_default() -> sa.TextClause:
+    if op.get_bind().dialect.name == "postgresql":
+        return sa.text("'{}'::jsonb")
+    return sa.text("'{}'")
+
+
 def upgrade() -> None:
     op.create_table(
         "resolver_cases",
@@ -31,8 +37,8 @@ def upgrade() -> None:
         sa.Column("machine_key", sa.String(length=255), nullable=True),
         sa.Column("source_commit", sa.String(length=64), nullable=True),
         sa.Column("repo_root", sa.Text(), nullable=True),
-        sa.Column("evidence_json", json_type, nullable=False, server_default=sa.text("'{}'::jsonb")),
-        sa.Column("resolution_json", json_type, nullable=False, server_default=sa.text("'{}'::jsonb")),
+        sa.Column("evidence_json", json_type, nullable=False, server_default=_json_object_default()),
+        sa.Column("resolution_json", json_type, nullable=False, server_default=_json_object_default()),
         sa.Column("attempt_count", sa.Integer(), nullable=False, server_default="0"),
         sa.Column("max_attempts", sa.Integer(), nullable=False, server_default="3"),
         sa.Column("last_evidence_hash", sa.String(length=64), nullable=True),
@@ -63,7 +69,7 @@ def upgrade() -> None:
         sa.Column("source", sa.String(length=32), nullable=False),
         sa.Column("kind", sa.String(length=64), nullable=False),
         sa.Column("summary", sa.Text(), nullable=False),
-        sa.Column("payload_json", json_type, nullable=False, server_default=sa.text("'{}'::jsonb")),
+        sa.Column("payload_json", json_type, nullable=False, server_default=_json_object_default()),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
         sa.ForeignKeyConstraint(["case_id"], ["resolver_cases.id"], name=op.f("fk_resolver_observations_case_id_resolver_cases")),
         sa.PrimaryKeyConstraint("id", name=op.f("pk_resolver_observations")),
@@ -93,8 +99,8 @@ def upgrade() -> None:
         sa.Column("evidence_hash", sa.String(length=64), nullable=True),
         sa.Column("failure_hash", sa.String(length=64), nullable=True),
         sa.Column("idempotency_key", sa.String(length=255), nullable=False),
-        sa.Column("request_json", json_type, nullable=False, server_default=sa.text("'{}'::jsonb")),
-        sa.Column("result_json", json_type, nullable=False, server_default=sa.text("'{}'::jsonb")),
+        sa.Column("request_json", json_type, nullable=False, server_default=_json_object_default()),
+        sa.Column("result_json", json_type, nullable=False, server_default=_json_object_default()),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
         sa.ForeignKeyConstraint(["case_id"], ["resolver_cases.id"], name=op.f("fk_resolver_actions_case_id_resolver_cases")),
         sa.PrimaryKeyConstraint("id", name=op.f("pk_resolver_actions")),

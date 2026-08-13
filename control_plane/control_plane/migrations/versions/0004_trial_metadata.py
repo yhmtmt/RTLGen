@@ -14,8 +14,22 @@ depends_on = None
 json_type = sa.JSON().with_variant(postgresql.JSONB(astext_type=sa.Text()), "postgresql")
 
 
+def _json_object_default() -> sa.TextClause:
+    if op.get_bind().dialect.name == "postgresql":
+        return sa.text("'{}'::jsonb")
+    return sa.text("'{}'")
+
+
 def upgrade() -> None:
-    op.add_column("work_items", sa.Column("trial_policy_json", json_type, nullable=False, server_default=sa.text("'{}'::jsonb")))
+    op.add_column(
+        "work_items",
+        sa.Column(
+            "trial_policy_json",
+            json_type,
+            nullable=False,
+            server_default=_json_object_default(),
+        ),
+    )
     op.add_column("runs", sa.Column("trial_index", sa.Integer(), nullable=True))
     op.add_column("runs", sa.Column("seed", sa.Integer(), nullable=True))
     op.add_column("runs", sa.Column("trial_group_key", sa.String(length=255), nullable=True))

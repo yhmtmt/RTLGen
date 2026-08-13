@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
-VENV_DIR=${RTLCP_VENV_DIR:-"$ROOT_DIR/.venv"}
+VENV_DIR=${RTLCP_VENV_DIR:-${VENV_PATH:-"$ROOT_DIR/.venv"}}
 DB_PATH=${RTLCP_SMOKE_DB_PATH:-/tmp/rtlgen-control-plane-phase1.db}
 DB_URL=${RTLCP_DATABASE_URL:-"sqlite+pysqlite:///$DB_PATH"}
 
