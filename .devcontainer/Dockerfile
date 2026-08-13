@@ -215,6 +215,7 @@ RUN chown root:root /usr/local/sbin/rtlgen-container-init && \
     visudo -cf /etc/sudoers.d/rtlgen-container-init
 
 ENV HOME=/home/${USERNAME}
+ENV PATH="/home/${USERNAME}/.local/bin:${PATH}"
 USER ${USERNAME}
 
 # Set the working directory

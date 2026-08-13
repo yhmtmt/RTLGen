@@ -56,6 +56,11 @@ case "${ROLE}" in
   server)
     echo "Developer/server role is not an execution node; worker/completion stay disabled unless started explicitly"
     echo "Skipping completion loop autostart for server role"
+    if [[ "${AUTOSTART_API:-1}" == "1" ]]; then
+      /workspaces/RTLGen/.devcontainer/control_plane_service_ctl.sh start api
+    else
+      echo "Skipping control-plane API autostart for server role"
+    fi
     if [[ "${AUTOSTART_RESOLVER:-1}" == "1" ]]; then
       /workspaces/RTLGen/.devcontainer/control_plane_service_ctl.sh start resolver
     else

@@ -1,17 +1,18 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Install the Codex CLI native binary on Ubuntu 22.04 (inside a container).
-# This does NOT use Node.js or npm.
+# Install the Codex CLI native binary without root privileges.
+# The devcontainer image already provides wget, tar, and CA certificates.
 
-SUDO=""
-if [ "$(id -u)" -ne 0 ]; then
-  SUDO="sudo"
-fi
+INSTALL_DIR="${CODEX_INSTALL_DIR:-${HOME}/.local/bin}"
 
-echo "[codex] Installing dependencies (curl, ca-certificates)..."
-$SUDO apt-get update -y
-$SUDO apt-get install -y curl ca-certificates
+for dependency in wget tar; do
+  if ! command -v "${dependency}" >/dev/null 2>&1; then
+    echo "[codex] Missing dependency: ${dependency}" >&2
+    echo "[codex] Install it in the image, then rebuild the devcontainer." >&2
+    exit 1
+  fi
+done
 
 ARCH="$(uname -m)"
 case "$ARCH" in
@@ -28,24 +29,35 @@ case "$ARCH" in
 esac
 
 TMP_DIR="$(mktemp -d)"
-cd "$TMP_DIR"
+trap 'rm -rf "${TMP_DIR}"' EXIT
 
 echo "[codex] Downloading latest Codex CLI binary for $ARCH..."
-curl -L "https://github.com/openai/codex/releases/latest/download/${CODEx_ASSET}.tar.gz" \
-  -o codex.tar.gz
+wget -q \
+  "https://github.com/openai/codex/releases/latest/download/${CODEx_ASSET}.tar.gz" \
+  -O "${TMP_DIR}/codex.tar.gz"
 
 echo "[codex] Extracting..."
-tar -xzf codex.tar.gz
+tar -xzf "${TMP_DIR}/codex.tar.gz" -C "${TMP_DIR}"
 
 # The tar contains a single binary named like codex-x86_64-unknown-linux-musl
-echo "[codex] Installing to /usr/local/bin/codex ..."
-$SUDO mv "$CODEx_ASSET" /usr/local/bin/codex
-$SUDO chmod +x /usr/local/bin/codex
+echo "[codex] Installing to ${INSTALL_DIR}/codex ..."
+mkdir -p "${INSTALL_DIR}"
+install -m 0755 "${TMP_DIR}/${CODEx_ASSET}" "${INSTALL_DIR}/codex"
 
-cd /
-rm -rf "$TMP_DIR"
+CODE_MODE_HOST_SOURCE="${CODEX_CODE_MODE_HOST_SOURCE:-${HOME}/.codex/plugins/.plugin-appserver/codex-code-mode-host}"
+CODE_MODE_HOST_TARGET="${INSTALL_DIR}/codex-code-mode-host"
+if [[ -x "${CODE_MODE_HOST_SOURCE}" ]]; then
+  if [[ -L "${CODE_MODE_HOST_TARGET}" ]]; then
+    ln -sfn "${CODE_MODE_HOST_SOURCE}" "${CODE_MODE_HOST_TARGET}"
+  elif [[ ! -e "${CODE_MODE_HOST_TARGET}" ]]; then
+    ln -s "${CODE_MODE_HOST_SOURCE}" "${CODE_MODE_HOST_TARGET}"
+  fi
+  echo "[codex] Code-mode host available at ${CODE_MODE_HOST_TARGET}"
+else
+  echo "[codex] Code-mode host plugin is not installed; CLI-only use remains available." >&2
+fi
 
 echo "[codex] Verifying installation..."
-codex --version
+"${INSTALL_DIR}/codex" --version
 
 echo "[codex] Done. You can now run 'codex' inside this container."

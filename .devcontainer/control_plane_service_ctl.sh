@@ -105,6 +105,7 @@ case "${ACTION}" in
     if ! kill -0 "$(cat "${PID_FILE}")" 2>/dev/null; then
       rm -f "${PID_FILE}"
       echo "failed to start ${SERVICE}; see ${LOG_FILE}" >&2
+      _tail_log 40 >&2
       exit 1
     fi
     echo "started ${SERVICE}: pid=$(cat "${PID_FILE}") log=${LOG_FILE}"
