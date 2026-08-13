@@ -21,6 +21,13 @@ require_value() {
 
 prepare_paths() {
   local path
+  if [[ -L /workspaces ]]; then
+    echo "Refusing symlink at privileged directory: /workspaces" >&2
+    exit 2
+  fi
+  install -d -o "${RTLGEN_USER}" -g "${RTLGEN_GROUP}" -m 0755 /workspaces
+  chown "${RTLGEN_USER}:${RTLGEN_GROUP}" /workspaces
+
   for path in /tmp/rtlgen-control-plane /workspaces/rtlgen-eval-clean; do
     if [[ -L "${path}" ]]; then
       echo "Refusing symlink at privileged directory: ${path}" >&2
