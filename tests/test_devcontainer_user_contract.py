@@ -50,6 +50,23 @@ def test_privileged_helper_does_not_execute_workspace_scripts() -> None:
     assert "^[0-9A-Fa-f:.]+/[0-9]+$" in helper
 
 
+def test_privileged_helper_rejects_symlinked_workspaces_parent() -> None:
+    helper = (DEVCONTAINER / "rtlgen-container-init").read_text(encoding="utf-8")
+
+    assert "[[ -L /workspaces ]]" in helper
+    assert "Refusing symlink at privileged directory: /workspaces" in helper
+    assert helper.index("[[ -L /workspaces ]]") < helper.index("install -d")
+
+
+def test_privileged_helper_owns_workspaces_non_recursively() -> None:
+    helper = (DEVCONTAINER / "rtlgen-container-init").read_text(encoding="utf-8")
+
+    assert 'install -d -o "${RTLGEN_USER}" -g "${RTLGEN_GROUP}" -m 0755 /workspaces' in helper
+    assert 'chown "${RTLGEN_USER}:${RTLGEN_GROUP}" /workspaces' in helper
+    assert 'chown -R' not in helper
+    assert 'chown "${RTLGEN_USER}:${RTLGEN_GROUP}" /workspaces/' not in helper
+
+
 def test_post_start_rejects_root_and_uses_noninteractive_sudo() -> None:
     post_start = (DEVCONTAINER / "post_start.sh").read_text(encoding="utf-8")
 
