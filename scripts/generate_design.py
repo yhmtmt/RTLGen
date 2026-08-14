@@ -461,6 +461,8 @@ def identify_design(config):
             raise ValueError("l1_memory_noc_primitive metadata widths must be positive")
         if primitive == "segmented_router" and ports != 5:
             raise ValueError("l1_memory_noc_primitive segmented_router requires five ports")
+        if primitive == "segmented_router" and flit_bits < 4:
+            raise ValueError("l1_memory_noc_primitive segmented_router requires at least four flit bits")
         return {
             "kind": "l1_memory_noc_primitive",
             "module_name": module_name,
@@ -1048,11 +1050,6 @@ def _emit_l1_segmented_router(module_name, design):
     vc_width = _ceil_log2_at_least_one(vc_count)
     x_coord = design["x_coord"]
     y_coord = design["y_coord"]
-    local_dest = (y_coord << 2) | x_coord
-    north_dest = (max(y_coord - 1, 0) << 2) | x_coord
-    south_dest = (min(y_coord + 1, 3) << 2) | x_coord
-    east_dest = (y_coord << 2) | min(x_coord + 1, 3)
-    west_dest = (y_coord << 2) | max(x_coord - 1, 0)
     return f"""
 `timescale 1ns/1ps
 
@@ -1079,12 +1076,6 @@ module {module_name}(
   localparam integer FIFO_DEPTH = {design['depth']};
   localparam integer COUNT_W = {counter_bits};
   localparam integer PORTS = 5;
-  localparam integer DEST_NORTH = {north_dest};
-  localparam integer DEST_SOUTH = {south_dest};
-  localparam integer DEST_EAST = {east_dest};
-  localparam integer DEST_WEST = {west_dest};
-  localparam integer DEST_LOCAL = {local_dest};
-
   reg [PORTS-1:0] in_valid;
   wire [PORTS-1:0] in_ready;
   reg [PORTS*DEST_W-1:0] in_dest;
@@ -1105,13 +1096,23 @@ module {module_name}(
   wire [PORTS*DATA_W-1:0] out_data;
   wire [PORTS*COUNT_W-1:0] route_flit_count;
 
-  reg [COUNT_W-1:0] flit_seed [0:PORTS-1];
   reg [TAG_W-1:0] tag_seed [0:PORTS-1];
   reg [FRAGMENT_W-1:0] fragment_seed [0:PORTS-1];
   reg [VC_W-1:0] vc_seed [0:PORTS-1];
   reg [DEST_W-1:0] dest_seed [0:PORTS-1];
+  reg [SOURCE_W-1:0] source_seed [0:PORTS-1];
   reg [DATA_W-1:0] observed;
   integer port_i;
+
+  function [DATA_W-1:0] advance_flit_data;
+    input [DATA_W-1:0] state;
+    begin
+      advance_flit_data = {{
+          state[DATA_W-2:0],
+          state[DATA_W-1] ^ state[(DATA_W/2)-1] ^ state[1] ^ state[0]
+      }};
+    end
+  endfunction
 
   assign observed_flit =
       observed
@@ -1172,42 +1173,35 @@ module {module_name}(
       in_fragment <= '0;
       in_last <= '0;
       in_vc <= '0;
-      in_data <= '0;
       out_ready <= '1;
       observed <= '0;
       for (port_i = 0; port_i < PORTS; port_i = port_i + 1) begin
-        flit_seed[port_i] <= port_i + 1;
         tag_seed[port_i] <= port_i + 1;
         fragment_seed[port_i] <= '0;
         vc_seed[port_i] <= port_i % VC_COUNT;
+        dest_seed[port_i] <= port_i;
+        source_seed[port_i] <= port_i;
+        in_data[(port_i * DATA_W) +: DATA_W] <= port_i + 1;
       end
-      dest_seed[0] <= DEST_EAST;
-      dest_seed[1] <= DEST_EAST;
-      dest_seed[2] <= DEST_EAST;
-      dest_seed[3] <= DEST_LOCAL;
-      dest_seed[4] <= DEST_EAST;
     end else begin
-      out_ready[0] <= 1'b1;
-      out_ready[1] <= 1'b1;
-      out_ready[2] <= !(tag_seed[4][1:0] == 2'b11);
-      out_ready[3] <= 1'b1;
-      out_ready[4] <= !(tag_seed[3][2:0] == 3'b101);
       observed <= out_data[(4 * DATA_W) +: DATA_W];
       for (port_i = 0; port_i < PORTS; port_i = port_i + 1) begin
+        out_ready[port_i] <= !(tag_seed[port_i][1:0] == port_i[1:0]);
         in_valid[port_i] <= 1'b1;
         in_dest[(port_i * DEST_W) +: DEST_W] <= dest_seed[port_i];
-        in_source[(port_i * SOURCE_W) +: SOURCE_W] <= port_i[SOURCE_W-1:0];
+        in_source[(port_i * SOURCE_W) +: SOURCE_W] <= source_seed[port_i];
         in_tag[(port_i * TAG_W) +: TAG_W] <= tag_seed[port_i];
         in_fragment[(port_i * FRAGMENT_W) +: FRAGMENT_W] <= fragment_seed[port_i];
         in_last[port_i] <= (fragment_seed[port_i] == {fragment_bits}'d7);
         in_vc[(port_i * VC_W) +: VC_W] <= vc_seed[port_i];
-        in_data[(port_i * DATA_W) +: DATA_W] <= flit_seed[port_i];
-        if (in_ready[port_i]) begin
-          flit_seed[port_i] <= flit_seed[port_i] + 1'b1;
+        if (in_valid[port_i] && in_ready[port_i]) begin
+          in_data[(port_i * DATA_W) +: DATA_W] <= advance_flit_data(
+              in_data[(port_i * DATA_W) +: DATA_W]);
           tag_seed[port_i] <= tag_seed[port_i] + 1'b1;
           fragment_seed[port_i] <= fragment_seed[port_i] + 1'b1;
-          if (port_i == 3)
-            dest_seed[port_i] <= (dest_seed[port_i] == DEST_LOCAL) ? DEST_WEST : DEST_LOCAL;
+          vc_seed[port_i] <= (vc_seed[port_i] == VC_COUNT-1) ? '0 : vc_seed[port_i] + 1'b1;
+          dest_seed[port_i] <= dest_seed[port_i] + 1'b1;
+          source_seed[port_i] <= source_seed[port_i] + 1'b1;
         end
       end
     end

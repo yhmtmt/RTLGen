@@ -6,7 +6,7 @@
 
 ## Checks
 - generator:
-  - threshold: the single-router wrapper config generates under the existing `l1_memory_noc_primitive` flow without manual source edits.
+  - threshold: the single-router wrapper config generates under the existing `l1_memory_noc_primitive` flow without manual source edits, uses a full-width state transition, cycles every VC/source/destination field, varies every sink-ready signal, and holds ingress data stable under backpressure.
 - rtl_compile:
   - threshold: the generated wrapper elaborates with the copied helper RTL sources.
 - router_equivalence:
