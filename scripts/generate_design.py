@@ -450,10 +450,11 @@ def identify_design(config):
             "segmented_router",
             "segmented_mesh4x4",
             "sram_packet_endpoint",
+            "sram_packet_mesh4x4",
         ):
             raise ValueError(
                 "l1_memory_noc_primitive primitive must be fifo, router, endpoint, segmented_router, "
-                "segmented_mesh4x4, or sram_packet_endpoint"
+                "segmented_mesh4x4, sram_packet_endpoint, or sram_packet_mesh4x4"
             )
         if flit_bits <= 0:
             raise ValueError("l1_memory_noc_primitive flit_bits must be positive")
@@ -481,7 +482,7 @@ def identify_design(config):
             raise ValueError("l1_memory_noc_primitive segmented_router requires five ports")
         if primitive == "segmented_router" and flit_bits < 4:
             raise ValueError("l1_memory_noc_primitive segmented_router requires at least four flit bits")
-        if primitive == "segmented_mesh4x4":
+        if primitive in ("segmented_mesh4x4", "sram_packet_mesh4x4"):
             if ports != 5:
                 raise ValueError("l1_memory_noc_primitive segmented_mesh4x4 requires five-port routers")
             if vc_count != 4:
@@ -501,7 +502,7 @@ def identify_design(config):
                 raise ValueError(
                     "l1_memory_noc_primitive segmented_mesh4x4 observation slice is narrower than metadata"
                 )
-        if primitive == "sram_packet_endpoint":
+        if primitive in ("sram_packet_endpoint", "sram_packet_mesh4x4"):
             if flit_bits != 256:
                 raise ValueError("l1_memory_noc_primitive sram_packet_endpoint requires 256-bit flits")
             if vc_count != 4 or dest_bits != 4 or source_bits != 4:
@@ -958,6 +959,21 @@ def generate_l1_memory_noc_design(src_dir, design):
             )
     elif design["primitive"] == "sram_packet_endpoint":
         text = _emit_l1_sram_packet_endpoint(module_name, design)
+    elif design["primitive"] == "sram_packet_mesh4x4":
+        text = _emit_l1_sram_packet_mesh4x4(module_name, design)
+        for filename in (
+            "noc_ready_valid_fifo.sv",
+            "noc_segmented_mesh_router.sv",
+            "noc_segmented_mesh4x4.sv",
+            "noc_sram_packet_endpoint.sv",
+            "noc_sram_packet_mesh4x4.sv",
+            "noc_sram_packet_mesh4x4_ppa_harness.sv",
+        ):
+            rtl_path = repo_root / "npu" / "sim" / "rtl" / filename
+            Path(src_dir, Path(filename).with_suffix(".v")).write_text(
+                rtl_path.read_text(encoding="utf-8"),
+                encoding="utf-8",
+            )
     else:
         text = _emit_l1_endpoint(module_name, design)
     Path(src_dir, f"{module_name}.v").write_text(text, encoding="utf-8")
@@ -1645,6 +1661,40 @@ module {module_name}(
 endmodule
 """
     return endpoint_rtl + top
+
+
+def _emit_l1_sram_packet_mesh4x4(module_name, design):
+    return f"""
+`timescale 1ns/1ps
+
+module {module_name}(
+  input clk,
+  input rst_n,
+  output [15:0] observed_valid,
+  output [{design['flit_bits']-1}:0] observed_flit,
+  output [{design['counter_bits']-1}:0] issued_packet_count,
+  output [{design['counter_bits']-1}:0] completed_packet_count,
+  output protocol_error
+);
+  noc_sram_packet_mesh4x4_ppa_harness #(
+    .DATA_W({design['flit_bits']}),
+    .ADDR_W({design['addr_bits']}),
+    .COUNTER_W({design['counter_bits']}),
+    .TX_DESC_DEPTH({design['tx_desc_depth']}),
+    .TX_OUTSTANDING({design['tx_outstanding']}),
+    .RX_CONTEXTS({design['rx_contexts']}),
+    .ROUTER_FIFO_DEPTH({design['depth']})
+  ) harness (
+    .clk(clk),
+    .rst_n(rst_n),
+    .observed_valid(observed_valid),
+    .observed_flit(observed_flit),
+    .issued_packet_count(issued_packet_count),
+    .completed_packet_count(completed_packet_count),
+    .protocol_error(protocol_error)
+  );
+endmodule
+"""
 
 
 def _emit_l1_endpoint(module_name, design):
@@ -2477,6 +2527,30 @@ module {wrapper_name}(
     .clk(clk),
     .rst_n(rst_n),
     .rx_destination_probe(rx_destination_probe),
+    .observed_flit(observed_flit),
+    .issued_packet_count(issued_packet_count),
+    .completed_packet_count(completed_packet_count),
+    .protocol_error(protocol_error)
+  );
+
+endmodule
+"""
+        elif design["primitive"] == "sram_packet_mesh4x4":
+            wrapper_content = f"""
+module {wrapper_name}(
+  input clk,
+  input rst_n,
+  output [15:0] observed_valid,
+  output [{flit_bits-1}:0] observed_flit,
+  output [{counter_bits-1}:0] issued_packet_count,
+  output [{counter_bits-1}:0] completed_packet_count,
+  output protocol_error
+);
+
+  {module_name} dut (
+    .clk(clk),
+    .rst_n(rst_n),
+    .observed_valid(observed_valid),
     .observed_flit(observed_flit),
     .issued_packet_count(issued_packet_count),
     .completed_packet_count(completed_packet_count),
