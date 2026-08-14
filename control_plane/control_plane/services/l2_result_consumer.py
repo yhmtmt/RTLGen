@@ -587,6 +587,10 @@ _DECODER_EVIDENCE_OUTPUT_KEYS: tuple[tuple[str, str], ...] = (
         "attention_score32_exact_reduction_recost_report",
     ),
     (
+        "attention_score32_noc_phase2_schedule_out",
+        "attention_score32_noc_phase2_schedule_report",
+    ),
+    (
         "attention_score32_folded_global_exact_reduction_recost_out",
         "attention_score32_folded_global_exact_reduction_recost_report",
     ),
@@ -830,6 +834,42 @@ def _decoder_quality_brief(evidence_payload: dict[str, Any]) -> dict[str, Any]:
     ):
         if key in evidence_payload:
             brief[key] = evidence_payload[key]
+    if (
+        evidence_payload.get("model") == "llama7b_proxy"
+        and evidence_payload.get("profile") == "decoder_attention_score32_noc_phase2_schedule"
+    ):
+        source_contract = dict(evidence_payload.get("source_contract") or {})
+        simulation = dict(evidence_payload.get("simulation") or {})
+        tag_semantics = dict(evidence_payload.get("tag_semantics") or {})
+        brief["schedule_summary"] = {
+            key: source_contract[key]
+            for key in (
+                "simulated_wave_count",
+                "tile_count",
+                "compute_layer_time_ns",
+                "noc_clock_ns",
+            )
+            if key in source_contract
+        }
+        brief["schedule_summary"].update(
+            {
+                key: simulation[key]
+                for key in (
+                    "cycles_to_drain",
+                    "drain_time_ns",
+                    "drain_within_source_compute_layer_envelope",
+                    "scheduled_packet_count",
+                    "scheduled_flit_count",
+                    "router_contention_cycles",
+                    "endpoint_input_stall_cycles_total",
+                )
+                if key in simulation
+            }
+        )
+        if "collision_free_reuse_proven" in tag_semantics:
+            brief["schedule_summary"]["collision_free_reuse_proven"] = tag_semantics[
+                "collision_free_reuse_proven"
+            ]
     return brief
 
 
@@ -999,6 +1039,45 @@ def _decoder_recommendation_override(
 
 def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, Any]) -> tuple[str, str]:
     model = str(evidence_payload.get("model", "")).strip()
+    if (
+        model == "llama7b_proxy"
+        and str(evidence_payload.get("profile", "")).strip()
+        == "decoder_attention_score32_noc_phase2_schedule"
+    ):
+        simulation = dict(evidence_payload.get("simulation") or {})
+        source_contract = dict(evidence_payload.get("source_contract") or {})
+        tag_semantics = dict(evidence_payload.get("tag_semantics") or {})
+        outcome = "score32_noc_phase2_schedule_recorded"
+        parts = [
+            f"Decoder score32 NoC Phase 2 schedule evidence recorded from {evidence_ref}: decision={outcome}",
+        ]
+        for key in (
+            "simulated_wave_count",
+            "tile_count",
+            "compute_layer_time_ns",
+            "noc_clock_ns",
+        ):
+            if key in source_contract:
+                parts.append(f"{key}={source_contract.get(key)}")
+        for key in (
+            "cycles_to_drain",
+            "drain_time_ns",
+            "drain_within_source_compute_layer_envelope",
+            "scheduled_packet_count",
+            "scheduled_flit_count",
+            "router_contention_cycles",
+            "endpoint_input_stall_cycles_total",
+        ):
+            if key in simulation:
+                parts.append(f"{key}={simulation.get(key)}")
+        if "collision_free_reuse_proven" in tag_semantics:
+            parts.append(
+                "collision_free_reuse_proven="
+                f"{tag_semantics.get('collision_free_reuse_proven')}"
+            )
+        summary = "; ".join(parts)
+        return outcome, summary if summary.endswith(".") else summary + "."
+
     if evidence_payload.get("estimator") == "attention_pwl_recip_lut_boundary_v1":
         outcome = str(evidence_payload.get("decision") or "attention_pwl_recip_lut_boundary_recorded")
         parts = [
