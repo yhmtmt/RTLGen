@@ -233,11 +233,12 @@ class _RouterState:
     def _occupancy(self) -> int:
         return sum(len(queue) for queue in self.queues)
 
-    def _input_ready(self, port: int, vc: int, will_pop: set[int]) -> bool:
+    def _input_ready(self, port: int, vc: int) -> bool:
         queue = self.queues[self._input_index(port, vc)]
-        if len(queue) < self.fifo_depth:
-            return True
-        return self._input_index(port, vc) in will_pop
+        # Match the RTL's registered-occupancy credit boundary. A full FIFO
+        # does not expose a combinational path from downstream ready to its
+        # upstream sender, even when one entry will be popped this cycle.
+        return len(queue) < self.fifo_depth
 
     def idle(self) -> bool:
         return self._occupancy() == 0 and all(flit is None for flit in self.out_holding)
@@ -277,7 +278,7 @@ class _RouterState:
         for port in range(PORTS):
             item = inputs[port]
             vc = 0 if item.flit is None else item.flit.vc
-            port_ready = self._input_ready(port, vc, will_pop)
+            port_ready = self._input_ready(port, vc)
             ready.append(port_ready)
             if item.valid and not port_ready:
                 input_stall = True
@@ -557,26 +558,26 @@ def simulate_scheduled_flits(
         for node in range(ENDPOINTS):
             out_ready[node][PORT_LOCAL] = endpoint_out_ready[node]
 
-        plans: list[RouterPlan] = []
-        for _ in range(ENDPOINTS * PORTS * 2):
-            plans = []
-            for node in range(ENDPOINTS):
-                plans.append(states[node].compute_plan(router_inputs[node], out_ready[node]))
-            updated = [[False] * PORTS for _ in range(ENDPOINTS)]
-            for node in range(ENDPOINTS):
-                updated[node][PORT_LOCAL] = endpoint_out_ready[node]
-                for port in (PORT_NORTH, PORT_SOUTH, PORT_EAST, PORT_WEST):
-                    neighbor = _neighbor(node, port)
-                    if neighbor is None:
-                        updated[node][port] = True
-                        continue
-                    downstream_node, downstream_port = neighbor
-                    updated[node][port] = plans[downstream_node].ready[downstream_port]
-            if updated == out_ready:
-                break
-            out_ready = updated
-        else:
-            raise RuntimeError("mesh ready/valid fixpoint did not converge")
+        # Input credit is a function of registered FIFO occupancy only. First
+        # sample those credits, then calculate link readiness and the final
+        # arbitration plan. No network-wide combinational fixpoint is needed.
+        credit_plans = [
+            states[node].compute_plan(router_inputs[node], [False] * PORTS)
+            for node in range(ENDPOINTS)
+        ]
+        for node in range(ENDPOINTS):
+            out_ready[node][PORT_LOCAL] = endpoint_out_ready[node]
+            for port in (PORT_NORTH, PORT_SOUTH, PORT_EAST, PORT_WEST):
+                neighbor = _neighbor(node, port)
+                if neighbor is None:
+                    out_ready[node][port] = True
+                    continue
+                downstream_node, downstream_port = neighbor
+                out_ready[node][port] = credit_plans[downstream_node].ready[downstream_port]
+        plans = [
+            states[node].compute_plan(router_inputs[node], out_ready[node])
+            for node in range(ENDPOINTS)
+        ]
 
         cycle_router_traces: list[RouterCycleTrace] = []
         cycle_injected: list[tuple[int, ModelFlit]] = []

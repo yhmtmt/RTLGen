@@ -21,6 +21,8 @@ control abstraction between cluster SRAM and the 256-bit segmented mesh.
 - Each valid fragment is written directly to `base + fragment * 32` bytes.
 - Contexts accept interleaved packets with different keys and enforce ordered
   fragments and a consistent `last` bit independently.
+- Every received flit must name the local endpoint as its destination; a
+  misrouted flit is consumed without an SRAM write and raises the sticky error.
 - A context is released only when its last SRAM write is accepted and packet
   completion can be retained.
 - Missing contexts, duplicate live keys, invalid counts, fragment-order errors,

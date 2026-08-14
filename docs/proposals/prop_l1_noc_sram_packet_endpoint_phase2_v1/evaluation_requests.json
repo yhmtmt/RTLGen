@@ -25,7 +25,7 @@
         "direction": "measure_phase2_sram_packet_endpoint",
         "reason": "Replace uncosted logical source descriptors and packetizer/control storage with concrete finite RTL PPA."
       },
-      "acceptance_notes": "Require exact packet metadata correspondence, stable ready/valid behavior, direct RX SRAM addresses, completion safety, protocol_error=0, and retained configured queue/context structures. Treat measured PPA as endpoint-control-plus-compact-harness evidence, not SRAM macro, router, aggregate mesh, or workload-activity evidence."
+      "acceptance_notes": "Require exact packet metadata correspondence, local-destination validation, stable ready/valid behavior, direct RX SRAM addresses, completion safety, protocol_error=0, and retained configured queue/context structures. Treat measured PPA as endpoint-control-plus-compact-harness evidence, not SRAM macro, router, aggregate mesh, or workload-activity evidence."
     }
   ]
 }

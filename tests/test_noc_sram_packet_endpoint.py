@@ -118,6 +118,7 @@ def test_noc_sram_packet_endpoint_ppa_harness_is_compact_live_and_compiles(
     assert design["primitive"] == "sram_packet_endpoint"
     generated = _emit_l1_sram_packet_endpoint(design["module_name"], design)
     assert "output [255:0] observed_flit" in generated
+    assert "input [3:0] rx_destination_probe" in generated
     assert "output [31:0] issued_packet_count" in generated
     assert ".TX_DESC_DEPTH(4)" in generated
     assert ".TX_OUTSTANDING(8)" in generated
@@ -135,13 +136,15 @@ def test_noc_sram_packet_endpoint_ppa_harness_is_compact_live_and_compiles(
 module tb_endpoint_ppa;
   reg clk = 1'b0;
   reg rst_n = 1'b0;
+  reg [3:0] rx_destination_probe = 4'd2;
   wire [255:0] observed_flit;
   wire [31:0] issued_packet_count;
   wire [31:0] completed_packet_count;
   wire protocol_error;
   always #1 clk = ~clk;
   {design['wrapper_name']} dut (
-    .clk(clk), .rst_n(rst_n), .observed_flit(observed_flit),
+    .clk(clk), .rst_n(rst_n),
+    .rx_destination_probe(rx_destination_probe), .observed_flit(observed_flit),
     .issued_packet_count(issued_packet_count),
     .completed_packet_count(completed_packet_count),
     .protocol_error(protocol_error)

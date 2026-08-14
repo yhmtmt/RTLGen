@@ -8,7 +8,7 @@
 - Eight receive contexts keyed by `(source, VC, tag)`.
 - Direct fragment writes to destination SRAM and buffered packet completion.
 - Sticky protocol checking for invalid descriptors, duplicate live keys,
-  missing contexts, fragment order, and `last` consistency.
+  missing contexts, wrong destination, fragment order, and `last` consistency.
 
 ## Physical Harness
 
@@ -18,6 +18,8 @@
 - Apply SRAM-read, SRAM-write, and completion backpressure.
 - Observe TX metadata, payloads, RX addresses/data, completion metadata,
   issued/completed counts, and protocol status through a compact boundary.
+- Retain the local-destination comparator through a four-bit destination probe
+  instead of tying it to a synthesis-removable constant.
 
 ## Exclusions
 

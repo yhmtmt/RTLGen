@@ -19,7 +19,8 @@ module noc_ready_valid_fifo #(
   output wire [COUNT_W-1:0] occupancy,
   output reg [COUNT_W-1:0] max_occupancy
 );
-  localparam [COUNT_W-1:0] DEPTH_VALUE = DEPTH;
+  localparam integer PTR_W = (DEPTH <= 1) ? 1 : $clog2(DEPTH);
+  localparam [COUNT_W-1:0] DEPTH_VALUE = COUNT_W'(DEPTH);
 
   reg [WIDTH-1:0] mem [0:DEPTH-1];
   reg [COUNT_W-1:0] count;
@@ -27,8 +28,11 @@ module noc_ready_valid_fifo #(
 
   wire out_valid_int = (count != {COUNT_W{1'b0}});
   wire out_fire = out_valid_int && out_ready;
-  wire in_ready_int = (count < DEPTH_VALUE) || out_fire;
+  // Readiness depends only on registered occupancy. This deliberately avoids
+  // propagating downstream ready through every router in a mesh cycle.
+  wire in_ready_int = count < DEPTH_VALUE;
   wire in_fire = in_valid && in_ready_int;
+  wire [PTR_W-1:0] count_index = count[PTR_W-1:0];
 
   assign in_ready = in_ready_int;
   assign out_valid = out_valid_int;
@@ -42,7 +46,7 @@ module noc_ready_valid_fifo #(
     end else begin
       case ({in_fire, out_fire})
         2'b10: begin
-          mem[count] <= in_data;
+          mem[count_index] <= in_data;
           count <= count + {{(COUNT_W-1){1'b0}}, 1'b1};
           if ((count + {{(COUNT_W-1){1'b0}}, 1'b1}) > max_occupancy) begin
             max_occupancy <= count + {{(COUNT_W-1){1'b0}}, 1'b1};
@@ -65,7 +69,7 @@ module noc_ready_valid_fifo #(
           if (count == {{(COUNT_W-1){1'b0}}, 1'b1}) begin
             mem[0] <= in_data;
           end else begin
-            mem[count - {{(COUNT_W-1){1'b0}}, 1'b1}] <= in_data;
+            mem[count_index - 1'b1] <= in_data;
           end
         end
         default: begin

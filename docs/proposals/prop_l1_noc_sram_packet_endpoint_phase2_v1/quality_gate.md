@@ -6,6 +6,8 @@
 - RTL TX metadata exactly matches `packetize_traffic_flow` for one- through
   eight-fragment packets.
 - RX accepts interleaved packet contexts and writes exact fragment addresses.
+- RX consumes a misrouted flit without an SRAM write and raises the sticky
+  protocol error.
 - Completion backpressure cannot release a receive context early.
 - Valid bounded traffic finishes with `protocol_error=0`.
 - Generated compact harness compiles, runs, and retains live issued/completed

@@ -6,6 +6,9 @@
 - Generate full-width endpoint traffic internally to avoid exposing over 8,000 payload pins.
 - Rotate each destination by an odd stride, cycle every VC, and vary every sink-ready signal.
 - Register a distinct 16-bit payload slice plus metadata at each endpoint. Across 16 endpoints, all 256 payload bit positions remain observable without a global XOR or 16:1 mux path.
+- Use registered-occupancy input credits so no downstream-ready path crosses
+  multiple routers combinationally. A full FIFO exposes renewed credit one
+  cycle after its first resumed pop.
 
 ## Accounting
 - Included: mesh routers, FIFOs, links, endpoint source state, compact observation registers, placement wiring, and clock distribution.

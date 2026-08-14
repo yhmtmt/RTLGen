@@ -1471,6 +1471,7 @@ def _emit_l1_sram_packet_endpoint(module_name, design):
 module {module_name}(
   input clk,
   input rst_n,
+  input [{dest_bits-1}:0] rx_destination_probe,
   output [{flit_bits-1}:0] observed_flit,
   output [{counter_bits-1}:0] issued_packet_count,
   output [{counter_bits-1}:0] completed_packet_count,
@@ -1598,7 +1599,8 @@ module {module_name}(
     .rx_desc_tag(next_tag), .rx_desc_base_addr(next_rx_base),
     .rx_desc_flit_count(next_flit_count),
     .rx_flit_valid(tx_flit_valid), .rx_flit_ready(rx_flit_ready),
-    .rx_flit_source(tx_flit_source), .rx_flit_vc(tx_flit_vc),
+    .rx_flit_source(tx_flit_source), .rx_flit_destination(rx_destination_probe),
+    .rx_flit_vc(tx_flit_vc),
     .rx_flit_tag(tx_flit_tag), .rx_flit_fragment(tx_flit_fragment),
     .rx_flit_last(tx_flit_last), .rx_flit_data(tx_flit_data),
     .rx_mem_write_valid(rx_mem_write_valid), .rx_mem_write_ready(rx_mem_write_ready),
@@ -2464,6 +2466,7 @@ endmodule
 module {wrapper_name}(
   input clk,
   input rst_n,
+  input [{design['dest_bits']-1}:0] rx_destination_probe,
   output [{flit_bits-1}:0] observed_flit,
   output [{counter_bits-1}:0] issued_packet_count,
   output [{counter_bits-1}:0] completed_packet_count,
@@ -2473,6 +2476,7 @@ module {wrapper_name}(
   {module_name} dut (
     .clk(clk),
     .rst_n(rst_n),
+    .rx_destination_probe(rx_destination_probe),
     .observed_flit(observed_flit),
     .issued_packet_count(issued_packet_count),
     .completed_packet_count(completed_packet_count),
