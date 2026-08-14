@@ -236,6 +236,14 @@ evidence gaps:
   upper 224 data bits. The complete 8-wave,
   128-tile schedule retry is queued as
   `l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1`.
+- Endpoint: `noc_sram_packet_endpoint` now embodies the Phase 2 logical
+  zero-copy descriptor queues, source SRAM read handshake, 256-bit
+  packetization, stable router injection, interleavable receive contexts,
+  direct destination SRAM writes, completion backpressure, and protocol
+  checks. Its packet metadata is compared exactly with the segmented-mesh
+  performance model. The prepared L1 item
+  `l1_noc_sram_packet_endpoint_phase2_v1` must measure endpoint PPA/service
+  before the Phase 2 reroute can remove the endpoint-control cost abstraction.
 - The original NoC Phase 2 item is superseded without a usable result. It
   interpreted compute-wrapper cycles as NoC cycles. The retry converts every
   release timestamp with
