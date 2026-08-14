@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import re
 import shutil
 import subprocess
@@ -31,6 +32,7 @@ from npu.sim.perf.noc_segmented_mesh import (
     simulate_router,
     simulate_scheduled_flits,
 )
+from scripts.generate_design import _emit_l1_segmented_router, identify_design
 ROUTER_CONFIG = (
     REPO_ROOT
     / "runs"
@@ -664,6 +666,24 @@ module tb_noc_segmented_mesh4x4_multiflow;
   end
 endmodule
 """
+
+
+def test_segmented_router_generator_drives_full_width_state_under_backpressure() -> None:
+    config = json.loads(ROUTER_CONFIG.read_text(encoding="utf-8"))
+    design = identify_design(config)
+    generated_top = _emit_l1_segmented_router(design["module_name"], design)
+
+    assert "function [DATA_W-1:0] advance_flit_data" in generated_top
+    assert "in_data[(port_i * DATA_W) +: DATA_W] <= advance_flit_data(" in generated_top
+    assert "flit_seed" not in generated_top
+    ready_block = generated_top.split(
+        "if (in_valid[port_i] && in_ready[port_i]) begin", maxsplit=1
+    )[1]
+    assert ready_block.index("advance_flit_data(") < ready_block.index("end")
+    assert "vc_seed[port_i] <= (vc_seed[port_i] == VC_COUNT-1)" in ready_block
+    assert "dest_seed[port_i] <= dest_seed[port_i] + 1'b1" in ready_block
+    assert "source_seed[port_i] <= source_seed[port_i] + 1'b1" in ready_block
+    assert "out_ready[port_i] <= !(tag_seed[port_i][1:0] == port_i[1:0])" in generated_top
 
 
 def test_segmented_router_wrapper_generates_and_compiles() -> None:

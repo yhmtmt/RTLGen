@@ -15,6 +15,7 @@
 - Use ready/valid backpressure.
 - Add a 4x4 mesh composition and a cycle model checked against RTL on route/stall scenarios.
 - Add a single-router wrapper/config for Nangate45 PPA.
+- Drive every physical-wrapper ingress with full-width evolving state, cycle every destination/source/VC field, and vary sink backpressure so synthesis cannot erase inactive payload bits, VC FIFOs, or route branches. Treat source/sink state and counters as disclosed benchmark overhead.
 
 ## Out of Scope
 - Aggregate 4x4 mesh physical placement.

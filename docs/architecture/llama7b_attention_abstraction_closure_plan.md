@@ -228,7 +228,12 @@ evidence gaps:
   replay. The bounded physical wrapper job remains queued; its register-array
   storage must not be described as SRAM-macro evidence.
 - NoC: the concrete five-port, 256-bit, four-VC segmented-router primitive PPA
-  job is queued as `l1_segmented_xy_mesh_noc_phase1_v1`. The complete 8-wave,
+  job is queued as `l1_segmented_xy_mesh_noc_phase1_v1`. Its first attempt
+  failed before synthesis on evaluator runtime ownership. Before retry, the
+  physical harness was also corrected from a zero-extending 32-bit data seed
+  to full-width evolving 256-bit ingress state; results from the old harness
+  would not qualify as physical evidence because synthesis could erase the
+  upper 224 data bits. The complete 8-wave,
   128-tile schedule retry is queued as
   `l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1`.
 - The original NoC Phase 2 item is superseded without a usable result. It

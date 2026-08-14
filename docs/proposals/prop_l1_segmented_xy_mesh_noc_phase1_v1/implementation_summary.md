@@ -9,6 +9,7 @@
 - Added a PPA-ready single-router config and dedicated Nangate45 sweep.
 - Added a cycle model for the segmented router/mesh under `npu/sim/perf`.
 - Added focused generator, router RTL/model, and mesh RTL/model tests.
+- Revised the physical source harness to advance independent full-width flit state. The earlier 32-bit seed assignment left the upper 224 bits constant and was invalid for a 256-bit physical datapath claim.
 
 ## Files Changed
 - `scripts/generate_design.py`
@@ -27,6 +28,7 @@
 - `pytest -q tests/test_noc_segmented_mesh.py`
 
 ## Remaining Abstractions
+- The PPA top includes source/sink boundary state and observability counters. Its area and power are therefore a conservative router-plus-harness anchor rather than isolated-router accounting; the routed critical path still exercises the concrete router datapath.
 - The physical evidence is still a single-router primitive, not the placed aggregate 4x4 mesh.
 - The cycle model is exact for the focused routed/stalled scenarios covered here, but full workload scheduling on the mesh is still a separate step.
 - SRAM/HBM traffic mapping and command scheduling remain above this transport phase.

@@ -10,7 +10,7 @@
   "expected_behavior": {
     "functional": "The router preserves explicit flit metadata, deterministic XY routing, virtual-channel separation, fair arbitration, and ready/valid backpressure.",
     "timing_model": "The cycle model matches the routed flit order and stall behavior of the RTL for focused contention and end-to-end path scenarios.",
-    "physical_model": "A dedicated single-router wrapper can be pushed through the existing Nangate45 macro flow to measure the real segmented router primitive without flattening the full 4x4 mesh."
+    "physical_model": "A dedicated full-width-state single-router wrapper can be pushed through the existing Nangate45 macro flow to measure a conservative router-plus-boundary-harness anchor without flattening the full 4x4 mesh."
   },
   "comparison_points": [
     "l1_noc_router_p4_w256_wrapper",
@@ -23,6 +23,7 @@
   ],
   "risks": [
     "The Phase 1 PPA artifact is a single-router wrapper, not the physical aggregate 4x4 mesh.",
+    "The physical top includes source/sink boundary state and observability counters, so its area and power are conservative for one router rather than isolated-router accounting.",
     "The mesh model remains deterministic XY and does not include adaptive routing or workload-specific traffic shaping.",
     "End-to-end Llama7B scheduling over the mesh still needs explicit producer/consumer traffic mapping."
   ],
@@ -45,7 +46,7 @@
       "requires_materialized_refs": true,
       "expected_result": {
         "direction": "measure_segmented_xy_router_primitive",
-        "reason": "Replace scaled legacy router/FIFO cost with the exact five-port Phase 1 router primitive before aggregate mesh recost."
+        "reason": "Replace scaled legacy router/FIFO cost with a full-width five-port Phase 1 router-plus-harness anchor before aggregate mesh recost."
       }
     }
   ],
