@@ -1,0 +1,62 @@
+{
+  "proposal_id": "prop_l1_noc_sram_packet_mesh4x4_composed_ppa_v1",
+  "created_utc": "2026-08-14T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit_block",
+  "abstraction_layer": "architecture_block",
+  "title": "Place the composed SRAM packet endpoints and 4x4 segmented mesh",
+  "hypothesis": "The exact sixteen-endpoint, sixteen-router registered-credit composition can be physically bounded at the same floorplan envelope as the aggregate mesh, replacing linear endpoint-plus-router composition with a placed control/fabric anchor.",
+  "direct_comparison": {
+    "primary_question": "What physical overhead appears when finite packet endpoints, SRAM boundary handshakes, and the complete segmented mesh are placed together?",
+    "include": [
+      "sixteen finite SRAM packet endpoints",
+      "sixteen exact segmented routers and links",
+      "registered FIFO credits",
+      "descriptor installation and packet release control",
+      "bounded SRAM response/write/completion handshakes",
+      "compact rotating full-payload observability"
+    ],
+    "exclude": [
+      "SRAM bitcells and macros",
+      "producer/reducer arithmetic",
+      "HBM/DRAM and controller",
+      "workload-matched switching activity"
+    ]
+  },
+  "expected_benefit": [
+    "replace additive endpoint/router area and timing assumptions with aggregate placement evidence",
+    "measure endpoint-to-router timing and congestion interactions",
+    "bound the remaining on-chip communication composition term before Llama7B reranking"
+  ],
+  "risks": [
+    "the source/observation scheduler harness adds disclosed area and registers",
+    "the full hierarchy may cross the known Yosys/OpenROAD runtime boundary",
+    "vectorless power is not workload energy",
+    "SRAM macro placement remains external"
+  ],
+  "required_evaluations": [
+    {
+      "item_id": "l1_noc_sram_packet_mesh4x4_composed_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure first-pass Nangate45 physical feasibility for the complete descriptor-driven endpoint/mesh composition.",
+      "evaluation_mode": "ppa",
+      "abstraction_layer": "architecture_block",
+      "comparison_role": "composed_sram_endpoint_mesh_physical_anchor",
+      "depends_on_item_ids": [
+        "l1_segmented_xy_mesh_noc_phase1_v1",
+        "l1_noc_sram_packet_endpoint_phase2_v1",
+        "l1_segmented_xy_mesh4x4_aggregate_ppa_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "config_paths": [
+        "runs/designs/noc/l1_noc_sram_packet_mesh4x4_w256_vc4_d4_td4_to8_rx8_wrapper/config_l1_noc_sram_packet_mesh4x4_w256_vc4_d4_td4_to8_rx8.json"
+      ],
+      "sweep_path": "runs/campaigns/noc/l1_sram_packet_mesh4x4/sweeps/nangate45_composed_feasibility.json",
+      "expected_outputs": [
+        "runs/designs/noc/l1_noc_sram_packet_mesh4x4_w256_vc4_d4_td4_to8_rx8_wrapper/metrics.csv"
+      ]
+    }
+  ]
+}

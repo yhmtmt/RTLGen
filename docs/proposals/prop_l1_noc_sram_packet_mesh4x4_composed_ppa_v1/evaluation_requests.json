@@ -1,0 +1,35 @@
+{
+  "proposal_id": "prop_l1_noc_sram_packet_mesh4x4_composed_ppa_v1",
+  "source_commit": "TBD",
+  "requested_items": [
+    {
+      "item_id": "l1_noc_sram_packet_mesh4x4_composed_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure first-pass Nangate45 physical feasibility for the complete descriptor-driven endpoint/mesh composition.",
+      "evaluation_mode": "ppa",
+      "abstraction_layer": "architecture_block",
+      "config_paths": [
+        "runs/designs/noc/l1_noc_sram_packet_mesh4x4_w256_vc4_d4_td4_to8_rx8_wrapper/config_l1_noc_sram_packet_mesh4x4_w256_vc4_d4_td4_to8_rx8.json"
+      ],
+      "sweep_path": "runs/campaigns/noc/l1_sram_packet_mesh4x4/sweeps/nangate45_composed_feasibility.json",
+      "expected_outputs": [
+        "runs/designs/noc/l1_noc_sram_packet_mesh4x4_w256_vc4_d4_td4_to8_rx8_wrapper/metrics.csv"
+      ],
+      "status": "pending_after_dependencies_merge",
+      "comparison_role": "composed_sram_endpoint_mesh_physical_anchor",
+      "paired_baseline_item_id": "l1_segmented_xy_mesh4x4_aggregate_ppa_v1",
+      "depends_on_item_ids": [
+        "l1_segmented_xy_mesh_noc_phase1_v1",
+        "l1_noc_sram_packet_endpoint_phase2_v1",
+        "l1_segmented_xy_mesh4x4_aggregate_ppa_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "measure_composed_endpoint_mesh_physical_overhead",
+        "reason": "Replace additive endpoint/router composition with an aggregate placed control/fabric anchor at a matched floorplan envelope."
+      },
+      "acceptance_notes": "Require all sixteen endpoints and routers retained, no combinational ready cycle, valid descriptor-before-release behavior, rotating full-payload observability, and a completed row or explicit bounded failure. Report harness overhead and do not claim SRAM macro, workload-activity, or HBM/DRAM closure."
+    }
+  ]
+}

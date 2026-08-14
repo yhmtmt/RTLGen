@@ -1,0 +1,37 @@
+{
+  "version": "1.1",
+  "operands": [
+    {
+      "name": "flit",
+      "dimensions": 1,
+      "bit_width": 256,
+      "signed": false,
+      "kind": "int"
+    }
+  ],
+  "operations": [
+    {
+      "type": "l1_memory_noc_primitive",
+      "module_name": "l1_noc_sram_packet_mesh4x4_w256_vc4_d4_td4_to8_rx8",
+      "operand": "flit",
+      "options": {
+        "primitive": "sram_packet_mesh4x4",
+        "flit_bits": 256,
+        "depth": 4,
+        "ports": 5,
+        "banks": 4,
+        "vc_count": 4,
+        "dest_bits": 4,
+        "source_bits": 4,
+        "tag_bits": 8,
+        "fragment_bits": 3,
+        "addr_bits": 24,
+        "flit_count_bits": 4,
+        "tx_desc_depth": 4,
+        "tx_outstanding": 8,
+        "rx_contexts": 8,
+        "counter_bits": 32
+      }
+    }
+  ]
+}

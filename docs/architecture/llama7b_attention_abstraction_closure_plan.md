@@ -250,6 +250,14 @@ evidence gaps:
   composed test proves simultaneous multihop packets and exact data/address
   delivery. Endpoint receive logic now rejects a flit whose destination does
   not name the local endpoint.
+- Physical composition: the prepared
+  `l1_noc_sram_packet_mesh4x4_composed_ppa_v1` item places the complete
+  endpoint/mesh hierarchy at the same initial floorplan envelope as the
+  aggregate mesh. Its checked-in harness installs collision-free descriptors,
+  exercises one- through eight-flit packets and all VCs, applies finite SRAM
+  and completion backpressure, and rotates local observation across all 256
+  payload bits. It remains dependency-gated behind router, endpoint, and
+  aggregate-mesh anchors and is not workload-activity or SRAM-macro evidence.
 - Credit timing: the original router FIFO allowed a full queue's input ready
   to depend on a same-cycle downstream pop. Across bidirectional links this
   formed a combinational ready fixpoint. FIFO credits now depend only on
