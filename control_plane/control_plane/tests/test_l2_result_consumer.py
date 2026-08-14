@@ -180,6 +180,174 @@ def test_decoder_evidence_paths_recognizes_operational_component_frontier(tmp_pa
     }
 
 
+def test_decoder_evidence_paths_recognizes_score32_noc_phase2_schedule(tmp_path: Path) -> None:
+    evidence_rel = "runs/datasets/demo/score32_noc_phase2_schedule.json"
+    report_rel = "runs/datasets/demo/score32_noc_phase2_schedule.md"
+    _write(tmp_path / evidence_rel, "{}\n")
+    _write(tmp_path / report_rel, "# Score32 NoC Phase 2 schedule\n")
+    work_item = SimpleNamespace(
+        input_manifest={
+            "decoder_contract": {
+                "attention_score32_noc_phase2_schedule_out": evidence_rel,
+                "attention_score32_noc_phase2_schedule_report": report_rel,
+            }
+        }
+    )
+
+    evidence_ref, source_refs = _decoder_evidence_paths(
+        repo_root=tmp_path,
+        work_item=work_item,
+    )
+
+    assert evidence_ref == evidence_rel
+    assert source_refs == {
+        "decoder_attention_score32_noc_phase2_schedule_out": evidence_rel,
+        "decoder_attention_score32_noc_phase2_schedule_report": report_rel,
+    }
+
+
+def test_decoder_evidence_summary_recognizes_score32_noc_phase2_schedule() -> None:
+    outcome, summary = _decoder_evidence_summary(
+        evidence_ref="runs/datasets/demo/score32_noc_phase2_schedule.json",
+        evidence_payload={
+            "model": "llama7b_proxy",
+            "profile": "decoder_attention_score32_noc_phase2_schedule",
+            "source_contract": {
+                "simulated_wave_count": 8,
+                "tile_count": 128,
+                "compute_layer_time_ns": 421511.3976,
+                "noc_clock_ns": 1.0,
+            },
+            "simulation": {
+                "cycles_to_drain": 397004,
+                "drain_time_ns": 397004.0,
+                "drain_within_source_compute_layer_envelope": True,
+                "scheduled_packet_count": 11576,
+                "scheduled_flit_count": 92128,
+                "router_contention_cycles": 36747,
+                "endpoint_input_stall_cycles_total": 319772,
+            },
+            "tag_semantics": {"collision_free_reuse_proven": True},
+        },
+    )
+
+    assert outcome == "score32_noc_phase2_schedule_recorded"
+    assert "cycles_to_drain=397004" in summary
+    assert "collision_free_reuse_proven=True" in summary
+
+
+def test_consume_l2_result_score32_noc_phase2_schedule_without_campaign_outputs(tmp_path: Path) -> None:
+    evidence_rel = "runs/datasets/demo/score32_noc_phase2_schedule.json"
+    report_rel = "runs/datasets/demo/score32_noc_phase2_schedule.md"
+    _write(
+        tmp_path / evidence_rel,
+        json.dumps(
+            {
+                "model": "llama7b_proxy",
+                "profile": "decoder_attention_score32_noc_phase2_schedule",
+                "source_contract": {
+                    "simulated_wave_count": 8,
+                    "tile_count": 128,
+                    "compute_layer_time_ns": 421511.3976,
+                    "noc_clock_ns": 1.0,
+                },
+                "simulation": {
+                    "cycles_to_drain": 397004,
+                    "drain_time_ns": 397004.0,
+                    "drain_within_source_compute_layer_envelope": True,
+                },
+                "tag_semantics": {
+                    "collision_free_reuse_proven": True,
+                    "tuple_summaries": [{"source": 0, "destination": 15}],
+                },
+                "remaining_abstractions": ["measured router clock substitution"],
+            }
+        )
+        + "\n",
+    )
+    _write(tmp_path / report_rel, "# Score32 NoC Phase 2 schedule\n")
+    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    create_all(engine)
+
+    item_id = "l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1"
+    with Session(engine) as session:
+        task_request = TaskRequest(
+            request_key=f"l2_campaign:{item_id}",
+            source="test",
+            requested_by="@tester",
+            title="Layer2 score32 NoC Phase 2 schedule",
+            description="Route the complete score32 workload through the segmented mesh.",
+            layer=LayerName.LAYER2,
+            flow=FlowName.OPENROAD,
+            priority=1,
+            request_payload={
+                "item_id": item_id,
+                "developer_loop": {
+                    "evaluation": {"mode": "frontier_detail"},
+                    "comparison": {"role": "closure_detail"},
+                    "abstraction": {"layer": "decoder_attention_score32_noc_phase2_schedule"},
+                },
+            },
+            source_commit="deadbeef",
+        )
+        session.add(task_request)
+        session.flush()
+        work_item = WorkItem(
+            work_item_key=f"l2_campaign:{item_id}",
+            task_request_id=task_request.id,
+            item_id=item_id,
+            layer=LayerName.LAYER2,
+            flow=FlowName.OPENROAD,
+            platform="nangate45",
+            task_type="l2_campaign",
+            state=WorkItemState.ARTIFACT_SYNC,
+            priority=1,
+            source_mode="src_verilog",
+            input_manifest={
+                "decoder_contract": {
+                    "attention_score32_noc_phase2_schedule_out": evidence_rel,
+                    "attention_score32_noc_phase2_schedule_report": report_rel,
+                }
+            },
+            command_manifest=[],
+            expected_outputs=[evidence_rel, report_rel],
+            acceptance_rules=[],
+            source_commit="deadbeef",
+        )
+        session.add(work_item)
+        session.flush()
+        session.add(
+            Run(
+                run_key=f"{item_id}_run_1",
+                work_item_id=work_item.id,
+                attempt=1,
+                executor_type=ExecutorType.INTERNAL_WORKER,
+                status=RunStatus.SUCCEEDED,
+                started_at=utcnow(),
+                completed_at=utcnow(),
+                checkout_commit="deadbeef",
+                result_summary="2/2 commands succeeded",
+                result_payload={"queue_result": {"status": "ok"}},
+            )
+        )
+        session.commit()
+
+        result = consume_l2_result(
+            session,
+            Layer2ConsumeRequest(repo_root=str(tmp_path), item_id=item_id),
+        )
+
+        assert result.recommended_arch_id == "decoder_attention_score32_noc_phase2_schedule"
+        assert result.recommended_macro_mode == "evidence_only"
+        decision_path = tmp_path / "control_plane" / "shadow_exports" / "l2_decisions" / f"{item_id}.json"
+        decision = json.loads(decision_path.read_text(encoding="utf-8"))
+        assert decision["proposal_assessment"]["outcome"] == "score32_noc_phase2_schedule_recorded"
+        assert decision["source_refs"]["decoder_attention_score32_noc_phase2_schedule_out"] == evidence_rel
+        assert decision["decoder_quality"]["schedule_summary"]["cycles_to_drain"] == 397004
+        assert "tuple_summaries" not in decision["decoder_quality"]["schedule_summary"]
+        assert "best_point_json" not in decision["source_refs"]
+
+
 def test_decoder_evidence_paths_recognizes_decode_score_tile_equivalence(tmp_path: Path) -> None:
     evidence_rel = "runs/datasets/demo/decode_score_tile_equivalence.json"
     report_rel = "runs/datasets/demo/decode_score_tile_equivalence.md"
