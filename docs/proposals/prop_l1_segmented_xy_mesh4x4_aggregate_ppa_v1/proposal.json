@@ -1,0 +1,59 @@
+{
+  "proposal_id": "prop_l1_segmented_xy_mesh4x4_aggregate_ppa_v1",
+  "created_utc": "2026-08-14T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit_block",
+  "abstraction_layer": "architecture_block",
+  "title": "Place the complete 4x4 segmented NoC fabric",
+  "hypothesis": "A compact endpoint-boundary harness can keep every payload bit, metadata field, VC FIFO, route branch, router instance, and inter-router link observable while allowing the complete 4x4 fabric to be placed as a macro without the artificial pin pressure of exposing all 16 endpoint buses.",
+  "direct_comparison": {
+    "primary_question": "How much timing, area, power, congestion, and synthesis complexity is added when the exact 16-router mesh and its links are placed together instead of composing one-router PPA?",
+    "include": [
+      "sixteen concrete p5/w256/vc4/d4 routers",
+      "all deterministic-XY inter-router links",
+      "full-width endpoint boundary state",
+      "per-endpoint compact observability registers",
+      "clock-tree and routed-wire effects from aggregate placement"
+    ],
+    "exclude": [
+      "SRAM macro placement",
+      "HBM/DRAM service",
+      "producer and root-finalizer datapaths",
+      "workload-matched switching activity"
+    ]
+  },
+  "expected_benefit": [
+    "replace the single-router-times-instance-count area floor with aggregate physical evidence",
+    "measure mesh wiring, congestion, buffering, and clock-distribution effects",
+    "bound whether the 4x4 topology remains physically plausible before Llama7B reranking"
+  ],
+  "risks": [
+    "the first point uses a deliberately loose 3.2 mm square die feasibility envelope and does not optimize die size",
+    "source and observation boundary registers add disclosed harness overhead",
+    "hierarchical synthesis may retain unobserved performance counters inside kept router modules; retained counter cost must be audited rather than assumed",
+    "the 16-router design may cross the known Yosys/OpenROAD runtime frontier"
+  ],
+  "required_evaluations": [
+    {
+      "item_id": "l1_segmented_xy_mesh4x4_aggregate_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure first-pass Nangate45 hierarchical physical feasibility for the complete compact-boundary 4x4 segmented mesh.",
+      "evaluation_mode": "ppa",
+      "abstraction_layer": "architecture_block",
+      "comparison_role": "aggregate_segmented_mesh_physical_anchor",
+      "depends_on_item_ids": [
+        "l1_segmented_xy_mesh_noc_phase1_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "config_paths": [
+        "runs/designs/noc/l1_noc_segmented_xy_mesh4x4_w256_vc4_d4_wrapper/config_l1_noc_segmented_xy_mesh4x4_w256_vc4_d4.json"
+      ],
+      "sweep_path": "runs/campaigns/noc/l1_segmented_xy_mesh4x4/sweeps/nangate45_hierarchical_feasibility.json",
+      "expected_outputs": [
+        "runs/designs/noc/l1_noc_segmented_xy_mesh4x4_w256_vc4_d4_wrapper/metrics.csv"
+      ]
+    }
+  ]
+}

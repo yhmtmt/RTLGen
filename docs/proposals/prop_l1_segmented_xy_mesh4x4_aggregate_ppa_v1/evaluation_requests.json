@@ -1,0 +1,33 @@
+{
+  "proposal_id": "prop_l1_segmented_xy_mesh4x4_aggregate_ppa_v1",
+  "source_commit": "TBD",
+  "requested_items": [
+    {
+      "item_id": "l1_segmented_xy_mesh4x4_aggregate_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure first-pass Nangate45 hierarchical physical feasibility for the complete compact-boundary 4x4 segmented mesh.",
+      "evaluation_mode": "ppa",
+      "abstraction_layer": "architecture_block",
+      "config_paths": [
+        "runs/designs/noc/l1_noc_segmented_xy_mesh4x4_w256_vc4_d4_wrapper/config_l1_noc_segmented_xy_mesh4x4_w256_vc4_d4.json"
+      ],
+      "sweep_path": "runs/campaigns/noc/l1_segmented_xy_mesh4x4/sweeps/nangate45_hierarchical_feasibility.json",
+      "expected_outputs": [
+        "runs/designs/noc/l1_noc_segmented_xy_mesh4x4_w256_vc4_d4_wrapper/metrics.csv"
+      ],
+      "status": "pending_after_dependencies_merge",
+      "comparison_role": "aggregate_segmented_mesh_physical_anchor",
+      "paired_baseline_item_id": "l1_segmented_xy_mesh_noc_phase1_v1",
+      "depends_on_item_ids": [
+        "l1_segmented_xy_mesh_noc_phase1_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "measure_aggregate_mesh_physical_overhead",
+        "reason": "Replace linear single-router composition with aggregate placed-mesh timing, area, power, and congestion evidence."
+      },
+      "acceptance_notes": "Require the compact top to observe one distinct payload slice and all metadata at every endpoint, with all 16 endpoints observed in RTL simulation. Accept physically completed or explicit bounded failure rows. Treat the 3.2 mm square die as a feasibility envelope, not an optimized die point. Audit whether hierarchical synthesis retained instrumentation counters; do not assume removal. Report boundary-register overhead and the absence of workload-matched activity, SRAM placement, and HBM/DRAM evidence."
+    }
+  ]
+}

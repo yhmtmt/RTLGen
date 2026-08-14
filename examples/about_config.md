@@ -482,13 +482,18 @@ a fixed-port flit crossbar/router with internal registered traffic.
 `primitive: "segmented_router"` emits the synthesizable five-port
 deterministic-XY segmented router used by the 4x4 mesh, including per-input
 per-VC buffering and synthetic internal traffic for direct PPA measurement.
+`primitive: "segmented_mesh4x4"` emits the complete 16-router composition with
+compact full-width endpoint traffic and per-endpoint observation state. It
+requires five-port routers, four VCs, four-bit endpoint IDs, and a flit width
+divisible by 16.
 `primitive: "endpoint"` emits a ready/valid on-chip service endpoint with
 finite endpoint buffering, finite per-bank queues, locality-first bank
 draining, and synthetic producer/consumer backpressure.
 
 Supported common options are `primitive`, `flit_bits`, `depth`, `ports`, and
-`counter_bits`. Segmented-router-specific options are `vc_count`, `dest_bits`,
-`source_bits`, `tag_bits`, `fragment_bits`, `x_coord`, and `y_coord`.
+`counter_bits`. Segmented-router and segmented-mesh options are `vc_count`,
+`dest_bits`, `source_bits`, `tag_bits`, and `fragment_bits`; the single-router
+form also accepts `x_coord` and `y_coord`.
 Endpoint-specific options are `banks`, `endpoint_depth`, and
 `bank_queue_depth`.
 

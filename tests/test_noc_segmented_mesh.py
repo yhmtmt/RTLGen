@@ -32,7 +32,12 @@ from npu.sim.perf.noc_segmented_mesh import (
     simulate_router,
     simulate_scheduled_flits,
 )
-from scripts.generate_design import _emit_l1_segmented_router, identify_design
+from scripts.generate_design import (
+    _emit_l1_segmented_mesh4x4,
+    _emit_l1_segmented_router,
+    generate_wrapper,
+    identify_design,
+)
 ROUTER_CONFIG = (
     REPO_ROOT
     / "runs"
@@ -42,6 +47,14 @@ ROUTER_CONFIG = (
     / "config_l1_noc_segmented_xy_router_p5_w256_vc4_d4.json"
 )
 GENERATED_SRC = Path("/orfs/flow/designs/src/l1_noc_segmented_xy_router_p5_w256_vc4_d4_wrapper")
+MESH_PPA_CONFIG = (
+    REPO_ROOT
+    / "runs"
+    / "designs"
+    / "noc"
+    / "l1_noc_segmented_xy_mesh4x4_w256_vc4_d4_wrapper"
+    / "config_l1_noc_segmented_xy_mesh4x4_w256_vc4_d4.json"
+)
 
 
 def _iverilog() -> str | None:
@@ -684,6 +697,69 @@ def test_segmented_router_generator_drives_full_width_state_under_backpressure()
     assert "dest_seed[port_i] <= dest_seed[port_i] + 1'b1" in ready_block
     assert "source_seed[port_i] <= source_seed[port_i] + 1'b1" in ready_block
     assert "out_ready[port_i] <= !(tag_seed[port_i][1:0] == port_i[1:0])" in generated_top
+
+
+def test_segmented_mesh4x4_ppa_top_is_compact_observable_and_compiles(tmp_path: Path) -> None:
+    config = json.loads(MESH_PPA_CONFIG.read_text(encoding="utf-8"))
+    design = identify_design(config)
+    assert design["primitive"] == "segmented_mesh4x4"
+    generated_top = _emit_l1_segmented_mesh4x4(design["module_name"], design)
+
+    assert "output [15:0] observed_valid" in generated_top
+    assert "output [255:0] observed_flit" in generated_top
+    assert "dest_seed[node_i] <= dest_seed[node_i] + 4'd5" in generated_top
+    assert "vc_seed[node_i] <= (vc_seed[node_i] == VC_COUNT-1)" in generated_top
+    assert "node_i * OBSERVE_SLICE_W" in generated_top
+    assert "output [NODES*DATA_W-1:0]" not in generated_top
+
+    generated_path = tmp_path / "l1_noc_segmented_xy_mesh4x4_w256_vc4_d4.v"
+    generated_path.write_text(generated_top, encoding="utf-8")
+    generate_wrapper(config, str(tmp_path), design)
+    wrapper_path = tmp_path / f"{design['wrapper_name']}.v"
+    assert wrapper_path.exists()
+    output = _compile_and_run(
+        tmp_path,
+        top="tb_segmented_mesh4x4_ppa",
+        sources=[
+            REPO_ROOT / "npu/sim/rtl/noc_ready_valid_fifo.sv",
+            REPO_ROOT / "npu/sim/rtl/noc_segmented_mesh_router.sv",
+            REPO_ROOT / "npu/sim/rtl/noc_segmented_mesh4x4.sv",
+            generated_path,
+            wrapper_path,
+        ],
+        tb_text=f"""
+module tb_segmented_mesh4x4_ppa;
+  reg clk = 1'b0;
+  reg rst_n = 1'b0;
+  wire [15:0] observed_valid;
+  wire [255:0] observed_flit;
+  reg [15:0] seen = 16'b0;
+
+  always #1 clk = ~clk;
+
+  {design['wrapper_name']} dut (
+    .clk(clk),
+    .rst_n(rst_n),
+    .observed_valid(observed_valid),
+    .observed_flit(observed_flit)
+  );
+
+  initial begin
+    repeat (3) @(posedge clk);
+    rst_n = 1'b1;
+    repeat (512) begin
+      @(posedge clk);
+      seen = seen | observed_valid;
+      if (^observed_flit === 1'bx)
+        $fatal(1, "unknown observed flit signature");
+    end
+    $display("SEEN=%h", seen);
+    $finish;
+  end
+endmodule
+""",
+    )
+    assert "SEEN=ffff" in output
 
 
 def test_segmented_router_wrapper_generates_and_compiles() -> None:
