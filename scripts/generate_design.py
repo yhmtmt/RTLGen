@@ -435,11 +435,25 @@ def identify_design(config):
         source_bits = int(options.get("source_bits", 4))
         tag_bits = int(options.get("tag_bits", 8))
         fragment_bits = int(options.get("fragment_bits", 3))
+        addr_bits = int(options.get("addr_bits", 24))
+        flit_count_bits = int(options.get("flit_count_bits", 4))
+        tx_desc_depth = int(options.get("tx_desc_depth", depth))
+        tx_outstanding = int(options.get("tx_outstanding", max(depth, 8)))
+        rx_contexts = int(options.get("rx_contexts", max(depth, 8)))
+        local_endpoint_id = int(options.get("local_endpoint_id", 2))
         x_coord = int(options.get("x_coord", 1))
         y_coord = int(options.get("y_coord", 1))
-        if primitive not in ("fifo", "router", "endpoint", "segmented_router", "segmented_mesh4x4"):
+        if primitive not in (
+            "fifo",
+            "router",
+            "endpoint",
+            "segmented_router",
+            "segmented_mesh4x4",
+            "sram_packet_endpoint",
+        ):
             raise ValueError(
-                "l1_memory_noc_primitive primitive must be fifo, router, endpoint, segmented_router, or segmented_mesh4x4"
+                "l1_memory_noc_primitive primitive must be fifo, router, endpoint, segmented_router, "
+                "segmented_mesh4x4, or sram_packet_endpoint"
             )
         if flit_bits <= 0:
             raise ValueError("l1_memory_noc_primitive flit_bits must be positive")
@@ -459,6 +473,10 @@ def identify_design(config):
             raise ValueError("l1_memory_noc_primitive vc_count must be positive")
         if dest_bits <= 0 or source_bits <= 0 or tag_bits <= 0 or fragment_bits <= 0:
             raise ValueError("l1_memory_noc_primitive metadata widths must be positive")
+        if addr_bits <= 0 or flit_count_bits <= 0:
+            raise ValueError("l1_memory_noc_primitive address/count widths must be positive")
+        if tx_desc_depth <= 0 or tx_outstanding <= 0 or rx_contexts <= 0:
+            raise ValueError("l1_memory_noc_primitive endpoint queue/context depths must be positive")
         if primitive == "segmented_router" and ports != 5:
             raise ValueError("l1_memory_noc_primitive segmented_router requires five ports")
         if primitive == "segmented_router" and flit_bits < 4:
@@ -483,6 +501,19 @@ def identify_design(config):
                 raise ValueError(
                     "l1_memory_noc_primitive segmented_mesh4x4 observation slice is narrower than metadata"
                 )
+        if primitive == "sram_packet_endpoint":
+            if flit_bits != 256:
+                raise ValueError("l1_memory_noc_primitive sram_packet_endpoint requires 256-bit flits")
+            if vc_count != 4 or dest_bits != 4 or source_bits != 4:
+                raise ValueError(
+                    "l1_memory_noc_primitive sram_packet_endpoint requires four VCs and four-bit endpoint IDs"
+                )
+            if (1 << flit_count_bits) - 1 < (1 << fragment_bits):
+                raise ValueError(
+                    "l1_memory_noc_primitive sram_packet_endpoint flit_count_bits cannot represent all fragments"
+                )
+            if local_endpoint_id < 0 or local_endpoint_id >= (1 << source_bits):
+                raise ValueError("l1_memory_noc_primitive local_endpoint_id is out of range")
         return {
             "kind": "l1_memory_noc_primitive",
             "module_name": module_name,
@@ -500,6 +531,12 @@ def identify_design(config):
             "source_bits": source_bits,
             "tag_bits": tag_bits,
             "fragment_bits": fragment_bits,
+            "addr_bits": addr_bits,
+            "flit_count_bits": flit_count_bits,
+            "tx_desc_depth": tx_desc_depth,
+            "tx_outstanding": tx_outstanding,
+            "rx_contexts": rx_contexts,
+            "local_endpoint_id": local_endpoint_id,
             "x_coord": x_coord,
             "y_coord": y_coord,
             "include_mg_cpa": False,
@@ -919,6 +956,8 @@ def generate_l1_memory_noc_design(src_dir, design):
                 rtl_path.read_text(encoding="utf-8"),
                 encoding="utf-8",
             )
+    elif design["primitive"] == "sram_packet_endpoint":
+        text = _emit_l1_sram_packet_endpoint(module_name, design)
     else:
         text = _emit_l1_endpoint(module_name, design)
     Path(src_dir, f"{module_name}.v").write_text(text, encoding="utf-8")
@@ -1412,6 +1451,198 @@ module {module_name}(
   end
 endmodule
 """
+
+
+def _emit_l1_sram_packet_endpoint(module_name, design):
+    flit_bits = design["flit_bits"]
+    source_bits = design["source_bits"]
+    dest_bits = design["dest_bits"]
+    vc_bits = _ceil_log2_at_least_one(design["vc_count"])
+    tag_bits = design["tag_bits"]
+    fragment_bits = design["fragment_bits"]
+    addr_bits = design["addr_bits"]
+    flit_count_bits = design["flit_count_bits"]
+    counter_bits = design["counter_bits"]
+    endpoint_rtl = (
+        repo_root / "npu" / "sim" / "rtl" / "noc_sram_packet_endpoint.sv"
+    ).read_text(encoding="utf-8")
+    top = f"""
+
+module {module_name}(
+  input clk,
+  input rst_n,
+  output [{flit_bits-1}:0] observed_flit,
+  output [{counter_bits-1}:0] issued_packet_count,
+  output [{counter_bits-1}:0] completed_packet_count,
+  output protocol_error
+);
+  localparam integer DATA_W = {flit_bits};
+  localparam integer SOURCE_W = {source_bits};
+  localparam integer DEST_W = {dest_bits};
+  localparam integer VC_W = {vc_bits};
+  localparam integer TAG_W = {tag_bits};
+  localparam integer FRAGMENT_W = {fragment_bits};
+  localparam integer ADDR_W = {addr_bits};
+  localparam integer FLIT_COUNT_W = {flit_count_bits};
+  localparam integer COUNT_W = {counter_bits};
+  localparam integer LOCAL_ID = {design['local_endpoint_id']};
+  localparam integer DATA_BYTES = DATA_W / 8;
+
+  reg [COUNT_W-1:0] issued_count_r;
+  reg [COUNT_W-1:0] completed_count_r;
+  reg [2:0] phase;
+  reg [DATA_W-1:0] observed_r;
+
+  wire [TAG_W-1:0] next_tag = issued_count_r[TAG_W-1:0];
+  wire [VC_W-1:0] next_vc = issued_count_r[VC_W-1:0];
+  wire [FLIT_COUNT_W-1:0] next_flit_count =
+      {{{{(FLIT_COUNT_W-FRAGMENT_W){{1'b0}}}}, issued_count_r[FRAGMENT_W-1:0]}} + 1'b1;
+  wire [ADDR_W-1:0] next_tx_base = issued_count_r * (DATA_BYTES * (1 << FRAGMENT_W));
+  wire [ADDR_W-1:0] next_rx_base = next_tx_base ^ (1 << (ADDR_W - 1));
+  wire [DEST_W-1:0] next_destination = issued_count_r[DEST_W-1:0] + 1'b1;
+
+  wire tx_desc_ready;
+  wire rx_desc_ready;
+  wire descriptor_pair_valid = tx_desc_ready && rx_desc_ready;
+  wire descriptor_pair_fire = descriptor_pair_valid;
+
+  wire tx_mem_req_valid;
+  wire tx_mem_req_ready;
+  wire [ADDR_W-1:0] tx_mem_req_addr;
+  reg tx_mem_rsp_valid;
+  wire tx_mem_rsp_ready;
+  reg [DATA_W-1:0] tx_mem_rsp_data;
+
+  wire tx_flit_valid;
+  wire tx_flit_ready;
+  wire [SOURCE_W-1:0] tx_flit_source;
+  wire [DEST_W-1:0] tx_flit_destination;
+  wire [VC_W-1:0] tx_flit_vc;
+  wire [TAG_W-1:0] tx_flit_tag;
+  wire [FRAGMENT_W-1:0] tx_flit_fragment;
+  wire tx_flit_last;
+  wire [DATA_W-1:0] tx_flit_data;
+
+  wire rx_flit_ready;
+  wire rx_mem_write_valid;
+  wire rx_mem_write_ready = phase != 3'd3;
+  wire [ADDR_W-1:0] rx_mem_write_addr;
+  wire [DATA_W-1:0] rx_mem_write_data;
+  wire rx_completion_valid;
+  wire rx_completion_ready = phase != 3'd6;
+  wire [SOURCE_W-1:0] rx_completion_source;
+  wire [VC_W-1:0] rx_completion_vc;
+  wire [TAG_W-1:0] rx_completion_tag;
+
+  wire tx_req_fire = tx_mem_req_valid && tx_mem_req_ready;
+  wire tx_rsp_fire = tx_mem_rsp_valid && tx_mem_rsp_ready;
+  wire tx_flit_fire = tx_flit_valid && tx_flit_ready;
+  wire rx_write_fire = rx_mem_write_valid && rx_mem_write_ready;
+  wire completion_fire = rx_completion_valid && rx_completion_ready;
+
+  wire [DATA_W-1:0] tx_metadata_observation =
+      {{{{(DATA_W-DEST_W){{1'b0}}}}, tx_flit_destination}} ^
+      ({{{{(DATA_W-VC_W){{1'b0}}}}, tx_flit_vc}} << 8) ^
+      ({{{{(DATA_W-TAG_W){{1'b0}}}}, tx_flit_tag}} << 16) ^
+      ({{{{(DATA_W-FRAGMENT_W){{1'b0}}}}, tx_flit_fragment}} << 32) ^
+      ({{{{(DATA_W-1){{1'b0}}}}, tx_flit_last}} << 48);
+  wire [DATA_W-1:0] rx_metadata_observation =
+      {{{{(DATA_W-ADDR_W){{1'b0}}}}, rx_mem_write_addr}} ^
+      ({{{{(DATA_W-SOURCE_W){{1'b0}}}}, rx_completion_source}} << 40) ^
+      ({{{{(DATA_W-VC_W){{1'b0}}}}, rx_completion_vc}} << 48) ^
+      ({{{{(DATA_W-TAG_W){{1'b0}}}}, rx_completion_tag}} << 56);
+
+  function [DATA_W-1:0] advance_data;
+    input [DATA_W-1:0] value;
+    reg feedback;
+    begin
+      feedback = value[DATA_W-1] ^ value[21] ^ value[5] ^ value[0];
+      advance_data = {{value[DATA_W-2:0], feedback}};
+    end
+  endfunction
+
+  assign tx_mem_req_ready = (!tx_mem_rsp_valid || tx_mem_rsp_ready) && phase != 3'd2;
+  assign tx_flit_ready = rx_flit_ready;
+  assign observed_flit = observed_r;
+  assign issued_packet_count = issued_count_r;
+  assign completed_packet_count = completed_count_r;
+
+  noc_sram_packet_endpoint #(
+    .DATA_W(DATA_W),
+    .ENDPOINT_W(SOURCE_W),
+    .VC_W(VC_W),
+    .TAG_W(TAG_W),
+    .FRAGMENT_W(FRAGMENT_W),
+    .ADDR_W(ADDR_W),
+    .FLIT_COUNT_W(FLIT_COUNT_W),
+    .TX_DESC_DEPTH({design['tx_desc_depth']}),
+    .TX_OUTSTANDING({design['tx_outstanding']}),
+    .RX_CONTEXTS({design['rx_contexts']}),
+    .LOCAL_ENDPOINT_ID(LOCAL_ID)
+  ) endpoint (
+    .clk(clk), .rst_n(rst_n),
+    .tx_desc_valid(descriptor_pair_valid), .tx_desc_ready(tx_desc_ready),
+    .tx_desc_destination(next_destination), .tx_desc_vc(next_vc),
+    .tx_desc_tag(next_tag), .tx_desc_base_addr(next_tx_base),
+    .tx_desc_flit_count(next_flit_count),
+    .tx_mem_req_valid(tx_mem_req_valid), .tx_mem_req_ready(tx_mem_req_ready),
+    .tx_mem_req_addr(tx_mem_req_addr), .tx_mem_rsp_valid(tx_mem_rsp_valid),
+    .tx_mem_rsp_ready(tx_mem_rsp_ready), .tx_mem_rsp_data(tx_mem_rsp_data),
+    .tx_flit_valid(tx_flit_valid), .tx_flit_ready(tx_flit_ready),
+    .tx_flit_source(tx_flit_source), .tx_flit_destination(tx_flit_destination),
+    .tx_flit_vc(tx_flit_vc), .tx_flit_tag(tx_flit_tag),
+    .tx_flit_fragment(tx_flit_fragment), .tx_flit_last(tx_flit_last),
+    .tx_flit_data(tx_flit_data),
+    .rx_desc_valid(descriptor_pair_valid), .rx_desc_ready(rx_desc_ready),
+    .rx_desc_source(LOCAL_ID[SOURCE_W-1:0]), .rx_desc_vc(next_vc),
+    .rx_desc_tag(next_tag), .rx_desc_base_addr(next_rx_base),
+    .rx_desc_flit_count(next_flit_count),
+    .rx_flit_valid(tx_flit_valid), .rx_flit_ready(rx_flit_ready),
+    .rx_flit_source(tx_flit_source), .rx_flit_vc(tx_flit_vc),
+    .rx_flit_tag(tx_flit_tag), .rx_flit_fragment(tx_flit_fragment),
+    .rx_flit_last(tx_flit_last), .rx_flit_data(tx_flit_data),
+    .rx_mem_write_valid(rx_mem_write_valid), .rx_mem_write_ready(rx_mem_write_ready),
+    .rx_mem_write_addr(rx_mem_write_addr), .rx_mem_write_data(rx_mem_write_data),
+    .rx_completion_valid(rx_completion_valid), .rx_completion_ready(rx_completion_ready),
+    .rx_completion_source(rx_completion_source), .rx_completion_vc(rx_completion_vc),
+    .rx_completion_tag(rx_completion_tag), .protocol_error(protocol_error)
+  );
+
+  always @(posedge clk or negedge rst_n) begin
+    if (!rst_n) begin
+      issued_count_r <= {{COUNT_W{{1'b0}}}};
+      completed_count_r <= {{COUNT_W{{1'b0}}}};
+      phase <= 3'd0;
+      observed_r <= {{{{(DATA_W-1){{1'b0}}}}, 1'b1}};
+      tx_mem_rsp_valid <= 1'b0;
+      tx_mem_rsp_data <= {{{{(DATA_W-1){{1'b0}}}}, 1'b1}};
+    end else begin
+      phase <= phase + 1'b1;
+      if (descriptor_pair_fire)
+        issued_count_r <= issued_count_r + 1'b1;
+
+      if (tx_req_fire) begin
+        tx_mem_rsp_valid <= 1'b1;
+        tx_mem_rsp_data <= advance_data(tx_mem_rsp_data) ^
+            {{{{(DATA_W-ADDR_W){{1'b0}}}}, tx_mem_req_addr}};
+      end else if (tx_rsp_fire) begin
+        tx_mem_rsp_valid <= 1'b0;
+      end
+
+      if (completion_fire)
+        completed_count_r <= completed_count_r + 1'b1;
+
+      if (tx_flit_fire || rx_write_fire || completion_fire) begin
+        observed_r <= advance_data(observed_r) ^
+            (tx_flit_fire ? (tx_flit_data ^ tx_metadata_observation) : {{DATA_W{{1'b0}}}}) ^
+            (rx_write_fire ? (rx_mem_write_data ^ rx_metadata_observation) : {{DATA_W{{1'b0}}}}) ^
+            (completion_fire ? rx_metadata_observation : {{DATA_W{{1'b0}}}});
+      end
+    end
+  end
+endmodule
+"""
+    return endpoint_rtl + top
 
 
 def _emit_l1_endpoint(module_name, design):
@@ -2224,6 +2455,28 @@ module {wrapper_name}(
     .rst_n(rst_n),
     .observed_valid(observed_valid),
     .observed_flit(observed_flit)
+  );
+
+endmodule
+"""
+        elif design["primitive"] == "sram_packet_endpoint":
+            wrapper_content = f"""
+module {wrapper_name}(
+  input clk,
+  input rst_n,
+  output [{flit_bits-1}:0] observed_flit,
+  output [{counter_bits-1}:0] issued_packet_count,
+  output [{counter_bits-1}:0] completed_packet_count,
+  output protocol_error
+);
+
+  {module_name} dut (
+    .clk(clk),
+    .rst_n(rst_n),
+    .observed_flit(observed_flit),
+    .issued_packet_count(issued_packet_count),
+    .completed_packet_count(completed_packet_count),
+    .protocol_error(protocol_error)
   );
 
 endmodule

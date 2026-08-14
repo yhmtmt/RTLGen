@@ -1,0 +1,59 @@
+{
+  "proposal_id": "prop_l1_noc_sram_packet_endpoint_phase2_v1",
+  "created_utc": "2026-08-14T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit_block",
+  "abstraction_layer": "architecture_block",
+  "title": "Embody the Phase 2 zero-copy SRAM packet endpoint",
+  "hypothesis": "A finite descriptor-driven endpoint can sustain segmented 256-bit traffic without packet-wide registers while making source retention, SRAM backpressure, packet metadata, receive context, direct writes, and completion control physically measurable.",
+  "direct_comparison": {
+    "primary_question": "What PPA and service constraints replace the Phase 2 model's uncosted zero-copy descriptor and packetizer abstraction?",
+    "include": [
+      "four TX descriptors",
+      "eight outstanding SRAM-read metadata entries",
+      "eight interleavable receive contexts",
+      "256-bit stable flit output",
+      "direct destination SRAM write control",
+      "packet completion and protocol checks",
+      "compact full-width physical harness"
+    ],
+    "exclude": [
+      "SRAM macros",
+      "router and mesh wiring",
+      "producer/reducer arithmetic",
+      "HBM/DRAM",
+      "workload-matched switching activity"
+    ]
+  },
+  "expected_benefit": [
+    "replace logical zero-copy release queues with finite RTL",
+    "measure endpoint timing, area, and vectorless power",
+    "expose sustainable SRAM-to-NoC service constraints for the Llama7B reroute"
+  ],
+  "risks": [
+    "the compact harness adds disclosed source/observation logic",
+    "SRAM latency and energy remain external until macro composition",
+    "vectorless PPA does not provide workload activity energy"
+  ],
+  "required_evaluations": [
+    {
+      "item_id": "l1_noc_sram_packet_endpoint_phase2_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure Nangate45 PPA for the concrete Phase 2 descriptor-driven SRAM packet endpoint.",
+      "evaluation_mode": "ppa",
+      "abstraction_layer": "architecture_block",
+      "comparison_role": "phase2_sram_packet_endpoint_physical_anchor",
+      "depends_on_item_ids": [],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "config_paths": [
+        "runs/designs/noc/l1_noc_sram_packet_endpoint_w256_td4_to8_rx8_wrapper/config_l1_noc_sram_packet_endpoint_w256_td4_to8_rx8.json"
+      ],
+      "sweep_path": "runs/campaigns/noc/l1_sram_packet_endpoint/sweeps/nangate45_macro_frontier.json",
+      "expected_outputs": [
+        "runs/designs/noc/l1_noc_sram_packet_endpoint_w256_td4_to8_rx8_wrapper/metrics.csv"
+      ]
+    }
+  ]
+}
