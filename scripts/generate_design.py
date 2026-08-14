@@ -437,9 +437,9 @@ def identify_design(config):
         fragment_bits = int(options.get("fragment_bits", 3))
         x_coord = int(options.get("x_coord", 1))
         y_coord = int(options.get("y_coord", 1))
-        if primitive not in ("fifo", "router", "endpoint", "segmented_router"):
+        if primitive not in ("fifo", "router", "endpoint", "segmented_router", "segmented_mesh4x4"):
             raise ValueError(
-                "l1_memory_noc_primitive primitive must be fifo, router, endpoint, or segmented_router"
+                "l1_memory_noc_primitive primitive must be fifo, router, endpoint, segmented_router, or segmented_mesh4x4"
             )
         if flit_bits <= 0:
             raise ValueError("l1_memory_noc_primitive flit_bits must be positive")
@@ -463,6 +463,26 @@ def identify_design(config):
             raise ValueError("l1_memory_noc_primitive segmented_router requires five ports")
         if primitive == "segmented_router" and flit_bits < 4:
             raise ValueError("l1_memory_noc_primitive segmented_router requires at least four flit bits")
+        if primitive == "segmented_mesh4x4":
+            if ports != 5:
+                raise ValueError("l1_memory_noc_primitive segmented_mesh4x4 requires five-port routers")
+            if vc_count != 4:
+                raise ValueError("l1_memory_noc_primitive segmented_mesh4x4 requires four virtual channels")
+            if dest_bits != 4 or source_bits != 4:
+                raise ValueError("l1_memory_noc_primitive segmented_mesh4x4 requires four-bit endpoint IDs")
+            if flit_bits < 16 or flit_bits % 16 != 0:
+                raise ValueError("l1_memory_noc_primitive segmented_mesh4x4 flit width must be divisible by 16")
+            observe_slice_bits = flit_bits // 16
+            if observe_slice_bits < max(
+                tag_bits,
+                fragment_bits,
+                dest_bits,
+                source_bits,
+                _ceil_log2_at_least_one(vc_count),
+            ):
+                raise ValueError(
+                    "l1_memory_noc_primitive segmented_mesh4x4 observation slice is narrower than metadata"
+                )
         return {
             "kind": "l1_memory_noc_primitive",
             "module_name": module_name,
@@ -887,6 +907,18 @@ def generate_l1_memory_noc_design(src_dir, design):
                 rtl_path.read_text(encoding="utf-8"),
                 encoding="utf-8",
             )
+    elif design["primitive"] == "segmented_mesh4x4":
+        text = _emit_l1_segmented_mesh4x4(module_name, design)
+        for filename in (
+            "noc_ready_valid_fifo.sv",
+            "noc_segmented_mesh_router.sv",
+            "noc_segmented_mesh4x4.sv",
+        ):
+            rtl_path = repo_root / "npu" / "sim" / "rtl" / filename
+            Path(src_dir, Path(filename).with_suffix(".v")).write_text(
+                rtl_path.read_text(encoding="utf-8"),
+                encoding="utf-8",
+            )
     else:
         text = _emit_l1_endpoint(module_name, design)
     Path(src_dir, f"{module_name}.v").write_text(text, encoding="utf-8")
@@ -1202,6 +1234,178 @@ module {module_name}(
           vc_seed[port_i] <= (vc_seed[port_i] == VC_COUNT-1) ? '0 : vc_seed[port_i] + 1'b1;
           dest_seed[port_i] <= dest_seed[port_i] + 1'b1;
           source_seed[port_i] <= source_seed[port_i] + 1'b1;
+        end
+      end
+    end
+  end
+endmodule
+"""
+
+
+def _emit_l1_segmented_mesh4x4(module_name, design):
+    flit_bits = design["flit_bits"]
+    counter_bits = design["counter_bits"]
+    tag_bits = design["tag_bits"]
+    fragment_bits = design["fragment_bits"]
+    vc_count = design["vc_count"]
+    vc_width = _ceil_log2_at_least_one(vc_count)
+    observe_slice_bits = flit_bits // 16
+    return f"""
+`timescale 1ns/1ps
+
+module {module_name}(
+  input clk,
+  input rst_n,
+  output [15:0] observed_valid,
+  output [{flit_bits-1}:0] observed_flit
+);
+  localparam integer NODES = 16;
+  localparam integer DATA_W = {flit_bits};
+  localparam integer DEST_W = 4;
+  localparam integer SOURCE_W = 4;
+  localparam integer TAG_W = {tag_bits};
+  localparam integer FRAGMENT_W = {fragment_bits};
+  localparam integer VC_COUNT = {vc_count};
+  localparam integer VC_W = {vc_width};
+  localparam integer FIFO_DEPTH = {design['depth']};
+  localparam integer COUNT_W = {counter_bits};
+  localparam integer OBSERVE_SLICE_W = {observe_slice_bits};
+
+  reg [NODES-1:0] endpoint_in_valid;
+  wire [NODES-1:0] endpoint_in_ready;
+  reg [NODES*DEST_W-1:0] endpoint_in_dest;
+  reg [NODES*SOURCE_W-1:0] endpoint_in_source;
+  reg [NODES*TAG_W-1:0] endpoint_in_tag;
+  reg [NODES*FRAGMENT_W-1:0] endpoint_in_fragment;
+  reg [NODES-1:0] endpoint_in_last;
+  reg [NODES*VC_W-1:0] endpoint_in_vc;
+  reg [NODES*DATA_W-1:0] endpoint_in_data;
+  wire [NODES-1:0] endpoint_out_valid;
+  reg [NODES-1:0] endpoint_out_ready;
+  wire [NODES*DEST_W-1:0] endpoint_out_dest;
+  wire [NODES*SOURCE_W-1:0] endpoint_out_source;
+  wire [NODES*TAG_W-1:0] endpoint_out_tag;
+  wire [NODES*FRAGMENT_W-1:0] endpoint_out_fragment;
+  wire [NODES-1:0] endpoint_out_last;
+  wire [NODES*VC_W-1:0] endpoint_out_vc;
+  wire [NODES*DATA_W-1:0] endpoint_out_data;
+  wire [NODES*COUNT_W-1:0] router_accepted_flit_count;
+  wire [NODES*COUNT_W-1:0] router_forwarded_flit_count;
+  wire [NODES*COUNT_W-1:0] router_input_stall_cycles;
+  wire [NODES*COUNT_W-1:0] router_output_stall_cycles;
+  wire [NODES*COUNT_W-1:0] router_contention_cycles;
+  wire [NODES*COUNT_W-1:0] router_current_input_occupancy;
+  wire [NODES*COUNT_W-1:0] router_max_input_occupancy;
+  wire [NODES*5*COUNT_W-1:0] router_route_flit_count;
+
+  reg [TAG_W-1:0] tag_seed [0:NODES-1];
+  reg [FRAGMENT_W-1:0] fragment_seed [0:NODES-1];
+  reg [VC_W-1:0] vc_seed [0:NODES-1];
+  reg [DEST_W-1:0] dest_seed [0:NODES-1];
+  reg [NODES-1:0] observed_valid_q;
+  reg [DATA_W-1:0] observed_q;
+  integer node_i;
+
+  function [DATA_W-1:0] advance_flit_data;
+    input [DATA_W-1:0] state;
+    begin
+      advance_flit_data = {{
+          state[DATA_W-2:0],
+          state[DATA_W-1] ^ state[(DATA_W/2)-1] ^ state[1] ^ state[0]
+      }};
+    end
+  endfunction
+
+  assign observed_valid = observed_valid_q;
+  assign observed_flit = observed_q;
+
+  noc_segmented_mesh4x4 #(
+    .DATA_W(DATA_W),
+    .TAG_W(TAG_W),
+    .FRAGMENT_W(FRAGMENT_W),
+    .VC_W(VC_W),
+    .VC_COUNT(VC_COUNT),
+    .FIFO_DEPTH(FIFO_DEPTH),
+    .COUNTER_W(COUNT_W)
+  ) mesh (
+    .clk(clk),
+    .rst_n(rst_n),
+    .endpoint_in_valid(endpoint_in_valid),
+    .endpoint_in_ready(endpoint_in_ready),
+    .endpoint_in_dest(endpoint_in_dest),
+    .endpoint_in_source(endpoint_in_source),
+    .endpoint_in_tag(endpoint_in_tag),
+    .endpoint_in_fragment(endpoint_in_fragment),
+    .endpoint_in_last(endpoint_in_last),
+    .endpoint_in_vc(endpoint_in_vc),
+    .endpoint_in_data(endpoint_in_data),
+    .endpoint_out_valid(endpoint_out_valid),
+    .endpoint_out_ready(endpoint_out_ready),
+    .endpoint_out_dest(endpoint_out_dest),
+    .endpoint_out_source(endpoint_out_source),
+    .endpoint_out_tag(endpoint_out_tag),
+    .endpoint_out_fragment(endpoint_out_fragment),
+    .endpoint_out_last(endpoint_out_last),
+    .endpoint_out_vc(endpoint_out_vc),
+    .endpoint_out_data(endpoint_out_data),
+    .router_accepted_flit_count(router_accepted_flit_count),
+    .router_forwarded_flit_count(router_forwarded_flit_count),
+    .router_input_stall_cycles(router_input_stall_cycles),
+    .router_output_stall_cycles(router_output_stall_cycles),
+    .router_contention_cycles(router_contention_cycles),
+    .router_current_input_occupancy(router_current_input_occupancy),
+    .router_max_input_occupancy(router_max_input_occupancy),
+    .router_route_flit_count(router_route_flit_count)
+  );
+
+  always @(posedge clk or negedge rst_n) begin
+    if (!rst_n) begin
+      endpoint_in_valid <= '0;
+      endpoint_in_dest <= '0;
+      endpoint_in_source <= '0;
+      endpoint_in_tag <= '0;
+      endpoint_in_fragment <= '0;
+      endpoint_in_last <= '0;
+      endpoint_in_vc <= '0;
+      endpoint_out_ready <= '1;
+      observed_valid_q <= '0;
+      observed_q <= '0;
+      for (node_i = 0; node_i < NODES; node_i = node_i + 1) begin
+        tag_seed[node_i] <= node_i + 1;
+        fragment_seed[node_i] <= '0;
+        vc_seed[node_i] <= node_i % VC_COUNT;
+        dest_seed[node_i] <= node_i + 5;
+        endpoint_in_data[(node_i * DATA_W) +: DATA_W] <= node_i + 1;
+      end
+    end else begin
+      observed_valid_q <= '0;
+      for (node_i = 0; node_i < NODES; node_i = node_i + 1) begin
+        endpoint_in_valid[node_i] <= 1'b1;
+        endpoint_in_dest[(node_i * DEST_W) +: DEST_W] <= dest_seed[node_i];
+        endpoint_in_source[(node_i * SOURCE_W) +: SOURCE_W] <= node_i[SOURCE_W-1:0];
+        endpoint_in_tag[(node_i * TAG_W) +: TAG_W] <= tag_seed[node_i];
+        endpoint_in_fragment[(node_i * FRAGMENT_W) +: FRAGMENT_W] <= fragment_seed[node_i];
+        endpoint_in_last[node_i] <= (fragment_seed[node_i] == {fragment_bits}'d7);
+        endpoint_in_vc[(node_i * VC_W) +: VC_W] <= vc_seed[node_i];
+        endpoint_out_ready[node_i] <= !(tag_seed[node_i][1:0] == node_i[1:0]);
+        if (endpoint_in_valid[node_i] && endpoint_in_ready[node_i]) begin
+          endpoint_in_data[(node_i * DATA_W) +: DATA_W] <= advance_flit_data(
+              endpoint_in_data[(node_i * DATA_W) +: DATA_W]);
+          tag_seed[node_i] <= tag_seed[node_i] + 1'b1;
+          fragment_seed[node_i] <= fragment_seed[node_i] + 1'b1;
+          vc_seed[node_i] <= (vc_seed[node_i] == VC_COUNT-1) ? '0 : vc_seed[node_i] + 1'b1;
+          dest_seed[node_i] <= dest_seed[node_i] + 4'd5;
+        end
+        if (endpoint_out_valid[node_i] && endpoint_out_ready[node_i]) begin
+          observed_valid_q[node_i] <= 1'b1;
+          observed_q[(node_i * OBSERVE_SLICE_W) +: OBSERVE_SLICE_W] <=
+              endpoint_out_data[((node_i * DATA_W) + (node_i * OBSERVE_SLICE_W)) +: OBSERVE_SLICE_W]
+              ^ endpoint_out_tag[(node_i * TAG_W) +: TAG_W]
+              ^ endpoint_out_fragment[(node_i * FRAGMENT_W) +: FRAGMENT_W]
+              ^ endpoint_out_source[(node_i * SOURCE_W) +: SOURCE_W]
+              ^ endpoint_out_dest[(node_i * DEST_W) +: DEST_W]
+              ^ endpoint_out_vc[(node_i * VC_W) +: VC_W]
+              ^ endpoint_out_last[node_i];
         end
       end
     end
@@ -2001,6 +2205,24 @@ module {wrapper_name}(
     .current_input_occupancy(current_input_occupancy),
     .max_input_occupancy(max_input_occupancy),
     .east_route_flit_count(east_route_flit_count),
+    .observed_flit(observed_flit)
+  );
+
+endmodule
+"""
+        elif design["primitive"] == "segmented_mesh4x4":
+            wrapper_content = f"""
+module {wrapper_name}(
+  input clk,
+  input rst_n,
+  output [15:0] observed_valid,
+  output [{flit_bits-1}:0] observed_flit
+);
+
+  {module_name} dut (
+    .clk(clk),
+    .rst_n(rst_n),
+    .observed_valid(observed_valid),
     .observed_flit(observed_flit)
   );
 

@@ -1,0 +1,11 @@
+{
+  "tag_prefix": "l1_segmented_xy_mesh4x4_nangate45_hierarchical_feasibility",
+  "flow_params": {
+    "CLOCK_PERIOD": [2.0],
+    "DIE_AREA": ["0 0 3200 3200"],
+    "CORE_AREA": ["50 50 3150 3150"],
+    "PLACE_DENSITY": [0.45],
+    "SYNTH_HIERARCHICAL": [1],
+    "SYNTH_KEEP_MODULES": ["noc_segmented_mesh_router noc_ready_valid_fifo"]
+  }
+}
