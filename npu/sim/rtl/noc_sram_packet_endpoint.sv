@@ -57,6 +57,7 @@ module noc_sram_packet_endpoint #(
   input wire rx_flit_valid,
   output wire rx_flit_ready,
   input wire [ENDPOINT_W-1:0] rx_flit_source,
+  input wire [ENDPOINT_W-1:0] rx_flit_destination,
   input wire [VC_W-1:0] rx_flit_vc,
   input wire [TAG_W-1:0] rx_flit_tag,
   input wire [FRAGMENT_W-1:0] rx_flit_fragment,
@@ -213,7 +214,9 @@ module noc_sram_packet_endpoint #(
     (rx_desc_flit_count != {FLIT_COUNT_W{1'b0}}) &&
     (rx_desc_flit_count <= MAX_FLIT_COUNT);
   wire rx_desc_push = rx_desc_valid && rx_desc_ready;
-  wire rx_flit_protocol_valid = rx_match_found && rx_fragment_valid && rx_last_valid;
+  wire rx_destination_valid = rx_flit_destination == LOCAL_ENDPOINT_ID[ENDPOINT_W-1:0];
+  wire rx_flit_protocol_valid =
+    rx_destination_valid && rx_match_found && rx_fragment_valid && rx_last_valid;
   wire rx_completion_space = !rx_completion_valid_r || rx_completion_ready;
   wire rx_flit_fire = rx_flit_valid && rx_flit_ready;
   wire rx_packet_complete = rx_flit_protocol_valid && rx_flit_last;

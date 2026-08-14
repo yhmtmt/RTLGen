@@ -244,6 +244,19 @@ evidence gaps:
   performance model. The prepared L1 item
   `l1_noc_sram_packet_endpoint_phase2_v1` must measure endpoint PPA/service
   before the Phase 2 reroute can remove the endpoint-control cost abstraction.
+- Composition: `noc_sram_packet_mesh4x4` connects sixteen finite endpoints to
+  all sixteen routers with explicit scheduler descriptors, source SRAM reads,
+  destination SRAM writes, completion, and protocol-error boundaries. The
+  composed test proves simultaneous multihop packets and exact data/address
+  delivery. Endpoint receive logic now rejects a flit whose destination does
+  not name the local endpoint.
+- Credit timing: the original router FIFO allowed a full queue's input ready
+  to depend on a same-cycle downstream pop. Across bidirectional links this
+  formed a combinational ready fixpoint. FIFO credits now depend only on
+  registered occupancy, and the performance model uses the same one-cycle
+  full-queue recovery rule. Router, aggregate-mesh, and endpoint PPA items must
+  use a merge commit containing this correction; the earlier queued source
+  hashes are not valid final physical anchors.
 - The original NoC Phase 2 item is superseded without a usable result. It
   interpreted compute-wrapper cycles as NoC cycles. The retry converts every
   release timestamp with

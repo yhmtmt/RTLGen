@@ -41,6 +41,7 @@ module noc_sram_packet_endpoint_tb;
   reg rx_flit_valid = 1'b0;
   wire rx_flit_ready;
   reg [3:0] rx_flit_source = 0;
+  reg [3:0] rx_flit_destination = 2;
   reg [1:0] rx_flit_vc = 0;
   reg [7:0] rx_flit_tag = 0;
   reg [2:0] rx_flit_fragment = 0;
@@ -94,7 +95,8 @@ module noc_sram_packet_endpoint_tb;
     .rx_desc_tag(rx_desc_tag), .rx_desc_base_addr(rx_desc_base_addr),
     .rx_desc_flit_count(rx_desc_flit_count),
     .rx_flit_valid(rx_flit_valid), .rx_flit_ready(rx_flit_ready),
-    .rx_flit_source(rx_flit_source), .rx_flit_vc(rx_flit_vc),
+    .rx_flit_source(rx_flit_source), .rx_flit_destination(rx_flit_destination),
+    .rx_flit_vc(rx_flit_vc),
     .rx_flit_tag(rx_flit_tag), .rx_flit_fragment(rx_flit_fragment),
     .rx_flit_last(rx_flit_last), .rx_flit_data(rx_flit_data),
     .rx_mem_write_valid(rx_mem_write_valid),
@@ -317,10 +319,12 @@ module noc_sram_packet_endpoint_tb;
     if (request_count !== 10 || write_count !== 5 || protocol_error)
       $fatal(1, "wrong final counts or protocol_error");
 
-    // An unmatched packet must be consumed to avoid deadlock and reported.
+    // A misrouted packet must be consumed without a write and reported.
+    send_rx_descriptor(15, 3, 8'hee, 16'h0900, 1);
+    rx_flit_destination = 3;
     send_rx_flit(15, 3, 8'hee, 0, 1, 32'hdeadbeef);
     if (!protocol_error)
-      $fatal(1, "unmatched RX packet did not set protocol_error");
+      $fatal(1, "misrouted RX packet did not set protocol_error");
 
     $display("PASS noc_sram_packet_endpoint requests=%0d tx=%0d writes=%0d completions=%0d",
              request_count, tx_count, write_count, completion_count);
