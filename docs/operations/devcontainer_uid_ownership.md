@@ -39,11 +39,16 @@ Only `/usr/local/sbin/rtlgen-container-init`, copied into the image and owned by
 root, may run passwordlessly through sudo. It has two validated operations:
 
 - `prepare`: create the control-plane runtime and evaluator service-checkout
-  directories for `rtlgen`.
+  directories for `rtlgen`. It also prepares only the writable OpenROAD runtime
+  roots used by generation and flow execution: `designs/src`,
+  `designs/nangate45`, `logs`, `objects`, `reports`, and `results` under
+  `/orfs/flow`.
 - `postgres`: initialize the local PostgreSQL service for the server role.
 
 The helper does not execute files from the writable workspace. API, resolver,
-worker, completion, Git, and Codex processes remain unprivileged.
+worker, completion, Git, Codex, RTL generation, and OpenROAD processes remain
+unprivileged. Ownership changes are non-recursive; OpenROAD tools, platform
+files, and scripts remain root-owned image content.
 
 ## One-time host repair
 

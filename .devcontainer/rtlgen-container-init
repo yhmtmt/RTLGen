@@ -36,6 +36,21 @@ prepare_paths() {
     install -d -o "${RTLGEN_USER}" -g "${RTLGEN_GROUP}" -m 0755 "${path}"
     chown "${RTLGEN_USER}:${RTLGEN_GROUP}" "${path}"
   done
+
+  for path in \
+    /orfs/flow/designs/src \
+    /orfs/flow/designs/nangate45 \
+    /orfs/flow/logs \
+    /orfs/flow/objects \
+    /orfs/flow/reports \
+    /orfs/flow/results; do
+    if [[ -L "${path}" ]]; then
+      echo "Refusing symlink at privileged directory: ${path}" >&2
+      exit 2
+    fi
+    install -d -o "${RTLGEN_USER}" -g "${RTLGEN_GROUP}" -m 0755 "${path}"
+    chown "${RTLGEN_USER}:${RTLGEN_GROUP}" "${path}"
+  done
 }
 
 initialize_postgres() {

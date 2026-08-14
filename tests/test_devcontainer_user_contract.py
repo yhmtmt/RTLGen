@@ -67,6 +67,24 @@ def test_privileged_helper_owns_workspaces_non_recursively() -> None:
     assert 'chown "${RTLGEN_USER}:${RTLGEN_GROUP}" /workspaces/' not in helper
 
 
+def test_privileged_helper_prepares_only_orfs_runtime_roots() -> None:
+    helper = (DEVCONTAINER / "rtlgen-container-init").read_text(encoding="utf-8")
+    expected_paths = (
+        "/orfs/flow/designs/src",
+        "/orfs/flow/designs/nangate45",
+        "/orfs/flow/logs",
+        "/orfs/flow/objects",
+        "/orfs/flow/reports",
+        "/orfs/flow/results",
+    )
+
+    for path in expected_paths:
+        assert path in helper
+    assert "/orfs/flow/platforms" not in helper
+    assert "/orfs/flow/scripts" not in helper
+    assert "chown -R" not in helper
+
+
 def test_post_start_rejects_root_and_uses_noninteractive_sudo() -> None:
     post_start = (DEVCONTAINER / "post_start.sh").read_text(encoding="utf-8")
 
