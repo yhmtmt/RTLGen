@@ -109,9 +109,13 @@ def _build_packet_specs(
     return specs
 
 
-def _packetize_specs_with_wide_tags(specs: list[PacketSpec]) -> list[TrafficFlow]:
+def _packetize_specs_with_concrete_tags(specs: list[PacketSpec]) -> list[TrafficFlow]:
     flows: list[TrafficFlow] = []
+    tuple_sequence: Counter[tuple[int, int, int]] = Counter()
     for ordinal, spec in enumerate(specs):
+        key = (spec.source, spec.destination, spec.vc)
+        wire_tag = tuple_sequence[key] % 256
+        tuple_sequence[key] += 1
         flows.append(
             TrafficFlow(
                 name=spec.label,
@@ -121,8 +125,9 @@ def _packetize_specs_with_wide_tags(specs: list[PacketSpec]) -> list[TrafficFlow
                 vc=spec.vc,
                 release_cycle=spec.release_cycle,
                 packet_payload_bytes=spec.payload_bytes,
-                tag_base=ordinal,
+                tag_base=wire_tag,
                 data_seed=spec.data_seed,
+                schedule_order=ordinal,
             )
         )
     return flows
@@ -547,7 +552,7 @@ def build_report(args: argparse.Namespace) -> JsonDict:
                     packet_specs.extend(new_specs)
                     packet_seed_counter += len(new_specs)
 
-    traffic_flows = _packetize_specs_with_wide_tags(packet_specs)
+    traffic_flows = _packetize_specs_with_concrete_tags(packet_specs)
     scheduled_flits = [scheduled for flow in traffic_flows for scheduled in packetize_traffic_flow(flow)]
     mesh_result = simulate_scheduled_flits(
         scheduled_flits,
@@ -708,9 +713,11 @@ def build_report(args: argparse.Namespace) -> JsonDict:
         "tag_semantics": {
             "tag_width_bits": 8,
             "assignment_scope": "per (source, destination, vc) ordered packet stream",
+            "concrete_wire_tags_simulated": True,
+            "schedule_order_is_independent_of_wire_tag": True,
             "collision_free_reuse_proven": True,
             "collision_free_reuse_invariant": "Concrete low_tag = tuple packet sequence index mod 256. For every reused (source, destination, vc, low_tag), the next packet's first injection cycle is strictly greater than the prior packet's last delivery cycle; same-cycle reuse is treated as ambiguous and rejected.",
-            "packet_identity_modeled_by_simulator": "source, destination, vc, label, packet-local fragment index, and last bit; 8-bit wire tags are audited after routing because the performance model does not perform packet reassembly or claim standalone reassembly correctness.",
+            "packet_identity_modeled_by_simulator": "source, destination, vc, concrete 8-bit wire tag, schedule order, label, packet-local fragment index, and last bit; schedule order is explicit and cannot be perturbed by modulo-256 tag reuse.",
             "ordered_tuple_stream_proven": True,
             "ordered_tuple_stream_summary": tuple_stream_proof["tuple_summaries"],
             "ordered_tuple_stream_max_packet_flits": tuple_stream_proof["max_packet_flits"],
