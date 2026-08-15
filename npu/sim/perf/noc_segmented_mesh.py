@@ -108,6 +108,8 @@ class Flow:
 class ScheduledFlit:
     release_cycle: int
     flit: ModelFlit
+    schedule_order: int = 0
+    packet_order: int = 0
 
 
 @dataclass(frozen=True)
@@ -121,6 +123,7 @@ class TrafficFlow:
     packet_payload_bytes: int = CONCEPTUAL_LINK_BITS // 8
     tag_base: int = 0
     data_seed: int = 0
+    schedule_order: int = 0
 
 
 @dataclass(frozen=True)
@@ -457,14 +460,15 @@ def packetize_traffic_flow(flow: TrafficFlow) -> tuple[ScheduledFlit, ...]:
             raise ValueError(
                 "traffic flow packetization exceeds the eight-fragment tagged packet envelope"
             )
-        # The performance model keeps a wide synthetic packet sequence tag so
-        # packet ordering cannot be perturbed by 8-bit wraparound. Concrete
-        # 8-bit tag reuse is audited separately by higher-level reports.
-        tag = flow.tag_base + packet_index
+        # Producer order is simulator metadata, independent of the concrete
+        # eight-bit tag carried by the modeled wire protocol.
+        tag = (flow.tag_base + packet_index) & 0xFF
         for fragment in range(flit_count):
             scheduled.append(
                 ScheduledFlit(
                     release_cycle=flow.release_cycle,
+                    schedule_order=flow.schedule_order,
+                    packet_order=packet_index,
                     flit=ModelFlit(
                         source=flow.source,
                         destination=flow.destination,
@@ -502,7 +506,16 @@ def simulate_scheduled_flits(
     max_cycles: int = 100000,
     fast_forward_idle: bool = False,
 ) -> MeshSimulationResult:
-    ordered = sorted(scheduled_flits, key=lambda item: (item.release_cycle, item.flit.source, item.flit.tag, item.flit.fragment))
+    ordered = sorted(
+        scheduled_flits,
+        key=lambda item: (
+            item.release_cycle,
+            item.flit.source,
+            item.schedule_order,
+            item.packet_order,
+            item.flit.fragment,
+        ),
+    )
     release_queues: list[deque[ScheduledFlit]] = [deque() for _ in range(ENDPOINTS)]
     future = deque(ordered)
     states = [
@@ -699,7 +712,7 @@ def simulate_mesh(
 def simulate(flows: Iterable[Flow], *, max_cycles: int = 10000) -> dict[str, object]:
     flow_list = list(flows)
     scheduled: list[ScheduledFlit] = []
-    for flow in flow_list:
+    for flow_order, flow in enumerate(flow_list):
         if flow.flits <= 0:
             raise ValueError("flow flits must be positive")
         if flow.flits % FLITS_PER_CONCEPTUAL_TRANSFER != 0:
@@ -714,6 +727,8 @@ def simulate(flows: Iterable[Flow], *, max_cycles: int = 10000) -> dict[str, obj
                 scheduled.append(
                     ScheduledFlit(
                         release_cycle=flow.release_cycle,
+                        schedule_order=flow_order,
+                        packet_order=packet_index,
                         flit=ModelFlit(
                             source=flow.source,
                             destination=flow.destination,

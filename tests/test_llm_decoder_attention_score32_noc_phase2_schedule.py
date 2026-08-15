@@ -57,6 +57,8 @@ def test_score32_noc_phase2_default_report_covers_full_declared_workload() -> No
     assert report["simulation"]["drain_minus_compute_layer_time_ns"] < 0.0
     assert report["simulation"]["router_contention_cycles"] > 0
     assert report["tag_semantics"]["collision_free_reuse_proven"] is True
+    assert report["tag_semantics"]["concrete_wire_tags_simulated"] is True
+    assert report["tag_semantics"]["schedule_order_is_independent_of_wire_tag"] is True
     assert report["tag_semantics"]["ordered_tuple_stream_proven"] is True
     assert report["tag_semantics"]["max_packets_per_tuple"] > 256
     assert any(

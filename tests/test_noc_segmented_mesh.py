@@ -1027,3 +1027,80 @@ def test_mesh_idle_fast_forward_preserves_absolute_delivery_cycles() -> None:
     ]
     assert len(accelerated.traces) < len(normal.traces)
     assert accelerated.endpoint_injected_flit_count == normal.endpoint_injected_flit_count
+
+
+def test_mesh_schedule_order_is_independent_of_wrapped_wire_tag() -> None:
+    flows = [
+        TrafficFlow(
+            name="before_wrap",
+            source=0,
+            destination=1,
+            payload_bytes=32,
+            vc=0,
+            release_cycle=0,
+            tag_base=255,
+            schedule_order=10,
+        ),
+        TrafficFlow(
+            name="after_wrap",
+            source=0,
+            destination=1,
+            payload_bytes=32,
+            vc=0,
+            release_cycle=0,
+            tag_base=0,
+            schedule_order=11,
+        ),
+    ]
+    scheduled = [item for flow in flows for item in packetize_traffic_flow(flow)]
+
+    result = simulate_scheduled_flits(scheduled, max_cycles=32)
+
+    assert [delivery.flit.label for delivery in result.deliveries] == [
+        "before_wrap",
+        "after_wrap",
+    ]
+    assert [delivery.flit.tag for delivery in result.deliveries] == [255, 0]
+
+
+def test_mesh_flow_and_packet_order_remain_distinct_across_tag_wrap() -> None:
+    flows = [
+        TrafficFlow(
+            name="multi_packet",
+            source=0,
+            destination=1,
+            payload_bytes=64,
+            packet_payload_bytes=32,
+            vc=0,
+            release_cycle=0,
+            tag_base=255,
+            schedule_order=10,
+        ),
+        TrafficFlow(
+            name="following_flow",
+            source=0,
+            destination=1,
+            payload_bytes=32,
+            packet_payload_bytes=32,
+            vc=0,
+            release_cycle=0,
+            tag_base=1,
+            schedule_order=11,
+        ),
+    ]
+    scheduled = [item for flow in flows for item in packetize_traffic_flow(flow)]
+
+    assert [(item.flit.tag, item.schedule_order, item.packet_order) for item in scheduled] == [
+        (255, 10, 0),
+        (0, 10, 1),
+        (1, 11, 0),
+    ]
+
+    result = simulate_scheduled_flits(scheduled, max_cycles=32)
+
+    assert [delivery.flit.label for delivery in result.deliveries] == [
+        "multi_packet",
+        "multi_packet",
+        "following_flow",
+    ]
+    assert [delivery.flit.tag for delivery in result.deliveries] == [255, 0, 1]
