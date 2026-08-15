@@ -1,0 +1,40 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_score32_noc_phase2_composed_mesh_reroute_v1",
+  "created_utc": "2026-08-15T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Bind composed endpoint/mesh PPA to the complete score32 NoC schedule",
+  "hypothesis": "Fresh full-workload routing at the measured composed endpoint/mesh clock can replace primitive sums with aggregate timing, footprint, wiring, congestion, and vectorless-power evidence.",
+  "direct_comparison": {
+    "primary_question": "Does the corrected 8-wave/128-tile Llama7B schedule remain inside its compute envelope after substituting aggregate composed-mesh PPA?",
+    "include": [
+      "exact corrected Phase 2 workload schedule",
+      "sixteen-endpoint and sixteen-router composed promotion",
+      "fresh release conversion and routing",
+      "aggregate placed footprint and vectorless power"
+    ],
+    "exclude": [
+      "SRAM bitcells and macro placement",
+      "workload-derived switching activity",
+      "HBM/DRAM controller implementation",
+      "producer, reducer, and root-finalizer arithmetic"
+    ]
+  },
+  "required_evaluations": [
+    {
+      "task_type": "l2_campaign",
+      "evaluation_mode": "frontier_detail",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1",
+        "l1_noc_sram_packet_mesh4x4_composed_ppa_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_schedule__l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1.json",
+    "control_plane/shadow_exports/l1_promotions/l1_noc_sram_packet_mesh4x4_composed_ppa_v1.json"
+  ]
+}
