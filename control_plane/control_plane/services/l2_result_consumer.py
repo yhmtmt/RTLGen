@@ -591,6 +591,10 @@ _DECODER_EVIDENCE_OUTPUT_KEYS: tuple[tuple[str, str], ...] = (
         "attention_score32_noc_phase2_schedule_report",
     ),
     (
+        "attention_score32_noc_phase2_composed_mesh_reroute_out",
+        "attention_score32_noc_phase2_composed_mesh_reroute_report",
+    ),
+    (
         "attention_score32_folded_global_exact_reduction_recost_out",
         "attention_score32_folded_global_exact_reduction_recost_report",
     ),
@@ -814,6 +818,9 @@ def _decoder_quality_brief(evidence_payload: dict[str, Any]) -> dict[str, Any]:
         "remaining_abstractions",
         "closure_flags",
         "closure_diagnosis",
+        "clock_contract",
+        "schedule",
+        "physical_accounting",
         "boundary_evidence",
         "composition_quantities",
         "measured_primitives",

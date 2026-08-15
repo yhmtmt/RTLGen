@@ -258,6 +258,12 @@ evidence gaps:
   and completion backpressure, and rotates local observation across all 256
   payload bits. It remains dependency-gated behind router, endpoint, and
   aggregate-mesh anchors and is not workload-activity or SRAM-macro evidence.
+- Composed schedule substitution: the prepared
+  `l2_decoder_attention_score32_noc_phase2_composed_mesh_reroute_llama7b_v1`
+  item waits for the corrected workload schedule and composed endpoint/mesh
+  promotion. It reruns all eight waves and 128 tiles at the conservative
+  composed clock, replaces primitive area/power sums with aggregate placed
+  evidence, and keeps SRAM macros plus workload-matched activity explicit.
 - Credit timing: the original router FIFO allowed a full queue's input ready
   to depend on a same-cycle downstream pop. Across bidirectional links this
   formed a combinational ready fixpoint. FIFO credits now depend only on

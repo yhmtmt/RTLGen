@@ -206,6 +206,29 @@ def test_decoder_evidence_paths_recognizes_score32_noc_phase2_schedule(tmp_path:
     }
 
 
+def test_decoder_evidence_paths_recognizes_score32_noc_composed_mesh_reroute(tmp_path: Path) -> None:
+    evidence_rel = "runs/datasets/demo/score32_noc_composed_mesh_reroute.json"
+    report_rel = "runs/datasets/demo/score32_noc_composed_mesh_reroute.md"
+    _write(tmp_path / evidence_rel, "{}\n")
+    _write(tmp_path / report_rel, "# Score32 NoC composed mesh reroute\n")
+    work_item = SimpleNamespace(
+        input_manifest={
+            "decoder_contract": {
+                "attention_score32_noc_phase2_composed_mesh_reroute_out": evidence_rel,
+                "attention_score32_noc_phase2_composed_mesh_reroute_report": report_rel,
+            }
+        }
+    )
+
+    evidence_ref, source_refs = _decoder_evidence_paths(repo_root=tmp_path, work_item=work_item)
+
+    assert evidence_ref == evidence_rel
+    assert source_refs == {
+        "decoder_attention_score32_noc_phase2_composed_mesh_reroute_out": evidence_rel,
+        "decoder_attention_score32_noc_phase2_composed_mesh_reroute_report": report_rel,
+    }
+
+
 def test_decoder_evidence_summary_recognizes_score32_noc_phase2_schedule() -> None:
     outcome, summary = _decoder_evidence_summary(
         evidence_ref="runs/datasets/demo/score32_noc_phase2_schedule.json",
