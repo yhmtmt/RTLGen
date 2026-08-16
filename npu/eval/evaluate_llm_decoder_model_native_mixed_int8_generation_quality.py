@@ -62,6 +62,135 @@ def _resolve_model_id(args: argparse.Namespace) -> str:
     )
 
 
+def _normalize_optional_str(value: Any) -> str:
+    return str(value or "").strip()
+
+
+def _optional_positive_int(value: Any) -> int:
+    if value in (None, ""):
+        return 0
+    parsed = int(value)
+    if parsed < 0:
+        raise argparse.ArgumentTypeError("expected non-negative integer")
+    return parsed
+
+
+def _config_positive_int(config: Any, field_names: tuple[str, ...], label: str) -> int:
+    for field_name in field_names:
+        value = getattr(config, field_name, None)
+        if value is None:
+            continue
+        parsed = int(value)
+        if parsed <= 0:
+            raise SystemExit(f"model config exposes non-positive {label}: {field_name}={value!r}")
+        return parsed
+    raise SystemExit(f"model config does not expose {label}")
+
+
+def _resolve_model_structure(config: Any) -> JsonDict:
+    attention_heads = _config_positive_int(
+        config,
+        ("num_attention_heads", "n_head"),
+        "attention head count",
+    )
+    kv_heads_value = getattr(config, "num_key_value_heads", None)
+    kv_heads = attention_heads if kv_heads_value is None else int(kv_heads_value)
+    if kv_heads <= 0:
+        raise SystemExit(f"model config exposes non-positive KV head count: num_key_value_heads={kv_heads_value!r}")
+    hidden_size = _config_positive_int(
+        config,
+        ("hidden_size", "n_embd", "d_model"),
+        "hidden size",
+    )
+    if attention_heads % kv_heads != 0:
+        raise SystemExit("model uses non-integer GQA group size; expected divisible attention and KV heads")
+    return {
+        "attention_head_count": attention_heads,
+        "kv_head_count": kv_heads,
+        "hidden_size": hidden_size,
+        "gqa_group_size": attention_heads / kv_heads,
+        "loaded_model_id": _normalize_optional_str(getattr(config, "_name_or_path", "")),
+    }
+
+
+def _build_requested_model_contract(args: argparse.Namespace, resolved_model_id: str) -> JsonDict:
+    expected_model_id = _normalize_optional_str(getattr(args, "expected_model_id", ""))
+    blockers: list[str] = []
+    if expected_model_id and resolved_model_id != expected_model_id:
+        blockers.append(
+            f"resolved model_id {resolved_model_id!r} does not match expected {expected_model_id!r}"
+        )
+    status = "pass" if not blockers else "fail"
+    return {
+        "status": status,
+        "blockers": blockers,
+        "resolved_model_id": resolved_model_id,
+        "expected_model_id": expected_model_id,
+    }
+
+
+def _build_structural_contract(args: argparse.Namespace, model: Any, *, resolved_model_id: str) -> JsonDict:
+    actual = _resolve_model_structure(model.config)
+    expected_attention_heads = _optional_positive_int(getattr(args, "expected_attention_head_count", 0))
+    expected_kv_heads = _optional_positive_int(getattr(args, "expected_kv_head_count", 0))
+    expected_hidden_size = _optional_positive_int(getattr(args, "expected_hidden_size", 0))
+    expected_gqa_group_size = int(getattr(args, "expected_gqa_group_size", 0) or 0)
+
+    blockers: list[str] = []
+    if expected_attention_heads and actual["attention_head_count"] != expected_attention_heads:
+        blockers.append(
+            "attention head count {} does not match expected {}".format(
+                actual["attention_head_count"],
+                expected_attention_heads,
+            )
+        )
+    if expected_kv_heads and actual["kv_head_count"] != expected_kv_heads:
+        blockers.append(
+            "KV head count {} does not match expected {}".format(
+                actual["kv_head_count"],
+                expected_kv_heads,
+            )
+        )
+    if expected_hidden_size and actual["hidden_size"] != expected_hidden_size:
+        blockers.append(
+            "hidden size {} does not match expected {}".format(
+                actual["hidden_size"],
+                expected_hidden_size,
+            )
+        )
+
+    gqa_matches_expectation = True
+    if expected_gqa_group_size > 0:
+        gqa_matches_expectation = abs(actual["gqa_group_size"] - expected_gqa_group_size) <= DIVISIBILITY_EPSILON
+
+    status = "pass" if not blockers else "fail"
+    return {
+        "status": status,
+        "blockers": blockers,
+        "resolved_model_id": resolved_model_id,
+        "expected": {
+            "attention_head_count": expected_attention_heads,
+            "kv_head_count": expected_kv_heads,
+            "hidden_size": expected_hidden_size,
+            "gqa_group_size": expected_gqa_group_size,
+        },
+        "actual": {
+            "attention_head_count": actual["attention_head_count"],
+            "kv_head_count": actual["kv_head_count"],
+            "hidden_size": actual["hidden_size"],
+            "gqa_group_size": actual["gqa_group_size"],
+            "loaded_model_id": actual["loaded_model_id"] or resolved_model_id,
+        },
+        "gqa_group_size_matches_expectation": gqa_matches_expectation,
+    }
+
+
+def _enforce_contract(contract: JsonDict, *, label: str) -> None:
+    blockers = contract.get("blockers") or []
+    if blockers:
+        raise SystemExit(f"{label} failed: {'; '.join(str(blocker) for blocker in blockers)}")
+
+
 def _resolve_candidates(args: argparse.Namespace) -> list[attention_eval.CandidateConfig]:
     candidates: list[attention_eval.CandidateConfig] = []
     if args.candidate:
@@ -76,14 +205,7 @@ def _resolve_candidates(args: argparse.Namespace) -> list[attention_eval.Candida
 
 
 def _model_gqa_group_size(model: Any) -> float:
-    config = model.config
-    attention_heads = int(getattr(config, "num_attention_heads", 0) or getattr(config, "n_head", 0) or 0)
-    kv_heads = int(getattr(config, "num_key_value_heads", 0) or attention_heads)
-    if attention_heads <= 0 or kv_heads <= 0:
-        raise SystemExit("model config does not expose attention and KV head counts")
-    if attention_heads % kv_heads != 0:
-        raise SystemExit("model uses non-integer GQA group size; expected divisible attention and KV heads")
-    return attention_heads / kv_heads
+    return float(_resolve_model_structure(model.config)["gqa_group_size"])
 
 
 def _collect_teacher_forced_rows(
@@ -497,6 +619,8 @@ def _candidate_precision(candidate: attention_eval.CandidateConfig) -> JsonDict:
 def _run_model_eval(args: argparse.Namespace) -> JsonDict:
     torch_module, AutoModelForCausalLM, AutoTokenizer = attention_eval._load_runtime_modules()
     model_id = _resolve_model_id(args)
+    requested_model_contract = _build_requested_model_contract(args, model_id)
+    _enforce_contract(requested_model_contract, label="requested model identity contract")
     device = args.device
     if device == "auto":
         device = "cuda" if torch_module.cuda.is_available() else "cpu"
@@ -515,6 +639,8 @@ def _run_model_eval(args: argparse.Namespace) -> JsonDict:
     tokenizer = AutoTokenizer.from_pretrained(model_id)
     reference_model = load_model().to(device)
     candidate_model = load_model().to(device)
+    structural_contract = _build_structural_contract(args, reference_model, resolved_model_id=model_id)
+    _enforce_contract(structural_contract, label="model structural contract")
     reference_model.eval()
     candidate_model.eval()
 
@@ -631,12 +757,28 @@ def _run_model_eval(args: argparse.Namespace) -> JsonDict:
         "quality_gate": "mixed_int8_generation_quality",
         "model": {
             "model_id": model_id,
-            "gqa_group_size": actual_gqa_group_size,
+            "resolved_model_id": model_id,
+            "loaded_model_id": structural_contract["actual"]["loaded_model_id"],
+            "attention_head_count": structural_contract["actual"]["attention_head_count"],
+            "kv_head_count": structural_contract["actual"]["kv_head_count"],
+            "hidden_size": structural_contract["actual"]["hidden_size"],
+            "gqa_group_size": structural_contract["actual"]["gqa_group_size"],
             "device": device,
             "dtype": attention_eval._dtype_label(dtype),
             "requested_dtype": args.dtype,
             "generation_steps": args.generation_steps,
             "max_prompts": args.max_prompts,
+            "expected_model_id": requested_model_contract["expected_model_id"],
+            "expected_attention_head_count": structural_contract["expected"]["attention_head_count"],
+            "expected_kv_head_count": structural_contract["expected"]["kv_head_count"],
+            "expected_hidden_size": structural_contract["expected"]["hidden_size"],
+            "expected_gqa_group_size": structural_contract["expected"]["gqa_group_size"],
+            "structural_contract_status": structural_contract["status"],
+            "structural_contract_blockers": structural_contract["blockers"],
+            "structural_contract": {
+                "requested_model_identity": requested_model_contract,
+                "loaded_model_structure": structural_contract,
+            },
         },
         "inputs": {
             "score_margin_audit_json": str(args.score_margin_audit_json) if args.score_margin_audit_json else "",
@@ -721,10 +863,14 @@ def _write_report_md(payload: JsonDict) -> str:
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--model-id", default="")
+    ap.add_argument("--expected-model-id", default="")
     ap.add_argument("--prompt-file", default="")
     ap.add_argument("--max-prompts", type=_parse_positive_int, default=2)
     ap.add_argument("--generation-steps", type=_parse_positive_int, default=4)
     ap.add_argument("--expected-gqa-group-size", type=int, default=8)
+    ap.add_argument("--expected-attention-head-count", type=_optional_positive_int, default=0)
+    ap.add_argument("--expected-kv-head-count", type=_optional_positive_int, default=0)
+    ap.add_argument("--expected-hidden-size", type=_optional_positive_int, default=0)
     ap.add_argument("--candidate", action="append", type=attention_eval._parse_candidate_spec, default=[])
     ap.add_argument("--candidate-list", action="append", type=attention_eval._parse_candidate_list, default=[])
     ap.add_argument("--primary-candidate-id", default="")

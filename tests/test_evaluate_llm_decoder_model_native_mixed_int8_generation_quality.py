@@ -13,13 +13,37 @@ if str(REPO_ROOT) not in sys.path:
 
 from npu.eval.evaluate_llm_decoder_model_native_mixed_int8_generation_quality import (
     DEFAULT_CANDIDATE_SPEC,
+    _build_requested_model_contract,
+    _build_structural_contract,
     _decision,
+    _enforce_contract,
     _resolve_candidates,
+    _resolve_model_structure,
     _summarize_free_running_rows,
     _summarize_teacher_forced_rows,
     _write_report_md,
 )
 from npu.eval import evaluate_llm_decoder_model_native_mixed_int8_attention as attention_eval
+
+
+class _FakeConfig:
+    def __init__(
+        self,
+        *,
+        attention_heads: int,
+        kv_heads: int,
+        hidden_size: int,
+        name_or_path: str = "",
+    ) -> None:
+        self.num_attention_heads = attention_heads
+        self.num_key_value_heads = kv_heads
+        self.hidden_size = hidden_size
+        self._name_or_path = name_or_path
+
+
+class _FakeModel:
+    def __init__(self, config: _FakeConfig) -> None:
+        self.config = config
 
 
 def test_summarize_teacher_and_free_running_rows_record_divergence_and_nll() -> None:
@@ -137,3 +161,114 @@ def test_report_and_hold_message_use_primary_candidate_label() -> None:
     assert "Hold this score24 w16 rtl exact mixed/int8 generation candidate" in decision["next_step"]
     assert "# Native-Checkpoint Mixed/Int8 Score24 W16 RTL Exact Generation Quality" in report
     assert "score32" not in report
+
+
+def test_requested_model_contract_accepts_exact_expected_identity() -> None:
+    args = argparse.Namespace(expected_model_id="meta-llama/Llama-2-7b-hf")
+
+    contract = _build_requested_model_contract(args, "meta-llama/Llama-2-7b-hf")
+
+    assert contract == {
+        "status": "pass",
+        "blockers": [],
+        "resolved_model_id": "meta-llama/Llama-2-7b-hf",
+        "expected_model_id": "meta-llama/Llama-2-7b-hf",
+    }
+
+
+def test_requested_model_contract_rejects_mismatched_identity() -> None:
+    args = argparse.Namespace(expected_model_id="meta-llama/Llama-2-7b-hf")
+    contract = _build_requested_model_contract(args, "mistralai/Mistral-7B-v0.1")
+
+    assert contract["status"] == "fail"
+    assert contract["blockers"] == [
+        "resolved model_id 'mistralai/Mistral-7B-v0.1' does not match expected 'meta-llama/Llama-2-7b-hf'"
+    ]
+    with pytest.raises(SystemExit, match="requested model identity contract failed"):
+        _enforce_contract(contract, label="requested model identity contract")
+
+
+def test_resolve_model_structure_reports_exact_llama2_dimensions() -> None:
+    model = _FakeModel(
+        _FakeConfig(
+            attention_heads=32,
+            kv_heads=32,
+            hidden_size=4096,
+            name_or_path="meta-llama/Llama-2-7b-hf",
+        )
+    )
+
+    structure = _resolve_model_structure(model.config)
+
+    assert structure == {
+        "attention_head_count": 32,
+        "kv_head_count": 32,
+        "hidden_size": 4096,
+        "gqa_group_size": 1.0,
+        "loaded_model_id": "meta-llama/Llama-2-7b-hf",
+    }
+
+
+def test_structural_contract_accepts_exact_llama2_requirements() -> None:
+    args = argparse.Namespace(
+        expected_attention_head_count=32,
+        expected_kv_head_count=32,
+        expected_hidden_size=4096,
+        expected_gqa_group_size=1,
+    )
+    model = _FakeModel(
+        _FakeConfig(
+            attention_heads=32,
+            kv_heads=32,
+            hidden_size=4096,
+            name_or_path="meta-llama/Llama-2-7b-hf",
+        )
+    )
+
+    contract = _build_structural_contract(
+        args,
+        model,
+        resolved_model_id="meta-llama/Llama-2-7b-hf",
+    )
+
+    assert contract["status"] == "pass"
+    assert contract["blockers"] == []
+    assert contract["expected"] == {
+        "attention_head_count": 32,
+        "kv_head_count": 32,
+        "hidden_size": 4096,
+        "gqa_group_size": 1,
+    }
+    assert contract["actual"] == {
+        "attention_head_count": 32,
+        "kv_head_count": 32,
+        "hidden_size": 4096,
+        "gqa_group_size": 1.0,
+        "loaded_model_id": "meta-llama/Llama-2-7b-hf",
+    }
+    assert contract["gqa_group_size_matches_expectation"] is True
+
+
+def test_structural_contract_rejects_dimension_mismatch_without_loading_models() -> None:
+    args = argparse.Namespace(
+        expected_attention_head_count=32,
+        expected_kv_head_count=32,
+        expected_hidden_size=4096,
+        expected_gqa_group_size=1,
+    )
+    model = _FakeModel(
+        _FakeConfig(
+            attention_heads=32,
+            kv_heads=8,
+            hidden_size=4096,
+            name_or_path="other/model",
+        )
+    )
+
+    contract = _build_structural_contract(args, model, resolved_model_id="other/model")
+
+    assert contract["status"] == "fail"
+    assert contract["blockers"] == ["KV head count 8 does not match expected 32"]
+    assert contract["gqa_group_size_matches_expectation"] is False
+    with pytest.raises(SystemExit, match="model structural contract failed"):
+        _enforce_contract(contract, label="model structural contract")
