@@ -1,0 +1,27 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_score32_noc_phase2_finite_endpoint_composed_recost_v1",
+  "source_commit": "TBD",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_score32_noc_phase2_finite_endpoint_composed_recost_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Recost the corrected score32 frontier with finite endpoint cadence and aggregate composed endpoint/mesh PPA.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_score32_noc_phase2_finite_endpoint_composed_recost",
+      "comparison_role": "closure_detail",
+      "status": "pending_after_dependencies_merge",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1",
+        "l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_llama7b_v1",
+        "l1_noc_sram_packet_mesh4x4_composed_ppa_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_outputs": [
+        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_finite_endpoint_composed_recost__l2_decoder_attention_score32_noc_phase2_finite_endpoint_composed_recost_llama7b_v1.json",
+        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_finite_endpoint_composed_recost__l2_decoder_attention_score32_noc_phase2_finite_endpoint_composed_recost_llama7b_v1.md"
+      ],
+      "acceptance_notes": "Require exact endpoint performance/RTL counters and complete delivery. Rerun at the conservative composed clock, use the slower of compute and finite NoC drain for token latency, replace rather than add prior primitive NoC PPA, and preserve precision evidence unchanged."
+    }
+  ]
+}

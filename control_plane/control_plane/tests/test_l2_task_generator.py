@@ -14872,6 +14872,65 @@ def test_generate_l2_campaign_task_adds_score32_endpoint_rtl_equivalence() -> No
             )
 
 
+def test_generate_l2_campaign_task_adds_finite_endpoint_composed_recost() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+        dependencies = [
+            "l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1",
+            "l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_llama7b_v1",
+            "l1_noc_sram_packet_mesh4x4_composed_ppa_v1",
+        ]
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                _make_l2_request(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id=(
+                        "l2_decoder_attention_score32_noc_phase2_"
+                        "finite_endpoint_composed_recost_llama7b_v1"
+                    ),
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    proposal_id=(
+                        "prop_l2_decoder_attention_score32_noc_phase2_"
+                        "finite_endpoint_composed_recost_v1"
+                    ),
+                    proposal_path=(
+                        "docs/proposals/prop_l2_decoder_attention_score32_noc_phase2_"
+                        "finite_endpoint_composed_recost_v1/proposal.json"
+                    ),
+                    abstraction_layer=(
+                        "decoder_attention_score32_noc_phase2_finite_endpoint_composed_recost"
+                    ),
+                    evaluation_mode="frontier_detail",
+                    depends_on_item_ids=dependencies,
+                    requires_merged_inputs=True,
+                    requires_materialized_refs=True,
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            run = work_item.command_manifest[0]["run"]
+            assert work_item.state == WorkItemState.BLOCKED
+            assert "recost_llm_decoder_attention_score32_noc_phase2_finite_endpoint_composed.py" in run
+            assert "--endpoint-equivalence-json" in run
+            assert "--composed-promotion-json" in run
+            assert "--runtime-max-sec 900" in run
+            assert work_item.input_manifest["worker_resources"]["stall_timeout_seconds"] == 480
+            assert work_item.expected_outputs[0].endswith(
+                "decoder_attention_score32_noc_phase2_finite_endpoint_composed_recost__"
+                "l2_decoder_attention_score32_noc_phase2_finite_endpoint_composed_recost_llama7b_v1.json"
+            )
+
+
 def test_score32_noc_closure_rejects_inexact_dependencies() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
