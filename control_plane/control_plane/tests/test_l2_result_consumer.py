@@ -339,6 +339,58 @@ def test_decoder_evidence_summary_recognizes_finite_endpoint_final_frontier() ->
     assert "unconditional_best=None" in summary
 
 
+def test_decoder_evidence_paths_recognizes_global_hbm_exact_mha_recost(tmp_path: Path) -> None:
+    evidence_rel = "runs/datasets/demo/score32_global_hbm_exact_mha.json"
+    report_rel = "runs/datasets/demo/score32_global_hbm_exact_mha.md"
+    _write(tmp_path / evidence_rel, "{}\n")
+    _write(tmp_path / report_rel, "# Global HBM exact MHA\n")
+    work_item = SimpleNamespace(
+        input_manifest={
+            "decoder_contract": {
+                "attention_score32_global_hbm_exact_mha_recost_out": evidence_rel,
+                "attention_score32_global_hbm_exact_mha_recost_report": report_rel,
+            }
+        }
+    )
+
+    evidence_ref, source_refs = _decoder_evidence_paths(repo_root=tmp_path, work_item=work_item)
+
+    assert evidence_ref == evidence_rel
+    assert source_refs == {
+        "decoder_attention_score32_global_hbm_exact_mha_recost_out": evidence_rel,
+        "decoder_attention_score32_global_hbm_exact_mha_recost_report": report_rel,
+    }
+
+
+def test_decoder_evidence_summary_recognizes_global_hbm_exact_mha_recost() -> None:
+    outcome, summary = _decoder_evidence_summary(
+        evidence_ref="runs/datasets/demo/score32_global_hbm_exact_mha.json",
+        evidence_payload={
+            "model": "llm_decoder_attention_score32_global_hbm_exact_llama2_mha_recost_v1",
+            "decision": "exact_llama2_mha_recost_recorded_native_quality_required",
+            "global_controller_correction": {"source_finite_token_throughput_per_s": 74.0},
+            "rows": [
+                {
+                    "candidate_id": "score32_gqa8_global_hbm_finite_endpoint",
+                    "throughput": {"token_throughput_per_s": 30.0},
+                },
+                {
+                    "candidate_id": "score32_exact_llama2_7b_mha_global_hbm_finite_endpoint",
+                    "throughput": {"token_throughput_per_s": 4.5},
+                    "energy": {"hbm_energy_mj_per_token": 1080.0},
+                    "quality_contract": {"promotable": False},
+                },
+            ],
+        },
+    )
+
+    assert outcome == "exact_llama2_mha_recost_recorded_native_quality_required"
+    assert "source_finite_token_s=74.0" in summary
+    assert "corrected_gqa8_token_s=30.0" in summary
+    assert "exact_mha_token_s=4.5" in summary
+    assert "exact_mha_promotable=False" in summary
+
+
 def test_decoder_evidence_summary_recognizes_score32_noc_phase2_schedule() -> None:
     outcome, summary = _decoder_evidence_summary(
         evidence_ref="runs/datasets/demo/score32_noc_phase2_schedule.json",

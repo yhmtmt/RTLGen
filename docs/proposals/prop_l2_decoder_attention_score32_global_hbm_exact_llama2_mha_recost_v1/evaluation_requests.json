@@ -1,0 +1,25 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_score32_global_hbm_exact_llama2_mha_recost_v1",
+  "source_commit": "TBD",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_score32_global_hbm_exact_llama2_mha_recost_v1",
+      "task_type": "l2_campaign",
+      "objective": "Correct global HBM bandwidth sharing and recost the exact 32-KV-head Llama-2-7B MHA structure.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_score32_global_hbm_exact_llama2_mha_recost",
+      "comparison_role": "structural_frontier_correction",
+      "status": "pending_after_dependency_merge",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_score32_noc_phase2_finite_endpoint_composed_recost_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_outputs": [
+        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_global_hbm_exact_llama2_mha_recost__l2_decoder_attention_score32_global_hbm_exact_llama2_mha_recost_v1.json",
+        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_global_hbm_exact_llama2_mha_recost__l2_decoder_attention_score32_global_hbm_exact_llama2_mha_recost_v1.md"
+      ],
+      "acceptance_notes": "Replay aggregate active-cluster HBM bytes, rebuild exact-MHA compute and memory quantities, rerun finite endpoint scheduling, and refuse promotion without native Llama-2-7B score32 quality evidence."
+    }
+  ]
+}

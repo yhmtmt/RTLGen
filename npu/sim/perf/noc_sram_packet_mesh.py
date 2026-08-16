@@ -412,6 +412,7 @@ def simulate_packet_mesh(
     completion_ready_schedule: ReadySchedule = None,
     max_cycles: int = 1_000_000,
     record_mesh_trace: bool = False,
+    fast_forward_idle: bool = False,
 ) -> PacketMeshResult:
     """Simulate paired descriptors and the existing registered-credit mesh.
 
@@ -475,7 +476,28 @@ def simulate_packet_mesh(
     router_forwarded: list[list[tuple[int, ModelFlit]]] = [[] for _ in range(ENDPOINTS)]
     max_rx_context_occupancy = 0
 
-    for cycle in range(max_cycles):
+    cycle = 0
+    while cycle < max_cycles:
+        if fast_forward_idle:
+            endpoints_idle = all(
+                state.tx_active is None
+                and not state.tx_fifo
+                and not state.tx_reads
+                and state.tx_output is None
+                and not state.rx_contexts
+                and state.completion is None
+                for state in states
+            )
+            if endpoints_idle and all(router.idle() for router in routers):
+                pending_releases = [
+                    packet_list[queue[0]].release_cycle for queue in rx_queues if queue
+                ]
+                if pending_releases:
+                    next_release = min(pending_releases)
+                    if next_release >= max_cycles:
+                        break
+                    cycle = max(cycle, next_release)
+
         # Descriptor scheduling is intentionally separate from data movement.
         # An RX handshake at this edge cannot make a same-edge TX release
         # legal, matching the RTL's registered descriptor state.
@@ -765,6 +787,7 @@ def simulate_packet_mesh(
                 max_rx_context_occupancy=max_rx_context_occupancy,
                 mesh_traces=tuple(mesh_traces),
             )
+        cycle += 1
 
     raise RuntimeError(
         f"packet mesh did not drain within max_cycles={max_cycles}; "

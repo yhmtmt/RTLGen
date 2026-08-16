@@ -5864,6 +5864,114 @@ def _decoder_attention_score32_finite_endpoint_final_frontier_evidence(
     }
 
 
+def _decoder_attention_score32_global_hbm_exact_llama2_mha_recost_evidence(
+    *,
+    item_id: str,
+    depends_on_item_ids: list[str] | None,
+    proposal_id: str | None,
+    proposal_path: str | None,
+) -> dict[str, Any]:
+    expected_item_id = "l2_decoder_attention_score32_global_hbm_exact_llama2_mha_recost_v1"
+    expected_proposal_id = "prop_l2_decoder_attention_score32_global_hbm_exact_llama2_mha_recost_v1"
+    expected_dependencies = [
+        "l2_decoder_attention_score32_noc_phase2_finite_endpoint_composed_recost_llama7b_v1"
+    ]
+    if item_id != expected_item_id:
+        raise Layer2TaskGenerationError("global-HBM exact-MHA recost only permits the exact item")
+    if str(proposal_id or "").strip() != expected_proposal_id:
+        raise Layer2TaskGenerationError("global-HBM exact-MHA recost proposal_id mismatch")
+    if str(proposal_path or "").strip() != f"docs/proposals/{expected_proposal_id}/proposal.json":
+        raise Layer2TaskGenerationError("global-HBM exact-MHA recost proposal_path mismatch")
+    if list(depends_on_item_ids or []) != expected_dependencies:
+        raise Layer2TaskGenerationError(
+            "global-HBM exact-MHA recost requires the exact finite recost dependency"
+        )
+
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    finite = (
+        f"{base}/decoder_attention_score32_noc_phase2_finite_endpoint_composed_recost__"
+        "l2_decoder_attention_score32_noc_phase2_finite_endpoint_composed_recost_llama7b_v1.json"
+    )
+    source = (
+        f"{base}/decoder_attention_score32_exact_reduction_recost__"
+        "l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1.json"
+    )
+    hbm_replay = (
+        f"{base}/decoder_attention_score32_hbm_controller_replay__"
+        "l2_decoder_attention_score32_hbm_controller_replay_llama7b_v1.json"
+    )
+    hbm_energy = (
+        f"{base}/decoder_attention_score32_exp_lut_hbm_dram_service_closure__"
+        "l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1.json"
+    )
+    measured_costs = (
+        "runs/campaigns/npu/l1_measured_costs/"
+        "llama7b_attention_local_costs_all_measured_endpoint_v1.json"
+    )
+    out = f"{base}/decoder_attention_score32_global_hbm_exact_llama2_mha_recost__{item_id}.json"
+    report = f"{base}/decoder_attention_score32_global_hbm_exact_llama2_mha_recost__{item_id}.md"
+    command = _bounded_launcher_command(
+        memory_high="4G",
+        memory_max="6G",
+        cpu_quota="100%",
+        tasks_max=64,
+        runtime_max_sec=3600,
+        child_command=[
+            "python3",
+            "npu/eval/recost_llm_decoder_attention_score32_global_hbm_exact_llama2_mha.py",
+            "--repo-root",
+            ".",
+            "--finite-recost-json",
+            finite,
+            "--source-recost-json",
+            source,
+            "--hbm-replay-json",
+            hbm_replay,
+            "--hbm-energy-json",
+            hbm_energy,
+            "--measured-l1-costs",
+            measured_costs,
+            "--out",
+            out,
+            "--report",
+            report,
+        ],
+    )
+    return {
+        "inputs": {
+            "attention_score32_finite_endpoint_composed_recost": finite,
+            "attention_score32_exact_reduction_recost": source,
+            "attention_score32_hbm_controller_replay": hbm_replay,
+            "attention_score32_hbm_energy_closure": hbm_energy,
+            "attention_score32_measured_l1_costs": measured_costs,
+            "attention_score32_global_hbm_exact_mha_recost_out": out,
+            "attention_score32_global_hbm_exact_mha_recost_report": report,
+        },
+        "commands": [{"name": "recost_score32_global_hbm_exact_llama2_mha", "run": command}],
+        "expected_outputs": [out, report],
+        "evidence_only": True,
+        "worker_resources": {
+            "exclusive_worker": True,
+            "memory_high": "4G",
+            "memory_max": "6G",
+            "cpu_quota": "100%",
+            "tasks_max": 64,
+            "outer_timeout_seconds": 3600,
+            "stall_timeout_seconds": 900,
+        },
+        "acceptance": [
+            "Replay aggregate bytes from every active cluster through one global HBM controller",
+            "Report the corrected GQA8 baseline before comparing exact Llama-2-7B MHA",
+            "Recompute MHA QKV projection cycles, KV writes, KV cache, tile bytes, and HBM energy",
+            "Keep shared-SRAM bytes and reduction payload fixed while recomputing residency fractions",
+            "Rerun finite endpoint scheduling with HBM-delayed wave releases",
+            "Keep compute/area sharing and every remaining energy and HBM abstraction explicit",
+            "Do not promote score32 without native Llama-2-7B generation-quality evidence",
+            "Write exactly one JSON and one Markdown report",
+        ],
+    }
+
+
 def _decoder_attention_kv_endpoint_full_onchip_service_schedule_evidence(
     *,
     item_id: str,
@@ -12744,6 +12852,7 @@ def _build_payload(
         "decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence",
         "decoder_attention_score32_noc_phase2_finite_endpoint_composed_recost",
         "decoder_attention_score32_finite_endpoint_final_frontier",
+        "decoder_attention_score32_global_hbm_exact_llama2_mha_recost",
         "decoder_attention_kv_endpoint_full_onchip_service_schedule",
         "decoder_attention_kv_endpoint_ready_valid_service",
         "decoder_attention_kv_endpoint_router_sram_composition",
@@ -13008,6 +13117,13 @@ def _build_payload(
             )
         elif abstraction_layer_name == "decoder_attention_score32_finite_endpoint_final_frontier":
             decoder_evidence = _decoder_attention_score32_finite_endpoint_final_frontier_evidence(
+                item_id=item_id,
+                depends_on_item_ids=depends_on_item_ids,
+                proposal_id=proposal_id,
+                proposal_path=proposal_path,
+            )
+        elif abstraction_layer_name == "decoder_attention_score32_global_hbm_exact_llama2_mha_recost":
+            decoder_evidence = _decoder_attention_score32_global_hbm_exact_llama2_mha_recost_evidence(
                 item_id=item_id,
                 depends_on_item_ids=depends_on_item_ids,
                 proposal_id=proposal_id,

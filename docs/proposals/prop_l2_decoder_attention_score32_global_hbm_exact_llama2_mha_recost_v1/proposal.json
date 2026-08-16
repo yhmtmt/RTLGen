@@ -1,0 +1,41 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_score32_global_hbm_exact_llama2_mha_recost_v1",
+  "created_utc": "2026-08-16T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Correct global HBM service and recost exact Llama-2-7B MHA",
+  "hypothesis": "The prior score32 frontier overstates throughput because it replays one tile against a global HBM controller, and its GQA8 shape is not exact Llama-2-7B; aggregate-wave replay plus a 32-KV-head MHA recost will establish the structurally valid performance and energy bounds.",
+  "direct_comparison": {
+    "primary_question": "How do corrected GQA8 and exact Llama-2-7B MHA compare in token throughput, energy, area, and structural/precision evidence under one global HBM controller?",
+    "include": [
+      "aggregate 16-cluster HBM wave service",
+      "separate HBM and compute clock domains",
+      "exact MHA QKV projection and KV traffic",
+      "finite endpoint NoC replay with delayed releases",
+      "calibrated HBM command energy",
+      "explicit structural and native-quality promotion gates"
+    ],
+    "exclude": [
+      "per-tile ownership of global HBM bandwidth",
+      "blind eight-times scaling of QKV compute or reduction traffic",
+      "vendor HBM timing/current signoff claims",
+      "promotion from Mistral GQA4 arithmetic evidence"
+    ]
+  },
+  "required_evaluations": [
+    {
+      "task_type": "l2_campaign",
+      "evaluation_mode": "frontier_detail",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_score32_noc_phase2_finite_endpoint_composed_recost_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_reduction_recost__l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_hbm_controller_replay__l2_decoder_attention_score32_hbm_controller_replay_llama7b_v1.json"
+  ]
+}
