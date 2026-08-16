@@ -603,6 +603,10 @@ _DECODER_EVIDENCE_OUTPUT_KEYS: tuple[tuple[str, str], ...] = (
         "attention_score32_noc_phase2_finite_endpoint_composed_recost_report",
     ),
     (
+        "attention_score32_finite_endpoint_final_frontier_out",
+        "attention_score32_finite_endpoint_final_frontier_report",
+    ),
+    (
         "attention_score32_folded_global_exact_reduction_recost_out",
         "attention_score32_folded_global_exact_reduction_recost_report",
     ),
@@ -832,6 +836,12 @@ def _decoder_quality_brief(evidence_payload: dict[str, Any]) -> dict[str, Any]:
         "throughput",
         "physical_recost",
         "precision_contract",
+        "dimension_winners",
+        "conditional_recommendation",
+        "pareto_frontier",
+        "excluded_nonpromotable_history",
+        "comparison_limits",
+        "next_measurements",
         "schedule",
         "physical_accounting",
         "boundary_evidence",
@@ -1059,6 +1069,24 @@ def _decoder_recommendation_override(
 
 def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, Any]) -> tuple[str, str]:
     model = str(evidence_payload.get("model", "")).strip()
+    if model == "llama7b_score32_finite_endpoint_final_frontier_v1":
+        outcome = str(
+            evidence_payload.get("decision")
+            or "two_nondominated_precision_safe_points_no_universal_scalar_winner"
+        )
+        winners = dict(evidence_payload.get("dimension_winners") or {})
+        recommendation = dict(evidence_payload.get("conditional_recommendation") or {})
+        pareto = evidence_payload.get("pareto_frontier")
+        parts = [
+            f"Llama7B finite-endpoint final frontier recorded from {evidence_ref}: decision={outcome}",
+            f"pareto_count={len(pareto) if isinstance(pareto, list) else 0}",
+        ]
+        for key in ("token_throughput", "die_envelope_area", "energy_per_token", "arithmetic_precision"):
+            if key in winners:
+                parts.append(f"{key}_winner={winners.get(key)}")
+        parts.append(f"unconditional_best={recommendation.get('unconditional_best')}")
+        summary = "; ".join(parts)
+        return outcome, summary if summary.endswith(".") else summary + "."
     if (
         model == "llama7b_proxy"
         and str(evidence_payload.get("profile", "")).strip()

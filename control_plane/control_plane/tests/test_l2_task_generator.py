@@ -14931,6 +14931,55 @@ def test_generate_l2_campaign_task_adds_finite_endpoint_composed_recost() -> Non
             )
 
 
+def test_generate_l2_campaign_task_adds_finite_endpoint_final_frontier() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+        dependencies = [
+            "l2_decoder_attention_score32_noc_phase2_finite_endpoint_composed_recost_llama7b_v1"
+        ]
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                _make_l2_request(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id="l2_decoder_attention_score32_finite_endpoint_final_frontier_llama7b_v1",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    proposal_id="prop_l2_decoder_attention_score32_finite_endpoint_final_frontier_v1",
+                    proposal_path=(
+                        "docs/proposals/prop_l2_decoder_attention_score32_"
+                        "finite_endpoint_final_frontier_v1/proposal.json"
+                    ),
+                    abstraction_layer="decoder_attention_score32_finite_endpoint_final_frontier",
+                    evaluation_mode="frontier_detail",
+                    depends_on_item_ids=dependencies,
+                    requires_merged_inputs=True,
+                    requires_materialized_refs=True,
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            run = work_item.command_manifest[0]["run"]
+            assert work_item.state == WorkItemState.BLOCKED
+            assert "audit_llm_decoder_attention_score32_finite_endpoint_final_frontier.py" in run
+            assert "--finite-recost-json" in run
+            assert "--quality-frontier-json" in run
+            assert "--runtime-max-sec 300" in run
+            assert work_item.input_manifest["worker_resources"]["exclusive_worker"] is False
+            assert work_item.expected_outputs[0].endswith(
+                "decoder_attention_score32_finite_endpoint_final_frontier__"
+                "l2_decoder_attention_score32_finite_endpoint_final_frontier_llama7b_v1.json"
+            )
+
+
 def test_score32_noc_closure_rejects_inexact_dependencies() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
