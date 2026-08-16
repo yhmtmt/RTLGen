@@ -216,10 +216,16 @@ def run_rtl_replay(
             str(repo_root / RTL_TB),
         ],
         cwd=repo_root,
-        check=True,
+        check=False,
         capture_output=True,
         text=True,
     )
+    if compile_result.returncode != 0:
+        raise RuntimeError(
+            "endpoint mesh RTL compilation failed\n"
+            f"stdout:\n{compile_result.stdout}\n"
+            f"stderr:\n{compile_result.stderr}"
+        )
     expected_flits = sum(packet.flit_count for packet in packets)
     command = [
         _tool("vvp"),

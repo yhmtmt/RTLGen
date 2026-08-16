@@ -15,6 +15,7 @@ module noc_sram_packet_mesh4x4_workload_tb;
   integer packet_count = 0;
   integer expected_flits = 0;
   integer timeout_cycles = 2000000;
+  integer plusarg_status;
   integer drain_cycle = 0;
   integer submitted_packets = 0;
   integer completed_packets = 0;
@@ -415,7 +416,7 @@ module noc_sram_packet_mesh4x4_workload_tb;
       $fatal(1, "PACKET_COUNT must be in [1, %0d]", MAX_PACKETS);
     if (!$value$plusargs("EXPECTED_FLITS=%d", expected_flits) || expected_flits <= 0)
       $fatal(1, "EXPECTED_FLITS must be positive");
-    void'($value$plusargs("TIMEOUT_CYCLES=%d", timeout_cycles));
+    plusarg_status = $value$plusargs("TIMEOUT_CYCLES=%d", timeout_cycles);
     if (!$value$plusargs("DESC_MEM=%s", descriptor_mem) ||
         !$value$plusargs("SRC_ORDER_MEM=%s", source_order_mem) ||
         !$value$plusargs("DST_ORDER_MEM=%s", destination_order_mem) ||
