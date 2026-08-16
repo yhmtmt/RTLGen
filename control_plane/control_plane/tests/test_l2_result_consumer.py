@@ -229,6 +229,65 @@ def test_decoder_evidence_paths_recognizes_score32_noc_composed_mesh_reroute(tmp
     }
 
 
+def test_decoder_evidence_paths_recognizes_finite_endpoint_composed_recost(tmp_path: Path) -> None:
+    evidence_rel = "runs/datasets/demo/score32_finite_endpoint_composed_recost.json"
+    report_rel = "runs/datasets/demo/score32_finite_endpoint_composed_recost.md"
+    _write(tmp_path / evidence_rel, "{}\n")
+    _write(tmp_path / report_rel, "# Finite endpoint composed recost\n")
+    work_item = SimpleNamespace(
+        input_manifest={
+            "decoder_contract": {
+                "attention_score32_noc_phase2_finite_endpoint_composed_recost_out": evidence_rel,
+                "attention_score32_noc_phase2_finite_endpoint_composed_recost_report": report_rel,
+            }
+        }
+    )
+
+    evidence_ref, source_refs = _decoder_evidence_paths(repo_root=tmp_path, work_item=work_item)
+
+    assert evidence_ref == evidence_rel
+    assert source_refs == {
+        "decoder_attention_score32_noc_phase2_finite_endpoint_composed_recost_out": evidence_rel,
+        "decoder_attention_score32_noc_phase2_finite_endpoint_composed_recost_report": report_rel,
+    }
+
+
+def test_decoder_evidence_summary_recognizes_finite_endpoint_composed_recost() -> None:
+    outcome, summary = _decoder_evidence_summary(
+        evidence_ref="runs/datasets/demo/score32_finite_endpoint_composed_recost.json",
+        evidence_payload={
+            "model": "llama7b_proxy",
+            "profile": "decoder_attention_score32_noc_phase2_finite_endpoint_composed_recost",
+            "decision": "score32_noc_phase2_finite_endpoint_composed_recost_recorded",
+            "clock_contract": {"effective_noc_clock_ns": 1.0},
+            "finite_endpoint_schedule": {
+                "cycles": 400000,
+                "drain_time_ns": 400000.0,
+                "cadence_delta_cycles_vs_logical": 3000,
+            },
+            "throughput": {
+                "bottleneck": "compute",
+                "token_throughput_per_s": 74.0,
+                "throughput_ratio_vs_source": 0.998,
+            },
+            "physical_recost": {
+                "total_embodied_area_um2": 700000000.0,
+                "area_fit": True,
+                "recost_logic_vectorless_energy_per_token_mj": 320.0,
+            },
+            "precision_contract": {
+                "precision_profile": "q8_k8_v8_a32_s32_w16_exp_lut_div_b20_int8_compute",
+                "semantic_profile": "score32_exp_lut_div",
+            },
+        },
+    )
+
+    assert outcome == "score32_noc_phase2_finite_endpoint_composed_recost_recorded"
+    assert "cycles=400000" in summary
+    assert "area_fit=True" in summary
+    assert "precision_profile=q8_k8_v8_a32_s32_w16_exp_lut_div_b20_int8_compute" in summary
+
+
 def test_decoder_evidence_summary_recognizes_score32_noc_phase2_schedule() -> None:
     outcome, summary = _decoder_evidence_summary(
         evidence_ref="runs/datasets/demo/score32_noc_phase2_schedule.json",

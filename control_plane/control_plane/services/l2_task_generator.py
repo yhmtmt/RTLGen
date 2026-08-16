@@ -5652,6 +5652,119 @@ def _decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_evidence(
     }
 
 
+def _decoder_attention_score32_noc_phase2_finite_endpoint_composed_recost_evidence(
+    *,
+    item_id: str,
+    depends_on_item_ids: list[str] | None,
+    proposal_id: str | None,
+    proposal_path: str | None,
+) -> dict[str, Any]:
+    expected_item_id = (
+        "l2_decoder_attention_score32_noc_phase2_finite_endpoint_composed_recost_llama7b_v1"
+    )
+    expected_proposal_id = (
+        "prop_l2_decoder_attention_score32_noc_phase2_finite_endpoint_composed_recost_v1"
+    )
+    expected_dependencies = [
+        "l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1",
+        "l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_llama7b_v1",
+        "l1_noc_sram_packet_mesh4x4_composed_ppa_v1",
+    ]
+    if item_id != expected_item_id:
+        raise Layer2TaskGenerationError("finite-endpoint composed recost only permits the exact item")
+    if str(proposal_id or "").strip() != expected_proposal_id:
+        raise Layer2TaskGenerationError("finite-endpoint composed recost proposal_id mismatch")
+    if str(proposal_path or "").strip() != f"docs/proposals/{expected_proposal_id}/proposal.json":
+        raise Layer2TaskGenerationError("finite-endpoint composed recost proposal_path mismatch")
+    if list(depends_on_item_ids or []) != expected_dependencies:
+        raise Layer2TaskGenerationError(
+            "finite-endpoint composed recost requires the exact schedule, equivalence, and PPA dependencies"
+        )
+
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    source = (
+        f"{base}/decoder_attention_score32_exact_reduction_recost__"
+        "l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1.json"
+    )
+    measured_costs = (
+        "runs/campaigns/npu/l1_measured_costs/"
+        "llama7b_attention_local_costs_all_measured_endpoint_v1.json"
+    )
+    schedule = (
+        f"{base}/decoder_attention_score32_noc_phase2_schedule__"
+        "l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1.json"
+    )
+    equivalence = (
+        f"{base}/decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence__"
+        "l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_llama7b_v1.json"
+    )
+    composed = (
+        "control_plane/shadow_exports/l1_promotions/"
+        "l1_noc_sram_packet_mesh4x4_composed_ppa_v1.json"
+    )
+    out = f"{base}/decoder_attention_score32_noc_phase2_finite_endpoint_composed_recost__{item_id}.json"
+    report = f"{base}/decoder_attention_score32_noc_phase2_finite_endpoint_composed_recost__{item_id}.md"
+    command = _bounded_launcher_command(
+        memory_high="4G",
+        memory_max="6G",
+        cpu_quota="200%",
+        tasks_max=128,
+        runtime_max_sec=900,
+        child_command=[
+            "python3",
+            "npu/eval/recost_llm_decoder_attention_score32_noc_phase2_finite_endpoint_composed.py",
+            "--repo-root",
+            ".",
+            "--source-json",
+            source,
+            "--measured-l1-costs",
+            measured_costs,
+            "--baseline-schedule-json",
+            schedule,
+            "--endpoint-equivalence-json",
+            equivalence,
+            "--composed-promotion-json",
+            composed,
+            "--out",
+            out,
+            "--report",
+            report,
+        ],
+    )
+    return {
+        "inputs": {
+            "attention_score32_noc_phase2_source_recost": source,
+            "attention_score32_noc_phase2_measured_l1_costs": measured_costs,
+            "attention_score32_noc_phase2_corrected_schedule": schedule,
+            "attention_score32_noc_phase2_endpoint_rtl_equivalence": equivalence,
+            "attention_score32_noc_phase2_composed_mesh_promotion": composed,
+            "attention_score32_noc_phase2_finite_endpoint_composed_recost_out": out,
+            "attention_score32_noc_phase2_finite_endpoint_composed_recost_report": report,
+        },
+        "commands": [{"name": "recost_attention_score32_finite_endpoint_composed", "run": command}],
+        "expected_outputs": [out, report],
+        "evidence_only": True,
+        "worker_resources": {
+            "exclusive_worker": True,
+            "memory_high": "4G",
+            "memory_max": "6G",
+            "cpu_quota": "200%",
+            "tasks_max": 128,
+            "outer_timeout_seconds": 900,
+            "stall_timeout_seconds": 480,
+        },
+        "acceptance": [
+            "Require exact workload-complete endpoint performance/RTL equivalence",
+            "Rerun the full finite-endpoint schedule at the conservative composed clock",
+            "Use max(compute layer time, finite endpoint drain time) for token throughput",
+            "Replace prior router, FIFO, and endpoint PPA with aggregate composed PPA",
+            "Inherit the exact arithmetic precision and quality contract unchanged",
+            "Keep scheduler PPA, SRAM macro physics and energy, activity power, and HBM/DRAM explicit",
+            "Write exactly one JSON and one Markdown report",
+        ],
+    }
+
+
 def _decoder_attention_kv_endpoint_full_onchip_service_schedule_evidence(
     *,
     item_id: str,
@@ -12530,6 +12643,7 @@ def _build_payload(
         "decoder_attention_score32_noc_phase2_measured_router_clock_reroute",
         "decoder_attention_score32_noc_phase2_composed_mesh_reroute",
         "decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence",
+        "decoder_attention_score32_noc_phase2_finite_endpoint_composed_recost",
         "decoder_attention_kv_endpoint_full_onchip_service_schedule",
         "decoder_attention_kv_endpoint_ready_valid_service",
         "decoder_attention_kv_endpoint_router_sram_composition",
@@ -12780,6 +12894,13 @@ def _build_payload(
             )
         elif abstraction_layer_name == "decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence":
             decoder_evidence = _decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_evidence(
+                item_id=item_id,
+                depends_on_item_ids=depends_on_item_ids,
+                proposal_id=proposal_id,
+                proposal_path=proposal_path,
+            )
+        elif abstraction_layer_name == "decoder_attention_score32_noc_phase2_finite_endpoint_composed_recost":
+            decoder_evidence = _decoder_attention_score32_noc_phase2_finite_endpoint_composed_recost_evidence(
                 item_id=item_id,
                 depends_on_item_ids=depends_on_item_ids,
                 proposal_id=proposal_id,

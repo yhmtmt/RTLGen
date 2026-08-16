@@ -1,0 +1,43 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_score32_noc_phase2_finite_endpoint_composed_recost_v1",
+  "created_utc": "2026-08-16T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Close finite endpoint timing and composed NoC PPA in the score32 frontier",
+  "hypothesis": "Binding workload-complete endpoint RTL equivalence and aggregate endpoint/mesh PPA into the corrected score32 schedule yields a defensible Llama7B throughput, area, vectorless logic energy, and precision point without double-counting primitive NoC costs.",
+  "direct_comparison": {
+    "primary_question": "Does the current score32 Llama7B point remain feasible and compute-bound after finite endpoint cadence and aggregate placed NoC costs replace their abstract counterparts?",
+    "include": [
+      "corrected workload-complete Phase 2 schedule",
+      "finite endpoint performance/RTL equivalence",
+      "sixteen-endpoint and sixteen-router aggregate PPA",
+      "fresh finite-endpoint replay at the conservative composed clock",
+      "inherited exact arithmetic precision and quality contract"
+    ],
+    "exclude": [
+      "synthesized workload command scheduler PPA",
+      "SRAM macro placement, port timing, and dynamic access energy",
+      "workload-derived switching activity",
+      "HBM/DRAM controller implementation and off-chip energy"
+    ]
+  },
+  "required_evaluations": [
+    {
+      "task_type": "l2_campaign",
+      "evaluation_mode": "frontier_detail",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1",
+        "l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_llama7b_v1",
+        "l1_noc_sram_packet_mesh4x4_composed_ppa_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_schedule__l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence__l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_llama7b_v1.json",
+    "control_plane/shadow_exports/l1_promotions/l1_noc_sram_packet_mesh4x4_composed_ppa_v1.json"
+  ]
+}

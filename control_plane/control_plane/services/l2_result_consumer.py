@@ -599,6 +599,10 @@ _DECODER_EVIDENCE_OUTPUT_KEYS: tuple[tuple[str, str], ...] = (
         "attention_score32_noc_phase2_endpoint_rtl_equivalence_report",
     ),
     (
+        "attention_score32_noc_phase2_finite_endpoint_composed_recost_out",
+        "attention_score32_noc_phase2_finite_endpoint_composed_recost_report",
+    ),
+    (
         "attention_score32_folded_global_exact_reduction_recost_out",
         "attention_score32_folded_global_exact_reduction_recost_report",
     ),
@@ -823,6 +827,11 @@ def _decoder_quality_brief(evidence_payload: dict[str, Any]) -> dict[str, Any]:
         "closure_flags",
         "closure_diagnosis",
         "clock_contract",
+        "logical_schedule",
+        "finite_endpoint_schedule",
+        "throughput",
+        "physical_recost",
+        "precision_contract",
         "schedule",
         "physical_accounting",
         "boundary_evidence",
@@ -1050,6 +1059,35 @@ def _decoder_recommendation_override(
 
 def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, Any]) -> tuple[str, str]:
     model = str(evidence_payload.get("model", "")).strip()
+    if (
+        model == "llama7b_proxy"
+        and str(evidence_payload.get("profile", "")).strip()
+        == "decoder_attention_score32_noc_phase2_finite_endpoint_composed_recost"
+    ):
+        outcome = str(
+            evidence_payload.get("decision")
+            or "score32_noc_phase2_finite_endpoint_composed_recost_recorded"
+        )
+        clock = dict(evidence_payload.get("clock_contract") or {})
+        finite = dict(evidence_payload.get("finite_endpoint_schedule") or {})
+        throughput = dict(evidence_payload.get("throughput") or {})
+        physical = dict(evidence_payload.get("physical_recost") or {})
+        precision = dict(evidence_payload.get("precision_contract") or {})
+        parts = [
+            f"Decoder score32 finite-endpoint composed recost recorded from {evidence_ref}: decision={outcome}",
+        ]
+        for section, keys in (
+            (clock, ("effective_noc_clock_ns",)),
+            (finite, ("cycles", "drain_time_ns", "cadence_delta_cycles_vs_logical")),
+            (throughput, ("bottleneck", "token_throughput_per_s", "throughput_ratio_vs_source")),
+            (physical, ("total_embodied_area_um2", "area_fit", "recost_logic_vectorless_energy_per_token_mj")),
+            (precision, ("precision_profile", "semantic_profile")),
+        ):
+            for key in keys:
+                if key in section:
+                    parts.append(f"{key}={section.get(key)}")
+        summary = "; ".join(parts)
+        return outcome, summary if summary.endswith(".") else summary + "."
     if (
         model == "llama7b_proxy"
         and str(evidence_payload.get("profile", "")).strip()
