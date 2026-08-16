@@ -41,4 +41,5 @@ jobs:
           python tests/test_eval_campaign_tools.py
           python tests/test_run_campaign_mapper_notes.py
           python -m pytest -q \
-            npu/eval/tests/test_recost_llm_decoder_attention_score32_noc_phase2_finite_endpoint_composed.py
+            npu/eval/tests/test_recost_llm_decoder_attention_score32_noc_phase2_finite_endpoint_composed.py \
+            npu/eval/tests/test_audit_llm_decoder_attention_score32_finite_endpoint_final_frontier.py

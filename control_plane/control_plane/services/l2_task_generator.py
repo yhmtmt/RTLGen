@@ -5765,6 +5765,97 @@ def _decoder_attention_score32_noc_phase2_finite_endpoint_composed_recost_eviden
     }
 
 
+def _decoder_attention_score32_finite_endpoint_final_frontier_evidence(
+    *,
+    item_id: str,
+    depends_on_item_ids: list[str] | None,
+    proposal_id: str | None,
+    proposal_path: str | None,
+) -> dict[str, Any]:
+    expected_item_id = (
+        "l2_decoder_attention_score32_finite_endpoint_final_frontier_llama7b_v1"
+    )
+    expected_proposal_id = (
+        "prop_l2_decoder_attention_score32_finite_endpoint_final_frontier_v1"
+    )
+    expected_dependencies = [
+        "l2_decoder_attention_score32_noc_phase2_finite_endpoint_composed_recost_llama7b_v1"
+    ]
+    if item_id != expected_item_id:
+        raise Layer2TaskGenerationError("finite-endpoint final frontier only permits the exact item")
+    if str(proposal_id or "").strip() != expected_proposal_id:
+        raise Layer2TaskGenerationError("finite-endpoint final frontier proposal_id mismatch")
+    if str(proposal_path or "").strip() != f"docs/proposals/{expected_proposal_id}/proposal.json":
+        raise Layer2TaskGenerationError("finite-endpoint final frontier proposal_path mismatch")
+    if list(depends_on_item_ids or []) != expected_dependencies:
+        raise Layer2TaskGenerationError(
+            "finite-endpoint final frontier requires the exact finite recost dependency"
+        )
+
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    finite_recost = (
+        f"{base}/decoder_attention_score32_noc_phase2_finite_endpoint_composed_recost__"
+        "l2_decoder_attention_score32_noc_phase2_finite_endpoint_composed_recost_llama7b_v1.json"
+    )
+    quality_frontier = (
+        f"{base}/decoder_attention_score32_integrated_frontier_ranking__"
+        "l2_decoder_attention_score32_quality_aware_hbm_controller_replay_"
+        "rtl_ppa_recost_frontier_llama7b_v1.json"
+    )
+    out = f"{base}/decoder_attention_score32_finite_endpoint_final_frontier__{item_id}.json"
+    report = f"{base}/decoder_attention_score32_finite_endpoint_final_frontier__{item_id}.md"
+    command = _bounded_launcher_command(
+        memory_high="1G",
+        memory_max="2G",
+        cpu_quota="100%",
+        tasks_max=32,
+        runtime_max_sec=300,
+        child_command=[
+            "python3",
+            "npu/eval/audit_llm_decoder_attention_score32_finite_endpoint_final_frontier.py",
+            "--repo-root",
+            ".",
+            "--finite-recost-json",
+            finite_recost,
+            "--quality-frontier-json",
+            quality_frontier,
+            "--out",
+            out,
+            "--report",
+            report,
+        ],
+    )
+    return {
+        "inputs": {
+            "attention_score32_finite_endpoint_composed_recost": finite_recost,
+            "attention_score32_quality_aware_frontier": quality_frontier,
+            "attention_score32_finite_endpoint_final_frontier_out": out,
+            "attention_score32_finite_endpoint_final_frontier_report": report,
+        },
+        "commands": [{"name": "audit_score32_finite_endpoint_final_frontier", "run": command}],
+        "expected_outputs": [out, report],
+        "evidence_only": True,
+        "worker_resources": {
+            "exclusive_worker": False,
+            "memory_high": "1G",
+            "memory_max": "2G",
+            "cpu_quota": "100%",
+            "tasks_max": 32,
+            "outer_timeout_seconds": 300,
+            "stall_timeout_seconds": 180,
+        },
+        "acceptance": [
+            "Consume the exact merged finite-endpoint composed recost",
+            "Require passing score32 and exact-FP16 quality-backed rows",
+            "Exclude planning-only and quality-invalid rows from promotion",
+            "Report throughput, die envelope, embodied area status, energy status, and precision separately",
+            "Return a Pareto frontier and per-dimension winners without a scalar universal winner",
+            "Keep workload activity, SRAM macro energy, vendor HBM signoff, and comparison-boundary gaps explicit",
+            "Write exactly one JSON and one Markdown report",
+        ],
+    }
+
+
 def _decoder_attention_kv_endpoint_full_onchip_service_schedule_evidence(
     *,
     item_id: str,
@@ -12644,6 +12735,7 @@ def _build_payload(
         "decoder_attention_score32_noc_phase2_composed_mesh_reroute",
         "decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence",
         "decoder_attention_score32_noc_phase2_finite_endpoint_composed_recost",
+        "decoder_attention_score32_finite_endpoint_final_frontier",
         "decoder_attention_kv_endpoint_full_onchip_service_schedule",
         "decoder_attention_kv_endpoint_ready_valid_service",
         "decoder_attention_kv_endpoint_router_sram_composition",
@@ -12901,6 +12993,13 @@ def _build_payload(
             )
         elif abstraction_layer_name == "decoder_attention_score32_noc_phase2_finite_endpoint_composed_recost":
             decoder_evidence = _decoder_attention_score32_noc_phase2_finite_endpoint_composed_recost_evidence(
+                item_id=item_id,
+                depends_on_item_ids=depends_on_item_ids,
+                proposal_id=proposal_id,
+                proposal_path=proposal_path,
+            )
+        elif abstraction_layer_name == "decoder_attention_score32_finite_endpoint_final_frontier":
+            decoder_evidence = _decoder_attention_score32_finite_endpoint_final_frontier_evidence(
                 item_id=item_id,
                 depends_on_item_ids=depends_on_item_ids,
                 proposal_id=proposal_id,

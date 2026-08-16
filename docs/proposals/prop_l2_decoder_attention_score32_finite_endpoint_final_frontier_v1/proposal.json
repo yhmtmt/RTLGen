@@ -1,0 +1,38 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_score32_finite_endpoint_final_frontier_v1",
+  "created_utc": "2026-08-16T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Rerank the Llama7B frontier after finite endpoint and composed NoC closure",
+  "hypothesis": "Replacing the score32 row with finite endpoint timing and aggregate physical accounting will expose a multidimensional Pareto frontier rather than a defensible single scalar winner.",
+  "direct_comparison": {
+    "primary_question": "Which quality-backed Llama7B architecture is best in throughput, area envelope, energy, and arithmetic precision after the score32 communication recost?",
+    "include": [
+      "finite endpoint and aggregate endpoint/mesh score32 recost",
+      "bounded generation-quality evidence",
+      "measured exact-FP16 energy reference",
+      "separate per-dimension winners and Pareto dominance"
+    ],
+    "exclude": [
+      "quality-invalid mixed-int8 rows from promotion",
+      "planning-only abstract throughput rows from promotion",
+      "scalar weighting across throughput, energy, area, and precision",
+      "claims of workload-complete NoC/SRAM energy"
+    ]
+  },
+  "required_evaluations": [
+    {
+      "task_type": "l2_campaign",
+      "evaluation_mode": "frontier_detail",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_score32_noc_phase2_finite_endpoint_composed_recost_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_integrated_frontier_ranking__l2_decoder_attention_score32_quality_aware_hbm_controller_replay_rtl_ppa_recost_frontier_llama7b_v1.json"
+  ]
+}
