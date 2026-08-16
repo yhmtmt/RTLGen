@@ -1,0 +1,2800 @@
+{
+  "explicit_assumptions": [
+    "Producer compute, local SRAM access, and local reducer accumulation stay intra-cluster and do not consume the mesh in this Phase 2 schedule.",
+    "Only two remote traffic classes are routed: shared SRAM tile payloads and local-reducer-to-root partial reductions.",
+    "Tile-to-cluster assignment is static wave-major round robin over the named cluster endpoints.",
+    "Shared SRAM homes use a deterministic rotating stride/offset mapping chosen only from explicit 4x4 permutations to approximate the declared hop envelope while keeping load balanced.",
+    "The root endpoint is explicit and fixed; root-finalizer output remains local to that endpoint.",
+    "Wave start and reduction release times are derived from checked-in score32 compute cycles and converted to absolute NoC cycles using the explicit compute and NoC clock periods.",
+    "HBM/DRAM timing is intentionally excluded; no remote traffic or timing claim is made for HBM service.",
+    "Each packet carries up to packet_payload_bytes of payload and is segmented into 256-bit flits with no extra header flit modeled.",
+    "The performance model does not perform packet reassembly; the checked artifact therefore fails closed unless 8-bit tag reuse is provably non-overlapping for each (source, destination, vc) tuple over packet lifetime intervals.",
+    "Per-endpoint release queues are logical zero-copy descriptors over payloads retained in source SRAM or reducer state. Corresponding descriptor/packetizer RTL exists in noc_sram_packet_endpoint, but its measured service cadence and PPA remain outside this result until the endpoint L1 result is consumed."
+  ],
+  "flow_summary": {
+    "local_only_reduction_bytes": 66560,
+    "local_only_shared_bytes": 278528,
+    "remote_reduction_bytes": 998400,
+    "remote_reduction_flow_count": 120,
+    "remote_reduction_packet_count": 3960,
+    "remote_shared_bytes": 1949696,
+    "remote_shared_flow_count": 112,
+    "remote_shared_packet_count": 7616
+  },
+  "mapping": {
+    "cluster_endpoint_labels": [
+      "0(0,0)",
+      "1(1,0)",
+      "2(2,0)",
+      "3(3,0)",
+      "4(0,1)",
+      "5(1,1)",
+      "6(2,1)",
+      "7(3,1)",
+      "8(0,2)",
+      "9(1,2)",
+      "10(2,2)",
+      "11(3,2)",
+      "12(0,3)",
+      "13(1,3)",
+      "14(2,3)",
+      "15(3,3)"
+    ],
+    "cluster_endpoints": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15
+    ],
+    "root_endpoint": 15,
+    "root_endpoint_label": "15(3,3)",
+    "shared_sram_average_remote_hops": 3.0,
+    "shared_sram_home_load_tiles": {
+      "0": 8,
+      "1": 8,
+      "2": 8,
+      "3": 8,
+      "4": 8,
+      "5": 8,
+      "6": 8,
+      "7": 8,
+      "8": 8,
+      "9": 8,
+      "10": 8,
+      "11": 8,
+      "12": 8,
+      "13": 8,
+      "14": 8,
+      "15": 8
+    },
+    "shared_sram_home_offset": 1,
+    "shared_sram_home_stride": 3,
+    "shared_sram_worst_remote_hops": 6
+  },
+  "measured_l1_profile": {
+    "description": "Area-conservative hd64/kv8 full-value attention tile with 128-bit local NoC primitives and exact-int q10 reciprocal softmax weights plus one measured 128-bit on-chip endpoint service block.",
+    "endpoint_per_cluster": 1,
+    "fifo_per_cluster": 1,
+    "local_datapath": {
+      "area_um2": 139416.358225,
+      "clock_ns": 0.8235,
+      "design": "attention_kv_full_value_hd64_kv8_tl16_b128_p8_ppc2_w24_a40_wrapper",
+      "metrics_csv": "runs/designs/activations/attention_kv_full_value_hd64_kv8_tl16_b128_p8_ppc2_w24_a40_wrapper/metrics.csv",
+      "power_mw": 0.0341
+    },
+    "name": "hd64_kv8_full_value_p8_ppc2_noc128_softmax_int8_q10",
+    "noc_fifo": {
+      "area_um2": 11606.830225,
+      "clock_ns": 0.2965,
+      "depth": 16,
+      "design": "l1_noc_fifo_w128_d16_wrapper",
+      "metrics_csv": "runs/designs/noc/l1_noc_fifo_w128_d16_wrapper/metrics.csv",
+      "power_mw": 0.00862,
+      "width_bits": 128
+    },
+    "noc_router": {
+      "area_um2": 3123.133225,
+      "clock_ns": 0.2424,
+      "design": "l1_noc_router_p4_w128_wrapper",
+      "metrics_csv": "runs/designs/noc/l1_noc_router_p4_w128_wrapper/metrics.csv",
+      "ports": 4,
+      "power_mw": 0.00176,
+      "width_bits": 128
+    },
+    "onchip_endpoint": {
+      "area_um2": 15293.032225,
+      "bank_queue_depth": 4,
+      "banks": 4,
+      "clock_ns": 0.7162,
+      "design": "l1_onchip_endpoint_w128_b4_eq8_bq4_wrapper",
+      "endpoint_depth": 8,
+      "metrics_csv": "runs/designs/noc/l1_onchip_endpoint_w128_b4_eq8_bq4_wrapper/metrics.csv",
+      "power_mw": 0.00983,
+      "width_bits": 128
+    },
+    "router_per_cluster": 1,
+    "softmax_weight_generator": {
+      "area_um2": 39776.3136,
+      "clock_ns": 5.5948,
+      "design": "attention_softmax_weight_int8_r8_acc24_recip_q10_wrapper",
+      "metrics_csv": "runs/designs/activations/attention_softmax_weight_int8_r8_acc24_recip_q10_wrapper/metrics.csv",
+      "power_mw": 0.00479
+    },
+    "softmax_weight_generator_per_cluster": 1
+  },
+  "model": "llama7b_proxy",
+  "profile": "decoder_attention_score32_noc_phase2_schedule",
+  "remaining_abstractions": [
+    "The schedule uses clock-corrected static wave timing from checked-in recost quantities and does not yet prove end-to-end command/control RTL cadence.",
+    "The NoC clock is an explicit evaluation assumption until the exact five-port segmented-router physical result is merged and substituted.",
+    "The source-descriptor queues, SRAM handshakes, packetizer, receive contexts, and producer backpressure now have bounded RTL, but are not yet physically measured or substituted into this schedule.",
+    "Shared SRAM home placement is deterministic and explicit, but still a topology adapter rather than a measured SRAM floorplan.",
+    "HBM/DRAM service and controller timing remain intentionally out of scope.",
+    "Root-finalizer internal compute is not rerouted here; the mesh model stops at root ingress."
+  ],
+  "schedule_parameters": {
+    "compute_clock_ns": 48.6509,
+    "compute_qkv_cycles_before_wave0": 192,
+    "compute_reduction_release_offset_cycles": 986,
+    "compute_tile_attention_cycles_per_wave": 986,
+    "compute_to_noc_clock_ratio": 48.6509,
+    "noc_clock_ns": 1.0,
+    "packet_payload_bytes": 256,
+    "reduction_release_compute_cycles": [
+      1178,
+      2164,
+      3150,
+      4136,
+      5122,
+      6108,
+      7094,
+      8080
+    ],
+    "reduction_release_noc_cycles": [
+      57311,
+      105281,
+      153251,
+      201221,
+      249190,
+      297160,
+      345130,
+      393100
+    ],
+    "reduction_vc": 1,
+    "release_conversion": "ceil(compute_cycles * compute_clock_ns / noc_clock_ns)",
+    "requested_wave_limit": null,
+    "shared_vc": 0,
+    "wave_start_compute_cycles": [
+      192,
+      1178,
+      2164,
+      3150,
+      4136,
+      5122,
+      6108,
+      7094
+    ],
+    "wave_start_noc_cycles": [
+      9341,
+      57311,
+      105281,
+      153251,
+      201221,
+      249190,
+      297160,
+      345130
+    ]
+  },
+  "simulation": {
+    "cycles_to_drain": 397004,
+    "delivered_flit_count": 92128,
+    "delivery_flit_count_by_class": {
+      "reduction": 31200,
+      "shared": 60928
+    },
+    "drain_minus_compute_layer_time_ns": -24507.397600000026,
+    "drain_time_ns": 397004.0,
+    "drain_within_source_compute_layer_envelope": true,
+    "endpoint_injected_flit_count": 92128,
+    "endpoint_input_stall_cycles_by_endpoint": {
+      "0": 33350,
+      "1": 33428,
+      "10": 15401,
+      "11": 10108,
+      "12": 11704,
+      "13": 11248,
+      "14": 6580,
+      "2": 29479,
+      "3": 24165,
+      "4": 29936,
+      "5": 29751,
+      "6": 25526,
+      "7": 18932,
+      "8": 20544,
+      "9": 20088
+    },
+    "endpoint_input_stall_cycles_total": 320240,
+    "last_delivery_cycle_by_class": {
+      "reduction": 397003,
+      "shared": 350366
+    },
+    "max_router_input_occupancy": 15,
+    "remote_reduction_average_hops_observed": 3.2,
+    "remote_reduction_worst_hops_observed": 6,
+    "remote_shared_average_hops_observed": 3.0,
+    "remote_shared_worst_hops_observed": 6,
+    "router_contention_cycles": 36762,
+    "scheduled_flit_count": 92128,
+    "scheduled_packet_count": 11576,
+    "top_link_flit_counts": [
+      {
+        "destination": 15,
+        "destination_label": "15(3,3)",
+        "flits": 28224,
+        "source": 11,
+        "source_label": "11(3,2)"
+      },
+      {
+        "destination": 11,
+        "destination_label": "11(3,2)",
+        "flits": 20992,
+        "source": 7,
+        "source_label": "7(3,1)"
+      },
+      {
+        "destination": 7,
+        "destination_label": "7(3,1)",
+        "flits": 11584,
+        "source": 3,
+        "source_label": "3(3,0)"
+      },
+      {
+        "destination": 3,
+        "destination_label": "3(3,0)",
+        "flits": 9504,
+        "source": 2,
+        "source_label": "2(2,0)"
+      },
+      {
+        "destination": 7,
+        "destination_label": "7(3,1)",
+        "flits": 9504,
+        "source": 6,
+        "source_label": "6(2,1)"
+      },
+      {
+        "destination": 11,
+        "destination_label": "11(3,2)",
+        "flits": 9504,
+        "source": 10,
+        "source_label": "10(2,2)"
+      },
+      {
+        "destination": 15,
+        "destination_label": "15(3,3)",
+        "flits": 9504,
+        "source": 14,
+        "source_label": "14(2,3)"
+      },
+      {
+        "destination": 2,
+        "destination_label": "2(2,0)",
+        "flits": 8512,
+        "source": 1,
+        "source_label": "1(1,0)"
+      },
+      {
+        "destination": 6,
+        "destination_label": "6(2,1)",
+        "flits": 8512,
+        "source": 5,
+        "source_label": "5(1,1)"
+      },
+      {
+        "destination": 10,
+        "destination_label": "10(2,2)",
+        "flits": 8512,
+        "source": 9,
+        "source_label": "9(1,2)"
+      },
+      {
+        "destination": 14,
+        "destination_label": "14(2,3)",
+        "flits": 8512,
+        "source": 13,
+        "source_label": "13(1,3)"
+      },
+      {
+        "destination": 5,
+        "destination_label": "5(1,1)",
+        "flits": 5440,
+        "source": 9,
+        "source_label": "9(1,2)"
+      }
+    ]
+  },
+  "source_artifacts": {
+    "measured_l1_costs_json": "runs/campaigns/npu/l1_measured_costs/llama7b_attention_local_costs_all_measured_endpoint_v1.json",
+    "measured_l1_profile": "hd64_kv8_full_value_p8_ppc2_noc128_softmax_int8_q10",
+    "score32_recost_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_reduction_recost__l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1.json"
+  },
+  "source_contract": {
+    "active_clusters": 16,
+    "attention_heads": 32,
+    "cluster_count": 16,
+    "compute_clock_ns": 48.6509,
+    "compute_layer_cycles": 8664,
+    "compute_layer_time_ns": 421511.3976,
+    "coverage": "workload_complete",
+    "declared_cross_tile_reduction_cycles": 574,
+    "declared_noc_hops": 6,
+    "declared_tile_waves": 8,
+    "hidden_size": 4096,
+    "kv_bits": 8,
+    "kv_heads": 4,
+    "noc_clock_ns": 1.0,
+    "reduction_strategy": "cluster_tree",
+    "scheduler_policy": "locality_aware",
+    "sequence_length": 131072,
+    "shared_byte_share": 0.016601562,
+    "simulated_wave_count": 8,
+    "tile_tokens": 1024,
+    "topology": "mesh2d"
+  },
+  "tag_semantics": {
+    "assignment_scope": "per (source, destination, vc) ordered packet stream",
+    "collision_free_reuse_invariant": "Concrete low_tag = tuple packet sequence index mod 256. For every reused (source, destination, vc, low_tag), the next packet's first injection cycle is strictly greater than the prior packet's last delivery cycle; same-cycle reuse is treated as ambiguous and rejected.",
+    "collision_free_reuse_proven": true,
+    "concrete_wire_tags_simulated": true,
+    "max_packets_per_tuple": 264,
+    "max_packets_tuple": {
+      "destination": 15,
+      "source": 0,
+      "vc": 1
+    },
+    "ordered_tuple_stream_max_packet_flits": 8,
+    "ordered_tuple_stream_proven": true,
+    "ordered_tuple_stream_summary": [
+      {
+        "destination": 3,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 0,
+        "vc": 0
+      },
+      {
+        "destination": 6,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 0,
+        "vc": 0
+      },
+      {
+        "destination": 7,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 0,
+        "vc": 0
+      },
+      {
+        "destination": 9,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 0,
+        "vc": 0
+      },
+      {
+        "destination": 10,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 0,
+        "vc": 0
+      },
+      {
+        "destination": 12,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 0,
+        "vc": 0
+      },
+      {
+        "destination": 13,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 0,
+        "vc": 0
+      },
+      {
+        "destination": 15,
+        "max_packet_flits": 8,
+        "min_packet_flits": 4,
+        "packet_count": 264,
+        "source": 0,
+        "vc": 1
+      },
+      {
+        "destination": 4,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 1,
+        "vc": 0
+      },
+      {
+        "destination": 7,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 1,
+        "vc": 0
+      },
+      {
+        "destination": 8,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 1,
+        "vc": 0
+      },
+      {
+        "destination": 10,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 1,
+        "vc": 0
+      },
+      {
+        "destination": 11,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 1,
+        "vc": 0
+      },
+      {
+        "destination": 13,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 1,
+        "vc": 0
+      },
+      {
+        "destination": 14,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 1,
+        "vc": 0
+      },
+      {
+        "destination": 15,
+        "max_packet_flits": 8,
+        "min_packet_flits": 4,
+        "packet_count": 264,
+        "source": 1,
+        "vc": 1
+      },
+      {
+        "destination": 5,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 2,
+        "vc": 0
+      },
+      {
+        "destination": 8,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 2,
+        "vc": 0
+      },
+      {
+        "destination": 9,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 2,
+        "vc": 0
+      },
+      {
+        "destination": 11,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 2,
+        "vc": 0
+      },
+      {
+        "destination": 12,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 2,
+        "vc": 0
+      },
+      {
+        "destination": 14,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 2,
+        "vc": 0
+      },
+      {
+        "destination": 15,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 2,
+        "vc": 0
+      },
+      {
+        "destination": 15,
+        "max_packet_flits": 8,
+        "min_packet_flits": 4,
+        "packet_count": 264,
+        "source": 2,
+        "vc": 1
+      },
+      {
+        "destination": 0,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 3,
+        "vc": 0
+      },
+      {
+        "destination": 6,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 3,
+        "vc": 0
+      },
+      {
+        "destination": 9,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 3,
+        "vc": 0
+      },
+      {
+        "destination": 10,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 3,
+        "vc": 0
+      },
+      {
+        "destination": 12,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 3,
+        "vc": 0
+      },
+      {
+        "destination": 13,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 3,
+        "vc": 0
+      },
+      {
+        "destination": 15,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 3,
+        "vc": 0
+      },
+      {
+        "destination": 15,
+        "max_packet_flits": 8,
+        "min_packet_flits": 4,
+        "packet_count": 264,
+        "source": 3,
+        "vc": 1
+      },
+      {
+        "destination": 0,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 4,
+        "vc": 0
+      },
+      {
+        "destination": 1,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 4,
+        "vc": 0
+      },
+      {
+        "destination": 7,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 4,
+        "vc": 0
+      },
+      {
+        "destination": 10,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 4,
+        "vc": 0
+      },
+      {
+        "destination": 11,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 4,
+        "vc": 0
+      },
+      {
+        "destination": 13,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 4,
+        "vc": 0
+      },
+      {
+        "destination": 14,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 4,
+        "vc": 0
+      },
+      {
+        "destination": 15,
+        "max_packet_flits": 8,
+        "min_packet_flits": 4,
+        "packet_count": 264,
+        "source": 4,
+        "vc": 1
+      },
+      {
+        "destination": 1,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 5,
+        "vc": 0
+      },
+      {
+        "destination": 2,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 5,
+        "vc": 0
+      },
+      {
+        "destination": 8,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 5,
+        "vc": 0
+      },
+      {
+        "destination": 11,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 5,
+        "vc": 0
+      },
+      {
+        "destination": 12,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 5,
+        "vc": 0
+      },
+      {
+        "destination": 14,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 5,
+        "vc": 0
+      },
+      {
+        "destination": 15,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 5,
+        "vc": 0
+      },
+      {
+        "destination": 15,
+        "max_packet_flits": 8,
+        "min_packet_flits": 4,
+        "packet_count": 264,
+        "source": 5,
+        "vc": 1
+      },
+      {
+        "destination": 0,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 6,
+        "vc": 0
+      },
+      {
+        "destination": 2,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 6,
+        "vc": 0
+      },
+      {
+        "destination": 3,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 6,
+        "vc": 0
+      },
+      {
+        "destination": 9,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 6,
+        "vc": 0
+      },
+      {
+        "destination": 12,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 6,
+        "vc": 0
+      },
+      {
+        "destination": 13,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 6,
+        "vc": 0
+      },
+      {
+        "destination": 15,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 6,
+        "vc": 0
+      },
+      {
+        "destination": 15,
+        "max_packet_flits": 8,
+        "min_packet_flits": 4,
+        "packet_count": 264,
+        "source": 6,
+        "vc": 1
+      },
+      {
+        "destination": 0,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 7,
+        "vc": 0
+      },
+      {
+        "destination": 1,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 7,
+        "vc": 0
+      },
+      {
+        "destination": 3,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 7,
+        "vc": 0
+      },
+      {
+        "destination": 4,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 7,
+        "vc": 0
+      },
+      {
+        "destination": 10,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 7,
+        "vc": 0
+      },
+      {
+        "destination": 13,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 7,
+        "vc": 0
+      },
+      {
+        "destination": 14,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 7,
+        "vc": 0
+      },
+      {
+        "destination": 15,
+        "max_packet_flits": 8,
+        "min_packet_flits": 4,
+        "packet_count": 264,
+        "source": 7,
+        "vc": 1
+      },
+      {
+        "destination": 1,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 8,
+        "vc": 0
+      },
+      {
+        "destination": 2,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 8,
+        "vc": 0
+      },
+      {
+        "destination": 4,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 8,
+        "vc": 0
+      },
+      {
+        "destination": 5,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 8,
+        "vc": 0
+      },
+      {
+        "destination": 11,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 8,
+        "vc": 0
+      },
+      {
+        "destination": 14,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 8,
+        "vc": 0
+      },
+      {
+        "destination": 15,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 8,
+        "vc": 0
+      },
+      {
+        "destination": 15,
+        "max_packet_flits": 8,
+        "min_packet_flits": 4,
+        "packet_count": 264,
+        "source": 8,
+        "vc": 1
+      },
+      {
+        "destination": 0,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 9,
+        "vc": 0
+      },
+      {
+        "destination": 2,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 9,
+        "vc": 0
+      },
+      {
+        "destination": 3,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 9,
+        "vc": 0
+      },
+      {
+        "destination": 5,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 9,
+        "vc": 0
+      },
+      {
+        "destination": 6,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 9,
+        "vc": 0
+      },
+      {
+        "destination": 12,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 9,
+        "vc": 0
+      },
+      {
+        "destination": 15,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 9,
+        "vc": 0
+      },
+      {
+        "destination": 15,
+        "max_packet_flits": 8,
+        "min_packet_flits": 4,
+        "packet_count": 264,
+        "source": 9,
+        "vc": 1
+      },
+      {
+        "destination": 0,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 10,
+        "vc": 0
+      },
+      {
+        "destination": 1,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 10,
+        "vc": 0
+      },
+      {
+        "destination": 3,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 10,
+        "vc": 0
+      },
+      {
+        "destination": 4,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 10,
+        "vc": 0
+      },
+      {
+        "destination": 6,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 10,
+        "vc": 0
+      },
+      {
+        "destination": 7,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 10,
+        "vc": 0
+      },
+      {
+        "destination": 13,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 10,
+        "vc": 0
+      },
+      {
+        "destination": 15,
+        "max_packet_flits": 8,
+        "min_packet_flits": 4,
+        "packet_count": 264,
+        "source": 10,
+        "vc": 1
+      },
+      {
+        "destination": 1,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 11,
+        "vc": 0
+      },
+      {
+        "destination": 2,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 11,
+        "vc": 0
+      },
+      {
+        "destination": 4,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 11,
+        "vc": 0
+      },
+      {
+        "destination": 5,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 11,
+        "vc": 0
+      },
+      {
+        "destination": 7,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 11,
+        "vc": 0
+      },
+      {
+        "destination": 8,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 11,
+        "vc": 0
+      },
+      {
+        "destination": 14,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 11,
+        "vc": 0
+      },
+      {
+        "destination": 15,
+        "max_packet_flits": 8,
+        "min_packet_flits": 4,
+        "packet_count": 264,
+        "source": 11,
+        "vc": 1
+      },
+      {
+        "destination": 2,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 12,
+        "vc": 0
+      },
+      {
+        "destination": 3,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 12,
+        "vc": 0
+      },
+      {
+        "destination": 5,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 12,
+        "vc": 0
+      },
+      {
+        "destination": 6,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 12,
+        "vc": 0
+      },
+      {
+        "destination": 8,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 12,
+        "vc": 0
+      },
+      {
+        "destination": 9,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 12,
+        "vc": 0
+      },
+      {
+        "destination": 15,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 12,
+        "vc": 0
+      },
+      {
+        "destination": 15,
+        "max_packet_flits": 8,
+        "min_packet_flits": 4,
+        "packet_count": 264,
+        "source": 12,
+        "vc": 1
+      },
+      {
+        "destination": 0,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 13,
+        "vc": 0
+      },
+      {
+        "destination": 3,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 13,
+        "vc": 0
+      },
+      {
+        "destination": 4,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 13,
+        "vc": 0
+      },
+      {
+        "destination": 6,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 13,
+        "vc": 0
+      },
+      {
+        "destination": 7,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 13,
+        "vc": 0
+      },
+      {
+        "destination": 9,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 13,
+        "vc": 0
+      },
+      {
+        "destination": 10,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 13,
+        "vc": 0
+      },
+      {
+        "destination": 15,
+        "max_packet_flits": 8,
+        "min_packet_flits": 4,
+        "packet_count": 264,
+        "source": 13,
+        "vc": 1
+      },
+      {
+        "destination": 1,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 14,
+        "vc": 0
+      },
+      {
+        "destination": 4,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 14,
+        "vc": 0
+      },
+      {
+        "destination": 5,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 14,
+        "vc": 0
+      },
+      {
+        "destination": 7,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 14,
+        "vc": 0
+      },
+      {
+        "destination": 8,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 14,
+        "vc": 0
+      },
+      {
+        "destination": 10,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 14,
+        "vc": 0
+      },
+      {
+        "destination": 11,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 14,
+        "vc": 0
+      },
+      {
+        "destination": 15,
+        "max_packet_flits": 8,
+        "min_packet_flits": 4,
+        "packet_count": 264,
+        "source": 14,
+        "vc": 1
+      },
+      {
+        "destination": 2,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 15,
+        "vc": 0
+      },
+      {
+        "destination": 5,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 15,
+        "vc": 0
+      },
+      {
+        "destination": 6,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 15,
+        "vc": 0
+      },
+      {
+        "destination": 8,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 15,
+        "vc": 0
+      },
+      {
+        "destination": 9,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 15,
+        "vc": 0
+      },
+      {
+        "destination": 11,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 15,
+        "vc": 0
+      },
+      {
+        "destination": 12,
+        "max_packet_flits": 8,
+        "min_packet_flits": 8,
+        "packet_count": 68,
+        "source": 15,
+        "vc": 0
+      }
+    ],
+    "packet_identity_modeled_by_simulator": "source, destination, vc, concrete 8-bit wire tag, schedule order, label, packet-local fragment index, and last bit; schedule order is explicit and cannot be perturbed by modulo-256 tag reuse.",
+    "schedule_order_is_independent_of_wire_tag": true,
+    "tag_width_bits": 8,
+    "tuple_summaries": [
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 3,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 0,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 6,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 0,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 7,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 0,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 9,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 0,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 10,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 0,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 12,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 0,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 13,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 0,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 15,
+        "min_nonoverlap_gap_cycles": 336522,
+        "overlap_checked_count": 8,
+        "packet_count": 264,
+        "source": 0,
+        "tag_reuse_count": 8,
+        "unique_tags_used": 256,
+        "vc": 1
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 4,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 1,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 7,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 1,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 8,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 1,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 10,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 1,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 11,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 1,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 13,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 1,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 14,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 1,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 15,
+        "min_nonoverlap_gap_cycles": 336560,
+        "overlap_checked_count": 8,
+        "packet_count": 264,
+        "source": 1,
+        "tag_reuse_count": 8,
+        "unique_tags_used": 256,
+        "vc": 1
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 5,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 2,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 8,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 2,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 9,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 2,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 11,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 2,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 12,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 2,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 14,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 2,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 15,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 2,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 15,
+        "min_nonoverlap_gap_cycles": 336813,
+        "overlap_checked_count": 8,
+        "packet_count": 264,
+        "source": 2,
+        "tag_reuse_count": 8,
+        "unique_tags_used": 256,
+        "vc": 1
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 0,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 3,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 6,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 3,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 9,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 3,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 10,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 3,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 12,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 3,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 13,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 3,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 15,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 3,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 15,
+        "min_nonoverlap_gap_cycles": 337064,
+        "overlap_checked_count": 8,
+        "packet_count": 264,
+        "source": 3,
+        "tag_reuse_count": 8,
+        "unique_tags_used": 256,
+        "vc": 1
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 0,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 4,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 1,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 4,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 7,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 4,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 10,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 4,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 11,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 4,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 13,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 4,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 14,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 4,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 15,
+        "min_nonoverlap_gap_cycles": 336763,
+        "overlap_checked_count": 8,
+        "packet_count": 264,
+        "source": 4,
+        "tag_reuse_count": 8,
+        "unique_tags_used": 256,
+        "vc": 1
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 1,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 5,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 2,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 5,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 8,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 5,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 11,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 5,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 12,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 5,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 14,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 5,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 15,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 5,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 15,
+        "min_nonoverlap_gap_cycles": 336812,
+        "overlap_checked_count": 8,
+        "packet_count": 264,
+        "source": 5,
+        "tag_reuse_count": 8,
+        "unique_tags_used": 256,
+        "vc": 1
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 0,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 6,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 2,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 6,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 3,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 6,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 9,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 6,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 12,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 6,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 13,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 6,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 15,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 6,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 15,
+        "min_nonoverlap_gap_cycles": 337063,
+        "overlap_checked_count": 8,
+        "packet_count": 264,
+        "source": 6,
+        "tag_reuse_count": 8,
+        "unique_tags_used": 256,
+        "vc": 1
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 0,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 7,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 1,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 7,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 3,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 7,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 4,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 7,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 10,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 7,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 13,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 7,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 14,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 7,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 15,
+        "min_nonoverlap_gap_cycles": 337198,
+        "overlap_checked_count": 8,
+        "packet_count": 264,
+        "source": 7,
+        "tag_reuse_count": 8,
+        "unique_tags_used": 256,
+        "vc": 1
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 1,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 8,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 2,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 8,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 4,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 8,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 5,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 8,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 11,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 8,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 14,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 8,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 15,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 8,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 15,
+        "min_nonoverlap_gap_cycles": 336767,
+        "overlap_checked_count": 8,
+        "packet_count": 264,
+        "source": 8,
+        "tag_reuse_count": 8,
+        "unique_tags_used": 256,
+        "vc": 1
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 0,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 9,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 2,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 9,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 3,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 9,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 5,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 9,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 6,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 9,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 12,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 9,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 15,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 9,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 15,
+        "min_nonoverlap_gap_cycles": 336816,
+        "overlap_checked_count": 8,
+        "packet_count": 264,
+        "source": 9,
+        "tag_reuse_count": 8,
+        "unique_tags_used": 256,
+        "vc": 1
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 0,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 10,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 1,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 10,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 3,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 10,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 4,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 10,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 6,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 10,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 7,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 10,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 13,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 10,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 15,
+        "min_nonoverlap_gap_cycles": 337067,
+        "overlap_checked_count": 8,
+        "packet_count": 264,
+        "source": 10,
+        "tag_reuse_count": 8,
+        "unique_tags_used": 256,
+        "vc": 1
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 1,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 11,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 2,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 11,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 4,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 11,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 5,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 11,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 7,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 11,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 8,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 11,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 14,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 11,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 15,
+        "min_nonoverlap_gap_cycles": 336915,
+        "overlap_checked_count": 8,
+        "packet_count": 264,
+        "source": 11,
+        "tag_reuse_count": 8,
+        "unique_tags_used": 256,
+        "vc": 1
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 2,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 12,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 3,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 12,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 5,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 12,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 6,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 12,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 8,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 12,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 9,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 12,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 15,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 12,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 15,
+        "min_nonoverlap_gap_cycles": 336767,
+        "overlap_checked_count": 8,
+        "packet_count": 264,
+        "source": 12,
+        "tag_reuse_count": 8,
+        "unique_tags_used": 256,
+        "vc": 1
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 0,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 13,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 3,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 13,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 4,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 13,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 6,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 13,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 7,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 13,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 9,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 13,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 10,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 13,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 15,
+        "min_nonoverlap_gap_cycles": 336792,
+        "overlap_checked_count": 8,
+        "packet_count": 264,
+        "source": 13,
+        "tag_reuse_count": 8,
+        "unique_tags_used": 256,
+        "vc": 1
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 1,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 14,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 4,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 14,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 5,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 14,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 7,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 14,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 8,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 14,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 10,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 14,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 11,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 14,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 15,
+        "min_nonoverlap_gap_cycles": 336535,
+        "overlap_checked_count": 8,
+        "packet_count": 264,
+        "source": 14,
+        "tag_reuse_count": 8,
+        "unique_tags_used": 256,
+        "vc": 1
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 2,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 15,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 5,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 15,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 6,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 15,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 8,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 15,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 9,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 15,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 11,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 15,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      },
+      {
+        "concrete_tag_policy": "packet_sequence_index mod 256",
+        "destination": 12,
+        "min_nonoverlap_gap_cycles": null,
+        "overlap_checked_count": 0,
+        "packet_count": 68,
+        "source": 15,
+        "tag_reuse_count": 0,
+        "unique_tags_used": 68,
+        "vc": 0
+      }
+    ]
+  },
+  "traffic_quantities": {
+    "cross_tile_reduction_payload_bytes_declared": 133120,
+    "full_tile_bytes": 1048576,
+    "local_tile_payload_bytes": 1031168,
+    "partial_reduction_payload_bytes": 8320,
+    "shared_tile_payload_bytes": 17408,
+    "simulated_tiles": 128,
+    "tile_count": 128
+  },
+  "version": 2
+}
