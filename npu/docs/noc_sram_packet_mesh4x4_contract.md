@@ -44,3 +44,12 @@ the complete sixteen-endpoint/sixteen-router hierarchy.
 
 This is functional composition evidence. Aggregate physical placement and
 workload-matched switching activity remain separate gates.
+
+The workload replay extension uses compact runtime descriptor memories to
+exercise the same hierarchy without embedding a packet list in generated RTL.
+Its paired scheduler installs each receive context before transmit release,
+serves one-cycle in-order source SRAM responses, verifies every destination
+write and completion, and compares drain/congestion counters with
+`npu.sim.perf.noc_sram_packet_mesh`. A local eight-source contention gate proves
+exact counters with full RX-context occupancy; the workload-complete Llama7B
+replay remains a bounded remote evaluation gate.

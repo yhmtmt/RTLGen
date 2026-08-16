@@ -53,6 +53,7 @@ jobs:
             libgtest-dev \
             ca-certificates \
             wget
+          python3 -m pip install pytest
 
       - name: Install OR-Tools C++ runtime
         run: |
@@ -94,6 +95,13 @@ jobs:
 
       - name: Run mapper split regression tests
         run: python3 tests/test_mapper_split.py
+
+      - name: Run endpoint mesh equivalence tests
+        run: |
+          python3 -m pytest -q \
+            tests/test_noc_sram_packet_mesh_perf.py \
+            tests/test_llm_decoder_attention_score32_noc_phase2_endpoint_rtl.py \
+            tests/test_llm_decoder_attention_score32_noc_phase2_schedule.py
 
       - name: Run NPU golden simulation
         run: bash npu/sim/run_golden.sh
