@@ -5,20 +5,22 @@
   "layer": "layer2",
   "kind": "architecture",
   "title": "Rerank the Llama7B frontier after finite endpoint and composed NoC closure",
-  "hypothesis": "Replacing the score32 row with finite endpoint timing and aggregate physical accounting will expose a multidimensional Pareto frontier rather than a defensible single scalar winner.",
+  "hypothesis": "Replacing the score32 row with finite endpoint timing and aggregate physical accounting, while checking structural model identity, will expose whether any point is actually promotable for exact Llama-2-7B rather than only a GQA8 proxy.",
   "direct_comparison": {
     "primary_question": "Which quality-backed Llama7B architecture is best in throughput, area envelope, energy, and arithmetic precision after the score32 communication recost?",
     "include": [
       "finite endpoint and aggregate endpoint/mesh score32 recost",
       "bounded generation-quality evidence",
       "measured exact-FP16 energy reference",
+      "direct Mistral-7B GQA4 versus hardware GQA8 structural-contract check",
       "separate per-dimension winners and Pareto dominance"
     ],
     "exclude": [
       "quality-invalid mixed-int8 rows from promotion",
       "planning-only abstract throughput rows from promotion",
       "scalar weighting across throughput, energy, area, and precision",
-      "claims of workload-complete NoC/SRAM energy"
+      "claims of workload-complete NoC/SRAM energy",
+      "treating arithmetic quality on one GQA structure as proof for another"
     ]
   },
   "required_evaluations": [

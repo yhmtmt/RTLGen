@@ -14972,6 +14972,7 @@ def test_generate_l2_campaign_task_adds_finite_endpoint_final_frontier() -> None
             assert "audit_llm_decoder_attention_score32_finite_endpoint_final_frontier.py" in run
             assert "--finite-recost-json" in run
             assert "--quality-frontier-json" in run
+            assert "--generation-quality-json" in run
             assert "--runtime-max-sec 300" in run
             assert work_item.input_manifest["worker_resources"]["exclusive_worker"] is False
             assert work_item.expected_outputs[0].endswith(
