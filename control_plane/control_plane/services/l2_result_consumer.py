@@ -607,6 +607,10 @@ _DECODER_EVIDENCE_OUTPUT_KEYS: tuple[tuple[str, str], ...] = (
         "attention_score32_finite_endpoint_final_frontier_report",
     ),
     (
+        "attention_score32_global_hbm_exact_mha_recost_out",
+        "attention_score32_global_hbm_exact_mha_recost_report",
+    ),
+    (
         "attention_score32_folded_global_exact_reduction_recost_out",
         "attention_score32_folded_global_exact_reduction_recost_report",
     ),
@@ -841,6 +845,10 @@ def _decoder_quality_brief(evidence_payload: dict[str, Any]) -> dict[str, Any]:
         "conditional_recommendation",
         "pareto_frontier",
         "engineering_pareto_frontier",
+        "global_controller_correction",
+        "exact_mha_delta_vs_corrected_gqa8",
+        "invariants",
+        "rows",
         "excluded_nonpromotable_history",
         "comparison_limits",
         "next_measurements",
@@ -1071,6 +1079,30 @@ def _decoder_recommendation_override(
 
 def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, Any]) -> tuple[str, str]:
     model = str(evidence_payload.get("model", "")).strip()
+    if model == "llm_decoder_attention_score32_global_hbm_exact_llama2_mha_recost_v1":
+        outcome = str(
+            evidence_payload.get("decision")
+            or "exact_llama2_mha_recost_recorded_native_quality_required"
+        )
+        correction = dict(evidence_payload.get("global_controller_correction") or {})
+        rows = list(evidence_payload.get("rows") or [])
+        by_id = {
+            str(row.get("candidate_id")): row
+            for row in rows
+            if isinstance(row, dict) and row.get("candidate_id")
+        }
+        gqa8 = dict(by_id.get("score32_gqa8_global_hbm_finite_endpoint") or {})
+        mha = dict(by_id.get("score32_exact_llama2_7b_mha_global_hbm_finite_endpoint") or {})
+        parts = [
+            f"Global-HBM exact Llama-2-7B MHA recost recorded from {evidence_ref}: decision={outcome}",
+            f"source_finite_token_s={correction.get('source_finite_token_throughput_per_s')}",
+            f"corrected_gqa8_token_s={dict(gqa8.get('throughput') or {}).get('token_throughput_per_s')}",
+            f"exact_mha_token_s={dict(mha.get('throughput') or {}).get('token_throughput_per_s')}",
+            f"exact_mha_hbm_mj_per_token={dict(mha.get('energy') or {}).get('hbm_energy_mj_per_token')}",
+            f"exact_mha_promotable={dict(mha.get('quality_contract') or {}).get('promotable')}",
+        ]
+        summary = "; ".join(parts)
+        return outcome, summary if summary.endswith(".") else summary + "."
     if model == "llama7b_score32_finite_endpoint_final_frontier_v1":
         outcome = str(
             evidence_payload.get("decision")

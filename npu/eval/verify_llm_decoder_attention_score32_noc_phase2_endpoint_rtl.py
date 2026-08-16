@@ -325,6 +325,7 @@ def run_performance_replay(
             for packet in packets
         ],
         max_cycles=max_cycles,
+        fast_forward_idle=True,
     )
     counters = {
         "packets": len(result.completions),

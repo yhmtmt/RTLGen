@@ -3,6 +3,8 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
+import pytest
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
@@ -134,3 +136,46 @@ def test_two_packet_composed_case_matches_endpoint_metadata() -> None:
     assert [write.address for write in result.destination_memory_writes if write.packet_index == 1] == [
         0x1200 + 32 * fragment for fragment in range(3)
     ]
+
+
+def test_idle_fast_forward_preserves_cycle_accurate_observables() -> None:
+    descriptors = [
+        PacketDescriptor(
+            source=0,
+            destination=15,
+            vc=1,
+            tag=0x21,
+            flit_count=4,
+            release_cycle=1000,
+            packet_id="late-a",
+        ),
+        PacketDescriptor(
+            source=3,
+            destination=12,
+            vc=2,
+            tag=0x22,
+            flit_count=3,
+            release_cycle=2000,
+            packet_id="late-b",
+        ),
+    ]
+
+    reference = simulate_packet_mesh(descriptors, max_cycles=5000)
+    accelerated = simulate_packet_mesh(descriptors, max_cycles=5000, fast_forward_idle=True)
+
+    assert accelerated == reference
+
+
+def test_idle_fast_forward_respects_max_cycle_bound() -> None:
+    descriptor = PacketDescriptor(
+        source=0,
+        destination=15,
+        vc=1,
+        tag=0x23,
+        flit_count=1,
+        release_cycle=1000,
+        packet_id="after-timeout",
+    )
+
+    with pytest.raises(RuntimeError, match="max_cycles=999"):
+        simulate_packet_mesh([descriptor], max_cycles=999, fast_forward_idle=True)
