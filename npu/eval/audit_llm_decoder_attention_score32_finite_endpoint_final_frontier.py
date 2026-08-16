@@ -168,12 +168,40 @@ def _fp16_row(source: JsonDict) -> JsonDict:
     }
 
 
-def _pareto_rows(score32: JsonDict, fp16: JsonDict) -> list[JsonDict]:
-    # Each candidate wins at least one strict dimension, so neither dominates the other.
-    return [
-        {**score32, "pareto_reason": "higher throughput and smaller die envelope"},
-        {**fp16, "pareto_reason": "lower energy and higher arithmetic precision"},
-    ]
+def _precision_level(row: JsonDict) -> int:
+    return 2 if row.get("family") == _FP16_FAMILY else 1
+
+
+def _winner(rows: list[JsonDict], key: str, *, maximize: bool) -> str | list[str]:
+    values = [float(row[key]) for row in rows]
+    target = max(values) if maximize else min(values)
+    winners = [str(row["candidate_id"]) for row, value in zip(rows, values) if value == target]
+    return winners[0] if len(winners) == 1 else winners
+
+
+def _dominates(left: JsonDict, right: JsonDict) -> bool:
+    comparisons = (
+        float(left["token_throughput_per_s"]) >= float(right["token_throughput_per_s"]),
+        float(left["die_envelope_mm2"]) <= float(right["die_envelope_mm2"]),
+        float(left["energy_mj_per_token"]) <= float(right["energy_mj_per_token"]),
+        _precision_level(left) >= _precision_level(right),
+    )
+    strict = (
+        float(left["token_throughput_per_s"]) > float(right["token_throughput_per_s"]),
+        float(left["die_envelope_mm2"]) < float(right["die_envelope_mm2"]),
+        float(left["energy_mj_per_token"]) < float(right["energy_mj_per_token"]),
+        _precision_level(left) > _precision_level(right),
+    )
+    return all(comparisons) and any(strict)
+
+
+def _pareto_rows(rows: list[JsonDict]) -> list[JsonDict]:
+    result: list[JsonDict] = []
+    for row in rows:
+        dominators = [other["candidate_id"] for other in rows if other is not row and _dominates(other, row)]
+        if not dominators:
+            result.append({**row, "pareto_reason": "not dominated across all four objectives"})
+    return result
 
 
 def build_report(*, finite_recost: JsonDict, quality_frontier: JsonDict) -> JsonDict:
@@ -181,6 +209,14 @@ def build_report(*, finite_recost: JsonDict, quality_frontier: JsonDict) -> Json
     prior_score32, prior_fp16, all_prior_rows = _frontier_rows(quality_frontier)
     score32 = _score32_row(recost, prior_score32)
     fp16 = _fp16_row(prior_fp16)
+    candidates = [score32, fp16]
+    pareto = _pareto_rows(candidates)
+    dimension_winners = {
+        "token_throughput": _winner(candidates, "token_throughput_per_s", maximize=True),
+        "die_envelope_area": _winner(candidates, "die_envelope_mm2", maximize=False),
+        "energy_per_token": _winner(candidates, "energy_mj_per_token", maximize=False),
+        "arithmetic_precision": fp16["candidate_id"],
+    }
     excluded = [
         {
             "candidate_id": row.get("candidate_id"),
@@ -193,7 +229,11 @@ def build_report(*, finite_recost: JsonDict, quality_frontier: JsonDict) -> Json
     return {
         "version": 1,
         "model": "llama7b_score32_finite_endpoint_final_frontier_v1",
-        "decision": "two_nondominated_precision_safe_points_no_universal_scalar_winner",
+        "decision": (
+            "two_nondominated_precision_safe_points_no_universal_scalar_winner"
+            if len(pareto) == 2
+            else "single_dominant_precision_safe_point"
+        ),
         "source_items": {
             "finite_endpoint_composed_recost": (
                 "l2_decoder_attention_score32_noc_phase2_finite_endpoint_composed_recost_llama7b_v1"
@@ -203,19 +243,19 @@ def build_report(*, finite_recost: JsonDict, quality_frontier: JsonDict) -> Json
                 "rtl_ppa_recost_frontier_llama7b_v1"
             ),
         },
-        "dimension_winners": {
-            "token_throughput": score32["candidate_id"],
-            "die_envelope_area": score32["candidate_id"],
-            "energy_per_token": fp16["candidate_id"],
-            "arithmetic_precision": fp16["candidate_id"],
-        },
+        "dimension_winners": dimension_winners,
         "conditional_recommendation": {
             "throughput_under_800mm2_with_bounded_generation_quality": score32["candidate_id"],
-            "energy_and_precision_first": fp16["candidate_id"],
-            "unconditional_best": None,
-            "reason": "The two quality-backed points trade throughput and die envelope against energy and precision.",
+            "energy_first": dimension_winners["energy_per_token"],
+            "precision_first": dimension_winners["arithmetic_precision"],
+            "unconditional_best": pareto[0]["candidate_id"] if len(pareto) == 1 else None,
+            "reason": (
+                "One point dominates every measured objective."
+                if len(pareto) == 1
+                else "The two quality-backed points trade measured objectives."
+            ),
         },
-        "pareto_frontier": _pareto_rows(score32, fp16),
+        "pareto_frontier": pareto,
         "excluded_nonpromotable_history": excluded,
         "comparison_limits": [
             "Score32 has total embodied area; the FP16 reference currently exposes only its die envelope and compute area.",

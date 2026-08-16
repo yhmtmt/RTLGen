@@ -118,3 +118,13 @@ def test_final_frontier_rejects_quality_regression() -> None:
 
     with pytest.raises(ValueError, match="quality evidence is not passing"):
         build_report(finite_recost=copy.deepcopy(_recost()), quality_frontier=frontier)
+
+
+def test_dimension_winner_uses_measured_throughput_not_candidate_identity() -> None:
+    recost = _recost()
+    recost["throughput"]["token_throughput_per_s"] = 10.0
+    recost["throughput"]["token_latency_us"] = 100000.0
+
+    result = build_report(finite_recost=recost, quality_frontier=_frontier())
+
+    assert result["dimension_winners"]["token_throughput"] == "fp16-reference"
