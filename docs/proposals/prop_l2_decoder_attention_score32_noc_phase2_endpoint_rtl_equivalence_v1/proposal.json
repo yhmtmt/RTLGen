@@ -1,0 +1,39 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_v1",
+  "created_utc": "2026-08-16T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "equivalence",
+  "title": "Workload-complete finite endpoint and mesh RTL equivalence",
+  "hypothesis": "Finite descriptor queues, SRAM handshakes, receive contexts, and paired scheduling can replay the complete score32 Phase-2 traffic with exact agreement between the performance model and composed RTL while quantifying the latency hidden by logical release queues.",
+  "direct_comparison": {
+    "primary_question": "What drain-time and congestion change appears when the complete Llama7B Phase-2 schedule is constrained by embodied endpoint control and checked against RTL?",
+    "include": [
+      "all eight waves and every canonical packet",
+      "paired RX-before-TX descriptor scheduling",
+      "finite TX descriptor and outstanding-read limits",
+      "finite RX contexts and completion retirement",
+      "one-cycle source SRAM responses and direct destination writes",
+      "all sixteen endpoints and deterministic-XY routers"
+    ],
+    "exclude": [
+      "SRAM bitcells and macro floorplanning",
+      "synthesized command-scheduler PPA",
+      "workload-derived switching power",
+      "HBM/DRAM controller implementation"
+    ]
+  },
+  "required_evaluations": [
+    {
+      "task_type": "l2_campaign",
+      "evaluation_mode": "frontier_detail",
+      "depends_on_item_ids": [],
+      "requires_merged_inputs": false,
+      "requires_materialized_refs": false
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_reduction_recost__l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1.json",
+    "npu/sim/rtl/noc_sram_packet_mesh4x4.sv"
+  ]
+}

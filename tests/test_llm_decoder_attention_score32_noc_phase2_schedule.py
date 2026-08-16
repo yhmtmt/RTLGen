@@ -80,12 +80,14 @@ def test_score32_noc_phase2_default_report_covers_full_declared_workload() -> No
 
 
 def test_score32_noc_phase2_explicit_wave_limit_is_bounded() -> None:
-    report = build_report(_args(wave_limit=1))
+    packet_specs = []
+    report = build_report(_args(wave_limit=1), packet_spec_output=packet_specs)
 
     assert report["source_contract"]["coverage"] == "bounded"
     assert report["source_contract"]["simulated_wave_count"] == 1
     assert report["traffic_quantities"]["simulated_tiles"] == report["source_contract"]["active_clusters"]
     assert report["schedule_parameters"]["requested_wave_limit"] == 1
+    assert len(packet_specs) == report["simulation"]["scheduled_packet_count"]
 
 
 def test_score32_noc_phase2_converts_absolute_release_times_between_clock_domains() -> None:

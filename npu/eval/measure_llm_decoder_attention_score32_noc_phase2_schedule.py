@@ -381,7 +381,11 @@ def _home_endpoint(cluster_endpoints: list[int], *, cluster_index: int, wave: in
     return cluster_endpoints[(cluster_index + offset + ((wave + 1) * stride)) % len(cluster_endpoints)]
 
 
-def build_report(args: argparse.Namespace) -> JsonDict:
+def build_report(
+    args: argparse.Namespace,
+    *,
+    packet_spec_output: list[PacketSpec] | None = None,
+) -> JsonDict:
     repo_root = args.repo_root.resolve()
     source_json = repo_root / args.source_json
     costs_json = repo_root / args.measured_l1_costs
@@ -551,6 +555,9 @@ def build_report(args: argparse.Namespace) -> JsonDict:
                     )
                     packet_specs.extend(new_specs)
                     packet_seed_counter += len(new_specs)
+
+    if packet_spec_output is not None:
+        packet_spec_output.extend(packet_specs)
 
     traffic_flows = _packetize_specs_with_concrete_tags(packet_specs)
     scheduled_flits = [scheduled for flow in traffic_flows for scheduled in packetize_traffic_flow(flow)]

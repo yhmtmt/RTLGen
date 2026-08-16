@@ -14818,6 +14818,60 @@ def test_generate_l2_campaign_task_adds_score32_noc_composed_mesh_reroute() -> N
             )
 
 
+def test_generate_l2_campaign_task_adds_score32_endpoint_rtl_equivalence() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                _make_l2_request(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id=(
+                        "l2_decoder_attention_score32_noc_phase2_"
+                        "endpoint_rtl_equivalence_llama7b_v1"
+                    ),
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    proposal_id=(
+                        "prop_l2_decoder_attention_score32_noc_phase2_"
+                        "endpoint_rtl_equivalence_v1"
+                    ),
+                    proposal_path=(
+                        "docs/proposals/prop_l2_decoder_attention_score32_noc_phase2_"
+                        "endpoint_rtl_equivalence_v1/proposal.json"
+                    ),
+                    abstraction_layer=(
+                        "decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence"
+                    ),
+                    evaluation_mode="frontier_detail",
+                    depends_on_item_ids=[],
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            run = work_item.command_manifest[0]["run"]
+            assert work_item.state == WorkItemState.DISPATCH_PENDING
+            assert "verify_llm_decoder_attention_score32_noc_phase2_endpoint_rtl.py" in run
+            assert "--runtime-max-sec 3600" in run
+            assert "--memory-high 4G" in run
+            assert "--memory-max 6G" in run
+            assert "--wall-timeout-seconds 2400" in run
+            assert work_item.input_manifest["worker_resources"]["exclusive_worker"] is True
+            assert work_item.input_manifest["worker_resources"]["stall_timeout_seconds"] == 1200
+            assert work_item.expected_outputs[0].endswith(
+                "decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence__"
+                "l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_llama7b_v1.json"
+            )
+
+
 def test_score32_noc_closure_rejects_inexact_dependencies() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
