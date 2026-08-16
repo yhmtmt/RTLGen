@@ -50,9 +50,13 @@
       },
       "paired_baseline_item_id": "",
       "depends_on_item_ids": [],
-      "status": "pending",
-      "supersedes_item_id": "l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1"
+      "status": "merged",
+      "supersedes_item_id": "l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1",
+      "merged_pr_number": 1670,
+      "merge_commit": "c5285382fc6e6da31f747aaa40a2fe610253c042",
+      "merged_utc": "2026-08-16T10:20:36.454891Z",
+      "notes": "Merged via PR #1670 and merge c5285382fc6e6da31f747aaa40a2fe610253c042 at 2026-08-16T10:20:36.454891Z."
     }
   ],
-  "source_commit": "3ee0279270524cad3ce6b381a051b897a5f39bea"
+  "source_commit": "b6cff4447a0f71a7e5c6e45a452f4475517c9e47"
 }

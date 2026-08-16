@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l2_decoder_attention_score32_noc_phase2_schedule_v1",
-  "decision": "pending",
-  "pr_number": null,
-  "merge_commit": "",
-  "merged_utc": ""
+  "decision": "iterate",
+  "pr_number": 1670,
+  "merge_commit": "c5285382fc6e6da31f747aaa40a2fe610253c042",
+  "merged_utc": "2026-08-16T10:20:36.454891Z"
 }
