@@ -5802,6 +5802,10 @@ def _decoder_attention_score32_finite_endpoint_final_frontier_evidence(
         "l2_decoder_attention_score32_quality_aware_hbm_controller_replay_"
         "rtl_ppa_recost_frontier_llama7b_v1.json"
     )
+    generation_quality = (
+        f"{base}/decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality__"
+        "l2_decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality_llama7b_v1.json"
+    )
     out = f"{base}/decoder_attention_score32_finite_endpoint_final_frontier__{item_id}.json"
     report = f"{base}/decoder_attention_score32_finite_endpoint_final_frontier__{item_id}.md"
     command = _bounded_launcher_command(
@@ -5819,6 +5823,8 @@ def _decoder_attention_score32_finite_endpoint_final_frontier_evidence(
             finite_recost,
             "--quality-frontier-json",
             quality_frontier,
+            "--generation-quality-json",
+            generation_quality,
             "--out",
             out,
             "--report",
@@ -5829,6 +5835,7 @@ def _decoder_attention_score32_finite_endpoint_final_frontier_evidence(
         "inputs": {
             "attention_score32_finite_endpoint_composed_recost": finite_recost,
             "attention_score32_quality_aware_frontier": quality_frontier,
+            "attention_score32_generation_quality": generation_quality,
             "attention_score32_finite_endpoint_final_frontier_out": out,
             "attention_score32_finite_endpoint_final_frontier_report": report,
         },
@@ -5846,7 +5853,8 @@ def _decoder_attention_score32_finite_endpoint_final_frontier_evidence(
         },
         "acceptance": [
             "Consume the exact merged finite-endpoint composed recost",
-            "Require passing score32 and exact-FP16 quality-backed rows",
+            "Distinguish arithmetic-quality evidence from structural GQA quality evidence",
+            "Reject Mistral-7B GQA4 evidence as structural proof for the GQA8 hardware point",
             "Exclude planning-only and quality-invalid rows from promotion",
             "Report throughput, die envelope, embodied area status, energy status, and precision separately",
             "Return a Pareto frontier and per-dimension winners without a scalar universal winner",

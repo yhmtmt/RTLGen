@@ -316,7 +316,7 @@ def test_decoder_evidence_summary_recognizes_finite_endpoint_final_frontier() ->
         evidence_ref="runs/datasets/demo/score32_finite_endpoint_final_frontier.json",
         evidence_payload={
             "model": "llama7b_score32_finite_endpoint_final_frontier_v1",
-            "decision": "two_nondominated_precision_safe_points_no_universal_scalar_winner",
+            "decision": "no_structurally_quality_backed_exact_llama7b_point",
             "dimension_winners": {
                 "token_throughput": "score32",
                 "die_envelope_area": "score32",
@@ -324,12 +324,16 @@ def test_decoder_evidence_summary_recognizes_finite_endpoint_final_frontier() ->
                 "arithmetic_precision": "fp16",
             },
             "conditional_recommendation": {"unconditional_best": None},
-            "pareto_frontier": [{"candidate_id": "score32"}, {"candidate_id": "fp16"}],
+            "pareto_frontier": [],
+            "engineering_pareto_frontier": [
+                {"candidate_id": "score32"},
+                {"candidate_id": "fp16"},
+            ],
         },
     )
 
-    assert outcome == "two_nondominated_precision_safe_points_no_universal_scalar_winner"
-    assert "pareto_count=2" in summary
+    assert outcome == "no_structurally_quality_backed_exact_llama7b_point"
+    assert "pareto_count=0" in summary
     assert "token_throughput_winner=score32" in summary
     assert "energy_per_token_winner=fp16" in summary
     assert "unconditional_best=None" in summary

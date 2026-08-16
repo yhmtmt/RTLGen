@@ -32,6 +32,16 @@ def _recost() -> dict:
             "semantic_profile": "score32_exp_lut_div",
             "arithmetic_changed_by_this_recost": False,
         },
+        "model_contract": {
+            "contract_scope": "llama7b_shaped_gqa8_proxy_not_exact_llama2_7b",
+            "hidden_size": 4096,
+            "layers": 32,
+            "attention_heads": 32,
+            "kv_heads": 4,
+            "gqa_group_size": 8,
+            "kv_sharing": "gqa8",
+            "sequence_length": 131072,
+        },
         "closure_flags": {
             "finite_endpoint_and_mesh_cycle_equivalence_consumed": True,
             "aggregate_endpoint_mesh_ppa_consumed": True,
@@ -86,6 +96,29 @@ def _frontier() -> dict:
     }
 
 
+def _generation_quality(*, gqa_group_size: int = 4) -> dict:
+    return {
+        "version": 1.0,
+        "quality_gate": "mixed_int8_generation_quality",
+        "model": {
+            "model_id": "mistralai/Mistral-7B-v0.1",
+            "gqa_group_size": float(gqa_group_size),
+            "generation_steps": 8,
+        },
+        "precision": {
+            "candidate_id": "score32_exp_lut_div",
+            "q_bits": 8,
+            "k_bits": 8,
+            "v_bits": 8,
+            "score_bits": 32,
+            "weight_bits": 16,
+            "softmax_mode": "exp_lut_div_bucket20",
+        },
+        "decision": {"status": "mixed_int8_generation_quality_pass"},
+        "summary": {"prompt_count": 8},
+    }
+
+
 def test_recost_validation_rejects_primitive_double_counting_flag() -> None:
     payload = _recost()
     payload["closure_flags"]["prior_primitive_area_power_replaced_not_added"] = False
@@ -94,17 +127,26 @@ def test_recost_validation_rejects_primitive_double_counting_flag() -> None:
         _validate_finite_recost(payload)
 
 
-def test_final_frontier_has_two_nondominated_quality_backed_points() -> None:
-    result = build_report(finite_recost=_recost(), quality_frontier=_frontier())
+def test_final_frontier_keeps_two_engineering_points_but_promotes_neither_structure() -> None:
+    result = build_report(
+        finite_recost=_recost(),
+        quality_frontier=_frontier(),
+        generation_quality=_generation_quality(),
+    )
 
-    assert result["decision"] == "two_nondominated_precision_safe_points_no_universal_scalar_winner"
+    assert result["decision"] == "no_structurally_quality_backed_exact_llama7b_point"
     assert result["conditional_recommendation"]["unconditional_best"] is None
-    assert len(result["pareto_frontier"]) == 2
-    score32, fp16 = result["pareto_frontier"]
+    assert result["pareto_frontier"] == []
+    assert len(result["engineering_pareto_frontier"]) == 2
+    score32, fp16 = result["engineering_pareto_frontier"]
     assert score32["token_throughput_per_s"] == 74.0
     assert score32["total_embodied_area_mm2"] == 760.03
     assert score32["energy_mj_per_token"] == pytest.approx(484.00135135135134)
     assert fp16["energy_mj_per_token"] == 82.0
+    assert score32["arithmetic_quality_backed"] is True
+    assert score32["structural_quality_backed"] is False
+    assert score32["promotable"] is False
+    assert fp16["structural_quality_backed"] is False
     assert result["dimension_winners"]["token_throughput"] == score32["candidate_id"]
     assert result["dimension_winners"]["energy_per_token"] == fp16["candidate_id"]
     assert result["excluded_nonpromotable_history"] == [
@@ -117,7 +159,11 @@ def test_final_frontier_rejects_quality_regression() -> None:
     frontier["rows"][0]["quality"]["status"] = "mixed_int8_generation_quality_fail"
 
     with pytest.raises(ValueError, match="quality evidence is not passing"):
-        build_report(finite_recost=copy.deepcopy(_recost()), quality_frontier=frontier)
+        build_report(
+            finite_recost=copy.deepcopy(_recost()),
+            quality_frontier=frontier,
+            generation_quality=_generation_quality(),
+        )
 
 
 def test_dimension_winner_uses_measured_throughput_not_candidate_identity() -> None:
@@ -125,6 +171,23 @@ def test_dimension_winner_uses_measured_throughput_not_candidate_identity() -> N
     recost["throughput"]["token_throughput_per_s"] = 10.0
     recost["throughput"]["token_latency_us"] = 100000.0
 
-    result = build_report(finite_recost=recost, quality_frontier=_frontier())
+    result = build_report(
+        finite_recost=recost,
+        quality_frontier=_frontier(),
+        generation_quality=_generation_quality(),
+    )
 
     assert result["dimension_winners"]["token_throughput"] == "fp16-reference"
+
+
+def test_matching_trained_gqa8_evidence_promotes_score32_structure() -> None:
+    result = build_report(
+        finite_recost=_recost(),
+        quality_frontier=_frontier(),
+        generation_quality=_generation_quality(gqa_group_size=8),
+    )
+
+    score32 = result["engineering_pareto_frontier"][0]
+    assert score32["structural_quality_backed"] is True
+    assert score32["promotable"] is True
+    assert [row["candidate_id"] for row in result["pareto_frontier"]] == [score32["candidate_id"]]

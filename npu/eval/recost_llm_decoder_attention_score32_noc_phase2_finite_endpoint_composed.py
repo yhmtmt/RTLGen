@@ -64,6 +64,14 @@ def _positive_number(value: Any, label: str) -> float:
     return number
 
 
+def _positive_int(value: Any, label: str) -> int:
+    number = _positive_number(value, label)
+    integer = int(number)
+    if float(integer) != number:
+        raise ValueError(f"{label} must be an integer")
+    return integer
+
+
 def _validate_endpoint_equivalence(payload: JsonDict, *, baseline: JsonDict) -> JsonDict:
     if payload.get("version") != 1 or payload.get("profile") != _EXPECTED_ENDPOINT_PROFILE:
         raise ValueError("endpoint equivalence profile/version mismatch")
@@ -230,6 +238,10 @@ def build_report(args: argparse.Namespace) -> JsonDict:
         token_time_ns=token_time_ns,
     )
     best = dict(source_recost.get("best_requested") or {})
+    attention_heads = _positive_int(best.get("attention_heads"), "attention_heads")
+    kv_heads = _positive_int(best.get("kv_heads"), "kv_heads")
+    if attention_heads % kv_heads != 0:
+        raise ValueError("attention_heads must be divisible by kv_heads")
     return {
         "version": 1,
         "model": "llama7b_proxy",
@@ -269,6 +281,16 @@ def build_report(args: argparse.Namespace) -> JsonDict:
             "throughput_ratio_vs_source": token_throughput_per_s / source_throughput,
         },
         "physical_recost": physical,
+        "model_contract": {
+            "contract_scope": "llama7b_shaped_gqa8_proxy_not_exact_llama2_7b",
+            "hidden_size": _positive_int(best.get("hidden_size"), "hidden_size"),
+            "layers": layers,
+            "attention_heads": attention_heads,
+            "kv_heads": kv_heads,
+            "gqa_group_size": attention_heads // kv_heads,
+            "kv_sharing": best.get("kv_sharing"),
+            "sequence_length": _positive_int(best.get("sequence_length"), "sequence_length"),
+        },
         "precision_contract": {
             "precision_profile": best.get("precision_profile"),
             "semantic_profile": best.get("measured_dual_stream_composed_semantic_profile"),

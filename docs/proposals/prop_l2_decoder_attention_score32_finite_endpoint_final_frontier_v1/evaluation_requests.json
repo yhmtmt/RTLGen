@@ -19,7 +19,7 @@
         "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_finite_endpoint_final_frontier__l2_decoder_attention_score32_finite_endpoint_final_frontier_llama7b_v1.json",
         "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_finite_endpoint_final_frontier__l2_decoder_attention_score32_finite_endpoint_final_frontier_llama7b_v1.md"
       ],
-      "acceptance_notes": "Require both promoted rows to be quality-backed. Exclude invalid and planning-only rows, report comparable metrics with their evidence status, and return Pareto and per-dimension winners without inventing a scalar utility function."
+      "acceptance_notes": "Separate arithmetic from structural quality. Reject Mistral-7B GQA4 evidence as structural proof for GQA8 hardware, keep invalid and planning-only rows out of promotion, and report engineering Pareto metrics separately from the promotable exact-model frontier."
     }
   ]
 }

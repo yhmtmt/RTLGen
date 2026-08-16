@@ -139,6 +139,11 @@ def test_build_report_joins_finite_timing_physical_and_precision_contracts(
             "reserved_area_fraction": 0.1,
             "precision_profile": "exact-profile",
             "measured_dual_stream_composed_semantic_profile": "exact-semantics",
+            "hidden_size": 4096,
+            "attention_heads": 32,
+            "kv_heads": 4,
+            "kv_sharing": "gqa8",
+            "sequence_length": 131072,
         },
     }
     endpoint = _endpoint()
@@ -222,5 +227,7 @@ def test_build_report_joins_finite_timing_physical_and_precision_contracts(
     assert result["throughput"]["bottleneck"] == "finite_endpoint_noc"
     assert result["throughput"]["token_throughput_per_s"] == pytest.approx(52083.333333333336)
     assert result["physical_recost"]["recost_logic_area_um2"] == 1030
+    assert result["model_contract"]["gqa_group_size"] == 8
+    assert result["model_contract"]["contract_scope"] == "llama7b_shaped_gqa8_proxy_not_exact_llama2_7b"
     assert result["precision_contract"]["precision_profile"] == "exact-profile"
     assert result["precision_contract"]["arithmetic_changed_by_this_recost"] is False
