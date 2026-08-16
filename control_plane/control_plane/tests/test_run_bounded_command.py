@@ -136,7 +136,6 @@ def test_apply_fallback_limits_sets_rlimits_and_affinity() -> None:
     assert selected == (2, 4, 6)
     assert rlimit_calls == [
         (module.resource.RLIMIT_AS, (8 * 1024**3, 8 * 1024**3)),
-        (module.resource.RLIMIT_NPROC, (512, 512)),
     ]
     assert affinity_calls == [(0, (2, 4, 6))]
 
@@ -259,6 +258,40 @@ def test_run_portable_fallback_normalizes_signal_exit() -> None:
     )
 
     assert result == 137
+
+
+def test_run_portable_fallback_enforces_tasks_max_on_child_tree(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    module = _load_launcher_module()
+    grandchild_pid_path = tmp_path / "tasks-max-grandchild.pid"
+    spec = module.LimitSpec(
+        memory_high=None,
+        memory_max=None,
+        cpu_quota=None,
+        tasks_max=1,
+        runtime_max_sec=10,
+    )
+    child_code = (
+        "import subprocess, sys, time\n"
+        "subprocess.Popen([sys.executable, '-c', "
+        "\"import os, pathlib, sys, time; pathlib.Path(sys.argv[1]).write_text(str(os.getpid())); time.sleep(60)\", "
+        "sys.argv[1]])\n"
+        "time.sleep(60)\n"
+    )
+
+    result = module._run_portable_fallback(
+        spec,
+        [sys.executable, "-c", child_code, str(grandchild_pid_path)],
+        term_grace_sec=0.2,
+    )
+
+    captured = capsys.readouterr()
+    assert result == module.TASKS_MAX_EXIT_CODE
+    assert '"event": "run_bounded_command_tasks_max_exceeded"' in captured.err
+    grandchild_pid = _read_pid(grandchild_pid_path)
+    _assert_process_gone(grandchild_pid)
 
 
 def test_run_portable_fallback_times_out_and_kills_process_group(tmp_path: Path) -> None:

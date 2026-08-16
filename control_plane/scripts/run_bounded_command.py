@@ -20,6 +20,7 @@ import time
 from typing import Any, Sequence
 
 TIMEOUT_EXIT_CODE = 124
+TASKS_MAX_EXIT_CODE = 125
 _SYSTEMD_CHECK_TIMEOUT_SEC = 5.0
 _TERM_GRACE_SEC = 5.0
 _POLL_INTERVAL_SEC = 0.05
@@ -249,8 +250,6 @@ def _apply_fallback_limits(
     if spec.memory_max is not None:
         memory_limit = _parse_size(spec.memory_max)
         setrlimit(resource.RLIMIT_AS, (memory_limit, memory_limit))
-    if spec.tasks_max is not None:
-        setrlimit(resource.RLIMIT_NPROC, (spec.tasks_max, spec.tasks_max))
     if sched_setaffinity is not None and selected_cpus:
         sched_setaffinity(0, selected_cpus)
     return selected_cpus
@@ -278,7 +277,7 @@ def _portable_backend_diagnostic(
             "memory_high": "advisory_unavailable",
             "memory_max": "rlimit_as" if spec.memory_max is not None else None,
             "cpu_quota": "sched_affinity_ceiling" if spec.cpu_quota is not None else None,
-            "tasks_max": "rlimit_nproc" if spec.tasks_max is not None else None,
+            "tasks_max": "process_tree_task_monitor" if spec.tasks_max is not None else None,
             "runtime_max_sec": "process_group_timeout" if spec.runtime_max_sec is not None else None,
         },
         "allowed_cpus": list(sorted(int(cpu) for cpu in allowed_cpus)),
@@ -384,6 +383,16 @@ def _collect_descendant_processes(owner_pid: int) -> dict[int, _ProcInfo]:
     return descendants
 
 
+def _count_descendant_tasks(owner_pid: int) -> int:
+    task_count = 0
+    for proc in _collect_descendant_processes(owner_pid).values():
+        try:
+            task_count += sum(1 for entry in Path(f"/proc/{proc.pid}/task").iterdir() if entry.name.isdigit())
+        except (FileNotFoundError, OSError):
+            continue
+    return task_count
+
+
 def _reap_descendant_processes(owner_pid: int, *, excluded_pid: int) -> None:
     for proc in _collect_descendant_processes(owner_pid).values():
         if proc.pid == excluded_pid:
@@ -471,6 +480,21 @@ def _run_portable_fallback(
                 _terminate_process_tree(process, term_grace_sec=term_grace_sec)
                 process.wait()
                 return 128 + signal_state.requested_signal
+            if spec.tasks_max is not None:
+                observed_tasks = _count_descendant_tasks(os.getpid())
+                if observed_tasks > spec.tasks_max:
+                    _emit_diagnostic(
+                        {
+                            "event": "run_bounded_command_tasks_max_exceeded",
+                            "backend": "portable_fallback",
+                            "tasks_max": spec.tasks_max,
+                            "observed_tasks": observed_tasks,
+                            "term_grace_sec": term_grace_sec,
+                        }
+                    )
+                    _terminate_process_tree(process, term_grace_sec=term_grace_sec)
+                    process.wait()
+                    return TASKS_MAX_EXIT_CODE
             if spec.runtime_max_sec is not None and time.monotonic() - started >= spec.runtime_max_sec:
                 _emit_diagnostic(
                     {
