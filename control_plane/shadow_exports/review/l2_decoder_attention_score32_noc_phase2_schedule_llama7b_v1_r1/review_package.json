@@ -1,0 +1,206 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-08-16T10:05:15.592996Z",
+  "control_plane_source_commit": "b6cff4447a0f71a7e5c6e45a452f4475517c9e47",
+  "review_metadata_source_commit": "b6cff4447a0f71a7e5c6e45a452f4475517c9e47",
+  "item_id": "l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1",
+  "run_key": "l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1_run_ca52d212ffae2ee6",
+  "layer": "layer2",
+  "flow": "openroad",
+  "task_type": "l2_campaign",
+  "source_commit": "f8814308c6088376fba60a7fb3d097dd83e7aa22",
+  "queue_snapshot": {
+    "path": "control_plane/shadow_exports/review/l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1/evaluated.json",
+    "result": {
+      "branch": "eval/l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1/s20260816t100513z",
+      "completed_utc": "2026-08-14T10:25:36.713530Z",
+      "evaluator_id": "control_plane",
+      "executor": "@control_plane",
+      "host": "0a8681f12293",
+      "identity_block": "[role:evaluator][account:control_plane][session:s20260816t100513z][host:0a8681f12293][item:l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1]",
+      "metrics_rows": [],
+      "metrics_exempt_reason": "evidence_only_decoder_evidence",
+      "queue_item_id": "l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1",
+      "session_id": "s20260816t100513z",
+      "status": "ok",
+      "summary": "2/2 commands succeeded"
+    }
+  },
+  "review_artifact": {
+    "kind": "decision_proposal",
+    "path": "control_plane/shadow_exports/l2_decisions/l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1.json",
+    "storage_mode": "repo",
+    "sha256": "ffdcfbb10adeb2a89381c94f1482980120f62e415f18f3032debc9888e40dea5",
+    "payload": {
+      "version": 0.1,
+      "generated_utc": "2026-08-16T10:05:12.711548Z",
+      "item_id": "l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1",
+      "run_key": "l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1_run_ca52d212ffae2ee6",
+      "layer": "layer2",
+      "flow": "openroad",
+      "platform": "nangate45",
+      "task_type": "l2_campaign",
+      "source_commit": "f8814308c6088376fba60a7fb3d097dd83e7aa22",
+      "review_metadata_source_commit": "b6cff4447a0f71a7e5c6e45a452f4475517c9e47",
+      "objective": "Materialize the clock-corrected complete 8-wave, 128-tile score32 schedule through the concrete 4x4 segmented mesh model.",
+      "input_manifest": {
+        "decoder_contract": {
+          "attention_score32_noc_phase2_scope": "Route all eight declared waves and all 128 Llama7B score32 tiles through the cycle-level 4x4 segmented mesh model. Require finite router FIFOs, endpoint backpressure, deterministic XY routing, four VCs, and collision-free 8-bit tag reuse. Convert source compute cycles to an explicit 1ns NoC target clock before routing. Keep measured NoC-clock substitution, HBM/DRAM, SRAM floorplanning, root-finalizer compute, and source descriptor/control storage explicit as remaining abstractions.",
+          "attention_score32_noc_phase2_schedule_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_schedule__l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1.json",
+          "attention_score32_noc_phase2_source_recost": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_reduction_recost__l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1.json",
+          "attention_score32_noc_phase2_schedule_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_schedule__l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1.md",
+          "attention_score32_noc_phase2_measured_l1_costs": "runs/campaigns/npu/l1_measured_costs/llama7b_attention_local_costs_all_measured_endpoint_v1.json"
+        },
+        "worker_resources": {
+          "cpu_quota": "200%",
+          "tasks_max": 128,
+          "memory_max": "4G",
+          "memory_high": "2G",
+          "exclusive_worker": true,
+          "outer_timeout_seconds": 300,
+          "stall_timeout_seconds": 180
+        }
+      },
+      "recommendation": {
+        "source": "decoder_evidence",
+        "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_schedule__l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1.json",
+        "arch_id": "decoder_attention_score32_noc_phase2_schedule",
+        "macro_mode": "evidence_only",
+        "outcome": "score32_noc_phase2_schedule_recorded"
+      },
+      "objective_profiles": [],
+      "evaluation_record": {
+        "proposal_id": "prop_l2_decoder_attention_score32_noc_phase2_schedule_v1",
+        "title": "Score32 segmented-mesh Phase 2 scheduling closure",
+        "primary_question": "When the full checked-in score32 recost traffic quantities are mapped onto an explicit static 4x4 segmented mesh with 4 VCs and deterministic XY routing, what routed drain time, contention, and link pressure appear across all declared waves?",
+        "evaluation_mode": "frontier_detail",
+        "comparison_role": "closure_detail",
+        "abstraction_layer": "decoder_attention_score32_noc_phase2_schedule",
+        "expected_direction": "iterate",
+        "expected_reason": "Use clock-corrected routed service evidence to replace the old NoC scalar or identify the next measured-clock/SRAM-placement adapter.",
+        "summary": "Decoder score32 NoC Phase 2 schedule evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_schedule__l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1.json: decision=score32_noc_phase2_schedule_recorded; simulated_wave_count=8; compute_layer_time_ns=421511.3976; noc_clock_ns=1.0; cycles_to_drain=397004; drain_time_ns=397004.0; drain_within_source_compute_layer_envelope=True; scheduled_packet_count=11576; scheduled_flit_count=92128; router_contention_cycles=36747; endpoint_input_stall_cycles_total=319772; collision_free_reuse_proven=True.",
+        "outcome": "score32_noc_phase2_schedule_recorded",
+        "expectation_status": "unspecified"
+      },
+      "proposal_assessment": {
+        "proposal_id": "prop_l2_decoder_attention_score32_noc_phase2_schedule_v1",
+        "title": "Score32 segmented-mesh Phase 2 scheduling closure",
+        "kind": "architecture",
+        "primary_question": "When the full checked-in score32 recost traffic quantities are mapped onto an explicit static 4x4 segmented mesh with 4 VCs and deterministic XY routing, what routed drain time, contention, and link pressure appear across all declared waves?",
+        "evaluation_mode": "frontier_detail",
+        "comparison_role": "closure_detail",
+        "outcome": "score32_noc_phase2_schedule_recorded",
+        "summary": "Decoder score32 NoC Phase 2 schedule evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_schedule__l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1.json: decision=score32_noc_phase2_schedule_recorded; simulated_wave_count=8; compute_layer_time_ns=421511.3976; noc_clock_ns=1.0; cycles_to_drain=397004; drain_time_ns=397004.0; drain_within_source_compute_layer_envelope=True; scheduled_packet_count=11576; scheduled_flit_count=92128; router_contention_cycles=36747; endpoint_input_stall_cycles_total=319772; collision_free_reuse_proven=True.",
+        "baseline_ref": null,
+        "baseline_item_id": null,
+        "matched_row_count": 0,
+        "matched_rows": [],
+        "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_schedule__l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1.json",
+        "decoder_quality": {
+          "diagnosis": {},
+          "profile": "decoder_attention_score32_noc_phase2_schedule",
+          "remaining_abstractions": [
+            "The schedule uses clock-corrected static wave timing from checked-in recost quantities and does not yet prove end-to-end command/control RTL cadence.",
+            "The NoC clock is an explicit evaluation assumption until the exact five-port segmented-router physical result is merged and substituted.",
+            "The source-descriptor queues and producer backpressure/control needed to retain payloads until injection are not yet embodied or physically measured.",
+            "Shared SRAM home placement is deterministic and explicit, but still a topology adapter rather than a measured SRAM floorplan.",
+            "HBM/DRAM service and controller timing remain intentionally out of scope.",
+            "Root-finalizer internal compute is not rerouted here; the mesh model stops at root ingress."
+          ],
+          "source_artifacts": {
+            "measured_l1_costs_json": "runs/campaigns/npu/l1_measured_costs/llama7b_attention_local_costs_all_measured_endpoint_v1.json",
+            "measured_l1_profile": "hd64_kv8_full_value_p8_ppc2_noc128_softmax_int8_q10",
+            "score32_recost_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_reduction_recost__l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1.json"
+          },
+          "schedule_summary": {
+            "simulated_wave_count": 8,
+            "compute_layer_time_ns": 421511.3976,
+            "noc_clock_ns": 1.0,
+            "cycles_to_drain": 397004,
+            "drain_time_ns": 397004.0,
+            "drain_within_source_compute_layer_envelope": true,
+            "scheduled_packet_count": 11576,
+            "scheduled_flit_count": 92128,
+            "router_contention_cycles": 36747,
+            "endpoint_input_stall_cycles_total": 319772,
+            "collision_free_reuse_proven": true
+          }
+        }
+      },
+      "source_refs": {
+        "decoder_evidence_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_schedule__l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1.json",
+        "decoder_attention_score32_noc_phase2_schedule_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_schedule__l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1.json",
+        "decoder_attention_score32_noc_phase2_schedule_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_schedule__l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1.md"
+      },
+      "decoder_quality": {
+        "diagnosis": {},
+        "profile": "decoder_attention_score32_noc_phase2_schedule",
+        "remaining_abstractions": [
+          "The schedule uses clock-corrected static wave timing from checked-in recost quantities and does not yet prove end-to-end command/control RTL cadence.",
+          "The NoC clock is an explicit evaluation assumption until the exact five-port segmented-router physical result is merged and substituted.",
+          "The source-descriptor queues and producer backpressure/control needed to retain payloads until injection are not yet embodied or physically measured.",
+          "Shared SRAM home placement is deterministic and explicit, but still a topology adapter rather than a measured SRAM floorplan.",
+          "HBM/DRAM service and controller timing remain intentionally out of scope.",
+          "Root-finalizer internal compute is not rerouted here; the mesh model stops at root ingress."
+        ],
+        "source_artifacts": {
+          "measured_l1_costs_json": "runs/campaigns/npu/l1_measured_costs/llama7b_attention_local_costs_all_measured_endpoint_v1.json",
+          "measured_l1_profile": "hd64_kv8_full_value_p8_ppc2_noc128_softmax_int8_q10",
+          "score32_recost_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_reduction_recost__l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1.json"
+        },
+        "schedule_summary": {
+          "simulated_wave_count": 8,
+          "compute_layer_time_ns": 421511.3976,
+          "noc_clock_ns": 1.0,
+          "cycles_to_drain": 397004,
+          "drain_time_ns": 397004.0,
+          "drain_within_source_compute_layer_envelope": true,
+          "scheduled_packet_count": 11576,
+          "scheduled_flit_count": 92128,
+          "router_contention_cycles": 36747,
+          "endpoint_input_stall_cycles_total": 319772,
+          "collision_free_reuse_proven": true
+        }
+      }
+    }
+  },
+  "developer_loop": {
+    "comparison": {
+      "role": "closure_detail",
+      "paired_baseline_item_id": ""
+    },
+    "evaluation": {
+      "mode": "frontier_detail",
+      "expected_reason": "Use clock-corrected routed service evidence to replace the old NoC scalar or identify the next measured-clock/SRAM-placement adapter.",
+      "expected_direction": "iterate"
+    },
+    "abstraction": {
+      "layer": "decoder_attention_score32_noc_phase2_schedule"
+    },
+    "proposal_id": "prop_l2_decoder_attention_score32_noc_phase2_schedule_v1",
+    "dependencies": {
+      "item_ids": [],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    },
+    "proposal_path": "docs/proposals/prop_l2_decoder_attention_score32_noc_phase2_schedule_v1/proposal.json"
+  },
+  "submission_history": null,
+  "pr_payload": {
+    "branch": "eval/l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1/s20260816t100513z",
+    "title": "eval: run route complete llama7b score32 workload through segmented mesh",
+    "body_fields": {
+      "host": "0a8681f12293",
+      "session_id": "s20260816t100513z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1"
+    },
+    "body_md": "## Summary\n- item_id: `l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1`\n- run_key: `l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1_run_ca52d212ffae2ee6`\n- layer: `layer2`\n- task_type: `l2_campaign`\n- status: `ok`\n- summary: `2/2 commands succeeded`\n- queue_snapshot: `control_plane/shadow_exports/review/l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1/evaluated.json`\n- metrics_rows_count: `0`\n- review_artifact: `decision_proposal` at `control_plane/shadow_exports/l2_decisions/l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1.json`\n\n## Developer Context\n- proposal_id: `prop_l2_decoder_attention_score32_noc_phase2_schedule_v1`\n- proposal_path: `docs/proposals/prop_l2_decoder_attention_score32_noc_phase2_schedule_v1/proposal.json`\n- reviewer_first_read: `docs/proposals/prop_l2_decoder_attention_score32_noc_phase2_schedule_v1/proposal.json` plus `docs/developer_agent_review.md`\n- execution_source_commit: `f8814308c6088376fba60a7fb3d097dd83e7aa22`\n- review_metadata_source_commit: `b6cff4447a0f71a7e5c6e45a452f4475517c9e47`\n\n## Evaluation Mode\n- evaluation_mode: `frontier_detail`\n- abstraction_layer: `decoder_attention_score32_noc_phase2_schedule`\n- comparison_role: `closure_detail`\n- expected_direction: `iterate`\n- expected_reason: `Use clock-corrected routed service evidence to replace the old NoC scalar or identify the next measured-clock/SRAM-placement adapter.`\n- expectation_status: `unspecified`\n- evaluation_summary: `Decoder score32 NoC Phase 2 schedule evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_schedule__l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1.json: decision=score32_noc_phase2_schedule_recorded; simulated_wave_count=8; compute_layer_time_ns=421511.3976; noc_clock_ns=1.0; cycles_to_drain=397004; drain_time_ns=397004.0; drain_within_source_compute_layer_envelope=True; scheduled_packet_count=11576; scheduled_flit_count=92128; router_contention_cycles=36747; endpoint_input_stall_cycles_total=319772; collision_free_reuse_proven=True.`\n\n## Focused Comparison\n- primary_question: `When the full checked-in score32 recost traffic quantities are mapped onto an explicit static 4x4 segmented mesh with 4 VCs and deterministic XY routing, what routed drain time, contention, and link pressure appear across all declared waves?`\n- comparison_role: `closure_detail`\n- proposal_outcome: `score32_noc_phase2_schedule_recorded`\n- comparison_summary: `Decoder score32 NoC Phase 2 schedule evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_schedule__l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1.json: decision=score32_noc_phase2_schedule_recorded; simulated_wave_count=8; compute_layer_time_ns=421511.3976; noc_clock_ns=1.0; cycles_to_drain=397004; drain_time_ns=397004.0; drain_within_source_compute_layer_envelope=True; scheduled_packet_count=11576; scheduled_flit_count=92128; router_contention_cycles=36747; endpoint_input_stall_cycles_total=319772; collision_free_reuse_proven=True.`\n- baseline_ref: `None`\n- baseline_item_id: `None`\n\n## Checklist\n- [ ] Commit lightweight campaign artifacts only\n- [ ] Include metrics row references in result.metrics_rows\n- [ ] Keep committed result_path fields repo-portable\n- [ ] Run python3 scripts/validate_runs.py --skip_eval_queue before pushing\n",
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Include metrics row references in result.metrics_rows",
+      "Keep committed result_path fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ]
+  }
+}
