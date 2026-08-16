@@ -18,11 +18,13 @@
 If a usable user `systemd` manager exists, the launcher applies the contract
 with `systemd-run --user --scope`. In evaluator containers without a user bus,
 the launcher falls back to process-group timeout, `RLIMIT_AS` for
-`MemoryMax=8G`, `RLIMIT_NPROC` for `TasksMax=512`, and a CPU-affinity ceiling
-derived from the current allowed CPUs and the requested quota rounded to whole
-CPUs (`CPUQuota=300%` becomes at most three allowed CPUs). `MemoryHigh=6G` is
-advisory and reported as unavailable in fallback mode rather than claimed as
-exact cgroup enforcement.
+`MemoryMax=8G`, descendant-tree task monitoring for `TasksMax=512`, and a
+CPU-affinity ceiling derived from the current allowed CPUs and the requested
+quota rounded to whole CPUs (`CPUQuota=300%` becomes at most three allowed
+CPUs). The fallback must not use `RLIMIT_NPROC`: that limit is scoped to every
+process sharing the remapped UID, not to this job. `MemoryHigh=6G` is advisory
+and reported as unavailable in fallback mode rather than claimed as exact
+cgroup enforcement.
 
 The probe backend should be `python3 npu/eval/probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8.py --sim-backend fine_compositional_icarus --compile-timeout-sec 1200 --timeout-sec 900`.
 It must pass the strict generated-top guard, serially replay the exact
