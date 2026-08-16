@@ -385,14 +385,21 @@ def build_report(
     args: argparse.Namespace,
     *,
     packet_spec_output: list[PacketSpec] | None = None,
+    source_row_override: JsonDict | None = None,
+    source_artifact_override: str | Path | None = None,
 ) -> JsonDict:
     repo_root = args.repo_root.resolve()
     source_json = repo_root / args.source_json
     costs_json = repo_root / args.measured_l1_costs
-    source_payload = _load_json(source_json)
-    source_row = source_payload.get("best_requested")
-    if not isinstance(source_row, dict):
-        raise ValueError("source recost payload is missing best_requested")
+    if source_row_override is None:
+        source_payload = _load_json(source_json)
+        source_row = source_payload.get("best_requested")
+        if not isinstance(source_row, dict):
+            raise ValueError("source recost payload is missing best_requested")
+    else:
+        if not isinstance(source_row_override, dict):
+            raise ValueError("source_row_override must be a dict")
+        source_row = source_row_override
     _require_fields(
         source_row,
         [
@@ -611,7 +618,9 @@ def build_report(
         "model": "llama7b_proxy",
         "profile": "decoder_attention_score32_noc_phase2_schedule",
         "source_artifacts": {
-            "score32_recost_json": str(args.source_json),
+            "score32_recost_json": str(
+                source_artifact_override if source_artifact_override is not None else args.source_json
+            ),
             "measured_l1_costs_json": str(args.measured_l1_costs),
             "measured_l1_profile": measured_profile["name"],
         },
