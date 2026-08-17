@@ -125,6 +125,37 @@ def test_server_starts_api_before_resolver() -> None:
     assert server_case.index("start api") < server_case.index("start resolver")
 
 
+def test_service_bootstrap_rejects_stale_image_helper_before_starting_daemons() -> None:
+    startup = (DEVCONTAINER / "start_control_plane_services.sh").read_text(
+        encoding="utf-8"
+    )
+
+    assert 'IMAGE_INIT_HELPER="/usr/local/sbin/rtlgen-container-init"' in startup
+    assert 'REPO_INIT_HELPER="/workspaces/RTLGen/.devcontainer/rtlgen-container-init"' in startup
+    assert 'cmp -s "${IMAGE_INIT_HELPER}" "${REPO_INIT_HELPER}"' in startup
+    assert "Rebuild the devcontainer image before starting control-plane services." in startup
+    assert startup.index("prepare_runtime_paths") < startup.index('case "${ROLE}" in')
+
+
+def test_service_bootstrap_prepares_and_checks_orfs_runtime_roots() -> None:
+    startup = (DEVCONTAINER / "start_control_plane_services.sh").read_text(
+        encoding="utf-8"
+    )
+    expected_paths = (
+        "/orfs/flow/designs/src",
+        "/orfs/flow/designs/nangate45",
+        "/orfs/flow/logs",
+        "/orfs/flow/objects",
+        "/orfs/flow/reports",
+        "/orfs/flow/results",
+    )
+
+    assert 'sudo -n "${IMAGE_INIT_HELPER}" prepare' in startup
+    assert '[[ ! -d "${path}" || ! -w "${path}" ]]' in startup
+    for path in expected_paths:
+        assert path in startup
+
+
 def test_migration_scripts_honor_external_devcontainer_venv() -> None:
     scripts = REPO_ROOT / "control_plane" / "scripts"
 

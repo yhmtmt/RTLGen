@@ -8,6 +8,42 @@ AUTOSTART_COMPLETIONS="${RTLCP_AUTOSTART_COMPLETIONS:-}"
 AUTOSTART_API="${RTLCP_AUTOSTART_API:-}"
 AUTOSTART_RESOLVER="${RTLCP_AUTOSTART_RESOLVER:-}"
 DEFAULT_DB_URL="postgresql+psycopg://rtlgen:rtlgen@localhost:5432/rtlgen_control_plane"
+IMAGE_INIT_HELPER="/usr/local/sbin/rtlgen-container-init"
+REPO_INIT_HELPER="/workspaces/RTLGen/.devcontainer/rtlgen-container-init"
+ORFS_RUNTIME_ROOTS=(
+  /orfs/flow/designs/src
+  /orfs/flow/designs/nangate45
+  /orfs/flow/logs
+  /orfs/flow/objects
+  /orfs/flow/reports
+  /orfs/flow/results
+)
+
+prepare_runtime_paths() {
+  local path
+
+  if [[ ! -x "${IMAGE_INIT_HELPER}" ]]; then
+    echo "Installed container initializer is missing: ${IMAGE_INIT_HELPER}" >&2
+    echo "Rebuild the devcontainer image from the current repository source." >&2
+    exit 1
+  fi
+  if [[ ! -f "${REPO_INIT_HELPER}" ]] || ! cmp -s "${IMAGE_INIT_HELPER}" "${REPO_INIT_HELPER}"; then
+    echo "Installed container initializer does not match ${REPO_INIT_HELPER}." >&2
+    echo "Rebuild the devcontainer image before starting control-plane services." >&2
+    exit 1
+  fi
+
+  sudo -n "${IMAGE_INIT_HELPER}" prepare
+  for path in "${ORFS_RUNTIME_ROOTS[@]}"; do
+    if [[ ! -d "${path}" || ! -w "${path}" ]]; then
+      echo "OpenROAD runtime path is not writable by uid=$(id -u): ${path}" >&2
+      echo "Rebuild the devcontainer image or repair its runtime-path initialization." >&2
+      exit 1
+    fi
+  done
+}
+
+prepare_runtime_paths
 
 case "${ROLE}" in
   server)
