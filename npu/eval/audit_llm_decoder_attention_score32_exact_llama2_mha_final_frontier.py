@@ -50,6 +50,7 @@ _SCORE32_PRECISION = {
     "softmax_mode": "exp_lut_div_bucket20",
 }
 _GQA8_CANDIDATE_ID = "score32_gqa8_global_hbm_finite_endpoint"
+_LONG_CONTEXT_MHA_CANDIDATE_ID = "score32_llama2_7b_mha_131k_extrapolation_global_hbm_finite_endpoint"
 _EXACT_MHA_CANDIDATE_ID = "score32_exact_llama2_7b_mha_global_hbm_finite_endpoint"
 
 
@@ -81,7 +82,7 @@ def _exact_number(value: Any, expected: float, label: str) -> float:
     return observed
 
 
-def _validate_recost(payload: JsonDict) -> tuple[JsonDict, JsonDict]:
+def _validate_recost(payload: JsonDict) -> tuple[JsonDict, JsonDict, JsonDict]:
     if payload.get("version") != 1 or payload.get("model") != _RECOST_MODEL:
         raise ValueError("exact MHA recost model/version mismatch")
     rows = payload.get("rows")
@@ -89,7 +90,8 @@ def _validate_recost(payload: JsonDict) -> tuple[JsonDict, JsonDict]:
         raise ValueError("exact MHA recost rows are missing")
 
     gqa8_row: JsonDict | None = None
-    mha_row: JsonDict | None = None
+    long_context_mha_row: JsonDict | None = None
+    native_mha_row: JsonDict | None = None
     for row in rows:
         if not isinstance(row, dict):
             continue
@@ -107,17 +109,26 @@ def _validate_recost(payload: JsonDict) -> tuple[JsonDict, JsonDict]:
             raise ValueError("exact MHA recost rows must remain on the 4096-wide 32-head model")
         candidate_id = row.get("candidate_id")
         if kv_heads == 4 and gqa_group_size == 8 and candidate_id == _GQA8_CANDIDATE_ID:
-            if contract.get("kv_sharing") != "gqa8":
+            if contract.get("kv_sharing") != "gqa8" or int(contract.get("sequence_length", 0)) != 131072:
                 raise ValueError("corrected GQA8 row kv_sharing mismatch")
             gqa8_row = dict(row)
+        elif kv_heads == 32 and gqa_group_size == 1 and candidate_id == _LONG_CONTEXT_MHA_CANDIDATE_ID:
+            if contract.get("kv_sharing") != "mha" or int(contract.get("sequence_length", 0)) != 131072:
+                raise ValueError("long-context MHA row contract mismatch")
+            long_context_mha_row = dict(row)
         elif kv_heads == 32 and gqa_group_size == 1 and candidate_id == _EXACT_MHA_CANDIDATE_ID:
-            if contract.get("kv_sharing") != "mha" or contract.get("contract_scope") != "exact_llama2_7b_mha_structure":
+            if (
+                contract.get("kv_sharing") != "mha"
+                or contract.get("contract_scope") != "exact_llama2_7b_mha_structure"
+                or int(contract.get("sequence_length", 0)) != 4096
+                or contract.get("native_context_match") is not True
+            ):
                 raise ValueError("exact MHA row structural contract mismatch")
-            mha_row = dict(row)
+            native_mha_row = dict(row)
 
-    if gqa8_row is None or mha_row is None:
-        raise ValueError("exact MHA recost must contain corrected GQA8 and exact MHA rows")
-    return gqa8_row, mha_row
+    if gqa8_row is None or long_context_mha_row is None or native_mha_row is None:
+        raise ValueError("exact MHA recost must contain corrected GQA8, 131k MHA, and native-context MHA rows")
+    return gqa8_row, long_context_mha_row, native_mha_row
 
 
 def _quality_model_field(model: JsonDict, field: str) -> Any:
@@ -263,6 +274,7 @@ def _recost_engineering_row(
     promotion_blocker: str | None,
     structural_mismatch: JsonDict | None,
     quality_meta: JsonDict,
+    workload_id: str,
 ) -> JsonDict:
     contract = dict(row["model_contract"])
     throughput = dict(row["throughput"])
@@ -270,6 +282,7 @@ def _recost_engineering_row(
     energy = dict(row["energy"])
     return {
         "candidate_id": row["candidate_id"],
+        "workload_id": workload_id,
         "source_model_contract": contract,
         "promotable": promotable,
         "quality_backed": quality_backed,
@@ -295,6 +308,7 @@ def _recost_engineering_row(
 def _fp16_row(source: JsonDict) -> JsonDict:
     return {
         "candidate_id": source["candidate_id"],
+        "workload_id": "legacy_llama7b_gqa8_131k_accounting",
         "source_model_contract": {
             "contract_scope": "measured_exact_fp16_gqa8_engineering_reference",
             "attention_heads": 32,
@@ -377,7 +391,7 @@ def _precision_winner(rows: list[JsonDict]) -> str | list[str]:
 
 
 def build_report(*, recost: JsonDict, generation_quality: JsonDict, quality_frontier: JsonDict) -> JsonDict:
-    corrected_gqa8, exact_mha = _validate_recost(recost)
+    corrected_gqa8, long_context_mha, exact_mha = _validate_recost(recost)
     quality = _validate_generation_quality(generation_quality)
     fp16_reference, excluded_history = _validate_quality_frontier(quality_frontier)
 
@@ -397,6 +411,29 @@ def build_report(*, recost: JsonDict, generation_quality: JsonDict, quality_fron
             "reason": "Corrected GQA8 score32 does not match the exact 32-KV-head Llama-2-7B structure.",
         },
         quality_meta=quality,
+        workload_id="long_context_131072_extrapolation",
+    )
+
+    long_context_mha_row = _recost_engineering_row(
+        long_context_mha,
+        promotable=False,
+        quality_backed=False,
+        structural_quality_backed=True,
+        arithmetic_quality_backed=False,
+        precision_level=1,
+        precision_dimension_label="score32_exp_lut_div",
+        precision_dimension_rank=1,
+        promotion_blocker=(
+            "The 131k MHA extrapolation exceeds the official checkpoint context and lacks matching long-context quality evidence."
+        ),
+        structural_mismatch={
+            "hardware_kv_sharing": "mha",
+            "sequence_length": 131072,
+            "official_native_context_length": 4096,
+            "reason": "MHA dimensions match, but the workload context does not match the official checkpoint contract.",
+        },
+        quality_meta=quality,
+        workload_id="long_context_131072_extrapolation",
     )
 
     exact_quality_pass = quality["decision_status"] == _QUALITY_PASS
@@ -412,20 +449,35 @@ def build_report(*, recost: JsonDict, generation_quality: JsonDict, quality_fron
         promotion_blocker=None if exact_quality_pass else "Exact score32 MHA lacks a passing native Llama-2-7B generation-quality gate.",
         structural_mismatch=None,
         quality_meta=quality,
+        workload_id="official_llama2_7b_native_context_4096",
     )
     fp16_row = _fp16_row(fp16_reference)
 
-    comparable_rows = [gqa8_row, exact_mha_row]
-    all_rows = [*comparable_rows, fp16_row]
-    engineering_pareto = _pareto_rows(comparable_rows)
-    promotable_rows = [row for row in comparable_rows if row["promotable"] and row["quality_backed"]]
+    long_context_rows = [gqa8_row, long_context_mha_row]
+    native_context_rows = [exact_mha_row]
+    all_rows = [*long_context_rows, *native_context_rows, fp16_row]
+    engineering_pareto_by_workload = {
+        "long_context_131072_extrapolation": _pareto_rows(long_context_rows),
+        "official_llama2_7b_native_context_4096": _pareto_rows(native_context_rows),
+    }
+    promotable_rows = [row for row in native_context_rows if row["promotable"] and row["quality_backed"]]
     promotable_pareto = _pareto_rows(promotable_rows)
 
-    dimension_winners = {
-        "throughput_comparable_boundary": _winner(comparable_rows, "token_throughput_per_s", maximize=True),
-        "embodied_area_comparable_boundary": _winner(comparable_rows, "embodied_area_mm2", maximize=False),
-        "energy_comparable_boundary": _winner(comparable_rows, "energy_mj_per_token", maximize=False),
-        "precision_comparable_boundary": _precision_winner(comparable_rows),
+    dimension_winners_by_workload = {
+        "long_context_131072_extrapolation": {
+            "throughput": _winner(long_context_rows, "token_throughput_per_s", maximize=True),
+            "embodied_area": _winner(long_context_rows, "embodied_area_mm2", maximize=False),
+            "energy": _winner(long_context_rows, "energy_mj_per_token", maximize=False),
+            "precision": _precision_winner(long_context_rows),
+        },
+        "official_llama2_7b_native_context_4096": {
+            "throughput": exact_mha_row["candidate_id"],
+            "embodied_area": exact_mha_row["candidate_id"],
+            "energy": exact_mha_row["candidate_id"],
+            "precision": exact_mha_row["candidate_id"],
+        },
+    }
+    noncomparable_reference_winners = {
         "higher_precision_noncomparable_reference": fp16_row["candidate_id"],
     }
 
@@ -437,6 +489,7 @@ def build_report(*, recost: JsonDict, generation_quality: JsonDict, quality_fron
             "Logic energy remains a vectorless activity proxy rather than workload-toggle-complete power.",
             "Fixed shared-SRAM residency is recosted but not reoptimized for exact MHA.",
             "Native exact Llama-2-7B quality is bounded to a limited prompt sample rather than a full benchmark suite.",
+            "The 131072-token stress workload is a long-context extrapolation beyond the official Llama-2-7B 4096-token context and is not quality-backed.",
             "Exact FP16 MHA has not been physically recosted on the same accounting boundary.",
         }
     )
@@ -453,8 +506,9 @@ def build_report(*, recost: JsonDict, generation_quality: JsonDict, quality_fron
                 "l2_decoder_attention_score32_quality_aware_hbm_controller_replay_rtl_ppa_recost_frontier_llama7b_v1"
             ),
         },
-        "dimension_winners": dimension_winners,
-        "dimension_winner_scope": "only rows with the same total-embodied-area accounting boundary",
+        "dimension_winners_by_workload": dimension_winners_by_workload,
+        "dimension_winner_scope": "rows are compared only within identical sequence-length and total-embodied-area boundaries",
+        "noncomparable_reference_winners": noncomparable_reference_winners,
         "scalar_universal_winner": None,
         "conditional_recommendation": {
             "universal_winner": None,
@@ -475,7 +529,7 @@ def build_report(*, recost: JsonDict, generation_quality: JsonDict, quality_fron
             "softmax_mode": _SCORE32_PRECISION["softmax_mode"],
         },
         "quality_contract": quality,
-        "engineering_pareto_frontier": engineering_pareto,
+        "engineering_pareto_frontiers_by_workload": engineering_pareto_by_workload,
         "promotable_pareto_frontier": promotable_pareto,
         "noncomparable_reference_rows": [fp16_row],
         "all_rows": all_rows,
@@ -490,7 +544,7 @@ def build_report(*, recost: JsonDict, generation_quality: JsonDict, quality_fron
 
 
 def write_report(payload: JsonDict, path: Path) -> None:
-    engineering = payload["engineering_pareto_frontier"]
+    engineering_by_workload = payload["engineering_pareto_frontiers_by_workload"]
     promotable = payload["promotable_pareto_frontier"]
     lines = [
         "# Exact Llama-2-7B Score32 Final Frontier",
@@ -499,25 +553,30 @@ def write_report(payload: JsonDict, path: Path) -> None:
         f"- decision: `{payload['decision']}`",
         "- scalar universal winner: `None`",
         "",
-        "## Dimension Winners",
+        "## Dimension Winners By Workload",
         "",
-        f"- throughput (comparable boundary): `{payload['dimension_winners']['throughput_comparable_boundary']}`",
-        f"- embodied_area (comparable boundary): `{payload['dimension_winners']['embodied_area_comparable_boundary']}`",
-        f"- energy (comparable boundary): `{payload['dimension_winners']['energy_comparable_boundary']}`",
-        f"- precision (comparable boundary): `{payload['dimension_winners']['precision_comparable_boundary']}`",
-        f"- higher-precision noncomparable reference: `{payload['dimension_winners']['higher_precision_noncomparable_reference']}`",
-        "",
-        "## Engineering Pareto",
-        "",
-        "| Candidate | Throughput token/s | Embodied area mm2 | Energy mJ/token | Precision | Promotable |",
-        "|---|---:|---:|---:|---|---|",
     ]
-    for row in engineering:
-        lines.append(
-            "| {candidate_id} | {token_throughput_per_s} | {embodied_area_mm2} | {energy_mj_per_token} | {precision_dimension_label} | {promotable} |".format(
-                **row
-            )
+    for workload_id, winners in payload["dimension_winners_by_workload"].items():
+        lines.append(f"- `{workload_id}`: `{winners}`")
+    lines.append(
+        f"- higher-precision noncomparable reference: `{payload['noncomparable_reference_winners']['higher_precision_noncomparable_reference']}`"
+    )
+    for workload_id, engineering in engineering_by_workload.items():
+        lines.extend(
+            [
+                "",
+                f"## Engineering Pareto: {workload_id}",
+                "",
+                "| Candidate | Throughput token/s | Embodied area mm2 | Energy mJ/token | Precision | Promotable |",
+                "|---|---:|---:|---:|---|---|",
+            ]
         )
+        for row in engineering:
+            lines.append(
+                "| {candidate_id} | {token_throughput_per_s} | {embodied_area_mm2} | {energy_mj_per_token} | {precision_dimension_label} | {promotable} |".format(
+                    **row
+                )
+            )
     lines.extend(["", "## Promotable Pareto", ""])
     if promotable:
         lines.extend(

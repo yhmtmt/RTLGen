@@ -31,6 +31,8 @@ def _recost() -> dict:
                     "kv_heads": 4,
                     "gqa_group_size": 8,
                     "kv_sharing": "gqa8",
+                    "sequence_length": 131072,
+                    "native_context_match": False,
                 },
                 "throughput": {
                     "token_throughput_per_s": 34.5,
@@ -48,7 +50,7 @@ def _recost() -> dict:
                 ],
             },
             {
-                "candidate_id": "score32_exact_llama2_7b_mha_global_hbm_finite_endpoint",
+                "candidate_id": "score32_llama2_7b_mha_131k_extrapolation_global_hbm_finite_endpoint",
                 "model_contract": {
                     "contract_scope": "exact_llama2_7b_mha_structure",
                     "hidden_size": 4096,
@@ -56,6 +58,8 @@ def _recost() -> dict:
                     "kv_heads": 32,
                     "gqa_group_size": 1,
                     "kv_sharing": "mha",
+                    "sequence_length": 131072,
+                    "native_context_match": False,
                 },
                 "throughput": {
                     "token_throughput_per_s": 4.4043,
@@ -66,6 +70,32 @@ def _recost() -> dict:
                 },
                 "energy": {
                     "total_proxy_energy_mj_per_token": 6893.038,
+                },
+                "remaining_abstractions": [
+                    "The fixed shared-SRAM residency policy is recosted but not reoptimized for MHA.",
+                ],
+            },
+            {
+                "candidate_id": "score32_exact_llama2_7b_mha_global_hbm_finite_endpoint",
+                "model_contract": {
+                    "contract_scope": "exact_llama2_7b_mha_structure",
+                    "hidden_size": 4096,
+                    "attention_heads": 32,
+                    "kv_heads": 32,
+                    "gqa_group_size": 1,
+                    "kv_sharing": "mha",
+                    "sequence_length": 4096,
+                    "native_context_match": True,
+                },
+                "throughput": {
+                    "token_throughput_per_s": 80.0,
+                    "token_latency_us": 12500.0,
+                },
+                "physical": {
+                    "total_embodied_area_um2": 790_000_000,
+                },
+                "energy": {
+                    "total_proxy_energy_mj_per_token": 250.0,
                 },
                 "remaining_abstractions": [
                     "The fixed shared-SRAM residency policy is recosted but not reoptimized for MHA.",
@@ -152,15 +182,25 @@ def test_exact_quality_pass_yields_promotable_frontier_with_unchanged_candidate_
     assert result["model"] == "llama2_7b_score32_exact_mha_final_frontier_v1"
     assert result["decision"] == _DECISION_PASS
     assert result["scalar_universal_winner"] is None
-    assert result["dimension_winners"] == {
-        "throughput_comparable_boundary": "score32_gqa8_global_hbm_finite_endpoint",
-        "embodied_area_comparable_boundary": "score32_gqa8_global_hbm_finite_endpoint",
-        "energy_comparable_boundary": "score32_gqa8_global_hbm_finite_endpoint",
-        "precision_comparable_boundary": [
-            "score32_gqa8_global_hbm_finite_endpoint",
-            "score32_exact_llama2_7b_mha_global_hbm_finite_endpoint",
-        ],
-        "higher_precision_noncomparable_reference": "measured_exact_fp16_gqa8_kv8_reference",
+    assert result["dimension_winners_by_workload"] == {
+        "long_context_131072_extrapolation": {
+            "throughput": "score32_gqa8_global_hbm_finite_endpoint",
+            "embodied_area": "score32_gqa8_global_hbm_finite_endpoint",
+            "energy": "score32_gqa8_global_hbm_finite_endpoint",
+            "precision": [
+                "score32_gqa8_global_hbm_finite_endpoint",
+                "score32_llama2_7b_mha_131k_extrapolation_global_hbm_finite_endpoint",
+            ],
+        },
+        "official_llama2_7b_native_context_4096": {
+            "throughput": "score32_exact_llama2_7b_mha_global_hbm_finite_endpoint",
+            "embodied_area": "score32_exact_llama2_7b_mha_global_hbm_finite_endpoint",
+            "energy": "score32_exact_llama2_7b_mha_global_hbm_finite_endpoint",
+            "precision": "score32_exact_llama2_7b_mha_global_hbm_finite_endpoint",
+        },
+    }
+    assert result["noncomparable_reference_winners"] == {
+        "higher_precision_noncomparable_reference": "measured_exact_fp16_gqa8_kv8_reference"
     }
 
     promotable = result["promotable_pareto_frontier"]
@@ -175,8 +215,13 @@ def test_exact_quality_pass_yields_promotable_frontier_with_unchanged_candidate_
     assert all_rows["score32_gqa8_global_hbm_finite_endpoint"]["structural_quality_backed"] is False
     assert all_rows["measured_exact_fp16_gqa8_kv8_reference"]["promotable"] is False
 
-    engineering = [row["candidate_id"] for row in result["engineering_pareto_frontier"]]
-    assert engineering == ["score32_gqa8_global_hbm_finite_endpoint"]
+    engineering = result["engineering_pareto_frontiers_by_workload"]
+    assert [row["candidate_id"] for row in engineering["long_context_131072_extrapolation"]] == [
+        "score32_gqa8_global_hbm_finite_endpoint"
+    ]
+    assert [row["candidate_id"] for row in engineering["official_llama2_7b_native_context_4096"]] == [
+        "score32_exact_llama2_7b_mha_global_hbm_finite_endpoint"
+    ]
     references = result["noncomparable_reference_rows"]
     assert [row["candidate_id"] for row in references] == [
         "measured_exact_fp16_gqa8_kv8_reference"
@@ -223,4 +268,5 @@ def test_remaining_abstractions_preserve_required_frontier_caveats() -> None:
     assert "Logic energy remains a vectorless activity proxy rather than workload-toggle-complete power." in abstractions
     assert "Fixed shared-SRAM residency is recosted but not reoptimized for exact MHA." in abstractions
     assert "Native exact Llama-2-7B quality is bounded to a limited prompt sample rather than a full benchmark suite." in abstractions
+    assert "The 131072-token stress workload is a long-context extrapolation beyond the official Llama-2-7B 4096-token context and is not quality-backed." in abstractions
     assert "Exact FP16 MHA has not been physically recosted on the same accounting boundary." in abstractions

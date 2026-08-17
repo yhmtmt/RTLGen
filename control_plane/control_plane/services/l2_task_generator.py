@@ -5970,6 +5970,7 @@ def _decoder_attention_score32_global_hbm_exact_llama2_mha_recost_evidence(
         "acceptance": [
             "Replay aggregate bytes from every active cluster through one global HBM controller",
             "Report the corrected GQA8 baseline before comparing exact Llama-2-7B MHA",
+            "Separate the 131072-token extrapolation from the official 4096-token native context",
             "Recompute MHA QKV projection cycles, KV writes, KV cache, tile bytes, and HBM energy",
             "Include measured HBM replay-controller area and latency-scaled vectorless energy",
             "Keep shared-SRAM bytes and reduction payload fixed while recomputing residency fractions",
@@ -6068,6 +6069,7 @@ def _decoder_attention_score32_exact_llama2_mha_final_frontier_evidence(
             "Require exact-MHA global-HBM recost and exact official-checkpoint quality evidence",
             "Promote score32 only when native exact-model generation quality passes",
             "Keep GQA8 score32 and GQA8 FP16 visible but structurally nonpromotable",
+            "Partition winners and Pareto sets by sequence-length workload identity",
             "Report throughput, embodied area, energy, and precision independently",
             "Return engineering and promotable Pareto sets without a scalar universal winner",
             "Carry every remaining HBM, activity, SRAM-policy, bounded-quality, and FP16-MHA gap",

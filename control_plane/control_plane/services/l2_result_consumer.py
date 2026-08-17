@@ -1100,12 +1100,19 @@ def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, 
             if isinstance(row, dict) and row.get("candidate_id")
         }
         gqa8 = dict(by_id.get("score32_gqa8_global_hbm_finite_endpoint") or {})
+        long_mha = dict(
+            by_id.get(
+                "score32_llama2_7b_mha_131k_extrapolation_global_hbm_finite_endpoint"
+            )
+            or {}
+        )
         mha = dict(by_id.get("score32_exact_llama2_7b_mha_global_hbm_finite_endpoint") or {})
         parts = [
             f"Global-HBM exact Llama-2-7B MHA recost recorded from {evidence_ref}: decision={outcome}",
             f"source_finite_token_s={correction.get('source_finite_token_throughput_per_s')}",
             f"corrected_gqa8_token_s={dict(gqa8.get('throughput') or {}).get('token_throughput_per_s')}",
-            f"exact_mha_token_s={dict(mha.get('throughput') or {}).get('token_throughput_per_s')}",
+            f"long_context_mha_token_s={dict(long_mha.get('throughput') or {}).get('token_throughput_per_s')}",
+            f"native_context_exact_mha_token_s={dict(mha.get('throughput') or {}).get('token_throughput_per_s')}",
             f"exact_mha_hbm_mj_per_token={dict(mha.get('energy') or {}).get('hbm_energy_mj_per_token')}",
             f"exact_mha_promotable={dict(mha.get('quality_contract') or {}).get('promotable')}",
         ]
@@ -1116,18 +1123,27 @@ def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, 
             evidence_payload.get("decision")
             or "exact_llama2_mha_score32_quality_hold"
         )
-        winners = dict(evidence_payload.get("dimension_winners") or {})
-        engineering = evidence_payload.get("engineering_pareto_frontier")
+        winners_by_workload = dict(evidence_payload.get("dimension_winners_by_workload") or {})
+        engineering_by_workload = dict(
+            evidence_payload.get("engineering_pareto_frontiers_by_workload") or {}
+        )
+        native_winners = dict(
+            winners_by_workload.get("official_llama2_7b_native_context_4096") or {}
+        )
         promotable = evidence_payload.get("promotable_pareto_frontier")
         references = evidence_payload.get("noncomparable_reference_rows")
         parts = [
             f"Exact Llama-2-7B MHA frontier recorded from {evidence_ref}: decision={outcome}",
-            f"engineering_pareto_count={len(engineering) if isinstance(engineering, list) else 0}",
+            f"engineering_workload_count={len(engineering_by_workload)}",
             f"promotable_pareto_count={len(promotable) if isinstance(promotable, list) else 0}",
             f"noncomparable_reference_count={len(references) if isinstance(references, list) else 0}",
-            f"throughput_winner={winners.get('throughput_comparable_boundary')}",
-            f"energy_winner={winners.get('energy_comparable_boundary')}",
-            f"higher_precision_reference={winners.get('higher_precision_noncomparable_reference')}",
+            f"native_context_throughput_winner={native_winners.get('throughput')}",
+            f"native_context_energy_winner={native_winners.get('energy')}",
+            "higher_precision_reference={}".format(
+                dict(evidence_payload.get("noncomparable_reference_winners") or {}).get(
+                    "higher_precision_noncomparable_reference"
+                )
+            ),
             f"scalar_universal_winner={evidence_payload.get('scalar_universal_winner')}",
         ]
         summary = "; ".join(parts)

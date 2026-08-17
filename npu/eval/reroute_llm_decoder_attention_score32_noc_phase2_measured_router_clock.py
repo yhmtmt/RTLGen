@@ -51,7 +51,12 @@ def _schedule_args(args: argparse.Namespace, *, noc_clock_ns: float) -> argparse
     )
 
 
-def _compact_schedule(payload: JsonDict) -> JsonDict:
+def _compact_schedule(
+    payload: JsonDict,
+    *,
+    expected_wave_count: int = 8,
+    expected_tile_count: int = 128,
+) -> JsonDict:
     if payload.get("version") != 2 or payload.get("profile") != "decoder_attention_score32_noc_phase2_schedule":
         raise ValueError("rerouted schedule must preserve the Phase 2 v2 profile")
     source = payload.get("source_contract")
@@ -62,10 +67,22 @@ def _compact_schedule(payload: JsonDict) -> JsonDict:
         raise ValueError("rerouted schedule is missing required sections")
     if source.get("coverage") != "workload_complete":
         raise ValueError("rerouted schedule must remain workload_complete")
-    if source.get("declared_tile_waves") != 8 or source.get("simulated_wave_count") != 8:
-        raise ValueError("rerouted schedule must cover exactly eight waves")
-    if traffic.get("tile_count") != 128 or traffic.get("simulated_tiles") != 128:
-        raise ValueError("rerouted schedule must cover exactly 128 tiles")
+    if expected_wave_count <= 0 or expected_tile_count <= 0:
+        raise ValueError("expected workload dimensions must be positive")
+    if (
+        source.get("declared_tile_waves") != expected_wave_count
+        or source.get("simulated_wave_count") != expected_wave_count
+    ):
+        raise ValueError(
+            f"rerouted schedule must cover exactly {expected_wave_count} waves"
+        )
+    if (
+        traffic.get("tile_count") != expected_tile_count
+        or traffic.get("simulated_tiles") != expected_tile_count
+    ):
+        raise ValueError(
+            f"rerouted schedule must cover exactly {expected_tile_count} tiles"
+        )
     if simulation.get("scheduled_flit_count") != simulation.get("delivered_flit_count"):
         raise ValueError("rerouted schedule must deliver every scheduled flit")
     return {

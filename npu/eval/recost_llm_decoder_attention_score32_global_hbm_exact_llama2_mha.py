@@ -286,6 +286,8 @@ def _candidate(
     candidate_id: str,
     kv_heads: int,
     exact_llama2_structure: bool,
+    sequence_length: int,
+    native_context_match: bool,
     finite: JsonDict,
     source_row: JsonDict,
     controller: JsonDict,
@@ -298,15 +300,16 @@ def _candidate(
     head_dim = hidden_size // attention_heads
     kv_bits = _positive_int(source_row.get("kv_bits"), "kv_bits")
     tile_tokens = _positive_int(source_row.get("tile_tokens"), "tile_tokens")
-    tile_count = _positive_int(source_row.get("tile_count"), "tile_count")
-    waves = _positive_int(source_row.get("tile_waves"), "tile_waves")
-    active_clusters = _positive_int(source_row.get("active_clusters"), "active_clusters")
+    source_active_clusters = _positive_int(source_row.get("active_clusters"), "active_clusters")
     layers = _positive_int(source_row.get("layers"), "layers")
     compute_clock_ns = _positive(
         source_row.get("measured_dual_stream_composed_clock_ns"), "compute clock"
     )
     hbm_clock_ns = _positive(source_row.get("clock_ns"), "HBM controller clock")
     full_tile_bytes = int(2 * tile_tokens * kv_heads * head_dim * kv_bits / 8)
+    tile_count = _ceil_div(sequence_length, tile_tokens)
+    active_clusters = min(source_active_clusters, tile_count)
+    waves = _ceil_div(tile_count, active_clusters)
     if fixed_shared_tile_bytes >= full_tile_bytes:
         raise ValueError("fixed shared payload must be smaller than the full KV tile")
     tile_hbm_bytes = full_tile_bytes - fixed_shared_tile_bytes
@@ -336,6 +339,10 @@ def _candidate(
     schedule_row.update(
         {
             "label": "llama2_7b_exact_mha" if exact_llama2_structure else "llama7b_gqa8_proxy",
+            "sequence_length": sequence_length,
+            "tile_count": tile_count,
+            "active_clusters": active_clusters,
+            "tile_waves": waves,
             "kv_heads": kv_heads,
             "kv_sharing": "mha" if kv_heads == attention_heads else f"gqa{attention_heads // kv_heads}",
             "shared_byte_share": fixed_shared_tile_bytes / full_tile_bytes,
@@ -345,7 +352,7 @@ def _candidate(
             "kv_write_cycles": kv_write_cycles,
             "kv_cache_mib": (
                 2
-                * _positive_int(source_row.get("sequence_length"), "sequence length")
+                * sequence_length
                 * kv_heads
                 * head_dim
                 * kv_bits
@@ -364,7 +371,11 @@ def _candidate(
         source_row_override=schedule_row,
         source_artifact_override=candidate_id,
     )
-    logical = _compact_schedule(logical_payload)
+    logical = _compact_schedule(
+        logical_payload,
+        expected_wave_count=waves,
+        expected_tile_count=tile_count,
+    )
     endpoint = run_performance_replay(
         descriptors_from_packet_specs(packet_specs), max_cycles=args.max_cycles
     )
@@ -422,10 +433,13 @@ def _candidate(
             "gqa_group_size": attention_heads // kv_heads,
             "kv_sharing": schedule_row["kv_sharing"],
             "sequence_length": schedule_row["sequence_length"],
+            "native_context_length": 4096,
+            "native_context_match": native_context_match,
             "kv_bits": kv_bits,
         },
         "projection": projection,
         "memory": {
+            "tile_count": tile_count,
             "full_tile_bytes": full_tile_bytes,
             "fixed_shared_tile_bytes": fixed_shared_tile_bytes,
             "tile_hbm_bytes": tile_hbm_bytes,
@@ -479,9 +493,12 @@ def _candidate(
             "arithmetic_profile": finite["precision_contract"]["precision_profile"],
             "structural_model_match": exact_llama2_structure,
             "native_llama2_generation_quality_measured": False,
+            "native_context_match": native_context_match,
             "promotable": False,
             "reason": (
-                "Exact MHA structure is recosted, but native Llama-2-7B score32 generation quality is not measured."
+                "Exact native-context MHA structure is recosted, but native Llama-2-7B score32 generation quality is not measured."
+                if exact_llama2_structure and native_context_match
+                else "The 131k MHA row extrapolates beyond the official Llama-2-7B native context and lacks matching long-context quality evidence."
                 if exact_llama2_structure
                 else "GQA8 is not the exact Llama-2-7B MHA structure."
             ),
@@ -508,6 +525,8 @@ def build_report(args: argparse.Namespace) -> JsonDict:
         candidate_id="score32_gqa8_global_hbm_finite_endpoint",
         kv_heads=4,
         exact_llama2_structure=False,
+        sequence_length=_positive_int(source_row.get("sequence_length"), "source sequence length"),
+        native_context_match=False,
         finite=finite,
         source_row=source_row,
         controller=controller,
@@ -515,11 +534,27 @@ def build_report(args: argparse.Namespace) -> JsonDict:
         energy_params=energy_params,
         fixed_shared_tile_bytes=fixed_shared_tile_bytes,
     )
-    mha = _candidate(
+    long_context_mha = _candidate(
+        args=args,
+        candidate_id="score32_llama2_7b_mha_131k_extrapolation_global_hbm_finite_endpoint",
+        kv_heads=32,
+        exact_llama2_structure=True,
+        sequence_length=_positive_int(source_row.get("sequence_length"), "source sequence length"),
+        native_context_match=False,
+        finite=finite,
+        source_row=source_row,
+        controller=controller,
+        controller_ppa=controller_ppa,
+        energy_params=energy_params,
+        fixed_shared_tile_bytes=fixed_shared_tile_bytes,
+    )
+    native_mha = _candidate(
         args=args,
         candidate_id="score32_exact_llama2_7b_mha_global_hbm_finite_endpoint",
         kv_heads=32,
         exact_llama2_structure=True,
+        sequence_length=4096,
+        native_context_match=True,
         finite=finite,
         source_row=source_row,
         controller=controller,
@@ -554,22 +589,28 @@ def build_report(args: argparse.Namespace) -> JsonDict:
                 gqa8["throughput"]["token_throughput_per_s"] / source_throughput
             ),
         },
-        "rows": [gqa8, mha],
-        "exact_mha_delta_vs_corrected_gqa8": {
-            "qkv_projection_macs_ratio": mha["projection"]["target_macs"] / gqa8["projection"]["target_macs"],
-            "kv_cache_ratio": mha["memory"]["kv_cache_mib"] / gqa8["memory"]["kv_cache_mib"],
-            "read_bytes_ratio": mha["memory"]["read_bytes_per_token"] / gqa8["memory"]["read_bytes_per_token"],
-            "token_latency_ratio": mha["throughput"]["token_latency_us"] / gqa8["throughput"]["token_latency_us"],
-            "token_throughput_ratio": mha["throughput"]["token_throughput_per_s"] / gqa8["throughput"]["token_throughput_per_s"],
-            "hbm_energy_ratio": mha["energy"]["hbm_energy_mj_per_token"] / gqa8["energy"]["hbm_energy_mj_per_token"],
+        "rows": [gqa8, long_context_mha, native_mha],
+        "long_context_mha_delta_vs_corrected_gqa8": {
+            "qkv_projection_macs_ratio": long_context_mha["projection"]["target_macs"] / gqa8["projection"]["target_macs"],
+            "kv_cache_ratio": long_context_mha["memory"]["kv_cache_mib"] / gqa8["memory"]["kv_cache_mib"],
+            "read_bytes_ratio": long_context_mha["memory"]["read_bytes_per_token"] / gqa8["memory"]["read_bytes_per_token"],
+            "token_latency_ratio": long_context_mha["throughput"]["token_latency_us"] / gqa8["throughput"]["token_latency_us"],
+            "token_throughput_ratio": long_context_mha["throughput"]["token_throughput_per_s"] / gqa8["throughput"]["token_throughput_per_s"],
+            "hbm_energy_ratio": long_context_mha["energy"]["hbm_energy_mj_per_token"] / gqa8["energy"]["hbm_energy_mj_per_token"],
+        },
+        "native_context_exact_mha": {
+            "sequence_length": native_mha["model_contract"]["sequence_length"],
+            "token_throughput_per_s": native_mha["throughput"]["token_throughput_per_s"],
+            "energy_mj_per_token": native_mha["energy"]["total_proxy_energy_mj_per_token"],
+            "quality_required": True,
         },
         "invariants": {
             "attention_qk_value_macs_unchanged": True,
             "partial_reduction_payload_unchanged": True,
             "fixed_shared_sram_bytes_unchanged": True,
             "finite_endpoint_packet_volume_unchanged": (
-                gqa8["schedule"]["scheduled_packets"] == mha["schedule"]["scheduled_packets"]
-                and gqa8["schedule"]["scheduled_flits"] == mha["schedule"]["scheduled_flits"]
+                gqa8["schedule"]["scheduled_packets"] == long_context_mha["schedule"]["scheduled_packets"]
+                and gqa8["schedule"]["scheduled_flits"] == long_context_mha["schedule"]["scheduled_flits"]
             ),
             "compute_array_and_onchip_area_unchanged": True,
         },
@@ -578,6 +619,7 @@ def build_report(args: argparse.Namespace) -> JsonDict:
             "HBM energy is command calibrated rather than vendor current signoff.",
             "Logic energy is an always-on vectorless upper proxy; workload clock-gating activity is not measured.",
             "Native Llama-2-7B score32 generation quality has not been measured.",
+            "The 131k-token rows are long-context extrapolations beyond the official Llama-2-7B 4096-token context and have no matching trained-checkpoint quality evidence.",
             "The fixed shared-SRAM residency policy is recosted but not reoptimized for MHA.",
         ],
         "next_step": {
@@ -589,32 +631,36 @@ def build_report(args: argparse.Namespace) -> JsonDict:
 
 
 def write_report(payload: JsonDict, path: Path) -> None:
-    gqa8, mha = payload["rows"]
+    gqa8, long_context_mha, native_mha = payload["rows"]
     lines = [
         "# Global-HBM Exact Llama-2-7B MHA Recost",
         "",
         f"- decision: `{payload['decision']}`",
         f"- corrected GQA8 throughput token/s: `{gqa8['throughput']['token_throughput_per_s']}`",
-        f"- exact MHA throughput token/s: `{mha['throughput']['token_throughput_per_s']}`",
-        f"- exact MHA KV cache MiB: `{mha['memory']['kv_cache_mib']}`",
-        f"- exact MHA total proxy energy mJ/token: `{mha['energy']['total_proxy_energy_mj_per_token']}`",
-        f"- total embodied area mm2: `{mha['physical']['total_embodied_area_um2'] / 1.0e6}`",
+        f"- 131k MHA extrapolation throughput token/s: `{long_context_mha['throughput']['token_throughput_per_s']}`",
+        f"- native 4096-context exact MHA throughput token/s: `{native_mha['throughput']['token_throughput_per_s']}`",
+        f"- native exact MHA KV cache MiB: `{native_mha['memory']['kv_cache_mib']}`",
+        f"- native exact MHA total proxy energy mJ/token: `{native_mha['energy']['total_proxy_energy_mj_per_token']}`",
+        f"- total embodied area mm2: `{native_mha['physical']['total_embodied_area_um2'] / 1.0e6}`",
         "",
-        "| Candidate | KV heads | QKV cycles | Wave HBM bytes | Layer cycles | Token/s | Total mJ/token | Embodied mm2 | Structural match | Promotable |",
-        "|---|---:|---:|---:|---:|---:|---:|---:|---|---|",
+        "| Candidate | Sequence | KV heads | Tiles/waves | Wave HBM bytes | Layer cycles | Token/s | Total mJ/token | Embodied mm2 | Structural/context match | Promotable |",
+        "|---|---:|---:|---:|---:|---:|---:|---:|---:|---|---|",
     ]
     for row in payload["rows"]:
         lines.append(
-            "| {candidate_id} | {kv_heads} | {qkv} | {wave_bytes} | {layer_cycles} | {throughput} | {energy} | {area} | {structural} | {promotable} |".format(
+            "| {candidate_id} | {sequence} | {kv_heads} | {tiles}/{waves} | {wave_bytes} | {layer_cycles} | {throughput} | {energy} | {area} | {structural}/{context} | {promotable} |".format(
                 candidate_id=row["candidate_id"],
+                sequence=row["model_contract"]["sequence_length"],
                 kv_heads=row["model_contract"]["kv_heads"],
-                qkv=row["projection"]["target_cycles"],
+                tiles=row["memory"]["tile_count"],
+                waves=row["schedule"]["tile_waves"],
                 wave_bytes=row["global_hbm_service"]["aggregate_wave_hbm_bytes"],
                 layer_cycles=row["schedule"]["layer_cycles"],
                 throughput=row["throughput"]["token_throughput_per_s"],
                 energy=row["energy"]["total_proxy_energy_mj_per_token"],
                 area=row["physical"]["total_embodied_area_um2"] / 1.0e6,
                 structural=row["quality_contract"]["structural_model_match"],
+                context=row["quality_contract"]["native_context_match"],
                 promotable=row["quality_contract"]["promotable"],
             )
         )

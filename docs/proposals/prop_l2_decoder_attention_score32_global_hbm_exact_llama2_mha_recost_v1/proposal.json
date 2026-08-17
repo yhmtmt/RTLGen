@@ -7,11 +7,12 @@
   "title": "Correct global HBM service and recost exact Llama-2-7B MHA",
   "hypothesis": "The prior score32 frontier overstates throughput because it replays one tile against a global HBM controller, and its GQA8 shape is not exact Llama-2-7B; aggregate-wave replay plus a 32-KV-head MHA recost will establish the structurally valid performance and energy bounds.",
   "direct_comparison": {
-    "primary_question": "How do corrected GQA8 and exact Llama-2-7B MHA compare in token throughput, energy, area, and structural/precision evidence under one global HBM controller?",
+    "primary_question": "How do corrected GQA8 and MHA compare under the same 131k stress workload, and what is the exact native-context Llama-2-7B MHA result under one global HBM controller?",
     "include": [
       "aggregate 16-cluster HBM wave service",
       "separate HBM and compute clock domains",
       "exact MHA QKV projection and KV traffic",
+      "separate 131072-token extrapolation and official 4096-token native-context workloads",
       "finite endpoint NoC replay with delayed releases",
       "calibrated HBM command energy",
       "measured HBM replay-controller area and latency-scaled power",

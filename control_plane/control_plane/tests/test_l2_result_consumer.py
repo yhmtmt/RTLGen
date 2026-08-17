@@ -421,8 +421,12 @@ def test_decoder_evidence_summary_recognizes_global_hbm_exact_mha_recost() -> No
                     "throughput": {"token_throughput_per_s": 30.0},
                 },
                 {
-                    "candidate_id": "score32_exact_llama2_7b_mha_global_hbm_finite_endpoint",
+                    "candidate_id": "score32_llama2_7b_mha_131k_extrapolation_global_hbm_finite_endpoint",
                     "throughput": {"token_throughput_per_s": 4.5},
+                },
+                {
+                    "candidate_id": "score32_exact_llama2_7b_mha_global_hbm_finite_endpoint",
+                    "throughput": {"token_throughput_per_s": 114.0},
                     "energy": {"hbm_energy_mj_per_token": 1080.0},
                     "quality_contract": {"promotable": False},
                 },
@@ -433,7 +437,8 @@ def test_decoder_evidence_summary_recognizes_global_hbm_exact_mha_recost() -> No
     assert outcome == "exact_llama2_mha_recost_recorded_native_quality_required"
     assert "source_finite_token_s=74.0" in summary
     assert "corrected_gqa8_token_s=30.0" in summary
-    assert "exact_mha_token_s=4.5" in summary
+    assert "long_context_mha_token_s=4.5" in summary
+    assert "native_context_exact_mha_token_s=114.0" in summary
     assert "exact_mha_promotable=False" in summary
 
 
@@ -443,12 +448,19 @@ def test_decoder_evidence_summary_recognizes_exact_llama2_mha_final_frontier() -
         evidence_payload={
             "model": "llama2_7b_score32_exact_mha_final_frontier_v1",
             "decision": "exact_llama2_mha_quality_backed_frontier_available",
-            "dimension_winners": {
-                "throughput_comparable_boundary": "gqa8",
-                "energy_comparable_boundary": "gqa8",
+            "dimension_winners_by_workload": {
+                "official_llama2_7b_native_context_4096": {
+                    "throughput": "exact_mha",
+                    "energy": "exact_mha",
+                },
+            },
+            "noncomparable_reference_winners": {
                 "higher_precision_noncomparable_reference": "fp16",
             },
-            "engineering_pareto_frontier": [{"candidate_id": "gqa8"}],
+            "engineering_pareto_frontiers_by_workload": {
+                "long_context_131072_extrapolation": [{"candidate_id": "gqa8"}],
+                "official_llama2_7b_native_context_4096": [{"candidate_id": "exact_mha"}],
+            },
             "promotable_pareto_frontier": [{"candidate_id": "exact_mha"}],
             "noncomparable_reference_rows": [{"candidate_id": "fp16"}],
             "scalar_universal_winner": None,
@@ -456,10 +468,10 @@ def test_decoder_evidence_summary_recognizes_exact_llama2_mha_final_frontier() -
     )
 
     assert outcome == "exact_llama2_mha_quality_backed_frontier_available"
-    assert "engineering_pareto_count=1" in summary
+    assert "engineering_workload_count=2" in summary
     assert "promotable_pareto_count=1" in summary
     assert "noncomparable_reference_count=1" in summary
-    assert "throughput_winner=gqa8" in summary
+    assert "native_context_throughput_winner=exact_mha" in summary
     assert "higher_precision_reference=fp16" in summary
     assert "scalar_universal_winner=None" in summary
 

@@ -8,7 +8,7 @@
   "abstraction_layer": "decoder_attention_score32_exact_llama2_mha_final_frontier",
   "hypothesis": "Joining the corrected global-HBM exact-MHA recost with exact-checkpoint score32 quality will establish the first structurally and arithmetically valid Llama-2-7B candidate, while exposing remaining energy, memory-policy, and FP16 comparison gaps.",
   "direct_comparison": {
-    "primary_question": "Which currently measured architecture is nondominated in token throughput, embodied area, energy, and precision after enforcing exact Llama-2-7B model identity?",
+    "primary_question": "Which currently measured architecture is nondominated within each identical workload/accounting boundary after enforcing exact Llama-2-7B model and context identity?",
     "include": [
       "exact 32-KV-head score32 MHA recost under one global HBM controller",
       "native meta-llama/Llama-2-7b-hf generation-quality evidence",
@@ -21,6 +21,7 @@
       "scalar weighting across objectives",
       "promotion of GQA8 rows as exact Llama-2-7B",
       "promotion after failed or missing exact-checkpoint quality",
+      "cross-ranking 4096-token native and 131072-token extrapolated workloads",
       "vendor HBM signoff claims",
       "claims that exact FP16 MHA has already been physically recosted"
     ],
