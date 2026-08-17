@@ -1,0 +1,64 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_score32_exact_llama2_mha_final_frontier_v1",
+  "created_utc": "2026-08-17T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Join exact Llama-2-7B MHA hardware and precision evidence",
+  "abstraction_layer": "decoder_attention_score32_exact_llama2_mha_final_frontier",
+  "hypothesis": "Joining the corrected global-HBM exact-MHA recost with exact-checkpoint score32 quality will establish the first structurally and arithmetically valid Llama-2-7B candidate, while exposing remaining energy, memory-policy, and FP16 comparison gaps.",
+  "direct_comparison": {
+    "primary_question": "Which currently measured architecture is nondominated in token throughput, embodied area, energy, and precision after enforcing exact Llama-2-7B model identity?",
+    "include": [
+      "exact 32-KV-head score32 MHA recost under one global HBM controller",
+      "native meta-llama/Llama-2-7b-hf generation-quality evidence",
+      "corrected GQA8 score32 engineering reference",
+      "measured exact-FP16 GQA8 engineering reference",
+      "separate engineering and structurally promotable Pareto sets",
+      "explicit exclusion of incomplete-area references from cross-objective dominance"
+    ],
+    "exclude": [
+      "scalar weighting across objectives",
+      "promotion of GQA8 rows as exact Llama-2-7B",
+      "promotion after failed or missing exact-checkpoint quality",
+      "vendor HBM signoff claims",
+      "claims that exact FP16 MHA has already been physically recosted"
+    ],
+    "metrics": [
+      "token_throughput_per_s",
+      "token_latency_us",
+      "total_embodied_area_mm2",
+      "die_envelope_mm2",
+      "energy_mj_per_token",
+      "precision_class",
+      "promotable",
+      "pareto_membership"
+    ]
+  },
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_score32_exact_llama2_mha_final_frontier_v1",
+      "task_type": "l2_campaign",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_score32_exact_llama2_mha_final_frontier",
+      "comparison_role": "exact_model_frontier_decision",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_score32_global_hbm_exact_llama2_mha_recost_v1",
+        "l2_decoder_attention_score32_exact_llama2_mha_generation_quality_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "run_physical": false
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_integrated_frontier_ranking__l2_decoder_attention_score32_quality_aware_hbm_controller_replay_rtl_ppa_recost_frontier_llama7b_v1.json"
+  ],
+  "risks": [
+    "The exact score32 row still uses deterministic HBM replay and command-calibrated HBM energy.",
+    "Logic energy remains vectorless rather than workload-toggle-complete.",
+    "The shared-SRAM residency allocation is fixed rather than optimized for MHA.",
+    "No structurally exact FP16 MHA physical reference exists yet."
+  ],
+  "needs_mapper_change": false
+}

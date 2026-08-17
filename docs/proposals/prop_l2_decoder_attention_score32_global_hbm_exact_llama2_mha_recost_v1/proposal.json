@@ -14,6 +14,7 @@
       "exact MHA QKV projection and KV traffic",
       "finite endpoint NoC replay with delayed releases",
       "calibrated HBM command energy",
+      "measured HBM replay-controller area and latency-scaled power",
       "explicit structural and native-quality promotion gates"
     ],
     "exclude": [
@@ -36,6 +37,7 @@
   ],
   "baseline_refs": [
     "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_reduction_recost__l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1.json",
-    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_hbm_controller_replay__l2_decoder_attention_score32_hbm_controller_replay_llama7b_v1.json"
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_hbm_controller_replay__l2_decoder_attention_score32_hbm_controller_replay_llama7b_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_integrated_frontier_ranking__l2_decoder_attention_score32_quality_aware_hbm_controller_replay_rtl_ppa_recost_frontier_llama7b_v1.json"
   ]
 }

@@ -268,7 +268,10 @@ def test_structural_contract_rejects_dimension_mismatch_without_loading_models()
     contract = _build_structural_contract(args, model, resolved_model_id="other/model")
 
     assert contract["status"] == "fail"
-    assert contract["blockers"] == ["KV head count 8 does not match expected 32"]
+    assert contract["blockers"] == [
+        "KV head count 8 does not match expected 32",
+        "GQA group size 4.0 does not match expected 1",
+    ]
     assert contract["gqa_group_size_matches_expectation"] is False
     with pytest.raises(SystemExit, match="model structural contract failed"):
         _enforce_contract(contract, label="model structural contract")

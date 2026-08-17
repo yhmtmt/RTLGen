@@ -25,6 +25,7 @@ def _recost() -> dict:
             {
                 "candidate_id": "score32_gqa8_global_hbm_finite_endpoint",
                 "model_contract": {
+                    "contract_scope": "llama7b_shaped_gqa8_proxy_not_exact_llama2_7b",
                     "hidden_size": 4096,
                     "attention_heads": 32,
                     "kv_heads": 4,
@@ -49,6 +50,7 @@ def _recost() -> dict:
             {
                 "candidate_id": "score32_exact_llama2_7b_mha_global_hbm_finite_endpoint",
                 "model_contract": {
+                    "contract_scope": "exact_llama2_7b_mha_structure",
                     "hidden_size": 4096,
                     "attention_heads": 32,
                     "kv_heads": 32,
@@ -84,6 +86,7 @@ def _quality(*, status: str = "mixed_int8_generation_quality_pass", model_id: st
         "model": {
             "model_id": model_id,
             "resolved_model_id": model_id,
+            "expected_model_id": "meta-llama/Llama-2-7b-hf",
             "hidden_size": 4096,
             "attention_head_count": 32,
             "kv_head_count": 32,
@@ -121,7 +124,8 @@ def _quality_frontier() -> dict:
                 "quality_backed": False,
                 "token_throughput_per_s": 12.0,
                 "latency_us": 83333.333333,
-                "total_embodied_area_mm2": 920.0,
+                "compute_area_mm2": 479.6,
+                "die_area_mm2": 1200.0,
                 "energy_mj_per_token": 120.0,
                 "remaining_abstractions": [
                     "Profile-scaled SRAM activity remains approximate.",
@@ -149,10 +153,14 @@ def test_exact_quality_pass_yields_promotable_frontier_with_unchanged_candidate_
     assert result["decision"] == _DECISION_PASS
     assert result["scalar_universal_winner"] is None
     assert result["dimension_winners"] == {
-        "throughput": "score32_gqa8_global_hbm_finite_endpoint",
-        "embodied_area": "score32_gqa8_global_hbm_finite_endpoint",
-        "energy": "measured_exact_fp16_gqa8_kv8_reference",
-        "precision": "measured_exact_fp16_gqa8_kv8_reference",
+        "throughput_comparable_boundary": "score32_gqa8_global_hbm_finite_endpoint",
+        "embodied_area_comparable_boundary": "score32_gqa8_global_hbm_finite_endpoint",
+        "energy_comparable_boundary": "score32_gqa8_global_hbm_finite_endpoint",
+        "precision_comparable_boundary": [
+            "score32_gqa8_global_hbm_finite_endpoint",
+            "score32_exact_llama2_7b_mha_global_hbm_finite_endpoint",
+        ],
+        "higher_precision_noncomparable_reference": "measured_exact_fp16_gqa8_kv8_reference",
     }
 
     promotable = result["promotable_pareto_frontier"]
@@ -168,10 +176,13 @@ def test_exact_quality_pass_yields_promotable_frontier_with_unchanged_candidate_
     assert all_rows["measured_exact_fp16_gqa8_kv8_reference"]["promotable"] is False
 
     engineering = [row["candidate_id"] for row in result["engineering_pareto_frontier"]]
-    assert engineering == [
-        "score32_gqa8_global_hbm_finite_endpoint",
-        "measured_exact_fp16_gqa8_kv8_reference",
+    assert engineering == ["score32_gqa8_global_hbm_finite_endpoint"]
+    references = result["noncomparable_reference_rows"]
+    assert [row["candidate_id"] for row in references] == [
+        "measured_exact_fp16_gqa8_kv8_reference"
     ]
+    assert references[0]["embodied_area_mm2"] is None
+    assert references[0]["area_metric_status"] == "compute_only_not_total_embodied_noncomparable"
 
 
 def test_quality_hold_keeps_exact_mha_nonpromotable_but_preserves_engineering_frontier() -> None:

@@ -162,6 +162,13 @@ def _build_structural_contract(args: argparse.Namespace, model: Any, *, resolved
     gqa_matches_expectation = True
     if expected_gqa_group_size > 0:
         gqa_matches_expectation = abs(actual["gqa_group_size"] - expected_gqa_group_size) <= DIVISIBILITY_EPSILON
+        if not gqa_matches_expectation:
+            blockers.append(
+                "GQA group size {} does not match expected {}".format(
+                    actual["gqa_group_size"],
+                    expected_gqa_group_size,
+                )
+            )
 
     status = "pass" if not blockers else "fail"
     return {

@@ -19,7 +19,7 @@
         "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_global_hbm_exact_llama2_mha_recost__l2_decoder_attention_score32_global_hbm_exact_llama2_mha_recost_v1.json",
         "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_global_hbm_exact_llama2_mha_recost__l2_decoder_attention_score32_global_hbm_exact_llama2_mha_recost_v1.md"
       ],
-      "acceptance_notes": "Replay aggregate active-cluster HBM bytes, rebuild exact-MHA compute and memory quantities, rerun finite endpoint scheduling, and refuse promotion without native Llama-2-7B score32 quality evidence."
+      "acceptance_notes": "Replay aggregate active-cluster HBM bytes, rebuild exact-MHA compute and memory quantities, include measured replay-controller area and latency-scaled energy, rerun finite endpoint scheduling, and refuse promotion without native Llama-2-7B score32 quality evidence."
     }
   ]
 }

@@ -52,11 +52,17 @@ DEFAULT_HBM_ENERGY = _BASE / (
     "decoder_attention_score32_exp_lut_hbm_dram_service_closure__"
     "l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1.json"
 )
+DEFAULT_QUALITY_FRONTIER = _BASE / (
+    "decoder_attention_score32_integrated_frontier_ranking__"
+    "l2_decoder_attention_score32_quality_aware_hbm_controller_replay_"
+    "rtl_ppa_recost_frontier_llama7b_v1.json"
+)
 
 _FINITE_PROFILE = "decoder_attention_score32_noc_phase2_finite_endpoint_composed_recost"
 _SOURCE_MODEL = "llm_decoder_attention_score32_exact_reduction_recost_v1"
 _HBM_REPLAY_MODEL = "llm_decoder_attention_score32_hbm_controller_replay_v1"
 _HBM_ENERGY_MODEL = "llm_decoder_attention_score32_exp_lut_hbm_dram_service_closure_v1"
+_QUALITY_FRONTIER_MODEL = "llm_decoder_attention_score32_integrated_frontier_ranking_v1"
 
 
 def _load_json(path: Path) -> JsonDict:
@@ -144,6 +150,33 @@ def _validate_inputs(
     ):
         _positive(energy_params.get(key), f"HBM energy parameter {key}")
     return model, best, controller, energy_params
+
+
+def _controller_ppa(quality_frontier: JsonDict) -> JsonDict:
+    if quality_frontier.get("version") != 1 or quality_frontier.get("model") != _QUALITY_FRONTIER_MODEL:
+        raise ValueError("quality frontier model/version mismatch")
+    rows = quality_frontier.get("rows")
+    if not isinstance(rows, list):
+        raise ValueError("quality frontier rows are missing")
+    matches = [
+        row
+        for row in rows
+        if isinstance(row, dict) and row.get("family") == "score32_exp_lut_div"
+    ]
+    if len(matches) != 1:
+        raise ValueError("quality frontier must contain exactly one score32 row")
+    ppa = matches[0].get("score32_hbm_controller_replay_ppa")
+    if not isinstance(ppa, dict):
+        raise ValueError("score32 row is missing measured HBM controller PPA")
+    return {
+        "artifact_item_id": str(ppa.get("artifact_item_id") or ""),
+        "area_mm2": _positive(ppa.get("controller_area_mm2"), "HBM controller area"),
+        "power_mw": _positive(ppa.get("controller_power_mw"), "HBM controller power"),
+        "critical_path_ns": _positive(
+            ppa.get("critical_path_ns_best"), "HBM controller critical path"
+        ),
+        "metrics_csv": str(ppa.get("metrics_csv") or ""),
+    }
 
 
 def _projection_cycles(*, row: JsonDict, kv_heads: int) -> JsonDict:
@@ -256,6 +289,7 @@ def _candidate(
     finite: JsonDict,
     source_row: JsonDict,
     controller: JsonDict,
+    controller_ppa: JsonDict,
     energy_params: JsonDict,
     fixed_shared_tile_bytes: int,
 ) -> JsonDict:
@@ -360,6 +394,19 @@ def _candidate(
         finite["physical_recost"]["recost_logic_vectorless_power_mw"], "logic vectorless power"
     )
     logic_energy_mj = logic_power_mw * token_time_ns / 1.0e9
+    controller_energy_mj = (
+        _positive(controller_ppa.get("power_mw"), "HBM controller power")
+        * token_time_ns
+        / 1.0e9
+    )
+    logic_area_um2 = _positive(
+        finite["physical_recost"]["total_embodied_area_um2"], "logic embodied area"
+    )
+    controller_area_um2 = (
+        _positive(controller_ppa.get("area_mm2"), "HBM controller area") * 1.0e6
+    )
+    total_embodied_area_um2 = logic_area_um2 + controller_area_um2
+    die_area_um2 = _positive(finite["physical_recost"]["die_area_um2"], "die area")
     return {
         "candidate_id": candidate_id,
         "model_contract": {
@@ -409,16 +456,22 @@ def _candidate(
             "token_throughput_per_s": 1.0e9 / token_time_ns,
         },
         "physical": {
-            "die_area_um2": finite["physical_recost"]["die_area_um2"],
-            "total_embodied_area_um2": finite["physical_recost"]["total_embodied_area_um2"],
-            "area_fit": finite["physical_recost"]["area_fit"],
+            "die_area_um2": die_area_um2,
+            "logic_and_onchip_memory_embodied_area_um2": logic_area_um2,
+            "hbm_controller_area_um2": controller_area_um2,
+            "total_embodied_area_um2": total_embodied_area_um2,
+            "area_fit": total_embodied_area_um2 <= die_area_um2,
             "area_change_for_mha": "none_shared_compute_and_fixed_onchip_buffers",
+            "hbm_controller_ppa": controller_ppa,
         },
         "energy": {
             "hbm_command_calibrated_energy": hbm_energy,
             "hbm_energy_mj_per_token": hbm_energy["energy_mj"],
             "logic_vectorless_energy_mj_per_token": logic_energy_mj,
-            "total_proxy_energy_mj_per_token": logic_energy_mj + float(hbm_energy["energy_mj"]),
+            "hbm_controller_vectorless_energy_mj_per_token": controller_energy_mj,
+            "total_proxy_energy_mj_per_token": (
+                logic_energy_mj + controller_energy_mj + float(hbm_energy["energy_mj"])
+            ),
             "logic_energy_status": "always_on_vectorless_upper_proxy_without_clock_gating",
             "hbm_energy_status": "command_calibrated_not_vendor_signoff",
         },
@@ -442,9 +495,11 @@ def build_report(args: argparse.Namespace) -> JsonDict:
     source = _load_json(root / args.source_recost_json)
     hbm_replay = _load_json(root / args.hbm_replay_json)
     hbm_energy = _load_json(root / args.hbm_energy_json)
+    quality_frontier = _load_json(root / args.quality_frontier_json)
     _model, source_row, controller, energy_params = _validate_inputs(
         finite=finite, source=source, hbm_replay=hbm_replay, hbm_energy=hbm_energy
     )
+    controller_ppa = _controller_ppa(quality_frontier)
     fixed_shared_tile_bytes = _positive_int(
         source_row.get("onchip_shared_bytes_per_cluster"), "fixed shared tile bytes"
     )
@@ -456,6 +511,7 @@ def build_report(args: argparse.Namespace) -> JsonDict:
         finite=finite,
         source_row=source_row,
         controller=controller,
+        controller_ppa=controller_ppa,
         energy_params=energy_params,
         fixed_shared_tile_bytes=fixed_shared_tile_bytes,
     )
@@ -467,6 +523,7 @@ def build_report(args: argparse.Namespace) -> JsonDict:
         finite=finite,
         source_row=source_row,
         controller=controller,
+        controller_ppa=controller_ppa,
         energy_params=energy_params,
         fixed_shared_tile_bytes=fixed_shared_tile_bytes,
     )
@@ -482,6 +539,10 @@ def build_report(args: argparse.Namespace) -> JsonDict:
             "exact_reduction_recost": "l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1",
             "hbm_controller_replay": "l2_decoder_attention_score32_hbm_controller_replay_llama7b_v1",
             "hbm_energy_closure": "l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1",
+            "hbm_controller_ppa_frontier": (
+                "l2_decoder_attention_score32_quality_aware_hbm_controller_replay_"
+                "rtl_ppa_recost_frontier_llama7b_v1"
+            ),
         },
         "global_controller_correction": {
             "legacy_scope": "one_tile_replayed_as_if_it_owned_the_global_controller",
@@ -536,21 +597,23 @@ def write_report(payload: JsonDict, path: Path) -> None:
         f"- corrected GQA8 throughput token/s: `{gqa8['throughput']['token_throughput_per_s']}`",
         f"- exact MHA throughput token/s: `{mha['throughput']['token_throughput_per_s']}`",
         f"- exact MHA KV cache MiB: `{mha['memory']['kv_cache_mib']}`",
-        f"- exact MHA HBM energy mJ/token: `{mha['energy']['hbm_energy_mj_per_token']}`",
+        f"- exact MHA total proxy energy mJ/token: `{mha['energy']['total_proxy_energy_mj_per_token']}`",
+        f"- total embodied area mm2: `{mha['physical']['total_embodied_area_um2'] / 1.0e6}`",
         "",
-        "| Candidate | KV heads | QKV cycles | Wave HBM bytes | Layer cycles | Token/s | HBM mJ/token | Structural match | Promotable |",
-        "|---|---:|---:|---:|---:|---:|---:|---|---|",
+        "| Candidate | KV heads | QKV cycles | Wave HBM bytes | Layer cycles | Token/s | Total mJ/token | Embodied mm2 | Structural match | Promotable |",
+        "|---|---:|---:|---:|---:|---:|---:|---:|---|---|",
     ]
     for row in payload["rows"]:
         lines.append(
-            "| {candidate_id} | {kv_heads} | {qkv} | {wave_bytes} | {layer_cycles} | {throughput} | {energy} | {structural} | {promotable} |".format(
+            "| {candidate_id} | {kv_heads} | {qkv} | {wave_bytes} | {layer_cycles} | {throughput} | {energy} | {area} | {structural} | {promotable} |".format(
                 candidate_id=row["candidate_id"],
                 kv_heads=row["model_contract"]["kv_heads"],
                 qkv=row["projection"]["target_cycles"],
                 wave_bytes=row["global_hbm_service"]["aggregate_wave_hbm_bytes"],
                 layer_cycles=row["schedule"]["layer_cycles"],
                 throughput=row["throughput"]["token_throughput_per_s"],
-                energy=row["energy"]["hbm_energy_mj_per_token"],
+                energy=row["energy"]["total_proxy_energy_mj_per_token"],
+                area=row["physical"]["total_embodied_area_um2"] / 1.0e6,
                 structural=row["quality_contract"]["structural_model_match"],
                 promotable=row["quality_contract"]["promotable"],
             )
@@ -568,6 +631,7 @@ def main() -> int:
     parser.add_argument("--source-recost-json", type=Path, default=DEFAULT_SOURCE_RECOST)
     parser.add_argument("--hbm-replay-json", type=Path, default=DEFAULT_HBM_REPLAY)
     parser.add_argument("--hbm-energy-json", type=Path, default=DEFAULT_HBM_ENERGY)
+    parser.add_argument("--quality-frontier-json", type=Path, default=DEFAULT_QUALITY_FRONTIER)
     parser.add_argument("--measured-l1-costs", type=Path, default=phase2_schedule.DEFAULT_MEASURED_L1_COSTS)
     parser.add_argument("--max-cycles", type=int, default=20_000_000)
     parser.add_argument("--out", type=Path, required=True)

@@ -22,7 +22,7 @@ DEFAULT_RECOST = _BASE / (
     "l2_decoder_attention_score32_global_hbm_exact_llama2_mha_recost_v1.json"
 )
 DEFAULT_GENERATION_QUALITY = _BASE / (
-    "decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality__"
+    "decoder_attention_score32_exact_llama2_mha_generation_quality__"
     "l2_decoder_attention_score32_exact_llama2_mha_generation_quality_v1.json"
 )
 DEFAULT_QUALITY_FRONTIER = _BASE / (
@@ -49,6 +49,8 @@ _SCORE32_PRECISION = {
     "weight_bits": 16,
     "softmax_mode": "exp_lut_div_bucket20",
 }
+_GQA8_CANDIDATE_ID = "score32_gqa8_global_hbm_finite_endpoint"
+_EXACT_MHA_CANDIDATE_ID = "score32_exact_llama2_7b_mha_global_hbm_finite_endpoint"
 
 
 def _load_json(path: Path) -> JsonDict:
@@ -103,9 +105,14 @@ def _validate_recost(payload: JsonDict) -> tuple[JsonDict, JsonDict]:
         hidden_size = int(_positive(contract.get("hidden_size"), "recost hidden_size"))
         if hidden_size != 4096 or attention_heads != 32:
             raise ValueError("exact MHA recost rows must remain on the 4096-wide 32-head model")
-        if kv_heads == 4 and gqa_group_size == 8:
+        candidate_id = row.get("candidate_id")
+        if kv_heads == 4 and gqa_group_size == 8 and candidate_id == _GQA8_CANDIDATE_ID:
+            if contract.get("kv_sharing") != "gqa8":
+                raise ValueError("corrected GQA8 row kv_sharing mismatch")
             gqa8_row = dict(row)
-        elif kv_heads == 32 and gqa_group_size == 1:
+        elif kv_heads == 32 and gqa_group_size == 1 and candidate_id == _EXACT_MHA_CANDIDATE_ID:
+            if contract.get("kv_sharing") != "mha" or contract.get("contract_scope") != "exact_llama2_7b_mha_structure":
+                raise ValueError("exact MHA row structural contract mismatch")
             mha_row = dict(row)
 
     if gqa8_row is None or mha_row is None:
@@ -145,6 +152,8 @@ def _validate_generation_quality(payload: JsonDict) -> JsonDict:
         raise ValueError(
             f"generation quality model_id mismatch: expected {_EXACT_MODEL_ID!r}, observed {observed_model_id!r}"
         )
+    if model.get("expected_model_id") != _EXACT_MODEL_ID:
+        raise ValueError("generation quality expected_model_id does not lock the official checkpoint")
 
     hidden_size = int(_exact_number(_quality_model_field(model, "hidden_size"), 4096, "quality hidden_size"))
     attention_heads = int(
@@ -302,7 +311,10 @@ def _fp16_row(source: JsonDict) -> JsonDict:
         "precision_dimension_rank": 2,
         "token_throughput_per_s": _positive(source.get("token_throughput_per_s"), "fp16 throughput"),
         "token_latency_us": _positive(source.get("latency_us"), "fp16 latency"),
-        "embodied_area_mm2": _embodied_area_mm2(source, source_label="fp16 reference"),
+        "embodied_area_mm2": None,
+        "compute_area_mm2": _positive(source.get("compute_area_mm2"), "fp16 compute area"),
+        "die_envelope_mm2": _positive(source.get("die_area_mm2"), "fp16 die envelope"),
+        "area_metric_status": "compute_only_not_total_embodied_noncomparable",
         "energy_mj_per_token": _positive(source.get("energy_mj_per_token"), "fp16 energy"),
         "remaining_abstractions": [
             *[str(item) for item in source.get("remaining_abstractions", [])],
@@ -403,21 +415,23 @@ def build_report(*, recost: JsonDict, generation_quality: JsonDict, quality_fron
     )
     fp16_row = _fp16_row(fp16_reference)
 
-    engineering_rows = [gqa8_row, exact_mha_row, fp16_row]
-    engineering_pareto = _pareto_rows(engineering_rows)
-    promotable_rows = [row for row in engineering_rows if row["promotable"] and row["quality_backed"]]
+    comparable_rows = [gqa8_row, exact_mha_row]
+    all_rows = [*comparable_rows, fp16_row]
+    engineering_pareto = _pareto_rows(comparable_rows)
+    promotable_rows = [row for row in comparable_rows if row["promotable"] and row["quality_backed"]]
     promotable_pareto = _pareto_rows(promotable_rows)
 
     dimension_winners = {
-        "throughput": _winner(engineering_rows, "token_throughput_per_s", maximize=True),
-        "embodied_area": _winner(engineering_rows, "embodied_area_mm2", maximize=False),
-        "energy": _winner(engineering_rows, "energy_mj_per_token", maximize=False),
-        "precision": _precision_winner(engineering_rows),
+        "throughput_comparable_boundary": _winner(comparable_rows, "token_throughput_per_s", maximize=True),
+        "embodied_area_comparable_boundary": _winner(comparable_rows, "embodied_area_mm2", maximize=False),
+        "energy_comparable_boundary": _winner(comparable_rows, "energy_mj_per_token", maximize=False),
+        "precision_comparable_boundary": _precision_winner(comparable_rows),
+        "higher_precision_noncomparable_reference": fp16_row["candidate_id"],
     }
 
     remaining_abstractions = sorted(
         {
-            *[item for row in engineering_rows for item in row["remaining_abstractions"]],
+            *[item for row in all_rows for item in row["remaining_abstractions"]],
             *[str(item) for item in recost.get("remaining_abstractions", [])],
             "HBM controller service remains deterministic global replay rather than controller RTL or vendor timing signoff.",
             "Logic energy remains a vectorless activity proxy rather than workload-toggle-complete power.",
@@ -440,7 +454,7 @@ def build_report(*, recost: JsonDict, generation_quality: JsonDict, quality_fron
             ),
         },
         "dimension_winners": dimension_winners,
-        "dimension_winner_scope": "engineering_metrics_across_exact_mha_gqa8_and_fp16_reference",
+        "dimension_winner_scope": "only rows with the same total-embodied-area accounting boundary",
         "scalar_universal_winner": None,
         "conditional_recommendation": {
             "universal_winner": None,
@@ -463,7 +477,8 @@ def build_report(*, recost: JsonDict, generation_quality: JsonDict, quality_fron
         "quality_contract": quality,
         "engineering_pareto_frontier": engineering_pareto,
         "promotable_pareto_frontier": promotable_pareto,
-        "all_rows": engineering_rows,
+        "noncomparable_reference_rows": [fp16_row],
+        "all_rows": all_rows,
         "excluded_nonpromotable_history": excluded_history,
         "remaining_abstractions": remaining_abstractions,
         "next_measurements": [
@@ -486,10 +501,11 @@ def write_report(payload: JsonDict, path: Path) -> None:
         "",
         "## Dimension Winners",
         "",
-        f"- throughput: `{payload['dimension_winners']['throughput']}`",
-        f"- embodied_area: `{payload['dimension_winners']['embodied_area']}`",
-        f"- energy: `{payload['dimension_winners']['energy']}`",
-        f"- precision: `{payload['dimension_winners']['precision']}`",
+        f"- throughput (comparable boundary): `{payload['dimension_winners']['throughput_comparable_boundary']}`",
+        f"- embodied_area (comparable boundary): `{payload['dimension_winners']['embodied_area_comparable_boundary']}`",
+        f"- energy (comparable boundary): `{payload['dimension_winners']['energy_comparable_boundary']}`",
+        f"- precision (comparable boundary): `{payload['dimension_winners']['precision_comparable_boundary']}`",
+        f"- higher-precision noncomparable reference: `{payload['dimension_winners']['higher_precision_noncomparable_reference']}`",
         "",
         "## Engineering Pareto",
         "",
@@ -518,6 +534,11 @@ def write_report(payload: JsonDict, path: Path) -> None:
             )
     else:
         lines.append("- No promotable frontier row is currently available.")
+    lines.extend(["", "## Noncomparable References", ""])
+    for row in payload["noncomparable_reference_rows"]:
+        lines.append(
+            f"- `{row['candidate_id']}`: {row['area_metric_status']}; excluded from cross-objective Pareto ranking."
+        )
     lines.extend(["", "## Remaining Abstractions", ""])
     lines.extend(f"- {item}" for item in payload["remaining_abstractions"])
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -527,18 +548,18 @@ def write_report(payload: JsonDict, path: Path) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repo-root", type=Path, default=Path("."))
-    parser.add_argument("--recost-json", type=Path, default=DEFAULT_RECOST)
-    parser.add_argument("--generation-quality-json", type=Path, default=DEFAULT_GENERATION_QUALITY)
-    parser.add_argument("--quality-frontier-json", type=Path, default=DEFAULT_QUALITY_FRONTIER)
+    parser.add_argument("--exact-mha-recost-json", type=Path, default=DEFAULT_RECOST)
+    parser.add_argument("--exact-generation-quality-json", type=Path, default=DEFAULT_GENERATION_QUALITY)
+    parser.add_argument("--prior-quality-frontier-json", type=Path, default=DEFAULT_QUALITY_FRONTIER)
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--report", type=Path, required=True)
     args = parser.parse_args()
 
     root = args.repo_root.resolve()
     payload = build_report(
-        recost=_load_json(root / args.recost_json),
-        generation_quality=_load_json(root / args.generation_quality_json),
-        quality_frontier=_load_json(root / args.quality_frontier_json),
+        recost=_load_json(root / args.exact_mha_recost_json),
+        generation_quality=_load_json(root / args.exact_generation_quality_json),
+        quality_frontier=_load_json(root / args.prior_quality_frontier_json),
     )
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
