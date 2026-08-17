@@ -1,0 +1,160 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-08-17T12:11:19.272158Z",
+  "control_plane_source_commit": "74623af52e7cba8eeced36efbe5236906b9a0d3d",
+  "review_metadata_source_commit": "74623af52e7cba8eeced36efbe5236906b9a0d3d",
+  "item_id": "l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_llama7b_v1",
+  "run_key": "l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_llama7b_v1_run_b7d876d9d5232f84",
+  "layer": "layer2",
+  "flow": "openroad",
+  "task_type": "l2_campaign",
+  "source_commit": "74623af52e7cba8eeced36efbe5236906b9a0d3d",
+  "queue_snapshot": {
+    "path": "control_plane/shadow_exports/review/l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_llama7b_v1/evaluated.json",
+    "result": {
+      "branch": "eval/l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_llama7b_v1/s20260817t121117z",
+      "completed_utc": "2026-08-17T12:11:13.249608Z",
+      "evaluator_id": "control_plane",
+      "executor": "@control_plane",
+      "host": "0a8681f12293",
+      "identity_block": "[role:evaluator][account:control_plane][session:s20260817t121117z][host:0a8681f12293][item:l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_llama7b_v1]",
+      "metrics_rows": [],
+      "metrics_exempt_reason": "evidence_only_decoder_evidence",
+      "queue_item_id": "l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_llama7b_v1",
+      "session_id": "s20260817t121117z",
+      "status": "ok",
+      "summary": "2/2 commands succeeded"
+    }
+  },
+  "review_artifact": {
+    "kind": "decision_proposal",
+    "path": "control_plane/shadow_exports/l2_decisions/l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_llama7b_v1.json",
+    "storage_mode": "repo",
+    "sha256": "f7bbb7357f5cf13b7be37dab7d3fdb0049cb3b3190c6b757f316df6d901e3aed",
+    "payload": {
+      "version": 0.1,
+      "generated_utc": "2026-08-17T12:11:16.234480Z",
+      "item_id": "l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_llama7b_v1",
+      "run_key": "l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_llama7b_v1_run_b7d876d9d5232f84",
+      "layer": "layer2",
+      "flow": "openroad",
+      "platform": "nangate45",
+      "task_type": "l2_campaign",
+      "source_commit": "74623af52e7cba8eeced36efbe5236906b9a0d3d",
+      "review_metadata_source_commit": "74623af52e7cba8eeced36efbe5236906b9a0d3d",
+      "objective": "Prove workload-complete equivalence between the finite endpoint-aware performance model and composed endpoint/mesh RTL after the bounded-task launcher fix.",
+      "input_manifest": {
+        "decoder_contract": {
+          "attention_score32_noc_phase2_source_recost": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_reduction_recost__l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1.json",
+          "attention_score32_noc_phase2_measured_l1_costs": "runs/campaigns/npu/l1_measured_costs/llama7b_attention_local_costs_all_measured_endpoint_v1.json",
+          "attention_score32_noc_phase2_endpoint_rtl_equivalence_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence__l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_llama7b_v1.json",
+          "attention_score32_noc_phase2_endpoint_rtl_equivalence_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence__l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_llama7b_v1.md"
+        },
+        "worker_resources": {
+          "cpu_quota": "200%",
+          "tasks_max": 128,
+          "memory_max": "6G",
+          "memory_high": "4G",
+          "exclusive_worker": true,
+          "outer_timeout_seconds": 3900,
+          "stall_timeout_seconds": 1200
+        }
+      },
+      "recommendation": {
+        "source": "decoder_evidence",
+        "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence__l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_llama7b_v1.json",
+        "arch_id": "decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence",
+        "macro_mode": "evidence_only",
+        "outcome": "decoder_evidence_recorded"
+      },
+      "objective_profiles": [],
+      "evaluation_record": {
+        "proposal_id": "prop_l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_v1",
+        "title": "Workload-complete finite endpoint and mesh RTL equivalence",
+        "primary_question": "What drain-time and congestion change appears when the complete Llama7B Phase-2 schedule is constrained by embodied endpoint control and checked against RTL?",
+        "evaluation_mode": "frontier_detail",
+        "comparison_role": "closure_detail",
+        "abstraction_layer": "decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence",
+        "expected_direction": "unknown",
+        "expected_reason": "",
+        "summary": "Decoder evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence__l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_llama7b_v1.json: decision=decoder_evidence_recorded.",
+        "outcome": "decoder_evidence_recorded",
+        "expectation_status": "unspecified"
+      },
+      "proposal_assessment": {
+        "proposal_id": "prop_l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_v1",
+        "title": "Workload-complete finite endpoint and mesh RTL equivalence",
+        "kind": "equivalence",
+        "primary_question": "What drain-time and congestion change appears when the complete Llama7B Phase-2 schedule is constrained by embodied endpoint control and checked against RTL?",
+        "evaluation_mode": "frontier_detail",
+        "comparison_role": "closure_detail",
+        "outcome": "decoder_evidence_recorded",
+        "summary": "Decoder evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence__l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_llama7b_v1.json: decision=decoder_evidence_recorded.",
+        "baseline_ref": null,
+        "baseline_item_id": null,
+        "matched_row_count": 0,
+        "matched_rows": [],
+        "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence__l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_llama7b_v1.json",
+        "decoder_quality": {
+          "diagnosis": {},
+          "profile": "decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence",
+          "remaining_abstractions": [
+            "SRAM arrays are transaction-accurate one-cycle ports; bitcells and macro placement remain external.",
+            "The command scheduler is embodied by the deterministic paired-descriptor testbench driver, not yet synthesized RTL.",
+            "HBM/DRAM and its controller remain intentionally outside the design boundary.",
+            "Workload-matched switching power requires a separate activity-capture run."
+          ]
+        }
+      },
+      "source_refs": {
+        "decoder_evidence_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence__l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_llama7b_v1.json",
+        "decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence__l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_llama7b_v1.json",
+        "decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence__l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_llama7b_v1.md"
+      },
+      "decoder_quality": {
+        "diagnosis": {},
+        "profile": "decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence",
+        "remaining_abstractions": [
+          "SRAM arrays are transaction-accurate one-cycle ports; bitcells and macro placement remain external.",
+          "The command scheduler is embodied by the deterministic paired-descriptor testbench driver, not yet synthesized RTL.",
+          "HBM/DRAM and its controller remain intentionally outside the design boundary.",
+          "Workload-matched switching power requires a separate activity-capture run."
+        ]
+      }
+    }
+  },
+  "developer_loop": {
+    "comparison": {
+      "role": "closure_detail",
+      "paired_baseline_item_id": ""
+    },
+    "evaluation": {
+      "mode": "frontier_detail",
+      "expected_reason": "",
+      "expected_direction": ""
+    },
+    "abstraction": {
+      "layer": "decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence"
+    },
+    "proposal_id": "prop_l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_v1",
+    "proposal_path": "docs/proposals/prop_l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_v1/proposal.json"
+  },
+  "submission_history": null,
+  "pr_payload": {
+    "branch": "eval/l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_llama7b_v1/s20260817t121117z",
+    "title": "eval: run workload-complete finite endpoint and mesh rtl equivalence retry",
+    "body_fields": {
+      "host": "0a8681f12293",
+      "session_id": "s20260817t121117z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_llama7b_v1"
+    },
+    "body_md": "## Summary\n- item_id: `l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_llama7b_v1`\n- run_key: `l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_llama7b_v1_run_b7d876d9d5232f84`\n- layer: `layer2`\n- task_type: `l2_campaign`\n- status: `ok`\n- summary: `2/2 commands succeeded`\n- queue_snapshot: `control_plane/shadow_exports/review/l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_llama7b_v1/evaluated.json`\n- metrics_rows_count: `0`\n- review_artifact: `decision_proposal` at `control_plane/shadow_exports/l2_decisions/l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_llama7b_v1.json`\n\n## Developer Context\n- proposal_id: `prop_l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_v1`\n- proposal_path: `docs/proposals/prop_l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_v1/proposal.json`\n- reviewer_first_read: `docs/proposals/prop_l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_v1/proposal.json` plus `docs/developer_agent_review.md`\n- execution_source_commit: `74623af52e7cba8eeced36efbe5236906b9a0d3d`\n- review_metadata_source_commit: `74623af52e7cba8eeced36efbe5236906b9a0d3d`\n\n## Evaluation Mode\n- evaluation_mode: `frontier_detail`\n- abstraction_layer: `decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence`\n- comparison_role: `closure_detail`\n- expected_direction: `unknown`\n- expectation_status: `unspecified`\n- evaluation_summary: `Decoder evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence__l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_llama7b_v1.json: decision=decoder_evidence_recorded.`\n\n## Focused Comparison\n- primary_question: `What drain-time and congestion change appears when the complete Llama7B Phase-2 schedule is constrained by embodied endpoint control and checked against RTL?`\n- comparison_role: `closure_detail`\n- proposal_outcome: `decoder_evidence_recorded`\n- comparison_summary: `Decoder evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence__l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_llama7b_v1.json: decision=decoder_evidence_recorded.`\n- baseline_ref: `None`\n- baseline_item_id: `None`\n\n## Checklist\n- [ ] Commit lightweight campaign artifacts only\n- [ ] Include metrics row references in result.metrics_rows\n- [ ] Keep committed result_path fields repo-portable\n- [ ] Run python3 scripts/validate_runs.py --skip_eval_queue before pushing\n",
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Include metrics row references in result.metrics_rows",
+      "Keep committed result_path fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ]
+  }
+}

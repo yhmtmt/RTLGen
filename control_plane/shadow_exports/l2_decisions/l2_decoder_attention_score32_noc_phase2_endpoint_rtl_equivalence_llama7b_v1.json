@@ -1,0 +1,91 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-08-17T12:11:16.234480Z",
+  "item_id": "l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_llama7b_v1",
+  "run_key": "l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_llama7b_v1_run_b7d876d9d5232f84",
+  "layer": "layer2",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l2_campaign",
+  "source_commit": "74623af52e7cba8eeced36efbe5236906b9a0d3d",
+  "review_metadata_source_commit": "74623af52e7cba8eeced36efbe5236906b9a0d3d",
+  "objective": "Prove workload-complete equivalence between the finite endpoint-aware performance model and composed endpoint/mesh RTL after the bounded-task launcher fix.",
+  "input_manifest": {
+    "decoder_contract": {
+      "attention_score32_noc_phase2_source_recost": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_reduction_recost__l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1.json",
+      "attention_score32_noc_phase2_measured_l1_costs": "runs/campaigns/npu/l1_measured_costs/llama7b_attention_local_costs_all_measured_endpoint_v1.json",
+      "attention_score32_noc_phase2_endpoint_rtl_equivalence_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence__l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_llama7b_v1.json",
+      "attention_score32_noc_phase2_endpoint_rtl_equivalence_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence__l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_llama7b_v1.md"
+    },
+    "worker_resources": {
+      "cpu_quota": "200%",
+      "tasks_max": 128,
+      "memory_max": "6G",
+      "memory_high": "4G",
+      "exclusive_worker": true,
+      "outer_timeout_seconds": 3900,
+      "stall_timeout_seconds": 1200
+    }
+  },
+  "recommendation": {
+    "source": "decoder_evidence",
+    "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence__l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_llama7b_v1.json",
+    "arch_id": "decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence",
+    "macro_mode": "evidence_only",
+    "outcome": "decoder_evidence_recorded"
+  },
+  "objective_profiles": [],
+  "evaluation_record": {
+    "proposal_id": "prop_l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_v1",
+    "title": "Workload-complete finite endpoint and mesh RTL equivalence",
+    "primary_question": "What drain-time and congestion change appears when the complete Llama7B Phase-2 schedule is constrained by embodied endpoint control and checked against RTL?",
+    "evaluation_mode": "frontier_detail",
+    "comparison_role": "closure_detail",
+    "abstraction_layer": "decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence",
+    "expected_direction": "unknown",
+    "expected_reason": "",
+    "summary": "Decoder evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence__l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_llama7b_v1.json: decision=decoder_evidence_recorded.",
+    "outcome": "decoder_evidence_recorded",
+    "expectation_status": "unspecified"
+  },
+  "proposal_assessment": {
+    "proposal_id": "prop_l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_v1",
+    "title": "Workload-complete finite endpoint and mesh RTL equivalence",
+    "kind": "equivalence",
+    "primary_question": "What drain-time and congestion change appears when the complete Llama7B Phase-2 schedule is constrained by embodied endpoint control and checked against RTL?",
+    "evaluation_mode": "frontier_detail",
+    "comparison_role": "closure_detail",
+    "outcome": "decoder_evidence_recorded",
+    "summary": "Decoder evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence__l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_llama7b_v1.json: decision=decoder_evidence_recorded.",
+    "baseline_ref": null,
+    "baseline_item_id": null,
+    "matched_row_count": 0,
+    "matched_rows": [],
+    "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence__l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_llama7b_v1.json",
+    "decoder_quality": {
+      "diagnosis": {},
+      "profile": "decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence",
+      "remaining_abstractions": [
+        "SRAM arrays are transaction-accurate one-cycle ports; bitcells and macro placement remain external.",
+        "The command scheduler is embodied by the deterministic paired-descriptor testbench driver, not yet synthesized RTL.",
+        "HBM/DRAM and its controller remain intentionally outside the design boundary.",
+        "Workload-matched switching power requires a separate activity-capture run."
+      ]
+    }
+  },
+  "source_refs": {
+    "decoder_evidence_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence__l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_llama7b_v1.json",
+    "decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence__l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_llama7b_v1.json",
+    "decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence__l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_llama7b_v1.md"
+  },
+  "decoder_quality": {
+    "diagnosis": {},
+    "profile": "decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence",
+    "remaining_abstractions": [
+      "SRAM arrays are transaction-accurate one-cycle ports; bitcells and macro placement remain external.",
+      "The command scheduler is embodied by the deterministic paired-descriptor testbench driver, not yet synthesized RTL.",
+      "HBM/DRAM and its controller remain intentionally outside the design boundary.",
+      "Workload-matched switching power requires a separate activity-capture run."
+    ]
+  }
+}

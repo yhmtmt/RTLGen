@@ -1,0 +1,120 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "decoder_contract": {
+        "attention_score32_noc_phase2_source_recost": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_reduction_recost__l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1.json",
+        "attention_score32_noc_phase2_measured_l1_costs": "runs/campaigns/npu/l1_measured_costs/llama7b_attention_local_costs_all_measured_endpoint_v1.json",
+        "attention_score32_noc_phase2_endpoint_rtl_equivalence_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence__l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_llama7b_v1.json",
+        "attention_score32_noc_phase2_endpoint_rtl_equivalence_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence__l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_llama7b_v1.md"
+      },
+      "worker_resources": {
+        "cpu_quota": "200%",
+        "tasks_max": 128,
+        "memory_max": "6G",
+        "memory_high": "4G",
+        "exclusive_worker": true,
+        "outer_timeout_seconds": 3900,
+        "stall_timeout_seconds": 1200
+      }
+    },
+    "commands": [
+      {
+        "run": "python3 control_plane/scripts/run_bounded_command.py --memory-high 4G --memory-max 6G --cpu-quota 200% --tasks-max 128 --runtime-max-sec 3600 -- python3 npu/eval/verify_llm_decoder_attention_score32_noc_phase2_endpoint_rtl.py --repo-root . --source-json runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_reduction_recost__l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1.json --measured-l1-costs runs/campaigns/npu/l1_measured_costs/llama7b_attention_local_costs_all_measured_endpoint_v1.json --wall-timeout-seconds 2400 --out runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence__l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_llama7b_v1.json --report runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence__l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_llama7b_v1.md",
+        "name": "verify_attention_score32_noc_phase2_endpoint_rtl_equivalence"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate_runs"
+      }
+    ],
+    "objective": "Prove workload-complete equivalence between the finite endpoint-aware performance model and composed endpoint/mesh RTL after the bounded-task launcher fix.",
+    "acceptance": [
+      "Replay all eight waves and every generated packet through finite endpoint and composed-mesh RTL",
+      "Install every receive descriptor before releasing its paired transmit descriptor",
+      "Use one-cycle in-order source SRAM responses, four-entry TX descriptor FIFOs, eight outstanding reads, and eight RX contexts",
+      "Require exact performance/RTL agreement for packets, flits, drain cycles, contention, stalls, and occupancy",
+      "Require zero endpoint protocol errors and concrete 8-bit wire tags",
+      "Keep SRAM bitcells, synthesized command scheduler, workload activity power, and HBM/DRAM explicit",
+      "Write exactly one JSON and one Markdown report"
+    ],
+    "source_mode": "src_verilog",
+    "expected_outputs": [
+      "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence__l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_llama7b_v1.json",
+      "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence__l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_llama7b_v1.md"
+    ]
+  },
+  "layer": "layer2",
+  "state": "evaluated",
+  "title": "Workload-complete finite endpoint and mesh RTL equivalence retry",
+  "result": {
+    "branch": "eval/l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_llama7b_v1/s20260817t121117z",
+    "completed_utc": "2026-08-17T12:11:13.249608Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "0a8681f12293",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260817t121117z][host:0a8681f12293][item:l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_llama7b_v1]",
+    "metrics_rows": [],
+    "metrics_exempt_reason": "evidence_only_decoder_evidence",
+    "queue_item_id": "l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_llama7b_v1",
+    "session_id": "s20260817t121117z",
+    "status": "ok",
+    "summary": "2/2 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_llama7b_v1/s20260817t121117z",
+    "pr_title": "eval: run workload-complete finite endpoint and mesh rtl equivalence retry",
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Include metrics row references in result.metrics_rows",
+      "Keep committed result_path fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "0a8681f12293",
+      "session_id": "s20260817t121117z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_llama7b_v1"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_llama7b_v1",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 121,
+  "created_utc": "2026-08-17T12:03:09.217445Z",
+  "requested_by": "developer_agent",
+  "developer_loop": {
+    "comparison": {
+      "role": "closure_detail",
+      "paired_baseline_item_id": ""
+    },
+    "evaluation": {
+      "mode": "frontier_detail",
+      "expected_reason": "",
+      "expected_direction": ""
+    },
+    "abstraction": {
+      "layer": "decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence"
+    },
+    "proposal_id": "prop_l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_v1",
+    "proposal_path": "docs/proposals/prop_l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_v1/proposal.json"
+  },
+  "source_requirement": {
+    "repo": "",
+    "reason": "evaluator runtime must contain the queued job source commit",
+    "version": 1,
+    "required_ref": "origin/master",
+    "required_sha": "74623af52e7cba8eeced36efbe5236906b9a0d3d",
+    "requires_daemon_restart": true
+  },
+  "generation_source_identity": {
+    "clean": true,
+    "proof": "generator_worktree_head_exact",
+    "version": 1,
+    "relation": "exact",
+    "repo_head_sha": "74623af52e7cba8eeced36efbe5236906b9a0d3d",
+    "declared_source_commit": "74623af52e7cba8eeced36efbe5236906b9a0d3d"
+  },
+  "task_type": "l2_campaign"
+}

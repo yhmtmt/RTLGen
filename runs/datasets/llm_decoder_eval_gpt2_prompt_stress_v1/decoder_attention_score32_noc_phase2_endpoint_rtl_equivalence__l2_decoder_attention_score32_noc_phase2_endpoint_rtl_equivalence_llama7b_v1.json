@@ -1,0 +1,50 @@
+{
+  "coverage": "workload_complete",
+  "endpoint_aware_performance_replay": {
+    "contention": 30285,
+    "cycles": 397203,
+    "flits": 92128,
+    "input_stalls": 46504,
+    "max_occupancy": 11,
+    "max_rx_context_occupancy_per_endpoint": 8,
+    "packets": 11576,
+    "protocol_errors": [],
+    "rx_descriptor_handshakes": 11576,
+    "source_memory_requests": 92128,
+    "source_memory_responses": 92128,
+    "tx_descriptor_handshakes": 11576
+  },
+  "endpoint_cadence_delta_cycles": 199,
+  "equivalence": {
+    "all_flits_written": true,
+    "all_packets_completed": true,
+    "cycle_and_router_counter_match": true,
+    "rx_contexts_per_endpoint": 8,
+    "rx_descriptor_precedes_tx_enforced": true,
+    "source_sram_response_latency_cycles": 1,
+    "tx_descriptor_depth": 4,
+    "tx_outstanding_limit": 8,
+    "wire_tag_width_bits": 8
+  },
+  "profile": "decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence",
+  "remaining_abstractions": [
+    "SRAM arrays are transaction-accurate one-cycle ports; bitcells and macro placement remain external.",
+    "The command scheduler is embodied by the deterministic paired-descriptor testbench driver, not yet synthesized RTL.",
+    "HBM/DRAM and its controller remain intentionally outside the design boundary.",
+    "Workload-matched switching power requires a separate activity-capture run."
+  ],
+  "rtl_replay": {
+    "contention": 30285,
+    "cycles": 397203,
+    "flits": 92128,
+    "input_stalls": 46504,
+    "max_occupancy": 11,
+    "packets": 11576
+  },
+  "source_schedule": {
+    "flit_count": 92128,
+    "logical_release_queue_cycles_to_drain": 397004,
+    "packet_count": 11576
+  },
+  "version": 1
+}
