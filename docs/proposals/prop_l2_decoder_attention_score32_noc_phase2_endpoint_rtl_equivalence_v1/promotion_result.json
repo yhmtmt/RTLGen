@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_v1",
+  "decision": "iterate",
+  "pr_number": 1681,
+  "merge_commit": "9eae0f59c7288087ed85a9ed7344312ea62fe633",
+  "merged_utc": "2026-08-17T12:14:26.982613Z"
+}

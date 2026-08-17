@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_v1",
-  "source_commit": "TBD",
+  "source_commit": "74623af52e7cba8eeced36efbe5236906b9a0d3d",
   "requested_items": [
     {
       "item_id": "l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_llama7b_v1",
@@ -9,7 +9,7 @@
       "evaluation_mode": "frontier_detail",
       "abstraction_layer": "decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence",
       "comparison_role": "closure_detail",
-      "status": "pending_after_merge",
+      "status": "merged",
       "depends_on_item_ids": [],
       "requires_merged_inputs": false,
       "requires_materialized_refs": false,
@@ -17,7 +17,11 @@
         "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence__l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_llama7b_v1.json",
         "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence__l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_llama7b_v1.md"
       ],
-      "acceptance_notes": "Replay all eight waves through finite descriptor queues, one-cycle SRAM responses, eight RX contexts, and the exact composed mesh RTL. Require exact counter equivalence and keep physical SRAM, scheduler PPA, activity power, and HBM/DRAM explicit."
+      "acceptance_notes": "Replay all eight waves through finite descriptor queues, one-cycle SRAM responses, eight RX contexts, and the exact composed mesh RTL. Require exact counter equivalence and keep physical SRAM, scheduler PPA, activity power, and HBM/DRAM explicit.",
+      "merged_pr_number": 1681,
+      "merge_commit": "9eae0f59c7288087ed85a9ed7344312ea62fe633",
+      "merged_utc": "2026-08-17T12:14:26.982613Z",
+      "notes": "Merged via PR #1681 and merge 9eae0f59c7288087ed85a9ed7344312ea62fe633 at 2026-08-17T12:14:26.982613Z."
     }
   ]
 }
