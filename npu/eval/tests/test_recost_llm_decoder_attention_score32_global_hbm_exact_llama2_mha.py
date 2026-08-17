@@ -94,10 +94,21 @@ def _energy_params() -> dict:
     }
 
 
+def _controller_ppa() -> dict:
+    return {
+        "artifact_item_id": "l1_hbm_controller",
+        "area_mm2": 0.03,
+        "power_mw": 0.1,
+        "critical_path_ns": 2.0,
+        "metrics_csv": "runs/designs/hbm/metrics.csv",
+    }
+
+
 def _args(tmp_path: Path) -> argparse.Namespace:
     return argparse.Namespace(
         repo_root=tmp_path,
         source_recost_json=Path("source.json"),
+        quality_frontier_json=Path("quality.json"),
         measured_l1_costs=Path("costs.json"),
         out=tmp_path / "out.json",
         report=tmp_path / "out.md",
@@ -145,7 +156,7 @@ def test_exact_mha_candidate_rebuilds_memory_compute_and_finite_release_schedule
     monkeypatch.setattr(
         recost,
         "_compact_schedule",
-        lambda _payload: {
+        lambda _payload, **_kwargs: {
             "scheduled_packet_count": 2,
             "scheduled_flit_count": 16,
         },
@@ -167,9 +178,12 @@ def test_exact_mha_candidate_rebuilds_memory_compute_and_finite_release_schedule
         candidate_id="exact-mha",
         kv_heads=32,
         exact_llama2_structure=True,
+        sequence_length=4096,
+        native_context_match=True,
         finite=_finite(),
         source_row=_source_row(),
         controller=_controller(),
+        controller_ppa=_controller_ppa(),
         energy_params=_energy_params(),
         fixed_shared_tile_bytes=17408,
     )
@@ -179,17 +193,48 @@ def test_exact_mha_candidate_rebuilds_memory_compute_and_finite_release_schedule
     assert schedule_row["kv_sharing"] == "mha"
     assert schedule_row["qkv_cycles"] == 460
     assert schedule_row["kv_write_cycles"] == 80
-    assert schedule_row["kv_cache_mib"] == 32768.0
+    assert schedule_row["sequence_length"] == 4096
+    assert schedule_row["tile_count"] == 4
+    assert schedule_row["active_clusters"] == 4
+    assert schedule_row["tile_waves"] == 1
+    assert schedule_row["kv_cache_mib"] == 1024.0
     assert result["memory"]["full_tile_bytes"] == 8_388_608
     assert result["memory"]["fixed_shared_tile_bytes"] == 17_408
     assert result["memory"]["tile_hbm_bytes"] == 8_371_200
-    assert result["memory"]["read_bytes_per_token"] == 34_288_435_200
+    assert result["memory"]["tile_count"] == 4
+    assert result["memory"]["read_bytes_per_token"] == 1_071_513_600
     assert result["memory"]["write_bytes_per_token"] == 262_144
-    assert result["global_hbm_service"]["aggregate_wave_hbm_bytes"] == 133_939_200
+    assert result["global_hbm_service"]["aggregate_wave_hbm_bytes"] == 33_484_800
     assert result["schedule"]["scheduled_packets"] == 2
     assert result["schedule"]["scheduled_flits"] == 16
     assert result["quality_contract"]["structural_model_match"] is True
+    assert result["quality_contract"]["native_context_match"] is True
     assert result["quality_contract"]["promotable"] is False
+    assert result["physical"]["hbm_controller_area_um2"] == 30_000.0
+    assert result["physical"]["total_embodied_area_um2"] == 760_030_000.0
+    assert result["energy"]["hbm_controller_vectorless_energy_mj_per_token"] > 0.0
+    assert result["energy"]["total_proxy_energy_mj_per_token"] > result["energy"]["hbm_energy_mj_per_token"]
+
+
+def test_controller_ppa_requires_the_measured_score32_row() -> None:
+    payload = {
+        "version": 1,
+        "model": recost._QUALITY_FRONTIER_MODEL,
+        "rows": [
+            {
+                "family": "score32_exp_lut_div",
+                "score32_hbm_controller_replay_ppa": {
+                    "artifact_item_id": "l1_hbm_controller",
+                    "controller_area_mm2": 0.03,
+                    "controller_power_mw": 0.1,
+                    "critical_path_ns_best": 2.0,
+                    "metrics_csv": "runs/designs/hbm/metrics.csv",
+                },
+            }
+        ],
+    }
+
+    assert recost._controller_ppa(payload) == _controller_ppa()
 
 
 def test_validation_rejects_structurally_mismatched_finite_source() -> None:

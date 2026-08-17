@@ -362,6 +362,52 @@ def test_decoder_evidence_paths_recognizes_global_hbm_exact_mha_recost(tmp_path:
     }
 
 
+def test_decoder_evidence_paths_recognizes_exact_llama2_mha_quality(tmp_path: Path) -> None:
+    evidence_rel = "runs/datasets/demo/exact_llama2_mha_quality.json"
+    report_rel = "runs/datasets/demo/exact_llama2_mha_quality.md"
+    _write(tmp_path / evidence_rel, "{}\n")
+    _write(tmp_path / report_rel, "# Exact Llama-2 quality\n")
+    work_item = SimpleNamespace(
+        input_manifest={
+            "decoder_contract": {
+                "attention_score32_exact_llama2_mha_generation_quality_out": evidence_rel,
+                "attention_score32_exact_llama2_mha_generation_quality_report": report_rel,
+            }
+        }
+    )
+
+    evidence_ref, source_refs = _decoder_evidence_paths(repo_root=tmp_path, work_item=work_item)
+
+    assert evidence_ref == evidence_rel
+    assert source_refs == {
+        "decoder_attention_score32_exact_llama2_mha_generation_quality_out": evidence_rel,
+        "decoder_attention_score32_exact_llama2_mha_generation_quality_report": report_rel,
+    }
+
+
+def test_decoder_evidence_paths_recognizes_exact_llama2_mha_final_frontier(tmp_path: Path) -> None:
+    evidence_rel = "runs/datasets/demo/exact_llama2_mha_final_frontier.json"
+    report_rel = "runs/datasets/demo/exact_llama2_mha_final_frontier.md"
+    _write(tmp_path / evidence_rel, "{}\n")
+    _write(tmp_path / report_rel, "# Exact Llama-2 frontier\n")
+    work_item = SimpleNamespace(
+        input_manifest={
+            "decoder_contract": {
+                "attention_score32_exact_llama2_mha_final_frontier_out": evidence_rel,
+                "attention_score32_exact_llama2_mha_final_frontier_report": report_rel,
+            }
+        }
+    )
+
+    evidence_ref, source_refs = _decoder_evidence_paths(repo_root=tmp_path, work_item=work_item)
+
+    assert evidence_ref == evidence_rel
+    assert source_refs == {
+        "decoder_attention_score32_exact_llama2_mha_final_frontier_out": evidence_rel,
+        "decoder_attention_score32_exact_llama2_mha_final_frontier_report": report_rel,
+    }
+
+
 def test_decoder_evidence_summary_recognizes_global_hbm_exact_mha_recost() -> None:
     outcome, summary = _decoder_evidence_summary(
         evidence_ref="runs/datasets/demo/score32_global_hbm_exact_mha.json",
@@ -375,8 +421,12 @@ def test_decoder_evidence_summary_recognizes_global_hbm_exact_mha_recost() -> No
                     "throughput": {"token_throughput_per_s": 30.0},
                 },
                 {
-                    "candidate_id": "score32_exact_llama2_7b_mha_global_hbm_finite_endpoint",
+                    "candidate_id": "score32_llama2_7b_mha_131k_extrapolation_global_hbm_finite_endpoint",
                     "throughput": {"token_throughput_per_s": 4.5},
+                },
+                {
+                    "candidate_id": "score32_exact_llama2_7b_mha_global_hbm_finite_endpoint",
+                    "throughput": {"token_throughput_per_s": 114.0},
                     "energy": {"hbm_energy_mj_per_token": 1080.0},
                     "quality_contract": {"promotable": False},
                 },
@@ -387,8 +437,43 @@ def test_decoder_evidence_summary_recognizes_global_hbm_exact_mha_recost() -> No
     assert outcome == "exact_llama2_mha_recost_recorded_native_quality_required"
     assert "source_finite_token_s=74.0" in summary
     assert "corrected_gqa8_token_s=30.0" in summary
-    assert "exact_mha_token_s=4.5" in summary
+    assert "long_context_mha_token_s=4.5" in summary
+    assert "native_context_exact_mha_token_s=114.0" in summary
     assert "exact_mha_promotable=False" in summary
+
+
+def test_decoder_evidence_summary_recognizes_exact_llama2_mha_final_frontier() -> None:
+    outcome, summary = _decoder_evidence_summary(
+        evidence_ref="runs/datasets/demo/exact_llama2_mha_final_frontier.json",
+        evidence_payload={
+            "model": "llama2_7b_score32_exact_mha_final_frontier_v1",
+            "decision": "exact_llama2_mha_quality_backed_frontier_available",
+            "dimension_winners_by_workload": {
+                "official_llama2_7b_native_context_4096": {
+                    "throughput": "exact_mha",
+                    "energy": "exact_mha",
+                },
+            },
+            "noncomparable_reference_winners": {
+                "higher_precision_noncomparable_reference": "fp16",
+            },
+            "engineering_pareto_frontiers_by_workload": {
+                "long_context_131072_extrapolation": [{"candidate_id": "gqa8"}],
+                "official_llama2_7b_native_context_4096": [{"candidate_id": "exact_mha"}],
+            },
+            "promotable_pareto_frontier": [{"candidate_id": "exact_mha"}],
+            "noncomparable_reference_rows": [{"candidate_id": "fp16"}],
+            "scalar_universal_winner": None,
+        },
+    )
+
+    assert outcome == "exact_llama2_mha_quality_backed_frontier_available"
+    assert "engineering_workload_count=2" in summary
+    assert "promotable_pareto_count=1" in summary
+    assert "noncomparable_reference_count=1" in summary
+    assert "native_context_throughput_winner=exact_mha" in summary
+    assert "higher_precision_reference=fp16" in summary
+    assert "scalar_universal_winner=None" in summary
 
 
 def test_decoder_evidence_summary_recognizes_score32_noc_phase2_schedule() -> None:

@@ -111,6 +111,29 @@ Treat a recovered non-tensor granularity as a hardware metadata/scale-cost
 question, not as QAT evidence. If no granularity recovers top-1/top-k ranking,
 the next quality path is true QAT/fine-tuning or the KV8 fallback.
 
+Gated checkpoints require evaluator-local authorization. Supply `HF_TOKEN` in
+the evaluator daemon environment or use an equivalent Hugging Face credential
+store mounted into the evaluator container; never place a token in a proposal,
+task command, artifact, log, or committed environment file. Jobs that claim an
+exact checkpoint must pass both `--model-id` and `--expected-model-id` plus the
+expected head/KV/hidden dimensions. An authorization or checkpoint-download
+failure is an execution-prerequisite failure and must not be consumed as a
+quality hold. For exact Llama-2-7B MHA, the required identity is:
+
+```sh
+bash npu/eval/run_hf_eval_python.sh \
+  npu/eval/evaluate_llm_decoder_model_native_mixed_int8_generation_quality.py \
+  --model-id meta-llama/Llama-2-7b-hf \
+  --expected-model-id meta-llama/Llama-2-7b-hf \
+  --expected-attention-head-count 32 \
+  --expected-kv-head-count 32 \
+  --expected-hidden-size 4096 \
+  --expected-gqa-group-size 1 \
+  --candidate score32_exp_lut_div:q8,k8,v8,s32,w16,exp_lut_div_bucket20 \
+  --out /tmp/llama2_score32_quality.json \
+  --out-md /tmp/llama2_score32_quality.md
+```
+
 ## Validation
 Validate campaign manifest:
 ```sh

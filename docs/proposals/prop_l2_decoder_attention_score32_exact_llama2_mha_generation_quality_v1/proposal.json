@@ -1,0 +1,65 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_score32_exact_llama2_mha_generation_quality_v1",
+  "created_utc": "2026-08-17T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Measure score32 generation quality on exact Llama-2-7B MHA",
+  "abstraction_layer": "decoder_attention_score32_exact_llama2_mha_generation_quality",
+  "hypothesis": "The score32 q8/k8/v8 exp-LUT/div arithmetic may preserve bounded generation quality on the exact Llama-2-7B MHA checkpoint, but Mistral GQA4 evidence cannot establish that claim.",
+  "direct_comparison": {
+    "primary_question": "Does the exact official Llama-2-7B MHA checkpoint preserve bounded greedy generation and reference-token likelihood with the score32 exp-LUT/div attention arithmetic?",
+    "baseline": "unmodified meta-llama/Llama-2-7b-hf",
+    "candidate": "score32_exp_lut_div:q8,k8,v8,s32,w16,exp_lut_div_bucket20",
+    "include": [
+      "hard model identity gate for meta-llama/Llama-2-7b-hf",
+      "hard structural gates for hidden size 4096, 32 attention heads, and 32 KV heads",
+      "teacher-forced reference-token NLL and top-1 agreement",
+      "bounded free-running greedy token agreement and first divergence"
+    ],
+    "exclude": [
+      "Mistral, TinyLlama, or environment-selected proxy substitution",
+      "QAT or fine-tuning recovery",
+      "full benchmark accuracy or perplexity claims",
+      "hardware PPA execution"
+    ],
+    "metrics": [
+      "teacher_forced_nll_delta_mean",
+      "teacher_forced_top1_match_rate",
+      "free_running_match_rate",
+      "free_running_first_divergence_step_mean",
+      "structural_contract_status"
+    ]
+  },
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_score32_exact_llama2_mha_generation_quality_v1",
+      "task_type": "l2_campaign",
+      "evaluation_mode": "quality_gate",
+      "abstraction_layer": "decoder_attention_score32_exact_llama2_mha_generation_quality",
+      "comparison_role": "exact_model_precision_gate",
+      "cost_class": "high",
+      "depends_on_item_ids": [],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": false,
+      "run_physical": false,
+      "expected_result": {
+        "direction": "accept_or_hold_exact_mha_score32",
+        "reason": "Only a passing exact-checkpoint result may make the exact-MHA hardware row precision-backed."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality__l2_decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality_llama7b_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/evaluate_llm_decoder_model_native_mixed_int8_generation_quality.py",
+    "docs/proposals/prop_l2_decoder_attention_score32_global_hbm_exact_llama2_mha_recost_v1/proposal.json"
+  ],
+  "risks": [
+    "The official checkpoint requires evaluator-local Hugging Face authorization.",
+    "Eight prompts and eight generated tokens are a bounded gate, not broad accuracy validation.",
+    "Two model instances require substantial evaluator memory."
+  ],
+  "needs_mapper_change": false
+}

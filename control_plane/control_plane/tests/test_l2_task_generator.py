@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+import re
 import subprocess
 import tempfile
 from unittest.mock import patch
@@ -9271,6 +9272,7 @@ def test_service_activity_power_request_manifests_remain_dependency_gated() -> N
         "l1_decoder_attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_pnr_v1_r2",
         "l2_decoder_attention_decode_score_multivalue_cluster_equivalence_llama7b_v1",
     }
+    base_item_id = "l2_decoder_attention_decode_score_multivalue_service_c1_activity_power_llama7b_v1"
 
     for manifest_name, items_key in (
         ("proposal.json", "required_evaluations"),
@@ -9284,17 +9286,21 @@ def test_service_activity_power_request_manifests_remain_dependency_gated() -> N
             assert "does not claim that r2 has passed" in note
             assert "later retries resolve dynamically" in note
         item = manifest[items_key][0]
-        assert (
-            item["item_id"]
-            == "l2_decoder_attention_decode_score_multivalue_service_c1_activity_power_llama7b_v1"
-        )
+        if manifest_name == "proposal.json":
+            assert item["item_id"] == base_item_id
+            assert item["status"] == "pending_implementation_merge"
+        else:
+            assert re.fullmatch(rf"{re.escape(base_item_id)}(?:_r\d+)?", item["item_id"])
+            assert base_item_id in item.get("prior_item_ids", [])
+            assert item["status"] == "merged"
+            assert int(item["merged_pr_number"]) > 0
+            assert item["merge_commit"]
         assert set(item["depends_on_item_ids"]) == expected_depends
         assert item["paired_baseline_item_id"] == (
             "l1_decoder_attention_decode_score_multivalue_service_c1_p128_b4_q4_rl2_rr_pnr_v1_r2"
         )
         assert item["requires_merged_inputs"] is True
         assert item["requires_materialized_refs"] is True
-        assert item["status"] == "pending_implementation_merge"
         assert "dependency-gated" in item["notes"]
         assert "not ready for normal dispatch" in item["notes"]
         assert "August 5, 2026" in item["notes"]
@@ -15027,13 +15033,163 @@ def test_generate_l2_campaign_task_adds_global_hbm_exact_llama2_mha_recost() -> 
             assert "--finite-recost-json" in run
             assert "--hbm-replay-json" in run
             assert "--hbm-energy-json" in run
+            assert "--quality-frontier-json" in run
             assert "--runtime-max-sec 3600" in run
             assert work_item.input_manifest["worker_resources"]["exclusive_worker"] is True
             assert work_item.input_manifest["worker_resources"]["stall_timeout_seconds"] == 900
+            assert work_item.input_manifest["decoder_contract"][
+                "attention_score32_quality_aware_frontier"
+            ].endswith(
+                "l2_decoder_attention_score32_quality_aware_hbm_controller_replay_"
+                "rtl_ppa_recost_frontier_llama7b_v1.json"
+            )
             assert work_item.expected_outputs[0].endswith(
                 "decoder_attention_score32_global_hbm_exact_llama2_mha_recost__"
                 "l2_decoder_attention_score32_global_hbm_exact_llama2_mha_recost_v1.json"
             )
+
+
+def test_generate_l2_campaign_task_adds_exact_llama2_mha_generation_quality() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                _make_l2_request(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id="l2_decoder_attention_score32_exact_llama2_mha_generation_quality_v1",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    proposal_id="prop_l2_decoder_attention_score32_exact_llama2_mha_generation_quality_v1",
+                    proposal_path=(
+                        "docs/proposals/prop_l2_decoder_attention_score32_"
+                        "exact_llama2_mha_generation_quality_v1/proposal.json"
+                    ),
+                    abstraction_layer="decoder_attention_score32_exact_llama2_mha_generation_quality",
+                    evaluation_mode="quality_gate",
+                    comparison_role="exact_model_precision_gate",
+                    depends_on_item_ids=[],
+                    requires_merged_inputs=True,
+                    requires_materialized_refs=False,
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            run = work_item.command_manifest[0]["run"]
+            decoder_inputs = work_item.input_manifest["decoder_contract"]
+            assert work_item.state == WorkItemState.DISPATCH_PENDING
+            assert "evaluate_llm_decoder_model_native_mixed_int8_generation_quality.py" in run
+            assert "--model-id meta-llama/Llama-2-7b-hf" in run
+            assert "--expected-model-id meta-llama/Llama-2-7b-hf" in run
+            assert "--expected-attention-head-count 32" in run
+            assert "--expected-kv-head-count 32" in run
+            assert "--expected-hidden-size 4096" in run
+            assert "--expected-gqa-group-size 1" in run
+            assert "score32_exp_lut_div:q8,k8,v8,s32,w16,exp_lut_div_bucket20" in run
+            assert "RTLGEN_MODEL_NATIVE_7B_MODEL_ID" not in run
+            assert "--runtime-max-sec 21600" in run
+            assert work_item.input_manifest["worker_resources"]["exclusive_worker"] is True
+            assert work_item.input_manifest["worker_resources"]["memory_max"] == "56G"
+            assert decoder_inputs["attention_score32_exact_llama2_mha_generation_quality_out"] in (
+                work_item.expected_outputs
+            )
+
+
+def test_exact_llama2_mha_generation_quality_rejects_dependencies() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session, pytest.raises(
+            Layer2TaskGenerationError,
+            match="must not wait on hardware recost",
+        ):
+            generate_l2_campaign_task(
+                session,
+                _make_l2_request(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id="l2_decoder_attention_score32_exact_llama2_mha_generation_quality_v1",
+                    source_commit=source_commit,
+                    proposal_id="prop_l2_decoder_attention_score32_exact_llama2_mha_generation_quality_v1",
+                    proposal_path=(
+                        "docs/proposals/prop_l2_decoder_attention_score32_"
+                        "exact_llama2_mha_generation_quality_v1/proposal.json"
+                    ),
+                    abstraction_layer="decoder_attention_score32_exact_llama2_mha_generation_quality",
+                    evaluation_mode="quality_gate",
+                    depends_on_item_ids=["l2_decoder_attention_score32_global_hbm_exact_llama2_mha_recost_v1"],
+                    requires_merged_inputs=True,
+                    run_physical=False,
+                ),
+            )
+
+
+def test_generate_l2_campaign_task_adds_exact_llama2_mha_final_frontier() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+        dependencies = [
+            "l2_decoder_attention_score32_global_hbm_exact_llama2_mha_recost_v1",
+            "l2_decoder_attention_score32_exact_llama2_mha_generation_quality_v1",
+        ]
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                _make_l2_request(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id="l2_decoder_attention_score32_exact_llama2_mha_final_frontier_v1",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    proposal_id="prop_l2_decoder_attention_score32_exact_llama2_mha_final_frontier_v1",
+                    proposal_path=(
+                        "docs/proposals/prop_l2_decoder_attention_score32_"
+                        "exact_llama2_mha_final_frontier_v1/proposal.json"
+                    ),
+                    abstraction_layer="decoder_attention_score32_exact_llama2_mha_final_frontier",
+                    evaluation_mode="frontier_detail",
+                    comparison_role="exact_model_frontier_decision",
+                    depends_on_item_ids=dependencies,
+                    requires_merged_inputs=True,
+                    requires_materialized_refs=True,
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            run = work_item.command_manifest[0]["run"]
+            assert work_item.state == WorkItemState.BLOCKED
+            assert "audit_llm_decoder_attention_score32_exact_llama2_mha_final_frontier.py" in run
+            assert "--exact-mha-recost-json" in run
+            assert "--exact-generation-quality-json" in run
+            assert "--prior-quality-frontier-json" in run
+            assert "--runtime-max-sec 300" in run
+            assert work_item.input_manifest["worker_resources"]["exclusive_worker"] is False
+            assert work_item.expected_outputs[0].endswith(
+                "decoder_attention_score32_exact_llama2_mha_final_frontier__"
+                "l2_decoder_attention_score32_exact_llama2_mha_final_frontier_v1.json"
+            )
+            assert work_item.task_request.request_payload["developer_loop"]["dependencies"][
+                "item_ids"
+            ] == dependencies
 
 
 def test_score32_noc_closure_rejects_inexact_dependencies() -> None:

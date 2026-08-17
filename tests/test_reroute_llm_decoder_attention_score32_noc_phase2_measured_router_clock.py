@@ -166,3 +166,22 @@ def test_reroute_rejects_noncanonical_baseline_item(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError, match="phase2 item_id"):
         reroute.build_report(args)
+
+
+def test_compact_schedule_accepts_an_explicit_workload_complete_shape() -> None:
+    payload = _rerouted(1.0)
+    payload["source_contract"]["declared_tile_waves"] = 1
+    payload["source_contract"]["simulated_wave_count"] = 1
+    payload["traffic_quantities"]["tile_count"] = 4
+    payload["traffic_quantities"]["simulated_tiles"] = 4
+    payload["schedule_parameters"]["wave_start_noc_cycles"] = [1]
+    payload["schedule_parameters"]["reduction_release_noc_cycles"] = [2]
+
+    compact = reroute._compact_schedule(
+        payload,
+        expected_wave_count=1,
+        expected_tile_count=4,
+    )
+
+    assert compact["scheduled_flit_count"] == compact["delivered_flit_count"]
+    assert compact["wave_start_noc_cycles"] == [1]

@@ -5908,6 +5908,11 @@ def _decoder_attention_score32_global_hbm_exact_llama2_mha_recost_evidence(
         "runs/campaigns/npu/l1_measured_costs/"
         "llama7b_attention_local_costs_all_measured_endpoint_v1.json"
     )
+    quality_frontier = (
+        f"{base}/decoder_attention_score32_integrated_frontier_ranking__"
+        "l2_decoder_attention_score32_quality_aware_hbm_controller_replay_"
+        "rtl_ppa_recost_frontier_llama7b_v1.json"
+    )
     out = f"{base}/decoder_attention_score32_global_hbm_exact_llama2_mha_recost__{item_id}.json"
     report = f"{base}/decoder_attention_score32_global_hbm_exact_llama2_mha_recost__{item_id}.md"
     command = _bounded_launcher_command(
@@ -5929,6 +5934,8 @@ def _decoder_attention_score32_global_hbm_exact_llama2_mha_recost_evidence(
             hbm_replay,
             "--hbm-energy-json",
             hbm_energy,
+            "--quality-frontier-json",
+            quality_frontier,
             "--measured-l1-costs",
             measured_costs,
             "--out",
@@ -5943,6 +5950,7 @@ def _decoder_attention_score32_global_hbm_exact_llama2_mha_recost_evidence(
             "attention_score32_exact_reduction_recost": source,
             "attention_score32_hbm_controller_replay": hbm_replay,
             "attention_score32_hbm_energy_closure": hbm_energy,
+            "attention_score32_quality_aware_frontier": quality_frontier,
             "attention_score32_measured_l1_costs": measured_costs,
             "attention_score32_global_hbm_exact_mha_recost_out": out,
             "attention_score32_global_hbm_exact_mha_recost_report": report,
@@ -5962,11 +5970,109 @@ def _decoder_attention_score32_global_hbm_exact_llama2_mha_recost_evidence(
         "acceptance": [
             "Replay aggregate bytes from every active cluster through one global HBM controller",
             "Report the corrected GQA8 baseline before comparing exact Llama-2-7B MHA",
+            "Separate the 131072-token extrapolation from the official 4096-token native context",
             "Recompute MHA QKV projection cycles, KV writes, KV cache, tile bytes, and HBM energy",
+            "Include measured HBM replay-controller area and latency-scaled vectorless energy",
             "Keep shared-SRAM bytes and reduction payload fixed while recomputing residency fractions",
             "Rerun finite endpoint scheduling with HBM-delayed wave releases",
             "Keep compute/area sharing and every remaining energy and HBM abstraction explicit",
             "Do not promote score32 without native Llama-2-7B generation-quality evidence",
+            "Write exactly one JSON and one Markdown report",
+        ],
+    }
+
+
+def _decoder_attention_score32_exact_llama2_mha_final_frontier_evidence(
+    *,
+    item_id: str,
+    depends_on_item_ids: list[str] | None,
+    proposal_id: str | None,
+    proposal_path: str | None,
+) -> dict[str, Any]:
+    expected_item_id = "l2_decoder_attention_score32_exact_llama2_mha_final_frontier_v1"
+    expected_proposal_id = "prop_l2_decoder_attention_score32_exact_llama2_mha_final_frontier_v1"
+    expected_dependencies = [
+        "l2_decoder_attention_score32_global_hbm_exact_llama2_mha_recost_v1",
+        "l2_decoder_attention_score32_exact_llama2_mha_generation_quality_v1",
+    ]
+    if item_id != expected_item_id:
+        raise Layer2TaskGenerationError("exact Llama-2 MHA final frontier only permits the exact item")
+    if str(proposal_id or "").strip() != expected_proposal_id:
+        raise Layer2TaskGenerationError("exact Llama-2 MHA final frontier proposal_id mismatch")
+    if str(proposal_path or "").strip() != f"docs/proposals/{expected_proposal_id}/proposal.json":
+        raise Layer2TaskGenerationError("exact Llama-2 MHA final frontier proposal_path mismatch")
+    if list(depends_on_item_ids or []) != expected_dependencies:
+        raise Layer2TaskGenerationError(
+            "exact Llama-2 MHA final frontier requires exact recost and exact quality dependencies"
+        )
+
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    recost = (
+        f"{base}/decoder_attention_score32_global_hbm_exact_llama2_mha_recost__"
+        "l2_decoder_attention_score32_global_hbm_exact_llama2_mha_recost_v1.json"
+    )
+    quality = (
+        f"{base}/decoder_attention_score32_exact_llama2_mha_generation_quality__"
+        "l2_decoder_attention_score32_exact_llama2_mha_generation_quality_v1.json"
+    )
+    prior_frontier = (
+        f"{base}/decoder_attention_score32_integrated_frontier_ranking__"
+        "l2_decoder_attention_score32_quality_aware_hbm_controller_replay_"
+        "rtl_ppa_recost_frontier_llama7b_v1.json"
+    )
+    out = f"{base}/decoder_attention_score32_exact_llama2_mha_final_frontier__{item_id}.json"
+    report = f"{base}/decoder_attention_score32_exact_llama2_mha_final_frontier__{item_id}.md"
+    command = _bounded_launcher_command(
+        memory_high="1G",
+        memory_max="2G",
+        cpu_quota="100%",
+        tasks_max=32,
+        runtime_max_sec=300,
+        child_command=[
+            "python3",
+            "npu/eval/audit_llm_decoder_attention_score32_exact_llama2_mha_final_frontier.py",
+            "--repo-root",
+            ".",
+            "--exact-mha-recost-json",
+            recost,
+            "--exact-generation-quality-json",
+            quality,
+            "--prior-quality-frontier-json",
+            prior_frontier,
+            "--out",
+            out,
+            "--report",
+            report,
+        ],
+    )
+    return {
+        "inputs": {
+            "attention_score32_global_hbm_exact_mha_recost": recost,
+            "attention_score32_exact_llama2_mha_generation_quality": quality,
+            "attention_score32_prior_quality_aware_frontier": prior_frontier,
+            "attention_score32_exact_llama2_mha_final_frontier_out": out,
+            "attention_score32_exact_llama2_mha_final_frontier_report": report,
+        },
+        "commands": [{"name": "audit_score32_exact_llama2_mha_final_frontier", "run": command}],
+        "expected_outputs": [out, report],
+        "evidence_only": True,
+        "worker_resources": {
+            "exclusive_worker": False,
+            "memory_high": "1G",
+            "memory_max": "2G",
+            "cpu_quota": "100%",
+            "tasks_max": 32,
+            "outer_timeout_seconds": 300,
+            "stall_timeout_seconds": 180,
+        },
+        "acceptance": [
+            "Require exact-MHA global-HBM recost and exact official-checkpoint quality evidence",
+            "Promote score32 only when native exact-model generation quality passes",
+            "Keep GQA8 score32 and GQA8 FP16 visible but structurally nonpromotable",
+            "Partition winners and Pareto sets by sequence-length workload identity",
+            "Report throughput, embodied area, energy, and precision independently",
+            "Return engineering and promotable Pareto sets without a scalar universal winner",
+            "Carry every remaining HBM, activity, SRAM-policy, bounded-quality, and FP16-MHA gap",
             "Write exactly one JSON and one Markdown report",
         ],
     }
@@ -10190,6 +10296,98 @@ def _decoder_attention_mixed_int8_generation_quality_evidence(*, item_id: str) -
     }
 
 
+def _decoder_attention_score32_exact_llama2_mha_generation_quality_evidence(
+    *,
+    item_id: str,
+    depends_on_item_ids: list[str] | None,
+    proposal_id: str | None,
+    proposal_path: str | None,
+) -> dict[str, Any]:
+    expected_item_id = "l2_decoder_attention_score32_exact_llama2_mha_generation_quality_v1"
+    expected_proposal_id = "prop_l2_decoder_attention_score32_exact_llama2_mha_generation_quality_v1"
+    if item_id != expected_item_id:
+        raise Layer2TaskGenerationError("exact Llama-2 MHA quality only permits the exact item")
+    if str(proposal_id or "").strip() != expected_proposal_id:
+        raise Layer2TaskGenerationError("exact Llama-2 MHA quality proposal_id mismatch")
+    if str(proposal_path or "").strip() != f"docs/proposals/{expected_proposal_id}/proposal.json":
+        raise Layer2TaskGenerationError("exact Llama-2 MHA quality proposal_path mismatch")
+    if list(depends_on_item_ids or []):
+        raise Layer2TaskGenerationError("exact Llama-2 MHA quality must not wait on hardware recost")
+
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_attention_score32_exact_llama2_mha_generation_quality__{item_id}.json"
+    report = f"{base}/decoder_attention_score32_exact_llama2_mha_generation_quality__{item_id}.md"
+    command = _bounded_launcher_command(
+        memory_high="48G",
+        memory_max="56G",
+        cpu_quota="800%",
+        tasks_max=256,
+        runtime_max_sec=21600,
+        child_command=[
+            "bash",
+            "npu/eval/run_hf_eval_python.sh",
+            "npu/eval/evaluate_llm_decoder_model_native_mixed_int8_generation_quality.py",
+            "--model-id",
+            "meta-llama/Llama-2-7b-hf",
+            "--expected-model-id",
+            "meta-llama/Llama-2-7b-hf",
+            "--expected-attention-head-count",
+            "32",
+            "--expected-kv-head-count",
+            "32",
+            "--expected-hidden-size",
+            "4096",
+            "--expected-gqa-group-size",
+            "1",
+            "--max-prompts",
+            "8",
+            "--generation-steps",
+            "8",
+            "--dtype",
+            "bfloat16",
+            "--candidate",
+            "score32_exp_lut_div:q8,k8,v8,s32,w16,exp_lut_div_bucket20",
+            "--primary-candidate-id",
+            "score32_exp_lut_div",
+            "--out",
+            out,
+            "--out-md",
+            report,
+        ],
+    )
+    return {
+        "inputs": {
+            "attention_score32_exact_llama2_mha_generation_quality_out": out,
+            "attention_score32_exact_llama2_mha_generation_quality_report": report,
+            "attention_score32_exact_llama2_mha_generation_quality_scope": (
+                "Measure score32 exp-LUT/div generation quality on the exact official "
+                "Llama-2-7B MHA checkpoint. Model identity and 32/32/4096 structure are "
+                "hard gates; no GQA proxy or environment-selected fallback is permitted."
+            ),
+        },
+        "commands": [{"name": "evaluate_score32_exact_llama2_mha_generation_quality", "run": command}],
+        "expected_outputs": [out, report],
+        "evidence_only": True,
+        "worker_resources": {
+            "exclusive_worker": True,
+            "memory_high": "48G",
+            "memory_max": "56G",
+            "cpu_quota": "800%",
+            "tasks_max": 256,
+            "outer_timeout_seconds": 21600,
+            "stall_timeout_seconds": 3600,
+        },
+        "acceptance": [
+            "Load only meta-llama/Llama-2-7b-hf; fail rather than substitute another checkpoint",
+            "Require hidden size 4096, 32 attention heads, 32 KV heads, and MHA group size 1",
+            "Evaluate the same score32 exp-LUT/div arithmetic profile used by the exact-MHA recost",
+            "Record teacher-forced NLL drift and bounded free-running greedy divergence",
+            "Require evaluator-local Hugging Face authorization for the gated official checkpoint",
+            "Write exactly one JSON and one Markdown report",
+        ],
+    }
+
+
 def _decoder_attention_mixed_int8_score32_w16_recip_lut_q16_generation_quality_evidence(
     *,
     item_id: str,
@@ -12853,6 +13051,8 @@ def _build_payload(
         "decoder_attention_score32_noc_phase2_finite_endpoint_composed_recost",
         "decoder_attention_score32_finite_endpoint_final_frontier",
         "decoder_attention_score32_global_hbm_exact_llama2_mha_recost",
+        "decoder_attention_score32_exact_llama2_mha_generation_quality",
+        "decoder_attention_score32_exact_llama2_mha_final_frontier",
         "decoder_attention_kv_endpoint_full_onchip_service_schedule",
         "decoder_attention_kv_endpoint_ready_valid_service",
         "decoder_attention_kv_endpoint_router_sram_composition",
@@ -13124,6 +13324,20 @@ def _build_payload(
             )
         elif abstraction_layer_name == "decoder_attention_score32_global_hbm_exact_llama2_mha_recost":
             decoder_evidence = _decoder_attention_score32_global_hbm_exact_llama2_mha_recost_evidence(
+                item_id=item_id,
+                depends_on_item_ids=depends_on_item_ids,
+                proposal_id=proposal_id,
+                proposal_path=proposal_path,
+            )
+        elif abstraction_layer_name == "decoder_attention_score32_exact_llama2_mha_generation_quality":
+            decoder_evidence = _decoder_attention_score32_exact_llama2_mha_generation_quality_evidence(
+                item_id=item_id,
+                depends_on_item_ids=depends_on_item_ids,
+                proposal_id=proposal_id,
+                proposal_path=proposal_path,
+            )
+        elif abstraction_layer_name == "decoder_attention_score32_exact_llama2_mha_final_frontier":
+            decoder_evidence = _decoder_attention_score32_exact_llama2_mha_final_frontier_evidence(
                 item_id=item_id,
                 depends_on_item_ids=depends_on_item_ids,
                 proposal_id=proposal_id,
