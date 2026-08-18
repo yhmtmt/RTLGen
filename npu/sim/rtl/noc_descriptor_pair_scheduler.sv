@@ -67,9 +67,13 @@ module noc_descriptor_pair_scheduler #(
   wire transmit_valid = command_released && receive_installed;
   wire receive_fire = receive_valid && rx_desc_ready[active_destination];
   wire transmit_fire = transmit_valid && tx_desc_ready[active_source];
+  wire [ENDPOINT_W:0] command_source_extended = {1'b0, cmd_source};
+  wire [ENDPOINT_W:0] command_destination_extended = {1'b0, cmd_destination};
+  localparam [ENDPOINT_W:0] NODE_COUNT = NODES[ENDPOINT_W:0];
   wire command_fields_valid =
     cmd_flit_count != {FLIT_COUNT_W{1'b0}} &&
-    cmd_source < NODES && cmd_destination < NODES;
+    command_source_extended < NODE_COUNT &&
+    command_destination_extended < NODE_COUNT;
 
   // A completing transmit can be replaced without an idle queue cycle.
   assign cmd_ready = !command_active || transmit_fire;

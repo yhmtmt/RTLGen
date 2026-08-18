@@ -18,6 +18,7 @@
     ],
     "exclude": [
       "command and packet SRAM bitcells",
+      "command population and inter-wave refill producer",
       "workload-derived switching power",
       "HBM/DRAM controller implementation"
     ]

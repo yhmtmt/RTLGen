@@ -11,6 +11,8 @@
     "primary_question": "What PPA and issue cadence replace the unmeasured deterministic testbench descriptor scheduler?",
     "include": [
       "one active 102-bit packet command",
+      "one-outstanding-read command SRAM prefetch control",
+      "one-entry command response buffer",
       "release-cycle gating",
       "receive descriptor installation before transmit submission",
       "endpoint backpressure",
@@ -19,6 +21,7 @@
     ],
     "exclude": [
       "external command SRAM bitcells",
+      "command population and inter-wave refill producer",
       "endpoint and router logic",
       "HBM/DRAM",
       "workload-matched switching power"
@@ -32,7 +35,7 @@
   "risks": [
     "global serialization may increase congestion or drain latency",
     "the physical harness contributes disclosed source, backpressure, and observation logic",
-    "command SRAM capacity and macro energy remain separate physical evidence"
+    "command SRAM bitcell capacity and macro energy remain separate physical evidence"
   ],
   "required_evaluations": [
     {

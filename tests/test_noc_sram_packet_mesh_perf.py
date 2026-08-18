@@ -232,3 +232,20 @@ def test_packet_mesh_rejects_unknown_descriptor_scheduler() -> None:
     )
     with pytest.raises(ValueError, match="descriptor_scheduler"):
         simulate_packet_mesh([descriptor], descriptor_scheduler="imaginary")
+
+
+def test_serial_scheduler_models_one_cycle_sram_cold_start() -> None:
+    descriptor = PacketDescriptor(
+        source=0,
+        destination=1,
+        vc=0,
+        tag=1,
+        flit_count=1,
+    )
+    result = simulate_packet_mesh(
+        [descriptor],
+        descriptor_scheduler="serial_paired",
+    )
+
+    assert result.rx_descriptor_handshakes[0].cycle == 3
+    assert result.tx_descriptor_handshakes[0].cycle == 4

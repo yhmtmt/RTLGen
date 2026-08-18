@@ -492,8 +492,9 @@ draining, and synthetic producer/consumer backpressure.
 `primitive: "sram_packet_endpoint"` emits the finite descriptor-driven packet
 endpoint. `primitive: "sram_packet_mesh4x4"` emits its full 16-endpoint,
 16-router composition. `primitive: "descriptor_pair_scheduler"` emits the
-synthesizable sixteen-endpoint command controller that waits for release,
-installs each RX descriptor, and only then submits its paired TX descriptor.
+synthesizable sixteen-endpoint command controller with sequential one-cycle
+SRAM prefetch, one response buffer, release waiting, RX descriptor
+installation, and only then paired TX descriptor submission.
 
 Supported common options are `primitive`, `flit_bits`, `depth`, `ports`, and
 `counter_bits`. Segmented-router and segmented-mesh options are `vc_count`,

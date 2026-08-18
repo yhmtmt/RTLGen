@@ -132,18 +132,70 @@ module noc_sram_packet_mesh4x4_workload_tb;
   string destination_meta_mem;
 
 `ifdef SERIAL_PAIRED_SCHEDULER
-  integer command_position = 0;
-  wire [15:0] scheduler_packet_index = command_position < packet_count ?
-    command_order[command_position] : 16'b0;
-  wire [95:0] scheduler_command = descriptors[scheduler_packet_index];
-  wire scheduler_cmd_valid = rst_n && command_position < packet_count;
+  localparam integer COMMAND_W = 102;
+  wire command_mem_req_valid;
+  wire command_mem_req_ready = 1'b1;
+  wire [13:0] command_mem_req_addr;
+  reg command_mem_pending = 1'b0;
+  reg [13:0] command_mem_pending_addr = 0;
+  wire command_mem_rsp_valid = command_mem_pending;
+  wire command_mem_rsp_ready;
+  wire [COMMAND_W-1:0] command_mem_rsp_data =
+    workload_command(command_mem_pending_addr);
+  wire scheduler_cmd_valid;
   wire scheduler_cmd_ready;
+  wire [COMMAND_W-1:0] scheduler_command;
+  wire [31:0] prefetch_request_count;
+  wire [31:0] prefetch_response_count;
+  wire [31:0] prefetch_delivered_command_count;
+  wire [31:0] prefetch_memory_stall_cycles;
+  wire prefetch_protocol_error;
   wire [31:0] scheduler_accepted_command_count;
   wire [31:0] scheduler_installed_receive_count;
   wire [31:0] scheduler_submitted_transmit_count;
   wire [31:0] scheduler_release_wait_cycles;
   wire [31:0] scheduler_endpoint_stall_cycles;
   wire scheduler_protocol_error;
+
+  function [COMMAND_W-1:0] workload_command;
+    input [13:0] command_address;
+    reg [15:0] command_packet;
+    begin
+      command_packet = command_order[command_address];
+      workload_command = {
+        descriptors[command_packet][53:50],
+        {command_packet, 8'b0},
+        {command_packet, 8'b0},
+        descriptors[command_packet][49:42],
+        descriptors[command_packet][41:40],
+        descriptors[command_packet][39:36],
+        descriptors[command_packet][35:32],
+        descriptors[command_packet][31:0]
+      };
+    end
+  endfunction
+
+  noc_descriptor_command_prefetch #(
+    .COMMAND_W(COMMAND_W),
+    .ADDR_W(14),
+    .COUNT_W(14)
+  ) command_prefetch (
+    .clk(clk), .rst_n(rst_n), .enable(1'b1),
+    .command_count(packet_count[13:0]),
+    .mem_req_valid(command_mem_req_valid),
+    .mem_req_ready(command_mem_req_ready),
+    .mem_req_addr(command_mem_req_addr),
+    .mem_rsp_valid(command_mem_rsp_valid),
+    .mem_rsp_ready(command_mem_rsp_ready),
+    .mem_rsp_data(command_mem_rsp_data),
+    .cmd_valid(scheduler_cmd_valid), .cmd_ready(scheduler_cmd_ready),
+    .cmd_data(scheduler_command),
+    .request_count(prefetch_request_count),
+    .response_count(prefetch_response_count),
+    .delivered_command_count(prefetch_delivered_command_count),
+    .memory_stall_cycles(prefetch_memory_stall_cycles),
+    .protocol_error(prefetch_protocol_error)
+  );
 
   noc_descriptor_pair_scheduler scheduler (
     .clk(clk), .rst_n(rst_n), .current_cycle(cycle),
@@ -153,9 +205,9 @@ module noc_sram_packet_mesh4x4_workload_tb;
     .cmd_destination(scheduler_command[39:36]),
     .cmd_vc(scheduler_command[41:40]),
     .cmd_tag(scheduler_command[49:42]),
-    .cmd_tx_base_addr({scheduler_packet_index, 8'b0}),
-    .cmd_rx_base_addr({scheduler_packet_index, 8'b0}),
-    .cmd_flit_count(scheduler_command[53:50]),
+    .cmd_tx_base_addr(scheduler_command[73:50]),
+    .cmd_rx_base_addr(scheduler_command[97:74]),
+    .cmd_flit_count(scheduler_command[101:98]),
     .tx_desc_valid(tx_desc_valid), .tx_desc_ready(tx_desc_ready),
     .tx_desc_destination(tx_desc_destination), .tx_desc_vc(tx_desc_vc),
     .tx_desc_tag(tx_desc_tag), .tx_desc_base_addr(tx_desc_base_addr),
@@ -315,7 +367,8 @@ module noc_sram_packet_mesh4x4_workload_tb;
       live_context_valid <= 0;
       completion_shadow_valid <= 0;
 `ifdef SERIAL_PAIRED_SCHEDULER
-      command_position <= 0;
+      command_mem_pending <= 1'b0;
+      command_mem_pending_addr <= 0;
 `endif
       for (seq_endpoint_i = 0; seq_endpoint_i < 16; seq_endpoint_i = seq_endpoint_i + 1) begin
         source_position[seq_endpoint_i] <= 0;
@@ -328,8 +381,12 @@ module noc_sram_packet_mesh4x4_workload_tb;
     end else begin
       cycle <= cycle + 1;
 `ifdef SERIAL_PAIRED_SCHEDULER
-      if (scheduler_cmd_valid && scheduler_cmd_ready)
-        command_position <= command_position + 1;
+      if (command_mem_pending && command_mem_rsp_ready)
+        command_mem_pending <= 1'b0;
+      if (command_mem_req_valid && command_mem_req_ready) begin
+        command_mem_pending <= 1'b1;
+        command_mem_pending_addr <= command_mem_req_addr;
+      end
 `endif
       tx_fire_count = 0;
       completion_fire_count = 0;
@@ -454,8 +511,9 @@ module noc_sram_packet_mesh4x4_workload_tb;
       if (endpoint_protocol_error != 0)
         $fatal(1, "endpoint protocol error: %h", endpoint_protocol_error);
 `ifdef SERIAL_PAIRED_SCHEDULER
-      if (scheduler_protocol_error)
-        $fatal(1, "descriptor scheduler protocol error");
+      if (prefetch_protocol_error || scheduler_protocol_error)
+        $fatal(1, "descriptor command path protocol error prefetch=%0d scheduler=%0d",
+          prefetch_protocol_error, scheduler_protocol_error);
 `endif
       if (cycle > 0 && (cycle % 100000) == 0)
         $display("PROGRESS workload cycle=%0d submitted=%0d completed=%0d writes=%0d",
@@ -491,9 +549,14 @@ module noc_sram_packet_mesh4x4_workload_tb;
 `ifdef SERIAL_PAIRED_SCHEDULER
       if (scheduler_accepted_command_count != packet_count ||
           scheduler_installed_receive_count != packet_count ||
-          scheduler_submitted_transmit_count != packet_count)
+          scheduler_submitted_transmit_count != packet_count ||
+          prefetch_request_count != packet_count ||
+          prefetch_response_count != packet_count ||
+          prefetch_delivered_command_count != packet_count)
         $fatal(1,
-          "scheduler count mismatch accepted=%0d rx=%0d tx=%0d expected=%0d",
+          "command count mismatch req=%0d rsp=%0d delivered=%0d accepted=%0d rx=%0d tx=%0d expected=%0d",
+          prefetch_request_count, prefetch_response_count,
+          prefetch_delivered_command_count,
           scheduler_accepted_command_count, scheduler_installed_receive_count,
           scheduler_submitted_transmit_count, packet_count);
 `endif

@@ -41,6 +41,7 @@ RTL_SOURCES = (
     Path("npu/sim/rtl/noc_sram_packet_mesh4x4.sv"),
 )
 SCHEDULER_RTL_SOURCE = Path("npu/sim/rtl/noc_descriptor_pair_scheduler.sv")
+PREFETCH_RTL_SOURCE = Path("npu/sim/rtl/noc_descriptor_command_prefetch.sv")
 RTL_TB = Path("tests/noc_sram_packet_mesh4x4_workload_tb.sv")
 PASS_RE = re.compile(
     r"PASS workload packets=(?P<packets>\d+) flits=(?P<flits>\d+) "
@@ -238,7 +239,11 @@ def run_rtl_replay(
     ]
     if descriptor_scheduler == "serial_paired":
         compile_command.extend(
-            ["-DSERIAL_PAIRED_SCHEDULER", str(repo_root / SCHEDULER_RTL_SOURCE)]
+            [
+                "-DSERIAL_PAIRED_SCHEDULER",
+                str(repo_root / PREFETCH_RTL_SOURCE),
+                str(repo_root / SCHEDULER_RTL_SOURCE),
+            ]
         )
     compile_command.extend(str(repo_root / path) for path in RTL_SOURCES)
     compile_command.append(str(repo_root / RTL_TB))
@@ -472,7 +477,7 @@ def build_and_run(args: argparse.Namespace) -> JsonDict:
         },
         "remaining_abstractions": [
             "SRAM arrays are transaction-accurate one-cycle ports; bitcells and macro placement remain external.",
-            "The 102-bit command records are supplied by an external command-memory/prefetch interface; its SRAM bitcells remain macro evidence.",
+            "The 102-bit command records use concrete one-cycle prefetch control; command SRAM bitcells, macro placement, and command population/refill remain external evidence.",
             *(
                 []
                 if args.descriptor_scheduler == "serial_paired"
