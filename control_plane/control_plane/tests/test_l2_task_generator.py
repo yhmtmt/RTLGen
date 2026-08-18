@@ -14641,6 +14641,58 @@ def test_generate_l2_campaign_task_adds_score32_noc_phase2_full_schedule_evidenc
             assert any("compute_clock_ns/noc_clock_ns" in entry for entry in acceptance)
 
 
+def test_generate_l2_campaign_task_adds_score32_phase2_exact_transport_revision() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                _make_l2_request(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id=(
+                        "l2_decoder_attention_score32_noc_phase2_"
+                        "exact_transport_revision_llama7b_v1"
+                    ),
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    proposal_id=(
+                        "prop_l2_decoder_attention_score32_noc_phase2_"
+                        "exact_transport_revision_v1"
+                    ),
+                    proposal_path=(
+                        "docs/proposals/prop_l2_decoder_attention_score32_noc_phase2_"
+                        "exact_transport_revision_v1/proposal.json"
+                    ),
+                    abstraction_layer=(
+                        "decoder_attention_score32_noc_phase2_exact_transport"
+                    ),
+                    evaluation_mode="frontier_detail",
+                    depends_on_item_ids=[],
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            run = work_item.command_manifest[0]["run"]
+            assert work_item.state == WorkItemState.DISPATCH_PENDING
+            assert "revise_llm_decoder_attention_score32_noc_phase2_exact_transport.py" in run
+            assert "partial_producer" not in run
+            assert "--runtime-max-sec 120" in run
+            assert work_item.input_manifest["worker_resources"]["exclusive_worker"] is False
+            assert any("419-bit" in str(rule) for rule in work_item.acceptance_rules)
+            assert work_item.expected_outputs[0].endswith(
+                "decoder_attention_score32_noc_phase2_exact_transport_revision__"
+                "l2_decoder_attention_score32_noc_phase2_exact_transport_revision_llama7b_v1.json"
+            )
+
+
 def test_generate_l2_campaign_task_rejects_noncanonical_score32_noc_phase2_item() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
