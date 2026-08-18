@@ -1,0 +1,31 @@
+{
+  "proposal_id": "prop_l1_attention_score32_exact_aligned_transport_codec_ppa_v1",
+  "source_commit": "TBD",
+  "requested_items": [
+    {
+      "item_id": "l1_attention_score32_exact_aligned_transport_codec_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure Nangate45 PPA for the exact 419-bit aggregate aligned two-flit codec.",
+      "evaluation_mode": "ppa",
+      "abstraction_layer": "architecture_block",
+      "config_paths": [
+        "runs/designs/noc/l1_attention_score32_exact_aligned_codec_w419_f256_wrapper/config_l1_attention_score32_exact_aligned_codec_w419_f256.json"
+      ],
+      "sweep_path": "runs/campaigns/noc/l1_attention_score32_exact_aligned_codec/sweeps/nangate45_macro_frontier.json",
+      "expected_outputs": [
+        "runs/designs/noc/l1_attention_score32_exact_aligned_codec_w419_f256_wrapper/metrics.csv"
+      ],
+      "status": "pending_after_proposal_merge",
+      "comparison_role": "phase2_exact_aligned_codec_physical_anchor",
+      "paired_baseline_item_id": "",
+      "depends_on_item_ids": [],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "measure_exact_aligned_transport_codec",
+        "reason": "Establish the direct field-preserving codec PPA anchor before comparing denser exact packing."
+      },
+      "acceptance_notes": "Require exact round-trip and no-bubble cadence tests, generated hierarchy checks, and timing/area/power rows for the requested sweep. Treat PPA as codec-plus-compact-harness evidence, not endpoint, mesh, SRAM, reducer, or global-tree evidence."
+    }
+  ]
+}

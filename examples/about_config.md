@@ -495,6 +495,9 @@ endpoint. `primitive: "sram_packet_mesh4x4"` emits its full 16-endpoint,
 synthesizable sixteen-endpoint command controller with sequential one-cycle
 SRAM prefetch, one response buffer, release waiting, RX descriptor
 installation, and only then paired TX descriptor submission.
+`primitive: "exact_aligned_codec"` emits the field-preserving 419-bit exact
+partial aggregate encoder/decoder over two aligned 256-bit flits, inside a
+compact activity harness for direct PPA measurement.
 
 Supported common options are `primitive`, `flit_bits`, `depth`, `ports`, and
 `counter_bits`. Segmented-router and segmented-mesh options are `vc_count`,
