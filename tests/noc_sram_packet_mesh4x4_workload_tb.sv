@@ -8,6 +8,7 @@ module noc_sram_packet_mesh4x4_workload_tb;
   localparam integer ADDR_W = 24;
   localparam integer MAX_PACKETS = 12000;
   localparam integer RX_CONTEXTS = 8;
+  localparam integer BOUNDED_PACKET_SLOTS = 563;
 
   reg clk = 1'b0;
   reg rst_n = 1'b0;
@@ -35,6 +36,12 @@ module noc_sram_packet_mesh4x4_workload_tb;
   integer comb_free_context;
   integer comb_duplicate_context;
   integer write_fragment;
+  integer request_packet;
+  integer request_fragment;
+  integer request_slot;
+  integer response_packet;
+  integer response_fragment;
+  integer descriptor_slot;
   integer tx_fire_count;
   integer completion_fire_count;
   integer write_fire_count;
@@ -84,6 +91,20 @@ module noc_sram_packet_mesh4x4_workload_tb;
   integer pending_read_rd [0:15];
   integer pending_read_wr [0:15];
   integer pending_read_count [0:15];
+  integer pending_read_packet [0:16*8-1];
+
+`ifdef GENERATED_COMMAND_SOURCE
+  integer serial_rx_position = 0;
+  integer serial_tx_position = 0;
+  integer tx_packet_queue [0:16*MAX_PACKETS-1];
+  integer tx_packet_rd [0:15];
+  integer tx_packet_wr [0:15];
+  integer tx_packet_fragment [0:15];
+  reg [ADDR_W-1:0] packet_tx_base [0:MAX_PACKETS-1];
+  reg [ADDR_W-1:0] packet_rx_base [0:MAX_PACKETS-1];
+  reg [BOUNDED_PACKET_SLOTS-1:0] tx_slot_live [0:15];
+  reg [BOUNDED_PACKET_SLOTS-1:0] rx_slot_live [0:15];
+`endif
 
 `ifdef SERIAL_PAIRED_SCHEDULER
   wire [15:0] rx_desc_valid;
@@ -243,12 +264,9 @@ module noc_sram_packet_mesh4x4_workload_tb;
 
   function [DATA_W-1:0] memory_data;
     input [3:0] source;
-    input [ADDR_W-1:0] address;
-    reg [15:0] packet_id;
-    reg [2:0] fragment;
+    input [15:0] packet_id;
+    input [2:0] fragment;
     begin
-      packet_id = address[23:8];
-      fragment = address[7:5];
       memory_data = {DATA_W{1'b0}};
       memory_data[3:0] = source;
       memory_data[19:4] = packet_id;
@@ -382,6 +400,10 @@ module noc_sram_packet_mesh4x4_workload_tb;
       packet_completed <= 0;
       live_context_valid <= 0;
       completion_shadow_valid <= 0;
+`ifdef GENERATED_COMMAND_SOURCE
+      serial_rx_position <= 0;
+      serial_tx_position <= 0;
+`endif
 `ifdef SERIAL_PAIRED_SCHEDULER
 `ifndef GENERATED_COMMAND_SOURCE
       command_mem_pending <= 1'b0;
@@ -395,6 +417,13 @@ module noc_sram_packet_mesh4x4_workload_tb;
         pending_read_rd[seq_endpoint_i] <= 0;
         pending_read_wr[seq_endpoint_i] <= 0;
         pending_read_count[seq_endpoint_i] <= 0;
+`ifdef GENERATED_COMMAND_SOURCE
+        tx_packet_rd[seq_endpoint_i] <= 0;
+        tx_packet_wr[seq_endpoint_i] <= 0;
+        tx_packet_fragment[seq_endpoint_i] <= 0;
+        tx_slot_live[seq_endpoint_i] <= 0;
+        rx_slot_live[seq_endpoint_i] <= 0;
+`endif
       end
     end else begin
       cycle <= cycle + 1;
@@ -413,16 +442,58 @@ module noc_sram_packet_mesh4x4_workload_tb;
       write_fire_count = 0;
 
       for (seq_endpoint_i = 0; seq_endpoint_i < 16; seq_endpoint_i = seq_endpoint_i + 1) begin
+`ifdef GENERATED_COMMAND_SOURCE
+        if (tx_mem_rsp_valid[seq_endpoint_i] && tx_mem_rsp_ready[seq_endpoint_i]) begin
+          response_packet =
+            tx_mem_rsp_data[(seq_endpoint_i*DATA_W) + 4 +: 16];
+          response_fragment =
+            tx_mem_rsp_data[(seq_endpoint_i*DATA_W) + 20 +: 3];
+          if (response_fragment + 1 == descriptors[response_packet][53:50]) begin
+            request_slot = packet_tx_base[response_packet] >> 8;
+            tx_slot_live[seq_endpoint_i][request_slot] <= 1'b0;
+          end
+        end
+`endif
+        request_packet = -1;
+        request_fragment = -1;
+        if (tx_mem_req_valid[seq_endpoint_i] && tx_mem_req_ready[seq_endpoint_i]) begin
+`ifdef GENERATED_COMMAND_SOURCE
+          request_packet = tx_packet_queue[
+            seq_endpoint_i*MAX_PACKETS + tx_packet_rd[seq_endpoint_i]];
+          request_fragment = tx_packet_fragment[seq_endpoint_i];
+          if (tx_mem_req_addr[(seq_endpoint_i*ADDR_W) +: ADDR_W] !==
+              packet_tx_base[request_packet] + request_fragment*32)
+            $fatal(1,
+              "TX packet-slot address mismatch endpoint=%0d packet=%0d fragment=%0d address=%h base=%h",
+              seq_endpoint_i, request_packet, request_fragment,
+              tx_mem_req_addr[(seq_endpoint_i*ADDR_W) +: ADDR_W],
+              packet_tx_base[request_packet]);
+          if (request_fragment + 1 == descriptors[request_packet][53:50]) begin
+            tx_packet_rd[seq_endpoint_i] <= tx_packet_rd[seq_endpoint_i] + 1;
+            tx_packet_fragment[seq_endpoint_i] <= 0;
+          end else begin
+            tx_packet_fragment[seq_endpoint_i] <= request_fragment + 1;
+          end
+`else
+          request_packet = tx_mem_req_addr[(seq_endpoint_i*ADDR_W) +: ADDR_W] >> 8;
+          request_fragment =
+            (tx_mem_req_addr[(seq_endpoint_i*ADDR_W) +: ADDR_W] >> 5) & 7;
+`endif
+        end
+
         if (!tx_mem_rsp_valid[seq_endpoint_i] || tx_mem_rsp_ready[seq_endpoint_i]) begin
           if (pending_read_count[seq_endpoint_i] > 0) begin
             tx_mem_rsp_valid[seq_endpoint_i] <= 1'b1;
             tx_mem_rsp_data[(seq_endpoint_i*DATA_W) +: DATA_W] <= memory_data(
               seq_endpoint_i[3:0],
-              pending_read_addr[seq_endpoint_i*8 + pending_read_rd[seq_endpoint_i]]);
+              pending_read_packet[seq_endpoint_i*8 + pending_read_rd[seq_endpoint_i]],
+              (pending_read_addr[seq_endpoint_i*8 + pending_read_rd[seq_endpoint_i]] >> 5) & 7);
             pending_read_rd[seq_endpoint_i] <= (pending_read_rd[seq_endpoint_i] + 1) % 8;
             if (tx_mem_req_valid[seq_endpoint_i] && tx_mem_req_ready[seq_endpoint_i]) begin
               pending_read_addr[seq_endpoint_i*8 + pending_read_wr[seq_endpoint_i]] <=
                 tx_mem_req_addr[(seq_endpoint_i*ADDR_W) +: ADDR_W];
+              pending_read_packet[seq_endpoint_i*8 + pending_read_wr[seq_endpoint_i]] <=
+                request_packet;
               pending_read_wr[seq_endpoint_i] <= (pending_read_wr[seq_endpoint_i] + 1) % 8;
             end else begin
               pending_read_count[seq_endpoint_i] <= pending_read_count[seq_endpoint_i] - 1;
@@ -432,20 +503,44 @@ module noc_sram_packet_mesh4x4_workload_tb;
             // response consumed at the following edge.
             tx_mem_rsp_valid[seq_endpoint_i] <= 1'b1;
             tx_mem_rsp_data[(seq_endpoint_i*DATA_W) +: DATA_W] <= memory_data(
-              seq_endpoint_i[3:0], tx_mem_req_addr[(seq_endpoint_i*ADDR_W) +: ADDR_W]);
+              seq_endpoint_i[3:0], request_packet, request_fragment[2:0]);
           end else begin
             tx_mem_rsp_valid[seq_endpoint_i] <= 1'b0;
           end
         end else if (tx_mem_req_valid[seq_endpoint_i] && tx_mem_req_ready[seq_endpoint_i]) begin
           pending_read_addr[seq_endpoint_i*8 + pending_read_wr[seq_endpoint_i]] <=
             tx_mem_req_addr[(seq_endpoint_i*ADDR_W) +: ADDR_W];
+          pending_read_packet[seq_endpoint_i*8 + pending_read_wr[seq_endpoint_i]] <=
+            request_packet;
           pending_read_wr[seq_endpoint_i] <= (pending_read_wr[seq_endpoint_i] + 1) % 8;
           pending_read_count[seq_endpoint_i] <= pending_read_count[seq_endpoint_i] + 1;
         end
 
         if (rx_desc_valid[seq_endpoint_i] && rx_desc_ready[seq_endpoint_i]) begin
 `ifdef SERIAL_PAIRED_SCHEDULER
+`ifdef GENERATED_COMMAND_SOURCE
+          selected_packet = command_order[serial_rx_position];
+          serial_rx_position <= serial_rx_position + 1;
+          if (descriptors[selected_packet][39:36] != seq_endpoint_i[3:0] ||
+              rx_desc_source[(seq_endpoint_i*4) +: 4] !== descriptors[selected_packet][35:32] ||
+              rx_desc_vc[(seq_endpoint_i*2) +: 2] !== descriptors[selected_packet][41:40] ||
+              rx_desc_tag[(seq_endpoint_i*8) +: 8] !== descriptors[selected_packet][49:42] ||
+              rx_desc_flit_count[(seq_endpoint_i*4) +: 4] !== descriptors[selected_packet][53:50])
+            $fatal(1, "generated RX descriptor metadata mismatch for packet %0d", selected_packet);
+          packet_rx_base[selected_packet] <=
+            rx_desc_base_addr[(seq_endpoint_i*ADDR_W) +: ADDR_W];
+          descriptor_slot =
+            rx_desc_base_addr[(seq_endpoint_i*ADDR_W) +: ADDR_W] >> 8;
+          if (descriptor_slot < 0 || descriptor_slot >= BOUNDED_PACKET_SLOTS)
+            $fatal(1, "generated RX descriptor slot is out of bounds: %0d", descriptor_slot);
+          if (rx_slot_live[seq_endpoint_i][descriptor_slot])
+            $fatal(1,
+              "generated RX descriptor reuses live slot endpoint=%0d slot=%0d packet=%0d",
+              seq_endpoint_i, descriptor_slot, selected_packet);
+          rx_slot_live[seq_endpoint_i][descriptor_slot] <= 1'b1;
+`else
           selected_packet = rx_desc_base_addr[(seq_endpoint_i*ADDR_W) +: ADDR_W] >> 8;
+`endif
 `else
           selected_index = destination_queue_meta[seq_endpoint_i][15:0] +
             destination_position[seq_endpoint_i];
@@ -466,7 +561,32 @@ module noc_sram_packet_mesh4x4_workload_tb;
 
         if (tx_desc_valid[seq_endpoint_i] && tx_desc_ready[seq_endpoint_i]) begin
 `ifdef SERIAL_PAIRED_SCHEDULER
+`ifdef GENERATED_COMMAND_SOURCE
+          selected_packet = command_order[serial_tx_position];
+          serial_tx_position <= serial_tx_position + 1;
+          if (descriptors[selected_packet][35:32] != seq_endpoint_i[3:0] ||
+              tx_desc_destination[(seq_endpoint_i*4) +: 4] !== descriptors[selected_packet][39:36] ||
+              tx_desc_vc[(seq_endpoint_i*2) +: 2] !== descriptors[selected_packet][41:40] ||
+              tx_desc_tag[(seq_endpoint_i*8) +: 8] !== descriptors[selected_packet][49:42] ||
+              tx_desc_flit_count[(seq_endpoint_i*4) +: 4] !== descriptors[selected_packet][53:50])
+            $fatal(1, "generated TX descriptor metadata mismatch for packet %0d", selected_packet);
+          packet_tx_base[selected_packet] <=
+            tx_desc_base_addr[(seq_endpoint_i*ADDR_W) +: ADDR_W];
+          descriptor_slot =
+            tx_desc_base_addr[(seq_endpoint_i*ADDR_W) +: ADDR_W] >> 8;
+          if (descriptor_slot < 0 || descriptor_slot >= BOUNDED_PACKET_SLOTS)
+            $fatal(1, "generated TX descriptor slot is out of bounds: %0d", descriptor_slot);
+          if (tx_slot_live[seq_endpoint_i][descriptor_slot])
+            $fatal(1,
+              "generated TX descriptor reuses live slot endpoint=%0d slot=%0d packet=%0d",
+              seq_endpoint_i, descriptor_slot, selected_packet);
+          tx_slot_live[seq_endpoint_i][descriptor_slot] <= 1'b1;
+          tx_packet_queue[seq_endpoint_i*MAX_PACKETS + tx_packet_wr[seq_endpoint_i]] <=
+            selected_packet;
+          tx_packet_wr[seq_endpoint_i] <= tx_packet_wr[seq_endpoint_i] + 1;
+`else
           selected_packet = tx_desc_base_addr[(seq_endpoint_i*ADDR_W) +: ADDR_W] >> 8;
+`endif
 `else
           selected_index = source_queue_meta[seq_endpoint_i][15:0] + source_position[seq_endpoint_i];
           selected_packet = source_order[selected_index];
@@ -494,17 +614,32 @@ module noc_sram_packet_mesh4x4_workload_tb;
         end
 
         if (rx_mem_write_valid[seq_endpoint_i] && rx_mem_write_ready[seq_endpoint_i]) begin
+`ifdef GENERATED_COMMAND_SOURCE
+          selected_packet =
+            rx_mem_write_data[(seq_endpoint_i*DATA_W) + 4 +: 16];
+          write_fragment =
+            rx_mem_write_data[(seq_endpoint_i*DATA_W) + 20 +: 3];
+`else
           selected_packet = rx_mem_write_addr[(seq_endpoint_i*ADDR_W) +: ADDR_W] >> 8;
           write_fragment =
             (rx_mem_write_addr[(seq_endpoint_i*ADDR_W) +: ADDR_W] >> 5) & 7;
+`endif
           if (selected_packet < 0 || selected_packet >= packet_count)
             $fatal(1, "destination write names invalid packet %0d", selected_packet);
           if (descriptors[selected_packet][39:36] != seq_endpoint_i[3:0])
             $fatal(1, "packet %0d written at wrong endpoint %0d", selected_packet, seq_endpoint_i);
+`ifdef GENERATED_COMMAND_SOURCE
+          if (rx_mem_write_addr[(seq_endpoint_i*ADDR_W) +: ADDR_W] !==
+              packet_rx_base[selected_packet] + write_fragment*32)
+            $fatal(1,
+              "RX packet-slot address mismatch endpoint=%0d packet=%0d fragment=%0d address=%h base=%h",
+              seq_endpoint_i, selected_packet, write_fragment,
+              rx_mem_write_addr[(seq_endpoint_i*ADDR_W) +: ADDR_W],
+              packet_rx_base[selected_packet]);
+`endif
           if (rx_mem_write_data[(seq_endpoint_i*DATA_W) +: DATA_W] !== memory_data(
                 descriptors[selected_packet][35:32],
-                (selected_packet << 8) |
-                  ((rx_mem_write_addr[(seq_endpoint_i*ADDR_W) +: ADDR_W] & 24'h0000ff))))
+                selected_packet[15:0], write_fragment[2:0]))
             $fatal(1, "packet %0d destination data mismatch", selected_packet);
           write_fire_count = write_fire_count + 1;
 
@@ -518,6 +653,10 @@ module noc_sram_packet_mesh4x4_workload_tb;
             if (free_context < 0)
               $fatal(1, "completed packet %0d has no live context", selected_packet);
             live_context_valid[seq_endpoint_i*RX_CONTEXTS + free_context] <= 1'b0;
+`ifdef GENERATED_COMMAND_SOURCE
+            descriptor_slot = packet_rx_base[selected_packet] >> 8;
+            rx_slot_live[seq_endpoint_i][descriptor_slot] <= 1'b0;
+`endif
             completion_packet[seq_endpoint_i] <= selected_packet;
             completion_shadow_valid[seq_endpoint_i] <= 1'b1;
           end
@@ -577,12 +716,21 @@ module noc_sram_packet_mesh4x4_workload_tb;
       if (!command_generator_done || generated_command_count != packet_count ||
           scheduler_accepted_command_count != packet_count ||
           scheduler_installed_receive_count != packet_count ||
-          scheduler_submitted_transmit_count != packet_count)
+          scheduler_submitted_transmit_count != packet_count ||
+          serial_rx_position != packet_count || serial_tx_position != packet_count)
         $fatal(1,
-          "command count mismatch generated=%0d accepted=%0d rx=%0d tx=%0d expected=%0d done=%0d",
+          "command count mismatch generated=%0d accepted=%0d rx=%0d tx=%0d rx_pos=%0d tx_pos=%0d expected=%0d done=%0d",
           generated_command_count, scheduler_accepted_command_count,
           scheduler_installed_receive_count, scheduler_submitted_transmit_count,
-          packet_count, command_generator_done);
+          serial_rx_position, serial_tx_position, packet_count, command_generator_done);
+      for (queue_i = 0; queue_i < 16; queue_i = queue_i + 1) begin
+        if (tx_slot_live[queue_i] != 0 || rx_slot_live[queue_i] != 0)
+          $fatal(1, "bounded packet slots remain live at endpoint %0d tx=%h rx=%h",
+            queue_i, tx_slot_live[queue_i], rx_slot_live[queue_i]);
+        if (tx_packet_rd[queue_i] != tx_packet_wr[queue_i])
+          $fatal(1, "TX packet-slot queue did not drain at endpoint %0d rd=%0d wr=%0d",
+            queue_i, tx_packet_rd[queue_i], tx_packet_wr[queue_i]);
+      end
 `else
       if (scheduler_accepted_command_count != packet_count ||
           scheduler_installed_receive_count != packet_count ||
