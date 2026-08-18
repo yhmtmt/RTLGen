@@ -40,4 +40,5 @@ control_plane/.venv/
 control_plane/**/__pycache__/
 control_plane/*.egg-info/
 control_plane/logs/
+control_plane/runtime_logs/
 control_plane/shadow_exports/
