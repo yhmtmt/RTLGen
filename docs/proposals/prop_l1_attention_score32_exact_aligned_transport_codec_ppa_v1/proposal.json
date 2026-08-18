@@ -1,0 +1,66 @@
+{
+  "proposal_id": "prop_l1_attention_score32_exact_aligned_transport_codec_ppa_v1",
+  "created_utc": "2026-08-18T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit_block",
+  "abstraction_layer": "architecture_block",
+  "title": "Embody the score32 exact aligned transport codec",
+  "hypothesis": "A field-preserving two-flit codec can sustain the 256-bit NoC payload cadence with small PPA relative to the exact reducer and mesh.",
+  "direct_comparison": {
+    "primary_question": "What PPA and cadence are required to transport one exact 419-bit aggregate beat without precision loss?",
+    "include": [
+      "419-bit retained encoder beat",
+      "two ordered 256-bit flits",
+      "256-bit decoder partial state",
+      "419-bit retained decoder output",
+      "phase, beat-last, and padding checks",
+      "ready/valid backpressure",
+      "full-width deterministic source and all-bit folded sink harness"
+    ],
+    "exclude": [
+      "local reducer arithmetic",
+      "packet endpoint and descriptor scheduler",
+      "SRAM bitcells",
+      "router and mesh wiring",
+      "global reduction tree",
+      "HBM/DRAM",
+      "workload-matched switching power"
+    ]
+  },
+  "expected_benefit": [
+    "remove exact aggregate field preservation from the Phase-2 abstraction list",
+    "establish a direct PPA baseline for packed and stats-once codecs",
+    "prove continuous one-flit-per-cycle transport under backpressure"
+  ],
+  "risks": [
+    "the retained 419-bit registers may dominate this small block",
+    "compact harness support logic is included in measured PPA",
+    "standalone PPA does not predict composed endpoint or routing timing"
+  ],
+  "required_evaluations": [
+    {
+      "item_id": "l1_attention_score32_exact_aligned_transport_codec_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure Nangate45 PPA for the exact 419-bit aggregate aligned two-flit codec.",
+      "evaluation_mode": "ppa",
+      "abstraction_layer": "architecture_block",
+      "comparison_role": "phase2_exact_aligned_codec_physical_anchor",
+      "depends_on_item_ids": [],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "config_paths": [
+        "runs/designs/noc/l1_attention_score32_exact_aligned_codec_w419_f256_wrapper/config_l1_attention_score32_exact_aligned_codec_w419_f256.json"
+      ],
+      "sweep_path": "runs/campaigns/noc/l1_attention_score32_exact_aligned_codec/sweeps/nangate45_macro_frontier.json",
+      "expected_outputs": [
+        "runs/designs/noc/l1_attention_score32_exact_aligned_codec_w419_f256_wrapper/metrics.csv"
+      ]
+    }
+  ],
+  "baseline_refs": [
+    "docs/proposals/prop_l2_decoder_attention_score32_noc_phase2_exact_transport_revision_v1/proposal.json",
+    "npu/docs/attention_score32_exact_aligned_transport_codec_contract.md",
+    "npu/eval/gqa8_compositional_exact.py"
+  ]
+}

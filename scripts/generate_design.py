@@ -453,11 +453,12 @@ def identify_design(config):
             "sram_packet_endpoint",
             "sram_packet_mesh4x4",
             "descriptor_pair_scheduler",
+            "exact_aligned_codec",
         ):
             raise ValueError(
                 "l1_memory_noc_primitive primitive must be fifo, router, endpoint, segmented_router, "
-                "segmented_mesh4x4, sram_packet_endpoint, sram_packet_mesh4x4, or "
-                "descriptor_pair_scheduler"
+                "segmented_mesh4x4, sram_packet_endpoint, sram_packet_mesh4x4, "
+                "descriptor_pair_scheduler, or exact_aligned_codec"
             )
         if flit_bits <= 0:
             raise ValueError("l1_memory_noc_primitive flit_bits must be positive")
@@ -532,6 +533,14 @@ def identify_design(config):
                     "l1_memory_noc_primitive descriptor_pair_scheduler command_source "
                     "must be prefetch or llama7b_generated"
                 )
+        if primitive == "exact_aligned_codec" and flit_bits != 256:
+            raise ValueError(
+                "l1_memory_noc_primitive exact_aligned_codec requires 256-bit flits"
+            )
+        if primitive == "exact_aligned_codec" and counter_bits < 4:
+            raise ValueError(
+                "l1_memory_noc_primitive exact_aligned_codec requires counter_bits >= 4"
+            )
         return {
             "kind": "l1_memory_noc_primitive",
             "module_name": module_name,
@@ -999,6 +1008,17 @@ def generate_l1_memory_noc_design(src_dir, design):
             "noc_llama7b_phase2_command_generator.sv",
             "noc_descriptor_pair_scheduler.sv",
             "noc_descriptor_pair_scheduler_ppa_harness.sv",
+        ):
+            rtl_path = repo_root / "npu" / "sim" / "rtl" / filename
+            Path(src_dir, Path(filename).with_suffix(".v")).write_text(
+                rtl_path.read_text(encoding="utf-8"),
+                encoding="utf-8",
+            )
+    elif design["primitive"] == "exact_aligned_codec":
+        text = _emit_l1_exact_aligned_codec(module_name, design)
+        for filename in (
+            "local_reducer_aggregate_aligned_exact_codec.sv",
+            "local_reducer_aggregate_aligned_exact_codec_ppa_harness.sv",
         ):
             rtl_path = repo_root / "npu" / "sim" / "rtl" / filename
             Path(src_dir, Path(filename).with_suffix(".v")).write_text(
@@ -1756,6 +1776,34 @@ module {module_name}(
     .endpoint_stall_cycles(endpoint_stall_cycles),
     .protocol_error(protocol_error),
     .observed_state(observed_state)
+  );
+endmodule
+"""
+
+
+def _emit_l1_exact_aligned_codec(module_name, design):
+    return f"""
+`timescale 1ns/1ps
+
+module {module_name}(
+  input clk,
+  input rst_n,
+  output [31:0] observed_data,
+  output [{design['counter_bits']-1}:0] accepted_beat_count,
+  output [{design['counter_bits']-1}:0] emitted_flit_count,
+  output [{design['counter_bits']-1}:0] decoded_beat_count,
+  output protocol_error
+);
+  local_reducer_aggregate_aligned_exact_codec_ppa_harness #(
+    .COUNTER_W({design['counter_bits']})
+  ) harness (
+    .clk(clk),
+    .rst_n(rst_n),
+    .observed_data(observed_data),
+    .accepted_beat_count(accepted_beat_count),
+    .emitted_flit_count(emitted_flit_count),
+    .decoded_beat_count(decoded_beat_count),
+    .protocol_error(protocol_error)
   );
 endmodule
 """
@@ -2649,6 +2697,30 @@ module {wrapper_name}(
 
 endmodule
 """
+        elif design["primitive"] == "exact_aligned_codec":
+            wrapper_content = f"""
+module {wrapper_name}(
+  input clk,
+  input rst_n,
+  output [31:0] observed_data,
+  output [{counter_bits-1}:0] accepted_beat_count,
+  output [{counter_bits-1}:0] emitted_flit_count,
+  output [{counter_bits-1}:0] decoded_beat_count,
+  output protocol_error
+);
+
+  {module_name} dut (
+    .clk(clk),
+    .rst_n(rst_n),
+    .observed_data(observed_data),
+    .accepted_beat_count(accepted_beat_count),
+    .emitted_flit_count(emitted_flit_count),
+    .decoded_beat_count(decoded_beat_count),
+    .protocol_error(protocol_error)
+  );
+
+endmodule
+"""
         else:
             wrapper_content = f"""
 module {wrapper_name}(
@@ -2704,6 +2776,16 @@ def generate_config_mk(platform_dir, platform, design):
                 f"$(DESIGN_HOME)/src/{wrapper_name}/noc_llama7b_phase2_command_generator.v",
                 f"$(DESIGN_HOME)/src/{wrapper_name}/noc_descriptor_pair_scheduler.v",
                 f"$(DESIGN_HOME)/src/{wrapper_name}/noc_descriptor_pair_scheduler_ppa_harness.v",
+            ]
+        )
+    if (
+        design["kind"] == "l1_memory_noc_primitive"
+        and design["primitive"] == "exact_aligned_codec"
+    ):
+        verilog_files.extend(
+            [
+                f"$(DESIGN_HOME)/src/{wrapper_name}/local_reducer_aggregate_aligned_exact_codec.v",
+                f"$(DESIGN_HOME)/src/{wrapper_name}/local_reducer_aggregate_aligned_exact_codec_ppa_harness.v",
             ]
         )
 
