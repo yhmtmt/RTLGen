@@ -155,3 +155,10 @@ def test_local_reducer_aggregate_aligned_exact_codec_ppa_hierarchy(tmp_path: Pat
             text=True,
             timeout=60,
         )
+
+
+def test_local_reducer_aggregate_aligned_exact_codec_rejects_narrow_counter() -> None:
+    config = json.loads(PPA_CONFIG.read_text(encoding="utf-8"))
+    config["operations"][0]["options"]["counter_bits"] = 3
+    with pytest.raises(ValueError, match="requires counter_bits >= 4"):
+        identify_design(config)

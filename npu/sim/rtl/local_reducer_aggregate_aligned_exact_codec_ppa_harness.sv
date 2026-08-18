@@ -17,7 +17,7 @@ module local_reducer_aggregate_aligned_exact_codec_ppa_harness #(
   localparam integer BEAT_W = 419;
   localparam integer FLIT_W = 256;
 
-  reg [31:0] source_state_q;
+  reg [BEAT_W-1:0] source_state_q;
   reg [COUNTER_W-1:0] cycle_count_q;
   reg [COUNTER_W-1:0] accepted_count_q;
   reg [COUNTER_W-1:0] emitted_count_q;
@@ -26,10 +26,7 @@ module local_reducer_aggregate_aligned_exact_codec_ppa_harness #(
 
   wire source_valid = cycle_count_q[2:0] != 3'b111;
   wire source_ready;
-  wire [BEAT_W-1:0] source_beat = {
-    source_state_q[2:0],
-    {13{source_state_q}}
-  };
+  wire [BEAT_W-1:0] source_beat = source_state_q;
   wire flit_valid;
   wire flit_ready;
   wire [FLIT_W-1:0] flit_data;
@@ -51,6 +48,17 @@ module local_reducer_aggregate_aligned_exact_codec_ppa_harness #(
   assign observed_data = observed_q;
   assign protocol_error = decoder_protocol_error;
 
+  function [31:0] fold_beat;
+    input [BEAT_W-1:0] value;
+    integer bit_i;
+    begin
+      fold_beat = 32'b0;
+      for (bit_i = 0; bit_i < BEAT_W; bit_i = bit_i + 1)
+        fold_beat[bit_i % 32] = fold_beat[bit_i % 32] ^ value[bit_i];
+    end
+  endfunction
+
+  (* keep_hierarchy = "yes" *)
   local_reducer_aggregate_aligned_exact_encoder u_encoder (
     .clk(clk),
     .rst_n(rst_n),
@@ -64,6 +72,7 @@ module local_reducer_aggregate_aligned_exact_codec_ppa_harness #(
     .flit_beat_last(flit_beat_last)
   );
 
+  (* keep_hierarchy = "yes" *)
   local_reducer_aggregate_aligned_exact_decoder u_decoder (
     .clk(clk),
     .rst_n(rst_n),
@@ -81,7 +90,10 @@ module local_reducer_aggregate_aligned_exact_codec_ppa_harness #(
 
   always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
-      source_state_q <= 32'h1357_9bdf;
+      source_state_q <= {
+        {13{32'h1357_9bdf}},
+        3'b101
+      };
       cycle_count_q <= {COUNTER_W{1'b0}};
       accepted_count_q <= {COUNTER_W{1'b0}};
       emitted_count_q <= {COUNTER_W{1'b0}};
@@ -91,9 +103,9 @@ module local_reducer_aggregate_aligned_exact_codec_ppa_harness #(
       cycle_count_q <= cycle_count_q + 1'b1;
       if (source_fire) begin
         source_state_q <= {
-          source_state_q[30:0],
-          source_state_q[31] ^ source_state_q[21] ^
-          source_state_q[1] ^ source_state_q[0]
+          source_state_q[BEAT_W-2:0],
+          source_state_q[BEAT_W-1] ^ source_state_q[302] ^
+          source_state_q[171] ^ source_state_q[5]
         };
         accepted_count_q <= accepted_count_q + 1'b1;
       end
@@ -101,11 +113,17 @@ module local_reducer_aggregate_aligned_exact_codec_ppa_harness #(
         emitted_count_q <= emitted_count_q + 1'b1;
       if (decoded_fire) begin
         decoded_count_q <= decoded_count_q + 1'b1;
-        observed_q <=
-          decoded_data[31:0] ^ decoded_data[127:96] ^
-          decoded_data[255:224] ^ decoded_data[351:320] ^
-          {29'b0, decoded_data[418:416]};
+        observed_q <= fold_beat(decoded_data);
       end
     end
   end
+
+`ifndef SYNTHESIS
+  initial begin
+    if (COUNTER_W < 4) begin
+      $error("local_reducer_aggregate_aligned_exact_codec_ppa_harness COUNTER_W must be at least 4");
+      $finish(1);
+    end
+  end
+`endif
 endmodule

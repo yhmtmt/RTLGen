@@ -16,7 +16,7 @@
       "419-bit retained decoder output",
       "phase, beat-last, and padding checks",
       "ready/valid backpressure",
-      "compact deterministic source and folded sink harness"
+      "full-width deterministic source and all-bit folded sink harness"
     ],
     "exclude": [
       "local reducer arithmetic",

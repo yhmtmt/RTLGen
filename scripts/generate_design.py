@@ -537,6 +537,10 @@ def identify_design(config):
             raise ValueError(
                 "l1_memory_noc_primitive exact_aligned_codec requires 256-bit flits"
             )
+        if primitive == "exact_aligned_codec" and counter_bits < 4:
+            raise ValueError(
+                "l1_memory_noc_primitive exact_aligned_codec requires counter_bits >= 4"
+            )
         return {
             "kind": "l1_memory_noc_primitive",
             "module_name": module_name,
