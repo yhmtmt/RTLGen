@@ -1,0 +1,23 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_score32_noc_phase2_serial_scheduler_equivalence_v1",
+  "source_commit": "TBD",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_score32_noc_phase2_serial_scheduler_equivalence_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Prove full-workload equivalence and measure cadence with the serial paired scheduler.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence",
+      "comparison_role": "scheduler_closure_detail",
+      "status": "pending_after_proposal_merge",
+      "depends_on_item_ids": [],
+      "requires_merged_inputs": false,
+      "requires_materialized_refs": false,
+      "expected_outputs": [
+        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence__l2_decoder_attention_score32_noc_phase2_serial_scheduler_equivalence_llama7b_v1.json",
+        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence__l2_decoder_attention_score32_noc_phase2_serial_scheduler_equivalence_llama7b_v1.md"
+      ],
+      "acceptance_notes": "Require all 11,576 packets and 92,128 flits, scheduler RX-before-TX ordering, zero protocol errors, and exact performance/RTL agreement for drain cycles, contention, stalls, and occupancy. Compare directly with the merged endpoint-parallel issuer baseline."
+    }
+  ]
+}

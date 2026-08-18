@@ -1,0 +1,56 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_score32_noc_phase2_serial_scheduler_equivalence_v1",
+  "created_utc": "2026-08-18T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "equivalence",
+  "title": "Workload-complete synthesized descriptor scheduler equivalence",
+  "hypothesis": "The area-conservative serial paired scheduler fits between Llama7B release waves without materially reducing token throughput while exactly matching composed RTL behavior.",
+  "direct_comparison": {
+    "primary_question": "How do drain time and congestion move when the abstract endpoint-parallel issuer is replaced by the synthesizable serial paired scheduler?",
+    "include": [
+      "all eight waves and every canonical packet",
+      "synthesizable global paired scheduler",
+      "finite TX queues and RX contexts",
+      "one-cycle SRAM transaction ports",
+      "all sixteen endpoints and routers",
+      "exact cycle and router-counter comparison"
+    ],
+    "exclude": [
+      "command and packet SRAM bitcells",
+      "workload-derived switching power",
+      "HBM/DRAM controller implementation"
+    ]
+  },
+  "expected_benefit": [
+    "remove the logical command-issuer timing abstraction",
+    "quantify scheduler serialization at full Llama7B scale",
+    "provide exact cadence for final physical recost"
+  ],
+  "risks": [
+    "global serialization may expose head-of-line blocking",
+    "transaction-accurate SRAM ports still require macro composition",
+    "functional replay does not provide workload switching energy"
+  ],
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_score32_noc_phase2_serial_scheduler_equivalence_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Prove full-workload equivalence and measure cadence with the serial paired scheduler.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence",
+      "comparison_role": "scheduler_closure_detail",
+      "depends_on_item_ids": [],
+      "requires_merged_inputs": false,
+      "requires_materialized_refs": false,
+      "expected_outputs": [
+        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence__l2_decoder_attention_score32_noc_phase2_serial_scheduler_equivalence_llama7b_v1.json",
+        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence__l2_decoder_attention_score32_noc_phase2_serial_scheduler_equivalence_llama7b_v1.md"
+      ]
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence__l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_llama7b_v1.json",
+    "docs/proposals/prop_l1_noc_descriptor_pair_scheduler_v1/proposal.json"
+  ]
+}

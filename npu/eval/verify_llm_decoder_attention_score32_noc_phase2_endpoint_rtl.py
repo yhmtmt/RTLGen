@@ -40,6 +40,7 @@ RTL_SOURCES = (
     Path("npu/sim/rtl/noc_sram_packet_endpoint.sv"),
     Path("npu/sim/rtl/noc_sram_packet_mesh4x4.sv"),
 )
+SCHEDULER_RTL_SOURCE = Path("npu/sim/rtl/noc_descriptor_pair_scheduler.sv")
 RTL_TB = Path("tests/noc_sram_packet_mesh4x4_workload_tb.sv")
 PASS_RE = re.compile(
     r"PASS workload packets=(?P<packets>\d+) flits=(?P<flits>\d+) "
@@ -64,6 +65,7 @@ class WorkloadPacket:
 @dataclass(frozen=True)
 class WorkloadMemoryPaths:
     descriptors: Path
+    command_order: Path
     source_order: Path
     destination_order: Path
     source_meta: Path
@@ -153,6 +155,7 @@ def write_workload_memories(
         raise ValueError("RTL workload must contain at least one packet")
     output_dir.mkdir(parents=True, exist_ok=True)
     descriptors = output_dir / "descriptors.mem"
+    command_order_path = output_dir / "command_order.mem"
     source_order_path = output_dir / "source_order.mem"
     destination_order_path = output_dir / "destination_order.mem"
     source_meta_path = output_dir / "source_meta.mem"
@@ -177,6 +180,21 @@ def write_workload_memories(
         words.append(word)
     _write_hex_lines(descriptors, words, 24)
 
+    command_order = [
+        packet.packet_id
+        for packet in sorted(
+            packets,
+            key=lambda packet: (
+                packet.release_cycle,
+                packet.schedule_order,
+                packet.packet_id,
+            ),
+        )
+    ]
+    if sorted(command_order) != list(range(len(packets))):
+        raise ValueError("global command order is not a packet permutation")
+    _write_hex_lines(command_order_path, command_order, 4)
+
     source_order, source_meta = _queue_order_and_meta(packets, endpoint_field="source")
     destination_order, destination_meta = _queue_order_and_meta(
         packets, endpoint_field="destination"
@@ -187,6 +205,7 @@ def write_workload_memories(
     _write_hex_lines(destination_meta_path, destination_meta, 8)
     return WorkloadMemoryPaths(
         descriptors=descriptors,
+        command_order=command_order_path,
         source_order=source_order_path,
         destination_order=destination_order_path,
         source_meta=source_meta_path,
@@ -201,20 +220,30 @@ def run_rtl_replay(
     work_dir: Path,
     timeout_cycles: int,
     wall_timeout_seconds: int,
+    descriptor_scheduler: str = "endpoint_parallel",
 ) -> JsonDict:
+    if descriptor_scheduler not in ("endpoint_parallel", "serial_paired"):
+        raise ValueError(
+            "descriptor_scheduler must be endpoint_parallel or serial_paired"
+        )
     memories = write_workload_memories(packets, work_dir)
     simulator = work_dir / "phase2_endpoint_mesh.vvp"
+    compile_command = [
+        _tool("iverilog"),
+        "-g2012",
+        "-s",
+        "noc_sram_packet_mesh4x4_workload_tb",
+        "-o",
+        str(simulator),
+    ]
+    if descriptor_scheduler == "serial_paired":
+        compile_command.extend(
+            ["-DSERIAL_PAIRED_SCHEDULER", str(repo_root / SCHEDULER_RTL_SOURCE)]
+        )
+    compile_command.extend(str(repo_root / path) for path in RTL_SOURCES)
+    compile_command.append(str(repo_root / RTL_TB))
     compile_result = subprocess.run(
-        [
-            _tool("iverilog"),
-            "-g2012",
-            "-s",
-            "noc_sram_packet_mesh4x4_workload_tb",
-            "-o",
-            str(simulator),
-            *[str(repo_root / path) for path in RTL_SOURCES],
-            str(repo_root / RTL_TB),
-        ],
+        compile_command,
         cwd=repo_root,
         check=False,
         capture_output=True,
@@ -234,6 +263,7 @@ def run_rtl_replay(
         f"+EXPECTED_FLITS={expected_flits}",
         f"+TIMEOUT_CYCLES={timeout_cycles}",
         f"+DESC_MEM={memories.descriptors}",
+        f"+CMD_ORDER_MEM={memories.command_order}",
         f"+SRC_ORDER_MEM={memories.source_order}",
         f"+DST_ORDER_MEM={memories.destination_order}",
         f"+SRC_META_MEM={memories.source_meta}",
@@ -306,6 +336,7 @@ def run_performance_replay(
     packets: list[WorkloadPacket],
     *,
     max_cycles: int,
+    descriptor_scheduler: str = "endpoint_parallel",
 ) -> JsonDict:
     result = simulate_packet_mesh(
         [
@@ -324,6 +355,7 @@ def run_performance_replay(
             )
             for packet in packets
         ],
+        descriptor_scheduler=descriptor_scheduler,
         max_cycles=max_cycles,
         fast_forward_idle=True,
     )
@@ -389,7 +421,11 @@ def build_and_run(args: argparse.Namespace) -> JsonDict:
     packet_specs: list[PacketSpec] = []
     schedule = build_report(_schedule_args(args), packet_spec_output=packet_specs)
     packets = descriptors_from_packet_specs(packet_specs)
-    performance = run_performance_replay(packets, max_cycles=args.rtl_timeout_cycles)
+    performance = run_performance_replay(
+        packets,
+        max_cycles=args.rtl_timeout_cycles,
+        descriptor_scheduler=args.descriptor_scheduler,
+    )
     with tempfile.TemporaryDirectory(prefix="rtlgen-phase2-endpoint-rtl-") as temporary:
         replay = run_rtl_replay(
             repo_root=args.repo_root.resolve(),
@@ -397,6 +433,7 @@ def build_and_run(args: argparse.Namespace) -> JsonDict:
             work_dir=Path(temporary),
             timeout_cycles=args.rtl_timeout_cycles,
             wall_timeout_seconds=args.wall_timeout_seconds,
+            descriptor_scheduler=args.descriptor_scheduler,
         )
     counters = replay["counters"]
     compared_fields = ("packets", "flits", "cycles", "contention", "input_stalls", "max_occupancy")
@@ -409,7 +446,8 @@ def build_and_run(args: argparse.Namespace) -> JsonDict:
         raise ValueError(f"endpoint-aware performance/RTL mismatch: {mismatches}")
     return {
         "profile": "decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence",
-        "version": 1,
+        "version": 2,
+        "descriptor_scheduler": args.descriptor_scheduler,
         "coverage": schedule["source_contract"]["coverage"],
         "source_schedule": {
             "packet_count": schedule["simulation"]["scheduled_packet_count"],
@@ -434,7 +472,14 @@ def build_and_run(args: argparse.Namespace) -> JsonDict:
         },
         "remaining_abstractions": [
             "SRAM arrays are transaction-accurate one-cycle ports; bitcells and macro placement remain external.",
-            "The command scheduler is embodied by the deterministic paired-descriptor testbench driver, not yet synthesized RTL.",
+            "The 102-bit command records are supplied by an external command-memory/prefetch interface; its SRAM bitcells remain macro evidence.",
+            *(
+                []
+                if args.descriptor_scheduler == "serial_paired"
+                else [
+                    "The command scheduler is embodied by the deterministic paired-descriptor testbench driver, not synthesized RTL."
+                ]
+            ),
             "HBM/DRAM and its controller remain intentionally outside the design boundary.",
             "Workload-matched switching power requires a separate activity-capture run.",
         ],
@@ -449,6 +494,7 @@ def write_report(payload: JsonDict, path: Path) -> None:
         "# Llama7B Phase-2 Endpoint/RTL Equivalence",
         "",
         f"- coverage: `{payload['coverage']}`",
+        f"- descriptor scheduler: `{payload['descriptor_scheduler']}`",
         f"- packets/flits: `{rtl['packets']}` / `{rtl['flits']}`",
         f"- logical release-queue drain: `{source['logical_release_queue_cycles_to_drain']}` cycles",
         f"- finite endpoint/RTL drain: `{rtl['cycles']}` cycles",
@@ -476,6 +522,11 @@ def main() -> int:
     parser.add_argument("--schedule-max-cycles", type=int, default=1000000)
     parser.add_argument("--rtl-timeout-cycles", type=int, default=2000000)
     parser.add_argument("--wall-timeout-seconds", type=int, default=1800)
+    parser.add_argument(
+        "--descriptor-scheduler",
+        choices=("endpoint_parallel", "serial_paired"),
+        default="serial_paired",
+    )
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--report", type=Path, required=True)
     args = parser.parse_args()

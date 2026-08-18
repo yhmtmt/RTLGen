@@ -451,10 +451,12 @@ def identify_design(config):
             "segmented_mesh4x4",
             "sram_packet_endpoint",
             "sram_packet_mesh4x4",
+            "descriptor_pair_scheduler",
         ):
             raise ValueError(
                 "l1_memory_noc_primitive primitive must be fifo, router, endpoint, segmented_router, "
-                "segmented_mesh4x4, sram_packet_endpoint, or sram_packet_mesh4x4"
+                "segmented_mesh4x4, sram_packet_endpoint, sram_packet_mesh4x4, or "
+                "descriptor_pair_scheduler"
             )
         if flit_bits <= 0:
             raise ValueError("l1_memory_noc_primitive flit_bits must be positive")
@@ -515,6 +517,15 @@ def identify_design(config):
                 )
             if local_endpoint_id < 0 or local_endpoint_id >= (1 << source_bits):
                 raise ValueError("l1_memory_noc_primitive local_endpoint_id is out of range")
+        if primitive == "descriptor_pair_scheduler":
+            if ports != 16:
+                raise ValueError(
+                    "l1_memory_noc_primitive descriptor_pair_scheduler requires 16 endpoints"
+                )
+            if flit_bits < 42:
+                raise ValueError(
+                    "l1_memory_noc_primitive descriptor_pair_scheduler requires at least 42 observation bits"
+                )
         return {
             "kind": "l1_memory_noc_primitive",
             "module_name": module_name,
@@ -968,6 +979,17 @@ def generate_l1_memory_noc_design(src_dir, design):
             "noc_sram_packet_endpoint.sv",
             "noc_sram_packet_mesh4x4.sv",
             "noc_sram_packet_mesh4x4_ppa_harness.sv",
+        ):
+            rtl_path = repo_root / "npu" / "sim" / "rtl" / filename
+            Path(src_dir, Path(filename).with_suffix(".v")).write_text(
+                rtl_path.read_text(encoding="utf-8"),
+                encoding="utf-8",
+            )
+    elif design["primitive"] == "descriptor_pair_scheduler":
+        text = _emit_l1_descriptor_pair_scheduler(module_name, design)
+        for filename in (
+            "noc_descriptor_pair_scheduler.sv",
+            "noc_descriptor_pair_scheduler_ppa_harness.sv",
         ):
             rtl_path = repo_root / "npu" / "sim" / "rtl" / filename
             Path(src_dir, Path(filename).with_suffix(".v")).write_text(
@@ -1692,6 +1714,38 @@ module {module_name}(
     .issued_packet_count(issued_packet_count),
     .completed_packet_count(completed_packet_count),
     .protocol_error(protocol_error)
+  );
+endmodule
+"""
+
+
+def _emit_l1_descriptor_pair_scheduler(module_name, design):
+    return f"""
+`timescale 1ns/1ps
+
+module {module_name}(
+  input clk,
+  input rst_n,
+  output [{design['counter_bits']-1}:0] accepted_command_count,
+  output [{design['counter_bits']-1}:0] installed_receive_count,
+  output [{design['counter_bits']-1}:0] submitted_transmit_count,
+  output [{design['counter_bits']-1}:0] endpoint_stall_cycles,
+  output protocol_error,
+  output [{design['flit_bits']-1}:0] observed_state
+);
+  noc_descriptor_pair_scheduler_ppa_harness #(
+    .NODES({design['ports']}),
+    .DATA_W({design['flit_bits']}),
+    .COUNTER_W({design['counter_bits']})
+  ) harness (
+    .clk(clk),
+    .rst_n(rst_n),
+    .accepted_command_count(accepted_command_count),
+    .installed_receive_count(installed_receive_count),
+    .submitted_transmit_count(submitted_transmit_count),
+    .endpoint_stall_cycles(endpoint_stall_cycles),
+    .protocol_error(protocol_error),
+    .observed_state(observed_state)
   );
 endmodule
 """
@@ -2559,6 +2613,32 @@ module {wrapper_name}(
 
 endmodule
 """
+        elif design["primitive"] == "descriptor_pair_scheduler":
+            wrapper_content = f"""
+module {wrapper_name}(
+  input clk,
+  input rst_n,
+  output [{counter_bits-1}:0] accepted_command_count,
+  output [{counter_bits-1}:0] installed_receive_count,
+  output [{counter_bits-1}:0] submitted_transmit_count,
+  output [{counter_bits-1}:0] endpoint_stall_cycles,
+  output protocol_error,
+  output [{flit_bits-1}:0] observed_state
+);
+
+  {module_name} dut (
+    .clk(clk),
+    .rst_n(rst_n),
+    .accepted_command_count(accepted_command_count),
+    .installed_receive_count(installed_receive_count),
+    .submitted_transmit_count(submitted_transmit_count),
+    .endpoint_stall_cycles(endpoint_stall_cycles),
+    .protocol_error(protocol_error),
+    .observed_state(observed_state)
+  );
+
+endmodule
+"""
         else:
             wrapper_content = f"""
 module {wrapper_name}(
@@ -2604,6 +2684,16 @@ def generate_config_mk(platform_dir, platform, design):
     ]
     if design["include_mg_cpa"]:
         verilog_files.append(f"$(DESIGN_HOME)/src/{wrapper_name}/MG_CPA.v")
+    if (
+        design["kind"] == "l1_memory_noc_primitive"
+        and design["primitive"] == "descriptor_pair_scheduler"
+    ):
+        verilog_files.extend(
+            [
+                f"$(DESIGN_HOME)/src/{wrapper_name}/noc_descriptor_pair_scheduler.v",
+                f"$(DESIGN_HOME)/src/{wrapper_name}/noc_descriptor_pair_scheduler_ppa_harness.v",
+            ]
+        )
 
     content = f"""
 export PLATFORM = {platform}

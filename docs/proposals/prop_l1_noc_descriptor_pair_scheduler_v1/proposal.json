@@ -1,0 +1,61 @@
+{
+  "proposal_id": "prop_l1_noc_descriptor_pair_scheduler_v1",
+  "created_utc": "2026-08-18T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit_block",
+  "abstraction_layer": "architecture_block",
+  "title": "Embody the Phase-2 paired descriptor scheduler",
+  "hypothesis": "A single-command RX-before-TX scheduler is small enough to be negligible beside the endpoint/mesh while sustaining the burst cadence of the complete Llama7B Phase-2 workload.",
+  "direct_comparison": {
+    "primary_question": "What PPA and issue cadence replace the unmeasured deterministic testbench descriptor scheduler?",
+    "include": [
+      "one active 102-bit packet command",
+      "release-cycle gating",
+      "receive descriptor installation before transmit submission",
+      "endpoint backpressure",
+      "same-edge command replacement after transmit acceptance",
+      "sixteen endpoint descriptor interfaces"
+    ],
+    "exclude": [
+      "external command SRAM bitcells",
+      "endpoint and router logic",
+      "HBM/DRAM",
+      "workload-matched switching power"
+    ]
+  },
+  "expected_benefit": [
+    "remove synthesized command-scheduler PPA from the Phase-2 abstraction list",
+    "establish a concrete one-command-per-two-cycle scheduling policy",
+    "bound command storage separately as a 102-bit external SRAM record"
+  ],
+  "risks": [
+    "global serialization may increase congestion or drain latency",
+    "the physical harness contributes disclosed source, backpressure, and observation logic",
+    "command SRAM capacity and macro energy remain separate physical evidence"
+  ],
+  "required_evaluations": [
+    {
+      "item_id": "l1_noc_descriptor_pair_scheduler_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure Nangate45 PPA for the synthesizable sixteen-endpoint paired descriptor scheduler.",
+      "evaluation_mode": "ppa",
+      "abstraction_layer": "architecture_block",
+      "comparison_role": "phase2_descriptor_scheduler_physical_anchor",
+      "depends_on_item_ids": [],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "config_paths": [
+        "runs/designs/noc/l1_noc_descriptor_pair_scheduler_n16_wrapper/config_l1_noc_descriptor_pair_scheduler_n16.json"
+      ],
+      "sweep_path": "runs/campaigns/noc/l1_descriptor_pair_scheduler/sweeps/nangate45_macro_frontier.json",
+      "expected_outputs": [
+        "runs/designs/noc/l1_noc_descriptor_pair_scheduler_n16_wrapper/metrics.csv"
+      ]
+    }
+  ],
+  "baseline_refs": [
+    "docs/proposals/prop_l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_v1/proposal.json",
+    "npu/sim/rtl/noc_sram_packet_mesh4x4.sv"
+  ]
+}

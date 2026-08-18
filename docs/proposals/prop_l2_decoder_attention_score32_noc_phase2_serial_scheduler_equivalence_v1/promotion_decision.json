@@ -1,0 +1,9 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_score32_noc_phase2_serial_scheduler_equivalence_v1",
+  "candidate_id": "",
+  "decision": "iterate",
+  "reason": "Focused equivalence passes; full workload evidence is pending.",
+  "evidence_refs": [],
+  "next_action": "run l2_decoder_attention_score32_noc_phase2_serial_scheduler_equivalence_llama7b_v1",
+  "requires_human_approval": false
+}

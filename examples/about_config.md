@@ -489,13 +489,19 @@ divisible by 16.
 `primitive: "endpoint"` emits a ready/valid on-chip service endpoint with
 finite endpoint buffering, finite per-bank queues, locality-first bank
 draining, and synthetic producer/consumer backpressure.
+`primitive: "sram_packet_endpoint"` emits the finite descriptor-driven packet
+endpoint. `primitive: "sram_packet_mesh4x4"` emits its full 16-endpoint,
+16-router composition. `primitive: "descriptor_pair_scheduler"` emits the
+synthesizable sixteen-endpoint command controller that waits for release,
+installs each RX descriptor, and only then submits its paired TX descriptor.
 
 Supported common options are `primitive`, `flit_bits`, `depth`, `ports`, and
 `counter_bits`. Segmented-router and segmented-mesh options are `vc_count`,
 `dest_bits`, `source_bits`, `tag_bits`, and `fragment_bits`; the single-router
 form also accepts `x_coord` and `y_coord`.
 Endpoint-specific options are `banks`, `endpoint_depth`, and
-`bank_queue_depth`.
+`bank_queue_depth`. Packet-endpoint options include `addr_bits`,
+`flit_count_bits`, `tx_desc_depth`, `tx_outstanding`, and `rx_contexts`.
 
 See `examples/config_l1_memory_noc_primitive.json` for a FIFO smoke
 configuration and `examples/config_l1_onchip_service_endpoint.json` for an

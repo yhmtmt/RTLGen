@@ -179,3 +179,56 @@ def test_idle_fast_forward_respects_max_cycle_bound() -> None:
 
     with pytest.raises(RuntimeError, match="max_cycles=999"):
         simulate_packet_mesh([descriptor], max_cycles=999, fast_forward_idle=True)
+
+
+def test_serial_paired_scheduler_matches_synthesizable_issue_cadence() -> None:
+    descriptors = [
+        PacketDescriptor(
+            source=index,
+            destination=15 - index,
+            vc=index,
+            tag=index + 1,
+            flit_count=1,
+            release_cycle=release,
+            schedule_order=index,
+            packet_id=f"serial-{index}",
+        )
+        for index, release in enumerate((4, 4, 10))
+    ]
+
+    result = simulate_packet_mesh(
+        descriptors,
+        descriptor_scheduler="serial_paired",
+        max_cycles=100,
+    )
+    accelerated = simulate_packet_mesh(
+        descriptors,
+        descriptor_scheduler="serial_paired",
+        fast_forward_idle=True,
+        max_cycles=100,
+    )
+
+    assert [(event.packet_index, event.cycle) for event in result.rx_descriptor_handshakes] == [
+        (0, 4),
+        (1, 6),
+        (2, 10),
+    ]
+    assert [(event.packet_index, event.cycle) for event in result.tx_descriptor_handshakes] == [
+        (0, 5),
+        (1, 7),
+        (2, 11),
+    ]
+    assert accelerated == result
+    assert not result.protocol_errors
+
+
+def test_packet_mesh_rejects_unknown_descriptor_scheduler() -> None:
+    descriptor = PacketDescriptor(
+        source=0,
+        destination=1,
+        vc=0,
+        tag=1,
+        flit_count=1,
+    )
+    with pytest.raises(ValueError, match="descriptor_scheduler"):
+        simulate_packet_mesh([descriptor], descriptor_scheduler="imaginary")

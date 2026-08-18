@@ -407,6 +407,7 @@ def _ordered_indices(descriptors: Sequence[PacketDescriptor]) -> tuple[int, ...]
 def simulate_packet_mesh(
     descriptors: Iterable[PacketDescriptor],
     *,
+    descriptor_scheduler: str = "endpoint_parallel",
     destination_sram_ready_schedule: ReadySchedule = None,
     source_sram_request_ready_schedule: ReadySchedule = None,
     completion_ready_schedule: ReadySchedule = None,
@@ -416,12 +417,18 @@ def simulate_packet_mesh(
 ) -> PacketMeshResult:
     """Simulate paired descriptors and the existing registered-credit mesh.
 
-    RX descriptors are scheduled one per destination endpoint per cycle.  A
-    TX descriptor is eligible only in a cycle strictly after its RX handshake,
-    and is scheduled one per source endpoint per cycle.  Ready schedules are
-    indexed as ``[cycle][endpoint]``; a callable may be used for large replay
-    workloads without materializing a matrix.
+    ``endpoint_parallel`` schedules one RX per destination and one TX per
+    source each cycle, preserving the original abstract scheduler.  The
+    synthesizable ``serial_paired`` policy holds one global command, installs
+    its RX descriptor first, and submits its TX descriptor on a later edge.
+    Ready schedules are indexed as ``[cycle][endpoint]``; a callable may be
+    used for large replay workloads without materializing a matrix.
     """
+
+    if descriptor_scheduler not in ("endpoint_parallel", "serial_paired"):
+        raise ValueError(
+            "descriptor_scheduler must be endpoint_parallel or serial_paired"
+        )
 
     packet_list = tuple(descriptors)
     if not packet_list:
@@ -454,6 +461,9 @@ def simulate_packet_mesh(
     rx_done: list[int | None] = [None] * len(packet_list)
     tx_done: list[int | None] = [None] * len(packet_list)
     ordered_indices = _ordered_indices(packet_list)
+    scheduler_pending = deque(ordered_indices)
+    scheduler_active: int | None = None
+    scheduler_receive_installed = False
     rx_queues = [deque() for _ in range(ENDPOINTS)]
     tx_queues = [deque() for _ in range(ENDPOINTS)]
     for index in ordered_indices:
@@ -489,9 +499,16 @@ def simulate_packet_mesh(
                 for state in states
             )
             if endpoints_idle and all(router.idle() for router in routers):
-                pending_releases = [
-                    packet_list[queue[0]].release_cycle for queue in rx_queues if queue
-                ]
+                if descriptor_scheduler == "serial_paired":
+                    pending_releases = (
+                        [packet_list[scheduler_active].release_cycle]
+                        if scheduler_active is not None
+                        else []
+                    )
+                else:
+                    pending_releases = [
+                        packet_list[queue[0]].release_cycle for queue in rx_queues if queue
+                    ]
                 if pending_releases:
                     next_release = min(pending_releases)
                     if next_release >= max_cycles:
@@ -502,29 +519,39 @@ def simulate_packet_mesh(
         # An RX handshake at this edge cannot make a same-edge TX release
         # legal, matching the RTL's registered descriptor state.
         rx_push: dict[int, int] = {}
-        for endpoint, queue in enumerate(rx_queues):
-            if not queue:
-                continue
-            index = queue[0]
-            descriptor = packet_list[index]
-            if (
-                descriptor.release_cycle <= cycle
-                and states[endpoint].rx_desc_ready(descriptor)
-            ):
-                rx_push[endpoint] = index
-
         tx_push: dict[int, int] = {}
-        for endpoint, queue in enumerate(tx_queues):
-            if not queue or not states[endpoint].tx_desc_ready():
-                continue
-            index = queue[0]
-            descriptor = packet_list[index]
-            if (
-                rx_done[index] is not None
-                and rx_done[index] < cycle
-                and descriptor.release_cycle <= cycle
-            ):
-                tx_push[endpoint] = index
+        if descriptor_scheduler == "serial_paired":
+            if scheduler_active is not None:
+                descriptor = packet_list[scheduler_active]
+                if descriptor.release_cycle <= cycle:
+                    if not scheduler_receive_installed:
+                        if states[descriptor.destination].rx_desc_ready(descriptor):
+                            rx_push[descriptor.destination] = scheduler_active
+                    elif states[descriptor.source].tx_desc_ready():
+                        tx_push[descriptor.source] = scheduler_active
+        else:
+            for endpoint, queue in enumerate(rx_queues):
+                if not queue:
+                    continue
+                index = queue[0]
+                descriptor = packet_list[index]
+                if (
+                    descriptor.release_cycle <= cycle
+                    and states[endpoint].rx_desc_ready(descriptor)
+                ):
+                    rx_push[endpoint] = index
+
+            for endpoint, queue in enumerate(tx_queues):
+                if not queue or not states[endpoint].tx_desc_ready():
+                    continue
+                index = queue[0]
+                descriptor = packet_list[index]
+                if (
+                    rx_done[index] is not None
+                    and rx_done[index] < cycle
+                    and descriptor.release_cycle <= cycle
+                ):
+                    tx_push[endpoint] = index
 
         tx_pop = [state.tx_pop_ready() for state in states]
         tx_requests_by_endpoint: list[SourceMemoryRequest | None] = [None] * ENDPOINTS
@@ -674,6 +701,10 @@ def simulate_packet_mesh(
                 rx_handshakes.append(
                     DescriptorHandshake(cycle, endpoint, "rx", index, packet_list[index])
                 )
+                if descriptor_scheduler == "serial_paired":
+                    if scheduler_active != index or scheduler_receive_installed:
+                        raise RuntimeError("serial RX scheduler state diverged")
+                    scheduler_receive_installed = True
             if endpoint in tx_push:
                 index = tx_push[endpoint]
                 if not tx_queues[endpoint] or tx_queues[endpoint][0] != index:
@@ -684,6 +715,11 @@ def simulate_packet_mesh(
                 tx_handshakes.append(
                     DescriptorHandshake(cycle, endpoint, "tx", index, packet_list[index])
                 )
+                if descriptor_scheduler == "serial_paired":
+                    if scheduler_active != index or not scheduler_receive_installed:
+                        raise RuntimeError("serial TX scheduler state diverged")
+                    scheduler_active = None
+                    scheduler_receive_installed = False
             if state.completion is not None and _ready(completion_ready_schedule, cycle, endpoint):
                 packet_index_completion, completion = state.completion
                 completion_handshakes.append(
@@ -699,6 +735,16 @@ def simulate_packet_mesh(
                 # The RTL clears the held completion at this edge.  A new
                 # final RX flit in the same edge may install the next event.
                 state.completion = None
+
+        # The external command memory can fill an empty scheduler or replace
+        # a command whose TX descriptor handshook on this edge.  Its newly
+        # accepted command cannot drive endpoint outputs until the next cycle.
+        if (
+            descriptor_scheduler == "serial_paired"
+            and scheduler_active is None
+            and scheduler_pending
+        ):
+            scheduler_active = scheduler_pending.popleft()
 
         for endpoint, event in enumerate(rx_flit_events):
             if event is None:

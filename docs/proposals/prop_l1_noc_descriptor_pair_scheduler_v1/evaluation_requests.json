@@ -1,0 +1,31 @@
+{
+  "proposal_id": "prop_l1_noc_descriptor_pair_scheduler_v1",
+  "source_commit": "TBD",
+  "requested_items": [
+    {
+      "item_id": "l1_noc_descriptor_pair_scheduler_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure Nangate45 PPA for the synthesizable sixteen-endpoint paired descriptor scheduler.",
+      "evaluation_mode": "ppa",
+      "abstraction_layer": "architecture_block",
+      "config_paths": [
+        "runs/designs/noc/l1_noc_descriptor_pair_scheduler_n16_wrapper/config_l1_noc_descriptor_pair_scheduler_n16.json"
+      ],
+      "sweep_path": "runs/campaigns/noc/l1_descriptor_pair_scheduler/sweeps/nangate45_macro_frontier.json",
+      "expected_outputs": [
+        "runs/designs/noc/l1_noc_descriptor_pair_scheduler_n16_wrapper/metrics.csv"
+      ],
+      "status": "pending_after_proposal_merge",
+      "comparison_role": "phase2_descriptor_scheduler_physical_anchor",
+      "paired_baseline_item_id": "",
+      "depends_on_item_ids": [],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "measure_phase2_descriptor_scheduler",
+        "reason": "Replace testbench-only command issue with concrete controller timing, area, and vectorless power."
+      },
+      "acceptance_notes": "Require RX-before-TX protocol simulation, exact generated hierarchy, all command fields retained, protocol_error=0, and timing/area/power rows for the requested sweep. Treat the result as scheduler-plus-harness evidence, not command-SRAM or workload-activity evidence."
+    }
+  ]
+}

@@ -42,6 +42,7 @@ module noc_sram_packet_mesh4x4_workload_tb;
   reg [15:0] completion_shadow_valid = 0;
 
   reg [95:0] descriptors [0:MAX_PACKETS-1];
+  reg [15:0] command_order [0:MAX_PACKETS-1];
   reg [15:0] source_order [0:MAX_PACKETS-1];
   reg [15:0] destination_order [0:MAX_PACKETS-1];
   reg [31:0] source_queue_meta [0:15];
@@ -54,13 +55,25 @@ module noc_sram_packet_mesh4x4_workload_tb;
   reg [127:0] live_context_valid = 0;
   integer live_context_packet [0:127];
 
+`ifdef SERIAL_PAIRED_SCHEDULER
+  wire [15:0] tx_desc_valid;
+`else
   reg [15:0] tx_desc_valid = 0;
+`endif
   wire [15:0] tx_desc_ready;
+`ifdef SERIAL_PAIRED_SCHEDULER
+  wire [63:0] tx_desc_destination;
+  wire [31:0] tx_desc_vc;
+  wire [127:0] tx_desc_tag;
+  wire [16*ADDR_W-1:0] tx_desc_base_addr;
+  wire [63:0] tx_desc_flit_count;
+`else
   reg [63:0] tx_desc_destination = 0;
   reg [31:0] tx_desc_vc = 0;
   reg [127:0] tx_desc_tag = 0;
   reg [16*ADDR_W-1:0] tx_desc_base_addr = 0;
   reg [63:0] tx_desc_flit_count = 0;
+`endif
   wire [15:0] tx_mem_req_valid;
   wire [15:0] tx_mem_req_ready;
   wire [16*ADDR_W-1:0] tx_mem_req_addr;
@@ -72,13 +85,25 @@ module noc_sram_packet_mesh4x4_workload_tb;
   integer pending_read_wr [0:15];
   integer pending_read_count [0:15];
 
+`ifdef SERIAL_PAIRED_SCHEDULER
+  wire [15:0] rx_desc_valid;
+`else
   reg [15:0] rx_desc_valid = 0;
+`endif
   wire [15:0] rx_desc_ready;
+`ifdef SERIAL_PAIRED_SCHEDULER
+  wire [63:0] rx_desc_source;
+  wire [31:0] rx_desc_vc;
+  wire [127:0] rx_desc_tag;
+  wire [16*ADDR_W-1:0] rx_desc_base_addr;
+  wire [63:0] rx_desc_flit_count;
+`else
   reg [63:0] rx_desc_source = 0;
   reg [31:0] rx_desc_vc = 0;
   reg [127:0] rx_desc_tag = 0;
   reg [16*ADDR_W-1:0] rx_desc_base_addr = 0;
   reg [63:0] rx_desc_flit_count = 0;
+`endif
   wire [15:0] rx_mem_write_valid;
   reg [15:0] rx_mem_write_ready = 16'hffff;
   wire [16*ADDR_W-1:0] rx_mem_write_addr;
@@ -100,10 +125,53 @@ module noc_sram_packet_mesh4x4_workload_tb;
   wire [16*5*32-1:0] router_route_flit_count;
 
   string descriptor_mem;
+  string command_order_mem;
   string source_order_mem;
   string destination_order_mem;
   string source_meta_mem;
   string destination_meta_mem;
+
+`ifdef SERIAL_PAIRED_SCHEDULER
+  integer command_position = 0;
+  wire [15:0] scheduler_packet_index = command_position < packet_count ?
+    command_order[command_position] : 16'b0;
+  wire [95:0] scheduler_command = descriptors[scheduler_packet_index];
+  wire scheduler_cmd_valid = rst_n && command_position < packet_count;
+  wire scheduler_cmd_ready;
+  wire [31:0] scheduler_accepted_command_count;
+  wire [31:0] scheduler_installed_receive_count;
+  wire [31:0] scheduler_submitted_transmit_count;
+  wire [31:0] scheduler_release_wait_cycles;
+  wire [31:0] scheduler_endpoint_stall_cycles;
+  wire scheduler_protocol_error;
+
+  noc_descriptor_pair_scheduler scheduler (
+    .clk(clk), .rst_n(rst_n), .current_cycle(cycle),
+    .cmd_valid(scheduler_cmd_valid), .cmd_ready(scheduler_cmd_ready),
+    .cmd_release_cycle(scheduler_command[31:0]),
+    .cmd_source(scheduler_command[35:32]),
+    .cmd_destination(scheduler_command[39:36]),
+    .cmd_vc(scheduler_command[41:40]),
+    .cmd_tag(scheduler_command[49:42]),
+    .cmd_tx_base_addr({scheduler_packet_index, 8'b0}),
+    .cmd_rx_base_addr({scheduler_packet_index, 8'b0}),
+    .cmd_flit_count(scheduler_command[53:50]),
+    .tx_desc_valid(tx_desc_valid), .tx_desc_ready(tx_desc_ready),
+    .tx_desc_destination(tx_desc_destination), .tx_desc_vc(tx_desc_vc),
+    .tx_desc_tag(tx_desc_tag), .tx_desc_base_addr(tx_desc_base_addr),
+    .tx_desc_flit_count(tx_desc_flit_count),
+    .rx_desc_valid(rx_desc_valid), .rx_desc_ready(rx_desc_ready),
+    .rx_desc_source(rx_desc_source), .rx_desc_vc(rx_desc_vc),
+    .rx_desc_tag(rx_desc_tag), .rx_desc_base_addr(rx_desc_base_addr),
+    .rx_desc_flit_count(rx_desc_flit_count),
+    .accepted_command_count(scheduler_accepted_command_count),
+    .installed_receive_count(scheduler_installed_receive_count),
+    .submitted_transmit_count(scheduler_submitted_transmit_count),
+    .release_wait_cycles(scheduler_release_wait_cycles),
+    .endpoint_stall_cycles(scheduler_endpoint_stall_cycles),
+    .protocol_error(scheduler_protocol_error)
+  );
+`endif
 
   function [DATA_W-1:0] memory_data;
     input [3:0] source;
@@ -169,6 +237,7 @@ module noc_sram_packet_mesh4x4_workload_tb;
   // Select at most one released descriptor per source and destination. The
   // receive side must handshake first; the transmit side observes that state
   // no earlier than the following cycle.
+`ifndef SERIAL_PAIRED_SCHEDULER
   always @(*) begin
     tx_desc_valid = 0;
     tx_desc_destination = 0;
@@ -230,6 +299,7 @@ module noc_sram_packet_mesh4x4_workload_tb;
       end
     end
   end
+`endif
 
   always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
@@ -244,6 +314,9 @@ module noc_sram_packet_mesh4x4_workload_tb;
       packet_completed <= 0;
       live_context_valid <= 0;
       completion_shadow_valid <= 0;
+`ifdef SERIAL_PAIRED_SCHEDULER
+      command_position <= 0;
+`endif
       for (seq_endpoint_i = 0; seq_endpoint_i < 16; seq_endpoint_i = seq_endpoint_i + 1) begin
         source_position[seq_endpoint_i] <= 0;
         destination_position[seq_endpoint_i] <= 0;
@@ -254,6 +327,10 @@ module noc_sram_packet_mesh4x4_workload_tb;
       end
     end else begin
       cycle <= cycle + 1;
+`ifdef SERIAL_PAIRED_SCHEDULER
+      if (scheduler_cmd_valid && scheduler_cmd_ready)
+        command_position <= command_position + 1;
+`endif
       tx_fire_count = 0;
       completion_fire_count = 0;
       write_fire_count = 0;
@@ -290,11 +367,15 @@ module noc_sram_packet_mesh4x4_workload_tb;
         end
 
         if (rx_desc_valid[seq_endpoint_i] && rx_desc_ready[seq_endpoint_i]) begin
+`ifdef SERIAL_PAIRED_SCHEDULER
+          selected_packet = rx_desc_base_addr[(seq_endpoint_i*ADDR_W) +: ADDR_W] >> 8;
+`else
           selected_index = destination_queue_meta[seq_endpoint_i][15:0] +
             destination_position[seq_endpoint_i];
           selected_packet = destination_order[selected_index];
-          rx_installed[selected_packet] <= 1'b1;
           destination_position[seq_endpoint_i] <= destination_position[seq_endpoint_i] + 1;
+`endif
+          rx_installed[selected_packet] <= 1'b1;
           free_context = -1;
           for (seq_context_i = 0; seq_context_i < RX_CONTEXTS;
                seq_context_i = seq_context_i + 1)
@@ -307,12 +388,16 @@ module noc_sram_packet_mesh4x4_workload_tb;
         end
 
         if (tx_desc_valid[seq_endpoint_i] && tx_desc_ready[seq_endpoint_i]) begin
+`ifdef SERIAL_PAIRED_SCHEDULER
+          selected_packet = tx_desc_base_addr[(seq_endpoint_i*ADDR_W) +: ADDR_W] >> 8;
+`else
           selected_index = source_queue_meta[seq_endpoint_i][15:0] + source_position[seq_endpoint_i];
           selected_packet = source_order[selected_index];
+          source_position[seq_endpoint_i] <= source_position[seq_endpoint_i] + 1;
+`endif
           if (!rx_installed[selected_packet])
             $fatal(1, "TX descriptor accepted before RX descriptor for packet %0d", selected_packet);
           tx_submitted[selected_packet] <= 1'b1;
-          source_position[seq_endpoint_i] <= source_position[seq_endpoint_i] + 1;
           tx_fire_count = tx_fire_count + 1;
         end
 
@@ -368,6 +453,10 @@ module noc_sram_packet_mesh4x4_workload_tb;
 
       if (endpoint_protocol_error != 0)
         $fatal(1, "endpoint protocol error: %h", endpoint_protocol_error);
+`ifdef SERIAL_PAIRED_SCHEDULER
+      if (scheduler_protocol_error)
+        $fatal(1, "descriptor scheduler protocol error");
+`endif
       if (cycle > 0 && (cycle % 100000) == 0)
         $display("PROGRESS workload cycle=%0d submitted=%0d completed=%0d writes=%0d",
           cycle, submitted_packets, completed_packets, accepted_writes);
@@ -399,6 +488,15 @@ module noc_sram_packet_mesh4x4_workload_tb;
       if (accepted_writes != expected_flits)
         $fatal(1, "flit count mismatch expected=%0d writes=%0d",
           expected_flits, accepted_writes);
+`ifdef SERIAL_PAIRED_SCHEDULER
+      if (scheduler_accepted_command_count != packet_count ||
+          scheduler_installed_receive_count != packet_count ||
+          scheduler_submitted_transmit_count != packet_count)
+        $fatal(1,
+          "scheduler count mismatch accepted=%0d rx=%0d tx=%0d expected=%0d",
+          scheduler_accepted_command_count, scheduler_installed_receive_count,
+          scheduler_submitted_transmit_count, packet_count);
+`endif
       for (packet_i = 0; packet_i < packet_count; packet_i = packet_i + 1)
         if (!rx_installed[packet_i] || !tx_submitted[packet_i] || !packet_completed[packet_i])
           $fatal(1, "packet %0d did not traverse the complete endpoint path", packet_i);
@@ -418,12 +516,14 @@ module noc_sram_packet_mesh4x4_workload_tb;
       $fatal(1, "EXPECTED_FLITS must be positive");
     plusarg_status = $value$plusargs("TIMEOUT_CYCLES=%d", timeout_cycles);
     if (!$value$plusargs("DESC_MEM=%s", descriptor_mem) ||
+        !$value$plusargs("CMD_ORDER_MEM=%s", command_order_mem) ||
         !$value$plusargs("SRC_ORDER_MEM=%s", source_order_mem) ||
         !$value$plusargs("DST_ORDER_MEM=%s", destination_order_mem) ||
         !$value$plusargs("SRC_META_MEM=%s", source_meta_mem) ||
         !$value$plusargs("DST_META_MEM=%s", destination_meta_mem))
       $fatal(1, "all workload memory paths are required");
     $readmemh(descriptor_mem, descriptors, 0, packet_count - 1);
+    $readmemh(command_order_mem, command_order, 0, packet_count - 1);
     $readmemh(source_order_mem, source_order, 0, packet_count - 1);
     $readmemh(destination_order_mem, destination_order, 0, packet_count - 1);
     $readmemh(source_meta_mem, source_queue_meta);
