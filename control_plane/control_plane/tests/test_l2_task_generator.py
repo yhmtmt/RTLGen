@@ -14824,7 +14824,26 @@ def test_generate_l2_campaign_task_adds_score32_noc_composed_mesh_reroute() -> N
             )
 
 
-def test_generate_l2_campaign_task_adds_score32_endpoint_rtl_equivalence() -> None:
+@pytest.mark.parametrize(
+    ("item_suffix", "proposal_suffix", "descriptor_scheduler"),
+    [
+        (
+            "endpoint_rtl_equivalence_llama7b_v1",
+            "endpoint_rtl_equivalence_v1",
+            "endpoint_parallel",
+        ),
+        (
+            "serial_scheduler_equivalence_llama7b_v1",
+            "serial_scheduler_equivalence_v1",
+            "serial_paired",
+        ),
+    ],
+)
+def test_generate_l2_campaign_task_adds_score32_endpoint_rtl_equivalence(
+    item_suffix: str,
+    proposal_suffix: str,
+    descriptor_scheduler: str,
+) -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
         repo_root.mkdir()
@@ -14841,17 +14860,17 @@ def test_generate_l2_campaign_task_adds_score32_endpoint_rtl_equivalence() -> No
                     campaign_path=campaign_path,
                     item_id=(
                         "l2_decoder_attention_score32_noc_phase2_"
-                        "endpoint_rtl_equivalence_llama7b_v1"
+                        f"{item_suffix}"
                     ),
                     requested_by="@tester",
                     source_commit=source_commit,
                     proposal_id=(
                         "prop_l2_decoder_attention_score32_noc_phase2_"
-                        "endpoint_rtl_equivalence_v1"
+                        f"{proposal_suffix}"
                     ),
                     proposal_path=(
                         "docs/proposals/prop_l2_decoder_attention_score32_noc_phase2_"
-                        "endpoint_rtl_equivalence_v1/proposal.json"
+                        f"{proposal_suffix}/proposal.json"
                     ),
                     abstraction_layer=(
                         "decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence"
@@ -14870,11 +14889,12 @@ def test_generate_l2_campaign_task_adds_score32_endpoint_rtl_equivalence() -> No
             assert "--memory-high 4G" in run
             assert "--memory-max 6G" in run
             assert "--wall-timeout-seconds 2400" in run
+            assert f"--descriptor-scheduler {descriptor_scheduler}" in run
             assert work_item.input_manifest["worker_resources"]["exclusive_worker"] is True
             assert work_item.input_manifest["worker_resources"]["stall_timeout_seconds"] == 1200
             assert work_item.expected_outputs[0].endswith(
                 "decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence__"
-                "l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_llama7b_v1.json"
+                f"l2_decoder_attention_score32_noc_phase2_{item_suffix}.json"
             )
 
 

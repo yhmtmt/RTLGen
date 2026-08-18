@@ -250,6 +250,20 @@ evidence gaps:
   composed test proves simultaneous multihop packets and exact data/address
   delivery. Endpoint receive logic now rejects a flit whose destination does
   not name the local endpoint.
+- Command scheduling: `noc_descriptor_pair_scheduler` now embodies the
+  previously testbench-only packet issuer as a one-active-command controller.
+  It gates on the concrete release cycle, holds RX and TX descriptors under
+  endpoint backpressure, enforces an RX handshake on an earlier edge than TX,
+  and accepts a replacement command when TX completes. The matching
+  `serial_paired` performance policy is exact against composed RTL on the
+  focused contention case and the complete 11,576-packet/92,128-flit replay.
+  Full drain is 397,227 cycles, only 24 cycles above the merged parallel-issuer
+  baseline, while contention/input stalls/peak occupancy fall from
+  30,285/46,504/11 to 8,736/11,816/7. The prepared L1 PPA item and remote L2
+  reproduction are required before removing scheduler cost and cadence from
+  the abstraction list. Its external command record is 102 bits; command SRAM
+  bitcells and prefetch service remain separate macro/interface evidence
+  rather than hidden flops.
 - Physical composition: the prepared
   `l1_noc_sram_packet_mesh4x4_composed_ppa_v1` item places the complete
   endpoint/mesh hierarchy at the same initial floorplan envelope as the

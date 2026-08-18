@@ -5565,14 +5565,22 @@ def _decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_evidence(
     proposal_id: str | None,
     proposal_path: str | None,
 ) -> dict[str, Any]:
-    expected_item_id = (
-        "l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_llama7b_v1"
-    )
-    expected_proposal_id = (
-        "prop_l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_v1"
-    )
-    if item_id != expected_item_id:
-        raise Layer2TaskGenerationError("score32 endpoint/RTL equivalence only permits the exact item")
+    variants = {
+        "l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_llama7b_v1": (
+            "prop_l2_decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_v1",
+            "endpoint_parallel",
+        ),
+        "l2_decoder_attention_score32_noc_phase2_serial_scheduler_equivalence_llama7b_v1": (
+            "prop_l2_decoder_attention_score32_noc_phase2_serial_scheduler_equivalence_v1",
+            "serial_paired",
+        ),
+    }
+    variant = variants.get(item_id)
+    if variant is None:
+        raise Layer2TaskGenerationError(
+            "score32 endpoint/RTL equivalence only permits a registered exact item"
+        )
+    expected_proposal_id, descriptor_scheduler = variant
     if str(proposal_id or "").strip() != expected_proposal_id:
         raise Layer2TaskGenerationError("score32 endpoint/RTL equivalence proposal_id mismatch")
     if str(proposal_path or "").strip() != f"docs/proposals/{expected_proposal_id}/proposal.json":
@@ -5610,6 +5618,8 @@ def _decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_evidence(
             measured_costs,
             "--wall-timeout-seconds",
             "2400",
+            "--descriptor-scheduler",
+            descriptor_scheduler,
             "--out",
             out,
             "--report",
@@ -5646,7 +5656,12 @@ def _decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_evidence(
             "Use one-cycle in-order source SRAM responses, four-entry TX descriptor FIFOs, eight outstanding reads, and eight RX contexts",
             "Require exact performance/RTL agreement for packets, flits, drain cycles, contention, stalls, and occupancy",
             "Require zero endpoint protocol errors and concrete 8-bit wire tags",
-            "Keep SRAM bitcells, synthesized command scheduler, workload activity power, and HBM/DRAM explicit",
+            (
+                "Require the serial paired command scheduler RTL in the composed replay"
+                if descriptor_scheduler == "serial_paired"
+                else "Keep synthesized command scheduler PPA explicit"
+            ),
+            "Keep SRAM bitcells, workload activity power, and HBM/DRAM explicit",
             "Write exactly one JSON and one Markdown report",
         ],
     }
