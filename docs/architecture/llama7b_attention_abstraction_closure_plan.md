@@ -261,9 +261,11 @@ evidence gaps:
   baseline, while contention/input stalls/peak occupancy fall from
   30,285/46,504/11 to 8,736/11,816/7. The prepared L1 PPA item and remote L2
   reproduction are required before removing scheduler cost and cadence from
-  the abstraction list. Its external command record is 102 bits; command SRAM
-  bitcells and prefetch service remain separate macro/interface evidence
-  rather than hidden flops.
+  the abstraction list. Its command record is 102 bits. Sequential address
+  generation, one outstanding read, one-cycle response capture, and a
+  one-entry prefetch buffer are concrete RTL. Command SRAM bitcells, placement,
+  macro energy, and the command population/inter-wave refill producer remain
+  separate evidence rather than hidden flops.
 - Physical composition: the prepared
   `l1_noc_sram_packet_mesh4x4_composed_ppa_v1` item places the complete
   endpoint/mesh hierarchy at the same initial floorplan envelope as the

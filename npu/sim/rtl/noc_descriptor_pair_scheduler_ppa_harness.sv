@@ -14,17 +14,33 @@ module noc_descriptor_pair_scheduler_ppa_harness #(
   output wire protocol_error,
   output wire [DATA_W-1:0] observed_state
 );
+  localparam integer COMMAND_W = 102;
   reg [31:0] current_cycle;
-  reg cmd_valid;
+  wire cmd_valid;
   wire cmd_ready;
-  reg [31:0] cmd_release_cycle;
-  reg [3:0] cmd_source;
-  reg [3:0] cmd_destination;
-  reg [1:0] cmd_vc;
-  reg [7:0] cmd_tag;
-  reg [23:0] cmd_tx_base_addr;
-  reg [23:0] cmd_rx_base_addr;
-  reg [3:0] cmd_flit_count;
+  wire [COMMAND_W-1:0] cmd_data;
+  wire [31:0] cmd_release_cycle = cmd_data[31:0];
+  wire [3:0] cmd_source = cmd_data[35:32];
+  wire [3:0] cmd_destination = cmd_data[39:36];
+  wire [1:0] cmd_vc = cmd_data[41:40];
+  wire [7:0] cmd_tag = cmd_data[49:42];
+  wire [23:0] cmd_tx_base_addr = cmd_data[73:50];
+  wire [23:0] cmd_rx_base_addr = cmd_data[97:74];
+  wire [3:0] cmd_flit_count = cmd_data[101:98];
+  wire command_mem_req_valid;
+  reg command_mem_req_ready;
+  wire [13:0] command_mem_req_addr;
+  wire command_mem_rsp_valid;
+  wire command_mem_rsp_ready;
+  wire [COMMAND_W-1:0] command_mem_rsp_data;
+  reg [13:0] pending_command_addr;
+  reg pending_command_valid;
+  wire [COUNTER_W-1:0] prefetch_request_count;
+  wire [COUNTER_W-1:0] prefetch_response_count;
+  wire [COUNTER_W-1:0] prefetch_delivered_count;
+  wire [COUNTER_W-1:0] prefetch_memory_stalls;
+  wire prefetch_protocol_error;
+  wire scheduler_protocol_error;
   wire [NODES-1:0] tx_desc_valid;
   reg [NODES-1:0] tx_desc_ready;
   wire [NODES*4-1:0] tx_desc_destination;
@@ -46,6 +62,31 @@ module noc_descriptor_pair_scheduler_ppa_harness #(
   integer observed_i;
 
   assign observed_state = observed_state_r;
+  assign protocol_error = prefetch_protocol_error | scheduler_protocol_error;
+  assign command_mem_rsp_valid = pending_command_valid;
+  assign command_mem_rsp_data = command_word(pending_command_addr);
+
+  function [COMMAND_W-1:0] command_word;
+    input [13:0] address;
+    reg [3:0] source;
+    reg [3:0] destination;
+    reg [3:0] flit_count;
+    begin
+      source = address[3:0];
+      destination = address[7:4] + address[3:0] + 1'b1;
+      flit_count = {1'b0, address[2:0]} + 1'b1;
+      command_word = {
+        flit_count,
+        {address, 10'h155},
+        {address, 10'h0aa},
+        address[7:0] ^ 8'h5a,
+        address[1:0],
+        destination,
+        source,
+        {18'b0, address}
+      };
+    end
+  endfunction
 
   always @(*) begin
     tx_observed_index = 4'b0;
@@ -57,6 +98,28 @@ module noc_descriptor_pair_scheduler_ppa_harness #(
         rx_observed_index = observed_i[3:0];
     end
   end
+
+  noc_descriptor_command_prefetch #(
+    .COMMAND_W(COMMAND_W),
+    .ADDR_W(14),
+    .COUNT_W(14),
+    .COUNTER_W(COUNTER_W)
+  ) prefetch (
+    .clk(clk), .rst_n(rst_n), .enable(1'b1),
+    .command_count(14'h3fff),
+    .mem_req_valid(command_mem_req_valid),
+    .mem_req_ready(command_mem_req_ready),
+    .mem_req_addr(command_mem_req_addr),
+    .mem_rsp_valid(command_mem_rsp_valid),
+    .mem_rsp_ready(command_mem_rsp_ready),
+    .mem_rsp_data(command_mem_rsp_data),
+    .cmd_valid(cmd_valid), .cmd_ready(cmd_ready), .cmd_data(cmd_data),
+    .request_count(prefetch_request_count),
+    .response_count(prefetch_response_count),
+    .delivered_command_count(prefetch_delivered_count),
+    .memory_stall_cycles(prefetch_memory_stalls),
+    .protocol_error(prefetch_protocol_error)
+  );
 
   noc_descriptor_pair_scheduler #(
     .NODES(NODES),
@@ -81,41 +144,31 @@ module noc_descriptor_pair_scheduler_ppa_harness #(
     .submitted_transmit_count(submitted_transmit_count),
     .release_wait_cycles(release_wait_cycles),
     .endpoint_stall_cycles(endpoint_stall_cycles),
-    .protocol_error(protocol_error)
+    .protocol_error(scheduler_protocol_error)
   );
 
   always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
       current_cycle <= 0;
-      cmd_valid <= 0;
-      cmd_release_cycle <= 0;
-      cmd_source <= 0;
-      cmd_destination <= 1;
-      cmd_vc <= 0;
-      cmd_tag <= 8'h1d;
-      cmd_tx_base_addr <= 24'h010000;
-      cmd_rx_base_addr <= 24'h020000;
-      cmd_flit_count <= 1;
+      command_mem_req_ready <= 1'b1;
+      pending_command_addr <= 0;
+      pending_command_valid <= 1'b0;
       tx_desc_ready <= {NODES{1'b1}};
       rx_desc_ready <= {NODES{1'b1}};
       observed_state_r <= {DATA_W{1'b0}};
     end else begin
       current_cycle <= current_cycle + 1'b1;
+      command_mem_req_ready <= !current_cycle[4] || current_cycle[1];
+      if (pending_command_valid && command_mem_rsp_ready)
+        pending_command_valid <= 1'b0;
+      if (command_mem_req_valid && command_mem_req_ready) begin
+        pending_command_addr <= command_mem_req_addr;
+        pending_command_valid <= 1'b1;
+      end
       tx_desc_ready <= {NODES{1'b1}} ^
         ({{(NODES-1){1'b0}}, current_cycle[2]} << current_cycle[7:4]);
       rx_desc_ready <= {NODES{1'b1}} ^
         ({{(NODES-1){1'b0}}, current_cycle[3]} << current_cycle[11:8]);
-      cmd_valid <= 1'b1;
-      if (cmd_valid && cmd_ready) begin
-        cmd_source <= cmd_source + 1'b1;
-        cmd_destination <= cmd_destination + 4'd3;
-        cmd_vc <= cmd_vc + 1'b1;
-        cmd_tag <= {cmd_tag[6:0], cmd_tag[7] ^ cmd_tag[5]};
-        cmd_tx_base_addr <= cmd_tx_base_addr + 24'h000120;
-        cmd_rx_base_addr <= cmd_rx_base_addr + 24'h000220;
-        cmd_flit_count <= cmd_flit_count == 4'd8 ? 4'd1 : cmd_flit_count + 1'b1;
-        cmd_release_cycle <= current_cycle + {28'b0, cmd_tag[3:0]};
-      end
       if (|(tx_desc_valid & tx_desc_ready))
         observed_state_r <= {observed_state_r[DATA_W-2:0], observed_state_r[DATA_W-1]} ^
           {{(DATA_W-42){1'b0}},

@@ -419,8 +419,10 @@ def simulate_packet_mesh(
 
     ``endpoint_parallel`` schedules one RX per destination and one TX per
     source each cycle, preserving the original abstract scheduler.  The
-    synthesizable ``serial_paired`` policy holds one global command, installs
-    its RX descriptor first, and submits its TX descriptor on a later edge.
+    synthesizable ``serial_paired`` policy includes the one-cycle SRAM request
+    and response buffer, then holds one global command, installs its RX
+    descriptor first, and submits its TX descriptor on a later edge. Its
+    steady-state issue cadence is two cycles per command.
     Ready schedules are indexed as ``[cycle][endpoint]``; a callable may be
     used for large replay workloads without materializing a matrix.
     """
@@ -743,6 +745,7 @@ def simulate_packet_mesh(
             descriptor_scheduler == "serial_paired"
             and scheduler_active is None
             and scheduler_pending
+            and cycle >= 2
         ):
             scheduler_active = scheduler_pending.popleft()
 

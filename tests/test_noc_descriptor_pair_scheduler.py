@@ -78,6 +78,7 @@ def test_noc_descriptor_pair_scheduler_generator_emits_exact_hierarchy(
     generate_wrapper(config, str(source_dir), design)
 
     expected_sources = {
+        "noc_descriptor_command_prefetch.v",
         "noc_descriptor_pair_scheduler.v",
         "noc_descriptor_pair_scheduler_ppa_harness.v",
         f"{design['module_name']}.v",
@@ -130,3 +131,83 @@ def test_noc_descriptor_pair_scheduler_rejects_unsupported_physical_shape(
     config["operations"][0]["options"][option] = value
     with pytest.raises(ValueError, match=message):
         identify_design(config)
+
+
+def test_noc_descriptor_scheduler_prefetch_harness_makes_progress(
+    tmp_path: Path,
+) -> None:
+    iverilog = shutil.which("iverilog")
+    vvp = shutil.which("vvp")
+    if iverilog is None or vvp is None:
+        pytest.skip("iverilog/vvp unavailable")
+    testbench = tmp_path / "harness_tb.sv"
+    testbench.write_text(
+        """
+module harness_tb;
+  reg clk = 1'b0;
+  reg rst_n = 1'b0;
+  wire [31:0] accepted;
+  wire [31:0] installed;
+  wire [31:0] submitted;
+  wire [31:0] stalls;
+  wire protocol_error;
+  wire [255:0] observed;
+  always #1 clk = ~clk;
+  noc_descriptor_pair_scheduler_ppa_harness dut (
+    .clk(clk), .rst_n(rst_n),
+    .accepted_command_count(accepted),
+    .installed_receive_count(installed),
+    .submitted_transmit_count(submitted),
+    .endpoint_stall_cycles(stalls),
+    .protocol_error(protocol_error),
+    .observed_state(observed)
+  );
+  initial begin
+    repeat (3) @(negedge clk);
+    rst_n = 1'b1;
+    repeat (200) @(negedge clk);
+    if (accepted < 16 || installed < 16 || submitted < 16 || protocol_error)
+      $fatal(1, "harness did not progress accepted=%0d rx=%0d tx=%0d error=%0d",
+        accepted, installed, submitted, protocol_error);
+    if (observed == 0)
+      $fatal(1, "harness observation state did not change");
+    $display("PASS harness accepted=%0d rx=%0d tx=%0d", accepted, installed, submitted);
+    $finish;
+  end
+endmodule
+""",
+        encoding="ascii",
+    )
+    simulator = tmp_path / "harness.vvp"
+    sources = [
+        REPO_ROOT / "npu/sim/rtl/noc_descriptor_command_prefetch.sv",
+        REPO_ROOT / "npu/sim/rtl/noc_descriptor_pair_scheduler.sv",
+        REPO_ROOT / "npu/sim/rtl/noc_descriptor_pair_scheduler_ppa_harness.sv",
+        testbench,
+    ]
+    compile_result = subprocess.run(
+        [
+            iverilog,
+            "-g2012",
+            "-s",
+            "harness_tb",
+            "-o",
+            str(simulator),
+            *[str(path) for path in sources],
+        ],
+        cwd=REPO_ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert compile_result.returncode == 0, compile_result.stderr
+    simulation = subprocess.run(
+        [vvp, str(simulator)],
+        cwd=REPO_ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    assert simulation.returncode == 0, simulation.stderr
+    assert "PASS harness" in simulation.stdout

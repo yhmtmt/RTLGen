@@ -988,6 +988,7 @@ def generate_l1_memory_noc_design(src_dir, design):
     elif design["primitive"] == "descriptor_pair_scheduler":
         text = _emit_l1_descriptor_pair_scheduler(module_name, design)
         for filename in (
+            "noc_descriptor_command_prefetch.sv",
             "noc_descriptor_pair_scheduler.sv",
             "noc_descriptor_pair_scheduler_ppa_harness.sv",
         ):
@@ -2690,6 +2691,7 @@ def generate_config_mk(platform_dir, platform, design):
     ):
         verilog_files.extend(
             [
+                f"$(DESIGN_HOME)/src/{wrapper_name}/noc_descriptor_command_prefetch.v",
                 f"$(DESIGN_HOME)/src/{wrapper_name}/noc_descriptor_pair_scheduler.v",
                 f"$(DESIGN_HOME)/src/{wrapper_name}/noc_descriptor_pair_scheduler_ppa_harness.v",
             ]
