@@ -6,7 +6,7 @@
   "kind": "validation",
   "abstraction_layer": "decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence",
   "title": "Prove generated Llama7B commands through the finite endpoint and mesh RTL",
-  "hypothesis": "Counter-generated commands preserve the complete Phase-2 packet stream and cycle behavior while removing the command image and refill boundary.",
+  "hypothesis": "Counter-generated commands preserve the complete Phase-2 packet stream and cycle behavior while removing the command image, refill boundary, and sparse global packet-address abstraction.",
   "direct_comparison": {
     "primary_question": "Does generated command control remain exactly equivalent through finite endpoints and the composed mesh?",
     "include": [
@@ -15,6 +15,7 @@
       "paired RX-before-TX scheduler RTL",
       "one-cycle source SRAM response control",
       "finite TX queues and RX contexts",
+      "bounded endpoint-local packet slots with cross-wave lifetime checks",
       "exact 4x4 segmented mesh RTL"
     ],
     "exclude": [
@@ -25,6 +26,7 @@
   },
   "expected_benefit": [
     "close command population and refill abstraction",
+    "close sparse packet-ID-derived address allocation for network lifetimes",
     "prove command-to-delivery cycle equivalence",
     "retain an explicit short list of physical-only abstractions"
   ],

@@ -36,7 +36,14 @@ JsonDict = dict[str, Any]
 MAX_PACKETS = 12000
 GENERATED_COMMAND_COUNT = 11576
 GENERATED_COMMAND_SHA256 = (
-    "624c39e542c05fa76a480c173d39323adba58ac75ee12951139d8893929df483"
+    "db8b0502bd3848a305f088ec94f74b97b6dc29bfce44d453e3d4b508e7ba6a4a"
+)
+PACKET_SLOT_BYTES = 256
+SHARED_PACKET_SLOTS = 68
+REDUCTION_PACKET_SLOTS = 33
+ROOT_REDUCTION_SOURCES = 15
+BOUNDED_PACKET_SLOTS = (
+    SHARED_PACKET_SLOTS + ROOT_REDUCTION_SOURCES * REDUCTION_PACKET_SLOTS
 )
 RTL_SOURCES = (
     Path("npu/sim/rtl/noc_ready_valid_fifo.sv"),
@@ -168,17 +175,136 @@ def command_words_from_packets(packets: list[WorkloadPacket]) -> list[int]:
             item.packet_id,
         ),
     ):
-        base_addr = packet.packet_id << 8
+        tx_base_addr, rx_base_addr = bounded_local_addresses(packet)
         word = packet.release_cycle
         word |= packet.source << 32
         word |= packet.destination << 36
         word |= packet.vc << 40
         word |= packet.tag << 42
-        word |= base_addr << 50
-        word |= base_addr << 74
+        word |= tx_base_addr << 50
+        word |= rx_base_addr << 74
         word |= packet.flit_count << 98
         words.append(word)
     return words
+
+
+def bounded_local_addresses(packet: WorkloadPacket) -> tuple[int, int]:
+    """Map a canonical packet to bounded source- and destination-local slots."""
+
+    match = re.fullmatch(
+        r"(?P<kind>shared|reduction)_w\d+_c\d+::p(?P<packet>\d+)",
+        packet.label,
+    )
+    if match is None:
+        raise ValueError(f"unsupported Phase-2 packet label: {packet.label}")
+    packet_index = int(match.group("packet"))
+    if match.group("kind") == "shared":
+        if packet_index not in range(SHARED_PACKET_SLOTS):
+            raise ValueError(f"shared packet index is outside bounded slots: {packet.label}")
+        tx_slot = packet_index
+        rx_slot = packet_index
+    else:
+        if packet_index not in range(REDUCTION_PACKET_SLOTS):
+            raise ValueError(f"reduction packet index is outside bounded slots: {packet.label}")
+        if packet.source not in range(ROOT_REDUCTION_SOURCES):
+            raise ValueError(f"reduction source is outside bounded slots: {packet.label}")
+        tx_slot = SHARED_PACKET_SLOTS + packet_index
+        rx_slot = (
+            SHARED_PACKET_SLOTS
+            + packet.source * REDUCTION_PACKET_SLOTS
+            + packet_index
+        )
+    if tx_slot >= BOUNDED_PACKET_SLOTS or rx_slot >= BOUNDED_PACKET_SLOTS:
+        raise AssertionError("bounded packet slot calculation exceeded its declared extent")
+    return tx_slot * PACKET_SLOT_BYTES, rx_slot * PACKET_SLOT_BYTES
+
+
+def _bounded_slot_lifetime_audit(result: Any) -> JsonDict:
+    """Prove that generated endpoint-local slots are never simultaneously live."""
+
+    tx_start = {item.packet_index: item.cycle for item in result.tx_descriptor_handshakes}
+    rx_start = {item.packet_index: item.cycle for item in result.rx_descriptor_handshakes}
+    tx_end: dict[int, int] = {}
+    rx_end: dict[int, int] = {}
+    for item in result.source_memory_responses:
+        tx_end[item.packet_index] = max(tx_end.get(item.packet_index, -1), item.cycle)
+    for item in result.destination_memory_writes:
+        rx_end[item.packet_index] = max(rx_end.get(item.packet_index, -1), item.cycle)
+
+    direction_summary: dict[str, JsonDict] = {}
+    maximum_slot_by_endpoint = {endpoint: -1 for endpoint in range(16)}
+    for direction, starts, ends, address_field in (
+        ("tx", tx_start, tx_end, "tx_base_addr"),
+        ("rx", rx_start, rx_end, "rx_base_addr"),
+    ):
+        by_endpoint_slot: dict[tuple[int, int], list[tuple[int, int, int]]] = {}
+        events_by_endpoint: dict[int, list[tuple[int, int]]] = {}
+        for packet_index, descriptor in enumerate(result.descriptors):
+            if packet_index not in starts or packet_index not in ends:
+                raise ValueError(f"bounded {direction} slot lacks a complete lifetime")
+            address = int(getattr(descriptor, address_field))
+            if address % PACKET_SLOT_BYTES:
+                raise ValueError(f"bounded {direction} address is not packet-slot aligned")
+            slot = address // PACKET_SLOT_BYTES
+            if slot not in range(BOUNDED_PACKET_SLOTS):
+                raise ValueError(f"bounded {direction} slot exceeds declared storage: {slot}")
+            endpoint = descriptor.source if direction == "tx" else descriptor.destination
+            maximum_slot_by_endpoint[endpoint] = max(
+                maximum_slot_by_endpoint[endpoint], slot
+            )
+            start = starts[packet_index]
+            end = ends[packet_index]
+            if end < start:
+                raise ValueError(f"bounded {direction} slot lifetime ends before it starts")
+            by_endpoint_slot.setdefault((endpoint, slot), []).append(
+                (start, end, packet_index)
+            )
+            events_by_endpoint.setdefault(endpoint, []).extend(((start, 1), (end + 1, -1)))
+
+        minimum_reuse_gap: int | None = None
+        reuse_count = 0
+        for (endpoint, slot), intervals in by_endpoint_slot.items():
+            intervals.sort()
+            for prior, following in zip(intervals, intervals[1:]):
+                reuse_count += 1
+                if following[0] <= prior[1]:
+                    raise ValueError(
+                        f"bounded {direction} slot overlap endpoint={endpoint} slot={slot}: "
+                        f"packet {prior[2]} ends {prior[1]}, packet {following[2]} starts {following[0]}"
+                    )
+                gap = following[0] - prior[1]
+                minimum_reuse_gap = gap if minimum_reuse_gap is None else min(minimum_reuse_gap, gap)
+
+        peak_live_by_endpoint: dict[str, int] = {}
+        for endpoint, events in events_by_endpoint.items():
+            live = 0
+            peak = 0
+            for _, delta in sorted(events):
+                live += delta
+                peak = max(peak, live)
+            peak_live_by_endpoint[str(endpoint)] = peak
+        direction_summary[direction] = {
+            "collision_free": True,
+            "reuse_count": reuse_count,
+            "minimum_reuse_gap_cycles": minimum_reuse_gap,
+            "peak_live_slots_by_endpoint": peak_live_by_endpoint,
+            "maximum_peak_live_slots": max(peak_live_by_endpoint.values(), default=0),
+        }
+    return {
+        "mapping": "shared slot=p; reduction TX slot=68+p; reduction root RX slot=68+33*source+p",
+        "packet_slot_bytes": PACKET_SLOT_BYTES,
+        "maximum_packet_slots_at_root_endpoint": BOUNDED_PACKET_SLOTS,
+        "maximum_addressed_bytes_at_root_endpoint": (
+            BOUNDED_PACKET_SLOTS * PACKET_SLOT_BYTES
+        ),
+        "required_address_extent_bytes_by_endpoint": {
+            str(endpoint): (maximum_slot + 1) * PACKET_SLOT_BYTES
+            for endpoint, maximum_slot in maximum_slot_by_endpoint.items()
+        },
+        "tx": direction_summary["tx"],
+        "rx": direction_summary["rx"],
+        "scope": "descriptor acceptance through final SRAM response/write; producer fill and consumer drain are separate interfaces",
+    }
 
 
 def _require_canonical_generated_commands(packets: list[WorkloadPacket]) -> None:
@@ -409,23 +535,30 @@ def run_performance_replay(
     max_cycles: int,
     descriptor_scheduler: str = "endpoint_parallel",
 ) -> JsonDict:
-    result = simulate_packet_mesh(
-        [
+    descriptors: list[PacketDescriptor] = []
+    for packet in packets:
+        if descriptor_scheduler == "serial_generated":
+            tx_base_addr, rx_base_addr = bounded_local_addresses(packet)
+        else:
+            tx_base_addr = packet.packet_id << 8
+            rx_base_addr = packet.packet_id << 8
+        descriptors.append(
             PacketDescriptor(
                 source=packet.source,
                 destination=packet.destination,
                 vc=packet.vc,
                 tag=packet.tag,
                 flit_count=packet.flit_count,
-                tx_base_addr=packet.packet_id << 8,
-                rx_base_addr=packet.packet_id << 8,
+                tx_base_addr=tx_base_addr,
+                rx_base_addr=rx_base_addr,
                 release_cycle=packet.release_cycle,
                 schedule_order=packet.schedule_order,
                 data_seed=packet.packet_id,
                 packet_id=packet.label,
             )
-            for packet in packets
-        ],
+        )
+    result = simulate_packet_mesh(
+        descriptors,
         descriptor_scheduler=descriptor_scheduler,
         max_cycles=max_cycles,
         fast_forward_idle=True,
@@ -468,6 +601,8 @@ def run_performance_replay(
             "endpoint-aware performance replay failed: "
             f"count_mismatches={mismatches}, protocol_errors={counters['protocol_errors']}"
         )
+    if descriptor_scheduler == "serial_generated":
+        counters["bounded_packet_slots"] = _bounded_slot_lifetime_audit(result)
     return counters
 
 
@@ -540,10 +675,21 @@ def build_and_run(args: argparse.Namespace) -> JsonDict:
             "tx_outstanding_limit": 8,
             "wire_tag_width_bits": 8,
             "cycle_and_router_counter_match": True,
+            "bounded_packet_slot_lifetime_match": (
+                args.descriptor_scheduler == "serial_generated"
+            ),
         },
         "remaining_abstractions": [
             "SRAM arrays are transaction-accurate one-cycle ports; bitcells and macro placement remain external.",
-            "Packet-ID-derived TX/RX addresses prove ordering and data integrity but do not yet embody compact per-endpoint payload allocation or lifetime reuse.",
+            *(
+                [
+                    "Generated commands use 563 bounded endpoint-local 256-byte packet slots; model and RTL prove network-lifetime reuse, while producer fill and consumer drain handshakes remain to be composed."
+                ]
+                if args.descriptor_scheduler == "serial_generated"
+                else [
+                    "Packet-ID-derived TX/RX addresses prove ordering and data integrity but do not embody compact per-endpoint payload allocation or lifetime reuse."
+                ]
+            ),
             *(
                 [
                     "The 102-bit command records use concrete one-cycle prefetch control; command SRAM bitcells, macro placement, and command population/refill remain external evidence."
@@ -582,10 +728,17 @@ def write_report(payload: JsonDict, path: Path) -> None:
         f"- maximum router occupancy: `{rtl['max_occupancy']}`",
         f"- maximum RX contexts used per endpoint: `{performance['max_rx_context_occupancy_per_endpoint']}`",
         "- cycle and router counter equivalence: `true`",
-        "",
-        "## Remaining Abstractions",
-        "",
     ]
+    bounded_slots = performance.get("bounded_packet_slots")
+    if isinstance(bounded_slots, dict):
+        lines.extend(
+            [
+                f"- bounded root packet slots/address extent: `{bounded_slots['maximum_packet_slots_at_root_endpoint']}` / `{bounded_slots['maximum_addressed_bytes_at_root_endpoint']}` bytes",
+                f"- TX peak live slots/minimum reuse gap: `{bounded_slots['tx']['maximum_peak_live_slots']}` / `{bounded_slots['tx']['minimum_reuse_gap_cycles']}` cycles",
+                f"- RX peak live slots/minimum reuse gap: `{bounded_slots['rx']['maximum_peak_live_slots']}` / `{bounded_slots['rx']['minimum_reuse_gap_cycles']}` cycles",
+            ]
+        )
+    lines.extend(["", "## Remaining Abstractions", ""])
     lines.extend(f"- {item}" for item in payload["remaining_abstractions"])
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")

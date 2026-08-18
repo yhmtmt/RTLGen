@@ -34,7 +34,8 @@ module noc_llama7b_phase2_command_generator #(
   reg [3:0] command_destination;
   reg [1:0] command_vc;
   reg [7:0] command_tag;
-  reg [13:0] command_packet_id;
+  reg [23:0] command_tx_base_addr;
+  reg [23:0] command_rx_base_addr;
   reg [3:0] command_flit_count;
 
   wire command_fire = cmd_valid && cmd_ready;
@@ -59,22 +60,6 @@ module noc_llama7b_phase2_command_generator #(
     end
   endfunction
 
-  function [13:0] wave_packet_base;
-    input [2:0] wave;
-    begin
-      case (wave)
-        3'd0: wave_packet_base = 14'd0;
-        3'd1: wave_packet_base = 14'd1583;
-        3'd2: wave_packet_base = 14'd3166;
-        3'd3: wave_packet_base = 14'd4749;
-        3'd4: wave_packet_base = 14'd6332;
-        3'd5: wave_packet_base = 14'd6827;
-        3'd6: wave_packet_base = 14'd8410;
-        3'd7: wave_packet_base = 14'd9993;
-      endcase
-    end
-  endfunction
-
   function [3:0] shared_home_shift;
     input [2:0] wave;
     begin
@@ -88,50 +73,6 @@ module noc_llama7b_phase2_command_generator #(
         3'd6: shared_home_shift = 4'd6;
         3'd7: shared_home_shift = 4'd9;
       endcase
-    end
-  endfunction
-
-  function [13:0] full_cluster_offset;
-    input [3:0] cluster_index;
-    reg [13:0] value;
-    begin
-      value = {10'b0, cluster_index};
-      full_cluster_offset =
-        (value << 6) + (value << 5) + (value << 2) + value;
-    end
-  endfunction
-
-  function [13:0] reduction_cluster_offset;
-    input [3:0] cluster_index;
-    reg [13:0] value;
-    begin
-      value = {10'b0, cluster_index};
-      reduction_cluster_offset = (value << 5) + value;
-    end
-  endfunction
-
-  function [13:0] shared_packet_id;
-    input [2:0] wave;
-    input [3:0] cluster_index;
-    input [6:0] packet_index;
-    begin
-      shared_packet_id = wave_packet_base(wave) +
-        full_cluster_offset(cluster_index) + {7'b0, packet_index};
-    end
-  endfunction
-
-  function [13:0] reduction_packet_id;
-    input [2:0] wave;
-    input [3:0] cluster_index;
-    input [6:0] packet_index;
-    begin
-      if (wave == 3'd4)
-        reduction_packet_id = wave_packet_base(wave) +
-          reduction_cluster_offset(cluster_index) + {7'b0, packet_index};
-      else
-        reduction_packet_id = wave_packet_base(wave) +
-          full_cluster_offset(cluster_index) + 14'd68 +
-          {7'b0, packet_index};
     end
   endfunction
 
@@ -154,13 +95,36 @@ module noc_llama7b_phase2_command_generator #(
     end
   endfunction
 
+  // Packet payloads use endpoint-local slots rather than the global packet
+  // identity. Shared traffic occupies slots 0..67. A reduction source uses
+  // slots 68..100, while root endpoint 15 gives each of the 15 sources a
+  // disjoint 33-slot receive window (68..562).
+  function [23:0] packet_slot_addr;
+    input [9:0] slot;
+    begin
+      packet_slot_addr = {6'b0, slot, 8'b0};
+    end
+  endfunction
+
+  function [9:0] reduction_root_slot;
+    input [3:0] source;
+    input [6:0] packet_index;
+    reg [9:0] source_value;
+    begin
+      source_value = {6'b0, source};
+      reduction_root_slot = 10'd68 + (source_value << 5) + source_value +
+        {3'b0, packet_index};
+    end
+  endfunction
+
   always @(*) begin
     command_release_cycle = epoch_release_cycle(release_epoch);
     command_source = 4'd0;
     command_destination = 4'd0;
     command_vc = 2'd0;
     command_tag = 8'd0;
-    command_packet_id = 14'd0;
+    command_tx_base_addr = 24'd0;
+    command_rx_base_addr = 24'd0;
     command_flit_count = 4'd8;
 
     if (phase == PHASE_SHARED) begin
@@ -168,13 +132,16 @@ module noc_llama7b_phase2_command_generator #(
       command_destination = cluster;
       command_vc = 2'd0;
       command_tag = {1'b0, packet};
-      command_packet_id = shared_packet_id(transfer_wave, cluster, packet);
+      command_tx_base_addr = packet_slot_addr({3'b0, packet});
+      command_rx_base_addr = packet_slot_addr({3'b0, packet});
     end else begin
       command_source = cluster;
       command_destination = 4'd15;
       command_vc = 2'd1;
       command_tag = reduction_tag(transfer_wave, packet);
-      command_packet_id = reduction_packet_id(transfer_wave, cluster, packet);
+      command_tx_base_addr = packet_slot_addr(10'd68 + {3'b0, packet});
+      command_rx_base_addr = packet_slot_addr(
+        reduction_root_slot(cluster, packet));
       if (packet == 7'd32)
         command_flit_count = 4'd4;
     end
@@ -183,8 +150,8 @@ module noc_llama7b_phase2_command_generator #(
   assign cmd_valid = enable && !done;
   assign cmd_data = {
     command_flit_count,
-    2'b0, command_packet_id, 8'b0,
-    2'b0, command_packet_id, 8'b0,
+    command_rx_base_addr,
+    command_tx_base_addr,
     command_tag,
     command_vc,
     command_destination,

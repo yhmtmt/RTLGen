@@ -5665,7 +5665,9 @@ def _decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_evidence(
                 "serial_paired": "Require the serial paired command scheduler RTL in the composed replay",
                 "serial_generated": (
                     "Require the counter-based Llama7B command generator and serial paired "
-                    "scheduler RTL to emit exactly 11576 commands in the composed replay"
+                    "scheduler RTL to emit exactly 11576 commands with 563 bounded "
+                    "endpoint-local packet slots; prove every TX/RX slot reuse collision-free "
+                    "through final SRAM response/write"
                 ),
             }[descriptor_scheduler],
             "Keep SRAM bitcells, workload activity power, and HBM/DRAM explicit",

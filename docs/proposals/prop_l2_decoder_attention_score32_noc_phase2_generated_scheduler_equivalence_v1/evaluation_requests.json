@@ -23,7 +23,7 @@
         "direction": "exact_generated_command_equivalence",
         "reason": "Close command-image and refill abstractions without changing packet or cycle behavior."
       },
-      "acceptance_notes": "Require 11576 generated commands, 92128 flits, exact RTL/performance packet/flit/cycle/contention/stall/occupancy counters, and zero protocol errors."
+      "acceptance_notes": "Require 11576 generated commands, 92128 flits, exact RTL/performance packet/flit/cycle/contention/stall/occupancy counters, zero protocol errors, 563 bounded 256-byte packet slots, and collision-free model plus RTL lifetime checks for every reused TX/RX slot."
     }
   ]
 }

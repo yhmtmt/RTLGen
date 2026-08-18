@@ -25,7 +25,7 @@
         "direction": "replace_command_image_with_exact_generation",
         "reason": "Measure generator-plus-scheduler PPA without command SRAM or refill estimates."
       },
-      "acceptance_notes": "Require exhaustive 11576-command equivalence, generated hierarchy selection, protocol_error=0, and timing/area/power rows. Treat vectorless power and payload SRAM macros as separate evidence."
+      "acceptance_notes": "Require exhaustive 11576-command equivalence including bounded TX/RX addresses, generated hierarchy selection, protocol_error=0, and timing/area/power rows. Require maximum RX base address 143872 bytes (slot 562). Treat vectorless power and payload SRAM macros as separate evidence."
     }
   ]
 }

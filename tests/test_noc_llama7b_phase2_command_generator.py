@@ -14,8 +14,11 @@ from npu.eval.measure_llm_decoder_attention_score32_noc_phase2_schedule import (
     build_report,
 )
 from npu.eval.verify_llm_decoder_attention_score32_noc_phase2_endpoint_rtl import (
+    BOUNDED_PACKET_SLOTS,
+    PACKET_SLOT_BYTES,
     _schedule_args,
     _require_canonical_generated_commands,
+    bounded_local_addresses,
     command_words_from_packets,
     descriptors_from_packet_specs,
 )
@@ -54,6 +57,12 @@ def test_generator_matches_all_authoritative_commands_under_backpressure(
     packets = descriptors_from_packet_specs(packet_specs)
     words = command_words_from_packets(packets)
     assert len(words) == 11576
+    addresses = [bounded_local_addresses(packet) for packet in packets]
+    assert min(tx for tx, _ in addresses) == 0
+    assert max(tx for tx, _ in addresses) == 100 * PACKET_SLOT_BYTES
+    assert max(rx for _, rx in addresses) == (
+        BOUNDED_PACKET_SLOTS - 1
+    ) * PACKET_SLOT_BYTES
     _require_canonical_generated_commands(packets)
 
     mutated_packets = list(packets)

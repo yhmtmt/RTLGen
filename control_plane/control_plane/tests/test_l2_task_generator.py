@@ -14897,6 +14897,11 @@ def test_generate_l2_campaign_task_adds_score32_endpoint_rtl_equivalence(
             assert f"--descriptor-scheduler {descriptor_scheduler}" in run
             assert work_item.input_manifest["worker_resources"]["exclusive_worker"] is True
             assert work_item.input_manifest["worker_resources"]["stall_timeout_seconds"] == 1200
+            if descriptor_scheduler == "serial_generated":
+                assert any(
+                    "563 bounded" in str(rule)
+                    for rule in work_item.acceptance_rules
+                )
             assert work_item.expected_outputs[0].endswith(
                 "decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence__"
                 f"l2_decoder_attention_score32_noc_phase2_{item_suffix}.json"

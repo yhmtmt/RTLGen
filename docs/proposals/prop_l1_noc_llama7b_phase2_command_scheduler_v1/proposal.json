@@ -6,7 +6,7 @@
   "kind": "circuit_block",
   "abstraction_layer": "architecture_block",
   "title": "Replace the Llama7B Phase-2 command image with exact RTL generation",
-  "hypothesis": "The regular complete Phase-2 command stream can be generated from small counters and constants with materially less area and energy than a 147594-byte command image while preserving exact packet ordering and cadence.",
+  "hypothesis": "The regular complete Phase-2 command stream and bounded endpoint-local payload addresses can be generated from small counters and constants with materially less area and energy than a 147594-byte command image while preserving exact packet ordering and cadence.",
   "direct_comparison": {
     "primary_question": "What PPA replaces the static command image, prefetch path, and unspecified refill producer for the checked Llama7B schedule?",
     "include": [
@@ -14,7 +14,7 @@
       "wave, traffic-class, cluster, and packet counters",
       "shared-home route generation",
       "reduction route and modulo-256 tag generation",
-      "packet-ID and TX/RX base-address generation",
+      "bounded class-local TX/RX packet-slot address generation",
       "paired RX-before-TX descriptor scheduler",
       "sixteen endpoint descriptor interfaces"
     ],
@@ -28,6 +28,7 @@
   "expected_benefit": [
     "remove 1180752 bits of static command records",
     "remove the command refill producer abstraction for this exact workload",
+    "replace sparse global packet-ID addressing with at most 563 endpoint-local 256-byte slots",
     "retain exact two-cycle paired descriptor cadence"
   ],
   "risks": [
