@@ -26,6 +26,11 @@ PPA_CONFIG = (
     / "runs/designs/noc/l1_noc_descriptor_pair_scheduler_n16_wrapper"
     / "config_l1_noc_descriptor_pair_scheduler_n16.json"
 )
+GENERATED_PPA_CONFIG = (
+    REPO_ROOT
+    / "runs/designs/noc/l1_noc_llama7b_phase2_command_scheduler_n16_wrapper"
+    / "config_l1_noc_llama7b_phase2_command_scheduler_n16.json"
+)
 
 
 def test_noc_descriptor_pair_scheduler_protocol() -> None:
@@ -79,6 +84,7 @@ def test_noc_descriptor_pair_scheduler_generator_emits_exact_hierarchy(
 
     expected_sources = {
         "noc_descriptor_command_prefetch.v",
+        "noc_llama7b_phase2_command_generator.v",
         "noc_descriptor_pair_scheduler.v",
         "noc_descriptor_pair_scheduler_ppa_harness.v",
         f"{design['module_name']}.v",
@@ -115,11 +121,55 @@ def test_noc_descriptor_pair_scheduler_generator_emits_exact_hierarchy(
     assert compile_result.returncode == 0, compile_result.stderr
 
 
+def test_generated_command_scheduler_emits_generator_selected_hierarchy(
+    tmp_path: Path,
+) -> None:
+    config = json.loads(GENERATED_PPA_CONFIG.read_text(encoding="utf-8"))
+    design = identify_design(config)
+    assert design["primitive"] == "descriptor_pair_scheduler"
+    assert design["command_source"] == "llama7b_generated"
+
+    source_dir = tmp_path / "src"
+    source_dir.mkdir()
+    generate_l1_memory_noc_design(str(source_dir), design)
+    generate_wrapper(config, str(source_dir), design)
+    top = (source_dir / f"{design['module_name']}.v").read_text(encoding="utf-8")
+    assert ".GENERATED_SOURCE(1)" in top
+
+    platform_dir = tmp_path / "platform"
+    platform_dir.mkdir()
+    generate_config_mk(str(platform_dir), "nangate45", design)
+    config_mk = (platform_dir / "config.mk").read_text(encoding="utf-8")
+    assert "/noc_llama7b_phase2_command_generator.v" in config_mk
+
+    iverilog = shutil.which("iverilog")
+    if iverilog is None:
+        return
+    compile_result = subprocess.run(
+        [
+            iverilog,
+            "-g2012",
+            "-s",
+            design["wrapper_name"],
+            "-t",
+            "null",
+            *[str(path) for path in sorted(source_dir.glob("*.v"))],
+        ],
+        cwd=REPO_ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    assert compile_result.returncode == 0, compile_result.stderr
+
+
 @pytest.mark.parametrize(
     ("option", "value", "message"),
     [
         ("ports", 8, "requires 16 endpoints"),
         ("flit_bits", 32, "requires at least 42 observation bits"),
+        ("command_source", "unknown", "must be prefetch or llama7b_generated"),
     ],
 )
 def test_noc_descriptor_pair_scheduler_rejects_unsupported_physical_shape(
@@ -181,6 +231,7 @@ endmodule
     simulator = tmp_path / "harness.vvp"
     sources = [
         REPO_ROOT / "npu/sim/rtl/noc_descriptor_command_prefetch.sv",
+        REPO_ROOT / "npu/sim/rtl/noc_llama7b_phase2_command_generator.sv",
         REPO_ROOT / "npu/sim/rtl/noc_descriptor_pair_scheduler.sv",
         REPO_ROOT / "npu/sim/rtl/noc_descriptor_pair_scheduler_ppa_harness.sv",
         testbench,

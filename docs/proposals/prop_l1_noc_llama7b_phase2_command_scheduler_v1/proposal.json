@@ -1,0 +1,62 @@
+{
+  "proposal_id": "prop_l1_noc_llama7b_phase2_command_scheduler_v1",
+  "created_utc": "2026-08-18T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit_block",
+  "abstraction_layer": "architecture_block",
+  "title": "Replace the Llama7B Phase-2 command image with exact RTL generation",
+  "hypothesis": "The regular complete Phase-2 command stream can be generated from small counters and constants with materially less area and energy than a 147594-byte command image while preserving exact packet ordering and cadence.",
+  "direct_comparison": {
+    "primary_question": "What PPA replaces the static command image, prefetch path, and unspecified refill producer for the checked Llama7B schedule?",
+    "include": [
+      "nine release epochs",
+      "wave, traffic-class, cluster, and packet counters",
+      "shared-home route generation",
+      "reduction route and modulo-256 tag generation",
+      "packet-ID and TX/RX base-address generation",
+      "paired RX-before-TX descriptor scheduler",
+      "sixteen endpoint descriptor interfaces"
+    ],
+    "exclude": [
+      "endpoint and router logic",
+      "payload SRAM bitcells",
+      "HBM/DRAM",
+      "workload-matched switching power"
+    ]
+  },
+  "expected_benefit": [
+    "remove 1180752 bits of static command records",
+    "remove the command refill producer abstraction for this exact workload",
+    "retain exact two-cycle paired descriptor cadence"
+  ],
+  "risks": [
+    "the generator is specialized to one checked schedule",
+    "constant arithmetic may create an unexpected timing path",
+    "vectorless power does not represent workload activity"
+  ],
+  "required_evaluations": [
+    {
+      "item_id": "l1_noc_llama7b_phase2_command_scheduler_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure Nangate45 PPA for the exact generated-command source plus sixteen-endpoint paired descriptor scheduler.",
+      "evaluation_mode": "ppa",
+      "abstraction_layer": "architecture_block",
+      "comparison_role": "phase2_generated_command_scheduler_physical_anchor",
+      "depends_on_item_ids": [],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "config_paths": [
+        "runs/designs/noc/l1_noc_llama7b_phase2_command_scheduler_n16_wrapper/config_l1_noc_llama7b_phase2_command_scheduler_n16.json"
+      ],
+      "sweep_path": "runs/campaigns/noc/l1_llama7b_phase2_command_scheduler/sweeps/nangate45_macro_frontier.json",
+      "expected_outputs": [
+        "runs/designs/noc/l1_noc_llama7b_phase2_command_scheduler_n16_wrapper/metrics.csv"
+      ]
+    }
+  ],
+  "baseline_refs": [
+    "docs/proposals/prop_l1_noc_descriptor_pair_scheduler_v1/proposal.json",
+    "npu/sim/rtl/noc_llama7b_phase2_command_generator.sv"
+  ]
+}

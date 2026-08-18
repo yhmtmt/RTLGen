@@ -5574,6 +5574,10 @@ def _decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_evidence(
             "prop_l2_decoder_attention_score32_noc_phase2_serial_scheduler_equivalence_v1",
             "serial_paired",
         ),
+        "l2_decoder_attention_score32_noc_phase2_generated_scheduler_equivalence_llama7b_v1": (
+            "prop_l2_decoder_attention_score32_noc_phase2_generated_scheduler_equivalence_v1",
+            "serial_generated",
+        ),
     }
     variant = variants.get(item_id)
     if variant is None:
@@ -5656,11 +5660,14 @@ def _decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence_evidence(
             "Use one-cycle in-order source SRAM responses, four-entry TX descriptor FIFOs, eight outstanding reads, and eight RX contexts",
             "Require exact performance/RTL agreement for packets, flits, drain cycles, contention, stalls, and occupancy",
             "Require zero endpoint protocol errors and concrete 8-bit wire tags",
-            (
-                "Require the serial paired command scheduler RTL in the composed replay"
-                if descriptor_scheduler == "serial_paired"
-                else "Keep synthesized command scheduler PPA explicit"
-            ),
+            {
+                "endpoint_parallel": "Keep synthesized command scheduler PPA explicit",
+                "serial_paired": "Require the serial paired command scheduler RTL in the composed replay",
+                "serial_generated": (
+                    "Require the counter-based Llama7B command generator and serial paired "
+                    "scheduler RTL to emit exactly 11576 commands in the composed replay"
+                ),
+            }[descriptor_scheduler],
             "Keep SRAM bitcells, workload activity power, and HBM/DRAM explicit",
             "Write exactly one JSON and one Markdown report",
         ],

@@ -1,0 +1,57 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_score32_noc_phase2_generated_scheduler_equivalence_v1",
+  "created_utc": "2026-08-18T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "validation",
+  "abstraction_layer": "decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence",
+  "title": "Prove generated Llama7B commands through the finite endpoint and mesh RTL",
+  "hypothesis": "Counter-generated commands preserve the complete Phase-2 packet stream and cycle behavior while removing the command image and refill boundary.",
+  "direct_comparison": {
+    "primary_question": "Does generated command control remain exactly equivalent through finite endpoints and the composed mesh?",
+    "include": [
+      "complete eight-wave and 128-tile schedule",
+      "11576 generated command records",
+      "paired RX-before-TX scheduler RTL",
+      "one-cycle source SRAM response control",
+      "finite TX queues and RX contexts",
+      "exact 4x4 segmented mesh RTL"
+    ],
+    "exclude": [
+      "payload SRAM bitcells and macro placement",
+      "HBM/DRAM controller",
+      "workload-matched switching power"
+    ]
+  },
+  "expected_benefit": [
+    "close command population and refill abstraction",
+    "prove command-to-delivery cycle equivalence",
+    "retain an explicit short list of physical-only abstractions"
+  ],
+  "risks": [
+    "full detailed RTL replay is computationally expensive",
+    "specialization is valid only for the checked schedule contract"
+  ],
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_score32_noc_phase2_generated_scheduler_equivalence_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Replay every generated command and packet through finite endpoint and mesh RTL and require exact performance-model counters.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence",
+      "comparison_role": "phase2_generated_scheduler_composed_equivalence",
+      "depends_on_item_ids": [],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "config_paths": [],
+      "expected_outputs": [
+        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence__l2_decoder_attention_score32_noc_phase2_generated_scheduler_equivalence_llama7b_v1.json",
+        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence__l2_decoder_attention_score32_noc_phase2_generated_scheduler_equivalence_llama7b_v1.md"
+      ]
+    }
+  ],
+  "baseline_refs": [
+    "docs/proposals/prop_l2_decoder_attention_score32_noc_phase2_serial_scheduler_equivalence_v1/proposal.json",
+    "docs/proposals/prop_l1_noc_llama7b_phase2_command_scheduler_v1/proposal.json"
+  ]
+}

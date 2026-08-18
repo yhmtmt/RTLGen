@@ -133,6 +133,10 @@ module noc_sram_packet_mesh4x4_workload_tb;
 
 `ifdef SERIAL_PAIRED_SCHEDULER
   localparam integer COMMAND_W = 102;
+  wire scheduler_cmd_valid;
+  wire scheduler_cmd_ready;
+  wire [COMMAND_W-1:0] scheduler_command;
+`ifndef GENERATED_COMMAND_SOURCE
   wire command_mem_req_valid;
   wire command_mem_req_ready = 1'b1;
   wire [13:0] command_mem_req_addr;
@@ -142,14 +146,16 @@ module noc_sram_packet_mesh4x4_workload_tb;
   wire command_mem_rsp_ready;
   wire [COMMAND_W-1:0] command_mem_rsp_data =
     workload_command(command_mem_pending_addr);
-  wire scheduler_cmd_valid;
-  wire scheduler_cmd_ready;
-  wire [COMMAND_W-1:0] scheduler_command;
   wire [31:0] prefetch_request_count;
   wire [31:0] prefetch_response_count;
   wire [31:0] prefetch_delivered_command_count;
   wire [31:0] prefetch_memory_stall_cycles;
   wire prefetch_protocol_error;
+`else
+  wire command_generator_done;
+  wire [31:0] generated_command_count;
+  wire command_generator_protocol_error;
+`endif
   wire [31:0] scheduler_accepted_command_count;
   wire [31:0] scheduler_installed_receive_count;
   wire [31:0] scheduler_submitted_transmit_count;
@@ -157,6 +163,7 @@ module noc_sram_packet_mesh4x4_workload_tb;
   wire [31:0] scheduler_endpoint_stall_cycles;
   wire scheduler_protocol_error;
 
+`ifndef GENERATED_COMMAND_SOURCE
   function [COMMAND_W-1:0] workload_command;
     input [13:0] command_address;
     reg [15:0] command_packet;
@@ -196,6 +203,15 @@ module noc_sram_packet_mesh4x4_workload_tb;
     .memory_stall_cycles(prefetch_memory_stall_cycles),
     .protocol_error(prefetch_protocol_error)
   );
+`else
+  noc_llama7b_phase2_command_generator command_generator (
+    .clk(clk), .rst_n(rst_n), .enable(1'b1),
+    .cmd_valid(scheduler_cmd_valid), .cmd_ready(scheduler_cmd_ready),
+    .cmd_data(scheduler_command), .done(command_generator_done),
+    .generated_command_count(generated_command_count),
+    .protocol_error(command_generator_protocol_error)
+  );
+`endif
 
   noc_descriptor_pair_scheduler scheduler (
     .clk(clk), .rst_n(rst_n), .current_cycle(cycle),
@@ -367,8 +383,10 @@ module noc_sram_packet_mesh4x4_workload_tb;
       live_context_valid <= 0;
       completion_shadow_valid <= 0;
 `ifdef SERIAL_PAIRED_SCHEDULER
+`ifndef GENERATED_COMMAND_SOURCE
       command_mem_pending <= 1'b0;
       command_mem_pending_addr <= 0;
+`endif
 `endif
       for (seq_endpoint_i = 0; seq_endpoint_i < 16; seq_endpoint_i = seq_endpoint_i + 1) begin
         source_position[seq_endpoint_i] <= 0;
@@ -381,12 +399,14 @@ module noc_sram_packet_mesh4x4_workload_tb;
     end else begin
       cycle <= cycle + 1;
 `ifdef SERIAL_PAIRED_SCHEDULER
+`ifndef GENERATED_COMMAND_SOURCE
       if (command_mem_pending && command_mem_rsp_ready)
         command_mem_pending <= 1'b0;
       if (command_mem_req_valid && command_mem_req_ready) begin
         command_mem_pending <= 1'b1;
         command_mem_pending_addr <= command_mem_req_addr;
       end
+`endif
 `endif
       tx_fire_count = 0;
       completion_fire_count = 0;
@@ -511,9 +531,15 @@ module noc_sram_packet_mesh4x4_workload_tb;
       if (endpoint_protocol_error != 0)
         $fatal(1, "endpoint protocol error: %h", endpoint_protocol_error);
 `ifdef SERIAL_PAIRED_SCHEDULER
+`ifdef GENERATED_COMMAND_SOURCE
+      if (command_generator_protocol_error || scheduler_protocol_error)
+        $fatal(1, "descriptor command path protocol error generator=%0d scheduler=%0d",
+          command_generator_protocol_error, scheduler_protocol_error);
+`else
       if (prefetch_protocol_error || scheduler_protocol_error)
         $fatal(1, "descriptor command path protocol error prefetch=%0d scheduler=%0d",
           prefetch_protocol_error, scheduler_protocol_error);
+`endif
 `endif
       if (cycle > 0 && (cycle % 100000) == 0)
         $display("PROGRESS workload cycle=%0d submitted=%0d completed=%0d writes=%0d",
@@ -547,6 +573,17 @@ module noc_sram_packet_mesh4x4_workload_tb;
         $fatal(1, "flit count mismatch expected=%0d writes=%0d",
           expected_flits, accepted_writes);
 `ifdef SERIAL_PAIRED_SCHEDULER
+`ifdef GENERATED_COMMAND_SOURCE
+      if (!command_generator_done || generated_command_count != packet_count ||
+          scheduler_accepted_command_count != packet_count ||
+          scheduler_installed_receive_count != packet_count ||
+          scheduler_submitted_transmit_count != packet_count)
+        $fatal(1,
+          "command count mismatch generated=%0d accepted=%0d rx=%0d tx=%0d expected=%0d done=%0d",
+          generated_command_count, scheduler_accepted_command_count,
+          scheduler_installed_receive_count, scheduler_submitted_transmit_count,
+          packet_count, command_generator_done);
+`else
       if (scheduler_accepted_command_count != packet_count ||
           scheduler_installed_receive_count != packet_count ||
           scheduler_submitted_transmit_count != packet_count ||
@@ -559,6 +596,7 @@ module noc_sram_packet_mesh4x4_workload_tb;
           prefetch_delivered_command_count,
           scheduler_accepted_command_count, scheduler_installed_receive_count,
           scheduler_submitted_transmit_count, packet_count);
+`endif
 `endif
       for (packet_i = 0; packet_i < packet_count; packet_i = packet_i + 1)
         if (!rx_installed[packet_i] || !tx_submitted[packet_i] || !packet_completed[packet_i])

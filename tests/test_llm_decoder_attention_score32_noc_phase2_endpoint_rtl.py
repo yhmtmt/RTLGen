@@ -142,3 +142,15 @@ def test_serial_scheduler_rtl_matches_performance_replay(tmp_path: Path) -> None
         )
     }
     assert result["counters"]["cycles"] == 88
+
+
+def test_generated_scheduler_rejects_noncanonical_workload(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="complete 11576-command"):
+        run_rtl_replay(
+            repo_root=REPO_ROOT,
+            packets=_contention_packets(),
+            work_dir=tmp_path,
+            timeout_cycles=10000,
+            wall_timeout_seconds=60,
+            descriptor_scheduler="serial_generated",
+        )

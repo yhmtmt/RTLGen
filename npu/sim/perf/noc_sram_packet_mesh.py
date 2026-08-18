@@ -420,17 +420,25 @@ def simulate_packet_mesh(
     ``endpoint_parallel`` schedules one RX per destination and one TX per
     source each cycle, preserving the original abstract scheduler.  The
     synthesizable ``serial_paired`` policy includes the one-cycle SRAM request
-    and response buffer, then holds one global command, installs its RX
-    descriptor first, and submits its TX descriptor on a later edge. Its
-    steady-state issue cadence is two cycles per command.
+    and response buffer. ``serial_generated`` feeds the same scheduler from a
+    direct ready/valid command generator. Both hold one global command,
+    install its RX descriptor first, and submit its TX descriptor on a later
+    edge; steady-state issue cadence is two cycles per command.
     Ready schedules are indexed as ``[cycle][endpoint]``; a callable may be
     used for large replay workloads without materializing a matrix.
     """
 
-    if descriptor_scheduler not in ("endpoint_parallel", "serial_paired"):
+    if descriptor_scheduler not in (
+        "endpoint_parallel",
+        "serial_paired",
+        "serial_generated",
+    ):
         raise ValueError(
-            "descriptor_scheduler must be endpoint_parallel or serial_paired"
+            "descriptor_scheduler must be endpoint_parallel, serial_paired, or "
+            "serial_generated"
         )
+
+    serial_scheduler = descriptor_scheduler in ("serial_paired", "serial_generated")
 
     packet_list = tuple(descriptors)
     if not packet_list:
@@ -501,7 +509,7 @@ def simulate_packet_mesh(
                 for state in states
             )
             if endpoints_idle and all(router.idle() for router in routers):
-                if descriptor_scheduler == "serial_paired":
+                if serial_scheduler:
                     pending_releases = (
                         [packet_list[scheduler_active].release_cycle]
                         if scheduler_active is not None
@@ -522,7 +530,7 @@ def simulate_packet_mesh(
         # legal, matching the RTL's registered descriptor state.
         rx_push: dict[int, int] = {}
         tx_push: dict[int, int] = {}
-        if descriptor_scheduler == "serial_paired":
+        if serial_scheduler:
             if scheduler_active is not None:
                 descriptor = packet_list[scheduler_active]
                 if descriptor.release_cycle <= cycle:
@@ -703,7 +711,7 @@ def simulate_packet_mesh(
                 rx_handshakes.append(
                     DescriptorHandshake(cycle, endpoint, "rx", index, packet_list[index])
                 )
-                if descriptor_scheduler == "serial_paired":
+                if serial_scheduler:
                     if scheduler_active != index or scheduler_receive_installed:
                         raise RuntimeError("serial RX scheduler state diverged")
                     scheduler_receive_installed = True
@@ -717,7 +725,7 @@ def simulate_packet_mesh(
                 tx_handshakes.append(
                     DescriptorHandshake(cycle, endpoint, "tx", index, packet_list[index])
                 )
-                if descriptor_scheduler == "serial_paired":
+                if serial_scheduler:
                     if scheduler_active != index or not scheduler_receive_installed:
                         raise RuntimeError("serial TX scheduler state diverged")
                     scheduler_active = None
@@ -742,10 +750,10 @@ def simulate_packet_mesh(
         # a command whose TX descriptor handshook on this edge.  Its newly
         # accepted command cannot drive endpoint outputs until the next cycle.
         if (
-            descriptor_scheduler == "serial_paired"
+            serial_scheduler
             and scheduler_active is None
             and scheduler_pending
-            and cycle >= 2
+            and cycle >= (2 if descriptor_scheduler == "serial_paired" else 0)
         ):
             scheduler_active = scheduler_pending.popleft()
 
