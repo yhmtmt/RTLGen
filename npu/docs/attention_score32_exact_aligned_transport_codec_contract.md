@@ -33,7 +33,7 @@ the reducer interfaces.
   can no longer be overwritten.
 
 The decoder accepts exactly the same two phases, rejects nonzero padding or an
-invalid phase/last sequence with a sticky protocol error, and presents one
+invalid phase/beat-last sequence with a sticky protocol error, and presents one
 stable aggregate beat until its consumer accepts it. Reset discards any
 partially transferred beat on either side.
 
@@ -46,9 +46,12 @@ interface. Backpressure must propagate through every retained stage; a static
 release timestamp is not equivalent to this contract.
 
 The endpoint descriptor still provides packet identity, source, destination,
-VC, tag, fragment, and packet-last metadata. Codec phase is subordinate to that
-framing and must agree with fragment order. NoC transport must not infer a new
-aggregate boundary from payload values.
+VC, tag, fragment, and packet-last metadata. Codec `flit_beat_last` marks the
+second half of one aggregate only; it must never drive the endpoint's packet
+`flit_last`, which remains true only on the final fragment of the configured
+packet. Codec phase is subordinate to packet framing and must agree with
+fragment order. NoC transport must not infer a new aggregate boundary from
+payload values.
 
 ## Closure Limits
 

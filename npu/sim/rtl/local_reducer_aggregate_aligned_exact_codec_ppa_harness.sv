@@ -34,7 +34,7 @@ module local_reducer_aggregate_aligned_exact_codec_ppa_harness #(
   wire flit_ready;
   wire [FLIT_W-1:0] flit_data;
   wire flit_phase;
-  wire flit_last;
+  wire flit_beat_last;
   wire decoded_valid;
   wire decoded_ready = cycle_count_q[3:1] != 3'b101;
   wire [BEAT_W-1:0] decoded_data;
@@ -61,7 +61,7 @@ module local_reducer_aggregate_aligned_exact_codec_ppa_harness #(
     .flit_ready(flit_ready),
     .flit_data(flit_data),
     .flit_phase(flit_phase),
-    .flit_last(flit_last)
+    .flit_beat_last(flit_beat_last)
   );
 
   local_reducer_aggregate_aligned_exact_decoder u_decoder (
@@ -71,7 +71,7 @@ module local_reducer_aggregate_aligned_exact_codec_ppa_harness #(
     .flit_ready(flit_ready),
     .flit_data(flit_data),
     .flit_phase(flit_phase),
-    .flit_last(flit_last),
+    .flit_beat_last(flit_beat_last),
     .beat_valid(decoded_valid),
     .beat_ready(decoded_ready),
     .beat_data(decoded_data),

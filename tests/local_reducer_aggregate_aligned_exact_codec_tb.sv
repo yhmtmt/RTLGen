@@ -25,13 +25,13 @@ module local_reducer_aggregate_aligned_exact_codec_tb;
   wire enc_flit_ready;
   wire [FLIT_W-1:0] enc_flit_data;
   wire enc_flit_phase;
-  wire enc_flit_last;
+  wire enc_flit_beat_last;
 
   reg dec_flit_valid = 1'b0;
   wire dec_flit_ready;
   reg [FLIT_W-1:0] dec_flit_data = {FLIT_W{1'b0}};
   reg dec_flit_phase = 1'b0;
-  reg dec_flit_last = 1'b0;
+  reg dec_flit_beat_last = 1'b0;
   wire dec_beat_valid;
   wire dec_beat_ready;
   wire [BEAT_W-1:0] dec_beat_data;
@@ -41,7 +41,7 @@ module local_reducer_aggregate_aligned_exact_codec_tb;
   reg manual_flit_valid = 1'b0;
   reg [FLIT_W-1:0] manual_flit_data = {FLIT_W{1'b0}};
   reg manual_flit_phase = 1'b0;
-  reg manual_flit_last = 1'b0;
+  reg manual_flit_beat_last = 1'b0;
   reg [2:0] mode = MODE_IDLE[2:0];
 
   reg [31:0] stall_state = 32'h1badf00d;
@@ -87,7 +87,7 @@ module local_reducer_aggregate_aligned_exact_codec_tb;
     .flit_ready(enc_flit_ready),
     .flit_data(enc_flit_data),
     .flit_phase(enc_flit_phase),
-    .flit_last(enc_flit_last)
+    .flit_beat_last(enc_flit_beat_last)
   );
 
   local_reducer_aggregate_aligned_exact_decoder #(
@@ -100,7 +100,7 @@ module local_reducer_aggregate_aligned_exact_codec_tb;
     .flit_ready(dec_flit_ready),
     .flit_data(dec_flit_data),
     .flit_phase(dec_flit_phase),
-    .flit_last(dec_flit_last),
+    .flit_beat_last(dec_flit_beat_last),
     .beat_valid(dec_beat_valid),
     .beat_ready(dec_beat_ready),
     .beat_data(dec_beat_data),
@@ -177,11 +177,11 @@ module local_reducer_aggregate_aligned_exact_codec_tb;
       dec_flit_valid = 1'b0;
       dec_flit_data = {FLIT_W{1'b0}};
       dec_flit_phase = 1'b0;
-      dec_flit_last = 1'b0;
+      dec_flit_beat_last = 1'b0;
       manual_flit_valid = 1'b0;
       manual_flit_data = {FLIT_W{1'b0}};
       manual_flit_phase = 1'b0;
-      manual_flit_last = 1'b0;
+      manual_flit_beat_last = 1'b0;
       manual_dec_ready = 1'b0;
       held_encoder_valid = 1'b0;
       held_decoder_valid = 1'b0;
@@ -229,7 +229,7 @@ module local_reducer_aggregate_aligned_exact_codec_tb;
       manual_flit_valid = 1'b1;
       manual_flit_data = data;
       manual_flit_phase = phase;
-      manual_flit_last = last;
+      manual_flit_beat_last = last;
       while (!dec_flit_ready)
         @(posedge clk);
       @(posedge clk);
@@ -237,7 +237,7 @@ module local_reducer_aggregate_aligned_exact_codec_tb;
       manual_flit_valid = 1'b0;
       manual_flit_data = {FLIT_W{1'b0}};
       manual_flit_phase = 1'b0;
-      manual_flit_last = 1'b0;
+      manual_flit_beat_last = 1'b0;
     end
   endtask
 
@@ -254,17 +254,17 @@ module local_reducer_aggregate_aligned_exact_codec_tb;
       dec_flit_valid = enc_flit_valid;
       dec_flit_data = enc_flit_data;
       dec_flit_phase = enc_flit_phase;
-      dec_flit_last = enc_flit_last;
+      dec_flit_beat_last = enc_flit_beat_last;
     end else if (mode == MODE_MANUAL_DECODER) begin
       dec_flit_valid = manual_flit_valid;
       dec_flit_data = manual_flit_data;
       dec_flit_phase = manual_flit_phase;
-      dec_flit_last = manual_flit_last;
+      dec_flit_beat_last = manual_flit_beat_last;
     end else begin
       dec_flit_valid = 1'b0;
       dec_flit_data = {FLIT_W{1'b0}};
       dec_flit_phase = 1'b0;
-      dec_flit_last = 1'b0;
+      dec_flit_beat_last = 1'b0;
     end
   end
 
@@ -277,10 +277,10 @@ module local_reducer_aggregate_aligned_exact_codec_tb;
     end else begin
       if (mode != MODE_MANUAL_DECODER && enc_flit_valid && !enc_flit_ready) begin
         if (held_encoder_valid &&
-            held_encoder_flit !== {enc_flit_phase, enc_flit_last, enc_flit_data})
+            held_encoder_flit !== {enc_flit_phase, enc_flit_beat_last, enc_flit_data})
           $fatal(1, "encoder output changed under backpressure");
         held_encoder_valid <= 1'b1;
-        held_encoder_flit <= {enc_flit_phase, enc_flit_last, enc_flit_data};
+        held_encoder_flit <= {enc_flit_phase, enc_flit_beat_last, enc_flit_data};
         encoder_hold_checks <= encoder_hold_checks + 1;
       end else begin
         held_encoder_valid <= 1'b0;
@@ -308,7 +308,7 @@ module local_reducer_aggregate_aligned_exact_codec_tb;
         $fatal(1, "encoder emitted too many flits");
       if (enc_flit_phase !== phase_index[0])
         $fatal(1, "encoder phase mismatch for flit %0d", encoder_flit_count);
-      if (enc_flit_last !== phase_index[0])
+      if (enc_flit_beat_last !== phase_index[0])
         $fatal(1, "encoder last mismatch for flit %0d", encoder_flit_count);
       if (enc_flit_data !== expected_flit(encoder_vectors[beat_index], phase_index))
         $fatal(1, "encoder flit payload mismatch for beat %0d phase %0d", beat_index, phase_index);

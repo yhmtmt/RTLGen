@@ -1,7 +1,7 @@
 # Design Brief
 
 The encoder retains one 419-bit exact aggregate beat and emits two ordered
-256-bit flits. The decoder checks phase, last, and zero padding before
+256-bit flits. The decoder checks phase, aggregate beat-last, and zero padding before
 reconstructing the identical beat. Both interfaces propagate ready/valid
 backpressure and sustain one flit per cycle without inter-beat bubbles after
 initial fill.

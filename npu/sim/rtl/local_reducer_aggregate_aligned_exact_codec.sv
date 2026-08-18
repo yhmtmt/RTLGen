@@ -8,7 +8,7 @@
 // - Phase 0 / last 0 carries beat_data[255:0].
 // - Phase 1 / last 1 carries beat_data[418:256] in flit_data[162:0].
 // - Phase 1 flit_data[255:163] is deterministically zero padded.
-// - Decoder rejects malformed phase/last ordering and nonzero phase-1 padding.
+// - Decoder rejects malformed phase/beat-last ordering and nonzero phase-1 padding.
 
 module local_reducer_aggregate_aligned_exact_encoder #(
   parameter integer BEAT_W = 419,
@@ -23,7 +23,7 @@ module local_reducer_aggregate_aligned_exact_encoder #(
   input  wire              flit_ready,
   output wire [FLIT_W-1:0] flit_data,
   output wire              flit_phase,
-  output wire              flit_last
+  output wire              flit_beat_last
 );
   localparam integer SECOND_PAYLOAD_W = BEAT_W - FLIT_W;
   localparam integer SECOND_PAD_W = FLIT_W - SECOND_PAYLOAD_W;
@@ -39,7 +39,7 @@ module local_reducer_aggregate_aligned_exact_encoder #(
   assign beat_ready = !active_r || release_fire;
   assign flit_valid = active_r;
   assign flit_phase = phase_r;
-  assign flit_last = phase_r;
+  assign flit_beat_last = phase_r;
   assign flit_data = !active_r ? {FLIT_W{1'b0}} :
     (phase_r ? {{SECOND_PAD_W{1'b0}}, beat_data_r[BEAT_W-1:FLIT_W]} :
                beat_data_r[FLIT_W-1:0]);
@@ -97,7 +97,7 @@ module local_reducer_aggregate_aligned_exact_decoder #(
   output wire              flit_ready,
   input  wire [FLIT_W-1:0] flit_data,
   input  wire              flit_phase,
-  input  wire              flit_last,
+  input  wire              flit_beat_last,
   output wire              beat_valid,
   input  wire              beat_ready,
   output wire [BEAT_W-1:0] beat_data,
@@ -115,8 +115,8 @@ module local_reducer_aggregate_aligned_exact_decoder #(
 
   wire flit_fire = flit_valid && flit_ready;
   wire beat_fire = beat_valid && beat_ready;
-  wire phase0_valid = !flit_phase && !flit_last;
-  wire phase1_valid = flit_phase && flit_last;
+  wire phase0_valid = !flit_phase && !flit_beat_last;
+  wire phase1_valid = flit_phase && flit_beat_last;
   wire phase1_padding_zero = flit_data[FLIT_W-1:SECOND_PAYLOAD_W] == {SECOND_PAD_W{1'b0}};
 
   assign flit_ready = !beat_valid_r || beat_ready;

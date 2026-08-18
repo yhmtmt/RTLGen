@@ -14,7 +14,7 @@
       "two ordered 256-bit flits",
       "256-bit decoder partial state",
       "419-bit retained decoder output",
-      "phase, last, and padding checks",
+      "phase, beat-last, and padding checks",
       "ready/valid backpressure",
       "compact deterministic source and folded sink harness"
     ],
