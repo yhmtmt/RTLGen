@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 import shutil
@@ -33,6 +34,10 @@ from npu.sim.perf.noc_sram_packet_mesh import (  # noqa: E402
 
 JsonDict = dict[str, Any]
 MAX_PACKETS = 12000
+GENERATED_COMMAND_COUNT = 11576
+GENERATED_COMMAND_SHA256 = (
+    "624c39e542c05fa76a480c173d39323adba58ac75ee12951139d8893929df483"
+)
 RTL_SOURCES = (
     Path("npu/sim/rtl/noc_ready_valid_fifo.sv"),
     Path("npu/sim/rtl/noc_segmented_mesh_router.sv"),
@@ -176,6 +181,24 @@ def command_words_from_packets(packets: list[WorkloadPacket]) -> list[int]:
     return words
 
 
+def _require_canonical_generated_commands(packets: list[WorkloadPacket]) -> None:
+    if len(packets) != GENERATED_COMMAND_COUNT:
+        raise ValueError(
+            "serial_generated is specialized to the complete 11576-command "
+            "Llama7B Phase-2 schedule"
+        )
+    digest = hashlib.sha256()
+    for word in command_words_from_packets(packets):
+        digest.update(word.to_bytes(13, byteorder="big"))
+    observed = digest.hexdigest()
+    if observed != GENERATED_COMMAND_SHA256:
+        raise ValueError(
+            "serial_generated command stream does not match the canonical "
+            f"Llama7B Phase-2 schedule: expected sha256={GENERATED_COMMAND_SHA256}, "
+            f"observed sha256={observed}"
+        )
+
+
 def write_workload_memories(
     packets: list[WorkloadPacket],
     output_dir: Path,
@@ -260,11 +283,8 @@ def run_rtl_replay(
             "descriptor_scheduler must be endpoint_parallel, serial_paired, or "
             "serial_generated"
         )
-    if descriptor_scheduler == "serial_generated" and len(packets) != 11576:
-        raise ValueError(
-            "serial_generated is specialized to the complete 11576-command "
-            "Llama7B Phase-2 schedule"
-        )
+    if descriptor_scheduler == "serial_generated":
+        _require_canonical_generated_commands(packets)
     memories = write_workload_memories(packets, work_dir)
     simulator = work_dir / "phase2_endpoint_mesh.vvp"
     compile_command = [

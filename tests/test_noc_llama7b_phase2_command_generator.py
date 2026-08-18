@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+from dataclasses import replace
 import shutil
 import subprocess
 from pathlib import Path
@@ -14,6 +15,7 @@ from npu.eval.measure_llm_decoder_attention_score32_noc_phase2_schedule import (
 )
 from npu.eval.verify_llm_decoder_attention_score32_noc_phase2_endpoint_rtl import (
     _schedule_args,
+    _require_canonical_generated_commands,
     command_words_from_packets,
     descriptors_from_packet_specs,
 )
@@ -52,6 +54,12 @@ def test_generator_matches_all_authoritative_commands_under_backpressure(
     packets = descriptors_from_packet_specs(packet_specs)
     words = command_words_from_packets(packets)
     assert len(words) == 11576
+    _require_canonical_generated_commands(packets)
+
+    mutated_packets = list(packets)
+    mutated_packets[0] = replace(mutated_packets[0], tag=1)
+    with pytest.raises(ValueError, match="does not match the canonical"):
+        _require_canonical_generated_commands(mutated_packets)
 
     expected_mem = tmp_path / "expected_commands.mem"
     expected_mem.write_text(
