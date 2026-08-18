@@ -1,0 +1,64 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_score32_noc_phase2_exact_transport_revision_v1",
+  "created_utc": "2026-08-18T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "revision",
+  "abstraction_layer": "decoder_attention_score32_noc_phase2_exact_transport",
+  "title": "Revise Phase-2 reduction traffic from the embodied exact reducer contract",
+  "hypothesis": "Replacing the per-wave 16-bit reduction heuristic with the actual 419-bit exact aggregate stream and group-major release contract will preserve precision while reducing total Phase-2 traffic because each cluster emits only after eight local waves.",
+  "direct_comparison": {
+    "primary_question": "What exact packet traffic must connect the embodied local temporal reducers to the root global reducer?",
+    "include": [
+      "four head groups",
+      "eight persistent local waves per group",
+      "128 exact aggregate beats per group and cluster",
+      "419-bit direct link beats",
+      "aligned, packed, and stats-once lossless transport modes",
+      "existing 256-bit flit and eight-flit packet contract"
+    ],
+    "exclude": [
+      "serializer and depacketizer PPA",
+      "dynamic producer/root backpressure",
+      "shared SRAM residency release",
+      "HBM/DRAM controller"
+    ]
+  },
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_score32_noc_phase2_exact_transport_revision_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Retract the invalid per-wave 16-bit reduction schedule and quantify precision-exact transport modes from the checked local16/global-tree RTL manifest.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_score32_noc_phase2_exact_transport",
+      "comparison_role": "phase2_exact_transport_revision",
+      "depends_on_item_ids": [],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "config_paths": [],
+      "expected_outputs": [
+        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_exact_transport_revision__l2_decoder_attention_score32_noc_phase2_exact_transport_revision_llama7b_v1.json",
+        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_exact_transport_revision__l2_decoder_attention_score32_noc_phase2_exact_transport_revision_llama7b_v1.md"
+      ],
+      "revision": {
+        "reason": "wrong_precision_and_release_contract",
+        "invalidates_item_ids": [
+          "l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1",
+          "l1_noc_llama7b_phase2_command_scheduler_v1",
+          "l2_decoder_attention_score32_noc_phase2_generated_scheduler_equivalence_llama7b_v1",
+          "l2_decoder_attention_score32_noc_phase2_finite_endpoint_composed_recost_llama7b_v1",
+          "l2_decoder_attention_score32_finite_endpoint_final_frontier_llama7b_v1"
+        ],
+        "invalidates": {
+          "artifact": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_schedule__l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1.json",
+          "prior_contract": "8320 bytes per cluster after each tile wave"
+        }
+      }
+    }
+  ],
+  "baseline_refs": [
+    "npu/docs/attention_score32_exact_local16_global_tree_gqa8_contract.md",
+    "runs/designs/npu_blocks/attention_score32_exact_local16_global_tree_cluster_sram_gqa8_p54x8_p53x8_c16_r2_l8_b59/verilog/attention_score32_exact_local16_global_tree_cluster_sram_gqa8_manifest.json",
+    "docs/proposals/prop_l2_decoder_attention_score32_noc_phase2_schedule_v1/proposal.json"
+  ]
+}

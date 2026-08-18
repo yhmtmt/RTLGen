@@ -5278,6 +5278,101 @@ def _decoder_attention_score32_noc_phase2_schedule_evidence(
     }
 
 
+def _decoder_attention_score32_noc_phase2_exact_transport_revision_evidence(
+    *,
+    item_id: str,
+    depends_on_item_ids: list[str] | None,
+    proposal_id: str | None,
+    proposal_path: str | None,
+) -> dict[str, Any]:
+    expected_item_id = (
+        "l2_decoder_attention_score32_noc_phase2_exact_transport_revision_llama7b_v1"
+    )
+    expected_proposal_id = (
+        "prop_l2_decoder_attention_score32_noc_phase2_exact_transport_revision_v1"
+    )
+    if item_id != expected_item_id:
+        raise Layer2TaskGenerationError(
+            "score32 Phase-2 exact transport revision only permits its registered item"
+        )
+    if str(proposal_id or "").strip() != expected_proposal_id:
+        raise Layer2TaskGenerationError("score32 Phase-2 exact transport proposal_id mismatch")
+    if str(proposal_path or "").strip() != (
+        f"docs/proposals/{expected_proposal_id}/proposal.json"
+    ):
+        raise Layer2TaskGenerationError("score32 Phase-2 exact transport proposal_path mismatch")
+    if list(depends_on_item_ids or []):
+        raise Layer2TaskGenerationError(
+            "score32 Phase-2 exact transport revision reads merged artifacts directly"
+        )
+
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    exact_manifest = (
+        "runs/designs/npu_blocks/"
+        "attention_score32_exact_local16_global_tree_cluster_sram_gqa8_"
+        "p54x8_p53x8_c16_r2_l8_b59/verilog/"
+        "attention_score32_exact_local16_global_tree_cluster_sram_gqa8_manifest.json"
+    )
+    prior_schedule = (
+        f"{base}/decoder_attention_score32_noc_phase2_schedule__"
+        "l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1.json"
+    )
+    out = f"{base}/decoder_attention_score32_noc_phase2_exact_transport_revision__{item_id}.json"
+    report = f"{base}/decoder_attention_score32_noc_phase2_exact_transport_revision__{item_id}.md"
+    command = _bounded_launcher_command(
+        memory_high="1G",
+        memory_max="2G",
+        cpu_quota="100%",
+        tasks_max=64,
+        runtime_max_sec=120,
+        child_command=[
+            "python3",
+            "npu/eval/revise_llm_decoder_attention_score32_noc_phase2_exact_transport.py",
+            "--exact-manifest",
+            exact_manifest,
+            "--prior-schedule",
+            prior_schedule,
+            "--out",
+            out,
+            "--report",
+            report,
+        ],
+    )
+    return {
+        "inputs": {
+            "attention_score32_exact_manifest": exact_manifest,
+            "attention_score32_prior_phase2_schedule": prior_schedule,
+            "attention_score32_exact_transport_revision_out": out,
+            "attention_score32_exact_transport_revision_report": report,
+        },
+        "commands": [
+            {
+                "name": "revise_attention_score32_noc_phase2_exact_transport",
+                "run": command,
+            }
+        ],
+        "expected_outputs": [out, report],
+        "evidence_only": True,
+        "worker_resources": {
+            "exclusive_worker": False,
+            "memory_high": "1G",
+            "memory_max": "2G",
+            "cpu_quota": "100%",
+            "tasks_max": 64,
+            "outer_timeout_seconds": 180,
+            "stall_timeout_seconds": 90,
+        },
+        "acceptance": [
+            "Require the merged exact manifest to declare 16 clusters and 419-bit partial links",
+            "Require four groups, eight local waves, and 128 aggregate beats per group",
+            "Compare aligned, packed, and stats-once transports without narrowing 41-bit numerators",
+            "Record revision metadata for every invalidated Phase-2 schedule descendant",
+            "Do not claim cycle closure before producer and root ready/valid composition",
+            "Write exactly one JSON and one Markdown report",
+        ],
+    }
+
+
 def _validate_score32_noc_closure_request(
     *,
     item_id: str,
@@ -13068,6 +13163,7 @@ def _build_payload(
         "decoder_attention_kv_endpoint_sram_noc_full_search_softmax_recip_lut_schedule",
         "decoder_attention_kv_onchip_service_schedule",
         "decoder_attention_score32_noc_phase2_schedule",
+        "decoder_attention_score32_noc_phase2_exact_transport",
         "decoder_attention_score32_noc_phase2_measured_router_closure",
         "decoder_attention_score32_noc_phase2_measured_router_clock_reroute",
         "decoder_attention_score32_noc_phase2_composed_mesh_reroute",
@@ -13303,6 +13399,15 @@ def _build_payload(
                 item_id=item_id,
                 proposal_id=proposal_id,
                 proposal_path=proposal_path,
+            )
+        elif abstraction_layer_name == "decoder_attention_score32_noc_phase2_exact_transport":
+            decoder_evidence = (
+                _decoder_attention_score32_noc_phase2_exact_transport_revision_evidence(
+                    item_id=item_id,
+                    depends_on_item_ids=depends_on_item_ids,
+                    proposal_id=proposal_id,
+                    proposal_path=proposal_path,
+                )
             )
         elif abstraction_layer_name == "decoder_attention_score32_noc_phase2_measured_router_closure":
             decoder_evidence = _decoder_attention_score32_noc_phase2_measured_router_closure_evidence(

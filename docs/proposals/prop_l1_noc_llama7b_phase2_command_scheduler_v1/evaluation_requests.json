@@ -15,7 +15,7 @@
       "expected_outputs": [
         "runs/designs/noc/l1_noc_llama7b_phase2_command_scheduler_n16_wrapper/metrics.csv"
       ],
-      "status": "pending_after_proposal_merge",
+      "status": "retracted",
       "comparison_role": "phase2_generated_command_scheduler_physical_anchor",
       "paired_baseline_item_id": "l1_noc_descriptor_pair_scheduler_v1",
       "depends_on_item_ids": [],
@@ -25,7 +25,9 @@
         "direction": "replace_command_image_with_exact_generation",
         "reason": "Measure generator-plus-scheduler PPA without command SRAM or refill estimates."
       },
-      "acceptance_notes": "Require exhaustive 11576-command equivalence including bounded TX/RX addresses, generated hierarchy selection, protocol_error=0, and timing/area/power rows. Require maximum RX base address 143872 bytes (slot 562). Treat vectorless power and payload SRAM macros as separate evidence."
+      "acceptance_notes": "Do not dispatch. The 11576-command source uses the invalidated per-wave 16-bit reduction contract.",
+      "retracted_by_item_id": "l2_decoder_attention_score32_noc_phase2_exact_transport_revision_llama7b_v1",
+      "retraction_reason": "wrong_precision_and_release_contract"
     }
   ]
 }

@@ -13,7 +13,7 @@
         "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence__l2_decoder_attention_score32_noc_phase2_generated_scheduler_equivalence_llama7b_v1.json",
         "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence__l2_decoder_attention_score32_noc_phase2_generated_scheduler_equivalence_llama7b_v1.md"
       ],
-      "status": "pending_after_proposal_merge",
+      "status": "retracted",
       "comparison_role": "phase2_generated_scheduler_composed_equivalence",
       "paired_baseline_item_id": "l2_decoder_attention_score32_noc_phase2_serial_scheduler_equivalence_llama7b_v1",
       "depends_on_item_ids": [],
@@ -23,7 +23,9 @@
         "direction": "exact_generated_command_equivalence",
         "reason": "Close command-image and refill abstractions without changing packet or cycle behavior."
       },
-      "acceptance_notes": "Require 11576 generated commands, 92128 flits, exact RTL/performance packet/flit/cycle/contention/stall/occupancy counters, zero protocol errors, 563 bounded 256-byte packet slots, and collision-free model plus RTL lifetime checks for every reused TX/RX slot."
+      "acceptance_notes": "Do not dispatch. The 11576-command/92128-flit workload uses the invalidated per-wave 16-bit reduction contract.",
+      "retracted_by_item_id": "l2_decoder_attention_score32_noc_phase2_exact_transport_revision_llama7b_v1",
+      "retraction_reason": "wrong_precision_and_release_contract"
     }
   ]
 }
