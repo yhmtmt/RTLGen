@@ -249,3 +249,21 @@ def test_serial_scheduler_models_one_cycle_sram_cold_start() -> None:
 
     assert result.rx_descriptor_handshakes[0].cycle == 3
     assert result.tx_descriptor_handshakes[0].cycle == 4
+
+
+def test_serial_generated_scheduler_removes_command_sram_cold_start() -> None:
+    descriptor = PacketDescriptor(
+        source=0,
+        destination=1,
+        vc=0,
+        tag=1,
+        flit_count=1,
+    )
+    result = simulate_packet_mesh(
+        [descriptor],
+        descriptor_scheduler="serial_generated",
+    )
+
+    assert result.rx_descriptor_handshakes[0].cycle == 1
+    assert result.tx_descriptor_handshakes[0].cycle == 2
+    assert not result.protocol_errors

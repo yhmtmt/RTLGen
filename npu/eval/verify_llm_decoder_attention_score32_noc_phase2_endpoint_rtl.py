@@ -42,6 +42,9 @@ RTL_SOURCES = (
 )
 SCHEDULER_RTL_SOURCE = Path("npu/sim/rtl/noc_descriptor_pair_scheduler.sv")
 PREFETCH_RTL_SOURCE = Path("npu/sim/rtl/noc_descriptor_command_prefetch.sv")
+COMMAND_GENERATOR_RTL_SOURCE = Path(
+    "npu/sim/rtl/noc_llama7b_phase2_command_generator.sv"
+)
 RTL_TB = Path("tests/noc_sram_packet_mesh4x4_workload_tb.sv")
 PASS_RE = re.compile(
     r"PASS workload packets=(?P<packets>\d+) flits=(?P<flits>\d+) "
@@ -148,6 +151,31 @@ def _queue_order_and_meta(
     return order, meta
 
 
+def command_words_from_packets(packets: list[WorkloadPacket]) -> list[int]:
+    """Pack the authoritative global command stream consumed by scheduler RTL."""
+
+    words: list[int] = []
+    for packet in sorted(
+        packets,
+        key=lambda item: (
+            item.release_cycle,
+            item.schedule_order,
+            item.packet_id,
+        ),
+    ):
+        base_addr = packet.packet_id << 8
+        word = packet.release_cycle
+        word |= packet.source << 32
+        word |= packet.destination << 36
+        word |= packet.vc << 40
+        word |= packet.tag << 42
+        word |= base_addr << 50
+        word |= base_addr << 74
+        word |= packet.flit_count << 98
+        words.append(word)
+    return words
+
+
 def write_workload_memories(
     packets: list[WorkloadPacket],
     output_dir: Path,
@@ -223,9 +251,19 @@ def run_rtl_replay(
     wall_timeout_seconds: int,
     descriptor_scheduler: str = "endpoint_parallel",
 ) -> JsonDict:
-    if descriptor_scheduler not in ("endpoint_parallel", "serial_paired"):
+    if descriptor_scheduler not in (
+        "endpoint_parallel",
+        "serial_paired",
+        "serial_generated",
+    ):
         raise ValueError(
-            "descriptor_scheduler must be endpoint_parallel or serial_paired"
+            "descriptor_scheduler must be endpoint_parallel, serial_paired, or "
+            "serial_generated"
+        )
+    if descriptor_scheduler == "serial_generated" and len(packets) != 11576:
+        raise ValueError(
+            "serial_generated is specialized to the complete 11576-command "
+            "Llama7B Phase-2 schedule"
         )
     memories = write_workload_memories(packets, work_dir)
     simulator = work_dir / "phase2_endpoint_mesh.vvp"
@@ -237,14 +275,22 @@ def run_rtl_replay(
         "-o",
         str(simulator),
     ]
-    if descriptor_scheduler == "serial_paired":
+    if descriptor_scheduler in ("serial_paired", "serial_generated"):
         compile_command.extend(
             [
                 "-DSERIAL_PAIRED_SCHEDULER",
-                str(repo_root / PREFETCH_RTL_SOURCE),
                 str(repo_root / SCHEDULER_RTL_SOURCE),
             ]
         )
+        if descriptor_scheduler == "serial_generated":
+            compile_command.extend(
+                [
+                    "-DGENERATED_COMMAND_SOURCE",
+                    str(repo_root / COMMAND_GENERATOR_RTL_SOURCE),
+                ]
+            )
+        else:
+            compile_command.append(str(repo_root / PREFETCH_RTL_SOURCE))
     compile_command.extend(str(repo_root / path) for path in RTL_SOURCES)
     compile_command.append(str(repo_root / RTL_TB))
     compile_result = subprocess.run(
@@ -477,10 +523,18 @@ def build_and_run(args: argparse.Namespace) -> JsonDict:
         },
         "remaining_abstractions": [
             "SRAM arrays are transaction-accurate one-cycle ports; bitcells and macro placement remain external.",
-            "The 102-bit command records use concrete one-cycle prefetch control; command SRAM bitcells, macro placement, and command population/refill remain external evidence.",
+            "Packet-ID-derived TX/RX addresses prove ordering and data integrity but do not yet embody compact per-endpoint payload allocation or lifetime reuse.",
+            *(
+                [
+                    "The 102-bit command records use concrete one-cycle prefetch control; command SRAM bitcells, macro placement, and command population/refill remain external evidence."
+                ]
+                if args.descriptor_scheduler == "serial_paired"
+                else []
+            ),
             *(
                 []
-                if args.descriptor_scheduler == "serial_paired"
+                if args.descriptor_scheduler
+                in ("serial_paired", "serial_generated")
                 else [
                     "The command scheduler is embodied by the deterministic paired-descriptor testbench driver, not synthesized RTL."
                 ]
@@ -529,8 +583,8 @@ def main() -> int:
     parser.add_argument("--wall-timeout-seconds", type=int, default=1800)
     parser.add_argument(
         "--descriptor-scheduler",
-        choices=("endpoint_parallel", "serial_paired"),
-        default="serial_paired",
+        choices=("endpoint_parallel", "serial_paired", "serial_generated"),
+        default="serial_generated",
     )
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--report", type=Path, required=True)

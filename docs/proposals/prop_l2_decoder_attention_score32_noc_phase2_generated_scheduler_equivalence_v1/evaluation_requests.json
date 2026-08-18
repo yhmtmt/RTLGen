@@ -1,0 +1,29 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_score32_noc_phase2_generated_scheduler_equivalence_v1",
+  "source_commit": "TBD",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_score32_noc_phase2_generated_scheduler_equivalence_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Replay every generated command and packet through finite endpoint and mesh RTL and require exact performance-model counters.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence",
+      "config_paths": [],
+      "expected_outputs": [
+        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence__l2_decoder_attention_score32_noc_phase2_generated_scheduler_equivalence_llama7b_v1.json",
+        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_endpoint_rtl_equivalence__l2_decoder_attention_score32_noc_phase2_generated_scheduler_equivalence_llama7b_v1.md"
+      ],
+      "status": "pending_after_proposal_merge",
+      "comparison_role": "phase2_generated_scheduler_composed_equivalence",
+      "paired_baseline_item_id": "l2_decoder_attention_score32_noc_phase2_serial_scheduler_equivalence_llama7b_v1",
+      "depends_on_item_ids": [],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "exact_generated_command_equivalence",
+        "reason": "Close command-image and refill abstractions without changing packet or cycle behavior."
+      },
+      "acceptance_notes": "Require 11576 generated commands, 92128 flits, exact RTL/performance packet/flit/cycle/contention/stall/occupancy counters, and zero protocol errors."
+    }
+  ]
+}

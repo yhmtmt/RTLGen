@@ -437,6 +437,7 @@ def identify_design(config):
         fragment_bits = int(options.get("fragment_bits", 3))
         addr_bits = int(options.get("addr_bits", 24))
         flit_count_bits = int(options.get("flit_count_bits", 4))
+        command_source = str(options.get("command_source", "prefetch"))
         tx_desc_depth = int(options.get("tx_desc_depth", depth))
         tx_outstanding = int(options.get("tx_outstanding", max(depth, 8)))
         rx_contexts = int(options.get("rx_contexts", max(depth, 8)))
@@ -526,6 +527,11 @@ def identify_design(config):
                 raise ValueError(
                     "l1_memory_noc_primitive descriptor_pair_scheduler requires at least 42 observation bits"
                 )
+            if command_source not in ("prefetch", "llama7b_generated"):
+                raise ValueError(
+                    "l1_memory_noc_primitive descriptor_pair_scheduler command_source "
+                    "must be prefetch or llama7b_generated"
+                )
         return {
             "kind": "l1_memory_noc_primitive",
             "module_name": module_name,
@@ -545,6 +551,7 @@ def identify_design(config):
             "fragment_bits": fragment_bits,
             "addr_bits": addr_bits,
             "flit_count_bits": flit_count_bits,
+            "command_source": command_source,
             "tx_desc_depth": tx_desc_depth,
             "tx_outstanding": tx_outstanding,
             "rx_contexts": rx_contexts,
@@ -989,6 +996,7 @@ def generate_l1_memory_noc_design(src_dir, design):
         text = _emit_l1_descriptor_pair_scheduler(module_name, design)
         for filename in (
             "noc_descriptor_command_prefetch.sv",
+            "noc_llama7b_phase2_command_generator.sv",
             "noc_descriptor_pair_scheduler.sv",
             "noc_descriptor_pair_scheduler_ppa_harness.sv",
         ):
@@ -1737,7 +1745,8 @@ module {module_name}(
   noc_descriptor_pair_scheduler_ppa_harness #(
     .NODES({design['ports']}),
     .DATA_W({design['flit_bits']}),
-    .COUNTER_W({design['counter_bits']})
+    .COUNTER_W({design['counter_bits']}),
+    .GENERATED_SOURCE({1 if design['command_source'] == 'llama7b_generated' else 0})
   ) harness (
     .clk(clk),
     .rst_n(rst_n),
@@ -2692,6 +2701,7 @@ def generate_config_mk(platform_dir, platform, design):
         verilog_files.extend(
             [
                 f"$(DESIGN_HOME)/src/{wrapper_name}/noc_descriptor_command_prefetch.v",
+                f"$(DESIGN_HOME)/src/{wrapper_name}/noc_llama7b_phase2_command_generator.v",
                 f"$(DESIGN_HOME)/src/{wrapper_name}/noc_descriptor_pair_scheduler.v",
                 f"$(DESIGN_HOME)/src/{wrapper_name}/noc_descriptor_pair_scheduler_ppa_harness.v",
             ]

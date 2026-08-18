@@ -14837,6 +14837,11 @@ def test_generate_l2_campaign_task_adds_score32_noc_composed_mesh_reroute() -> N
             "serial_scheduler_equivalence_v1",
             "serial_paired",
         ),
+        (
+            "generated_scheduler_equivalence_llama7b_v1",
+            "generated_scheduler_equivalence_v1",
+            "serial_generated",
+        ),
     ],
 )
 def test_generate_l2_campaign_task_adds_score32_endpoint_rtl_equivalence(
