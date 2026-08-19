@@ -39,8 +39,6 @@ module local_reducer_aggregate_stats_once_exact_packet_tx_framer #(
   reg active_q;
   reg input_done_q;
   reg [7:0] flit_index_q;
-  reg [15:0] command_q;
-  reg [4:0] head_base_q;
   reg [3:0] source_q;
   reg [3:0] destination_q;
   reg [VC_W-1:0] vc_q;
@@ -83,8 +81,6 @@ module local_reducer_aggregate_stats_once_exact_packet_tx_framer #(
       active_q <= 1'b0;
       input_done_q <= 1'b0;
       flit_index_q <= 8'b0;
-      command_q <= 16'b0;
-      head_base_q <= 5'b0;
       source_q <= 4'b0;
       destination_q <= 4'b0;
       vc_q <= {VC_W{1'b0}};
@@ -106,8 +102,6 @@ module local_reducer_aggregate_stats_once_exact_packet_tx_framer #(
         active_q <= 1'b1;
         input_done_q <= 1'b0;
         flit_index_q <= 8'b0;
-        command_q <= group_command_id;
-        head_base_q <= group_head_base;
         source_q <= group_source;
         destination_q <= group_destination;
         vc_q <= group_vc;
@@ -198,6 +192,8 @@ module local_reducer_aggregate_stats_once_exact_packet_rx_deframer #(
   input  wire                         codec_flit_ready,
   output wire [DATA_W-1:0]             codec_flit_data,
   output wire                         codec_flit_group_last,
+  output wire [15:0]                  codec_group_command_id,
+  output wire [4:0]                   codec_group_head_base,
   output wire                         protocol_error,
   output wire                         clean_group_complete
 );
@@ -243,6 +239,8 @@ module local_reducer_aggregate_stats_once_exact_packet_rx_deframer #(
   assign codec_flit_valid = output_valid_q;
   assign codec_flit_data = output_data_q;
   assign codec_flit_group_last = output_group_last_q;
+  assign codec_group_command_id = command_q;
+  assign codec_group_head_base = head_base_q;
   assign protocol_error = protocol_error_q;
   assign clean_group_complete = clean_group_complete_q;
 
