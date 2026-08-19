@@ -36,7 +36,7 @@ module local_reducer_aggregate_exact_codec_matched_ppa_harness #(
   reg mismatch_q;
 
   wire [15:0] group_command_id = group_id_q;
-  wire [4:0] group_head_base = {3'b000, group_id_q[1:0], 3'b000};
+  wire [4:0] group_head_base = {group_id_q[1:0], 3'b000};
   wire group_ctx_valid = !group_open_q;
   wire common_source_valid = group_open_q &&
     (source_group_beat_q < 8'd128) && (cycle_count_q[2:0] != 3'b111);
@@ -112,7 +112,7 @@ module local_reducer_aggregate_exact_codec_matched_ppa_harness #(
     reg [31:0] head_max;
     reg [32:0] head_sum;
     begin
-      head = {3'b000, group_id[1:0], 3'b000} + (beat_index >> 4);
+      head = {group_id[1:0], 3'b000} + {1'b0, beat_index[7:4]};
       slice = beat_index[3:0];
       head_max = 32'h1200_0000 ^ {group_id, group_id} ^
         {24'b0, beat_index[7:4], beat_index[7:4]};
