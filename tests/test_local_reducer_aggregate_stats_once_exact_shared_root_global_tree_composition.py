@@ -64,13 +64,18 @@ def _generate_tree(tmp_path: Path) -> Path:
     _tool("iverilog") is None or _tool("vvp") is None,
     reason="iverilog/vvp unavailable",
 )
-def test_full_chain_exact_finite_sram_mesh_and_tree(tmp_path: Path) -> None:
+@pytest.mark.parametrize("physical_banks", [15, 4])
+def test_full_chain_exact_finite_sram_mesh_and_tree(
+    tmp_path: Path,
+    physical_banks: int,
+) -> None:
     tree_dir = _generate_tree(tmp_path)
     simv = tmp_path / "full_chain.vvp"
     subprocess.run(
         [
             str(_tool("iverilog")),
             "-g2012",
+            f"-DSHARED_ROOT_PHYSICAL_BANKS={physical_banks}",
             "-s",
             TOP,
             "-o",
@@ -103,7 +108,8 @@ def test_full_chain_exact_finite_sram_mesh_and_tree(tmp_path: Path) -> None:
     assert "replays=315" in run.stdout
     assert "source_mask=7fff" in run.stdout
     assert "root_delivery_span=2505" in run.stdout
-    assert "final_cycle=2600" in run.stdout
+    expected_final_cycle = 2600 if physical_banks == 15 else 2613
+    assert f"final_cycle={expected_final_cycle}" in run.stdout
     assert "max_aggregate_slots=30" in run.stdout
     assert "slots_per_source=2" in run.stdout
 

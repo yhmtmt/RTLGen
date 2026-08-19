@@ -8,12 +8,17 @@ module local_reducer_aggregate_stats_once_exact_shared_root_global_tree_composit
   localparam integer GROUP_BEATS = 128;
   localparam integer GROUP_FLITS = 167;
   localparam integer GROUP_PACKETS = 21;
-  localparam integer SIM_TIMEOUT_CYCLES = 50000;
+  localparam integer SIM_TIMEOUT_CYCLES = 10000;
   localparam integer NODES = 16;
   localparam integer DATA_W = 256;
   localparam integer TAG_W = 8;
   localparam integer FRAGMENT_W = 3;
   localparam integer VC_W = 2;
+`ifdef SHARED_ROOT_PHYSICAL_BANKS
+  localparam integer ROOT_PHYSICAL_BANKS = `SHARED_ROOT_PHYSICAL_BANKS;
+`else
+  localparam integer ROOT_PHYSICAL_BANKS = SOURCE_COUNT;
+`endif
 
   reg clk = 1'b0;
   reg rst_n = 1'b0;
@@ -228,7 +233,9 @@ module local_reducer_aggregate_stats_once_exact_shared_root_global_tree_composit
     end
   endgenerate
 
-  local_reducer_aggregate_stats_once_exact_shared_root_global_tree_composition composition (
+  local_reducer_aggregate_stats_once_exact_shared_root_global_tree_composition #(
+    .PHYSICAL_BANKS(ROOT_PHYSICAL_BANKS)
+  ) composition (
     .clk(clk), .rst_n(rst_n),
     .group_ctx_valid(context_fire),
     .group_ctx_ready(composition_ctx_ready),
@@ -367,8 +374,27 @@ module local_reducer_aggregate_stats_once_exact_shared_root_global_tree_composit
         source_beat_index[source_i] <= 0;
     end else begin
       cycle <= cycle + 1;
-      if (cycle >= SIM_TIMEOUT_CYCLES)
+      if (cycle >= SIM_TIMEOUT_CYCLES) begin
+        $display("TIMEOUT banks=%0d root_rows=%0d root_local=%0d flits=%0d desc=%0d comp=%0d replay=%0d slots=%0d source0=%0d source14=%0d",
+          ROOT_PHYSICAL_BANKS, root_count, root_beat_index,
+          root_accepted_flit_count, root_descriptor_install_count,
+          root_completion_count, root_replay_packet_count,
+          max_occupied_slots, source_beat_index[0], source_beat_index[14]);
+        for (source_i = 0; source_i < SOURCE_COUNT; source_i = source_i + 1)
+          $display("SOURCE %0d next=%0d replay=%0d word=%0d slot=%0d states=%0d/%0d rsp_valid=%0d rsp_ready=%0d read_valid=%0d read_ready=%0d",
+            source_i,
+            composition.root_rx.next_packet_q[source_i],
+            composition.root_rx.replay_active_q[source_i],
+            composition.root_rx.replay_word_q[source_i],
+            composition.root_rx.replay_slot_q[source_i],
+            composition.root_rx.slot_state[source_i][0],
+            composition.root_rx.slot_state[source_i][1],
+            composition.root_rx.storage_read_rsp_valid_w[source_i],
+            composition.root_rx.storage_read_rsp_ready_w[source_i],
+            composition.root_rx.storage_read_req_valid_w[source_i],
+            composition.root_rx.storage_read_req_ready_w[source_i]);
         $fatal(1, "full-chain shared-root timeout");
+      end
       if (context_fire)
         ctx_pending <= 1'b0;
       for (source_i = 0; source_i < SOURCE_COUNT; source_i = source_i + 1)
