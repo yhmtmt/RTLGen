@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import shutil
 import subprocess
 from pathlib import Path
@@ -71,8 +72,9 @@ def test_finite_sram_adapter_exact_roundtrip_through_real_mesh(tmp_path: Path) -
 
 
 @pytest.mark.skipif(_tool("yosys") is None, reason="yosys unavailable")
-def test_finite_sram_adapter_yosys_import_process_check() -> None:
+def test_finite_sram_adapter_yosys_retains_two_packet_srams(tmp_path: Path) -> None:
     yosys = str(_tool("yosys"))
+    netlist = tmp_path / "stats_once_exact_sram_packet_adapter.json"
     subprocess.run(
         [
             yosys,
@@ -82,7 +84,8 @@ def test_finite_sram_adapter_yosys_import_process_check() -> None:
             + " ".join(str(path) for path in RTL_SOURCES)
             + "; hierarchy -check -top "
             + "local_reducer_aggregate_stats_once_exact_sram_packet_adapter; "
-            + "proc; check",
+            + "proc; memory_dff; memory_collect; check; write_json "
+            + str(netlist),
         ],
         check=True,
         cwd=REPO_ROOT,
@@ -90,3 +93,28 @@ def test_finite_sram_adapter_yosys_import_process_check() -> None:
         text=True,
         timeout=60,
     )
+    design = json.loads(netlist.read_text())
+    adapter = design["modules"][
+        "local_reducer_aggregate_stats_once_exact_sram_packet_adapter"
+    ]
+    packet_sram_instances = [
+        cell
+        for cell in adapter["cells"].values()
+        if "local_reducer_aggregate_stats_once_exact_packet_sram" in cell["type"]
+    ]
+    assert len(packet_sram_instances) == 2
+
+    packet_sram_modules = [
+        module
+        for name, module in design["modules"].items()
+        if "local_reducer_aggregate_stats_once_exact_packet_sram" in name
+    ]
+    assert len(packet_sram_modules) == 1
+    memory_cells = [
+        cell
+        for cell in packet_sram_modules[0]["cells"].values()
+        if cell["type"] == "$mem_v2"
+    ]
+    assert len(memory_cells) == 1
+    assert memory_cells[0]["parameters"]["SIZE"] == "00000000000000000000000000010000"
+    assert memory_cells[0]["parameters"]["WIDTH"] == "00000000000000000000000100000000"

@@ -393,6 +393,12 @@ module local_reducer_aggregate_stats_once_exact_sram_packet_adapter_tb;
       @(posedge clk);
     @(negedge clk);
     source_ctx_valid = 1'b0;
+    // Context is a handshake, not a live sideband.  Change every route field
+    // immediately afterward to prove the adapter retained the accepted values.
+    source_source = 4'd9;
+    source_destination = 4'd14;
+    source_vc = 2'd1;
+    source_epoch = 3'd2;
 
     for (i = 0; i < GROUP_BEATS; i = i + 1) begin
       @(negedge clk);

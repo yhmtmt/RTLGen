@@ -1,5 +1,56 @@
 `timescale 1ns/1ps
 
+// One-read/one-write 16x256 packet SRAM with a registered, backpressured read
+// response.  The array has no reset and is kept in a dedicated module so
+// synthesis retains a memory boundary instead of expanding packet payloads
+// into resettable state registers.
+module local_reducer_aggregate_stats_once_exact_packet_sram #(
+  parameter integer DATA_W = 256,
+  parameter integer ADDR_W = 4
+) (
+  input wire clk,
+  input wire rst_n,
+  input wire write_valid,
+  input wire [ADDR_W-1:0] write_addr,
+  input wire [DATA_W-1:0] write_data,
+  input wire read_req_valid,
+  output wire read_req_ready,
+  input wire [ADDR_W-1:0] read_req_addr,
+  output wire read_rsp_valid,
+  input wire read_rsp_ready,
+  output wire [ADDR_W-1:0] read_rsp_addr,
+  output wire [DATA_W-1:0] read_rsp_data
+);
+  reg [DATA_W-1:0] mem [0:(1 << ADDR_W)-1];
+  reg read_rsp_valid_q;
+  reg [ADDR_W-1:0] read_rsp_addr_q;
+  reg [DATA_W-1:0] read_rsp_data_q;
+
+  assign read_req_ready = !read_rsp_valid_q || read_rsp_ready;
+  assign read_rsp_valid = read_rsp_valid_q;
+  assign read_rsp_addr = read_rsp_addr_q;
+  assign read_rsp_data = read_rsp_data_q;
+
+  always @(posedge clk) begin
+    if (write_valid)
+      mem[write_addr] <= write_data;
+    if (read_req_valid && read_req_ready) begin
+      read_rsp_addr_q <= read_req_addr;
+      read_rsp_data_q <= mem[read_req_addr];
+    end
+  end
+
+  always @(posedge clk or negedge rst_n) begin
+    if (!rst_n) begin
+      read_rsp_valid_q <= 1'b0;
+    end else if (read_req_valid && read_req_ready) begin
+      read_rsp_valid_q <= 1'b1;
+    end else if (read_rsp_valid_q && read_rsp_ready) begin
+      read_rsp_valid_q <= 1'b0;
+    end
+  end
+endmodule
+
 // Finite SRAM adapter for one exact stats-once group.  The packet framer and
 // deframer retain the wire contract; this block owns only two source and two
 // destination packet slots and the endpoint memory handshakes around them.
@@ -112,6 +163,10 @@ module local_reducer_aggregate_stats_once_exact_sram_packet_adapter #(
   wire rx_deframer_error;
 
   reg tx_group_active_q;
+  reg [3:0] tx_group_source_q;
+  reg [3:0] tx_group_destination_q;
+  reg [VC_W-1:0] tx_group_vc_q;
+  reg [2:0] tx_group_epoch_q;
   reg tx_fill_active_q;
   reg tx_fill_slot_q;
   reg [3:0] tx_fill_word_q;
@@ -125,13 +180,9 @@ module local_reducer_aggregate_stats_once_exact_sram_packet_adapter #(
   reg tx_wait_fill_q;
   reg tx_wait_slot_q;
   reg [1:0] src_slot_state [0:SLOT_COUNT-1];
-  reg [DATA_W-1:0] src_mem [0:SLOT_COUNT-1][0:SLOT_WORDS-1];
   reg [FLIT_COUNT_W-1:0] src_expected_count [0:SLOT_COUNT-1];
   reg [FLIT_COUNT_W-1:0] src_req_count [0:SLOT_COUNT-1];
   reg [FLIT_COUNT_W-1:0] src_rsp_count [0:SLOT_COUNT-1];
-  reg src_rsp_valid_q;
-  reg src_rsp_slot_q;
-  reg [DATA_W-1:0] src_rsp_data_q;
   reg source_error_q;
 
   reg rx_group_active_q;
@@ -155,7 +206,6 @@ module local_reducer_aggregate_stats_once_exact_sram_packet_adapter #(
   reg [VC_W-1:0] dst_slot_vc [0:SLOT_COUNT-1];
   reg [TAG_W-1:0] dst_slot_tag [0:SLOT_COUNT-1];
   reg [FLIT_COUNT_W-1:0] dst_slot_count [0:SLOT_COUNT-1];
-  reg [DATA_W-1:0] dst_mem [0:SLOT_COUNT-1][0:SLOT_WORDS-1];
   reg [31:0] rx_write_cycle_q;
   reg rx_descriptor_installed_q;
   reg destination_error_q;
@@ -163,6 +213,15 @@ module local_reducer_aggregate_stats_once_exact_sram_packet_adapter #(
   reg replay_slot_q;
   reg [3:0] replay_word_q;
   reg [4:0] replay_next_packet_q;
+
+  wire src_mem_read_req_ready;
+  wire src_mem_read_rsp_valid;
+  wire [3:0] src_mem_read_rsp_addr;
+  wire [DATA_W-1:0] src_mem_read_rsp_data;
+  wire dst_mem_read_req_ready;
+  wire dst_mem_read_rsp_valid;
+  wire [3:0] dst_mem_read_rsp_addr;
+  wire [DATA_W-1:0] dst_mem_read_rsp_data;
 
   wire [1:0] src_occupied_count =
     (src_slot_state[0] != SLOT_FREE) + (src_slot_state[1] != SLOT_FREE);
@@ -183,7 +242,7 @@ module local_reducer_aggregate_stats_once_exact_sram_packet_adapter #(
 
   local_reducer_aggregate_stats_once_exact_packet_tx_framer tx_framer (
     .clk(clk), .rst_n(rst_n),
-    .group_ctx_valid(group_ctx_valid && (TX_ENABLE != 0)),
+    .group_ctx_valid(tx_ctx_fire),
     .group_ctx_ready(tx_framer_ctx_ready),
     .group_command_id(group_command_id), .group_head_base(group_head_base),
     .group_source(group_source), .group_destination(group_destination),
@@ -203,20 +262,21 @@ module local_reducer_aggregate_stats_once_exact_sram_packet_adapter #(
 
   local_reducer_aggregate_stats_once_exact_packet_rx_deframer rx_deframer (
     .clk(clk), .rst_n(rst_n),
-    .group_ctx_valid(group_ctx_valid && (RX_ENABLE != 0)),
+    .group_ctx_valid(rx_ctx_fire),
     .group_ctx_ready(rx_deframer_ctx_ready),
     .group_command_id(group_command_id), .group_head_base(group_head_base),
     .group_source(group_source), .group_destination(group_destination),
     .group_vc(group_vc), .group_epoch(group_epoch),
-    .mesh_flit_valid(replay_active_q && (RX_ENABLE != 0)),
+    .mesh_flit_valid(dst_mem_read_rsp_valid && (RX_ENABLE != 0)),
     .mesh_flit_ready(rx_deframer_flit_ready),
-    .mesh_flit_destination(dst_slot_destination[replay_slot_q]),
-    .mesh_flit_source(dst_slot_source[replay_slot_q]),
-    .mesh_flit_tag(dst_slot_tag[replay_slot_q]),
-    .mesh_flit_fragment(replay_word_q[FRAGMENT_W-1:0]),
-    .mesh_flit_last(replay_word_q + 1'b1 == dst_slot_count[replay_slot_q]),
-    .mesh_flit_vc(dst_slot_vc[replay_slot_q]),
-    .mesh_flit_data(dst_mem[replay_slot_q][replay_word_q[WORD_INDEX_W-1:0]]),
+    .mesh_flit_destination(dst_slot_destination[dst_mem_read_rsp_addr[3]]),
+    .mesh_flit_source(dst_slot_source[dst_mem_read_rsp_addr[3]]),
+    .mesh_flit_tag(dst_slot_tag[dst_mem_read_rsp_addr[3]]),
+    .mesh_flit_fragment(dst_mem_read_rsp_addr[FRAGMENT_W-1:0]),
+    .mesh_flit_last(dst_mem_read_rsp_addr[WORD_INDEX_W-1:0] + 1'b1 ==
+                    dst_slot_count[dst_mem_read_rsp_addr[3]]),
+    .mesh_flit_vc(dst_slot_vc[dst_mem_read_rsp_addr[3]]),
+    .mesh_flit_data(dst_mem_read_rsp_data),
     .codec_flit_valid(codec_out_valid), .codec_flit_ready(codec_out_ready),
     .codec_flit_data(codec_out_data),
     .codec_flit_group_last(codec_out_group_last),
@@ -333,9 +393,9 @@ module local_reducer_aggregate_stats_once_exact_sram_packet_adapter #(
   assign mesh_in_data = ep_tx_flit_data;
   assign mesh_out_ready = ep_rx_flit_ready;
 
-  assign ep_tx_mem_req_ready = (TX_ENABLE != 0) && !src_rsp_valid_q;
-  assign ep_tx_mem_rsp_valid = src_rsp_valid_q && (TX_ENABLE != 0);
-  assign ep_tx_mem_rsp_data = src_rsp_data_q;
+  assign ep_tx_mem_req_ready = (TX_ENABLE != 0) && src_mem_read_req_ready;
+  assign ep_tx_mem_rsp_valid = src_mem_read_rsp_valid && (TX_ENABLE != 0);
+  assign ep_tx_mem_rsp_data = src_mem_read_rsp_data;
   wire ep_tx_mem_req_fire = ep_tx_mem_req_valid && ep_tx_mem_req_ready;
   wire ep_tx_mem_rsp_fire = ep_tx_mem_rsp_valid && ep_tx_mem_rsp_ready;
 
@@ -399,6 +459,50 @@ module local_reducer_aggregate_stats_once_exact_sram_packet_adapter #(
   integer replay_found_i;
   reg replay_found_r;
   reg replay_found_slot_r;
+  wire replay_issue_available = replay_active_q &&
+    (replay_word_q < dst_slot_count[replay_slot_q]);
+  wire [3:0] src_fill_mem_addr =
+    {tx_fill_slot_q, tx_fill_word_q[WORD_INDEX_W-1:0]};
+  wire [3:0] src_read_mem_addr =
+    {tx_addr_slot_i[0], tx_addr_word_i[WORD_INDEX_W-1:0]};
+  wire [3:0] dst_write_mem_addr =
+    {rx_addr_slot_i[0], rx_addr_word_i[WORD_INDEX_W-1:0]};
+  wire [3:0] dst_read_mem_addr =
+    {replay_slot_q, replay_word_q[WORD_INDEX_W-1:0]};
+  wire dst_mem_read_req_valid = replay_issue_available && (RX_ENABLE != 0);
+  wire dst_mem_read_req_fire = dst_mem_read_req_valid &&
+    dst_mem_read_req_ready;
+  wire dst_mem_read_rsp_fire = dst_mem_read_rsp_valid &&
+    rx_deframer_flit_ready;
+
+  local_reducer_aggregate_stats_once_exact_packet_sram #(
+    .DATA_W(DATA_W), .ADDR_W(4)
+  ) source_packet_sram (
+    .clk(clk), .rst_n(rst_n),
+    .write_valid(tx_framer_flit_valid && tx_framer_flit_ready),
+    .write_addr(src_fill_mem_addr), .write_data(tx_framer_flit_data),
+    .read_req_valid(ep_tx_mem_req_valid && (TX_ENABLE != 0)),
+    .read_req_ready(src_mem_read_req_ready),
+    .read_req_addr(src_read_mem_addr),
+    .read_rsp_valid(src_mem_read_rsp_valid),
+    .read_rsp_ready(ep_tx_mem_rsp_ready && (TX_ENABLE != 0)),
+    .read_rsp_addr(src_mem_read_rsp_addr),
+    .read_rsp_data(src_mem_read_rsp_data)
+  );
+
+  local_reducer_aggregate_stats_once_exact_packet_sram #(
+    .DATA_W(DATA_W), .ADDR_W(4)
+  ) destination_packet_sram (
+    .clk(clk), .rst_n(rst_n), .write_valid(ep_rx_mem_write_fire),
+    .write_addr(dst_write_mem_addr), .write_data(ep_rx_mem_write_data),
+    .read_req_valid(dst_mem_read_req_valid),
+    .read_req_ready(dst_mem_read_req_ready),
+    .read_req_addr(dst_read_mem_addr),
+    .read_rsp_valid(dst_mem_read_rsp_valid),
+    .read_rsp_ready(rx_deframer_flit_ready),
+    .read_rsp_addr(dst_mem_read_rsp_addr),
+    .read_rsp_data(dst_mem_read_rsp_data)
+  );
   always @* begin
     replay_found_r = 1'b0;
     replay_found_slot_r = 1'b0;
@@ -415,6 +519,10 @@ module local_reducer_aggregate_stats_once_exact_sram_packet_adapter #(
   always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
       tx_group_active_q <= 1'b0;
+      tx_group_source_q <= 0;
+      tx_group_destination_q <= 0;
+      tx_group_vc_q <= 0;
+      tx_group_epoch_q <= 0;
       tx_fill_active_q <= 1'b0;
       tx_fill_slot_q <= 1'b0;
       tx_fill_word_q <= 4'd0;
@@ -427,9 +535,6 @@ module local_reducer_aggregate_stats_once_exact_sram_packet_adapter #(
       tx_packet_index_q <= 0;
       tx_wait_fill_q <= 1'b0;
       tx_wait_slot_q <= 1'b0;
-      src_rsp_valid_q <= 1'b0;
-      src_rsp_slot_q <= 1'b0;
-      src_rsp_data_q <= 0;
       source_error_q <= 1'b0;
       rx_group_active_q <= 1'b0;
       rx_group_source_q <= 0;
@@ -455,8 +560,6 @@ module local_reducer_aggregate_stats_once_exact_sram_packet_adapter #(
       tx_descriptor_count <= 0;
       rx_completion_count <= 0;
       replay_packet_count <= 0;
-      max_source_occupancy <= 0;
-      max_destination_occupancy <= 0;
       for (reset_i = 0; reset_i < SLOT_COUNT; reset_i = reset_i + 1) begin
         src_slot_state[reset_i] <= SLOT_FREE;
         src_expected_count[reset_i] <= 0;
@@ -476,6 +579,10 @@ module local_reducer_aggregate_stats_once_exact_sram_packet_adapter #(
 
       if (tx_ctx_fire) begin
         tx_group_active_q <= 1'b1;
+        tx_group_source_q <= group_source;
+        tx_group_destination_q <= group_destination;
+        tx_group_vc_q <= group_vc;
+        tx_group_epoch_q <= group_epoch;
         tx_fill_active_q <= 1'b1;
         tx_fill_slot_q <= 1'b0;
         tx_fill_word_q <= 0;
@@ -489,13 +596,11 @@ module local_reducer_aggregate_stats_once_exact_sram_packet_adapter #(
 
       if (tx_framer_flit_valid && tx_framer_flit_ready) begin
         if (tx_framer_fragment != tx_fill_word_q[FRAGMENT_W-1:0] ||
-            tx_framer_source != group_source ||
-            tx_framer_destination != group_destination ||
-            tx_framer_vc != group_vc ||
-            tx_framer_tag != {group_epoch, tx_packet_index_q})
+            tx_framer_source != tx_group_source_q ||
+            tx_framer_destination != tx_group_destination_q ||
+            tx_framer_vc != tx_group_vc_q ||
+            tx_framer_tag != {tx_group_epoch_q, tx_packet_index_q})
           source_error_q <= 1'b1;
-        src_mem[tx_fill_slot_q][tx_fill_word_q[WORD_INDEX_W-1:0]] <=
-          tx_framer_flit_data;
         if (tx_framer_last) begin
           if ((tx_packet_index_q < 5'd20 && tx_fill_word_q != 4'd7) ||
               (tx_packet_index_q == 5'd20 && tx_fill_word_q != 4'd6))
@@ -536,30 +641,26 @@ module local_reducer_aggregate_stats_once_exact_sram_packet_adapter #(
       end
 
       if (ep_tx_mem_req_fire) begin
-        src_rsp_valid_q <= 1'b1;
         if (!tx_addr_valid_r || tx_addr_word_i >= SLOT_WORDS ||
             src_slot_state[tx_addr_slot_i] != SLOT_IN_FLIGHT ||
             src_req_count[tx_addr_slot_i] >= src_expected_count[tx_addr_slot_i]) begin
           source_error_q <= 1'b1;
-          src_rsp_slot_q <= tx_addr_slot_i[0:0];
-          src_rsp_data_q <= 0;
         end else begin
-          src_rsp_slot_q <= tx_addr_slot_i[0:0];
-          src_rsp_data_q <= src_mem[tx_addr_slot_i][tx_addr_word_i];
           src_req_count[tx_addr_slot_i] <=
             src_req_count[tx_addr_slot_i] + 1'b1;
         end
       end
       if (ep_tx_mem_rsp_fire) begin
-        src_rsp_valid_q <= 1'b0;
-        if (src_slot_state[src_rsp_slot_q] != SLOT_IN_FLIGHT ||
-            src_rsp_count[src_rsp_slot_q] >= src_expected_count[src_rsp_slot_q]) begin
+        if (src_slot_state[src_mem_read_rsp_addr[3]] != SLOT_IN_FLIGHT ||
+            src_rsp_count[src_mem_read_rsp_addr[3]] >=
+            src_expected_count[src_mem_read_rsp_addr[3]]) begin
           source_error_q <= 1'b1;
         end else begin
-          src_rsp_count[src_rsp_slot_q] <= src_rsp_count[src_rsp_slot_q] + 1'b1;
-          if (src_rsp_count[src_rsp_slot_q] + 1'b1 ==
-              src_expected_count[src_rsp_slot_q])
-            src_slot_state[src_rsp_slot_q] <= SLOT_FREE;
+          src_rsp_count[src_mem_read_rsp_addr[3]] <=
+            src_rsp_count[src_mem_read_rsp_addr[3]] + 1'b1;
+          if (src_rsp_count[src_mem_read_rsp_addr[3]] + 1'b1 ==
+              src_expected_count[src_mem_read_rsp_addr[3]])
+            src_slot_state[src_mem_read_rsp_addr[3]] <= SLOT_FREE;
         end
       end
 
@@ -600,7 +701,6 @@ module local_reducer_aggregate_stats_once_exact_sram_packet_adapter #(
             rx_addr_word_i >= dst_slot_count[rx_active_slot_q]) begin
           destination_error_q <= 1'b1;
         end else begin
-          dst_mem[rx_active_slot_q][rx_addr_word_i] <= ep_rx_mem_write_data;
         end
       end
 
@@ -638,14 +738,20 @@ module local_reducer_aggregate_stats_once_exact_sram_packet_adapter #(
         replay_word_q <= 0;
         dst_slot_state[replay_found_slot_r] <= DST_REPLAY;
       end
-      if (replay_active_q && rx_deframer_flit_ready) begin
-        if (replay_word_q + 1'b1 == dst_slot_count[replay_slot_q]) begin
+
+      if (dst_mem_read_req_fire)
+        replay_word_q <= replay_word_q + 1'b1;
+
+      if (dst_mem_read_rsp_fire) begin
+        if (dst_mem_read_rsp_addr[WORD_INDEX_W-1:0] + 1'b1 ==
+            dst_slot_count[dst_mem_read_rsp_addr[3]]) begin
           replay_active_q <= 1'b0;
-          dst_slot_state[replay_slot_q] <= 3'd0;
+          dst_slot_state[dst_mem_read_rsp_addr[3]] <= 3'd0;
           replay_next_packet_q <= replay_next_packet_q + 1'b1;
           replay_packet_count <= replay_packet_count + 1'b1;
-        end else begin
-          replay_word_q <= replay_word_q + 1'b1;
+        end else if (!replay_active_q ||
+                     dst_mem_read_rsp_addr[3] != replay_slot_q) begin
+          destination_error_q <= 1'b1;
         end
       end
     end

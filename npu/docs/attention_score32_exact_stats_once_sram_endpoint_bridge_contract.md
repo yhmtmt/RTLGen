@@ -59,3 +59,9 @@ counts, completion order, stalls, and maximum slot occupancy.
 SRAM is initially an inferred synchronous word array for control and schedule
 closure. Its bitcell area and energy must later be substituted from a cited
 macro model; the inferred array is not itself a physical SRAM PPA claim.
+
+The minimum adapter therefore retains two distinct 16x256 memory boundaries:
+one source packet store and one destination packet store. Synthesis validation
+must prove that each boundary remains a memory cell after process lowering; a
+register-and-multiplexer expansion is not an acceptable SRAM embodiment or a
+valid basis for packet-storage PPA.
