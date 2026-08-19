@@ -1,5 +1,305 @@
 `timescale 1ns/1ps
 
+// One synchronous single-port physical bank for the shared-root storage
+// fabric.  A write wins arbitration over a read in the same cycle.  The
+// response register is held until the consumer accepts it.
+module local_reducer_aggregate_stats_once_exact_shared_root_bank_memory #(
+  parameter integer DATA_W = 256,
+  parameter integer ADDR_W = 6,
+  parameter integer DEPTH = 64
+) (
+  input wire clk,
+  input wire rst_n,
+  input wire write_valid,
+  input wire [ADDR_W-1:0] write_addr,
+  input wire [DATA_W-1:0] write_data,
+  input wire read_req_valid,
+  output wire read_req_ready,
+  input wire [ADDR_W-1:0] read_req_addr,
+  output wire read_rsp_valid,
+  input wire read_rsp_ready,
+  output wire [ADDR_W-1:0] read_rsp_addr,
+  output wire [DATA_W-1:0] read_rsp_data
+);
+  reg [DATA_W-1:0] mem [0:DEPTH-1];
+  reg read_rsp_valid_q;
+  reg [ADDR_W-1:0] read_rsp_addr_q;
+  reg [DATA_W-1:0] read_rsp_data_q;
+
+  // The fabric never presents a read while write_valid is asserted.  Keep
+  // the priority here as well so the bank remains safe as a standalone unit.
+  assign read_req_ready = !write_valid &&
+    (!read_rsp_valid_q || read_rsp_ready);
+  assign read_rsp_valid = read_rsp_valid_q;
+  assign read_rsp_addr = read_rsp_addr_q;
+  assign read_rsp_data = read_rsp_data_q;
+
+  always @(posedge clk) begin
+    if (write_valid)
+      mem[write_addr] <= write_data;
+    if (read_req_valid && read_req_ready) begin
+      read_rsp_addr_q <= read_req_addr;
+      read_rsp_data_q <= mem[read_req_addr];
+    end
+  end
+
+  always @(posedge clk or negedge rst_n) begin
+    if (!rst_n) begin
+      read_rsp_valid_q <= 1'b0;
+    end else if (read_req_valid && read_req_ready) begin
+      read_rsp_valid_q <= 1'b1;
+    end else if (read_rsp_valid_q && read_rsp_ready) begin
+      read_rsp_valid_q <= 1'b0;
+    end
+  end
+
+`ifndef SYNTHESIS
+  initial begin
+    if (DEPTH != (1 << ADDR_W)) begin
+      $error("shared-root bank depth must match its address width");
+      $finish(1);
+    end
+  end
+`endif
+endmodule
+
+// Shared logical packet storage.  Source s maps to physical bank s modulo
+// PHYSICAL_BANKS; its row is (s / PHYSICAL_BANKS) * 16 + slot * 8 + word.
+// Each bank has one write/read port, so writes have priority and reads are
+// selected fairly among the sources mapped to that bank.
+module local_reducer_aggregate_stats_once_exact_shared_root_storage_fabric #(
+  parameter integer DATA_W = 256,
+  parameter integer SOURCE_COUNT = 15,
+  parameter integer PHYSICAL_BANKS = 15,
+  parameter integer ADDR_W = 4
+) (
+  input wire clk,
+  input wire rst_n,
+  input wire [SOURCE_COUNT-1:0] write_valid,
+  output wire [SOURCE_COUNT-1:0] write_ready,
+  input wire [SOURCE_COUNT*ADDR_W-1:0] write_addr,
+  input wire [SOURCE_COUNT*DATA_W-1:0] write_data,
+  input wire [SOURCE_COUNT-1:0] read_req_valid,
+  output wire [SOURCE_COUNT-1:0] read_req_ready,
+  input wire [SOURCE_COUNT*ADDR_W-1:0] read_req_addr,
+  output wire [SOURCE_COUNT-1:0] read_rsp_valid,
+  input wire [SOURCE_COUNT-1:0] read_rsp_ready,
+  output wire [SOURCE_COUNT*ADDR_W-1:0] read_rsp_addr,
+  output wire [SOURCE_COUNT*DATA_W-1:0] read_rsp_data,
+  output wire protocol_error
+);
+  localparam integer SLOT_WORDS = 8;
+  localparam integer BANK_SOURCE_COUNT =
+    (SOURCE_COUNT + PHYSICAL_BANKS - 1) / PHYSICAL_BANKS;
+  localparam integer BANK_DEPTH = BANK_SOURCE_COUNT * 16;
+  localparam integer BANK_ADDR_W = (BANK_DEPTH <= 1) ? 1 : $clog2(BANK_DEPTH);
+  localparam integer BANK_PTR_W =
+    (BANK_SOURCE_COUNT <= 1) ? 1 : $clog2(BANK_SOURCE_COUNT);
+  localparam integer SOURCE_W =
+    (SOURCE_COUNT <= 1) ? 1 : $clog2(SOURCE_COUNT);
+
+  wire [PHYSICAL_BANKS-1:0] bank_write_valid_w;
+  wire [PHYSICAL_BANKS-1:0] bank_read_req_valid_w;
+  wire [PHYSICAL_BANKS-1:0] bank_read_req_ready_w;
+  wire [PHYSICAL_BANKS-1:0] bank_read_rsp_valid_w;
+  wire [PHYSICAL_BANKS-1:0] bank_read_rsp_ready_w;
+  wire [PHYSICAL_BANKS*BANK_ADDR_W-1:0] bank_write_addr_w;
+  wire [PHYSICAL_BANKS*BANK_ADDR_W-1:0] bank_read_req_addr_w;
+  wire [PHYSICAL_BANKS*BANK_ADDR_W-1:0] bank_read_rsp_addr_w;
+  wire [PHYSICAL_BANKS*DATA_W-1:0] bank_write_data_w;
+  wire [PHYSICAL_BANKS*DATA_W-1:0] bank_read_rsp_data_w;
+  wire [PHYSICAL_BANKS-1:0] bank_response_route_valid_w;
+  wire [PHYSICAL_BANKS*SOURCE_W-1:0] bank_response_source_w;
+  wire [PHYSICAL_BANKS*ADDR_W-1:0] bank_response_logical_addr_w;
+  reg [SOURCE_COUNT-1:0] source_rsp_valid_q;
+  reg [SOURCE_COUNT*ADDR_W-1:0] source_rsp_addr_q;
+  reg [SOURCE_COUNT*DATA_W-1:0] source_rsp_data_q;
+  wire [SOURCE_COUNT-1:0] source_rsp_slot_ready_w =
+    ~source_rsp_valid_q | read_rsp_ready;
+
+  assign read_rsp_valid = source_rsp_valid_q;
+  assign read_rsp_addr = source_rsp_addr_q;
+  assign read_rsp_data = source_rsp_data_q;
+
+  genvar bank_g;
+  generate
+    for (bank_g = 0; bank_g < PHYSICAL_BANKS; bank_g = bank_g + 1) begin : gen_bank
+      localparam integer BANK_ID = bank_g;
+      integer source_i;
+      integer offset_i;
+      integer candidate_source_i;
+      integer selected_source_i;
+      integer selected_write_i;
+      integer selected_offset_i;
+      integer response_source_i;
+      reg selected_write_r;
+      reg selected_read_r;
+      reg [BANK_PTR_W-1:0] rr_ptr_q;
+      reg [BANK_PTR_W-1:0] rr_ptr_next;
+      reg [BANK_ADDR_W-1:0] write_row_r;
+      reg [BANK_ADDR_W-1:0] read_row_r;
+      reg [DATA_W-1:0] write_data_r;
+      reg [ADDR_W-1:0] read_logical_addr_r;
+      reg [ADDR_W-1:0] write_logical_addr_r;
+      reg [ADDR_W-1:0] response_logical_addr_r;
+      reg response_source_valid_r;
+
+      always @* begin
+        response_logical_addr_r = bank_read_rsp_addr_w[
+          BANK_ID*BANK_ADDR_W +: BANK_ADDR_W];
+        response_source_valid_r = 1'b0;
+        response_source_i = 0;
+        for (source_i = 0; source_i < SOURCE_COUNT; source_i = source_i + 1) begin
+          if ((source_i % PHYSICAL_BANKS) == BANK_ID &&
+              (bank_read_rsp_addr_w[BANK_ID*BANK_ADDR_W +: BANK_ADDR_W] / 16) ==
+              (source_i / PHYSICAL_BANKS)) begin
+            response_source_valid_r = 1'b1;
+            response_source_i = source_i;
+            response_logical_addr_r = bank_read_rsp_addr_w[
+              BANK_ID*BANK_ADDR_W +: BANK_ADDR_W] % 16;
+          end
+        end
+
+        selected_write_r = 1'b0;
+        selected_write_i = 0;
+        write_row_r = {BANK_ADDR_W{1'b0}};
+        write_data_r = {DATA_W{1'b0}};
+        write_logical_addr_r = {ADDR_W{1'b0}};
+        for (source_i = 0; source_i < SOURCE_COUNT; source_i = source_i + 1) begin
+          if (!selected_write_r && write_valid[source_i] &&
+              ((source_i % PHYSICAL_BANKS) == BANK_ID)) begin
+            selected_write_r = 1'b1;
+            selected_write_i = source_i;
+            write_logical_addr_r = write_addr[source_i*ADDR_W +: ADDR_W];
+            write_row_r = (source_i / PHYSICAL_BANKS) * 16 +
+              write_addr[source_i*ADDR_W +: ADDR_W];
+            write_data_r = write_data[source_i*DATA_W +: DATA_W];
+          end
+        end
+
+        selected_read_r = 1'b0;
+        selected_source_i = 0;
+        selected_offset_i = 0;
+        read_row_r = {BANK_ADDR_W{1'b0}};
+        read_logical_addr_r = {ADDR_W{1'b0}};
+        for (offset_i = 0; offset_i < BANK_SOURCE_COUNT; offset_i = offset_i + 1) begin
+          candidate_source_i = BANK_ID +
+            ((rr_ptr_q + offset_i) % BANK_SOURCE_COUNT) * PHYSICAL_BANKS;
+          if (!selected_read_r && candidate_source_i < SOURCE_COUNT &&
+              read_req_valid[candidate_source_i] &&
+              !source_rsp_valid_q[candidate_source_i] &&
+              !(bank_read_rsp_valid_w[BANK_ID] &&
+                response_source_valid_r &&
+                response_source_i == candidate_source_i)) begin
+            selected_read_r = 1'b1;
+            selected_source_i = candidate_source_i;
+            selected_offset_i = offset_i;
+            read_logical_addr_r =
+              read_req_addr[candidate_source_i*ADDR_W +: ADDR_W];
+            read_row_r = (candidate_source_i / PHYSICAL_BANKS) * 16 +
+              read_req_addr[candidate_source_i*ADDR_W +: ADDR_W];
+          end
+        end
+
+        rr_ptr_next = rr_ptr_q;
+        if (selected_read_r && bank_read_req_ready_w[BANK_ID]) begin
+          if (selected_offset_i == BANK_SOURCE_COUNT - 1)
+            rr_ptr_next = {BANK_PTR_W{1'b0}};
+          else
+            rr_ptr_next = rr_ptr_q + selected_offset_i + 1'b1;
+        end
+
+      end
+
+      assign bank_write_valid_w[BANK_ID] = selected_write_r;
+      assign bank_write_addr_w[BANK_ID*BANK_ADDR_W +: BANK_ADDR_W] = write_row_r;
+      assign bank_write_data_w[BANK_ID*DATA_W +: DATA_W] = write_data_r;
+      assign bank_read_req_valid_w[BANK_ID] = selected_read_r &&
+        !selected_write_r;
+      assign bank_read_req_addr_w[BANK_ID*BANK_ADDR_W +: BANK_ADDR_W] = read_row_r;
+      assign bank_read_rsp_ready_w[BANK_ID] =
+        bank_read_rsp_valid_w[BANK_ID] && response_source_valid_r &&
+        source_rsp_slot_ready_w[response_source_i];
+      assign bank_response_route_valid_w[BANK_ID] = response_source_valid_r;
+      assign bank_response_source_w[BANK_ID*SOURCE_W +: SOURCE_W] =
+        response_source_i[SOURCE_W-1:0];
+      assign bank_response_logical_addr_w[BANK_ID*ADDR_W +: ADDR_W] =
+        response_logical_addr_r;
+
+      genvar source_route_g;
+      for (source_route_g = 0; source_route_g < SOURCE_COUNT;
+           source_route_g = source_route_g + 1) begin : gen_source_route
+        if ((source_route_g % PHYSICAL_BANKS) == BANK_ID) begin : gen_mapped_source
+          assign write_ready[source_route_g] = !selected_write_r ||
+            (selected_write_i == source_route_g);
+          assign read_req_ready[source_route_g] = bank_read_req_ready_w[BANK_ID] &&
+            !selected_write_r && selected_read_r &&
+            (selected_source_i == source_route_g);
+        end
+      end
+
+      local_reducer_aggregate_stats_once_exact_shared_root_bank_memory #(
+        .DATA_W(DATA_W), .ADDR_W(BANK_ADDR_W), .DEPTH(BANK_DEPTH)
+      ) bank_memory (
+        .clk(clk), .rst_n(rst_n),
+        .write_valid(bank_write_valid_w[BANK_ID]),
+        .write_addr(bank_write_addr_w[BANK_ID*BANK_ADDR_W +: BANK_ADDR_W]),
+        .write_data(bank_write_data_w[BANK_ID*DATA_W +: DATA_W]),
+        .read_req_valid(bank_read_req_valid_w[BANK_ID]),
+        .read_req_ready(bank_read_req_ready_w[BANK_ID]),
+        .read_req_addr(bank_read_req_addr_w[BANK_ID*BANK_ADDR_W +: BANK_ADDR_W]),
+        .read_rsp_valid(bank_read_rsp_valid_w[BANK_ID]),
+        .read_rsp_ready(bank_read_rsp_ready_w[BANK_ID]),
+        .read_rsp_addr(bank_read_rsp_addr_w[BANK_ID*BANK_ADDR_W +: BANK_ADDR_W]),
+        .read_rsp_data(bank_read_rsp_data_w[BANK_ID*DATA_W +: DATA_W])
+      );
+
+      always @(posedge clk or negedge rst_n) begin
+        if (!rst_n)
+          rr_ptr_q <= {BANK_PTR_W{1'b0}};
+        else
+          rr_ptr_q <= rr_ptr_next;
+      end
+    end
+  endgenerate
+
+  integer response_source_i;
+  integer response_bank_i;
+  always @(posedge clk or negedge rst_n) begin
+    if (!rst_n) begin
+      source_rsp_valid_q <= {SOURCE_COUNT{1'b0}};
+      source_rsp_addr_q <= {SOURCE_COUNT*ADDR_W{1'b0}};
+      source_rsp_data_q <= {SOURCE_COUNT*DATA_W{1'b0}};
+    end else begin
+      for (response_source_i = 0;
+           response_source_i < SOURCE_COUNT;
+           response_source_i = response_source_i + 1) begin
+        if (source_rsp_valid_q[response_source_i] &&
+            read_rsp_ready[response_source_i])
+          source_rsp_valid_q[response_source_i] <= 1'b0;
+        for (response_bank_i = 0;
+             response_bank_i < PHYSICAL_BANKS;
+             response_bank_i = response_bank_i + 1) begin
+          if (bank_read_rsp_valid_w[response_bank_i] &&
+              bank_read_rsp_ready_w[response_bank_i] &&
+              bank_response_route_valid_w[response_bank_i] &&
+              bank_response_source_w[
+                response_bank_i*SOURCE_W +: SOURCE_W] == response_source_i) begin
+            source_rsp_valid_q[response_source_i] <= 1'b1;
+            source_rsp_addr_q[response_source_i*ADDR_W +: ADDR_W] <=
+              bank_response_logical_addr_w[
+                response_bank_i*ADDR_W +: ADDR_W];
+            source_rsp_data_q[response_source_i*DATA_W +: DATA_W] <=
+              bank_read_rsp_data_w[response_bank_i*DATA_W +: DATA_W];
+          end
+        end
+      end
+    end
+  end
+
+  assign protocol_error = 1'b0;
+endmodule
+
 // Shared root receive adapter for the exact stats-once transport.
 //
 // The root owns one descriptor endpoint and demultiplexes its single memory
@@ -16,7 +316,8 @@ module local_reducer_aggregate_stats_once_exact_shared_root_rx_adapter #(
   parameter integer ADDR_W = 16,
   parameter integer FLIT_COUNT_W = 4,
   parameter integer SOURCE_COUNT = 15,
-  parameter integer ROOT_ENDPOINT_ID = 15
+  parameter integer ROOT_ENDPOINT_ID = 15,
+  parameter integer PHYSICAL_BANKS = 15
 ) (
   input wire clk,
   input wire rst_n,
@@ -128,6 +429,19 @@ module local_reducer_aggregate_stats_once_exact_shared_root_rx_adapter #(
   wire [SOURCE_COUNT-1:0] packet_sram_read_rsp_valid_w;
   wire [SOURCE_COUNT*4-1:0] packet_sram_read_rsp_addr_w;
   wire [SOURCE_COUNT-1:0] replay_response_fire_w;
+
+  wire [SOURCE_COUNT-1:0] storage_write_valid_w;
+  wire [SOURCE_COUNT-1:0] storage_write_ready_w;
+  wire [SOURCE_COUNT*4-1:0] storage_write_addr_w;
+  wire [SOURCE_COUNT*DATA_W-1:0] storage_write_data_w;
+  wire [SOURCE_COUNT-1:0] storage_read_req_valid_w;
+  wire [SOURCE_COUNT-1:0] storage_read_req_ready_w;
+  wire [SOURCE_COUNT*4-1:0] storage_read_req_addr_w;
+  wire [SOURCE_COUNT-1:0] storage_read_rsp_valid_w;
+  wire [SOURCE_COUNT-1:0] storage_read_rsp_ready_w;
+  wire [SOURCE_COUNT*4-1:0] storage_read_rsp_addr_w;
+  wire [SOURCE_COUNT*DATA_W-1:0] storage_read_rsp_data_w;
+  wire storage_protocol_error_w;
 
   wire [SOURCE_COUNT-1:0] deframer_ctx_ready_w;
   wire [SOURCE_COUNT-1:0] deframer_flit_valid_w;
@@ -253,6 +567,7 @@ module local_reducer_aggregate_stats_once_exact_shared_root_rx_adapter #(
   reg write_route_valid;
   reg [ENDPOINT_W-1:0] write_route_source;
   reg [3:0] write_route_addr;
+  wire write_route_state_ok;
   always @* begin
     write_route_valid = 1'b0;
     write_route_source = {ENDPOINT_W{1'b0}};
@@ -270,13 +585,67 @@ module local_reducer_aggregate_stats_once_exact_shared_root_rx_adapter #(
       end
     end
   end
-  // An invalid route is consumed so the endpoint can report it as a protocol
-  // error instead of deadlocking the mesh. Valid writes are never stalled by
-  // the inferred SRAMs themselves.
-  assign ep_rx_mem_write_ready = !ep_rx_mem_write_valid || write_route_valid;
+  // The endpoint writes one logical source lane at a time.  A valid active
+  // slot is backpressured by the physical bank fabric; malformed or stale
+  // writes are still consumed so the endpoint can report the protocol error.
+  assign ep_rx_mem_write_ready = !ep_rx_mem_write_valid ||
+    !write_route_valid || !write_route_state_ok ||
+    storage_write_ready_w[write_route_source];
 
-  wire write_route_state_ok = write_route_valid &&
+  assign write_route_state_ok = write_route_valid &&
     (slot_state[write_route_source][write_route_addr[3]] == SLOT_ACTIVE);
+
+  // Keep the original fifteen top-level packet SRAM cells for the default
+  // physical-bank configuration.  The shared fabric is selected for a
+  // genuinely shared-bank configuration such as PHYSICAL_BANKS=4.
+  genvar physical_bank_g;
+  generate
+    if (PHYSICAL_BANKS == SOURCE_COUNT) begin : gen_compat_source_banks
+      for (physical_bank_g = 0; physical_bank_g < SOURCE_COUNT;
+           physical_bank_g = physical_bank_g + 1) begin : gen_source_bank
+        localparam integer BANK_SOURCE_ID = physical_bank_g;
+        local_reducer_aggregate_stats_once_exact_packet_sram #(
+          .DATA_W(DATA_W), .ADDR_W(4)
+        ) destination_packet_sram (
+          .clk(clk), .rst_n(rst_n),
+          .write_valid(storage_write_valid_w[BANK_SOURCE_ID]),
+          .write_addr(storage_write_addr_w[BANK_SOURCE_ID*4 +: 4]),
+          .write_data(storage_write_data_w[BANK_SOURCE_ID*DATA_W +: DATA_W]),
+          .read_req_valid(storage_read_req_valid_w[BANK_SOURCE_ID]),
+          .read_req_ready(storage_read_req_ready_w[BANK_SOURCE_ID]),
+          .read_req_addr(storage_read_req_addr_w[BANK_SOURCE_ID*4 +: 4]),
+          .read_rsp_valid(storage_read_rsp_valid_w[BANK_SOURCE_ID]),
+          .read_rsp_ready(storage_read_rsp_ready_w[BANK_SOURCE_ID]),
+          .read_rsp_addr(storage_read_rsp_addr_w[BANK_SOURCE_ID*4 +: 4]),
+          .read_rsp_data(storage_read_rsp_data_w[BANK_SOURCE_ID*DATA_W +: DATA_W])
+        );
+        assign storage_write_ready_w[BANK_SOURCE_ID] = 1'b1;
+      end
+      assign storage_protocol_error_w = 1'b0;
+    end else begin : gen_shared_physical_banks
+      local_reducer_aggregate_stats_once_exact_shared_root_storage_fabric #(
+        .DATA_W(DATA_W), .SOURCE_COUNT(SOURCE_COUNT),
+        .PHYSICAL_BANKS(PHYSICAL_BANKS), .ADDR_W(4)
+      ) storage_fabric (
+        .clk(clk), .rst_n(rst_n),
+        .write_valid(storage_write_valid_w),
+        .write_ready(storage_write_ready_w),
+        .write_addr(storage_write_addr_w),
+        .write_data(storage_write_data_w),
+        .read_req_valid(storage_read_req_valid_w),
+        .read_req_ready(storage_read_req_ready_w),
+        .read_req_addr(storage_read_req_addr_w),
+        .read_rsp_valid(storage_read_rsp_valid_w),
+        .read_rsp_ready(storage_read_rsp_ready_w),
+        .read_rsp_addr(storage_read_rsp_addr_w),
+        .read_rsp_data(storage_read_rsp_data_w),
+        .protocol_error(storage_protocol_error_w)
+      );
+    end
+  endgenerate
+
+  assign packet_sram_read_rsp_valid_w = storage_read_rsp_valid_w;
+  assign packet_sram_read_rsp_addr_w = storage_read_rsp_addr_w;
 
   genvar source_g;
   generate
@@ -334,25 +703,24 @@ module local_reducer_aggregate_stats_once_exact_shared_root_rx_adapter #(
         (({1'b0, packet_sram_read_rsp_addr[2:0]} + 1'b1) ==
          {1'b0, slot_flit_count[SOURCE_ID][packet_sram_read_rsp_addr[3]]});
 
-      wire packet_sram_write_valid = source_write_fire && source_write_state_ok;
-      wire [3:0] packet_sram_write_addr = write_route_addr;
       wire packet_sram_read_rsp_ready = deframer_flit_ready_w[SOURCE_ID];
 
-      local_reducer_aggregate_stats_once_exact_packet_sram #(
-        .DATA_W(DATA_W), .ADDR_W(4)
-      ) destination_packet_sram (
-        .clk(clk), .rst_n(rst_n),
-        .write_valid(packet_sram_write_valid),
-        .write_addr(packet_sram_write_addr),
-        .write_data(ep_rx_mem_write_data),
-        .read_req_valid(replay_issue),
-        .read_req_ready(packet_sram_read_req_ready),
-        .read_req_addr({replay_slot_q[SOURCE_ID], replay_word_q[SOURCE_ID][2:0]}),
-        .read_rsp_valid(packet_sram_read_rsp_valid),
-        .read_rsp_ready(packet_sram_read_rsp_ready),
-        .read_rsp_addr(packet_sram_read_rsp_addr),
-        .read_rsp_data(packet_sram_read_rsp_data)
-      );
+      assign storage_write_valid_w[SOURCE_ID] =
+        ep_rx_mem_write_valid && write_route_valid &&
+        (write_route_source == SOURCE_ID) && source_write_state_ok;
+      assign storage_write_addr_w[SOURCE_ID*4 +: 4] = write_route_addr;
+      assign storage_write_data_w[SOURCE_ID*DATA_W +: DATA_W] =
+        ep_rx_mem_write_data;
+      assign storage_read_req_valid_w[SOURCE_ID] = replay_issue;
+      assign storage_read_req_addr_w[SOURCE_ID*4 +: 4] =
+        {replay_slot_q[SOURCE_ID], replay_word_q[SOURCE_ID][2:0]};
+      assign storage_read_rsp_ready_w[SOURCE_ID] = packet_sram_read_rsp_ready;
+      assign packet_sram_read_rsp_valid = storage_read_rsp_valid_w[SOURCE_ID];
+      assign packet_sram_read_rsp_addr =
+        storage_read_rsp_addr_w[SOURCE_ID*4 +: 4];
+      assign packet_sram_read_rsp_data =
+        storage_read_rsp_data_w[SOURCE_ID*DATA_W +: DATA_W];
+      assign packet_sram_read_req_ready = storage_read_req_ready_w[SOURCE_ID];
 
       wire deframer_ctx_valid = source_ctx_fire;
       wire [DATA_W-1:0] deframer_data = packet_sram_read_rsp_data;
@@ -388,10 +756,6 @@ module local_reducer_aggregate_stats_once_exact_shared_root_rx_adapter #(
         .clean_group_complete(deframer_clean_w[SOURCE_ID])
       );
 
-      assign packet_sram_read_rsp_valid_w[SOURCE_ID] =
-        packet_sram_read_rsp_valid;
-      assign packet_sram_read_rsp_addr_w[SOURCE_ID*4 +: 4] =
-        packet_sram_read_rsp_addr;
       assign codec_out_data[SOURCE_ID*DATA_W +: DATA_W] =
         deframer_data_w[SOURCE_ID*DATA_W +: DATA_W];
 
@@ -620,6 +984,7 @@ module local_reducer_aggregate_stats_once_exact_shared_root_rx_adapter #(
   endgenerate
 
   assign protocol_error = root_error_q || ep_protocol_error ||
+    storage_protocol_error_w ||
     (|source_protocol_error);
 
 `ifndef SYNTHESIS

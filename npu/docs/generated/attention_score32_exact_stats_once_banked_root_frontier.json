@@ -8,7 +8,7 @@
   ],
   "limitations": [
     "Macro count uses available 64x32 granularity; macro PPA awaits evaluator measurement.",
-    "The model includes single-port conflicts and slot-release feedback but not decoder/tree backpressure.",
+    "The model excludes decoder/tree backpressure; the selected B4 point has separate full-chain RTL timing evidence.",
     "Precision is unchanged because packet storage and replay are bit-exact."
   ],
   "memory_contract": {
@@ -62,6 +62,24 @@
       "schedule_iterations": 1
     }
   ],
+  "rtl_validation": {
+    "bank_depth_words": 64,
+    "bank_word_bits": 256,
+    "baseline_15_bank_final_cycle": 2600,
+    "bit_exact": true,
+    "canonical_remote_beats": 1920,
+    "exact_final_rows": 128,
+    "exact_lane_value": 65535,
+    "full_chain_final_cycle": 2613,
+    "full_chain_latency_increase_cycles": 13,
+    "full_chain_latency_increase_pct": 0.5,
+    "physical_banks": 4,
+    "retained_bank_memories": 4,
+    "root_delivery_span_cycles": 2505,
+    "test": "tests/test_local_reducer_aggregate_stats_once_exact_shared_root_global_tree_composition.py",
+    "transport_flits": 2505,
+    "transport_packets": 315
+  },
   "selected_point": {
     "exact_transport": true,
     "fakeram45_64x32_macros": 32,

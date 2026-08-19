@@ -11,6 +11,11 @@ module local_reducer_aggregate_stats_once_exact_shared_root_rx_adapter_tb;
   localparam integer TOTAL_BEATS = SOURCE_COUNT * GROUP_BEATS;
   localparam integer TOTAL_FLITS = SOURCE_COUNT * GROUP_FLITS;
   localparam integer TOTAL_PACKETS = SOURCE_COUNT * GROUP_PACKETS;
+`ifdef SHARED_ROOT_PHYSICAL_BANKS
+  localparam integer ROOT_PHYSICAL_BANKS = `SHARED_ROOT_PHYSICAL_BANKS;
+`else
+  localparam integer ROOT_PHYSICAL_BANKS = SOURCE_COUNT;
+`endif
   localparam integer SIM_TIMEOUT_CYCLES = 4000000;
 
   reg clk = 1'b0;
@@ -163,7 +168,9 @@ module local_reducer_aggregate_stats_once_exact_shared_root_rx_adapter_tb;
     .router_max_input_occupancy(), .router_route_flit_count()
   );
 
-  local_reducer_aggregate_stats_once_exact_shared_root_rx_adapter root (
+  local_reducer_aggregate_stats_once_exact_shared_root_rx_adapter #(
+    .PHYSICAL_BANKS(ROOT_PHYSICAL_BANKS)
+  ) root (
     .clk(clk), .rst_n(rst_n),
     .group_ctx_valid(group_ctx_valid), .group_ctx_ready(root_group_ctx_ready),
     .group_command_id(group_command_id), .group_head_base(group_head_base),
