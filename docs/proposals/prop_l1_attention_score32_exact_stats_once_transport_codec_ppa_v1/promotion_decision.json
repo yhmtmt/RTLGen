@@ -1,0 +1,6 @@
+{
+  "proposal_id": "prop_l1_attention_score32_exact_stats_once_transport_codec_ppa_v1",
+  "decision": "pending_evaluation",
+  "reason": "Exact RTL exists, but the matched Nangate45 codec tradeoff has not been measured.",
+  "next_action": "run l1_attention_score32_exact_stats_once_transport_codec_ppa_v1"
+}

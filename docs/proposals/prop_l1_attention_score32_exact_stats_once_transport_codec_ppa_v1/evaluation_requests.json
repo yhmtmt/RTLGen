@@ -1,0 +1,33 @@
+{
+  "proposal_id": "prop_l1_attention_score32_exact_stats_once_transport_codec_ppa_v1",
+  "source_commit": "TBD",
+  "requested_items": [
+    {
+      "item_id": "l1_attention_score32_exact_stats_once_transport_codec_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure paired Nangate45 PPA for exact aligned and stats-once aggregate codecs under an identical group source and sink.",
+      "evaluation_mode": "ppa",
+      "abstraction_layer": "architecture_block",
+      "config_paths": [
+        "runs/designs/noc/l1_attention_score32_exact_matched_aligned_codec_w419_f256_wrapper/config_l1_attention_score32_exact_matched_aligned_codec_w419_f256.json",
+        "runs/designs/noc/l1_attention_score32_exact_matched_stats_once_codec_w419_f256_wrapper/config_l1_attention_score32_exact_matched_stats_once_codec_w419_f256.json"
+      ],
+      "sweep_path": "runs/campaigns/noc/l1_attention_score32_exact_matched_codec/sweeps/nangate45_macro_frontier.json",
+      "expected_outputs": [
+        "runs/designs/noc/l1_attention_score32_exact_matched_aligned_codec_w419_f256_wrapper/metrics.csv",
+        "runs/designs/noc/l1_attention_score32_exact_matched_stats_once_codec_w419_f256_wrapper/metrics.csv"
+      ],
+      "status": "pending_after_proposal_merge",
+      "comparison_role": "phase2_exact_transport_matched_codec_tradeoff",
+      "paired_baseline_item_id": "l1_attention_score32_exact_aligned_transport_codec_ppa_v1",
+      "depends_on_item_ids": [],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "measure_exact_stats_once_codec_tradeoff",
+        "reason": "Determine whether 34.8 percent fewer exact transport flits outweigh bounded-reservoir codec cost at 15-pair architecture scale."
+      },
+      "acceptance_notes": "Require exact round-trip, matched generated hierarchy, and paired timing-feasible rows from the same source/tool settings. Keep endpoint, mesh, SRAM, reducer, root tree, and HBM outside this PPA claim."
+    }
+  ]
+}

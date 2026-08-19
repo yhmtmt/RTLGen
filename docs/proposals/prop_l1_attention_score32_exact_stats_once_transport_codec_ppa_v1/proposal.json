@@ -1,0 +1,65 @@
+{
+  "proposal_id": "prop_l1_attention_score32_exact_stats_once_transport_codec_ppa_v1",
+  "created_utc": "2026-08-18T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit_block",
+  "abstraction_layer": "architecture_block",
+  "title": "Measure exact stats-once transport against a matched aligned codec",
+  "hypothesis": "Removing repeated aggregate metadata reduces exact Phase-2 traffic by 34.8 percent with codec PPA small enough that the 15-pair Llama7B hierarchy improves total transport area-energy and service time.",
+  "direct_comparison": {
+    "primary_question": "Does exact stats-once packing improve the measured codec-plus-transport frontier after its bounded reservoir cost is scaled to all 15 remote cluster links?",
+    "include": [
+      "one identical canonical 419-bit group source for both candidates",
+      "one identical all-bit sink and deterministic stall schedule",
+      "aligned exact two-flit encoder and decoder",
+      "stats-once exact bounded-reservoir encoder and decoder",
+      "128 beats and 256 versus 167 flits per group",
+      "paired Nangate45 timing, area, and vectorless power"
+    ],
+    "exclude": [
+      "local reducer arithmetic",
+      "packet endpoint and descriptor scheduler",
+      "SRAM bitcells",
+      "router and mesh wiring",
+      "global reduction tree",
+      "HBM/DRAM",
+      "workload-activity power"
+    ]
+  },
+  "required_evaluations": [
+    {
+      "item_id": "l1_attention_score32_exact_stats_once_transport_codec_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure paired Nangate45 PPA for exact aligned and stats-once aggregate codecs under an identical group source and sink.",
+      "evaluation_mode": "ppa",
+      "abstraction_layer": "architecture_block",
+      "comparison_role": "phase2_exact_transport_matched_codec_tradeoff",
+      "paired_baseline_item_id": "l1_attention_score32_exact_aligned_transport_codec_ppa_v1",
+      "depends_on_item_ids": [],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "config_paths": [
+        "runs/designs/noc/l1_attention_score32_exact_matched_aligned_codec_w419_f256_wrapper/config_l1_attention_score32_exact_matched_aligned_codec_w419_f256.json",
+        "runs/designs/noc/l1_attention_score32_exact_matched_stats_once_codec_w419_f256_wrapper/config_l1_attention_score32_exact_matched_stats_once_codec_w419_f256.json"
+      ],
+      "sweep_path": "runs/campaigns/noc/l1_attention_score32_exact_matched_codec/sweeps/nangate45_macro_frontier.json",
+      "expected_outputs": [
+        "runs/designs/noc/l1_attention_score32_exact_matched_aligned_codec_w419_f256_wrapper/metrics.csv",
+        "runs/designs/noc/l1_attention_score32_exact_matched_stats_once_codec_w419_f256_wrapper/metrics.csv"
+      ]
+    }
+  ],
+  "baseline_refs": [
+    "docs/proposals/prop_l1_attention_score32_exact_aligned_transport_codec_ppa_v1/proposal.json",
+    "docs/proposals/prop_l2_decoder_attention_score32_noc_phase2_exact_transport_revision_v1/proposal.json",
+    "npu/docs/attention_score32_exact_aligned_transport_codec_contract.md",
+    "npu/docs/attention_score32_exact_stats_once_transport_codec_contract.md"
+  ],
+  "remaining_abstractions_after_this_step": [
+    "codec-to-packet endpoint integration",
+    "transport through the routed mesh under descriptor-owned packet boundaries",
+    "root decoder to global exact reduction readiness",
+    "workload-activity transport energy"
+  ]
+}
