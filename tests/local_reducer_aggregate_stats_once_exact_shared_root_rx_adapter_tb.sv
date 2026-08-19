@@ -306,6 +306,8 @@ module local_reducer_aggregate_stats_once_exact_shared_root_rx_adapter_tb;
   integer failures = 0;
   integer mesh_flit_count = 0;
   integer mesh_packet_count = 0;
+  integer first_root_flit_cycle = -1;
+  integer last_root_flit_cycle = -1;
   reg [SOURCE_COUNT-1:0] mesh_source_mask = {SOURCE_COUNT{1'b0}};
   integer monitor_i;
 
@@ -324,6 +326,8 @@ module local_reducer_aggregate_stats_once_exact_shared_root_rx_adapter_tb;
       cycle <= 0;
       mesh_flit_count <= 0;
       mesh_packet_count <= 0;
+      first_root_flit_cycle <= -1;
+      last_root_flit_cycle <= -1;
       mesh_source_mask <= {SOURCE_COUNT{1'b0}};
       for (monitor_i = 0; monitor_i < SOURCE_COUNT; monitor_i = monitor_i + 1) begin
         beat_index[monitor_i] <= 0;
@@ -358,6 +362,9 @@ module local_reducer_aggregate_stats_once_exact_shared_root_rx_adapter_tb;
       end
 
       if (root_mesh_out_valid && root_mesh_out_ready) begin
+        if (first_root_flit_cycle < 0)
+          first_root_flit_cycle <= cycle;
+        last_root_flit_cycle <= cycle;
         mesh_flit_count <= mesh_flit_count + 1;
         if (root_mesh_out_source < SOURCE_COUNT)
           mesh_source_mask[root_mesh_out_source] <= 1'b1;
@@ -435,6 +442,7 @@ module local_reducer_aggregate_stats_once_exact_shared_root_rx_adapter_tb;
         root_descriptor_install_count != TOTAL_PACKETS ||
         root_completion_count != TOTAL_PACKETS ||
         root_replay_packet_count != TOTAL_PACKETS ||
+        (last_root_flit_cycle - first_root_flit_cycle + 1) < TOTAL_FLITS ||
         mesh_source_mask != {SOURCE_COUNT{1'b1}} || root_protocol_error ||
         (|encoder_error) || (|tx_adapter_error) || (|root_source_error) ||
         (|decoder_error) || root_max_occupied_slots == 0) begin
@@ -445,10 +453,12 @@ module local_reducer_aggregate_stats_once_exact_shared_root_rx_adapter_tb;
         root_max_occupied_slots, failures, mesh_source_mask, root_protocol_error,
         |encoder_error, |tx_adapter_error, |root_source_error, |decoder_error);
     end
-    $display("PASS shared_root_stats_once sources=15 beats=%0d flits=%0d packets=%0d descriptors=%0d completions=%0d replays=%0d max_occupied_slots=%0d source_mask=%h",
+    $display("PASS shared_root_stats_once sources=15 beats=%0d flits=%0d packets=%0d descriptors=%0d completions=%0d replays=%0d root_delivery_span=%0d max_occupied_slots=%0d source_mask=%h",
       TOTAL_BEATS, mesh_flit_count, mesh_packet_count,
       root_descriptor_install_count, root_completion_count,
-      root_replay_packet_count, root_max_occupied_slots, mesh_source_mask);
+      root_replay_packet_count,
+      last_root_flit_cycle - first_root_flit_cycle + 1,
+      root_max_occupied_slots, mesh_source_mask);
     $finish;
   end
 endmodule

@@ -72,6 +72,7 @@ def test_shared_root_exact_15_source_mesh_equivalence(tmp_path: Path) -> None:
     assert "descriptors=315" in run.stdout
     assert "completions=315" in run.stdout
     assert "replays=315" in run.stdout
+    assert "root_delivery_span=2505" in run.stdout
     assert "source_mask=7fff" in run.stdout
 
 
@@ -126,7 +127,11 @@ def test_shared_root_yosys_has_one_endpoint_and_fifteen_sram_banks(
         or "local_reducer_aggregate_stats_once_exact_packet_sram" in name
     ]
     assert len(sram_modules) == 1
-    mem_cells = [cell for cell in sram_modules[0]["cells"].values() if cell["type"] == "$mem_v2"]
+    mem_cells = [
+        cell
+        for cell in sram_modules[0]["cells"].values()
+        if cell["type"] == "$mem_v2"
+    ]
     assert len(mem_cells) == 1
     assert mem_cells[0]["parameters"]["SIZE"] == "00000000000000000000000000010000"
     assert mem_cells[0]["parameters"]["WIDTH"] == "00000000000000000000000100000000"

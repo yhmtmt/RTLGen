@@ -106,6 +106,25 @@ module local_reducer_aggregate_stats_once_exact_shared_root_rx_adapter #(
   reg replay_slot_q [0:SOURCE_COUNT-1];
   reg [3:0] replay_word_q [0:SOURCE_COUNT-1];
 
+  integer active_group_i;
+  reg all_groups_active;
+  reg any_group_active;
+  reg group_release_open_q;
+  reg [4:0] release_round_q;
+  reg [6:0] release_interval_q;
+  always @* begin
+    all_groups_active = 1'b1;
+    any_group_active = 1'b0;
+    for (active_group_i = 0;
+         active_group_i < SOURCE_COUNT;
+         active_group_i = active_group_i + 1) begin
+      if (!group_active_q[active_group_i])
+        all_groups_active = 1'b0;
+      if (group_active_q[active_group_i])
+        any_group_active = 1'b1;
+    end
+  end
+
   wire [SOURCE_COUNT-1:0] packet_sram_read_rsp_valid_w;
   wire [SOURCE_COUNT*4-1:0] packet_sram_read_rsp_addr_w;
   wire [SOURCE_COUNT-1:0] replay_response_fire_w;
@@ -378,6 +397,7 @@ module local_reducer_aggregate_stats_once_exact_shared_root_rx_adapter #(
 
       assign group_ctx_ready[SOURCE_ID] =
         !group_active_q[SOURCE_ID] &&
+        (!group_release_open_q || !any_group_active) &&
         !desc_pending_q[SOURCE_ID] &&
         !active_packet_q[SOURCE_ID] &&
         !wait_next_q[SOURCE_ID] &&
@@ -385,7 +405,12 @@ module local_reducer_aggregate_stats_once_exact_shared_root_rx_adapter #(
         (slot_state[SOURCE_ID][0] == SLOT_FREE) &&
         (slot_state[SOURCE_ID][1] == SLOT_FREE) &&
         deframer_ctx_ready_w[SOURCE_ID];
-      assign tx_release_valid[SOURCE_ID] = release_pending_q[SOURCE_ID];
+      // A reduction group cannot make forward progress without every leaf.
+      // Hold early sources until all remote contexts are latched so context
+      // arrival skew cannot bias the fixed-priority descriptor scheduler.
+      assign tx_release_valid[SOURCE_ID] =
+        release_pending_q[SOURCE_ID] && group_release_open_q &&
+        (active_packet_index_q[SOURCE_ID] <= release_round_q);
       assign codec_out_valid[SOURCE_ID] = deframer_flit_valid_w[SOURCE_ID];
       assign group_complete[SOURCE_ID] = deframer_clean_w[SOURCE_ID];
       assign descriptor_installed[SOURCE_ID] = descriptor_fire;
@@ -542,7 +567,24 @@ module local_reducer_aggregate_stats_once_exact_shared_root_rx_adapter #(
       root_replay_packet_count <= 32'b0;
       max_occupied_slots <= 6'b0;
       root_error_q <= 1'b0;
+      group_release_open_q <= 1'b0;
+      release_round_q <= 5'b0;
+      release_interval_q <= 7'b0;
     end else begin
+      if (all_groups_active)
+        group_release_open_q <= 1'b1;
+      else if (!any_group_active)
+        group_release_open_q <= 1'b0;
+      if (!group_release_open_q) begin
+        release_round_q <= 5'b0;
+        release_interval_q <= 7'b0;
+      end else if (release_interval_q == 7'd119) begin
+        release_interval_q <= 7'b0;
+        if (release_round_q != 5'd20)
+          release_round_q <= release_round_q + 1'b1;
+      end else begin
+        release_interval_q <= release_interval_q + 1'b1;
+      end
       if (ep_rx_mem_write_fire)
         root_accepted_flit_count <= root_accepted_flit_count + 1'b1;
       if (ep_rx_desc_fire)

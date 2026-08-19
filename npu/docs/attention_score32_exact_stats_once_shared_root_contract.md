@@ -34,6 +34,12 @@ capacity, produces a continuous root stream after fill, and remains valid for
 the seven-flit terminal round. A dynamic scheduler may release earlier only if
 it proves the same context and slot-reuse invariants.
 
+The RTL latches a group barrier after all 15 remote contexts arrive and opens
+packet index `n` at 120-cycle intervals. The complete real-mesh equivalence
+trace delivers all 2,505 flits over exactly 2,505 cycles from first root
+delivery through last root delivery. Thus the finite endpoint, SRAM replay,
+and source scheduling add no root-ejection bubbles for this group.
+
 ## Destination Storage And Replay
 
 Each remote source owns two eight-word 256-bit packet slots at the root. The
