@@ -1,26 +1,26 @@
 {
+  "area_floor_point": {
+    "bit_exact": true,
+    "fakeram45_64x32_macros": 32,
+    "full_chain_final_cycle": 3077,
+    "latency_increase_vs_15_banks_pct": 17.442748,
+    "normalized_component_throughput_vs_15_banks": 0.851479,
+    "physical_banks": 4,
+    "root_delivery_span_cycles": 2939
+  },
   "dominated_points": [
     {
       "fakeram45_64x32_macros": 32,
       "physical_banks": 1,
       "reason": "same 32 macros as four banks, but every root write and replay read contends for one single port"
+    },
+    {
+      "fakeram45_64x32_macros": 32,
+      "physical_banks": 2,
+      "reason": "same 32 macros as four banks, but registered-SRAM full-chain completion is 4120 cycles instead of 3077"
     }
   ],
-  "limitations": [
-    "Macro count uses available 64x32 granularity; macro PPA awaits evaluator measurement.",
-    "The model excludes decoder/tree backpressure; the selected B4 point has separate full-chain RTL timing evidence.",
-    "Precision is unchanged because packet storage and replay are bit-exact."
-  ],
-  "memory_contract": {
-    "available_macro": "fakeram45_64x32",
-    "logical_payload_bytes": 7680,
-    "logical_sources": 15,
-    "single_port_write_priority": true,
-    "slot_words": 8,
-    "slots_per_source": 2,
-    "word_bits": 256
-  },
-  "points": [
+  "inferred_memory_model_points": [
     {
       "exact_transport": true,
       "fakeram45_64x32_macros": 32,
@@ -62,41 +62,88 @@
       "schedule_iterations": 1
     }
   ],
+  "limitations": [
+    "Macro PPA and placed control timing await evaluator measurement.",
+    "Cycle results use the available registered fakeram45 behavioral model; post-route clock frequency is not yet applied.",
+    "The inferred-memory model remains diagnostic only and does not select the physical bank point.",
+    "Precision is unchanged because packet storage and replay are bit-exact."
+  ],
+  "memory_contract": {
+    "available_macro": "fakeram45_64x32",
+    "logical_payload_bytes": 7680,
+    "logical_sources": 15,
+    "single_port_write_priority": true,
+    "slot_words": 8,
+    "slots_per_source": 2,
+    "word_bits": 256
+  },
+  "pareto_candidate_banks": [
+    4,
+    8,
+    15
+  ],
+  "rtl_macro_points": [
+    {
+      "bit_exact": true,
+      "fakeram45_64x32_macros": 32,
+      "full_chain_final_cycle": 4120,
+      "latency_increase_vs_15_banks_pct": 57.251908,
+      "normalized_component_throughput_vs_15_banks": 0.635922,
+      "physical_banks": 2,
+      "root_delivery_span_cycles": 3901
+    },
+    {
+      "bit_exact": true,
+      "fakeram45_64x32_macros": 32,
+      "full_chain_final_cycle": 3077,
+      "latency_increase_vs_15_banks_pct": 17.442748,
+      "normalized_component_throughput_vs_15_banks": 0.851479,
+      "physical_banks": 4,
+      "root_delivery_span_cycles": 2939
+    },
+    {
+      "bit_exact": true,
+      "fakeram45_64x32_macros": 64,
+      "full_chain_final_cycle": 2855,
+      "latency_increase_vs_15_banks_pct": 8.969466,
+      "normalized_component_throughput_vs_15_banks": 0.917688,
+      "physical_banks": 8,
+      "root_delivery_span_cycles": 2733
+    },
+    {
+      "bit_exact": true,
+      "fakeram45_64x32_macros": 120,
+      "full_chain_final_cycle": 2620,
+      "latency_increase_vs_15_banks_pct": 0.0,
+      "normalized_component_throughput_vs_15_banks": 1.0,
+      "physical_banks": 15,
+      "root_delivery_span_cycles": 2505
+    }
+  ],
   "rtl_validation": {
-    "bank_depth_words": 64,
-    "bank_word_bits": 256,
-    "baseline_15_bank_final_cycle": 2600,
     "bit_exact": true,
     "canonical_remote_beats": 1920,
     "exact_final_rows": 128,
     "exact_lane_value": 65535,
-    "full_chain_final_cycle": 2613,
-    "full_chain_latency_increase_cycles": 13,
-    "full_chain_latency_increase_pct": 0.5,
-    "physical_banks": 4,
-    "retained_bank_memories": 4,
-    "root_delivery_span_cycles": 2505,
+    "macro_backend": "fakeram45_64x32",
     "test": "tests/test_local_reducer_aggregate_stats_once_exact_shared_root_global_tree_composition.py",
     "transport_flits": 2505,
-    "transport_packets": 315
+    "transport_packets": 315,
+    "validated_physical_banks": [
+      2,
+      4,
+      8,
+      15
+    ]
   },
-  "selected_point": {
-    "exact_transport": true,
-    "fakeram45_64x32_macros": 32,
-    "final_replay_cycle": 2533,
-    "max_slots_per_source": 2,
-    "physical_banks": 4,
-    "replay_drain_cycles": 13,
-    "root_delivery_span_cycles": 2505,
-    "schedule_iterations": 1
-  },
-  "selection": {
+  "selection_status": {
+    "b4_latency_increase_vs_15_banks_pct": 17.442748,
+    "b8_latency_increase_vs_15_banks_pct": 8.969466,
+    "b8_macro_reduction_vs_15_banks_pct": 46.666667,
     "macro_reduction_vs_15_banks_pct": 73.333333,
-    "physical_banks": 4,
-    "reason": "minimum 32-macro count while retaining the exact 2505-cycle root serialization floor",
-    "replay_drain_increase_vs_15_banks_cycles": 5,
-    "two_bank_transport_span_penalty_pct": 4.91018
+    "reason": "B4 minimizes SRAM count, B15 maximizes measured throughput, and B8 is intermediate; energy and placed control area are not yet measured",
+    "status": "awaiting_macro_ppa"
   },
-  "semantic_profile": "score32_exact_stats_once_banked_root_v1",
-  "version": 1
+  "semantic_profile": "score32_exact_stats_once_banked_root_macro_v2",
+  "version": 2
 }

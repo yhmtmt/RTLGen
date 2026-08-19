@@ -9,6 +9,11 @@ module local_reducer_aggregate_stats_once_exact_shared_root_storage_fabric_b4_tb
   localparam integer PHYSICAL_BANKS = 4;
   localparam integer DATA_W = 256;
   localparam integer ADDR_W = 4;
+`ifdef SHARED_ROOT_USE_FAKERAM
+  localparam integer USE_FAKERAM = `SHARED_ROOT_USE_FAKERAM;
+`else
+  localparam integer USE_FAKERAM = 0;
+`endif
   localparam integer PACKET_COUNT = 21;
   localparam integer FLITS_PER_SOURCE = 167;
   localparam integer CANONICAL_BEATS_PER_SOURCE = 128;
@@ -37,7 +42,8 @@ module local_reducer_aggregate_stats_once_exact_shared_root_storage_fabric_b4_tb
 
   local_reducer_aggregate_stats_once_exact_shared_root_storage_fabric #(
     .DATA_W(DATA_W), .SOURCE_COUNT(SOURCE_COUNT),
-    .PHYSICAL_BANKS(PHYSICAL_BANKS), .ADDR_W(ADDR_W)
+    .PHYSICAL_BANKS(PHYSICAL_BANKS), .ADDR_W(ADDR_W),
+    .USE_FAKERAM(USE_FAKERAM)
   ) fabric (
     .clk(clk), .rst_n(rst_n),
     .write_valid(write_valid), .write_ready(write_ready),
@@ -288,8 +294,8 @@ module local_reducer_aggregate_stats_once_exact_shared_root_storage_fabric_b4_tb
         write_packet_count, TOTAL_PACKETS, read_request_count, TOTAL_FLITS,
         exact_errors, overwrite_errors, protocol_error);
     end
-    $display("PASS shared_root_storage_b4 canonical_beats=%0d flits=%0d packets=%0d exact_outputs=%0d overwrite_errors=%0d independent_backpressure=1",
-      TOTAL_CANONICAL_BEATS, read_flit_count, read_packet_count,
+    $display("PASS shared_root_storage_b4 use_fakeram=%0d canonical_beats=%0d flits=%0d packets=%0d exact_outputs=%0d overwrite_errors=%0d independent_backpressure=1",
+      USE_FAKERAM, TOTAL_CANONICAL_BEATS, read_flit_count, read_packet_count,
       read_flit_count, overwrite_errors);
     $finish;
   end

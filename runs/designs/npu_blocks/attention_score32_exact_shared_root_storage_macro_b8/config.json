@@ -1,0 +1,10 @@
+{
+  "top_name": "attention_score32_exact_shared_root_storage_macro_b8",
+  "attention_score32_exact_shared_root_storage_physical_harness": {
+    "physical_banks": 8
+  },
+  "report_links": {
+    "proposal_id": "prop_l1_attention_score32_exact_shared_root_storage_macro_ppa_v1",
+    "proposal_path": "docs/proposals/prop_l1_attention_score32_exact_shared_root_storage_macro_ppa_v1/proposal.json"
+  }
+}

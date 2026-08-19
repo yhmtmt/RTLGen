@@ -1,0 +1,83 @@
+{
+  "proposal_id": "prop_l1_attention_score32_exact_shared_root_storage_macro_ppa_v1",
+  "source_commit": "TBD",
+  "source_commit_note": "Queue only after merge from merged origin/master and pin source_requirement.required_sha to the merge commit containing the macro backend, harness, guard, configs, sweeps, proposal linkage, and task-generator support.",
+  "requested_items": [
+    {
+      "item_id": "l1_attention_score32_exact_shared_root_storage_macro_b2_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure the exact two-bank registered-SRAM storage point.",
+      "evaluation_mode": "physical_calibration",
+      "abstraction_layer": "decoder_attention_exact_shared_root_packet_storage",
+      "comparison_role": "same_macro_count_low_bank_diagnostic",
+      "config_paths": ["runs/designs/npu_blocks/attention_score32_exact_shared_root_storage_macro_b2/config.json"],
+      "sweep_path": "runs/campaigns/npu/attention_score32_exact_shared_root_storage_macro_ppa_v1/sweeps/nangate45_b2.json",
+      "out_root": "runs/designs/npu_blocks",
+      "expected_outputs": [
+        "runs/designs/npu_blocks/attention_score32_exact_shared_root_storage_macro_b2/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_shared_root_storage_macro_b2/timing_debug_report.md"
+      ],
+      "status": "pending_after_proposal_merge",
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "acceptance_notes": "Require exactly 32 fakeram45_64x32 macros and retain this point as a diagnostic unless PPA offsets its measured 4120-cycle full-chain latency."
+    },
+    {
+      "item_id": "l1_attention_score32_exact_shared_root_storage_macro_b4_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure the exact four-bank registered-SRAM storage point.",
+      "evaluation_mode": "physical_calibration",
+      "abstraction_layer": "decoder_attention_exact_shared_root_packet_storage",
+      "comparison_role": "minimum_macro_area_floor",
+      "config_paths": ["runs/designs/npu_blocks/attention_score32_exact_shared_root_storage_macro_b4/config.json"],
+      "sweep_path": "runs/campaigns/npu/attention_score32_exact_shared_root_storage_macro_ppa_v1/sweeps/nangate45_b4.json",
+      "out_root": "runs/designs/npu_blocks",
+      "expected_outputs": [
+        "runs/designs/npu_blocks/attention_score32_exact_shared_root_storage_macro_b4/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_shared_root_storage_macro_b4/timing_debug_report.md"
+      ],
+      "status": "pending_after_proposal_merge",
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "acceptance_notes": "Require exactly 32 fakeram45_64x32 macros and preserve the measured exact full-chain result of 2939 root-span and 3077 final cycles."
+    },
+    {
+      "item_id": "l1_attention_score32_exact_shared_root_storage_macro_b8_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure the exact eight-bank registered-SRAM storage point.",
+      "evaluation_mode": "physical_calibration",
+      "abstraction_layer": "decoder_attention_exact_shared_root_packet_storage",
+      "comparison_role": "balanced_macro_throughput_candidate",
+      "config_paths": ["runs/designs/npu_blocks/attention_score32_exact_shared_root_storage_macro_b8/config.json"],
+      "sweep_path": "runs/campaigns/npu/attention_score32_exact_shared_root_storage_macro_ppa_v1/sweeps/nangate45_b8.json",
+      "out_root": "runs/designs/npu_blocks",
+      "expected_outputs": [
+        "runs/designs/npu_blocks/attention_score32_exact_shared_root_storage_macro_b8/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_shared_root_storage_macro_b8/timing_debug_report.md"
+      ],
+      "status": "pending_after_proposal_merge",
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "acceptance_notes": "Require exactly 64 fakeram45_64x32 macros and preserve the measured exact full-chain result of 2733 root-span and 2855 final cycles."
+    },
+    {
+      "item_id": "l1_attention_score32_exact_shared_root_storage_macro_b15_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure the exact fifteen-bank registered-SRAM throughput anchor.",
+      "evaluation_mode": "physical_calibration",
+      "abstraction_layer": "decoder_attention_exact_shared_root_packet_storage",
+      "comparison_role": "maximum_bank_throughput_anchor",
+      "config_paths": ["runs/designs/npu_blocks/attention_score32_exact_shared_root_storage_macro_b15/config.json"],
+      "sweep_path": "runs/campaigns/npu/attention_score32_exact_shared_root_storage_macro_ppa_v1/sweeps/nangate45_b15.json",
+      "out_root": "runs/designs/npu_blocks",
+      "expected_outputs": [
+        "runs/designs/npu_blocks/attention_score32_exact_shared_root_storage_macro_b15/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_shared_root_storage_macro_b15/timing_debug_report.md"
+      ],
+      "status": "pending_after_proposal_merge",
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "acceptance_notes": "Require exactly 120 fakeram45_64x32 macros and preserve the measured exact full-chain result of 2505 root-span and 2620 final cycles."
+    }
+  ]
+}
