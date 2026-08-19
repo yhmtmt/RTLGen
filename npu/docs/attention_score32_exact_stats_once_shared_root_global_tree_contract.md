@@ -56,3 +56,9 @@ The cycle report must separate root-link delivery, decoder drain, tree
 completion, and finalizer completion. The measured 2,505-cycle root delivery
 span is the transport floor; any additional composed latency is attributed to
 decoder/tree/finalizer service or explicit downstream backpressure.
+
+The full finite-SRAM, registered-credit mesh, shared-root, decoder, and factored
+`c16/r2/l8/b59` tree simulation reaches that 2,505-cycle inclusive delivery
+floor. It emits all 128 exact finalized rows by cycle 2,600, 75 cycles after
+the final root flit. Peak aggregate destination occupancy is 30 packet slots,
+which is exactly the two-slot bound at each of the 15 remote sources.

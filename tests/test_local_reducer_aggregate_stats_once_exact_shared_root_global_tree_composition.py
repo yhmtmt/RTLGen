@@ -102,9 +102,10 @@ def test_full_chain_exact_finite_sram_mesh_and_tree(tmp_path: Path) -> None:
     assert "completions=315" in run.stdout
     assert "replays=315" in run.stdout
     assert "source_mask=7fff" in run.stdout
-    assert "first_last_span=2504" in run.stdout
+    assert "root_delivery_span=2505" in run.stdout
     assert "final_cycle=2600" in run.stdout
-    assert "max_slots=30" in run.stdout
+    assert "max_aggregate_slots=30" in run.stdout
+    assert "slots_per_source=2" in run.stdout
 
 
 @pytest.mark.skipif(_tool("yosys") is None, reason="yosys unavailable")
