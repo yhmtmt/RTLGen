@@ -1,0 +1,84 @@
+{
+  "dominated_points": [
+    {
+      "fakeram45_64x32_macros": 32,
+      "physical_banks": 1,
+      "reason": "same 32 macros as four banks, but every root write and replay read contends for one single port"
+    }
+  ],
+  "limitations": [
+    "Macro count uses available 64x32 granularity; macro PPA awaits evaluator measurement.",
+    "The model includes single-port conflicts and slot-release feedback but not decoder/tree backpressure.",
+    "Precision is unchanged because packet storage and replay are bit-exact."
+  ],
+  "memory_contract": {
+    "available_macro": "fakeram45_64x32",
+    "logical_payload_bytes": 7680,
+    "logical_sources": 15,
+    "single_port_write_priority": true,
+    "slot_words": 8,
+    "slots_per_source": 2,
+    "word_bits": 256
+  },
+  "points": [
+    {
+      "exact_transport": true,
+      "fakeram45_64x32_macros": 32,
+      "final_replay_cycle": 2707,
+      "max_slots_per_source": 2,
+      "physical_banks": 2,
+      "replay_drain_cycles": 64,
+      "root_delivery_span_cycles": 2628,
+      "schedule_iterations": 24
+    },
+    {
+      "exact_transport": true,
+      "fakeram45_64x32_macros": 32,
+      "final_replay_cycle": 2533,
+      "max_slots_per_source": 2,
+      "physical_banks": 4,
+      "replay_drain_cycles": 13,
+      "root_delivery_span_cycles": 2505,
+      "schedule_iterations": 1
+    },
+    {
+      "exact_transport": true,
+      "fakeram45_64x32_macros": 64,
+      "final_replay_cycle": 2528,
+      "max_slots_per_source": 2,
+      "physical_banks": 8,
+      "replay_drain_cycles": 8,
+      "root_delivery_span_cycles": 2505,
+      "schedule_iterations": 1
+    },
+    {
+      "exact_transport": true,
+      "fakeram45_64x32_macros": 120,
+      "final_replay_cycle": 2528,
+      "max_slots_per_source": 2,
+      "physical_banks": 15,
+      "replay_drain_cycles": 8,
+      "root_delivery_span_cycles": 2505,
+      "schedule_iterations": 1
+    }
+  ],
+  "selected_point": {
+    "exact_transport": true,
+    "fakeram45_64x32_macros": 32,
+    "final_replay_cycle": 2533,
+    "max_slots_per_source": 2,
+    "physical_banks": 4,
+    "replay_drain_cycles": 13,
+    "root_delivery_span_cycles": 2505,
+    "schedule_iterations": 1
+  },
+  "selection": {
+    "macro_reduction_vs_15_banks_pct": 73.333333,
+    "physical_banks": 4,
+    "reason": "minimum 32-macro count while retaining the exact 2505-cycle root serialization floor",
+    "replay_drain_increase_vs_15_banks_cycles": 5,
+    "two_bank_transport_span_penalty_pct": 4.91018
+  },
+  "semantic_profile": "score32_exact_stats_once_banked_root_v1",
+  "version": 1
+}
