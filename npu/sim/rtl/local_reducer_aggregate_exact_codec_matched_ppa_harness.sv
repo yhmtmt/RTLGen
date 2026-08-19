@@ -70,6 +70,7 @@ module local_reducer_aggregate_exact_codec_matched_ppa_harness #(
   wire decoder_group_ctx_ready;
   wire context_ready;
   wire context_fire = group_ctx_valid && context_ready;
+  wire paired_group_ctx_valid = group_ctx_valid && context_ready;
   wire source_fire = common_source_valid && source_ready;
   wire flit_fire = encoder_flit_valid && encoder_flit_ready;
   wire decoded_fire = decoded_valid && decoded_ready;
@@ -194,7 +195,7 @@ module local_reducer_aggregate_exact_codec_matched_ppa_harness #(
       local_reducer_aggregate_stats_once_exact_encoder u_encoder (
         .clk(clk),
         .rst_n(rst_n),
-        .group_ctx_valid(group_ctx_valid),
+        .group_ctx_valid(paired_group_ctx_valid),
         .group_ctx_ready(encoder_group_ctx_ready),
         .group_command_id(group_command_id),
         .group_head_base(group_head_base),
@@ -212,7 +213,7 @@ module local_reducer_aggregate_exact_codec_matched_ppa_harness #(
       local_reducer_aggregate_stats_once_exact_decoder u_decoder (
         .clk(clk),
         .rst_n(rst_n),
-        .group_ctx_valid(group_ctx_valid),
+        .group_ctx_valid(paired_group_ctx_valid),
         .group_ctx_ready(decoder_group_ctx_ready),
         .group_command_id(group_command_id),
         .group_head_base(group_head_base),
