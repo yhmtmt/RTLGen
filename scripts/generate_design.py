@@ -454,11 +454,12 @@ def identify_design(config):
             "sram_packet_mesh4x4",
             "descriptor_pair_scheduler",
             "exact_aligned_codec",
+            "exact_matched_codec",
         ):
             raise ValueError(
                 "l1_memory_noc_primitive primitive must be fifo, router, endpoint, segmented_router, "
                 "segmented_mesh4x4, sram_packet_endpoint, sram_packet_mesh4x4, "
-                "descriptor_pair_scheduler, or exact_aligned_codec"
+                "descriptor_pair_scheduler, exact_aligned_codec, or exact_matched_codec"
             )
         if flit_bits <= 0:
             raise ValueError("l1_memory_noc_primitive flit_bits must be positive")
@@ -541,6 +542,19 @@ def identify_design(config):
             raise ValueError(
                 "l1_memory_noc_primitive exact_aligned_codec requires counter_bits >= 4"
             )
+        codec_mode = str(options.get("codec_mode", "aligned"))
+        if primitive == "exact_matched_codec" and flit_bits != 256:
+            raise ValueError(
+                "l1_memory_noc_primitive exact_matched_codec requires 256-bit flits"
+            )
+        if primitive == "exact_matched_codec" and counter_bits < 8:
+            raise ValueError(
+                "l1_memory_noc_primitive exact_matched_codec requires counter_bits >= 8"
+            )
+        if primitive == "exact_matched_codec" and codec_mode not in ("aligned", "stats_once"):
+            raise ValueError(
+                "l1_memory_noc_primitive exact_matched_codec codec_mode must be aligned or stats_once"
+            )
         return {
             "kind": "l1_memory_noc_primitive",
             "module_name": module_name,
@@ -561,6 +575,7 @@ def identify_design(config):
             "addr_bits": addr_bits,
             "flit_count_bits": flit_count_bits,
             "command_source": command_source,
+            "codec_mode": codec_mode,
             "tx_desc_depth": tx_desc_depth,
             "tx_outstanding": tx_outstanding,
             "rx_contexts": rx_contexts,
@@ -1019,6 +1034,18 @@ def generate_l1_memory_noc_design(src_dir, design):
         for filename in (
             "local_reducer_aggregate_aligned_exact_codec.sv",
             "local_reducer_aggregate_aligned_exact_codec_ppa_harness.sv",
+        ):
+            rtl_path = repo_root / "npu" / "sim" / "rtl" / filename
+            Path(src_dir, Path(filename).with_suffix(".v")).write_text(
+                rtl_path.read_text(encoding="utf-8"),
+                encoding="utf-8",
+            )
+    elif design["primitive"] == "exact_matched_codec":
+        text = _emit_l1_exact_matched_codec(module_name, design)
+        for filename in (
+            "local_reducer_aggregate_aligned_exact_codec.sv",
+            "local_reducer_aggregate_stats_once_exact_codec.sv",
+            "local_reducer_aggregate_exact_codec_matched_ppa_harness.sv",
         ):
             rtl_path = repo_root / "npu" / "sim" / "rtl" / filename
             Path(src_dir, Path(filename).with_suffix(".v")).write_text(
@@ -1803,6 +1830,38 @@ module {module_name}(
     .accepted_beat_count(accepted_beat_count),
     .emitted_flit_count(emitted_flit_count),
     .decoded_beat_count(decoded_beat_count),
+    .protocol_error(protocol_error)
+  );
+endmodule
+"""
+
+
+def _emit_l1_exact_matched_codec(module_name, design):
+    mode_stats_once = 1 if design["codec_mode"] == "stats_once" else 0
+    return f"""
+`timescale 1ns/1ps
+
+module {module_name}(
+  input clk,
+  input rst_n,
+  output [31:0] observed_data,
+  output [{design['counter_bits']-1}:0] accepted_beat_count,
+  output [{design['counter_bits']-1}:0] emitted_flit_count,
+  output [{design['counter_bits']-1}:0] decoded_beat_count,
+  output [{design['counter_bits']-1}:0] completed_group_count,
+  output protocol_error
+);
+  local_reducer_aggregate_exact_codec_matched_ppa_harness #(
+    .MODE_STATS_ONCE({mode_stats_once}),
+    .COUNTER_W({design['counter_bits']})
+  ) harness (
+    .clk(clk),
+    .rst_n(rst_n),
+    .observed_data(observed_data),
+    .accepted_beat_count(accepted_beat_count),
+    .emitted_flit_count(emitted_flit_count),
+    .decoded_beat_count(decoded_beat_count),
+    .completed_group_count(completed_group_count),
     .protocol_error(protocol_error)
   );
 endmodule
@@ -2721,6 +2780,32 @@ module {wrapper_name}(
 
 endmodule
 """
+        elif design["primitive"] == "exact_matched_codec":
+            wrapper_content = f"""
+module {wrapper_name}(
+  input clk,
+  input rst_n,
+  output [31:0] observed_data,
+  output [{counter_bits-1}:0] accepted_beat_count,
+  output [{counter_bits-1}:0] emitted_flit_count,
+  output [{counter_bits-1}:0] decoded_beat_count,
+  output [{counter_bits-1}:0] completed_group_count,
+  output protocol_error
+);
+
+  {module_name} dut (
+    .clk(clk),
+    .rst_n(rst_n),
+    .observed_data(observed_data),
+    .accepted_beat_count(accepted_beat_count),
+    .emitted_flit_count(emitted_flit_count),
+    .decoded_beat_count(decoded_beat_count),
+    .completed_group_count(completed_group_count),
+    .protocol_error(protocol_error)
+  );
+
+endmodule
+"""
         else:
             wrapper_content = f"""
 module {wrapper_name}(
@@ -2786,6 +2871,17 @@ def generate_config_mk(platform_dir, platform, design):
             [
                 f"$(DESIGN_HOME)/src/{wrapper_name}/local_reducer_aggregate_aligned_exact_codec.v",
                 f"$(DESIGN_HOME)/src/{wrapper_name}/local_reducer_aggregate_aligned_exact_codec_ppa_harness.v",
+            ]
+        )
+    if (
+        design["kind"] == "l1_memory_noc_primitive"
+        and design["primitive"] == "exact_matched_codec"
+    ):
+        verilog_files.extend(
+            [
+                f"$(DESIGN_HOME)/src/{wrapper_name}/local_reducer_aggregate_aligned_exact_codec.v",
+                f"$(DESIGN_HOME)/src/{wrapper_name}/local_reducer_aggregate_stats_once_exact_codec.v",
+                f"$(DESIGN_HOME)/src/{wrapper_name}/local_reducer_aggregate_exact_codec_matched_ppa_harness.v",
             ]
         )
 

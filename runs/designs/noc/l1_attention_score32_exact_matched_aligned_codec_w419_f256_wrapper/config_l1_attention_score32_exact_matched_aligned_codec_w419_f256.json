@@ -1,0 +1,28 @@
+{
+  "version": "1.1",
+  "operands": [
+    {
+      "name": "flit",
+      "dimensions": 1,
+      "bit_width": 256,
+      "signed": false,
+      "kind": "int"
+    }
+  ],
+  "operations": [
+    {
+      "type": "l1_memory_noc_primitive",
+      "module_name": "l1_attention_score32_exact_matched_aligned_codec_w419_f256",
+      "operand": "flit",
+      "options": {
+        "primitive": "exact_matched_codec",
+        "codec_mode": "aligned",
+        "flit_bits": 256,
+        "depth": 2,
+        "ports": 2,
+        "banks": 2,
+        "counter_bits": 32
+      }
+    }
+  ]
+}
