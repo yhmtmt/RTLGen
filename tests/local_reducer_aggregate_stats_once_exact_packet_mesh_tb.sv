@@ -25,6 +25,8 @@ module local_reducer_aggregate_stats_once_exact_packet_mesh_tb;
         state = state ^ (state << 5);
         payload_for[(lane * 32) +: 32] = state;
       end
+      if (flit_id == 166)
+        payload_for[DATA_W-1:8] = {(DATA_W-8){1'b0}};
     end
   endfunction
 
@@ -422,6 +424,23 @@ module local_reducer_aggregate_stats_once_exact_packet_mesh_tb;
   integer bad_rx_clean_count;
   integer bad_rx_done;
 
+  // Direct malformed RX: terminal bits above the eight valid payload bits
+  // must be zero before the transport can report clean completion.
+  reg bad_padding_ctx_valid;
+  wire bad_padding_ctx_ready;
+  reg bad_padding_mesh_valid;
+  wire bad_padding_mesh_ready;
+  reg [7:0] bad_padding_mesh_tag;
+  reg [2:0] bad_padding_mesh_fragment;
+  reg bad_padding_mesh_last;
+  reg [DATA_W-1:0] bad_padding_mesh_data;
+  wire bad_padding_codec_valid;
+  wire bad_padding_error;
+  wire bad_padding_clean;
+  integer bad_padding_output_count;
+  integer bad_padding_clean_count;
+  integer bad_padding_done;
+
   local_reducer_aggregate_stats_once_exact_packet_rx_deframer u_bad_rx (
     .clk(clk), .rst_n(rst_n), .group_ctx_valid(bad_rx_ctx_valid),
     .group_ctx_ready(bad_rx_ctx_ready), .group_command_id(bad_rx_command),
@@ -435,6 +454,24 @@ module local_reducer_aggregate_stats_once_exact_packet_mesh_tb;
     .codec_flit_valid(bad_rx_codec_valid), .codec_flit_ready(1'b1),
     .codec_flit_data(), .codec_flit_group_last(),
     .protocol_error(bad_rx_error), .clean_group_complete(bad_rx_clean)
+  );
+
+  local_reducer_aggregate_stats_once_exact_packet_rx_deframer u_bad_padding (
+    .clk(clk), .rst_n(rst_n), .group_ctx_valid(bad_padding_ctx_valid),
+    .group_ctx_ready(bad_padding_ctx_ready), .group_command_id(16'h6400),
+    .group_head_base(5'd8), .group_source(4'd1), .group_destination(4'd0),
+    .group_vc(2'd2), .group_epoch(3'd6),
+    .mesh_flit_valid(bad_padding_mesh_valid),
+    .mesh_flit_ready(bad_padding_mesh_ready), .mesh_flit_destination(4'd0),
+    .mesh_flit_source(4'd1), .mesh_flit_tag(bad_padding_mesh_tag),
+    .mesh_flit_fragment(bad_padding_mesh_fragment),
+    .mesh_flit_last(bad_padding_mesh_last), .mesh_flit_vc(2'd2),
+    .mesh_flit_data(bad_padding_mesh_data),
+    .codec_flit_valid(bad_padding_codec_valid), .codec_flit_ready(1'b1),
+    .codec_flit_data(), .codec_flit_group_last(),
+    .codec_group_command_id(), .codec_group_head_base(),
+    .protocol_error(bad_padding_error),
+    .clean_group_complete(bad_padding_clean)
   );
 
   initial begin
@@ -485,10 +522,8 @@ module local_reducer_aggregate_stats_once_exact_packet_mesh_tb;
         mesh_flit_count, output_flit_count, mesh_packet_count, clean_count,
         good_failures, tx_stability_failures, rx_stability_failures,
         mesh_metadata_failures, output_last_failures, good_tx_error, good_rx_error);
-    bad_early_done = 1;
-    bad_late_done = 1;
-    bad_rx_done = 1;
-    while (!(bad_early_done && bad_late_done && bad_rx_done)) @(posedge clk);
+    while (!(bad_early_done && bad_late_done && bad_rx_done &&
+             bad_padding_done)) @(posedge clk);
     $display("PASS local_reducer_aggregate_stats_once_exact_packet_mesh groups=2 flits=334 packets=42 outputs=334 tx_clean=2 rx_clean=2 clean=2");
     $finish;
   end
@@ -606,6 +641,40 @@ module local_reducer_aggregate_stats_once_exact_packet_mesh_tb;
     bad_rx_done = 1;
   end
 
+  initial begin
+    bad_padding_ctx_valid = 0;
+    bad_padding_mesh_valid = 0;
+    bad_padding_mesh_tag = 0;
+    bad_padding_mesh_fragment = 0;
+    bad_padding_mesh_last = 0;
+    bad_padding_mesh_data = 0;
+    bad_padding_output_count = 0;
+    bad_padding_clean_count = 0;
+    bad_padding_done = 0;
+    @(posedge rst_n);
+    @(negedge clk);
+    bad_padding_ctx_valid = 1;
+    while (!bad_padding_ctx_ready) @(posedge clk);
+    @(negedge clk);
+    bad_padding_ctx_valid = 0;
+    for (integer i = 0; i < 167; i = i + 1) begin
+      bad_padding_mesh_tag = 8'hc0 | (i / 8);
+      bad_padding_mesh_fragment = i % 8;
+      bad_padding_mesh_last = ((i % 8) == 7) || (i == 166);
+      bad_padding_mesh_data = payload_for(12, i);
+      if (i == 166)
+        bad_padding_mesh_data[255] = 1'b1;
+      bad_padding_mesh_valid = 1;
+      while (!(bad_padding_mesh_valid && bad_padding_mesh_ready)) @(posedge clk);
+      @(negedge clk);
+    end
+    bad_padding_mesh_valid = 0;
+    while (bad_padding_output_count < 167) @(posedge clk);
+    if (!bad_padding_error || bad_padding_clean_count != 0)
+      $fatal(1, "nonzero terminal padding was not rejected");
+    bad_padding_done = 1;
+  end
+
   always @(posedge clk) begin
     if (rst_n) begin
       if (bad_rx_codec_valid)
@@ -616,6 +685,10 @@ module local_reducer_aggregate_stats_once_exact_packet_mesh_tb;
         bad_early_clean_count <= bad_early_clean_count + 1;
       if (bad_late_clean)
         bad_late_clean_count <= bad_late_clean_count + 1;
+      if (bad_padding_codec_valid)
+        bad_padding_output_count <= bad_padding_output_count + 1;
+      if (bad_padding_clean)
+        bad_padding_clean_count <= bad_padding_clean_count + 1;
     end
   end
 

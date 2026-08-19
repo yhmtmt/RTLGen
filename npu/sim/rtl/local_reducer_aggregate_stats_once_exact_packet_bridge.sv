@@ -232,6 +232,8 @@ module local_reducer_aggregate_stats_once_exact_packet_rx_deframer #(
     (mesh_flit_tag == expected_tag) &&
     (mesh_flit_fragment == flit_index_q[2:0]) &&
     (mesh_flit_last == expected_packet_last);
+  wire terminal_padding_ok = !expected_group_last ||
+    (mesh_flit_data[DATA_W-1:8] == {(DATA_W-8){1'b0}});
 
   assign group_ctx_ready = !active_q;
   assign mesh_flit_ready = active_q && !input_done_q &&
@@ -284,7 +286,7 @@ module local_reducer_aggregate_stats_once_exact_packet_rx_deframer #(
           output_data_q <= mesh_flit_data;
           output_group_last_q <= expected_group_last;
 
-          if (!metadata_ok) begin
+          if (!metadata_ok || !terminal_padding_ok) begin
             group_error_q <= 1'b1;
             protocol_error_q <= 1'b1;
           end
