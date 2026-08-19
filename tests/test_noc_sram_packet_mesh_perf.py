@@ -64,6 +64,43 @@ def test_eight_rx_contexts_throttle_a_ninth_packet() -> None:
     assert not result.protocol_errors
 
 
+def test_per_endpoint_rx_context_override_accepts_fifteen_root_sources() -> None:
+    descriptors = [
+        PacketDescriptor(
+            source=source,
+            destination=15,
+            vc=1,
+            tag=source,
+            flit_count=8,
+            packet_id=f"root-source-{source}",
+        )
+        for source in range(15)
+    ]
+    result = simulate_packet_mesh(
+        descriptors,
+        rx_context_limits={15: 15},
+    )
+
+    assert len(result.rx_descriptor_handshakes) == 15
+    assert result.max_rx_context_occupancy == 15
+    assert len(result.deliveries) == 15 * 8
+    assert not result.protocol_errors
+
+
+def test_rx_context_override_rejects_invalid_endpoint_or_capacity() -> None:
+    descriptor = PacketDescriptor(
+        source=0,
+        destination=15,
+        vc=1,
+        tag=0,
+        flit_count=1,
+    )
+    with pytest.raises(ValueError, match="keys"):
+        simulate_packet_mesh([descriptor], rx_context_limits={16: 15})
+    with pytest.raises(ValueError, match="positive"):
+        simulate_packet_mesh([descriptor], rx_context_limits={15: 0})
+
+
 def test_concrete_tags_are_preserved_across_wrap() -> None:
     descriptors = [
         PacketDescriptor(

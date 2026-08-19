@@ -408,6 +408,7 @@ def simulate_packet_mesh(
     descriptors: Iterable[PacketDescriptor],
     *,
     descriptor_scheduler: str = "endpoint_parallel",
+    rx_context_limits: Mapping[int, int] | None = None,
     destination_sram_ready_schedule: ReadySchedule = None,
     source_sram_request_ready_schedule: ReadySchedule = None,
     completion_ready_schedule: ReadySchedule = None,
@@ -458,7 +459,19 @@ def simulate_packet_mesh(
             protocol_errors=(),
         )
 
-    states = [_EndpointState(endpoint) for endpoint in range(ENDPOINTS)]
+    context_limits = dict(rx_context_limits or {})
+    for endpoint, limit in context_limits.items():
+        if not 0 <= int(endpoint) < ENDPOINTS:
+            raise ValueError("rx_context_limits keys must be endpoints in [0, 15]")
+        if int(limit) < 1:
+            raise ValueError("rx_context_limits values must be positive")
+    states = [
+        _EndpointState(
+            endpoint,
+            rx_context_limit=int(context_limits.get(endpoint, RX_CONTEXTS)),
+        )
+        for endpoint in range(ENDPOINTS)
+    ]
     routers = [
         _RouterState(
             x_coord=coordinates(endpoint)[0],
