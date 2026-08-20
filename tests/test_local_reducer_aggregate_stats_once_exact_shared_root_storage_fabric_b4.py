@@ -29,6 +29,8 @@ RTL_SOURCES = [
     RTL / "local_reducer_aggregate_stats_once_exact_sram_packet_adapter.sv",
     RTL / "local_reducer_aggregate_stats_once_exact_shared_root_rx_adapter.sv",
 ]
+FAKERAM_MODEL = RTL / "fakeram45_64x32_model.sv"
+FAKERAM_BLACKBOX = REPO_ROOT / "npu/rtl/fakeram45_64x32_blackbox.v"
 FULL_ROOT_TB = REPO_ROOT / (
     "tests/local_reducer_aggregate_stats_once_exact_shared_root_rx_adapter_tb.sv"
 )
@@ -47,17 +49,23 @@ FULL_ROOT_SOURCES = [
     _tool("iverilog") is None or _tool("vvp") is None,
     reason="iverilog/vvp unavailable",
 )
-def test_b4_shared_storage_exact_roundtrip(tmp_path: Path) -> None:
+@pytest.mark.parametrize("use_fakeram", [0, 1])
+def test_b4_shared_storage_exact_roundtrip(
+    tmp_path: Path,
+    use_fakeram: int,
+) -> None:
     simv = tmp_path / "shared_root_storage_b4.vvp"
     subprocess.run(
         [
             str(_tool("iverilog")),
             "-g2012",
+            f"-DSHARED_ROOT_USE_FAKERAM={use_fakeram}",
             "-s",
             TB_TOP,
             "-o",
             str(simv),
             *[str(path) for path in RTL_SOURCES],
+            str(FAKERAM_MODEL),
             str(TB),
         ],
         check=True,
@@ -75,6 +83,7 @@ def test_b4_shared_storage_exact_roundtrip(tmp_path: Path) -> None:
         timeout=60,
     )
     assert "PASS shared_root_storage_b4" in run.stdout
+    assert f"use_fakeram={use_fakeram}" in run.stdout
     assert "canonical_beats=1920" in run.stdout
     assert "flits=2505" in run.stdout
     assert "packets=315" in run.stdout
@@ -168,3 +177,58 @@ def test_b4_shared_storage_has_four_64x256_banks(tmp_path: Path) -> None:
     assert len(mem_cells) == 1
     assert int(mem_cells[0]["parameters"]["SIZE"], 2) == 64
     assert int(mem_cells[0]["parameters"]["WIDTH"], 2) == 256
+
+
+@pytest.mark.skipif(_tool("yosys") is None, reason="yosys unavailable")
+@pytest.mark.parametrize(
+    ("physical_banks", "expected_macros_per_bank", "expected_macro_count"),
+    [(2, 16, 32), (4, 8, 32), (8, 8, 64), (15, 8, 120)],
+)
+def test_shared_storage_has_expected_fakeram_macros(
+    tmp_path: Path,
+    physical_banks: int,
+    expected_macros_per_bank: int,
+    expected_macro_count: int,
+) -> None:
+    netlist = tmp_path / f"shared_root_storage_b{physical_banks}_fakeram.json"
+    subprocess.run(
+        [
+            str(_tool("yosys")),
+            "-q",
+            "-p",
+            "read_verilog -DSYNTHESIS -sv "
+            + str(FAKERAM_BLACKBOX)
+            + " "
+            + " ".join(str(path) for path in RTL_SOURCES)
+            + f"; chparam -set PHYSICAL_BANKS {physical_banks} "
+            + f"-set USE_FAKERAM 1 {TOP}; "
+            + f"hierarchy -check -top {TOP}; proc; check; write_json "
+            + str(netlist),
+        ],
+        check=True,
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+        timeout=120,
+    )
+    design = json.loads(netlist.read_text())
+    top = design["modules"][TOP]
+    bank_cells = [
+        cell
+        for cell in top["cells"].values()
+        if "shared_root_bank_memory" in cell["type"]
+    ]
+    bank_modules = [
+        module
+        for name, module in design["modules"].items()
+        if "shared_root_bank_memory" in name
+    ]
+    assert len(bank_cells) == physical_banks
+    assert len(bank_modules) == 1
+    macros_per_bank = sum(
+        1
+        for cell in bank_modules[0]["cells"].values()
+        if cell["type"] == "fakeram45_64x32"
+    )
+    assert macros_per_bank == expected_macros_per_bank
+    assert len(bank_cells) * macros_per_bank == expected_macro_count

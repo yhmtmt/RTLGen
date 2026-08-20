@@ -20,7 +20,8 @@ module local_reducer_aggregate_stats_once_exact_shared_root_global_tree_composit
   parameter integer LEAF_COUNT = 16,
   parameter integer BEAT_W = 419,
   parameter integer ROOT_ENDPOINT_ID = 15,
-  parameter integer PHYSICAL_BANKS = 15
+  parameter integer PHYSICAL_BANKS = 15,
+  parameter integer USE_FAKERAM = 0
 ) (
   input wire clk,
   input wire rst_n,
@@ -111,7 +112,8 @@ module local_reducer_aggregate_stats_once_exact_shared_root_global_tree_composit
     .FLIT_COUNT_W(FLIT_COUNT_W),
     .SOURCE_COUNT(SOURCE_COUNT),
     .ROOT_ENDPOINT_ID(ROOT_ENDPOINT_ID),
-    .PHYSICAL_BANKS(PHYSICAL_BANKS)
+    .PHYSICAL_BANKS(PHYSICAL_BANKS),
+    .USE_FAKERAM(USE_FAKERAM)
   ) root_rx (
     .clk(clk), .rst_n(rst_n),
     .group_ctx_valid(atomic_ctx_valid_w),

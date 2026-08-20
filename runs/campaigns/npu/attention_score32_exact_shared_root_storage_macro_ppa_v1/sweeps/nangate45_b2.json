@@ -1,0 +1,10 @@
+{
+  "tag_prefix": "attention_score32_exact_shared_root_storage_macro_b2_v1",
+  "flow_params": {
+    "CLOCK_PERIOD": [4.0, 6.0, 8.0, 10.0, 12.0],
+    "DIE_AREA": ["0 0 500 500"],
+    "CORE_AREA": ["50 50 450 450"],
+    "PLACE_DENSITY": [0.4],
+    "SYNTH_HIERARCHICAL": [1]
+  }
+}

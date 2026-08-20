@@ -40,6 +40,7 @@ RTL_SOURCES = [
     RTL / "local_reducer_aggregate_stats_once_exact_shared_root_leaf_adapter.sv",
     RTL / "local_reducer_aggregate_stats_once_exact_shared_root_global_tree_composition.sv",
 ]
+FAKERAM_MODEL = RTL / "fakeram45_64x32_model.sv"
 
 
 def _generate_tree(tmp_path: Path) -> Path:
@@ -64,10 +65,23 @@ def _generate_tree(tmp_path: Path) -> Path:
     _tool("iverilog") is None or _tool("vvp") is None,
     reason="iverilog/vvp unavailable",
 )
-@pytest.mark.parametrize("physical_banks", [15, 4])
+@pytest.mark.parametrize(
+    ("physical_banks", "use_fakeram", "expected_root_span", "expected_final_cycle"),
+    [
+        (15, 0, 2505, 2600),
+        (4, 0, 2505, 2613),
+        (2, 1, 3901, 4120),
+        (4, 1, 2939, 3077),
+        (8, 1, 2733, 2855),
+        (15, 1, 2505, 2620),
+    ],
+)
 def test_full_chain_exact_finite_sram_mesh_and_tree(
     tmp_path: Path,
     physical_banks: int,
+    use_fakeram: int,
+    expected_root_span: int,
+    expected_final_cycle: int,
 ) -> None:
     tree_dir = _generate_tree(tmp_path)
     simv = tmp_path / "full_chain.vvp"
@@ -76,12 +90,14 @@ def test_full_chain_exact_finite_sram_mesh_and_tree(
             str(_tool("iverilog")),
             "-g2012",
             f"-DSHARED_ROOT_PHYSICAL_BANKS={physical_banks}",
+            f"-DSHARED_ROOT_USE_FAKERAM={use_fakeram}",
             "-s",
             TOP,
             "-o",
             str(simv),
             str(tree_dir / "top.v"),
             *[str(path) for path in RTL_SOURCES],
+            str(FAKERAM_MODEL),
             str(TB),
         ],
         check=True,
@@ -107,8 +123,9 @@ def test_full_chain_exact_finite_sram_mesh_and_tree(
     assert "completions=315" in run.stdout
     assert "replays=315" in run.stdout
     assert "source_mask=7fff" in run.stdout
-    assert "root_delivery_span=2505" in run.stdout
-    expected_final_cycle = 2600 if physical_banks == 15 else 2613
+    assert f"banks={physical_banks}" in run.stdout
+    assert f"use_fakeram={use_fakeram}" in run.stdout
+    assert f"root_delivery_span={expected_root_span}" in run.stdout
     assert f"final_cycle={expected_final_cycle}" in run.stdout
     assert "max_aggregate_slots=30" in run.stdout
     assert "slots_per_source=2" in run.stdout

@@ -19,6 +19,11 @@ module local_reducer_aggregate_stats_once_exact_shared_root_global_tree_composit
 `else
   localparam integer ROOT_PHYSICAL_BANKS = SOURCE_COUNT;
 `endif
+`ifdef SHARED_ROOT_USE_FAKERAM
+  localparam integer ROOT_USE_FAKERAM = `SHARED_ROOT_USE_FAKERAM;
+`else
+  localparam integer ROOT_USE_FAKERAM = 0;
+`endif
 
   reg clk = 1'b0;
   reg rst_n = 1'b0;
@@ -234,7 +239,8 @@ module local_reducer_aggregate_stats_once_exact_shared_root_global_tree_composit
   endgenerate
 
   local_reducer_aggregate_stats_once_exact_shared_root_global_tree_composition #(
-    .PHYSICAL_BANKS(ROOT_PHYSICAL_BANKS)
+    .PHYSICAL_BANKS(ROOT_PHYSICAL_BANKS),
+    .USE_FAKERAM(ROOT_USE_FAKERAM)
   ) composition (
     .clk(clk), .rst_n(rst_n),
     .group_ctx_valid(context_fire),
@@ -375,8 +381,8 @@ module local_reducer_aggregate_stats_once_exact_shared_root_global_tree_composit
     end else begin
       cycle <= cycle + 1;
       if (cycle >= SIM_TIMEOUT_CYCLES) begin
-        $display("TIMEOUT banks=%0d root_rows=%0d root_local=%0d flits=%0d desc=%0d comp=%0d replay=%0d slots=%0d source0=%0d source14=%0d",
-          ROOT_PHYSICAL_BANKS, root_count, root_beat_index,
+        $display("TIMEOUT banks=%0d use_fakeram=%0d root_rows=%0d root_local=%0d flits=%0d desc=%0d comp=%0d replay=%0d slots=%0d source0=%0d source14=%0d",
+          ROOT_PHYSICAL_BANKS, ROOT_USE_FAKERAM, root_count, root_beat_index,
           root_accepted_flit_count, root_descriptor_install_count,
           root_completion_count, root_replay_packet_count,
           max_occupied_slots, source_beat_index[0], source_beat_index[14]);
@@ -430,13 +436,18 @@ module local_reducer_aggregate_stats_once_exact_shared_root_global_tree_composit
               root_replay_packet_count !== SOURCE_COUNT*GROUP_PACKETS ||
               source_desc_sum !== SOURCE_COUNT*GROUP_PACKETS ||
               source_mask !== {SOURCE_COUNT{1'b1}} ||
-              (root_last_delivery_cycle - root_first_delivery_cycle + 1) !==
-                SOURCE_COUNT*GROUP_FLITS ||
+              (!ROOT_USE_FAKERAM &&
+               (root_last_delivery_cycle - root_first_delivery_cycle + 1) !==
+                 SOURCE_COUNT*GROUP_FLITS) ||
               max_occupied_slots > SOURCE_COUNT*2)
-            $fatal(1, "transport count mismatch flits=%0d desc=%0d comp=%0d replay=%0d txdesc=%0d",
+            $fatal(1, "transport count mismatch flits=%0d desc=%0d comp=%0d replay=%0d txdesc=%0d source_mask=%h root_span=%0d slots=%0d",
               root_accepted_flit_count, root_descriptor_install_count,
-              root_completion_count, root_replay_packet_count, source_desc_sum);
-          $display("PASS full_chain rows=%0d remote_beats=%0d flits=%0d packets=%0d descriptors=%0d completions=%0d replays=%0d source_mask=%h root_delivery_span=%0d final_cycle=%0d tree_drain_cycles=%0d max_aggregate_slots=%0d slots_per_source=2",
+              root_completion_count, root_replay_packet_count, source_desc_sum,
+              source_mask,
+              root_last_delivery_cycle - root_first_delivery_cycle + 1,
+              max_occupied_slots);
+          $display("PASS full_chain banks=%0d use_fakeram=%0d rows=%0d remote_beats=%0d flits=%0d packets=%0d descriptors=%0d completions=%0d replays=%0d source_mask=%h root_delivery_span=%0d final_cycle=%0d tree_drain_cycles=%0d max_aggregate_slots=%0d slots_per_source=2",
+            ROOT_PHYSICAL_BANKS, ROOT_USE_FAKERAM,
             root_count, SOURCE_COUNT*GROUP_BEATS, root_accepted_flit_count,
             SOURCE_COUNT*GROUP_PACKETS, root_descriptor_install_count,
             root_completion_count, root_replay_packet_count,

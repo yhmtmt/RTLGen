@@ -6,11 +6,13 @@
 module local_reducer_aggregate_stats_once_exact_shared_root_bank_memory #(
   parameter integer DATA_W = 256,
   parameter integer ADDR_W = 6,
-  parameter integer DEPTH = 64
+  parameter integer DEPTH = 64,
+  parameter integer USE_FAKERAM = 0
 ) (
   input wire clk,
   input wire rst_n,
   input wire write_valid,
+  output wire write_ready,
   input wire [ADDR_W-1:0] write_addr,
   input wire [DATA_W-1:0] write_data,
   input wire read_req_valid,
@@ -21,42 +23,126 @@ module local_reducer_aggregate_stats_once_exact_shared_root_bank_memory #(
   output wire [ADDR_W-1:0] read_rsp_addr,
   output wire [DATA_W-1:0] read_rsp_data
 );
-  reg [DATA_W-1:0] mem [0:DEPTH-1];
-  reg read_rsp_valid_q;
-  reg [ADDR_W-1:0] read_rsp_addr_q;
-  reg [DATA_W-1:0] read_rsp_data_q;
+  generate
+    if (USE_FAKERAM == 0) begin : gen_inferred_memory
+      reg [DATA_W-1:0] mem [0:DEPTH-1];
+      reg read_rsp_valid_q;
+      reg [ADDR_W-1:0] read_rsp_addr_q;
+      reg [DATA_W-1:0] read_rsp_data_q;
 
-  // The fabric never presents a read while write_valid is asserted.  Keep
-  // the priority here as well so the bank remains safe as a standalone unit.
-  assign read_req_ready = !write_valid &&
-    (!read_rsp_valid_q || read_rsp_ready);
-  assign read_rsp_valid = read_rsp_valid_q;
-  assign read_rsp_addr = read_rsp_addr_q;
-  assign read_rsp_data = read_rsp_data_q;
+      assign write_ready = 1'b1;
+      assign read_req_ready = !write_valid &&
+        (!read_rsp_valid_q || read_rsp_ready);
+      assign read_rsp_valid = read_rsp_valid_q;
+      assign read_rsp_addr = read_rsp_addr_q;
+      assign read_rsp_data = read_rsp_data_q;
 
-  always @(posedge clk) begin
-    if (write_valid)
-      mem[write_addr] <= write_data;
-    if (read_req_valid && read_req_ready) begin
-      read_rsp_addr_q <= read_req_addr;
-      read_rsp_data_q <= mem[read_req_addr];
+      always @(posedge clk) begin
+        if (write_valid)
+          mem[write_addr] <= write_data;
+        if (read_req_valid && read_req_ready) begin
+          read_rsp_addr_q <= read_req_addr;
+          read_rsp_data_q <= mem[read_req_addr];
+        end
+      end
+
+      always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+          read_rsp_valid_q <= 1'b0;
+        end else if (read_req_valid && read_req_ready) begin
+          read_rsp_valid_q <= 1'b1;
+        end else if (read_rsp_valid_q && read_rsp_ready) begin
+          read_rsp_valid_q <= 1'b0;
+        end
+      end
+    end else begin : gen_fakeram_memory
+      localparam integer MACRO_DEPTH = 64;
+      localparam integer MACRO_WIDTH = 32;
+      localparam integer DEPTH_MACROS =
+        (DEPTH + MACRO_DEPTH - 1) / MACRO_DEPTH;
+      localparam integer WIDTH_MACROS = DATA_W / MACRO_WIDTH;
+      localparam integer PHYSICAL_BITS = WIDTH_MACROS * MACRO_WIDTH;
+      localparam [1:0] S_IDLE = 2'd0;
+      localparam [1:0] S_READ_WAIT = 2'd1;
+      localparam [1:0] S_RESPONSE = 2'd2;
+
+      reg [1:0] state_q;
+      reg [ADDR_W-1:0] read_rsp_addr_q;
+      wire response_replaced_w = state_q == S_RESPONSE && read_rsp_ready;
+      wire operation_ready_w = state_q == S_IDLE || response_replaced_w;
+      wire write_fire_w = write_valid && operation_ready_w;
+      wire read_fire_w = read_req_valid && read_req_ready;
+      wire [ADDR_W-1:0] operation_addr_w =
+        write_fire_w ? write_addr : read_req_addr;
+      wire [ADDR_W+5:0] extended_operation_addr_w =
+        {{6{1'b0}}, operation_addr_w};
+      wire [DEPTH_MACROS*PHYSICAL_BITS-1:0] macro_read_words_w;
+      wire [PHYSICAL_BITS-1:0] selected_read_word_w =
+        macro_read_words_w[
+          (read_rsp_addr_q / MACRO_DEPTH) * PHYSICAL_BITS +: PHYSICAL_BITS];
+
+      assign write_ready = operation_ready_w;
+      assign read_req_ready = operation_ready_w && !write_valid;
+      assign read_rsp_valid = state_q == S_RESPONSE;
+      assign read_rsp_addr = read_rsp_addr_q;
+      assign read_rsp_data = selected_read_word_w[DATA_W-1:0];
+
+      genvar depth_g;
+      genvar width_g;
+      for (depth_g = 0; depth_g < DEPTH_MACROS; depth_g = depth_g + 1) begin : gen_depth
+        for (width_g = 0; width_g < WIDTH_MACROS; width_g = width_g + 1) begin : gen_width
+          fakeram45_64x32 u_packet_mem (
+            .rd_out(macro_read_words_w[
+              (depth_g * PHYSICAL_BITS) + (width_g * MACRO_WIDTH) +: MACRO_WIDTH]),
+            .addr_in(extended_operation_addr_w[5:0]),
+            .we_in(write_fire_w),
+            .wd_in(write_data[width_g*MACRO_WIDTH +: MACRO_WIDTH]),
+            .w_mask_in({MACRO_WIDTH{1'b1}}),
+            .clk(clk),
+            .ce_in((write_fire_w || read_fire_w) &&
+              ((operation_addr_w / MACRO_DEPTH) == depth_g))
+          );
+        end
+      end
+
+      always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+          state_q <= S_IDLE;
+          read_rsp_addr_q <= {ADDR_W{1'b0}};
+        end else begin
+          case (state_q)
+            S_IDLE: begin
+              if (read_fire_w) begin
+                read_rsp_addr_q <= read_req_addr;
+                state_q <= S_READ_WAIT;
+              end
+            end
+            S_READ_WAIT: state_q <= S_RESPONSE;
+            S_RESPONSE: begin
+              if (read_rsp_ready) begin
+                if (read_fire_w) begin
+                  read_rsp_addr_q <= read_req_addr;
+                  state_q <= S_READ_WAIT;
+                end else begin
+                  state_q <= S_IDLE;
+                end
+              end
+            end
+            default: state_q <= S_IDLE;
+          endcase
+        end
+      end
     end
-  end
-
-  always @(posedge clk or negedge rst_n) begin
-    if (!rst_n) begin
-      read_rsp_valid_q <= 1'b0;
-    end else if (read_req_valid && read_req_ready) begin
-      read_rsp_valid_q <= 1'b1;
-    end else if (read_rsp_valid_q && read_rsp_ready) begin
-      read_rsp_valid_q <= 1'b0;
-    end
-  end
+  endgenerate
 
 `ifndef SYNTHESIS
   initial begin
     if (DEPTH != (1 << ADDR_W)) begin
       $error("shared-root bank depth must match its address width");
+      $finish(1);
+    end
+    if (USE_FAKERAM != 0 && (DATA_W % 32) != 0) begin
+      $error("fakeram shared-root banks require 32-bit width granularity");
       $finish(1);
     end
   end
@@ -71,7 +157,8 @@ module local_reducer_aggregate_stats_once_exact_shared_root_storage_fabric #(
   parameter integer DATA_W = 256,
   parameter integer SOURCE_COUNT = 15,
   parameter integer PHYSICAL_BANKS = 15,
-  parameter integer ADDR_W = 4
+  parameter integer ADDR_W = 4,
+  parameter integer USE_FAKERAM = 0
 ) (
   input wire clk,
   input wire rst_n,
@@ -99,6 +186,7 @@ module local_reducer_aggregate_stats_once_exact_shared_root_storage_fabric #(
     (SOURCE_COUNT <= 1) ? 1 : $clog2(SOURCE_COUNT);
 
   wire [PHYSICAL_BANKS-1:0] bank_write_valid_w;
+  wire [PHYSICAL_BANKS-1:0] bank_write_ready_w;
   wire [PHYSICAL_BANKS-1:0] bank_read_req_valid_w;
   wire [PHYSICAL_BANKS-1:0] bank_read_req_ready_w;
   wire [PHYSICAL_BANKS-1:0] bank_read_rsp_valid_w;
@@ -230,8 +318,8 @@ module local_reducer_aggregate_stats_once_exact_shared_root_storage_fabric #(
       for (source_route_g = 0; source_route_g < SOURCE_COUNT;
            source_route_g = source_route_g + 1) begin : gen_source_route
         if ((source_route_g % PHYSICAL_BANKS) == BANK_ID) begin : gen_mapped_source
-          assign write_ready[source_route_g] = !selected_write_r ||
-            (selected_write_i == source_route_g);
+          assign write_ready[source_route_g] = bank_write_ready_w[BANK_ID] &&
+            (!selected_write_r || (selected_write_i == source_route_g));
           assign read_req_ready[source_route_g] = bank_read_req_ready_w[BANK_ID] &&
             !selected_write_r && selected_read_r &&
             (selected_source_i == source_route_g);
@@ -239,10 +327,12 @@ module local_reducer_aggregate_stats_once_exact_shared_root_storage_fabric #(
       end
 
       local_reducer_aggregate_stats_once_exact_shared_root_bank_memory #(
-        .DATA_W(DATA_W), .ADDR_W(BANK_ADDR_W), .DEPTH(BANK_DEPTH)
+        .DATA_W(DATA_W), .ADDR_W(BANK_ADDR_W), .DEPTH(BANK_DEPTH),
+        .USE_FAKERAM(USE_FAKERAM)
       ) bank_memory (
         .clk(clk), .rst_n(rst_n),
         .write_valid(bank_write_valid_w[BANK_ID]),
+        .write_ready(bank_write_ready_w[BANK_ID]),
         .write_addr(bank_write_addr_w[BANK_ID*BANK_ADDR_W +: BANK_ADDR_W]),
         .write_data(bank_write_data_w[BANK_ID*DATA_W +: DATA_W]),
         .read_req_valid(bank_read_req_valid_w[BANK_ID]),
@@ -317,7 +407,8 @@ module local_reducer_aggregate_stats_once_exact_shared_root_rx_adapter #(
   parameter integer FLIT_COUNT_W = 4,
   parameter integer SOURCE_COUNT = 15,
   parameter integer ROOT_ENDPOINT_ID = 15,
-  parameter integer PHYSICAL_BANKS = 15
+  parameter integer PHYSICAL_BANKS = 15,
+  parameter integer USE_FAKERAM = 0
 ) (
   input wire clk,
   input wire rst_n,
@@ -600,7 +691,7 @@ module local_reducer_aggregate_stats_once_exact_shared_root_rx_adapter #(
   // genuinely shared-bank configuration such as PHYSICAL_BANKS=4.
   genvar physical_bank_g;
   generate
-    if (PHYSICAL_BANKS == SOURCE_COUNT) begin : gen_compat_source_banks
+    if (PHYSICAL_BANKS == SOURCE_COUNT && USE_FAKERAM == 0) begin : gen_compat_source_banks
       for (physical_bank_g = 0; physical_bank_g < SOURCE_COUNT;
            physical_bank_g = physical_bank_g + 1) begin : gen_source_bank
         localparam integer BANK_SOURCE_ID = physical_bank_g;
@@ -625,7 +716,8 @@ module local_reducer_aggregate_stats_once_exact_shared_root_rx_adapter #(
     end else begin : gen_shared_physical_banks
       local_reducer_aggregate_stats_once_exact_shared_root_storage_fabric #(
         .DATA_W(DATA_W), .SOURCE_COUNT(SOURCE_COUNT),
-        .PHYSICAL_BANKS(PHYSICAL_BANKS), .ADDR_W(4)
+        .PHYSICAL_BANKS(PHYSICAL_BANKS), .ADDR_W(4),
+        .USE_FAKERAM(USE_FAKERAM)
       ) storage_fabric (
         .clk(clk), .rst_n(rst_n),
         .write_valid(storage_write_valid_w),

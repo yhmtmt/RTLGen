@@ -1,0 +1,99 @@
+{
+  "proposal_id": "prop_l1_attention_score32_exact_shared_root_storage_macro_ppa_v1",
+  "created_utc": "2026-08-19T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit",
+  "title": "Exact shared-root registered-SRAM bank frontier physical calibration",
+  "abstraction_layer": "decoder_attention_exact_shared_root_packet_storage",
+  "hypothesis": "Registered fakeram timing changes the bank-count frontier; physically measuring B2/B4/B8/B15 with equal macro-utilization floorplans will identify the SRAM/control area, frequency, and power tradeoff needed for hierarchical Llama7B recosting.",
+  "direct_comparison": {
+    "primary_question": "Which exact shared-root bank count gives the best throughput, area, and energy tradeoff after registered SRAM timing and physical macro cost are included?",
+    "baselines": [
+      "attention_score32_exact_stats_once_banked_root_frontier",
+      "local_reducer_aggregate_stats_once_exact_shared_root_global_tree_composition"
+    ],
+    "candidate": [
+      "attention_score32_exact_shared_root_storage_macro_b2",
+      "attention_score32_exact_shared_root_storage_macro_b4",
+      "attention_score32_exact_shared_root_storage_macro_b8",
+      "attention_score32_exact_shared_root_storage_macro_b15"
+    ],
+    "include": [
+      "the production shared-root storage arbiter and response skids",
+      "registered fakeram45_64x32 read behavior",
+      "32, 32, 64, and 120 physical SRAM macro inventories",
+      "narrow-I/O self traffic covering all 240 logical words",
+      "per-point floorplans targeting similar raw SRAM macro utilization"
+    ],
+    "exclude": [
+      "the already measured transport codec, endpoint, mesh, decoder, and global tree PPA",
+      "external HBM/DRAM",
+      "a final energy claim before workload activity power is measured"
+    ],
+    "metrics": [
+      "critical_path_ns",
+      "stdcell_area_um2",
+      "macro_area_um2",
+      "total_power_mw",
+      "macro_count",
+      "flow_status"
+    ]
+  },
+  "required_evaluations": [
+    {
+      "item_id": "l1_attention_score32_exact_shared_root_storage_macro_b2_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure the two-bank 32-macro registered-SRAM storage point.",
+      "status": "pending",
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "configs": ["runs/designs/npu_blocks/attention_score32_exact_shared_root_storage_macro_b2/config.json"],
+      "sweep_path": "runs/campaigns/npu/attention_score32_exact_shared_root_storage_macro_ppa_v1/sweeps/nangate45_b2.json",
+      "out_root": "runs/designs/npu_blocks"
+    },
+    {
+      "item_id": "l1_attention_score32_exact_shared_root_storage_macro_b4_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure the four-bank 32-macro area-floor storage point.",
+      "status": "pending",
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "configs": ["runs/designs/npu_blocks/attention_score32_exact_shared_root_storage_macro_b4/config.json"],
+      "sweep_path": "runs/campaigns/npu/attention_score32_exact_shared_root_storage_macro_ppa_v1/sweeps/nangate45_b4.json",
+      "out_root": "runs/designs/npu_blocks"
+    },
+    {
+      "item_id": "l1_attention_score32_exact_shared_root_storage_macro_b8_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure the eight-bank 64-macro balanced storage point.",
+      "status": "pending",
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "configs": ["runs/designs/npu_blocks/attention_score32_exact_shared_root_storage_macro_b8/config.json"],
+      "sweep_path": "runs/campaigns/npu/attention_score32_exact_shared_root_storage_macro_ppa_v1/sweeps/nangate45_b8.json",
+      "out_root": "runs/designs/npu_blocks"
+    },
+    {
+      "item_id": "l1_attention_score32_exact_shared_root_storage_macro_b15_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure the fifteen-bank 120-macro throughput-anchor storage point.",
+      "status": "pending",
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "configs": ["runs/designs/npu_blocks/attention_score32_exact_shared_root_storage_macro_b15/config.json"],
+      "sweep_path": "runs/campaigns/npu/attention_score32_exact_shared_root_storage_macro_ppa_v1/sweeps/nangate45_b15.json",
+      "out_root": "runs/designs/npu_blocks"
+    }
+  ],
+  "remaining_abstractions": [
+    "OpenROAD vectorless power is a physical screening metric; workload activity power remains a follow-up.",
+    "Macro placement is selected by OpenROAD inside the fixed per-point die/core bounds.",
+    "The global architecture remains hierarchically accounted because the flat exact tree exceeds the synthesis memory envelope."
+  ],
+  "source_refs": [
+    "npu/rtlgen/gen_attention_score32_exact_shared_root_storage_physical_harness.py",
+    "npu/eval/check_attention_score32_exact_shared_root_storage_physical_guard.py",
+    "npu/docs/generated/attention_score32_exact_stats_once_banked_root_frontier.json"
+  ]
+}
