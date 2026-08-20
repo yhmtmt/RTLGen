@@ -230,6 +230,12 @@ def load_operator_status(session: Session, request: OperatorStatusRequest) -> Op
                 source_blocked_items.append(row)
         worker_attention = None
         if (
+            last_progress is not None
+            and str(last_progress.get("phase") or "") == "runtime_contract"
+            and str(last_progress.get("status") or "") == "blocked"
+        ):
+            worker_attention = "evaluator_runtime_contract_blocked"
+        elif (
             active_slots == 0
             and source_blocked_items
             and _last_progress_is_legacy_tracked_modification_block(last_progress)

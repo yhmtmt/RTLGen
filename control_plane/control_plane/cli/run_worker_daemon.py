@@ -91,6 +91,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--auto-update-source", action="store_true")
     parser.add_argument("--source-update-ref", default="origin/master")
     parser.add_argument("--no-restart-on-source-update", action="store_true")
+    parser.add_argument("--skip-runtime-contract-check", action="store_true")
     args = parser.parse_args(argv)
     capability_filter = _parse_json_flag(args.capability_filter_json)
     capabilities = _worker_capabilities(
@@ -146,6 +147,9 @@ def main(argv: list[str] | None = None) -> int:
             auto_update_source=args.auto_update_source,
             source_update_ref=args.source_update_ref,
             restart_on_source_update=not args.no_restart_on_source_update,
+            enforce_runtime_contract=(
+                args.machine_role == "evaluator" and not args.skip_runtime_contract_check
+            ),
         ),
     )
     print(

@@ -50,6 +50,16 @@ worker, completion, Git, Codex, RTL generation, and OpenROAD processes remain
 unprivileged. Ownership changes are non-recursive; OpenROAD tools, platform
 files, and scripts remain root-owned image content.
 
+Automatic evaluator source reconciliation updates the service checkout and
+re-executes the worker, but it cannot update files installed into the container
+image. In particular, a change to `.devcontainer/rtlgen-container-init`
+requires rebuilding the evaluator image. Before leasing work, the evaluator
+worker compares that repository file with
+`/usr/local/sbin/rtlgen-container-init` and checks that every OpenROAD runtime
+root is writable. A mismatch leaves the item in `READY` and reports
+`evaluator_runtime_contract_blocked` in operator status; it must not be
+recorded as a design or OpenROAD failure.
+
 ## One-time host repair
 
 Stop Codex and the old container before repairing ownership. On each developer
@@ -77,4 +87,5 @@ ps -eo user,pid,cmd | grep -E 'codex|control_plane'
 The host must be able to edit and remove `permission-test`. Control-plane
 processes must run as `rtlgen`; PostgreSQL retains its normal system accounts.
 For the evaluator, also confirm its stable machine key, remote DB connection,
-heartbeat, and exact-source reconciliation before dispatching more work.
+heartbeat, exact-source reconciliation, and absence of
+`evaluator_runtime_contract_blocked` before dispatching more work.

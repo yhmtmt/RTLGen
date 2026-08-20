@@ -44,4 +44,5 @@ def test_run_worker_daemon_cli_persists_filter_and_source_capabilities(monkeypat
         "repo_root": str(tmp_path.resolve()),
         "head": "abc123",
     }
+    assert config.enforce_runtime_contract is True
     assert '"poll_count": 0' in capsys.readouterr().out

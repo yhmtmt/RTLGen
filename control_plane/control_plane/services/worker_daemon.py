@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
+import os
+from pathlib import Path
 import time
 from typing import Callable
 
@@ -35,6 +37,16 @@ class WorkerDaemonConfig:
     auto_update_source: bool = False
     source_update_ref: str = "origin/master"
     restart_on_source_update: bool = True
+    enforce_runtime_contract: bool = False
+    installed_init_helper: str = "/usr/local/sbin/rtlgen-container-init"
+    runtime_roots: tuple[str, ...] = (
+        "/orfs/flow/designs/src",
+        "/orfs/flow/designs/nangate45",
+        "/orfs/flow/logs",
+        "/orfs/flow/objects",
+        "/orfs/flow/reports",
+        "/orfs/flow/results",
+    )
 
 
 @dataclass(frozen=True)
@@ -61,6 +73,37 @@ def _dispose_session_engine(session_factory: sessionmaker, logger: Callable[[str
 
 def _is_retryable_db_error(exc: Exception) -> bool:
     return isinstance(exc, (OperationalError, DBAPIError))
+
+
+def _runtime_contract_error(config: WorkerDaemonConfig) -> str | None:
+    """Return why an evaluator image cannot safely execute the current checkout."""
+
+    if not config.enforce_runtime_contract:
+        return None
+
+    repo_helper = Path(config.worker.repo_root).resolve() / ".devcontainer" / "rtlgen-container-init"
+    image_helper = Path(config.installed_init_helper)
+    if not repo_helper.is_file():
+        return f"repository container initializer is missing: {repo_helper}"
+    if not image_helper.is_file():
+        return f"installed container initializer is missing: {image_helper}"
+    try:
+        helpers_match = repo_helper.read_bytes() == image_helper.read_bytes()
+    except OSError as exc:
+        return f"could not compare container initializers: {exc}"
+    if not helpers_match:
+        return (
+            f"installed container initializer does not match {repo_helper}; "
+            "rebuild the evaluator container image"
+        )
+
+    for raw_path in config.runtime_roots:
+        path = Path(raw_path)
+        if not path.is_dir():
+            return f"OpenROAD runtime path is missing: {path}"
+        if not os.access(path, os.W_OK | os.X_OK):
+            return f"OpenROAD runtime path is not writable by uid={os.getuid()}: {path}"
+    return None
 
 
 def _record_daemon_progress(
@@ -304,29 +347,49 @@ def run_worker_daemon(
                     continue
                 raise
 
-        try:
-            reconcile_result = _reconcile_next_item_source(
+        runtime_contract_error = _runtime_contract_error(config)
+        if runtime_contract_error is not None:
+            logger(f"worker-daemon runtime_contract_blocked error={runtime_contract_error}")
+            _record_daemon_progress(
                 session_factory,
                 config=config,
                 logger=logger,
+                progress={
+                    "phase": "runtime_contract",
+                    "status": "blocked",
+                    "error": runtime_contract_error,
+                },
             )
-            if reconcile_result is not None:
-                batch = [reconcile_result]
-            else:
-                batch = _run_parallel_batch(session_factory, config=config)
-        except SystemExit:
-            raise
-        except Exception as exc:
-            if _is_retryable_db_error(exc):
-                logger(f"worker-daemon db_unavailable stage=batch error={exc}")
-                _dispose_session_engine(session_factory, logger)
-                if config.max_polls is not None and poll_count >= config.max_polls:
-                    logger("worker-daemon stop reason=max_polls")
-                    break
-                time.sleep(config.poll_seconds)
-                continue
-            logger(f"worker-daemon batch_error error={exc}")
-            batch = [WorkerLoopResult(status="worker_error", summary=str(exc))]
+            batch = [
+                WorkerLoopResult(
+                    status="runtime_contract_blocked",
+                    summary=runtime_contract_error,
+                )
+            ]
+        else:
+            try:
+                reconcile_result = _reconcile_next_item_source(
+                    session_factory,
+                    config=config,
+                    logger=logger,
+                )
+                if reconcile_result is not None:
+                    batch = [reconcile_result]
+                else:
+                    batch = _run_parallel_batch(session_factory, config=config)
+            except SystemExit:
+                raise
+            except Exception as exc:
+                if _is_retryable_db_error(exc):
+                    logger(f"worker-daemon db_unavailable stage=batch error={exc}")
+                    _dispose_session_engine(session_factory, logger)
+                    if config.max_polls is not None and poll_count >= config.max_polls:
+                        logger("worker-daemon stop reason=max_polls")
+                        break
+                    time.sleep(config.poll_seconds)
+                    continue
+                logger(f"worker-daemon batch_error error={exc}")
+                batch = [WorkerLoopResult(status="worker_error", summary=str(exc))]
 
         results.extend(batch)
 
