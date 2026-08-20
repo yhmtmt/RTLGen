@@ -15,6 +15,12 @@ common range: 400 um square cores for B2/B4, 550 um for B8, and 750 um for B15.
 This avoids interpreting congestion from a fixed undersized core as a bank
 architecture penalty.
 
+Each accepted metrics row must retain `macro_count`, `macro_area_um2`,
+`blackbox_instance_counts`, `missing_blackboxes`, and `macro_manifest_path`.
+The bank comparison is invalid if the CSV cannot prove the expected 32, 32,
+64, and 120 physical SRAM instances; a passing pre-synthesis guard alone is
+not sufficient evidence for the placed result.
+
 At queue time, use merged `origin/master` as the source commit. Each normal L1
 task-generation request must place that SHA in
 `source_requirement.required_sha`.

@@ -1158,6 +1158,8 @@ def add_utilization_metrics(
     )
     if stdcell_area is not None:
         metrics["stdcell_area_um2"] = stdcell_area
+    if instance_area is not None and stdcell_area is not None:
+        metrics["macro_area_um2"] = max(0.0, instance_area - stdcell_area)
 
     stdcell_count = first_openroad_metric(
         metrics_json,
@@ -1908,6 +1910,8 @@ def append_metrics(metrics_path: Path, row: Dict[str, object]):
         "total_power_mw",
         "instance_area_um2",
         "stdcell_area_um2",
+        "macro_area_um2",
+        "macro_count",
         "stdcell_count",
         "core_area_um2",
         "utilization_pct",
@@ -1926,6 +1930,10 @@ def append_metrics(metrics_path: Path, row: Dict[str, object]):
         "fsm_encfile_sha1",
         "fsm_encfile_sha256",
         "fsm_encoding_json",
+        "blackbox_instance_counts",
+        "missing_blackboxes",
+        "macro_manifest_path",
+        "macro_selection",
     ]
 
     existing_rows: List[Dict[str, object]] = []
@@ -1945,6 +1953,15 @@ def append_metrics(metrics_path: Path, row: Dict[str, object]):
                 existing_rows = list(reader)
             else:
                 needs_rewrite = True
+
+    for key in row:
+        if key not in header:
+            header.append(key)
+
+    def csv_value(value: object) -> object:
+        if isinstance(value, (dict, list, tuple)):
+            return json.dumps(value, sort_keys=True)
+        return value
 
     def identity_key(record: Dict[str, object]) -> tuple[str, str, str, str]:
         return (
@@ -1967,7 +1984,7 @@ def append_metrics(metrics_path: Path, row: Dict[str, object]):
             writer.writeheader()
             for old_row in existing_rows:
                 writer.writerow({h: old_row.get(h, "") for h in header})
-            writer.writerow({h: row.get(h, "") for h in header})
+            writer.writerow({h: csv_value(row.get(h, "")) for h in header})
         return
 
     needs_header = not metrics_path.exists()
@@ -1975,7 +1992,7 @@ def append_metrics(metrics_path: Path, row: Dict[str, object]):
         writer = csv.DictWriter(f, fieldnames=header)
         if needs_header:
             writer.writeheader()
-        writer.writerow({h: row.get(h, "") for h in header})
+        writer.writerow({h: csv_value(row.get(h, "")) for h in header})
 
 
 def command_to_text(command: List[object]) -> str:
@@ -2694,6 +2711,8 @@ def run_single(design_dir: Path, design_name: str, platform: str, top: str, veri
         "total_power_mw": metrics.get("total_power_mw"),
         "instance_area_um2": metrics.get("instance_area_um2"),
         "stdcell_area_um2": metrics.get("stdcell_area_um2"),
+        "macro_area_um2": metrics.get("macro_area_um2"),
+        "macro_count": sum(blackbox_counts.values()),
         "stdcell_count": metrics.get("stdcell_count"),
         "core_area_um2": metrics.get("core_area_um2"),
         "utilization_pct": metrics.get("utilization_pct"),
