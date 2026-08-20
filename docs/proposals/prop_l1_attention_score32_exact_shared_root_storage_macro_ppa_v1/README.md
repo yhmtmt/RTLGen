@@ -25,7 +25,9 @@ After all four metrics files merge, run
 `npu/eval/audit_attention_score32_exact_shared_root_storage_physical_frontier.py`.
 It verifies the macro inventory, applies each post-route critical path to the
 exact full-chain cycle count, and reports separate latency, instance-area, and
-vectorless-energy Pareto winners. It deliberately does not collapse those
+vectorless-energy Pareto winners. The audit requires a measured system clock
+floor and uses `max(storage critical path, system clock floor)`; storage PPA
+alone cannot claim full-chain timing. It deliberately does not collapse those
 dimensions into a scalar score or claim per-token energy before hierarchical
 Llama7B schedule recosting.
 
