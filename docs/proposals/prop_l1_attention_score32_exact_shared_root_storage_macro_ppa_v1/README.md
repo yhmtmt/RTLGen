@@ -21,6 +21,14 @@ The bank comparison is invalid if the CSV cannot prove the expected 32, 32,
 64, and 120 physical SRAM instances; a passing pre-synthesis guard alone is
 not sufficient evidence for the placed result.
 
+After all four metrics files merge, run
+`npu/eval/audit_attention_score32_exact_shared_root_storage_physical_frontier.py`.
+It verifies the macro inventory, applies each post-route critical path to the
+exact full-chain cycle count, and reports separate latency, instance-area, and
+vectorless-energy Pareto winners. It deliberately does not collapse those
+dimensions into a scalar score or claim per-token energy before hierarchical
+Llama7B schedule recosting.
+
 At queue time, use merged `origin/master` as the source commit. Each normal L1
 task-generation request must place that SHA in
 `source_requirement.required_sha`.

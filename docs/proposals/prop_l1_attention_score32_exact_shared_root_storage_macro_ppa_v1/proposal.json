@@ -94,6 +94,7 @@
   "source_refs": [
     "npu/rtlgen/gen_attention_score32_exact_shared_root_storage_physical_harness.py",
     "npu/eval/check_attention_score32_exact_shared_root_storage_physical_guard.py",
+    "npu/eval/audit_attention_score32_exact_shared_root_storage_physical_frontier.py",
     "npu/docs/generated/attention_score32_exact_stats_once_banked_root_frontier.json"
   ]
 }
