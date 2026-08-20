@@ -574,6 +574,43 @@ def test_operator_status_does_not_flag_assigned_ready_worker_with_progress() -> 
         assert "stalled_workers=" not in status.health_summary["message"]
 
 
+def test_operator_status_flags_runtime_contract_blocked_evaluator() -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    create_all(engine)
+    now = utcnow()
+    with Session(engine) as session:
+        machine = WorkerMachine(
+            machine_key="worker-stale-image",
+            hostname="eval-host",
+            executor_kind="local_process",
+            capabilities={
+                "flow": "openroad",
+                "platform": "nangate45",
+                "last_progress": {
+                    "phase": "runtime_contract",
+                    "status": "blocked",
+                    "error": "installed container initializer does not match repository helper",
+                },
+            },
+            role="evaluator",
+            slot_capacity=4,
+            last_seen_at=now,
+        )
+        session.add(machine)
+        session.flush()
+        ready_item = _seed_item(session, item_id="stale_image_item", state=WorkItemState.READY)
+        ready_item.assigned_machine_key = machine.machine_key
+        session.commit()
+
+        status = load_operator_status(session, OperatorStatusRequest(recent_limit=5))
+
+    row = next(r for r in status.evaluator_machines if r["machine_key"] == "worker-stale-image")
+    assert row["active_slots"] == 0
+    assert row["assigned_ready"] == 1
+    assert row["worker_attention"] == "evaluator_runtime_contract_blocked"
+    assert "stalled_workers=1" in status.health_summary["message"]
+
+
 def test_operator_status_reports_blocked_dependency_reason() -> None:
     engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
     create_all(engine)

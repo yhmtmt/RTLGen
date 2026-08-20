@@ -541,6 +541,64 @@ def test_worker_daemon_records_source_reconcile_error_progress() -> None:
             assert progress["error"] == "fetch failed"
 
 
+def test_worker_daemon_blocks_before_lease_when_evaluator_image_is_stale() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        _init_git_repo(repo_root)
+        repo_helper = repo_root / ".devcontainer" / "rtlgen-container-init"
+        repo_helper.parent.mkdir()
+        repo_helper.write_text("current image contract\n", encoding="utf-8")
+        installed_helper = Path(td) / "installed-rtlgen-container-init"
+        installed_helper.write_text("stale image contract\n", encoding="utf-8")
+
+        db_path = Path(td) / "cp.db"
+        engine = create_engine(f"sqlite+pysqlite:///{db_path}", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            _seed_ready_work_item(
+                session,
+                item_id="daemon_item_stale_image",
+                repo_root=repo_root,
+                assigned_machine_key="daemon-worker-stale-image",
+            )
+
+        session_factory = build_session_factory(engine)
+        result = run_worker_daemon(
+            session_factory,
+            config=WorkerDaemonConfig(
+                worker=WorkerConfig(
+                    repo_root=str(repo_root),
+                    machine_key="daemon-worker-stale-image",
+                    capabilities={"platform": "nangate45", "flow": "openroad"},
+                    capability_filter={"platform": "nangate45", "flow": "openroad"},
+                    heartbeat_seconds=1,
+                ),
+                poll_seconds=0,
+                max_polls=1,
+                enforce_runtime_contract=True,
+                installed_init_helper=str(installed_helper),
+                runtime_roots=(),
+            ),
+        )
+
+        assert [row.status for row in result.results] == ["runtime_contract_blocked"]
+        assert "rebuild the evaluator container image" in result.results[0].summary
+        with Session(engine) as session:
+            item = session.query(WorkItem).filter_by(item_id="daemon_item_stale_image").one()
+            assert item.state == WorkItemState.READY
+            assert session.query(Run).count() == 0
+            machine = session.query(WorkerMachine).filter_by(machine_key="daemon-worker-stale-image").one()
+            assert machine.capabilities["last_progress"] == {
+                "phase": "runtime_contract",
+                "status": "blocked",
+                "error": (
+                    f"installed container initializer does not match {repo_helper}; "
+                    "rebuild the evaluator container image"
+                ),
+            }
+
+
 def test_worker_daemon_executes_two_items_with_concurrency() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
