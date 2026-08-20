@@ -869,6 +869,50 @@ class ModeCompareRegressionTest(unittest.TestCase):
             self.assertEqual("flow_failed", rows[0]["status"])
             self.assertEqual("/orfs/flow/logs/new", rows[0]["result_path"])
 
+    def test_append_metrics_preserves_structured_macro_evidence(self):
+        with tempfile.TemporaryDirectory() as td:
+            metrics_path = Path(td) / "metrics.csv"
+            row = {
+                "design": "macro_design",
+                "platform": "nangate45",
+                "config_hash": "cfg",
+                "param_hash": "params",
+                "tag": "macro_tag",
+                "status": "ok",
+                "critical_path_ns": 4.0,
+                "die_area": 250000.0,
+                "total_power_mw": 2.0,
+                "instance_area_um2": 41000.0,
+                "stdcell_area_um2": 1300.0,
+                "macro_area_um2": 39700.0,
+                "macro_count": 32,
+                "blackbox_instance_counts": {"fakeram45_64x32": 32},
+                "missing_blackboxes": [],
+                "macro_manifest_path": "verilog/macro_manifest.json",
+                "macro_selection": {"entry": "fakeram45_64x32"},
+                "custom_physical_field": {"retained": True},
+            }
+
+            self.run_block_sweep.append_metrics(metrics_path, row)
+
+            with metrics_path.open(newline="", encoding="utf-8") as f:
+                rows = list(csv.DictReader(f))
+            self.assertEqual(1, len(rows))
+            self.assertEqual("32", rows[0]["macro_count"])
+            self.assertEqual(
+                {"fakeram45_64x32": 32},
+                json.loads(rows[0]["blackbox_instance_counts"]),
+            )
+            self.assertEqual([], json.loads(rows[0]["missing_blackboxes"]))
+            self.assertEqual(
+                {"entry": "fakeram45_64x32"},
+                json.loads(rows[0]["macro_selection"]),
+            )
+            self.assertEqual(
+                {"retained": True},
+                json.loads(rows[0]["custom_physical_field"]),
+            )
+
     def test_run_single_assigns_distinct_fsm_capture_base_per_synth_invocation(self):
         with tempfile.TemporaryDirectory() as td:
             tmp = Path(td)
@@ -1585,6 +1629,7 @@ class SynthTargetMappingRegressionTest(unittest.TestCase):
         )
         self.assertEqual(490000.0, metrics["instance_area_um2"])
         self.assertEqual(470000.0, metrics["stdcell_area_um2"])
+        self.assertEqual(20000.0, metrics["macro_area_um2"])
         self.assertEqual(12345.0, metrics["stdcell_count"])
         self.assertEqual(1960000.0, metrics["core_area_um2"])
         self.assertAlmostEqual(25.0, metrics["utilization_pct"])
@@ -1602,6 +1647,7 @@ class SynthTargetMappingRegressionTest(unittest.TestCase):
         )
         self.assertEqual(510000.0, metrics["instance_area_um2"])
         self.assertEqual(501000.0, metrics["stdcell_area_um2"])
+        self.assertEqual(9000.0, metrics["macro_area_um2"])
         self.assertEqual(23456.0, metrics["stdcell_count"])
         self.assertAlmostEqual(510000.0 * 100.0 / 1960000.0, metrics["utilization_pct"])
 
@@ -1618,6 +1664,7 @@ class SynthTargetMappingRegressionTest(unittest.TestCase):
         )
         self.assertEqual(410000.0, metrics["instance_area_um2"])
         self.assertEqual(409000.0, metrics["stdcell_area_um2"])
+        self.assertEqual(1000.0, metrics["macro_area_um2"])
         self.assertEqual(19876.0, metrics["stdcell_count"])
         self.assertAlmostEqual(41.0, metrics["utilization_pct"])
 
