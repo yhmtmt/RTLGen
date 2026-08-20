@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from control_plane.cli import run_worker_daemon as cli
 from control_plane.services.worker_daemon import WorkerDaemonResult
+from control_plane.services import worker_source
 
 
 def test_run_worker_daemon_cli_persists_filter_and_source_capabilities(monkeypatch, tmp_path, capsys) -> None:
@@ -10,7 +11,7 @@ def test_run_worker_daemon_cli_persists_filter_and_source_capabilities(monkeypat
     monkeypatch.setattr(cli, "build_engine", lambda _url: object())
     monkeypatch.setattr(cli, "create_all", lambda _engine: None)
     monkeypatch.setattr(cli, "build_session_factory", lambda _engine: object())
-    monkeypatch.setattr(cli, "_service_repo_head", lambda _repo_root: "abc123")
+    monkeypatch.setattr(worker_source, "service_repo_head", lambda _repo_root: "abc123")
 
     def fake_run_worker_daemon(session_factory, *, config, log_fn=None):
         captured["session_factory"] = session_factory

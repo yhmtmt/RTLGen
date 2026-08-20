@@ -12,6 +12,7 @@ from control_plane.models.enums import FlowName, LeaseStatus, WorkItemState
 from control_plane.models.work_items import WorkItem
 from control_plane.models.worker_machines import WorkerMachine
 from control_plane.models.worker_leases import WorkerLease
+from control_plane.services.worker_source import source_head_satisfies_requirement
 
 
 class NoEligibleWorkItem(RuntimeError):
@@ -109,6 +110,20 @@ def machine_active_lease_count(session: Session, machine_id: str) -> int:
     )
 
 
+def worker_source_satisfies_item(
+    work_item: WorkItem, machine_capabilities: dict[str, Any] | None
+) -> bool:
+    required_sha = str(work_item.source_commit or "").strip()
+    if not required_sha:
+        return True
+    worker_source = dict((machine_capabilities or {}).get("worker_source") or {})
+    return source_head_satisfies_requirement(
+        repo_root=str(worker_source.get("repo_root") or ""),
+        worker_head=str(worker_source.get("head") or ""),
+        required_sha=required_sha,
+    )
+
+
 def select_next_work_item(
     session: Session,
     *,
@@ -152,6 +167,8 @@ def select_next_work_item(
     query = query.order_by(*order_cols, WorkItem.priority.desc(), WorkItem.created_at.asc(), WorkItem.item_id.asc())
     active_count = machine_active_lease_count(session, machine.id) if machine is not None else 0
     for item in query.all():
+        if not worker_source_satisfies_item(item, effective):
+            continue
         if work_item_requires_exclusive_worker(item) and active_count > 0:
             continue
         return item
