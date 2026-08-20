@@ -69,7 +69,9 @@ def _metrics_path(design_root: Path, banks: int) -> Path:
     )
 
 
-def _load_bank_rows(*, path: Path, contract: JsonDict, banks: int) -> list[JsonDict]:
+def _load_bank_rows(
+    *, path: Path, contract: JsonDict, banks: int, clock_floor_ns: float
+) -> list[JsonDict]:
     if not path.is_file():
         raise ValueError(f"B{banks} metrics are missing: {path}")
     with path.open(newline="", encoding="utf-8") as handle:
@@ -118,16 +120,20 @@ def _load_bank_rows(*, path: Path, contract: JsonDict, banks: int) -> list[JsonD
         if not isinstance(params, dict):
             raise ValueError(f"{label} params_json must be an object")
         requested_period_ns = _positive(params.get("CLOCK_PERIOD"), f"{label} clock period")
-        full_chain_latency_ns = final_cycles * critical_path_ns
+        effective_clock_ns = max(critical_path_ns, clock_floor_ns)
+        full_chain_latency_ns = final_cycles * effective_clock_ns
         rows.append(
             {
                 "candidate_id": f"shared_root_storage_b{banks}_{source.get('tag') or index}",
                 "physical_banks": banks,
                 "tag": source.get("tag"),
                 "requested_period_ns": requested_period_ns,
-                "critical_path_ns": critical_path_ns,
+                "storage_critical_path_ns": critical_path_ns,
+                "system_clock_floor_ns": clock_floor_ns,
+                "effective_full_chain_clock_ns": effective_clock_ns,
                 "timing_slack_ns": requested_period_ns - critical_path_ns,
-                "timing_met": critical_path_ns <= requested_period_ns + 1.0e-9,
+                "timing_met": max(critical_path_ns, clock_floor_ns)
+                <= requested_period_ns + 1.0e-9,
                 "full_chain_final_cycles": final_cycles,
                 "full_chain_latency_ns": full_chain_latency_ns,
                 "component_completions_per_s": 1.0e9 / full_chain_latency_ns,
@@ -136,7 +142,7 @@ def _load_bank_rows(*, path: Path, contract: JsonDict, banks: int) -> list[JsonD
                 "instance_area_um2": instance_area_um2,
                 "macro_count": macro_count,
                 "total_power_mw": total_power_mw,
-                "vectorless_full_chain_energy_nj": total_power_mw
+                "vectorless_storage_energy_screen_nj": total_power_mw
                 * full_chain_latency_ns
                 / 1000.0,
                 "bit_exact": True,
@@ -151,20 +157,30 @@ def _dominates(left: JsonDict, right: JsonDict) -> bool:
     left_values = (
         float(left["full_chain_latency_ns"]),
         float(left["instance_area_um2"]),
-        float(left["vectorless_full_chain_energy_nj"]),
+        float(left["vectorless_storage_energy_screen_nj"]),
     )
     right_values = (
         float(right["full_chain_latency_ns"]),
         float(right["instance_area_um2"]),
-        float(right["vectorless_full_chain_energy_nj"]),
+        float(right["vectorless_storage_energy_screen_nj"]),
     )
     return all(a <= b for a, b in zip(left_values, right_values)) and any(
         a < b for a, b in zip(left_values, right_values)
     )
 
 
-def build_report(*, bank_report: JsonDict, design_root: Path) -> JsonDict:
+def build_report(
+    *,
+    bank_report: JsonDict,
+    design_root: Path,
+    clock_floor_ns: float,
+    clock_floor_source: str,
+) -> JsonDict:
     contracts = _bank_contract(bank_report)
+    measured_clock_floor_ns = _positive(clock_floor_ns, "system clock floor")
+    measured_clock_floor_source = str(clock_floor_source or "").strip()
+    if not measured_clock_floor_source:
+        raise ValueError("system clock floor source is required")
     measured_rows = [
         row
         for banks in _BANKS
@@ -172,6 +188,7 @@ def build_report(*, bank_report: JsonDict, design_root: Path) -> JsonDict:
             path=_metrics_path(design_root, banks),
             contract=contracts[banks],
             banks=banks,
+            clock_floor_ns=measured_clock_floor_ns,
         )
     ]
     eligible = [row for row in measured_rows if row["timing_met"]]
@@ -189,13 +206,20 @@ def build_report(*, bank_report: JsonDict, design_root: Path) -> JsonDict:
         "version": 1,
         "semantic_profile": "score32_exact_shared_root_storage_physical_frontier_v1",
         "source_bank_profile": bank_report["semantic_profile"],
+        "clock_contract": {
+            "system_clock_floor_ns": measured_clock_floor_ns,
+            "source": measured_clock_floor_source,
+            "effective_clock_rule": "max(storage_critical_path_ns, system_clock_floor_ns)",
+        },
         "measured_rows": measured_rows,
         "timing_eligible_candidate_ids": [row["candidate_id"] for row in eligible],
         "pareto_candidate_ids": [row["candidate_id"] for row in pareto],
         "dimension_winners": {
             "full_chain_latency": winner("full_chain_latency_ns"),
             "embodied_instance_area": winner("instance_area_um2"),
-            "vectorless_full_chain_energy": winner("vectorless_full_chain_energy_nj"),
+            "vectorless_storage_energy_screen": winner(
+                "vectorless_storage_energy_screen_nj"
+            ),
             "precision": [row["candidate_id"] for row in eligible],
         },
         "selection_status": "physical_bank_frontier_measured_no_scalar_weighting",
@@ -205,6 +229,7 @@ def build_report(*, bank_report: JsonDict, design_root: Path) -> JsonDict:
         },
         "remaining_abstractions": [
             "OpenROAD vectorless power is a screening metric, not workload-toggle-complete energy.",
+            "Storage-block vectorless power multiplied by full-chain duration is not total full-chain energy.",
             "The component completion energy is not yet multiplied by the Llama7B hierarchical invocation schedule.",
             "Vendor SRAM signoff is represented by the available fakeram45 Liberty/LEF model.",
         ],
@@ -219,14 +244,15 @@ def render_markdown(report: JsonDict) -> str:
     lines = [
         "# Exact Shared-Root Storage Physical Frontier",
         "",
-        "| candidate | banks | macros | requested ns | postroute ns | full-chain ns | area um2 | power mW | energy nJ | timing |",
-        "|---|---:|---:|---:|---:|---:|---:|---:|---:|---|",
+        "| candidate | banks | macros | requested ns | storage ns | effective ns | full-chain ns | area um2 | power mW | storage screen nJ | timing |",
+        "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|",
     ]
     for row in report["measured_rows"]:
         lines.append(
             "| {candidate_id} | {physical_banks} | {macro_count} | {requested_period_ns:.4f} | "
-            "{critical_path_ns:.4f} | {full_chain_latency_ns:.4f} | {instance_area_um2:.4f} | "
-            "{total_power_mw:.6f} | {vectorless_full_chain_energy_nj:.6f} | {timing_met} |".format(
+            "{storage_critical_path_ns:.4f} | {effective_full_chain_clock_ns:.4f} | "
+            "{full_chain_latency_ns:.4f} | {instance_area_um2:.4f} | "
+            "{total_power_mw:.6f} | {vectorless_storage_energy_screen_nj:.6f} | {timing_met} |".format(
                 **row
             )
         )
@@ -246,12 +272,19 @@ def main() -> int:
     parser.add_argument("--repo-root", type=Path, default=Path("."))
     parser.add_argument("--bank-report", type=Path, default=_DEFAULT_BANK_REPORT)
     parser.add_argument("--design-root", type=Path, default=_DEFAULT_DESIGN_ROOT)
+    parser.add_argument("--clock-floor-ns", type=float, required=True)
+    parser.add_argument("--clock-floor-source", required=True)
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--report", type=Path, required=True)
     args = parser.parse_args()
     root = args.repo_root.resolve()
     bank_report = json.loads((root / args.bank_report).read_text(encoding="utf-8"))
-    report = build_report(bank_report=bank_report, design_root=root / args.design_root)
+    report = build_report(
+        bank_report=bank_report,
+        design_root=root / args.design_root,
+        clock_floor_ns=args.clock_floor_ns,
+        clock_floor_source=args.clock_floor_source,
+    )
     out_path = root / args.out
     report_path = root / args.report
     out_path.parent.mkdir(parents=True, exist_ok=True)

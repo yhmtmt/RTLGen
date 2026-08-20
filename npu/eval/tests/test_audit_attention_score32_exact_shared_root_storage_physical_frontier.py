@@ -71,16 +71,24 @@ def test_physical_frontier_keeps_separate_area_energy_and_latency_winners(tmp_pa
     _write_metrics(design_root, banks=8, cp_ns=5.5, power_mw=1.6, stdcell_area=9000.0)
     _write_metrics(design_root, banks=15, cp_ns=6.0, power_mw=2.5, stdcell_area=14000.0)
 
-    report = _MODULE.build_report(bank_report=_bank_report(), design_root=design_root)
+    report = _MODULE.build_report(
+        bank_report=_bank_report(),
+        design_root=design_root,
+        clock_floor_ns=8.0,
+        clock_floor_source="measured_mesh_tree_floor.json",
+    )
 
     assert report["selection_status"] == "physical_bank_frontier_measured_no_scalar_weighting"
     winners = report["dimension_winners"]
-    assert winners["full_chain_latency"] == ["shared_root_storage_b8_b8_8ns"]
+    assert winners["full_chain_latency"] == ["shared_root_storage_b15_b15_8ns"]
     assert winners["embodied_instance_area"] == ["shared_root_storage_b4_b4_8ns"]
-    assert winners["vectorless_full_chain_energy"] == ["shared_root_storage_b4_b4_8ns"]
+    assert winners["vectorless_storage_energy_screen"] == [
+        "shared_root_storage_b4_b4_8ns"
+    ]
     assert set(report["pareto_candidate_ids"]) == {
         "shared_root_storage_b4_b4_8ns",
         "shared_root_storage_b8_b8_8ns",
+        "shared_root_storage_b15_b15_8ns",
     }
     assert all(row["bit_exact"] for row in report["measured_rows"])
 
@@ -94,4 +102,23 @@ def test_physical_frontier_rejects_erased_macro_inventory(tmp_path: Path) -> Non
     path.write_text(text, encoding="utf-8")
 
     with pytest.raises(ValueError, match="macro_count mismatch"):
-        _MODULE.build_report(bank_report=_bank_report(), design_root=design_root)
+        _MODULE.build_report(
+            bank_report=_bank_report(),
+            design_root=design_root,
+            clock_floor_ns=8.0,
+            clock_floor_source="measured_mesh_tree_floor.json",
+        )
+
+
+def test_physical_frontier_does_not_ignore_slower_system_clock_floor(tmp_path: Path) -> None:
+    design_root = tmp_path / "designs"
+    for banks in (2, 4, 8, 15):
+        _write_metrics(design_root, banks=banks, cp_ns=6.0, power_mw=1.0, stdcell_area=1000.0)
+
+    with pytest.raises(ValueError, match="no measured row meets"):
+        _MODULE.build_report(
+            bank_report=_bank_report(),
+            design_root=design_root,
+            clock_floor_ns=9.0,
+            clock_floor_source="measured_mesh_tree_floor.json",
+        )
