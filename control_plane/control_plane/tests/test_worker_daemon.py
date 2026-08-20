@@ -541,6 +541,69 @@ def test_worker_daemon_records_source_reconcile_error_progress() -> None:
             assert progress["error"] == "fetch failed"
 
 
+def test_worker_daemon_requires_reexec_when_checkout_changed_under_process() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        _init_git_repo(repo_root)
+        db_path = Path(td) / "cp.db"
+        engine = create_engine(f"sqlite+pysqlite:///{db_path}", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            _seed_ready_work_item(
+                session,
+                item_id="daemon_item_checkout_changed",
+                repo_root=repo_root,
+                assigned_machine_key="daemon-worker-checkout-changed",
+                source_commit="required-source",
+            )
+
+        session_factory = build_session_factory(engine)
+        with patch(
+            "control_plane.services.worker_daemon.reconcile_service_repo_source",
+            return_value=SourceReconciliationResult(
+                status="satisfied",
+                required_sha="required-source",
+                current_sha="current-checkout-source",
+                source_commit_relation="exact",
+            ),
+        ):
+            result = run_worker_daemon(
+                session_factory,
+                config=WorkerDaemonConfig(
+                    worker=WorkerConfig(
+                        repo_root=str(repo_root),
+                        machine_key="daemon-worker-checkout-changed",
+                        capabilities={
+                            "platform": "nangate45",
+                            "flow": "openroad",
+                            "worker_source": {
+                                "head": "loaded-process-source",
+                                "repo_root": str(repo_root),
+                            },
+                        },
+                        capability_filter={"platform": "nangate45", "flow": "openroad"},
+                        heartbeat_seconds=1,
+                    ),
+                    poll_seconds=0,
+                    max_polls=1,
+                    auto_update_source=True,
+                    restart_on_source_update=False,
+                ),
+            )
+
+        assert [row.status for row in result.results] == ["source_restart_required"]
+        with Session(engine) as session:
+            item = session.query(WorkItem).filter_by(item_id="daemon_item_checkout_changed").one()
+            assert item.state == WorkItemState.READY
+            machine = session.query(WorkerMachine).filter_by(machine_key="daemon-worker-checkout-changed").one()
+            progress = machine.capabilities["last_progress"]
+            assert progress["phase"] == "source_reconcile"
+            assert progress["status"] == "restart_required"
+            assert progress["loaded_head"] == "loaded-process-source"
+            assert progress["current_sha"] == "current-checkout-source"
+
+
 def test_worker_daemon_blocks_before_lease_when_evaluator_image_is_stale() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"

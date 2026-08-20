@@ -275,6 +275,40 @@ def _reconcile_next_item_source(
         )
 
     if result.status in {"satisfied", "no_requirement"}:
+        worker_source = dict((config.worker.capabilities or {}).get("worker_source") or {})
+        loaded_head = str(worker_source.get("head") or "").strip()
+        if (
+            result.status == "satisfied"
+            and loaded_head
+            and result.current_sha
+            and loaded_head != result.current_sha
+        ):
+            message = (
+                "service checkout changed after worker process start: "
+                f"loaded={loaded_head} current={result.current_sha}"
+            )
+            logger(f"worker-daemon source_reconcile restart_required message={message}")
+            _record_daemon_progress(
+                session_factory,
+                config=config,
+                logger=logger,
+                progress={
+                    "phase": "source_reconcile",
+                    "status": "restart_required",
+                    "item_id": item.item_id,
+                    "required_sha": required_sha,
+                    "loaded_head": loaded_head,
+                    "current_sha": result.current_sha,
+                    "message": message,
+                },
+            )
+            if config.restart_on_source_update:
+                reexec_current_process()
+            return WorkerLoopResult(
+                status="source_restart_required",
+                item_id=item.item_id,
+                summary=message,
+            )
         return None
 
     logger(

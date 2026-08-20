@@ -25,6 +25,7 @@ from control_plane.services.dependency_gate import dependency_gate_config_from_p
 from control_plane.services.operator_submission import assess_submission_eligibility
 from control_plane.services.run_index_query import comparative_run_index
 from control_plane.services.trial_variance import load_seed_trial_variance
+from control_plane.services.worker_source import source_head_satisfies_requirement
 
 
 _SOURCE_RECONCILER_TRACKED_SNAPSHOT_COMMIT = "989f3b00"
@@ -65,27 +66,6 @@ def _submission_finalization_fields(link: GitHubLink) -> dict[str, Any]:
 
 def _default_repo_root() -> str:
     return os.environ.get("RTLGEN_SERVICE_REPO") or os.environ.get("REPO_ROOT") or "/workspaces/rtlgen-eval-clean"
-
-
-def _source_head_satisfies_requirement(*, repo_root: str, worker_head: str, required_sha: str) -> bool:
-    worker = str(worker_head or "").strip()
-    required = str(required_sha or "").strip()
-    if not required:
-        return True
-    if not worker:
-        return False
-    if worker == required:
-        return True
-    try:
-        result = subprocess.run(
-            ["git", "-C", str(Path(repo_root).resolve()), "merge-base", "--is-ancestor", required, worker],
-            check=False,
-            capture_output=True,
-            text=True,
-        )
-    except (OSError, RuntimeError):
-        return False
-    return result.returncode == 0
 
 
 def _source_reconciler_has_tracked_snapshot_support(*, repo_root: str, worker_head: str) -> bool:
@@ -214,7 +194,7 @@ def load_operator_status(session: Session, request: OperatorStatusRequest) -> Op
             required_sha = str(item.source_commit or "").strip()
             if not required_sha:
                 continue
-            satisfied = _source_head_satisfies_requirement(
+            satisfied = source_head_satisfies_requirement(
                 repo_root=request.repo_root,
                 worker_head=worker_head,
                 required_sha=required_sha,

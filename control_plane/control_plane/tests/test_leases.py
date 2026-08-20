@@ -229,6 +229,63 @@ def test_acquire_next_lease_persists_capability_filter() -> None:
         assert machine.capabilities["flow"] == "openroad"
 
 
+def test_acquire_next_lease_accepts_exact_loaded_worker_source() -> None:
+    with make_session() as session:
+        _, item_b = seed_ready_items(session)
+        from control_plane.services.lease_service import upsert_worker_machine
+
+        item_b.source_commit = "required-source"
+        session.commit()
+        upsert_worker_machine(session, machine_key="machine-1")
+        assign_work_item(session, item_id=item_b.item_id, machine_key="machine-1")
+
+        result = acquire_next_lease(
+            session,
+            machine_key="machine-1",
+            capabilities={
+                "platform": "nangate45",
+                "flow": "openroad",
+                "worker_source": {
+                    "head": "required-source",
+                    "repo_root": "/unused-for-exact-match",
+                },
+            },
+            lease_seconds=900,
+        )
+
+        assert result.item_id == item_b.item_id
+
+
+def test_acquire_next_lease_rejects_older_loaded_worker_source() -> None:
+    with make_session() as session:
+        _, item_b = seed_ready_items(session)
+        from control_plane.services.lease_service import upsert_worker_machine
+
+        item_b.source_commit = "required-source"
+        session.commit()
+        upsert_worker_machine(session, machine_key="machine-1")
+        assign_work_item(session, item_id=item_b.item_id, machine_key="machine-1")
+
+        with pytest.raises(NoEligibleWorkItem, match="no eligible work item"):
+            acquire_next_lease(
+                session,
+                machine_key="machine-1",
+                capabilities={
+                    "platform": "nangate45",
+                    "flow": "openroad",
+                    "worker_source": {
+                        "head": "older-loaded-source",
+                        "repo_root": "/not/a/git/repository",
+                    },
+                },
+                lease_seconds=900,
+            )
+
+        session.refresh(item_b)
+        assert item_b.state == WorkItemState.READY
+        assert session.query(WorkerLease).filter_by(work_item_id=item_b.id).count() == 0
+
+
 def test_heartbeat_updates_expiry_and_machine_progress() -> None:
     with make_session() as session:
         _, item_b = seed_ready_items(session)

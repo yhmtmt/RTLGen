@@ -8,6 +8,7 @@ import socket
 
 from control_plane.db import build_engine, build_session_factory, create_all
 from control_plane.services.worker_service import render_worker_results, run_worker
+from control_plane.services.worker_source import capabilities_with_worker_source
 from control_plane.workers.executor import WorkerConfig
 
 
@@ -56,6 +57,12 @@ def main(argv: list[str] | None = None) -> int:
     engine = build_engine(args.database_url)
     create_all(engine)
     session_factory = build_session_factory(engine)
+    capability_filter = _parse_json_flag(args.capability_filter_json)
+    capabilities = capabilities_with_worker_source(
+        repo_root=args.repo_root,
+        capabilities=_parse_json_flag(args.capabilities_json),
+        capability_filter=capability_filter,
+    )
     config = WorkerConfig(
         repo_root=args.repo_root,
         machine_key=args.machine_key,
@@ -63,8 +70,8 @@ def main(argv: list[str] | None = None) -> int:
         executor_kind=args.executor_kind,
         machine_role=args.machine_role,
         slot_capacity=args.slot_capacity if args.slot_capacity is not None else max(1, args.max_items),
-        capabilities=_parse_json_flag(args.capabilities_json),
-        capability_filter=_parse_json_flag(args.capability_filter_json),
+        capabilities=capabilities,
+        capability_filter=capability_filter,
         lease_seconds=args.lease_seconds,
         heartbeat_seconds=args.heartbeat_seconds,
         command_timeout_seconds=args.command_timeout_seconds,

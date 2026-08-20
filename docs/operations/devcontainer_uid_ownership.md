@@ -60,6 +60,13 @@ root is writable. A mismatch leaves the item in `READY` and reports
 `evaluator_runtime_contract_blocked` in operator status; it must not be
 recorded as a design or OpenROAD failure.
 
+The scheduler also compares each item's required source SHA with the source SHA
+loaded by the worker process at startup. This check occurs when the lease is
+acquired, so an item arriving between a daemon poll and a parallel worker batch
+cannot bypass source reconciliation. A changed service checkout requires worker
+re-execution before the item becomes lease-eligible; the checkout's current
+`HEAD` alone is not evidence that the running Python process loaded that code.
+
 ## One-time host repair
 
 Stop Codex and the old container before repairing ownership. On each developer
