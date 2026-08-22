@@ -1,0 +1,79 @@
+{
+  "proposal_id": "prop_l1_attention_shared_sram_read_group_adapter_ppa_v1",
+  "source_commit": "TBD",
+  "source_commit_note": "Queue only after merge and pin source_requirement.required_sha to the merged origin/master commit containing the adapter, generator, guard, configs, sweep, and task-generator support.",
+  "requested_items": [
+    {
+      "item_id": "l1_attention_shared_sram_read_group_adapter_w256_s1_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure serialized 256-bit shared-SRAM adaptation.",
+      "evaluation_mode": "physical_calibration",
+      "abstraction_layer": "decoder_attention_shared_sram_macro_port_adapter",
+      "comparison_role": "remote_serial_control",
+      "config_paths": ["runs/designs/npu_blocks/attention_shared_sram_read_group_adapter_w256_s1/config.json"],
+      "sweep_path": "runs/campaigns/npu/attention_shared_sram_read_group_adapter_ppa_v1/sweeps/nangate45.json",
+      "out_root": "runs/designs/npu_blocks",
+      "expected_outputs": [
+        "runs/designs/npu_blocks/attention_shared_sram_read_group_adapter_w256_s1/metrics.csv",
+        "runs/designs/npu_blocks/attention_shared_sram_read_group_adapter_w256_s1/timing_debug_report.md"
+      ],
+      "status": "pending_after_proposal_merge",
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    },
+    {
+      "item_id": "l1_attention_shared_sram_read_group_adapter_w256_s2_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure overlapped 256-bit shared-SRAM adaptation.",
+      "evaluation_mode": "physical_calibration",
+      "abstraction_layer": "decoder_attention_shared_sram_macro_port_adapter",
+      "comparison_role": "remote_throughput_candidate",
+      "config_paths": ["runs/designs/npu_blocks/attention_shared_sram_read_group_adapter_w256_s2/config.json"],
+      "sweep_path": "runs/campaigns/npu/attention_shared_sram_read_group_adapter_ppa_v1/sweeps/nangate45.json",
+      "out_root": "runs/designs/npu_blocks",
+      "expected_outputs": [
+        "runs/designs/npu_blocks/attention_shared_sram_read_group_adapter_w256_s2/metrics.csv",
+        "runs/designs/npu_blocks/attention_shared_sram_read_group_adapter_w256_s2/timing_debug_report.md"
+      ],
+      "status": "pending_after_proposal_merge",
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    },
+    {
+      "item_id": "l1_attention_shared_sram_read_group_adapter_w512_s1_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure serialized 512-bit shared-SRAM adaptation.",
+      "evaluation_mode": "physical_calibration",
+      "abstraction_layer": "decoder_attention_shared_sram_macro_port_adapter",
+      "comparison_role": "local_fill_serial_control",
+      "config_paths": ["runs/designs/npu_blocks/attention_shared_sram_read_group_adapter_w512_s1/config.json"],
+      "sweep_path": "runs/campaigns/npu/attention_shared_sram_read_group_adapter_ppa_v1/sweeps/nangate45.json",
+      "out_root": "runs/designs/npu_blocks",
+      "expected_outputs": [
+        "runs/designs/npu_blocks/attention_shared_sram_read_group_adapter_w512_s1/metrics.csv",
+        "runs/designs/npu_blocks/attention_shared_sram_read_group_adapter_w512_s1/timing_debug_report.md"
+      ],
+      "status": "pending_after_proposal_merge",
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    },
+    {
+      "item_id": "l1_attention_shared_sram_read_group_adapter_w512_s2_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure overlapped 512-bit shared-SRAM adaptation.",
+      "evaluation_mode": "physical_calibration",
+      "abstraction_layer": "decoder_attention_shared_sram_macro_port_adapter",
+      "comparison_role": "local_fill_throughput_candidate",
+      "config_paths": ["runs/designs/npu_blocks/attention_shared_sram_read_group_adapter_w512_s2/config.json"],
+      "sweep_path": "runs/campaigns/npu/attention_shared_sram_read_group_adapter_ppa_v1/sweeps/nangate45.json",
+      "out_root": "runs/designs/npu_blocks",
+      "expected_outputs": [
+        "runs/designs/npu_blocks/attention_shared_sram_read_group_adapter_w512_s2/metrics.csv",
+        "runs/designs/npu_blocks/attention_shared_sram_read_group_adapter_w512_s2/timing_debug_report.md"
+      ],
+      "status": "pending_after_proposal_merge",
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    }
+  ]
+}

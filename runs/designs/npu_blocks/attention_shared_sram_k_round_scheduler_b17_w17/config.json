@@ -1,0 +1,13 @@
+{
+  "top_name": "attention_shared_sram_k_round_scheduler_b17_w17",
+  "attention_shared_sram_k_round_scheduler_ppa_harness": {
+    "banks": 17,
+    "words_per_group": 128,
+    "dimension_groups": 8,
+    "dimensions_per_group": 16
+  },
+  "report_links": {
+    "proposal_id": "prop_l1_attention_shared_sram_k_round_scheduler_ppa_v1",
+    "proposal_path": "docs/proposals/prop_l1_attention_shared_sram_k_round_scheduler_ppa_v1/proposal.json"
+  }
+}

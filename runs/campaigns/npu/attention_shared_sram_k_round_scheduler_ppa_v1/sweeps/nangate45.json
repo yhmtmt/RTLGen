@@ -1,0 +1,10 @@
+{
+  "tag_prefix": "attention_shared_sram_k_round_scheduler_ppa_v1",
+  "flow_params": {
+    "CLOCK_PERIOD": [4.0, 6.0, 8.0, 10.0, 12.0, 16.0],
+    "DIE_AREA": ["0 0 1100 1100"],
+    "CORE_AREA": ["50 50 1050 1050"],
+    "PLACE_DENSITY": [0.5],
+    "SYNTH_HIERARCHICAL": [1]
+  }
+}
