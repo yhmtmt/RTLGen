@@ -50,6 +50,7 @@ HEAD_BASES = (0, 8, 16, 24)
 DEFAULT_LOGICAL_HEAD_GROUPS = 1
 MAX_LOGICAL_HEAD_GROUPS = len(HEAD_BASES)
 SEED = 29
+HEAD_DIM = full_probe.HEAD_DIM
 WAVES = LOCAL_TEMPORAL_WAVES
 TB_TIMEOUT_CYCLES = 50_000
 DEFAULT_SUBPROCESS_TIMEOUT_SEC = 900
@@ -75,7 +76,7 @@ ROWS_PER_STREAM = ROWS_PER_BUFFER // STREAMS
 EXPECTED_TOTALS = {
     "fill_target_accept_count": 128,
     "fill_row_accept_count": 262_144,
-    "producer_handshake_count": 8_192,
+    "producer_handshake_count": 8_192 * HEAD_DIM,
     "sram_request_accept_count": 262_144,
     "sram_response_accept_count": 262_144,
     "cluster_row_count": 2_048,
@@ -331,6 +332,7 @@ def _driver_data(*, logical_head_groups: int = DEFAULT_LOGICAL_HEAD_GROUPS) -> d
     cluster_bases = _cluster_bases()
     query_streams: list[list[int]] = [[] for _ in range(TOTAL_PRODUCERS)]
     key_streams: list[list[int]] = [[] for _ in range(TOTAL_PRODUCERS)]
+    last_streams: list[list[int]] = [[] for _ in range(TOTAL_PRODUCERS)]
     beat_limits = [[0 for _ in range(TOTAL_PRODUCERS)] for _ in range(len(wave_commands))]
     max_beats_per_producer = 0
     for cluster, producers in enumerate(CLUSTER_PRODUCERS):
@@ -356,32 +358,37 @@ def _driver_data(*, logical_head_groups: int = DEFAULT_LOGICAL_HEAD_GROUPS) -> d
                 )
                 blocks = list(stream_blocks)
                 for block in range(block_count):
-                    queries0, keys0 = blocks[0][block][0]
-                    queries1, keys1 = blocks[1][block][0]
-                    query_streams[global_producer].append(
-                        full_probe._pack(list(queries0), 8) | (
-                        full_probe._pack(list(queries1), 8) << 64
-                    )
-                    )
-                    key_streams[global_producer].append(
-                        full_probe._pack(list(keys0), 8) | (
-                        full_probe._pack(list(keys1), 8) << 64
-                    )
-                    )
-                    beat_cursor += 1
+                    for dimension in range(HEAD_DIM):
+                        queries0, keys0 = blocks[0][block][dimension]
+                        queries1, keys1 = blocks[1][block][dimension]
+                        query_streams[global_producer].append(
+                            full_probe._pack(list(queries0), 8) | (
+                            full_probe._pack(list(queries1), 8) << 64
+                        )
+                        )
+                        key_streams[global_producer].append(
+                            full_probe._pack(list(keys0), 8) | (
+                            full_probe._pack(list(keys1), 8) << 64
+                        )
+                        )
+                        last_streams[global_producer].append(int(dimension + 1 == HEAD_DIM))
+                        beat_cursor += 1
                 beat_limits[command_index][global_producer] = beat_cursor
             max_beats_per_producer = max(max_beats_per_producer, beat_cursor)
     query_words = [0] * (TOTAL_PRODUCERS * max_beats_per_producer)
     key_words = [0] * (TOTAL_PRODUCERS * max_beats_per_producer)
+    last_words = [0] * (TOTAL_PRODUCERS * max_beats_per_producer)
     for producer in range(TOTAL_PRODUCERS):
         for beat_index, packed_query in enumerate(query_streams[producer]):
             flat = (producer * max_beats_per_producer) + beat_index
             query_words[flat] = packed_query
             key_words[flat] = key_streams[producer][beat_index]
+            last_words[flat] = last_streams[producer][beat_index]
     return {
         "wave_commands": wave_commands,
         "query_words": query_words,
         "key_words": key_words,
+        "last_words": last_words,
         "max_beats_per_producer": max_beats_per_producer,
         "beat_limits": beat_limits,
     }
@@ -437,11 +444,14 @@ def _write_memh_sidecars(
     driver_data = _driver_data(logical_head_groups=logical_head_groups)
     query_words = list(driver_data["query_words"])
     key_words = list(driver_data["key_words"])
+    last_words = list(driver_data["last_words"])
     query_path = directory / "query.memh"
     key_path = directory / "key.memh"
+    last_path = directory / "last.memh"
     fill_path = directory / "fill.memh"
     _write_memh(query_path, query_words, width_bits=128)
     _write_memh(key_path, key_words, width_bits=128)
+    _write_memh(last_path, last_words, width_bits=1)
     with fill_path.open("w", encoding="ascii") as handle:
         for cluster in range(CLUSTERS):
             for wave_command in _wave_commands(logical_head_groups=logical_head_groups):
@@ -454,9 +464,11 @@ def _write_memh_sidecars(
     return {
         "query": query_path.name,
         "key": key_path.name,
+        "last": last_path.name,
         "fill": fill_path.name,
         "query_words": len(query_words),
         "key_words": len(key_words),
+        "last_words": len(last_words),
         "fill_words": CLUSTERS * logical_head_groups * WAVES * ROWS_PER_BUFFER,
         "max_beats_per_producer": int(driver_data["max_beats_per_producer"]),
         "logical_head_groups": int(logical_head_groups),
@@ -728,6 +740,7 @@ module tb;
   reg [31:0] cmd_beat_limit_mem [0:WAVE_COMMANDS-1][0:TOTAL_PRODUCERS-1];
   reg [127:0] query_mem [0:(TOTAL_PRODUCERS*MAX_BEATS_PER_PRODUCER)-1];
   reg [127:0] key_mem [0:(TOTAL_PRODUCERS*MAX_BEATS_PER_PRODUCER)-1];
+  reg last_mem [0:(TOTAL_PRODUCERS*MAX_BEATS_PER_PRODUCER)-1];
   reg [511:0] fill_mem [0:(CLUSTERS*WAVE_COMMANDS*ROWS_PER_TARGET)-1];
   reg root_ready_mem [0:ROOT_READY_PATTERN_LEN-1];
 
@@ -928,7 +941,7 @@ module tb;
           (beat_issue[producer_index] < cmd_beat_limit_mem[active_command_index][producer_index])) begin
         flat_index = (producer_index * MAX_BEATS_PER_PRODUCER) + beat_issue[producer_index];
         input_valid[producer_index] = 1'b1;
-        input_last[producer_index] = 1'b1;
+        input_last[producer_index] = last_mem[flat_index];
         input_query[(producer_index * 128) +: 128] = query_mem[flat_index];
         input_key[(producer_index * 128) +: 128] = key_mem[flat_index];
       end
@@ -1012,6 +1025,7 @@ module tb;
   initial begin
     $readmemh("query.memh", query_mem);
     $readmemh("key.memh", key_mem);
+    $readmemh("last.memh", last_mem);
     $readmemh("fill.memh", fill_mem);
 {command_init}
 {beat_limit_init}
@@ -1454,6 +1468,8 @@ def build_report(
     )
     report.update(
         {
+            "head_dimension": HEAD_DIM,
+            "score_accumulation_beats_per_block": HEAD_DIM,
             "clusters": CLUSTERS,
             "cluster_producers": list(CLUSTER_PRODUCERS),
             "total_local_producers": TOTAL_PRODUCERS,
@@ -1506,6 +1522,8 @@ def _render_text(report: JsonDict) -> str:
         f"- classification: `{report['classification']}`",
         f"- simulation_status: `{report['simulation_status']}`",
         f"- sim_backend: `{report['sim_backend']}`",
+        f"- head_dimension: `{report['head_dimension']}`",
+        f"- score_accumulation_beats_per_block: `{report['score_accumulation_beats_per_block']}`",
         f"- compile_timeout_sec: `{report['compile_timeout_sec']}`",
         f"- simulation_timeout_sec: `{report['simulation_timeout_sec']}`",
         f"- producer_handshakes: `{summary.get('producer_handshake_count', 0)}`",

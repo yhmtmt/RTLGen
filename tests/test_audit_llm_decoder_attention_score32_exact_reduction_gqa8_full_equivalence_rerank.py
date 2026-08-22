@@ -17,7 +17,7 @@ def _write(path: Path, payload: dict) -> None:
 def _equivalence_payload(*, logical_head_groups: int, source_links: dict | None = None) -> dict:
     totals = {
         1: {
-            "producer_handshake_count": 8192,
+            "producer_handshake_count": 1_048_576,
             "fill_target_accept_count": 128,
             "fill_row_accept_count": 262144,
             "sram_request_accept_count": 262144,
@@ -28,7 +28,7 @@ def _equivalence_payload(*, logical_head_groups: int, source_links: dict | None 
             "cadence_command_accept_count": 8,
         },
         4: {
-            "producer_handshake_count": 32768,
+            "producer_handshake_count": 4_194_304,
             "fill_target_accept_count": 512,
             "fill_row_accept_count": 1048576,
             "sram_request_accept_count": 1048576,
@@ -72,6 +72,8 @@ def _equivalence_payload(*, logical_head_groups: int, source_links: dict | None 
         "simulation_status": "ok",
         "normalized_returncode": 0,
         "logical_head_groups": logical_head_groups,
+        "head_dimension": 128,
+        "score_accumulation_beats_per_block": 128,
         "head_bases": head_bases,
         "command_ids": command_ids,
         "summary": {**totals, "protocol_error": 0},
@@ -210,9 +212,9 @@ def _inputs(tmp_path: Path) -> Namespace:
         _equivalence_payload(
             logical_head_groups=1,
             source_links={
-                "proposal_id": "prop_l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1",
-                "proposal_path": "docs/proposals/prop_l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1/proposal.json",
-                "item_id": "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1_r7",
+                "proposal_id": "prop_l2_decoder_attention_score32_gqa8_full_head_dimension_revision_v1",
+                "proposal_path": "docs/proposals/prop_l2_decoder_attention_score32_gqa8_full_head_dimension_revision_v1/proposal.json",
+                "item_id": "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1_r8",
             },
         ),
     )
@@ -221,9 +223,9 @@ def _inputs(tmp_path: Path) -> Namespace:
         _equivalence_payload(
             logical_head_groups=4,
             source_links={
-                "proposal_id": "prop_l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1",
-                "proposal_path": "docs/proposals/prop_l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1/proposal.json",
-                "item_id": "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1",
+                "proposal_id": "prop_l2_decoder_attention_score32_gqa8_full_head_dimension_revision_v1",
+                "proposal_path": "docs/proposals/prop_l2_decoder_attention_score32_gqa8_full_head_dimension_revision_v1/proposal.json",
+                "item_id": "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1_r2",
             },
         ),
     )
@@ -269,7 +271,7 @@ def test_exact_reduction_full_gqa8_rerank_recosts_score32_row_and_preserves_rank
         "provisional_pending_reducer_and_global_tree_activity_power_measurement"
     )
     assert report["equivalence_prerequisites"]["one_group"]["source_links"]["item_id"] == (
-        "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1_r7"
+        "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1_r8"
     )
 
 
@@ -293,9 +295,31 @@ def test_exact_reduction_full_gqa8_rerank_rejects_failed_four_group_equivalence(
         build_report(args)
 
 
-def test_exact_reduction_full_gqa8_rerank_rejects_missing_r7_one_group_artifact(tmp_path: Path) -> None:
+def test_exact_reduction_full_gqa8_rerank_rejects_legacy_one_dimension_evidence(tmp_path: Path) -> None:
     args = _inputs(tmp_path)
-    args.one_group_equivalence_json = tmp_path / "missing_r7.json"
+    payload = json.loads(args.one_group_equivalence_json.read_text(encoding="utf-8"))
+    payload["head_dimension"] = 1
+    payload["score_accumulation_beats_per_block"] = 1
+    payload["summary"]["producer_handshake_count"] = 8192
+    _write(args.one_group_equivalence_json, payload)
+
+    with pytest.raises(ValueError, match="one-group head_dimension must be 128"):
+        build_report(args)
+
+
+def test_exact_reduction_full_gqa8_rerank_requires_explicit_head_dimension_contract(tmp_path: Path) -> None:
+    args = _inputs(tmp_path)
+    payload = json.loads(args.four_group_equivalence_json.read_text(encoding="utf-8"))
+    del payload["head_dimension"]
+    _write(args.four_group_equivalence_json, payload)
+
+    with pytest.raises(ValueError, match="four-group head_dimension must be a finite number"):
+        build_report(args)
+
+
+def test_exact_reduction_full_gqa8_rerank_rejects_missing_r8_one_group_artifact(tmp_path: Path) -> None:
+    args = _inputs(tmp_path)
+    args.one_group_equivalence_json = tmp_path / "missing_r8.json"
 
     with pytest.raises(FileNotFoundError):
         build_report(args)

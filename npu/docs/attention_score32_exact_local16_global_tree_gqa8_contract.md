@@ -15,6 +15,10 @@ This block is the full structural exact wrapper that composes:
 - direct global exact merge/finalization through the existing ordered banked `c16/r2/l8/b59` tree
 - finalized `320`-bit value output plus component/global counters and protocol signals
 
+The producer-side score contract is Llama7B `head_dim=128`: each token block is
+the dot product of `128` accepted signed INT8 query/key beats, with `input_last`
+asserted only on the final dimension.
+
 ## Cluster Partition
 
 - clusters `0..7` use `54` local producer leaves each
@@ -37,13 +41,13 @@ This block is the full structural exact wrapper that composes:
   the existing finalized-tree contract itself, which consumes `global_max` and
   `exp_sum` internally and emits finalized values only.
 
-## Recorded Bounded Full-Wrapper Evidence
+## Retracted One-Dimensional Evidence
 
-Recorded on July 28, 2026 with:
+The July 28, 2026 bounded run used this command:
 
 - `python npu/eval/probe_attention_score32_exact_local16_global_tree_gqa8.py --config runs/designs/npu_blocks/attention_score32_exact_local16_global_tree_gqa8_p54x8_p53x8_c16_r2_l8_b59/config.json --timeout-sec 240 --json`
 
-Checked-in bounded point:
+It recorded the following historical point:
 
 - command groups: `1`
 - head bases: `[0]`
@@ -61,10 +65,20 @@ Checked-in bounded point:
 - per-cluster emitted aggregate beats: `128`
 - protocol errors: `0`
 
-This bounded point is a full structural wrapper simulation over the real
-`856`-leaf boundary. It is not a reduced proxy.
+That result is not valid Llama7B full-head equivalence evidence. Its stimulus
+asserted `input_last` on every producer beat, so every score covered one product
+instead of the required `128`-term dot product. The structural wrapper and
+reduction rows were exercised, but the sequential producer accumulation path was
+not. The result and dependent full-GQA8 rerank must remain as retracted audit
+history until replaced by reports that record:
 
-## Heavier Run Status
+- `head_dimension=128`
+- `score_accumulation_beats_per_block=128`
+- `producer_handshake_count=1,048,576` for one head group
+- `producer_handshake_count=4,194,304` for four head groups
+- exact structured cluster/root row equality and zero protocol errors
+
+## Historical Heavier Run Status
 
 The same full wrapper was also attempted as a heavier two-group run on July 28,
 2026 with:

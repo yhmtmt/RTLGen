@@ -8033,15 +8033,15 @@ def test_generate_l2_campaign_task_adds_score32_exact_reduction_full_gqa8_rerank
                 _make_l2_request(
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
-                    item_id="l2_decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank_llama7b_v1",
+                    item_id="l2_decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank_llama7b_v1_r2",
                     requested_by="@tester",
                     source_commit=source_commit,
                     proposal_id=(
-                        "prop_l2_decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank_llama7b_v1"
+                        "prop_l2_decoder_attention_score32_gqa8_full_head_dimension_revision_v1"
                     ),
                     proposal_path=(
                         "docs/proposals/"
-                        "prop_l2_decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank_llama7b_v1/"
+                        "prop_l2_decoder_attention_score32_gqa8_full_head_dimension_revision_v1/"
                         "proposal.json"
                     ),
                     abstraction_layer="decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank",
@@ -8053,8 +8053,8 @@ def test_generate_l2_campaign_task_adds_score32_exact_reduction_full_gqa8_rerank
                     depends_on_item_ids=[
                         "l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1",
                         "l2_decoder_attention_score32_quality_aware_hbm_controller_replay_rtl_ppa_recost_frontier_llama7b_v1",
-                        "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1_r7",
-                        "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1",
+                        "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1_r8",
+                        "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1_r2",
                     ],
                     requires_merged_inputs=True,
                     requires_materialized_refs=True,
@@ -8086,16 +8086,16 @@ def test_generate_l2_campaign_task_adds_score32_exact_reduction_full_gqa8_rerank
             )
             assert decoder_inputs["attention_score32_one_group_gqa8_equivalence_json"].endswith(
                 "decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence__"
-                "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1_r7.json"
+                "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1_r8.json"
             )
             assert decoder_inputs["attention_score32_four_group_gqa8_equivalence_json"].endswith(
                 "decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence__"
-                "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1.json"
+                "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1_r2.json"
             )
             assert decoder_inputs["attention_score32_exact_reduction_gqa8_full_equivalence_rerank_out"] == (
                 "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
                 "decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank__"
-                "l2_decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank_llama7b_v1.json"
+                "l2_decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank_llama7b_v1_r2.json"
             )
             assert decoder_inputs["attention_score32_exact_reduction_gqa8_full_equivalence_rerank_scope"].startswith(
                 "Rerank the quality-aware score32 HBM-controller-PPA frontier"
@@ -8104,8 +8104,8 @@ def test_generate_l2_campaign_task_adds_score32_exact_reduction_full_gqa8_rerank
                 "item_ids": [
                     "l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1",
                     "l2_decoder_attention_score32_quality_aware_hbm_controller_replay_rtl_ppa_recost_frontier_llama7b_v1",
-                    "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1_r7",
-                    "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1",
+                    "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1_r8",
+                    "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1_r2",
                 ],
                 "requires_merged_inputs": True,
                 "requires_materialized_refs": True,
@@ -15798,7 +15798,8 @@ def test_generate_l2_campaign_task_adds_cluster_sram_gqa8_equivalence_evidence()
             assert work_item.expected_outputs == expected_outputs
             assert acceptance == work_item.acceptance_rules
             assert any("passed=true" in rule and "classification=passed" in rule for rule in acceptance)
-            assert any("producer_handshake_count=8192" in rule for rule in acceptance)
+            assert any("head_dimension=128" in rule for rule in acceptance)
+            assert any("producer_handshake_count=1048576" in rule for rule in acceptance)
             assert any("cluster_summaries" in rule and "errors=0" in rule for rule in acceptance)
             assert any("full_row_audit.passed=true" in rule for rule in acceptance)
             assert work_item.task_request.request_payload["task"]["inputs"]["decoder_contract"] == decoder_inputs
@@ -15894,7 +15895,8 @@ def test_generate_l2_campaign_task_adds_cluster_sram_gqa8_rotation_equivalence_e
                     "attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_report"
                 ],
             ]
-            assert any("producer_handshake_count=32768" in rule for rule in acceptance)
+            assert any("head_dimension=128" in rule for rule in acceptance)
+            assert any("producer_handshake_count=4194304" in rule for rule in acceptance)
             assert any("completed_command_count=4" in rule for rule in acceptance)
             assert any("strict_generated_top_guard=passed" in rule for rule in acceptance)
             assert any("producer_replay_parallelism=1" in rule for rule in acceptance)

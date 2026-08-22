@@ -22,28 +22,23 @@ _EXPECTED_FRONTIER_ITEM_ID = (
     "l2_decoder_attention_score32_quality_aware_hbm_controller_replay_rtl_ppa_recost_frontier_llama7b_v1"
 )
 _EXPECTED_ONE_GROUP_ITEM_ID = (
-    "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1_r7"
+    "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1_r8"
 )
 _EXPECTED_FOUR_GROUP_ITEM_ID = (
-    "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1"
+    "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1_r2"
 )
-_EXPECTED_ONE_GROUP_PROPOSAL_ID = (
-    "prop_l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1"
-)
+_EXPECTED_ONE_GROUP_PROPOSAL_ID = "prop_l2_decoder_attention_score32_gqa8_full_head_dimension_revision_v1"
 _EXPECTED_ONE_GROUP_PROPOSAL_PATH = (
-    "docs/proposals/prop_l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1/proposal.json"
+    "docs/proposals/prop_l2_decoder_attention_score32_gqa8_full_head_dimension_revision_v1/proposal.json"
 )
-_EXPECTED_FOUR_GROUP_PROPOSAL_ID = (
-    "prop_l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1"
-)
-_EXPECTED_FOUR_GROUP_PROPOSAL_PATH = (
-    "docs/proposals/prop_l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1/proposal.json"
-)
+_EXPECTED_FOUR_GROUP_PROPOSAL_ID = _EXPECTED_ONE_GROUP_PROPOSAL_ID
+_EXPECTED_FOUR_GROUP_PROPOSAL_PATH = _EXPECTED_ONE_GROUP_PROPOSAL_PATH
 _EXPECTED_SCORE32_FAMILY = "score32_exp_lut_div"
 _EXPECTED_SCORE32_CANDIDATE = "score32_exp_lut_schedule_wrapper_hbm_controller_replay_best"
+_EXPECTED_HEAD_DIMENSION = 128
 _EXPECTED_EQUIVALENCE_COUNTS = {
     1: {
-        "producer_handshake_count": 8192,
+        "producer_handshake_count": 1_048_576,
         "fill_target_accept_count": 128,
         "fill_row_accept_count": 262144,
         "sram_request_accept_count": 262144,
@@ -52,7 +47,7 @@ _EXPECTED_EQUIVALENCE_COUNTS = {
         "root_row_count": 128,
     },
     4: {
-        "producer_handshake_count": 32768,
+        "producer_handshake_count": 4_194_304,
         "fill_target_accept_count": 512,
         "fill_row_accept_count": 1048576,
         "sram_request_accept_count": 1048576,
@@ -285,6 +280,21 @@ def _validate_equivalence(payload: JsonDict, *, label: str, expected_groups: int
         int(_as_float(payload.get("logical_head_groups"), label=f"{label} logical_head_groups")) == expected_groups,
         f"{label} equivalence logical_head_groups must be {expected_groups}",
     )
+    head_dimension = int(_as_float(payload.get("head_dimension"), label=f"{label} head_dimension"))
+    _require(
+        head_dimension == _EXPECTED_HEAD_DIMENSION,
+        f"{label} head_dimension must be {_EXPECTED_HEAD_DIMENSION}, got {head_dimension}",
+    )
+    accumulation_beats = int(
+        _as_float(
+            payload.get("score_accumulation_beats_per_block"),
+            label=f"{label} score_accumulation_beats_per_block",
+        )
+    )
+    _require(
+        accumulation_beats == _EXPECTED_HEAD_DIMENSION,
+        f"{label} score_accumulation_beats_per_block must be {_EXPECTED_HEAD_DIMENSION}, got {accumulation_beats}",
+    )
     head_bases = [int(value) for value in _as_list(payload.get("head_bases"))]
     _require(head_bases == _EXPECTED_HEAD_BASES[expected_groups], f"{label} head_bases are mismatched")
     command_ids = [int(value) for value in _as_list(payload.get("command_ids"))]
@@ -363,6 +373,8 @@ def _validate_equivalence(payload: JsonDict, *, label: str, expected_groups: int
                 )
     return {
         "logical_head_groups": expected_groups,
+        "head_dimension": head_dimension,
+        "score_accumulation_beats_per_block": accumulation_beats,
         "head_bases": head_bases,
         "command_ids": command_ids,
         "summary": {key: expected_counts[key] for key in expected_counts},
