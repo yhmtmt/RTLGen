@@ -10,11 +10,14 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from npu.eval.probe_attention_score32_exact_local16_global_tree_gqa8 import (
+    HEAD_DIM,
     _default_config,
     _expected_cluster_summary_counts,
     _hierarchy_driver_data,
     _logical_commands,
+    _raw_scores,
     _resolve_workload,
+    _stream_block_beats,
     _testbench,
     _wave_command_schedule,
     compare_compositional_rows,
@@ -145,11 +148,89 @@ def test_hierarchy_driver_populates_all_producer_and_value_lanes() -> None:
     assert len(driver["key_mem"]) == 856
     assert len(driver["last_mem"]) == 856
     assert len(driver["value_mem"]) == 1712
-    assert driver["max_beats_per_producer"] == 16
+    assert driver["max_beats_per_producer"] == 16 * HEAD_DIM
     assert driver["max_blocks_per_producer"] == 16
     assert all(len(stream) > 0 for stream in driver["query_mem"])
     assert all(len(stream) > 0 for stream in driver["value_mem"])
     assert all(limit > 0 for limit in driver["beat_limits"][-1])
+    assert all(
+        len(last) == len(query) == len(key)
+        for last, query, key in zip(driver["last_mem"], driver["query_mem"], driver["key_mem"])
+    )
+    assert all(
+        sum(last) == len(last) // HEAD_DIM
+        for last in driver["last_mem"]
+    )
+
+
+def test_each_block_contains_all_128_dimensions_and_reference_sums_them() -> None:
+    blocks = _stream_block_beats(
+        cluster=0,
+        producer=0,
+        group_index=0,
+        wave_index=0,
+        stream=0,
+        block_count=1,
+        seed=29,
+    )
+    assert len(blocks) == 1
+    assert len(blocks[0]) == HEAD_DIM
+    expected = [
+        sum(query[3] * key[token] for query, key in blocks[0])
+        for token in range(8)
+    ]
+    assert _raw_scores(blocks[0], 3) == expected
+
+
+def test_dimension_zero_preserves_the_prior_deterministic_stimulus() -> None:
+    cluster = 2
+    producer = 7
+    group_index = 1
+    wave_index = 3
+    stream = 1
+    block_index = 0
+    seed = 29
+    block = _stream_block_beats(
+        cluster=cluster,
+        producer=producer,
+        group_index=group_index,
+        wave_index=wave_index,
+        stream=stream,
+        block_count=1,
+        seed=seed,
+    )[block_index]
+    queries, keys = block[0]
+    assert queries == tuple(
+        (
+            seed * 17
+            + cluster * 19
+            + producer * 23
+            + group_index * 29
+            + wave_index * 31
+            + stream * 37
+            + block_index * 41
+            + head_lane * 43
+        )
+        % 127
+        - 63
+        for head_lane in range(8)
+    )
+    assert keys == tuple(
+        (
+            seed * 47
+            + cluster * 53
+            + producer * 59
+            + group_index * 61
+            + wave_index * 67
+            + stream * 71
+            + block_index * 73
+            + token_lane * 79
+        )
+        % 127
+        - 63
+        for token_lane in range(8)
+    )
+    assert block[1] != block[0]
 
 
 def test_hierarchy_driver_rotates_p54_and_p53_extra_blocks_by_head_group() -> None:
@@ -196,6 +277,10 @@ def test_generated_testbench_drives_real_interfaces_and_wave_schedule() -> None:
     assert "reg [31:0] cmd_beat_limit_mem [0:WAVE_COMMANDS-1][0:TOTAL_PRODUCERS-1];" in tb
     assert "if (rst_n && (active_command_index >= 0) && (beat_issue[producer_index] < cmd_beat_limit_mem[active_command_index][producer_index])) begin" in tb
     assert "input_valid[producer_index] = 1'b1;" in tb
+    assert "input_last[producer_index] = last_mem[flat_index];" in tb
+    assert '$readmemh("query.memh", query_mem);' in tb
+    assert '$readmemh("last.memh", last_mem);' in tb
+    assert '$readmemh("value.memh", value_mem);' in tb
     assert "if (value_read_req_valid[lane_index] && value_read_req_ready[lane_index]) begin" in tb
     assert "value_response_valid[lane_index] <= 1'b1;" in tb
     assert 'COMMAND_ACCEPT idx=%0d cmd=%0d head_base=%0d logical=%0d wave=%0d cycle=%0d' in tb

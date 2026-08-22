@@ -14,6 +14,17 @@ This block composes:
 - direct local exact aggregation into the existing finalized global tree root
 - packed cluster compute counters plus packed cluster SRAM counters and errors
 
+## Llama7B Score Accumulation
+
+- every query/key score block has `128` signed INT8 dimensions
+- a producer must accept exactly `128` query/key beats for each token block
+- `input_last` is asserted only on dimension `127`
+- the score entering exp/reduction is the signed sum of all `128` products
+- a report is valid Llama7B evidence only when it records both
+  `head_dimension=128` and `score_accumulation_beats_per_block=128`
+- one logical head group therefore accepts `1,048,576` producer beats; all four
+  GQA8 head groups accept `4,194,304`
+
 ## Fixed Schedule
 
 - internal group-major command cadence is fixed to head bases `0, 8, 16, 24`

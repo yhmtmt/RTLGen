@@ -1,0 +1,103 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_score32_gqa8_full_head_dimension_revision_v1",
+  "created_utc": "2026-08-21T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "revision",
+  "abstraction_layer": "decoder_attention_score32_gqa8_full_head_dimension_revision",
+  "title": "Replace one-dimensional GQA8 evidence with full 128D Llama7B score accumulation",
+  "hypothesis": "The composed score32 producer, cluster-SRAM, local reducer, and finalized global tree preserve RTL/perf equivalence when every token score is accumulated across all 128 Llama7B head dimensions.",
+  "direct_comparison": {
+    "primary_question": "Does the previously selected score32 GQA8 hierarchy remain exact when the producer sequential dependency spans the full 128-dimensional Llama7B query/key dot product?",
+    "include": [
+      "856 real dual-stream score32 producers",
+      "128 accepted signed INT8 query/key beats per token block",
+      "input_last only on dimension 127",
+      "sixteen cluster SRAM services and local temporal reducers",
+      "the c16/r2/l8/b59 finalized global tree",
+      "one-group and four-group GQA8 ownership",
+      "full structured cluster and root row audits"
+    ],
+    "exclude": [
+      "OpenROAD full-array PPA",
+      "measured SRAM macro energy",
+      "mesh NoC routing and arbitration",
+      "HBM/DRAM controller signoff"
+    ]
+  },
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1_r8",
+      "task_type": "l2_campaign",
+      "objective": "Replace the retracted one-dimensional one-group equivalence artifact with a bounded full-128D Llama7B RTL/perf proof.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence",
+      "comparison_role": "corrective_equivalence_check",
+      "depends_on_item_ids": [],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "run_physical": false,
+      "expected_outputs": [
+        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence__l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1_r8.json",
+        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence__l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1_r8.md"
+      ],
+      "revision": {
+        "reason": "wrong_head_dimension_stimulus",
+        "invalidates_item_ids": [
+          "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1_r7",
+          "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1",
+          "l2_decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank_llama7b_v1"
+        ],
+        "invalidates": {
+          "prior_contract": "one query/key product per token block with input_last asserted on every beat",
+          "replacement_contract": "128 query/key products per token block with input_last asserted only on dimension 127"
+        }
+      }
+    },
+    {
+      "item_id": "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1_r2",
+      "task_type": "l2_campaign",
+      "objective": "Prove the corrected full-128D score accumulation across GQA8 head bases 0, 8, 16, and 24.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence",
+      "comparison_role": "corrective_equivalence_check",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1_r8"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "run_physical": false,
+      "expected_outputs": [
+        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence__l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1_r2.json",
+        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence__l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1_r2.md"
+      ]
+    },
+    {
+      "item_id": "l2_decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank_llama7b_v1_r2",
+      "task_type": "l2_campaign",
+      "objective": "Replace the retracted frontier rerank using only explicit full-128D one- and four-group GQA8 equivalence evidence.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank",
+      "comparison_role": "corrective_frontier_rerank",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1",
+        "l2_decoder_attention_score32_quality_aware_hbm_controller_replay_rtl_ppa_recost_frontier_llama7b_v1",
+        "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1_r8",
+        "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1_r2"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "run_physical": false,
+      "expected_outputs": [
+        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank__l2_decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank_llama7b_v1_r2.json",
+        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank__l2_decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank_llama7b_v1_r2.md"
+      ]
+    }
+  ],
+  "baseline_refs": [
+    "npu/docs/attention_score32_exact_local16_global_tree_cluster_sram_gqa8_contract.md",
+    "npu/docs/attention_score32_exact_local16_global_tree_gqa8_contract.md",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence__l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1_r7.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence__l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1.json"
+  ]
+}

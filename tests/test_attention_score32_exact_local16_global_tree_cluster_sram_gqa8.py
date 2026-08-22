@@ -169,7 +169,7 @@ def test_expected_counts_scale_to_four_head_groups() -> None:
     assert scaled["totals"] == {
         "fill_target_accept_count": 512,
         "fill_row_accept_count": 1048576,
-        "producer_handshake_count": 32768,
+        "producer_handshake_count": 4_194_304,
         "sram_request_accept_count": 1048576,
         "sram_response_accept_count": 1048576,
         "cluster_row_count": 8192,
@@ -199,6 +199,7 @@ def test_generated_testbench_is_real_memh_backed_composed_traffic() -> None:
     assert 'localparam integer TB_TIMEOUT_CYCLES = 50000;' in tb
     assert '$readmemh("query.memh", query_mem);' in tb
     assert '$readmemh("key.memh", key_mem);' in tb
+    assert '$readmemh("last.memh", last_mem);' in tb
     assert '$readmemh("fill.memh", fill_mem);' in tb
     assert "input_valid[producer_index] = 1'b1;" in tb
     assert "input_query = '0;" in tb
@@ -206,6 +207,7 @@ def test_generated_testbench_is_real_memh_backed_composed_traffic() -> None:
     assert "109568'd0" not in tb
     assert "input_query[(producer_index * 128) +: 128] = query_mem[flat_index];" in tb
     assert "input_key[(producer_index * 128) +: 128] = key_mem[flat_index];" in tb
+    assert "input_last[producer_index] = last_mem[flat_index];" in tb
     assert "input_valid[producer_index] && input_ready[producer_index]" in tb
     assert "$countones(input_valid & input_ready)" in tb
     assert "fill_target_valid[cluster_index] = 1'b1;" in tb
@@ -293,6 +295,7 @@ def test_fill_sidecar_uses_cluster_major_wave_command_order(
             "wave_commands": fake_wave_commands,
             "query_words": [0],
             "key_words": [0],
+            "last_words": [1],
             "max_beats_per_producer": 1,
             "beat_limits": [[0]],
         },
@@ -447,6 +450,8 @@ def test_compositional_cluster_testbenches_use_concrete_rtl_and_local_sidecars()
     assert "if (out_valid && out_ready)" in p54
     assert "$readmemh(\"query.memh\", query_mem)" in p54
     assert "$readmemh(\"fill.memh\", fill_mem)" in p54
+    assert "$readmemh(\"last.memh\", last_mem)" in p54
+    assert "input_last[producer] = last_mem[flat_index]" in p54
     assert "input_query = '0" in p54
     assert "score32_top__cluster_p53 dut (" in p53
     assert "localparam integer PRODUCERS = 53;" in p53
@@ -686,6 +691,8 @@ def test_fine_compositional_producer_harness_uses_one_real_producer_and_sidecars
     assert "__cluster_p54 dut" not in tb
     assert '$readmemh("producer_commands.memh",command_mem);' in tb
     assert '$readmemh("value.memh",value_mem);' in tb
+    assert '$readmemh("last.memh",last_mem);' in tb
+    assert ".input_last(last_mem[input_drive])" in tb
     assert "PRODUCER_REQUEST" in tb
     assert "PRODUCER_RESULT cluster=2 producer=7" in tb
 
@@ -934,7 +941,7 @@ def test_observation_evaluator_validates_every_exact_total_and_row() -> None:
     assert expected_counts()["totals"] == {
         "fill_target_accept_count": 128,
         "fill_row_accept_count": 262144,
-        "producer_handshake_count": 8192,
+        "producer_handshake_count": 1_048_576,
         "sram_request_accept_count": 262144,
         "sram_response_accept_count": 262144,
         "cluster_row_count": 2048,
@@ -1129,6 +1136,8 @@ def test_markdown_failure_report_keeps_bounded_subprocess_diagnostics() -> None:
     stderr_tail = "first meaningful error\n" + ("warning\n" * 400) + "Killed\n"
     report = {
         "passed": False,
+        "head_dimension": 128,
+        "score_accumulation_beats_per_block": 128,
         "classification": "failed_inconclusive",
         "simulation_status": "resource_failure",
         "sim_backend": VERILATOR_HIERARCHICAL_BACKEND,
@@ -1158,6 +1167,8 @@ def test_markdown_failure_report_keeps_bounded_subprocess_diagnostics() -> None:
 def test_markdown_pass_report_omits_failure_diagnostics() -> None:
     report = {
         "passed": True,
+        "head_dimension": 128,
+        "score_accumulation_beats_per_block": 128,
         "classification": "passed",
         "simulation_status": "ok",
         "sim_backend": DEFAULT_SIM_BACKEND,
@@ -1462,6 +1473,8 @@ def test_main_writes_bounded_json_and_markdown_reports(
 ) -> None:
     fake_report = {
         "passed": True,
+        "head_dimension": 128,
+        "score_accumulation_beats_per_block": 128,
         "classification": "passed",
         "simulation_status": "ok",
         "sim_backend": DEFAULT_SIM_BACKEND,
@@ -1523,6 +1536,8 @@ def test_main_writes_bounded_json_and_markdown_reports(
     assert "expected_root_rows" not in payload
     markdown = out_md.read_text(encoding="utf-8")
     assert "# attention_score32_exact_local16_global_tree_cluster_sram_gqa8_probe" in markdown
-    assert "- producer_handshakes: `8192`" in markdown
+    assert "- head_dimension: `128`" in markdown
+    assert "- score_accumulation_beats_per_block: `128`" in markdown
+    assert "- producer_handshakes: `1048576`" in markdown
     stdout = capsys.readouterr().out
     assert json.loads(stdout) == payload

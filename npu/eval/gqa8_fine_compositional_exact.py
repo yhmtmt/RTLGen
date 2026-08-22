@@ -69,6 +69,7 @@ def _producer_case(*, cluster: int, producer: int, logical_head_groups: int) -> 
     commands = probe._wave_commands(logical_head_groups=logical_head_groups)
     query_words: list[int] = []
     key_words: list[int] = []
+    last_words: list[int] = []
     value_words = [[], []]
     beat_limits: list[int] = []
     block_offsets: list[int] = []
@@ -95,16 +96,18 @@ def _producer_case(*, cluster: int, producer: int, logical_head_groups: int) -> 
             for stream in range(probe.STREAMS)
         ]
         for block in range(block_count):
-            queries0, keys0 = stream_blocks[0][block][0]
-            queries1, keys1 = stream_blocks[1][block][0]
-            query_words.append(
-                probe.full_probe._pack(list(queries0), 8)
-                | (probe.full_probe._pack(list(queries1), 8) << 64)
-            )
-            key_words.append(
-                probe.full_probe._pack(list(keys0), 8)
-                | (probe.full_probe._pack(list(keys1), 8) << 64)
-            )
+            for dimension in range(probe.HEAD_DIM):
+                queries0, keys0 = stream_blocks[0][block][dimension]
+                queries1, keys1 = stream_blocks[1][block][dimension]
+                query_words.append(
+                    probe.full_probe._pack(list(queries0), 8)
+                    | (probe.full_probe._pack(list(queries1), 8) << 64)
+                )
+                key_words.append(
+                    probe.full_probe._pack(list(keys0), 8)
+                    | (probe.full_probe._pack(list(keys1), 8) << 64)
+                )
+                last_words.append(int(dimension + 1 == probe.HEAD_DIM))
         beat_limits.append(len(query_words))
         for stream in range(probe.STREAMS):
             blocks = probe.full_probe._value_blocks(
@@ -148,6 +151,7 @@ def _producer_case(*, cluster: int, producer: int, logical_head_groups: int) -> 
         "commands": commands,
         "query_words": query_words,
         "key_words": key_words,
+        "last_words": last_words,
         "value_words": value_words[0] + value_words[1],
         "total_blocks": block_cursor,
         "beat_limits": beat_limits,
@@ -167,6 +171,7 @@ def _write_producer_sidecars(
 
     probe._write_memh(directory / "query.memh", case["query_words"], width_bits=128)
     probe._write_memh(directory / "key.memh", case["key_words"], width_bits=128)
+    probe._write_memh(directory / "last.memh", case["last_words"], width_bits=1)
     total_blocks = int(case["total_blocks"])
     values = list(case["value_words"])
     stream_words = total_blocks * 16
@@ -203,6 +208,7 @@ module tb;
   reg finish_pending=0;
   reg [140:0] command_mem [0:COMMANDS-1];
   reg [127:0] query_mem [0:TOTAL_BEATS-1], key_mem [0:TOTAL_BEATS-1];
+  reg last_mem [0:TOTAL_BEATS-1];
   reg [511:0] value_mem [0:(2*TOTAL_BLOCKS*16)-1];
   wire command_valid=(issued<COMMANDS); wire command_ready;
   wire input_valid=(input_index < ((issued==0)?0:command_mem[issued-1][140:109])); wire input_ready;
@@ -224,7 +230,7 @@ module tb;
     .command_block_count(command_mem[command_drive][76:62]),
     .command_score_multiplier(command_mem[command_drive][55:24]),
     .command_score_shift(command_mem[command_drive][61:56]),
-    .input_valid(input_valid),.input_ready(input_ready),.input_last(1'b1),
+    .input_valid(input_valid),.input_ready(input_ready),.input_last(last_mem[input_drive]),
     .input_query(query_mem[input_drive]),.input_key(key_mem[input_drive]),
     .value_read_req_valid(req_valid),.value_read_req_ready(req_ready),
     .value_read_req_address(req_address),.value_read_req_slice(req_slice),
@@ -295,6 +301,7 @@ module tb;
   end
   initial begin
     $readmemh("query.memh",query_mem); $readmemh("key.memh",key_mem);
+    $readmemh("last.memh",last_mem);
     $readmemh("value.memh",value_mem);
     $readmemh("producer_commands.memh",command_mem);
     resp_valid=0; resp_address=0; resp_slice=0; resp_matrix=0;

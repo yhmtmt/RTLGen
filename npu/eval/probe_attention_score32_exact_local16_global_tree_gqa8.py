@@ -33,6 +33,7 @@ from npu.sim.perf.attention_exact_partial import (
 from npu.sim.perf.attention_online import requantize_score_row
 
 JsonDict = dict[str, Any]
+HEAD_DIM = 128
 _CONFIG_KEY = "attention_score32_exact_local16_global_tree_gqa8"
 _CLUSTER_RESULT_RE = re.compile(
     r"CLUSTER_RESULT cluster=(\d+) cmd=(\d+) head=(\d+) slice=(\d+) last=(\d+) max=(-?\d+) sum=(\d+) value=([0-9a-fA-F]+) cycle=(\d+)"
@@ -257,41 +258,46 @@ def _stream_block_beats(
 ) -> tuple[tuple[tuple[tuple[int, ...], tuple[int, ...]], ...], ...]:
     blocks = []
     for block_index in range(block_count):
-        queries = tuple(
-            (
+        beats = []
+        for dimension in range(HEAD_DIM):
+            queries = tuple(
                 (
-                    seed * 17
-                    + cluster * 19
-                    + producer * 23
-                    + group_index * 29
-                    + wave_index * 31
-                    + stream * 37
-                    + block_index * 41
-                    + head_lane * 43
+                    (
+                        seed * 17
+                        + cluster * 19
+                        + producer * 23
+                        + group_index * 29
+                        + wave_index * 31
+                        + stream * 37
+                        + block_index * 41
+                        + head_lane * 43
+                        + dimension * 47
+                    )
+                    % 127
                 )
-                % 127
+                - 63
+                for head_lane in range(8)
             )
-            - 63
-            for head_lane in range(8)
-        )
-        keys = tuple(
-            (
+            keys = tuple(
                 (
-                    seed * 47
-                    + cluster * 53
-                    + producer * 59
-                    + group_index * 61
-                    + wave_index * 67
-                    + stream * 71
-                    + block_index * 73
-                    + token_lane * 79
+                    (
+                        seed * 47
+                        + cluster * 53
+                        + producer * 59
+                        + group_index * 61
+                        + wave_index * 67
+                        + stream * 71
+                        + block_index * 73
+                        + token_lane * 79
+                        + dimension * 83
+                    )
+                    % 127
                 )
-                % 127
+                - 63
+                for token_lane in range(8)
             )
-            - 63
-            for token_lane in range(8)
-        )
-        blocks.append((((tuple(queries), tuple(keys))),))
+            beats.append((queries, keys))
+        blocks.append(tuple(beats))
     return tuple(blocks)
 
 
@@ -335,9 +341,19 @@ def _value_blocks(
     )
 
 
-def _raw_scores(block: tuple[tuple[int, ...], tuple[int, ...]], head_lane: int) -> list[int]:
-    queries, keys = block
-    return [int(queries[head_lane]) * int(keys[token_lane]) for token_lane in range(8)]
+def _raw_scores(
+    block: tuple[tuple[tuple[int, ...], tuple[int, ...]], ...],
+    head_lane: int,
+) -> list[int]:
+    if len(block) != HEAD_DIM:
+        raise ValueError(f"score block must contain {HEAD_DIM} head-dimension beats")
+    return [
+        sum(
+            int(queries[head_lane]) * int(keys[token_lane])
+            for queries, keys in block
+        )
+        for token_lane in range(8)
+    ]
 
 
 def _producer_wave_stream(
@@ -365,7 +381,7 @@ def _producer_wave_stream(
             score_rows = [
                 list(
                     requantize_score_row(
-                        _raw_scores(blocks[block_index][0], head_lane),
+                        _raw_scores(blocks[block_index], head_lane),
                         multiplier=int(logical_command["multiplier"]),
                         shift=int(logical_command["shift"]),
                     )
@@ -468,15 +484,20 @@ def _hierarchy_driver_data(cluster_producers: tuple[int, ...], workload: dict[st
                     seed=int(workload["seed"]),
                 )
                 for block_index in range(block_count):
-                    queries0, keys0 = blocks0[block_index][0]
-                    queries1, keys1 = blocks1[block_index][0]
-                    query_mem[global_index].append(_pack(list(queries0), 8) | (_pack(list(queries1), 8) << 64))
-                    key_mem[global_index].append(_pack(list(keys0), 8) | (_pack(list(keys1), 8) << 64))
-                    last_mem[global_index].append(1)
+                    for dimension in range(HEAD_DIM):
+                        queries0, keys0 = blocks0[block_index][dimension]
+                        queries1, keys1 = blocks1[block_index][dimension]
+                        query_mem[global_index].append(
+                            _pack(list(queries0), 8) | (_pack(list(queries1), 8) << 64)
+                        )
+                        key_mem[global_index].append(
+                            _pack(list(keys0), 8) | (_pack(list(keys1), 8) << 64)
+                        )
+                        last_mem[global_index].append(int(dimension + 1 == HEAD_DIM))
                     for value_slice in range(16):
                         stream_values[0].append(_pack([lane for row in values0[block_index][value_slice] for lane in row], 8))
                         stream_values[1].append(_pack([lane for row in values1[block_index][value_slice] for lane in row], 8))
-                cumulative_beats += block_count
+                cumulative_beats += block_count * HEAD_DIM
                 cumulative_blocks += block_count
                 beat_limits[command_index][global_index] = cumulative_beats
             value_mem[global_index * 2] = stream_values[0]
@@ -569,6 +590,44 @@ def _ready_init(pattern: tuple[bool, ...]) -> str:
     return "\n".join(f"    root_ready_mem[{index}] = 1'b{1 if value else 0};" for index, value in enumerate(pattern))
 
 
+def _write_memh(path: Path, values: list[int], *, width_bits: int) -> None:
+    width_hex = (width_bits + 3) // 4
+    with path.open("w", encoding="ascii") as handle:
+        for value in values:
+            handle.write(f"{int(value) & ((1 << width_bits) - 1):0{width_hex}x}\n")
+
+
+def _write_driver_sidecars(directory: Path, command_data: dict[str, object]) -> dict[str, int]:
+    query_mem = command_data["query_mem"]
+    key_mem = command_data["key_mem"]
+    last_mem = command_data["last_mem"]
+    value_mem = command_data["value_mem"]
+    max_beats = int(command_data["max_beats_per_producer"])
+    max_blocks = int(command_data["max_blocks_per_producer"])
+    query_words: list[int] = []
+    key_words: list[int] = []
+    last_words: list[int] = []
+    for producer in range(len(query_mem)):
+        count = len(query_mem[producer])
+        query_words.extend([*query_mem[producer], *([0] * (max_beats - count))])
+        key_words.extend([*key_mem[producer], *([0] * (max_beats - count))])
+        last_words.extend([*last_mem[producer], *([0] * (max_beats - count))])
+    value_words: list[int] = []
+    words_per_lane = max_blocks * 16
+    for lane in value_mem:
+        value_words.extend([*lane, *([0] * (words_per_lane - len(lane)))])
+    _write_memh(directory / "query.memh", query_words, width_bits=128)
+    _write_memh(directory / "key.memh", key_words, width_bits=128)
+    _write_memh(directory / "last.memh", last_words, width_bits=1)
+    _write_memh(directory / "value.memh", value_words, width_bits=512)
+    return {
+        "query_words": len(query_words),
+        "key_words": len(key_words),
+        "last_words": len(last_words),
+        "value_words": len(value_words),
+    }
+
+
 def _score_params(head_base: int) -> tuple[int, int]:
     group_index = int(head_base) >> 3
     if group_index == 0:
@@ -644,15 +703,18 @@ def _cluster_summary_logging() -> str:
     return "\n".join(lines)
 
 
-def _testbench(*, top_name: str, cluster_producers: tuple[int, ...], workload: dict[str, object], output_ready_pattern: tuple[bool, ...]) -> str:
+def _testbench(
+    *,
+    top_name: str,
+    cluster_producers: tuple[int, ...],
+    workload: dict[str, object],
+    output_ready_pattern: tuple[bool, ...],
+    command_data: dict[str, object] | None = None,
+) -> str:
     total_producers = sum(cluster_producers)
     value_lanes = total_producers * 2
-    command_data = _hierarchy_driver_data(cluster_producers, workload)
+    command_data = command_data or _hierarchy_driver_data(cluster_producers, workload)
     wave_commands = tuple(command_data["wave_commands"])
-    query_mem = command_data["query_mem"]
-    key_mem = command_data["key_mem"]
-    last_mem = command_data["last_mem"]
-    value_mem = command_data["value_mem"]
     beat_limits = command_data["beat_limits"]
     block_offsets = command_data["block_offsets"]
     max_beats_per_producer = int(command_data["max_beats_per_producer"])
@@ -665,21 +727,6 @@ def _testbench(*, top_name: str, cluster_producers: tuple[int, ...], workload: d
                 f"    cmd_beat_limit_mem[{command_index}][{producer}] = 32'd{int(beat_limits[command_index][producer])}; "
                 f"cmd_block_offset_mem[{command_index}][{producer}] = 32'd{int(block_offsets[command_index][producer])};"
             )
-    beat_init = []
-    for producer in range(total_producers):
-        for beat_index, packed_query in enumerate(query_mem[producer]):
-            flat_index = (producer * max_beats_per_producer) + beat_index
-            beat_init.append(
-                f"    query_mem[{flat_index}] = 128'h{int(packed_query):032x}; "
-                f"key_mem[{flat_index}] = 128'h{int(key_mem[producer][beat_index]):032x}; "
-                f"last_mem[{flat_index}] = 1'b{int(last_mem[producer][beat_index])};"
-            )
-    value_init = []
-    for lane_index in range(value_lanes):
-        for slice_index, packed_matrix in enumerate(value_mem[lane_index]):
-            flat_index = (lane_index * max_blocks_per_producer * 16) + slice_index
-            value_init.append(f"    value_mem[{flat_index}] = 512'h{int(packed_matrix):0128x};")
-
     return f"""`timescale 1ns/1ps
 module tb;
   localparam integer COMMANDS = {int(workload["command_count"])};
@@ -972,10 +1019,12 @@ module tb;
   end
 
   initial begin
+    $readmemh("query.memh", query_mem);
+    $readmemh("key.memh", key_mem);
+    $readmemh("last.memh", last_mem);
+    $readmemh("value.memh", value_mem);
 {_command_init(command_data)}
 {chr(10).join(beat_limit_init)}
-{chr(10).join(beat_init)}
-{chr(10).join(value_init)}
 {_ready_init(output_ready_pattern)}
     clk = 1'b0;
     rst_n = 1'b0;
@@ -1100,6 +1149,8 @@ def build_report(
         temp_dir = Path(temp_dir_name)
         rtl_dir = temp_dir / "rtl"
         generate(resolved_config, rtl_dir)
+        command_data = _hierarchy_driver_data(cluster_producers, workload)
+        _write_driver_sidecars(temp_dir, command_data)
         testbench_path = temp_dir / "tb.v"
         fakeram_path = temp_dir / "fakeram45_2048x39.v"
         testbench_path.write_text(
@@ -1108,6 +1159,7 @@ def build_report(
                 cluster_producers=cluster_producers,
                 workload=workload,
                 output_ready_pattern=tuple(bool(value) for value in output_ready_pattern),
+                command_data=command_data,
             ),
             encoding="utf-8",
         )
@@ -1196,6 +1248,8 @@ def build_report(
 
     report: JsonDict = {
         "passed": passed,
+        "head_dimension": HEAD_DIM,
+        "score_accumulation_beats_per_block": HEAD_DIM,
         "simulation_status": "testbench_timeout" if tb_timeout_cycle is not None else simulation_status,
         "timed_out": timed_out,
         "timeout_classification": "failed_inconclusive" if timed_out else None,
@@ -1247,6 +1301,8 @@ def _render_text(report: JsonDict) -> str:
         "",
         f"- passed: `{report['passed']}`",
         f"- simulation_status: `{report['simulation_status']}`",
+        f"- head_dimension: `{report['head_dimension']}`",
+        f"- score_accumulation_beats_per_block: `{report['score_accumulation_beats_per_block']}`",
         f"- interface_mode: `{report['interface_mode']}`",
         f"- total_local_producers: `{report['total_local_producers']}`",
         f"- outputs: `{report['outputs']}`",

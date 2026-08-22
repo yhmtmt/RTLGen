@@ -7473,11 +7473,11 @@ def _decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank_evid
     )
     one_group_equivalence_json = (
         f"{base}/decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence__"
-        "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1_r7.json"
+        "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1_r8.json"
     )
     four_group_equivalence_json = (
         f"{base}/decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence__"
-        "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1.json"
+        "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1_r2.json"
     )
     out = f"{base}/decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank__{item_id}.json"
     report = f"{base}/decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank__{item_id}.md"
@@ -11948,6 +11948,7 @@ def _decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equiv
         "acceptance": [
             "Write exactly the bounded JSON and Markdown probe reports declared in expected_outputs",
             "Require report passed=true, classification=passed, and counts_passed=true",
+            "Require report head_dimension=128 and score_accumulation_beats_per_block=128",
             "Require compositional_components.strict_generated_top_guard=passed",
             "Require compositional_components.producer_replay_parallelism=1",
             (
@@ -11955,7 +11956,7 @@ def _decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equiv
                 "value_packing=canonical_pack_numerators"
             ),
             (
-                "Require exact totals in report.summary: producer_handshake_count=8192, "
+                "Require exact totals in report.summary: producer_handshake_count=1048576, "
                 "fill_target_accept_count=128, fill_row_accept_count=262144, "
                 "sram_request_accept_count=262144, sram_response_accept_count=262144, "
                 "cluster_row_count=2048, root_row_count=128, command_accept_count=8, "
@@ -12061,6 +12062,7 @@ def _decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotat
         "acceptance": [
             "Write exactly the bounded JSON and Markdown probe reports declared in expected_outputs",
             "Require report passed=true, classification=passed, and counts_passed=true",
+            "Require report head_dimension=128 and score_accumulation_beats_per_block=128",
             "Require compositional_components.strict_generated_top_guard=passed",
             "Require compositional_components.producer_replay_parallelism=1",
             (
@@ -12068,7 +12070,7 @@ def _decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotat
                 "value_packing=canonical_pack_numerators"
             ),
             (
-                "Require exact totals in report.summary: producer_handshake_count=32768, "
+                "Require exact totals in report.summary: producer_handshake_count=4194304, "
                 "fill_target_accept_count=512, fill_row_accept_count=1048576, "
                 "sram_request_accept_count=1048576, sram_response_accept_count=1048576, "
                 "cluster_row_count=8192, root_row_count=512, command_accept_count=32, "

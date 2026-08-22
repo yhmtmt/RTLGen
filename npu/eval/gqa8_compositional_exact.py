@@ -48,6 +48,7 @@ def _cluster_driver_data(*, cluster: int, logical_head_groups: int) -> JsonDict:
     wave_commands = probe._wave_commands(logical_head_groups=logical_head_groups)
     query_streams: list[list[int]] = [[] for _ in range(producers)]
     key_streams: list[list[int]] = [[] for _ in range(producers)]
+    last_streams: list[list[int]] = [[] for _ in range(producers)]
     beat_limits = [[0 for _ in range(producers)] for _ in wave_commands]
     max_beats = 0
     for producer in range(producers):
@@ -70,30 +71,35 @@ def _cluster_driver_data(*, cluster: int, logical_head_groups: int) -> JsonDict:
                 for stream in range(probe.STREAMS)
             ]
             for block in range(block_count):
-                queries0, keys0 = blocks[0][block][0]
-                queries1, keys1 = blocks[1][block][0]
-                query_streams[producer].append(
-                    probe.full_probe._pack(list(queries0), 8)
-                    | (probe.full_probe._pack(list(queries1), 8) << 64)
-                )
-                key_streams[producer].append(
-                    probe.full_probe._pack(list(keys0), 8)
-                    | (probe.full_probe._pack(list(keys1), 8) << 64)
-                )
-                cursor += 1
+                for dimension in range(probe.HEAD_DIM):
+                    queries0, keys0 = blocks[0][block][dimension]
+                    queries1, keys1 = blocks[1][block][dimension]
+                    query_streams[producer].append(
+                        probe.full_probe._pack(list(queries0), 8)
+                        | (probe.full_probe._pack(list(queries1), 8) << 64)
+                    )
+                    key_streams[producer].append(
+                        probe.full_probe._pack(list(keys0), 8)
+                        | (probe.full_probe._pack(list(keys1), 8) << 64)
+                    )
+                    last_streams[producer].append(int(dimension + 1 == probe.HEAD_DIM))
+                    cursor += 1
             beat_limits[command_index][producer] = cursor
         max_beats = max(max_beats, cursor)
     query_words = [0] * (producers * max_beats)
     key_words = [0] * (producers * max_beats)
+    last_words = [0] * (producers * max_beats)
     for producer in range(producers):
         for beat_index, query in enumerate(query_streams[producer]):
             flat = producer * max_beats + beat_index
             query_words[flat] = query
             key_words[flat] = key_streams[producer][beat_index]
+            last_words[flat] = last_streams[producer][beat_index]
     return {
         "wave_commands": wave_commands,
         "query_words": query_words,
         "key_words": key_words,
+        "last_words": last_words,
         "beat_limits": beat_limits,
         "max_beats_per_producer": max_beats,
     }
@@ -105,6 +111,7 @@ def _write_cluster_sidecars(directory: Path, *, cluster: int, logical_head_group
     data = _cluster_driver_data(cluster=cluster, logical_head_groups=logical_head_groups)
     probe._write_memh(directory / "query.memh", data["query_words"], width_bits=128)
     probe._write_memh(directory / "key.memh", data["key_words"], width_bits=128)
+    probe._write_memh(directory / "last.memh", data["last_words"], width_bits=1)
     fill_words = [
         value
         for command in data["wave_commands"]
@@ -118,6 +125,7 @@ def _write_cluster_sidecars(directory: Path, *, cluster: int, logical_head_group
     return {
         "query_words": len(data["query_words"]),
         "key_words": len(data["key_words"]),
+        "last_words": len(data["last_words"]),
         "fill_words": len(fill_words),
         "max_beats_per_producer": int(data["max_beats_per_producer"]),
     }
@@ -190,6 +198,7 @@ module tb;
   reg [31:0] beat_limit_mem [0:COMMANDS-1][0:PRODUCERS-1];
   reg [127:0] query_mem [0:(PRODUCERS*MAX_BEATS)-1];
   reg [127:0] key_mem [0:(PRODUCERS*MAX_BEATS)-1];
+  reg last_mem [0:(PRODUCERS*MAX_BEATS)-1];
   reg [511:0] fill_mem [0:(COMMANDS*ROWS_PER_TARGET)-1];
   reg out_ready_mem [0:OUT_READY_LEN-1];
   wire preload_complete = fill_command >= ((COMMANDS < 2) ? COMMANDS : 2);
@@ -260,7 +269,7 @@ module tb;
     for (producer = 0; producer < PRODUCERS; producer = producer + 1) begin
       if (rst_n && active >= 0 && beat_issue[producer] < beat_limit_mem[active][producer]) begin
         flat_index = producer * MAX_BEATS + beat_issue[producer];
-        input_valid[producer] = 1'b1; input_last[producer] = 1'b1;
+        input_valid[producer] = 1'b1; input_last[producer] = last_mem[flat_index];
         input_query[producer*128 +: 128] = query_mem[flat_index];
         input_key[producer*128 +: 128] = key_mem[flat_index];
       end
@@ -304,7 +313,8 @@ module tb;
   end
   initial begin
     if (!$value$plusargs("CLUSTER=%d", cluster_id)) cluster_id = 0;
-    $readmemh("query.memh", query_mem); $readmemh("key.memh", key_mem); $readmemh("fill.memh", fill_mem);
+    $readmemh("query.memh", query_mem); $readmemh("key.memh", key_mem);
+    $readmemh("last.memh", last_mem); $readmemh("fill.memh", fill_mem);
 {command_init}
 {beat_limit_init}
 {ready_init}
