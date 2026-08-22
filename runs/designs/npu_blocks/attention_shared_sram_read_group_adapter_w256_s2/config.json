@@ -1,0 +1,12 @@
+{
+  "top_name": "attention_shared_sram_read_group_adapter_w256_s2",
+  "attention_shared_sram_read_group_adapter_ppa_harness": {
+    "beat_width": 256,
+    "group_slots": 2,
+    "groups": 64
+  },
+  "report_links": {
+    "proposal_id": "prop_l1_attention_shared_sram_read_group_adapter_ppa_v1",
+    "proposal_path": "docs/proposals/prop_l1_attention_shared_sram_read_group_adapter_ppa_v1/proposal.json"
+  }
+}

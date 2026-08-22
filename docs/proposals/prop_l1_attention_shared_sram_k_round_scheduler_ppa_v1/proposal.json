@@ -1,0 +1,69 @@
+{
+  "proposal_id": "prop_l1_attention_shared_sram_k_round_scheduler_ppa_v1",
+  "created_utc": "2026-08-22T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit",
+  "title": "Shared-SRAM 17-bank K round scheduler physical calibration",
+  "abstraction_layer": "decoder_attention_shared_sram_k_prefetch_scheduler",
+  "hypothesis": "Physical-bank-ordered 17-word double buffering removes the full-window synthesis explosion while preserving exact K data and sustaining one compute beat per cycle for SRAM response latency no greater than sixteen cycles.",
+  "direct_comparison": {
+    "primary_question": "What routed timing, standard-cell area, and vectorless power does the concrete 17-bank K round scheduler add, and is its 1,024-cycle interface physically feasible?",
+    "baselines": [
+      "attention_shared_sram_k_window_scheduler full-window functional point",
+      "attention_shared_sram_read_group_adapter physical calibration",
+      "checked shared-SRAM CACTI macro registry"
+    ],
+    "candidate": [
+      "attention_shared_sram_k_round_scheduler_b17_w17"
+    ],
+    "include": [
+      "synthesizable request scheduling and tagged response validation",
+      "two concrete 17x1024-bit live K windows",
+      "physical-bank write layout and 64-bit compute-side permutation",
+      "minimal narrow-I/O deterministic activity harness, with overhead explicitly included"
+    ],
+    "exclude": [
+      "full shared-SRAM capacity macro area and access energy",
+      "downstream score multiply-accumulate arithmetic",
+      "NoC endpoint and mesh PPA",
+      "external HBM/DRAM"
+    ],
+    "metrics": [
+      "critical_path_ns",
+      "stdcell_area_um2",
+      "total_power_mw",
+      "flow_status"
+    ]
+  },
+  "required_evaluations": [
+    {
+      "item_id": "l1_attention_shared_sram_k_round_scheduler_b17_w17_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure the exact 17-bank, two-round-window scheduler across a broad Nangate45 timing sweep.",
+      "status": "pending",
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "configs": [
+        "runs/designs/npu_blocks/attention_shared_sram_k_round_scheduler_b17_w17/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/attention_shared_sram_k_round_scheduler_ppa_v1/sweeps/nangate45.json",
+      "out_root": "runs/designs/npu_blocks"
+    }
+  ],
+  "remaining_abstractions": [
+    "Full shared-SRAM capacity area and access energy are composed from the checked macro registry rather than instantiated as resettable RTL.",
+    "The narrow-I/O harness supplies replicated metadata-derived SRAM response payloads and contributes small explicitly declared overhead; full macro timing is composed separately.",
+    "Downstream score arithmetic must be composed before the 1,024-cycle scheduler cadence can replace the current Llama7B frontier service time.",
+    "Vectorless power is a screening metric until workload activity is supplied.",
+    "HBM/DRAM and its controller remain external."
+  ],
+  "source_refs": [
+    "npu/docs/attention_shared_sram_k_window_scheduler_contract.md",
+    "npu/sim/perf/attention_shared_sram_k_round_scheduler.py",
+    "npu/sim/rtl/attention_shared_sram_k_round_bank.sv",
+    "npu/sim/rtl/attention_shared_sram_k_round_scheduler.sv",
+    "npu/rtlgen/gen_attention_shared_sram_k_round_scheduler_ppa_harness.py",
+    "npu/eval/check_attention_shared_sram_k_round_scheduler_ppa_guard.py"
+  ]
+}

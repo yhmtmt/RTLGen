@@ -24,8 +24,88 @@ from control_plane.services.l1_task_generator import (
     Layer1SweepGenerateRequest,
     Layer1TaskGenerationError,
     _multivalue_cluster_binary_fsm_profile,
+    _read_config_target,
     generate_l1_sweep_task,
 )
+
+
+def test_read_config_target_builds_shared_sram_adapter_remote_commands(tmp_path: Path) -> None:
+    repo_root = tmp_path / "repo"
+    design_dir = repo_root / "runs/designs/npu_blocks/attention_shared_sram_read_group_adapter_w256_s2"
+    design_dir.mkdir(parents=True)
+    config_path = design_dir / "config.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "top_name": design_dir.name,
+                "attention_shared_sram_read_group_adapter_ppa_harness": {
+                    "beat_width": 256,
+                    "group_slots": 2,
+                    "groups": 64,
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    config_rel = str(config_path.relative_to(repo_root))
+    target = _read_config_target(
+        config_path,
+        repo_root=repo_root,
+        config_rel=config_rel,
+        out_root="runs/designs/npu_blocks",
+        make_target=None,
+    )
+    assert target.design_name == design_dir.name
+    assert target.expected_metrics_path == f"runs/designs/npu_blocks/{design_dir.name}/metrics.csv"
+    assert [command["name"] for command in target.commands] == [
+        "generate_attention_shared_sram_read_group_adapter_ppa_harness_rtl",
+        "check_attention_shared_sram_read_group_adapter_ppa_guard",
+        "run_block_sweep",
+        "extract_attention_shared_sram_read_group_adapter_ppa_harness_timing_paths",
+    ]
+    assert "gen_attention_shared_sram_read_group_adapter_ppa_harness.py" in target.commands[0]["run"]
+    assert "check_attention_shared_sram_read_group_adapter_ppa_guard.py" in target.commands[1]["run"]
+    assert "--top attention_shared_sram_read_group_adapter_w256_s2" in target.commands[2]["run"]
+
+
+def test_read_config_target_builds_shared_sram_k_round_scheduler_commands(tmp_path: Path) -> None:
+    repo_root = tmp_path / "repo"
+    design_dir = repo_root / "runs/designs/npu_blocks/attention_shared_sram_k_round_scheduler_b17_w17"
+    design_dir.mkdir(parents=True)
+    config_path = design_dir / "config.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "top_name": design_dir.name,
+                "attention_shared_sram_k_round_scheduler_ppa_harness": {
+                    "banks": 17,
+                    "words_per_group": 128,
+                    "dimension_groups": 8,
+                    "dimensions_per_group": 16,
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    config_rel = str(config_path.relative_to(repo_root))
+    target = _read_config_target(
+        config_path,
+        repo_root=repo_root,
+        config_rel=config_rel,
+        out_root="runs/designs/npu_blocks",
+        make_target=None,
+    )
+    assert target.design_name == design_dir.name
+    assert target.expected_metrics_path == f"runs/designs/npu_blocks/{design_dir.name}/metrics.csv"
+    assert [command["name"] for command in target.commands] == [
+        "generate_attention_shared_sram_k_round_scheduler_ppa_harness_rtl",
+        "check_attention_shared_sram_k_round_scheduler_ppa_guard",
+        "run_block_sweep",
+        "extract_attention_shared_sram_k_round_scheduler_ppa_harness_timing_paths",
+    ]
+    assert "gen_attention_shared_sram_k_round_scheduler_ppa_harness.py" in target.commands[0]["run"]
+    assert "check_attention_shared_sram_k_round_scheduler_ppa_guard.py" in target.commands[1]["run"]
+    assert "--top attention_shared_sram_k_round_scheduler_b17_w17" in target.commands[2]["run"]
 
 
 def _write_example_repo(repo_root: Path) -> tuple[str, str]:

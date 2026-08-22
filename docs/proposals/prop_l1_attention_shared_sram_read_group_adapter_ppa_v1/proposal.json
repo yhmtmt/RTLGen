@@ -1,0 +1,99 @@
+{
+  "proposal_id": "prop_l1_attention_shared_sram_read_group_adapter_ppa_v1",
+  "created_utc": "2026-08-21T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit",
+  "title": "Shared-SRAM 1024-bit read-group adapter physical calibration",
+  "abstraction_layer": "decoder_attention_shared_sram_macro_port_adapter",
+  "hypothesis": "A two-slot adapter can preserve exact 256-bit NoC and 512-bit local-fill streams while sustaining one output beat per cycle, with modest logic cost relative to the separately accounted SRAM macros.",
+  "direct_comparison": {
+    "primary_question": "What timing, standard-cell area, and vectorless power does 1024-bit macro adaptation add for remote and local shared-SRAM paths?",
+    "baselines": [
+      "local_capacity_chunk_02_256kib CACTI macro entry",
+      "noc_sram_packet_endpoint Phase-2 transport"
+    ],
+    "candidate": [
+      "attention_shared_sram_read_group_adapter_w256_s1",
+      "attention_shared_sram_read_group_adapter_w256_s2",
+      "attention_shared_sram_read_group_adapter_w512_s1",
+      "attention_shared_sram_read_group_adapter_w512_s2"
+    ],
+    "include": [
+      "synthesizable group collection, macro request metadata, response buffering, and ordered emission",
+      "narrow-I/O deterministic activity harness",
+      "one-slot serialization and two-slot overlap points"
+    ],
+    "exclude": [
+      "68 MiB shared-SRAM capacity area",
+      "CACTI macro access energy",
+      "17-bank K prefetch scheduler and 16 KiB word window",
+      "NoC endpoint and mesh PPA",
+      "external HBM/DRAM"
+    ],
+    "metrics": [
+      "critical_path_ns",
+      "stdcell_area_um2",
+      "total_power_mw",
+      "flow_status"
+    ]
+  },
+  "required_evaluations": [
+    {
+      "item_id": "l1_attention_shared_sram_read_group_adapter_w256_s1_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure serialized 256-bit remote-path adaptation.",
+      "status": "pending",
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "configs": ["runs/designs/npu_blocks/attention_shared_sram_read_group_adapter_w256_s1/config.json"],
+      "sweep_path": "runs/campaigns/npu/attention_shared_sram_read_group_adapter_ppa_v1/sweeps/nangate45.json",
+      "out_root": "runs/designs/npu_blocks"
+    },
+    {
+      "item_id": "l1_attention_shared_sram_read_group_adapter_w256_s2_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure overlapped 256-bit remote-path adaptation.",
+      "status": "pending",
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "configs": ["runs/designs/npu_blocks/attention_shared_sram_read_group_adapter_w256_s2/config.json"],
+      "sweep_path": "runs/campaigns/npu/attention_shared_sram_read_group_adapter_ppa_v1/sweeps/nangate45.json",
+      "out_root": "runs/designs/npu_blocks"
+    },
+    {
+      "item_id": "l1_attention_shared_sram_read_group_adapter_w512_s1_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure serialized 512-bit local-fill adaptation.",
+      "status": "pending",
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "configs": ["runs/designs/npu_blocks/attention_shared_sram_read_group_adapter_w512_s1/config.json"],
+      "sweep_path": "runs/campaigns/npu/attention_shared_sram_read_group_adapter_ppa_v1/sweeps/nangate45.json",
+      "out_root": "runs/designs/npu_blocks"
+    },
+    {
+      "item_id": "l1_attention_shared_sram_read_group_adapter_w512_s2_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure overlapped 512-bit local-fill adaptation.",
+      "status": "pending",
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "configs": ["runs/designs/npu_blocks/attention_shared_sram_read_group_adapter_w512_s2/config.json"],
+      "sweep_path": "runs/campaigns/npu/attention_shared_sram_read_group_adapter_ppa_v1/sweeps/nangate45.json",
+      "out_root": "runs/designs/npu_blocks"
+    }
+  ],
+  "remaining_abstractions": [
+    "Full capacity macro area and access energy are composed from the checked registry rather than instantiated in RTL.",
+    "The 17-bank K prefetch scheduler and double-buffered word window are not part of this adapter run.",
+    "Vectorless power is a screening metric until workload activity is supplied."
+  ],
+  "source_refs": [
+    "npu/docs/attention_phase2_shared_stream_transport_contract.md",
+    "npu/sim/rtl/attention_shared_sram_read_group_adapter.sv",
+    "npu/sim/perf/attention_shared_sram_gqa8_tensor_layout.py",
+    "npu/rtlgen/gen_attention_shared_sram_read_group_adapter_ppa_harness.py",
+    "npu/eval/check_attention_shared_sram_read_group_adapter_ppa_guard.py"
+  ]
+}

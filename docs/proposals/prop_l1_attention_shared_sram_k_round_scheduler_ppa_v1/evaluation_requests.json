@@ -1,0 +1,27 @@
+{
+  "proposal_id": "prop_l1_attention_shared_sram_k_round_scheduler_ppa_v1",
+  "source_commit": "TBD",
+  "source_commit_note": "Queue only after merge and pin source_requirement.required_sha to the merged origin/master commit containing the model, RTL, exact-data tests, physical harness, guard, config, sweep, and task-generator support.",
+  "requested_items": [
+    {
+      "item_id": "l1_attention_shared_sram_k_round_scheduler_b17_w17_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure the exact 17-bank double-buffered K round scheduler on Nangate45.",
+      "evaluation_mode": "physical_calibration",
+      "abstraction_layer": "decoder_attention_shared_sram_k_prefetch_scheduler",
+      "comparison_role": "bounded_round_window_candidate",
+      "config_paths": [
+        "runs/designs/npu_blocks/attention_shared_sram_k_round_scheduler_b17_w17/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/attention_shared_sram_k_round_scheduler_ppa_v1/sweeps/nangate45.json",
+      "out_root": "runs/designs/npu_blocks",
+      "expected_outputs": [
+        "runs/designs/npu_blocks/attention_shared_sram_k_round_scheduler_b17_w17/metrics.csv",
+        "runs/designs/npu_blocks/attention_shared_sram_k_round_scheduler_b17_w17/timing_debug_report.md"
+      ],
+      "status": "pending_after_proposal_merge",
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    }
+  ]
+}
