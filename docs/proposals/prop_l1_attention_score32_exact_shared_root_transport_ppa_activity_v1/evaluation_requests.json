@@ -1,0 +1,33 @@
+{
+  "proposal_id": "prop_l1_attention_score32_exact_shared_root_transport_ppa_activity_v1",
+  "source_commit": "TBD",
+  "source_commit_note": "Queue only after merge from origin/master and pin source_requirement.required_sha to the merge commit containing the generator, guard, config, canary sweep, proposal linkage, and task-generator support.",
+  "requested_items": [
+    {
+      "item_id": "l1_attention_score32_exact_shared_root_transport_ppa_activity_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure the compact exact stats-once reduction-transport composition with the exact c16/r2/l8/b59 global tree and 15-bank fakeram root storage.",
+      "evaluation_mode": "physical_calibration",
+      "abstraction_layer": "decoder_attention_exact_shared_root_transport",
+      "comparison_role": "exact_transport_composed_physical_canary",
+      "config_paths": [
+        "runs/designs/npu_blocks/attention_score32_exact_shared_root_transport_ppa_activity_l1/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/attention_score32_exact_shared_root_transport_ppa_activity_l1/sweeps/nangate45_canary.json",
+      "out_root": "runs/designs/npu_blocks",
+      "expected_outputs": [
+        "runs/designs/npu_blocks/attention_score32_exact_shared_root_transport_ppa_activity_l1/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_shared_root_transport_ppa_activity_l1/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_score32_exact_shared_root_transport_ppa_activity_l1/hierarchy_reports/index.json"
+      ],
+      "status": "pending_after_proposal_merge",
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "establish_exact_composed_reduction_transport_ppa_anchor",
+        "reason": "Replace reduction-transport and shared-root fabric abstractions with measured hierarchical evidence before composing the separate shared-SRAM stream traffic and recosting Llama7B."
+      },
+      "acceptance_notes": "Do not dispatch until the evaluator has the source commit. The guard must prove exact module/pin/macro inventory and the post-sweep guard must attach hierarchical area. This item embodies only the 15-source reduction traffic; the 112 shared-SRAM contexts remain outside it. Whole-harness power is an upper bound; HBM/DRAM and exact Llama7B quality remain outside this item. Retracted L2 frontier artifacts must remain retracted."
+    }
+  ]
+}
