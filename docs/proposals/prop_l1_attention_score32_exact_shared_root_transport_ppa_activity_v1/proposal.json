@@ -1,0 +1,80 @@
+{
+  "proposal_id": "prop_l1_attention_score32_exact_shared_root_transport_ppa_activity_v1",
+  "created_utc": "2026-08-21T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit",
+  "title": "Compact exact stats-once reduction-transport physical calibration",
+  "abstraction_layer": "decoder_attention_exact_shared_root_transport",
+  "hypothesis": "A compact-pin physical harness containing the exact c16/r2/l8/b59 global tree, real stats-once reduction codecs, endpoint adapters, 4x4 mesh, shared-root storage, and the admission boundary can establish a reusable Nangate45 reduction-transport/fabric PPA anchor without treating verification stimulus as DUT area.",
+  "direct_comparison": {
+    "primary_question": "What are the timing, area, and whole-harness power bounds of the exact 15-source, 15-bank shared-root reduction-transport composition under a conservative hierarchical physical canary?",
+    "include": [
+      "35 input bits and 128 output bits at the compact physical boundary",
+      "exact c16/r2/l8/b59 global reduction tree",
+      "15 exact stats-once source encoders and packet adapters",
+      "real 4x4 deterministic-XY mesh and shared-root receive/storage path",
+      "exactly 120 fakeram45_64x32 root-storage macros",
+      "hierarchical instance-area accounting under composition/exact_transport_wrapper/",
+      "a small Nangate45 clock and placement-density canary sweep"
+    ],
+    "exclude": [
+      "HBM/DRAM controller and off-chip memory service",
+      "claiming verification stimulus logic as DUT area",
+      "claiming whole-harness vectorless power as workload activity energy",
+      "the separate 112 shared-SRAM stream contexts and their packet traffic",
+      "reinstating any retracted L2 Phase-2 schedule, frontier, or finite-endpoint result",
+      "Llama7B quality claims; those require the separate exact MHA quality gate"
+    ],
+    "metrics": [
+      "critical_path_ns",
+      "instance_area_um2",
+      "hierarchical_instance_area_um2",
+      "total_power_mw",
+      "macro_count",
+      "hierarchy_area_prefix",
+      "flow_status"
+    ]
+  },
+  "required_evaluations": [
+    {
+      "item_id": "l1_attention_score32_exact_shared_root_transport_ppa_activity_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure the compact exact stats-once reduction-transport composition with the exact global tree and 15-bank fakeram root storage.",
+      "status": "pending",
+      "evaluation_mode": "physical_calibration",
+      "abstraction_layer": "decoder_attention_exact_shared_root_transport",
+      "comparison_role": "exact_transport_composed_physical_canary",
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "config_paths": [
+        "runs/designs/npu_blocks/attention_score32_exact_shared_root_transport_ppa_activity_l1/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/attention_score32_exact_shared_root_transport_ppa_activity_l1/sweeps/nangate45_canary.json",
+      "out_root": "runs/designs/npu_blocks",
+      "expected_outputs": [
+        "runs/designs/npu_blocks/attention_score32_exact_shared_root_transport_ppa_activity_l1/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_shared_root_transport_ppa_activity_l1/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_score32_exact_shared_root_transport_ppa_activity_l1/hierarchy_reports/index.json"
+      ],
+      "expected_result": {
+        "direction": "establish_exact_composed_reduction_transport_ppa_anchor",
+        "reason": "Use physical evidence to replace reduction-transport and shared-root fabric abstractions before composing shared-SRAM traffic and recosting the Llama7B schedule."
+      },
+      "acceptance_notes": "Require the generated top/guard to prove 35 input bits, 128 output bits, composition/exact_transport_wrapper/ hierarchy, exact c16/r2/l8/b59 tree, PHYSICAL_BANKS=15, USE_FAKERAM=1, and exactly 120 fakeram45_64x32 macros. Attach hierarchical area to metrics.csv after each successful OpenROAD result. Treat this as reduction-traffic evidence only, treat total_power_mw as a whole-harness upper bound, and do not restore retracted L2 frontier artifacts."
+    }
+  ],
+  "remaining_abstractions": [
+    "The 112 shared-SRAM stream contexts and their packet traffic are not composed in this reduction-transport item.",
+    "HBM/DRAM service is intentionally external.",
+    "Whole-harness power is an upper bound until workload activity power is separately measured.",
+    "This canary does not by itself establish exact Llama7B MHA quality or final token throughput."
+  ],
+  "source_refs": [
+    "npu/rtlgen/gen_attention_score32_exact_shared_root_transport_ppa_activity_harness.py",
+    "npu/eval/check_attention_score32_exact_shared_root_transport_ppa_activity_guard.py",
+    "npu/sim/rtl/local_reducer_aggregate_stats_once_exact_shared_root_transport_ppa_activity_harness.sv",
+    "npu/sim/rtl/local_reducer_aggregate_stats_once_exact_shared_root_transport_wrapper.sv",
+    "npu/rtlgen/gen_attention_score32_exact_banked_finalized_tree.py"
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "top_name": "attention_score32_exact_shared_root_transport_ppa_activity_l1",
+  "attention_score32_exact_shared_root_transport_ppa_activity_harness": {
+    "physical_banks": 15,
+    "use_fakeram": 1,
+    "hierarchy_area_prefix": "composition/exact_transport_wrapper/"
+  },
+  "report_links": {
+    "proposal_id": "prop_l1_attention_score32_exact_shared_root_transport_ppa_activity_v1",
+    "proposal_path": "docs/proposals/prop_l1_attention_score32_exact_shared_root_transport_ppa_activity_v1/proposal.json"
+  }
+}
