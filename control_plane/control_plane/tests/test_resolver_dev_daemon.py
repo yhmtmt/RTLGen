@@ -451,6 +451,64 @@ def test_dev_resolver_opens_issue_for_assigned_ready_source_mismatch() -> None:
     assert case.status == "awaiting_remote"
 
 
+def test_dev_resolver_ignores_source_mismatch_heartbeat_only_change() -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    create_all(engine)
+    _seed_assigned_ready_source_mismatch(engine)
+    session_factory = build_session_factory(engine)
+
+    with patch(
+        "control_plane.services.resolver_dev_daemon.open_issue_for_case",
+        return_value=ResolverIssueCreateResult(
+            issue_number=178,
+            issue_url="https://github.com/yhmtmt/RTLGen/issues/178",
+        ),
+    ) as open_issue_mock, patch(
+        "control_plane.services.resolver_dev_daemon.fetch_issue",
+        return_value=type("Issue", (), {"state": "open"})(),
+    ), patch(
+        "control_plane.services.resolver_dev_daemon.fetch_issue_comments",
+        return_value=(),
+    ), patch(
+        "control_plane.services.resolver_dev_daemon.comment_issue_for_case"
+    ) as comment_mock, patch(
+        "control_plane.services.resolver_dev_daemon.time.sleep"
+    ):
+        first = run_dev_resolver(
+            session_factory,
+            ResolverDevDaemonConfig(
+                repo="yhmtmt/RTLGen",
+                repo_root="/repo",
+                poll_seconds=0,
+                max_polls=1,
+            ),
+        )
+        with Session(engine) as session:
+            machine = session.query(WorkerMachine).filter_by(machine_key="eval-source").one()
+            machine.last_seen_at = utcnow()
+            session.commit()
+        second = run_dev_resolver(
+            session_factory,
+            ResolverDevDaemonConfig(
+                repo="yhmtmt/RTLGen",
+                repo_root="/repo",
+                poll_seconds=0,
+                max_polls=1,
+            ),
+        )
+
+    with Session(engine) as session:
+        cases = session.query(ResolverCase).all()
+        actions = session.query(ResolverAction).all()
+
+    assert first.opened_issue_count == 1
+    assert second.updated_issue_count == 0
+    assert len(cases) == 1
+    assert [action.action_key for action in actions] == ["open_issue"]
+    assert open_issue_mock.call_count == 1
+    assert comment_mock.call_count == 0
+
+
 def test_dev_resolver_applies_expire_stale_lease_from_diagnosis() -> None:
     engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
     create_all(engine)
