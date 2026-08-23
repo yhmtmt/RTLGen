@@ -44,6 +44,7 @@ Notes:
 """
 
 import argparse
+import csv
 import datetime
 import hashlib
 import itertools
@@ -451,23 +452,28 @@ def append_index(circuit_root: Path, record: Dict[str, object]):
         "result_path",
     ]
     exists = index_path.exists()
-    with index_path.open("a") as f:
+    with index_path.open("a", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=header, lineterminator="\n")
         if not exists:
-            f.write(",".join(header) + "\n")
-        row = [
-            record.get("design", ""),
-            record.get("platform", ""),
-            record.get("config_hash", ""),
-            record.get("param_hash", ""),
-            record.get("tag", ""),
-            record.get("status", ""),
-            str(record.get("metrics", {}).get("critical_path_ns", "")),
-            str(record.get("metrics", {}).get("die_area", "")),
-            str(record.get("metrics", {}).get("total_power_mw", "")),
-            json.dumps(record.get("flow_params", {}), sort_keys=True),
-            normalize_repo_path(str(record.get("result_path", record.get("param_hash", "")))),
-        ]
-        f.write(",".join(row) + "\n")
+            writer.writeheader()
+        metrics = record.get("metrics", {})
+        writer.writerow(
+            {
+                "design": record.get("design", ""),
+                "platform": record.get("platform", ""),
+                "config_hash": record.get("config_hash", ""),
+                "param_hash": record.get("param_hash", ""),
+                "tag": record.get("tag", ""),
+                "status": record.get("status", ""),
+                "critical_path_ns": metrics.get("critical_path_ns", ""),
+                "die_area": metrics.get("die_area", ""),
+                "total_power_mw": metrics.get("total_power_mw", ""),
+                "params_json": json.dumps(record.get("flow_params", {}), sort_keys=True),
+                "result_path": normalize_repo_path(
+                    str(record.get("result_path", record.get("param_hash", "")))
+                ),
+            }
+        )
 
 
 def main():
