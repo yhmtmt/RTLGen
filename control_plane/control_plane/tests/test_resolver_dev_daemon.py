@@ -307,7 +307,7 @@ def test_dev_resolver_does_not_open_issue_within_orphaned_stale_grace() -> None:
     assert cases == []
 
 
-def test_dev_resolver_opens_new_issue_when_existing_linked_issue_is_closed() -> None:
+def test_dev_resolver_resolves_closed_escalation_before_opening_new_issue() -> None:
     engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
     create_all(engine)
     _seed_orphaned_running_item(engine)
@@ -318,7 +318,7 @@ def test_dev_resolver_opens_new_issue_when_existing_linked_issue_is_closed() -> 
             fingerprint="orphaned_running_item:command_progress",
             failure_class="orphaned_running_item",
             owner="eval",
-            status="awaiting_remote",
+            status="escalated",
             severity="high",
             issue_number=184,
             first_item_id="old-item",

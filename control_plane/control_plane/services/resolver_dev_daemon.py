@@ -456,7 +456,11 @@ def _handle_detection(
 def _reconcile_closed_remote_issues(session: Session, *, repo: str) -> None:
     cases = (
         session.query(ResolverCase)
-        .filter(ResolverCase.status.in_(("open", "diagnosing", "fix_in_progress", "awaiting_remote", "awaiting_retry")))
+        .filter(
+            ResolverCase.status.in_(
+                ("open", "diagnosing", "fix_in_progress", "awaiting_remote", "awaiting_retry", "escalated")
+            )
+        )
         .filter(ResolverCase.issue_number.isnot(None))
         .all()
     )
