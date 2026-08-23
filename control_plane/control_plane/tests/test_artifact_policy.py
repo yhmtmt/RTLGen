@@ -21,6 +21,14 @@ def test_transportable_expected_output_allows_design_local_fsm_diagnostic_and_ti
     assert is_transportable_expected_output(f"{base}/timing_debug_report.md")
 
 
+def test_transportable_expected_output_allows_design_hierarchy_report_index_only() -> None:
+    base = "runs/designs/npu_blocks/attention_score32_exact_shared_root_transport"
+
+    assert is_transportable_expected_output(f"{base}/hierarchy_reports/index.json")
+    assert not is_transportable_expected_output(f"{base}/reports/index.json")
+    assert not is_transportable_expected_output(f"{base}/hierarchy_reports/detail.json")
+
+
 def test_transportable_expected_output_rejects_design_local_source_rtl_and_manifests() -> None:
     base = "runs/designs/npu_blocks/attention_decode_score_multivalue_cluster_int8_m1x8_iterdiv"
 
